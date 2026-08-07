@@ -3,6 +3,7 @@ using System;
 using System.Threading.Tasks;
 using StardewModdingAPI.Events;
 using System.Collections.Generic;
+using StardewModdingAPI;
 
 namespace ValleyTalk
 {
@@ -23,6 +24,32 @@ namespace ValleyTalk
         public static void Initialize()
         {
             ModEntry.SHelper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
+        }
+
+        /// <summary>
+        /// Cleans up event subscriptions and resets state. Called when the game is exiting.
+        /// </summary>
+        public static void Cleanup()
+        {
+            try
+            {
+                // Unsubscribe from events
+                if (ModEntry.SHelper != null)
+                {
+                    ModEntry.SHelper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
+                }
+
+                // Reset state
+                _awaitingTextInput = false;
+                _inputTitle = "";
+                _currentNpc = null;
+                _currentDialogueKey = "";
+                _currentResponse = new List<ConversationElement>();
+            }
+            catch (Exception ex)
+            {
+                ModEntry.SMonitor?.Log($"[TextInputManager] Error during cleanup: {ex.Message}", LogLevel.Warn);
+            }
         }
 
         /// <summary>

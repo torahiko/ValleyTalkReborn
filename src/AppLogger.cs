@@ -109,5 +109,13 @@ namespace ValleyTalk
         {
             _monitor?.Log($"{_logPrefix}{string.Format(format, args)}", LogLevel.Warn);
         }
+
+        /// <summary>
+        /// Resets the monitor reference. Called when the game is exiting.
+        /// </summary>
+        public static void Cleanup()
+        {
+            _monitor = null;
+         }
     }
 }

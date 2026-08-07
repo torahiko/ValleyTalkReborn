@@ -242,6 +242,9 @@ public class Character
         string[] results = Array.Empty<string>();
         Prompts prompts = null;
 
+        // 每次新对话重置取消标志，防止上次取消影响本次
+        IsUserCancelled = false;
+
         // 将 Prompts 创建放在 try-catch 中，防止打包失败导致崩溃
         try
         {
@@ -262,6 +265,9 @@ public class Character
             {
                 prompts.System = memoryCtx + "\n\n" + prompts.System;
             }
+
+            // [Action Awareness Injection] — delegates text generation to PerceptionInjector
+            PerceptionInjector.Inject(Name, prompts);
         }
         catch (Exception ex)
         {
@@ -289,8 +295,16 @@ public class Character
                     timeoutSeconds *= 2; // Double the timeout for each retry after the first
                 }
 
+
+                // If user already cancelled, do not retry
+                if (IsUserCancelled)
+                {
+                    results = Array.Empty<string>();
+                    break;
+                }
                 // Execute with timeout
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
+                Character.CurrentDialogueCts = cts;
 
                 string[] resultsInternal;
 
@@ -315,6 +329,13 @@ public class Character
                     {
                         resultsInternal = Array.Empty<string>();
                     }
+                }
+                catch (OperationCanceledException)
+                {
+                    // 用户主动取消，静默处理，不记录错误
+                    Log.Debug($"AI request cancelled for {Name}.");
+                    resultsInternal = new string[] { "..." };
+                    break; // 跳出重试循环，不再重试
                 }
                 catch (Exception ex)
                 {
@@ -409,6 +430,7 @@ public class Character
             results[0] += $"[{prompts.GiveGift}]";
         }
 
+        Character.CurrentDialogueCts = null;
         return results;
     }
 
@@ -728,6 +750,15 @@ public class Character
     }
 
     public string Name { get; }
+
+        // Expose current dialogue cancellation token for plugin access
+        public static CancellationTokenSource CurrentDialogueCts { get; internal set; }
+
+        /// <summary>
+        /// Set to true when the user explicitly cancels via the cancel button.
+        /// Checked by retry logic to prevent auto-retry after user cancellation.
+        /// </summary>
+        public static bool IsUserCancelled { get; set; }
     public string DialogueFilePath { get; }
     public string BioFilePath { get; }
     public DialogueFile DialogueData 

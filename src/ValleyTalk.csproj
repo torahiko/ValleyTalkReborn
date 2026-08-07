@@ -2,23 +2,18 @@
   <PropertyGroup>
     <AssemblyName>ValleyTalk</AssemblyName>
     <RootNamespace>ValleyTalk</RootNamespace>
-    <Version>1.6.0</Version>
-    <TargetFrameworks>net6.0</TargetFrameworks>
+    <Version>1.6.5</Version>
+    <TargetFramework>net6.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <GamePath>/home/david/snap/steam/common/.local/share/Steam/steamapps/common/Stardew Valley</GamePath>
     <EnableHarmony>true</EnableHarmony>
     <Platforms>AnyCPU;x64</Platforms>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ModFolderName>ValleyTalk</ModFolderName>
-    <BundleExtraAssemblies>ThirdParty, System</BundleExtraAssemblies>
-    <!-- Android compatibility settings -->
-    <AndroidUseAapt2>true</AndroidUseAapt2>
-    <AndroidEnableMultiDx>true</AndroidEnableMultiDx>
-    <AndroidSupportedAbis>arm64-v8a;armeabi-v7a</AndroidSupportedAbis>
     <Authors>dandm1/srkgou</Authors>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="newtonsoft.json" Version="13.0.5-beta1" />
+    <PackageReference Include="newtonsoft.json" Version="13.0.3" />
     <PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.4.0" />
     <PackageReference Include="TextCopy" Version="6.2.1" />
   </ItemGroup>

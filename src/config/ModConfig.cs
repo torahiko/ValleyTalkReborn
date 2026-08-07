@@ -21,6 +21,12 @@ namespace ValleyTalk
         public int MarriageFrequency { get; set; } = 4;
         public int GiftFrequency { get; set; } = 4;
         public string TypedResponses { get; set; } = "With Generated";
+        public SButton InitiateTypedDialogueKey { get; set; } = SButton.LeftAlt;
+        public bool SuppressConnectionCheck { get; set; } = false;
+        public bool EnableCancelButton { get; set; } = true;
+        public bool EnableMemoryCompression { get; set; } = true;
+        public int MemoryRecentCount { get; set; } = 10;
+
         public string DisableCharacters
         {
             get => disableCharacters;
@@ -28,23 +34,30 @@ namespace ValleyTalk
             {
                 disableCharacters = value;
                 DisabledCharactersList = value
-                            .Split(new[] { ',', ' ' })
-                            .Select(s => s.Trim().ToTitleCase())
-                            .Where(s => !string.IsNullOrWhiteSpace(s))
-                            .ToList();
+                    .Split(new[] { ',', ' ' })
+                    .Select(s => s.Trim().ToTitleCase())
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                    .ToList();
             }
         }
 
-        public SButton InitiateTypedDialogueKey { get; internal set; } = SButton.LeftAlt;
         internal List<string> DisabledCharactersList { get; private set; } = new List<string>();
-        public bool SuppressConnectionCheck { get; set; } = false;
 
-        // Dialogue memory compression settings
-        public bool EnableMemoryCompression { get; set; } = true;
-        /// <summary>
-        /// Number of recent history entries to keep verbatim (not compressed).
-        /// Older entries will be summarized via LLM.
-        /// </summary>
-        public int MemoryRecentCount { get; set; } = 10;
+        public bool EnablePerceptionSystem { get; set; } = true;
+
+        public bool EnableNearbyPerception { get; set; } = true;
+        public bool EnableSameMapPerception { get; set; } = true;
+        public bool EnableGlobalPerception { get; set; } = true;
+
+        public bool EnablePerceptionEat { get; set; } = true;
+        public bool EnablePerceptionFish { get; set; } = true;
+        public bool EnablePerceptionChop { get; set; } = true;
+        public bool EnablePerceptionPlace { get; set; } = true;
+        public bool EnablePerceptionTalk { get; set; } = true;
+        public bool EnablePerceptionHarvest { get; set; } = true;
+
+        public int PerceptionTalkLifetime { get; set; } = 1;
+        public int PerceptionActionLifetime { get; set; } = 5;
+        public int PerceptionHarvestLifetime { get; set; } = 1440;
     }
 }

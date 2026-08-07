@@ -338,5 +338,34 @@ namespace ValleyTalk
         {
             LastContext = null;
         }
+
+        /// <summary>
+        /// Cleans up character cache and context. Called when the game is exiting.
+        /// </summary>
+        public void Cleanup()
+        {
+            try
+            {
+                // Clear character cache (holds NPC references)
+                _characters?.Clear();
+                _characters = new Dictionary<string, ValleyTalk.Character>();
+
+                // Clear context
+                LastContext = null;
+
+                // Clear patch tracking data
+                _patchCharacters?.Clear();
+                _patchCharacters = null;
+                _patchDate = 0;
+
+                LlmDisabled = false;
+
+                ModEntry.SMonitor?.Log("[DialogueBuilder] Cleaned up successfully.", LogLevel.Debug);
+            }
+            catch (Exception ex)
+            {
+                ModEntry.SMonitor?.Log($"[DialogueBuilder] Error during cleanup: {ex.Message}", LogLevel.Warn);
+            }
+        }
     }
 }

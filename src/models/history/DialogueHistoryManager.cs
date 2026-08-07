@@ -30,7 +30,36 @@ namespace ValleyTalk
 
         private DialogueHistoryManager()
         {
-            ModEntry.SHelper.Events.GameLoop.Saving += OnSaving;
+            if (ModEntry.SHelper != null)
+            {
+                ModEntry.SHelper.Events.GameLoop.Saving += OnSaving;
+            }
+        }
+
+        /// <summary>
+        /// Cleans up event subscriptions and clears history data. Called when the game is exiting.
+        /// </summary>
+        public void Cleanup()
+        {
+            try
+            {
+                // Unsubscribe from events
+                if (ModEntry.SHelper != null)
+                {
+                    ModEntry.SHelper.Events.GameLoop.Saving -= OnSaving;
+                }
+
+                // Clear history data
+                _history.Clear();
+                _lastEntry.Clear();
+                _pendingGifts.Clear();
+
+                ModEntry.SMonitor?.Log("[DialogueHistoryManager] Cleaned up successfully.", LogLevel.Debug);
+            }
+            catch (Exception ex)
+            {
+                ModEntry.SMonitor?.Log($"[DialogueHistoryManager] Error during cleanup: {ex.Message}", LogLevel.Warn);
+            }
         }
 
         /// <summary>

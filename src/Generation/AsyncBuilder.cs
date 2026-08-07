@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using ValleyTalk.Platform;
@@ -12,9 +13,43 @@ public class AsyncBuilder
     private static AsyncBuilder _instance = new AsyncBuilder();
     public static AsyncBuilder Instance => _instance;
     private AsyncBuilder()
-    { 
-        ModEntry.SHelper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
-    }
+        {
+            if (ModEntry.SHelper != null)
+            {
+                ModEntry.SHelper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
+            }
+        }
+
+        /// <summary>
+        /// Cleans up event subscriptions and resets state. Called when the game is exiting.
+        /// </summary>
+        public void Cleanup()
+        {
+            try
+            {
+                // Unsubscribe from events
+                if (ModEntry.SHelper != null)
+                {
+                    ModEntry.SHelper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
+                }
+
+                // Reset state
+                _awaitingGeneration = false;
+                _speakingNpc = null;
+                _currentDialogueKey = string.Empty;
+                _originalLine = null;
+                _currentConversation = null;
+                _currentGift = null;
+                _currentTaste = 0;
+                _awaitedType = GenerationType.None;
+
+                ModEntry.SMonitor?.Log("[AsyncBuilder] Cleaned up successfully.", LogLevel.Debug);
+            }
+            catch (Exception ex)
+            {
+                ModEntry.SMonitor?.Log($"[AsyncBuilder] Error during cleanup: {ex.Message}", LogLevel.Warn);
+            }
+        }
 
     private bool _awaitingGeneration = false;
     private GenerationType _awaitedType = GenerationType.None;

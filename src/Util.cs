@@ -53,7 +53,7 @@ namespace ValleyTalk
             return builder.ToString();
         }
 
-        internal static string GetString(ValleyTalk.Character npc,string key,object tokens = null,bool returnNull = false)
+        internal static string GetString(ValleyTalk.Character npc, string key, object tokens = null, bool returnNull = false)
         {
             if (npc == null) return string.Empty;
 
@@ -75,6 +75,16 @@ namespace ValleyTalk
                 PromptCache.Instance.Cache.TryGetValue(key, out result);
             }
             
+            // 如果缓存未命中，尝试从 SMAPI 系统的 i18n 本地化（zh.json 等）读取
+            if (result == null && _translationHelper != null)
+            {
+                var translation = _translationHelper.Get(key);
+                if (translation.HasValue())
+                {
+                    result = translation.ToString();
+                }
+            }
+
             if (returnNull && result == null)
             {
                 return null;
@@ -95,7 +105,20 @@ namespace ValleyTalk
         internal static string GetString(string key, object tokens = null, bool returnNull = false)
         {
             string result = string.Empty;
-            if (!PromptCache.Instance.Cache.TryGetValue(key, out result) && returnNull)
+            bool foundInCache = PromptCache.Instance.Cache.TryGetValue(key, out result);
+
+            // 优先缓存，未命中则读取 SMAPI 的 i18n 语言包（例如 default.json / zh.json）
+            if (!foundInCache && _translationHelper != null)
+            {
+                var translation = _translationHelper.Get(key);
+                if (translation.HasValue())
+                {
+                    result = translation.ToString();
+                    foundInCache = true;
+                }
+            }
+
+            if (!foundInCache && returnNull)
             {
                 return null;
             }

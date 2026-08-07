@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using HarmonyLib;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using System.Collections.Generic;
 using System.Linq;
 using System.Globalization;
+using ValleyTalk.Plugins;
 namespace ValleyTalk
 {
     public partial class ModEntry : Mod
@@ -12,6 +13,22 @@ namespace ValleyTalk
         public static IMonitor SMonitor;
         public static IModHelper SHelper { get; private set; }
         public static ModConfig Config;
+
+        /// <summary>
+        /// Harmony instance saved as a member so it can be unpatched on exit.
+        /// </summary>
+        private Harmony _harmony;
+
+        /// <summary>
+        /// Indicates whether the mod has been initialized (to prevent duplicate subscriptions).
+        /// </summary>
+        private static bool _isInitialized = false;
+
+        /// <summary>
+        /// Cancel button plugin instance.
+        /// </summary>
+        private CancelButtonPlugin _cancelButtonPlugin;
+
         public static Dictionary<string, Type> LlmMap
         {
             get
@@ -116,10 +133,37 @@ namespace ValleyTalk
         {
             SHelper = helper;
 
+            // Defensive cleanup: attempt to unload any leftover patches from a previous session
+            try
+            {
+                new Harmony(ModManifest.UniqueID).UnpatchAll(ModManifest.UniqueID);
+            }
+            catch (Exception ex)
+            {
+                Monitor.Log($"[ValleyTalk] Defensive Harmony.UnpatchAll failed: {ex.Message}", LogLevel.Trace);
+            }
+
+            // If already initialized (e.g. second run in same process), clean up first
+            if (_isInitialized)
+            {
+                Cleanup();
+            }
+
+            // Subscribe to game lifecycle events
             helper.Events.GameLoop.GameLaunched += OnGameLaunched;
             helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
 
             Config = Helper.ReadConfig<ModConfig>();
+
+            // Load cancel button plugin
+            if (Config.EnableCancelButton)
+            {
+                _cancelButtonPlugin = new CancelButtonPlugin(helper, Monitor, Config.EnableCancelButton);
+            }
+            else
+            {
+                Monitor.Log("Cancel button plugin disabled (config off).", LogLevel.Debug);
+            }
 
             SMonitor = Monitor;
 
@@ -155,10 +199,165 @@ namespace ValleyTalk
 
             CheckContentPacks();
 
-            var harmony = new Harmony(ModManifest.UniqueID);
-            harmony.PatchAll();
+            // Initialize Action Awareness System
+            try
+            {
+                EatSubscriber.Initialize();
+                FishSubscriber.Initialize();
+                WorldSubscriber.Initialize();
+                HarvestSubscriber.Initialize();
+                TalkSubscriber.Initialize();
+
+                Log.Debug("[ValleyTalk] Action Awareness System initialized.");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"[ValleyTalk] Error initializing Action Awareness System: {ex.Message}");
+            }
+
+            // Save Harmony instance as a member so it can be unpatched on exit
+            _harmony = new Harmony(ModManifest.UniqueID);
+            _harmony.PatchAll();
+
+            _isInitialized = true;
 
             Log.Debug($"[{DateTime.Now}] Mod loaded");
+        }
+
+        /// <summary>
+        /// Performs comprehensive cleanup of all static resources, event subscriptions, and Harmony patches.
+        /// This is critical to prevent AccessViolationException on second launch.
+        /// </summary>
+        private void Cleanup()
+        {
+            try
+            {
+                // 1. Unload all Harmony patches applied by this mod
+                try
+                {
+                    _harmony?.UnpatchAll(ModManifest.UniqueID);
+                    _harmony = null;
+                    Log.Debug("[ValleyTalk] Harmony patches unloaded.");
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[ValleyTalk] Error unpatching Harmony: {ex.Message}");
+                }
+
+                // 2. Clean up MemoryManager singleton
+                try
+                {
+                    MemoryManager.Instance?.Cleanup();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[ValleyTalk] Error cleaning MemoryManager: {ex.Message}");
+                }
+
+                // 3. Clean up TextInputManager
+                try
+                {
+                    TextInputManager.Cleanup();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[ValleyTalk] Error cleaning TextInputManager: {ex.Message}");
+                }
+
+                // 4. Clean up AsyncBuilder singleton
+                try
+                {
+                    AsyncBuilder.Instance?.Cleanup();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[ValleyTalk] Error cleaning AsyncBuilder: {ex.Message}");
+                }
+
+                // 5. Clean up DialogueHistoryManager singleton
+                try
+                {
+                    DialogueHistoryManager.Instance?.Cleanup();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[ValleyTalk] Error cleaning DialogueHistoryManager: {ex.Message}");
+                }
+
+                // 6. Clean up DialogueBuilder singleton
+                try
+                {
+                    DialogueBuilder.Instance?.Cleanup();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[ValleyTalk] Error cleaning DialogueBuilder: {ex.Message}");
+                }
+
+                // 7. Clean up ModInteropManager singleton
+                try
+                {
+                    ModInteropManager.Instance?.Cleanup();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[ValleyTalk] Error cleaning ModInteropManager: {ex.Message}");
+                }
+
+                // 8b. Clean up Action Awareness System
+                try
+                {
+                    EatSubscriber.Cleanup();
+                    FishSubscriber.Cleanup();
+                    WorldSubscriber.Cleanup();
+                    HarvestSubscriber.Cleanup();
+                    TalkSubscriber.Cleanup();
+
+                    PerceptionManager.Instance?.Cleanup();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[ValleyTalk] Error cleaning Action Awareness System: {ex.Message}");
+                }
+
+                // 8. Reset static fields in ModEntry
+                try
+                {
+                    _llmMap = null;
+                    _fixPunctuation = null;
+                    _locale = null;
+                    _localeCache = string.Empty;
+                    _localeCacheFixPunctuation = string.Empty;
+                    BlockModdedContent = false;
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[ValleyTalk] Error resetting ModEntry statics: {ex.Message}");
+                }
+
+                // 9. Dispose cancel button plugin
+                try
+                {
+                    _cancelButtonPlugin?.Dispose();
+                    _cancelButtonPlugin = null;
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[ValleyTalk] Error disposing cancel button plugin: {ex.Message}");
+                }
+
+                // 10. Reset Log monitor reference
+                Log.Cleanup();
+
+                _isInitialized = false;
+
+                Log.Debug("[ValleyTalk] Full cleanup completed.");
+            }
+            catch (Exception ex)
+            {
+                // Last-resort error handling - never throw from cleanup
+                try { Log.Error($"[ValleyTalk] Critical error during cleanup: {ex.Message}"); } catch { }
+            }
         }
 
         private void CheckContentPacks()

@@ -65,6 +65,17 @@ namespace ValleyTalk
 
             public static string AddButton() => Lookup("Memory.AddButton");
 
+            public static string EditTitle(string name)
+                => Lookup("Memory.EditTitle")
+                    .Replace("{{0}}", name ?? string.Empty)
+                    .Replace("{{Name}}", name ?? string.Empty);
+
+            public static string EditButtonHover()
+                => Lookup("Memory.EditButtonHover");
+
+            public static string DeleteButtonHover()
+                => Lookup("Memory.DeleteButtonHover");
+
             public static string AddTitle(string name)
                 => Lookup("Memory.AddTitle")
                     .Replace("{{0}}", name ?? string.Empty)
@@ -112,6 +123,41 @@ namespace ValleyTalk
                     .Replace("{{0}}", max.ToString())
                     .Replace("{{value}}", max.ToString())
                     .Replace("{{Max}}", max.ToString());
+        }
+
+        public static class DialogueInput
+        {
+            public static string DefaultTitle() => Lookup("DialogueInput.DefaultTitle");
+
+            public static string Instruction() => Lookup("DialogueInput.Instruction");
+
+            public static string ClearHistoryHover(string npcName)
+                => Lookup("DialogueInput.ClearHistoryHover")
+                    .Replace("{{0}}", npcName ?? string.Empty)
+                    .Replace("{{Name}}", npcName ?? string.Empty);
+
+            public static string ViewHistoryHover(string npcName)
+                => Lookup("DialogueInput.ViewHistoryHover")
+                    .Replace("{{0}}", npcName ?? string.Empty)
+                    .Replace("{{Name}}", npcName ?? string.Empty);
+
+            public static string ClearAllConfirm()
+                => Lookup("DialogueInput.ClearAllConfirm");
+
+            public static string ClearOneConfirm(string npcName)
+                => Lookup("DialogueInput.ClearOneConfirm")
+                    .Replace("{{0}}", npcName ?? string.Empty)
+                    .Replace("{{Name}}", npcName ?? string.Empty);
+
+            public static string HistoryTitle(string npcName)
+                => Lookup("DialogueInput.HistoryTitle")
+                    .Replace("{{0}}", npcName ?? string.Empty)
+                    .Replace("{{Name}}", npcName ?? string.Empty);
+
+            public static string HistoryEmpty(string npcName)
+                => Lookup("DialogueInput.HistoryEmpty")
+                    .Replace("{{0}}", npcName ?? string.Empty)
+                    .Replace("{{Name}}", npcName ?? string.Empty);
         }
     }
 }

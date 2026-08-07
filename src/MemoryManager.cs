@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using StardewValley;
 using StardewModdingAPI;
 
 namespace ValleyTalk
 {
-    /// <summary>
-    /// 记忆条目实体。关联 NpcName。
-    /// </summary>
     public class MemoryEntry
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
@@ -18,10 +16,6 @@ namespace ValleyTalk
         public string Source { get; set; } = "Manual";
     }
 
-    /// <summary>
-    /// 记忆管理器。每个 NPC 最多 10 条记忆，关联 NPC 名称。
-    /// 持久化通过 SMAPI 的 SaveData 机制实现。
-    /// </summary>
     internal class MemoryManager
     {
         public static readonly MemoryManager Instance = new MemoryManager();
@@ -29,22 +23,35 @@ namespace ValleyTalk
         private const int MaxMemoryLengthEnglish = 30;
         public const int MaxMemoriesPerNpc = 10;
         public const int MaxMemoriesInPrompt = 5;
-        private const string SaveDataKey = "ValleyTalk.Memories";
 
-        // Key = NpcName, Value = 记忆列表（按时间倒序，最新在前）
         private Dictionary<string, List<MemoryEntry>> _memories = new();
 
         private MemoryManager()
         {
-            // 注册存档事件
-            ModEntry.SHelper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
-            ModEntry.SHelper.Events.GameLoop.Saving += OnSaving;
+            if (ModEntry.SHelper != null)
+            {
+                ModEntry.SHelper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
+            }
         }
 
-        /// <summary>
-        /// Returns the max memory length based on the current game language.
-        /// Chinese: 30 chars, other languages: 30 chars.
-        /// </summary>
+        public void Cleanup()
+        {
+            try
+            {
+                if (ModEntry.SHelper != null)
+                {
+                    ModEntry.SHelper.Events.GameLoop.SaveLoaded -= OnSaveLoaded;
+                }
+                _memories?.Clear();
+                _memories = new Dictionary<string, List<MemoryEntry>>();
+                ModEntry.SMonitor?.Log("[MemoryManager] Cleaned up successfully.", LogLevel.Debug);
+            }
+            catch (Exception ex)
+            {
+                ModEntry.SMonitor?.Log($"[MemoryManager] Error during cleanup: {ex.Message}", LogLevel.Warn);
+            }
+        }
+
         public int GetMaxMemoryLength()
         {
             var lang = LocalizedContentManager.CurrentLanguageCode;
@@ -53,65 +60,84 @@ namespace ValleyTalk
                 : MaxMemoryLengthEnglish;
         }
 
-        /// <summary>
-        /// 加载存档时读取记忆数据
-        /// </summary>
         private void OnSaveLoaded(object sender, StardewModdingAPI.Events.SaveLoadedEventArgs e)
         {
             Load();
         }
 
         /// <summary>
-        /// 保存存档时写入记忆数据
-        /// </summary>
-        private void OnSaving(object sender, StardewModdingAPI.Events.SavingEventArgs e)
-        {
-            Save();
-        }
-
-        /// <summary>
-        /// 从存档数据加载记忆
+        /// 功能3：文件 I/O 的细粒度拆分（加载阶段）
+        /// 扫描当前存档专属文件夹下所有的 memory_{NpcName}.json 文件
         /// </summary>
         public void Load()
         {
+            _memories.Clear();
+            if (string.IsNullOrWhiteSpace(Constants.SaveFolderName) || ModEntry.SHelper == null) return;
+
+            string saveDir = Path.Combine(ModEntry.SHelper.DirectoryPath, "data", Constants.SaveFolderName);
+            if (!Directory.Exists(saveDir)) return;
+
             try
             {
-                var data = ModEntry.SHelper.Data.ReadSaveData<Dictionary<string, List<MemoryEntry>>>(SaveDataKey);
-                _memories = data ?? new Dictionary<string, List<MemoryEntry>>();
+                var files = Directory.GetFiles(saveDir, "memory_*.json");
+                foreach (var file in files)
+                {
+                    // Use exact prefix/suffix stripping instead of Replace to avoid
+                    // corrupting NPC names that might contain "memory" or ".json" substrings.
+                    string fileName = Path.GetFileName(file);
+                    const string prefix = "memory_";
+                    const string suffix = ".json";
+                    string npcName = fileName;
+                    if (fileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                        npcName = fileName.Substring(prefix.Length);
+                    if (npcName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+                        npcName = npcName.Substring(0, npcName.Length - suffix.Length);
+                    
+                    var list = ModEntry.SHelper.Data.ReadJsonFile<List<MemoryEntry>>($"data/{Constants.SaveFolderName}/{fileName}");
+                    if (list != null)
+                    {
+                        _memories[npcName] = list;
+                    }
+                }
             }
             catch (Exception ex)
             {
                 ModEntry.SMonitor?.Log($"[MemoryManager] 加载记忆失败: {ex.Message}", LogLevel.Debug);
-                _memories = new Dictionary<string, List<MemoryEntry>>();
             }
         }
 
         /// <summary>
-        /// 保存记忆到存档
+        /// 功能3：文件 I/O 的细粒度拆分（保存阶段）
+        /// 只覆写指定 NPC 的独立文件
         /// </summary>
-        public void Save()
+        public void Save(string npcName)
         {
             try
             {
-                ModEntry.SHelper.Data.WriteSaveData(SaveDataKey, _memories);
+                if (string.IsNullOrWhiteSpace(Constants.SaveFolderName) || ModEntry.SHelper == null) return;
+                
+                string path = $"data/{Constants.SaveFolderName}/memory_{npcName}.json";
+                
+                if (!_memories.TryGetValue(npcName, out var list) || list.Count == 0)
+                {
+                    // 如果记忆被清空了，直接删除文件以节省空间
+                    string fullPath = Path.Combine(ModEntry.SHelper.DirectoryPath, path);
+                    if (File.Exists(fullPath)) File.Delete(fullPath);
+                }
+                else
+                {
+                    ModEntry.SHelper.Data.WriteJsonFile(path, list);
+                }
             }
             catch (Exception ex)
             {
-                ModEntry.SMonitor?.Log($"[MemoryManager] 保存记忆失败: {ex.Message}", LogLevel.Warn);
+                ModEntry.SMonitor?.Log($"[MemoryManager] 保存 {npcName} 的记忆失败: {ex.Message}", LogLevel.Warn);
             }
         }
 
-        /// <summary>
-        /// 添加记忆。
-        /// 返回 1 表示添加成功；
-        /// 返回 0 表示参数无效或已达上限；
-        /// 返回 -1 表示内容超过当前语言字符上限；
-        /// 返回 null 表示内容重复已存在。
-        /// </summary>
         public int? AddMemory(string npcName, string content)
         {
-            if (string.IsNullOrWhiteSpace(npcName) || string.IsNullOrWhiteSpace(content))
-                return 0;
+            if (string.IsNullOrWhiteSpace(npcName) || string.IsNullOrWhiteSpace(content)) return 0;
 
             if (!_memories.TryGetValue(npcName, out var list))
             {
@@ -119,17 +145,11 @@ namespace ValleyTalk
                 _memories[npcName] = list;
             }
 
-            // 上限检查
-            if (list.Count >= MaxMemoriesPerNpc)
-                return 0;
+            if (list.Count >= MaxMemoriesPerNpc) return 0;
 
-            // 长度检查（根据当前语言）
             var trimmedContent = content.Trim();
-            var maxLen = GetMaxMemoryLength();
-            if (trimmedContent.Length > maxLen)
-                return -1;
+            if (trimmedContent.Length > GetMaxMemoryLength()) return -1;
 
-            // 重复检查（不区分大小写）
             if (list.Any(m => string.Equals(m.Content, content, StringComparison.OrdinalIgnoreCase)))
                 return null;
 
@@ -141,56 +161,59 @@ namespace ValleyTalk
                 Source = "Manual"
             });
 
-            ModEntry.SMonitor?.Log($"[MemoryManager] Added memory for {npcName}: {trimmedContent}", LogLevel.Debug);
+            Save(npcName); // 仅保存当前 NPC
             return 1;
         }
 
         /// <summary>
-        /// 按 ID 删除记忆
+        /// 功能5底层：编辑已有记忆
         /// </summary>
+        public int? EditMemory(string npcName, string id, string newContent)
+        {
+            if (!_memories.TryGetValue(npcName, out var list)) return 0;
+            
+            var entry = list.FirstOrDefault(m => m.Id == id);
+            if (entry == null) return 0;
+
+            var trimmed = newContent.Trim();
+            if (trimmed.Length > GetMaxMemoryLength()) return -1;
+
+            // 查重时忽略自身
+            if (list.Any(m => m.Id != id && string.Equals(m.Content, trimmed, StringComparison.OrdinalIgnoreCase)))
+                return null;
+
+            entry.Content = trimmed;
+            Save(npcName); // 仅保存当前 NPC
+            return 1;
+        }
+
         public bool RemoveMemory(string npcName, string id)
         {
-            if (!_memories.TryGetValue(npcName, out var list))
-                return false;
+            if (!_memories.TryGetValue(npcName, out var list)) return false;
 
             var entry = list.FirstOrDefault(m => m.Id == id);
-            if (entry == null)
-                return false;
+            if (entry == null) return false;
 
             list.Remove(entry);
+            if (list.Count == 0) _memories.Remove(npcName);
 
-            // 如果该 NPC 没有记忆了，移除键值
-            if (list.Count == 0)
-                _memories.Remove(npcName);
-
+            Save(npcName); // 仅保存当前 NPC
             return true;
         }
 
-        /// <summary>
-        /// 获取指定 NPC 的所有记忆（按时间倒序，最新在前）
-        /// </summary>
         public List<MemoryEntry> GetMemories(string npcName)
         {
-            if (!_memories.TryGetValue(npcName, out var list))
-                return new List<MemoryEntry>();
-
+            if (!_memories.TryGetValue(npcName, out var list)) return new List<MemoryEntry>();
             return list.OrderByDescending(m => m.CreatedAt).ToList();
         }
 
-        /// <summary>
-        /// 获取记忆数量
-        /// </summary>
         public int GetMemoryCount(string npcName)
         {
-            if (!_memories.TryGetValue(npcName, out var list))
-                return 0;
-
-            return list.Count;
+            return _memories.TryGetValue(npcName, out var list) ? list.Count : 0;
         }
 
         /// <summary>
-        /// Enhanced smart memory injection with highest priority enforcement.
-        /// This is the recommended method for injecting memories into AI prompts.
+        /// 功能4：摆脱硬编码，纯 LLM 意图判断提示词
         /// </summary>
         public string GetSmartMemoryContext(string npcName, string playerInput, int maxCount = MaxMemoriesInPrompt)
         {
@@ -198,159 +221,27 @@ namespace ValleyTalk
             if (!entries.Any()) return "";
 
             var selected = entries.Take(maxCount).ToList();
-
-            // Categorize memories into three types: unconditional addressing rules, conditional rules, and facts
-            var addressingRules = selected.Where(e => IsBehavioralRule(e.Content) && !HasCondition(e.Content)).ToList();
-            var conditionalRules = selected.Where(e => IsBehavioralRule(e.Content) && HasCondition(e.Content)).ToList();
-            var facts = selected.Where(e => !IsBehavioralRule(e.Content)).ToList();
-
-            bool playerAskingAboutSelf = IsPlayerAskingAboutSelf(playerInput);
-
             var sb = new System.Text.StringBuilder();
 
-            // ========== Part 1: Mandatory declaration (highest priority) ==========
             sb.AppendLine("=== !!! HIGHEST PRIORITY - PLAYER MEMORIES !!! ===");
-            sb.AppendLine("The following are facts the player has directly told you.");
-            sb.AppendLine("THESE ARE TRUTH. YOUR PERSONALITY COMES SECOND.");
+            sb.AppendLine("The following are facts or rules the player has established. THESE OVERRIDE YOUR DEFAULT KNOWLEDGE:");
             sb.AppendLine();
-
-            // ========== Part 2: Universal enforcement rules ==========
-            sb.AppendLine("YOU MUST FOLLOW THESE RULES:");
-            sb.AppendLine("1. When the player asks a question that these memories answer, you MUST use the memory.");
-            sb.AppendLine("2. NEVER contradict a memory, even if you think you know better.");
-            sb.AppendLine("3. NEVER guess or make up information when a memory provides the answer.");
-            sb.AppendLine("4. If a memory says 'call me X' or 'address me as X', you MUST use it in every response.");
-            sb.AppendLine("5. These memories OVERRIDE your default knowledge and personality.");
+            sb.AppendLine("INSTRUCTIONS ON HOW TO USE THESE MEMORIES:");
+            sb.AppendLine("1. Evaluate the current context and the player's input dynamically.");
+            sb.AppendLine("2. If a memory dictates how to address the player, do so unconditionally in every response.");
+            sb.AppendLine("3. If a memory contains a situational condition (e.g., 'when X happens', 'if I do Y'), determine if the current conversation matches the condition before applying it.");
+            sb.AppendLine("4. If a memory is a fact about the player, use it ONLY if it naturally fits the current topic or if the player is explicitly asking about themselves. NEVER force unrelated memories into casual topics.");
             sb.AppendLine();
-
-            // ========== Part 3: Unconditional behavioral rules ==========
-            if (addressingRules.Any())
+            
+            sb.AppendLine("MEMORIES TO EVALUATE:");
+            foreach (var e in selected)
             {
-                sb.AppendLine("ADDRESSING RULES - APPLY TO EVERY RESPONSE:");
-                foreach (var e in addressingRules)
-                    sb.AppendLine($"- {e.Content}");
-                sb.AppendLine();
+                sb.AppendLine($"- {e.Content}");
             }
-
-            // ========== Part 4: Conditional behavioral rules ==========
-            if (conditionalRules.Any())
-            {
-                sb.AppendLine("SITUATIONAL RULES - ONLY APPLY WHEN TOPIC MATCHES:");
-                sb.AppendLine("(Check if the current conversation is about the place/event mentioned)");
-                foreach (var e in conditionalRules)
-                    sb.AppendLine($"- {e.Content}");
-                sb.AppendLine();
-            }
-
-            // ========== Part 5: Background facts ==========
-            if (facts.Any())
-            {
-                if (playerAskingAboutSelf)
-                {
-                    sb.AppendLine("PLAYER FACTS - USE THESE TO ANSWER (DO NOT GUESS):");
-                    foreach (var e in facts)
-                        sb.AppendLine($"- {e.Content}");
-                }
-                else
-                {
-                    sb.AppendLine($"PLAYER FACTS ({facts.Count}) - DO NOT MENTION unless player asks about themselves.");
-                    // Still list the facts so the AI knows they exist, just not usable right now
-                    foreach (var e in facts)
-                        sb.AppendLine($"- {e.Content}");
-                }
-                sb.AppendLine();
-            }
-
-            // ========== Part 6: Closing reinforcement ==========
+            sb.AppendLine();
             sb.AppendLine($"=== END OF {npcName}'S PLAYER MEMORIES ===");
-            sb.AppendLine("REMEMBER: These memories are TRUTH. Your knowledge is SECONDARY.");
 
             return sb.ToString();
-        }
-
-        /// <summary>
-        /// [DEPRECATED] Use GetSmartMemoryContext instead for better memory enforcement.
-        /// 生成用于 AI 提示词的记忆上下文文本，最多取 5 条
-        /// </summary>
-        [Obsolete("Use GetSmartMemoryContext instead for better memory enforcement.")]
-        public string GetMemoryPromptContext(string npcName, int maxCount = MaxMemoriesInPrompt)
-        {
-            var entries = GetMemories(npcName);
-            if (!entries.Any())
-                return "";
-
-            var selected = entries.Take(maxCount).ToList();
-            var behavioral = selected.Where(m => IsBehavioralRule(m.Content)).ToList();
-            var background = selected.Where(m => !IsBehavioralRule(m.Content)).ToList();
-
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine("### MEMORY_START ###");
-
-            if (behavioral.Any())
-            {
-                sb.AppendLine("BEHAVIORAL RULES (must follow):");
-                foreach (var e in behavioral)
-                    sb.AppendLine($"- {e.Content}");
-            }
-
-            if (background.Any())
-            {
-                sb.AppendLine("BACKGROUND KNOWLEDGE (reference only):");
-                foreach (var e in background)
-                    sb.AppendLine($"- {e.Content}");
-            }
-
-            sb.AppendLine();
-            sb.AppendLine("RULES FOR USING MEMORIES:");
-            sb.AppendLine("You have learned certain preferences (likes/dislikes) about the player. These are for reference ONLY when the player asks directly or when the topic naturally arises (e.g., gift-giving, cooking, food-related conversations). NEVER actively bring them up in unrelated topics (weather, festivals, quests, etc.) as that would feel forced and awkward. However, if a memory explicitly specifies how you should address or behave towards the player (e.g., \"call me baby\"), you MUST strictly follow that instruction.");
-            sb.AppendLine("### MEMORY_END ###");
-
-            return sb.ToString();
-        }
-
-        /// <summary>
-        /// Determines whether a memory is a behavioral rule (contains address-related keywords).
-        /// </summary>
-        private static bool IsBehavioralRule(string content)
-        {
-            if (string.IsNullOrEmpty(content)) return false;
-
-            string[] keywords = { "叫我", "称呼我", "喊我", "call me", "address me", "refer to me" };
-            var lower = content.ToLowerInvariant();
-
-            foreach (var k in keywords)
-            {
-                if (lower.Contains(k)) return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Determines if the player is asking about themselves based on input keywords.
-        /// </summary>
-        private bool IsPlayerAskingAboutSelf(string input)
-        {
-            if (string.IsNullOrEmpty(input)) return false;
-            var lower = input.ToLowerInvariant();
-            string[] keywords = {
-                "我喜欢", "我不喜欢", "我的", "我有没有", "我是不是", "关于我", "我最喜欢", "我讨厌",
-                "i like", "i dislike", "my favorite", "about me", "do i", "am i", "what do i"
-            };
-            foreach (var k in keywords) if (lower.Contains(k)) return true;
-            return false;
-        }
-
-        /// <summary>
-        /// Determines if a memory content contains conditional markers.
-        /// </summary>
-        private bool HasCondition(string content)
-        {
-            if (string.IsNullOrEmpty(content)) return false;
-            string[] markers = { "当", "如果", "在", "去", "到", "记得", "提醒", "when", "if", "at", "to", "remember", "remind" };
-            var lower = content.ToLowerInvariant();
-            foreach (var m in markers) if (lower.Contains(m)) return true;
-            return false;
         }
     }
 }

@@ -92,6 +92,16 @@ namespace ValleyTalk
         }
 
         /// <summary>
+        /// Sets the text content directly and moves the caret to the end.
+        /// Used for pre-filling the box in edit mode.
+        /// </summary>
+        public void SetText(string text)
+        {
+            Text = text ?? "";
+            _caretPosition = Text.Length;
+        }
+
+        /// <summary>
         /// Handles left click for scroll arrows.
         /// Returns true if the click was handled by this text box.
         /// </summary>
@@ -666,4 +676,3 @@ namespace ValleyTalk
         }
     }
 }
-

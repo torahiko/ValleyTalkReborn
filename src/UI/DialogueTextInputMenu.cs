@@ -33,7 +33,7 @@ namespace ValleyTalk
 
         public DialogueTextInputMenu(string title, TextSubmittedDelegate callback, NPC currentNpc)
         {
-            _title = title ?? "Enter your response";
+            _title = title ?? I18n.DialogueInput.DefaultTitle();
             var titleSize = Game1.dialogueFont.MeasureString(_title);
             _onTextSubmitted = callback;
             _npcName = currentNpc?.Name ?? "";
@@ -47,7 +47,7 @@ namespace ValleyTalk
 
             _menuBounds = new Rectangle((int)_menuPosition.X, (int)_menuPosition.Y, MenuWidth, MenuHeight);
 
-            _inputTextBox = new DialogueTextInputBox(150) // Character limit: 150
+            _inputTextBox = new DialogueTextInputBox(200) // Character limit: 200
             {
                 Position = new Vector2(_menuPosition.X + Margin * 2, _menuPosition.Y + titleSize.Y + Margin * 5),
                 Extent = new Vector2(MenuWidth - 4 * Margin, TextBoxHeight),
@@ -71,12 +71,12 @@ namespace ValleyTalk
             _clearHistory = new ClickableTextureComponent(
                 new Rectangle((int)_menuPosition.X + 2 * Margin, (int)_menuPosition.Y + MenuHeight - 2 * Margin - ButtonSize, ButtonSize, ButtonSize),
                 springTownTilesheet, new Rectangle(224, 26, 16, 22), 3f);
-            _clearHistory.hoverText = $"清空与 {_npcName} 的对话记录 ([Shift]清空所有)";
+            _clearHistory.hoverText = I18n.DialogueInput.ClearHistoryHover(_npcName);
 
             _viewHistory = new ClickableTextureComponent(
                 new Rectangle((int)_menuPosition.X + 3 * Margin + ButtonSize, (int)_menuPosition.Y + MenuHeight - 2 * Margin - ButtonSize, ButtonSize, ButtonSize),
                 Game1.mouseCursors, new Rectangle(189, 423, 15, 13), 3.5f);
-            _viewHistory.hoverText = $"查看与 {_npcName} 的历史对话记录";
+            _viewHistory.hoverText = I18n.DialogueInput.ViewHistoryHover(_npcName);
 
             _memoryButton = new ClickableTextureComponent(
                 new Rectangle((int)_menuPosition.X + 4 * Margin + 2 * ButtonSize, (int)_menuPosition.Y + MenuHeight - 2 * Margin - ButtonSize, ButtonSize, ButtonSize),
@@ -107,7 +107,7 @@ namespace ValleyTalk
 
             _inputTextBox.Draw(spriteBatch);
 
-            var instruction = "按下 Enter 发送，或点击 OK。按下 Esc 取消。";
+            var instruction = I18n.DialogueInput.Instruction();
             spriteBatch.DrawString(Game1.smallFont, instruction, new Vector2(_menuPosition.X + (MenuWidth - Game1.smallFont.MeasureString(instruction).X) / 2, _inputTextBox.Position.Y + _inputTextBox.Extent.Y + Margin * 1.5f), Color.Gray);
 
             _okButton.draw(spriteBatch);
@@ -140,11 +140,11 @@ namespace ValleyTalk
             {
                 if (Game1.input.GetKeyboardState().IsKeyDown(Keys.LeftShift))
                 {
-                    ShowConfirmation("确认清空与【所有村民】的历史对话吗？此操作无法撤销。", () => { Game1.playSound("trashcan"); ClearHistory(); }, () => { });
+                    ShowConfirmation(I18n.DialogueInput.ClearAllConfirm(), () => { Game1.playSound("trashcan"); ClearHistory(); }, () => { });
                 }
                 else
                 {
-                    ShowConfirmation($"确认清空与【{_npcName}】的历史对话吗？此操作无法撤销。", () => { Game1.playSound("trashcan"); ClearHistory(_npcName); }, () => { });
+                    ShowConfirmation(I18n.DialogueInput.ClearOneConfirm(_npcName), () => { Game1.playSound("trashcan"); ClearHistory(_npcName); }, () => { });
                 }
             }
             else if (_viewHistory.containsPoint(x, y))
@@ -252,11 +252,11 @@ namespace ValleyTalk
 
             if (historyLines.Count == 0)
             {
-                Game1.drawObjectDialogue($"暂无与 {_npcName} 的历史对话记录。");
+                Game1.drawObjectDialogue(I18n.DialogueInput.HistoryEmpty(_npcName));
                 return;
             }
 
-            Game1.activeClickableMenu = new ScrollableHistoryMenu($"与 {_npcName} 的历史对话", historyLines, null);
+            Game1.activeClickableMenu = new ScrollableHistoryMenu(I18n.DialogueInput.HistoryTitle(_npcName), historyLines, null);
         }
 
         private void Submit(string text)

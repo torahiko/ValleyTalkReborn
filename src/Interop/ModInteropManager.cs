@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System;
 using System.Linq;
+using StardewModdingAPI;
 
 namespace ValleyTalk;
 
@@ -80,11 +82,27 @@ public class ModInteropManager
     }
 
     internal Dictionary<string, IEnumerable<string>> GetPromptOverrides(Character character)
-    {
-        if (_promptOverrides.TryGetValue(character.Name, out var overrides))
         {
-            return overrides.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Values.AsEnumerable());
+            if (_promptOverrides.TryGetValue(character.Name, out var overrides))
+            {
+                return overrides.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Values.AsEnumerable());
+            }
+            return [];
         }
-        return [];
-    }
+
+        /// <summary>
+        /// Clears all prompt override data. Called when the game is exiting.
+        /// </summary>
+        public void Cleanup()
+        {
+            try
+            {
+                _promptOverrides?.Clear();
+                _promptOverrides = new Dictionary<string, Dictionary<string, Dictionary<string, string>>>();
+            }
+            catch (Exception ex)
+            {
+                ModEntry.SMonitor?.Log($"[ModInteropManager] Error during cleanup: {ex.Message}", LogLevel.Warn);
+            }
+        }
 }
