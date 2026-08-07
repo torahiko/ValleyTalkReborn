@@ -116,7 +116,8 @@ namespace ValleyTalk
         {
             return SpeakerName == other.SpeakerName
                 && Text == other.Text
-                && SpeakerType == other.SpeakerType;
+                && SpeakerType == other.SpeakerType
+                && DialogueType == other.DialogueType;
         }
     }
 }

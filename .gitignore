@@ -484,3 +484,9 @@ $RECYCLE.BIN/
 *.swp
 translations/*.zip
 Extensions/*.zip
+
+# Stardew Valley game mods folder (local copy)
+Stardew Valley/
+
+# Unrelated third-party project
+claude-desktop-zh-cn-1.4.3/

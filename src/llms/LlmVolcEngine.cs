@@ -48,6 +48,9 @@ internal class LlmVolcEngine : Llm, IGetModelNames
     {
         var inputString = JsonConvert.SerializeObject(new
             {
+                thinking = new { type = "disabled" },
+                temperature = 0.9,
+                top_p = 0.9,
                 model = modelName,
                 max_tokens = n_predict,
                 messages = new PromptElement[]

@@ -37,6 +37,13 @@ namespace ValleyTalk
             if (!ModEntry.Config.EnableMemoryCompression) return "";
             if (allEntries.Count <= recentCount) return "";
 
+            // Skip compression if memory markers are present (memory context should not be compressed)
+            const string MemoryMarker = "### MEMORY_START ###";
+            if (allEntries.Any(e => !string.IsNullOrEmpty(e.Text) && e.Text.Contains(MemoryMarker)))
+            {
+                return "";
+            }
+
             var oldEntries = allEntries.Take(allEntries.Count - recentCount).ToList();
 
             // Check cache: if we already compressed this set, reuse

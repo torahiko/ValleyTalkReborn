@@ -41,14 +41,17 @@ internal class LlmClaude : Llm, IGetModelNames
 
     internal override async Task<LlmResponse> RunInference(string systemPromptString, string gameCacheString, string npcCacheString, string promptString, string responseStart = "",int n_predict = 2048,string cacheContext="",bool allowRetry = true)
     {
-        var promptCached = gameCacheString;
-        var inputString = JsonConvert.SerializeObject(new
-            {
-                model = this.modelName,
-                max_tokens = n_predict,
-                system = new PromptElement[]
+            var promptCached = gameCacheString;
+            var inputString = JsonConvert.SerializeObject(new
                 {
-                    new()
+                    thinking = new { type = "disabled" },
+                    model = this.modelName,
+                    max_tokens = n_predict,
+                    temperature = 0.9,
+                    top_p = 0.9,
+                    system = new PromptElement[]
+                    {
+                        new()
                     {
                         type = "text",
                         text = systemPromptString

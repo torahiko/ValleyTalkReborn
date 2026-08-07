@@ -1,12 +1,1 @@
-{
-    "Name": "ValleyTalk Content Pack",
-    "Author": "dandm1/srkgou",
-    "Version": "1.5.0",
-    "Description": "CP Infinite dialogue for Stardew Valley",
-    "UniqueID": "dandm1.CPValleyTalk",
-    "MinimumApiVersion": "4.1.0",
-    "UpdateKeys": [ "Nexus:30319" ],
-    "ContentPackFor": {
-    "UniqueID": "Pathoschild.ContentPatcher"
-     }
-  }
+H:/ValleyTalk-master/src/manifest.json

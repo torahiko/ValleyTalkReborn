@@ -1,4 +1,4 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using StardewValley;
@@ -18,6 +18,7 @@ namespace ValleyTalk
         private readonly ClickableTextureComponent _cancelButton;
         private readonly ClickableTextureComponent _clearHistory;
         private readonly ClickableTextureComponent _viewHistory;
+        private readonly ClickableTextureComponent _memoryButton;
         private readonly TextSubmittedDelegate _onTextSubmitted;
         private readonly string _npcName;
 
@@ -27,8 +28,8 @@ namespace ValleyTalk
         private const int ButtonSize = 64;
         private const int Margin = 24;
 
-        private readonly Vector2 _menuPosition;
-        private readonly Rectangle _menuBounds;
+        private Vector2 _menuPosition;
+        private Rectangle _menuBounds;
 
         public DialogueTextInputMenu(string title, TextSubmittedDelegate callback, NPC currentNpc)
         {
@@ -46,7 +47,7 @@ namespace ValleyTalk
 
             _menuBounds = new Rectangle((int)_menuPosition.X, (int)_menuPosition.Y, MenuWidth, MenuHeight);
 
-            _inputTextBox = new DialogueTextInputBox(500)
+            _inputTextBox = new DialogueTextInputBox(150) // Character limit: 150
             {
                 Position = new Vector2(_menuPosition.X + Margin * 2, _menuPosition.Y + titleSize.Y + Margin * 5),
                 Extent = new Vector2(MenuWidth - 4 * Margin, TextBoxHeight),
@@ -76,6 +77,14 @@ namespace ValleyTalk
                 new Rectangle((int)_menuPosition.X + 3 * Margin + ButtonSize, (int)_menuPosition.Y + MenuHeight - 2 * Margin - ButtonSize, ButtonSize, ButtonSize),
                 Game1.mouseCursors, new Rectangle(189, 423, 15, 13), 3.5f);
             _viewHistory.hoverText = $"查看与 {_npcName} 的历史对话记录";
+
+            _memoryButton = new ClickableTextureComponent(
+                new Rectangle((int)_menuPosition.X + 4 * Margin + 2 * ButtonSize, (int)_menuPosition.Y + MenuHeight - 2 * Margin - ButtonSize, ButtonSize, ButtonSize),
+                Game1.objectSpriteSheet,
+                Game1.getSourceRectForStandardTileSheet(Game1.objectSpriteSheet, 434, 16, 16), // Stardew Fruit
+                3.5f
+            );
+            _memoryButton.hoverText = I18n.Memory.ButtonHover(_npcName);
         }
 
         public void Close()
@@ -85,6 +94,11 @@ namespace ValleyTalk
 
         public void Draw(SpriteBatch spriteBatch)
         {
+            _inputTextBox.Update(Game1.currentGameTime);
+
+            // Recenter the menu on each frame to handle window resizing
+            Recenter();
+
             spriteBatch.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.4f);
             Game1.drawDialogueBox(_menuBounds.X, _menuBounds.Y, _menuBounds.Width, _menuBounds.Height, false, true);
 
@@ -100,11 +114,13 @@ namespace ValleyTalk
             _cancelButton.draw(spriteBatch);
             _clearHistory.draw(spriteBatch);
             _viewHistory.draw(spriteBatch);
+            _memoryButton.draw(spriteBatch);
 
             int mouseX = Game1.getMouseX();
             int mouseY = Game1.getMouseY();
             if (_clearHistory.containsPoint(mouseX, mouseY)) IClickableMenu.drawHoverText(spriteBatch, _clearHistory.hoverText, Game1.smallFont);
             else if (_viewHistory.containsPoint(mouseX, mouseY)) IClickableMenu.drawHoverText(spriteBatch, _viewHistory.hoverText, Game1.smallFont);
+            else if (_memoryButton.containsPoint(mouseX, mouseY)) IClickableMenu.drawHoverText(spriteBatch, _memoryButton.hoverText, Game1.smallFont);
 
             if (!Game1.options.hardwareCursor)
             {
@@ -114,17 +130,21 @@ namespace ValleyTalk
 
         public void ReceiveLeftClick(int x, int y)
         {
+            // First, let the text box handle scroll arrow clicks
+            if (_inputTextBox.ReceiveLeftClick(x, y))
+                return;
+
             if (_okButton.containsPoint(x, y)) { Game1.playSound("coin"); Submit(_inputTextBox.Text); }
             else if (_cancelButton.containsPoint(x, y)) { Game1.playSound("cancel"); Submit(""); }
             else if (_clearHistory.containsPoint(x, y))
             {
                 if (Game1.input.GetKeyboardState().IsKeyDown(Keys.LeftShift))
                 {
-                    ConfirmAction("确认清空与【所有村民】的历史对话吗？此操作无法撤销。", () => { Game1.playSound("trashcan"); ClearHistory(); });
+                    ShowConfirmation("确认清空与【所有村民】的历史对话吗？此操作无法撤销。", () => { Game1.playSound("trashcan"); ClearHistory(); }, () => { });
                 }
                 else
                 {
-                    ConfirmAction($"确认清空与【{_npcName}】的历史对话吗？此操作无法撤销。", () => { Game1.playSound("trashcan"); ClearHistory(_npcName); });
+                    ShowConfirmation($"确认清空与【{_npcName}】的历史对话吗？此操作无法撤销。", () => { Game1.playSound("trashcan"); ClearHistory(_npcName); }, () => { });
                 }
             }
             else if (_viewHistory.containsPoint(x, y))
@@ -132,18 +152,85 @@ namespace ValleyTalk
                 Game1.playSound("bigSelect");
                 ShowHistoryDialogue();
             }
+            else if (_memoryButton.containsPoint(x, y))
+            {
+                Game1.playSound("bigSelect");
+                Game1.activeClickableMenu = new ScrollableMemoryMenu(_npcName);
+            }
             else if (_inputTextBox.ContainsPoint(x, y))
             {
                 Game1.keyboardDispatcher.Subscriber = _inputTextBox;
             }
         }
 
-        private void ConfirmAction(string confirmText, Action onConfirm)
+        /// <summary>
+        /// Handles scroll wheel input for the text box.
+        /// </summary>
+        public void ReceiveScrollWheel(int direction)
         {
-            // Show confirmation and perform action directly
-            // (history can be regenerated through gameplay, so no destructive risk)
-            Game1.drawObjectDialogue(confirmText);
-            onConfirm?.Invoke();
+            _inputTextBox.ReceiveScrollWheel(direction);
+        }
+
+        public void ReceiveKeyPress(Keys key)
+        {
+            if (key == Keys.Escape)
+            {
+                Submit("");
+            }
+            else
+            {
+                _inputTextBox.RecieveSpecialInput(key);
+            }
+        }
+
+        /// <summary>
+        /// Recalculates the menu position to keep it centered on screen.
+        /// Call this when the window is resized.
+        /// </summary>
+        public void Recenter()
+        {
+            var titleSize = Game1.dialogueFont.MeasureString(_title);
+            var totalHeight = Margin * 8 + titleSize.Y + TextBoxHeight + ButtonSize * 2;
+
+            _menuPosition = new Vector2(
+                (Game1.uiViewport.Width - MenuWidth) / 2,
+                (Game1.uiViewport.Height - totalHeight) / 2
+            );
+
+            _menuBounds = new Rectangle((int)_menuPosition.X, (int)_menuPosition.Y, MenuWidth, MenuHeight);
+
+            // Update text box position
+            _inputTextBox.Position = new Vector2(_menuPosition.X + Margin * 2, _menuPosition.Y + titleSize.Y + Margin * 5);
+
+            // Update button positions
+            _okButton.bounds = new Rectangle((int)_menuPosition.X + MenuWidth - 2 * Margin - ButtonSize, (int)_menuPosition.Y + MenuHeight - 2 * Margin - ButtonSize, ButtonSize, ButtonSize);
+            _cancelButton.bounds = new Rectangle((int)_menuPosition.X + MenuWidth - 3 * Margin - 2 * ButtonSize, (int)_menuPosition.Y + MenuHeight - 2 * Margin - ButtonSize, ButtonSize, ButtonSize);
+            _clearHistory.bounds = new Rectangle((int)_menuPosition.X + 2 * Margin, (int)_menuPosition.Y + MenuHeight - 2 * Margin - ButtonSize, ButtonSize, ButtonSize);
+            _viewHistory.bounds = new Rectangle((int)_menuPosition.X + 3 * Margin + ButtonSize, (int)_menuPosition.Y + MenuHeight - 2 * Margin - ButtonSize, ButtonSize, ButtonSize);
+            _memoryButton.bounds = new Rectangle((int)_menuPosition.X + 4 * Margin + 2 * ButtonSize, (int)_menuPosition.Y + MenuHeight - 2 * Margin - ButtonSize, ButtonSize, ButtonSize);
+        }
+
+        private void ShowConfirmation(string message, Action onConfirm, Action onCancel)
+        {
+            // Store the current menu reference so we can restore it after confirmation
+            var currentMenu = Game1.activeClickableMenu;
+            Game1.exitActiveMenu();
+            Game1.activeClickableMenu = null;
+
+            var confirmDialog = new ConfirmationDialog(message, (farmer) =>
+            {
+                onConfirm?.Invoke();
+                Game1.exitActiveMenu();
+                Game1.activeClickableMenu = null;
+                Game1.activeClickableMenu = currentMenu;
+            }, (farmer) =>
+            {
+                onCancel?.Invoke();
+                Game1.exitActiveMenu();
+                Game1.activeClickableMenu = null;
+                Game1.activeClickableMenu = currentMenu;
+            });
+            Game1.activeClickableMenu = confirmDialog;
         }
 
         private void ClearHistory(string npcName = "")
@@ -169,23 +256,25 @@ namespace ValleyTalk
                 return;
             }
 
-            var parentMenu = Game1.activeClickableMenu;
-            Game1.activeClickableMenu = new ScrollableHistoryMenu($"与 {_npcName} 的对话记录", historyLines, parentMenu);
+            Game1.activeClickableMenu = new ScrollableHistoryMenu($"与 {_npcName} 的历史对话", historyLines, null);
         }
 
-        public void ReceiveKeyPress(Keys key)
+        private void Submit(string text)
         {
-            if (key == Keys.Escape) Submit(""); else _inputTextBox.RecieveSpecialInput(key);
+            Close();
+            _onTextSubmitted?.Invoke(text);
         }
-        public bool ContainsPoint(int x, int y) => _menuBounds.Contains(x, y);
-        private void Submit(string text) => _onTextSubmitted?.Invoke(text ?? "");
     }
+
+    /// <summary>
+    /// A scrollable menu for displaying dialogue history with word wrapping.
+    /// </summary>
     public class ScrollableHistoryMenu : IClickableMenu
     {
-        private readonly List<string> _wrappedLines = new();
         private new readonly IClickableMenu _parentMenu;
-        private int _startIndex = 0;
+        private readonly List<string> _wrappedLines = new List<string>();
         private readonly int _maxLines;
+        private int _startIndex;
         private readonly ClickableTextureComponent _upArrow;
         private readonly ClickableTextureComponent _downArrow;
         private readonly ClickableTextureComponent _scrollbar;
@@ -267,6 +356,12 @@ namespace ValleyTalk
         public override void draw(SpriteBatch b)
         {
             b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.4f);
+
+            // Draw outer background box (大框) - slightly larger for depth effect
+            IClickableMenu.drawTextureBox(b, xPositionOnScreen - 16, yPositionOnScreen - 16, width + 32, height + 32, Color.White);
+            IClickableMenu.drawTextureBox(b, xPositionOnScreen - 8, yPositionOnScreen - 8, width + 16, height + 16, Color.White);
+
+            // Draw inner dialogue box (小框)
             Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
 
             var titleSize = Game1.dialogueFont.MeasureString(_title);

@@ -110,23 +110,16 @@ namespace ValleyTalk
                     name: () => Util.GetString("configServerAddress", returnNull: true) ?? "Server Address",
                     tooltip: () => Util.GetString("configServerAddressTooltip", returnNull: true) ?? "URL of the server for local and Open AI compatible models.",
                     getValue: () => Config.ServerAddress,
-                    setValue: (value) =>{ Config.ServerAddress = value; SetLlm(); }
+                    setValue: (value) =>{ Config.ServerAddress = value; SetLlm(); },
+                    fieldId: "ServerAddress"
                 );
             }
             ConfigMenu.AddTextOption(
                 mod: ModManifest,
-                name: () => Util.GetString("configTypedResponses", returnNull: true) ?? "Typed Responses",
-                tooltip: () => Util.GetString("configTypedResponsesTooltip", returnNull: true) ?? "When should the user be able to type responses?",
-                getValue: () => Config.TypedResponses,
-                allowedValues: new string[] { "Always", "With Generated", "Never" },
-                setValue: (value) =>{ Config.TypedResponses = value; }
-            );
-            ConfigMenu.AddKeybind(
-                mod: ModManifest,
-                name: () => Util.GetString("configKeybind", returnNull: true) ?? "Keybind for typed dialogue",
-                tooltip: () => Util.GetString("configKeybindTooltip", returnNull: true) ?? "Key to press while clicking on an NPC to initiate typed dialogue.",
-                getValue: () => ModEntry.Config.InitiateTypedDialogueKey,
-                setValue: (value) =>{ ModEntry.Config.InitiateTypedDialogueKey = value; }
+                name: () => Util.GetString("configInitiateKey", returnNull: true) ?? "Key to initiate typed dialogue",
+                tooltip: () => Util.GetString("configInitiateKeyTooltip", returnNull: true) ?? "Key to hold while clicking on an NPC to initiate typed dialogue.",
+                getValue: () => ModEntry.Config.InitiateTypedDialogueKey.ToString(),
+                setValue: (value) => { SButton result; if (Enum.TryParse<SButton>(value, out result)) ModEntry.Config.InitiateTypedDialogueKey = result; }
             );
             ConfigMenu.AddBoolOption(
                 mod: ModManifest,

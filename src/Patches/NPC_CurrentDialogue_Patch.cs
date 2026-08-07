@@ -63,7 +63,7 @@ namespace ValleyTalk
                     else
                     {
                         var sourceLine = trace.GetILOffset();
-                        if (sourceLine <= minLine)
+                        if (sourceLine < minLine)
                         {
                             DialogueHistoryManager.Instance.RecordNpcDialogue(__instance.Name, string.Join(" ", theLine.Select(x => x.Text)), "dialogue");
                             minLine = sourceLine;

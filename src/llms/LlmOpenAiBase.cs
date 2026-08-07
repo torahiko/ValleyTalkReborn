@@ -28,6 +28,8 @@ internal abstract class LlmOpenAiBase : Llm
         var inputString = JsonConvert.SerializeObject(new // Changed
             {
                 model = modelName,
+                temperature = 0.9,
+                top_p = 0.9,
                 max_tokens = n_predict,
                 messages = new PromptElement[]
                 { 

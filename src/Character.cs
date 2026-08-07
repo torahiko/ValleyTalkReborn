@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -246,6 +246,22 @@ public class Character
         try
         {
             prompts = new Prompts(context, this);
+
+            // 注入玩家自定义记忆（高优先级，放在 System 最前面）
+            // Extract the latest player input from chat history
+            string lastPlayerInput = "";
+            if (context.ChatHistory != null)
+            {
+                var lastPlayerLine = context.ChatHistory.LastOrDefault(x => x.IsPlayerLine);
+                if (lastPlayerLine != null)
+                    lastPlayerInput = lastPlayerLine.Text;
+            }
+
+            var memoryCtx = MemoryManager.Instance.GetSmartMemoryContext(Name, lastPlayerInput);
+            if (!string.IsNullOrEmpty(memoryCtx))
+            {
+                prompts.System = memoryCtx + "\n\n" + prompts.System;
+            }
         }
         catch (Exception ex)
         {

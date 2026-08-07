@@ -88,7 +88,7 @@ internal class LlmGemini : Llm, IGetModelNames
             useContext = CacheContexts[cacheContext];
         }
 
-        int thinkingBudget = modelName.Contains("flash", StringComparison.OrdinalIgnoreCase) ? 0 : 128;
+        int thinkingBudget = 0;
         var jsonData = JsonConvert.SerializeObject(new // Changed
             {
                 safetySettings = new[] 
@@ -98,7 +98,7 @@ internal class LlmGemini : Llm, IGetModelNames
                 },
                 system_instruction = new { parts = new { text = systemPromptString } },
                 contents = new { parts = new { text = promptString } },
-                generationConfig = new { maxOutputTokens = n_predict, temperature = 1.5, topP = 0.9, thinkingConfig = new { thinkingBudget  } }
+                generationConfig = new { maxOutputTokens = n_predict, temperature = 0.9, topP = 0.9, thinkingConfig = new { thinkingBudget  } }
             });
 
         var json = new StringContent(
