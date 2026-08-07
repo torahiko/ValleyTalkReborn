@@ -2,7 +2,7 @@
   "$schema": "https://smapi.io/schemas/manifest.json",
   "Name": "ValleyTalk",
   "Author": "dandm1/srkgou",
-  "Version": "1.5.0",
+  "Version": "1.6.0",
   "Description": "Infinite dialogue for Stardew Valley",
   "UniqueID": "dandm1.ValleyTalk",
   "EntryDll": "ValleyTalk.dll",

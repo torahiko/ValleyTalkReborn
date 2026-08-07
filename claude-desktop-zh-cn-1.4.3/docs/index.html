@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Claude Desktop 中文补丁 — 一键汉化 · 双平台 · 可恢复</title>
+  <meta name="description" content="免费开源的 Claude Desktop 中文汉化补丁：macOS 与 Windows 一键安装，支持简体、繁体（中国台湾）、繁体（中国香港），安装前自动备份、随时可恢复，官方更新后持续跟进。">
+  <meta property="og:title" content="Claude Desktop 中文补丁">
+  <meta property="og:description" content="一键把 Claude Desktop 翻成中文。双平台、三种中文变体、自动备份可恢复、持续维护。">
+  <style>
+    :root {
+      color-scheme: light;
+
+      /* 纸与墨 */
+      --paper:      #f4efe4;
+      --paper-soft: #efe8d9;
+      --paper-deep: #e7dcc7;
+      --card:       #fbf7ee;
+      --ink:        #1b1813;
+      --ink-2:      #423b31;
+      --ink-3:      #847a69;
+      --ink-4:      #a99e89;
+
+      /* 朱砂印 / 强调 */
+      --seal:       #cf3a22;
+      --seal-deep:  #a52a16;
+      --seal-soft:  rgba(207, 58, 34, 0.10);
+      --jade:       #34624b;
+      --jade-soft:  rgba(52, 98, 75, 0.12);
+
+      /* 线 */
+      --rule:        rgba(27, 24, 19, 0.16);
+      --rule-strong: rgba(27, 24, 19, 0.30);
+      --hair:        rgba(27, 24, 19, 0.09);
+
+      --display: "Songti SC", "Noto Serif SC", "Source Han Serif SC", "Songti TC", "STSong", "SimSun", serif;
+      --latin:   "Georgia", "Times New Roman", "Songti SC", serif;
+      --sans:    "PingFang SC", "Microsoft YaHei", "Noto Sans SC", "Hiragino Sans GB", system-ui, sans-serif;
+      --mono:    "SF Mono", "Menlo", "Cascadia Code", "Consolas", "Roboto Mono", monospace;
+
+      --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+      --shadow: 0 30px 70px -34px rgba(57, 41, 18, 0.55);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.62;
+      background-color: var(--paper);
+      background-image:
+        radial-gradient(120% 80% at 100% 0%, rgba(207, 58, 34, 0.05), transparent 46%),
+        radial-gradient(120% 90% at 0% 0%, rgba(52, 98, 75, 0.05), transparent 40%),
+        linear-gradient(180deg, #f6f1e7 0%, #efe7d6 100%);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      overflow-x: hidden;
+    }
+
+    /* 纸张颗粒 */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.5;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+    }
+
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+
+    ::selection { background: var(--seal); color: #fff; }
+
+    p, li, dd { text-wrap: pretty; }
+    .term, .nowrap { white-space: nowrap; }
+
+    /* 阅读进度 */
+    .progress {
+      position: fixed;
+      inset: 0 0 auto;
+      height: 2px;
+      transform: scaleX(0);
+      transform-origin: left;
+      background: var(--seal);
+      z-index: 60;
+      transition: transform 0.1s linear;
+    }
+
+    /* ── 印章 ───────────────────────────── */
+    .seal {
+      display: inline-grid;
+      place-items: center;
+      font-family: var(--display);
+      font-weight: 700;
+      color: var(--seal);
+      letter-spacing: 0.04em;
+      border: 2.5px solid var(--seal);
+      border-radius: 6px;
+      background: var(--seal-soft);
+      box-shadow: inset 0 0 0 1px rgba(207, 58, 34, 0.35);
+      line-height: 0.96;
+      text-align: center;
+      transform: rotate(-6deg);
+    }
+    .seal--brand { width: 34px; height: 34px; font-size: 19px; border-width: 2px; border-radius: 5px; }
+    .seal--lg {
+      width: 96px; height: 96px; font-size: 33px; padding: 3px;
+      writing-mode: vertical-rl;
+      letter-spacing: 0.18em;
+    }
+
+    /* ── 容器 ───────────────────────────── */
+    .page {
+      position: relative;
+      z-index: 1;
+      width: min(1240px, calc(100vw - 56px));
+      margin: 0 auto;
+    }
+
+    /* ── 导航 ───────────────────────────── */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 16px 0 15px;
+      background: color-mix(in srgb, var(--paper) 86%, transparent);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--rule);
+    }
+    .brand { display: inline-flex; align-items: center; gap: 12px; }
+    .brand-name {
+      display: flex; flex-direction: column; line-height: 1.08;
+    }
+    .brand-name b { font-size: 16px; font-weight: 700; letter-spacing: 0.01em; }
+    .brand-name span {
+      font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em;
+      text-transform: uppercase; color: var(--ink-3);
+    }
+    .nav-right { display: flex; align-items: center; gap: 4px; }
+    .nav-links { display: flex; align-items: center; gap: 2px; }
+    .nav-links a {
+      padding: 8px 13px; font-size: 14px; color: var(--ink-2); border-radius: 7px;
+      transition: color 0.2s, background 0.2s;
+    }
+    .nav-links a:hover { color: var(--ink); background: rgba(27, 24, 19, 0.05); }
+
+    .star-badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      margin-left: 6px; padding: 8px 12px;
+      font-family: var(--mono); font-size: 12px; letter-spacing: 0.04em;
+      color: var(--ink-2);
+      border: 1px solid var(--rule); border-radius: 8px;
+      transition: border-color 0.2s, color 0.2s, transform 0.2s;
+    }
+    .star-badge:hover { color: var(--ink); border-color: var(--rule-strong); transform: translateY(-1px); }
+    .star-badge svg { width: 13px; height: 13px; fill: var(--seal); }
+    .star-badge b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+      padding: 13px 22px; font-size: 15px; font-weight: 600; white-space: nowrap;
+      border-radius: 9px; border: 1.5px solid transparent;
+      transition: transform 0.22s var(--ease), box-shadow 0.22s, background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn .arrow { transition: transform 0.22s var(--ease); }
+    .btn:hover .arrow { transform: translateX(3px); }
+    .btn-primary {
+      color: #fdf4ef; background: var(--seal);
+      box-shadow: 0 16px 30px -16px rgba(165, 42, 22, 0.85);
+    }
+    .btn-primary:hover { background: var(--seal-deep); box-shadow: 0 22px 38px -16px rgba(165, 42, 22, 0.9); }
+    .btn-ghost { color: var(--ink); background: transparent; border-color: var(--rule-strong); }
+    .btn-ghost:hover { border-color: var(--ink); background: rgba(27, 24, 19, 0.03); }
+    .btn-sm { padding: 10px 16px; font-size: 14px; }
+    .nav .btn-primary { padding: 10px 16px; font-size: 14px; }
+
+    /* ── 通用排版 ────────────────────────── */
+    .kicker {
+      display: inline-flex; align-items: center; gap: 9px;
+      font-family: var(--mono); font-size: 12px; letter-spacing: 0.16em;
+      text-transform: uppercase; color: var(--seal-deep);
+    }
+    .kicker::before {
+      content: ""; width: 22px; height: 1.5px; background: var(--seal); display: inline-block;
+    }
+
+    h1, h2, h3 { font-family: var(--display); font-weight: 700; }
+    .latin { font-family: var(--latin); font-style: italic; font-weight: 400; }
+
+    /* ── Hero ───────────────────────────── */
+    .hero {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 56px;
+      align-items: center;
+      padding: clamp(46px, 7vw, 92px) 0 clamp(40px, 5vw, 72px);
+    }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--ink-3);
+    }
+    .hero-eyebrow b { color: var(--seal-deep); font-weight: 600; }
+    h1 {
+      margin: 22px 0 24px;
+      font-size: clamp(46px, 6.4vw, 88px);
+      line-height: 1.08;
+      letter-spacing: 0.005em;
+    }
+    h1 .latin { letter-spacing: -0.01em; }
+    h1 .stamp-word { position: relative; white-space: nowrap; }
+    h1 .stamp-word::after {
+      content: ""; position: absolute; left: -4%; right: -4%; bottom: 0.14em; height: 0.5em;
+      background: var(--seal-soft); z-index: -1; border-radius: 2px;
+    }
+    .hero-lead {
+      max-width: 540px; margin: 0; color: var(--ink-2); font-size: 17.5px; line-height: 1.7;
+    }
+    .hero-lead b { color: var(--ink); font-weight: 600; }
+    .hero-cta { display: flex; flex-wrap: wrap; gap: 13px; margin: 32px 0 0; }
+
+    .vprops {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 0; margin: 40px 0 0; border-top: 1px solid var(--rule);
+    }
+    .vprops > div { padding: 18px 16px 0 0; }
+    .vprops dt { font-family: var(--display); font-weight: 700; font-size: 18px; }
+    .vprops dd {
+      margin: 4px 0 0; font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.03em;
+      color: var(--ink-3); line-height: 1.5;
+    }
+
+    /* Hero 译版样张 */
+    .plate {
+      position: relative;
+      background: var(--card);
+      border: 1px solid var(--rule);
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+    .plate::after {
+      content: ""; position: absolute; inset: 7px; border: 1px solid var(--hair); border-radius: 11px;
+      pointer-events: none;
+    }
+    .plate-head {
+      display: flex; align-items: center; justify-content: space-between;
+      font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; color: var(--ink-3);
+      padding-bottom: 16px; margin-bottom: 18px; border-bottom: 1px solid var(--hair);
+    }
+    .plate-head .reg { color: var(--seal); font-size: 14px; }
+    .xlate-feature { display: grid; gap: 11px; }
+    .xrow {
+      display: grid; grid-template-columns: 42px 1fr; gap: 13px; align-items: center;
+    }
+    .lang-tab {
+      display: inline-grid; place-items: center; width: 42px; height: 26px;
+      font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
+      border: 1px solid var(--rule); border-radius: 6px; color: var(--ink-3);
+    }
+    .lang-tab.on { color: #fff; background: var(--seal); border-color: var(--seal); letter-spacing: 0.06em; }
+    .xrow.before p { margin: 0; color: var(--ink-4); font-family: var(--latin); font-size: 16px; }
+    .xrow.before p s { text-decoration-color: rgba(207, 58, 34, 0.5); }
+    .xrow.after p { margin: 0; color: var(--ink); font-weight: 600; font-size: 16px; }
+    .xarrow { text-align: center; color: var(--seal); font-size: 15px; margin: -2px 0; padding-left: 55px; }
+
+    .glossary {
+      margin: 20px 0 0; padding: 16px 0 4px; border-top: 1px dashed var(--rule);
+      display: grid; gap: 9px;
+    }
+    .glossary .grow {
+      display: grid; grid-template-columns: 1fr auto 1fr; align-items: baseline; gap: 12px;
+      font-size: 14px;
+    }
+    .glossary .en { font-family: var(--latin); color: var(--ink-3); font-size: 14px; }
+    .glossary .sep { font-family: var(--mono); color: var(--seal); font-size: 11px; }
+    .glossary .cn { font-weight: 600; text-align: right; }
+
+    .plate-foot {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--hair);
+    }
+    .plate-foot .status {
+      font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; color: var(--jade);
+    }
+    .plate-foot .status b { color: var(--jade); }
+
+    /* ── 章节框架 ────────────────────────── */
+    .section { padding: clamp(58px, 7vw, 104px) 0; border-top: 1px solid var(--rule); }
+    .shead {
+      display: grid; grid-template-columns: auto 1fr; gap: 6px 22px; align-items: baseline;
+      margin-bottom: clamp(34px, 4vw, 54px);
+    }
+    .shead-no {
+      grid-row: span 2; font-family: var(--latin); font-style: italic;
+      font-size: clamp(40px, 5vw, 64px); color: var(--seal); line-height: 0.8;
+    }
+    .shead-label {
+      font-family: var(--mono); font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--ink-3); align-self: end;
+    }
+    .shead-title {
+      margin: 0; font-size: clamp(28px, 3.6vw, 46px); line-height: 1.18; letter-spacing: 0.005em;
+      max-width: 16em;
+    }
+    .shead-desc {
+      grid-column: 2; margin: 12px 0 0; color: var(--ink-2); font-size: 16px; max-width: 44em;
+    }
+
+    /* ── 特性 ───────────────────────────── */
+    .features { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: var(--rule);
+      border: 1px solid var(--rule); border-radius: 16px; overflow: hidden; }
+    .feature {
+      grid-column: span 2; background: var(--card); padding: 28px 26px;
+      transition: background 0.25s;
+    }
+    .feature:hover { background: var(--paper-soft); }
+    .feature .fno {
+      font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; color: var(--seal);
+    }
+    .feature h3 { margin: 14px 0 9px; font-size: 21px; letter-spacing: 0.01em; }
+    .feature p { margin: 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.62; }
+    .feature p code, .feature p .term {
+      font-family: var(--mono); font-size: 12.5px; background: rgba(27, 24, 19, 0.05);
+      padding: 1px 5px; border-radius: 4px; color: var(--ink); white-space: nowrap;
+    }
+    @media (max-width: 920px) {
+      .features { grid-template-columns: 1fr 1fr; }
+      .feature { grid-column: auto; }
+    }
+    @media (max-width: 560px) {
+      .features { grid-template-columns: 1fr; }
+    }
+
+    .more-strip {
+      display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px;
+    }
+    .more-strip span {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 14px; font-size: 13.5px; color: var(--ink-2);
+      border: 1px solid var(--rule); border-radius: 999px; background: var(--card);
+    }
+    .more-strip span::before { content: "＋"; color: var(--seal); font-family: var(--mono); font-size: 12px; }
+
+    /* ── 截图 ───────────────────────────── */
+    .gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+    .shot { grid-column: span 1; }
+    .shot.wide { grid-column: 1 / -1; }
+    figure.shot {
+      margin: 0; border: 1px solid var(--rule); border-radius: 14px; overflow: hidden;
+      background: var(--card); box-shadow: var(--shadow); cursor: zoom-in;
+      transition: transform 0.32s var(--ease), box-shadow 0.32s;
+    }
+    figure.shot:hover { transform: translateY(-5px); box-shadow: 0 38px 70px -32px rgba(57, 41, 18, 0.55); }
+    figure.shot img { width: 100%; height: auto; object-fit: cover; transition: transform 0.6s var(--ease); }
+    figure.shot:hover img { transform: scale(1.03); }
+    figcaption {
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+      padding: 14px 18px; border-top: 1px solid var(--rule); background: var(--card);
+    }
+    figcaption b { font-family: var(--display); font-weight: 700; font-size: 16px; }
+    figcaption span { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--ink-3); }
+    @media (max-width: 640px) { .gallery { grid-template-columns: 1fr; } }
+
+    /* ── 安装 ───────────────────────────── */
+    .install-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+    .os-card {
+      position: relative; background: var(--card); border: 1px solid var(--rule);
+      border-radius: 16px; padding: 28px 28px 26px;
+    }
+    .os-head { display: flex; align-items: center; gap: 13px; margin-bottom: 22px; }
+    .os-glyph {
+      display: inline-grid; place-items: center; width: 44px; height: 44px;
+      font-size: 20px; border: 1px solid var(--rule-strong); border-radius: 11px; color: var(--ink);
+    }
+    .os-head b { font-family: var(--display); font-weight: 700; font-size: 22px; }
+    .os-head span { display: block; font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; color: var(--ink-3); }
+    .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; counter-reset: s; }
+    .steps li {
+      position: relative; padding-left: 34px;
+      color: var(--ink-2); font-size: 14.5px; line-height: 1.62;
+    }
+    .steps li::before {
+      counter-increment: s; content: counter(s, decimal-leading-zero);
+      position: absolute; left: 0; top: 1px;
+      font-family: var(--mono); font-size: 12px; color: var(--seal);
+    }
+    .steps code, .steps .term {
+      font-family: var(--mono); font-size: 12.5px; background: rgba(27, 24, 19, 0.05);
+      padding: 1px 5px; border-radius: 4px; color: var(--ink); white-space: nowrap;
+    }
+    .steps b { color: var(--ink); font-weight: 600; }
+    .os-note {
+      margin: 20px 0 0; padding: 13px 15px; font-size: 13px; line-height: 1.55; color: var(--ink-2);
+      border: 1px dashed var(--rule-strong); border-radius: 11px; background: rgba(27, 24, 19, 0.02);
+    }
+    .os-note b { color: var(--seal-deep); }
+    .safety-bar {
+      display: flex; align-items: center; gap: 14px; margin-top: 22px; padding: 16px 20px;
+      border: 1px solid var(--jade-soft); border-left: 3px solid var(--jade);
+      border-radius: 12px; background: var(--jade-soft); color: var(--ink-2); font-size: 14.5px;
+    }
+    .safety-bar .ic { color: var(--jade); font-size: 18px; }
+    .safety-bar b { color: var(--jade); font-weight: 700; }
+    @media (max-width: 760px) { .install-grid { grid-template-columns: 1fr; } }
+
+    /* ── 反馈 + 社区 ─────────────────────── */
+    .feedback-grid { display: grid; grid-template-columns: 1.25fr 0.75fr; gap: 22px; align-items: stretch; }
+    .panel {
+      background: var(--card); border: 1px solid var(--rule); border-radius: 16px; padding: 30px;
+    }
+    .panel h3 { margin: 0 0 12px; font-size: 24px; }
+    .panel p { margin: 0 0 20px; color: var(--ink-2); font-size: 15px; }
+    .checklist { list-style: none; margin: 0 0 24px; padding: 0; display: grid; gap: 11px; }
+    .checklist li { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: baseline; font-size: 14.5px; }
+    .checklist li b { font-family: var(--mono); color: var(--seal); font-size: 12px; }
+    .checklist li span { color: var(--ink-2); }
+    .checklist li span em { color: var(--ink); font-style: normal; font-weight: 600; }
+    .community { display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .community img {
+      width: 188px; height: 188px; object-fit: contain; border-radius: 12px;
+      border: 1px solid var(--rule); background: #fff; padding: 6px;
+    }
+    .community b { margin-top: 16px; font-family: var(--display); font-weight: 700; font-size: 17px; }
+    .community p { margin: 6px 0 0; font-size: 13px; color: var(--ink-3); line-height: 1.55; }
+    .community a { color: var(--seal-deep); border-bottom: 1px solid rgba(207,58,34,0.3); }
+    @media (max-width: 760px) { .feedback-grid { grid-template-columns: 1fr; } }
+
+    /* ── 终幕 CTA ────────────────────────── */
+    .finale {
+      position: relative; margin: clamp(58px, 7vw, 104px) 0 0;
+      padding: clamp(48px, 6vw, 80px) clamp(28px, 5vw, 64px);
+      border: 1px solid var(--rule-strong); border-radius: 22px;
+      background:
+        radial-gradient(120% 120% at 100% 0%, rgba(207, 58, 34, 0.07), transparent 50%),
+        var(--card);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .finale .watermark {
+      position: absolute; right: -28px; bottom: -38px; font-family: var(--display); font-weight: 700;
+      font-size: clamp(140px, 22vw, 280px); color: var(--seal); opacity: 0.05; line-height: 0.8;
+      letter-spacing: 0.1em; pointer-events: none; writing-mode: vertical-rl;
+    }
+    .finale-inner { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 22px; max-width: 30em; }
+    .finale h2 { margin: 0; font-size: clamp(34px, 4.6vw, 60px); line-height: 1.12; }
+    .finale p { margin: 0; color: var(--ink-2); font-size: 16.5px; max-width: 34em; }
+    .finale .hero-cta { margin: 0; }
+
+    /* ── 页脚 ───────────────────────────── */
+    footer {
+      margin-top: clamp(40px, 5vw, 64px); padding: 34px 0 56px;
+      border-top: 1px solid var(--rule);
+      display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: start;
+    }
+    .foot-disc { max-width: 52em; color: var(--ink-3); font-size: 13px; line-height: 1.65; }
+    .foot-disc b { color: var(--ink-2); font-weight: 600; }
+    .foot-links { display: flex; gap: 7px; font-family: var(--mono); font-size: 12px; letter-spacing: 0.04em; }
+    .foot-links a { color: var(--ink-2); padding: 4px 2px; border-bottom: 1px solid transparent; transition: border-color 0.2s, color 0.2s; }
+    .foot-links a:hover { color: var(--seal-deep); border-bottom-color: var(--seal); }
+    .foot-links .dot { color: var(--ink-4); }
+    @media (max-width: 640px) { footer { grid-template-columns: 1fr; } }
+
+    /* ── 灯箱 ───────────────────────────── */
+    .lightbox {
+      position: fixed; inset: 0; z-index: 80; display: none; align-items: center; justify-content: center;
+      padding: 32px; background: rgba(20, 16, 11, 0.84); backdrop-filter: blur(12px); cursor: zoom-out;
+    }
+    .lightbox.active { display: flex; }
+    .lightbox img {
+      max-width: min(1400px, 94vw); max-height: 92vh; border-radius: 12px;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.5); border: 6px solid #fbf7ee;
+      animation: pop 0.3s var(--ease);
+    }
+    @keyframes pop { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    /* ── 入场动画 ────────────────────────── */
+    body:not(.motion-ready) [data-reveal] { opacity: 1; transform: none; }
+    body.motion-ready [data-reveal] {
+      opacity: 0; transform: translateY(22px);
+      transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+      transition-delay: var(--delay, 0ms);
+    }
+    body.motion-ready [data-reveal].in { opacity: 1; transform: none; }
+
+    /* 印章入场 */
+    body.motion-ready .seal--lg { animation: stamp 0.6s var(--ease) 0.5s both; }
+    @keyframes stamp {
+      0%   { opacity: 0; transform: rotate(-22deg) scale(1.7); }
+      60%  { opacity: 1; transform: rotate(-3deg) scale(0.94); }
+      100% { opacity: 1; transform: rotate(-6deg) scale(1); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+      body.motion-ready [data-reveal] { opacity: 1; transform: none; }
+      body.motion-ready .seal--lg { animation: none; }
+    }
+
+    /* ── 响应式 ──────────────────────────── */
+    @media (max-width: 980px) {
+      .hero { grid-template-columns: 1fr; gap: 44px; }
+      .nav-links { display: none; }
+    }
+    @media (max-width: 560px) {
+      .page { width: min(100% - 32px, 540px); }
+      .nav { gap: 12px; }
+      .star-badge { display: none; }
+      .brand-name b { font-size: 14px; }
+      .brand-name span { display: none; }
+      .vprops { grid-template-columns: 1fr 1fr; gap: 14px 0; }
+      .vprops > div { padding-right: 12px; }
+      .hero-cta .btn { flex: 1 1 auto; }
+      .shead { grid-template-columns: 1fr; }
+      .shead-no { grid-row: auto; }
+      .shead-desc { grid-column: 1; }
+      .glossary .grow { grid-template-columns: 1fr auto; }
+      .glossary .cn { grid-column: 1 / -1; text-align: left; }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress" aria-hidden="true"></div>
+
+  <main class="page">
+    <!-- 导航 -->
+    <nav class="nav" aria-label="主导航">
+      <a class="brand" href="#top" aria-label="返回顶部">
+        <span class="seal seal--brand" aria-hidden="true">译</span>
+        <span class="brand-name">
+          <b>Claude Desktop 中文补丁</b>
+          <span>community localization</span>
+        </span>
+      </a>
+      <div class="nav-right">
+        <div class="nav-links">
+          <a href="#features">特性</a>
+          <a href="#screenshots">截图</a>
+          <a href="#install">安装</a>
+          <a href="#feedback">反馈</a>
+        </div>
+        <a class="star-badge" href="https://github.com/javaht/claude-desktop-zh-cn" target="_blank" rel="noopener" aria-label="在 GitHub 上 Star 本项目">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>
+          Star <b id="star-count">—</b>
+        </a>
+        <a class="btn btn-primary" href="https://github.com/javaht/claude-desktop-zh-cn/releases/latest">下载补丁</a>
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero" id="top">
+      <div class="hero-copy">
+        <div class="hero-eyebrow" data-reveal><b>非官方社区项目</b> · 免费开源 · 持续维护</div>
+        <h1 data-reveal style="--delay:70ms">
+          把 <span class="latin">Claude&nbsp;Desktop</span><br>
+          <span class="stamp-word">翻成中文。</span>
+        </h1>
+        <p class="hero-lead" data-reveal style="--delay:140ms">
+          免费、开源、持续维护的 <span class="term">Claude Desktop</span> 汉化补丁。<b>一条脚本装上，界面即刻变中文</b> —— macOS 与 Windows 双平台，简体、繁体（中国台湾）、繁体（中国香港）任你选。官方更新后同步跟进，遇到漏翻随时反馈、随时修。
+        </p>
+        <div class="hero-cta" data-reveal style="--delay:210ms">
+          <a class="btn btn-primary" href="https://github.com/javaht/claude-desktop-zh-cn/releases/latest">立即下载补丁 <span class="arrow">→</span></a>
+          <a class="btn btn-ghost" href="https://github.com/javaht/claude-desktop-zh-cn">在 GitHub 查看</a>
+        </div>
+        <dl class="vprops" data-reveal style="--delay:280ms">
+          <div><dt>双平台</dt><dd>macOS + Windows</dd></div>
+          <div><dt>三种中文</dt><dd>简体 · 繁·中国台湾 · 繁·中国香港</dd></div>
+          <div><dt>安全可逆</dt><dd>自动备份 · 一键恢复</dd></div>
+          <div><dt>持续维护</dt><dd>跟随官方更新</dd></div>
+        </dl>
+      </div>
+
+      <aside class="plate" data-reveal style="--delay:200ms" aria-label="汉化前后对照示意">
+        <div class="plate-head">
+          <span>CLAUDE.APP / i18n · zh-CN</span>
+          <span class="reg">⊕</span>
+        </div>
+        <div class="xlate-feature">
+          <div class="xrow before">
+            <span class="lang-tab" aria-hidden="true">EN</span>
+            <p><s>Connectors have moved to Customize.</s></p>
+          </div>
+          <div class="xarrow" aria-hidden="true">↓</div>
+          <div class="xrow after">
+            <span class="lang-tab on" aria-hidden="true">中文</span>
+            <p>连接器已移至「自定义」。</p>
+          </div>
+        </div>
+        <div class="glossary" aria-label="界面用词对照">
+          <div class="grow"><span class="en">Settings</span><span class="sep">→</span><span class="cn">设置</span></div>
+          <div class="grow"><span class="en">New chat</span><span class="sep">→</span><span class="cn">新建对话</span></div>
+          <div class="grow"><span class="en">Projects</span><span class="sep">→</span><span class="cn">项目</span></div>
+        </div>
+        <div class="plate-foot">
+          <span class="seal seal--lg" aria-hidden="true">汉化</span>
+          <span class="status">已汉化 ✓<br><b>PATCHED · zh-CN</b></span>
+        </div>
+      </aside>
+    </section>
+
+    <!-- 特性 -->
+    <section class="section" id="features">
+      <header class="shead">
+        <span class="shead-no" aria-hidden="true">01</span>
+        <span class="shead-label">特性 · Features</span>
+        <h2 class="shead-title" data-reveal>不只是把按钮换成中文。</h2>
+        <p class="shead-desc" data-reveal style="--delay:60ms">装上就能用，出问题能退，新版本不丢字段。下面是它真正帮你处理的事。</p>
+      </header>
+
+      <div class="features" data-reveal>
+        <article class="feature">
+          <span class="fno">01</span>
+          <h3>一键安装，双平台通吃</h3>
+          <p>macOS 双击 <code>install-mac.command</code>，Windows 右键以管理员身份运行 <code>install-windows.bat</code>，跟着菜单走完即可，不用手动改文件。</p>
+        </article>
+        <article class="feature">
+          <span class="fno">02</span>
+          <h3>三种中文变体任选</h3>
+          <p>简体中文 <span class="term">zh-CN</span>、繁体中文·中国台湾 <span class="term">zh-TW</span>、繁体中文·中国香港 <span class="term">zh-HK</span>，安装时选一个语言即可。</p>
+        </article>
+        <article class="feature">
+          <span class="fno">03</span>
+          <h3>安全备份 · 一键恢复</h3>
+          <p>安装前自动备份原始 Claude，随时可从备份恢复或彻底卸载，装坏也退得回去。</p>
+        </article>
+        <article class="feature">
+          <span class="fno">04</span>
+          <h3>智能合并，不丢字段</h3>
+          <p>跟随你当前的 Claude 版本合并语言文件；新版尚未翻译的字段保留英文，绝不出现界面缺字。</p>
+        </article>
+        <article class="feature">
+          <span class="fno">05</span>
+          <h3>第三方网关兼容</h3>
+          <p>可关闭 3P gateway 对模型名的本地校验，<span class="term">deepseek</span>、<span class="term">kimi</span> 等自定义模型名不再让整套配置失效。</p>
+        </article>
+        <article class="feature">
+          <span class="fno">06</span>
+          <h3>CC Switch skills 同步</h3>
+          <p>把 <code>~/.cc-switch/skills</code> 里的技能软链接进 Claude Desktop，同名跳过、源目录不动，可随时撤销。</p>
+        </article>
+      </div>
+
+      <div class="more-strip" data-reveal style="--delay:80ms">
+        <span>登录后的 claude.ai 在线页面也汉化</span>
+        <span>菜单内一键开关自动更新</span>
+        <span>macOS 原生菜单同步汉化</span>
+        <span>安装写入失败自动容错</span>
+      </div>
+    </section>
+
+    <!-- 截图 -->
+    <section class="section" id="screenshots">
+      <header class="shead">
+        <span class="shead-no" aria-hidden="true">02</span>
+        <span class="shead-label">截图 · Screens</span>
+        <h2 class="shead-title" data-reveal>装好之后，长这样。</h2>
+        <p class="shead-desc" data-reveal style="--delay:60ms">真实安装效果，点击任意图片可放大查看。</p>
+      </header>
+
+      <div class="gallery">
+        <figure class="shot wide" data-reveal data-lightbox="images/claude-desktop-zh-cn-home.png">
+          <img src="images/claude-desktop-zh-cn-home.png" alt="Claude Desktop 第三方推理网关与连接配置界面（已汉化）" width="1480" height="880" decoding="async" fetchpriority="high">
+          <figcaption><b>第三方推理网关</b><span>GATEWAY · zh-CN</span></figcaption>
+        </figure>
+        <figure class="shot" data-reveal style="--delay:70ms" data-lightbox="images/claude-desktop-zh-cn-settings.png">
+          <img src="images/claude-desktop-zh-cn-settings.png" alt="Claude Desktop 设置 · 计费与免费计划界面（已汉化）" width="1480" height="880" loading="lazy" decoding="async">
+          <figcaption><b>设置 · 计费计划</b><span>SETTINGS</span></figcaption>
+        </figure>
+        <figure class="shot" data-reveal style="--delay:140ms" data-lightbox="images/claude-desktop-zh-cn-gateway.png">
+          <img src="images/claude-desktop-zh-cn-gateway.png" alt="Claude Desktop 聊天主界面（已汉化）" width="1480" height="900" loading="lazy" decoding="async">
+          <figcaption><b>聊天主界面</b><span>CHAT</span></figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 安装 -->
+    <section class="section" id="install">
+      <header class="shead">
+        <span class="shead-no" aria-hidden="true">03</span>
+        <span class="shead-label">安装 · Install</span>
+        <h2 class="shead-title" data-reveal>两步装上，随时退得回去。</h2>
+        <p class="shead-desc" data-reveal style="--delay:60ms">退出 Claude Desktop，跑一次入口脚本，按菜单选语言就行。两个平台分别看 ——</p>
+      </header>
+
+      <div class="install-grid">
+        <article class="os-card" data-reveal>
+          <div class="os-head">
+            <span class="os-glyph" aria-hidden="true">⌘</span>
+            <div><b>macOS</b><span>install-mac.command</span></div>
+          </div>
+          <ol class="steps">
+            <li>退出 Claude Desktop。</li>
+            <li>双击 <code>install-mac.command</code>，选择「安装中文补丁」。</li>
+            <li>选语言（<b>1</b> 简体 / <b>2</b> 繁体·中国台湾 / <b>3</b> 繁体·中国香港），按提示输入 Mac 登录密码。</li>
+            <li>Claude 自动重启即生效；若没切换，到左下角账号菜单 <span class="term">Language</span> 里手动选。</li>
+          </ol>
+          <p class="os-note"><b>想更稳？</b> 菜单里还有「安全模式」，跳过 <span class="term">app.asar</span> 结构性补丁，只做等长菜单汉化，兼容性更高。</p>
+        </article>
+
+        <article class="os-card" data-reveal style="--delay:80ms">
+          <div class="os-head">
+            <span class="os-glyph" aria-hidden="true">⊞</span>
+            <div><b>Windows</b><span>install-windows.bat</span></div>
+          </div>
+          <ol class="steps">
+            <li>退出 Claude Desktop。</li>
+            <li>右键 <code>install-windows.bat</code>，选择以管理员身份运行。</li>
+            <li>先选安装模式，再选语言（简体 / 繁·中国台湾 / 繁·中国香港）。</li>
+            <li>脚本自动备份资源、写入中文并重启 Claude。</li>
+          </ol>
+          <p class="os-note"><b>三种模式：</b> ① Cowork 兼容（跳过 <span class="term">app.asar</span>）② 官方账号登录 ③ 第三方 API 实验。需要 Cowork 沙箱 / 截图工作区请选 ①。</p>
+        </article>
+      </div>
+
+      <div class="safety-bar" data-reveal>
+        <span class="ic" aria-hidden="true">↺</span>
+        <span>所有改动只动本机 Claude 的本地资源，<b>安装前自动备份</b>。要恢复？再跑一次脚本，选「恢复 / 卸载」即可。</span>
+      </div>
+    </section>
+
+    <!-- 反馈 + 社区 -->
+    <section class="section" id="feedback">
+      <header class="shead">
+        <span class="shead-no" aria-hidden="true">04</span>
+        <span class="shead-label">反馈 · Feedback</span>
+        <h2 class="shead-title" data-reveal>发现漏翻？一张截图就能修。</h2>
+        <p class="shead-desc" data-reveal style="--delay:60ms">Claude 持续更新，新版偶尔会冒出没翻到的英文。看到了别忍着，提给我们就好。</p>
+      </header>
+
+      <div class="feedback-grid">
+        <article class="panel" data-reveal>
+          <h3>提一个好 Issue</h3>
+          <p>别只贴一句英文。带齐这四样，我们就能定位到资源层、稳稳修掉：</p>
+          <ul class="checklist">
+            <li><b>01</b><span><em>全屏截图</em> —— 保留导航、弹窗和上下文。</span></li>
+            <li><b>02</b><span><em>所在页面</em> —— 例如设置页、第三方供应商、工具详情。</span></li>
+            <li><b>03</b><span><em>触发操作</em> —— 点了哪个按钮，是否有报错。</span></li>
+            <li><b>04</b><span><em>期望译法</em> —— 有更顺的中文，直接写出来。</span></li>
+          </ul>
+          <a class="btn btn-primary btn-sm" href="https://github.com/javaht/claude-desktop-zh-cn/issues/new">提交漏翻 Issue <span class="arrow">→</span></a>
+        </article>
+
+        <article class="panel community" data-reveal style="--delay:80ms">
+          <img src="images/wechat-group.png" alt="Claude Desktop 中文交流群二维码">
+          <b>扫码加入交流群</b>
+          <p>使用、第三方 API 配置或漏翻问题，都能在群里聊。<br>第三方 API 可参考 <a href="https://linux.do/t/topic/2032192" target="_blank" rel="noopener">这篇教程</a>。</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- 终幕 -->
+    <section class="finale" data-reveal aria-label="下载行动区">
+      <span class="watermark" aria-hidden="true">汉化</span>
+      <div class="finale-inner">
+        <h2>把英文界面，<br>留在过去。</h2>
+        <p>免费、开源、可恢复。下载最新补丁，给你的 Claude Desktop 换上母语。</p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="https://github.com/javaht/claude-desktop-zh-cn/releases/latest">立即下载补丁 <span class="arrow">→</span></a>
+          <a class="btn btn-ghost" href="https://github.com/javaht/claude-desktop-zh-cn">查看 GitHub 仓库</a>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <p class="foot-disc">
+        <b>免责声明：</b>本项目为非官方中文补丁，与 Anthropic 无关，仅修改本机 Claude Desktop 的本地资源文件。Claude Desktop 更新后资源结构可能变化，若补丁失效，请先更新本项目或重新运行安装脚本。开源社区维护。
+      </p>
+      <nav class="foot-links" aria-label="页脚链接">
+        <a href="https://github.com/javaht/claude-desktop-zh-cn">GitHub</a><span class="dot">/</span>
+        <a href="https://github.com/javaht/claude-desktop-zh-cn/issues">Issues</a><span class="dot">/</span>
+        <a href="https://github.com/javaht/claude-desktop-zh-cn/releases/latest">Releases</a>
+      </nav>
+    </footer>
+  </main>
+
+  <div class="lightbox" id="lightbox" aria-hidden="true"><img src="" alt=""></div>
+
+  <script>
+    (() => {
+      const root = document.documentElement;
+      document.body.classList.add("motion-ready");
+
+      // GitHub Star 数（失败静默）
+      const starEl = document.getElementById("star-count");
+      if (starEl) {
+        fetch("https://api.github.com/repos/javaht/claude-desktop-zh-cn")
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => {
+            if (d && typeof d.stargazers_count === "number") {
+              starEl.textContent = d.stargazers_count >= 1000
+                ? (d.stargazers_count / 1000).toFixed(1) + "k"
+                : String(d.stargazers_count);
+            }
+          })
+          .catch(() => {});
+      }
+
+      // 阅读进度
+      const progress = document.querySelector(".progress");
+      const setProgress = () => {
+        if (!progress) return;
+        const max = root.scrollHeight - window.innerHeight;
+        if (max <= 0) { progress.style.transform = "scaleX(0)"; return; }
+        progress.style.transform = "scaleX(" + Math.min(1, Math.max(0, window.scrollY / max)) + ")";
+      };
+      window.addEventListener("scroll", setProgress, { passive: true });
+      setProgress();
+
+      // 滚动入场
+      const items = document.querySelectorAll("[data-reveal]");
+      if ("IntersectionObserver" in window) {
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach((e) => {
+            if (!e.isIntersecting) return;
+            e.target.classList.add("in");
+            io.unobserve(e.target);
+          });
+        }, { threshold: 0.14, rootMargin: "0px 0px -7% 0px" });
+        items.forEach((el) => io.observe(el));
+      } else {
+        items.forEach((el) => el.classList.add("in"));
+      }
+
+      // 灯箱
+      const lb = document.getElementById("lightbox");
+      const lbImg = lb ? lb.querySelector("img") : null;
+      let lastTrigger = null;
+      const open = (el) => {
+        if (!lb || !lbImg) return;
+        const src = el.getAttribute("data-lightbox");
+        if (!src) return;
+        const img = el.querySelector("img");
+        lbImg.src = src;
+        lbImg.alt = img ? img.alt : "截图预览";
+        lb.classList.add("active");
+        lb.setAttribute("aria-hidden", "false");
+        lastTrigger = el;
+      };
+      const close = () => {
+        if (!lb || !lb.classList.contains("active")) return;
+        lb.classList.remove("active");
+        lb.setAttribute("aria-hidden", "true");
+        if (lastTrigger && lastTrigger.focus) lastTrigger.focus({ preventScroll: true });
+        lastTrigger = null;
+      };
+      document.querySelectorAll("[data-lightbox]").forEach((el) => {
+        el.setAttribute("tabindex", "0");
+        el.setAttribute("role", "button");
+        el.addEventListener("click", () => open(el));
+        el.addEventListener("keydown", (ev) => {
+          if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); open(el); }
+        });
+      });
+      if (lb) {
+        lb.addEventListener("click", close);
+        document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") close(); });
+      }
+    })();
+  </script>
+</body>
+</html>

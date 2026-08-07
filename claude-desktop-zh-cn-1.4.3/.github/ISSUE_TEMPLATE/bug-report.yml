@@ -1,0 +1,64 @@
+name: 问题反馈
+description: 提交使用本项目时遇到的问题
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈问题。为了更快定位，请尽量完整填写下面的信息。
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: 平台是啥
+      description: 请选择你使用的平台
+      options:
+        - macOS
+        - Windows
+        - 其他
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: isnew
+    attributes:
+      label: 是否使用最新代码
+      description: 没使用最新代码的话先用最新代码试试
+      options:
+        - 是
+        - 否
+        - 其他
+    validations:
+      required: true     
+
+  - type: input
+    id: claude_version
+    attributes:
+      label: Clade Desktop版本是多少
+      description: 请填写 Claude Desktop 版本号，例如 0.11.2
+      placeholder: 例如 x.xx.x
+    validations:
+      required: true
+
+  - type: dropdown
+    id: third_party_api_mode
+    attributes:
+      label: 是否用的第三方 API 模式
+      description: README 提到本项目仅支持 API 使用方式，请说明当前是否启用了第三方模式
+      options:
+        - 是
+        - 否
+        - 不确定
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem_description
+    attributes:
+      label: 问题描述
+      description: 请简要描述你遇到的问题
+      placeholder: 例如：安装完成后 Claude 无法启动，或界面没有切换成中文
+    validations:
+      required: true

@@ -1,0 +1,78 @@
+name: Prepare Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version, e.g. 1.1.4"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate version
+        run: |
+          VERSION="${{ inputs.version }}"
+          if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Version must look like 1.1.4"
+            exit 1
+          fi
+          if git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "Tag $VERSION already exists"
+            exit 1
+          fi
+
+      - name: Update release metadata
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          version = os.environ["VERSION"]
+          path = Path("resources/release.json")
+          if path.exists():
+              data = json.loads(path.read_text(encoding="utf-8"))
+          else:
+              path.parent.mkdir(parents=True, exist_ok=True)
+              data = {"repo": "javaht/claude-desktop-zh-cn"}
+          data["repo"] = "javaht/claude-desktop-zh-cn"
+          data["release"] = version
+          path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          PY
+        env:
+          VERSION: ${{ inputs.version }}
+
+      - name: Validate scripts
+        run: |
+          bash -n install-mac.command
+          git diff --check
+
+      - name: Commit and tag
+        run: |
+          VERSION="${{ inputs.version }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add resources/release.json
+          if git diff --cached --quiet; then
+            echo "No release metadata changes to commit"
+          else
+            git commit -m "Release $VERSION"
+            git push origin main
+          fi
+
+          git tag "$VERSION"
+          git push origin "$VERSION"

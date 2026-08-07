@@ -1,0 +1,18 @@
+﻿{
+  "Memory.Title": "Memories with {0} ({1}/10)",
+  "Memory.Empty": "No memories yet. Click the button below to add one.",
+  "Memory.AddButton": "+ Add Memory",
+  "Memory.AddTitle": "Add a memory for {0}",
+  "Memory.AddHint": "Enter something you want the NPC to remember (e.g., I like strawberries)",
+  "Memory.AddSuccess": "Memory added successfully.",
+  "Memory.AddFailedFull": "This character's memories are full (10/10). Please delete unimportant memories first.",
+  "Memory.AddFailedDuplicate": "This memory already exists.",
+  "Memory.AddFailedTooLong": "Memory content is too long (max {0} characters).",
+  "Memory.DeleteConfirm": "Are you sure you want to delete the memory \"{0}\"?",
+  "Memory.DeleteSuccess": "Memory deleted.",
+  "Memory.ButtonHover": "Manage my memories with {0} (max 10)",
+  "Memory.CloseButton": "Close",
+  "Memory.CancelButton": "Cancel",
+  "Memory.OKButton": "OK",
+  "Memory.CharacterLimit": "Character limit: {0}"
+}
