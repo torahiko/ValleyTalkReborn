@@ -52,7 +52,7 @@ namespace ValleytalkReborn
 
         #endregion
 
-        #region Public API (All Methods Restored)
+        #region Public API
 
         public void RecordNpcDialogue(string npcName, string text, string dialogueType = "dialogue")
         {
@@ -65,7 +65,7 @@ namespace ValleytalkReborn
         {
             if (string.IsNullOrWhiteSpace(text)) return;
             var entry = new DialogueHistoryEntry(
-                Util.GetString("generalFarmerLabel"),
+                "Player",
                 text,
                 SpeakerType.Player,
                 "conversation"
@@ -190,7 +190,7 @@ namespace ValleytalkReborn
         {
             lock (_historyLock)
             {
-                return _lastEntry.OrderByDescending(x => x.Value.Timestamp).FirstOrDefault().Key ?? "";
+                return _lastEntry.OrderByDescending(x => x.Value.Timestamp.TimeOfDay).FirstOrDefault().Key ?? "";
             }
         }
 
@@ -224,12 +224,9 @@ namespace ValleytalkReborn
                     _history[npcName] = list;
                 }
 
-                // O(1) 去重：拦截同时间段完全重复的连续语句
                 if (_lastEntry.TryGetValue(npcName, out var last))
                 {
-                    if (last.SpeakerType == entry.SpeakerType &&
-                        last.Text.Equals(entry.Text, StringComparison.Ordinal) &&
-                        last.Timestamp.TimeOfDay == entry.Timestamp.TimeOfDay)
+                    if (entry.IsDuplicateOf(last))
                     {
                         return;
                     }
@@ -428,9 +425,9 @@ namespace ValleytalkReborn
 
         public DialogueHistoryEntry ToEntry()
         {
-            var entry = new DialogueHistoryEntry(SpeakerName, Text, SpeakerType, DialogueType)
+            var time = new StardewTime(Year, Season, Day, TimeOfDay);
+            var entry = new DialogueHistoryEntry(SpeakerName, Text, SpeakerType, time, DialogueType)
             {
-                Timestamp = new StardewTime(Year, Season, Day, TimeOfDay),
                 GiftName = GiftName,
                 GiftTaste = GiftTaste
             };

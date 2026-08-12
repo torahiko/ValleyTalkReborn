@@ -174,7 +174,7 @@ namespace ValleytalkReborn
                     fieldId: "ModelName"
                 );
 
-                // 快捷拉框选择
+                // 快捷下拉框选择
                 if (_cachedModelNames != null && _cachedModelNames.Length > 0)
                 {
                     var quickSelectOptions = new List<string> { "--- Select to auto-fill ---" };
@@ -290,22 +290,8 @@ namespace ValleytalkReborn
                 setValue: (value) => { Config.DisableCharacters = value; }
             );
 
-            // Action Awareness System
-            ConfigMenu.AddSectionTitle(
-                mod: ModManifest,
-                text: () => GetUIString("Perception.SectionTitle", "Action Awareness System"),
-                tooltip: () => GetUIString("Perception.SectionTooltip",
-                    "Let NPCs perceive player actions and mention them in dialogue")
-            );
-
-            ConfigMenu.AddBoolOption(
-                mod: ModManifest,
-                name: () => GetUIString("Perception.EnableMaster", "Enable Action Awareness (Master Switch)"),
-                tooltip: () => GetUIString("Perception.EnableMasterTooltip",
-                    "Master switch for all action awareness features"),
-                getValue: () => Config.EnablePerceptionSystem,
-                setValue: value => Config.EnablePerceptionSystem = value
-            );
+            // 注意：Perception 系统开关（EnablePerceptionSystem）在此处故意被隐藏，不向玩家暴露 UI 菜单。
+            // 配置底层该字段依旧保留（默认值为 true），确保代码逻辑强耦合时不被影响。
         }
 
         private static string[] GetCachedModelNames()
@@ -337,7 +323,6 @@ namespace ValleytalkReborn
 
         private static string[] GetModelNames()
         {
-            // 如果连 API Key 都没填，直接返回空，不再盲目发起 API 请求
             if (string.IsNullOrWhiteSpace(ModEntry.Config.ApiKey))
                 return new string[] { };
 
@@ -346,7 +331,6 @@ namespace ValleytalkReborn
 
             if (provider.GetInterfaces().Any(x => x.Name == "IGetModelNames"))
             {
-                // 关键点：如果 ModelName 为空，给一个占位符，防止触发“未填写模型名称”的验证报错
                 string currentModel = string.IsNullOrWhiteSpace(ModEntry.Config.ModelName) 
                     ? "placeholder-for-fetching" 
                     : ModEntry.Config.ModelName;

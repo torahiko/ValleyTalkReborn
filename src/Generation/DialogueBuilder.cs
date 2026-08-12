@@ -162,15 +162,24 @@ namespace ValleytalkReborn
             ApplyEmbodiedActions(instance, context, theLine);
 
             // 2. ★ 统一解析所有具身动作（包括表情、朝向、移动等）
+            // 找到这部分代码：
             if (context.RoutingFlags.IsMovementRequested
                 || context.RoutingFlags.IsFollowing
                 || context.RoutingFlags.IsOnDate)
             {
-                EmbodiedActionParser.ParseAndExecute(instance, theLine, latestPlayerInput);
+                EmbodiedActionParser.ParseAndExecute(
+                    instance, 
+                    theLine, 
+                    latestPlayerInput, 
+                    allowFallbackEmotes: !context.RoutingFlags.IsSimpleGreeting); 
             }
             else
             {
-                EmbodiedActionParser.ParseEmotesAndFaceOnly(instance, theLine);
+               // 送礼场景不触发问候，直接保持或显式传入路由标志
+                EmbodiedActionParser.ParseEmotesAndFaceOnly(
+                    instance, 
+                    theLine, 
+                    allowFallbackEmotes: !context.RoutingFlags.IsSimpleGreeting); 
             }
 
             // Phase 4：放鸽子清算后，清除记仇缓存（仅在 Prompt 已注入该 Flag 时）
@@ -204,7 +213,10 @@ namespace ValleytalkReborn
             var theLine = await LlmDialogueService.Instance.GenerateDialogueAsync(character, context);
 
             // 送礼不涉及移动，只解析表情与朝向
-            EmbodiedActionParser.ParseEmotesAndFaceOnly(instance, theLine);
+            EmbodiedActionParser.ParseEmotesAndFaceOnly(
+                instance, 
+                theLine, 
+                allowFallbackEmotes: !context.RoutingFlags.IsSimpleGreeting);
             
             string formattedLine = FormatLine(theLine);
             var newDialogue = new Dialogue(instance, $"Accept_{gift.Name}", formattedLine);

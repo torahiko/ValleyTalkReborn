@@ -1,5 +1,6 @@
 ﻿using System;
 using Newtonsoft.Json;
+using StardewModdingAPI;
 using StardewValley;
 #nullable disable
 
@@ -17,7 +18,6 @@ namespace ValleytalkReborn
 
     /// <summary>
     /// Represents a single entry in the dialogue history.
-    /// This replaces the scattered recording across DialogueHistory, ConversationHistory, etc.
     /// </summary>
     internal class DialogueHistoryEntry
     {
@@ -25,8 +25,6 @@ namespace ValleytalkReborn
         public DialogueHistoryEntry()
         {
             Id = Guid.NewGuid();
-            // 修复：将 Game1.season 强制转换为 ValleyTalk.Season
-            Timestamp = new StardewTime(Game1.year, (Season)Game1.season, Game1.dayOfMonth, Game1.timeOfDay);
         }
 
         public DialogueHistoryEntry(string speakerName, string text, SpeakerType speakerType, string dialogueType = "")
@@ -36,6 +34,18 @@ namespace ValleytalkReborn
             Text = text;
             SpeakerType = speakerType;
             DialogueType = dialogueType;
+
+            // 仅在世界就绪时安全获取当前游戏时间
+            if (Context.IsWorldReady)
+            {
+                Timestamp = new StardewTime(Game1.year, (Season)Game1.season, Game1.dayOfMonth, Game1.timeOfDay);
+            }
+        }
+
+        public DialogueHistoryEntry(string speakerName, string text, SpeakerType speakerType, StardewTime timestamp, string dialogueType = "")
+            : this(speakerName, text, speakerType, dialogueType)
+        {
+            Timestamp = timestamp;
         }
 
         /// <summary>
@@ -44,7 +54,7 @@ namespace ValleytalkReborn
         public Guid Id { get; }
 
         /// <summary>
-        /// Who spoke this line (NPC name, "Farmer", or "System")
+        /// Who spoke this line (NPC name, "Player", or "System")
         /// </summary>
         public string SpeakerName { get; set; } = "";
 
@@ -59,7 +69,7 @@ namespace ValleytalkReborn
         public SpeakerType SpeakerType { get; set; }
 
         /// <summary>
-        /// Category: "dialogue", "conversation", "gift", "event", "marriage"
+        /// Category: "dialogue", "conversation", "gift", "event", "marriage", "eavesdrop"
         /// </summary>
         public string DialogueType { get; set; } = "";
 
@@ -80,7 +90,6 @@ namespace ValleytalkReborn
 
         /// <summary>
         /// Soft-delete flag. Consumed entries are excluded from future context queries.
-        /// Set to true after the entry has been read into a prompt payload.
         /// </summary>
         [JsonIgnore]
         public bool IsConsumed { get; set; } = false;
@@ -98,7 +107,7 @@ namespace ValleytalkReborn
         {
             string speakerLabel = SpeakerType switch
             {
-                SpeakerType.Player => Util.GetString("generalFarmerLabel"),
+                SpeakerType.Player => Util.GetString("generalFarmerLabel") ?? "Farmer",
                 SpeakerType.System => "***",
                 _ => npcName
             };
@@ -110,7 +119,6 @@ namespace ValleytalkReborn
                 _ => "  "
             };
 
-            // 修复：将小写的 season 和 dayOfMonth 改为大写
             string timestamp = $"{Timestamp.Season} {Timestamp.DayOfMonth}";
 
             return SpeakerType == SpeakerType.System
@@ -119,14 +127,20 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
-        /// Checks if this entry is a duplicate of another based on speaker and text
+        /// Checks if this entry is a duplicate of another based on speaker, text and time
         /// </summary>
         public bool IsDuplicateOf(DialogueHistoryEntry other)
         {
-            return SpeakerName == other.SpeakerName
-                && Text == other.Text
-                && SpeakerType == other.SpeakerType
-                && DialogueType == other.DialogueType;
+            if (other == null) return false;
+
+            bool timeMatches = Timestamp.Year == other.Timestamp.Year &&
+                               Timestamp.Season == other.Timestamp.Season &&
+                               Timestamp.DayOfMonth == other.Timestamp.DayOfMonth &&
+                               Timestamp.TimeOfDay == other.Timestamp.TimeOfDay;
+
+            return SpeakerType == other.SpeakerType
+                && string.Equals(Text, other.Text, StringComparison.Ordinal)
+                && timeMatches;
         }
     }
 }
