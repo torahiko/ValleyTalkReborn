@@ -3,39 +3,56 @@ using System;
 using System.Linq;
 using StardewModdingAPI;
 
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 public class ModInteropManager
 {
     private ModInteropManager() { }
     private static ModInteropManager _instance;
     public static ModInteropManager Instance => _instance ??= new ModInteropManager();
+    
     private Dictionary<string, Dictionary<string, Dictionary<string, string>>> _promptOverrides = new();
+    
+    // 【新增】线程安全锁，防止异步生成对话时与其他模组注册产生并发修改冲突
+    private readonly object _lockObj = new object();
 
     public void RegisterPromptOverride(string modName, string characterName, string promptElement, string overrideText)
     {
-        if (!_promptOverrides.ContainsKey(characterName))
+        lock (_lockObj)
         {
-            _promptOverrides[characterName] = new Dictionary<string, Dictionary<string, string>>();
+            // 【优化】使用 TryGetValue 替代 ContainsKey + 索引器，消除双重哈希计算
+            if (!_promptOverrides.TryGetValue(characterName, out var charDict))
+            {
+                charDict = new Dictionary<string, Dictionary<string, string>>();
+                _promptOverrides[characterName] = charDict;
+            }
+
+            if (!charDict.TryGetValue(promptElement, out var promptDict))
+            {
+                promptDict = new Dictionary<string, string>();
+                charDict[promptElement] = promptDict;
+            }
+
+            promptDict[modName] = overrideText;
         }
-        if (!_promptOverrides[characterName].ContainsKey(promptElement))
-        {
-            _promptOverrides[characterName][promptElement] = new Dictionary<string, string>();
-        }
-        _promptOverrides[characterName][promptElement][modName] = overrideText;
     }
 
     public void ClearPromptOverride(string modName, string characterName, string promptElement)
     {
-        if (_promptOverrides.ContainsKey(characterName) && _promptOverrides[characterName].ContainsKey(promptElement))
+        lock (_lockObj)
         {
-            _promptOverrides[characterName][promptElement].Remove(modName);
-            if (_promptOverrides[characterName][promptElement].Count == 0)
+            // 【优化】连续使用 TryGetValue 进行安全解包，既快又安全
+            if (_promptOverrides.TryGetValue(characterName, out var charDict) && 
+                charDict.TryGetValue(promptElement, out var promptDict))
             {
-                _promptOverrides[characterName].Remove(promptElement);
-                if (_promptOverrides[characterName].Count == 0)
+                promptDict.Remove(modName);
+                if (promptDict.Count == 0)
                 {
-                    _promptOverrides.Remove(characterName);
+                    charDict.Remove(promptElement);
+                    if (charDict.Count == 0)
+                    {
+                        _promptOverrides.Remove(characterName);
+                    }
                 }
             }
         }
@@ -43,66 +60,88 @@ public class ModInteropManager
 
     public void ClearPromptOverrides(string modName, string characterName = "")
     {
-        if (string.IsNullOrWhiteSpace(characterName))
+        lock (_lockObj)
         {
-            foreach (var character in _promptOverrides.Keys.ToList())
+            if (string.IsNullOrWhiteSpace(characterName))
             {
-                foreach (var promptElement in _promptOverrides[character].Keys.ToList())
+                // 使用 ToList() 是为了在遍历时允许安全删除，但在 lock 保护下执行是绝对安全的
+                foreach (var charKey in _promptOverrides.Keys.ToList())
                 {
-                    _promptOverrides[character][promptElement].Remove(modName);
-                    if (_promptOverrides[character][promptElement].Count == 0)
+                    var charDict = _promptOverrides[charKey];
+                    foreach (var promptKey in charDict.Keys.ToList())
                     {
-                        _promptOverrides[character].Remove(promptElement);
+                        var promptDict = charDict[promptKey];
+                        promptDict.Remove(modName);
+                        
+                        if (promptDict.Count == 0)
+                        {
+                            charDict.Remove(promptKey);
+                        }
                     }
-                }
-                if (_promptOverrides[character].Count == 0)
-                {
-                    _promptOverrides.Remove(character);
+                    
+                    if (charDict.Count == 0)
+                    {
+                        _promptOverrides.Remove(charKey);
+                    }
                 }
             }
-        }
-        else
-        {
-            if (_promptOverrides.ContainsKey(characterName))
+            else
             {
-                foreach (var promptElement in _promptOverrides[characterName].Keys.ToList())
+                if (_promptOverrides.TryGetValue(characterName, out var charDict))
                 {
-                    _promptOverrides[characterName][promptElement].Remove(modName);
-                    if (_promptOverrides[characterName][promptElement].Count == 0)
+                    foreach (var promptKey in charDict.Keys.ToList())
                     {
-                        _promptOverrides[characterName].Remove(promptElement);
+                        var promptDict = charDict[promptKey];
+                        promptDict.Remove(modName);
+                        
+                        if (promptDict.Count == 0)
+                        {
+                            charDict.Remove(promptKey);
+                        }
                     }
-                }
-                if (_promptOverrides[characterName].Count == 0)
-                {
-                    _promptOverrides.Remove(characterName);
+                    
+                    if (charDict.Count == 0)
+                    {
+                        _promptOverrides.Remove(characterName);
+                    }
                 }
             }
         }
     }
 
     internal Dictionary<string, IEnumerable<string>> GetPromptOverrides(Character character)
+    {
+        lock (_lockObj)
         {
             if (_promptOverrides.TryGetValue(character.Name, out var overrides))
             {
-                return overrides.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Values.AsEnumerable());
+                // 【关键优化】必须在这里调用 .ToList() 将内部的 Values 实体化！
+                // 否则外部在使用返回的 IEnumerable 时，如果恰好有其他模组修改了字典，会导致游戏崩溃。
+                return overrides.ToDictionary(
+                    kvp => kvp.Key, 
+                    kvp => (IEnumerable<string>)kvp.Value.Values.ToList()
+                );
             }
-            return [];
+            return new Dictionary<string, IEnumerable<string>>();
         }
+    }
 
-        /// <summary>
-        /// Clears all prompt override data. Called when the game is exiting.
-        /// </summary>
-        public void Cleanup()
+    /// <summary>
+    /// Clears all prompt override data. Called when the game is exiting.
+    /// </summary>
+    public void Cleanup()
+    {
+        try
         {
-            try
+            lock (_lockObj)
             {
                 _promptOverrides?.Clear();
                 _promptOverrides = new Dictionary<string, Dictionary<string, Dictionary<string, string>>>();
             }
-            catch (Exception ex)
-            {
-                ModEntry.SMonitor?.Log($"[ModInteropManager] Error during cleanup: {ex.Message}", LogLevel.Warn);
-            }
         }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log($"[ModInteropManager] Error during cleanup: {ex.Message}", LogLevel.Warn);
+        }
+    }
 }

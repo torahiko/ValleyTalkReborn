@@ -1,64 +1,40 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json; 
-using ValleyTalk;
+using Newtonsoft.Json;
+using StardewValley;
 
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 internal class StardewEventHistory
 {
-    private List<Tuple<StardewTime,IHistory>> _eventHistory = new();
-    private List<Tuple<StardewTime,IHistory>> _overheardHistory = new();
-    private List<Tuple<StardewTime,IHistory>> _dialogueHistory = new();
-    private List<Tuple<StardewTime,IHistory>> _conversationHistory = new();
+    private List<Tuple<StardewTime, IHistory>> _eventHistory = new();
+    private List<Tuple<StardewTime, IHistory>> _overheardHistory = new();
+    private List<Tuple<StardewTime, IHistory>> _dialogueHistory = new();
+    private List<Tuple<StardewTime, IHistory>> _conversationHistory = new();
 
     public List<Tuple<StardewTime, DialogueEventHistory>> EventHistory
     {
-        get
-        {
-            return _eventHistory.Select(x => new Tuple<StardewTime, DialogueEventHistory>(x.Item1, (DialogueEventHistory)x.Item2)).ToList();
-        }
-        set
-        {
-            _eventHistory = value.Select(x => new Tuple<StardewTime, IHistory>(x.Item1, x.Item2)).ToList();
-        }
+        get => _eventHistory.Select(x => new Tuple<StardewTime, DialogueEventHistory>(x.Item1, (DialogueEventHistory)x.Item2)).ToList();
+        set => _eventHistory = value.Select(x => new Tuple<StardewTime, IHistory>(x.Item1, x.Item2)).ToList();
     }
 
     public List<Tuple<StardewTime, DialogueEventOverheard>> OverheardHistory
     {
-        get
-        {
-            return _overheardHistory.Select(x => new Tuple<StardewTime, DialogueEventOverheard>(x.Item1, (DialogueEventOverheard)x.Item2)).ToList();
-        }
-        set
-        {
-            _overheardHistory = value.Select(x => new Tuple<StardewTime, IHistory>(x.Item1, x.Item2)).ToList();
-        }
+        get => _overheardHistory.Select(x => new Tuple<StardewTime, DialogueEventOverheard>(x.Item1, (DialogueEventOverheard)x.Item2)).ToList();
+        set => _overheardHistory = value.Select(x => new Tuple<StardewTime, IHistory>(x.Item1, x.Item2)).ToList();
     }
 
     public List<Tuple<StardewTime, DialogueHistory>> DialogueHistory
     {
-        get
-        {
-            return _dialogueHistory.Select(x => new Tuple<StardewTime, DialogueHistory>(x.Item1, (DialogueHistory)x.Item2)).ToList();
-        }
-        set
-        {
-            _dialogueHistory = value.Select(x => new Tuple<StardewTime, IHistory>(x.Item1, x.Item2)).ToList();
-        }
+        get => _dialogueHistory.Select(x => new Tuple<StardewTime, DialogueHistory>(x.Item1, (DialogueHistory)x.Item2)).ToList();
+        set => _dialogueHistory = value.Select(x => new Tuple<StardewTime, IHistory>(x.Item1, x.Item2)).ToList();
     }
 
     public List<Tuple<StardewTime, ConversationHistory>> ConversationHistory
     {
-        get
-        {
-            return _conversationHistory.Select(x => new Tuple<StardewTime, ConversationHistory>(x.Item1, (ConversationHistory)x.Item2)).ToList();
-        }
-        set
-        {
-            _conversationHistory = value.Select(x => new Tuple<StardewTime, IHistory>(x.Item1, x.Item2)).ToList();
-        }
+        get => _conversationHistory.Select(x => new Tuple<StardewTime, ConversationHistory>(x.Item1, (ConversationHistory)x.Item2)).ToList();
+        set => _conversationHistory = value.Select(x => new Tuple<StardewTime, IHistory>(x.Item1, x.Item2)).ToList();
     }
 
     public void ClearConversationHistory()
@@ -70,98 +46,111 @@ internal class StardewEventHistory
 
     [JsonIgnore]
     public IEnumerable<Tuple<StardewTime, IHistory>> AllTypes => 
-        _eventHistory.AsEnumerable<Tuple<StardewTime, IHistory>>()
-                .Concat(_overheardHistory)
-                .Concat(_dialogueHistory)
-                .Concat(_conversationHistory);
+        _eventHistory.Concat(_overheardHistory)
+                    .Concat(_dialogueHistory)
+                    .Concat(_conversationHistory);
 
     internal void Add(StardewTime time, IHistory theEvent)
     {
-        switch(theEvent.GetType().Name)
+        if (theEvent == null) return;
+
+        switch (theEvent)
         {
-            case "DialogueEventHistory":
-                _eventHistory.Add(new(time,(DialogueEventHistory)theEvent));
+            case DialogueEventHistory eventHist:
+                _eventHistory.Add(new(time, eventHist));
                 break;
-            case "DialogueEventOverheard":
-                _overheardHistory.Add(new(time,(DialogueEventOverheard)theEvent));
+                
+            case DialogueEventOverheard overheardHist:
+                _overheardHistory.Add(new(time,overheardHist));
                 break;
-            case "DialogueHistory":
-                _dialogueHistory.Add(new(time,(DialogueHistory)theEvent));
+
+            case DialogueHistory dialogueHist:
+                _dialogueHistory.Add(new(time, dialogueHist));
                 break;
-            case "ConversationHistory":
-                var chEvent = theEvent as ConversationHistory;
-                if (_conversationHistory.Any(x => ((ConversationHistory)x.Item2).Id == chEvent.Id))
-                {
-                    // If the conversation already exists, update it
-                    _conversationHistory.RemoveAll(x => ((ConversationHistory)x.Item2).Id == chEvent.Id);
-                }
-                _conversationHistory.Add(new(time,chEvent));
+
+            case ConversationHistory chEvent:
+                _conversationHistory.RemoveAll(x => x.Item2 is ConversationHistory existing && existing.Id == chEvent.Id);
+                _conversationHistory.Add(new(time, chEvent));
                 break;
+
             default:
-                throw new NotImplementedException();
+                throw new NotImplementedException($"Unhandled IHistory type: {theEvent.GetType().Name}");
         }
     }
 
     internal bool Any()
     {
-        return _eventHistory.Any() || _overheardHistory.Any() || _dialogueHistory.Any();
+        return _eventHistory.Count > 0 || _overheardHistory.Count > 0 || _dialogueHistory.Count > 0 || _conversationHistory.Count > 0;
     }
 
-    internal Tuple<StardewTime,IHistory> Last()
+    internal Tuple<StardewTime, IHistory> Last()
     {
-        var lastEvent = _eventHistory.LastOrDefault();
-        var lastOverheard = _overheardHistory.LastOrDefault();
-        var lastDialogue = _dialogueHistory.LastOrDefault();
-        var lastConversation = _conversationHistory.LastOrDefault();
-        // Return the item with the latest time in Item1 of the tuple
-        var lastEventTime = lastEvent?.Item1 ?? new StardewTime();
-        var lastOverheardTime = lastOverheard?.Item1 ?? new StardewTime();
-        var lastDialogueTime = lastDialogue?.Item1 ?? new StardewTime();
-        var lastConversationTime = lastConversation?.Item1 ?? new StardewTime();
-        var lastDlg = lastDialogueTime.CompareTo(lastConversationTime) > 0 ? (lastDialogue,lastDialogueTime) : (lastConversation,lastConversationTime);
-        if (lastEventTime.CompareTo(lastOverheardTime) > 0)
+        Tuple<StardewTime, IHistory> latestItem = null;
+
+        void CheckAndApplyLast(List<Tuple<StardewTime, IHistory>> list)
         {
-            return lastEventTime.CompareTo(lastDlg.Item2) > 0 ? lastEvent : lastDlg.Item1;
+            if (list.Count == 0) return;
+            var candidate = list[list.Count - 1];
+            
+            if (candidate?.Item1 == null) return;
+
+            if (latestItem == null || candidate.Item1.CompareTo(latestItem.Item1) > 0)
+            {
+                latestItem = candidate;
+            }
         }
-        else
-        {
-            return lastOverheardTime.CompareTo(lastDlg.Item2) > 0 ? lastOverheard : lastDlg.Item1;
-        }
+
+        CheckAndApplyLast(_eventHistory);
+        CheckAndApplyLast(_overheardHistory);
+        CheckAndApplyLast(_dialogueHistory);
+        CheckAndApplyLast(_conversationHistory);
+
+        return latestItem;
     }
 
-    internal void RemoveAfter(StardewTime timeNow)
+    internal void RemoveAfter(StardewTime? timeNow)
     {
-        if (_eventHistory.Any(x => x.Item1.After(timeNow)))
-        {
-            _eventHistory.RemoveAll(x => x.Item1.After(timeNow));
-        }
-        if (_overheardHistory.Any(x => x.Item1.After(timeNow)))
-        {
-            _overheardHistory.RemoveAll(x => x.Item1.After(timeNow));
-        }
-        if (_dialogueHistory.Any(x => x.Item1.After(timeNow)))
-        {
-            _dialogueHistory.RemoveAll(x => x.Item1.After(timeNow));
-        }
-        if (_conversationHistory.Any(x => x.Item1.After(timeNow)))
-        {
-            _conversationHistory.RemoveAll(x => x.Item1.After(timeNow));
-        }
+        if (timeNow == null) return;
+        var time = timeNow.Value;
+
+        _eventHistory.RemoveAll(x => x.Item1.After(time));
+        _overheardHistory.RemoveAll(x => x.Item1.After(time));
+        _dialogueHistory.RemoveAll(x => x.Item1.After(time));
+        _conversationHistory.RemoveAll(x => x.Item1.After(time));
     }
 
     internal void RemoveDialogueOverlapping(List<ConversationElement> chatHistory)
     {
-        foreach (var chat in chatHistory)
-        {
-            _dialogueHistory.RemoveAll(x => ((DialogueHistory)x.Item2).Dialogues.Any(z => z.Text.Equals(chat.Text)));
-        }
+        if (chatHistory == null || chatHistory.Count == 0) return;
+
+        var textsToRemove = chatHistory
+            .Where(c => !string.IsNullOrEmpty(c?.Text))
+            .Select(c => c.Text)
+            .ToHashSet();
+
+        if (textsToRemove.Count == 0) return;
+
+        _dialogueHistory.RemoveAll(x => 
+            x.Item2 is DialogueHistory dh && 
+            dh.Dialogues != null && 
+            dh.Dialogues.Any(z => z.Text != null && textsToRemove.Contains(z.Text)));
     }
 
     internal void RemoveOverheardOverlapping(string name, List<StardewValley.DialogueLine> overheardDialogue)
     {
-        foreach (var dialogue in overheardDialogue)
-        {
-            _overheardHistory.RemoveAll(x => ((DialogueEventOverheard)x.Item2).dialogues.Any(z => z.Text.Equals(dialogue.Text)) && ((DialogueEventOverheard)x.Item2).name.Equals(name));
-        }
+        if (overheardDialogue == null || overheardDialogue.Count == 0) return;
+
+        var textsToRemove = overheardDialogue
+            .Where(d => !string.IsNullOrEmpty(d.Text))
+            .Select(d => d.Text)
+            .ToHashSet();
+
+        if (textsToRemove.Count == 0) return;
+
+        _overheardHistory.RemoveAll(x => 
+            x.Item2 is DialogueEventOverheard deh && 
+            string.Equals(deh.Name, name, StringComparison.Ordinal) && 
+            deh.Dialogues != null && 
+            deh.Dialogues.Any(z => z.Text != null && textsToRemove.Contains(z.Text)));
     }
 }

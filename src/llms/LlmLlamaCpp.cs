@@ -3,17 +3,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
-using Newtonsoft.Json; // Changed
-using Newtonsoft.Json.Linq; // Added
+using Newtonsoft.Json; 
+using Newtonsoft.Json.Linq; 
 using System.Threading;
 using System.Threading.Tasks;
-using ValleyTalk;
-using ValleyTalk.Platform;
+using ValleytalkReborn;
+using ValleytalkReborn.Platform;
 
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 internal class LlmLlamaCpp : Llm
 {
+    private static readonly HttpClient SharedHttpClient = new HttpClient
+    {
+        Timeout = TimeSpan.FromMinutes(1)
+    };
+
     public LlmLlamaCpp(string url, string promptFormat)
     {
         this.url = url;
@@ -35,29 +40,11 @@ internal class LlmLlamaCpp : Llm
 
     internal override async Task<LlmResponse> RunInference(string systemPromptString, string gameCacheString, string npcCacheString, string promptString, string responseStart = "",int n_predict = 2048,string cacheContext="",bool allowRetry = true)
     {
-
         promptString = gameCacheString + npcCacheString + promptString;
         var fullPrompt = BuildPrompt(systemPromptString, promptString, responseStart);
-        // Create a JSON object with the prompt and other parameters
-        var json = new StringContent(
-            JsonConvert.SerializeObject(new // Changed
-            {
-                prompt = fullPrompt,
-                n_predict = n_predict,
-                stream = false,
-                temperature = n_predict == 1 ? 0 : 0.9,
-                top_p = 0.9,
-                min_p = 0.05,
-                repeat_penalty = 1.05,
-            }),
-            Encoding.UTF8,
-            "application/json"
-        );
 
-        // call out to URL passing the object as the body, and return the result
         bool retry = true;
         
-        // Check network availability on Android
         if (AndroidHelper.IsAndroid && !NetworkHelper.IsNetworkAvailable())
         {
             throw new InvalidOperationException("Network not available");
@@ -69,148 +56,142 @@ internal class LlmLlamaCpp : Llm
             try
             {
                 retry = false;
+                var requestBody = new
+                {
+                    prompt = fullPrompt,
+                    n_predict = n_predict,
+                    stream = false,
+                    temperature = n_predict == 1 ? 0 : 0.9,
+                    top_p = 0.9,
+                    min_p = 0.05,
+                    repeat_penalty = 1.05,
+                };
 
                 if (AndroidHelper.IsAndroid)
                 {
-                    var jsonData = JsonConvert.SerializeObject(new
-                    {
-                        prompt = fullPrompt,
-                        n_predict = n_predict,
-                        stream = false,
-                        temperature = n_predict == 1 ? 0 : 0.9,
-                        top_p = 0.9,
-                        min_p = 0.05,
-                        repeat_penalty = 1.05,
-                    });
+                    var jsonData = JsonConvert.SerializeObject(requestBody);
                     responseString = await NetworkHelper.MakeRequestAsync(url, jsonData);
                 }
                 else
                 {
-                    var client = new HttpClient
-                    {
-                        Timeout = TimeSpan.FromSeconds(ModEntry.Config.QueryTimeout)
-                    };
-                    var response = await client.PostAsync(url, json);
+                    using var jsonContent = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json");
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(ModEntry.Config.QueryTimeout));
+                    
+                    var response = await SharedHttpClient.PostAsync(url, jsonContent, cts.Token);
                     responseString = await response.Content.ReadAsStringAsync();
                 }
 
                 var responseJson = JObject.Parse(responseString);
 
                 var token_stats = responseJson["timings"] as JObject;
-                AddToStats(token_stats); // No change needed here now
+                AddToStats(token_stats);
 
                 if (responseJson == null)
                 {
                     throw new Exception("Failed to parse response");
                 }
-                else
-                {
-                    var contentToken = responseJson["content"];
-                    if (!string.IsNullOrWhiteSpace(contentToken?.ToString()))
-                    {
-                        return new LlmResponse(contentToken.ToString());
-                    }
-                    else
-                    {
-                        throw new Exception("No content in response");
-                    }
 
+                var contentToken = responseJson["content"];
+                if (!string.IsNullOrWhiteSpace(contentToken?.ToString()))
+                {
+                    return new LlmResponse(contentToken.ToString());
                 }
+                
+                throw new Exception("No content in response");
             }
             catch (Exception ex)
             {
                 Log.Debug(ex.Message);
                 Log.Debug("Retrying...");
                 retry = allowRetry;
-                Thread.Sleep(1000);
+                // 【优化】改为非阻塞异步等待 1 秒，游戏不会硬性冻结卡死
+                await Task.Delay(1000);
             }
         }
-        return new LlmResponse(
-            responseString, 500
-        );
+        return new LlmResponse(responseString, 500);
     }
     
-    internal override Dictionary<string,double>[] RunInferenceProbabilities(string fullPrompt,int n_predict = 1)
+    internal override Dictionary<string,double>[] RunInferenceProbabilities(string fullPrompt, int n_predict = 1)
     {
-      // Create a JSON object with the prompt and other parameters
-        var json = new StringContent(
-            JsonConvert.SerializeObject(new // Changed
-            {
-                prompt = fullPrompt,
-                n_predict = n_predict,
-                stream = false,
-                temperature = 0.8,
-                top_p = 0.88,
-                min_p = 0.05,
-                //repeat_penalty = 1.05,
-                //presence_penalty = 0.0,
-                cache_prompt = true,
-                n_probs = 10
-            }),
-            Encoding.UTF8,
-            "application/json"
-        );
-
-        // call out to URL passing the object as the body, and return the result
-        var client = new HttpClient
+        try
         {
-            Timeout = TimeSpan.FromMinutes(1)
-        };
-        bool retry=true;
-        while (retry)
-        {
-            try
+            // 【优化】使用 Task.Run 隔离异步调用，规避 .Result 造成的死锁风险
+            return Task.Run(async () =>
             {
-                retry=false;
-                var response = client.PostAsync(url, json).Result;
-                // Return the 'content' element of the response json
-                var responseString = response.Content.ReadAsStringAsync().Result;
-                var responseJson = JObject.Parse(responseString); // Changed
-                
-                var token_stats = responseJson["timings"] as JObject; // Changed and cast to JObject
-                AddToStats(token_stats); // No change needed here now
-
-                if (responseJson == null)
-                {
-                    throw new Exception("Failed to parse response");
-                }
-                else
-                {
-                    var result = new List<Dictionary<string, double>>();
-                    var probsToken = responseJson["completion_probabilities"]; // Changed
-                    if (probsToken is JArray probsArray) // Changed
+                var jsonContent = new StringContent(
+                    JsonConvert.SerializeObject(new 
                     {
-                        foreach (var prob in probsArray)
+                        prompt = fullPrompt,
+                        n_predict = n_predict,
+                        stream = false,
+                        temperature = 0.8,
+                        top_p = 0.88,
+                        min_p = 0.05,
+                        cache_prompt = true,
+                        n_probs = 10
+                    }),
+                    Encoding.UTF8,
+                    "application/json"
+                );
+
+                bool retry = true;
+                while (retry)
+                {
+                    try
+                    {
+                        retry = false;
+                        using var response = await SharedHttpClient.PostAsync(url, jsonContent);
+                        var responseString = await response.Content.ReadAsStringAsync();
+                        var responseJson = JObject.Parse(responseString);
+                        
+                        var token_stats = responseJson["timings"] as JObject;
+                        AddToStats(token_stats);
+
+                        if (responseJson == null)
                         {
-                            var probDict = new Dictionary<string,double>();
-                            var innerProbsToken = prob["probs"];
-                            if (innerProbsToken is JArray innerProbsArray) // Changed
+                            throw new Exception("Failed to parse response");
+                        }
+
+                        var result = new List<Dictionary<string, double>>();
+                        var probsToken = responseJson["completion_probabilities"]; 
+                        if (probsToken is JArray probsArray) 
+                        {
+                            foreach (var prob in probsArray)
                             {
-                                foreach (var prop in innerProbsArray)
+                                var probDict = new Dictionary<string,double>();
+                                var innerProbsToken = prob["probs"];
+                                if (innerProbsToken is JArray innerProbsArray) 
                                 {
-                                    var token = prop["tok_str"]?.ToString(); // Changed
-                                    var probability = prop["prob"]?.Value<double>(); // Changed
-                                    if (token != null && probability.HasValue)
+                                    foreach (var prop in innerProbsArray)
                                     {
-                                        probDict[token] = probability.Value;
+                                        var token = prop["tok_str"]?.ToString(); 
+                                        var probability = prop["prob"]?.Value<double>(); 
+                                        if (token != null && probability.HasValue)
+                                        {
+                                            probDict[token] = probability.Value;
+                                        }
                                     }
                                 }
+                                result.Add(probDict);
                             }
-                            result.Add(probDict);
                         }
+                        return result.ToArray();
                     }
-                    return result.ToArray();
+                    catch(Exception ex)
+                    {
+                        Log.Debug(ex.Message);
+                        Log.Debug("Retrying...");
+                        retry = true;
+                        await Task.Delay(1000);
+                    }
                 }
-            }
-            catch(Exception ex)
-            {
-                Log.Debug(ex.Message);
-                Log.Debug("Retrying...");
-                retry=true;
-                Thread.Sleep(1000);
-            }
+                return Array.Empty<Dictionary<string, double>>();
+            }).GetAwaiter().GetResult();
         }
-        return Array.Empty<Dictionary<string, double>>();
+        catch (Exception ex)
+        {
+            Log.Error(ex.Message);
+            return Array.Empty<Dictionary<string, double>>();
+        }
     }
-
 }

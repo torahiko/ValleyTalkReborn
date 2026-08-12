@@ -1,84 +1,106 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using HarmonyLib;
 using StardewValley;
-using System.Linq;
 
-namespace ValleyTalk
+namespace ValleytalkReborn
 {
     [HarmonyPatch(typeof(Dialogue), nameof(Dialogue.chooseResponse))]
     public class Dialogue_ChooseResponse_Patch
     {
-        private static System.Reflection.FieldInfo isLastDialogueInteractiveField;
-        private static System.Reflection.FieldInfo finishedLastDialogueField;
-        private static System.Reflection.MethodInfo parseDialogueStringMethod;
-        private static string respondString;
-
-        static Dialogue_ChooseResponse_Patch()
-        {
-
-            isLastDialogueInteractiveField = typeof(Dialogue).GetField("isLastDialogueInteractive", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            finishedLastDialogueField = typeof(Dialogue).GetField("finishedLastDialogue", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            //isCurrentStringContinuedOnNextScreenField = typeof(Dialogue).GetField("isCurrentStringContinuedOnNextScreen", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            parseDialogueStringMethod = typeof(Dialogue).GetMethod("parseDialogueString", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            respondString = Util.GetString("outputRespond");
-        }
+        // 【优化】使用 Harmony 高性能 FieldRef 替代传统 FieldInfo.SetValue，提升反射运行速度
+        private static readonly AccessTools.FieldRef<Dialogue, bool> FinishedLastDialogueRef =
+            AccessTools.FieldRefAccess<Dialogue, bool>("finishedLastDialogue");
 
         public static bool Prefix(ref Dialogue __instance, ref bool __result, Response response)
         {
+            if (__instance?.speaker == null || response == null)
+            {
+                return true;
+            }
+
             ModEntry.SMonitor.Log($"Dialogue.chooseResponse called with response key: {response.responseKey}", StardewModdingAPI.LogLevel.Trace);
+
             if (!DialogueBuilder.Instance.PatchNpc(__instance.speaker))
             {
                 return true;
             }
-            if (__instance.getResponseOptions().Any(r => !r.responseKey.StartsWith(SldConstants.DialogueKeyPrefix)))
+
+            var responseOptions = __instance.getResponseOptions();
+            if (responseOptions == null || responseOptions.Any(r => r?.responseKey == null || !r.responseKey.StartsWith(SldConstants.DialogueKeyPrefix)))
             {
                 return true;
             }
+
+            // 处理静默选项
             if (response.responseKey == $"{SldConstants.DialogueKeyPrefix}Silent")
             {
-                // Record silent response via new history system
                 DialogueHistoryManager.Instance.RecordPlayerDialogue(__instance.speaker.Name, "...");
                 __result = true;
                 return false;
             }
+
+            // 【优化】动态获取翻译，避免多语言切换或未初始化时失效
+            string respondString = Util.GetString("outputRespond");
             
-            // Get the current dialogue string from __instance
-            // If the last entry is "Respond:", remove it
             var dialogueStrings = __instance.dialogues;
-            if (dialogueStrings.Last().Text == respondString)
+            if (dialogueStrings != null && dialogueStrings.Count > 0)
             {
-                dialogueStrings.RemoveAt(dialogueStrings.Count - 1);
+                // 【Bug 修复】使用 LastOrDefault 防止列表为空时抛出 InvalidOperationException
+                var lastLine = dialogueStrings.LastOrDefault();
+                if (lastLine != null && lastLine.Text == respondString)
+                {
+                    dialogueStrings.RemoveAt(dialogueStrings.Count - 1);
+                }
             }
 
-            var previous = DialogueBuilder.Instance.LastContext.ChatHistory;
-            var dialogueStringIEnum = dialogueStrings.Where(x => !previous.Any(y => y.Text.Contains(x.Text)) && x.Text != "skip");
-            
-            previous.AddRange(dialogueStringIEnum.Select(x => new ConversationElement(x.Text, false)));
+            // 【Bug 修复】防护 LastContext 为 null 的致命空指针隐患
+            var context = DialogueBuilder.Instance.GetContext(__instance.speaker.Name);
+            var previous = context?.ChatHistory ?? new List<ConversationElement>();
 
-            string farmerResponse = response.responseText;
+            if (dialogueStrings != null)
+            {
+                var newLines = dialogueStrings
+                    .Where(x => x != null && x.Text != "skip" && !previous.Any(y => y.Text != null && y.Text.Contains(x.Text)))
+                    .Select(x => new ConversationElement(x.Text, false));
+                
+                previous.AddRange(newLines);
+            }
 
-            // Record player response via new history system
+            string farmerResponse = response.responseText ?? string.Empty;
+
+// 【修复】确保记录前清理玩家选项中的 @ 符号
+            if (farmerResponse.Contains('@') && Game1.player != null)
+            {
+                farmerResponse = farmerResponse.Replace("@", Game1.player.Name);
+            }
+
             DialogueHistoryManager.Instance.RecordPlayerDialogue(__instance.speaker.Name, farmerResponse);
 
             if (response.responseKey == $"{SldConstants.DialogueKeyPrefix}TypedResponse")
             {
-                // Request deferred text input
                 TextInputManager.RequestTextInput(
                     Util.GetString("uiYourResponse"), 
                     __instance.speaker, 
                     __instance.speaker.LoadedDialogueKey ?? "default",
                     previous);
                 
-                // Exit the current dialogue to allow text input
                 __result = true;
                 return false;
             }
-            
-            // Set the isLastDialogueInteractive flag to false using reflection
-            finishedLastDialogueField.SetValue(__instance, false);
+
+            // 【优化】使用高性能委托赋值
+            FinishedLastDialogueRef(__instance) = false;
+
+            var updatedHistory = new List<ConversationElement>(previous)
+            {
+                new ConversationElement(farmerResponse, true)
+            };
 
             AsyncBuilder.Instance.RequestNpcResponse(
                 __instance.speaker, 
-                previous.AddItem(new ConversationElement(farmerResponse, true)).ToArray()
+                updatedHistory.ToArray()
             );
 
             __result = true;

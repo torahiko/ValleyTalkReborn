@@ -1,8 +1,8 @@
-{
+﻿{
     "Changes": [
         {
             "Action": "EditData",
-            "Target": "ValleyTalk/Bios/Olivia",
+            "Target": "ValleyTalkReborn/Bios/Olivia",
             "Entries": {
                 "Biography": "Wealthy, refined woman originally from the Gotoro Empire who now lives in Pelican Town.\n* Mother to Victor, widow of Edward.\n* Lives in an elegant manor house.\n* Former corporate professional turned part-time stock trader.\n* Cultured and sophisticated with expensive tastes.\n\n**Background**\n* Born in the Gotoro Empire to parents who later immigrated to the Ferngill Republic.\n* Still has family trapped in the Gotoro Empire due to ongoing war.\n* Previously worked in a corporate position at Joja Corporation in Zuzu City.\n* Was married to Edward who passed away some time ago.\n* Moved to Pelican Town with her son Victor after leaving corporate life.\n* Semi-retired but continues to trade stocks part-time (approximately 15 hours per week).\n\n**Interests & Hobbies**\n* Wine connoisseur with extensive knowledge of vintages.\n* Practices and teaches yoga.\n* Passionate about painting.\n* Collects Gotoran art and china.\n* Enjoys hosting elegant social gatherings.\n* Regular aerobics participant.\n* Interest in fine dining and cooking.",
                 "Relationships": {
@@ -106,7 +106,7 @@
         },
         {
             "Action": "EditData",
-            "Target": "ValleyTalk/Bios/Caroline",
+            "Target": "ValleyTalkReborn/Bios/Caroline",
             "TargetField": [
                 "Relationships"
             ],
@@ -121,7 +121,7 @@
         },
         {
             "Action": "EditData",
-            "Target": "ValleyTalk/Bios/Jodi",
+            "Target": "ValleyTalkReborn/Bios/Jodi",
             "TargetField": [
                 "Relationships"
             ],
@@ -136,7 +136,7 @@
         },
         {
             "Action": "EditData",
-            "Target": "ValleyTalk/Bios/Pam",
+            "Target": "ValleyTalkReborn/Bios/Pam",
             "TargetField": [
                 "Relationships"
             ],
@@ -151,7 +151,7 @@
         },
         {
             "Action": "EditData",
-            "Target": "ValleyTalk/Bios/Leah",
+            "Target": "ValleyTalkReborn/Bios/Leah",
             "TargetField": [
                 "Relationships"
             ],

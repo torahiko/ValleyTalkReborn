@@ -1,22 +1,25 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq; // Added
+using System.Linq; 
 using System.Net.Http;
 using System.Text;
-using Newtonsoft.Json; // Changed
-using Newtonsoft.Json.Linq; // Added
+using Newtonsoft.Json; 
+using Newtonsoft.Json.Linq; 
 using System.Threading;
 using System.Threading.Tasks;
-using ValleyTalk;
-using ValleyTalk.Platform;
+using ValleytalkReborn;
+using ValleytalkReborn.Platform;
 
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 internal class LlmGemini : Llm, IGetModelNames
 {
     private string apiKey;
     private string modelName;
+
+    // 复用 HttpClient，避免循环中重复创建引发套接字耗尽
+    private static readonly HttpClient SharedHttpClient = new HttpClient();
 
     public LlmGemini(string apiKey, string modelName = null)
     {
@@ -34,91 +37,109 @@ internal class LlmGemini : Llm, IGetModelNames
 
     public string[] GetModelNames()
     {
-        try{
-        var modelsUrl = $"https://generativelanguage.googleapis.com/v1beta/models?key="+apiKey;
-        
-        // Use Android-compatible network helper
-        string responseString;
-        if (AndroidHelper.IsAndroid && NetworkHelper.IsNetworkAvailable())
+        try
         {
-            responseString = NetworkHelper.MakeRequestAsync(modelsUrl).Result;
-        }
-        else
-        {
-            var client = new HttpClient();
-            var response = client.GetAsync(modelsUrl).Result;
-            responseString = response.Content.ReadAsStringAsync().Result;
-        }
-        
-        var responseJson = JObject.Parse(responseString); // Changed
-        var modelsToken = responseJson["models"]; // Changed
-        var modelNames = new List<string>();
-        if (modelsToken is JArray modelsArray) // Changed
-        {
-            foreach (var model in modelsArray)
+            var modelsUrl = $"https://generativelanguage.googleapis.com/v1beta/models?key=" + apiKey;
+            
+            return Task.Run(async () =>
             {
-                var nameToken = model["name"]; // Changed
-                if (nameToken != null)
+                string responseString;
+                if (AndroidHelper.IsAndroid && NetworkHelper.IsNetworkAvailable())
                 {
-                    var name = nameToken.ToString(); // Changed
-                    if (name.StartsWith("models/"))
-                    {
-                        name = name.Substring(7);
-                    }
-                    modelNames.Add(name);
+                    responseString = await NetworkHelper.MakeRequestAsync(modelsUrl);
                 }
-            }
-        }
-        return modelNames.ToArray();
+                else
+                {
+                    responseString = await SharedHttpClient.GetStringAsync(modelsUrl);
+                }
+                
+                var responseJson = JObject.Parse(responseString); 
+                var modelsToken = responseJson["models"]; 
+                var modelNames = new List<string>();
+                
+                if (modelsToken is JArray modelsArray) 
+                {
+                    foreach (var model in modelsArray)
+                    {
+                        var nameToken = model["name"]; 
+                        if (nameToken != null)
+                        {
+                            var name = nameToken.ToString(); 
+                            if (name.StartsWith("models/"))
+                            {
+                                name = name.Substring(7);
+                            }
+                            modelNames.Add(name);
+                        }
+                    }
+                }
+                return modelNames.ToArray();
+            }).GetAwaiter().GetResult();
         }
         catch(Exception ex)
         {
             Log.Debug(ex.Message);
-            return new string[] { };
+            return Array.Empty<string>();
         }
     }
 
-    internal override async Task<LlmResponse> RunInference(string systemPromptString, string gameCacheString, string npcCacheString, string promptString, string responseStart = "",int n_predict = 2048,string cacheContext="",bool allowRetry = true)
+    internal override async Task<LlmResponse> RunInference(string systemPromptString, string gameCacheString, string npcCacheString, string promptString, string responseStart = "", int n_predict = 2048, string cacheContext = "", bool allowRetry = true)
     {
-        var useContext = string.Empty;
-
         promptString = gameCacheString + npcCacheString + promptString;
-        if (!string.IsNullOrEmpty(cacheContext))
-        {
-            useContext = CacheContexts[cacheContext];
-        }
 
         int thinkingBudget = 0;
-        var jsonData = JsonConvert.SerializeObject(new // Changed
+        var toolsPayload = ModEntry.Config.UseNativeToolCalling
+            ? new[] { new { functionDeclarations = AgentToolDefinitions.GetGeminiToolsArray() } }
+            : null;
+
+        // 判断当前模型是否为 Gemma 模型，适配思维配置
+        bool isGemmaModel = !string.IsNullOrEmpty(modelName) && modelName.IndexOf("gemma", StringComparison.OrdinalIgnoreCase) >= 0;
+
+        object generationConfig;
+        if (isGemmaModel)
+        {
+            generationConfig = new
             {
-                safetySettings = new[] 
-                { 
-                    new {category = "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold = "BLOCK_NONE"},
-                    new {category = "HARM_CATEGORY_HARASSMENT", threshold = "BLOCK_MEDIUM_AND_ABOVE"}
-                },
-                system_instruction = new { parts = new { text = systemPromptString } },
-                contents = new { parts = new { text = promptString } },
-                generationConfig = new { maxOutputTokens = n_predict, temperature = 0.9, topP = 0.9, thinkingConfig = new { thinkingBudget  } }
-            });
+                maxOutputTokens = n_predict,
+                temperature = 0.9,
+                topP = 0.9
+            };
+        }
+        else
+        {
+            generationConfig = new
+            {
+                maxOutputTokens = n_predict,
+                temperature = 0.9,
+                topP = 0.9,
+                thinkingConfig = new { thinkingBudget }
+            };
+        }
 
-        var json = new StringContent(
-            jsonData,
-            Encoding.UTF8,
-            "application/json"
-        );
+        var jsonData = JsonConvert.SerializeObject(new
+        {
+            safetySettings = new[]
+            {
+                new {category = "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold = "BLOCK_NONE"},
+                new {category = "HARM_CATEGORY_HARASSMENT", threshold = "BLOCK_MEDIUM_AND_ABOVE"}
+            },
+            system_instruction = new { parts = new { text = systemPromptString } },
+            contents = new { parts = new { text = promptString } },
+            generationConfig = generationConfig,
+            tools = toolsPayload
+        });
 
-        // call out to URL passing the object as the body, and return the result
         int retry = allowRetry ? 3 : 1;
         var fullUrl = url + apiKey;
         
-        // Check network availability on Android
         if (AndroidHelper.IsAndroid && !NetworkHelper.IsNetworkAvailable())
         {
             throw new InvalidOperationException("Network not available");
         }
 
         string responseString = "";
-        HttpResponseMessage response = new HttpResponseMessage();
+        int statusCode = 500;
+
         while (retry > 0)
         {
             try
@@ -126,62 +147,88 @@ internal class LlmGemini : Llm, IGetModelNames
                 if (AndroidHelper.IsAndroid)
                 {
                     responseString = await NetworkHelper.MakeRequestAsync(fullUrl, jsonData);
+                    statusCode = 200;
                 }
                 else
                 {
-                    var client = new HttpClient
-                    {
-                        Timeout = TimeSpan.FromSeconds(ModEntry.Config.QueryTimeout)
-                    };
-                    response = await client.PostAsync(fullUrl, json);
+                    using var jsonContent = new StringContent(jsonData, Encoding.UTF8, "application/json");
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(ModEntry.Config.QueryTimeout));
+                    var response = await SharedHttpClient.PostAsync(fullUrl, jsonContent, cts.Token);
+                    
+                    statusCode = (int)response.StatusCode;
                     responseString = await response.Content.ReadAsStringAsync();
                 }
                 
-                var responseJson = JObject.Parse(responseString); // Changed
-                
+                var responseJson = JObject.Parse(responseString); 
                 if (responseJson == null)
                 {
                     throw new Exception("Failed to parse response");
                 }
-                else
+                
+                if (!responseJson.TryGetValue("candidates", out var candidatesToken) || !(candidatesToken is JArray candidatesArray) || !candidatesArray.HasValues) { retry--; continue; } 
+                
+                var firstCandidate = candidatesArray.FirstOrDefault();
+                if (firstCandidate == null) { retry--; continue; } 
+
+                var finishReasonToken = firstCandidate["finishReason"];
+                if (finishReasonToken == null || finishReasonToken.ToString() != "STOP") { retry--; continue; } 
+                
+                var contentToken = firstCandidate["content"];
+                if (contentToken == null) { retry--; continue; } 
+
+                var partsToken = contentToken["parts"];
+                if (!(partsToken is JArray partsArray) || !partsArray.HasValues) { retry--; continue; }
+
+                var toolResponse = new LlmResponse("", true);
+                string textPart = null;
+
+                foreach (var part in partsArray)
                 {
-                    
-                    if (!responseJson.TryGetValue("candidates", out var candidatesToken) || !(candidatesToken is JArray candidatesArray) || !candidatesArray.HasValues) { retry--; continue; } // Changed
-                    
-                    var firstCandidate = candidatesArray.FirstOrDefault();
-                    if (firstCandidate == null) { retry--; continue; } 
-
-                    var finishReasonToken = firstCandidate["finishReason"];
-                    if (finishReasonToken == null || finishReasonToken.ToString() != "STOP") { retry--; continue; } 
-                    var contentToken = firstCandidate["content"];
-                    if (contentToken == null) { retry--; continue; } 
-
-                    var partsToken = contentToken["parts"];
-                    if (!(partsToken is JArray partsArray) || !partsArray.HasValues) { retry--; continue; } 
-
-                    var firstPart = partsArray.FirstOrDefault();
-                    if (firstPart == null) { retry--; continue; } 
-
-                    var textToken = firstPart["text"];
-                    if (textToken == null) { retry--; continue; } 
-                    
-                    var text = textToken.ToString(); 
-                    if (!string.IsNullOrWhiteSpace(text))
+                    var funcCallToken = part["functionCall"];
+                    if (funcCallToken != null && funcCallToken.Type != JTokenType.Null)
                     {
-                        return new LlmResponse(text);
+                        var funcName = funcCallToken["name"]?.ToString();
+                        var argsToken = funcCallToken["args"];
+                        var funcArgs = argsToken != null ? argsToken.ToString(Newtonsoft.Json.Formatting.None) : "{}";
+                        if (!string.IsNullOrEmpty(funcName))
+                            toolResponse.ToolCalls.Add(new ToolCallData { FunctionName = funcName, JsonArguments = funcArgs });
                     }
-                    return new LlmResponse("Empty response", (int)response.StatusCode);
+                    else if (part["text"] != null && textPart == null)
+                    {
+                        textPart = part["text"].ToString();
+                    }
                 }
+
+                if (toolResponse.ToolCalls.Count > 0)
+                {
+                    toolResponse.Text = textPart ?? "";
+                    Log.Debug($"[LlmGemini] Tool calls received: {toolResponse.ToolCalls.Count}");
+                    return toolResponse;
+                }
+
+                var firstPart = partsArray.FirstOrDefault();
+                if (firstPart == null) { retry--; continue; }
+
+                var textToken = firstPart["text"];
+                if (textToken == null) { retry--; continue; }
+                
+                var text = textToken.ToString(); 
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    return new LlmResponse(text);
+                }
+                
+                return new LlmResponse("Empty response", statusCode);
             }
             catch(Exception ex)
             {
                 Log.Debug(ex.Message);
                 Log.Debug("Retrying...");
                 retry--;
-                Thread.Sleep(100);
+                await Task.Delay(100);
             }
         }
-        return new LlmResponse(responseString, (int)response.StatusCode);
+        return new LlmResponse(responseString, statusCode);
     }
 
     internal override Dictionary<string, double>[] RunInferenceProbabilities(string fullPrompt, int n_predict = 1)

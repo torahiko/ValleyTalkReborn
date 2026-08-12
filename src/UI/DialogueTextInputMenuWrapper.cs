@@ -1,9 +1,10 @@
+using Microsoft.Xna.Framework;
 using StardewValley.Menus;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using ValleyTalk.Platform;
+using ValleytalkReborn.Platform;
 
-namespace ValleyTalk
+namespace ValleytalkReborn
 {
     /// <summary>
     /// Wrapper to integrate DialogueTextInputMenu with Stardew Valley's menu system
@@ -28,7 +29,7 @@ namespace ValleyTalk
 
         public override void draw(SpriteBatch b)
         {
-            _innerMenu.Draw(b);
+            _innerMenu.draw(b);
         }
 
         public override void receiveLeftClick(int x, int y, bool playSound = true)
@@ -50,6 +51,16 @@ namespace ValleyTalk
         {
             _innerMenu.Close();
             base.cleanupBeforeExit();
+        }
+
+        /// <summary>
+        /// Passes window size changes down to the inner menu so it can
+        /// recalculate responsive layout (instead of per-frame Recenter).
+        /// </summary>
+        public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
+        {
+            base.gameWindowSizeChanged(oldBounds, newBounds);
+            _innerMenu.gameWindowSizeChanged(oldBounds, newBounds);
         }
     }
 

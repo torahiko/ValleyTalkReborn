@@ -2,7 +2,7 @@
 using StardewModdingAPI.Events;
 using StardewValley;
 
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 /// <summary>
 /// Subscribes to dialogue events to enable nearby NPCs to "overhear" conversations.
@@ -66,7 +66,7 @@ internal static class TalkSubscriber
 
                 string template = $"Overheard {talkingNpcName} chatting with the farmer.";
 
-                PerceptionManager.Instance.Record("Talk", template, npcName, ModEntry.Config.PerceptionTalkLifetime, false);
+                PerceptionManager.Instance.Record("Talk", template, npcName, ModEntry.Config.PerceptionTalkLifetime, isLandmark: false);
             }
         }
     }

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 internal class LlmDummy : Llm
 {

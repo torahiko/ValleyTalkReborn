@@ -1,8 +1,8 @@
-{
+﻿{
     "Changes": [
       {
         "Action": "EditData",
-        "Target": "ValleyTalk/Bios/Andy",
+        "Target": "ValleyTalkReborn/Bios/Andy",
         "Entries": {
             "Biography": "Andy is a gruff, elderly farmer who lives and works alone at Fairhaven Farm in Stardew Valley. He is passionate about agriculture and takes great pride in his crops and foraging skills. Despite his sometimes abrasive personality, Andy has a kind heart and values his friendships with the other residents of the valley.\n\n**Interests:**\n- **Farming**: Andy\u0027s primary passion is farming, and he dedicates most of his time to tending his crops and maintaining Fairhaven Farm. \n- **Foraging**: He also enjoys foraging in Cindersap Forest, searching for rare ingredients to use on his farm or sell for profit.\n- **Cooking**: Andy takes pride in his cooking skills, particularly when it comes to traditional farmer\u0027s meals and preserves made from his own produce.\n\n**Background:**\nAndy has lived in Stardew Valley for many years, witnessing the changes in the community and the challenges faced by local farmers. He once had close friendships with Jerry and Elizabeth, the former owners of Aurora Vineyard, as well as Alexa from Stardust Farm. However, economic hardships during the great recession forced them to leave the valley, which deeply affected Andy. Despite these setbacks, he persevered and continued to manage Fairhaven Farm independently. At festivals, Andy often discusses his farming experiences and foraging finds with other attendees. Andy is a big fan of Joja Corporation products and often advocates them in his farming and lifestyle.",
             "Relationships": {
@@ -60,7 +60,7 @@
       },
       {
         "Action": "EditData",
-        "Target": "ValleyTalk/Bios/Lewis",
+        "Target": "ValleyTalkReborn/Bios/Lewis",
         "TargetField": [ "Relationships" ],
         "Priority": "Late",
         "Entries": {
@@ -73,7 +73,7 @@
       },
       {
         "Action": "EditData",
-        "Target": "ValleyTalk/Bios/Pierre",
+        "Target": "ValleyTalkReborn/Bios/Pierre",
         "TargetField": [ "Relationships" ],
         "Priority": "Late",
         "Entries": {

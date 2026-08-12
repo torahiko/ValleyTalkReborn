@@ -1,8 +1,8 @@
-{
+﻿{
   "Changes": [
     {
       "Action": "EditData",
-      "Target": "ValleyTalk/Prompts",
+      "Target": "ValleyTalkReborn/Prompts",
       "Priority": "Early",
       "Entries": {
         "cc_Bus_Repaired": "{{i18n:cc_Bus_Repaired.MaleNpc}}",

@@ -4,9 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using StardewModdingAPI;
 using StardewValley;
-using ValleyTalk;
+using ValleytalkReborn;
 
-namespace ValleyTalk
+namespace ValleytalkReborn
 {
     /// <summary>
     /// Compresses older dialogue history into concise summaries using the LLM.
@@ -107,7 +107,7 @@ namespace ValleyTalk
 
             // Group entries by day
             var groupedByDay = entries
-                .GroupBy(e => $"{e.Timestamp.year}_{e.Timestamp.season}_{e.Timestamp.dayOfMonth}")
+                .GroupBy(e => $"{e.Timestamp.Year}_{e.Timestamp.Season}_{e.Timestamp.DayOfMonth}")
                 .OrderBy(g => g.Key);
 
             // Build dialogue text for the compression prompt
@@ -115,7 +115,7 @@ namespace ValleyTalk
             foreach (var dayGroup in groupedByDay)
             {
                 var first = dayGroup.First();
-                dialogueText.AppendLine($"[{first.Timestamp.season} {first.Timestamp.dayOfMonth}]");
+                dialogueText.AppendLine($"[{first.Timestamp.Season} {first.Timestamp.DayOfMonth}]");
                 foreach (var entry in dayGroup)
                 {
                     string speaker = entry.SpeakerType == SpeakerType.Player

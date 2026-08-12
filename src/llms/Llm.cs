@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq; // Added
+using Newtonsoft.Json.Linq; 
 using System.Threading.Tasks;
-using ValleyTalk;
+using ValleytalkReborn;
 
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 internal abstract class Llm
 {
@@ -24,13 +24,27 @@ internal abstract class Llm
         };
         Llm instance = CreateInstance(llmType, paramsDict);
         Instance = instance;
-        DialogueBuilder.Instance.LlmDisabled = CheckConnection(apiKey, modelName).Result;
+        
+        // 【优化】防止 UI 卡死！先假设连接不可用，然后抛入后台线程去异步验证，验证成功后再悄悄启用
+        DialogueBuilder.Instance.LlmDisabled = true; 
+        Task.Run(async () => 
+        {
+            bool isDisabled = await CheckConnection(apiKey, modelName);
+            DialogueBuilder.Instance.LlmDisabled = isDisabled;
+        });
     }
 
     private static async Task<bool> CheckConnection(string apiKey, string modelName)
     {
         if (ModEntry.Config.SuppressConnectionCheck)
             return false;
+
+        // 【新增防线】如果 API Key 或 Model Name 为空，直接判定连接不可用，拦截无效的网络测试请求
+        if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(modelName))
+        {
+            ModEntry.SMonitor.Log($"[ValleytalkReborn] API Key 或模型名称未填写，暂停模型连接测试。", StardewModdingAPI.LogLevel.Warn);
+            return true; // Connection failed/disabled
+        }
 
         var response = await Instance.RunInference("You are performing LLM connection testing", "Please just ", "respond with ", "'Connection successful'", allowRetry: false);
         if (!response.IsSuccess || response.Text.Length < 5)
@@ -40,59 +54,20 @@ internal abstract class Llm
             {
                 ModEntry.SMonitor.Log($"Error message: {response.ErrorMessage}", StardewModdingAPI.LogLevel.Error);
             }
-            if (string.IsNullOrWhiteSpace(apiKey))
-            {
-                ModEntry.SMonitor.Log(Util.GetString("modelCheckApiKey", returnNull: true) ?? "API key is not provided. Please check the configuration.", StardewModdingAPI.LogLevel.Error);
-            }
-            else
-            {
-                var getList = Llm.Instance as IGetModelNames;
-                if (getList != null)
-                {
-                    if (string.IsNullOrWhiteSpace(modelName))
-                    {
-                        ModEntry.SMonitor.Log(Util.GetString("modelCheckModelName", returnNull: true) ?? "Model name is not provided. Usually this is requires, please check the configuration.", StardewModdingAPI.LogLevel.Error);
-                    }
-                    var modelNames = getList.GetModelNames();
-                    if (modelNames.Any())
-                    {
-                        if (modelNames.Contains(modelName))
-                        {
-                            ModEntry.SMonitor.Log(Util.GetString("modelCheckValidModelName", returnNull: true) ?? "Can retreive model names and model name is a valid option.  Possible causes - model is not a text generation model, insecure endpoint specified or incorrect API key (some providers).", StardewModdingAPI.LogLevel.Error);
-                        }
-                        else
-                        {
-                            ModEntry.SMonitor.Log(Util.GetString("modelCheckCantGenerate", returnNull: true) ?? "Can retreive model names but not generate dialogue. Check the model name is correctly configured.", StardewModdingAPI.LogLevel.Error);
-                        }
-                        if ((Llm.Instance is LlmOAICompatible || Llm.Instance is LlmLlamaCpp) && !Llm.Instance.url.Contains("https"))
-                        {
-                            ModEntry.SMonitor.Log(Util.GetString("modelCheckInsecure", returnNull: true) ?? "The server address specified does not use a secure connection (https). This can block text generation.", StardewModdingAPI.LogLevel.Error);
-                        }
-                    }
-                    else
-                    {
-                        ModEntry.SMonitor.Log(Util.GetString("modelCheckGetNames", returnNull: true) ?? "Unable to get model names or generate dialogue.  Please check the API Key is correctly entered.", StardewModdingAPI.LogLevel.Error);
-                    }
-                }
-                else
-                {
-                    ModEntry.SMonitor.Log(Util.GetString("modelCheckGenericError", returnNull: true) ?? "Please check the server address and details.", StardewModdingAPI.LogLevel.Error);
-                }
-            }
-            return true;
+
+            // 避免在连接测试失败后再重复卡顿调用 GetModelNames
+            return true; // Connection failed
         }
         else
         {
             ModEntry.SMonitor.Log(Util.GetString("modelCheckSuccess", returnNull: true) ?? "Connected to the model successfully.", StardewModdingAPI.LogLevel.Info);
-            return false;
+            return false; // Connection successful
         }
     }
 
     public static Llm CreateInstance(Type llmType, Dictionary<string, string> paramsDict)
     {
-        // Find the best constructor
         var constructor = llmType.GetConstructors().OrderByDescending(x => x.GetParameters().Length).First();
-        // Construct an array of parameters by name matching
         var parameters = constructor.GetParameters().Select(x =>
         {
             if (paramsDict.TryGetValue(x.Name, out var value))
@@ -101,8 +76,7 @@ internal abstract class Llm
             }
             return x.HasDefaultValue ? x.DefaultValue : null;
         }).ToArray();
-        var instance = (Llm)Activator.CreateInstance(llmType, parameters);
-        return instance;
+        return (Llm)Activator.CreateInstance(llmType, parameters);
     }
 
     protected string url;
@@ -112,31 +86,26 @@ internal abstract class Llm
     private double _totalInferenceTime;
 
     public abstract bool IsHighlySensoredModel { get; }
-
     public abstract string ExtraInstructions { get; }
-
     public string TokenStats => $"Prompt: {_totalPrompts} tokens in {_totalPromptTime}ms, Inference: {_totalInference} tokens in {_totalInferenceTime}ms";
-    internal abstract Task<LlmResponse> RunInference(string systemPromptString, string gameCacheString, string npcCacheString, string promptString, string responseStart = "",int n_predict = 150,string cacheContext="",bool allowRetry = true);
     
+    internal abstract Task<LlmResponse> RunInference(string systemPromptString, string gameCacheString, string npcCacheString, string promptString, string responseStart = "",int n_predict = 150,string cacheContext="",bool allowRetry = true);
     internal abstract Dictionary<string,double>[] RunInferenceProbabilities(string fullPrompt,int n_predict = 1);
 
-    protected void AddToStats(JObject token_stats) // Changed JsonElement to JObject
+    protected void AddToStats(JObject token_stats) 
     {
-        if (token_stats == null) return; // Added null check
+        if (token_stats == null) return; 
 
-        _totalPrompts += token_stats.Value<long?>("prompt_n") ?? 0; // Changed to use JObject access
-        _totalPromptTime += token_stats.Value<double?>("prompt_ms") ?? 0.0; // Changed to use JObject access
-        _totalInference += token_stats.Value<long?>("predicted_n") ?? 0; // Changed to use JObject access
-        _totalInferenceTime += token_stats.Value<double?>("predicted_ms") ?? 0.0; // Changed to use JObject access
+        _totalPrompts += token_stats.Value<long?>("prompt_n") ?? 0; 
+        _totalPromptTime += token_stats.Value<double?>("prompt_ms") ?? 0.0; 
+        _totalInference += token_stats.Value<long?>("predicted_n") ?? 0; 
+        _totalInferenceTime += token_stats.Value<double?>("predicted_ms") ?? 0.0; 
     }
 
     internal double[] GetProbabilities(string prompt, string[][] options)
     {
-        // Build a map from tokens to option numbers
         var map = BuildMap(options);
-
-        var result = FindTokensRecursive(prompt, map, string.Empty);
-        return result;
+        return FindTokensRecursive(prompt, map, string.Empty);
     }
 
     private static Dictionary<string, int> BuildMap(string[][] options)
@@ -149,7 +118,6 @@ internal abstract class Llm
                 map[option] = i;
             }
         }
-
         return map;
     }
 
@@ -159,6 +127,7 @@ internal abstract class Llm
         var fullPrompt = prompt + prefix;
         var tokens = RunInferenceProbabilities(fullPrompt, 1)[0];
         var result = new double[maxOut + 1];
+        
         foreach (var token in tokens)
         {
             if (token.Value == 0) continue;

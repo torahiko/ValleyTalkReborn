@@ -1,31 +1,46 @@
 using System;
 
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
-/// <summary>
-/// Represents a single perception record that an NPC can "know" about.
-/// Only the latest record per Key is kept — new records overwrite old ones.
-/// </summary>
 internal class PerceptionEntry
 {
-    /// <summary>Behavior key, e.g. "Eat", "Fish", "Talk", "Harvest".</summary>
-    public string Key { get; set; } = "";
+    public string Key { get; set; } = string.Empty;
+    public string Template { get; set; } = string.Empty;
 
-    /// <summary>Pre-filled template sentence describing the action.</summary>
-    public string Template { get; set; } = "";
+    public string NpcName { get; set; } = string.Empty;
 
-    /// <summary>Witness NPC name. Null or empty means global (town-wide broadcast).</summary>
-    public string NpcName { get; set; } = "";
-
-    /// <summary>When the perception was recorded.</summary>
+    /// <summary>Used for exact sorting.</summary>
     public DateTime Timestamp { get; set; } = DateTime.Now;
 
-    /// <summary>Lifetime in minutes before the perception expires.</summary>
-    public int LifetimeMinutes { get; set; } = 5;
+    /// <summary>In-game time when this was recorded (e.g., 1430 for 2:30 PM).</summary>
+    public int RecordedTimeOfDay { get; set; } = 600;
 
-    /// <summary>Whether this is a global (town-wide) broadcast perception.</summary>
-    public bool IsGlobal { get; set; } = false;
+    /// <summary>Lifetime in in-game hours. Values >= 20 mean all-day.</summary>
+    public int LifetimeHours { get; set; } = 2;
 
-    /// <summary>Stardew Valley 1.6 string item ID associated with this perception (e.g. for "Eat" actions).</summary>
+    /// <summary>
+    /// True  → enters the global gossip queue (Track 1, max 2, town-wide snapshots).
+    /// False → enters the farmer's personal bucket (Track 2, max 3, eyewitness-filtered).
+    /// </summary>
+    public bool IsGossip { get; set; } = false;
+
+    /// <summary>
+    /// Condition C: landmark/rare event that broadcasts town-wide regardless of NPC presence.
+    /// E.g. catching a Legend fish. When true, all NPCs receive this entry regardless of location.
+    /// </summary>
+    public bool IsLandmark { get; set; } = false;
+
+    /// <summary>
+    /// The game location name where this event occurred (e.g. "Saloon", "Beach").
+    /// Used by the eyewitness filter: NPCs present at this location can "see" this event.
+    /// </summary>
+    public string LocationName { get; set; } = string.Empty;
+
+    /// <summary>Item ID for dynamic gift-taste evaluation (used by Eat and Gift perceptions).</summary>
     public string ItemId { get; set; } = null;
+
+    /// <summary>
+    /// True → already processed by nightly consolidation; skip during prompt injection the next day.
+    /// </summary>
+    public bool IsConsolidated { get; set; } = false;
 }

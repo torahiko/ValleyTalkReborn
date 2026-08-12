@@ -2,7 +2,7 @@
 using StardewModdingAPI.Events;
 using StardewValley;
 
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 /// <summary>
 /// Tracks harvests and records town-wide broadcasts when player ships items.
@@ -68,6 +68,6 @@ internal static class HarvestSubscriber
         string template = $"The farm harvested {qualityPrefix}{cropName} today.";
         int lifetime = ModEntry.Config.PerceptionHarvestLifetime;
 
-        PerceptionManager.Instance.Record("Harvest", template, null, lifetime, true);
+        PerceptionManager.Instance.Record("Harvest", template, null, lifetime, isLandmark: true);
     }
 }

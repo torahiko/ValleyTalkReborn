@@ -1,16 +1,16 @@
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 internal class ActivityHistory : IHistory
 {
-    private string activity;
+    private readonly string _activity;
 
     public ActivityHistory(string activity)
     {
-        this.activity = activity;
+        _activity = activity ?? string.Empty;
     }
 
     public string Format(string npcName)
     {
-        return activity;
+        return _activity;
     }
 }

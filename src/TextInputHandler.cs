@@ -1,127 +1,141 @@
-using StardewValley;
 using System;
-using System.Threading.Tasks;
-using StardewModdingAPI.Events;
 using System.Collections.Generic;
 using StardewModdingAPI;
+using StardewModdingAPI.Events;
+using StardewValley;
 
-namespace ValleyTalk
+namespace ValleytalkReborn
 {
     /// <summary>
     /// Manages deferred text input for dialogue responses
     /// </summary>
     public static class TextInputManager
     {
-        private static bool _awaitingTextInput = false;
-        private static string _inputTitle = "";
-        private static NPC _currentNpc = null;
-        private static string _currentDialogueKey = "";
-        private static List<ConversationElement> _currentResponse = new List<ConversationElement>();
+        /// <summary>
+        /// 封装单次文本输入请求的数据包，避免全局分散变量
+        /// </summary>
+        private class InputRequest
+        {
+            public string Title { get; }
+            public NPC Npc { get; }
+            public string DialogueKey { get; }
+            public List<ConversationElement> ResponseHistory { get; }
+
+            public InputRequest(string title, NPC npc, string dialogueKey, List<ConversationElement> responseHistory)
+            {
+                Title = string.IsNullOrWhiteSpace(title) ? "Enter your response" : title;
+                Npc = npc;
+                DialogueKey = dialogueKey ?? string.Empty;
+                ResponseHistory = responseHistory ?? new List<ConversationElement>();
+            }
+        }
+
+        private static InputRequest _pendingRequest;
+        private static bool _isInitialized;
 
         /// <summary>
         /// Initialize the text input manager with mod events
         /// </summary>
-        public static void Initialize()
+        public static void Initialize(IModEvents events)
         {
-            ModEntry.SHelper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
+            if (_isInitialized) return;
+
+            events.GameLoop.UpdateTicked += OnUpdateTicked;
+            _isInitialized = true;
         }
 
         /// <summary>
-        /// Cleans up event subscriptions and resets state. Called when the game is exiting.
+        /// Cleans up event subscriptions and resets state.
         /// </summary>
-        public static void Cleanup()
+        public static void Cleanup(IModEvents events)
         {
-            try
+            if (_isInitialized && events != null)
             {
-                // Unsubscribe from events
-                if (ModEntry.SHelper != null)
-                {
-                    ModEntry.SHelper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
-                }
+                events.GameLoop.UpdateTicked -= OnUpdateTicked;
+                _isInitialized = false;
+            }
 
-                // Reset state
-                _awaitingTextInput = false;
-                _inputTitle = "";
-                _currentNpc = null;
-                _currentDialogueKey = "";
-                _currentResponse = new List<ConversationElement>();
-            }
-            catch (Exception ex)
-            {
-                ModEntry.SMonitor?.Log($"[TextInputManager] Error during cleanup: {ex.Message}", LogLevel.Warn);
-            }
+            _pendingRequest = null;
         }
 
         /// <summary>
-        /// Request text input - this will be handled on the next frame
+        /// Request text input - this will be handled on the next frame when no active menu is present
         /// </summary>
         public static void RequestTextInput(string title, NPC npc, string dialogueKey = "", List<ConversationElement> dialogueHistory = null)
         {
-            _awaitingTextInput = true;
-            _inputTitle = title ?? "Enter your response";
-            _currentNpc = npc;
-            _currentDialogueKey = dialogueKey;
-            _currentResponse = dialogueHistory ?? new List<ConversationElement>();
+            if (npc == null)
+            {
+                ModEntry.SMonitor?.Log("[TextInputManager] Ignored RequestTextInput call because NPC was null.", LogLevel.Warn);
+                return;
+            }
+
+            var request = new InputRequest(title, npc, dialogueKey, dialogueHistory);
+
+            // 如果当前没有活跃菜单（如 Alt+点击直接触发），立即显示
+            if (Game1.activeClickableMenu == null)
+            {
+                ShowTextInputMenu(request);
+            }
+            else
+            {
+                // 有菜单正在显示（如从对话选项触发），等菜单关闭后再显示
+                _pendingRequest = request;
+            }
         }
 
         private static void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
         {
-            // Only show the input menu when we're not in a dialogue and input is requested
-            if (_awaitingTextInput && Game1.activeClickableMenu == null)
+            if (_pendingRequest != null && Game1.activeClickableMenu == null)
             {
-                _awaitingTextInput = false;
-                ShowTextInputMenu();
+                var request = _pendingRequest;
+                _pendingRequest = null;
+                ShowTextInputMenu(request);
             }
         }
 
-        private static void ShowTextInputMenu()
+        private static void ShowTextInputMenu(InputRequest request)
         {
             try
             {
-                var textInputMenu = new DialogueTextInputMenu(_inputTitle, OnTextEntered, _currentNpc);
+                // 通过 lambda 闭包直接将 request 传递给回调，无需依赖全局静态状态
+                var textInputMenu = new DialogueTextInputMenu(request.Title, text => OnTextEntered(text, request), request.Npc);
                 Game1.activeClickableMenu = new DialogueTextInputMenuWrapper(textInputMenu);
             }
             catch (Exception ex)
             {
-                ModEntry.SMonitor?.Log($"Error showing text input menu: {ex.Message}", StardewModdingAPI.LogLevel.Error);
+                ModEntry.SMonitor?.Log($"Error showing text input menu: {ex.Message}", LogLevel.Error);
             }
         }
 
-        private static void OnTextEntered(string enteredText)
+        private static void OnTextEntered(string enteredText, InputRequest request)
         {
             Game1.exitActiveMenu();
 
-            if (_currentNpc == null || string.IsNullOrWhiteSpace(enteredText))
+            if (string.IsNullOrWhiteSpace(enteredText))
             {
-                // Reset state
-                _currentNpc = null;
-                _currentDialogueKey = "";
-                _inputTitle = "";
                 return;
             }
+
             try
             {
-                // Also record player dialogue via new history system
-                DialogueHistoryManager.Instance.RecordPlayerDialogue(_currentNpc.Name, enteredText);
+                // Record player dialogue via history system
+                DialogueHistoryManager.Instance.RecordPlayerDialogue(request.Npc.Name, enteredText);
 
-                _currentResponse.Add(new ConversationElement(enteredText, true));
-                _currentNpc.grantConversationFriendship(Game1.player);
+                request.ResponseHistory.Add(new ConversationElement(enteredText, true));
+                request.Npc.grantConversationFriendship(Game1.player);
                 
+                // 创建占位对话框，供 AsyncBuilder 检测到后替换为思考中提示
+                Game1.activeClickableMenu = new StardewValley.Menus.DialogueBox(
+                    new StardewValley.Dialogue(request.Npc, "", "   "));
+                Game1.currentSpeaker = request.Npc;
+
                 // Generate NPC response to the typed input
-                AsyncBuilder.Instance.RequestNpcResponse(_currentNpc, _currentResponse.ToArray());
+                AsyncBuilder.Instance.RequestNpcResponse(request.Npc, request.ResponseHistory.ToArray());
             }
             catch (Exception ex)
             {
-                ModEntry.SMonitor?.Log($"Error handling text input: {ex.Message}", StardewModdingAPI.LogLevel.Error);
-            }
-            finally
-            {
-                // Reset state
-                _currentNpc = null;
-                _currentDialogueKey = "";
-                _inputTitle = "";
+                ModEntry.SMonitor?.Log($"Error handling text input: {ex.Message}", LogLevel.Error);
             }
         }
     }
-
 }

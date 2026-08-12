@@ -1,8 +1,8 @@
-{
+﻿{
     "Changes": [
         {
             "Action": "EditData",
-            "Target": "ValleyTalk/Bios/Sophia",
+            "Target": "ValleyTalkReborn/Bios/Sophia",
             "Entries": {
                 "Biography": "Sophia is the young owner and operator of Blue Moon Vineyard, known for its high-quality wines. She inherited the vineyard after tragically losing her parents, Robert and Alice, in a car accident involving a Joja truck. Sophia lives alone in her family home, working to maintain her parents' legacy while navigating her personal interests and challenges.\\n\\n**Background** \\nSophia has struggled with being alone since her parents' passing on the 4th of Fall. She maintains a close friendship with Gus, who has known her since childhood.\\n\\n**Interests**\\n* Anime series like \"Pink Princess Crusaders\" and \"My Villain Academia\"\\n* Cosplay, creating detailed costumes\\n* Reading graphic novels and manga\\n* Fairy stones and other fairy-related items\\n* Makeup and fashion\\n* Orange chicken, particularly from Grampleton\\n**Significant Game Events**\\n* Manages Blue Moon Vineyard's wine production.\\n* Can build a fairy garden with the player's help.\\n* Can attend comic con in Zuzu City and performs cosplay skits.",
                 "Relationships": {
@@ -95,7 +95,7 @@
         },
         {
             "Action": "EditData",
-            "Target": "ValleyTalk/Bios/Emily",
+            "Target": "ValleyTalkReborn/Bios/Emily",
             "TargetField": [
                 "Relationships"
             ],
@@ -110,7 +110,7 @@
         },
         {
             "Action": "EditData",
-            "Target": "ValleyTalk/Bios/Haley",
+            "Target": "ValleyTalkReborn/Bios/Haley",
             "TargetField": [
                 "Relationships"
             ],

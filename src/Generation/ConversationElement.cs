@@ -1,18 +1,12 @@
 using System;
 
-namespace ValleyTalk
+namespace ValleytalkReborn
 {
-    public class ConversationElement
+    /// <summary>
+    /// 表示单条对话元素（不可变数据记录）
+    /// </summary>
+    public record ConversationElement(string Text, bool IsPlayerLine)
     {
-        public string Text { get; set; }
-        public bool IsPlayerLine { get; set; }
-        public Guid Id { get; }
-
-        public ConversationElement(string text, bool isPlayerLine)
-        {
-            Text = text;
-            IsPlayerLine = isPlayerLine;
-            Id = Guid.NewGuid();
-        }
+        public Guid Id { get; init; } = Guid.NewGuid();
     }
 }

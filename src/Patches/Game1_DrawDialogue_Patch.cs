@@ -1,31 +1,35 @@
-﻿using HarmonyLib;
-using StardewValley;
-using StardewValley.Menus;
-using System;
+﻿using System;
 using System.Linq;
-using System.Threading.Tasks;
-using System.Collections.Generic; // Add reference to ValleyTalk namespace for TextInputHandler
+using HarmonyLib;
+using StardewValley;
 
-namespace ValleyTalk
+namespace ValleytalkReborn
 {
     [HarmonyPatch(typeof(Game1), nameof(Game1.DrawDialogue), new Type[] { typeof(Dialogue) })]
     public class Game1_DrawDialogue_Patch
     {
+        internal static bool DrawingDialogue = false;
 
         public static bool Prefix(Dialogue dialogue)
         {
-            if (dialogue == null || dialogue.dialogues == null || dialogue.dialogues.Count == 0)
+            if (dialogue?.dialogues == null || dialogue.dialogues.Count == 0)
             {
-                return true; // Allow original method to execute if no dialogues
+                return true;
             }
 
-            if (dialogue.dialogues.First().Text.StartsWith(SldConstants.DialogueSkipTag))
+            var firstText = dialogue.dialogues.First()?.Text;
+            if (firstText != null && firstText.StartsWith(SldConstants.DialogueSkipTag))
             {
-                return false; // Skip the original method
+                return false;
             }
 
-            return true; // Allow original method to execute
+            DrawingDialogue = true;
+            return true;
+        }
+
+        public static void Postfix()
+        {
+            DrawingDialogue = false;
         }
     }
-
 }

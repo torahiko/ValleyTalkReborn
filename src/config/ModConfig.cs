@@ -1,9 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using StardewModdingAPI;
 
-namespace ValleyTalk
+namespace ValleytalkReborn
 {
+    public enum SafetyModeLevel { Off, Loose, Moderate, Strict }
+
     public class ModConfig
     {
         private string disableCharacters = string.Empty;
@@ -23,7 +26,6 @@ namespace ValleyTalk
         public string TypedResponses { get; set; } = "With Generated";
         public SButton InitiateTypedDialogueKey { get; set; } = SButton.LeftAlt;
         public bool SuppressConnectionCheck { get; set; } = false;
-        public bool EnableCancelButton { get; set; } = true;
         public bool EnableMemoryCompression { get; set; } = true;
         public int MemoryRecentCount { get; set; } = 10;
 
@@ -37,11 +39,11 @@ namespace ValleyTalk
                     .Split(new[] { ',', ' ' })
                     .Select(s => s.Trim().ToTitleCase())
                     .Where(s => !string.IsNullOrWhiteSpace(s))
-                    .ToList();
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
             }
         }
 
-        internal List<string> DisabledCharactersList { get; private set; } = new List<string>();
+        internal HashSet<string> DisabledCharactersList { get; private set; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         public bool EnablePerceptionSystem { get; set; } = true;
 
@@ -55,9 +57,25 @@ namespace ValleyTalk
         public bool EnablePerceptionPlace { get; set; } = true;
         public bool EnablePerceptionTalk { get; set; } = true;
         public bool EnablePerceptionHarvest { get; set; } = true;
+        public bool EnablePerceptionGift { get; set; } = true;
 
         public int PerceptionTalkLifetime { get; set; } = 1;
         public int PerceptionActionLifetime { get; set; } = 5;
         public int PerceptionHarvestLifetime { get; set; } = 1440;
+
+        // Player Profile Configuration
+        public bool EnablePlayerProfile { get; set; } = true;
+        public string PlayerSexualOrientation { get; set; } = ""; // Single-select
+        public string PlayerCustomBio { get; set; } = ""; // Max 300 chars
+        public bool EnableInfiniteChat { get; set; } = false;
+        public SafetyModeLevel RomanceSafetyMode { get; set; } = SafetyModeLevel.Moderate;
+
+        /// <summary>
+        /// 启用原生 Function Calling（云端 LLM）。
+        /// 设为 false 时回退至 Legacy [ACTION:TAG] 文本解析模式（适合本地 Llama 模型）。
+        /// </summary>
+        public bool UseNativeToolCalling { get; set; } = true;
+        public bool EnableVanillaFirst { get; set; } = true;
+        public bool EnableNightlyConsolidation { get; set; } = true;
     }
 }

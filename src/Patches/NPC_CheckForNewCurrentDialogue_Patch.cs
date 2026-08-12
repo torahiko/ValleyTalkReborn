@@ -1,14 +1,43 @@
 using HarmonyLib;
 using StardewValley;
 
-namespace ValleyTalk
+namespace ValleytalkReborn
 {
     [HarmonyPatch(typeof(NPC), nameof(NPC.checkForNewCurrentDialogue))]
     public class NPC_CheckForNewCurrentDialogue_Patch
     {
+        private static string _lastCheckedNpc = null;
+        private static int _lastHeartLevel = -1;
+
+        internal static void ClearDedupState()
+        {
+            _lastCheckedNpc = null;
+            _lastHeartLevel = -1;
+        }
+
         public static bool Prefix(ref NPC __instance, ref bool __result, int heartLevel, bool noPreface)
         {
-            ModEntry.SMonitor.Log($"NPC {__instance.Name} checking for new dialogue at heart level {heartLevel}", StardewModdingAPI.LogLevel.Trace);
+            if (__instance == null)
+            {
+                return true;
+            }
+
+            // Deduplication: skip logging if same NPC and heart level checked consecutively
+            if (_lastCheckedNpc == __instance.Name && _lastHeartLevel == heartLevel)
+            {
+                // Still execute the core logic, just skip the log
+            }
+            else
+            {
+                _lastCheckedNpc = __instance.Name;
+                _lastHeartLevel = heartLevel;
+
+                if (ModEntry.Config.Debug)
+                {
+                    ModEntry.SMonitor.Log($"NPC {__instance.Name} checking for new dialogue at heart level {heartLevel}", StardewModdingAPI.LogLevel.Trace);
+                }
+            }
+
             if (!DialogueBuilder.Instance.PatchNpc(__instance, ModEntry.Config.GeneralFrequency, true))
             {
                 return true;
@@ -17,16 +46,25 @@ namespace ValleyTalk
             // Check network availability early (Android only)
             if (!NetworkAvailabilityChecker.IsNetworkAvailableWithRetry())
             {
-                ModEntry.SMonitor.Log($"Network not available, skipping AI new dialogue check for {__instance.Name}", StardewModdingAPI.LogLevel.Trace);
+                if (ModEntry.Config.Debug)
+                {
+                    ModEntry.SMonitor.Log($"Network not available, skipping AI new dialogue check for {__instance.Name}", StardewModdingAPI.LogLevel.Trace);
+                }
                 return true; // Use default behavior
             }
 
-            if (Game1.player.currentLocation.Name == "Saloon" || Game1.player.currentLocation.Name == "IslandSouth")
+            if (!ModEntry.Config.EnableVanillaFirst)
             {
-                var newDialogue = new Dialogue(__instance, Game1.player.currentLocation.Name, SldConstants.DialogueGenerationTag);
-                __instance.CurrentDialogue.Push(newDialogue);
-                __result = true;
+                var currentLocationName = Game1.player?.currentLocation?.Name;
+                if (currentLocationName == "Saloon" || currentLocationName == "IslandSouth")
+                {
+                    var newDialogue = new Dialogue(__instance, currentLocationName, SldConstants.DialogueGenerationTag);
+                    __instance.CurrentDialogue.Push(newDialogue);
+                    __result = true;
+                    return false;
+                }
             }
+
             return true;
         }
     }

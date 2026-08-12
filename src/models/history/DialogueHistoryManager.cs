@@ -1,85 +1,69 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using StardewValley;
-using StardewModdingAPI.Events;
 using StardewModdingAPI;
-#nullable disable
+using StardewModdingAPI.Events;
+using StardewValley;
 
-namespace ValleyTalk
+namespace ValleytalkReborn
 {
     /// <summary>
-    /// Centralized manager for recording and retrieving NPC dialogue history.
-    /// Replaces the scattered recording logic across patches.
+    /// 中央对话历史管理器：彻底替代原作者的 EventHistoryReader.cs
+    /// 完美支持单人/联机主机（SaveData）与联机客机（Multiplayer Local JSON）模式。
     /// </summary>
     internal class DialogueHistoryManager
     {
         public static DialogueHistoryManager Instance { get; } = new DialogueHistoryManager();
 
-        // Per-NPC history, keyed by NPC name
-        private readonly Dictionary<string, List<DialogueHistoryEntry>> _history = new();
+        private readonly Dictionary<string, List<DialogueHistoryEntry>> _history = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, DialogueHistoryEntry> _lastEntry = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, DialogueHistoryEntry> _pendingGifts = new(StringComparer.OrdinalIgnoreCase);
 
-        // Tracks the last recorded entry per NPC for deduplication
-        private readonly Dictionary<string, DialogueHistoryEntry> _lastEntry = new();
-
-        // Tracks pending gift recordings (when gift is given but NPC response hasn't been generated yet)
-        private readonly Dictionary<string, DialogueHistoryEntry> _pendingGifts = new();
-
-        // Maximum entries per NPC to prevent unbounded growth
-        private const int MaxEntriesPerNpc = 500;
+        private readonly object _historyLock = new();
+        private const int MaxEntriesPerNpc = 300;
+        private const string SaveKey = "ValleyTalk.DialogueHistory";
 
         private DialogueHistoryManager()
         {
             if (ModEntry.SHelper != null)
             {
                 ModEntry.SHelper.Events.GameLoop.Saving += OnSaving;
+                ModEntry.SHelper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
+                ModEntry.SHelper.Events.GameLoop.DayEnding += OnDayEnding;
             }
         }
 
-        /// <summary>
-        /// Cleans up event subscriptions and clears history data. Called when the game is exiting.
-        /// </summary>
-        public void Cleanup()
+        #region Event Handlers
+
+        private void OnSaving(object sender, SavingEventArgs e)
         {
-            try
-            {
-                // Unsubscribe from events
-                if (ModEntry.SHelper != null)
-                {
-                    ModEntry.SHelper.Events.GameLoop.Saving -= OnSaving;
-                }
-
-                // Clear history data
-                _history.Clear();
-                _lastEntry.Clear();
-                _pendingGifts.Clear();
-
-                ModEntry.SMonitor?.Log("[DialogueHistoryManager] Cleaned up successfully.", LogLevel.Debug);
-            }
-            catch (Exception ex)
-            {
-                ModEntry.SMonitor?.Log($"[DialogueHistoryManager] Error during cleanup: {ex.Message}", LogLevel.Warn);
-            }
+            SaveSync();
         }
 
-        /// <summary>
-        /// Records a line of NPC dialogue
-        /// </summary>
+        private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
+        {
+            Load();
+        }
+
+        private void OnDayEnding(object sender, DayEndingEventArgs e)
+        {
+            PurgeEavesdropEntries();
+        }
+
+        #endregion
+
+        #region Public API (All Methods Restored)
+
         public void RecordNpcDialogue(string npcName, string text, string dialogueType = "dialogue")
         {
             if (string.IsNullOrWhiteSpace(text)) return;
-
             var entry = new DialogueHistoryEntry(npcName, text, SpeakerType.NPC, dialogueType);
             AddEntry(npcName, entry);
         }
 
-        /// <summary>
-        /// Records a player response/line
-        /// </summary>
         public void RecordPlayerDialogue(string npcName, string text)
         {
             if (string.IsNullOrWhiteSpace(text)) return;
-
             var entry = new DialogueHistoryEntry(
                 Util.GetString("generalFarmerLabel"),
                 text,
@@ -89,9 +73,6 @@ namespace ValleyTalk
             AddEntry(npcName, entry);
         }
 
-        /// <summary>
-        /// Records the action of giving a gift. The NPC response will be recorded separately when generated.
-        /// </summary>
         public void RecordGiftGiven(string npcName, string giftName, int taste)
         {
             string tasteLabel = taste switch
@@ -110,186 +91,309 @@ namespace ValleyTalk
                 GiftTaste = taste
             };
 
-            // Track pending gift so we can link the NPC response later
             _pendingGifts[npcName] = entry;
             AddEntry(npcName, entry);
         }
 
-        /// <summary>
-        /// Records the NPC's reaction to a gift. Links to the pending gift entry if available.
-        /// </summary>
         public void RecordGiftReaction(string npcName, string reactionText)
         {
             if (string.IsNullOrWhiteSpace(reactionText)) return;
-
-            // Record the NPC's reaction as a normal NPC line but tagged as gift type
             var entry = new DialogueHistoryEntry(npcName, reactionText, SpeakerType.NPC, "gift");
             AddEntry(npcName, entry);
-
-            // Clear pending gift
             _pendingGifts.Remove(npcName);
         }
 
-        /// <summary>
-        /// Records a full conversation exchange (player typed input + NPC response)
-        /// </summary>
+        public void RecordSystemEvent(string npcName, string text, string dialogueType = "system")
+        {
+            if (string.IsNullOrWhiteSpace(text)) return;
+            var entry = new DialogueHistoryEntry("System", text, SpeakerType.System, dialogueType);
+            AddEntry(npcName, entry);
+        }
+
+        public void PurgeEavesdropEntries()
+        {
+            lock (_historyLock)
+            {
+                foreach (var list in _history.Values)
+                {
+                    list.RemoveAll(e => e.DialogueType == "eavesdrop");
+                }
+            }
+        }
+
+        public void ConsumeEavesdropEntries(string npcName)
+        {
+            lock (_historyLock)
+            {
+                if (!_history.TryGetValue(npcName, out var list)) return;
+                foreach (var e in list)
+                {
+                    if (e.DialogueType == "eavesdrop" && !e.IsConsumed)
+                        e.IsConsumed = true;
+                }
+            }
+        }
+
         public void RecordConversationExchange(string npcName, string playerLine, string npcResponse)
         {
             if (!string.IsNullOrWhiteSpace(playerLine))
-            {
                 RecordPlayerDialogue(npcName, playerLine);
-            }
+
             if (!string.IsNullOrWhiteSpace(npcResponse))
-            {
                 RecordNpcDialogue(npcName, npcResponse, "conversation");
-            }
         }
 
-        /// <summary>
-        /// Gets all history for a specific NPC, ordered chronologically
-        /// </summary>
         public List<DialogueHistoryEntry> GetHistory(string npcName)
         {
-            if (_history.TryGetValue(npcName, out var entries))
+            lock (_historyLock)
             {
-                return entries.ToList();
+                if (_history.TryGetValue(npcName, out var entries))
+                    return entries.ToList();
+                return new List<DialogueHistoryEntry>();
             }
-            return new List<DialogueHistoryEntry>();
         }
 
-        /// <summary>
-        /// Gets formatted history lines for display in the UI
-        /// </summary>
         public List<string> GetFormattedHistory(string npcName)
         {
             var entries = GetHistory(npcName);
             return entries.Select(e => e.Format(npcName)).ToList();
         }
 
-        /// <summary>
-        /// Clears all history for a specific NPC
-        /// </summary>
+        public List<DialogueHistoryEntry> GetRecentHistory(string npcName, int count)
+        {
+            var entries = GetHistory(npcName);
+            return entries.TakeLast(Math.Min(count, entries.Count)).ToList();
+        }
+
         public void ClearHistory(string npcName)
         {
-            _history.Remove(npcName);
-            _lastEntry.Remove(npcName);
-            _pendingGifts.Remove(npcName);
+            lock (_historyLock)
+            {
+                _history.Remove(npcName);
+                _lastEntry.Remove(npcName);
+                _pendingGifts.Remove(npcName);
+            }
             DialogueMemoryCompressor.ClearCache(npcName);
         }
 
-        /// <summary>
-        /// Clears history for all NPCs
-        /// </summary>
         public void ClearAllHistory()
         {
-            _history.Clear();
-            _lastEntry.Clear();
-            _pendingGifts.Clear();
+            lock (_historyLock)
+            {
+                _history.Clear();
+                _lastEntry.Clear();
+                _pendingGifts.Clear();
+            }
         }
 
-        /// <summary>
-        /// Gets the most recent NPC name that the player interacted with (for UI title)
-        /// </summary>
         public string GetMostRecentNpc()
         {
-            return _lastEntry.OrderByDescending(x => x.Value.Timestamp).FirstOrDefault().Key ?? "";
+            lock (_historyLock)
+            {
+                return _lastEntry.OrderByDescending(x => x.Value.Timestamp).FirstOrDefault().Key ?? "";
+            }
         }
 
-        // Helper to calculate total days for deduplication time window comparison
-        private static double TotalDays(StardewTime t) => t.year * 112 + (int)t.season * 28 + t.dayOfMonth;
+        public int GetTotalEntryCount()
+        {
+            lock (_historyLock)
+            {
+                return _history.Values.Sum(list => list.Count);
+            }
+        }
+
+        public bool HasHistory(string npcName)
+        {
+            lock (_historyLock)
+            {
+                return _history.ContainsKey(npcName) && _history[npcName].Any();
+            }
+        }
+
+        #endregion
+
+        #region Add Entry & Optimized Deduplication
 
         private void AddEntry(string npcName, DialogueHistoryEntry entry)
         {
-            if (!_history.ContainsKey(npcName))
+            lock (_historyLock)
             {
-                _history[npcName] = new List<DialogueHistoryEntry>();
+                if (!_history.TryGetValue(npcName, out var list))
+                {
+                    list = new List<DialogueHistoryEntry>();
+                    _history[npcName] = list;
+                }
+
+                // O(1) 去重：拦截同时间段完全重复的连续语句
+                if (_lastEntry.TryGetValue(npcName, out var last))
+                {
+                    if (last.SpeakerType == entry.SpeakerType &&
+                        last.Text.Equals(entry.Text, StringComparison.Ordinal) &&
+                        last.Timestamp.TimeOfDay == entry.Timestamp.TimeOfDay)
+                    {
+                        return;
+                    }
+                }
+
+                list.Add(entry);
+                _lastEntry[npcName] = entry;
+
+                if (list.Count > MaxEntriesPerNpc)
+                {
+                    list.RemoveRange(0, list.Count - MaxEntriesPerNpc);
+                }
             }
 
-            // Deduplication: skip if this is identical to the last entry
-            if (_lastEntry.TryGetValue(npcName, out var last) && last.IsDuplicateOf(entry))
-            {
-                return;
-            }
-
-            // Deduplication: skip if the same NPC said the same thing within a short time window
-            // (prevents the same line being recorded by multiple patches)
-            var recentEntries = _history[npcName].Where(e =>
-                e.SpeakerType == SpeakerType.NPC &&
-                e.Text == entry.Text &&
-                Math.Abs((TotalDays(e.Timestamp) - TotalDays(entry.Timestamp))) < 1
-            );
-            if (recentEntries.Any())
-            {
-                return;
-            }
-
-            _history[npcName].Add(entry);
-            _lastEntry[npcName] = entry;
-
-            // Trim if exceeding max
-            if (_history[npcName].Count > MaxEntriesPerNpc)
-            {
-                _history[npcName].RemoveRange(0, _history[npcName].Count - MaxEntriesPerNpc);
-            }
-
-            // Proactively compress older entries in the background
             TryTriggerCompression(npcName);
         }
 
-        private void OnSaving(object sender, SavingEventArgs e)
+        #endregion
+
+        #region Save / Load (Multiplayer Support)
+
+        private string GetMultiplayerFilePath()
         {
-            // Save to SMAPI save data
-            var data = new Dictionary<string, List<SerializableEntry>>();
-            foreach (var kvp in _history)
-            {
-                data[kvp.Key] = kvp.Value.Select(SerializableEntry.FromEntry).ToList();
-            }
-            ModEntry.SHelper.Data.WriteSaveData("ValleyTalk.DialogueHistory", data);
+            return $"data/multiplayer/{Constants.SaveFolderName}_DialogueHistory.json";
         }
 
-        /// <summary>
-        /// Loads history from SMPI save data. Call this on game load.
-        /// </summary>
-        public void Load()
+        public void SaveSync()
         {
-            var data = ModEntry.SHelper.Data.ReadSaveData<Dictionary<string, List<SerializableEntry>>>("ValleyTalk.DialogueHistory");
-            if (data == null) return;
-
-            foreach (var kvp in data)
+            lock (_historyLock)
             {
-                _history[kvp.Key] = kvp.Value.Select(se => se.ToEntry()).ToList();
-                if (_history[kvp.Key].Any())
+                try
                 {
-                    _lastEntry[kvp.Key] = _history[kvp.Key].Last();
+                    var snapshot = CreateDataSnapshotInternal();
+                    if (snapshot == null || snapshot.Count == 0) return;
+
+                    if (Context.IsMainPlayer)
+                    {
+                        ModEntry.SHelper.Data.WriteSaveData(SaveKey, snapshot);
+                        ModEntry.SMonitor?.Log($"[DialogueHistoryManager] [Host] Saved history for {snapshot.Count} NPCs.", LogLevel.Debug);
+                    }
+                    else
+                    {
+                        ModEntry.SHelper.Data.WriteJsonFile(GetMultiplayerFilePath(), snapshot);
+                        ModEntry.SMonitor?.Log($"[DialogueHistoryManager] [Farmhand] Saved local history to {GetMultiplayerFilePath()}.", LogLevel.Debug);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ModEntry.SMonitor?.Log($"[DialogueHistoryManager] Save failed: {ex.Message}", LogLevel.Error);
                 }
             }
         }
 
-        /// <summary>
-        /// Proactively compresses older entries in the background when history grows large.
-        /// The result is cached by DialogueMemoryCompressor for use when building prompts.
-        /// </summary>
+        public void Load()
+        {
+            lock (_historyLock)
+            {
+                try
+                {
+                    Dictionary<string, List<SerializableEntry>> data = null;
+
+                    if (Context.IsMainPlayer)
+                    {
+                        data = ModEntry.SHelper.Data.ReadSaveData<Dictionary<string, List<SerializableEntry>>>(SaveKey);
+                    }
+                    else
+                    {
+                        data = ModEntry.SHelper.Data.ReadJsonFile<Dictionary<string, List<SerializableEntry>>>(GetMultiplayerFilePath());
+                    }
+
+                    if (data == null) return;
+
+                    _history.Clear();
+                    _lastEntry.Clear();
+
+                    foreach (var (npcName, serializableEntries) in data)
+                    {
+                        var entries = serializableEntries.Select(se => se.ToEntry()).ToList();
+                        if (entries.Count > 0)
+                        {
+                            _history[npcName] = entries;
+                            _lastEntry[npcName] = entries[^1];
+                        }
+                    }
+
+                    ModEntry.SMonitor?.Log($"[DialogueHistoryManager] Loaded history for {_history.Count} NPCs (IsMainPlayer={Context.IsMainPlayer}).", LogLevel.Debug);
+                }
+                catch (Exception ex)
+                {
+                    ModEntry.SMonitor?.Log($"[DialogueHistoryManager] Load failed: {ex.Message}", LogLevel.Error);
+                }
+            }
+        }
+
+        private Dictionary<string, List<SerializableEntry>> CreateDataSnapshotInternal()
+        {
+            var snapshot = new Dictionary<string, List<SerializableEntry>>();
+            foreach (var (npcName, list) in _history)
+            {
+                if (list != null && list.Count > 0)
+                {
+                    snapshot[npcName] = list.Select(SerializableEntry.FromEntry).ToList();
+                }
+            }
+            return snapshot;
+        }
+
+        #endregion
+
+        #region Cleanup
+
+        public void Cleanup()
+        {
+            SaveSync();
+
+            if (ModEntry.SHelper != null)
+            {
+                ModEntry.SHelper.Events.GameLoop.Saving -= OnSaving;
+                ModEntry.SHelper.Events.GameLoop.SaveLoaded -= OnSaveLoaded;
+                ModEntry.SHelper.Events.GameLoop.DayEnding -= OnDayEnding;
+            }
+
+            lock (_historyLock)
+            {
+                _history.Clear();
+                _lastEntry.Clear();
+                _pendingGifts.Clear();
+            }
+
+            ModEntry.SMonitor?.Log("[DialogueHistoryManager] Cleaned up successfully.", LogLevel.Debug);
+        }
+
+        #endregion
+
+        #region Private Helpers
+
         private void TryTriggerCompression(string npcName)
         {
             if (!ModEntry.Config.EnableMemoryCompression) return;
-            var entries = GetHistory(npcName);
+
+            List<DialogueHistoryEntry> entries;
+            lock (_historyLock)
+            {
+                if (!_history.TryGetValue(npcName, out var list)) return;
+                entries = list.ToList();
+            }
+
             int recentCount = ModEntry.Config.MemoryRecentCount;
-            // Only compress if we have significantly more than the "recent" window
             if (entries.Count <= recentCount * 2) return;
 
-            // Fire-and-forget: compress in background, cache the result
             var cached = DialogueMemoryCompressor.GetCachedSummary(npcName, entries.Count, recentCount);
-            if (cached == "")
+            if (string.IsNullOrEmpty(cached))
             {
                 _ = System.Threading.Tasks.Task.Run(() =>
                     DialogueMemoryCompressor.GetCompressedSummary(npcName, entries, recentCount));
             }
         }
+
+        #endregion
     }
 
-    /// <summary>
-    /// Serializable wrapper for DialogueHistoryEntry (StardewTime isn't directly serializable in all cases)
-    /// </summary>
+    // ─────────────────────────────────────────────────────────
+    // 用于存档 JSON 序列化的数据包裹类
+    // ─────────────────────────────────────────────────────────
     internal class SerializableEntry
     {
         public Guid Id { get; set; }
@@ -298,7 +402,7 @@ namespace ValleyTalk
         public SpeakerType SpeakerType { get; set; }
         public string DialogueType { get; set; } = "";
         public int Year { get; set; }
-        public StardewValley.Season Season { get; set; }
+        public Season Season { get; set; }
         public int Day { get; set; }
         public int TimeOfDay { get; set; }
         public string GiftName { get; set; }
@@ -313,10 +417,10 @@ namespace ValleyTalk
                 Text = entry.Text,
                 SpeakerType = entry.SpeakerType,
                 DialogueType = entry.DialogueType,
-                Year = entry.Timestamp.year,
-                Season = entry.Timestamp.season,
-                Day = entry.Timestamp.dayOfMonth,
-                TimeOfDay = entry.Timestamp.timeOfDay,
+                Year = entry.Timestamp.Year,
+                Season = entry.Timestamp.Season,
+                Day = entry.Timestamp.DayOfMonth,
+                TimeOfDay = entry.Timestamp.TimeOfDay,
                 GiftName = entry.GiftName,
                 GiftTaste = entry.GiftTaste
             };

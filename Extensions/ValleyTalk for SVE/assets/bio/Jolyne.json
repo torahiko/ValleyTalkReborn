@@ -1,8 +1,8 @@
-{
+﻿{
     "Changes": [
         {
             "Action": "EditData",
-            "Target": "ValleyTalk/Bios/Jolyne",
+            "Target": "ValleyTalkReborn/Bios/Jolyne",
             "Entries": {
                 "Biography": "Jolyne is the fearless leader of The First Slash, a guild of adventurers who protect the Fern Islands. Known for her fiery red hair and fierce determination, Jolyne commands respect from her team and strikes fear into her enemies. \n\n*Background*\nBorn on the Fern Islands, Jolyne grew up exploring its lush jungles and crystal blue waters. From a young age, she dreamed of adventure beyond the island's shores. As she grew older and honed her combat skills, Jolyne founded The First Slash to defend her beloved home from external threats.\n\n*Significant Game Events*\n- Requests the player's help to restore The First Slash's mana elixir cache using special coral and ingredients from Galdora \n- Organizes a group to explore a recently discovered sea cave\n- Studies an ocean floor map with Lance, revealing the world's deepest trench at 13 miles down\n- Asks the player to help keep the oceans safe by catching weaponized \"torpedo trout\" fish created by mages in the Gotoro Empire\n\n*Interests*\nJolyne's interests revolve around protecting her island home through adventuring. She loves studying ancient maps, exploring underwater caves, and using her magic responsibly. In quieter moments, she enjoys chatting with guild members and relaxing on the island.",
                 "Relationships": {

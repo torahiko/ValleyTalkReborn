@@ -2,75 +2,126 @@ using System.Collections.Generic;
 using System.Linq;
 using StardewValley;
 
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 /// <summary>
-/// Handles injecting perception data into NPC dialogue prompts.
-/// Separated from PerceptionManager to keep concerns clean.
+/// Builds and injects perception text into the NPC system prompt.
+///
+/// Two independent sections:
+///   Section 1 — [Town Gossip] from Track 1 (_globalGossip, max 2)
+///   Section 2 — [NPC's Recent Observations] from Track 2 (_farmerBucket, eyewitness-filtered, max 3)
+///
+/// Each section is only emitted when it has content. Neither is required.
 /// </summary>
 internal static class PerceptionInjector
 {
-    /// <summary>
-    /// Builds the perception injection text for the system prompt.
-    /// Returns empty string if no valid perceptions exist.
-    /// </summary>
     public static string BuildPerceptionText(string npcName)
     {
-        var perceptions = PerceptionManager.Instance.GetPerceptionsFor(npcName, 3);
-        if (!perceptions.Any())
+        if (string.IsNullOrEmpty(npcName)) return string.Empty;
+
+        string gossipBlock = BuildGossipBlock();
+        string localBlock  = BuildLocalBlock(npcName);
+
+        if (string.IsNullOrEmpty(gossipBlock) && string.IsNullOrEmpty(localBlock))
             return string.Empty;
 
-        // English instruction header — universally understood by LLMs regardless of player language
-        var lines = new List<string> { "[NPC's Recent Observations] (Instruction: Choose at most ONE interesting event from the list below to mention naturally in your dialogue ONLY IF it fits the current context and NPC's personality. Do NOT list them mechanically.)" };
+        var parts = new List<string>();
+        if (!string.IsNullOrEmpty(gossipBlock)) parts.Add(gossipBlock);
+        if (!string.IsNullOrEmpty(localBlock))  parts.Add(localBlock);
+        return string.Join("\n\n", parts);
+    }
+
+    public static void Inject(string npcName, Prompts prompts)
+    {
+        if (prompts == null || string.IsNullOrEmpty(npcName)) return;
+
+        string text = BuildPerceptionText(npcName);
+        if (string.IsNullOrEmpty(text)) return;
+
+        prompts.CorePrompt += "\n\n" + text;
+    }
+
+    // ─────────────────────────────────────────────
+    //  Section 1: Town Gossip
+    // ─────────────────────────────────────────────
+
+    private static string BuildGossipBlock()
+    {
+        var snapshots = PerceptionManager.Instance.GetGossipSnapshots();
+        if (snapshots == null || snapshots.Count == 0) return string.Empty;
+
+        var lines = new List<string>
+        {
+            "[Town Gossip] (Recent town-wide events you have heard about. " +
+            "Mention them naturally only if they fit the conversation — do NOT list them mechanically.)"
+        };
+
+        foreach (var p in snapshots)
+        {
+            if (p == null || string.IsNullOrWhiteSpace(p.Template)) continue;
+            lines.Add($"- {p.Template}");
+        }
+
+        return lines.Count > 1 ? string.Join("\n", lines) : string.Empty;
+    }
+
+    // ─────────────────────────────────────────────
+    //  Section 2: Personal eyewitness observations
+    // ─────────────────────────────────────────────
+
+    private static string BuildLocalBlock(string npcName)
+    {
+        var perceptions = PerceptionManager.Instance.GetFilteredBucketFor(npcName, 3);
+        if (perceptions == null || perceptions.Count == 0) return string.Empty;
+
+        var lines = new List<string>
+        {
+            "[NPC's Recent Observations] (Instruction: Choose at most ONE interesting event " +
+            "from the list below to mention naturally ONLY IF it fits the current context " +
+            "and your personality. Do NOT list them mechanically.)"
+        };
 
         foreach (var p in perceptions)
         {
+            if (p == null) continue;
+
             string line = $"- {p.Template}";
 
-            // Dynamically evaluate NPC gift taste for "Eat" perceptions with a valid item ID.
-            if (p.Key == "Eat" && !string.IsNullOrEmpty(p.ItemId))
-            {
-                try
-                {
-                    var npc = Game1.getCharacterFromName(npcName);
-                    if (npc != null)
-                    {
-                        var dummyItem = ItemRegistry.Create(p.ItemId);
-                        if (dummyItem != null)
-                        {
-                            int taste = npc.getGiftTasteForThisItem(dummyItem);
-                            if (taste == NPC.gift_taste_love)
-                                line += " (CRITICAL INSTRUCTION: You ABSOLUTELY LOVE this food! You MUST react excitedly and explicitly comment on the farmer eating it!)";
-                            else if (taste == NPC.gift_taste_hate)
-                                line += " (CRITICAL INSTRUCTION: You ABSOLUTELY HATE this food! You MUST express disgust or shock that the farmer is eating it!)";
-                        }
-                    }
-                }
-                catch
-                {
-                    // Silently ignore — fall back to base template.
-                }
-            }
+            if ((p.Key == "Eat" || p.Key == "Gift") && !string.IsNullOrEmpty(p.ItemId))
+                line += BuildGiftTasteAnnotation(npcName, p.ItemId);
 
             lines.Add(line);
         }
 
-        return string.Join("\n", lines);
+        return lines.Count > 1 ? string.Join("\n", lines) : string.Empty;
     }
 
-    /// <summary>
-    /// Injects perception data into the prompts.System string.
-    /// Called after MemoryManager injection, before base settings.
-    /// </summary>
-    public static void Inject(string npcName, Prompts prompts)
+    private static string BuildGiftTasteAnnotation(string npcName, string itemId)
     {
-        if (prompts == null) return;
+        try
+        {
+            var npc = Game1.getCharacterFromName(npcName);
+            if (npc == null) return string.Empty;
 
-        var perceptionText = BuildPerceptionText(npcName);
-        if (string.IsNullOrEmpty(perceptionText))
-            return;
+            var item = ItemRegistry.Create(itemId);
+            if (item == null) return string.Empty;
 
-        // Append after memory injection, before base settings
-        prompts.System += "\n\n" + perceptionText;
+            return npc.getGiftTasteForThisItem(item) switch
+            {
+                NPC.gift_taste_love =>
+                    // Neutral fact — attitude is determined by the NPC's long-term traits, not forced here.
+                    " (Note: This is one of your favorite items. " +
+                    "How you react depends on your current feelings toward the farmer.)",
+                NPC.gift_taste_hate =>
+                    // Neutral fact — attitude is determined by the NPC's long-term traits, not forced here.
+                    " (Note: You normally dislike this item. " +
+                    "How you react depends on your current feelings toward the farmer.)",
+                _ => string.Empty
+            };
+        }
+        catch
+        {
+            return string.Empty;
+        }
     }
 }

@@ -1,14 +1,20 @@
 using HarmonyLib;
 using StardewValley;
 
-namespace ValleyTalk
+namespace ValleytalkReborn
 {
     [HarmonyPatch(typeof(NPC), nameof(NPC.tryToGetMarriageSpecificDialogue))]
     public class NPC_TryToGetMarriageSpecificDialogue_Patch
     {
         public static bool Prefix(ref NPC __instance, ref Dialogue __result, string dialogueKey)
         {
+            if (__instance == null || string.IsNullOrEmpty(dialogueKey))
+            {
+                return true;
+            }
+
             ModEntry.SMonitor.Log($"NPC {__instance.Name} trying to get marriage specific dialogue with key '{dialogueKey}'", StardewModdingAPI.LogLevel.Trace);
+
             if (!DialogueBuilder.Instance.PatchNpc(__instance, ModEntry.Config.MarriageFrequency))
             {
                 return true;
@@ -21,7 +27,8 @@ namespace ValleyTalk
                 return true; // Use default behavior
             }
 
-            if (dialogueKey.StartsWith("funReturn_") || dialogueKey.StartsWith("jobReturn_"))
+            if (!ModEntry.Config.EnableVanillaFirst &&
+                (dialogueKey.StartsWith("funReturn_") || dialogueKey.StartsWith("jobReturn_")))
             {
                 __result = new Dialogue(__instance, dialogueKey, SldConstants.DialogueGenerationTag);
                 return false;

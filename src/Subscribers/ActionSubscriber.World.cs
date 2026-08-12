@@ -3,7 +3,7 @@ using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 /// <summary>
 /// Subscribes to world object/terrain changes for placement and chopping.
@@ -74,7 +74,7 @@ internal static class WorldSubscriber
             {
                 string name = obj.DisplayName ?? obj.Name ?? "item";
                 string template = $"The farmer just placed a {name}.";
-                PerceptionManager.Instance.Record("Place", template, null, ModEntry.Config.PerceptionActionLifetime, false);
+                PerceptionManager.Instance.Record("Place", template, null, ModEntry.Config.PerceptionActionLifetime, isLandmark: false);
             }
         }
         catch (Exception ex)
@@ -93,7 +93,7 @@ internal static class WorldSubscriber
             if (feature is StardewValley.TerrainFeatures.Tree)
             {
                 string template = $"The farmer just chopped down a tree.";
-                PerceptionManager.Instance.Record("Chop", template, null, ModEntry.Config.PerceptionActionLifetime, false);
+                PerceptionManager.Instance.Record("Chop", template, null, ModEntry.Config.PerceptionActionLifetime, isLandmark: false);
             }
         }
         catch (Exception ex)

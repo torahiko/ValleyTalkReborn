@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using StardewValley;
 
-namespace ValleyTalk
+namespace ValleytalkReborn
 {
     public static class I18n
     {
@@ -158,6 +158,66 @@ namespace ValleyTalk
                 => Lookup("DialogueInput.HistoryEmpty")
                     .Replace("{{0}}", npcName ?? string.Empty)
                     .Replace("{{Name}}", npcName ?? string.Empty);
+        }
+
+        public static class Profile
+        {
+            public static string ButtonHover()
+                => Lookup("Profile.ButtonHover");
+
+            public static string Title()
+                => Lookup("Profile.Title");
+
+            public static string EnableProfile()
+                => Lookup("Profile.EnableProfile");
+
+            public static string PersonalityTraits()
+                => Lookup("Profile.PersonalityTraits");
+
+            public static string FarmSpecialty()
+                => Lookup("Profile.FarmSpecialty");
+
+            public static string SocialStyle()
+                => Lookup("Profile.SocialStyle");
+
+            public static string SexualOrientation()
+                => Lookup("Profile.SexualOrientation");
+
+            public static string RomanceSafetyMode()
+                => Lookup("Profile.RomanceSafetyMode");
+
+            public static string CustomBio()
+                => Lookup("Profile.CustomBio");
+
+            public static string TraitsMaxReached()
+                => Lookup("Profile.TraitsMaxReached");
+
+            public static string SaveButton()
+                => Lookup("Profile.SaveButton");
+
+            public static string SaveSuccess()
+                => Lookup("Profile.SaveSuccess");
+
+            public static string CloseButton()
+                => Lookup("Profile.CloseButton");
+
+            public static string SelectOption()
+                => Lookup("Profile.SelectOption");
+
+            public static string SafetyStrict()
+                => Lookup("Profile.SafetyStrict");
+
+            public static string SafetyModerate()
+                => Lookup("Profile.SafetyModerate");
+
+            public static string SafetyLoose()
+                => Lookup("Profile.SafetyLoose");
+
+            public static string SafetyOff()
+                => Lookup("Profile.SafetyOff");
+
+            public static string SafetyDescription()
+                => Lookup("Profile.SafetyDescription");
         }
     }
 }

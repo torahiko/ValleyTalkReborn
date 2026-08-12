@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using StardewValley;
 
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 public class ValleyTalkInterface : IValleyTalkInterface
 {

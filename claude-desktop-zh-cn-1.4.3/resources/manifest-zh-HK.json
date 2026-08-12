@@ -1,4 +1,4 @@
-{
+﻿{
   "language": "zh-HK",
   "label": "繁體中文（中國香港）",
   "source_app": "Claude Desktop",
@@ -10,3 +10,4 @@
     "run install.command again after Claude Desktop updates"
   ]
 }
+

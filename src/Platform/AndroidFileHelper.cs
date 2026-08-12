@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using StardewModdingAPI;
 
-namespace ValleyTalk.Platform
+namespace ValleytalkReborn.Platform
 {
     /// <summary>
     /// Helper class for Android-compatible file system operations

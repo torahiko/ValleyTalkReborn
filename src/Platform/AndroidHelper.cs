@@ -2,7 +2,7 @@ using Microsoft.Xna.Framework;
 using StardewValley;
 using System;
 
-namespace ValleyTalk.Platform
+namespace ValleytalkReborn.Platform
 {
     /// <summary>
     /// Helper class for Android-specific input handling

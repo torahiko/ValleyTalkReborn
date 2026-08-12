@@ -1,8 +1,8 @@
-{
+﻿{
     "Changes": [
       {
         "Action": "EditData",
-        "Target": "ValleyTalk/GameSummary",
+        "Target": "ValleyTalkReborn/GameSummary",
         "TargetField": [ "Villagers", "Entries" ],
         "Entries": {
           "Alesia": { 

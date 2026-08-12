@@ -1,79 +1,81 @@
-using HarmonyLib;
-using StardewValley;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using HarmonyLib;
+using StardewModdingAPI;
+using StardewValley;
 
-namespace ValleyTalk
+namespace ValleytalkReborn
 {
     [HarmonyPatch(typeof(NPC), nameof(NPC.CurrentDialogue), MethodType.Getter)]
     public class NPC_CurrentDialogue_Patch
     {
-        private static int minLine = int.MaxValue;
+        private static readonly Dictionary<string, string> _lastRecordedDialogue = new Dictionary<string, string>();
+        private static readonly Dictionary<string, long> _lastRecordedTime = new Dictionary<string, long>();
+        private const long DedupWindowMs = 100;
+
+        internal static void ClearDedupState()
+        {
+            _lastRecordedDialogue.Clear();
+            _lastRecordedTime.Clear();
+        }
+
         public static void Postfix(ref NPC __instance, ref Stack<Dialogue> __result)
         {
+            if (__instance == null || __result == null) return;
             if (__result.Count == 0) return;
 
-            var trace = new System.Diagnostics.StackTrace().GetFrame(2);
-            if (
-                trace.GetMethod().Name.Contains("drawDialogue")
-            )
+            // 仅在 drawDialogue 调用链上才做历史记录
+            if (!Game1_DrawDialogue_Patch.DrawingDialogue) return;
+
+            var currentDialogue = __result.Peek();
+            if (currentDialogue?.dialogues == null || currentDialogue.dialogues.Count == 0) return;
+
+            var nextLine = currentDialogue.dialogues.FirstOrDefault();
+            if (nextLine == null) return;
+
+            // 生成占位符或空白行不记录
+            if (nextLine.Text == SldConstants.DialogueGenerationTag) return;
+            if (string.IsNullOrWhiteSpace(nextLine.Text)) return;
+            if (nextLine.Text == SldConstants.DialogueSkipTag) return;
+
+            var combinedText = string.Join(" ", currentDialogue.dialogues
+                .Where(x => x != null)
+                .Select(x => x.Text));
+
+            // 去重：100ms 窗口内同一内容不重复记录
+            var now = Stopwatch.GetTimestamp();
+            long nowMs = now * 1000 / Stopwatch.Frequency;
+            if (_lastRecordedDialogue.TryGetValue(__instance.Name, out var lastText) &&
+                _lastRecordedTime.TryGetValue(__instance.Name, out var lastTime) &&
+                lastText == combinedText &&
+                (nowMs - lastTime) < DedupWindowMs)
             {
-                List<StardewValley.DialogueLine> theLine;
-                var allLines = __result.Peek().dialogues;
-                var nextLine = allLines.First();
+                return;
+            }
 
-                string originalLine = string.Empty;
-                if (nextLine.Text == SldConstants.DialogueGenerationTag)
-                {
-                    ModEntry.SMonitor.Log($"NPC {__instance.Name} is generating dialogue", StardewModdingAPI.LogLevel.Trace);
+            _lastRecordedDialogue[__instance.Name] = combinedText;
+            _lastRecordedTime[__instance.Name] = nowMs;
 
-                    // Check network availability early (Android only)
-                    if (!NetworkAvailabilityChecker.IsNetworkAvailableWithRetry())
-                    {
-                        ModEntry.SMonitor.Log($"Network not available, skipping AI dialogue generation for {__instance.Name}", StardewModdingAPI.LogLevel.Trace);
-                        // In this context we need to return a single line of dialogue "..."
-                        __result.Pop();
-                        __result.Push(new Dialogue(__instance, "", "..."));
-                        // Let default dialogue continue
-                        return;
-                    }
+            // 感知系统：窃听广播（无论 AI 还是原版对话都执行）
+            // 注意：vanilla/AI 对话的历史记录由 DialogueBox_Ctor_Patch 统一处理，此处不再重复记录。
+            var nearbyNpcs = Util.GetNearbyNpcs(__instance);
+            if (nearbyNpcs != null)
+            {
+                var cleanedForEavesdrop = EavesdropTextCleaner.Clean(combinedText);
+                var farmerLabel = Util.GetString("generalFarmerLabel") ?? "农夫";
+                var lastPlayerEntry = DialogueHistoryManager.Instance.GetHistory(__instance.Name)
+                    .LastOrDefault(e => e.SpeakerType == SpeakerType.Player && e.DialogueType != "eavesdrop");
 
-                    __result.Pop();
-                    if (allLines.Count > 1)
-                    {
-                        allLines = allLines.Skip(1).ToList();
-                        originalLine = string.Join(" ", allLines.Select(x => x.Text));
-                    }
-                    AsyncBuilder.Instance.RequestNpcBasic(__instance, "default", originalLine);
-                    Game1.currentSpeaker = __instance;
-                    __result.Clear();
-                    return;
-                }
-                else
+                string farmerSaid = lastPlayerEntry != null && !string.IsNullOrWhiteSpace(lastPlayerEntry.Text)
+                    ? $"{farmerLabel}对{__instance.displayName}说：\"{lastPlayerEntry.Text}\"，{__instance.displayName}回应：\"{cleanedForEavesdrop}\""
+                    : $"{farmerLabel}对{__instance.displayName}说话，{__instance.displayName}回应：\"{cleanedForEavesdrop}\"";
+
+                var eavesdropText = $"[Eavesdrop] {farmerSaid}";
+                foreach (var npc in nearbyNpcs)
                 {
-                    ModEntry.SMonitor.Log($"NPC {__instance.Name} recording line: {nextLine.Text}", StardewModdingAPI.LogLevel.Trace);
-                    var trace3 = new System.Diagnostics.StackTrace().GetFrame(2);
-                    theLine = __result.Peek().dialogues;
-                    if (trace3.GetMethod().Name.StartsWith("Speak"))
-                    {
-                        var theEvent = Game1.currentLocation.currentEvent;
-                        var festivalName = theEvent.FestivalName;
-                        DialogueHistoryManager.Instance.RecordNpcDialogue(__instance.Name, string.Join(" ", theLine.Select(x => x.Text)), "event");
-                    }
-                    else
-                    {
-                        var sourceLine = trace.GetILOffset();
-                        if (sourceLine < minLine)
-                        {
-                            DialogueHistoryManager.Instance.RecordNpcDialogue(__instance.Name, string.Join(" ", theLine.Select(x => x.Text)), "dialogue");
-                            minLine = sourceLine;
-                        }
-                    }
-                }
-                foreach (var npc in Util.GetNearbyNpcs(__instance))
-                {
-                    // Overheard lines are recorded under the nearby NPC's history with context
-                    DialogueHistoryManager.Instance.RecordNpcDialogue(npc.Name, $"[Overheard {__instance.Name}] {string.Join(" ", theLine.Select(x => x.Text))}", "overheard");
+                    if (npc != null)
+                        DialogueHistoryManager.Instance.RecordSystemEvent(npc.Name, eavesdropText, "eavesdrop");
                 }
             }
         }

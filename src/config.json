@@ -1,4 +1,4 @@
-{
+﻿{
   "EnableMod": true,
   "Debug": false,
   "Provider": "Mistral",
@@ -15,7 +15,6 @@
   "DisableCharacters": "",
   "InitiateTypedDialogueKey": "LeftAlt",
   "SupressConnectionCheck": false,
-  "EnableCancelButton": true,
   "EnableMemoryCompression": true,
   "MemoryRecentCount": 10,
 
@@ -31,5 +30,7 @@
   "EnablePerceptionHarvest": true,
   "PerceptionTalkLifetime": 1,
   "PerceptionActionLifetime": 5,
-  "PerceptionHarvestLifetime": 1440
+  "PerceptionHarvestLifetime": 20
 }
+
+

@@ -1,30 +1,24 @@
+using System;
 using System.Threading.Tasks;
-using ValleyTalk.Platform;
+using ValleytalkReborn.Platform;
 
-namespace ValleyTalk
+namespace ValleytalkReborn
 {
     /// <summary>
     /// Helper class for network availability checking in patches
     /// </summary>
     public static class NetworkAvailabilityChecker
     {
-        /// <summary>
-        /// Checks network availability on Android, with retry logic
-        /// </summary>
-        /// <returns>True if network is available or not on Android, false if Android and no network after retry</returns>
         public static async Task<bool> IsNetworkAvailableWithRetryAsync()
         {
-            // If not on Android, always return true (assume network is available)
             if (!AndroidHelper.IsAndroid)
                 return true;
 
-            // First check
             if (NetworkHelper.IsNetworkAvailable())
                 return true;
 
-            ModEntry.SMonitor.Log("Network not available, retrying once per second for 5 seconds...", StardewModdingAPI.LogLevel.Warn);
+            ModEntry.SMonitor?.Log("Network not available, retrying once per second for 5 seconds...", StardewModdingAPI.LogLevel.Warn);
             
-            // Retry once per second for 5 seconds
             for (int i = 0; i < 5; i++)
             {
                 await Task.Delay(1000);
@@ -33,17 +27,27 @@ namespace ValleyTalk
                     return true;
             }
 
-            ModEntry.SMonitor.Log("Network still not available after retrying for 5 seconds, disabling AI dialogue generation", StardewModdingAPI.LogLevel.Warn);
+            ModEntry.SMonitor?.Log("Network still not available after retrying for 5 seconds, disabling AI dialogue generation", StardewModdingAPI.LogLevel.Warn);
             return false;
         }
 
         /// <summary>
-        /// Synchronous version that blocks for the network check
+        /// Synchronous version that blocks for the network check.
+        /// 【Bug 修复】使用 Task.Run 隔离同步上下文，防止主线程调用 .Result 导致游戏界面死锁卡死
         /// </summary>
         public static bool IsNetworkAvailableWithRetry()
         {
-            return IsNetworkAvailableWithRetryAsync().Result;
+            if (!AndroidHelper.IsAndroid)
+                return true;
+
+            try
+            {
+                return Task.Run(async () => await IsNetworkAvailableWithRetryAsync()).GetAwaiter().GetResult();
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
-
 }

@@ -5,7 +5,7 @@ using StardewValley;
 using StardewValley.Menus;
 using System;
 
-namespace ValleyTalk
+namespace ValleytalkReborn
 {
     /// <summary>
     /// A confirmation dialog with Yes/No buttons that properly blocks input to underlying menus.
@@ -22,19 +22,27 @@ namespace ValleyTalk
         private const int DialogHeight = 373;
         private const int ButtonSize = 64;
 
+        // 平滑缩放动画的状态字段 (对齐 DialogueTextInputMenu)
+        private float _yesButtonHoverScale = 1f;
+        private float _noButtonHoverScale = 1f;
+        private readonly float _yesButtonBaseScale = 1f;
+        private readonly float _noButtonBaseScale = 1f;
+
+        // 【新增】标记是否已经明确做出了选择
+        private bool _hasActed = false;
+
         public ConfirmationDialog(string message, Action<Farmer> onConfirm, Action<Farmer> onCancel)
             : base(
                   (Game1.uiViewport.Width - DialogWidth) / 2,
                   (Game1.uiViewport.Height - DialogHeight) / 2,
                   DialogWidth,
                   DialogHeight,
-                  true)
+                  true) 
         {
             _message = message;
             _onConfirm = onConfirm;
             _onCancel = onCancel;
 
-            // Create Yes button (checkmark)
             _yesButton = new ClickableTextureComponent(
                 new Rectangle(
                     xPositionOnScreen + DialogWidth / 2 - 80,
@@ -44,7 +52,6 @@ namespace ValleyTalk
                 Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 46, -1, -1),
                 1f);
 
-            // Create No button (X)
             _noButton = new ClickableTextureComponent(
                 new Rectangle(
                     xPositionOnScreen + DialogWidth / 2 + 16,
@@ -53,6 +60,21 @@ namespace ValleyTalk
                 Game1.mouseCursors,
                 Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 47, -1, -1),
                 1f);
+
+            // 修正关闭按钮的错位
+            if (upperRightCloseButton != null)
+            {
+                upperRightCloseButton.bounds.X = xPositionOnScreen + width - 36;
+                upperRightCloseButton.bounds.Y = yPositionOnScreen + 64;
+            }
+        }
+
+        // 复刻 DialogueTextInputMenu 中的平滑插值逻辑
+        private void UpdateButtonScale(ref float currentScale, ClickableTextureComponent button, int mouseX, int mouseY)
+        {
+            bool hover = button.containsPoint(mouseX, mouseY);
+            float target = hover ? 1.15f : 1.0f; // 1.15f 匹配你的原有设定
+            currentScale += (target - currentScale) * 0.2f;
         }
 
         public override void receiveLeftClick(int x, int y, bool playSound = true)
@@ -62,12 +84,18 @@ namespace ValleyTalk
             if (_yesButton.containsPoint(x, y))
             {
                 Game1.playSound("coin");
+                _yesButton.scale -= 0.25f; // 点击瞬间的缩小按压效果
+                _hasActed = true;          // 【新增】标记已行动
                 _onConfirm?.Invoke(Game1.player);
+                exitThisMenu(); 
             }
             else if (_noButton.containsPoint(x, y))
             {
                 Game1.playSound("cancel");
+                _noButton.scale -= 0.25f; // 点击瞬间的缩小按压效果
+                _hasActed = true;         // 【新增】标记已行动
                 _onCancel?.Invoke(Game1.player);
+                exitThisMenu(); 
             }
         }
 
@@ -76,32 +104,49 @@ namespace ValleyTalk
             if (key == Keys.Escape)
             {
                 Game1.playSound("cancel");
+                // 【修复】不再这里直接调用 _onCancel，交给 cleanupBeforeExit 统一处理
+                exitThisMenu();
+            }
+        }
+
+        // 【新增】重写清理方法，拦截包括右上角红叉在内的所有关闭途径
+        protected override void cleanupBeforeExit()
+        {
+            base.cleanupBeforeExit();
+            
+            // 如果玩家没有点击 Yes 也没有点击 No，统一视为 Cancel 并恢复父菜单
+            if (!_hasActed)
+            {
                 _onCancel?.Invoke(Game1.player);
             }
         }
 
         public override void draw(SpriteBatch b)
         {
-            // Draw semi-transparent overlay
             b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.5f);
-
-            // Draw dialog box
             Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
 
-            // Draw message
             var msgSize = Game1.dialogueFont.MeasureString(_message);
             var textY = yPositionOnScreen + (height - msgSize.Y) / 2 - 10;
             b.DrawString(Game1.dialogueFont, _message,
-                new Vector2(
-                    xPositionOnScreen + (width - msgSize.X) / 2,
-                    textY),
+                new Vector2(xPositionOnScreen + (width - msgSize.X) / 2, textY),
                 Game1.textColor);
 
-            // Draw buttons
+            int mouseX = Game1.getMouseX();
+            int mouseY = Game1.getMouseY();
+
+            UpdateButtonScale(ref _yesButtonHoverScale, _yesButton, mouseX, mouseY);
+            _yesButton.scale = _yesButtonBaseScale * _yesButtonHoverScale;
             _yesButton.draw(b);
+
+            UpdateButtonScale(ref _noButtonHoverScale, _noButton, mouseX, mouseY);
+            _noButton.scale = _noButtonBaseScale * _noButtonHoverScale;
             _noButton.draw(b);
 
-            // Draw mouse cursor
+            // 先调用 base.draw 绘制包括关闭按钮在内的底层 UI
+            base.draw(b);
+
+            // 最后再绘制鼠标，确保鼠标永远覆盖在关闭按钮上方
             if (!Game1.options.hardwareCursor)
             {
                 b.Draw(Game1.mouseCursors,
@@ -109,8 +154,6 @@ namespace ValleyTalk
                     Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 0, 16, 16),
                     Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 1f);
             }
-
-            base.draw(b);
         }
     }
 }

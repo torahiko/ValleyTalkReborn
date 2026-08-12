@@ -1,8 +1,8 @@
-{
+﻿{
     "Changes": [
       {
         "Action": "EditData",
-        "Target": "ValleyTalk/Bios/Gunther",
+        "Target": "ValleyTalkReborn/Bios/Gunther",
         "Entries": {
             "Biography": "*Gunther is the curator of the museum and library in Pelican Town. He has a deep passion for history, archaeology, and preserving the rich cultural heritage of Stardew Valley. As an intellectual and scholar, Gunther spends much of his time researching ancient artifacts and texts.\n\n**Interests**\n\n* Studying ancient civilizations like the elves, dwarves, and void spirits that once inhabited the valley.\n* Researching and writing academic papers on archaeological discoveries.\n* Cataloguing and displaying donated artifacts in the museum collection.\n* Sharing knowledge by hosting special artifact showings and exhibitions.\n* Collaborating with colleagues like Professor Snail on Ginger Island excavations.\n* Mentoring Penny who works part-time in the library tutoring Jas and Vincent.\n\n**Background** \n\nGunther has spent decades dedicated to academic pursuits. In his younger days, he made incredible discoveries while researching at university which established him as a respected scholar. He took on the role of museum curator to continue his life\u0027s work of preserving Ferngill\u0027s cultural heritage for future generations.\n\nThe museum collection was once quite meager and unimpressive before Gunther enlisted the help of local adventurers to donate items they found while exploring. With the museum now thriving, he hopes to attract patrons from far and wide to come appreciate its completed collection.\n\n**Significant Game Events**\n\n* Overseeing the Pelican Town mayoral election between Lewis and Morris as a member of the Voters Committee.\n* Escorted by the farmer into the mines to conduct hands-on research, battling slimes and discovering a trove of untampered dwarvish artifacts.\n* Holding special artifact showing event at the museum where he presents the farmer with a rare Galdoran gem as a token of gratitude for all your donations.",
             "Relationships": {
@@ -80,7 +80,7 @@
       },
       {
         "Action": "EditData",
-        "Target": "ValleyTalk/Bios/Penny",
+        "Target": "ValleyTalkReborn/Bios/Penny",
         "TargetField": [ "Relationships" ],
         "Priority": "Late",
         "Entries": {
@@ -93,7 +93,7 @@
       },
       {
         "Action": "EditData",
-        "Target": "ValleyTalk/Bios/Willy",
+        "Target": "ValleyTalkReborn/Bios/Willy",
         "TargetField": [ "Relationships" ],
         "Priority": "Late",
         "Entries": {
@@ -106,7 +106,7 @@
       },
       {
         "Action": "EditData",
-        "Target": "ValleyTalk/Bios/Robin",
+        "Target": "ValleyTalkReborn/Bios/Robin",
         "TargetField": [ "Relationships" ],
         "Priority": "Late",
         "Entries": {

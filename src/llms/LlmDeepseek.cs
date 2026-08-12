@@ -1,6 +1,6 @@
-using ValleyTalk;
+using ValleytalkReborn;
 
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 internal class LlmDeepSeek : LlmOpenAiBase, IGetModelNames
 {

@@ -1,8 +1,8 @@
-{
+﻿{
     "Changes": [
         {
             "Action": "EditData",
-            "Target": "ValleyTalk/Bios/Hank",
+            "Target": "ValleyTalkReborn/Bios/Hank",
             "Entries": {
                 "Biography": "Hank is a friendly, middle-aged man living in the Pondwood suburbs with his husband Treyvon and stepdaughter Scarlett. He works as a handyman, doing construction and repair jobs for various clients in the area. Hank has a jovial personality and enjoys socializing with neighbors and visitors.\n\n**Interests**\n- Sports fan, especially of the Tunnelers gridball team \n- Home improvement projects like painting and yardwork\n- Trying out new diets and recipes\n- Hosting get-togethers and pool parties (dreams of installing a pool)\n\n**Background**  \nHank grew up in the Pondwood area and worked various odd jobs in his youth. He and Treyvon worked hard to purchase their suburban home, which they take great pride in maintaining and improving. The couple has built a stable life together. Hank helps raise Scarlett as his own daughter.",
                 "Relationships": {

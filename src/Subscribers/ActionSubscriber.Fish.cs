@@ -3,7 +3,7 @@ using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Tools;
 
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 /// <summary>
 /// Subscribes to fish catch events and records perceptions when the player catches a fish.
@@ -44,9 +44,11 @@ internal static class FishSubscriber
 
     private static void RecordFishPerception(string fishName)
     {
-        string template = $"The farmer just caught {fishName}.";
+        // Format: "The farmer just caught a fish nearby."
+        string template = "The farmer just caught a fish nearby.";
         int lifetime = ModEntry.Config.PerceptionActionLifetime;
 
-        PerceptionManager.Instance.Record("Fish", template, null, lifetime, false);
+        PerceptionManager.Instance.Record("Fish", template, null, lifetime,
+            isLandmark: false);
     }
 }

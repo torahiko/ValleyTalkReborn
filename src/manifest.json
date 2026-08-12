@@ -1,10 +1,16 @@
 ﻿{
-  "Name": "ValleyTalk",
-  "Author": "dandm1/srkgou",
-  "Version": "1.6.5",
+  "Name": "ValleytalkReborn",
+  "Author": "srkgou/dandm1",
+  "Version": "2.0.1",
   "Description": "Infinite dialogue for Stardew Valley",
-  "UniqueID": "dandm1.ValleyTalk",
-  "EntryDll": "ValleyTalk.dll",
+  "UniqueID": "srkgou.ValleyTalkReborn",
+  "EntryDll": "ValleyTalkReborn.dll",
   "MinimumApiVersion": "4.1.0",
-  "UpdateKeys": [ "Nexus:30319" ]
+  "UpdateKeys": [ "Nexus:30319" ],
+  "Dependencies": [
+    {
+      "UniqueID": "Omegasis.PolyamorySweetLove",
+      "IsRequired": false
+    }
+  ]
 }

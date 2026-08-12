@@ -1,6 +1,6 @@
-using ValleyTalk;
+using ValleytalkReborn;
 
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 internal class LlmOpenAi : LlmOpenAiBase, IGetModelNames
 {
@@ -19,7 +19,7 @@ internal class LlmOpenAi : LlmOpenAiBase, IGetModelNames
     {
         if (string.IsNullOrEmpty(apiKey))
         {
-            return new string[] { };
+            return System.Array.Empty<string>();
         }
         return CoreGetModelNames();
     }

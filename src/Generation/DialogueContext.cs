@@ -6,16 +6,16 @@ using System.Data;
 using System.Data.SqlTypes;
 using System.Linq;
 using StardewValley.Characters;
-using ValleyTalk;
+using ValleytalkReborn;
 
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 public class DialogueContext
 {
     private static readonly string[] singles = new string[] { "Emily", "Haley", "Maru", "Penny", "Sam", "Sebastian", "Shane", "Abigail", "Elliott", "Harvey", "Leah", "Alex", "Krobus" };
     private static readonly int[] heartsOptions = new int[] { 0, 2, 4, 6, 8, 10 };
     private static readonly int[] friendHeartOptions = new int[] { 0, 6, 8, 10 };
-    private static readonly Season?[] seasonOptions = new ValleyTalk.Season?[] { ValleyTalk.Season.Spring, ValleyTalk.Season.Summer, ValleyTalk.Season.Fall, ValleyTalk.Season.Winter, null };
+    private static readonly Season?[] seasonOptions = new Season?[] { ValleytalkReborn.Season.Spring, ValleytalkReborn.Season.Summer, ValleytalkReborn.Season.Fall, ValleytalkReborn.Season.Winter, null };
     public static readonly string[] locations = new string[] { "Beach", "Desert", "Railroad", "Saloon", "SeedShop", "JojaMart" };
     public static readonly string[] resortTags = new string[] { "Resort", "Resort_Entering", "Resort_Leaving" };
     private static readonly int[] yearOptions = new int[] { 1, 2 };
@@ -36,6 +36,17 @@ public class DialogueContext
     public string ChatID { get; init; }
     public List<ConversationElement> ChatHistory { get; set; } = new List<ConversationElement>();
     public bool LastLineIsPlayerInput { get; set; } = false; // Tracks if the last line came from the player
+
+    // 【新增】用于接收和传递 ContextRouter 动态计算出的路由标志位
+    public ContextFlags RoutingFlags { get; set; } = new ContextFlags 
+    { 
+        IncludeSafetyRules = true, 
+        IncludeShortTermContext = true, 
+        IncludeMemories = true, 
+        IncludeEnvironment = true, 
+        IncludeFarmDetails = true, 
+        IsSimpleGreeting = false 
+    };
 
     private string[] elements = Array.Empty<string>();
     public bool Married { get; set; } = false;
@@ -141,45 +152,47 @@ public class DialogueContext
         Value = value;
         if (string.IsNullOrWhiteSpace(value)) return;
 
-        elements = value.Split('_');
+        var parts = value.Split('_');
+        var partsLength = parts.Length;
+        var cursor = 0;
 
-        // Delete any empty elements from the start
-        while (elements.Length > 0 && elements[0] == "")
+        // Skip empty elements from the start
+        while (cursor < partsLength && parts[cursor] == "")
         {
-            elements = elements.Skip(1).ToArray();
+            cursor++;
         }
 
-        if (elements.Length == 0) return;
+        if (cursor >= partsLength) return;
 
-        // If the first element is M then set the context to married, and remove it from the list
-        if (elements.Length > 0 && elements[0] == "M")
+        // If the current element is "M" then mark married and advance
+        if (parts[cursor] == "M")
         {
             Married = true;
-            elements = elements.Skip(1).ToArray();
+            cursor++;
         }
 
-        if (elements.Length > 0 && elements[0] == "B")
+        if (cursor < partsLength && parts[cursor] == "B")
         {
             Birthday = true;
-            elements = elements.Skip(1).ToArray();
+            cursor++;
         }
 
-        if (elements.Length == 0) return;
+        if (cursor >= partsLength) return;
 
-        // Check if the first element is a season. If so, set the season and remove it from the list
-        if (elements.Length > 0 && !int.TryParse(elements[0], out _) && Enum.TryParse<Season>(elements[0], true, out Season season))
+        // Check if the current element is a season
+        if (!int.TryParse(parts[cursor], out _) && Enum.TryParse<Season>(parts[cursor], true, out var season))
         {
             Season = season;
-            elements = elements.Skip(1).ToArray();
+            cursor++;
         }
 
-        if (elements.Length == 0) return;
+        if (cursor >= partsLength) return;
 
-        // Check if the first element is a valid GUID. If so, set the chat ID and remove it from the list
-        if (elements.Length >= 2 && Guid.TryParse(elements[0], out _))
+        // Check if the current element is a valid GUID
+        if (cursor + 1 < partsLength && Guid.TryParse(parts[cursor], out _))
         {
-            ChatID = $"{elements[0]}_{elements[1]}";
-            elements = elements.Skip(2).ToArray();
+            ChatID = $"{parts[cursor]}_{parts[cursor + 1]}";
+            cursor += 2;
         }
         else if (locations.Any(x => value.StartsWith(x, StringComparison.OrdinalIgnoreCase)))
         {
@@ -193,8 +206,8 @@ public class DialogueContext
             {
                 Hearts = 0;
             }
-            elements = elements.Skip(1).ToArray();
-            if (elements.Length == 0) return;
+            cursor++;
+            if (cursor >= partsLength) return;
         }
         else if (specialContexts.Any(x => value.StartsWith(x, StringComparison.OrdinalIgnoreCase)) && !value.Contains("_Day") && !value.Contains("_Night"))
         {
@@ -208,92 +221,97 @@ public class DialogueContext
             {
                 Hearts = 0;
             }
-            elements = elements.Skip(1).ToArray();
-            if (elements.Length == 0) return;
+            cursor++;
+            if (cursor >= partsLength) return;
         }
-        // Check if the first element is a day of the week followed by a number
-        else if (elements.Length > 0 && elements[0].Length >= 3 && Enum.TryParse<Weekday>(elements[0].Substring(0, 3), true, out var day))
+        // Check if the current element is a day of the week followed by a number
+        else if (parts[cursor].Length >= 3 && Enum.TryParse<Weekday>(parts[cursor].Substring(0, 3), true, out var day))
         {
             Day = day;
-            if (elements[0].Length > 3)
+            if (parts[cursor].Length > 3)
             {
-                Hearts = int.Parse(elements[0].Substring(3));
+                Hearts = int.Parse(parts[cursor].Substring(3));
             }
             else
             {
                 Hearts = 0;
             }
-            elements = elements.Skip(1).ToArray();
+            cursor++;
         }
-        else if (elements.Length > 0 && int.TryParse(elements[0], out var dayOfSeason))
+        else if (int.TryParse(parts[cursor], out var dayOfSeason))
         {
             DayOfSeason = dayOfSeason;
-            elements = elements.Skip(1).ToArray();
+            cursor++;
         }
-        else if (elements.Length > 0 && elements[0].StartsWith("Accept", StringComparison.OrdinalIgnoreCase))
+        else if (parts[cursor].StartsWith("Accept", StringComparison.OrdinalIgnoreCase))
         {
-            if (elements.Length >= 2)
+            if (cursor + 1 < partsLength)
             {
-                var gift = elements[1];
+                var gift = parts[cursor + 1];
                 while (gift.StartsWith("(O)"))
                 {
                     gift = gift.Substring(3);
                 }
-                elements = elements.Skip(2).ToArray();
+                cursor += 2;
             }
             else
             {
-                elements = elements.Skip(1).ToArray();
+                cursor++;
             }
         }
-        else if (elements.Length >= 1 && Enum.TryParse<RandomAction>(elements[0], true, out var randomAction))
+        else if (Enum.TryParse<RandomAction>(parts[cursor], true, out var randomAction))
         {
             RandomAct = randomAction;
-            if ((randomAction == RandomAction.Rainy || randomAction == RandomAction.Indoor) && elements.Length >= 2)
+            if ((randomAction == RandomAction.Rainy || randomAction == RandomAction.Indoor) && cursor + 1 < partsLength)
             {
-                TimeOfDay = elements[1];
-                elements = elements.Skip(2).ToArray();
+                TimeOfDay = parts[cursor + 1];
+                cursor += 2;
             }
             else
             {
-                elements = elements.Skip(1).ToArray();
+                cursor++;
             }
-            if (elements.Length > 0 && int.TryParse(elements[0], out var randomValue))
+            if (cursor < partsLength && int.TryParse(parts[cursor], out var randomValue))
             {
                 RandomValue = randomValue;
-                elements = elements.Skip(1).ToArray();
+                cursor++;
             }
         }
-        else if (elements.Length >= 2 && Enum.TryParse<SpouseAction>(elements[0], true, out var spouseAction))
+        else if (cursor + 1 < partsLength && Enum.TryParse<SpouseAction>(parts[cursor], true, out var spouseAction))
         {
             SpouseAct = spouseAction;
-            Spouse = elements[1];
-            elements = elements.Skip(2).ToArray();
+            Spouse = parts[cursor + 1];
+            cursor += 2;
         }
         else
         {
             ChatID = value;
-            elements = Array.Empty<string>();
+            return;
         }
 
-        // 防护：如果在此之前 elements 已经为空，直接退出
-        if (elements.Length == 0) return;
+        // Guard: if cursor has exhausted parts, exit
+        if (cursor >= partsLength) return;
 
-        // If the first element is a number, set the year and remove it from the list
-        if (elements.Length > 0 && int.TryParse(elements[0], out var year))
+        // If the current element is a number, set the year and advance
+        if (int.TryParse(parts[cursor], out var year))
         {
             Year = year;
-            elements = elements.Skip(1).ToArray();
+            cursor++;
         }
 
-        // If there are two or more remaining elements, check if the next element says "inlaw"
-        if (elements.Length >= 2 && elements[0] == "inlaw")
+        // If there are two or more remaining elements, check if the next says "inlaw"
+        if (cursor + 1 < partsLength && parts[cursor] == "inlaw")
         {
-            Inlaw = elements[1];
-            elements = elements.Skip(2).ToArray();
+            Inlaw = parts[cursor + 1];
+            cursor += 2;
+        }
+
+        // Store remaining elements for any downstream consumers
+        if (cursor < partsLength)
+        {
+            elements = parts.Skip(cursor).ToArray();
         }
     }
-
     public DialogueContext(DialogueContext context)
     {
         Hearts = context.Hearts;
@@ -314,6 +332,9 @@ public class DialogueContext
         TargetSamples = context.TargetSamples;
         Location = context.Location;
         LastLineIsPlayerInput = context.LastLineIsPlayerInput;
+        
+        // 【新增】在克隆时同步路由标志位
+        RoutingFlags = context.RoutingFlags;
     }
 
     private string _value;
@@ -391,8 +412,8 @@ public class DialogueContext
         difference += CompareValuesNull(Spouse, other.Spouse, 0, 10000, 2000);
         difference += CompareValues(Year, other.Year, 0, 200, 200);
         difference += CompareValuesNull(Inlaw, other.Inlaw, 0, 500, 1000);
-        // Add a random factor
-        difference += new Random().Next(0, 10);
+        // Use a deterministic tie-breaker based on Location hash to avoid IComparable contract violations
+        difference += (Location?.GetHashCode() ?? 0) % 10;
 
         return difference;
     }
@@ -474,9 +495,21 @@ public class DialogueContext
     
     public override int GetHashCode()
     {
-        return HashCode.Combine(
-            HashCode.Combine(Hearts, Season, Year, Day, DayOfSeason, Inlaw, Accept),
-            HashCode.Combine(TimeOfDay, RandomAct, SpouseAct, ChatID, Married, Location, Birthday)
-        );
+        var hash = new HashCode();
+        hash.Add(Hearts);
+        hash.Add(Season);
+        hash.Add(Year);
+        hash.Add(Day);
+        hash.Add(DayOfSeason);
+        hash.Add(Inlaw);
+        hash.Add(Accept);
+        hash.Add(TimeOfDay);
+        hash.Add(RandomAct);
+        hash.Add(SpouseAct);
+        hash.Add(ChatID);
+        hash.Add(Married);
+        hash.Add(Location);
+        hash.Add(Birthday);
+        return hash.ToHashCode();
     }
 }

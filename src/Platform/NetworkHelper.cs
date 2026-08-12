@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Collections.Generic;
 
-namespace ValleyTalk.Platform
+namespace ValleytalkReborn.Platform
 {
     /// <summary>
     /// Helper class for Android-compatible network operations
@@ -17,46 +17,39 @@ namespace ValleyTalk.Platform
         {
             var handler = new HttpClientHandler();
             
-            // Increase timeout for mobile networks
             _httpClient = new HttpClient(handler)
             {
-                Timeout = TimeSpan.FromSeconds(ModEntry.Config.QueryTimeout)
+                Timeout = TimeSpan.FromSeconds(ModEntry.Config?.QueryTimeout ?? 60)
             };
 
-            // Android-specific configuration
             if (AndroidHelper.IsAndroid)
             {
-                // Add mobile-friendly headers
                 _httpClient.DefaultRequestHeaders.Add("User-Agent",
                     "ValleyTalk/1.0 (Android; Stardew Valley Mod)");
             }
         }
 
-        /// <summary>
-        /// Makes an HTTP request with Android-compatible settings
-        /// </summary>
         public static async Task<string> MakeRequestAsync(string url, string content = null, CancellationToken cancellationToken = default, string authToken = null)
         {
             HttpResponseMessage response = null;
             try
             {
-                
-                if (string.IsNullOrEmpty(content))
+                using var request = new HttpRequestMessage(
+                    string.IsNullOrEmpty(content) ? HttpMethod.Get : HttpMethod.Post, 
+                    url
+                );
+
+                if (!string.IsNullOrEmpty(content))
                 {
-                    var request = new HttpRequestMessage(HttpMethod.Get, url);
-                    if (!string.IsNullOrEmpty(authToken))
-                        request.Headers.Add("Authorization", $"Bearer {authToken}");
-                    response = await _httpClient.SendAsync(request, cancellationToken);
-                }
-                else
-                {
-                    var stringContent = new StringContent(content, System.Text.Encoding.UTF8, "application/json");
-                    var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = stringContent };
-                    if (!string.IsNullOrEmpty(authToken))
-                        request.Headers.Add("Authorization", $"Bearer {authToken}");
-                    response = await _httpClient.SendAsync(request, cancellationToken);
+                    request.Content = new StringContent(content, System.Text.Encoding.UTF8, "application/json");
                 }
 
+                if (!string.IsNullOrEmpty(authToken))
+                {
+                    request.Headers.Add("Authorization", $"Bearer {authToken}");
+                }
+
+                response = await _httpClient.SendAsync(request, cancellationToken);
                 response.EnsureSuccessStatusCode();
                 return await response.Content.ReadAsStringAsync();
             }
@@ -71,23 +64,30 @@ namespace ValleyTalk.Platform
             catch (HttpRequestException ex)
             {
                 string message = ex.Message;
-                if (response != null && response.Content != null)
+                if (response?.Content != null)
                 {
-                    message += $"\n (HTTP {(int)response.StatusCode} - {response.Content.ReadAsStringAsync().Result})";
+                    // 【Bug 修复】使用 await 异步读取错误响应，消除原代码中 .Result 导致的线程死锁
+                    try
+                    {
+                        string errorBody = await response.Content.ReadAsStringAsync();
+                        message += $"\n (HTTP {(int)response.StatusCode} - {errorBody})";
+                    }
+                    catch
+                    {
+                        message += $"\n (HTTP {(int)response.StatusCode})";
+                    }
                 }
                 throw new InvalidOperationException($"Network request failed: {message}", ex);
             }
         }
 
-        /// <summary>
-        /// Makes an HTTP request with custom headers for specific LLM providers
-        /// </summary>
         public static async Task<string> MakeRequestWithCustomHeadersAsync(string url, string content, Dictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
+            HttpResponseMessage response = null;
             try
             {
-                var stringContent = new StringContent(content, System.Text.Encoding.UTF8, "application/json");
-                var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = stringContent };
+                using var stringContent = new StringContent(content, System.Text.Encoding.UTF8, "application/json");
+                using var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = stringContent };
                 
                 if (headers != null)
                 {
@@ -97,7 +97,7 @@ namespace ValleyTalk.Platform
                     }
                 }
 
-                var response = await _httpClient.SendAsync(request, cancellationToken);
+                response = await _httpClient.SendAsync(request, cancellationToken);
                 response.EnsureSuccessStatusCode();
                 return await response.Content.ReadAsStringAsync();
             }
@@ -111,18 +111,28 @@ namespace ValleyTalk.Platform
             }
             catch (HttpRequestException ex)
             {
-                throw new InvalidOperationException($"Network request failed: {ex.Message}", ex);
+                string message = ex.Message;
+                if (response?.Content != null)
+                {
+                    // 【优化】同样补充详细的错误日志读取
+                    try
+                    {
+                        string errorBody = await response.Content.ReadAsStringAsync();
+                        message += $"\n (HTTP {(int)response.StatusCode} - {errorBody})";
+                    }
+                    catch
+                    {
+                        message += $"\n (HTTP {(int)response.StatusCode})";
+                    }
+                }
+                throw new InvalidOperationException($"Network request failed: {message}", ex);
             }
         }
 
-        /// <summary>
-        /// Checks if network is available (basic check for Android)
-        /// </summary>
         public static bool IsNetworkAvailable()
         {
             try
             {
-                // Basic connectivity test
                 return System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable();
             }
             catch
@@ -131,9 +141,6 @@ namespace ValleyTalk.Platform
             }
         }
 
-        /// <summary>
-        /// Disposes the HTTP client
-        /// </summary>
         public static void Dispose()
         {
             _httpClient?.Dispose();

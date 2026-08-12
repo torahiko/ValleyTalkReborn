@@ -2,7 +2,7 @@
 using StardewModdingAPI.Events;
 using StardewValley;
 
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 /// <summary>
 /// Subscribes to eat events and records perceptions when the player eats items.
@@ -47,15 +47,14 @@ internal static class EatSubscriber
     private static void RecordEatPerception(Item itemToEat)
     {
         if (itemToEat == null) return;
-
         string itemId = itemToEat.ItemId;
         if (itemId == _lastItemId || string.IsNullOrEmpty(itemId)) return;
-
         string itemName = itemToEat.DisplayName ?? itemToEat.Name ?? "something";
-        string template = $"The farmer just ate {itemName}.";
+        // Format: "The farmer ate a [ItemName] in front of you."
+        string template = $"The farmer ate a [{itemName}] in front of you.";
         int lifetime = ModEntry.Config.PerceptionActionLifetime;
-
-        PerceptionManager.Instance.Record("Eat", template, null, lifetime, false, itemId);
+        PerceptionManager.Instance.Record("Eat", template, null, lifetime,
+            isLandmark: false, itemId: itemId);
         _lastItemId = itemId;
     }
 }

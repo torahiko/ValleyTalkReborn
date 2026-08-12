@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Net;
 using static StardewValley.LocalizedContentManager;
 
-namespace ValleyTalk
+namespace ValleytalkReborn
 {
     internal class SldConstants
     {

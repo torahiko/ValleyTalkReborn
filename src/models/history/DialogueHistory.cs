@@ -4,26 +4,38 @@ using System.Linq;
 using Newtonsoft.Json;
 using StardewValley;
 
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 internal class DialogueHistory : IHistory
 {
+    private IEnumerable<StardewValley.DialogueLine> _dialogues = Enumerable.Empty<StardewValley.DialogueLine>();
+
     [JsonConstructor]
     public DialogueHistory()
     {
-        Dialogues = new List<StardewValley.DialogueLine>();
+        _dialogues = Enumerable.Empty<StardewValley.DialogueLine>();
     }
 
     public DialogueHistory(IEnumerable<StardewValley.DialogueLine> dialogues)
     {
-        Dialogues = dialogues;
+        _dialogues = dialogues ?? Enumerable.Empty<StardewValley.DialogueLine>();
     }
 
     public string Format(string npcName)
     {
-        var totalDialogue = string.Join(" : ", Dialogues.Select(x => x.Text));
-        return Util.GetString("dialogueHistoryFormat", new { npcName = npcName, totalDialogue = totalDialogue });
+        var safeDialogues = Dialogues ?? Enumerable.Empty<StardewValley.DialogueLine>();
+        var totalDialogue = string.Join(" : ", safeDialogues.Where(x => x != null).Select(x => x.Text));
+        
+        return Util.GetString("dialogueHistoryFormat", new 
+        { 
+            npcName = npcName ?? string.Empty, 
+            totalDialogue = totalDialogue 
+        });
     }
 
-    public IEnumerable<StardewValley.DialogueLine> Dialogues { get; set; }
+    public IEnumerable<StardewValley.DialogueLine> Dialogues 
+    { 
+        get => _dialogues; 
+        set => _dialogues = value ?? Enumerable.Empty<StardewValley.DialogueLine>(); 
+    }
 }

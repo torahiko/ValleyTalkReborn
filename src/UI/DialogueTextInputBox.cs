@@ -6,7 +6,7 @@ using StardewValley.Menus;
 using System;
 using System.Collections.Generic;
 
-namespace ValleyTalk
+namespace ValleytalkReborn
 {
     /// <summary>
     /// A larger text input box specifically designed for dialogue responses.
@@ -44,6 +44,10 @@ namespace ValleyTalk
         private Keys _currentSpecialKey = Keys.None;
         private double _keyPressTime = 0;
         private int _repeatCount = 0;
+
+        // Cached wrapped lines to avoid per-frame allocation
+        private List<string> _cachedWrappedLines;
+        private bool _isTextDirty = true;
 
         // Counter display area
         private const int CounterPadding = 8;
@@ -98,6 +102,7 @@ namespace ValleyTalk
         public void SetText(string text)
         {
             Text = text ?? "";
+            _isTextDirty = true;
             _caretPosition = Text.Length;
         }
 
@@ -261,7 +266,12 @@ namespace ValleyTalk
         /// </summary>
         private List<string> GetWrappedLines(string text)
         {
-            return WrapTextByPixelWidth(text, (int)Extent.X - 64, Font); // Extra padding for arrows
+            if (_isTextDirty || _cachedWrappedLines == null)
+            {
+                _cachedWrappedLines = WrapTextByPixelWidth(text, (int)Extent.X - 64, Font);
+                _isTextDirty = false;
+            }
+            return _cachedWrappedLines;
         }
 
         /// <summary>
@@ -413,6 +423,7 @@ namespace ValleyTalk
                 {
                     Text = Text.Remove(_caretPosition - 1, 1);
                     _caretPosition--;
+                    _isTextDirty = true;
                 }
                 return;
             }
@@ -433,6 +444,7 @@ namespace ValleyTalk
             {
                 Text = Text.Insert(_caretPosition, inputChar.ToString());
                 _caretPosition++;
+                _isTextDirty = true;
             }
             else
             {
@@ -599,6 +611,7 @@ namespace ValleyTalk
             if (_caretPosition < Text.Length)
             {
                 Text = Text.Remove(_caretPosition, 1);
+                _isTextDirty = true;
             }
         }
 
@@ -608,10 +621,11 @@ namespace ValleyTalk
             {
                 Text = Text.Remove(_caretPosition - 1, 1);
                 _caretPosition--;
+                _isTextDirty = true;
             }
         }
 
-        private static bool IsControlKeyDown()
+        public static bool IsControlKeyDown()
         {
             var state = Keyboard.GetState();
             return state.IsKeyDown(Keys.LeftControl) || state.IsKeyDown(Keys.RightControl);
@@ -651,6 +665,7 @@ namespace ValleyTalk
 
                 Text = Text.Insert(_caretPosition, clipboardText);
                 _caretPosition += clipboardText.Length;
+                _isTextDirty = true;
             }
             catch (Exception ex)
             {
@@ -668,11 +683,14 @@ namespace ValleyTalk
                 TextCopy.ClipboardService.SetText(Text);
                 Text = "";
                 _caretPosition = 0;
-            }
-            catch (Exception ex)
+                _isTextDirty = true;
+            }catch (Exception ex)
             {
                 Log.Debug($"Clipboard cut failed: {ex.Message}");
             }
+
+        /// <summary>
         }
     }
+
 }

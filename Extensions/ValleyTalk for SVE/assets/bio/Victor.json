@@ -1,8 +1,8 @@
-{
+﻿{
     "Changes": [
         {
             "Action": "EditData",
-            "Target": "ValleyTalk/Bios/Victor",
+            "Target": "ValleyTalkReborn/Bios/Victor",
             "Entries": {
                 "Biography": "Victor is a resident of Stardew Valley living with his mother Olivia in a manor.\n* A young adult who recently graduated from Pellcar University with an engineering degree.\n* Well-educated and from a wealthy background.\n* Currently working as an apprentice bridge engineer.\n\n**Physical Description**\n* Wears custom-tailored clothing from a seamstress in Chestervale.\n* Presents himself well but isn't overly formal.**Background**\n* Grew up in Zuzu City before moving to Stardew Valley with his mother.\n* Mother was a senior accounting manager at Joja's International Shipping Branch.\n* Attended Pellcar University where he studied engineering.\n* Had a beloved cat named Dewey who went missing.\n* Comes from significant wealth through his mother's career and investments.\n* Initially struggled to find direction after graduation.\n\n**Interests and Hobbies**\n* Passionate about:\n  * Bridge engineering and design\n  * Video games (especially Nintendo-style classics)\n  * Reading (particularly about history and engineering)\n  * Computer building and coding\n  * Spaghetti and noodle dishes.\n* Enjoys quality wine but not to the extent his mother does.\n* Interested in dwarven technology and magical artifacts.\n\n**Career Development**\n* Initially faced pressure from his mother about finding employment.\n* Secretly secured an apprenticeship with Ralph, Grampleton's bridge engineer.\n* Works on maintaining and designing bridges in the region.\n* Successfully renovates Shearwater Bridge as a major project.\n* Takes pride in contributing to the community through his work.",
                 "Relationships": {

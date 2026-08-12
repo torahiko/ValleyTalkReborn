@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using StardewValley;
 
-namespace ValleyTalk
+namespace ValleytalkReborn
 {
     /// <summary>
     /// Helper class for building the event history section of the prompt.
@@ -26,68 +26,32 @@ namespace ValleyTalk
             prompt.AppendLine(Util.GetString(character, "eventHistoryIntro", new { Name = character.Name }));
             prompt.AppendLine(Util.GetString(character, "eventHistorySubheading"));
 
-            int remainingLength = 4000;
-            List<string> historyLines = new List<string>();
+            // Build a set of texts already present in the active ChatHistory so we don't duplicate them
+            var chatHistoryTexts = new System.Collections.Generic.HashSet<string>(
+                context?.ChatHistory?.Select(c => c.Text?.Trim() ?? "")
+                ?? System.Linq.Enumerable.Empty<string>(),
+                System.StringComparer.Ordinal);
 
-            // Separate world events (ActivityHistory) from dialogue entries (DialogueHistoryAdapter)
-            var worldEvents = historySample.Where(e => e.Item2 is ActivityHistory).ToList();
-            var dialogueEntries = historySample.Where(e => e.Item2 is DialogueHistoryAdapter).ToList();
-
-            int recentCount = ModEntry.Config.MemoryRecentCount;
-
-            // Compress old dialogue entries if we have more than the recent window
-            if (ModEntry.Config.EnableMemoryCompression && dialogueEntries.Count > recentCount)
+            foreach (var entry in historySample)
             {
-                string cachedSummary = DialogueMemoryCompressor.GetCachedSummary(character.Name, dialogueEntries.Count, recentCount);
-
-                if (!string.IsNullOrEmpty(cachedSummary))
+                if (entry.Item2 is DialogueHistoryAdapter adapter)
                 {
-                    string summaryLine = $"[Summary of earlier conversations: {cachedSummary}]";
-                    historyLines.Add(summaryLine);
-                    remainingLength -= summaryLine.Length + 1;
-                }
+                    bool isSystem = adapter.Entry.SpeakerType == SpeakerType.System;
+                    if (!isSystem)
+                    {
+                        // Skip normal dialogue lines already visible in the active chat context
+                        var entryText = adapter.Entry.Text?.Trim() ?? "";
+                        if (!string.IsNullOrEmpty(entryText) && chatHistoryTexts.Contains(entryText)) continue;
+                    }
 
-                // Show recent entries in detail
-                var recentEntries = dialogueEntries.Skip(dialogueEntries.Count - recentCount);
-                foreach (var entry in recentEntries.AsEnumerable().Reverse())
+                    string fuzzyTime = DialogueHistoryAdapter.GetFuzzyTime(entry.Item1, timeNow);
+                    prompt.AppendLine($"- {fuzzyTime}: {adapter.Format(character.Name)}");
+                }
+                else
                 {
-                    // Exclude the current conversation (entries from "just now")
-                    if (entry.Item1.IsJustNow()) continue;
-
-                    var line = $"- {entry.Item1.SinceDescription(timeNow)}: {entry.Item2.Format(character.Name)}";
-                    historyLines.Add(line);
-                    remainingLength -= line.Length + 1;
-                    if (remainingLength < 0) break;
+                    string fuzzyTime = DialogueHistoryAdapter.GetFuzzyTime(entry.Item1, timeNow);
+                    prompt.AppendLine($"- {fuzzyTime}: {entry.Item2.Format(character.Name)}");
                 }
-            }
-            else
-            {
-                // Not enough entries to compress - show all verbatim
-                foreach (var entry in dialogueEntries.AsEnumerable().Reverse())
-                {
-                    // Exclude the current conversation (entries from "just now")
-                    if (entry.Item1.IsJustNow()) continue;
-
-                    var line = $"- {entry.Item1.SinceDescription(timeNow)}: {entry.Item2.Format(character.Name)}";
-                    historyLines.Add(line);
-                    remainingLength -= line.Length + 1;
-                    if (remainingLength < 0) break;
-                }
-            }
-
-            // World events are always shown (they're brief and informational)
-            foreach (var worldEvent in worldEvents.AsEnumerable().Reverse())
-            {
-                var line = $"- {worldEvent.Item1.SinceDescription(timeNow)}: {worldEvent.Item2.Format(character.Name)}";
-                historyLines.Add(line);
-                remainingLength -= line.Length + 1;
-                if (remainingLength < 0) break;
-            }
-
-            // Reverse to show oldest first
-            foreach (var line in historyLines.Reverse<string>())
-            {
-                prompt.AppendLine(line);
             }
         }
     }

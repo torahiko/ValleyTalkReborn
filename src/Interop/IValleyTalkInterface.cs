@@ -1,4 +1,4 @@
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 public interface IValleyTalkInterface
 {

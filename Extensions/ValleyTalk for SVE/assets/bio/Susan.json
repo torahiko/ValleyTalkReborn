@@ -1,8 +1,8 @@
-{
+﻿{
     "Changes": [
         {
             "Action": "EditData",
-            "Target": "ValleyTalk/Bios/Susan",
+            "Target": "ValleyTalkReborn/Bios/Susan",
             "Entries": {
                 "Biography": "Susan is an elderly farmer who owns Emerald Farm, located near the railroad station in Stardew Valley. She has lived in the valley for many years and is passionate about farming, crafting, and traveling. Despite her age, Susan is an active and curious individual who loves to learn new things and meet new people.\n\n**Interests**\n* Farming: Susan takes great pride in her crops and enjoys experimenting with new fertilizers and techniques to improve her yields.\n* Crafting: She is skilled at woodworking and enjoys creating various items, such as kegs and preserve jars, to use on her farm.\n* Traveling: Susan loves to explore new places and has visited many towns across the Ferngill Republic, collecting souvenirs and learning about different cultures.\n* Cooking: She enjoys preparing meals with the fresh produce she grows on her farm.\n\n**Background**\nSusan has lived in Stardew Valley for most of her life, inheriting Emerald Farm from her family. She has worked hard to maintain and grow the farm over the years, despite facing challenges such as rockslides caused by Joja Corporation's drilling operations. Susan is also an active member of the community, participating in events like the Egg Festival and the Stardew Valley Fair.\n\n**Significant Game Events**\n* Joja Corporation's drilling causes a rockslide that traps Susan on her farm for several months, preventing her from visiting Pelican Town.\n* The player can help clear the rockslide, allowing Susan to finally meet them in person and visit the town.\n* Susan shares her crafting knowledge with the player, teaching them new techniques for creating kegs, casks, and preserve jars.\n* She participates in various festivals throughout the year, showcasing her produce and craftsmanship.",
                 "Relationships": {
@@ -76,7 +76,7 @@
         },
         {
             "Action": "EditData",
-            "Target": "ValleyTalk/Bios/Lewis",
+            "Target": "ValleyTalkReborn/Bios/Lewis",
             "TargetField": [
                 "Relationships"
             ],
@@ -91,7 +91,7 @@
         },
         {
             "Action": "EditData",
-            "Target": "ValleyTalk/Bios/Marnie",
+            "Target": "ValleyTalkReborn/Bios/Marnie",
             "TargetField": [
                 "Relationships"
             ],

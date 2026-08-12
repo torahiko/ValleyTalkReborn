@@ -1,41 +1,49 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Collections.Concurrent;
-using StardewModdingAPI.Events;
 using StardewModdingAPI;
+using StardewModdingAPI.Events;
 using StardewValley;
 
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 /// <summary>
-/// Singleton manager for storing, querying, and cleaning up perception records.
-/// Each behavior type keeps only the latest record — new overwrites old.
+/// Manages two separate perception tracks:
+///
+///   Track 1 — _globalGossip (max 2): town-wide "Town Gossip" snapshots.
+///     Triggered by major events (date ended, etc.). Shared by all NPCs. Simple FIFO.
+///
+///   Track 2 — _farmerBucket (max 3): the farmer's personal short-term perception pocket.
+///     Uses Deduplicated-FIFO: same Key + NpcName (or Key + Location) replaces old entry.
+///     Injected per-NPC through an eyewitness filter at prompt-build time.
 /// </summary>
 internal class PerceptionManager
 {
-    /// <summary>Singleton instance.</summary>
     public static readonly PerceptionManager Instance = new PerceptionManager();
 
-    /// <summary>Key = composite "[{action}]_{npcName|GLOBAL}", Value = latest perception record.</summary>
-    private readonly ConcurrentDictionary<string, PerceptionEntry> _perceptions = new();
+    private readonly object _lock = new object();
 
-    /// <summary>Timer for periodic cleanup (unused, kept for future use).</summary>
-    private TimeSpan _lastCleanup = TimeSpan.Zero;
+    // Track 1: global gossip snapshots (max 2, simple FIFO)
+    private readonly Queue<PerceptionEntry> _globalGossip = new Queue<PerceptionEntry>();
+    private const int MaxGossipEntries = 2;
+
+    // Track 2: farmer's personal bucket (max 3, Deduplicated-FIFO)
+    private readonly Queue<PerceptionEntry> _farmerBucket = new Queue<PerceptionEntry>();
+    private const int MaxBucketEntries = 3;
 
     private PerceptionManager()
     {
-        // Subscribe to game loop for periodic cleanup
         if (ModEntry.SHelper != null)
         {
             ModEntry.SHelper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
-            ModEntry.SHelper.Events.GameLoop.DayStarted += OnDayStarted;
+            ModEntry.SHelper.Events.GameLoop.DayStarted   += OnDayStarted;
         }
     }
 
-    /// <summary>
-    /// Cleans up event subscriptions. Called when the game is exiting.
-    /// </summary>
+    // ─────────────────────────────────────────────
+    //  Lifecycle
+    // ─────────────────────────────────────────────
+
     public void Cleanup()
     {
         try
@@ -43,9 +51,13 @@ internal class PerceptionManager
             if (ModEntry.SHelper != null)
             {
                 ModEntry.SHelper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
-                ModEntry.SHelper.Events.GameLoop.DayStarted -= OnDayStarted;
+                ModEntry.SHelper.Events.GameLoop.DayStarted   -= OnDayStarted;
             }
-            _perceptions.Clear();
+            lock (_lock)
+            {
+                _globalGossip.Clear();
+                _farmerBucket.Clear();
+            }
         }
         catch (Exception ex)
         {
@@ -53,164 +65,291 @@ internal class PerceptionManager
         }
     }
 
-    /// <summary>
-    /// Records a behavior perception. New records with the same key overwrite old ones.
-    /// Respects all config switches via ShouldRecord().
-    /// Uses composite key: $"[{key}]_{npcName ?? "GLOBAL"}" to prevent
-    /// global events from overwriting NPC-specific events of the same action type.
-    /// </summary>
-    public void Record(string key, string template, string npcName = null, int lifetimeMinutes = 5, bool isGlobal = false, string itemId = null)
+    // ─────────────────────────────────────────────
+    //  Public API
+    // ─────────────────────────────────────────────
+
+    public void Record(
+        string key,
+        string template,
+        string npcName       = null,
+        int    lifetimeHours = 2,
+        bool   isGossip      = false,
+        bool   isLandmark    = false,
+        string itemId        = null,
+        string locationName  = null)
     {
-        if (!ShouldRecord(key, isGlobal)) return;
+        if (!ShouldRecord(key, isGossip)) return;
         if (string.IsNullOrWhiteSpace(template)) return;
 
-        string compositeKey = $"[{key}]_{npcName ?? "GLOBAL"}";
-        _perceptions[compositeKey] = new PerceptionEntry
+        string resolvedLocation = locationName
+            ?? Game1.currentLocation?.Name
+            ?? string.Empty;
+
+        var entry = new PerceptionEntry
         {
-            Key = key,
-            Template = template,
-            NpcName = npcName ?? "",
-            Timestamp = DateTime.Now,
-            LifetimeMinutes = lifetimeMinutes,
-            IsGlobal = isGlobal,
-            ItemId = itemId
+            Key               = key,
+            Template          = template,
+            NpcName           = npcName ?? string.Empty,
+            Timestamp         = DateTime.Now,
+            RecordedTimeOfDay = Game1.timeOfDay,
+            LifetimeHours     = lifetimeHours,
+            IsGossip          = isGossip,
+            IsLandmark        = isLandmark,
+            LocationName      = resolvedLocation,
+            ItemId            = itemId
         };
 
-        if (ModEntry.Config.Debug)
+        lock (_lock)
         {
-            ModEntry.SMonitor?.Log($"[Perception] Recorded '{compositeKey}': {template}", LogLevel.Debug);
+            if (isGossip)
+                EnqueueGossip(entry);
+            else
+                EnqueueBucket(entry);
+        }
+
+        if (ModEntry.Config?.Debug == true)
+        {
+            string track = isGossip ? "Gossip" : "Bucket";
+            ModEntry.SMonitor?.Log(
+                $"[PerceptionManager] [{track}] '{key}' @ {resolvedLocation}: {template}",
+                LogLevel.Debug);
         }
     }
 
     /// <summary>
-    /// Gets perceptions that a specific NPC knows about.
-    /// Returns up to maxCount entries, ordered by time (newest first).
-    /// Includes both NPC-specific perceptions and global (town-wide) perceptions.
+    /// Open interface for recording a town-wide gossip snapshot from any major event.
+    /// </summary>
+    public void RecordGossip(string key, string template, int lifetimeHours = 20)
+    {
+        Record(
+            key:          key,
+            template:     template,
+            npcName:      null,
+            lifetimeHours: lifetimeHours,
+            isGossip:     true,
+            isLandmark:   false);
+    }
+
+    /// <summary>
+    /// Returns all currently valid gossip snapshots (Track 1) for prompt injection.
+    /// </summary>
+    public List<PerceptionEntry> GetGossipSnapshots()
+    {
+        lock (_lock)
+        {
+            return _globalGossip
+                .Where(IsPerceptionTimeValid)
+                .ToList();
+        }
+    }
+
+    /// <summary>
+    /// Marks all entries for the given NPC as consolidated so they won't be
+    /// re-injected during prompt build the next day.
+    /// Called by NightlyConsolidationHook after packing events into a nightly work item.
+    /// </summary>
+    public void MarkAsConsolidated(string npcName)
+    {
+        if (string.IsNullOrEmpty(npcName)) return;
+        lock (_lock)
+        {
+            foreach (var e in _farmerBucket)
+            {
+                if (e.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase))
+                    e.IsConsolidated = true;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Returns farmer bucket entries that pass the eyewitness filter for the given NPC.
+    ///
+    ///   Condition B — entry.NpcName == npcName  (directly targeted, e.g. received a gift)
+    ///   Condition A — entry.LocationName == npc's current location  (eyewitness)
+    ///   Condition C — entry.IsLandmark == true  (town-wide broadcast)
+    ///   Condition D — none of the above → excluded
+    /// </summary>
+    public List<PerceptionEntry> GetFilteredBucketFor(string npcName, int max = 3)
+    {
+        if (string.IsNullOrEmpty(npcName)) return new List<PerceptionEntry>();
+
+        string npcLocation = GetNpcCurrentLocation(npcName);
+
+        lock (_lock)
+        {
+            return _farmerBucket
+                .Where(IsPerceptionTimeValid)
+                .Where(e => !e.IsConsolidated) // Skip entries already processed by nightly consolidation
+                .Where(e => PassesEyewitnessFilter(e, npcName, npcLocation))
+                .OrderByDescending(e => e.Timestamp)
+                .Take(max)
+                .ToList();
+        }
+    }
+
+    /// <summary>
+    /// Legacy accessor — returns filtered bucket entries.
+    /// Kept for any external callers still using GetPerceptionsFor().
     /// </summary>
     public List<PerceptionEntry> GetPerceptionsFor(string npcName, int maxCount = 3)
+        => GetFilteredBucketFor(npcName, maxCount);
+
+    public IReadOnlyList<string> GetInteractedNpcNamesToday()
     {
-        var now = DateTime.Now;
-        var results = _perceptions.Values
-            .Where(p => IsPerceptionValidForNpc(p, npcName, now))
-            .OrderByDescending(p => p.Timestamp)
-            .Take(maxCount)
-            .ToList();
-        return results;
+        lock (_lock)
+        {
+            return _farmerBucket
+                .Where(e => !string.IsNullOrEmpty(e.NpcName))
+                .Select(e => e.NpcName)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    //  Private: queue management
+    // ─────────────────────────────────────────────
+
+    private void EnqueueGossip(PerceptionEntry entry)
+    {
+        while (_globalGossip.Count >= MaxGossipEntries) _globalGossip.Dequeue();
+        _globalGossip.Enqueue(entry);
     }
 
     /// <summary>
-    /// Checks whether a perception is still valid (not expired) and visible to the given NPC.
+    /// Deduplicated-FIFO for farmer bucket:
+    ///   1. Remove any existing entry with same Key AND (same NpcName OR same LocationName).
+    ///   2. Append new entry to tail.
+    ///   3. If total still exceeds MaxBucketEntries, evict oldest from head.
     /// </summary>
-    private bool IsPerceptionValidForNpc(PerceptionEntry entry, string npcName, DateTime now)
+    private void EnqueueBucket(PerceptionEntry entry)
     {
-        // Check expiration
-        if ((now - entry.Timestamp).TotalMinutes > entry.LifetimeMinutes)
-            return false;
+        PerceptionEntry duplicate = _farmerBucket.FirstOrDefault(e =>
+            e.Key == entry.Key &&
+            (
+                (!string.IsNullOrEmpty(entry.NpcName)
+                    && string.Equals(e.NpcName, entry.NpcName, StringComparison.OrdinalIgnoreCase))
+                ||
+                (string.IsNullOrEmpty(entry.NpcName)
+                    && !string.IsNullOrEmpty(entry.LocationName)
+                    && string.Equals(e.LocationName, entry.LocationName, StringComparison.OrdinalIgnoreCase))
+            ));
 
-        // Global perceptions are visible to everyone
-        if (entry.IsGlobal)
-            return true;
-
-        // NPC-specific perceptions are only visible to that NPC
-        if (!string.IsNullOrEmpty(entry.NpcName) && entry.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        // Same-map perceptions (no specific NPC) are visible to all NPCs on the same map
-        if (string.IsNullOrEmpty(entry.NpcName))
+        if (duplicate != null)
         {
-            // For same-map perception, check if NPC is on same map as player
-            return IsNpcOnSameMap(npcName);
+            var remaining = _farmerBucket.Where(e => e != duplicate).ToList();
+            _farmerBucket.Clear();
+            foreach (var item in remaining)
+                _farmerBucket.Enqueue(item);
         }
+
+        while (_farmerBucket.Count >= MaxBucketEntries)
+            _farmerBucket.Dequeue();
+
+        _farmerBucket.Enqueue(entry);
+    }
+
+    // ─────────────────────────────────────────────
+    //  Private: filter & validity
+    // ─────────────────────────────────────────────
+
+    private static bool PassesEyewitnessFilter(
+        PerceptionEntry entry, string npcName, string npcLocation)
+    {
+        if (entry.IsLandmark) return true;
+
+        if (!string.IsNullOrEmpty(entry.NpcName) &&
+            entry.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (!string.IsNullOrEmpty(entry.LocationName) &&
+            !string.IsNullOrEmpty(npcLocation) &&
+            entry.LocationName.Equals(npcLocation, StringComparison.OrdinalIgnoreCase))
+            return true;
 
         return false;
     }
 
-    /// <summary>
-    /// Checks if an NPC is on the same map as the player.
-    /// </summary>
-    private bool IsNpcOnSameMap(string npcName)
+    private static string GetNpcCurrentLocation(string npcName)
     {
-        try
-        {
-            var currentLocation = Game1.currentLocation;
-            if (currentLocation == null) return false;
-
-            return currentLocation.characters.Any(npc =>
-                npc.Name.Equals(npcName, StringComparison.OrdinalIgnoreCase) ||
-                (npc.displayName != null && npc.displayName.Equals(npcName, StringComparison.OrdinalIgnoreCase)));
-        }
-        catch
-        {
-            return false;
-        }
+        try { return Game1.getCharacterFromName(npcName)?.currentLocation?.Name ?? string.Empty; }
+        catch { return string.Empty; }
     }
 
-    /// <summary>
-    /// Checks all config switches to determine if a behavior should be recorded.
-    /// </summary>
-    private bool ShouldRecord(string key, bool isGlobal)
+    private static int GetInGameMinutes(int timeOfDay)
+        => (timeOfDay / 100) * 60 + (timeOfDay % 100);
+
+    private static bool IsPerceptionTimeValid(PerceptionEntry entry)
     {
-        // Master switch
+        if (entry == null) return false;
+        if (entry.LifetimeHours >= 20) return true;
+
+        int currentMins  = GetInGameMinutes(Game1.timeOfDay);
+        int recordedMins = GetInGameMinutes(entry.RecordedTimeOfDay);
+
+        if (currentMins < recordedMins) return false;
+        return (currentMins - recordedMins) <= (entry.LifetimeHours * 60);
+    }
+
+    private static bool ShouldRecord(string key, bool isGossip)
+    {
         if (!ModEntry.Config.EnablePerceptionSystem) return false;
+        if (isGossip) return true;
 
-        // Layer switches
-        if (isGlobal && !ModEntry.Config.EnableGlobalPerception) return false;
-        if (!isGlobal && key == "Talk" && !ModEntry.Config.EnableNearbyPerception) return false;
-        if (!isGlobal && key != "Talk" && !ModEntry.Config.EnableSameMapPerception) return false;
-
-        // Behavior-level switches
         return key switch
         {
-            "Eat" => ModEntry.Config.EnablePerceptionEat,
-            "Fish" => ModEntry.Config.EnablePerceptionFish,
-            "Chop" => ModEntry.Config.EnablePerceptionChop,
-            "Place" => ModEntry.Config.EnablePerceptionPlace,
-            "Talk" => ModEntry.Config.EnablePerceptionTalk,
+            "Eat"     => ModEntry.Config.EnablePerceptionEat,
+            "Fish"    => ModEntry.Config.EnablePerceptionFish,
+            "Chop"    => ModEntry.Config.EnablePerceptionChop,
+            "Place"   => ModEntry.Config.EnablePerceptionPlace,
+            "Talk"    => ModEntry.Config.EnableNearbyPerception,
             "Harvest" => ModEntry.Config.EnablePerceptionHarvest,
-            _ => true
+            "Gift"    => ModEntry.Config.EnablePerceptionGift,
+            _         => true
         };
     }
 
-    /// <summary>
-    /// Periodic cleanup of expired entries. Called every game tick but only processes once per minute.
-    /// Optimized to avoid allocating a new list unless there are actually expired entries.
-    /// </summary>
-    private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
-    {
-        if (!e.IsMultipleOf(60)) return; // Only run every 60 ticks (~1 second)
+    // ─────────────────────────────────────────────
+    //  Event callbacks
+    // ─────────────────────────────────────────────
 
-        var now = DateTime.Now;
-        // Use a local list only if we actually find expired entries — avoids GC pressure
-        List<string> expiredKeys = null;
-
-        foreach (var kvp in _perceptions)
-        {
-            if ((now - kvp.Value.Timestamp).TotalMinutes > kvp.Value.LifetimeMinutes)
-            {
-                expiredKeys ??= new List<string>();
-                expiredKeys.Add(kvp.Key);
-            }
-        }
-
-        if (expiredKeys != null)
-        {
-            foreach (var key in expiredKeys)
-            {
-                _perceptions.TryRemove(key, out _);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Clears all perceptions when a new day starts (handles harvest reset automatically).
-    /// </summary>
     private void OnDayStarted(object sender, DayStartedEventArgs e)
     {
-        _perceptions.Clear();
-
-        if (ModEntry.Config.Debug)
+        lock (_lock)
         {
-            ModEntry.SMonitor?.Log("[Perception] All perceptions cleared on new day.", LogLevel.Debug);
+            _farmerBucket.Clear();
+        }
+
+        if (ModEntry.Config?.Debug == true)
+            ModEntry.SMonitor?.Log(
+                "[PerceptionManager] Farmer bucket cleared on new day.", LogLevel.Debug);
+    }
+
+    private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
+    {
+        if (!e.IsMultipleOf(60)) return;
+
+        lock (_lock)
+        {
+            bool bucketDirty = _farmerBucket.Any(p => !IsPerceptionTimeValid(p));
+            bool gossipDirty = _globalGossip.Any(p => !IsPerceptionTimeValid(p));
+
+            if (!bucketDirty && !gossipDirty) return;
+
+            if (bucketDirty)
+            {
+                var valid = _farmerBucket.Where(IsPerceptionTimeValid).ToList();
+                _farmerBucket.Clear();
+                foreach (var item in valid) _farmerBucket.Enqueue(item);
+            }
+
+            if (gossipDirty)
+            {
+                var valid = _globalGossip.Where(IsPerceptionTimeValid).ToList();
+                _globalGossip.Clear();
+                foreach (var item in valid) _globalGossip.Enqueue(item);
+            }
         }
     }
 }

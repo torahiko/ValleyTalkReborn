@@ -1,8 +1,8 @@
-{
+﻿{
     "Changes": [
       {
         "Action": "EditData",
-        "Target": "ValleyTalk/GameSummary",
+        "Target": "ValleyTalkReborn/GameSummary",
         "TargetField": [ "Locations", "Entries" ],
         "Entries": {
             "BlueMoonVineyard": {
@@ -45,3 +45,4 @@
        }
     ]
 }
+

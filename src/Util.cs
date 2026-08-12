@@ -1,144 +1,164 @@
-using StardewValley;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Xna.Framework;
+using StardewModdingAPI;
+using StardewValley;
 
-namespace ValleyTalk
+namespace ValleytalkReborn
 {
-    public class Util
+    /// <summary>
+    /// ValleyTalk 通用工具类
+    /// </summary>
+    public static class Util
     {
-        private static StardewModdingAPI.ITranslationHelper _translationHelper => ModEntry.SHelper?.Translation;
+        private static ITranslationHelper TranslationHelper => ModEntry.SHelper?.Translation;
 
+        /// <summary>
+        /// 获取指定 NPC 附近 4.5 格范围内的其他 NPC
+        /// </summary>
         public static IEnumerable<NPC> GetNearbyNpcs(NPC npc)
         {
-            // Check for any other NPCs within 3 squares
-            var speakerLocation = npc.Tile;
-            var speakerName = npc.Name;
-            var npcs = Game1.currentLocation.characters.Where(x => x.CanReceiveGifts() && x.Name != speakerName);
-            List<NPC> nearbyNpcs = new List<NPC>();
-            foreach (var otherNpc in npcs)
+            if (npc == null || Game1.currentLocation?.characters == null)
+                return Enumerable.Empty<NPC>();
+
+            Vector2 speakerLocation = npc.Tile;
+            string speakerName = npc.Name;
+
+            // 使用 DistanceSquared (4.5 的平方是 20.25) 避免开方运算，大幅提升性能
+            const float maxDistanceSquared = 20.25f;
+
+            var nearbyNpcs = new List<NPC>();
+            foreach (var otherNpc in Game1.currentLocation.characters)
             {
-                var npcLocation = otherNpc.Tile;
-                if (Microsoft.Xna.Framework.Vector2.Distance(speakerLocation, npcLocation) < 4.5)
+                if (otherNpc == null || otherNpc.Name == speakerName || !otherNpc.CanReceiveGifts())
+                    continue;
+
+                if (Vector2.DistanceSquared(speakerLocation, otherNpc.Tile) < maxDistanceSquared)
                 {
                     nearbyNpcs.Add(otherNpc);
                 }
             }
+
             return nearbyNpcs;
         }
 
-        internal static string ConcatAnd(List<string> strings)
+        /// <summary>
+        /// 拼接字符串列表（如：张三, 李四 和 王五）
+        /// </summary>
+        internal static string ConcatAnd(IReadOnlyList<string> strings)
         {
-            if (strings.Count == 0)
-            {
+            if (strings == null || strings.Count == 0)
                 return string.Empty;
-            }
+
             if (strings.Count == 1)
-            {
                 return strings[0];
-            }
+
             var builder = new System.Text.StringBuilder();
             for (int i = 0; i < strings.Count; i++)
             {
                 if (i == strings.Count - 1)
                 {
-                    builder.Append($" {GetString("generalAnd")} ");
+                    // 格式化连接词，前后空格由语言包内部决定（中文无需空格，英文自带空格）
+                    builder.Append(GetString("generalAnd")).Append(strings[i]);
                 }
-                else if (i > 0)
+                else
                 {
-                    builder.Append(", ");
+                    builder.Append(strings[i]);
+                    if (i < strings.Count - 2)
+                    {
+                        builder.Append(", ");
+                    }
                 }
-                builder.Append(strings[i]);
             }
             return builder.ToString();
         }
 
-        internal static string GetString(ValleyTalk.Character npc, string key, object tokens = null, bool returnNull = false)
+        /// <summary>
+        /// 获取特定 NPC 的本地化或缓存字符串
+        /// </summary>
+        internal static string GetString(Character npc, string key, object tokens = null, bool returnNull = false)
         {
-            if (npc == null) return string.Empty;
+            if (npc == null || string.IsNullOrEmpty(key)) 
+                return returnNull ? null : string.Empty;
 
-            if (npc.Bio.PromptOverrides.ContainsKey(key))
+            // 1. 优先读取 NPC 独特的 Prompt 覆盖
+            if (npc.Bio.PromptOverrides.TryGetValue(key, out string overrideVal))
             {
-                return npc.Bio.PromptOverrides[key];
+                return ReplaceTokens(overrideVal, tokens);
             }
+
+            // 2. 根据性别在 Cache 中寻找
             string result = null;
-            if (npc.Bio.IsMale ?? false)
+            if (npc.Bio.IsMale == true)
             {
                 PromptCache.Instance.Cache.TryGetValue($"{key}.MaleNpc", out result);
             }
-            else if (!(npc.Bio.IsMale ?? true))
+            else if (npc.Bio.IsMale == false)
             {
                 PromptCache.Instance.Cache.TryGetValue($"{key}.FemaleNpc", out result);
             }
+
+            // 3. 通用 Cache 查找
             if (result == null)
             {
                 PromptCache.Instance.Cache.TryGetValue(key, out result);
             }
-            
-            // 如果缓存未命中，尝试从 SMAPI 系统的 i18n 本地化（zh.json 等）读取
-            if (result == null && _translationHelper != null)
+
+            // 4. Cache 未命中，尝试从 SMAPI 本地化 i18n 系统读取（SMAPI 原生支持 Token 替换）
+            if (result == null && TranslationHelper != null)
             {
-                var translation = _translationHelper.Get(key);
+                var translation = TranslationHelper.Get(key, tokens);
                 if (translation.HasValue())
                 {
-                    result = translation.ToString();
+                    return translation.ToString();
                 }
             }
 
-            if (returnNull && result == null)
+            if (result == null)
             {
-                return null;
+                return returnNull ? null : string.Empty;
             }
 
-            // Replace tokens
-            if (tokens != null && result != null)
-            {
-                foreach (var token in tokens.GetType().GetProperties())
-                {
-                    var tokenName = "{{" + token.Name + "}}";
-                    result = result.Replace(tokenName, token.GetValue(tokens).ToString());
-                }
-            }
-            return result;
+            return ReplaceTokens(result, tokens);
         }
 
+        /// <summary>
+        /// 获取通用的本地化或缓存字符串
+        /// </summary>
         internal static string GetString(string key, object tokens = null, bool returnNull = false)
         {
-            string result = string.Empty;
-            bool foundInCache = PromptCache.Instance.Cache.TryGetValue(key, out result);
+            if (string.IsNullOrEmpty(key)) 
+                return returnNull ? null : string.Empty;
 
-            // 优先缓存，未命中则读取 SMAPI 的 i18n 语言包（例如 default.json / zh.json）
-            if (!foundInCache && _translationHelper != null)
+            // 1. 优先从 PromptCache 中查找
+            if (PromptCache.Instance.Cache.TryGetValue(key, out string result))
             {
-                var translation = _translationHelper.Get(key);
+                return ReplaceTokens(result, tokens);
+            }
+
+            // 2. 未命中则从 SMAPI i18n 语言包中查找
+            if (TranslationHelper != null)
+            {
+                var translation = TranslationHelper.Get(key, tokens);
                 if (translation.HasValue())
                 {
-                    result = translation.ToString();
-                    foundInCache = true;
+                    return translation.ToString();
                 }
             }
 
-            if (!foundInCache && returnNull)
-            {
-                return null;
-            }
-            
-            // Replace tokens
-            if (tokens != null && result != null)
-            {
-                foreach (var token in tokens.GetType().GetProperties())
-                {
-                    var tokenName = "{{" + token.Name + "}}";
-                    result = result.Replace(tokenName, token.GetValue(tokens).ToString());
-                }
-            }
-
-            return result;
+            return returnNull ? null : string.Empty;
         }
 
+        /// <summary>
+        /// 读取多语言 JSON 文件
+        /// </summary>
         internal static T ReadLocalisedJson<T>(string basePath, string extension = "json") where T : class
         {
-            foreach(var langSuffix in ModEntry.LanguageFileSuffixes)
+            if (ModEntry.LanguageFileSuffixes == null || ModEntry.SHelper?.Data == null)
+                return default;
+
+            foreach (var langSuffix in ModEntry.LanguageFileSuffixes)
             {
                 var path = $"{basePath}{langSuffix}.{extension}";
                 var result = ModEntry.SHelper.Data.ReadJsonFile<T>(path);
@@ -149,6 +169,26 @@ namespace ValleyTalk
             }
 
             return default;
+        }
+
+        /// <summary>
+        /// 内部 Token 替换助手（用于处理自定义 Cache 的文本，SMAPI 的文本已被 TranslationHelper 自动处理）
+        /// </summary>
+        private static string ReplaceTokens(string template, object tokens)
+        {
+            if (string.IsNullOrEmpty(template) || tokens == null) 
+                return template;
+
+            foreach (var prop in tokens.GetType().GetProperties())
+            {
+                var value = prop.GetValue(tokens)?.ToString();
+                if (value != null)
+                {
+                    template = template.Replace("{{" + prop.Name + "}}", value);
+                }
+            }
+
+            return template;
         }
     }
 }

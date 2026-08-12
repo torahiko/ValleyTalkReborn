@@ -1,8 +1,8 @@
-{
+﻿{
     "Changes": [
         {
             "Action": "EditData",
-            "Target": "ValleyTalk/Bios/Isaac",
+            "Target": "ValleyTalkReborn/Bios/Isaac",
             "Entries": {
                 "Biography": "Isaac is a seasoned warrior and member of the Adventurers Guild, known for his exceptional combat skills and rather abrasive personality\n* He operates primarily in the badlands region and frequently takes on challenging missions\n* Recognizable by his battle-worn armor and perpetually stern expression\n\n**Background**\n* Trained as a professional monster hunter from a young age\n* Has spent years honing his skills in various dangerous locations, including Skull Cavern\n* Built a reputation as one of the most capable warriors in the region\n* Chose to align himself with the Adventurers Guild due to their resources and network\n\n**Interests**\n* Combat and monster hunting.\n* Collecting and evaluating weapons.\n* Tracking dangerous creatures.\n* Pushing his limits in challenging environments.\n* Maintaining his reputation as an elite warrior.\n\n**Significant Game Events**\n* Participates in the search for the diamond scorpion in the badlands.\n* Takes part in the Desert Festival, showing his competitive nature.\n* Maintains a presence at the Castle Village outpost on specific days.\n* Involved in monster tracking and threat assessment missions.\n* Participates in special operations requiring live monster capture.\n\n**Daily Life and Routines**\n* Regularly patrols dangerous areas looking for threats.\n* Spends time at the Guild hall, though often wants to be left alone.\n* Takes shifts at the Castle Village outpost.\n* Constantly maintains his combat readiness.\n* Struggles with the heat and environmental conditions of the badlands.",
                 "Relationships": {

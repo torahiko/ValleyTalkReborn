@@ -1,184 +1,144 @@
 using System;
 using StardewValley;
+#nullable enable
 
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
-internal class StardewTime : IComparable<StardewTime>
+/// <summary>
+/// 表示星露谷物语中的时间点（不可变只读结构体）
+/// </summary>
+public readonly struct StardewTime : IComparable<StardewTime>, IEquatable<StardewTime>
 {
-    public StardewValley.Season season { get; set; }
-    public int dayOfMonth { get; set; }
-    public int timeOfDay { get; set; }
-    public int year { get; set; }
+    public Season Season { get; }
+    public int DayOfMonth { get; }
+    public int TimeOfDay { get; }
+    public int Year { get; }
 
+    /// <summary>
+    /// 默认构造函数：第 1 年春季第 1 天 06:00
+    /// </summary>
     public StardewTime()
     {
-        year = 0;
-        season = StardewValley.Season.Spring;
-        dayOfMonth = 0;
-        timeOfDay = 600;
+        Year = 1;
+        Season = Season.Spring;
+        DayOfMonth = 1;
+        TimeOfDay = 600;
     }
 
-    public StardewTime(WorldDate date, int time)
+    public StardewTime(WorldDate date, int time) 
+        : this(date.Year, (Season)date.Season, date.DayOfMonth, time) { }
+
+    public StardewTime(int year, Season season, int dayOfMonth, int timeOfDay)
     {
-        year = date.Year;
-        season = date.Season;
-        dayOfMonth = date.DayOfMonth;
-        timeOfDay = time;
+        Year = year;
+        Season = season;
+        DayOfMonth = dayOfMonth;
+        TimeOfDay = timeOfDay;
     }
 
-    public StardewTime(int year, StardewValley.Season season, int dayOfMonth, int timeOfDay)
-    {
-        this.year = year;
-        this.season = season;
-        this.dayOfMonth = dayOfMonth;
-        this.timeOfDay = timeOfDay;
-    }
-
+    /// <summary>
+    /// 基于当前游戏日期加上或减去指定天数构造（默认时间 06:00）
+    /// </summary>
     public StardewTime(int addDays)
     {
-        var worldDate = Game1.Date;
-        year = worldDate.Year;
-        season = worldDate.Season;
-        dayOfMonth = worldDate.DayOfMonth;
-        timeOfDay = 600;
-        AddDays(addDays);
+        var baseTime = new StardewTime(Game1.Date, 600);
+        var target = baseTime.AddDays(addDays);
+        
+        Year = target.Year;
+        Season = target.Season;
+        DayOfMonth = target.DayOfMonth;
+        TimeOfDay = target.TimeOfDay;
     }
 
-    public double DaysSince(int year, StardewValley.Season season, int dayOfMonth, int timeOfDay)
+    /// <summary>
+    /// 将星露谷的时间格式 (如 600, 1430, 2600) 转换为一天中从 06:00 AM 开始累积的游戏分钟数
+    /// </summary>
+    private static double TimeToMinutes(int timeOfDay)
+    {
+        int hours = timeOfDay / 100;
+        int minutes = timeOfDay % 100;
+        return (hours - 6) * 60 + minutes;
+    }
+
+    /// <summary>
+    /// 获取自第 0 年春季第 1 天 06:00 以来转换的精确总天数（包含日内时间的小数部分）
+    /// </summary>
+    public double TotalDays => 
+        (Year * 112) + ((int)Season * 28) + (DayOfMonth - 1) + (TimeToMinutes(TimeOfDay) / 1200.0);
+
+    /// <summary>
+    /// 计算距离另一个时间点相差的天数
+    /// </summary>
+    public double DaysSince(StardewTime other) => other.TotalDays - TotalDays;
+
+    public double DaysSince(int year, Season season, int dayOfMonth, int timeOfDay)
     {
         return DaysSince(new StardewTime(year, season, dayOfMonth, timeOfDay));
     }
 
-    public double DaysSince(StardewTime other)
+    /// <summary>
+    /// 生成描述时间差的本地化文本
+    /// </summary>
+    public string SinceDescription(StardewTime? other = null)
     {
-        double days = 0;
-        days += (other.year - year) * 112;
-        days += (SeasonToInt(other.season) - SeasonToInt(season)) * 28;
-        days += other.dayOfMonth - dayOfMonth;
-        return days;
-    }
-
-    public string SinceDescription(StardewTime other = null)
-    {
-        if (other == null)
-        {
-            other = new StardewTime(Game1.Date, Game1.timeOfDay);
-        }
-        double days = DaysSince(other);
-        var thisSeasonKey = Utility.getSeasonKey(this.season);
+        var compareTarget = other ?? new StardewTime(Game1.Date, Game1.timeOfDay);
+        double days = DaysSince(compareTarget);
+        
+        var thisSeasonKey = Utility.getSeasonKey((StardewValley.Season)Season);
         var seasonDisplay = Game1.content.LoadString("Strings\\StringsFromCSFiles:" + thisSeasonKey);
+
         return days switch
         {
             < 0 => Util.GetString("timeInTheFuture"),
-            < (double)1 / 120 => Util.GetString("timeJustNow"),
-            < (double)1 / 24 => Util.GetString("timeInTheLastHour"),
-            < 1 => other.dayOfMonth == dayOfMonth ? Util.GetString("timeEarlierToday") : Util.GetString("timeYesterday"),
+            < (double)1 / 120 => Util.GetString("timeJustNow"),            // ~10 游戏分钟内
+            < (double)1 / 24 => Util.GetString("timeInTheLastHour"),        // ~50 游戏分钟内
+            < 1 => compareTarget.DayOfMonth == DayOfMonth 
+                ? Util.GetString("timeEarlierToday") 
+                : Util.GetString("timeYesterday"),
             < 14 => Util.GetString("timeDaysAgo", new { days = (int)days }),
-            < 56 => Util.GetString("timeDaysAgoSeasonDay", new { days = (int)days, day = this.dayOfMonth, season = seasonDisplay }),
-            < 112 => other.year == year ?
-                        Util.GetString("timeEarlierThisYear", new { day = this.dayOfMonth, season = seasonDisplay })
-                      : Util.GetString("timeLastYear", new { day = this.dayOfMonth, season = seasonDisplay }),
-            _ => Util.GetString("timeALongTimeAgo", new { day = this.dayOfMonth, season = seasonDisplay, year = this.year })
+            < 56 => Util.GetString("timeDaysAgoSeasonDay", new { days = (int)days, day = DayOfMonth, season = seasonDisplay }),
+            < 112 => compareTarget.Year == Year 
+                ? Util.GetString("timeEarlierThisYear", new { day = DayOfMonth, season = seasonDisplay })
+                : Util.GetString("timeLastYear", new { day = DayOfMonth, season = seasonDisplay }),
+            _ => Util.GetString("timeALongTimeAgo", new { day = DayOfMonth, season = seasonDisplay, year = Year })
         };
     }
 
-    private static int SeasonToInt(StardewValley.Season season)
+    /// <summary>
+    /// 增加指定天数并返回新的 StardewTime 对象（高效率数学计算）
+    /// </summary>
+    public StardewTime AddDays(int offset)
     {
-        return season switch
-        {
-            StardewValley.Season.Spring => 0,
-            StardewValley.Season.Summer => 1,
-            StardewValley.Season.Fall => 2,
-            StardewValley.Season.Winter => 3,
-            _ => throw new Exception("Invalid season")
-        };
+        int totalDays = (Year * 112) + ((int)Season * 28) + (DayOfMonth - 1) + offset;
+        if (totalDays < 0) totalDays = 0;
+
+        int newYear = totalDays / 112;
+        int remDays = totalDays % 112;
+        int newSeason = remDays / 28;
+        int newDay = (remDays % 28) + 1;
+
+        return new StardewTime(newYear, (Season)newSeason, newDay, TimeOfDay);
     }
 
-    private static StardewValley.Season IntToSeason(int season)
+    public int CompareTo(StardewTime other) => TotalDays.CompareTo(other.TotalDays);
+
+    public bool After(StardewTime compareTo) => CompareTo(compareTo) > 0;
+
+    public bool IsJustNow(StardewTime? other = null)
     {
-        return season switch
-        {
-            0 => StardewValley.Season.Spring,
-            1 => StardewValley.Season.Summer,
-            2 => StardewValley.Season.Fall,
-            3 => StardewValley.Season.Winter,
-            _ => throw new Exception("Invalid season")
-        };
+        var compareTarget = other ?? new StardewTime(Game1.Date, Game1.timeOfDay);
+        var elapsed = DaysSince(compareTarget);
+        return elapsed >= 0 && elapsed < (1.0 / 120.0);
     }
 
-    internal StardewTime AddDays(int offset)
-    {
-        int targetYear = year;
-        int targetSeason = SeasonToInt(season);
-        int targetDay = dayOfMonth + offset;
-        while (targetDay > 28)
-        {
-            targetSeason++;
-            targetDay -= 28;
-            if (targetSeason == 4)
-            {
-                targetYear++;
-                targetSeason = 0;
-            }
-        }
-        while (targetDay < 1)
-        {
-            targetSeason--;
-            targetDay += 28;
-            if (targetSeason == -1)
-            {
-                if (targetYear == 0)
-                {
-                    return new StardewTime(0, 0, 0, 600);
-                }
-                targetYear--;
-                targetSeason = 3;
-            }
-        }
-        return new StardewTime(targetYear, IntToSeason(targetSeason), targetDay, 600);
-    }
+    public bool Equals(StardewTime other) => TotalDays.Equals(other.TotalDays);
+    public override bool Equals(object? obj) => obj is StardewTime other && Equals(other);  // ← 这里加了 ? 
+    public override int GetHashCode() => HashCode.Combine(Year, Season, DayOfMonth, TimeOfDay);
 
-    public int CompareTo(StardewTime other)
-    {
-        if (year != other.year)
-        {
-            return year - other.year;
-        }
-        if (SeasonToInt(season) != SeasonToInt(other.season))
-        {
-            return SeasonToInt(season) - SeasonToInt(other.season);
-        }
-        if (dayOfMonth != other.dayOfMonth)
-        {
-            return dayOfMonth - other.dayOfMonth;
-        }
-        return timeOfDay - other.timeOfDay;
-    }
-
-    internal bool After(StardewTime compareTo)
-    {
-        if (year != compareTo.year)
-        {
-            return year > compareTo.year;
-        }
-        if (SeasonToInt(season) != SeasonToInt(compareTo.season))
-        {
-            return SeasonToInt(season) > SeasonToInt(compareTo.season);
-        }
-        if (dayOfMonth != compareTo.dayOfMonth)
-        {
-            return dayOfMonth > compareTo.dayOfMonth;
-        }
-        return true; // Return true on the same day
-    }
-
-    internal bool IsJustNow(StardewTime other = null)
-    {
-        if (other == null)
-        {
-            other = new StardewTime(Game1.Date, Game1.timeOfDay);
-        }
-        var elapsed = DaysSince(other);
-        return elapsed < (double)1 / 100 && elapsed >= 0;
-    }
+    public static bool operator ==(StardewTime left, StardewTime right) => left.Equals(right);
+    public static bool operator !=(StardewTime left, StardewTime right) => !left.Equals(right);
+    public static bool operator <(StardewTime left, StardewTime right) => left.CompareTo(right) < 0;
+    public static bool operator >(StardewTime left, StardewTime right) => left.CompareTo(right) > 0;
+    public static bool operator <=(StardewTime left, StardewTime right) => left.CompareTo(right) <= 0;
+    public static bool operator >=(StardewTime left, StardewTime right) => left.CompareTo(right) >= 0;
 }

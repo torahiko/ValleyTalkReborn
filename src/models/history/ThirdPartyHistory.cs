@@ -1,27 +1,39 @@
 using System.Collections.Generic;
 using System.Linq;
-using ValleyTalk;
+using StardewValley;
 
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 internal class ThirdPartyHistory : IHistory
 {
-    public Character character;
-    public List<StardewValley.DialogueLine> filteredDialogues;
-    public string festivalName;
+    public Character Character { get; set; }
+    public IEnumerable<StardewValley.DialogueLine> FilteredDialogues { get; set; }
+    public string FestivalName { get; set; }
 
-    public ThirdPartyHistory(Character character, List<StardewValley.DialogueLine> filteredDialogues, string festivalName)
+    public ThirdPartyHistory(Character character, IEnumerable<StardewValley.DialogueLine> filteredDialogues, string festivalName)
     {
-        this.character = character;
-        this.filteredDialogues = filteredDialogues;
-        this.festivalName = festivalName;
+        Character = character;
+        FilteredDialogues = filteredDialogues ?? Enumerable.Empty<StardewValley.DialogueLine>();
+        FestivalName = festivalName ?? string.Empty;
     }
 
     public string Format(string npcName)
     {
-        var totalDialogue = string.Join(" : ", filteredDialogues.Select(x => x.Text));
-        var festivalNameString = string.IsNullOrWhiteSpace(festivalName) ? "" : Util.GetString("historyThirdPartyFestival", new { festivalName= festivalName });
-        return Util.GetString("historyThirdPartyFormat", new { npcName= npcName, Name= character.Name, festivalNameString= festivalNameString, totalDialogue= totalDialogue });
+        var dialogues = FilteredDialogues ?? Enumerable.Empty<StardewValley.DialogueLine>();
+        var totalDialogue = string.Join(" : ", dialogues.Where(x => x != null).Select(x => x.Text));
+        
+        var festivalNameString = string.IsNullOrWhiteSpace(FestivalName) 
+            ? string.Empty 
+            : Util.GetString("historyThirdPartyFestival", new { festivalName = FestivalName });
+            
+        var charName = Character?.Name ?? string.Empty;
 
+        return Util.GetString("historyThirdPartyFormat", new 
+        { 
+            npcName = npcName ?? string.Empty, 
+            Name = charName, 
+            festivalNameString = festivalNameString, 
+            totalDialogue = totalDialogue 
+        });
     }
 }

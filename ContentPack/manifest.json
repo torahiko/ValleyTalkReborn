@@ -1,9 +1,9 @@
-{
-    "Name": "ValleyTalk Content Pack",
-    "Author": "dandm1",
-    "Version": "1.6.5",
+﻿{
+    "Name": "ValleytalkReborn Content Pack",
+    "Author": "srkgou/dandm1",
+    "Version": "2.0.1",
     "Description": "CP Infinite dialogue for Stardew Valley",
-    "UniqueID": "dandm1.CPValleyTalk",
+    "UniqueID": "srkgou.CPValleyTalkReborn",
     "MinimumApiVersion": "4.1.0",
     "UpdateKeys": [ "Nexus:30319" ],
     "ContentPackFor": {

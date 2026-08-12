@@ -4,7 +4,7 @@ using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 public class PromptCache
 {
@@ -53,9 +53,9 @@ public class PromptCache
             }
             foreach (var entry in promptDict)
             {
-                if (entry.Value is string && !entry.Value.ToString().StartsWith("(no translation"))
+                if (!string.IsNullOrEmpty(entry.Value) && !entry.Value.StartsWith("(no translation"))
                 {
-                    _promptCache.Add(entry.Key, Game1.content.PreprocessString(entry.Value.ToString()));
+                    _promptCache.Add(entry.Key, Game1.content.PreprocessString(entry.Value));
                 }
             }
         }

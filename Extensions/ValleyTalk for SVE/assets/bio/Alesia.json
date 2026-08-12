@@ -2,7 +2,7 @@
     "Changes": [
       {
         "Action": "EditData",
-        "Target": "ValleyTalk/Bios/Alesia",
+        "Target": "ValleyTalkReborn/Bios/Alesia",
         "Entries": {
             "Biography": "Alesia is a skilled archer and monster hunter who hails from Castle Village. She is a member of the Adventurer\u0027s Guild along with Isaac and Camilla. Alesia occasionally visits Stardew Valley to aid Marlon and share her expertise. \n\n**Interests**\n* Monster hunting and tracking monster movements to report to the Adventurer\u0027s Guild\n.* Archery and keeping her bow skills sharp.\n* Visiting Stardew Valley and assisting her old friend Marlon when needed.\n* Following the guidance of Yoba in her adventures.\n\n**Background**\nAlesia lived in Stardew Valley years ago before moving to Castle Village. She honed her archery skills and became a renowned monster hunter, earning a place in the Adventurer\u0027s Guild. Alesia maintains a busy schedule traveling between the valley, castle village, and outposts to hunt monsters and file reports for the guild. Despite the demands of her work, she always makes time to visit Stardew Valley and check in on her old friend Marlon.\n\n**Significant Game Events**\n* Alesia assists the farmer in searching for the diamond scorpion in the badlands.\n* Alesia captures monsters with a joint effort alongside the farmer and others.\n* She visits Marlon in Stardew Valley to help deal with slimes duplicating in the caverns.",
             "Relationships": {
@@ -65,7 +65,7 @@
       },
       {
         "Action": "EditData",
-        "Target": "ValleyTalk/Bios/Marlon",
+        "Target": "ValleyTalkReborn/Bios/Marlon",
         "TargetField": [ "Relationships" ],
         "Priority": "Late",
         "Entries": {

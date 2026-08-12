@@ -1,6 +1,6 @@
-using ValleyTalk;
+using ValleytalkReborn;
 
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 internal class LlmMistral : LlmOpenAiBase, IGetModelNames
 {
@@ -20,7 +20,7 @@ internal class LlmMistral : LlmOpenAiBase, IGetModelNames
     {
         if (string.IsNullOrEmpty(apiKey))
         {
-            return new string[] { };
+            return System.Array.Empty<string>();
         }
         return CoreGetModelNames();
     }

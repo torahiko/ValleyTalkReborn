@@ -1,4 +1,4 @@
-namespace ValleyTalk;
+namespace ValleytalkReborn;
 
 public class ChildDescription
 {
@@ -9,7 +9,7 @@ public class ChildDescription
         Age = age;
     }
 
-    public string Name { get; internal set; }
-    public bool IsMale { get; internal set; }
-    public int Age { get; internal set; }
+    public string Name { get; }
+    public bool IsMale { get; }
+    public int Age { get; }
 }

@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 using StardewValley;
 #nullable disable
 
-namespace ValleyTalk
+namespace ValleytalkReborn
 {
     /// <summary>
     /// Represents who spoke a line of dialogue
@@ -25,7 +25,8 @@ namespace ValleyTalk
         public DialogueHistoryEntry()
         {
             Id = Guid.NewGuid();
-            Timestamp = new StardewTime(Game1.year, Game1.season, Game1.dayOfMonth, Game1.timeOfDay);
+            // 修复：将 Game1.season 强制转换为 ValleyTalk.Season
+            Timestamp = new StardewTime(Game1.year, (Season)Game1.season, Game1.dayOfMonth, Game1.timeOfDay);
         }
 
         public DialogueHistoryEntry(string speakerName, string text, SpeakerType speakerType, string dialogueType = "")
@@ -78,6 +79,13 @@ namespace ValleyTalk
         public int GiftTaste { get; set; } = -1;
 
         /// <summary>
+        /// Soft-delete flag. Consumed entries are excluded from future context queries.
+        /// Set to true after the entry has been read into a prompt payload.
+        /// </summary>
+        [JsonIgnore]
+        public bool IsConsumed { get; set; } = false;
+
+        /// <summary>
         /// Hash for deduplication: speaker + text + approximate time
         /// </summary>
         [JsonIgnore]
@@ -102,7 +110,8 @@ namespace ValleyTalk
                 _ => "  "
             };
 
-            string timestamp = $"{Timestamp.season} {Timestamp.dayOfMonth}";
+            // 修复：将小写的 season 和 dayOfMonth 改为大写
+            string timestamp = $"{Timestamp.Season} {Timestamp.DayOfMonth}";
 
             return SpeakerType == SpeakerType.System
                 ? $"{prefix}[{timestamp}] {Text}"
