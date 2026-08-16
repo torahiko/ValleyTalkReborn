@@ -104,6 +104,11 @@ namespace ValleytalkReborn
             if (AsyncBuilder.Instance.GenerationCooldownFrames > 0)
                 return true;
 
+            // ★ 保护：有原版特殊行为的 NPC 完全放行
+            // （商店、任务触发等不依赖 CurrentDialogue 的逻辑）
+            if (HasVanillaSpecialAction(__instance))
+                return true;
+
             if (who.friendshipData.TryGetValue(__instance.Name, out var fsc) && fsc.TalkedToToday)
             {
                 if (!ModEntry.Config.EnableInfiniteChat)
@@ -185,6 +190,49 @@ namespace ValleytalkReborn
 
             __result = true;
             return false;
+        }
+
+        /// <summary>
+        /// 判断该 NPC 是否在原版 checkAction 中有非对话的特殊行为
+        /// （弹出商店菜单、触发特殊事件等）。对这类 NPC 应完全放行原版逻辑。
+        /// </summary>
+        private static bool HasVanillaSpecialAction(NPC npc)
+        {
+            switch (npc.Name)
+            {
+                // 自身即为商店入口的特殊 NPC
+                case "Krobus":
+                case "Dwarf":
+                case "Sandy":
+                    return true;
+
+                // 在自己的店里时才会触发商店，闲逛时为普通 NPC
+                case "Marnie":
+                    return IsInsideOwnShop(npc, "AnimalShop");
+                case "Pierre":
+                    return IsInsideOwnShop(npc, "SeedShop");
+                case "Robin":
+                    return IsInsideOwnShop(npc, "ScienceHouse");
+                case "Clint":
+                    return IsInsideOwnShop(npc, "Blacksmith");
+                case "Willy":
+                    return IsInsideOwnShop(npc, "FishShop");
+                case "Gus":
+                    return IsInsideOwnShop(npc, "Saloon");
+                case "Harvey":
+                    return IsInsideOwnShop(npc, "Hospital");
+
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// 检查 NPC 当前是否在其所属的商店建筑内。
+        /// </summary>
+        private static bool IsInsideOwnShop(NPC npc, string locationName)
+        {
+            return npc.currentLocation?.Name == locationName;
         }
     }
 }

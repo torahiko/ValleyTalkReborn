@@ -149,7 +149,13 @@ namespace ValleytalkReborn
 
         public override void Entry(IModHelper helper)
         {
-            SHelper = helper;
+            SHelper  = helper;
+            SMonitor = Monitor;
+            // 显式初始化，替代构造函数自注册
+            DateManager.Instance.Initialize(helper);
+            InvitationManager.Instance.Initialize(helper);
+            MemoryManager.Instance.Initialize(helper);
+            WorldMemoryManager.Instance.Initialize(helper);
 
             // If already initialized (e.g. second run in same process), clean up first
             if (_isInitialized)
@@ -532,6 +538,26 @@ namespace ValleytalkReborn
                 catch (Exception ex)
                 {
                     Log.Error($"[ValleyTalkReborn] Error cleaning CompanionScheduleManager: {ex.Message}");
+                }
+
+                // ★ 清理 DateManager（取消事件订阅并重置状态）
+                try
+                {
+                    DateManager.Instance?.Cleanup(SHelper);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[ValleyTalkReborn] Error cleaning DateManager: {ex.Message}");
+                }
+
+                // ★ 清理 InvitationManager（取消事件订阅）
+                try
+                {
+                    InvitationManager.Instance?.Cleanup(SHelper);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[ValleyTalkReborn] Error cleaning InvitationManager: {ex.Message}");
                 }
 
                 try

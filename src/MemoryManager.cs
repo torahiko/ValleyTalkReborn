@@ -60,11 +60,16 @@ internal class MemoryManager : IMemoryProvider
 
     private MemoryManager()
     {
-        if (ModEntry.SHelper != null)
-        {
-            ModEntry.SHelper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
-            ModEntry.SHelper.Events.GameLoop.DayStarted += OnDayStarted;
-        }
+        // 不在构造函数里注册事件，改由 ModEntry.Entry() 显式调用 Initialize
+    }
+
+    public void Initialize(IModHelper helper)
+    {
+        // 先取消防止重复注册（Cleanup → Entry 的重入场景）
+        helper.Events.GameLoop.SaveLoaded -= OnSaveLoaded;
+        helper.Events.GameLoop.DayStarted -= OnDayStarted;
+        helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
+        helper.Events.GameLoop.DayStarted += OnDayStarted;
     }
 
     private void OnDayStarted(object sender, StardewModdingAPI.Events.DayStartedEventArgs e)
@@ -184,7 +189,8 @@ internal class MemoryManager : IMemoryProvider
     /// <summary>
     /// [FIX-5] 返回明确枚举
     /// </summary>
-    public MemoryOperationResult AddMemory(string npcName, string content, MemoryCategory category = MemoryCategory.Behavior)
+    public MemoryOperationResult AddMemory(string npcName, string content,
+        MemoryCategory category = MemoryCategory.Behavior)
     {
         if (string.IsNullOrWhiteSpace(npcName) || string.IsNullOrWhiteSpace(content))
             return MemoryOperationResult.NotFound;
@@ -207,11 +213,11 @@ internal class MemoryManager : IMemoryProvider
 
         list.Insert(0, new MemoryEntry
         {
-            NpcName   = npcName,
-            Content   = trimmedContent,
+            NpcName = npcName,
+            Content = trimmedContent,
             CreatedAt = DateTime.Now,
-            Source    = "Manual",
-            Category  = category
+            Source = "Manual",
+            Category = category
         });
 
         Save(npcName);
@@ -221,7 +227,8 @@ internal class MemoryManager : IMemoryProvider
     /// <summary>
     /// [FIX-5] 返回明确枚举
     /// </summary>
-    public MemoryOperationResult EditMemory(string npcName, string id, string newContent, MemoryCategory? category = null)
+    public MemoryOperationResult EditMemory(string npcName, string id, string newContent,
+        MemoryCategory? category = null)
     {
         if (!_memories.TryGetValue(npcName, out var list))
             return MemoryOperationResult.NotFound;
@@ -261,16 +268,17 @@ internal class MemoryManager : IMemoryProvider
 
     public List<MemoryEntry> GetMemories(string npcName)
     {
+        EnsureLoaded();
         if (!_memories.TryGetValue(npcName, out var list)) return new List<MemoryEntry>();
         return list.OrderByDescending(m => m.CreatedAt).ToList();
     }
 
     public int GetMemoryCount(string npcName)
-        => _memories.TryGetValue(npcName, out var list) ? list.Count : 0;
+    {
+        EnsureLoaded();
+        return _memories.TryGetValue(npcName, out var list) ? list.Count : 0;
+    }
 
-    /// <summary>
-    /// [FIX-3] 按实际 Category 分组呈现，标签与数据一致
-    /// </summary>
     public string GetSmartMemoryContext(string npcName, int maxCount = MaxMemoriesInPrompt)
     {
         var entries = GetMemories(npcName);
@@ -278,8 +286,6 @@ internal class MemoryManager : IMemoryProvider
 
         bool isZh = IsChineseLanguage;
         var selected = entries.Take(maxCount).ToList();
-        var grouped = selected.GroupBy(e => e.Category);
-
         var sb = new System.Text.StringBuilder();
 
         if (isZh)
@@ -287,22 +293,8 @@ internal class MemoryManager : IMemoryProvider
             sb.AppendLine("=== 玩家自定义规则与专属设定 ===");
             sb.AppendLine("请将以下约定自然融汇于你的角色扮演与表达习惯中：");
             sb.AppendLine();
-
-            foreach (var group in grouped)
-            {
-                string label = group.Key switch
-                {
-                    MemoryCategory.Address  => "[ADDRESS] 称呼习惯",
-                    MemoryCategory.Behavior => "[BEHAVIOR] 行为偏好",
-                    MemoryCategory.Fact     => "[FACT] 专属背景",
-                    _                       => "[OTHER] 其他"
-                };
-                sb.AppendLine($"【{label}】");
-                foreach (var e in group)
-                    sb.AppendLine($"- {e.Content}");
-                sb.AppendLine();
-            }
-
+            foreach (var e in selected)
+                sb.AppendLine($"- {e.Content}");
             sb.AppendLine("=========================================");
         }
         else
@@ -310,22 +302,8 @@ internal class MemoryManager : IMemoryProvider
             sb.AppendLine("=== USER-DEFINED HIGH-PRIORITY RULES ===");
             sb.AppendLine("Seamlessly integrate these custom guidelines into your ongoing persona and speech habits:");
             sb.AppendLine();
-
-            foreach (var group in grouped)
-            {
-                string label = group.Key switch
-                {
-                    MemoryCategory.Address  => "[ADDRESS] Name/Title",
-                    MemoryCategory.Behavior => "[BEHAVIOR] Actions/Tone",
-                    MemoryCategory.Fact     => "[FACT] Background/Lore",
-                    _                       => "[OTHER] Miscellaneous"
-                };
-                sb.AppendLine($"[{label}]");
-                foreach (var e in group)
-                    sb.AppendLine($"- {e.Content}");
-                sb.AppendLine();
-            }
-
+            foreach (var e in selected)
+                sb.AppendLine($"- {e.Content}");
             sb.AppendLine("=========================================");
         }
 
