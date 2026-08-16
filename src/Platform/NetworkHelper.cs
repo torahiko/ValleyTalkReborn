@@ -129,6 +129,55 @@ namespace ValleytalkReborn.Platform
             }
         }
 
+        public static async Task MakeStreamingRequestAsync(
+            string url,
+            string content,
+            string authToken,
+            Action<string> onToken,
+            CancellationToken cancellationToken = default)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, url);
+            request.Content = new StringContent(content, System.Text.Encoding.UTF8, "application/json");
+
+            if (!string.IsNullOrEmpty(authToken))
+                request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+            using var response = await _httpClient.SendAsync(
+                request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorBody = await response.Content.ReadAsStringAsync();
+                throw new InvalidOperationException(
+                    $"Streaming request failed: HTTP {(int)response.StatusCode} - {errorBody}");
+            }
+
+            using var stream = await response.Content.ReadAsStreamAsync();
+            using var reader = new System.IO.StreamReader(stream);
+
+            while (!reader.EndOfStream && !cancellationToken.IsCancellationRequested)
+            {
+                var line = await reader.ReadLineAsync();
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                if (!line.StartsWith("data:")) continue;
+
+                var data = line.Substring(5).Trim();
+                if (data == "[DONE]") break;
+
+                try
+                {
+                    var json = Newtonsoft.Json.Linq.JObject.Parse(data);
+                    var delta = json["choices"]?[0]?["delta"]?["content"]?.ToString();
+                    if (!string.IsNullOrEmpty(delta))
+                        onToken(delta);
+                }
+                catch
+                {
+                    // 单行解析失败跳过，不中断整个流
+                }
+            }
+        }
+
         public static bool IsNetworkAvailable()
         {
             try

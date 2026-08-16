@@ -28,7 +28,7 @@ namespace ValleytalkReborn
             }
 
             var responseOptions = __instance.getResponseOptions();
-            if (responseOptions == null || responseOptions.Any(r => r?.responseKey == null || !r.responseKey.StartsWith(SldConstants.DialogueKeyPrefix)))
+            if (response.responseKey == null || !response.responseKey.StartsWith(SldConstants.DialogueKeyPrefix))
             {
                 return true;
             }
@@ -62,9 +62,13 @@ namespace ValleytalkReborn
             if (dialogueStrings != null)
             {
                 var newLines = dialogueStrings
-                    .Where(x => x != null && x.Text != "skip" && !previous.Any(y => y.Text != null && y.Text.Contains(x.Text)))
+                    .Where(x => x != null 
+                                && x.Text != "skip" 
+                                && !previous.Any(y => y.Text != null 
+                                                      && y.Text.Length >= x.Text.Length 
+                                                      && y.Text.Contains(x.Text)))  // ← 注意这里：三个右括号 )))
                     .Select(x => new ConversationElement(x.Text, false));
-                
+    
                 previous.AddRange(newLines);
             }
 

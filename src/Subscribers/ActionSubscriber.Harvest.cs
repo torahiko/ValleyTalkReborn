@@ -1,55 +1,56 @@
-﻿using StardewModdingAPI;
+﻿using System.Collections.Generic;
+using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 
 namespace ValleytalkReborn;
 
 /// <summary>
-/// Tracks harvests and records town-wide broadcasts when player ships items.
+/// Tracks harvests and records town-wide broadcasts when new crops appear in inventory.
 /// </summary>
 internal static class HarvestSubscriber
 {
-    private static int _lastShippedId = -1;
+    private static bool _initialized = false;
+    private static readonly HashSet<string> _recordedCropIds = new();
 
     public static void Initialize()
     {
-        if (ModEntry.SHelper != null)
-        {
-            ModEntry.SHelper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
-        }
+        if (_initialized || ModEntry.SHelper == null) return;
+        ModEntry.SHelper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
+        ModEntry.SHelper.Events.GameLoop.DayStarted   += OnDayStarted;
+        _initialized = true;
     }
 
     public static void Cleanup()
     {
-        if (ModEntry.SHelper != null)
-        {
-            ModEntry.SHelper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
-        }
+        if (!_initialized || ModEntry.SHelper == null) return;
+        ModEntry.SHelper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
+        ModEntry.SHelper.Events.GameLoop.DayStarted   -= OnDayStarted;
+        _recordedCropIds.Clear();
+        _initialized = false;
+    }
+
+    private static void OnDayStarted(object sender, DayStartedEventArgs e)
+    {
+        _recordedCropIds.Clear();
     }
 
     private static void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
     {
         if (!e.IsMultipleOf(60)) return;
-
         var player = Game1.player;
         if (player == null) return;
 
-        // Track crops in inventory (harvested items)
         foreach (var item in player.Items)
         {
             if (item is StardewValley.Object obj && obj.Type == "Arch")
-            {
-                continue; // Skip artifacts
-            }
+                continue;
 
-            if (item is StardewValley.Object crop && crop.Category == StardewValley.Object.VegetableCategory)
+            if (item is StardewValley.Object crop
+                && crop.Category == StardewValley.Object.VegetableCategory)
             {
-                int currentId = crop.ParentSheetIndex;
-                if (currentId != _lastShippedId)
-                {
-                    _lastShippedId = currentId;
+                if (_recordedCropIds.Add(crop.ItemId))
                     RecordHarvestPerception(crop);
-                }
             }
         }
     }
@@ -59,15 +60,20 @@ internal static class HarvestSubscriber
         string cropName = harvest.DisplayName ?? harvest.Name ?? "crops";
         string qualityPrefix = harvest.Quality.ToString() switch
         {
-            "Gold" => "gold-quality ",
-            "Silver" => "silver-quality ",
+            "Gold"    => "gold-quality ",
+            "Silver"  => "silver-quality ",
             "Iridium" => "iridium-quality ",
-            _ => ""
+            _         => ""
         };
 
-        string template = $"The farm harvested {qualityPrefix}{cropName} today.";
-        int lifetime = ModEntry.Config.PerceptionHarvestLifetime;
+        string template = PerceptionManager.PickVariant(new[]
+        {
+            $"Word is going around that the farmer harvested {qualityPrefix}{cropName} today.",
+            $"You heard that the farmer's {qualityPrefix}{cropName} came in today.",
+            $"People are saying the farmer brought in a harvest of {qualityPrefix}{cropName} this morning.",
+        });
 
-        PerceptionManager.Instance.Record("Harvest", template, null, lifetime, isLandmark: true);
+        // lifetimeHours: 20 = 全天有效，与 Track 1 语义一致
+        PerceptionManager.Instance.Record("Harvest", template, null, 20, isLandmark: true);
     }
 }

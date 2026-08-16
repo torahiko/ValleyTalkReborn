@@ -1,7 +1,8 @@
-namespace ValleytalkReborn
+using System.Threading.Tasks;
+
+namespace ValleytalkReborn;
+
+internal interface IGetModelNames
 {
-    internal interface IGetModelNames
-    {
-        string[] GetModelNames();
-    }
+    Task<string[]> GetModelNamesAsync();
 }

@@ -1,15 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.IO;
-using StardewValley;
 using StardewModdingAPI;
+using StardewValley;
 
 namespace ValleytalkReborn;
 
-// ─────────────────────────────────────────────────────────
-// MemoryEntry
-// ─────────────────────────────────────────────────────────
+/// <summary>
+/// [FIX-3] 记忆分类枚举，让 Prompt 中的标签有实际数据支撑
+/// </summary>
+public enum MemoryCategory
+{
+    /// <summary>称呼习惯（如"叫我阿星"）</summary>
+    Address,
+    /// <summary>行为偏好（如"生气时请沉默"）</summary>
+    Behavior,
+    /// <summary>专属背景设定（如"我们曾在矿洞相遇"）</summary>
+    Fact
+}
 
 public class MemoryEntry
 {
@@ -18,11 +26,24 @@ public class MemoryEntry
     public string Content { get; set; } = "";
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public string Source { get; set; } = "Manual";
+
+    /// <summary>
+    /// [FIX-3] 记忆分类，默认为 Behavior（向后兼容旧存档）
+    /// </summary>
+    public MemoryCategory Category { get; set; } = MemoryCategory.Behavior;
 }
 
-// ─────────────────────────────────────────────────────────
-// MemoryManager（实现 IMemoryProvider）
-// ─────────────────────────────────────────────────────────
+/// <summary>
+/// [FIX-5] 明确的操作结果枚举，替代 int? 的歧义返回值
+/// </summary>
+public enum MemoryOperationResult
+{
+    Success,
+    Duplicate,
+    TooLong,
+    CapacityFull,
+    NotFound
+}
 
 internal class MemoryManager : IMemoryProvider
 {
@@ -34,13 +55,14 @@ internal class MemoryManager : IMemoryProvider
     private Dictionary<string, List<MemoryEntry>> _memories = new();
     private bool _isLoaded = false;
 
+    private static bool IsChineseLanguage =>
+        LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+
     private MemoryManager()
     {
         if (ModEntry.SHelper != null)
         {
             ModEntry.SHelper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
-            // Fallback: load on first day start in case SaveLoaded already fired
-            // before this singleton was accessed (e.g. after hot reload)
             ModEntry.SHelper.Events.GameLoop.DayStarted += OnDayStarted;
         }
     }
@@ -50,16 +72,11 @@ internal class MemoryManager : IMemoryProvider
         if (!_isLoaded) Load();
     }
 
-    /// <summary>
-    /// Loads memory data if it has not been loaded yet.
-    /// Safe to call multiple times — no-ops if already loaded.
-    /// </summary>
     public void EnsureLoaded()
     {
         if (!_isLoaded) Load();
     }
 
-    /// <summary>是否已成功加载过数据。</summary>
     public bool IsLoaded => _isLoaded;
 
     public void Cleanup()
@@ -79,11 +96,11 @@ internal class MemoryManager : IMemoryProvider
 
     public int GetMaxMemoryLength() => MaxMemoryLength;
 
-    private void OnSaveLoaded(object sender, StardewModdingAPI.Events.SaveLoadedEventArgs e)
-    {
-        Load();
-    }
+    private void OnSaveLoaded(object sender, StardewModdingAPI.Events.SaveLoadedEventArgs e) => Load();
 
+    /// <summary>
+    /// [FIX-2] 以文件内容中的 NpcName 为准，增加空值校验
+    /// </summary>
     public void Load()
     {
         _memories.Clear();
@@ -91,43 +108,50 @@ internal class MemoryManager : IMemoryProvider
 
         if (string.IsNullOrWhiteSpace(Constants.SaveFolderName) || ModEntry.SHelper == null) return;
 
-        string saveDir = Path.Combine(ModEntry.SHelper.DirectoryPath, "data", Constants.SaveFolderName);
-        if (!Directory.Exists(saveDir))
-        {
-            _isLoaded = true;
-            return;
-        }
-
+        string saveDir = $"data/{Constants.SaveFolderName}";
         try
         {
-            var files = Directory.GetFiles(saveDir, "memory_*.json");
+            string physicalDir = System.IO.Path.Combine(ModEntry.SHelper.DirectoryPath, saveDir);
+            if (!System.IO.Directory.Exists(physicalDir))
+            {
+                _isLoaded = true;
+                return;
+            }
+
+            var files = System.IO.Directory.GetFiles(physicalDir, "memory_*.json");
+
             foreach (var file in files)
             {
-                string fileName = Path.GetFileName(file);
-                const string prefix = "memory_";
-                const string suffix = ".json";
-                string npcName = fileName;
-                if (fileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                    npcName = fileName.Substring(prefix.Length);
-                if (npcName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
-                    npcName = npcName.Substring(0, npcName.Length - suffix.Length);
+                string fileName = System.IO.Path.GetFileName(file);
+                string relativePath = $"{saveDir}/{fileName}";
 
-                var list = ModEntry.SHelper.Data.ReadJsonFile<List<MemoryEntry>>(
-                    $"data/{Constants.SaveFolderName}/{fileName}");
-                if (list != null && list.Count > 0)
+                var list = ModEntry.SHelper.Data.ReadJsonFile<List<MemoryEntry>>(relativePath);
+                if (list == null || list.Count == 0) continue;
+
+                // [FIX-2] 以文件内容中第一条记录的 NpcName 为准
+                string actualNpcName = list.First().NpcName;
+                if (string.IsNullOrWhiteSpace(actualNpcName))
                 {
-                    _memories[npcName] = list;
+                    ModEntry.SMonitor?.Log(
+                        $"[MemoryManager] Skipping {fileName}: NpcName is empty in file content.",
+                        LogLevel.Warn);
+                    continue;
                 }
+
+                _memories[actualNpcName] = list;
             }
+
             _isLoaded = true;
         }
         catch (Exception ex)
         {
-            ModEntry.SMonitor?.Log($"[MemoryManager] 加载记忆失败: {ex.Message}", LogLevel.Warn);
-            // _isLoaded 保持 false，表示加载不完整
+            ModEntry.SMonitor?.Log($"[MemoryManager] Load failed: {ex.Message}", LogLevel.Warn);
         }
     }
 
+    /// <summary>
+    /// [FIX-1] 统一使用 Data API，不再混用 File.Delete
+    /// </summary>
     public void Save(string npcName)
     {
         try
@@ -138,8 +162,7 @@ internal class MemoryManager : IMemoryProvider
 
             if (!_memories.TryGetValue(npcName, out var list) || list.Count == 0)
             {
-                string fullPath = Path.Combine(ModEntry.SHelper.DirectoryPath, path);
-                if (File.Exists(fullPath)) File.Delete(fullPath);
+                ModEntry.SHelper.Data.WriteJsonFile(path, new List<MemoryEntry>());
             }
             else
             {
@@ -148,22 +171,23 @@ internal class MemoryManager : IMemoryProvider
         }
         catch (Exception ex)
         {
-            ModEntry.SMonitor?.Log($"[MemoryManager] 保存 {npcName} 的记忆失败: {ex.Message}", LogLevel.Warn);
+            ModEntry.SMonitor?.Log($"[MemoryManager] Save failed for {npcName}: {ex.Message}", LogLevel.Warn);
         }
     }
 
-    /// <summary>保存所有 NPC 的记忆数据。</summary>
     public void SaveAll()
     {
         foreach (var npcName in _memories.Keys.ToList())
-        {
             Save(npcName);
-        }
     }
 
-    public int? AddMemory(string npcName, string content)
+    /// <summary>
+    /// [FIX-5] 返回明确枚举
+    /// </summary>
+    public MemoryOperationResult AddMemory(string npcName, string content, MemoryCategory category = MemoryCategory.Behavior)
     {
-        if (string.IsNullOrWhiteSpace(npcName) || string.IsNullOrWhiteSpace(content)) return 0;
+        if (string.IsNullOrWhiteSpace(npcName) || string.IsNullOrWhiteSpace(content))
+            return MemoryOperationResult.NotFound;
 
         if (!_memories.TryGetValue(npcName, out var list))
         {
@@ -171,42 +195,54 @@ internal class MemoryManager : IMemoryProvider
             _memories[npcName] = list;
         }
 
-        if (list.Count >= MaxMemoriesPerNpc) return 0;
+        if (list.Count >= MaxMemoriesPerNpc)
+            return MemoryOperationResult.CapacityFull;
 
         var trimmedContent = content.Trim();
-        if (trimmedContent.Length > GetMaxMemoryLength()) return -1;
+        if (trimmedContent.Length > MaxMemoryLength)
+            return MemoryOperationResult.TooLong;
 
-        if (list.Any(m => string.Equals(m.Content, content, StringComparison.OrdinalIgnoreCase)))
-            return null;
+        if (list.Any(m => string.Equals(m.Content, trimmedContent, StringComparison.OrdinalIgnoreCase)))
+            return MemoryOperationResult.Duplicate;
 
         list.Insert(0, new MemoryEntry
         {
-            NpcName = npcName,
-            Content = trimmedContent,
+            NpcName   = npcName,
+            Content   = trimmedContent,
             CreatedAt = DateTime.Now,
-            Source = "Manual"
+            Source    = "Manual",
+            Category  = category
         });
 
         Save(npcName);
-        return 1;
+        return MemoryOperationResult.Success;
     }
 
-    public int? EditMemory(string npcName, string id, string newContent)
+    /// <summary>
+    /// [FIX-5] 返回明确枚举
+    /// </summary>
+    public MemoryOperationResult EditMemory(string npcName, string id, string newContent, MemoryCategory? category = null)
     {
-        if (!_memories.TryGetValue(npcName, out var list)) return 0;
+        if (!_memories.TryGetValue(npcName, out var list))
+            return MemoryOperationResult.NotFound;
 
         var entry = list.FirstOrDefault(m => m.Id == id);
-        if (entry == null) return 0;
+        if (entry == null)
+            return MemoryOperationResult.NotFound;
 
         var trimmed = newContent.Trim();
-        if (trimmed.Length > GetMaxMemoryLength()) return -1;
+        if (trimmed.Length > MaxMemoryLength)
+            return MemoryOperationResult.TooLong;
 
         if (list.Any(m => m.Id != id && string.Equals(m.Content, trimmed, StringComparison.OrdinalIgnoreCase)))
-            return null;
+            return MemoryOperationResult.Duplicate;
 
         entry.Content = trimmed;
+        if (category.HasValue)
+            entry.Category = category.Value;
+
         Save(npcName);
-        return 1;
+        return MemoryOperationResult.Success;
     }
 
     public bool RemoveMemory(string npcName, string id)
@@ -229,43 +265,69 @@ internal class MemoryManager : IMemoryProvider
         return list.OrderByDescending(m => m.CreatedAt).ToList();
     }
 
-    // ── IMemoryProvider 实现 ──
-
     public int GetMemoryCount(string npcName)
-    {
-        return _memories.TryGetValue(npcName, out var list) ? list.Count : 0;
-    }
-
-    // ── Prompt 生成 ──
+        => _memories.TryGetValue(npcName, out var list) ? list.Count : 0;
 
     /// <summary>
-    /// 生成注入 System Prompt 的记忆上下文。
-    /// 重写指令，明确区分三类规则，消除 LLM 逃避执行的歧义。
+    /// [FIX-3] 按实际 Category 分组呈现，标签与数据一致
     /// </summary>
     public string GetSmartMemoryContext(string npcName, int maxCount = MaxMemoriesInPrompt)
     {
         var entries = GetMemories(npcName);
         if (entries.Count == 0) return "";
 
+        bool isZh = IsChineseLanguage;
         var selected = entries.Take(maxCount).ToList();
+        var grouped = selected.GroupBy(e => e.Category);
+
         var sb = new System.Text.StringBuilder();
 
-        sb.AppendLine("=== USER-DEFINED HIGH-PRIORITY RULES ===");
-        sb.AppendLine("Override persona defaults and story knowledge. Act naturally without meta-explanations.");
-        sb.AppendLine();
-        sb.AppendLine("RULE TYPES & EXECUTION:");
-        sb.AppendLine("• [ADDRESS] (Name/Title): Apply to EVERY response without exception. Self-correct immediately if violated.");
-        sb.AppendLine("• [BEHAVIOR] (Actions/Tone): Trigger strictly when matching context/situation occurs.");
-        sb.AppendLine("• [FACT] (Background/Lore): Bring up naturally only when relevant; do not force into conversation.");
-        sb.AppendLine();
-        sb.AppendLine("ACTIVE RULES:");
-        foreach (var e in selected)
+        if (isZh)
         {
-            sb.AppendLine($"- {e.Content}");
+            sb.AppendLine("=== 玩家自定义规则与专属设定 ===");
+            sb.AppendLine("请将以下约定自然融汇于你的角色扮演与表达习惯中：");
+            sb.AppendLine();
+
+            foreach (var group in grouped)
+            {
+                string label = group.Key switch
+                {
+                    MemoryCategory.Address  => "[ADDRESS] 称呼习惯",
+                    MemoryCategory.Behavior => "[BEHAVIOR] 行为偏好",
+                    MemoryCategory.Fact     => "[FACT] 专属背景",
+                    _                       => "[OTHER] 其他"
+                };
+                sb.AppendLine($"【{label}】");
+                foreach (var e in group)
+                    sb.AppendLine($"- {e.Content}");
+                sb.AppendLine();
+            }
+
+            sb.AppendLine("=========================================");
         }
-        sb.AppendLine("=========================================");
-        sb.AppendLine();
-        sb.AppendLine($"=== END OF {npcName.ToUpperInvariant()}'S RULES — FULL COMPLIANCE REQUIRED ===");
+        else
+        {
+            sb.AppendLine("=== USER-DEFINED HIGH-PRIORITY RULES ===");
+            sb.AppendLine("Seamlessly integrate these custom guidelines into your ongoing persona and speech habits:");
+            sb.AppendLine();
+
+            foreach (var group in grouped)
+            {
+                string label = group.Key switch
+                {
+                    MemoryCategory.Address  => "[ADDRESS] Name/Title",
+                    MemoryCategory.Behavior => "[BEHAVIOR] Actions/Tone",
+                    MemoryCategory.Fact     => "[FACT] Background/Lore",
+                    _                       => "[OTHER] Miscellaneous"
+                };
+                sb.AppendLine($"[{label}]");
+                foreach (var e in group)
+                    sb.AppendLine($"- {e.Content}");
+                sb.AppendLine();
+            }
+
+            sb.AppendLine("=========================================");
+        }
 
         return sb.ToString();
     }

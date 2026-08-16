@@ -3,13 +3,13 @@ using System.Threading.Tasks;
 
 namespace ValleytalkReborn;
 
-internal class LlmOpenAi : LlmOpenAiBase, IGetModelNames
+internal class LlmGrok : LlmOpenAiBase, IGetModelNames
 {
-    public LlmOpenAi(string apiKey, string modelName = null)
+    public LlmGrok(string apiKey, string modelName = null)
     {
-        url = "https://api.openai.com";
+        url = "https://api.x.ai";
         this.apiKey = apiKey;
-        this.modelName = modelName ?? "gpt-4o";
+        this.modelName = modelName ?? "grok-3";
     }
 
     public override string ExtraInstructions => "";

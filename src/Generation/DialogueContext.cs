@@ -230,7 +230,10 @@ public class DialogueContext
             Day = day;
             if (parts[cursor].Length > 3)
             {
-                Hearts = int.Parse(parts[cursor].Substring(3));
+                // 修复：原来是 int.Parse，读档后部分 key 后缀非数字会抛 FormatException
+                if (!int.TryParse(parts[cursor].Substring(3), out var heartsVal))
+                    heartsVal = 0;
+                Hearts = heartsVal;
             }
             else
             {
@@ -384,7 +387,7 @@ public class DialogueContext
             return 10000;
         }
         // If they are both hearts based, favour hearts that are similar.  If only one is hearts based, they are very different.
-        difference += Math.Abs(Hearts ?? 0 - other.Hearts ?? 0) * 100;
+        difference += Math.Abs((Hearts ?? 0) - (other.Hearts ?? 0)) * 100;
 
         if (Season != other.Season)
         {

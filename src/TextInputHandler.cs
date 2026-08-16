@@ -111,25 +111,16 @@ namespace ValleytalkReborn
         {
             Game1.exitActiveMenu();
 
-            if (string.IsNullOrWhiteSpace(enteredText))
-            {
-                return;
-            }
+            if (string.IsNullOrWhiteSpace(enteredText))return;
 
             try
             {
-                // Record player dialogue via history system
                 DialogueHistoryManager.Instance.RecordPlayerDialogue(request.Npc.Name, enteredText);
-
                 request.ResponseHistory.Add(new ConversationElement(enteredText, true));
                 request.Npc.grantConversationFriendship(Game1.player);
-                
-                // 创建占位对话框，供 AsyncBuilder 检测到后替换为思考中提示
-                Game1.activeClickableMenu = new StardewValley.Menus.DialogueBox(
-                    new StardewValley.Dialogue(request.Npc, "", "   "));
-                Game1.currentSpeaker = request.Npc;
 
-                // Generate NPC response to the typed input
+                // 不创建占位框，AsyncBuilder 会在 activeClickableMenu == null 时自己创建
+                Game1.currentSpeaker = request.Npc;
                 AsyncBuilder.Instance.RequestNpcResponse(request.Npc, request.ResponseHistory.ToArray());
             }
             catch (Exception ex)

@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Text;
 using Newtonsoft.Json; 
 using Newtonsoft.Json.Linq; 
 using System.Threading;
 using System.Threading.Tasks;
-using ValleytalkReborn;
 using ValleytalkReborn.Platform;
 
 namespace ValleytalkReborn;
@@ -38,7 +36,10 @@ internal class LlmLlamaCpp : Llm
             .Replace("{response_start}", responseStart);
     }
 
-    internal override async Task<LlmResponse> RunInference(string systemPromptString, string gameCacheString, string npcCacheString, string promptString, string responseStart = "",int n_predict = 2048,string cacheContext="",bool allowRetry = true)
+    internal override async Task<LlmResponse> RunInference(
+        string systemPromptString, string gameCacheString, string npcCacheString, 
+        string promptString, string responseStart = "", int n_predict = 2048, 
+        string cacheContext = "", bool allowRetry = true)
     {
         promptString = gameCacheString + npcCacheString + promptString;
         var fullPrompt = BuildPrompt(systemPromptString, promptString, responseStart);
@@ -67,14 +68,16 @@ internal class LlmLlamaCpp : Llm
                     repeat_penalty = 1.05,
                 };
 
+                var jsonData = JsonConvert.SerializeObject(requestBody);
+
                 if (AndroidHelper.IsAndroid)
                 {
-                    var jsonData = JsonConvert.SerializeObject(requestBody);
                     responseString = await NetworkHelper.MakeRequestAsync(url, jsonData);
                 }
                 else
                 {
-                    using var jsonContent = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json");
+                    using var jsonContent = new StringContent(jsonData, Encoding.UTF8, "application/json");
+                    // 🌟 修复：增加超时的 Cancellation Control，避免 Llama.cpp 挂起导致无限卡顿
                     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(ModEntry.Config.QueryTimeout));
                     
                     var response = await SharedHttpClient.PostAsync(url, jsonContent, cts.Token);
@@ -104,89 +107,64 @@ internal class LlmLlamaCpp : Llm
                 Log.Debug(ex.Message);
                 Log.Debug("Retrying...");
                 retry = allowRetry;
-                // 【优化】改为非阻塞异步等待 1 秒，游戏不会硬性冻结卡死
                 await Task.Delay(1000);
             }
         }
         return new LlmResponse(responseString, 500);
     }
     
-    internal override Dictionary<string,double>[] RunInferenceProbabilities(string fullPrompt, int n_predict = 1)
+    internal override Dictionary<string, double>[] RunInferenceProbabilities(string fullPrompt, int n_predict = 1)
     {
         try
         {
-            // 【优化】使用 Task.Run 隔离异步调用，规避 .Result 造成的死锁风险
-            return Task.Run(async () =>
-            {
-                var jsonContent = new StringContent(
-                    JsonConvert.SerializeObject(new 
-                    {
-                        prompt = fullPrompt,
-                        n_predict = n_predict,
-                        stream = false,
-                        temperature = 0.8,
-                        top_p = 0.88,
-                        min_p = 0.05,
-                        cache_prompt = true,
-                        n_probs = 10
-                    }),
-                    Encoding.UTF8,
-                    "application/json"
-                );
-
-                bool retry = true;
-                while (retry)
+            var jsonContent = new StringContent(
+                JsonConvert.SerializeObject(new 
                 {
-                    try
+                    prompt = fullPrompt,
+                    n_predict = n_predict,
+                    stream = false,
+                    temperature = 0.8,
+                    top_p = 0.88,
+                    min_p = 0.05,
+                    cache_prompt = true,
+                    n_probs = 10
+                }),
+                Encoding.UTF8,
+                "application/json"
+            );
+
+            // 🌟 修复：直接使用 HttpClient 的异步 API，彻底移除外层 Task.Run(...) 嵌套，防止同步/异步混用卡死
+            var response = SharedHttpClient.PostAsync(url, jsonContent).GetAwaiter().GetResult();
+            var responseString = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+            var responseJson = JObject.Parse(responseString);
+            
+            var token_stats = responseJson["timings"] as JObject;
+            AddToStats(token_stats);
+
+            var result = new List<Dictionary<string, double>>();
+            var probsToken = responseJson["completion_probabilities"]; 
+            if (probsToken is JArray probsArray) 
+            {
+                foreach (var prob in probsArray)
+                {
+                    var probDict = new Dictionary<string, double>();
+                    var innerProbsToken = prob["probs"];
+                    if (innerProbsToken is JArray innerProbsArray) 
                     {
-                        retry = false;
-                        using var response = await SharedHttpClient.PostAsync(url, jsonContent);
-                        var responseString = await response.Content.ReadAsStringAsync();
-                        var responseJson = JObject.Parse(responseString);
-                        
-                        var token_stats = responseJson["timings"] as JObject;
-                        AddToStats(token_stats);
-
-                        if (responseJson == null)
+                        foreach (var prop in innerProbsArray)
                         {
-                            throw new Exception("Failed to parse response");
-                        }
-
-                        var result = new List<Dictionary<string, double>>();
-                        var probsToken = responseJson["completion_probabilities"]; 
-                        if (probsToken is JArray probsArray) 
-                        {
-                            foreach (var prob in probsArray)
+                            var token = prop["tok_str"]?.ToString(); 
+                            var probability = prop["prob"]?.Value<double>(); 
+                            if (token != null && probability.HasValue)
                             {
-                                var probDict = new Dictionary<string,double>();
-                                var innerProbsToken = prob["probs"];
-                                if (innerProbsToken is JArray innerProbsArray) 
-                                {
-                                    foreach (var prop in innerProbsArray)
-                                    {
-                                        var token = prop["tok_str"]?.ToString(); 
-                                        var probability = prop["prob"]?.Value<double>(); 
-                                        if (token != null && probability.HasValue)
-                                        {
-                                            probDict[token] = probability.Value;
-                                        }
-                                    }
-                                }
-                                result.Add(probDict);
+                                probDict[token] = probability.Value;
                             }
                         }
-                        return result.ToArray();
                     }
-                    catch(Exception ex)
-                    {
-                        Log.Debug(ex.Message);
-                        Log.Debug("Retrying...");
-                        retry = true;
-                        await Task.Delay(1000);
-                    }
+                    result.Add(probDict);
                 }
-                return Array.Empty<Dictionary<string, double>>();
-            }).GetAwaiter().GetResult();
+            }
+            return result.ToArray();
         }
         catch (Exception ex)
         {

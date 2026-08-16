@@ -1,4 +1,5 @@
-using ValleytalkReborn;
+using System;
+using System.Threading.Tasks;
 
 namespace ValleytalkReborn;
 
@@ -7,21 +8,15 @@ internal class LlmMistral : LlmOpenAiBase, IGetModelNames
     public LlmMistral(string apiKey, string modelName = null)
     {
         url = "https://api.mistral.ai";
-
         this.apiKey = apiKey;
         this.modelName = modelName ?? "mistral-large-latest";
     }
 
     public override string ExtraInstructions => "";
-
     public override bool IsHighlySensoredModel => false;
 
-    public string[] GetModelNames()
+    public async Task<string[]> GetModelNamesAsync()
     {
-        if (string.IsNullOrEmpty(apiKey))
-        {
-            return System.Array.Empty<string>();
-        }
-        return CoreGetModelNames();
+        return await CoreGetModelNamesAsync();
     }
 }

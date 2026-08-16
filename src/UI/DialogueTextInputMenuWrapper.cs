@@ -1,13 +1,13 @@
 using Microsoft.Xna.Framework;
-using StardewValley.Menus;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using StardewValley.Menus;
 using ValleytalkReborn.Platform;
 
 namespace ValleytalkReborn
 {
     /// <summary>
-    /// Wrapper to integrate DialogueTextInputMenu with Stardew Valley's menu system
+    /// Wrapper to integrate DialogueTextInputMenu with Stardew Valley's menu system.
     /// </summary>
     internal class DialogueTextInputMenuWrapper : IClickableMenu
     {
@@ -16,12 +16,23 @@ namespace ValleytalkReborn
         public DialogueTextInputMenuWrapper(DialogueTextInputMenu innerMenu) : base()
         {
             _innerMenu = innerMenu;
-            
-            // Adjust position for Android virtual keyboard
+
+            // If this menu is wrapped, submenus should restore the wrapper, not the inner menu.
+            _innerMenu.SetMenuToRestore(this);
+
+            // Sync base menu bounds so the game's menu system has correct size information.
+            xPositionOnScreen = _innerMenu.MenuBounds.X;
+            yPositionOnScreen = _innerMenu.MenuBounds.Y;
+            width = _innerMenu.MenuBounds.Width;
+            height = _innerMenu.MenuBounds.Height;
+
+            // Adjust position for Android virtual keyboard.
             if (AndroidHelper.IsAndroid)
             {
                 var adjustedPosition = AndroidHelper.AdjustPositionForKeyboard(
-                    new Microsoft.Xna.Framework.Vector2(xPositionOnScreen, yPositionOnScreen));
+                    new Vector2(xPositionOnScreen, yPositionOnScreen)
+                );
+
                 xPositionOnScreen = (int)adjustedPosition.X;
                 yPositionOnScreen = (int)adjustedPosition.Y;
             }
@@ -42,6 +53,12 @@ namespace ValleytalkReborn
             _innerMenu.ReceiveKeyPress(key);
         }
 
+        public override void receiveScrollWheelAction(int direction)
+        {
+            base.receiveScrollWheelAction(direction);
+            _innerMenu.ReceiveScrollWheel(direction);
+        }
+
         public override bool overrideSnappyMenuCursorMovementBan()
         {
             return true;
@@ -54,8 +71,7 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
-        /// Passes window size changes down to the inner menu so it can
-        /// recalculate responsive layout (instead of per-frame Recenter).
+        /// Passes window size changes down to the inner menu so it can recalculate responsive layout.
         /// </summary>
         public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
         {
@@ -63,5 +79,4 @@ namespace ValleytalkReborn
             _innerMenu.gameWindowSizeChanged(oldBounds, newBounds);
         }
     }
-
 }

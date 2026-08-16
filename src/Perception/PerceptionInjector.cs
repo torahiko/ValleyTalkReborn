@@ -1,3 +1,5 @@
+// PerceptionInjector.cs
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using StardewValley;
@@ -6,15 +8,12 @@ namespace ValleytalkReborn;
 
 /// <summary>
 /// Builds and injects perception text into the NPC system prompt.
-///
-/// Two independent sections:
-///   Section 1 — [Town Gossip] from Track 1 (_globalGossip, max 2)
-///   Section 2 — [NPC's Recent Observations] from Track 2 (_farmerBucket, eyewitness-filtered, max 3)
-///
-/// Each section is only emitted when it has content. Neither is required.
 /// </summary>
 internal static class PerceptionInjector
 {
+    private static bool IsChineseLanguage => 
+        LocalizedContentManager.CurrentLanguageCode.ToString().StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+
     public static string BuildPerceptionText(string npcName)
     {
         if (string.IsNullOrEmpty(npcName)) return string.Empty;
@@ -38,25 +37,26 @@ internal static class PerceptionInjector
         string text = BuildPerceptionText(npcName);
         if (string.IsNullOrEmpty(text)) return;
 
-        prompts.CorePrompt += "\n\n" + text;
+        // 🌟 注入 SystemPrompt 尾部，与 LlmDialogueService 架构对齐，避免在 CorePrompt 抢占对话注意力
+        prompts.SystemPrompt += "\n\n" + text;
     }
-
-    // ─────────────────────────────────────────────
-    //  Section 1: Town Gossip
-    // ─────────────────────────────────────────────
 
     private static string BuildGossipBlock()
     {
         var snapshots = PerceptionManager.Instance.GetGossipSnapshots();
         if (snapshots == null || snapshots.Count == 0) return string.Empty;
 
+        bool isZh = IsChineseLanguage;
+
+        // 🌟 弱化提示，仅保留至多 1 条传闻，避免每轮无脑复读
         var lines = new List<string>
         {
-            "[Town Gossip] (Recent town-wide events you have heard about. " +
-            "Mention them naturally only if they fit the conversation — do NOT list them mechanically.)"
+            isZh 
+                ? "[小镇背景传闻]（背景认知：仅在与农夫当前对话主题高度契合时顺带提及，优先响应农夫的发言。）"
+                : "[Town Gossip] (Background context: Only mention if directly relevant to the ongoing conversation.)"
         };
 
-        foreach (var p in snapshots)
+        foreach (var p in snapshots.Take(1))
         {
             if (p == null || string.IsNullOrWhiteSpace(p.Template)) continue;
             lines.Add($"- {p.Template}");
@@ -65,38 +65,106 @@ internal static class PerceptionInjector
         return lines.Count > 1 ? string.Join("\n", lines) : string.Empty;
     }
 
-    // ─────────────────────────────────────────────
-    //  Section 2: Personal eyewitness observations
-    // ─────────────────────────────────────────────
+   private static string BuildLocalBlock(string npcName)
+{
+    var perceptions = PerceptionManager.Instance.GetFilteredBucketFor(npcName, 2);
+    if (perceptions == null || perceptions.Count == 0) return string.Empty;
 
-    private static string BuildLocalBlock(string npcName)
+    bool isZh = IsChineseLanguage;
+
+    // 礼物类感知单独提取，注入为强上下文而非弱背景
+    var giftPerceptions = perceptions
+        .Where(p => p?.Key == "Gift"
+            && !string.IsNullOrEmpty(p.NpcName)
+            && p.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase))
+        .ToList();
+
+    var otherPerceptions = perceptions
+        .Where(p => p?.Key != "Gift")
+        .ToList();
+
+    var lines = new List<string>();
+
+    // ── 礼物感知：以强指令形式出现 ──
+    if (giftPerceptions.Any())
     {
-        var perceptions = PerceptionManager.Instance.GetFilteredBucketFor(npcName, 3);
-        if (perceptions == null || perceptions.Count == 0) return string.Empty;
+        lines.Add(isZh
+            ? "[礼物上下文]（强制要求：你刚刚收到了以下礼物，必须在本次回应中对此作出真实反应。）"
+            : "[Gift Context] (REQUIRED: You just received the following gift. You MUST react to it in your response.)");
 
-        var lines = new List<string>
+        foreach (var p in giftPerceptions)
         {
-            "[NPC's Recent Observations] (Instruction: Choose at most ONE interesting event " +
-            "from the list below to mention naturally ONLY IF it fits the current context " +
-            "and your personality. Do NOT list them mechanically.)"
-        };
+            string itemName = !string.IsNullOrEmpty(p.ItemId)
+                ? GetItemDisplayName(p.ItemId)
+                : (!string.IsNullOrEmpty(p.Template) ? p.Template : "???");
+            string annotation = !string.IsNullOrEmpty(p.ItemId)
+                ? BuildGiftTasteAnnotation(npcName, p.ItemId, isZh)
+                : string.Empty;
 
-        foreach (var p in perceptions)
-        {
-            if (p == null) continue;
+            string entry = isZh
+                ? $"- 礼物：{itemName}{annotation}"
+                : $"- Gift: {itemName}{annotation}";
 
-            string line = $"- {p.Template}";
-
-            if ((p.Key == "Eat" || p.Key == "Gift") && !string.IsNullOrEmpty(p.ItemId))
-                line += BuildGiftTasteAnnotation(npcName, p.ItemId);
-
-            lines.Add(line);
+            lines.Add(entry);
         }
-
-        return lines.Count > 1 ? string.Join("\n", lines) : string.Empty;
     }
 
-    private static string BuildGiftTasteAnnotation(string npcName, string itemId)
+    // ── 其他近距离观察：保持弱感知形式 ──
+    if (otherPerceptions.Any())
+    {
+        lines.Add(isZh
+            ? "[近期近距离观察]（潜意识印象：若与当前话题无关请忽略，切勿主动生硬开启该话题。）"
+            : "[NPC's Recent Observations] (Subconscious context: Ignore if irrelevant to the farmer's current topic.)");
+
+        foreach (var p in otherPerceptions)
+        {
+            string template = ResolveTemplate(p, npcName, isZh);
+            string line = $"- {template}";
+            if (p.Key == "Eat" && !string.IsNullOrEmpty(p.ItemId))
+                line += BuildGiftTasteAnnotation(npcName, p.ItemId, isZh);
+            lines.Add(line);
+        }
+    }
+
+    return lines.Count > 1 ? string.Join("\n", lines) : string.Empty;
+}
+
+    private static string ResolveTemplate(PerceptionEntry entry, string npcName, bool isZh)
+    {
+        if (entry.Key != "Gift") return entry.Template;
+
+        bool isRecipient = !string.IsNullOrEmpty(entry.NpcName)
+            && entry.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase);
+
+        if (!isRecipient) return entry.Template;
+
+        string itemName = !string.IsNullOrEmpty(entry.ItemId) ? GetItemDisplayName(entry.ItemId) : "";
+
+        if (isZh)
+        {
+            return !string.IsNullOrEmpty(itemName)
+                ? $"面前的玩家（@）递给你了一份礼物：[{itemName}]。"
+                : "面前的玩家（@）递给你了一份礼物。";
+        }
+        else
+        {
+            return !string.IsNullOrEmpty(itemName)
+                ? $"The player (@) in front of you gave you a gift: [{itemName}]."
+                : "The player (@) in front of you gave you a gift.";
+        }
+    }
+
+    private static string GetItemDisplayName(string itemId)
+    {
+        try
+        {
+            var item = ItemRegistry.Create(itemId);
+            return item?.DisplayName ?? item?.Name ?? itemId;
+        }
+        catch { return itemId; }
+    }
+
+    private static string BuildGiftTasteAnnotation(string npcName, string itemId, bool isZh)
     {
         try
         {
@@ -108,15 +176,11 @@ internal static class PerceptionInjector
 
             return npc.getGiftTasteForThisItem(item) switch
             {
-                NPC.gift_taste_love =>
-                    // Neutral fact — attitude is determined by the NPC's long-term traits, not forced here.
-                    " (Note: This is one of your favorite items. " +
-                    "How you react depends on your current feelings toward the farmer.)",
-                NPC.gift_taste_hate =>
-                    // Neutral fact — attitude is determined by the NPC's long-term traits, not forced here.
-                    " (Note: You normally dislike this item. " +
-                    "How you react depends on your current feelings toward the farmer.)",
-                _ => string.Empty
+                NPC.gift_taste_love    => isZh ? "（最爱物品，请表现出明显的惊喜与喜悦。）"  : " (Loved item — react with clear delight and gratitude.)",
+                NPC.gift_taste_like    => isZh ? "（喜欢的物品，语气温暖积极。）"           : " (Liked item — warm and appreciative tone.)",
+                NPC.gift_taste_dislike => isZh ? "（不喜欢的物品，可礼貌委婉地表达遗憾。）"   : " (Disliked item — politely hint at disappointment.)",
+                NPC.gift_taste_hate    => isZh ? "（讨厌的物品，可表现出明显的不适或困惑。）"  : " (Hated item — react with clear discomfort or confusion.)",
+                _                      => isZh ? "（普通物品，平淡接受即可。）"              : " (Neutral item — accept graciously without strong reaction.)",
             };
         }
         catch

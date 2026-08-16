@@ -10,46 +10,60 @@ namespace ValleytalkReborn;
 internal static class TalkSubscriber
 {
     private static NPC _lastTalkingNpc = null;
+    private static bool _initialized = false;
+    private static int _nullSpeakerTicks = 0;
+    private const int NullToleranceTicks = 5;
 
     public static void Initialize()
     {
-        if (ModEntry.SHelper != null)
-        {
-            ModEntry.SHelper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
-        }
+        if (_initialized || ModEntry.SHelper == null) return;
+        ModEntry.SHelper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
+        _initialized = true;
     }
 
     public static void Cleanup()
     {
-        if (ModEntry.SHelper != null)
-        {
-            ModEntry.SHelper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
-        }
+        if (!_initialized || ModEntry.SHelper == null) return;
+        ModEntry.SHelper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
+        _lastTalkingNpc = null;
+        _nullSpeakerTicks = 0;
+        _initialized = false;
     }
 
     private static void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
     {
         if (!e.IsMultipleOf(30)) return;
-
         var player = Game1.player;
         if (player == null || Game1.currentLocation == null) return;
 
-        // Check if player is in dialogue with someone
         var currentSpeaker = Game1.currentSpeaker;
-        if (currentSpeaker is NPC talkingNpc && talkingNpc != _lastTalkingNpc)
-        {
-            RecordNearbyOverhearing(talkingNpc);
-        }
 
-        _lastTalkingNpc = currentSpeaker as NPC;
+        if (currentSpeaker is NPC talkingNpc)
+        {
+            _nullSpeakerTicks = 0;
+            if (talkingNpc != _lastTalkingNpc)
+            {
+                _lastTalkingNpc = talkingNpc;
+                RecordNearbyOverhearing(talkingNpc);
+            }
+        }
+        else
+        {
+            _nullSpeakerTicks++;
+            if (_nullSpeakerTicks > NullToleranceTicks)
+            {
+                _lastTalkingNpc = null;
+                _nullSpeakerTicks = 0;
+            }
+        }
     }
 
     private static void RecordNearbyOverhearing(NPC talkingNpc)
     {
         var currentLocation = Game1.currentLocation;
         var player = Game1.player;
+        string talkingNpcName = talkingNpc.displayName ?? talkingNpc.Name;
 
-        // Find NPCs within 8 tiles
         foreach (var npc in currentLocation.characters)
         {
             if (npc == talkingNpc) continue;
@@ -58,15 +72,18 @@ internal static class TalkSubscriber
             float dy = npc.Position.Y - player.Position.Y;
             float distance = (float)System.Math.Sqrt(dx * dx + dy * dy);
 
-            // 8 tiles = 512 pixels (64px per tile)
+            // 8 tiles = 512 pixels
             if (distance <= 512f)
             {
-                string npcName = npc.Name;
-                string talkingNpcName = talkingNpc.displayName ?? talkingNpc.Name;
+                string template = PerceptionManager.PickVariant(new[]
+                {
+                    $"You overheard {talkingNpcName} having a conversation with the farmer nearby.",
+                    $"You caught bits of a conversation between {talkingNpcName} and the farmer a moment ago.",
+                    $"{talkingNpcName} was talking with the farmer close by — you couldn't help but overhear.",
+                });
 
-                string template = $"Overheard {talkingNpcName} chatting with the farmer.";
-
-                PerceptionManager.Instance.Record("Talk", template, npcName, ModEntry.Config.PerceptionTalkLifetime, isLandmark: false);
+                PerceptionManager.Instance.Record("Talk", template, npc.Name,
+                    ModEntry.Config.PerceptionTalkLifetime, isLandmark: false);
             }
         }
     }

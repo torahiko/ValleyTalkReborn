@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using GenericModConfigMenu;
 using StardewModdingAPI;
 
@@ -11,7 +12,6 @@ namespace ValleytalkReborn
         private static IGenericModConfigMenuApi ConfigMenu;
         private static IManifest ModManifest;
         private static ModEntry _modEntry;
-
         private static string[] _cachedModelNames = null;
         private static string _cachedProvider = null;
 
@@ -36,7 +36,6 @@ namespace ValleytalkReborn
         private static string GetUIString(string key, string fallback, object tokens = null)
         {
             string result = null;
-
             if (_modEntry != null && _modEntry.Helper != null && _modEntry.Helper.Translation != null)
             {
                 var smapiTranslation = _modEntry.Helper.Translation.Get(key);
@@ -64,7 +63,7 @@ namespace ValleytalkReborn
             {
                 foreach (var token in tokens.GetType().GetProperties())
                 {
-                    var tokenName = "{\n" + token.Name + "}}";
+                    var tokenName = "{{" + token.Name + "}}";
                     result = result.Replace(tokenName, token.GetValue(tokens)?.ToString() ?? "");
                 }
             }
@@ -76,10 +75,9 @@ namespace ValleytalkReborn
         {
             _modEntry = modEntry;
             var Config = ModEntry.Config;
-
             ModManifest = modEntry.ModManifest;
-
             ConfigMenu = GetConfigMenu(modEntry);
+
             if (ConfigMenu == null)
             {
                 modEntry.Monitor.Log(GetUIString("configGmcmNotInstalled", "Generic Mod Config Menu not installed."),
@@ -89,29 +87,28 @@ namespace ValleytalkReborn
 
             // 重新注册前先取消注册，实现 UI 动态刷新
             ConfigMenu.Unregister(ModManifest);
-
             ConfigMenu.Register(
                 mod: ModManifest,
                 reset: () => ModEntry.Config = new ModConfig(),
                 save: () =>
                 {
                     modEntry.Helper.WriteConfig(ModEntry.Config);
-    
-                    // 1. 先刷新缓存，让下拉框有最新的模型列表
-                    RefreshModelNamesCache();
-    
-                    // 2. 如果模型名已经选择/填写，再进行 Llm 的实例化与网络连接校验
+
+                    // 🌟 核心修复：触发后台异步刷新模型缓存，彻底避免 Save 时 UI 假死
+                    RefreshModelNamesCacheAsync();
+
+                    // 如果模型名已经选择/填写，再进行 Llm 的实例化与网络连接校验
                     if (!string.IsNullOrWhiteSpace(ModEntry.Config.ModelName))
                     {
                         SetLlm();
                     }
-    
-                    // 3. 重新注册界面，展示更新后的下拉菜单
+
+                    // 重新注册界面，展示更新后的下拉菜单
                     Register(modEntry);
                 }
             );
 
-            // Add config options
+            // ── 基础功能开关 ──────────────────────────────────────
             ConfigMenu.AddBoolOption(
                 mod: ModManifest,
                 name: () => GetUIString("configEnable", "Enable Mod"),
@@ -130,6 +127,7 @@ namespace ValleytalkReborn
             );
 #endif
 
+            // ── AI 模型与服务商设置 ──────────────────────────────
             var llmTypes = ModEntry.LlmMap.Keys.ToArray();
             ConfigMenu.AddTextOption(
                 mod: ModManifest,
@@ -141,7 +139,8 @@ namespace ValleytalkReborn
                     Config.ApiKey = "";
                     Config.Provider = value;
                     _cachedModelNames = null;
-                    RefreshModelNamesCache();
+                    // 🌟 切换服务商时也使用异步刷新
+                    RefreshModelNamesCacheAsync();
                 },
                 allowedValues: llmTypes,
                 fieldId: "Provider"
@@ -179,7 +178,6 @@ namespace ValleytalkReborn
                 {
                     var quickSelectOptions = new List<string> { "--- Select to auto-fill ---" };
                     quickSelectOptions.AddRange(_cachedModelNames);
-
                     ConfigMenu.AddTextOption(
                         mod: ModManifest,
                         name: () => GetUIString("configQuickSelect", "Quick Select Model"),
@@ -218,17 +216,13 @@ namespace ValleytalkReborn
                 );
             }
 
-            ConfigMenu.AddTextOption(
+            // ── 对话与输出选项 ──────────────────────────────────
+            ConfigMenu.AddBoolOption(
                 mod: ModManifest,
-                name: () => GetUIString("configInitiateKey", "Key to initiate typed dialogue"),
-                tooltip: () => GetUIString("configInitiateKeyTooltip",
-                    "Key to hold while clicking on an NPC to initiate typed dialogue."),
-                getValue: () => ModEntry.Config.InitiateTypedDialogueKey.ToString(),
-                setValue: (value) =>
-                {
-                    SButton result;
-                    if (Enum.TryParse<SButton>(value, out result)) ModEntry.Config.InitiateTypedDialogueKey = result;
-                }
+                name: () => GetUIString("configStreaming", "Enable Streaming Output"),
+                tooltip: () => GetUIString("configStreamingTooltip", "Show AI responses word-by-word as they arrive. Only applies to typed conversations."),
+                getValue: () => Config.EnableStreaming,
+                setValue: value => Config.EnableStreaming = value
             );
 
             ConfigMenu.AddBoolOption(
@@ -283,56 +277,115 @@ namespace ValleytalkReborn
 
             ConfigMenu.AddTextOption(
                 mod: ModManifest,
-                name: () => GetUIString("configDiableForCharacters", "Disable for characters"),
+                name: () => GetUIString("configDiableForCharacters", "Disable for specific NPCs"),
                 tooltip: () => GetUIString("configDiableForCharactersTooltip",
                     "Comma-separated list of villagers to disable the mod for, e.g. (\"Abigail,Leah,Sam\")"),
                 getValue: () => Config.DisableCharacters,
                 setValue: (value) => { Config.DisableCharacters = value; }
             );
+            
+            // ── ★ 快捷键与控制设置 Section ──────────────────────
+            ConfigMenu.AddSectionTitle(
+                mod: ModManifest,
+                text: () => GetUIString("configSectionKeybinds", "Keybinds & Controls")
+            );
 
-            // 注意：Perception 系统开关（EnablePerceptionSystem）在此处故意被隐藏，不向玩家暴露 UI 菜单。
-            // 配置底层该字段依旧保留（默认值为 true），确保代码逻辑强耦合时不被影响。
+            // 1. 打字对话按键
+            // 🌟 修复：从 AddTextOption 改为 AddKeybind，提供可视化按键绑定体验
+            ConfigMenu.AddKeybind(
+                mod: ModManifest,
+                name: () => GetUIString("configInitiateKey", "Initiate Typed Dialogue Key"),
+                getValue: () => ModEntry.Config.InitiateTypedDialogueKey,
+                setValue: (value) => ModEntry.Config.InitiateTypedDialogueKey = value,
+                tooltip: () => GetUIString("configInitiateKeyTooltip",
+                    "Key to hold while clicking on an NPC to initiate typed dialogue.")
+            );
+
+            // 2. 追问快捷键
+            ConfigMenu.AddKeybind(
+                mod: ModManifest,
+                name: () => GetUIString("configQuickReplyKey", "Quick Reply Key"),
+                getValue: () => ModEntry.Config.QuickReplyKey,
+                setValue: (value) => ModEntry.Config.QuickReplyKey = value,
+                tooltip: () => GetUIString("configQuickReplyKeyTooltip", 
+                    "Key to quickly reply to the last spoken NPC within 5 seconds.")
+            );
         }
 
+        /// <summary>
+        /// 获取缓存的模型名称，若缓存失效则触发后台异步刷新
+        /// </summary>
         private static string[] GetCachedModelNames()
         {
             if (_cachedModelNames == null || _cachedProvider != ModEntry.Config.Provider)
             {
-                RefreshModelNamesCache();
+                // 🌟 仅触发后台任务，不阻塞当前 UI 线程
+                RefreshModelNamesCacheAsync();
             }
-            return _cachedModelNames ?? new string[] { };
+            return _cachedModelNames ?? Array.Empty<string>();
         }
 
-        private static void RefreshModelNamesCache()
+        /// <summary>
+        /// 🌟 核心修复：后台异步刷新模型缓存，防止 GMCM 界面卡死
+        /// </summary>
+        private static void RefreshModelNamesCacheAsync()
         {
-            try
-            {
-                _cachedModelNames = GetModelNames();
-                _cachedProvider = ModEntry.Config.Provider;
+            _cachedProvider = ModEntry.Config.Provider;
 
-                var names = _cachedModelNames.ToList();
-                names.Sort();
-                _cachedModelNames = names.ToArray();
-            }
-            catch (Exception ex)
+            Task.Run(async () =>
             {
-                _modEntry.Monitor.Log($"Error fetching model names: {ex.Message}", LogLevel.Warn);
-                _cachedModelNames = new string[] { };
+                try
+                {
+                    var fetchedNames = await GetModelNamesAsync();
+                    if (fetchedNames != null && fetchedNames.Length > 0)
+                    {
+                        var namesList = fetchedNames.ToList();
+                        namesList.Sort();
+                        _cachedModelNames = namesList.ToArray();
+
+                        // 🌟 刷新成功后，通过 SMAPI 事件切回主线程重新注册 GMCM
+                        if (_modEntry != null)
+                        {
+                            _modEntry.Helper.Events.GameLoop.UpdateTicked += OnUpdateTickedToRefreshUi;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _modEntry?.Monitor.Log($"Error fetching model names: {ex.Message}", LogLevel.Warn);
+                    _cachedModelNames = Array.Empty<string>();
+                }
+            });
+        }
+
+        /// <summary>
+        /// 主线程回调：确保 GMCM UI 操作在正确的线程执行
+        /// </summary>
+        private static void OnUpdateTickedToRefreshUi(object sender, StardewModdingAPI.Events.UpdateTickedEventArgs e)
+        {
+            if (_modEntry != null)
+            {
+                Register(_modEntry);
+                // 立即取消订阅，确保只执行一次
+                _modEntry.Helper.Events.GameLoop.UpdateTicked -= OnUpdateTickedToRefreshUi;
             }
         }
 
-        private static string[] GetModelNames()
+        /// <summary>
+        /// 🌟 核心修复：异步获取模型列表，替代原有的同步 GetModelNames
+        /// </summary>
+        private static async Task<string[]> GetModelNamesAsync()
         {
             if (string.IsNullOrWhiteSpace(ModEntry.Config.ApiKey))
-                return new string[] { };
+                return Array.Empty<string>();
 
             if (!ModEntry.LlmMap.TryGetValue(ModEntry.Config.Provider, out var provider))
-                return new string[] { };
+                return Array.Empty<string>();
 
-            if (provider.GetInterfaces().Any(x => x.Name == "IGetModelNames"))
+            if (typeof(IGetModelNames).IsAssignableFrom(provider))
             {
-                string currentModel = string.IsNullOrWhiteSpace(ModEntry.Config.ModelName) 
-                    ? "placeholder-for-fetching" 
+                string currentModel = string.IsNullOrWhiteSpace(ModEntry.Config.ModelName)
+                    ? "placeholder-for-fetching"
                     : ModEntry.Config.ModelName;
 
                 var paramsDict = new Dictionary<string, string>()
@@ -346,21 +399,22 @@ namespace ValleytalkReborn
                 try
                 {
                     var instance = Llm.CreateInstance(provider, paramsDict);
-                    return ((IGetModelNames)instance).GetModelNames();
+                    // 🌟 调用全新的异步接口方法
+                    return await ((IGetModelNames)instance).GetModelNamesAsync();
                 }
                 catch (Exception ex)
                 {
-                    _modEntry.Monitor.Log($"Failed to get model names: {ex.Message}", LogLevel.Trace);
-                    return new string[] { };
+                    _modEntry?.Monitor.Log($"Failed to get model names: {ex.Message}", LogLevel.Trace);
+                    return Array.Empty<string>();
                 }
             }
 
-            return new string[] { };
+            return Array.Empty<string>();
         }
 
         private static IGenericModConfigMenuApi GetConfigMenu(ModEntry modEntry)
         {
-            return modEntry.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu"); 
+            return modEntry.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
         }
 
         private static void SetLlm()

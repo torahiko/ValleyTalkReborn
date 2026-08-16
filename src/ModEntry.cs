@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using HarmonyLib;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -7,6 +7,7 @@ using System.Linq;
 using System.Globalization;
 using StardewValley;
 using ValleytalkReborn.Plugins;
+using Microsoft.Xna.Framework;
 
 namespace ValleytalkReborn
 {
@@ -19,7 +20,7 @@ namespace ValleytalkReborn
         /// <summary>
         /// Harmony instance saved as a member so it can be unpatched on exit.
         /// </summary>
-        private Harmony _harmony;
+        private static Harmony _harmony;
 
         /// <summary>
         /// Flag to ensure Harmony patches are only applied once per game process.
@@ -35,6 +36,10 @@ namespace ValleytalkReborn
         /// Cancel button plugin instance.
         /// </summary>
         private static CancelButtonPlugin _cancelButtonPlugin;
+        
+        private int _lastDialogueCloseTick = -9999;
+        
+        private NPC _lastSpokenNPC = null;
 
         /// <summary>
         /// Exposes the cancel button plugin instance so Character can register itself as active.
@@ -51,21 +56,23 @@ namespace ValleytalkReborn
                     _llmMap = new Dictionary<string, Type>(StringComparer.InvariantCultureIgnoreCase)
                     {
 #if DEBUG
-                        {"Dummy", typeof(LlmDummy)},
+                        { "Dummy", typeof(LlmDummy)},
 #endif
-                        {"LlamaCpp", typeof(LlmLlamaCpp)},
-                        {"Google", typeof(LlmGemini)},
-                        {"Anthropic", typeof(LlmClaude)},
-                        {"OpenAI", typeof(LlmOpenAi)},
-                        {"Mistral", typeof(LlmMistral)},
-                        {"DeepSeek", typeof(LlmDeepSeek)},
-                        {"VolcEngine", typeof(LlmVolcEngine)},
-                        {"OpenAiCompatible", typeof(LlmOAICompatible)}
+                        { "LlamaCpp", typeof(LlmLlamaCpp)},
+                        { "Google", typeof(LlmGemini)},
+                        { "Anthropic", typeof(LlmClaude)},
+                        { "OpenAI", typeof(LlmOpenAi)},
+                        { "Mistral", typeof(LlmMistral)},
+                        { "Grok", typeof(LlmGrok)}, 
+                        { "DeepSeek", typeof(LlmDeepSeek)},
+                        { "VolcEngine", typeof(LlmVolcEngine)},
+                        { "OpenAiCompatible", typeof(LlmOAICompatible)}
                     };
                 }
                 return _llmMap;
             }
         }
+
         public static bool BlockModdedContent { get; private set; } = false;
         private static CultureInfo _locale;
         public static string Language 
@@ -154,9 +161,17 @@ namespace ValleytalkReborn
             helper.Events.GameLoop.GameLaunched += OnGameLaunched;
             helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
             helper.Events.GameLoop.DayStarted += OnDayStarted;
+            helper.Events.GameLoop.ReturnedToTitle += OnReturnedToTitle;
+            helper.Events.Display.MenuChanged += OnMenuChanged;
+
+            // 🌟 Agent tool dispatcher thread-safe queue: process pending actions on main thread
+            helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 
             // 拦截外部输入，防止打字时触发其他MOD的热键
             helper.Events.Input.ButtonPressed += OnButtonPressed;
+
+            // ★ 监听 CP 热重载（使用规范的 AssetsInvalidated 事件）
+            helper.Events.Content.AssetsInvalidated += OnAssetsInvalidated;
 
             Config = Helper.ReadConfig<ModConfig>();
 
@@ -182,6 +197,9 @@ namespace ValleytalkReborn
             }
 
             _isInitialized = true;
+
+            // Initialize SpouseWaitingEvent (伴侣深夜等待事件)
+            SpouseWaitingEvent.Initialize();
 
             // 注册夜间记忆固化系统
             NightlyConsolidationHook.Register(helper);
@@ -236,6 +254,15 @@ namespace ValleytalkReborn
                 TalkSubscriber.Initialize();
                 GiftSubscriber.Initialize();
 
+                MassGiftTracker.Initialize();
+                ConsecutiveTalkTracker.Initialize();
+                ExtremeActivityTracker.Initialize();
+                DailyHeadlineGenerator.Initialize(); 
+                
+                TrashCanTracker.Initialize(_harmony);
+
+                DynamicBarkManager.EnsureSubscribed();
+                
                 Log.Debug("[ValleyTalkReborn] Action Awareness System initialized.");
             }
             catch (Exception ex)
@@ -317,6 +344,36 @@ namespace ValleytalkReborn
         private void OnButtonPressed(object sender, ButtonPressedEventArgs e)
         {
             if (!Config.EnableMod) return;
+            // 在任何点击事件触发时，记录此刻 ALT 键是否按下
+            // 必须在这里记录，因为 checkAction 执行时 ALT 状态已丢失
+            if (e.Button == SButton.MouseRight || e.Button == SButton.MouseLeft)
+            {
+                NPC_CheckAction_Patch.TriggerKeyWasDown = NPC_CheckAction_Patch.IsTriggerKeyDown();
+            }
+            // 快捷键追问判定逻辑（原有代码不动）
+            if (Context.IsPlayerFree && e.Button == Config.QuickReplyKey)
+            {
+                int tickDiff = Game1.ticks - _lastDialogueCloseTick;
+        
+                if (tickDiff > 0 && tickDiff <= 300 && _lastSpokenNPC != null)
+                {
+                    bool sameLocation = Game1.player.currentLocation == _lastSpokenNPC.currentLocation;
+                    float distance = sameLocation ? Vector2.Distance(Game1.player.Position, _lastSpokenNPC.Position) : float.MaxValue;
+
+                    if (!sameLocation || distance > 256f)
+                    {
+                        Game1.addHUDMessage(new HUDMessage($"{_lastSpokenNPC.displayName} 已经走远了...", 3));
+                    }
+                    else
+                    {
+                        Game1.playSound("bigSelect"); 
+                        TextInputManager.RequestTextInput($"与 {_lastSpokenNPC.displayName} 交谈", _lastSpokenNPC);
+                    }
+            
+                    Helper.Input.Suppress(e.Button);
+                    return; 
+                }
+            }
 
             if (Game1.keyboardDispatcher?.Subscriber is DialogueTextInputBox)
             {
@@ -435,7 +492,13 @@ namespace ValleytalkReborn
                     TalkSubscriber.Cleanup();
                     GiftSubscriber.Cleanup();
 
+                    MassGiftTracker.Cleanup();
+                    ConsecutiveTalkTracker.Cleanup();
+                    ExtremeActivityTracker.Cleanup();
+                    DailyHeadlineGenerator.Cleanup(); 
+                    
                     PerceptionManager.Instance?.Cleanup();
+                    SpouseWaitingEvent.Cleanup();
                 }
                 catch (Exception ex)
                 {
@@ -449,6 +512,26 @@ namespace ValleytalkReborn
                 catch (Exception ex)
                 {
                     Log.Error($"[ValleyTalkReborn] Error cleaning WorldMemoryManager: {ex.Message}");
+                }
+
+                // ★ 清理关系注册表缓存
+                try
+                {
+                    NpcRelationRegistry.Instance.Cleanup();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[ValleyTalkReborn] Error cleaning NpcRelationRegistry: {ex.Message}");
+                }
+
+                // ★ 清理伴侣日程管理器资产与状态缓存
+                try
+                {
+                    CompanionScheduleManager.Instance.Cleanup();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[ValleyTalkReborn] Error cleaning CompanionScheduleManager: {ex.Message}");
                 }
 
                 try
@@ -517,19 +600,89 @@ namespace ValleytalkReborn
         private void OnGameLaunched(object sender, GameLaunchedEventArgs e)
         {
             ModConfigMenu.Register(this);
+            DynamicBarkManager.OnGameLaunched();
         }
 
+        /// <summary>
+        /// 当 CP 资源被其他 Mod 或热重载刷新失效时，自动重新加载所有关联数据
+        /// </summary>
+        private void OnAssetsInvalidated(object sender, AssetsInvalidatedEventArgs e)
+        {
+            // 刷新 NPC 关系表
+            if (e.NamesWithoutLocale.Any(an => an.IsEquivalentTo("ValleytalkReborn/NpcRelations")))
+            {
+                NpcRelationRegistry.Instance.Reload(Helper, Monitor);
+            }
+
+            // 刷新 POI 地点与 NPC 喜好资产表
+            if (e.NamesWithoutLocale.Any(an => an.IsEquivalentTo("ValleytalkReborn/GlobalPoiAssets") ||
+                                               an.IsEquivalentTo("ValleytalkReborn/NpcPreferences")))
+            {
+                CompanionScheduleManager.Instance.ReloadAssets();
+            }
+        }
+        
+        private void OnMenuChanged(object sender, MenuChangedEventArgs e)
+        {
+            if (!Config.EnableMod) return;
+    
+            if (e.OldMenu is StardewValley.Menus.DialogueBox oldDb && e.NewMenu == null)
+            {
+                var speaker = oldDb.characterDialogue?.speaker ?? Game1.currentSpeaker;
+                if (speaker != null)
+                {
+                    _lastSpokenNPC = speaker;
+                    _lastDialogueCloseTick = Game1.ticks;
+                }
+
+                // 修复：对话框关闭后清除 currentSpeaker，防止原版引擎误判为可对话
+                if (Game1.currentSpeaker != null)
+                {
+                    Game1.currentSpeaker = null;
+                }
+            }
+        }
+        
         private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
         {
+            // 每次读档后重建 CancelButtonPlugin，防止 ReturnedToTitle 销毁后失效
+            if (_cancelButtonPlugin == null)
+            {
+                _cancelButtonPlugin = new CancelButtonPlugin(Helper, Monitor);
+            }
             DialogueHistoryManager.Instance.Load();
             RecentConversationTracker.Clear();
+            SessionCache.Instance.ResetAll();
+
+            // ★ 存档加载完成后载入 NPC 关系（此时 CP 资源包已 100% 挂载就绪）
+            NpcRelationRegistry.Instance.LoadAll(Helper, Monitor);
         }
 
         private void OnDayStarted(object sender, DayStartedEventArgs e)
         {
+            PlayerStateScanner.OnDayStarted(); 
             RecentConversationTracker.Clear();
             NPC_CurrentDialogue_Patch.ClearDedupState();
             NPC_CheckForNewCurrentDialogue_Patch.ClearDedupState();
+            SessionCache.Instance.ResetAll();
+        }
+
+        /// <summary>
+        /// Called when the player returns to the title screen.
+        /// </summary>
+        private void OnReturnedToTitle(object sender, ReturnedToTitleEventArgs e)
+        {
+            Cleanup();
+            SMonitor.Log("[ModEntry] Returned to title screen — all manager caches cleaned up.", LogLevel.Debug);
+        }
+
+        /// <summary>
+        /// Called every game tick. Processes the AgentToolDispatcher's thread-safe action queue
+        /// to safely execute background-thread requests (e.g. DelayedAction registrations) on the main thread.
+        /// </summary>
+        private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
+        {
+            AgentToolDispatcher.ProcessMainThreadQueue();
         }
     }
 }

@@ -1,31 +1,30 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq; 
+using System.Threading;
 using System.Threading.Tasks;
-using ValleytalkReborn;
+using Newtonsoft.Json.Linq;
 
 namespace ValleytalkReborn;
 
 internal abstract class Llm
 {
-    internal static Llm Instance {get; private set;}
-    = new LlmDummy();
+    internal static Llm Instance { get; private set; } = new LlmDummy();
     
-    internal static void SetLlm(Type llmType, string url ="", string promptFormat="", string apiKey="", string modelName = null)
+    internal static void SetLlm(Type llmType, string url = "", string promptFormat = "", string apiKey = "", string modelName = null)
     {
         var paramsDict = new Dictionary<string, string>
         {
-            {"url", url},
-            {"promptFormat", promptFormat},
-            {"apiKey", apiKey},
-            {"modelName", modelName}
+            { "url", url },
+            { "promptFormat", promptFormat },
+            { "apiKey", apiKey },
+            { "modelName", modelName }
         };
+        
         Llm instance = CreateInstance(llmType, paramsDict);
         Instance = instance;
         
-        // 【优化】防止 UI 卡死！先假设连接不可用，然后抛入后台线程去异步验证，验证成功后再悄悄启用
+        // 【优化】先假设连接不可用，抛入后台线程去异步验证，验证成功后再悄悄启用，防止游戏 UI 卡死
         DialogueBuilder.Instance.LlmDisabled = true; 
         Task.Run(async () => 
         {
@@ -49,13 +48,12 @@ internal abstract class Llm
         var response = await Instance.RunInference("You are performing LLM connection testing", "Please just ", "respond with ", "'Connection successful'", allowRetry: false);
         if (!response.IsSuccess || response.Text.Length < 5)
         {
-            ModEntry.SMonitor.Log($"Failed to connect to the model {modelName} using provider {Instance.GetType().Name}. ", StardewModdingAPI.LogLevel.Error);
+            ModEntry.SMonitor.Log($"Failed to connect to the model {modelName} using provider {Instance.GetType().Name}.", StardewModdingAPI.LogLevel.Error);
             if (!string.IsNullOrWhiteSpace(response.ErrorMessage))
             {
                 ModEntry.SMonitor.Log($"Error message: {response.ErrorMessage}", StardewModdingAPI.LogLevel.Error);
             }
 
-            // 避免在连接测试失败后再重复卡顿调用 GetModelNames
             return true; // Connection failed
         }
         else
@@ -76,6 +74,7 @@ internal abstract class Llm
             }
             return x.HasDefaultValue ? x.DefaultValue : null;
         }).ToArray();
+
         return (Llm)Activator.CreateInstance(llmType, parameters);
     }
 
@@ -89,8 +88,37 @@ internal abstract class Llm
     public abstract string ExtraInstructions { get; }
     public string TokenStats => $"Prompt: {_totalPrompts} tokens in {_totalPromptTime}ms, Inference: {_totalInference} tokens in {_totalInferenceTime}ms";
     
-    internal abstract Task<LlmResponse> RunInference(string systemPromptString, string gameCacheString, string npcCacheString, string promptString, string responseStart = "",int n_predict = 150,string cacheContext="",bool allowRetry = true);
-    internal abstract Dictionary<string,double>[] RunInferenceProbabilities(string fullPrompt,int n_predict = 1);
+    internal abstract Task<LlmResponse> RunInference(
+        string systemPromptString, 
+        string gameCacheString, 
+        string npcCacheString, 
+        string promptString, 
+        string responseStart = "", 
+        int n_predict = 2048, 
+        string cacheContext = "", 
+        bool allowRetry = true);
+
+    internal abstract Dictionary<string, double>[] RunInferenceProbabilities(string fullPrompt, int n_predict = 1);
+
+    internal virtual async Task<LlmResponse> RunStreamingInference(
+        string systemPromptString,
+        string gameCacheString,
+        string npcCacheString,
+        string promptString,
+        Action<string> onToken,
+        CancellationToken ct,
+        string responseStart = "",
+        int n_predict = 2048)
+    {
+        var result = await RunInference(
+            systemPromptString, gameCacheString, npcCacheString,
+            promptString, responseStart, n_predict);
+            
+        if (result.IsSuccess && !string.IsNullOrWhiteSpace(result.Text))
+            onToken(result.Text);
+            
+        return result;
+    }
 
     protected void AddToStats(JObject token_stats) 
     {

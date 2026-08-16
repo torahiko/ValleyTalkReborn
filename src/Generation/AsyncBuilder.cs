@@ -1,7 +1,9 @@
+﻿// AsyncBuilder.cs
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -16,11 +18,6 @@ public class AsyncBuilder
     private static readonly AsyncBuilder _instance = new AsyncBuilder();
     public static AsyncBuilder Instance => _instance;
 
-    /// <summary>
-    /// NPC names whose current dialogue was AI-generated.
-    /// Set just before DrawDialogue so the vanilla Patch can skip duplicate recording.
-    /// Cleared by the Patch after it reads the flag.
-    /// </summary>
     private static readonly HashSet<string> _aiDialogueNpcNames =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -30,11 +27,11 @@ public class AsyncBuilder
     }
 
     private readonly ConcurrentQueue<Action> _mainThreadActionQueue = new ConcurrentQueue<Action>();
-
+    private readonly ConcurrentQueue<string> _streamTokenQueue = new ConcurrentQueue<string>();
+    private readonly System.Text.StringBuilder _streamAccumulator = new System.Text.StringBuilder();
     private IClickableMenu _placeholderMenu = null;
     private bool _awaitingGeneration = false;
     private int _waitFrames = 0;
-
     private GenerationType _awaitedType = GenerationType.None;
     private NPC _speakingNpc = null;
     private string _currentDialogueKey = "";
@@ -42,16 +39,17 @@ public class AsyncBuilder
     private IEnumerable<ConversationElement> _currentConversation = null;
     private StardewValley.Object _currentGift = null;
     private int _currentTaste = 0;
-
-    /// <summary>
-    /// 防抖集合：记录本帧内已发起请求的 NPC 名字，下一帧自动清空。
-    /// 彻底防止同帧内多个系统对同一 NPC 重复触发。
-    /// </summary>
     private readonly HashSet<string> _requestedThisFrame = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    private int _generationCooldownFrames = 0;
+    private bool _isStreaming = false;
+    private int _generationId = 0;
+    private readonly HashSet<string> _pendingGiftNpcs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     public bool AwaitingGeneration => _awaitingGeneration;
     public bool IsGeneratingDialogue { get; internal set; }
     public NPC SpeakingNpc => _speakingNpc;
+    internal GenerationType AwaitedType => _awaitedType;
+    public int GenerationCooldownFrames => _generationCooldownFrames;
 
     private AsyncBuilder()
     {
@@ -67,6 +65,8 @@ public class AsyncBuilder
         {
             ResetState();
             while (_mainThreadActionQueue.TryDequeue(out _)) { }
+            while (_streamTokenQueue.TryDequeue(out _)) { }
+            _streamAccumulator.Clear();
             _requestedThisFrame.Clear();
             _aiDialogueNpcNames.Clear();
         }
@@ -80,6 +80,7 @@ public class AsyncBuilder
     {
         _awaitingGeneration = false;
         IsGeneratingDialogue = false;
+        _isStreaming = false;
         _waitFrames = 0;
         _placeholderMenu = null;
         _speakingNpc = null;
@@ -89,44 +90,109 @@ public class AsyncBuilder
         _currentGift = null;
         _currentTaste = 0;
         _awaitedType = GenerationType.None;
+        while (_streamTokenQueue.TryDequeue(out _)) { }
+        _streamAccumulator.Clear();
     }
 
     private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
     {
-        // 每帧开始时清空防抖集合，确保下一次玩家交互可以正常触发
         _requestedThisFrame.Clear();
+
+        if (_generationCooldownFrames > 0)
+            _generationCooldownFrames--;
+
+        // Drain stream tokens and update the placeholder DialogueBox text
+        if (_isStreaming && _placeholderMenu != null && _streamTokenQueue.Count > 0)
+        {
+            while (_streamTokenQueue.TryDequeue(out var token))
+                _streamAccumulator.Append(token);
+
+            var preview = _streamAccumulator.ToString().TrimEnd();
+            if (!string.IsNullOrWhiteSpace(preview) && _speakingNpc != null
+                && Game1.activeClickableMenu is DialogueBox)
+            {
+                var previewDialogue = new Dialogue(_speakingNpc, "", preview);
+                var newBox = new DialogueBox(previewDialogue);
+                Game1.activeClickableMenu = newBox;
+                _placeholderMenu = newBox;
+            }
+        }
 
         while (_mainThreadActionQueue.TryDequeue(out var action))
         {
             try { action?.Invoke(); }
-            catch (Exception ex) { ModEntry.SMonitor?.Log($"[AsyncBuilder] Error: {ex.Message}", LogLevel.Error); }
+            catch (Exception ex) { ModEntry.SMonitor?.Log($"[AsyncBuilder] Error executing main thread action: {ex.Message}", LogLevel.Error); }
         }
 
         if (_awaitingGeneration)
         {
-            if (Game1.activeClickableMenu is DialogueBox db)
+            if (_awaitedType == GenerationType.conversation || _awaitedType == GenerationType.Gift)
             {
-                _awaitingGeneration = false;
-                _waitFrames = 0;
-
-                if (_speakingNpc != null)
+                if (Game1.activeClickableMenu == null)
                 {
-                    var thinkingMsg = Util.GetString("ui.thinking") ?? "思考中...";
-                    db = new DialogueBox(new Dialogue(_speakingNpc, "", $"$0 {thinkingMsg}"));
-                    Game1.activeClickableMenu = db;
+                    _awaitingGeneration = false;
+                    _waitFrames = 0;
+                    IClickableMenu db;
+                    if (_speakingNpc != null)
+                    {
+                        var placeholder = new DialogueBox(new Dialogue(_speakingNpc, "", "   "));
+                        Game1.activeClickableMenu = placeholder;
+                        db = placeholder;
+                    }
+                    else
+                    {
+                        var placeholder = new DialogueBox("   ");
+                        Game1.activeClickableMenu = placeholder;
+                        db = placeholder;
+                    }
+                    _placeholderMenu = db;
+                    IsGeneratingDialogue = true;
+                    ModEntry.SMonitor?.Log(
+                        $"[AsyncBuilder] ★ Starting PerformGeneration. type={_awaitedType}, npc={_speakingNpc?.Name}",
+                        LogLevel.Debug);
+                    _ = PerformGeneration(db);
                 }
-
-                _placeholderMenu = db;
-                IsGeneratingDialogue = true;
-                _ = PerformGeneration(db);
+                else
+                {
+                    _waitFrames++;
+                    if (_waitFrames > 120)
+                    {
+                        ModEntry.SMonitor?.Log("[AsyncBuilder] Timed out waiting for menu to close (conversation/gift), resetting.", LogLevel.Warn);
+                        if (Game1.activeClickableMenu != null) Game1.exitActiveMenu();
+                        ResetState();
+                    }
+                }
             }
             else
             {
-                _waitFrames++;
-                if (_waitFrames > 30)
+                if (Game1.activeClickableMenu is DialogueBox db)
                 {
-                    ModEntry.SMonitor?.Log("[AsyncBuilder] Timed out waiting for DialogueBox, resetting.", LogLevel.Warn);
-                    ResetState();
+                    ModEntry.SMonitor?.Log($"[AsyncBuilder] Taking over DialogueBox, starting generation.", LogLevel.Trace);
+                    _awaitingGeneration = false;
+                    _waitFrames = 0;
+                    if (_speakingNpc != null)
+                    {
+                        var newDb = new DialogueBox(new Dialogue(_speakingNpc, "", "   "));
+                        Game1.activeClickableMenu = newDb;
+                        db = newDb;
+                    }
+                    _placeholderMenu = db;
+                    IsGeneratingDialogue = true;
+                    ModEntry.SMonitor?.Log(
+                        $"[AsyncBuilder] ★ Starting PerformGeneration. type={_awaitedType}, npc={_speakingNpc?.Name}",
+                        LogLevel.Debug);
+                    _ = PerformGeneration(db);
+                }
+                else
+                {
+                    _waitFrames++;
+                    ModEntry.SMonitor?.Log($"[AsyncBuilder] Waiting for DialogueBox, activeMenu={Game1.activeClickableMenu?.GetType().Name ?? "null"}, waitFrames={_waitFrames}", LogLevel.Trace);
+                    if (_waitFrames > 120)
+                    {
+                        ModEntry.SMonitor?.Log("[AsyncBuilder] Timed out waiting for DialogueBox (Basic/Gift), resetting.", LogLevel.Warn);
+                        if (Game1.activeClickableMenu != null) Game1.exitActiveMenu();
+                        ResetState();
+                    }
                 }
             }
         }
@@ -136,7 +202,7 @@ public class AsyncBuilder
     {
         NPC npc = _speakingNpc;
         GenerationType currentType = _awaitedType;
-
+        int myGenerationId = _generationId;
         try
         {
             Task<Dialogue> dialogueTask = currentType switch
@@ -151,12 +217,14 @@ public class AsyncBuilder
             {
                 EnqueueToMainThread(() =>
                 {
+                    var menuToClose = _placeholderMenu;
                     ResetState();
+                    _generationCooldownFrames = 5;
                     var errMsg = Util.GetString("uiErrorGeneric") ?? "（请求发生异常，请检查设置。）";
                     if (npc != null)
                         Game1.activeClickableMenu = new DialogueBox(new Dialogue(npc, "", $"$s {errMsg}"));
                     else
-                        ShowFeedbackDialogue(placeholder, errMsg);
+                        ShowFeedbackDialogue(menuToClose, errMsg);
                 });
                 return;
             }
@@ -165,27 +233,39 @@ public class AsyncBuilder
 
             EnqueueToMainThread(() =>
             {
+                // Check generation ID: if it changed, this result is stale (preempted by Gift).
+                if (_generationId != myGenerationId)
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[AsyncBuilder] Discarding stale {currentType} result for {npc?.Name} (id mismatch).",
+                        LogLevel.Debug);
+                    return;
+                }
+                var menuToClose = _placeholderMenu;
                 ResetState();
-                ClosePlaceholder(placeholder);
+                _generationCooldownFrames = 5;
+                if (menuToClose != null && Game1.activeClickableMenu == menuToClose)
+                    Game1.exitActiveMenu();
+
                 if (newDialogue != null && newDialogue.dialogues.Count > 0)
                 {
-                    // 【修复】在 DrawDialogue 之前打标，让 Patch 跳过 vanilla 记录
                     _aiDialogueNpcNames.Add(npc.Name);
-
                     Game1.DrawDialogue(newDialogue);
 
-                    string responseText = string.Join(" ", newDialogue.dialogues.Select(d => d.Text));
+                    // 🌟【核心修复】：清洗星露谷原版内部标记、选项占位符以及肖像指令，防止 ${ 回应: } 泄露至历史库
+                    string rawResponseText = string.Join(" ", newDialogue.dialogues.Select(d => d.Text));
+                    string cleanResponseText = SanitizeDialogueForHistory(rawResponseText);
 
-                    if (Game1.player != null && responseText.Contains("@"))
-                        responseText = responseText.Replace("@", Game1.player.Name);
+                    if (Game1.player != null && cleanResponseText.Contains("@"))
+                        cleanResponseText = cleanResponseText.Replace("@", Game1.player.Name);
 
                     var (_, lastPlayerChoice) = RecentConversationTracker.GetRecentContext(npc.Name);
-                    RecentConversationTracker.RecordResponse(npc.Name, responseText, lastPlayerChoice);
+                    RecentConversationTracker.RecordResponse(npc.Name, cleanResponseText, lastPlayerChoice);
 
                     if (currentType == GenerationType.Gift)
-                        DialogueHistoryManager.Instance.RecordGiftReaction(npc.Name, responseText);
+                        DialogueHistoryManager.Instance.RecordGiftReaction(npc.Name, cleanResponseText);
                     else
-                        DialogueHistoryManager.Instance.RecordNpcDialogue(npc.Name, responseText, "conversation");
+                        DialogueHistoryManager.Instance.RecordNpcDialogue(npc.Name, cleanResponseText, "conversation");
                 }
             });
         }
@@ -199,6 +279,7 @@ public class AsyncBuilder
             EnqueueToMainThread(() =>
             {
                 ResetState();
+                _generationCooldownFrames = 5;
                 var netMsg = Util.GetString("uiErrorNetwork") ?? "（请求发生异常或超时，请检查网络与设置。）";
                 if (npc != null)
                     Game1.activeClickableMenu = new DialogueBox(new Dialogue(npc, "", $"$s {netMsg}"));
@@ -208,10 +289,25 @@ public class AsyncBuilder
         }
     }
 
-    private static void ClosePlaceholder(IClickableMenu placeholder)
+    /// <summary>
+    /// 彻底剔除星露谷原版语法格式及未渲染模板标记
+    /// </summary>
+    private static string SanitizeDialogueForHistory(string text)
     {
-        if (placeholder != null && Game1.activeClickableMenu == placeholder)
-            Game1.exitActiveMenu();
+        if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+
+        // 剔除 ${ 回应: ... } 以及 ${ ... }
+        string cleaned = Regex.Replace(text, @"\$\{.*?\}", "");
+        // 剔除 #$q, #$r, #$b#, #$e# 等星露谷控制标签
+        cleaned = Regex.Replace(cleaned, @"#\$[a-zA-Z0-9_#\s\-\:]+", "");
+        // 剔除 $h, $s, $a, $0 等单字符肖像标记
+        cleaned = Regex.Replace(cleaned, @"\$[a-zA-Z0-9]", "");
+        // 剔除 [ACTION:...] 动作标签
+        cleaned = Regex.Replace(cleaned, @"\[ACTION:.*?\]", "");
+        // 剔除 [MOOD:...] 情绪标签
+        cleaned = Regex.Replace(cleaned, @"\[MOOD:.*?\]", "");
+
+        return cleaned.Trim();
     }
 
     private static void ShowFeedbackDialogue(IClickableMenu placeholder, string message)
@@ -230,11 +326,22 @@ public class AsyncBuilder
     internal void RequestNpcResponse(NPC currentNpc, IEnumerable<ConversationElement> currentConversation)
     {
         if (currentNpc == null) return;
+
+        // If a Gift interaction is pending for this NPC, suppress conversation
+        // to avoid racing with the Gift request.
+        if (ConsumeGiftInteractionMark(currentNpc.Name))
+        {
+            ModEntry.SMonitor?.Log(
+                $"[AsyncBuilder] Suppressed conversation request for {currentNpc.Name}: gift interaction pending.",
+                LogLevel.Trace);
+            return;
+        }
         if (CheckAndWarnIfAwaiting()) return;
         if (!TryClaimNpc(currentNpc.Name)) return;
 
         _speakingNpc = currentNpc;
         _currentConversation = currentConversation;
+        _currentDialogueKey = "conversation";
         _awaitedType = GenerationType.conversation;
         _awaitingGeneration = true;
     }
@@ -242,33 +349,104 @@ public class AsyncBuilder
     internal void RequestNpcGiftResponse(NPC currentNpc, StardewValley.Object gift, int taste)
     {
         if (currentNpc == null) return;
-        if (CheckAndWarnIfAwaiting()) return;
+
+        // Gift has higher priority than Basic: if a Basic request is pending
+        // (not yet started generation), replace it instead of being silently dropped.
+        if (_awaitingGeneration && _awaitedType == GenerationType.Basic && !IsGeneratingDialogue)
+        {
+            ModEntry.SMonitor?.Log(
+                $"[AsyncBuilder] ★ Gift preempting PENDING Basic for {currentNpc.Name}.",
+                LogLevel.Debug);
+            // Reset only state flags, keep _requestedThisFrame intact so
+            // TryClaimNpc() for this Gift request still works correctly.
+            _awaitingGeneration = false;
+            _awaitedType = GenerationType.None;
+            _speakingNpc = null;
+            _currentDialogueKey = string.Empty;
+            _originalLine = null;
+            _currentConversation = null;
+            _waitFrames = 0;
+            _requestedThisFrame.Remove(currentNpc.Name);
+        }
+
+        // Gift also preempts in-progress Basic generation (already in PerformGeneration).
+        if (IsGeneratingDialogue && _awaitedType == GenerationType.Basic)
+        {
+            ModEntry.SMonitor?.Log(
+                $"[AsyncBuilder] ★ Gift preempting IN-PROGRESS Basic for {currentNpc.Name}.",
+                LogLevel.Debug);
+            // Increment ID so the running PerformGeneration discards its result on completion.
+            _generationId++;
+            // Close the Basic placeholder DialogueBox to make room for Gift flow.
+            if (Game1.activeClickableMenu == _placeholderMenu)
+                Game1.exitActiveMenu();
+            ResetState();
+            _requestedThisFrame.Remove(currentNpc.Name);
+        }
+        // Gift skips cooldown check; only block if generation is truly in progress.
+        // Cooldown is for debouncing normal dialogue, not for high-priority gifts.
+        if (_awaitingGeneration || IsGeneratingDialogue)
+        {
+            ModEntry.SMonitor?.Log("[AsyncBuilder] Gift request blocked: generation in progress.", LogLevel.Trace);
+            return;
+        }
+
+        // Force-clear cooldown so Gift is never blocked by it.
+        _generationCooldownFrames = 0;
         if (!TryClaimNpc(currentNpc.Name)) return;
 
+        MarkGiftInteraction(currentNpc.Name);
         _speakingNpc = currentNpc;
         _currentGift = gift;
         _currentTaste = taste;
         _awaitedType = GenerationType.Gift;
         _awaitingGeneration = true;
+        ModEntry.SMonitor?.Log(
+            $"[AsyncBuilder] ★ Gift request queued for {currentNpc.Name}. awaitedType={_awaitedType}",
+            LogLevel.Debug);
     }
 
-    internal void RequestNpcBasic(NPC currentNpc, string dialogueKey, string originalLine)
+    public void MarkGiftInteraction(string npcName)
     {
-        if (currentNpc == null) return;
-        if (CheckAndWarnIfAwaiting()) return;
-        if (!TryClaimNpc(currentNpc.Name)) return;
+        if (!string.IsNullOrEmpty(npcName))
+            _pendingGiftNpcs.Add(npcName);
+    }
+
+    public bool ConsumeGiftInteractionMark(string npcName)
+        {
+            if (string.IsNullOrEmpty(npcName)) return false;
+            return _pendingGiftNpcs.Remove(npcName);
+        }
+
+        public bool HasGiftInteractionPending(string npcName)
+        {
+            if (string.IsNullOrEmpty(npcName)) return false;
+            return _pendingGiftNpcs.Contains(npcName);
+        }
+
+    internal bool TryRequestNpcBasic(NPC currentNpc, string dialogueKey, string originalLine)
+    {
+        ModEntry.SMonitor?.Log(
+            $"[AsyncBuilder] TryRequestNpcBasic called for {currentNpc?.Name}, key={dialogueKey}",
+            LogLevel.Trace);
+
+        if (currentNpc == null) return false;
+        if (CheckAndWarnIfAwaiting()) return false;
+        if (!TryClaimNpc(currentNpc.Name)) return false;
 
         _speakingNpc = currentNpc;
         _currentDialogueKey = dialogueKey;
         _originalLine = originalLine;
         _awaitedType = GenerationType.Basic;
         _awaitingGeneration = true;
+        return true;
     }
 
-    /// <summary>
-    /// 尝试为本帧"认领"一个 NPC 的请求槽位。
-    /// 同一帧内同一个 NPC 只能被认领一次，后续调用直接返回 false。
-    /// </summary>
+    internal void RequestNpcBasic(NPC currentNpc, string dialogueKey, string originalLine)
+    {
+        TryRequestNpcBasic(currentNpc, dialogueKey, originalLine);
+    }
+
     private bool TryClaimNpc(string npcName)
     {
         if (string.IsNullOrEmpty(npcName)) return false;
@@ -283,21 +461,49 @@ public class AsyncBuilder
 
     private bool CheckAndWarnIfAwaiting()
     {
-        if (_awaitingGeneration || IsGeneratingDialogue)
+        if (_awaitingGeneration || IsGeneratingDialogue || _generationCooldownFrames > 0)
         {
-            ModEntry.SMonitor?.Log("[AsyncBuilder] Request blocked: generation already in progress.", LogLevel.Trace);
+            ModEntry.SMonitor?.Log("[AsyncBuilder] Request blocked: generation in progress or cooldown.", LogLevel.Trace);
             return true;
         }
         return false;
     }
 
-    private async Task<Dialogue> GenerateNpcGift() => await DialogueBuilder.Instance.GenerateGift(_speakingNpc, _currentGift, _currentTaste);
-    private async Task<Dialogue> GenerateNpc() => await DialogueBuilder.Instance.Generate(_speakingNpc, _currentDialogueKey, _originalLine);
+    private async Task<Dialogue> GenerateNpcGift()
+    {
+        Action<string> streamCallback = null;
+        if (ModEntry.Config.EnableStreaming)
+        {
+            _isStreaming = true;
+            streamCallback = token => _streamTokenQueue.Enqueue(token);
+        }
+        return await DialogueBuilder.Instance.GenerateGift(_speakingNpc, _currentGift, _currentTaste, streamCallback);
+    }
+
+    private async Task<Dialogue> GenerateNpc()
+    {
+        Action<string> streamCallback = null;
+        if (ModEntry.Config.EnableStreaming)
+        {
+            _isStreaming = true;
+            streamCallback = token => _streamTokenQueue.Enqueue(token);
+        }
+        return await DialogueBuilder.Instance.Generate(_speakingNpc, _currentDialogueKey, _originalLine, streamCallback);
+    }
+
     private async Task<Dialogue> GenerateNpcResponse()
     {
         var npc = _speakingNpc;
         var conversationList = _currentConversation?.ToList() ?? new List<ConversationElement>();
-        var newDialogue = await DialogueBuilder.Instance.GenerateResponse(npc, conversationList, true);
+
+        Action<string> streamCallback = null;
+        if (ModEntry.Config.EnableStreaming)
+        {
+            _isStreaming = true;
+            streamCallback = token => _streamTokenQueue.Enqueue(token);
+        }
+
+        var newDialogue = await DialogueBuilder.Instance.GenerateResponse(npc, conversationList, true, streamCallback);
         if (newDialogue == null) return null;
         return new Dialogue(npc, _currentDialogueKey, newDialogue);
     }

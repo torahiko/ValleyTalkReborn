@@ -9,6 +9,14 @@
   "UpdateKeys": [ "Nexus:30319" ],
   "Dependencies": [
     {
+      "UniqueID": "Pathoschild.ContentPatcher",
+      "IsRequired": true
+    },
+    {
+      "UniqueID": "srkgou.CPValleyTalkReborn",
+      "IsRequired": true
+    },
+    {
       "UniqueID": "Omegasis.PolyamorySweetLove",
       "IsRequired": false
     }

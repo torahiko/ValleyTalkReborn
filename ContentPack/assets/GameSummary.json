@@ -18,264 +18,257 @@
           "Text": "",
           "Entries": {}
         },
-
-  "LocationRegions": {
-  "Farm": "The Farm",
-  "FarmHouse": "The Farm",
-  "Cellar": "The Farm",
-  "Greenhouse": "The Farm",
-  "FarmCave": "The Farm",
-
-  "Town": "Pelican Town",
-  "SeedShop": "Pelican Town",
-  "JojaMart": "Pelican Town",
-  "Saloon": "Pelican Town",
-  "Hospital": "Pelican Town",
-  "Blacksmith": "Pelican Town",
-  "LibraryMuseum": "Pelican Town",
-  "CommunityCenter": "Pelican Town",
-  "ManorHouse": "Pelican Town",
-  "HaleyHouse": "Pelican Town",
-  "SamHouse": "Pelican Town",
-  "JoshHouse": "Pelican Town",
-  "Trailer": "Pelican Town",
-  "Trailer_Big": "Pelican Town",
-  "ArchaeologyHouse": "Pelican Town",
-
-  "Forest": "Cindersap Forest",
-  "LeahHouse": "Cindersap Forest",
-  "WizardHouse": "Cindersap Forest",
-  "WizardHouseBasement": "Cindersap Forest",
-  "WitchSwamp": "Cindersap Forest",
-  "AnimalShop": "Cindersap Forest",
-
-  "Mountain": "Mountain",
-  "Mine": "Mountain",
-  "AdventureGuild": "Mountain",
-  "Railroad": "Mountain",
-  "ScienceHouse": "Mountain",
-  "LinusTent": "Mountain",
-  "BathHouse_Entry": "Mountain",
-  "BathHouse_Pool": "Mountain",
-  "BathHouse_MensLocker": "Mountain",
-  "BathHouse_WomensLocker": "Mountain",
-  "Summit": "Mountain",
-
-  "Beach": "Beach",
-  "FishShop": "Beach",
-  "ElliottHouse": "Beach",
-  "tide_pools": "Beach",
-
-  "Desert": "Desert",
-  "SandyHouse": "Desert",
-  "SkullCave": "Desert",
-  "Club": "Desert",
-
-  "IslandSouth": "Ginger Island",
-  "IslandNorth": "Ginger Island",
-  "IslandWest": "Ginger Island",
-  "IslandEast": "Ginger Island",
-  "IslandFarmHouse": "Ginger Island",
-  "IslandResort": "Ginger Island",
-  "IslandSouthEast": "Ginger Island",
-  "IslandSouthEastCave": "Ginger Island",
-  "IslandNorthCave1": "Ginger Island",
-  "IslandShrine": "Ginger Island",
-  "Volcano_Entrance": "Ginger Island",
-  "Volcano_5": "Ginger Island",
-  "Volcano_10": "Ginger Island",
+        "LocationRegions": {
+          "Farm": "The Farm",
+          "FarmHouse": "The Farm",
+          "Cellar": "The Farm",
+          "Greenhouse": "The Farm",
+          "FarmCave": "The Farm",
+          "Town": "Pelican Town",
+          "SeedShop": "Pelican Town",
+          "JojaMart": "Pelican Town",
+          "Saloon": "Pelican Town",
+          "Hospital": "Pelican Town",
+          "Blacksmith": "Pelican Town",
+          "LibraryMuseum": "Pelican Town",
+          "CommunityCenter": "Pelican Town",
+          "ManorHouse": "Pelican Town",
+          "HaleyHouse": "Pelican Town",
+          "SamHouse": "Pelican Town",
+          "JoshHouse": "Pelican Town",
+          "Trailer": "Pelican Town",
+          "Trailer_Big": "Pelican Town",
+          "ArchaeologyHouse": "Pelican Town",
+          "Forest": "Cindersap Forest",
+          "LeahHouse": "Cindersap Forest",
+          "WizardHouse": "Cindersap Forest",
+          "WizardHouseBasement": "Cindersap Forest",
+          "WitchSwamp": "Cindersap Forest",
+          "AnimalShop": "Cindersap Forest",
+          "Mountain": "Mountain",
+          "Mine": "Mountain",
+          "AdventureGuild": "Mountain",
+          "Railroad": "Mountain",
+          "ScienceHouse": "Mountain",
+          "LinusTent": "Mountain",
+          "BathHouse_Entry": "Mountain",
+          "BathHouse_Pool": "Mountain",
+          "BathHouse_MensLocker": "Mountain",
+          "BathHouse_WomensLocker": "Mountain",
+          "Summit": "Mountain",
+          "Beach": "Beach",
+          "FishShop": "Beach",
+          "ElliottHouse": "Beach",
+          "tide_pools": "Beach",
+          "Desert": "Desert",
+          "SandyHouse": "Desert",
+          "SkullCave": "Desert",
+          "Club": "Desert",
+          "IslandSouth": "Ginger Island",
+          "IslandNorth": "Ginger Island",
+          "IslandWest": "Ginger Island",
+          "IslandEast": "Ginger Island",
+          "IslandFarmHouse": "Ginger Island",
+          "IslandResort": "Ginger Island",
+          "IslandSouthEast": "Ginger Island",
+          "IslandSouthEastCave": "Ginger Island",
+          "IslandNorthCave1": "Ginger Island",
+          "IslandShrine": "Ginger Island",
+          "Volcano_Entrance": "Ginger Island",
+          "Volcano_5": "Ginger Island",
+          "Volcano_10": "Ginger Island"
         },
         "FarmerBackground": {
           "Text": "",
           "Entries": {}
         },
         "Seasons": {
-          "Text": "The year in Stardew Valley is divided into 4 seasons each 28 days long. The seasons are:",
+          "Text": "The year in Stardew Valley is divided into 4 seasons of 28 days each:",
           "Entries": {
             "Spring": {
               "id": "Spring",
               "Name": "Spring",
-              "Description": "Mild weather with occasional rain.",
+              "Description": "Mild weather with pleasant rain showers.",
               "Crops": ["Cauliflower", "Potatoes", "Parsnips", "Green Beans", "Strawberries"],
               "Forage": ["Wild Horseradish", "Daffodil", "Leek", "Dandelion"]
             },
             "Summer": {
               "id": "Summer",
               "Name": "Summer",
-              "Description": "Warm and sunny weather with occasional thunderstorms.",
+              "Description": "Warm, sunny days with occasional thunderstorms.",
               "Crops": ["Blueberries", "Melons", "Tomatoes", "Corn", "Hops"],
               "Forage": ["Spice Berry", "Grape", "Sweet Pea"]
             },
             "Fall": {
               "id": "Fall",
               "Name": "Fall",
-              "Description": "Cool and crisp weather with sporadic rain.",
+              "Description": "Cool and crisp weather with colorful foliage and light rain.",
               "Crops": ["Pumpkins", "Cranberries", "Eggplants", "Artichokes", "Bok Choy"],
               "Forage": ["Common Mushroom", "Wild Plum", "Hazelnut", "Blackberry"]
             },
             "Winter": {
               "id": "Winter",
               "Name": "Winter",
-              "Description": "Cold and snowy weather.",
+              "Description": "Cold and snowy conditions where outdoor crops do not grow natively.",
               "Forage": ["Winter Root", "Crystal Fruit", "Snow Yam", "Crocus"]
             }
           }
         },
         "Locations": {
-          "Text": "The action in Stardew Valley includes the following buildings and places:",
+          "Text": "Key locations and points of interest across the valley include:",
           "Entries": {
             "TheFarm": {
               "id": "TheFarm",
               "Region": "The Farm",
               "Name": "The Farm",
-              "Description": "The farmer's home and main center of action. Farm buildings include Barn, Coop, Greenhouse, Silo, Stable, Shed, and Fish Pond."
+              "Description": "The farmer's home and primary homestead. Features farm structures like the Barn, Coop, Greenhouse, Silo, Stable, Shed, and Fish Pond."
             },
             "PelicanTown_SeedShop": {
               "id": "PelicanTown/SeedShop",
               "Region": "Pelican Town",
               "Name": "Pierre's General Store",
-              "Description": "Sells seeds and produce. Owned by Pierre, who lives there with his wife Caroline and daughter Abigail."
+              "Description": "Local shop selling seeds and supplies. Owned by Pierre, who lives here with Caroline and Abigail."
             },
             "PelicanTown_JojaMart": {
               "id": "PelicanTown/JojaMart",
               "Region": "Pelican Town",
               "Name": "JojaMart",
-              "Description": "Corporate store competing with Pierre's. Employs Shane, Emily, and Morris."
+              "Description": "A mega-corporate supermarket competing with Pierre's. Employs Shane, Sam, and Manager Morris."
             },
             "PelicanTown_StardropSaloon": {
               "id": "PelicanTown/StardropSaloon",
               "Region": "Pelican Town",
               "Name": "Stardrop Saloon",
-              "Description": "Social hub owned by Gus. Offers food, drinks, pool, and arcade games."
+              "Description": "The local social hub owned and managed by Gus, assisted by Emily. Features food, drinks, pool, and arcade games."
             },
             "PelicanTown_HarveysClinic": {
               "id": "PelicanTown/HarveysClinic",
               "Region": "Pelican Town",
               "Name": "Harvey's Clinic",
-              "Description": "Town doctor's office, run by Harvey."
+              "Description": "Town medical clinic run by Dr. Harvey, with Maru working part-time as a nurse."
             },
             "PelicanTown_Blacksmith": {
               "id": "PelicanTown/Blacksmith",
               "Region": "Pelican Town",
               "Name": "Blacksmith",
-              "Description": "Owned by Clint. Upgrades tools and processes geodes."
+              "Description": "Run by Clint, who processes geodes and upgrades farming tools."
             },
             "PelicanTown_LibraryMuseum": {
               "id": "PelicanTown/LibraryMuseum",
               "Region": "Pelican Town",
               "Name": "Library & Museum",
-              "Description": "Run by Gunther. Displays donated artifacts and minerals."
+              "Description": "Curated by Gunther. Houses donated artifacts, minerals, and lost books."
             },
             "PelicanTown_CommunityCenter": {
               "id": "PelicanTown/CommunityCenter",
               "Region": "Pelican Town",
               "Name": "Community Center",
-              "Description": "Formerly the social heart of town, now dilapidated. Can be restored or converted into a Joja Warehouse."
+              "Description": "The historic heart of town, currently neglected. Can be restored by Junimos or turned into a Joja Warehouse."
             },
             "CindersapForest": {
               "id": "CindersapForest",
               "Region": "Cindersap Forest",
               "Name": "Cindersap Forest",
-              "Description": "Contains Leah's Cottage, Marnie's Ranch, and the Wizard's Tower. Visited by Travelling Cart on Fri/Sun."
+              "Description": "Lush forest housing Leah's Cottage, Marnie's Ranch, and the Wizard's Tower. The Travelling Cart visits Fridays and Sundays."
             },
             "CindersapForest_MarniesRanch": {
               "id": "CindersapForest/MarniesRanch",
               "Region": "Cindersap Forest",
               "Name": "Marnie's Ranch",
-              "Description": "Sells animals and supplies. Marnie lives here with Jas and Shane."
+              "Description": "Sells livestock and animal supplies. Marnie lives here with Jas and Shane."
             },
             "CindersapForest_WizardsTower": {
               "id": "CindersapForest/WizardsTower",
               "Region": "Cindersap Forest",
               "Name": "Wizard's Tower",
-              "Description": "Home to the Wizard. Regarded with suspicion by most villagers."
+              "Description": "Home of M. Rasmodius the Wizard. Most villagers view it with local curiosity or superstition."
             },
             "Mountain": {
               "id": "Mountain",
               "Region": "Mountain",
               "Name": "Mountain",
-              "Description": "North of town. Contains Robin's Carpenter Shop, Linus's tent, the Mines, and the Adventurer's Guild."
+              "Description": "Scenic northern area featuring Robin's Carpenter Shop, Linus's tent, the Mines, and the Adventurer's Guild."
             },
             "Mountain_AdventurersGuild": {
               "id": "Mountain/AdventurersGuild",
               "Region": "Mountain",
               "Name": "Adventurer's Guild",
-              "Description": "Run by Marlon. Frequented by adventurers including Abigail and Sebastian."
+              "Description": "Headquarters for local monster hunters, managed by Marlon and Gil."
             },
             "Mountain_TheMines": {
               "id": "Mountain/TheMines",
               "Region": "Mountain",
               "Name": "The Mines",
-              "Description": "Dangerous and monster-filled. Regularly explored by the farmer, Clint, Abigail, Linus, and Sebastian."
+              "Description": "Deep, cavernous mines filled with ores, minerals, and monsters. Explored by adventurous villagers."
             },
             "Mountain_Spa": {
               "id": "Mountain/Spa",
               "Region": "Mountain",
               "Name": "Spa",
-              "Description": "Swimming pool and gym near the railroad. Pool restores energy and health."
+              "Description": "A bathhouse near the railroad. Its thermal pool restores energy and health."
             },
             "Beach_FishShop": {
               "id": "Beach/FishShop",
               "Region": "Beach",
               "Name": "Fish Shop",
-              "Description": "Run by Willy. Sells fishing supplies. Ferry to Ginger Island departs from here once repaired."
+              "Description": "Willy's seaside shop selling fishing gear and tackle. Features a boat to Ginger Island once repaired."
             },
             "Desert_Oasis": {
               "id": "Desert/Oasis",
               "Region": "Desert",
               "Name": "Oasis",
-              "Description": "Sandy's shop in the Calico Desert. Sells rare seeds including cactus, starfruit, and beet. Accessible once the bus is repaired."
+              "Description": "Sandy's shop in the Calico Desert selling exotic seeds and goods. Accessible via the repaired Desert Bus."
             },
             "GingerIsland": {
               "id": "GingerIsland",
               "Region": "Ginger Island",
               "Name": "Ginger Island",
-              "Description": "Tropical island off the coast. Contains a resort, farm, and exotic wildlife. Accessible once Willy's boat is repaired."
+              "Description": "A tropical paradise featuring an island farm, beach resort, and volcano dungeon."
             }
           }
         },
         "Festivals": {
-          "Text": "The year in Pelican Town features a number of important festivals. These are:",
+          "Text": "Pelican Town hosts several seasonal community festivals throughout the year:",
           "Entries": {
             "spring13": {
               "id": "spring13",
               "Name": "Egg Festival",
-              "Description": "**Spring 13** - Egg hunt competition."
+              "Description": "Spring 13. Features an egg hunt competition."
             },
             "spring24": {
               "id": "spring24",
               "Name": "Flower Dance",
-              "Description": "**Spring 24** - Dance festival. Players can ask an eligible villager to be their partner."
+              "Description": "Spring 24. A traditional spring dance where players can ask an eligible villager to pair up."
             },
             "summer11": {
               "id": "summer11",
               "Name": "Luau",
-              "Description": "**Summer 11** - Beach potluck festival. Players contribute to a communal soup."
+              "Description": "Summer 11. A beachside potluck where villagers contribute ingredients to a communal soup for the Governor."
             },
             "summer28": {
               "id": "summer28",
               "Name": "Dance of the Moonlight Jellies",
-              "Description": "**Summer 28** - Evening festival watching glowing jellyfish migrate."
+              "Description": "Summer 28. An evening gathering at the beach to watch migrating bioluminescent jellyfish."
             },
             "fall16": {
               "id": "fall16",
               "Name": "Stardew Valley Fair",
-              "Description": "**Fall 16** - Fair with mini-games and a Grange Display competition."
+              "Description": "Fall 16. A town fair with carnival minigames and the Grange Display contest."
             },
             "fall27": {
               "id": "fall27",
               "Name": "Spirit's Eve",
-              "Description": "**Fall 27** - Halloween-style festival with a haunted maze."
+              "Description": "Fall 27. A spooky festival featuring a haunted maze and seasonal treats."
             },
             "winter8": {
               "id": "winter8",
               "Name": "Festival of Ice",
-              "Description": "**Winter 8** - Ice fishing competition in Cindersap Forest."
+              "Description": "Winter 8. Features ice sculptures, igloos, and an ice fishing competition."
             },
             "winter25": {
               "id": "winter25",
               "Name": "Feast of the Winter Star",
-              "Description": "**Winter 25** - Gift-giving celebration with a secret gift-giver draw."
+              "Description": "Winter 25. A holiday celebration centered around secret gift-giving."
             }
           }
         },

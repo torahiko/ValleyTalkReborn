@@ -33,6 +33,19 @@ namespace ValleytalkReborn
             if (ModEntry.Config.EnableVanillaFirst)
                 return true;
 
+            // ★ Core fix: if this NPC's gift interaction is still pending,
+            // do NOT send a Basic request — let the Gift flow own the DialogueBox.
+            if (AsyncBuilder.Instance.HasGiftInteractionPending(n.Name))
+            {
+                ModEntry.SMonitor.Log(
+                    $"[MarriageDialogueReference_GetDialogue_Patch] Skipping Basic for {n.Name}: Gift interaction pending.",
+                    StardewModdingAPI.LogLevel.Debug);
+                var skip = new Dialogue(n, __instance.DialogueKey, SldConstants.DialogueSkipTag);
+                skip.exitCurrentDialogue();
+                __result = skip;
+                return false;
+            }
+
             string nextDialogue = null;
             lock (LockObj)
             {

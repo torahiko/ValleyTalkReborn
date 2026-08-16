@@ -1,3 +1,4 @@
+// NPC_CheckAction_Patch.cs
 using HarmonyLib;
 using StardewValley;
 using StardewModdingAPI;
@@ -8,111 +9,182 @@ namespace ValleytalkReborn
     [HarmonyPriority(Priority.First)]
     public class NPC_CheckAction_Patch
     {
+        public static bool TriggerKeyWasDown = false;
+
         public static SButton InitiateTypedDialogueKey => ModEntry.Config?.InitiateTypedDialogueKey ?? SButton.LeftAlt;
+
+        public static bool IsTriggerKeyDown()
+        {
+            if (ModEntry.SHelper?.Input == null) return false;
+
+            var input = ModEntry.SHelper.Input;
+            var targetKey = InitiateTypedDialogueKey;
+
+            if (input.IsDown(targetKey))
+                return true;
+
+            if (targetKey == SButton.LeftAlt || targetKey == SButton.RightAlt)
+                return input.IsDown(SButton.LeftAlt) || input.IsDown(SButton.RightAlt);
+
+            if (targetKey == SButton.LeftControl || targetKey == SButton.RightControl)
+                return input.IsDown(SButton.LeftControl) || input.IsDown(SButton.RightControl);
+
+            if (targetKey == SButton.LeftShift || targetKey == SButton.RightShift)
+                return input.IsDown(SButton.LeftShift) || input.IsDown(SButton.RightShift);
+
+            return false;
+        }
 
         public static bool Prefix(ref NPC __instance, ref bool __result, Farmer who, GameLocation l)
         {
             if (__instance == null || who == null) return true;
-
             if (__instance.IsInvisible || __instance.isSleeping.Value || !who.CanMove)
                 return true;
 
-            if (!ModEntry.Config.EnableMod || !DialogueBuilder.Instance.PatchNpc(__instance))
-                return true;
-
-            bool wasTriggerKeyDown = ModEntry.SHelper?.Input?.IsDown(InitiateTypedDialogueKey) ?? false;
+            bool wasTriggerKeyDown = TriggerKeyWasDown;
+            TriggerKeyWasDown = false;
 
             // ══════════════════════════════════════════════
-            // 分支 A：Alt + 点击 → 自定义文本输入
+            // 分支 A：Alt + 点击 → 唤醒自定义文本输入框 (绝对优先)
             // ══════════════════════════════════════════════
             if (wasTriggerKeyDown)
             {
-                if (__instance.Sprite.CurrentAnimation != null) return true;
-                if (__instance.currentMarriageDialogue.Count > 0) return true;
-                if (__instance.hasTemporaryMessageAvailable()) return true;
+                if (!ModEntry.Config.EnableMod || !DialogueBuilder.Instance.PatchNpc(__instance))
+                    return true;
 
                 DialogueBuilder.Instance.ClearContext(__instance.Name);
                 var character = DialogueBuilder.Instance.GetCharacter(__instance);
 
-                if (Game1.player.friendshipData.TryGetValue(__instance.Name, out var caFriendship))
-                    caFriendship.TalkedToToday = true;
+                if (Game1.player.friendshipData.TryGetValue(__instance.Name, out var caFriendship))caFriendship.TalkedToToday = true;
 
                 var displayName = __instance.displayName ?? __instance.Name ?? "NPC";
-                var prompt = Util.GetString(character, "uiStartConversation", new { Name = displayName }) ?? $"What do you want to say to {displayName}?";
+                var prompt = Util.GetString(character, "uiStartConversation", new { Name = displayName })?? $"What do you want to say to {displayName}?";
 
                 TextInputManager.RequestTextInput(prompt, __instance);
 
-                __result = false;
+                ModEntry.SHelper?.Input?.Suppress(SButton.MouseRight);
+                ModEntry.SHelper?.Input?.Suppress(SButton.MouseLeft);
+                __result = true;
                 return false;
             }
 
+            if (!ModEntry.Config.EnableMod || !DialogueBuilder.Instance.PatchNpc(__instance))
+                return true;
+
             // ══════════════════════════════════════════════
-            // 分支 B：再次对话（InfiniteChat）→ 触发 AI 续聊
+            // 保护：送礼与特定道具检测
+            // ══════════════════════════════════════════════
+            if (who.ActiveObject != null && who.ActiveObject.canBeGivenAsGift())
+                return true;
+
+            // ══════════════════════════════════════════════
+            // 分支 B：InfiniteChat → 标记续聊语境
             // ══════════════════════════════════════════════
             if (ModEntry.Config.EnableInfiniteChat && who.IsLocalPlayer)
             {
-                if (__instance.Sprite.CurrentAnimation == null &&
-                    __instance.currentMarriageDialogue.Count == 0 &&
-                    !__instance.hasTemporaryMessageAvailable() &&
-                    !__instance.isMoving() &&
-                    who.ActiveObject == null && who.CurrentItem == null)
+                if (who.friendshipData.TryGetValue(__instance.Name, out var fs) && fs.TalkedToToday)
                 {
-                    bool hasTalkedToday = who.friendshipData.TryGetValue(__instance.Name, out var fs) && fs.TalkedToToday;
-                    if (hasTalkedToday)
-                    {
-                        // 把 hasBeenKissedToday 设为 true，让 KISS mod 看到后主动跳过
-                        __instance.hasBeenKissedToday.Value = true;
-                        __instance.CurrentDialogue.Clear();
-
-                        // 【修复 1】直接在屏幕画出占位对话框，唤醒 AsyncBuilder
-                        Game1.activeClickableMenu = new StardewValley.Menus.DialogueBox(new Dialogue(__instance, "", "   "));
-
-                        Game1.currentSpeaker = __instance;
-                        AsyncBuilder.Instance.RequestNpcBasic(__instance, "InfiniteChat", "");
-
-                        __result = true;
-                        return false;
-                    }
+                    fs.TalkedToToday = false;
+                    InfiniteChatTracker.SetContinuing(__instance.Name);
                 }
             }
 
             // ══════════════════════════════════════════════
-            // 分支 C：普通点击 → 触发 AI 对话
+            // 分支 C：普通点击 → 触发 AI 对话 / 亲吻与防死锁分支
             // ══════════════════════════════════════════════
             if (__instance.hasTemporaryMessageAvailable()) return true;
             if (__instance.currentMarriageDialogue.Count > 0) return true;
 
-            // 拦截重复点击
             if (AsyncBuilder.Instance.AwaitingGeneration || AsyncBuilder.Instance.IsGeneratingDialogue)
             {
                 __result = true;
                 return false;
             }
 
+            if (AsyncBuilder.Instance.GenerationCooldownFrames > 0)
+                return true;
+
+            if (who.friendshipData.TryGetValue(__instance.Name, out var fsc) && fsc.TalkedToToday)
+            {
+                if (!ModEntry.Config.EnableInfiniteChat)
+                {
+                    bool isRomantic = fsc.IsMarried() || fsc.IsDating() || fsc.IsEngaged();
+
+                    if (isRomantic)
+                    {
+                        if (__instance.hasBeenKissedToday.Value)
+                        {
+                            // TriggerKissReaction 已经会显示 bark，不需要再加气泡
+                            __instance.doEmote(20);
+                            __result = true;
+                            return false;
+                        }
+                        return true;
+                    }
+                    else
+                    {
+                        bool isChinese = StardewValley.LocalizedContentManager.CurrentLanguageCode == StardewValley.LocalizedContentManager.LanguageCode.zh;
+                        int timeOfDay = StardewValley.Game1.timeOfDay;
+
+                        string[] pool;
+
+                        if (timeOfDay < 1200) // 上午 (6:00 - 11:50)
+                        {
+                            pool = isChinese
+                                ? new[] { "早上好！", "早啊！", "你好~" }
+                                : new[] { "Morning!", "Good morning!", "Hey there!" };
+                        }
+                        else if (timeOfDay < 1800) // 下午 (12:00 - 17:50)
+                        {
+                            pool = isChinese
+                                ? new[] { "下午好！", "你好呀！", "嗨！" }
+                                : new[] { "Good afternoon!", "Hey there!", "Hi!" };
+                        }
+                        else // 傍晚与夜间 (18:00 - 26:00)
+                        {
+                            pool = isChinese
+                                ? new[] { "晚上好！", "这么晚还忙呢？", "嗨，晚上好~" }
+                                : new[] { "Evening!", "Good evening!", "Hey, working late?" };
+                        }
+                        
+                        string greeting = pool[StardewValley.Game1.random.Next(pool.Length)];
+
+                        __instance.showTextAboveHead(greeting);
+                        __result = true;
+                        return false;
+                    }
+                }
+            }
+
             if (ModEntry.Config.EnableVanillaFirst)
             {
                 if (__instance.CurrentDialogue != null && __instance.CurrentDialogue.Count > 0)
                     return true;
-
-                bool hasTalkedToday = who.friendshipData.TryGetValue(__instance.Name, out var fs2) && fs2.TalkedToToday;
-                if (!hasTalkedToday)
-                    return true;
             }
 
-            if (who.friendshipData.TryGetValue(__instance.Name, out var friendship))
-                friendship.TalkedToToday = true;
+            if (fsc != null) fsc.TalkedToToday = true;
 
             __instance.CurrentDialogue.Clear();
 
-            // 【修复 2】彻底抛弃 Push，直接打开 DialogueBox，根除幽灵空白框
-            Game1.activeClickableMenu = new StardewValley.Menus.DialogueBox(new Dialogue(__instance, "", "   "));
+            bool isContinuing = InfiniteChatTracker.IsContinuing(__instance.Name);
+            InfiniteChatTracker.Clear(__instance.Name);
 
-            Game1.currentSpeaker = __instance;
-            AsyncBuilder.Instance.RequestNpcBasic(__instance, "default", "");
+            bool accepted = AsyncBuilder.Instance.TryRequestNpcBasic(
+                __instance,
+                isContinuing ? "InfiniteChat" : "default",
+                "");
 
-            // 【修复 3】必须返回 false 拦截原版引擎的执行
+            if (!accepted)
+                return true;
+
+            Game1.activeClickableMenu = new StardewValley.Menus.DialogueBox(
+                new Dialogue(__instance, "", "   "));
+
+            ModEntry.SHelper?.Input?.Suppress(SButton.MouseRight);
+            ModEntry.SHelper?.Input?.Suppress(SButton.MouseLeft);
+
             __result = true;
             return false;
         }
     }
-} 
+}

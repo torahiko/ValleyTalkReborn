@@ -64,6 +64,7 @@ namespace ValleytalkReborn
             public static string Empty() => Lookup("Memory.Empty");
 
             public static string AddButton() => Lookup("Memory.AddButton");
+            public static string AddWorldButton() => Lookup("Memory.AddWorldButton");
 
             public static string EditTitle(string name)
                 => Lookup("Memory.EditTitle")

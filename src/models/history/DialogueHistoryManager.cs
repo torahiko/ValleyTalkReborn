@@ -126,11 +126,8 @@ namespace ValleytalkReborn
             lock (_historyLock)
             {
                 if (!_history.TryGetValue(npcName, out var list)) return;
-                foreach (var e in list)
-                {
-                    if (e.DialogueType == "eavesdrop" && !e.IsConsumed)
-                        e.IsConsumed = true;
-                }
+                // Directly remove — eavesdrop entries are transient, destroy on use
+                list.RemoveAll(e => e.DialogueType == "eavesdrop");
             }
         }
 

@@ -1,5 +1,3 @@
-using System;
-
 namespace ValleytalkReborn;
 
 internal class PerceptionEntry
@@ -9,10 +7,10 @@ internal class PerceptionEntry
 
     public string NpcName { get; set; } = string.Empty;
 
-    /// <summary>Used for exact sorting.</summary>
-    public DateTime Timestamp { get; set; } = DateTime.Now;
-
-    /// <summary>In-game time when this was recorded (e.g., 1430 for 2:30 PM).</summary>
+    /// <summary>
+    /// In-game time when this was recorded (e.g., 1430 for 2:30 PM).
+    /// Used for sorting and lifetime validation. Replaces DateTime.Now to stay on the game clock.
+    /// </summary>
     public int RecordedTimeOfDay { get; set; } = 600;
 
     /// <summary>Lifetime in in-game hours. Values >= 20 mean all-day.</summary>

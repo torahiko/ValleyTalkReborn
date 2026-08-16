@@ -10,21 +10,15 @@ using System.Linq;
 
 namespace ValleytalkReborn
 {
-    // ═══════════════════════════════════════════════════════════════════
-    //  ScrollableMemoryMenu  —  Tab 0: NPC 个人记忆 | Tab 1: 大世界记忆
-    // ═══════════════════════════════════════════════════════════════════
     internal class ScrollableMemoryMenu : IClickableMenu
     {
-        // ── Identity ────────────────────────────────────────────────────
         private readonly string _npcName;
         private readonly IClickableMenu _ownerMenu;
 
-        // ── Tab state ───────────────────────────────────────────────────
         private int _currentTab = 0;
         private Rectangle _tabNpcRect;
         private Rectangle _tabWorldRect;
 
-        // ── Entry list (resolved per tab) ───────────────────────────────
         private List<MemoryEntry> ActiveEntries =>
             _currentTab == 0
                 ? MemoryManager.Instance.GetMemories(_npcName)
@@ -35,12 +29,10 @@ namespace ValleytalkReborn
                 ? MemoryManager.MaxMemoriesPerNpc
                 : WorldMemoryManager.MaxEntries;
 
-        // ── Scroll / layout ─────────────────────────────────────────────
         private Rectangle _addButtonRect;
         private readonly ClickableTextureComponent _closeButton;
         private readonly List<ClickableTextureComponent> _deleteButtons = new();
         private readonly List<ClickableTextureComponent> _editButtons   = new();
-
         private ClickableTextureComponent _upArrow;
         private ClickableTextureComponent _downArrow;
         private ClickableTextureComponent _scrollbar;
@@ -49,7 +41,6 @@ namespace ValleytalkReborn
         private bool _scrolling;
         private int  _hoveredRow = -1;
 
-        // ── Hover animation ─────────────────────────────────────────────
         private float _closeButtonHoverScale;
         private float _upArrowHoverScale;
         private float _downArrowHoverScale;
@@ -57,7 +48,6 @@ namespace ValleytalkReborn
         private readonly float _upArrowBaseScale;
         private readonly float _downArrowBaseScale;
 
-        // ── Layout constants ────────────────────────────────────────────
         private const int MenuWidth     = 1000;
         private const int MenuHeight    = 600;
         private const int TabBarY       = 56;
@@ -69,14 +59,10 @@ namespace ValleytalkReborn
         private const int LineHeight    = 46;
         private const int ButtonSize    = 40;
 
-        // ════════════════════════════════════════════════════════════════
-        //  Constructor
-        // ════════════════════════════════════════════════════════════════
         public ScrollableMemoryMenu(string npcName, IClickableMenu parentMenu = null)
         {
             _npcName    = npcName;
             _ownerMenu = parentMenu;
-
             xPositionOnScreen = (Game1.uiViewport.Width  - MenuWidth)  / 2;
             yPositionOnScreen = (Game1.uiViewport.Height - MenuHeight) / 2;
             width  = MenuWidth;
@@ -110,6 +96,7 @@ namespace ValleytalkReborn
                 yPositionOnScreen + TopPadding + 50,
                 12,
                 height - TopPadding - BottomPadding - 80);
+
             _scrollbar = new ClickableTextureComponent(
                 new Rectangle(_scrollbarRunner.X - 6, _scrollbarRunner.Y, 24, 40),
                 Game1.mouseCursors, new Rectangle(435, 463, 6, 10), 4f);
@@ -123,9 +110,6 @@ namespace ValleytalkReborn
             exitFunction = () => Game1.playSound("bigDeSelect");
         }
 
-        // ════════════════════════════════════════════════════════════════
-        //  Tab switching
-        // ════════════════════════════════════════════════════════════════
         private void SwitchTab(int tab)
         {
             if (_currentTab == tab) return;
@@ -135,20 +119,15 @@ namespace ValleytalkReborn
             RefreshActionButtons();
         }
 
-        // ════════════════════════════════════════════════════════════════
-        //  Layout helpers
-        // ════════════════════════════════════════════════════════════════
         private void RefreshActionButtons()
         {
             _deleteButtons.Clear();
             _editButtons.Clear();
             var entries      = ActiveEntries;
             int visibleCount = GetVisibleLineCount();
-
             for (int i = 0; i < visibleCount && _startIndex + i < entries.Count; i++)
             {
                 int y = yPositionOnScreen + TopPadding + 10 + i * LineHeight;
-
                 var del = new ClickableTextureComponent(
                     new Rectangle(xPositionOnScreen + width - 70, y, ButtonSize, ButtonSize),
                     Game1.mouseCursors, new Rectangle(322, 498, 12, 12), 2.5f);
@@ -183,9 +162,6 @@ namespace ValleytalkReborn
             scale += (target - scale) * 0.2f;
         }
 
-        // ════════════════════════════════════════════════════════════════
-        //  RefreshEntries
-        // ════════════════════════════════════════════════════════════════
         internal void RefreshEntries()
         {
             _startIndex = 0;
@@ -193,9 +169,6 @@ namespace ValleytalkReborn
             SetScrollbarPosition();
         }
 
-        // ════════════════════════════════════════════════════════════════
-        //  Input
-        // ════════════════════════════════════════════════════════════════
         public override void receiveScrollWheelAction(int direction)
         {
             base.receiveScrollWheelAction(direction);
@@ -220,17 +193,14 @@ namespace ValleytalkReborn
         public override void receiveLeftClick(int x, int y, bool playSound = true)
         {
             base.receiveLeftClick(x, y, playSound);
-
             if (_closeButton.containsPoint(x, y))
             {
                 Game1.playSound("bigDeSelect");
                 exitThisMenu();
                 return;
             }
-
             if (_tabNpcRect.Contains(x, y))  { SwitchTab(0); return; }
             if (_tabWorldRect.Contains(x, y)) { SwitchTab(1); return; }
-
             if (_addButtonRect.Contains(x, y))
             {
                 OpenAddMemoryDialog();
@@ -242,7 +212,6 @@ namespace ValleytalkReborn
             {
                 int idx = _startIndex + i;
                 if (idx >= entries.Count) continue;
-
                 if (_deleteButtons[i].containsPoint(x, y))
                 {
                     ConfirmDeleteMemory(entries[idx]);
@@ -305,9 +274,6 @@ namespace ValleytalkReborn
             _scrolling = false;
         }
 
-        // ════════════════════════════════════════════════════════════════
-        //  Add / Delete dialogs
-        // ════════════════════════════════════════════════════════════════
         private void OpenAddMemoryDialog()
         {
             if (ActiveEntries.Count >= MaxEntriesForTab)
@@ -330,7 +296,6 @@ namespace ValleytalkReborn
                         MemoryManager.Instance.RemoveMemory(_npcName, entry.Id);
                     else
                         WorldMemoryManager.Instance.RemoveEntry(entry.Id);
-
                     Game1.playSound("trashcan");
                     _startIndex = Math.Max(0, _startIndex - 1);
                     RefreshActionButtons();
@@ -339,9 +304,6 @@ namespace ValleytalkReborn
                 _ => { Game1.activeClickableMenu = this; });
         }
 
-        // ════════════════════════════════════════════════════════════════
-        //  Draw
-        // ════════════════════════════════════════════════════════════════
         public override void draw(SpriteBatch b)
         {
             int mx = Game1.getMouseX();
@@ -428,6 +390,7 @@ namespace ValleytalkReborn
                     _downArrow.scale = _downArrowBaseScale * _downArrowHoverScale;
                     _upArrow.draw(b);
                     _downArrow.draw(b);
+
                     IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
                         new Rectangle(403, 383, 6, 6),
                         _scrollbarRunner.X, _scrollbarRunner.Y,
@@ -444,12 +407,17 @@ namespace ValleytalkReborn
                             yPositionOnScreen + TopPadding - 20),
                 Color.Gray);
 
-            string addText  = _currentTab == 0 ? I18n.Memory.AddButton() : "+ 添加世界记忆";
+            // [OPT-4] 世界记忆按钮文字统一使用 I18n
+            string addText  = _currentTab == 0
+                ? I18n.Memory.AddButton()
+                : I18n.Memory.AddWorldButton();
             bool   addHover = _addButtonRect.Contains(mx, my);
             Color  addColor = addHover ? Color.Gold : Color.White;
+
             IClickableMenu.drawTextureBox(b,
                 _addButtonRect.X, _addButtonRect.Y,
                 _addButtonRect.Width, _addButtonRect.Height, addColor);
+
             var addLabelSize = Game1.smallFont.MeasureString(addText);
             b.DrawString(Game1.smallFont, addText,
                 new Vector2(
@@ -495,7 +463,7 @@ namespace ValleytalkReborn
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    //  AddMemoryInputMenu  —  used for both Tab 0 (NPC) and Tab 1 (World)
+    //  AddMemoryInputMenu — 适配 MemoryOperationResult 枚举 + 实时字数反馈
     // ═══════════════════════════════════════════════════════════════════
     internal class AddMemoryInputMenu : IClickableMenu
     {
@@ -534,6 +502,7 @@ namespace ValleytalkReborn
             height = MenuHeight;
 
             int lineHeight = Game1.dialogueFont.LineSpacing;
+
             _inputBox = new DialogueTextInputBox(CharacterLimit, WarningThreshold)
             {
                 Position  = new Vector2(xPositionOnScreen + 40,
@@ -551,6 +520,7 @@ namespace ValleytalkReborn
             Game1.keyboardDispatcher.Subscriber = _inputBox;
 
             int btnY = yPositionOnScreen + height - 80 + lineHeight;
+
             _okButton = new ClickableTextureComponent(
                 new Rectangle(xPositionOnScreen + width - 2 * 24 - 64, btnY, 64, 64),
                 Game1.mouseCursors,
@@ -571,6 +541,9 @@ namespace ValleytalkReborn
             scale += (target - scale) * 0.2f;
         }
 
+        /// <summary>
+        /// [FIX] 适配 MemoryOperationResult 枚举返回值
+        /// </summary>
         private void Submit(string text)
         {
             if (string.IsNullOrWhiteSpace(text))
@@ -581,7 +554,7 @@ namespace ValleytalkReborn
             }
 
             string trimmed = text.Trim();
-            int? result;
+            MemoryOperationResult result;
 
             if (_tab == 1)
             {
@@ -599,27 +572,27 @@ namespace ValleytalkReborn
             int maxLen   = _tab == 1 ? WorldMemoryManager.MaxEntryLength : MemoryManager.Instance.GetMaxMemoryLength();
             int maxCount = _tab == 1 ? WorldMemoryManager.MaxEntries     : MemoryManager.MaxMemoriesPerNpc;
 
-            if (result == 1)
+            switch (result)
             {
-                Game1.playSound("coin");
-            }
-            else if (result == 0)
-            {
-                Game1.playSound("cancel");
-                Game1.drawObjectDialogue(I18n.Memory.AddFailedFull(maxCount));
-                return;
-            }
-            else if (result == -1)
-            {
-                Game1.playSound("cancel");
-                Game1.drawObjectDialogue(I18n.Memory.AddFailedTooLong(maxLen));
-                return;
-            }
-            else
-            {
-                Game1.playSound("cancel");
-                Game1.drawObjectDialogue(I18n.Memory.AddFailedDuplicate());
-                return;
+                case MemoryOperationResult.Success:
+                    Game1.playSound("coin");
+                    break;
+                case MemoryOperationResult.CapacityFull:
+                    Game1.playSound("cancel");
+                    Game1.drawObjectDialogue(I18n.Memory.AddFailedFull(maxCount));
+                    return;
+                case MemoryOperationResult.TooLong:
+                    Game1.playSound("cancel");
+                    Game1.drawObjectDialogue(I18n.Memory.AddFailedTooLong(maxLen));
+                    return;
+                case MemoryOperationResult.Duplicate:
+                    Game1.playSound("cancel");
+                    Game1.drawObjectDialogue(I18n.Memory.AddFailedDuplicate());
+                    return;
+                default:
+                    Game1.playSound("cancel");
+                    Game1.drawObjectDialogue(I18n.Memory.AddFailedDuplicate());
+                    return;
             }
 
             _returnMenu.RefreshEntries();
@@ -635,16 +608,13 @@ namespace ValleytalkReborn
         public override void receiveLeftClick(int x, int y, bool playSound = true)
         {
             base.receiveLeftClick(x, y, playSound);
-
             if (_inputBox.ReceiveLeftClick(x, y)) return;
-
             if (_inputBox.ContainsPoint(x, y))
             {
                 Game1.keyboardDispatcher.Subscriber = _inputBox;
                 _inputBox.Selected = true;
                 return;
             }
-
             if (_okButton.containsPoint(x, y))
             {
                 Game1.playSound("coin");
@@ -683,6 +653,7 @@ namespace ValleytalkReborn
         public override void draw(SpriteBatch b)
         {
             _inputBox.Update(Game1.currentGameTime);
+
             b.Draw(Game1.fadeToBlackRect,
                 Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.4f);
             IClickableMenu.drawTextureBox(b,
@@ -693,6 +664,7 @@ namespace ValleytalkReborn
                 : (_existingEntry != null
                     ? I18n.Memory.EditTitle(_npcName)
                     : I18n.Memory.AddTitle(_npcName));
+
             var titleSize = Game1.dialogueFont.MeasureString(title);
             b.DrawString(Game1.dialogueFont, title,
                 new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f,
@@ -709,6 +681,18 @@ namespace ValleytalkReborn
                 Color.Gray);
 
             _inputBox.Draw(b);
+
+            // [OPT-3] 实时字数反馈
+            int currentLen = _inputBox.Text?.Length ?? 0;
+            Color lenColor = currentLen > CharacterLimit ? Color.Red
+                           : currentLen > WarningThreshold ? Color.Yellow
+                           : Color.Gray;
+            string lenText = $"{currentLen}/{CharacterLimit}";
+            var lenSize = Game1.smallFont.MeasureString(lenText);
+            b.DrawString(Game1.smallFont, lenText,
+                new Vector2(xPositionOnScreen + width - lenSize.X - 40,
+                            yPositionOnScreen + 100 + Game1.dialogueFont.LineSpacing + 65),
+                lenColor);
 
             int mx = Game1.getMouseX();
             int my = Game1.getMouseY();

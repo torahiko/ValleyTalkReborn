@@ -11,12 +11,12 @@ namespace ValleytalkReborn
         // 【优化】升级为 HashSet<string>，享用 O(1) 超高速查询
         private static readonly HashSet<string> SkipGeneratedDialogue = new(StringComparer.OrdinalIgnoreCase)
         {
-            "NPC.cs.4463", // #$e#I also filled {0}'s water bowl.
-            "NPC.cs.4462", // I got up early and watered some crops for you. I hope it makes your job a little easier today.
-            "NPC.cs.4470", // I got up early to water some crops and they were already done! You've really got this place under control.$h
-            "NPC.cs.4474", // I got up early and fed all the farm animals. I hope that makes your job a little easier today.
-            "NPC.cs.4481", // I spent the morning repairing a few of the fences. They should be as good as new.
-            "MultiplePetBowls_watered", // I filled all the pet bowls with water.   
+            "NPC.cs.4463",
+            "NPC.cs.4462",
+            "NPC.cs.4470",
+            "NPC.cs.4474",
+            "NPC.cs.4481",
+            "MultiplePetBowls_watered",
         };
 
         public static bool Prefix(ref NPC __instance, string dialogue_file, string dialogue_key, bool gendered, string[] substitutions)

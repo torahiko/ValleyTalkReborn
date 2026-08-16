@@ -25,6 +25,7 @@ namespace ValleytalkReborn
         public int GiftFrequency { get; set; } = 4;
         public string TypedResponses { get; set; } = "With Generated";
         public SButton InitiateTypedDialogueKey { get; set; } = SButton.LeftAlt;
+        public SButton QuickReplyKey { get; set; } = SButton.Enter; 
         public bool SuppressConnectionCheck { get; set; } = false;
         public bool EnableMemoryCompression { get; set; } = true;
         public int MemoryRecentCount { get; set; } = 10;
@@ -77,5 +78,6 @@ namespace ValleytalkReborn
         public bool UseNativeToolCalling { get; set; } = true;
         public bool EnableVanillaFirst { get; set; } = true;
         public bool EnableNightlyConsolidation { get; set; } = true;
+        public bool EnableStreaming { get; set; } = true;
     }
 }

@@ -36,10 +36,15 @@ namespace ValleytalkReborn
             {
                 if (entry.Item2 is DialogueHistoryAdapter adapter)
                 {
+                    // 即用即毁类型：不进长期记忆
+                    if (adapter.Entry.DialogueType == "eavesdrop") continue;
+                    // 原版台词和礼物系统条目：属于游戏事件记录，不以"NPC说过的话"形式展示
+                    if (adapter.Entry.DialogueType == "vanilla") continue;
+                    if (adapter.Entry.DialogueType == "gift") continue;
+
                     bool isSystem = adapter.Entry.SpeakerType == SpeakerType.System;
                     if (!isSystem)
                     {
-                        // Skip normal dialogue lines already visible in the active chat context
                         var entryText = adapter.Entry.Text?.Trim() ?? "";
                         if (!string.IsNullOrEmpty(entryText) && chatHistoryTexts.Contains(entryText)) continue;
                     }

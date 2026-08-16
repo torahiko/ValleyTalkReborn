@@ -1,6 +1,8 @@
+// NPC_PushTemporaryDialogue_Patch.cs
 using System;
 using HarmonyLib;
 using StardewValley;
+using StardewModdingAPI;
 
 namespace ValleytalkReborn
 {
@@ -10,22 +12,19 @@ namespace ValleytalkReborn
         public static bool Prefix(ref NPC __instance, string translationKey)
         {
             if (__instance == null || string.IsNullOrEmpty(translationKey))
-            {
                 return true;
-            }
 
-            ModEntry.SMonitor.Log($"NPC {__instance.Name} pushing temporary dialogue with key '{translationKey}'", StardewModdingAPI.LogLevel.Trace);
+            // ★ 日志降级：Trace
+            ModEntry.SMonitor.Log($"[PushTempDialogue] {__instance.Name} key='{translationKey}'", LogLevel.Trace);
 
             if (!DialogueBuilder.Instance.PatchNpc(__instance, ModEntry.Config.GeneralFrequency, true))
-            {
                 return true;
-            }
 
-            // Check network availability early (Android only)
             if (!NetworkAvailabilityChecker.IsNetworkAvailableWithRetry())
             {
-                ModEntry.SMonitor.Log($"Network not available, skipping AI temporary dialogue for {__instance.Name}", StardewModdingAPI.LogLevel.Trace);
-                return true; // Use default behavior
+                // ★ 日志降级：Trace
+                ModEntry.SMonitor.Log($"[PushTempDialogue] Network not available, skipping for {__instance.Name}", LogLevel.Trace);
+                return true;
             }
 
             try
@@ -34,35 +33,38 @@ namespace ValleytalkReborn
                 {
                     string path = $"Resort_Marriage{translationKey.Substring(6)}";
                     if (Game1.content.LoadStringReturnNullIfNotFound(path) != null)
-                    {
                         translationKey = path;
-                    }
                 }
 
                 if (__instance.CurrentDialogue != null && __instance.CurrentDialogue.Count != 0)
                 {
                     var peekDialogue = __instance.CurrentDialogue.Peek();
                     if (peekDialogue != null && peekDialogue.temporaryDialogueKey == translationKey)
-                    {
                         return true;
-                    }
                 }
 
                 var originalString = Game1.content.LoadString(translationKey);
 
-                AsyncBuilder.Instance.RequestNpcBasic(__instance, translationKey, originalString);
-                __instance.CurrentDialogue?.Push(new Dialogue(__instance, translationKey, "   ")
+                // ★ 修复：先尝试注册请求，注册成功后才创建占位框
+                bool accepted = AsyncBuilder.Instance.TryRequestNpcBasic(__instance, translationKey, originalString);
+                if (!accepted)
                 {
-                    removeOnNextMove = true,
-                    temporaryDialogueKey = translationKey
-                });
+                    // 被拒就走原版，不留孤立框
+                    return true;
+                }
+
+                Game1.activeClickableMenu = new StardewValley.Menus.DialogueBox(
+                    new Dialogue(__instance, translationKey, "   "));
+
+                // ★ 日志降级：Trace
+                ModEntry.SMonitor.Log($"[PushTempDialogue] Placeholder created, awaiting={AsyncBuilder.Instance.AwaitingGeneration}", LogLevel.Trace);
 
                 return false;
             }
             catch (Exception ex)
             {
-                ModEntry.SMonitor.Log($"Error in NPC_PushTemporaryDialogue_Patch: {ex.Message}", StardewModdingAPI.LogLevel.Warn);
-                return true; // 【Bug 修复】出错时允许原版逻辑执行，防止卡死
+                ModEntry.SMonitor.Log($"[PushTempDialogue] Error: {ex.Message}", LogLevel.Warn);
+                return true;
             }
         }
     }

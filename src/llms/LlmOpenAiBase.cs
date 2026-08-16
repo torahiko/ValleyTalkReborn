@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Linq; 
+using System.Linq;
 using System.Net.Http;
 using System.Text;
-using Newtonsoft.Json; 
-using Newtonsoft.Json.Linq; 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using ValleytalkReborn;
 using ValleytalkReborn.Platform;
 
 namespace ValleytalkReborn;
@@ -16,181 +15,214 @@ internal abstract class LlmOpenAiBase : Llm
 {
     protected string apiKey;
     protected string modelName;
-    
-    // 【优化】复用 HttpClient，避免频繁实例化导致 Socket 耗尽
-    private static readonly HttpClient SharedHttpClient = new HttpClient 
-    { 
-        Timeout = TimeSpan.FromMinutes(1) 
+
+    private static readonly HttpClient SharedHttpClient = new HttpClient
+    {
+        Timeout = TimeSpan.FromMinutes(1)
     };
 
-    record PromptElement
+    protected async Task<string[]> CoreGetModelNamesAsync()
     {
-        public string role { get; set; }
-        public string content { get; set; }
+        if (string.IsNullOrEmpty(apiKey))
+        {
+            return Array.Empty<string>();
+        }
+
+        try
+        {
+            var modelsUrl = url.EndsWith("/") ? $"{url}v1/models" : $"{url}/v1/models";
+
+            if (AndroidHelper.IsAndroid && NetworkHelper.IsNetworkAvailable())
+            {
+                var headers = new Dictionary<string, string>
+                {
+                    { "Authorization", $"Bearer {apiKey}" }
+                };
+                var responseString = await NetworkHelper.MakeRequestWithCustomHeadersAsync(modelsUrl, null, headers);
+                return ParseModelNamesFromJson(responseString);
+            }
+            else
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Get, modelsUrl);
+                request.Headers.Add("Authorization", $"Bearer {apiKey}");
+
+                using var response = await SharedHttpClient.SendAsync(request);
+                var responseString = await response.Content.ReadAsStringAsync();
+                return ParseModelNamesFromJson(responseString);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Debug($"[LlmOpenAiBase] GetModelNames failed: {ex.Message}");
+            return Array.Empty<string>();
+        }
     }
 
-    internal override async Task<LlmResponse> RunInference(string systemPromptString, string gameCacheString, string npcCacheString, string promptString, string responseStart = "",int n_predict = 2048,string cacheContext="",bool allowRetry = true)
+    private string[] ParseModelNamesFromJson(string jsonString)
     {
+        if (string.IsNullOrWhiteSpace(jsonString)) return Array.Empty<string>();
+        var responseJson = JObject.Parse(jsonString);
+        var modelsToken = responseJson["data"] as JArray;
+        var modelNames = new List<string>();
+
+        if (modelsToken != null)
+        {
+            foreach (var model in modelsToken)
+            {
+                var idToken = model["id"];
+                if (idToken != null)
+                {
+                    modelNames.Add(idToken.ToString());
+                }
+            }
+        }
+        return modelNames.ToArray();
+    }
+
+    internal override async Task<LlmResponse> RunInference(
+        string systemPromptString, string gameCacheString, string npcCacheString,
+        string promptString, string responseStart = "", int n_predict = 2048,
+        string cacheContext = "", bool allowRetry = true)
+    {
+        promptString = gameCacheString + npcCacheString + promptString;
+
+        var messages = new List<object>();
+        if (!string.IsNullOrWhiteSpace(systemPromptString))
+        {
+            messages.Add(new { role = "system", content = systemPromptString });
+        }
+        messages.Add(new { role = "user", content = promptString });
+
+        if (!string.IsNullOrWhiteSpace(responseStart))
+        {
+            messages.Add(new { role = "assistant", content = responseStart });
+        }
+
         var tools = ModEntry.Config.UseNativeToolCalling
             ? (object)AgentToolDefinitions.GetOpenAiToolsArray()
             : null;
 
-        var inputString = JsonConvert.SerializeObject(new
-            {
-                model = modelName,
-                temperature = 0.9,
-                top_p = 0.9,
-                max_tokens = n_predict,
-                messages = string.IsNullOrWhiteSpace(responseStart)
-                    ? new PromptElement[]
-                    {
-                        new() { role = "system", content = systemPromptString },
-                        new() { role = "user", content = gameCacheString + npcCacheString + promptString }
-                    }
-                    : new PromptElement[]
-                    {
-                        new() { role = "system", content = systemPromptString },
-                        new() { role = "user", content = gameCacheString + npcCacheString + promptString },
-                        new() { role = "assistant", content = responseStart }
-                    },
-                thinking = new { type = "disabled" },
-                tools
-            });
-            
-        var json = new StringContent(inputString, Encoding.UTF8, "application/json");
+        // ── 汇总主流厂商/中转站的“禁用/降低思考”参数 ──
+        var requestBody = new
+        {
+            model = modelName,
+            messages = messages,
+            temperature = 0.9,
+            top_p = 0.9,
+            max_tokens = n_predict,
+            tools = tools,
+
+            // 1. Anthropic / Claude 样式规范
+            thinking = new { type = "disabled" },
+
+            // 2. DeepSeek R1 官方/第三方代理常见开关
+            thinking_budget = 0,
+            disable_thinking = true,
+
+            // 3. OpenAI o1/o3/o3-mini 系列（降低推理消耗）
+            reasoning_effort = "low",
+
+            // 4. SiliconFlow / OpenRouter 等平台过滤思考过程字段
+            include_reasoning = false,
+            reasoning = false
+        };
+
+        var jsonData = JsonConvert.SerializeObject(requestBody);
+        var endpointUrl = url.EndsWith("/") ? $"{url}v1/chat/completions" : $"{url}/v1/chat/completions";
 
         int retry = allowRetry ? 3 : 1;
-        var fullUrl = $"{url}/v1/chat/completions";
-        
-        if (AndroidHelper.IsAndroid && !NetworkHelper.IsNetworkAvailable())
-        {
-            throw new InvalidOperationException("Network not available");
-        }
-        
         string responseString = "";
-        int apiResponseCode = 500;
-        
+        int statusCode = 500;
+
         while (retry > 0)
         {
             try
             {
-                responseString = await NetworkHelper.MakeRequestAsync(fullUrl, inputString, CancellationToken.None, apiKey);
-                var responseJson = JObject.Parse(responseString);
-
-                if (responseJson == null)
+                if (AndroidHelper.IsAndroid && NetworkHelper.IsNetworkAvailable())
                 {
-                    throw new Exception("Failed to parse response");
+                    var headers = new Dictionary<string, string>
+                    {
+                        { "Authorization", $"Bearer {apiKey}" }
+                    };
+                    responseString = await NetworkHelper.MakeRequestWithCustomHeadersAsync(endpointUrl, jsonData, headers);
+                    statusCode = 200;
                 }
                 else
                 {
-                    if (!responseJson.TryGetValue("choices", out var choicesToken) || choicesToken.Type == JTokenType.Null) { retry--; continue; } 
-                    var choicesArray = choicesToken as JArray;
-                    if (choicesArray == null || !choicesArray.HasValues) { retry--; continue; }
+                    using var request = new HttpRequestMessage(HttpMethod.Post, endpointUrl);
+                    request.Headers.Add("Authorization", $"Bearer {apiKey}");
+                    request.Content = new StringContent(jsonData, Encoding.UTF8, "application/json");
 
-                    var firstChoice = choicesArray.FirstOrDefault();
-                    if (firstChoice == null) { retry--; continue; }
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(ModEntry.Config.QueryTimeout));
+                    using var response = await SharedHttpClient.SendAsync(request, cts.Token);
 
-                    var messageToken = firstChoice["message"];
-                    if (messageToken == null || messageToken.Type == JTokenType.Null) { retry--; continue; }
-
-                    // ── Native Tool Calling: extract tool_calls without early return ──
-                    var toolCallsToken = messageToken["tool_calls"] as JArray;
-                    var response = new LlmResponse("", true);
-                    if (toolCallsToken != null && toolCallsToken.HasValues)
-                    {
-                        foreach (var tc in toolCallsToken)
-                        {
-                            var funcName = tc["function"]?["name"]?.ToString();
-                            var funcArgs = tc["function"]?["arguments"]?.ToString() ?? "{}";
-                            if (!string.IsNullOrEmpty(funcName))
-                                response.ToolCalls.Add(new ToolCallData { FunctionName = funcName, JsonArguments = funcArgs });
-                        }
-                        if (response.ToolCalls.Count > 0)
-                            Log.Debug($"[LlmOpenAiBase] Tool calls received: {response.ToolCalls.Count}");
-                    }
-
-                    var contentToken = messageToken["content"];
-                    var text = (contentToken != null && contentToken.Type != JTokenType.Null)
-                        ? contentToken.ToString()
-                        : string.Empty;
-                    response.Text = text;
-
-                    // Only retry when both content and tool_calls are completely absent
-                    if (string.IsNullOrWhiteSpace(text) && response.ToolCalls.Count == 0)
-                    {
-                        retry--;
-                        continue;
-                    }
-
-                    return response;
+                    statusCode = (int)response.StatusCode;
+                    responseString = await response.Content.ReadAsStringAsync();
                 }
+
+                var responseJson = JObject.Parse(responseString);
+                var choices = responseJson["choices"] as JArray;
+                if (choices == null || choices.Count == 0)
+                {
+                    retry--;
+                    continue;
+                }
+
+                var firstChoice = choices[0];
+                var messageToken = firstChoice["message"];
+                if (messageToken == null)
+                {
+                    retry--;
+                    continue;
+                }
+
+                // ── Native Tool Calling ──
+                var toolResponse = new LlmResponse("", true);
+                var toolCallsArray = messageToken["tool_calls"] as JArray;
+                if (toolCallsArray != null && toolCallsArray.Count > 0)
+                {
+                    foreach (var tc in toolCallsArray)
+                    {
+                        var functionToken = tc["function"];
+                        if (functionToken != null)
+                        {
+                            var funcName = functionToken["name"]?.ToString();
+                            var funcArgs = functionToken["arguments"]?.ToString() ?? "{}";
+                            if (!string.IsNullOrEmpty(funcName))
+                            {
+                                toolResponse.ToolCalls.Add(new ToolCallData { FunctionName = funcName, JsonArguments = funcArgs });
+                            }
+                        }
+                    }
+                }
+
+                var contentStr = messageToken["content"]?.ToString();
+                if (toolResponse.ToolCalls.Count > 0)
+                {
+                    toolResponse.Text = contentStr ?? "";
+                    return toolResponse;
+                }
+
+                if (!string.IsNullOrWhiteSpace(contentStr))
+                {
+                    return new LlmResponse(contentStr);
+                }
+
+                retry--;
             }
             catch (Exception ex)
             {
-                if (ex.InnerException is HttpRequestException httpEx)
-                {
-                    apiResponseCode = (int)(httpEx.StatusCode ?? 0);
-                }
-                Log.Debug(ex.Message);
-                Log.Debug("Retrying...");
+                Log.Debug($"[LlmOpenAiBase] Request error: {ex.Message}");
                 retry--;
-                // 【优化】绝对禁止在 async 方法中使用 Thread.Sleep 阻塞主线程
                 await Task.Delay(100);
             }
         }
-        return new LlmResponse(responseString, apiResponseCode);
+
+        return new LlmResponse(responseString, statusCode);
     }
 
     internal override Dictionary<string, double>[] RunInferenceProbabilities(string fullPrompt, int n_predict = 1)
     {
         throw new NotImplementedException();
-    }
-
-    public string[] CoreGetModelNames(Dictionary<string, string> extraHeaders = null)
-    {
-        extraHeaders ??= new Dictionary<string, string>();
-        
-        try 
-        {
-            var fullUrl = $"{url}/v1/models";
-
-            // 【优化】使用 Task.Run 包装异步请求并在后台执行，防止强制 .Result 引发 UI 线程 SynchronizationContext 死锁
-            return Task.Run(async () => 
-            {
-                using var request = new HttpRequestMessage(HttpMethod.Get, fullUrl);
-                request.Headers.Add("Authorization", $"Bearer {apiKey}");
-                foreach (var header in extraHeaders)
-                {
-                    request.Headers.Add(header.Key, header.Value);
-                }
-                
-                using var response = await SharedHttpClient.SendAsync(request);
-                var responseString = await response.Content.ReadAsStringAsync();
-                var responseJson = JObject.Parse(responseString); 
-                
-                var dataToken = responseJson["data"];
-                if (dataToken == null || dataToken.Type == JTokenType.Null || !(dataToken is JArray modelsArray)) 
-                {
-                    return Array.Empty<string>(); 
-                }
-
-                var modelNames = new List<string>();
-                foreach (var model in modelsArray)
-                {
-                    var idToken = model["id"];
-                    if (idToken != null && idToken.Type != JTokenType.Null)
-                    {
-                        modelNames.Add(idToken.ToString()); 
-                    }
-                }
-                return modelNames.ToArray();
-                
-            }).GetAwaiter().GetResult();
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex.Message);
-            return Array.Empty<string>();
-        }
     }
 }

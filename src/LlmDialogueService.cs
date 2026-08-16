@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using StardewModdingAPI;
 using StardewValley;
@@ -28,75 +29,152 @@ public class LlmDialogueService
     private const int RETRY_DELAY_SECONDS = 5;
 
     private LlmDialogueService()
-    {
-    }
+    {}
 
     /// <summary>
     /// Generates AI dialogue for the given character using the provided context.
     /// Handles prompt assembly, LLM inference with timeout/retry, and output parsing.
     /// </summary>
-    public async Task<string[]> GenerateDialogueAsync(Character character, DialogueContext context)
+    public async Task<string[]> GenerateDialogueAsync(Character character, DialogueContext context, Action<string> onStreamingToken = null)
     {
-        string[] results = Array.Empty<string>();
+        // 严格的最外层状态管理，确保无论是正常 return 还是异常 throw，都能正确重置状态
         IsRequestInProgress = true;
-        Prompts prompts = null;
-
         try
         {
+            string[] results = Array.Empty<string>();
+
             // Reset cancellation flag for each new dialogue to prevent stale state
             character.IsUserCancelled = false;
-
-            // Register this character as the active dialogue character for cancel button plugin
             ModEntry.CancelButtonPluginInstance?.SetActiveCharacter(character);
 
-            // Wrap prompt creation in try-catch to prevent packaging failures from crashing
+            Prompts prompts = null;
             try
             {
-            prompts = new Prompts(context, character);
+                PlayerStateScanner.Scan();
+                prompts = new Prompts(context, character);
 
-            // S1: Tab1 NPC 个人记忆（最高优先级，前置）
-            var memoryCtx = MemoryManager.Instance.GetSmartMemoryContext(character.Name);
-            if (!string.IsNullOrEmpty(memoryCtx))
-                prompts.SystemPrompt = memoryCtx + "\n\n" + prompts.SystemPrompt;
+                // ── SystemPrompt 注入顺序：静态在前，动态在后，最大化 cache 命中率 ──
+                // 原则：cache 基于前缀匹配，变动越频繁的内容越靠后，
+                //       避免高频变化的内容污染前面稳定内容的缓存前缀。
+                //
+                // [基础 systemPrompt] ← GetSystemPrompt() 已在属性初始化中，纯静态，保持最前
 
-            // S2: Tab2 大世界记忆（紧跟 Tab1）
-            WorldMemoryManager.Instance.EnsureLoaded();
-            var worldMemCtx = WorldMemoryManager.Instance.GetPromptText();
-            if (!string.IsNullOrEmpty(worldMemCtx))
-                prompts.SystemPrompt += "\n\n" + worldMemCtx;
+                // S1: NPC 个人记忆（变动频率：每次记忆摘要更新后，约数天一次）
+                var memoryCtx = MemoryManager.Instance.GetSmartMemoryContext(character.Name);
+                if (!string.IsNullOrEmpty(memoryCtx))prompts.SystemPrompt += "\n\n" + memoryCtx;
 
-            // S3: 感知层（Town Gossip + Immediate Observations）
-            PerceptionInjector.Inject(character.Name, prompts);
+                // S2: 大世界记忆（变动频率：类似，数天一次）
+                WorldMemoryManager.Instance.EnsureLoaded();
+                var worldMemCtx = WorldMemoryManager.Instance.GetPromptText();
+                if (!string.IsNullOrEmpty(worldMemCtx))
+                    prompts.SystemPrompt += "\n\n" + worldMemCtx;
 
-            // S5: EvolvedTraits（NPC 对农夫的长期印象）
-            var evolvedBlock = EvolvedTraitManager.GetPromptBlock(character.Name);
-            if (!string.IsNullOrEmpty(evolvedBlock))
-                prompts.SystemPrompt += "\n\n" + evolvedBlock;
+                // S3: EvolvedTraits（NPC 对农夫的长期印象，变动频率：数天一次）
+                var evolvedBlock = EvolvedTraitManager.GetPromptBlock(character.Name, context);
+                if (!string.IsNullOrEmpty(evolvedBlock))
+                    prompts.SystemPrompt += "\n\n" + evolvedBlock;
 
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, $"[ValleyTalk] Prompt packaging failed (Prompts.cs error): {character.Name}");
-            ModEntry.SMonitor.Log($"Prompts Error StackTrace: {ex}", StardewModdingAPI.LogLevel.Error);
-            return new string[] { "..." };
-        }
+                // S4: 感知层（Town Gossip + Immediate Observations，变动频率：每次对话，最频繁，置于最后）
+                PerceptionInjector.Inject(character.Name, prompts);
 
-        int timeoutSeconds = ModEntry.Config.QueryTimeout;
-        Exception lastException = null;
-        LlmResponse result = null;
-
-        for (int attempt = 0; attempt <= MAX_RETRY_ATTEMPTS; attempt++)
-        {
-            try
-            {
-                // Apply delay before retry (no delay for first or second attempt)
-                if (attempt >= 2)
+                // S5: 配偶深夜等待事件（极低频触发，注入 CorePrompt 末尾，不影响 SystemPrompt 缓存）
+                if (SpouseWaitingEvent.TryConsumeSpouseDialogue(character.Name))
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(RETRY_DELAY_SECONDS));
-                    // Double the timeout but cap at MAX_TIMEOUT_SECONDS
-                    timeoutSeconds = Math.Min(timeoutSeconds * 2, MAX_TIMEOUT_SECONDS);
+                    string porchCtx = SpouseWaitingEvent.GetPorchContext();
+                    if (!string.IsNullOrEmpty(porchCtx))
+                        prompts.CorePrompt += "\n\n" + SpouseWaitingEvent.BuildStatusPrompt(porchCtx);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, $"[ValleyTalk] Prompt packaging failed (Prompts.cs error): {character.Name}");
+                ModEntry.SMonitor.Log($"Prompts Error StackTrace: {ex}", StardewModdingAPI.LogLevel.Error);
+                // 构造 Prompt 失败，直接返回占位符。外层 finally 会正确处理 IsRequestInProgress
+                return new string[] { "..." };
+            }
+
+            // ══════════════════════════════════════════════════
+            //  流式路径
+            // ══════════════════════════════════════════════════
+            if (onStreamingToken != null
+                && ModEntry.Config.EnableStreaming
+                && !ModEntry.Config.UseNativeToolCalling
+                && !context.RoutingFlags.IsMovementRequested
+                && !context.RoutingFlags.IsGotoRequested
+                && !context.RoutingFlags.IsInviteRequested
+                && !context.RoutingFlags.IsOnDate)
+            {
+                var tracker = new StreamLineTracker();
+
+                using var cts = new CancellationTokenSource(
+                    TimeSpan.FromSeconds(ModEntry.Config.QueryTimeout));
+                character.CurrentDialogueCts = cts;
+
+                if (ModEntry.Config.Debug)
+                    LogDebugRequest(character, prompts, attemptNumber: 1);
+
+                LlmResponse streamResult = null;
+                try
+                {
+                    streamResult = await Llm.Instance.RunStreamingInference(
+                        prompts.SystemPrompt,
+                        prompts.GameConstantContext,
+                        prompts.NpcConstantContext,
+                        $"{prompts.CorePrompt}{prompts.Instructions}{prompts.Command}",
+                        delta =>
+                        {
+                            var displayText = tracker.Feed(delta);
+                            if (displayText != null)
+                                onStreamingToken(displayText);
+                        },
+                        cts.Token,
+                        prompts.ResponseStart);
+                }
+                catch (OperationCanceledException)
+                {
+                    Log.Debug($"Streaming cancelled for {character.Name}.");
+                    character.CurrentDialogueCts = null;
+                    ModEntry.CancelButtonPluginInstance?.SetActiveCharacter(null);
+                    return new[] { "..." };
                 }
 
+                character.CurrentDialogueCts = null;
+                ModEntry.CancelButtonPluginInstance?.SetActiveCharacter(null);
+
+                if (streamResult == null || !streamResult.IsSuccess
+                    || string.IsNullOrWhiteSpace(streamResult.Text))return new[] { "..." };
+
+                var processed = ProcessLines(streamResult.Text, character).ToArray();
+
+                if (!string.IsNullOrWhiteSpace(prompts.GiveGift) && processed.Length > 0)processed[0] += $"[{prompts.GiveGift}]";
+
+                // Extract mood tag and persist session history for continuity
+                if (processed.Length > 0)
+                {
+                    string mood = ExtractMoodTag(processed[0]);
+                    StripMoodTag(processed);
+                    SessionCache.Instance.MergeHistory(
+                        character.Name,
+                        context.ChatHistory,
+                        SanitizeForSession(processed[0]),
+                        mood);
+                }
+
+                DialogueHistoryManager.Instance.ConsumeEavesdropEntries(character.Name);
+
+                if (ModEntry.Config.Debug)
+                    LogDebugContext(character, context, prompts, processed);
+
+                return processed.Length > 0 ? processed : new[] { "..." };
+            }
+
+            int timeoutSeconds = ModEntry.Config.QueryTimeout;
+            Exception lastException = null;
+            LlmResponse result = null;
+            bool isDebug = ModEntry.Config.Debug; // 提前缓存 Debug 配置，减少属性访问
+
+            for (int attempt = 0; attempt <= MAX_RETRY_ATTEMPTS; attempt++)
+            {
                 // If user already cancelled, do not retry
                 if (character.IsUserCancelled)
                 {
@@ -108,18 +186,17 @@ public class LlmDialogueService
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
                 character.CurrentDialogueCts = cts;
 
-                string[] resultsInternal;
+                string[] resultsInternal = Array.Empty<string>();
 
                 try
                 {
-                    // Debug logging for request context (extracted method)
-                    LogDebugRequest(character, prompts, attempt + 1);
+                    if (isDebug) LogDebugRequest(character, prompts, attempt + 1);
                     
                     var inferenceTask = Llm.Instance.RunInference(
                         prompts.SystemPrompt,
                         $"{prompts.GameConstantContext}",
                         $"{prompts.NpcConstantContext}",
-                        $"{prompts.CorePrompt}{prompts.Instructions}{prompts.Command}",  // Instructions 后移
+                        $"{prompts.CorePrompt}{prompts.Instructions}{prompts.Command}",
                         prompts.ResponseStart
                     );
 
@@ -141,7 +218,6 @@ public class LlmDialogueService
                         // speak_in_bubble 与对话框互斥：气泡模式下跳过文本输出
                         if (result.UsedBubble)
                         {
-                            resultsInternal = Array.Empty<string>();
                             results = Array.Empty<string>();
                             break;
                         }
@@ -151,18 +227,13 @@ public class LlmDialogueService
                         {
                             dialogueText = "- ...";
                         }
-                        // ← 加在这里，ProcessLines 之前，打印原始输出
-                        if (ModEntry.Config.Debug && !string.IsNullOrWhiteSpace(dialogueText))
-                        {
+                        if (isDebug && !string.IsNullOrWhiteSpace(dialogueText)){
                             ModEntry.SMonitor.Log(
                                 $"[ValleyTalk] [Raw API Response] {character.Name}:\n{dialogueText}",
                                 LogLevel.Debug);
                         }
+                        
                         resultsInternal = ProcessLines(dialogueText, character, attempt > 2).ToArray();
-                    }
-                    else
-                    {
-                        resultsInternal = Array.Empty<string>();
                     }
                 }
                 catch (OperationCanceledException)
@@ -170,65 +241,75 @@ public class LlmDialogueService
                     // User-initiated cancellation, silent handling, no error logging
                     Log.Debug($"AI request cancelled for {character.Name}.");
                     resultsInternal = new string[] { "..." };
+                    results = resultsInternal;
                     break; // Exit retry loop, no further retries
                 }
                 catch (Exception ex)
                 {
+                    lastException = ex;
                     Log.Error(ex, $"Error generating AI response for {character.StardewNpc.displayName}");
-                    throw;
                 }
 
                 if (resultsInternal.Length > 0)
                 {
                     results = resultsInternal;
+                    string mood = ExtractMoodTag(resultsInternal[0]);
+                    StripMoodTag(resultsInternal);
+                    SessionCache.Instance.MergeHistory(
+                        character.Name,
+                        context.ChatHistory,
+                        SanitizeForSession(resultsInternal[0]),
+                        mood);
+
                     DialogueHistoryManager.Instance.ConsumeEavesdropEntries(character.Name);
+                    if (isDebug) LogDebugContext(character, context, prompts, resultsInternal);
                     break; // Success, exit retry loop
                 }
-
-                Log.Warning("No valid response generated from AI model.");
-                if (result != null && !string.IsNullOrWhiteSpace(result.ErrorMessage))
+                else
                 {
-                    Log.Warning($"API Error Message: {result.ErrorMessage}");
-                }
-                else if (result != null && !string.IsNullOrWhiteSpace(result.Text))
-                {
-                    Log.Warning($"API Response: {result.Text}");
-                }
+                    Log.Warning("No valid response generated from AI model.");
+                    if (result != null && !string.IsNullOrWhiteSpace(result.ErrorMessage))
+                    {
+                        Log.Warning($"API Error Message: {result.ErrorMessage}");
+                    }
+                    else if (result != null && !string.IsNullOrWhiteSpace(result.Text))
+                    {
+                        Log.Warning($"API Response: {result.Text}");
+                    }
 
-                // Additional debug logging for context (extracted)
-                LogDebugContext(character, context, prompts, resultsInternal);
+                    if (isDebug) LogDebugContext(character, context, prompts, resultsInternal);
+
+                    // 修复：仅在失败后，且准备进行下一次尝试前，才应用延迟和超时翻倍
+                    if (attempt < MAX_RETRY_ATTEMPTS)
+                    {
+                        if (attempt >= 1) // 第一次失败重试不延迟，第二次及以后开始延迟和翻倍
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(RETRY_DELAY_SECONDS));timeoutSeconds = Math.Min(timeoutSeconds * 2, MAX_TIMEOUT_SECONDS);
+                        }
+                    }
+                }
             }
-            catch (Exception ex)
+
+            // Handle final result
+            if (results.Length == 0 && lastException != null)
             {
-                lastException = ex;
-
-                // If this is the last attempt, don't continue
-                if (attempt == MAX_RETRY_ATTEMPTS)
-                {
-                    break;
-                }
+                ModEntry.SMonitor.Log($"Error generating AI response for {character.Name}: {lastException}",
+                    StardewModdingAPI.LogLevel.Error);
+                results = new string[] { "..." };
             }
-        }
 
-        // Handle final result
-        if (results.Length == 0 && lastException != null)
-        {
-            ModEntry.SMonitor.Log($"Error generating AI response for {character.Name}: {lastException}",
-                StardewModdingAPI.LogLevel.Error);
-            results = new string[] { "..." };
-        }
+            if (!string.IsNullOrWhiteSpace(prompts?.GiveGift) && results.Length > 0)
+            {
+                results[0] += $"[{prompts.GiveGift}]";
+            }
 
-        if (!string.IsNullOrWhiteSpace(prompts?.GiveGift) && results.Length > 0)
-        {
-            results[0] += $"[{prompts.GiveGift}]";
-        }
-
-        character.CurrentDialogueCts = null;
-        ModEntry.CancelButtonPluginInstance?.SetActiveCharacter(null);
-        return results;
+            character.CurrentDialogueCts = null;
+            ModEntry.CancelButtonPluginInstance?.SetActiveCharacter(null);
+            return results;
         }
         finally
         {
+            // 确保方法任何出口点都会释放标志位
             IsRequestInProgress = false;
         }
     }
@@ -241,79 +322,92 @@ public class LlmDialogueService
     /// <param name="resultString">Raw LLM output.</param>
     /// <param name="character">Target character (used for portrait validation).</param>
     /// <param name="relaxedValidation">When true, allows non‑standard dialogue formats (used for retry scenarios).</param>
-private IEnumerable<string> ProcessLines(string resultString, Character character, bool relaxedValidation = false)
-{
-    try
+    private IEnumerable<string> ProcessLines(string resultString, Character character, bool relaxedValidation = false)
     {
-        // ── Step 1: Split lines ──
-        var resultLines = resultString.Split('\n')
-            .Select(x => x.Replace("\r", "").Trim())
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .ToList();
+        try
+        {
+            // ── Step 1: Split lines ──
+            var resultLines = resultString.Split('\n')
+                .Select(x => x.Replace("\r", "").Trim())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToList();
 
-        // ── Step 2: Separate dialogue lines from response option lines ──
-        var rawDialogueLines = resultLines.Where(x => x.StartsWith("-")).ToList();
-        var rawResponseLines = resultLines.Where(x => x.StartsWith("%")).ToList();
+            // ── Step 2: Separate dialogue lines from response option lines ──
+            var rawDialogueLines = resultLines.Where(x => x.StartsWith("-")).ToList();
+            var rawResponseLines = resultLines.Where(x => x.StartsWith("%")).ToList();
 
-        // If no '-' lines at all, fall back to non-'%' lines
-        if (rawDialogueLines.Count == 0)
-            rawDialogueLines = resultLines.Where(x => !x.StartsWith("%")).ToList();
+            // Fallback: 如果 LLM 没有输出 '-' 前缀，就兜底将所有非 '%' 的文本视作对话正文
+            // 注意：若 LLM 输出了混排格式（如第一行无前缀，第二行有 '-'），此处不触发，这是预期设计
+            if (rawDialogueLines.Count == 0)rawDialogueLines = resultLines.Where(x => !x.StartsWith("%")).ToList();
 
-        if (rawDialogueLines.Count == 0)
+            if (rawDialogueLines.Count == 0)
+                return Array.Empty<string>();
+
+            // ── Step 3: Strip the leading '-' marker from each line, then JOIN into one
+            //string BEFORE cleaning. This preserves $h/$b/$0 structure that
+            //           the LLM placed within a single logical reply. ──
+            var strippedParts = rawDialogueLines
+                .Select(line =>
+                {
+                    // Only strip a single "- " or "-" prefix; never use TrimStart (it eats all leading '-' and spaces)
+                    if (line.StartsWith("- ")) return line.Substring(2);
+                    if (line.StartsWith("-")) return line.Substring(1);
+                    return line;
+                })
+                .Where(line => !string.IsNullOrWhiteSpace(line))
+                .ToList();
+
+            // Join with a single space — the LLM already embeds #$b# / $b where it wants
+            // page breaks, so we must NOT insert extra #$b# between lines here.
+            string joined = string.Join(" ", strippedParts);
+
+            // ── Step 4: Run the full cleanup pipeline ONCE on the joined string ──
+            string cleaned = DialogueCleaner.CommonCleanup(joined);
+            cleaned = DialogueCleaner.DialogueLineCleanup(
+                cleaned, character.ValidPortraits, ModEntry.FixPunctuation, relaxedValidation);
+
+            if (string.IsNullOrWhiteSpace(cleaned))
+                return Array.Empty<string>();
+
+            // Debug: log if we merged multiple lines
+            if (strippedParts.Count > 1 && ModEntry.Config.Debug)
+                Log.Debug($"Merged {strippedParts.Count} '-' lines into one dialogue for {character.Name}.");
+
+            // ── Step 5: Response options ──
+            var responseLines = rawResponseLines
+                .Select(x =>
+                {
+                    // Only strip a single "% " or "%" prefix; never use TrimStart (it eats all leading '%' and spaces)
+                    if (x.StartsWith("% ")) return x.Substring(2);
+                    if (x.StartsWith("%")) return x.Substring(1);
+                    return x;
+                })
+                .Select(x => DialogueCleaner.CommonCleanup(x))
+                .Select(x => DialogueCleaner.ResponseLineCleanup(x, ModEntry.FixPunctuation))
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToList();
+
+            // 这里检查的是经过清理、过滤空白字符串后的最终 List 数量
+            // 如果玩家选项少于 2 个（如只有1个"再见"），不具备选择意义，则直接清空
+            if (responseLines.Count < 2)
+                responseLines.Clear();
+
+            var finalResult = new List<string> { cleaned };
+            finalResult.AddRange(responseLines);
+            return finalResult;
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"ProcessLines exception: {ex.Message}\n{ex.StackTrace}");
             return Array.Empty<string>();
-
-        // ── Step 3: Strip the leading '-' marker from each line, then JOIN into one
-        //string BEFORE cleaning. This preserves $h/$b/$0 structure that
-        //           the LLM placed within a single logical reply. ──
-        var strippedParts = rawDialogueLines
-            .Select(line => line.TrimStart('-', ' '))   // only strip the '-' prefix
-            .Where(line => !string.IsNullOrWhiteSpace(line))
-            .ToList();
-
-        // Join with a single space — the LLM already embeds #$b# / $b where it wants
-        // page breaks, so we must NOT insert extra #$b# between lines here.
-        string joined = string.Join(" ", strippedParts);
-
-        // ── Step 4: Run the full cleanup pipeline ONCE on the joined string ──
-        string cleaned = DialogueCleaner.CommonCleanup(joined);
-        cleaned = DialogueCleaner.DialogueLineCleanup(
-            cleaned, character.ValidPortraits, ModEntry.FixPunctuation, relaxedValidation);
-
-        if (string.IsNullOrWhiteSpace(cleaned))
-            return Array.Empty<string>();
-
-        // Debug: log if we merged multiple lines
-        if (strippedParts.Count > 1 && ModEntry.Config.Debug)
-            Log.Debug($"Merged {strippedParts.Count} '-' lines into one dialogue for {character.Name}.");
-
-        // ── Step 5: Response options ──
-        var responseLines = rawResponseLines
-            .Select(x => DialogueCleaner.CommonCleanup(x))
-            .Select(x => DialogueCleaner.ResponseLineCleanup(x, ModEntry.FixPunctuation))
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .ToList();
-
-        if (responseLines.Count < 2)
-            responseLines.Clear();
-
-        var finalResult = new List<string> { cleaned };
-        finalResult.AddRange(responseLines);
-        return finalResult;
+        }
     }
-    catch (Exception ex)
-    {
-        Log.Error($"ProcessLines exception: {ex.Message}\n{ex.StackTrace}");
-        return Array.Empty<string>();
-    }
-}
 
     /// <summary>
     /// Logs the full request context (System, GameConstant, NpcConstant, CorePrompt, etc.) in a formatted box.
     /// </summary>
     private void LogDebugRequest(Character character, Prompts prompts, int attemptNumber)
     {
-        if (!ModEntry.Config.Debug) return;
-
         var sb = new System.Text.StringBuilder();
         sb.AppendLine($"╔═══════════════════════════════════════════════════════════════════");
         sb.AppendLine($"║ [AI Request Context] {character.Name} (Attempt {attemptNumber})");
@@ -368,8 +462,6 @@ private IEnumerable<string> ProcessLines(string resultString, Character characte
     /// </summary>
     private void LogDebugContext(Character character, DialogueContext context, Prompts prompts, string[] resultsInternal)
     {
-        if (!ModEntry.Config.Debug) return;
-
         Log.Debug($"Context:");
         Log.Debug($"-------------------");
         Log.Debug($"Name: {character.Name}");
@@ -411,5 +503,43 @@ private IEnumerable<string> ProcessLines(string resultString, Character characte
             Log.Debug("Results: (empty)");
         }
         Log.Debug("--------------------------------------------------");
+    }
+
+    /// <summary>
+    /// Strips format markers from LLM output before writing to session cache.
+    /// Removes #$b#/$h/[ACTION:...]/[MOOD:...]/[241] etc. so history stays clean.
+    /// </summary>
+    private static string SanitizeForSession(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+        string s = Regex.Replace(text, @"#\$[a-zA-Z0-9_#\s\-\:]+", "");  // #$b# #$e# etc.
+        s = Regex.Replace(s, @"\$[a-zA-Z0-9]", "");        // $h $l $s etc.
+        s = Regex.Replace(s, @"\[ACTION:.*?\]", "");                        // [ACTION:...]
+        s = Regex.Replace(s, @"\[MOOD:\w+\]", "");                          // [MOOD:...] (double insurance)
+        s = Regex.Replace(s, @"\[\d+\]", "");                               // [241] index markers
+        return s.Trim();
+    }
+
+    /// <summary>
+    /// Extracts [MOOD:xxx] tag from dialogue text. Returns the mood keyword or empty string.
+    /// Convention: LLM outputs [MOOD:curious] etc. at end of line when tone shifts.
+    /// </summary>
+    private static string ExtractMoodTag(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return "";
+        var match = System.Text.RegularExpressions.Regex.Match(text, @"\[MOOD:(\w+)\]");
+        return match.Success ? match.Groups[1].Value.ToLower() : "";
+    }
+
+    /// <summary>
+    /// Strips all [MOOD:xxx] tags from processed dialogue lines (in-place).
+    /// Mood tags are metadata for session tracking, not meant for display.
+    /// </summary>
+    private static void StripMoodTag(string[] lines)
+    {
+        for (int i = 0; i < lines.Length; i++)
+        {
+            lines[i] = System.Text.RegularExpressions.Regex.Replace(lines[i], @"\[MOOD:\w+\]", "").Trim();
+        }
     }
 }
