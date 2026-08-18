@@ -187,7 +187,7 @@ public class Character : IDisposable
         DialogueData = new();
         foreach (var dialogue in canonDialogue)
         {
-            var context = new DialogueContext(dialogue.Key);
+            var context = DialogueContext.SafeParse(dialogue.Key);
             var value = new DialogueValue(dialogue.Value);
             // 🌟 #6: 删除死代码 if (value is DialogueValue)，直接 Add
             DialogueData.Add("Base", context, value);
@@ -294,6 +294,7 @@ public class Character : IDisposable
         {
             newHistory = historyManager.GetHistory(Name)
                 .Where(e => !e.IsConsumed)
+                .Where(e => e.DialogueType != "eavesdrop")
                 .TakeLast(limit)
                 .Select(e => new Tuple<StardewTime, IHistory>(e.Timestamp, new DialogueHistoryAdapter(e)));
         }
@@ -326,7 +327,8 @@ public class Character : IDisposable
         }
 
         var lastEntry = history.Last();
-        return lastEntry.Timestamp.IsJustNow();
+        return lastEntry.Timestamp.IsJustNow()
+            && lastEntry.SpeakerType != SpeakerType.System;
     }
 
     internal void ClearConversationHistory()

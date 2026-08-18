@@ -306,7 +306,7 @@ public sealed class DialogueContextJsonConverter : JsonConverter<DialogueContext
 {
     public override DialogueContext ReadJson(JsonReader reader, Type objectType, DialogueContext existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
-        return new DialogueContext(reader.Value?.ToString() ?? string.Empty);
+        return DialogueContext.SafeParse(reader.Value?.ToString() ?? string.Empty);
     }
 
     public override void WriteJson(JsonWriter writer, DialogueContext value, JsonSerializer serializer)

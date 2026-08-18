@@ -213,12 +213,13 @@ internal static class DailyHeadlineGenerator
         for today's edition. The headline should feel authentic to the Stardew Valley universe:
         Topics you can draw from (pick one at random):
         - Ferngill Republic vs. Gotoro Empire geopolitics (naval clashes, trade, veterans, diplomacy)
-        - Zuzu City life (transit, sports, music, culture, JojaCorp)
-        - Regional economy (Grampleton commodities, lumber, import prices)
+        - Zuzu City life (events, sports, music, festivals, JojaCorp)
+        - Regional economy (agriculture, Grampleton commodities, lumber, import prices)
         - Seasonal weather or nature events in the valley
         - Quiet local Pelican Town happenings (road work, the saloon, Adventurer's Guild, rare sightings)
         Rules:
         - Do NOT mention the farmer or any specific farmer action.
+        - Do NOT use "Headline:", "News:", "Title:", or similar prefixes.
         - Do NOT use markdown, bullet points, quotes, or dashes.
         - Output ONLY the single headline sentence. Nothing else.
         """;
@@ -226,18 +227,20 @@ internal static class DailyHeadlineGenerator
     private static string BuildLlmSystemPrompt_ZH() =>
         """
         你是鹈鹕镇《晨间公报》的编辑，负责为《星露谷》世界观下的小镇报纸撰写每日头条。
-        你的任务是为今天的版面写一条简短的头条新闻（1~2句话，不超过60个汉字）。
-        新闻内容必须符合《星露谷》世界观，真实感强，读来像是真实发生的事。
-        可选题材（从中随机选一个方向）：
+        你的任务是为今天的版面写一条简短的头条新闻（1~2句话，优先控制在60个汉字以内）。
+        新闻内容必须符合《星露谷》世界观，读起来真实、自然，像小镇报纸上会出现的报道。
+        风格参考：语气亲和但不夸张，真实但不平淡，像晨间播报。
+        可选题材（从以下方向中选择一个）：
         - 芬吉尔共和国与戈托罗帝国的地缘局势（海战、贸易、外交、老兵）
-        - 祖祖城都市动态（轻轨、球赛、音乐节、乔佳公司）
-        - 地区经济（格兰普顿物价、木材、进口商品）
+        - 祖祖城都市动态（活动、球赛、音乐节、JOJA公司）
+        - 地区经济（农业、格兰普顿物价、木材、进口商品）
         - 山谷季节性天气或自然奇景
         - 鹈鹕镇本地小事（道路施工、酒馆、冒险者公会、罕见目击）
         规则：
         - 不得提及农夫或任何农夫的具体行为。
-        - 不得使用 Markdown 格式、引号、破折号或符号。
-        - 只输出一条头条句子本身，不输出任何其他内容。
+        - 不得使用“头条：”、“新闻：”、“标题：”等前缀。
+        - 不得使用 Markdown 格式、引号、破折号或任何符号。
+        - 只输出一条完整句子，不输出任何其他内容。
         """;
 
     // ─────────────────────────────────────────────────────────────

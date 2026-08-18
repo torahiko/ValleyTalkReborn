@@ -10,26 +10,25 @@ namespace ValleytalkReborn
 {
     internal class JourneySegment
     {
-        public string MapName { get; set; }
-        public Vector2 WalkToTile { get; set; }
-        public string NextMapName { get; set; }
-        public Vector2 NextMapLanding { get; set; }
+        public string   MapName        { get; set; }
+        public Vector2  WalkToTile     { get; set; }
+        public string   NextMapName    { get; set; }
+        public Vector2  NextMapLanding { get; set; }
     }
 
     internal class MultiMapJourney
     {
-        public NPC Npc { get; set; }
-        public Queue<JourneySegment> Segments { get; } = new();
-        public Action OnComplete { get; set; }
-        public Action OnFail { get; set; }
-        public bool SegmentDispatched { get; set; } = false;
-        public bool IsFinished { get; set; } = false;
+        public NPC                    Npc       { get; set; }
+        public Queue<JourneySegment>  Segments  { get; } = new();
+        public Action                 OnComplete { get; set; }
+        public Action                 OnFail     { get; set; }
+        public bool                   SegmentDispatched { get; set; } = false;
+        public bool                   IsFinished { get; set; } = false;
     }
 
     public class MultiMapNavigator
     {
         private static readonly MultiMapNavigator _instance = new();
-
         public static MultiMapNavigator Instance
         {
             get
@@ -40,18 +39,13 @@ namespace ValleytalkReborn
         }
 
         private Dictionary<string, List<WarpEdge>> _warpGraph = new(StringComparer.OrdinalIgnoreCase);
-        private bool _graphBuilt = false;
+        private bool _graphBuilt      = false;
         private bool _eventsSubscribed = false;
 
-        // ★ 当前正在执行的导航任务，最多一个
         private MultiMapJourney _currentJourney;
-
-        // ★ 等待队列
         private readonly Queue<MultiMapJourney> _waitingQueue = new();
 
-        private MultiMapNavigator()
-        {
-        }
+        private MultiMapNavigator() { }
 
         private void EnsureEventsSubscribed()
         {
@@ -59,30 +53,27 @@ namespace ValleytalkReborn
                 return;
 
             ModEntry.SHelper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
-
-            ModEntry.SHelper.Events.GameLoop.DayStarted += (_, _) => CancelAll();
-
-            ModEntry.SHelper.Events.GameLoop.DayEnding += (_, _) => CancelAll();
-
-            ModEntry.SHelper.Events.GameLoop.SaveLoaded += (_, _) =>
+            ModEntry.SHelper.Events.GameLoop.DayStarted   += (_, _) => CancelAll();
+            ModEntry.SHelper.Events.GameLoop.DayEnding    += (_, _) => CancelAll();
+            ModEntry.SHelper.Events.GameLoop.SaveLoaded   += (_, _) =>
             {
                 _graphBuilt = false;
                 CancelAll();
             };
-
             ModEntry.SHelper.Events.Player.Warped += (_, _) => _graphBuilt = false;
 
             _eventsSubscribed = true;
         }
 
+        // ──────────────────────────────────────────────────────
+        //  公共接口
+        // ──────────────────────────────────────────────────────
+
         public bool IsNavigating(NPC npc)
         {
-            if (npc?.Name == null)
-                return false;
-
+            if (npc?.Name == null) return false;
             if (_currentJourney?.Npc?.Name == npc.Name && !_currentJourney.IsFinished)
                 return true;
-
             return _waitingQueue.Any(j => !j.IsFinished && j.Npc?.Name == npc.Name);
         }
 
@@ -93,15 +84,13 @@ namespace ValleytalkReborn
             Action onComplete = null,
             Action onFail = null)
         {
-            if (npc == null)
-                return;
+            if (npc == null) return;
 
             if (string.IsNullOrWhiteSpace(targetMapName))
             {
                 ModEntry.SMonitor?.Log(
                     "[MultiMapNavigator] NavigateTo failed: targetMapName is null or empty.",
                     LogLevel.Warn);
-
                 SafeInvoke(onFail, "onFail");
                 return;
             }
@@ -111,24 +100,19 @@ namespace ValleytalkReborn
                 ModEntry.SMonitor?.Log(
                     "[MultiMapNavigator] NavigateTo failed: NPC name is null or empty.",
                     LogLevel.Warn);
-
                 SafeInvoke(onFail, "onFail");
                 return;
             }
 
-            // 如果这个 NPC 自己已经有当前任务或排队任务，先取消旧的
             Cancel(npc.Name);
-
             EnsureGraphBuilt();
 
             string fromMap = npc.currentLocation?.Name;
-
             if (string.IsNullOrWhiteSpace(fromMap))
             {
                 ModEntry.SMonitor?.Log(
                     $"[MultiMapNavigator] {npc.Name} has no valid currentLocation. Falling back to 'FarmHouse'.",
                     LogLevel.Warn);
-
                 fromMap = "FarmHouse";
             }
 
@@ -137,19 +121,18 @@ namespace ValleytalkReborn
             if (segments == null || segments.Count == 0)
             {
                 ModEntry.SMonitor?.Log(
-                    $"[MultiMapNavigator] No route from '{fromMap}' to '{targetMapName}' for {npc.Name}. Warping directly.",
+                    $"[MultiMapNavigator] No route from '{fromMap}' to '{targetMapName}' for {npc.Name}. Calling onFail.",
                     LogLevel.Warn);
-
-                WarpCharacterSafe(npc, targetMapName, targetTile);
-                SafeInvoke(onComplete, "no-route fallback onComplete");
+                // Delegate to onFail instead of warping directly, letting the caller decide how to handle it.
+                SafeInvoke(onFail, "no-route onFail");
                 return;
             }
 
             var journey = new MultiMapJourney
             {
-                Npc = npc,
+                Npc        = npc,
                 OnComplete = onComplete,
-                OnFail = onFail
+                OnFail     = onFail
             };
 
             foreach (var seg in segments)
@@ -160,18 +143,14 @@ namespace ValleytalkReborn
 
         public void Cancel(string npcName)
         {
-            if (string.IsNullOrWhiteSpace(npcName))
-                return;
-
+            if (string.IsNullOrWhiteSpace(npcName)) return;
             bool cancelled = false;
 
             if (_currentJourney?.Npc?.Name == npcName)
             {
                 _currentJourney.IsFinished = true;
-
                 if (_currentJourney.Npc != null)
                     MovementManager.Instance.CancelMoveToTile(_currentJourney.Npc, invokeFailCallback: false);
-
                 _currentJourney = null;
                 cancelled = true;
             }
@@ -179,18 +158,14 @@ namespace ValleytalkReborn
             if (_waitingQueue.Count > 0)
             {
                 var keep = new List<MultiMapJourney>();
-
                 while (_waitingQueue.Count > 0)
                 {
                     var j = _waitingQueue.Dequeue();
-
                     if (j?.Npc?.Name == npcName)
                     {
                         j.IsFinished = true;
-
                         if (j.Npc != null)
                             MovementManager.Instance.CancelMoveToTile(j.Npc, invokeFailCallback: false);
-
                         cancelled = true;
                     }
                     else if (j != null && !j.IsFinished)
@@ -198,7 +173,6 @@ namespace ValleytalkReborn
                         keep.Add(j);
                     }
                 }
-
                 foreach (var j in keep)
                     _waitingQueue.Enqueue(j);
             }
@@ -212,10 +186,8 @@ namespace ValleytalkReborn
             if (_currentJourney != null)
             {
                 _currentJourney.IsFinished = true;
-
                 if (_currentJourney.Npc != null)
                     MovementManager.Instance.CancelMoveToTile(_currentJourney.Npc, invokeFailCallback: false);
-
                 _currentJourney = null;
             }
 
@@ -223,17 +195,18 @@ namespace ValleytalkReborn
             {
                 var j = _waitingQueue.Dequeue();
                 j.IsFinished = true;
-
                 if (j.Npc != null)
                     MovementManager.Instance.CancelMoveToTile(j.Npc, invokeFailCallback: false);
             }
         }
 
-        // ── Update 主循环 ──────────────────────────────────────────
+        // ──────────────────────────────────────────────────────
+        //  Update 主循环
+        // ──────────────────────────────────────────────────────
+
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
         {
-            if (!Context.IsWorldReady)
-                return;
+            if (!Context.IsWorldReady) return;
 
             if (_currentJourney == null || _currentJourney.IsFinished)
             {
@@ -252,21 +225,15 @@ namespace ValleytalkReborn
             if (_currentJourney != null && !_currentJourney.IsFinished)
                 return;
 
-            // ★ 只要有跟随、GoTo、Step 正在发生，就等待
             if (mm.HasActiveFollow || mm.IsMoving || mm.IsStepActive)
                 return;
 
             while (_waitingQueue.Count > 0)
             {
                 var next = _waitingQueue.Dequeue();
+                if (next == null || next.IsFinished) continue;
+                if (next.Npc == null || string.IsNullOrWhiteSpace(next.Npc.Name)) continue;
 
-                if (next == null || next.IsFinished)
-                    continue;
-
-                if (next.Npc == null || string.IsNullOrWhiteSpace(next.Npc.Name))
-                    continue;
-
-                // ★ 如果这个 NPC 又开始跟随了，跳过它的旧导航
                 if (mm.CurrentFollowingNpc == next.Npc || mm.CurrentGotoNpc == next.Npc)
                 {
                     next.IsFinished = true;
@@ -287,23 +254,19 @@ namespace ValleytalkReborn
 
         private void TryEnqueueOrStart(MultiMapJourney journey)
         {
-            if (journey == null || journey.IsFinished || journey.Npc == null)
-                return;
+            if (journey == null || journey.IsFinished || journey.Npc == null) return;
 
             var mm = MovementManager.Instance;
-
             bool busy =
                 (_currentJourney != null && !_currentJourney.IsFinished) ||
                 _waitingQueue.Count > 0;
 
-            // ★ 只要有跟随、GoTo、Step，就排队
             if (!busy && (mm.HasActiveFollow || mm.IsMoving || mm.IsStepActive))
                 busy = true;
 
             if (busy)
             {
                 _waitingQueue.Enqueue(journey);
-
                 ModEntry.SMonitor?.Log(
                     $"[MultiMapNavigator] {journey.Npc.Name} queued. Queue size: {_waitingQueue.Count}.",
                     LogLevel.Debug);
@@ -316,11 +279,9 @@ namespace ValleytalkReborn
 
         private void StartJourney(MultiMapJourney journey)
         {
-            if (journey == null || journey.IsFinished)
-                return;
+            if (journey == null || journey.IsFinished) return;
 
             var npc = journey.Npc;
-
             if (npc == null || string.IsNullOrWhiteSpace(npc.Name))
             {
                 journey.IsFinished = true;
@@ -340,11 +301,9 @@ namespace ValleytalkReborn
 
         private void TickJourney(MultiMapJourney journey)
         {
-            if (journey == null || journey.IsFinished)
-                return;
+            if (journey == null || journey.IsFinished) return;
 
             var npc = journey.Npc;
-
             if (npc == null || string.IsNullOrWhiteSpace(npc.Name))
             {
                 FailJourney(journey);
@@ -359,13 +318,11 @@ namespace ValleytalkReborn
 
             var mm = MovementManager.Instance;
 
-            // ★ 如果当前导航的 NPC 突然开始跟随玩家，导航让位
             if (mm.CurrentFollowingNpc == npc)
             {
                 ModEntry.SMonitor?.Log(
                     $"[MultiMapNavigator] {npc.Name} started following player. Cancelling navigation.",
                     LogLevel.Debug);
-
                 mm.CancelMoveToTile(npc, invokeFailCallback: false);
                 FailJourney(journey);
                 return;
@@ -379,7 +336,6 @@ namespace ValleytalkReborn
 
             var seg = journey.Segments.Peek();
 
-            // NPC 被外力移走
             if (!string.Equals(npc.currentLocation?.Name, seg.MapName, StringComparison.OrdinalIgnoreCase))
             {
                 ModEntry.SMonitor?.Log(
@@ -388,13 +344,11 @@ namespace ValleytalkReborn
                     LogLevel.Debug);
 
                 var finalSeg = journey.Segments.Last();
-
                 if (finalSeg.NextMapName == null &&
                     string.Equals(npc.currentLocation?.Name, finalSeg.MapName, StringComparison.OrdinalIgnoreCase))
                 {
                     while (journey.Segments.Count > 1)
                         journey.Segments.Dequeue();
-
                     journey.SegmentDispatched = false;
                     DispatchCurrentSegment(journey);
                 }
@@ -402,18 +356,15 @@ namespace ValleytalkReborn
                 {
                     FailJourney(journey);
                 }
-
                 return;
             }
 
-            // 如果上一段结束后没有成功派发下一段，这里重试
             if (!journey.SegmentDispatched)
             {
                 DispatchCurrentSegment(journey);
                 return;
             }
 
-            // ★ 防卡死：可见段已派发但 MovementManager 不再移动该 NPC
             if (journey.SegmentDispatched &&
                 IsVisibleMap(seg.MapName) &&
                 !mm.IsNpcMoving(npc))
@@ -421,32 +372,30 @@ namespace ValleytalkReborn
                 ModEntry.SMonitor?.Log(
                     $"[MultiMapNavigator] {npc.Name} visible segment seems externally cancelled. Treating as failed segment.",
                     LogLevel.Debug);
-
                 OnSegmentArrived(journey, seg, success: false);
                 return;
             }
         }
 
-        // ── 段派发 ────────────────────────────────────────────────
+        // ──────────────────────────────────────────────────────
+        //  段派发
+        // ──────────────────────────────────────────────────────
+
         private void DispatchCurrentSegment(MultiMapJourney journey)
         {
-            if (journey == null || journey.IsFinished || journey.Segments.Count == 0)
-                return;
+            if (journey == null || journey.IsFinished || journey.Segments.Count == 0) return;
 
             var npc = journey.Npc;
-
             if (npc == null || string.IsNullOrWhiteSpace(npc.Name))
             {
                 FailJourney(journey);
                 return;
             }
 
-            if (_currentJourney != journey)
-                return;
+            if (_currentJourney != journey) return;
 
             var mm = MovementManager.Instance;
 
-            // ★ 如果 MovementManager 正忙，不派发，等下一帧 Tick 重试
             if (mm.HasActiveFollow || mm.IsMoving || mm.IsStepActive)
             {
                 journey.SegmentDispatched = false;
@@ -466,7 +415,7 @@ namespace ValleytalkReborn
                     npc,
                     seg.WalkToTile,
                     onComplete: () => OnSegmentArrived(journey, seg, success: true),
-                    onFail: () => OnSegmentArrived(journey, seg, success: false));
+                    onFail:     () => OnSegmentArrived(journey, seg, success: false));
             }
             else
             {
@@ -479,14 +428,10 @@ namespace ValleytalkReborn
             JourneySegment completedSeg,
             bool success)
         {
-            if (journey == null || completedSeg == null || journey.IsFinished)
-                return;
-
-            if (_currentJourney != journey)
-                return;
+            if (journey == null || completedSeg == null || journey.IsFinished) return;
+            if (_currentJourney != journey) return;
 
             var npc = journey.Npc;
-
             if (npc == null || string.IsNullOrWhiteSpace(npc.Name))
             {
                 FailJourney(journey);
@@ -502,17 +447,14 @@ namespace ValleytalkReborn
             if (completedSeg.NextMapName == null)
             {
                 bool shouldWarpToFinalTile = !success || !IsVisibleMap(completedSeg.MapName);
-
                 if (shouldWarpToFinalTile)
                 {
                     ModEntry.SMonitor?.Log(
                         $"[MultiMapNavigator] {npc.Name} final segment needs warp. " +
                         $"Map: '{completedSeg.MapName}', Tile: ({completedSeg.WalkToTile.X},{completedSeg.WalkToTile.Y}).",
                         LogLevel.Debug);
-
                     WarpCharacterSafe(npc, completedSeg.MapName, completedSeg.WalkToTile);
                 }
-
                 FinishJourney(journey);
                 return;
             }
@@ -534,28 +476,30 @@ namespace ValleytalkReborn
                 FinishJourney(journey);
         }
 
-        // ── 路由规划 BFS ──────────────────────────────────────────
+        // ──────────────────────────────────────────────────────
+        //  路由规划 BFS
+        // ──────────────────────────────────────────────────────
+
         private List<JourneySegment> PlanRoute(string fromMap, string toMap, Vector2 finalTile)
         {
             if (string.IsNullOrWhiteSpace(fromMap) || string.IsNullOrWhiteSpace(toMap))
                 return null;
 
-            // ★ 同地图也返回最终段，统一进入队列
             if (string.Equals(fromMap, toMap, StringComparison.OrdinalIgnoreCase))
             {
                 return new List<JourneySegment>
                 {
                     new JourneySegment
                     {
-                        MapName = toMap,
-                        WalkToTile = finalTile,
+                        MapName     = toMap,
+                        WalkToTile  = finalTile,
                         NextMapName = null
                     }
                 };
             }
 
             var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { fromMap };
-            var queue = new Queue<(string map, List<JourneySegment> path)>();
+            var queue   = new Queue<(string map, List<JourneySegment> path)>();
             queue.Enqueue((fromMap, new List<JourneySegment>()));
 
             while (queue.Count > 0)
@@ -569,15 +513,14 @@ namespace ValleytalkReborn
                 {
                     if (edge == null || string.IsNullOrWhiteSpace(edge.TargetMapName))
                         continue;
-
                     if (visited.Contains(edge.TargetMapName))
                         continue;
 
                     var newSeg = new JourneySegment
                     {
-                        MapName = currentMap,
-                        WalkToTile = edge.ExitTile,
-                        NextMapName = edge.TargetMapName,
+                        MapName        = currentMap,
+                        WalkToTile     = edge.ExitTile,
+                        NextMapName    = edge.TargetMapName,
                         NextMapLanding = edge.LandingTile
                     };
 
@@ -587,11 +530,10 @@ namespace ValleytalkReborn
                     {
                         newPath.Add(new JourneySegment
                         {
-                            MapName = edge.TargetMapName,
-                            WalkToTile = finalTile,
+                            MapName     = edge.TargetMapName,
+                            WalkToTile  = finalTile,
                             NextMapName = null
                         });
-
                         return newPath;
                     }
 
@@ -603,14 +545,14 @@ namespace ValleytalkReborn
             return null;
         }
 
-        // ── Warp 图构建 ────────────────────────────────────────────
+        // ──────────────────────────────────────────────────────
+        //  Warp 图构建
+        // ──────────────────────────────────────────────────────
+
         private void EnsureGraphBuilt()
         {
-            if (_graphBuilt)
-                return;
-
-            if (!Context.IsWorldReady || Game1.locations == null)
-                return;
+            if (_graphBuilt) return;
+            if (!Context.IsWorldReady || Game1.locations == null) return;
 
             BuildWarpGraph();
             _graphBuilt = true;
@@ -619,9 +561,7 @@ namespace ValleytalkReborn
         private void BuildWarpGraph()
         {
             _warpGraph = new Dictionary<string, List<WarpEdge>>(StringComparer.OrdinalIgnoreCase);
-
-            if (Game1.locations == null)
-                return;
+            if (Game1.locations == null) return;
 
             foreach (var loc in Game1.locations)
             {
@@ -629,7 +569,6 @@ namespace ValleytalkReborn
                     continue;
 
                 var edges = new List<WarpEdge>();
-
                 foreach (var warp in loc.warps)
                 {
                     if (warp == null || string.IsNullOrWhiteSpace(warp.TargetName))
@@ -637,20 +576,22 @@ namespace ValleytalkReborn
 
                     edges.Add(new WarpEdge
                     {
-                        ExitTile = new Vector2(warp.X, warp.Y),
+                        ExitTile      = new Vector2(Math.Max(0, warp.X), Math.Max(0, warp.Y)),
                         TargetMapName = warp.TargetName,
-                        LandingTile = new Vector2(warp.TargetX, warp.TargetY)
+                        LandingTile   = new Vector2(Math.Max(0, warp.TargetX), Math.Max(0, warp.TargetY))
                     });
                 }
 
-                if (edges.Count == 0)
-                    continue;
+                if (edges.Count == 0) continue;
 
                 if (!_warpGraph.TryGetValue(loc.Name, out var existing))
                     _warpGraph[loc.Name] = edges;
                 else
                     existing.AddRange(edges);
             }
+
+            // ★ 补全不在 Game1.locations 中的关键地图（如 FarmHouse、自定义地图）
+            EnsureMissingMapEdges();
 
             ModEntry.SMonitor?.Log(
                 $"[MultiMapNavigator] Warp graph built: {_warpGraph.Count} maps, " +
@@ -659,57 +600,120 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
-        /// ★ 改为“玩家当前所在地图才可寻路”。
-        /// 玩家不在该地图时，MultiMapNavigator 会直接走 warp。
+        /// ★ 补全不在 Game1.locations 中的地图边。
+        /// FarmHouse 是 Farm 的子地图，通常不在 Game1.locations 里；
+        /// 自定义地图 Mod 也可能有类似情况。
         /// </summary>
+private void EnsureMissingMapEdges()
+{
+    // ── FarmHouse → Farm ──
+    if (!_warpGraph.TryGetValue("FarmHouse", out var fhEdges) || fhEdges.Count == 0)
+    {
+        try
+        {
+            var farmhouseBuilding = Game1.getFarm()?.GetMainFarmHouse();
+            // ★ GetMainFarmHouse() 返回 Building，需要 .indoors 才是 GameLocation
+            var farmhouse = farmhouseBuilding?.indoors?.Value;
+
+            if (farmhouse?.warps != null && farmhouse.warps.Count > 0)
+            {
+                var edges = farmhouse.warps
+                    .Where(w => w != null && !string.IsNullOrWhiteSpace(w.TargetName))
+                    .Select(w => new WarpEdge
+                    {
+                        ExitTile      = new Vector2(w.X, w.Y),
+                        TargetMapName = w.TargetName,
+                        LandingTile   = new Vector2(w.TargetX, w.TargetY)
+                    })
+                    .ToList();
+
+                if (edges.Count > 0)
+                {
+                    _warpGraph["FarmHouse"] = edges;
+                    ModEntry.SMonitor?.Log(
+                        $"[MultiMapNavigator] FarmHouse not in Game1.locations — " +
+                        $"added {edges.Count} edge(s) from farmhouse.indoors.warps.",
+                        LogLevel.Info);
+                    return;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log(
+                $"[MultiMapNavigator] EnsureMissingMapEdges (farmhouse.warps) error: {ex.Message}",
+                LogLevel.Warn);
+        }
+
+        // 兜底：硬编码标准 FarmHouse 出口
+        _warpGraph["FarmHouse"] = new List<WarpEdge>
+        {
+            new WarpEdge
+            {
+                ExitTile      = new Vector2(6, 15),
+                TargetMapName = "Farm",
+                LandingTile   = new Vector2(64, 15)
+            }
+        };
+        ModEntry.SMonitor?.Log(
+            "[MultiMapNavigator] FarmHouse fallback edge added: (6,15) → Farm (64,15).",
+            LogLevel.Info);
+    }
+
+    // ── 诊断：打印关键地图的连通性 ──
+    string[] criticalMaps =
+    {
+        "FarmHouse", "Farm", "Town", "BusStop",
+        "Beach", "Forest", "Blacksmith", "Greenhouse"
+    };
+
+    foreach (var m in criticalMaps)
+    {
+        bool hasEdges = _warpGraph.TryGetValue(m, out var e) && e.Count > 0;
+        ModEntry.SMonitor?.Log(
+            $"[MultiMapNavigator] Graph check: '{m}' → " +
+            $"{(hasEdges ? $"{e.Count} edge(s)" : "❌ MISSING")}",
+            LogLevel.Info);
+    }
+}
+
+        // ──────────────────────────────────────────────────────
+        //  可见性判断
+        // ──────────────────────────────────────────────────────
+
         private static bool IsVisibleMap(string mapName)
         {
-            if (string.IsNullOrWhiteSpace(mapName))
-                return false;
-
+            if (string.IsNullOrWhiteSpace(mapName)) return false;
             string currentMap = Game1.currentLocation?.Name;
-
             return string.Equals(currentMap, mapName, StringComparison.OrdinalIgnoreCase);
         }
 
-        // ── 完成 / 失败 / 辅助 ───────────────────────────────────
+        // ──────────────────────────────────────────────────────
+        //  完成 / 失败 / 辅助
+        // ──────────────────────────────────────────────────────
+
         private void FinishJourney(MultiMapJourney journey)
         {
-            if (journey == null || journey.IsFinished)
-                return;
-
+            if (journey == null || journey.IsFinished) return;
             journey.IsFinished = true;
-
-            if (_currentJourney == journey)
-                _currentJourney = null;
-
+            if (_currentJourney == journey) _currentJourney = null;
             SafeInvoke(journey.OnComplete, "journey.OnComplete");
             TryStartNextWaiting();
         }
 
         private void FailJourney(MultiMapJourney journey)
         {
-            if (journey == null || journey.IsFinished)
-                return;
-
+            if (journey == null || journey.IsFinished) return;
             journey.IsFinished = true;
-
-            if (_currentJourney == journey)
-                _currentJourney = null;
-
+            if (_currentJourney == journey) _currentJourney = null;
             SafeInvoke(journey.OnFail, "journey.OnFail");
             TryStartNextWaiting();
         }
 
         private static void SafeInvoke(Action action, string context)
         {
-            if (action == null)
-                return;
-
-            try
-            {
-                action.Invoke();
-            }
+            if (action == null) return;
+            try { action.Invoke(); }
             catch (Exception ex)
             {
                 ModEntry.SMonitor?.Log(
@@ -720,9 +724,7 @@ namespace ValleytalkReborn
 
         private static void WarpCharacterSafe(NPC npc, string mapName, Vector2 tile)
         {
-            if (npc == null || string.IsNullOrWhiteSpace(mapName))
-                return;
-
+            if (npc == null || string.IsNullOrWhiteSpace(mapName)) return;
             try
             {
                 var point = new Point((int)Math.Round(tile.X), (int)Math.Round(tile.Y));
@@ -748,8 +750,8 @@ namespace ValleytalkReborn
 
     internal class WarpEdge
     {
-        public Vector2 ExitTile { get; set; }
-        public string TargetMapName { get; set; }
-        public Vector2 LandingTile { get; set; }
+        public Vector2 ExitTile      { get; set; }
+        public string  TargetMapName { get; set; }
+        public Vector2 LandingTile   { get; set; }
     }
 }

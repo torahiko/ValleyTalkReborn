@@ -22,7 +22,8 @@ public class LlmDialogueService
     /// Indicates whether an LLM inference request is currently in progress.
     /// Used by NightlyConsolidationHook to wait for pending requests before packing events.
     /// </summary>
-    public bool IsRequestInProgress { get; private set; } = false;
+    private volatile bool _isRequestInProgress = false;
+    public bool IsRequestInProgress => _isRequestInProgress;
 
     private const int MAX_RETRY_ATTEMPTS = 4;
     private const int MAX_TIMEOUT_SECONDS = 120;
@@ -38,7 +39,7 @@ public class LlmDialogueService
     public async Task<string[]> GenerateDialogueAsync(Character character, DialogueContext context, Action<string> onStreamingToken = null)
     {
         // 严格的最外层状态管理，确保无论是正常 return 还是异常 throw，都能正确重置状态
-        IsRequestInProgress = true;
+        _isRequestInProgress = true;
         try
         {
             string[] results = Array.Empty<string>();
@@ -76,6 +77,9 @@ public class LlmDialogueService
 
                 // S4: 感知层（Town Gossip + Immediate Observations，变动频率：每次对话，最频繁，置于最后）
                 PerceptionInjector.Inject(character.Name, prompts);
+
+                // S4.5: 偷听短期上下文（新增）
+                EavesdropInjector.Inject(character.Name, prompts);
 
                 // S5: 配偶深夜等待事件（极低频触发，注入 CorePrompt 末尾，不影响 SystemPrompt 缓存）
                 if (SpouseWaitingEvent.TryConsumeSpouseDialogue(character.Name))
@@ -160,10 +164,12 @@ public class LlmDialogueService
                         mood);
                 }
 
-                DialogueHistoryManager.Instance.ConsumeEavesdropEntries(character.Name);
+               DialogueHistoryManager.Instance.ConsumeEavesdropEntries(character.Name);
+               // Mark perceptions as consolidated to prevent re-injection of "just received gift" next turn
+               PerceptionManager.Instance.MarkAsConsolidated(character.Name);
 
-                if (ModEntry.Config.Debug)
-                    LogDebugContext(character, context, prompts, processed);
+               // if (ModEntry.Config.Debug)
+                //     LogDebugContext(character, context, prompts, processed);
 
                 return processed.Length > 0 ? processed : new[] { "..." };
             }
@@ -171,6 +177,7 @@ public class LlmDialogueService
             int timeoutSeconds = ModEntry.Config.QueryTimeout;
             Exception lastException = null;
             LlmResponse result = null;
+            int userConfiguredTimeout = timeoutSeconds;  // Save user's config as the ceiling floor
             bool isDebug = ModEntry.Config.Debug; // 提前缓存 Debug 配置，减少属性访问
 
             for (int attempt = 0; attempt <= MAX_RETRY_ATTEMPTS; attempt++)
@@ -262,7 +269,9 @@ public class LlmDialogueService
                         mood);
 
                     DialogueHistoryManager.Instance.ConsumeEavesdropEntries(character.Name);
-                    if (isDebug) LogDebugContext(character, context, prompts, resultsInternal);
+                    // Mark perceptions as consolidated to prevent re-injection of "just received gift" next turn
+                    PerceptionManager.Instance.MarkAsConsolidated(character.Name);
+                    // if (isDebug) LogDebugContext(character, context, prompts, resultsInternal);
                     break; // Success, exit retry loop
                 }
                 else
@@ -277,14 +286,14 @@ public class LlmDialogueService
                         Log.Warning($"API Response: {result.Text}");
                     }
 
-                    if (isDebug) LogDebugContext(character, context, prompts, resultsInternal);
+                    // if (isDebug) LogDebugContext(character, context, prompts, resultsInternal);
 
                     // 修复：仅在失败后，且准备进行下一次尝试前，才应用延迟和超时翻倍
                     if (attempt < MAX_RETRY_ATTEMPTS)
                     {
                         if (attempt >= 1) // 第一次失败重试不延迟，第二次及以后开始延迟和翻倍
                         {
-                            await Task.Delay(TimeSpan.FromSeconds(RETRY_DELAY_SECONDS));timeoutSeconds = Math.Min(timeoutSeconds * 2, MAX_TIMEOUT_SECONDS);
+                            await Task.Delay(TimeSpan.FromSeconds(RETRY_DELAY_SECONDS));timeoutSeconds = Math.Min(timeoutSeconds * 2, Math.Max(MAX_TIMEOUT_SECONDS, userConfiguredTimeout));
                         }
                     }
                 }
@@ -310,7 +319,7 @@ public class LlmDialogueService
         finally
         {
             // 确保方法任何出口点都会释放标志位
-            IsRequestInProgress = false;
+            _isRequestInProgress = false;
         }
     }
 
@@ -365,6 +374,9 @@ public class LlmDialogueService
             string cleaned = DialogueCleaner.CommonCleanup(joined);
             cleaned = DialogueCleaner.DialogueLineCleanup(
                 cleaned, character.ValidPortraits, ModEntry.FixPunctuation, relaxedValidation);
+            // Fallback: fix AI misuse of page-break tokens
+            cleaned = SanitizePageBreaks(cleaned);
+
 
             if (string.IsNullOrWhiteSpace(cleaned))
                 return Array.Empty<string>();
@@ -512,11 +524,14 @@ public class LlmDialogueService
     private static string SanitizeForSession(string text)
     {
         if (string.IsNullOrWhiteSpace(text)) return string.Empty;
-        string s = Regex.Replace(text, @"#\$[a-zA-Z0-9_#\s\-\:]+", "");  // #$b# #$e# etc.
-        s = Regex.Replace(s, @"\$[a-zA-Z0-9]", "");        // $h $l $s etc.
-        s = Regex.Replace(s, @"\[ACTION:.*?\]", "");                        // [ACTION:...]
-        s = Regex.Replace(s, @"\[MOOD:\w+\]", "");                          // [MOOD:...] (double insurance)
-        s = Regex.Replace(s, @"\[\d+\]", "");                               // [241] index markers
+        string s = Regex.Replace(text, @"#\$[^\#]+#?", "");
+        s = Regex.Replace(s, @"\$[a-zA-Z0-9]", "");
+        s = Regex.Replace(s, @"\[ACTION:.*?\]", "");
+        s = Regex.Replace(s, @"\[MOOD:\w+\]", "");
+        s = Regex.Replace(s, @"\[\d+\]", "");
+        // Clean up empty parentheses left after removing page-break tokens, e.g. (##) or ()
+        s = Regex.Replace(s, @"\(\s*\)", "");
+        s = Regex.Replace(s, @" {2,}", " ");
         return s.Trim();
     }
 
@@ -541,5 +556,36 @@ public class LlmDialogueService
         {
             lines[i] = System.Text.RegularExpressions.Regex.Replace(lines[i], @"\[MOOD:\w+\]", "").Trim();
         }
+    }
+
+    /// <summary>
+    /// Fix AI overuse of #$b# / #$e# tokens:
+    /// 1. Remove page-break tokens inside or next to parentheses
+    /// 2. Limit total page-break tokens to at most 1
+    /// 3. Remove in-sentence page-break tokens (only keep after 。！？)
+    /// </summary>
+    private static string SanitizePageBreaks(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return text;
+
+        // 1. Remove page-break tokens inside or adjacent to parentheses
+        text = Regex.Replace(text, @"\(#\$[a-z]+#", "(");
+        text = Regex.Replace(text, @"#\$[a-z]+#\)", ")");
+
+        // 2. Remove page-break tokens right after an opening parenthesis
+        text = Regex.Replace(text, @"\(#\$[a-z]+#\s*", "(");
+
+        // 3. Limit total page-break tokens: keep at most 1
+        int pageBreakCount = 0;
+        text = Regex.Replace(text, @"#\$[a-z]+#", m =>
+        {
+            pageBreakCount++;
+            return pageBreakCount <= 1 ? m.Value : " ";
+        });
+
+        // 4. Clean up extra spaces caused by removed tokens
+        text = Regex.Replace(text, @" {2,}", " ");
+
+        return text.Trim();
     }
 }

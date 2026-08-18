@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
+using StardewModdingAPI;
 using System.Data.SqlTypes;
 using System.Linq;
 using StardewValley.Characters;
@@ -251,10 +252,12 @@ public class DialogueContext
             if (cursor + 1 < partsLength)
             {
                 var gift = parts[cursor + 1];
-                while (gift.StartsWith("(O)"))
+                while (gift.StartsWith("(O)", StringComparison.Ordinal))
                 {
                     gift = gift.Substring(3);
                 }
+                // Construct the gift Object using item ID and a quantity of 1
+                Accept = new StardewValley.Object(gift, 1);
                 cursor += 2;
             }
             else
@@ -315,6 +318,26 @@ public class DialogueContext
             elements = parts.Skip(cursor).ToArray();
         }
     }
+    /// <summary>
+    /// Safely parse a context value without throwing. Returns an empty <see cref="DialogueContext"/>
+    /// if the input is null/blank, and logs + returns empty on any parse exception.
+    /// Use this at all external call sites instead of <c>new DialogueContext(string)</c>.
+    /// </summary>
+    public static DialogueContext SafeParse(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return new DialogueContext();
+        try
+        {
+            return new DialogueContext(value);
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log($"[DialogueContext] Failed to parse '{value}': {ex.Message}", LogLevel.Warn);
+            return new DialogueContext();
+        }
+    }
+
     public DialogueContext(DialogueContext context)
     {
         Hearts = context.Hearts;
@@ -415,8 +438,13 @@ public class DialogueContext
         difference += CompareValuesNull(Spouse, other.Spouse, 0, 10000, 2000);
         difference += CompareValues(Year, other.Year, 0, 200, 200);
         difference += CompareValuesNull(Inlaw, other.Inlaw, 0, 500, 1000);
-        // Use a deterministic tie-breaker based on Location hash to avoid IComparable contract violations
-        difference += (Location?.GetHashCode() ?? 0) % 10;
+        // Use a deterministic string ordinal comparison as tie-breaker instead of
+        // Location.GetHashCode(), which is randomized per-process on .NET Core and
+        // would break the IComparable symmetry contract (a.CompareTo(b) vs b.CompareTo(a)).
+        if (Location != null && other?.Location != null)
+        {
+            difference += Math.Abs(string.Compare(Location, other.Location, StringComparison.Ordinal) % 10);
+        }
 
         return difference;
     }

@@ -671,11 +671,16 @@ namespace ValleytalkReborn
         
         private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
         {
+            // 修复：返回标题后 Cleanup 会取消 TextInputManager 的 UpdateTicked 订阅，
+            // 重新读档时必须重新初始化，否则从对话选项触发的自定义回复会卡在 pending。
+            TextInputManager.Initialize(Helper.Events);
+
             // 每次读档后重建 CancelButtonPlugin，防止 ReturnedToTitle 销毁后失效
             if (_cancelButtonPlugin == null)
             {
                 _cancelButtonPlugin = new CancelButtonPlugin(Helper, Monitor);
             }
+
             DialogueHistoryManager.Instance.Load();
             RecentConversationTracker.Clear();
             SessionCache.Instance.ResetAll();

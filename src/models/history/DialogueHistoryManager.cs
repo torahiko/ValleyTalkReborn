@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -54,19 +55,44 @@ namespace ValleytalkReborn
 
         #region Public API
 
+        /// <summary>
+        /// 统一清洗对话文本，剔除星露谷控制标签、模板标记和自定义标签，防止脏数据进入历史库。
+        /// 所有写入历史的入口（RecordNpcDialogue / RecordPlayerDialogue / RecordGiftReaction）在写入前都必须调用此方法。
+        /// </summary>
+        internal static string SanitizeForStorage(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+
+            string clean = text;
+            // ${...} 模板标记
+            clean = Regex.Replace(clean, @"\$\{.*?\}", "");
+            // #$q、#$r 等带参数的控制标签（含数字、空格、点号路径），匹配到下一个 # 之前的所有内容
+            clean = Regex.Replace(clean, @"#\$[^\#]+#?", "");
+            // $x 单字符肖像标记
+            clean = Regex.Replace(clean, @"\$[a-zA-Z0-9]", "");
+            // [ACTION:...] [MOOD:...] 自定义标签
+            clean = Regex.Replace(clean, @"\[(?:ACTION|MOOD):.*?\]", "");
+            // skip# 前缀
+            clean = Regex.Replace(clean, @"^skip#", "");
+
+            return clean.Trim();
+        }
+
         public void RecordNpcDialogue(string npcName, string text, string dialogueType = "dialogue")
         {
-            if (string.IsNullOrWhiteSpace(text)) return;
-            var entry = new DialogueHistoryEntry(npcName, text, SpeakerType.NPC, dialogueType);
+            var sanitized = SanitizeForStorage(text);
+            if (string.IsNullOrWhiteSpace(sanitized)) return;
+            var entry = new DialogueHistoryEntry(npcName, sanitized, SpeakerType.NPC, dialogueType);
             AddEntry(npcName, entry);
         }
 
         public void RecordPlayerDialogue(string npcName, string text)
         {
-            if (string.IsNullOrWhiteSpace(text)) return;
+            var sanitized = SanitizeForStorage(text);
+            if (string.IsNullOrWhiteSpace(sanitized)) return;
             var entry = new DialogueHistoryEntry(
                 "Player",
-                text,
+                sanitized,
                 SpeakerType.Player,
                 "conversation"
             );
@@ -97,8 +123,9 @@ namespace ValleytalkReborn
 
         public void RecordGiftReaction(string npcName, string reactionText)
         {
-            if (string.IsNullOrWhiteSpace(reactionText)) return;
-            var entry = new DialogueHistoryEntry(npcName, reactionText, SpeakerType.NPC, "gift");
+            var sanitized = SanitizeForStorage(reactionText);
+            if (string.IsNullOrWhiteSpace(sanitized)) return;
+            var entry = new DialogueHistoryEntry(npcName, sanitized, SpeakerType.NPC, "gift");
             AddEntry(npcName, entry);
             _pendingGifts.Remove(npcName);
         }

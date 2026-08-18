@@ -44,7 +44,10 @@ namespace ValleytalkReborn
                 return "";
             }
 
-            var oldEntries = allEntries.Take(allEntries.Count - recentCount).ToList();
+            var oldEntries = allEntries
+                .Take(allEntries.Count - recentCount)
+                .Where(e => e.DialogueType != "eavesdrop")
+                .ToList();
 
             // Check cache: if we already compressed this set, reuse
             if (_cache.TryGetValue(npcName, out var cached) && cached.EntryCount == oldEntries.Count)

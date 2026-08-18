@@ -38,9 +38,8 @@ namespace ValleytalkReborn
                 {
                     // 即用即毁类型：不进长期记忆
                     if (adapter.Entry.DialogueType == "eavesdrop") continue;
-                    // 原版台词和礼物系统条目：属于游戏事件记录，不以"NPC说过的话"形式展示
+                    // 原版台词：属于游戏事件记录，不以"NPC说过的话"形式展示
                     if (adapter.Entry.DialogueType == "vanilla") continue;
-                    if (adapter.Entry.DialogueType == "gift") continue;
 
                     bool isSystem = adapter.Entry.SpeakerType == SpeakerType.System;
                     if (!isSystem)

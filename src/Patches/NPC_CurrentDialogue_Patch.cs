@@ -74,7 +74,7 @@ namespace ValleytalkReborn
                 var eavesdropText = $"[Eavesdrop] {farmerSaid}";
                 foreach (var npc in nearbyNpcs)
                 {
-                    if (npc != null)
+                    if (npc != null && npc != __instance) 
                         DialogueHistoryManager.Instance.RecordSystemEvent(npc.Name, eavesdropText, "eavesdrop");
                 }
             }

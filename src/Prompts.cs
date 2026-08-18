@@ -1,7 +1,6 @@
 ﻿// Prompts.cs
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -23,8 +22,31 @@ public class Prompts
     private bool IsChineseLanguage => 
         LocalizedContentManager.CurrentLanguageCode.ToString().StartsWith("zh", StringComparison.OrdinalIgnoreCase);
 
-    private string TargetLanguageName => 
-        ModEntry.Language ?? LocalizedContentManager.CurrentLanguageCode.ToString();
+    private string TargetLanguageName
+    {
+        get
+        {
+            if (!string.IsNullOrEmpty(ModEntry.Language))
+                return ModEntry.Language;
+
+            return LocalizedContentManager.CurrentLanguageCode switch
+            {
+                LocalizedContentManager.LanguageCode.en => "English",
+                LocalizedContentManager.LanguageCode.zh => "Chinese",
+                LocalizedContentManager.LanguageCode.ja => "Japanese",
+                LocalizedContentManager.LanguageCode.ko => "Korean",
+                LocalizedContentManager.LanguageCode.de => "German",
+                LocalizedContentManager.LanguageCode.fr => "French",
+                LocalizedContentManager.LanguageCode.pt => "Portuguese",
+                LocalizedContentManager.LanguageCode.ru => "Russian",
+                LocalizedContentManager.LanguageCode.es => "Spanish",
+                LocalizedContentManager.LanguageCode.it => "Italian",
+                LocalizedContentManager.LanguageCode.tr => "Turkish",
+                LocalizedContentManager.LanguageCode.hu => "Hungarian",
+                _ => LocalizedContentManager.CurrentLanguageCode.ToString()
+            };
+        }
+    }
 
     private string BuildStardewSummary()
     {
@@ -145,11 +167,7 @@ public class Prompts
     {
         var systemPrompt = new StringBuilder();
         systemPrompt.AppendLine(Util.GetString(Character, "systemPrompt"));
-
-        if (ModEntry.Config.ApplyTranslation || (!IsChineseLanguage && LocalizedContentManager.CurrentLanguageCode != LocalizedContentManager.LanguageCode.en))
-        {
-            systemPrompt.AppendLine(Util.GetString(Character, "systemPromptTranslation", new { Language = TargetLanguageName }));
-        }
+        systemPrompt.AppendLine(Util.GetString(Character, "systemPromptTranslation")); 
         return systemPrompt.ToString();
     }
 
@@ -293,6 +311,7 @@ public class Prompts
                 : "- Instruction: Express your disappointment, hurt, or frustration about being stood up. Demand an explanation.");
 
             GetMicroEnvironment(prompt);
+            InjectPendingTopic(prompt);
             return prompt.ToString();
         }
 
@@ -324,8 +343,9 @@ public class Prompts
                 DateManager.Instance.RecordDateDialogue(Game1.player?.Name ?? "Farmer", lastPlayerLine);
 
             GetMicroEnvironment(prompt);
-            InjectSessionContinuity(prompt);
             GetCurrentConversation(prompt);
+            InjectSessionContinuity(prompt);
+            InjectPendingTopic(prompt);
             return prompt.ToString();
         }
 
@@ -340,8 +360,9 @@ public class Prompts
                 : "- State: You agreed to walk along with the player. Keep a relaxed, friendly, and pleasant companion tone.");
 
             GetMicroEnvironment(prompt);
-            InjectSessionContinuity(prompt);
             GetCurrentConversation(prompt);
+            InjectSessionContinuity(prompt);
+            InjectPendingTopic(prompt);
             return prompt.ToString();
         }
 
@@ -370,6 +391,7 @@ public class Prompts
         prompt.AppendLine($"## {Util.GetString(Character, "coreInstructionHeading")}");
 
         GetMicroEnvironment(prompt);
+        InjectGreetingContext(prompt);
 
         Friendship friendship = null;
         Game1.getPlayerOrEventFarmer()?.friendshipData?.TryGetValue(Character.Name, out friendship);
@@ -564,7 +586,11 @@ public class Prompts
             prompt.AppendLine(Util.GetString(Character, "currentConversationIntro", new { Name = Name }));
             for (int i = 0; i < Context.ChatHistory.Count; i++)
             {
-                prompt.AppendLine(Context.ChatHistory[i].IsPlayerLine ? $"- {Util.GetString(Character, "generalFarmerLabel")}: {Context.ChatHistory[i].Text}" : $"- {Name}: {Context.ChatHistory[i].Text}");
+                var elem = Context.ChatHistory[i];
+                string timePrefix = string.IsNullOrEmpty(elem.FuzzyTime) ? "" : $"[{elem.FuzzyTime}] ";
+                prompt.AppendLine(elem.IsPlayerLine
+                    ? $"- {timePrefix}{Util.GetString(Character, "generalFarmerLabel")}: {elem.Text}"
+                    : $"- {timePrefix}{Name}: {elem.Text}");
             }
         }
         else if (Character.SpokeJustNow())
@@ -582,6 +608,16 @@ public class Prompts
         string pending = PendingTopicManager.Instance.ConsumePendingTopic(Character.Name);
         if (string.IsNullOrEmpty(pending)) return;
 
+        // ================= 核心修复：清洗原版星露谷占位符 =================
+        string playerName = Game1.player?.Name ?? "Farmer";
+        string farmName = Game1.player?.farmName?.Value ?? "Farm";
+        
+        pending = pending
+            .Replace("@", playerName)
+            .Replace("%farmer", playerName)
+            .Replace("%farm", farmName);
+        // ===============================================================
+
         bool isZh = IsChineseLanguage;
 
         prompt.AppendLine("<pending_thought>");
@@ -595,10 +631,60 @@ public class Prompts
         prompt.AppendLine("</pending_thought>\n");
     }
 
+    private void InjectGreetingContext(StringBuilder prompt)
+    {
+        var historyManager = DialogueHistoryManager.Instance;
+        if (historyManager == null) return;
+
+        var history = historyManager.GetRecentHistory(Character.Name, 1);
+        if (history.Count == 0) return; // No history — first-meeting logic handled elsewhere
+
+        var lastEntry = history[0];
+        var lastTime = lastEntry.Timestamp;
+        var now = new StardewTime(Game1.year, (Season)Game1.season, Game1.dayOfMonth, Game1.timeOfDay);
+
+        bool isToday = lastTime.Year == now.Year && lastTime.Season == now.Season
+                       && lastTime.DayOfMonth == now.DayOfMonth;
+
+        if (isToday) return; // Already spoke today — InjectSessionContinuity handles it
+
+        bool isZh = IsChineseLanguage;
+        int dayGap = (int)Math.Round(now.TotalDays - lastTime.TotalDays);
+
+        prompt.AppendLine("<greeting_context>");
+        if (dayGap == 1)
+        {
+            prompt.AppendLine(isZh
+                ? "- 这是今天与农夫的第一次对话。昨天你们有过交流，可以自然地衔接昨天的话题，或者简单地打个招呼。不需要刻意说\"早上好\"，但要有重新见面的感觉。"
+                : "- This is your first conversation today. You spoke yesterday — naturally continue from yesterday's thread or give a light greeting. Avoid a stiff 'Good morning', but acknowledge seeing them again.");
+        }
+        else if (dayGap <= 3)
+        {
+            prompt.AppendLine(isZh
+                ? "- 这是今天与农夫的第一次对话，你们已经 " + dayGap + " 天没说话了。重新建立连接，可以提到上次聊的事，或表示你注意到对方这几天的动态。"
+                : "- This is your first conversation today. It has been " + dayGap + " days since you last spoke. Re-establish connection naturally — reference your last conversation or note their recent presence.");
+        }
+        else
+        {
+            prompt.AppendLine(isZh
+                ? "- 这是今天与农夫的第一次对话，你们已经 " + dayGap + " 天没有交流了。重新见面时要有一种久违的感觉，可以好奇对方这段时间在忙什么。"
+                : "- First conversation today after " + dayGap + " days apart. Show a sense of catching up — you might wonder what they've been up to.");
+        }
+        prompt.AppendLine("</greeting_context>\n");
+    }
+
     private void InjectSessionContinuity(StringBuilder prompt)
     {
         var session = SessionCache.Instance.GetOrCreate(Character.Name);
         if (session.RecentTurns.Count == 0) return;
+
+        // Skip if the session was last updated on a different day — avoid presenting
+        // yesterday's conversation as "earlier today"
+        if (StardewModdingAPI.Context.IsWorldReady &&
+            (session.LastUpdatedYear != Game1.year ||
+             session.LastUpdatedSeason != (Season)Game1.season ||
+             session.LastUpdatedDay != Game1.dayOfMonth))
+            return;
 
         string Normalize(string s) => Regex.Replace(s ?? "", @"[\s\$\#\@\{\}\[\]]", "");
         var currentNorms = Context.ChatHistory.Select(x => Normalize(x.Text)).ToHashSet();
@@ -620,7 +706,8 @@ public class Prompts
             string label = turn.IsPlayerLine
                 ? (isZh ? "农夫" : "Farmer")
                 : Name;
-            prompt.AppendLine($"- {label}: {turn.Text}");
+            string timePrefix = string.IsNullOrEmpty(turn.FuzzyTime) ? "" : $"[{turn.FuzzyTime}] ";
+            prompt.AppendLine($"- {timePrefix}{label}: {turn.Text}");
         }
 
         if (!string.IsNullOrEmpty(session.EmotionalTone))
@@ -851,7 +938,7 @@ public class Prompts
                 < 8 => Util.GetString(Character, "nonSpouseFriendshipCloseFriends", new { Name = Name }),
                 <= 10 => Util.GetString(Character, "nonSpouseFriendshipWantToDate", new { Name = Name }),
                 <= 14 => Util.GetString(Character, "nonSpouseFriendshipIntimate", new { Name = Name }),
-                _ => throw new InvalidDataException("Invalid heart level.")
+                _ => Util.GetString(Character, "nonSpouseFriendshipIntimate", new { Name = Name })
             });
         }
         else

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using StardewModdingAPI;
+using StardewValley;
 
 namespace ValleytalkReborn;
 
@@ -21,7 +23,10 @@ public class SessionCache
         public List<ConversationElement> RecentTurns { get; } = new();
         public string EmotionalTone { get; set; } = "";
         public DateTime LastActivity { get; set; } = DateTime.Now;
-        public bool IsExpired => (DateTime.Now - LastActivity).TotalMinutes > ExpiryMinutes;
+        public int LastUpdatedYear { get; set; } = 1;
+        public Season LastUpdatedSeason { get; set; } = Season.Spring;
+        public int LastUpdatedDay { get; set; } = 1;
+public bool IsExpired => (DateTime.Now - LastActivity).TotalMinutes > ExpiryMinutes;
     }
 
     private SessionCache() { }
@@ -44,18 +49,25 @@ public class SessionCache
     public void MergeHistory(string npcName, IEnumerable<ConversationElement> history, string npcReply, string mood)
     {
         var entry = GetOrCreate(npcName);
+        bool isZh = LocalizedContentManager.CurrentLanguageCode.ToString().StartsWith("zh", StringComparison.OrdinalIgnoreCase);
 
         foreach (var element in history)
         {
             // Avoid duplicates when dialogue box reopens with carry-over lines
             if (!entry.RecentTurns.Any(t => t.Text == element.Text && t.IsPlayerLine == element.IsPlayerLine))
-                entry.RecentTurns.Add(new ConversationElement(element.Text, element.IsPlayerLine));
+                entry.RecentTurns.Add(new ConversationElement(element.Text, element.IsPlayerLine)
+                {
+                    FuzzyTime = element.FuzzyTime
+                });
         }
 
         if (!string.IsNullOrWhiteSpace(npcReply))
         {
             if (!entry.RecentTurns.Any(t => t.Text == npcReply && !t.IsPlayerLine))
-                entry.RecentTurns.Add(new ConversationElement(npcReply, false));
+                entry.RecentTurns.Add(new ConversationElement(npcReply, false)
+                {
+                    FuzzyTime = isZh ? "刚刚" : "Just now"
+                });
         }
 
         // Trim to cap
@@ -64,6 +76,14 @@ public class SessionCache
 
         if (!string.IsNullOrWhiteSpace(mood))
             entry.EmotionalTone = mood;
+
+        // Record current game date for cross-day detection
+        if (Context.IsWorldReady)
+        {
+            entry.LastUpdatedYear = Game1.year;
+            entry.LastUpdatedSeason = (Season)Game1.season;
+            entry.LastUpdatedDay = Game1.dayOfMonth;
+        }
     }
 
     public void ResetAll() => _cache.Clear();

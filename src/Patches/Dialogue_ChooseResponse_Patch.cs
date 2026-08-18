@@ -80,8 +80,6 @@ namespace ValleytalkReborn
                 farmerResponse = farmerResponse.Replace("@", Game1.player.Name);
             }
 
-            DialogueHistoryManager.Instance.RecordPlayerDialogue(__instance.speaker.Name, farmerResponse);
-
             if (response.responseKey == $"{SldConstants.DialogueKeyPrefix}TypedResponse")
             {
                 TextInputManager.RequestTextInput(
@@ -97,15 +95,27 @@ namespace ValleytalkReborn
             // 【优化】使用高性能委托赋值
             FinishedLastDialogueRef(__instance) = false;
 
+            // 用户主动选择选项，清零冷却防止请求被静默丢弃
+            AsyncBuilder.Instance.ClearCooldown();
+
             var updatedHistory = new List<ConversationElement>(previous)
             {
                 new ConversationElement(farmerResponse, true)
             };
 
-            AsyncBuilder.Instance.RequestNpcResponse(
+            bool accepted = AsyncBuilder.Instance.RequestNpcResponse(
                 __instance.speaker, 
                 updatedHistory.ToArray()
             );
+
+            if (accepted)
+            {
+                DialogueHistoryManager.Instance.RecordPlayerDialogue(__instance.speaker.Name, farmerResponse);
+            }
+            else
+            {
+                ModEntry.SMonitor?.Log($"[ChooseResponse] Request rejected by AsyncBuilder for {__instance.speaker.Name}.", StardewModdingAPI.LogLevel.Warn);
+            }
 
             __result = true;
             return false;

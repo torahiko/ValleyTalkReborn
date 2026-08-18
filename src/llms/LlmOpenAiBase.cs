@@ -114,7 +114,7 @@ internal abstract class LlmOpenAiBase : Llm
 
             // 1. Anthropic / Claude 样式规范
             thinking = new { type = "disabled" },
-
+            
             // 2. DeepSeek R1 官方/第三方代理常见开关
             thinking_budget = 0,
             disable_thinking = true,

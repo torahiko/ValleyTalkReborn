@@ -136,7 +136,7 @@ namespace ValleytalkReborn
 
         private void RefreshActionButtons()
         {
-            ClampStartIndex(); // ★ 修复越界
+            ClampStartIndex();
 
             _deleteButtons.Clear();
             _editButtons.Clear();
@@ -159,7 +159,6 @@ namespace ValleytalkReborn
             }
         }
 
-        /// <summary>钳制 _startIndex 防止越界导致空白页面。</summary>
         private void ClampStartIndex()
         {
             var entries = ActiveEntries;
@@ -316,8 +315,6 @@ namespace ValleytalkReborn
                     else
                         WorldMemoryManager.Instance.RemoveEntry(entry.Id);
                     Game1.playSound("trashcan");
-                    // _startIndex 会在 RefreshEntries 里重置为0，但我们希望保持相近位置
-                    // 这里简单重置，RefreshEntries 会调用 ClampStartIndex 自动修正
                     RefreshEntries();
                     Game1.activeClickableMenu = this;
                 },
@@ -340,15 +337,15 @@ namespace ValleytalkReborn
             Game1.drawDialogueBox(
                 xPositionOnScreen, yPositionOnScreen, width, height, false, true);
 
-            string title = "记忆管理";
+            string title = I18n.Memory.MenuTitle();
             var titleSize = Game1.dialogueFont.MeasureString(title);
             b.DrawString(Game1.dialogueFont, title,
                 new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f,
                             yPositionOnScreen + 20),
                 Game1.textColor);
 
-            DrawTab(b, _tabNpcRect,   $"NPC 个人记忆 ({_npcName})", _currentTab == 0, mx, my);
-            DrawTab(b, _tabWorldRect, "大世界记忆",                  _currentTab == 1, mx, my);
+            DrawTab(b, _tabNpcRect,   I18n.Memory.TabNpc(_npcName), _currentTab == 0, mx, my);
+            DrawTab(b, _tabWorldRect, I18n.Memory.TabWorld(),       _currentTab == 1, mx, my);
 
             b.Draw(Game1.staminaRect,
                 new Rectangle(xPositionOnScreen + LeftPadding,
@@ -364,7 +361,7 @@ namespace ValleytalkReborn
             {
                 string hint = _currentTab == 0
                     ? I18n.Memory.Empty()
-                    : "还没有大世界记忆。点击下方按钮添加。";
+                    : I18n.Memory.WorldEmpty();
                 var hintSize = Game1.dialogueFont.MeasureString(hint);
                 b.DrawString(Game1.dialogueFont, hint,
                     new Vector2(xPositionOnScreen + (width - hintSize.X) / 2f,
@@ -668,7 +665,7 @@ namespace ValleytalkReborn
                 xPositionOnScreen, yPositionOnScreen, width, height, Color.White);
 
             string title = _tab == 1
-                ? (_existingEntry != null ? "编辑世界记忆" : "添加世界记忆")
+                ? (_existingEntry != null ? I18n.Memory.WorldEditTitle() : I18n.Memory.WorldAddTitle())
                 : (_existingEntry != null
                     ? I18n.Memory.EditTitle(_npcName)
                     : I18n.Memory.AddTitle(_npcName));
@@ -680,7 +677,7 @@ namespace ValleytalkReborn
                 Game1.textColor);
 
             string hint = _tab == 1
-                ? $"输入世界记忆（最多 {WorldMemoryManager.MaxEntryLength} 字）"
+                ? I18n.Memory.WorldAddHint(WorldMemoryManager.MaxEntryLength)
                 : I18n.Memory.AddHint();
             var hintSize = Game1.smallFont.MeasureString(hint);
             b.DrawString(Game1.smallFont, hint,
@@ -689,8 +686,6 @@ namespace ValleytalkReborn
                 Color.Gray);
 
             _inputBox.Draw(b);
-
-            // ★ 已删除重复的字数指示器（输入框自身已包含）
 
             int mx = Game1.getMouseX();
             int my = Game1.getMouseY();

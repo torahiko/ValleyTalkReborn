@@ -115,13 +115,28 @@ namespace ValleytalkReborn
 
             try
             {
-                DialogueHistoryManager.Instance.RecordPlayerDialogue(request.Npc.Name, enteredText);
-                request.ResponseHistory.Add(new ConversationElement(enteredText, true));
-                request.Npc.grantConversationFriendship(Game1.player);
-
-                // 不创建占位框，AsyncBuilder 会在 activeClickableMenu == null 时自己创建
                 Game1.currentSpeaker = request.Npc;
-                AsyncBuilder.Instance.RequestNpcResponse(request.Npc, request.ResponseHistory.ToArray());
+
+                // 用户主动提交文本输入，清零冷却防止请求被静默丢弃
+                AsyncBuilder.Instance.ClearCooldown();
+
+                // Only record history after the request is successfully accepted
+                var historyCopy = new List<ConversationElement>(request.ResponseHistory)
+                {
+                    new ConversationElement(enteredText, true)
+                };
+
+                bool accepted = AsyncBuilder.Instance.RequestNpcResponse(request.Npc, historyCopy.ToArray());
+                if (accepted)
+                {
+                    DialogueHistoryManager.Instance.RecordPlayerDialogue(request.Npc.Name, enteredText);
+                    request.ResponseHistory.Add(new ConversationElement(enteredText, true));
+                    request.Npc.grantConversationFriendship(Game1.player);
+                }
+                else
+                {
+                    ModEntry.SMonitor?.Log($"[TextInputManager] Request rejected by AsyncBuilder for {request.Npc.Name}.", LogLevel.Warn);
+                }
             }
             catch (Exception ex)
             {

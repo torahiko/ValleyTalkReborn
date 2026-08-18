@@ -92,6 +92,18 @@ public class AsyncBuilder
         _awaitedType = GenerationType.None;
         while (_streamTokenQueue.TryDequeue(out _)) { }
         _streamAccumulator.Clear();
+        _pendingGiftNpcs.Clear();
+    }
+
+    /// <summary>
+    /// Aborts the current in-progress generation by incrementing the generation ID
+    /// (causing the running PerformGeneration to discard its result) and resetting all state.
+    /// Use this when preempting an in-progress generation with a higher-priority request.
+    /// </summary>
+    private void AbortCurrentGeneration()
+    {
+        _generationId++;
+        ResetState();
     }
 
     private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
@@ -294,20 +306,7 @@ public class AsyncBuilder
     /// </summary>
     private static string SanitizeDialogueForHistory(string text)
     {
-        if (string.IsNullOrWhiteSpace(text)) return string.Empty;
-
-        // 剔除 ${ 回应: ... } 以及 ${ ... }
-        string cleaned = Regex.Replace(text, @"\$\{.*?\}", "");
-        // 剔除 #$q, #$r, #$b#, #$e# 等星露谷控制标签
-        cleaned = Regex.Replace(cleaned, @"#\$[a-zA-Z0-9_#\s\-\:]+", "");
-        // 剔除 $h, $s, $a, $0 等单字符肖像标记
-        cleaned = Regex.Replace(cleaned, @"\$[a-zA-Z0-9]", "");
-        // 剔除 [ACTION:...] 动作标签
-        cleaned = Regex.Replace(cleaned, @"\[ACTION:.*?\]", "");
-        // 剔除 [MOOD:...] 情绪标签
-        cleaned = Regex.Replace(cleaned, @"\[MOOD:.*?\]", "");
-
-        return cleaned.Trim();
+        return DialogueHistoryManager.SanitizeForStorage(text);
     }
 
     private static void ShowFeedbackDialogue(IClickableMenu placeholder, string message)
@@ -323,27 +322,31 @@ public class AsyncBuilder
         if (action != null) _mainThreadActionQueue.Enqueue(action);
     }
 
-    internal void RequestNpcResponse(NPC currentNpc, IEnumerable<ConversationElement> currentConversation)
+    internal bool RequestNpcResponse(NPC currentNpc, IEnumerable<ConversationElement> currentConversation)
     {
-        if (currentNpc == null) return;
+        if (currentNpc == null) return false;
 
-        // If a Gift interaction is pending for this NPC, suppress conversation
-        // to avoid racing with the Gift request.
-        if (ConsumeGiftInteractionMark(currentNpc.Name))
+        // Only block when truly in gift-generation phase; avoid stale marks permanently locking subsequent dialogue
+        if (_awaitedType == GenerationType.Gift && IsGeneratingDialogue)
         {
             ModEntry.SMonitor?.Log(
-                $"[AsyncBuilder] Suppressed conversation request for {currentNpc.Name}: gift interaction pending.",
+                $"[AsyncBuilder] Suppressed conversation request for {currentNpc.Name}: gift interaction in progress.",
                 LogLevel.Trace);
-            return;
+            return false;
         }
-        if (CheckAndWarnIfAwaiting()) return;
-        if (!TryClaimNpc(currentNpc.Name)) return;
+
+        // Consume/clear any residual gift mark
+        ConsumeGiftInteractionMark(currentNpc.Name);
+
+        if (CheckAndWarnIfAwaiting()) return false;
+        if (!TryClaimNpc(currentNpc.Name)) return false;
 
         _speakingNpc = currentNpc;
         _currentConversation = currentConversation;
         _currentDialogueKey = "conversation";
         _awaitedType = GenerationType.conversation;
         _awaitingGeneration = true;
+        return true;
     }
 
     internal void RequestNpcGiftResponse(NPC currentNpc, StardewValley.Object gift, int taste)
@@ -375,14 +378,24 @@ public class AsyncBuilder
             ModEntry.SMonitor?.Log(
                 $"[AsyncBuilder] ★ Gift preempting IN-PROGRESS Basic for {currentNpc.Name}.",
                 LogLevel.Debug);
-            // Increment ID so the running PerformGeneration discards its result on completion.
-            _generationId++;
-            // Close the Basic placeholder DialogueBox to make room for Gift flow.
             if (Game1.activeClickableMenu == _placeholderMenu)
                 Game1.exitActiveMenu();
-            ResetState();
+            AbortCurrentGeneration();
             _requestedThisFrame.Remove(currentNpc.Name);
         }
+
+        // Gift also preempts in-progress Gift generation (e.g. player gifts the same NPC rapidly).
+        if (IsGeneratingDialogue && _awaitedType == GenerationType.Gift)
+        {
+            ModEntry.SMonitor?.Log(
+                $"[AsyncBuilder] ★ Gift preempting IN-PROGRESS Gift for {currentNpc.Name}.",
+                LogLevel.Debug);
+            if (Game1.activeClickableMenu == _placeholderMenu)
+                Game1.exitActiveMenu();
+            AbortCurrentGeneration();
+            _requestedThisFrame.Remove(currentNpc.Name);
+        }
+
         // Gift skips cooldown check; only block if generation is truly in progress.
         // Cooldown is for debouncing normal dialogue, not for high-priority gifts.
         if (_awaitingGeneration || IsGeneratingDialogue)
@@ -467,6 +480,15 @@ public class AsyncBuilder
             return true;
         }
         return false;
+    }
+
+    /// <summary>
+    /// 清除生成冷却计数，供用户主动触发的选项点击或文本输入使用。
+    /// 冷却是为了防止自动触发的重复请求，不应拦截用户的主动操作。
+    /// </summary>
+    public void ClearCooldown()
+    {
+        _generationCooldownFrames = 0;
     }
 
     private async Task<Dialogue> GenerateNpcGift()

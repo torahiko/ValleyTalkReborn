@@ -14,11 +14,14 @@ internal static class PerceptionInjector
     private static bool IsChineseLanguage => 
         LocalizedContentManager.CurrentLanguageCode.ToString().StartsWith("zh", StringComparison.OrdinalIgnoreCase);
 
+    private static readonly HashSet<string> _mentionedGossipKeys =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
     public static string BuildPerceptionText(string npcName)
     {
         if (string.IsNullOrEmpty(npcName)) return string.Empty;
 
-        string gossipBlock = BuildGossipBlock();
+        string gossipBlock = BuildGossipBlock(npcName);
         string localBlock  = BuildLocalBlock(npcName);
 
         if (string.IsNullOrEmpty(gossipBlock) && string.IsNullOrEmpty(localBlock))
@@ -41,7 +44,7 @@ internal static class PerceptionInjector
         prompts.SystemPrompt += "\n\n" + text;
     }
 
-    private static string BuildGossipBlock()
+    private static string BuildGossipBlock(string npcName)
     {
         var snapshots = PerceptionManager.Instance.GetGossipSnapshots();
         if (snapshots == null || snapshots.Count == 0) return string.Empty;
@@ -59,6 +62,30 @@ internal static class PerceptionInjector
         foreach (var p in snapshots.Take(1))
         {
             if (p == null || string.IsNullOrWhiteSpace(p.Template)) continue;
+
+            string dayKey;
+            try
+            {
+                dayKey = Game1.Date != null
+                    ? Game1.Date.TotalDays.ToString()
+                    : $"{Game1.year}-{Game1.season}-{Game1.dayOfMonth}";
+            }
+            catch
+            {
+                dayKey = "unknown-day";
+            }
+
+            string dedupeKey =
+                $"{dayKey}:{npcName}:{p.Key ?? ""}:{p.Template}";
+
+            // 防止 HashSet 无限增长
+            if (_mentionedGossipKeys.Count > 10000)
+                _mentionedGossipKeys.Clear();
+
+            // 同一条 gossip，对同一个 NPC，每天最多注入一次
+            if (!_mentionedGossipKeys.Add(dedupeKey))
+                continue;
+
             lines.Add($"- {p.Template}");
         }
 

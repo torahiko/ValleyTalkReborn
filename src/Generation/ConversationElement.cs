@@ -6,7 +6,8 @@ namespace ValleytalkReborn
     /// 表示单条对话元素（不可变数据记录）
     /// </summary>
     public record ConversationElement(string Text, bool IsPlayerLine)
-    {
-        public Guid Id { get; init; } = Guid.NewGuid();
-    }
+{
+    public Guid Id { get; init; } = Guid.NewGuid();
+    public string FuzzyTime { get; set; } = "";
+}
 }

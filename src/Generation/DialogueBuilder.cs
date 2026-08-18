@@ -100,24 +100,17 @@ namespace ValleytalkReborn
 
             DialogueContext context = GetContext(instance.Name) ?? GetBasicContext(instance);
 
-            string NormalizeText(string txt)
-            {
-                if (string.IsNullOrWhiteSpace(txt)) return string.Empty;
-                string clean = Regex.Replace(txt, @"[\$\#\s@]|(\$\{.*?\})", "");
-                if (StardewValley.Game1.player != null)
-                    clean = clean.Replace(StardewValley.Game1.player.Name, "");
-                return clean;
-            }
-
             var fullHistory = context.ChatHistory.ToList();
 
-            var existingKeys = new HashSet<(string, bool)>(
-                fullHistory.Select(e => (NormalizeText(e.Text), e.IsPlayerLine)));
+            var existingKeys = new HashSet<string>(
+                fullHistory.Select(e => DialogueHistoryManager.SanitizeForStorage(e.Text)),
+                StringComparer.OrdinalIgnoreCase);
 
             foreach (var elem in conversation)
             {
                 string cleanedText = CleanHistoryText(elem.Text);
-                if (existingKeys.Add((NormalizeText(cleanedText), elem.IsPlayerLine)))
+                string dedupKey = DialogueHistoryManager.SanitizeForStorage(cleanedText);
+                if (!string.IsNullOrWhiteSpace(dedupKey) && existingKeys.Add(dedupKey))
                 {
                     fullHistory.Add(new ConversationElement(cleanedText, elem.IsPlayerLine));
                 }
@@ -128,7 +121,10 @@ namespace ValleytalkReborn
             {
                 if (cleanHistory.Count > 0 &&
                     cleanHistory.Last().IsPlayerLine == elem.IsPlayerLine &&
-                    NormalizeText(cleanHistory.Last().Text) == NormalizeText(elem.Text))
+                    string.Equals(
+                        DialogueHistoryManager.SanitizeForStorage(cleanHistory.Last().Text),
+                        DialogueHistoryManager.SanitizeForStorage(elem.Text),
+                        StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
@@ -317,11 +313,7 @@ namespace ValleytalkReborn
 
         private static string CleanHistoryText(string raw)
         {
-            if (string.IsNullOrWhiteSpace(raw)) return string.Empty;
-            string clean = Regex.Replace(raw, @"\$\{.*?\}", "");
-            clean = Regex.Replace(clean, @"#\$[a-zA-Z0-9_#\s\-\:]+", "");
-            clean = Regex.Replace(clean, @"\$[a-zA-Z0-9]", "");
-            return clean.Trim();
+            return DialogueHistoryManager.SanitizeForStorage(raw);
         }
 
         private DialogueContext GetBasicContext(NPC instance)
@@ -433,6 +425,7 @@ namespace ValleytalkReborn
                 var historyEntries = historyManager.GetRecentHistory(instance.Name, recentCount);
                 if (historyEntries.Count > 0)
                 {
+                    var timeNow = new StardewTime(Game1.Date, Game1.timeOfDay);
                     context.ChatHistory = historyEntries
                         .Where(e =>
                             e.DialogueType != "eavesdrop" &&
@@ -440,7 +433,10 @@ namespace ValleytalkReborn
                             e.DialogueType != "event" &&     // ← 剧情事件台词不进对话历史
                             e.DialogueType != "gift" &&      // ← 礼物系统条目不进对话历史
                             e.SpeakerType != SpeakerType.System)
-                        .Select(e => new ConversationElement(CleanHistoryText(e.Text), e.SpeakerType == SpeakerType.Player))
+                        .Select(e => new ConversationElement(CleanHistoryText(e.Text), e.SpeakerType == SpeakerType.Player)
+                        {
+                            FuzzyTime = DialogueHistoryAdapter.GetFuzzyTime(e.Timestamp, timeNow)
+                        })
                         .Where(e => !string.IsNullOrWhiteSpace(e.Text))
                         .ToList();
                 }

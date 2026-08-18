@@ -27,7 +27,9 @@ namespace ValleytalkReborn
         private readonly string _npcName;
 
         private const int MenuWidth = 1200;
-        private const int MenuHeight = 600;
+        private const int MenuHeight = 640;
+        private const int TopPadding = 80; // 顶部预留出足够的对话框内边距
+        private const int HeaderHeight = 96; // 扩展标题槽位高度，容纳各种语言的单行字高
         private const int TextBoxHeight = 240;
         private const int ButtonSize = 64;
         private const int Margin = 24;
@@ -63,16 +65,17 @@ namespace ValleytalkReborn
 
         public DialogueTextInputMenu(string title, TextSubmittedDelegate callback, NPC currentNpc)
         {
-            _title = title ?? I18n.DialogueInput.DefaultTitle();
-            _onTextSubmitted = callback;
             _npcName = currentNpc?.Name ?? "";
+            _title = title ?? (string.IsNullOrEmpty(_npcName)
+                ? I18n.DialogueInput.DefaultTitle()
+                : I18n.DialogueInput.DefaultTitleWithNpc(_npcName));
+            _onTextSubmitted = callback;
 
             // Initialize responsive sizes before using them.
             _currentMenuWidth = Math.Min(MenuWidth, Game1.uiViewport.Width - 64);
             _currentMenuHeight = Math.Min(MenuHeight, Game1.uiViewport.Height - 64);
 
-            var titleSize = Game1.dialogueFont.MeasureString(_title);
-            var totalHeight = Margin * 8 + titleSize.Y + TextBoxHeight + ButtonSize * 2;
+            var totalHeight = TopPadding + HeaderHeight + TextBoxHeight + ButtonSize * 2 + Margin * 2;
 
             _menuPosition = new Vector2(
                 Math.Max(0, (Game1.uiViewport.Width - _currentMenuWidth) / 2),
@@ -90,7 +93,7 @@ namespace ValleytalkReborn
 
             _inputTextBox = new DialogueTextInputBox(200)
             {
-                Position = new Vector2(_menuPosition.X + Margin * 2, _menuPosition.Y + titleSize.Y + Margin * 5),
+                Position = new Vector2(_menuPosition.X + Margin * 2, _menuPosition.Y + TopPadding + HeaderHeight + 16),
                 Extent = new Vector2(textBoxWidth, TextBoxHeight),
                 Font = Game1.dialogueFont,
                 TextColor = Game1.textColor,
@@ -188,7 +191,7 @@ namespace ValleytalkReborn
                 3.5f
             )
             {
-                hoverText = I18n.Profile.ButtonHover() ?? "Farmer Profile & Persona"
+                hoverText = I18n.Profile.ButtonHover()
             };
 
             _advancedSettingsButton = new ClickableTextureComponent(
@@ -203,16 +206,11 @@ namespace ValleytalkReborn
                 3.5f
             )
             {
-                hoverText = ModEntry.SHelper.Translation.Get("AdvancedSettings.ButtonHover").Default("Advanced Settings")
+                hoverText = I18n.AdvancedSettings.ButtonHover()
             };
 
-            // Perform initial responsive layout.
             Recenter();
         }
-
-        ///////////////////////////////////////////////////////////////////
-        // Public menu helpers
-        ///////////////////////////////////////////////////////////////////
 
         public void SetMenuToRestore(IClickableMenu menu)
         {
@@ -232,7 +230,10 @@ namespace ValleytalkReborn
 
         public void Close()
         {
-            Game1.keyboardDispatcher.Subscriber = null;
+            if (Game1.keyboardDispatcher.Subscriber == _inputTextBox)
+            {
+                Game1.keyboardDispatcher.Subscriber = null;
+            }
 
             if (Game1.activeClickableMenu == this)
             {
@@ -245,17 +246,12 @@ namespace ValleytalkReborn
             _onTextSubmitted?.Invoke(text);
         }
 
-        ///////////////////////////////////////////////////////////////////
-        // Layout
-        ///////////////////////////////////////////////////////////////////
-
         public void Recenter()
         {
             _currentMenuWidth = Math.Min(MenuWidth, Game1.uiViewport.Width - 64);
             _currentMenuHeight = Math.Min(MenuHeight, Game1.uiViewport.Height - 64);
 
-            var titleSize = Game1.dialogueFont.MeasureString(_title);
-            var totalHeight = Margin * 8 + titleSize.Y + TextBoxHeight + ButtonSize * 2;
+            var totalHeight = TopPadding + HeaderHeight + TextBoxHeight + ButtonSize * 2 + Margin * 2;
 
             _menuPosition = new Vector2(
                 Math.Max(0, (Game1.uiViewport.Width - _currentMenuWidth) / 2),
@@ -278,7 +274,7 @@ namespace ValleytalkReborn
 
             _inputTextBox.Position = new Vector2(
                 _menuPosition.X + Margin * 2,
-                _menuPosition.Y + titleSize.Y + Margin * 5
+                _menuPosition.Y + TopPadding + HeaderHeight + 16
             );
 
             _inputTextBox.Extent = new Vector2(textBoxWidth, TextBoxHeight);
@@ -340,10 +336,6 @@ namespace ValleytalkReborn
             Recenter();
         }
 
-        ///////////////////////////////////////////////////////////////////
-        // Draw
-        ///////////////////////////////////////////////////////////////////
-
         public override void draw(SpriteBatch spriteBatch)
         {
             _inputTextBox.Update(Game1.currentGameTime);
@@ -365,13 +357,16 @@ namespace ValleytalkReborn
 
             var titleSize = Game1.dialogueFont.MeasureString(_title);
 
+            // 在充足的预留空间与槽位内绝对居中，安全包裹在边框内
+            Vector2 titlePos = new Vector2(
+                _menuPosition.X + (_currentMenuWidth - titleSize.X) / 2f,
+                _menuPosition.Y + TopPadding + (HeaderHeight - titleSize.Y) / 2f
+            );
+
             spriteBatch.DrawString(
                 Game1.dialogueFont,
                 _title,
-                new Vector2(
-                    _menuPosition.X + (_currentMenuWidth - titleSize.X) / 2,
-                    _menuPosition.Y + 2 * Margin + titleSize.Y
-                ),
+                titlePos,
                 Game1.textColor
             );
 
@@ -384,7 +379,7 @@ namespace ValleytalkReborn
                 instruction,
                 new Vector2(
                     _menuPosition.X + (_currentMenuWidth - Game1.smallFont.MeasureString(instruction).X) / 2,
-                    _inputTextBox.Position.Y + _inputTextBox.Extent.Y + Margin * 1.5f
+                    _inputTextBox.Position.Y + _inputTextBox.Extent.Y + Margin * 1.2f
                 ),
                 Color.Gray
             );
@@ -455,10 +450,6 @@ namespace ValleytalkReborn
             float target = hover ? 1.15f : 1.0f;
             currentScale += (target - currentScale) * 0.2f;
         }
-
-        ///////////////////////////////////////////////////////////////////
-        // Input
-        ///////////////////////////////////////////////////////////////////
 
         public override void receiveLeftClick(int x, int y, bool playSound = true)
         {
@@ -561,36 +552,30 @@ namespace ValleytalkReborn
                 return;
             }
 
-            // Ctrl shortcuts.
             if (DialogueTextInputBox.IsControlKeyDown())
             {
                 _inputTextBox.RecieveSpecialInput(key);
                 return;
             }
 
-            // Navigation / delete / backspace keys.
-            // 我们在此处显式捕获 Keys.Back，以修复退格键失效的问题。
             if (
                 key == Keys.Left ||
                 key == Keys.Right ||
                 key == Keys.Home ||
                 key == Keys.End ||
                 key == Keys.Delete ||
-                key == Keys.Back // <-- 添加这一行
+                key == Keys.Back
             )
             {
                 _inputTextBox.RecieveSpecialInput(key);
             }
         }
+
         protected override void cleanupBeforeExit()
         {
             Game1.keyboardDispatcher.Subscriber = null;
             base.cleanupBeforeExit();
         }
-
-        ///////////////////////////////////////////////////////////////////
-        // Submenus / data
-        ///////////////////////////////////////////////////////////////////
 
         private void ShowConfirmation(string message, Action onConfirm, Action onCancel)
         {
@@ -827,10 +812,15 @@ namespace ValleytalkReborn
 
             var titleSize = Game1.dialogueFont.MeasureString(_title);
 
+            Vector2 titlePos = new Vector2(
+                xPositionOnScreen + (width - titleSize.X) / 2f,
+                yPositionOnScreen + 24f + (48f - titleSize.Y) / 2f
+            );
+
             b.DrawString(
                 Game1.dialogueFont,
                 _title,
-                new Vector2(xPositionOnScreen + (width - titleSize.X) / 2, yPositionOnScreen + 32),
+                titlePos,
                 Game1.textColor
             );
 
