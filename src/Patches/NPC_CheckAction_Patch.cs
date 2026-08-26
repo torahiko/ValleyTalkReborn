@@ -37,6 +37,10 @@ namespace ValleytalkReborn
 
         public static bool Prefix(ref NPC __instance, ref bool __result, Farmer who, GameLocation l)
         {
+            // ★ 原版交互优先：玩家与 NPC 交互时，取消该 NPC 参与的所有 A2A 会话
+            if (__instance != null && !__instance.IsInvisible && !__instance.isSleeping.Value && who != null && who.CanMove)
+                DynamicBarkManager.CancelA2AForNpc(__instance.Name, "Player interaction");
+
             if (__instance == null || who == null) return true;
             if (__instance.IsInvisible || __instance.isSleeping.Value || !who.CanMove)
                 return true;
@@ -119,7 +123,7 @@ namespace ValleytalkReborn
                     {
                         if (__instance.hasBeenKissedToday.Value)
                         {
-                            // TriggerKissReaction 已经会显示 bark，不需要再加气泡
+                            // 今天已通过原版互动亲过，只显示爱心表情，不再触发对话
                             __instance.doEmote(20);
                             __result = true;
                             return false;
@@ -136,20 +140,20 @@ namespace ValleytalkReborn
                         if (timeOfDay < 1200) // 上午 (6:00 - 11:50)
                         {
                             pool = isChinese
-                                ? new[] { "早上好！", "早啊！", "你好~" }
-                                : new[] { "Morning!", "Good morning!", "Hey there!" };
+                                ? new[] { "早上好。", "嗯...", "你好。" }
+                                : new[] { "Good morning.", "Hello.", "Greetings." };
                         }
                         else if (timeOfDay < 1800) // 下午 (12:00 - 17:50)
                         {
                             pool = isChinese
-                                ? new[] { "下午好！", "你好呀！", "嗨！" }
-                                : new[] { "Good afternoon!", "Hey there!", "Hi!" };
+                                ? new[] { "下午好。", "嗯...", "你好。" }
+                                : new[] { "Good afternoon.", "Hello.", "Greetings." };
                         }
                         else // 傍晚与夜间 (18:00 - 26:00)
                         {
                             pool = isChinese
-                                ? new[] { "晚上好！", "这么晚还忙呢？", "嗨，晚上好~" }
-                                : new[] { "Evening!", "Good evening!", "Hey, working late?" };
+                                ? new[] { "晚上好。", "嗯...", "你好。" }
+                                : new[] { "Good evening.", "Hello.", "Greetings." };
                         }
                         
                         string greeting = pool[StardewValley.Game1.random.Next(pool.Length)];

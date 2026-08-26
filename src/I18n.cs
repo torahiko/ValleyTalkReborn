@@ -135,8 +135,12 @@ namespace ValleytalkReborn
             return Lookup("Memory.CharacterLimit")
                 .Replace("{{value}}", maxLen.ToString())
                 .Replace("{{0}}", maxLen.ToString());
+            
         }
-
+        
+        public static string ResponseStart() => Lookup("responseStart");
+        public static string Get(string key) => Lookup(key);
+        
         public static class Memory
         {
             public static string Title(string name, int count)

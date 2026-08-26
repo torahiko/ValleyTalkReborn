@@ -12,11 +12,12 @@ namespace ValleytalkReborn
     internal class PlayerProfileCustomMenu : IClickableMenu
     {
         private readonly string _npcName;
+        // 🌟 新增：保存父菜单的引用，用于退出时恢复
+        private readonly IClickableMenu _ownerMenu; 
 
         // Menu dimensions (responsive sizing)
         private int _menuWidth;
         private int _menuHeight;
-
         private const int MenuWidthDefault = 900;
         private const int MenuHeightDefault = 650;
         private const int RowHeight = 48;
@@ -81,10 +82,12 @@ namespace ValleytalkReborn
         // Layout dirty flag - when true, UpdateLayout() is called at the start of draw()
         private bool _layoutDirty = true;
 
-        public PlayerProfileCustomMenu(string npcName)
+        // 🌟 修改：增加 ownerMenu 参数
+        public PlayerProfileCustomMenu(string npcName, IClickableMenu ownerMenu = null)
             : base(0, 0, MenuWidthDefault, MenuHeightDefault, true)
         {
             _npcName = npcName;
+            _ownerMenu = ownerMenu; // 🌟 赋值
 
             // Calculate responsive menu dimensions based on viewport
             CalculateMenuDimensions();
@@ -95,7 +98,6 @@ namespace ValleytalkReborn
 
             // --- Load i18n translations with PProfile. prefix ---
             string noneOption = ModEntry.SHelper.Translation.Get("PProfile.UI.None").Default("(None)");
-
             _orientationOptions.Add(noneOption);
             foreach (var key in _orientationKeys)
             {
@@ -109,7 +111,6 @@ namespace ValleytalkReborn
                 ModEntry.SHelper.Translation.Get("PProfile.Safety.Moderate").Default("3: Moderate"),
                 ModEntry.SHelper.Translation.Get("PProfile.Safety.Strict").Default("4: Strict")
             };
-
             _safetyDesc = ModEntry.SHelper.Translation.Get("PProfile.Safety.Desc").Default("Protects you from unwanted romantic or flirtatious dialogue.\n- Off: Unrestricted.\n- Loose: Contextually appropriate.\n- Moderate: High-friendship NPCs subtle affection.\n- Strict: ONLY partners/spouses.");
             _bioPlaceholder = ModEntry.SHelper.Translation.Get("PProfile.UI.BioPlaceholder").Default("e.g: Former Joja accountant who loves hot coffee and hates rain. Recently moved to Stardew Valley to find a new purpose in life.");
 
@@ -132,14 +133,11 @@ namespace ValleytalkReborn
             _upArrow = new ClickableTextureComponent(
                 new Rectangle(xPositionOnScreen + _menuWidth - 48, yPositionOnScreen + 80, 44, 48),
                 Game1.mouseCursors, new Rectangle(421, 459, 11, 12), 4f);
-
             _downArrow = new ClickableTextureComponent(
                 new Rectangle(xPositionOnScreen + _menuWidth - 48, yPositionOnScreen + _menuHeight - 56, 44, 48),
                 Game1.mouseCursors, new Rectangle(421, 472, 11, 12), 4f);
-
             _scrollbarRunner = new Rectangle(
                 xPositionOnScreen + _menuWidth - 32, yPositionOnScreen + 130, 12, _menuHeight - 186);
-
             _scrollbar = new ClickableTextureComponent(
                 new Rectangle(_scrollbarRunner.X - 6, _scrollbarRunner.Y, 24, 40),
                 Game1.mouseCursors, new Rectangle(435, 463, 6, 10), 4f);
@@ -151,7 +149,6 @@ namespace ValleytalkReborn
         private void CalculateColumnLayout()
         {
             _leftMargin = xPositionOnScreen + 40;
-
             float maxWidth = 0f;
 
             string enableLabel = ModEntry.SHelper.Translation.Get("PProfile.UI.EnableProfile").Default("Enable Player Profile");
@@ -169,7 +166,6 @@ namespace ValleytalkReborn
             _maxLabelWidth = (int)Math.Ceiling(maxWidth);
             _rightColumnX = _leftMargin + _maxLabelWidth + 30;
             _dropdownWidth = _menuWidth - (_rightColumnX - xPositionOnScreen) - 80;
-
             if (_dropdownWidth < 200)
                 _dropdownWidth = 200;
         }
@@ -178,7 +174,6 @@ namespace ValleytalkReborn
         {
             _menuWidth = Math.Min(MenuWidthDefault, Game1.uiViewport.Width - ViewportPadding * 2);
             _menuHeight = Math.Min(MenuHeightDefault, Game1.uiViewport.Height - ViewportPadding * 2);
-
             if (_menuWidth < 640)
                 _menuWidth = 640;
             if (_menuHeight < 400)
@@ -188,12 +183,9 @@ namespace ValleytalkReborn
         public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
         {
             base.gameWindowSizeChanged(oldBounds, newBounds);
-
             CalculateMenuDimensions();
-
             xPositionOnScreen = (Game1.uiViewport.Width - _menuWidth) / 2;
             yPositionOnScreen = (Game1.uiViewport.Height - _menuHeight) / 2;
-
             CalculateColumnLayout();
 
             if (_bioTextBox != null)
@@ -201,29 +193,24 @@ namespace ValleytalkReborn
                 _bioTextBox.Position = new Vector2(_rightColumnX, yPositionOnScreen + 300);
                 _bioTextBox.Extent = new Vector2(_dropdownWidth, BioBoxHeight);
             }
-
             if (_upArrow != null)
             {
                 _upArrow.bounds.X = xPositionOnScreen + _menuWidth - 48;
                 _upArrow.bounds.Y = yPositionOnScreen + 80;
             }
-
             if (_downArrow != null)
             {
                 _downArrow.bounds.X = xPositionOnScreen + _menuWidth - 48;
                 _downArrow.bounds.Y = yPositionOnScreen + _menuHeight - 56;
             }
-
             _scrollbarRunner.X = xPositionOnScreen + _menuWidth - 32;
             _scrollbarRunner.Y = yPositionOnScreen + 130;
             _scrollbarRunner.Height = _menuHeight - 186;
-
             if (_scrollbar != null)
             {
                 _scrollbar.bounds.X = _scrollbarRunner.X - 6;
                 _scrollbar.bounds.Y = _scrollbarRunner.Y;
             }
-
             SetScrollbarPosition();
             _layoutDirty = true;
         }
@@ -231,14 +218,12 @@ namespace ValleytalkReborn
         private void LoadFromConfig()
         {
             var config = ModEntry.Config;
-
             _orientationIndex = 0;
             if (!string.IsNullOrEmpty(config.PlayerSexualOrientation))
             {
                 int idx = _orientationKeys.IndexOf(config.PlayerSexualOrientation);
                 if (idx >= 0) _orientationIndex = idx + 1;
             }
-
             _safetyModeIndex = (int)config.RomanceSafetyMode;
 
             if (_bioTextBox != null)
@@ -249,7 +234,6 @@ namespace ValleytalkReborn
                     try
                     {
                         var saveData = ModEntry.SHelper.Data.ReadJsonFile<Dictionary<string, string>>(path);
-                        
                         if (saveData != null && saveData.TryGetValue("PlayerCustomBio", out string savedBio))
                         {
                             _bioTextBox.SetText(savedBio);
@@ -276,7 +260,6 @@ namespace ValleytalkReborn
         public void SaveToConfig()
         {
             var config = ModEntry.Config;
-
             config.PlayerSexualOrientation = _orientationIndex > 0 ? _orientationKeys[_orientationIndex - 1] : "";
             config.RomanceSafetyMode = (SafetyModeLevel)_safetyModeIndex;
 
@@ -291,16 +274,15 @@ namespace ValleytalkReborn
                     : _bioTextBox.Text;
 
                 string path = $"data/{StardewModdingAPI.Constants.SaveFolderName}/PlayerProfile.json";
-                
                 try
                 {
                     var saveData = new Dictionary<string, string>
                     {
                         { "PlayerCustomBio", bioText }
                     };
-                    
                     ModEntry.SHelper.Data.WriteJsonFile(path, saveData);
                     ModEntry.SMonitor?.Log($"[ValleytalkReborn] Successfully saved custom bio.", LogLevel.Trace);
+                    PlayerProfileManager.InvalidateBioCache();
                 }
                 catch (Exception ex)
                 {
@@ -320,16 +302,13 @@ namespace ValleytalkReborn
         public override void receiveScrollWheelAction(int direction)
         {
             base.receiveScrollWheelAction(direction);
-
             if (_orientationDropdownOpen) return;
-
             _bioTextBox?.ReceiveScrollWheel(direction);
 
             int visibleHeight = _menuHeight - 200;
             if (_totalContentHeight <= visibleHeight) return;
 
             int oldOffset = _scrollOffset;
-
             if (direction > 0 && _scrollOffset > 0)
             {
                 _scrollOffset = Math.Max(0, _scrollOffset - RowHeight);
@@ -340,26 +319,31 @@ namespace ValleytalkReborn
                 _scrollOffset = Math.Min(_totalContentHeight - visibleHeight, _scrollOffset + RowHeight);
                 Game1.playSound("shwip");
             }
-
             if (_scrollOffset != oldOffset)
             {
                 _layoutDirty = true;
             }
-
             SetScrollbarPosition();
         }
 
         public override void receiveLeftClick(int x, int y, bool playSound = true)
         {
             base.receiveLeftClick(x, y, playSound);
-
             int saveBtnY = yPositionOnScreen + _menuHeight - 60;
+
+            // 🌟 保存按钮逻辑 (方案 A：HUD 轻提示)
             if (x >= xPositionOnScreen + _menuWidth / 2 - 80 && x <= xPositionOnScreen + _menuWidth / 2 + 80
                 && y >= saveBtnY && y <= saveBtnY + 44)
             {
                 Game1.playSound("select");
                 SaveToConfig();
-                Game1.drawObjectDialogue(ModEntry.SHelper.Translation.Get("PProfile.UI.ProfileSaved").Default("Profile saved!"));
+
+                // 弹出左下角 HUD 轻提示（不占用 activeClickableMenu）
+                string msg = ModEntry.SHelper.Translation.Get("PProfile.UI.ProfileSaved").Default("Profile saved!");
+                Game1.addHUDMessage(new HUDMessage(msg, 2));
+                // 注：如果编译器对 true 报错，请改为 new HUDMessage(msg, 2)
+
+                // 退出当前菜单。这会触发 cleanupBeforeExit，从而把主菜单挂载回来
                 exitThisMenu();
                 return;
             }
@@ -368,7 +352,6 @@ namespace ValleytalkReborn
             {
                 ModEntry.Config.EnablePlayerProfile = !ModEntry.Config.EnablePlayerProfile;
                 Game1.playSound("select");
-
                 if (!ModEntry.Config.EnablePlayerProfile)
                 {
                     _scrollOffset = 0;
@@ -385,7 +368,6 @@ namespace ValleytalkReborn
             {
                 if (ProcessDropdownClick(_orientationDropdownItems, ref _orientationIndex, ref _orientationDropdownOpen, x, y)) return;
                 if (_orientationDropdownRect.Contains(x, y)) { _orientationDropdownOpen = false; Game1.playSound("select"); return; }
-
                 CloseAllDropdowns();
                 return;
             }
@@ -464,7 +446,6 @@ namespace ValleytalkReborn
         {
             base.leftClickHeld(x, y);
             int visibleHeight = _menuHeight - 200;
-
             if (!_orientationDropdownOpen)
             {
                 if (_scrolling && _totalContentHeight > visibleHeight)
@@ -475,13 +456,11 @@ namespace ValleytalkReborn
                     SetScrollbarPosition();
                     _layoutDirty = true;
                 }
-
                 if (_sliderRect.Contains(x, y))
                 {
                     int trackWidth = _sliderRect.Width;
                     int relativeX = Math.Max(0, Math.Min(trackWidth, x - _sliderRect.X));
                     int newIndex = Math.Min(3, (int)(((float)relativeX / trackWidth) * 4));
-
                     if (_safetyModeIndex != newIndex)
                     {
                         _safetyModeIndex = newIndex;
@@ -532,10 +511,8 @@ namespace ValleytalkReborn
                 // --- Safety Slider ---
                 int trackWidth = Math.Min(220, _dropdownWidth);
                 _sliderRect = new Rectangle(_rightColumnX, scrollY + 10, trackWidth, SliderTrackHeight);
-
                 int thumbX = _sliderRect.X + (int)(_safetyModeIndex * ((float)trackWidth / 3)) - 12;
                 _sliderThumbRect = new Rectangle(thumbX, _sliderRect.Y - 8, 24, 40);
-
                 scrollY += 48;
 
                 string parsedDesc = Game1.parseText(_safetyDesc, Game1.smallFont, _dropdownWidth);
@@ -543,13 +520,11 @@ namespace ValleytalkReborn
 
                 // --- Bio ---
                 _bioTextBoxRect = new Rectangle(_rightColumnX, scrollY, _dropdownWidth, BioBoxHeight);
-
                 if (_bioTextBox != null)
                 {
                     _bioTextBox.Position = new Vector2(_bioTextBoxRect.X, _bioTextBoxRect.Y);
                     _bioTextBox.Extent = new Vector2(_bioTextBoxRect.Width, BioBoxHeight);
                 }
-
                 scrollY += BioBoxHeight + 20;
 
                 // Pre-build dropdown item rectangles
@@ -579,7 +554,6 @@ namespace ValleytalkReborn
         public override void draw(SpriteBatch b)
         {
             _bioTextBox?.Update(Game1.currentGameTime);
-
             UpdateLayout();
 
             b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.5f);
@@ -604,11 +578,9 @@ namespace ValleytalkReborn
             b.GraphicsDevice.ScissorRectangle = _scissorRect;
 
             DrawCheckbox(b, _enableProfileCheckboxRect, ModEntry.Config.EnablePlayerProfile);
-
             string enableLabel = ModEntry.SHelper.Translation.Get("PProfile.UI.EnableProfile").Default("Enable Player Profile");
             b.DrawString(Game1.smallFont, enableLabel,
                 new Vector2(_rightColumnX + CheckboxSize + 12, scrollY + 6), Game1.textColor);
-
             scrollY += RowHeight + 12;
 
             if (ModEntry.Config.EnablePlayerProfile)
@@ -626,7 +598,6 @@ namespace ValleytalkReborn
                 b.DrawString(Game1.smallFont, safetyLabel, new Vector2(_leftMargin, scrollY), Game1.textColor);
 
                 int trackWidth = Math.Min(220, _dropdownWidth);
-
                 IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6), _sliderRect.X, _sliderRect.Y, _sliderRect.Width, _sliderRect.Height, Color.White, 4f, false);
 
                 for (int t = 0; t < 4; t++)
@@ -636,7 +607,6 @@ namespace ValleytalkReborn
                 }
 
                 b.Draw(Game1.mouseCursors, _sliderThumbRect, new Rectangle(435, 463, 6, 10), Color.White);
-
                 b.DrawString(Game1.smallFont, _sliderLabels[_safetyModeIndex], new Vector2(_rightColumnX + trackWidth + 16, scrollY + 8), Game1.textColor);
                 scrollY += 48;
 
@@ -647,9 +617,7 @@ namespace ValleytalkReborn
                 // --- Bio ---
                 string bioLabel = ModEntry.SHelper.Translation.Get("PProfile.UI.CustomBio").Default("Custom Bio:");
                 b.DrawString(Game1.smallFont, bioLabel, new Vector2(_leftMargin, scrollY), Game1.textColor);
-
                 IClickableMenu.drawTextureBox(b, _bioTextBoxRect.X - 4, _bioTextBoxRect.Y - 4, _bioTextBoxRect.Width + 8, _bioTextBoxRect.Height + 8, Color.White);
-
                 _bioTextBox.Draw(b);
 
                 if (string.IsNullOrWhiteSpace(_bioTextBox.Text))
@@ -662,16 +630,14 @@ namespace ValleytalkReborn
                 string counterText = $"{_bioTextBox.Text.Length}/{MaxBioLength}";
                 Vector2 counterSize = Game1.smallFont.MeasureString(counterText);
                 Color counterColor = _bioTextBox.Text.Length >= MaxBioLength ? Color.Red : Color.Gray;
-                
                 b.DrawString(Game1.smallFont, counterText, 
                     new Vector2(_bioTextBoxRect.Right - counterSize.X - 8, _bioTextBoxRect.Bottom - counterSize.Y - 8), 
                     counterColor);
-
+                
                 scrollY += BioBoxHeight + 20;
             }
 
             b.End();
-
             b.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
 
             if (ModEntry.Config.EnablePlayerProfile)
@@ -704,7 +670,6 @@ namespace ValleytalkReborn
         {
             int listWidth = baseRect.Width - 40;
             Rectangle containerRect = new Rectangle(baseRect.X, baseY + DropdownHeight, listWidth, options.Count * DropdownHeight);
-
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(433, 451, 3, 3), containerRect.X, containerRect.Y, containerRect.Width, containerRect.Height, Color.White, 4f, false);
 
             for (int i = 0; i < options.Count; i++)
@@ -718,7 +683,6 @@ namespace ValleytalkReborn
                 {
                     b.Draw(Game1.staminaRect, new Rectangle(itemRect.X + 4, itemRect.Y, itemRect.Width - 8, itemRect.Height), Color.Wheat);
                 }
-
                 if (i < options.Count - 1)
                 {
                     b.Draw(Game1.staminaRect, new Rectangle(itemRect.X + 4, itemRect.Bottom - 1, itemRect.Width - 8, 1), Color.Black * 0.2f);
@@ -740,7 +704,6 @@ namespace ValleytalkReborn
 
             Rectangle btnRect = new Rectangle(rect.Right - 40, rect.Y, 40, rect.Height);
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(433, 451, 3, 3), btnRect.X, btnRect.Y, btnRect.Width, btnRect.Height, Color.White, 4f, false);
-
             b.Draw(Game1.mouseCursors, new Vector2(btnRect.X + 12, btnRect.Y + 12), new Rectangle(437, 450, 10, 11), Color.White, 0f, Vector2.Zero, 2f, SpriteEffects.None, 1f);
         }
 
@@ -760,12 +723,19 @@ namespace ValleytalkReborn
                 Color.Black);
         }
 
+        // 🌟 核心：退出时恢复父菜单
         protected override void cleanupBeforeExit()
         {
             base.cleanupBeforeExit();
             if (Game1.keyboardDispatcher.Subscriber == _bioTextBox)
             {
                 Game1.keyboardDispatcher.Subscriber = null;
+            }
+            
+            // 如果存在父菜单，且当前菜单正在被销毁，则静默恢复父菜单
+            if (_ownerMenu != null && Game1.activeClickableMenu == this)
+            {
+                Game1.activeClickableMenu = _ownerMenu;
             }
         }
     }

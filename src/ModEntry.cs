@@ -18,9 +18,38 @@ namespace ValleytalkReborn
         public static ModConfig Config;
 
         /// <summary>
+        /// 对话系统配置。
+        /// </summary>
+        internal static DialogueConfig DialogueSettings { get; private set; }
+
+        /// <summary>
+        /// A2A 输出验证转发器（供 MainThreadOutputQueue 使用）。
+        /// </summary>
+        internal static bool A2AOutputValidator(string sessionId, int generation, string npcName)
+        {
+            return _dialogueCoordinator?.A2A.SessionManager.ValidateA2AOutput(sessionId, generation, npcName) ?? false;
+        }
+
+        /// <summary>
+        /// A2A output validator implementation for MainThreadOutputQueue.
+        /// </summary>
+        internal sealed class A2AOutputValidatorImpl : IA2AOutputValidator
+        {
+            public bool Validate(string sessionId, int generation, string npcName)
+            {
+                return A2AOutputValidator(sessionId, generation, npcName);
+            }
+        }
+
+        /// <summary>
         /// Harmony instance saved as a member so it can be unpatched on exit.
         /// </summary>
         private static Harmony _harmony;
+
+        /// <summary>
+        /// 对话协调器：唯一允许订阅 SMAPI GameLoop 事件的对象。
+        /// </summary>
+        private static DialogueCoordinator _dialogueCoordinator;
 
         /// <summary>
         /// Flag to ensure Harmony patches are only applied once per game process.
@@ -151,24 +180,27 @@ namespace ValleytalkReborn
         {
             SHelper  = helper;
             SMonitor = Monitor;
-            // 显式初始化，替代构造函数自注册
-            DateManager.Instance.Initialize(helper);
-            InvitationManager.Instance.Initialize(helper);
-            MemoryManager.Instance.Initialize(helper);
-            WorldMemoryManager.Instance.Initialize(helper);
 
-            // If already initialized (e.g. second run in same process), clean up first
+            // 1. 先清理旧状态（如果已初始化过）
             if (_isInitialized)
             {
                 Cleanup();
             }
 
-            // Subscribe to game lifecycle events
-            helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+            // 2. 再初始化新状态
+            DateManager.Instance.Initialize(helper);
+            InvitationManager.Instance.Initialize(helper);
+            MemoryManager.Instance.Initialize(helper);
+            WorldMemoryManager.Instance.Initialize(helper);
+            MovementManager.Instance.Initialize(helper);
+
+            // Subscribe to game lifecycle events（DialogueCoordinator 将订阅 GameLoop 事件）
             helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
+            helper.Events.Display.MenuChanged += OnMenuChanged;
+
+            // ModEntry 保留 DayStarted 和 ReturnedToTitle 订阅（清理非对话系统状态）
             helper.Events.GameLoop.DayStarted += OnDayStarted;
             helper.Events.GameLoop.ReturnedToTitle += OnReturnedToTitle;
-            helper.Events.Display.MenuChanged += OnMenuChanged;
 
             // 🌟 Agent tool dispatcher thread-safe queue: process pending actions on main thread
             helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
@@ -212,6 +244,35 @@ namespace ValleytalkReborn
 
             // 加载/刷新模组的核心功能模块
             OnConfigChanged();
+
+            // ★ 装配对话协调器（唯一 SMAPI GameLoop 事件订阅入口）
+            DialogueSettings = Helper.ReadConfig<DialogueConfig>();
+            DialogueSettings.Validate(Monitor);
+
+            var npcReservations = new NpcReservationService();
+            var outputQueue = new MainThreadOutputQueue(new A2AOutputValidatorImpl());
+            var llmGateway = new LlmRequestGateway(DialogueSettings.LlmTimeoutSeconds);
+
+            var ambientBarkStateStore = new AmbientBarkStateStore();
+            var barkPromptBuilder = new BarkPromptBuilder(ambientBarkStateStore);
+            var ambientBarkModule = new AmbientBarkModule(
+                ambientBarkStateStore,
+                barkPromptBuilder,
+                npcReservations,
+                outputQueue,
+                llmGateway,
+                DialogueSettings);
+
+            var a2aPromptBuilder = new A2APromptBuilder();
+            var a2aSessionManager = new A2ASessionManager(
+                npcReservations, outputQueue, llmGateway, DialogueSettings, a2aPromptBuilder);
+            var a2aModule = new A2AModule(a2aSessionManager);
+
+            _dialogueCoordinator = new DialogueCoordinator(helper, Monitor, ambientBarkModule, a2aModule, outputQueue);
+
+            DynamicBarkManager.BindCoordinator(_dialogueCoordinator);
+
+            helper.Events.GameLoop.GameLaunched += OnGameLaunched;
 
             Log.Debug($"[{DateTime.Now}] Mod loaded");
         }
@@ -264,11 +325,9 @@ namespace ValleytalkReborn
                 ConsecutiveTalkTracker.Initialize();
                 ExtremeActivityTracker.Initialize();
                 DailyHeadlineGenerator.Initialize(); 
-                
+
                 TrashCanTracker.Initialize(_harmony);
 
-                DynamicBarkManager.EnsureSubscribed();
-                
                 Log.Debug("[ValleyTalkReborn] Action Awareness System initialized.");
             }
             catch (Exception ex)
@@ -415,6 +474,16 @@ namespace ValleytalkReborn
         {
             try
             {
+                _dialogueCoordinator?.Unsubscribe();
+                _dialogueCoordinator = null;
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"[ValleyTalkReborn] Error unsubscribing DialogueCoordinator: {ex.Message}");
+            }
+
+            try
+            {
                 try
                 {
                     DialogueHistoryManager.Instance?.SaveSync();
@@ -442,6 +511,15 @@ namespace ValleytalkReborn
                 catch (Exception ex)
                 {
                     Log.Error($"[ValleyTalkReborn] Error cleaning MemoryManager: {ex.Message}");
+                }
+
+                try
+                {
+                    MovementManager.Instance?.Cleanup(SHelper);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[ValleyTalkReborn] Error cleaning MovementManager: {ex.Message}");
                 }
 
                 try
@@ -626,7 +704,7 @@ namespace ValleytalkReborn
         private void OnGameLaunched(object sender, GameLaunchedEventArgs e)
         {
             ModConfigMenu.Register(this);
-            DynamicBarkManager.OnGameLaunched();
+            _dialogueCoordinator?.Subscribe();
         }
 
         /// <summary>
@@ -713,7 +791,7 @@ namespace ValleytalkReborn
         /// </summary>
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
         {
-            AgentToolDispatcher.ProcessMainThreadQueue();
+        AgentToolDispatcher.ProcessMainThreadQueue();
         }
     }
 }

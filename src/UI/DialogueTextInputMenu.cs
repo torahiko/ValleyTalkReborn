@@ -14,7 +14,6 @@ namespace ValleytalkReborn
 
         private readonly string _title;
         private readonly DialogueTextInputBox _inputTextBox;
-
         private readonly ClickableTextureComponent _okButton;
         private readonly ClickableTextureComponent _cancelButton;
         private readonly ClickableTextureComponent _clearHistory;
@@ -22,7 +21,6 @@ namespace ValleytalkReborn
         private readonly ClickableTextureComponent _memoryButton;
         private readonly ClickableTextureComponent _profileButton;
         private readonly ClickableTextureComponent _advancedSettingsButton;
-
         private readonly TextSubmittedDelegate _onTextSubmitted;
         private readonly string _npcName;
 
@@ -37,7 +35,6 @@ namespace ValleytalkReborn
         // Responsive runtime dimensions.
         private int _currentMenuWidth;
         private int _currentMenuHeight;
-
         private Vector2 _menuPosition;
         private Rectangle _menuBounds;
 
@@ -74,7 +71,6 @@ namespace ValleytalkReborn
             // Initialize responsive sizes before using them.
             _currentMenuWidth = Math.Min(MenuWidth, Game1.uiViewport.Width - 64);
             _currentMenuHeight = Math.Min(MenuHeight, Game1.uiViewport.Height - 64);
-
             var totalHeight = TopPadding + HeaderHeight + TextBoxHeight + ButtonSize * 2 + Margin * 2;
 
             _menuPosition = new Vector2(
@@ -99,13 +95,11 @@ namespace ValleytalkReborn
                 TextColor = Game1.textColor,
                 Selected = true
             };
-
             _inputTextBox.OnSubmit += sender =>
             {
                 Game1.playSound("coin");
                 Submit(sender.Text);
             };
-
             Game1.keyboardDispatcher.Subscriber = _inputTextBox;
 
             _okButton = new ClickableTextureComponent(
@@ -250,7 +244,6 @@ namespace ValleytalkReborn
         {
             _currentMenuWidth = Math.Min(MenuWidth, Game1.uiViewport.Width - 64);
             _currentMenuHeight = Math.Min(MenuHeight, Game1.uiViewport.Height - 64);
-
             var totalHeight = TopPadding + HeaderHeight + TextBoxHeight + ButtonSize * 2 + Margin * 2;
 
             _menuPosition = new Vector2(
@@ -271,12 +264,10 @@ namespace ValleytalkReborn
             height = _currentMenuHeight;
 
             float textBoxWidth = Math.Max(64, _currentMenuWidth - 4 * Margin);
-
             _inputTextBox.Position = new Vector2(
                 _menuPosition.X + Margin * 2,
                 _menuPosition.Y + TopPadding + HeaderHeight + 16
             );
-
             _inputTextBox.Extent = new Vector2(textBoxWidth, TextBoxHeight);
             _inputTextBox.InvalidateLayout();
 
@@ -339,7 +330,6 @@ namespace ValleytalkReborn
         public override void draw(SpriteBatch spriteBatch)
         {
             _inputTextBox.Update(Game1.currentGameTime);
-
             spriteBatch.Draw(
                 Game1.fadeToBlackRect,
                 Game1.graphics.GraphicsDevice.Viewport.Bounds,
@@ -373,7 +363,6 @@ namespace ValleytalkReborn
             _inputTextBox.Draw(spriteBatch);
 
             string instruction = I18n.DialogueInput.Instruction();
-
             spriteBatch.DrawString(
                 Game1.smallFont,
                 instruction,
@@ -508,7 +497,7 @@ namespace ValleytalkReborn
             {
                 Game1.playSound("bigSelect");
                 Game1.keyboardDispatcher.Subscriber = null;
-                Game1.activeClickableMenu = new ScrollableMemoryMenu(_npcName);
+                Game1.activeClickableMenu = new ScrollableMemoryMenu(_npcName, _menuToRestore ?? this);
             }
             else if (_advancedSettingsButton.containsPoint(x, y))
             {
@@ -520,7 +509,8 @@ namespace ValleytalkReborn
             {
                 Game1.playSound("bigSelect");
                 Game1.keyboardDispatcher.Subscriber = null;
-                Game1.activeClickableMenu = new PlayerProfileCustomMenu(_npcName);
+                // 🌟 关键修改：将当前的包装器/菜单作为 ownerMenu 传给 Profile 菜单
+                Game1.activeClickableMenu = new PlayerProfileCustomMenu(_npcName, _menuToRestore ?? this);
             }
             else if (_inputTextBox.ContainsPoint(x, y))
             {
@@ -543,6 +533,10 @@ namespace ValleytalkReborn
             ReceiveKeyPress(key);
         }
 
+        
+        // ⚠️ 不要在此处转发 Ctrl+Key！KeyboardDispatcher 已通过
+        //IKeyboardSubscriber 路由。重复转发会导致粘贴/剪切/复制执行两次。
+       //参照 AddMemoryInputMenu.receiveKeyPress 的正确写法。
         public void ReceiveKeyPress(Keys key)
         {
             if (key == Keys.Escape)
@@ -552,22 +546,22 @@ namespace ValleytalkReborn
                 return;
             }
 
-            if (DialogueTextInputBox.IsControlKeyDown())
+            // Guard: Ctrl 组合键（C/V/X/A）由 KeyboardDispatcher 通过
+            // IKeyboardSubscriber.RecieveSpecialInput 直接路由，此处不可重复转发。
+            // 仅在没有 Ctrl 修饰时才转发导航/编辑键。
+            if (!DialogueTextInputBox.IsControlKeyDown())
             {
-                _inputTextBox.RecieveSpecialInput(key);
-                return;
-            }
-
-            if (
-                key == Keys.Left ||
-                key == Keys.Right ||
-                key == Keys.Home ||
-                key == Keys.End ||
-                key == Keys.Delete ||
-                key == Keys.Back
-            )
-            {
-                _inputTextBox.RecieveSpecialInput(key);
+                if (
+                    key == Keys.Left ||
+                    key == Keys.Right ||
+                    key == Keys.Home ||
+                    key == Keys.End ||
+                    key == Keys.Delete ||
+                    key == Keys.Back
+                )
+                {
+                    _inputTextBox.RecieveSpecialInput(key);
+                }
             }
         }
 
@@ -580,7 +574,6 @@ namespace ValleytalkReborn
         private void ShowConfirmation(string message, Action onConfirm, Action onCancel)
         {
             Game1.keyboardDispatcher.Subscriber = null;
-
             Game1.activeClickableMenu = new ConfirmationDialog(
                 message,
                 _ =>
@@ -599,7 +592,6 @@ namespace ValleytalkReborn
         private void ShowHistoryDialogue()
         {
             var historyLines = DialogueHistoryManager.Instance.GetFormattedHistory(_npcName);
-
             if (historyLines == null || historyLines.Count == 0)
             {
                 Game1.drawObjectDialogue(I18n.DialogueInput.HistoryEmpty(_npcName));
@@ -616,11 +608,21 @@ namespace ValleytalkReborn
         private void ClearHistory()
         {
             DialogueHistoryManager.Instance.ClearAllHistory();
+
+            // Clear in-memory session caches so NPCs truly forget the conversation
+            SessionCache.Instance.ResetAll();
+            RecentConversationTracker.Clear();
+            DialogueBuilder.Instance?.ClearAllContexts();
         }
 
         private void ClearHistory(string npcName)
         {
             DialogueHistoryManager.Instance.ClearHistory(npcName);
+
+            // Clear in-memory session caches so NPCs truly forget the conversation
+            SessionCache.Instance.Reset(npcName);
+            RecentConversationTracker.Clear(npcName);
+            DialogueBuilder.Instance?.ClearContext(npcName);
         }
     }
 
@@ -632,12 +634,10 @@ namespace ValleytalkReborn
         private readonly DialogueTextInputMenu _ownerMenu;
         private readonly string _title;
         private readonly List<string> _wrappedLines = new List<string>();
-
         private readonly ClickableTextureComponent _upArrow;
         private readonly ClickableTextureComponent _downArrow;
         private readonly ClickableTextureComponent _scrollbar;
         private readonly Rectangle _scrollbarRunner;
-
         private int _startIndex;
         private bool _scrolling;
         private readonly int _maxLines;
@@ -653,16 +653,13 @@ namespace ValleytalkReborn
         {
             _ownerMenu = owner;
             _title = title;
-
             int textWidth = width - 128;
-
             foreach (var line in historyLines)
             {
                 string wrapped = Game1.parseText(line, Game1.dialogueFont, textWidth);
                 _wrappedLines.AddRange(wrapped.Split('\n'));
                 _wrappedLines.Add("");
             }
-
             if (_wrappedLines.Count > 0)
                 _wrappedLines.RemoveAt(_wrappedLines.Count - 1);
 
@@ -704,7 +701,6 @@ namespace ValleytalkReborn
         {
             if (_wrappedLines.Count <= _maxLines)
                 return;
-
             float pct = (float)_startIndex / (_wrappedLines.Count - _maxLines);
             _scrollbar.bounds.Y = _scrollbarRunner.Y + (int)(pct * (_scrollbarRunner.Height - _scrollbar.bounds.Height));
         }
@@ -712,7 +708,6 @@ namespace ValleytalkReborn
         public override void receiveScrollWheelAction(int direction)
         {
             base.receiveScrollWheelAction(direction);
-
             if (direction > 0 && _startIndex > 0)
             {
                 _startIndex--;
@@ -723,14 +718,12 @@ namespace ValleytalkReborn
                 _startIndex++;
                 Game1.playSound("shwip");
             }
-
             SetScrollbarPosition();
         }
 
         public override void receiveLeftClick(int x, int y, bool playSound = true)
         {
             base.receiveLeftClick(x, y, playSound);
-
             if (_wrappedLines.Count <= _maxLines)
                 return;
 
@@ -761,17 +754,14 @@ namespace ValleytalkReborn
         public override void leftClickHeld(int x, int y)
         {
             base.leftClickHeld(x, y);
-
             if (_scrolling && _wrappedLines.Count > _maxLines)
             {
                 int yPos = Math.Max(
                     _scrollbarRunner.Y,
                     Math.Min(y, _scrollbarRunner.Bottom - _scrollbar.bounds.Height)
                 );
-
                 float pct = (float)(yPos - _scrollbarRunner.Y) / (_scrollbarRunner.Height - _scrollbar.bounds.Height);
                 _startIndex = (int)(pct * (_wrappedLines.Count - _maxLines));
-
                 SetScrollbarPosition();
             }
         }
@@ -811,7 +801,6 @@ namespace ValleytalkReborn
             Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
 
             var titleSize = Game1.dialogueFont.MeasureString(_title);
-
             Vector2 titlePos = new Vector2(
                 xPositionOnScreen + (width - titleSize.X) / 2f,
                 yPositionOnScreen + 24f + (48f - titleSize.Y) / 2f
@@ -844,7 +833,6 @@ namespace ValleytalkReborn
             {
                 _upArrow.draw(b);
                 _downArrow.draw(b);
-
                 IClickableMenu.drawTextureBox(
                     b,
                     Game1.mouseCursors,
@@ -857,7 +845,6 @@ namespace ValleytalkReborn
                     4f,
                     false
                 );
-
                 _scrollbar.draw(b);
             }
 

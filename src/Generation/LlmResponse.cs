@@ -32,6 +32,11 @@ namespace ValleytalkReborn
         public bool UsedBubble { get; set; } = false;
 
         /// <summary>
+        /// The reason this LLM response ended.
+        /// </summary>
+        public DialogueModels.LlmRequestEndReason EndReason { get; set; } = DialogueModels.LlmRequestEndReason.Success;
+
+        /// <summary>
         /// 成功响应的构造函数
         /// </summary>
         public LlmResponse(string text, bool isSuccess = true)
@@ -48,6 +53,28 @@ namespace ValleytalkReborn
             ErrorMessage = errorMessage;
             ResponseCode = responseCode;
             IsSuccess = isSuccess;
+        }
+
+        /// <summary>
+        /// Create a cancelled response.
+        /// </summary>
+        public static LlmResponse Cancelled()
+        {
+            return new LlmResponse(null, 0, false)
+            {
+                EndReason = DialogueModels.LlmRequestEndReason.Cancelled
+            };
+        }
+
+        /// <summary>
+        /// Create a timeout response.
+        /// </summary>
+        public static LlmResponse Timeout()
+        {
+            return new LlmResponse(null, 0, false)
+            {
+                EndReason = DialogueModels.LlmRequestEndReason.Timeout
+            };
         }
     }
 }

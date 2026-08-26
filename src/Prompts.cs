@@ -317,47 +317,46 @@ public class Prompts
 
         if (!string.IsNullOrEmpty(npcName) && DateManager.Instance?.IsOnDate(npcName) == true)
         {
-            string locId = DateManager.Instance.ActiveDateLocation ?? "";
-            string locName = locId;
-            string locDetail = "";
+            var dateMode = DateManager.Instance.CurrentDateMode;
 
-            if (DateLocationRegistry.Locations.TryGetValue(locId, out var info))
+            if (dateMode == DateManager.DateMode.Follow)
             {
-                locName = isZh ? info.DisplayNameZh : info.DisplayNameEn;
-                locDetail = isZh ? info.ContextDescriptionZh : info.ContextDescriptionEn;
+                prompt.AppendLine($"## {Util.GetString(Character, "coreInstructionHeading")}");
+                prompt.AppendLine(isZh ? "### [陪伴散步中]" : "### [WALKING TOGETHER]");
+                prompt.AppendLine(isZh
+                    ? $"- 当前地点：{DateManager.Instance.ActiveDateLocation ?? ""}"
+                    : $"- Location: {DateManager.Instance.ActiveDateLocation ?? ""}");
+                prompt.AppendLine(isZh
+                    ? "- 语气要求：你正在陪农夫在附近走走，保持轻松自然的日常氛围。"
+                    : "- Tone: You are walking around together. Keep a relaxed, natural daily companion tone.");
             }
+            else
+            {
+                string locId = DateManager.Instance.ActiveDateLocation ?? "";
+                string locName = locId;
+                string locDetail = "";
 
-            prompt.AppendLine($"## {Util.GetString(Character, "coreInstructionHeading")}");
-            prompt.AppendLine(isZh ? "### [约会进行中 - 核心语境]" : "### [ROMANTIC DATE ACTIVE]");
-            prompt.AppendLine(isZh ? $"- 当前地点：{locName}" : $"- Location: {locName}");
+                if (DateLocationRegistry.Locations.TryGetValue(locId, out var info))
+                {
+                    locName = isZh ? info.DisplayNameZh : info.DisplayNameEn;
+                    locDetail = isZh ? info.ContextDescriptionZh : info.ContextDescriptionEn;
+                }
 
-            if (!string.IsNullOrWhiteSpace(locDetail))
-                prompt.AppendLine(isZh ? $"- 周围环境：{locDetail}" : $"- Atmosphere: {locDetail}");
+                prompt.AppendLine($"## {Util.GetString(Character, "coreInstructionHeading")}");
+                prompt.AppendLine(isZh ? "### [约会进行中 - 核心语境]" : "### [ROMANTIC DATE ACTIVE]");
+                prompt.AppendLine(isZh ? $"- 当前地点：{locName}" : $"- Location: {locName}");
 
-            prompt.AppendLine(isZh
-                ? "- 语气要求：你们正在享受今晚的二人浪漫约会。请表现出对面前玩家的倾听与深情，多结合眼前的浪漫环境进行互动与交流。"
-                : "- Tone Instruction: You are currently on a romantic date. Be affectionate, engaged, and interact with the surroundings.");
+                if (!string.IsNullOrWhiteSpace(locDetail))
+                    prompt.AppendLine(isZh ? $"- 周围环境：{locDetail}" : $"- Atmosphere: {locDetail}");
+
+                prompt.AppendLine(isZh
+                    ? "- 语气要求：你们正在享受今晚的二人浪漫约会。请表现出对面前玩家的倾听与深情，多结合眼前的浪漫环境进行互动与交流。"
+                    : "- Tone Instruction: You are currently on a romantic date. Be affectionate, engaged, and interact with the surroundings.");
+            }
 
             var lastPlayerLine = Context?.ChatHistory?.LastOrDefault(x => x.IsPlayerLine)?.Text;
             if (!string.IsNullOrWhiteSpace(lastPlayerLine))
                 DateManager.Instance.RecordDateDialogue(Game1.player?.Name ?? "Farmer", lastPlayerLine);
-
-            GetMicroEnvironment(prompt);
-            GetCurrentConversation(prompt);
-            InjectSessionContinuity(prompt);
-            InjectPendingTopic(prompt);
-            return prompt.ToString();
-        }
-
-        if (!string.IsNullOrEmpty(npcName)
-            && DateManager.Instance?.CurrentDateMode == DateManager.DateMode.Follow
-            && DateManager.Instance.ActiveDateNpcName == npcName)
-        {
-            prompt.AppendLine($"## {Util.GetString(Character, "coreInstructionHeading")}");
-            prompt.AppendLine(isZh ? "### [散步同行中]" : "### [WALKING TOGETHER]");
-            prompt.AppendLine(isZh
-                ? "- 状态：你正答应陪伴玩家在小镇漫步散心。保持轻松、愉悦与随性的日常同伴语气。"
-                : "- State: You agreed to walk along with the player. Keep a relaxed, friendly, and pleasant companion tone.");
 
             GetMicroEnvironment(prompt);
             GetCurrentConversation(prompt);
@@ -1214,8 +1213,9 @@ public class Prompts
         if (ModEntry.Config.UseNativeToolCalling)
         {
             commandPrompt.AppendLine(isZh ? "- 表情气泡: 如有需要可使用 [ACTION:EMOTE:ANGRY]、[ACTION:EMOTE:HEART]、[ACTION:EMOTE:BLUSH] 等标签。" : "- Emote bubbles: Use text tags like [ACTION:EMOTE:ANGRY], [ACTION:EMOTE:HEART], [ACTION:EMOTE:BLUSH] if appropriate.");
-            commandPrompt.AppendLine(isZh ? "- 肢体位移与跟随: 同时调用 `trigger_physical_action` 工具。" : "- Physical Movements & Following: Invoke `trigger_physical_action` tool.");
-        }
+            commandPrompt.AppendLine(isZh 
+                ? "- 肢体位移与跟随: 仅当玩家明确要求方向移动或跟随时，才调用 `trigger_physical_action` 工具。亲吻、拥抱等亲密请求请用台词和表情回应，严禁调用物理移动工具。" 
+                : "- Physical Movements & Following: Only invoke `trigger_physical_action` tool when the player explicitly requests directional movement or following. For intimate requests (kisses, hugs), respond with dialogue and emotes only — NEVER invoke physical movement tools.");        }
         else
         {
             commandPrompt.AppendLine(isZh ? "- 表情气泡标签: [ACTION:EMOTE:ANGRY], [ACTION:EMOTE:SAD], [ACTION:EMOTE:HEART], [ACTION:EMOTE:HAPPY], [ACTION:EMOTE:BLUSH], [ACTION:EMOTE:SURPRISE]" : "- Emote tags: [ACTION:EMOTE:ANGRY], [ACTION:EMOTE:SAD], [ACTION:EMOTE:HEART], [ACTION:EMOTE:HAPPY], [ACTION:EMOTE:BLUSH], [ACTION:EMOTE:SURPRISE]");
@@ -1294,7 +1294,8 @@ public class Prompts
 
     private string GetResponseStart()
     {
-        return "- ";
+        string start = I18n.ResponseStart();
+        return !string.IsNullOrWhiteSpace(start) ? start : "[In-Character Dialogue]:";
     }
 
     private string RelationshipWord(bool maleFarmer, bool npcIsMale)

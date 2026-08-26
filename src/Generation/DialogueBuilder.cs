@@ -138,24 +138,38 @@ namespace ValleytalkReborn
 
             DynamicBarkManager.CancelBackgroundTasks(instance.Name);
 
+
+            // ── 本地明确指令短路执行 (Local Short-circuit) ──
+            if (context.RoutingFlags.IsActionRequested && context.RoutingFlags.RequestedAction != ActionTag.None)
+            {
+                string actionType = context.RoutingFlags.RequestedAction.ToTagString();
+                if (!string.IsNullOrWhiteSpace(actionType))
+                {
+                    string jsonArgs = Newtonsoft.Json.JsonConvert.SerializeObject(new { action_type = actionType });
+                    bool accepted = AgentToolDispatcher.DispatchToolCall(instance, AgentToolDefinitions.ToolPhysicalAction, jsonArgs);
+                    ModEntry.SMonitor?.Log(
+                        $"[DialogueBuilder] Local action short-circuit: {instance.Name} -> {actionType} (Accepted: {accepted})",
+                        StardewModdingAPI.LogLevel.Debug);
+                }
+            }
+
+
             SetContext(instance.Name, context);
 
-            bool useStreaming = onStreamingToken != null
-                && !context.RoutingFlags.IsMovementRequested
-                && !context.RoutingFlags.IsGotoRequested
-                && !context.RoutingFlags.IsInviteRequested
-                && !context.RoutingFlags.IsOnDate;
+// 🌟 全局放开流式限制：只要有回调且设置中开启了流式，即使包含工具调用也强制走流式通道。
+// 底层的 LlmOpenAiBase 现已完美支持流式 JSON 分片解析。
+            bool useStreaming = onStreamingToken != null && ModEntry.Config.EnableStreaming;
             
             if (ModEntry.Config?.Debug ?? false)
             {
                 ModEntry.SMonitor?.Log(
                     $"[DialogueBuilder] {instance.Name} | " +
                     $"Streaming={useStreaming} " +
-                    $"(hasCallback={onStreamingToken != null} " +
+                    $"Action={context.RoutingFlags.IsActionRequested}({context.RoutingFlags.RequestedAction}) " +
                     $"Move={context.RoutingFlags.IsMovementRequested} " +
                     $"Goto={context.RoutingFlags.IsGotoRequested} " +
                     $"Invite={context.RoutingFlags.IsInviteRequested} " +
-                    $"OnDate={context.RoutingFlags.IsOnDate})",
+                    $"OnDate={context.RoutingFlags.IsOnDate}",
                     LogLevel.Debug);
             }
             
@@ -164,7 +178,8 @@ namespace ValleytalkReborn
             
             ApplyEmbodiedActions(instance, context, theLine);
 
-            if (context.RoutingFlags.IsMovementRequested
+            if (context.RoutingFlags.IsActionRequested
+                || context.RoutingFlags.IsMovementRequested
                 || context.RoutingFlags.IsFollowing
                 || context.RoutingFlags.IsOnDate)
             {
@@ -511,6 +526,15 @@ namespace ValleytalkReborn
         {
             if (!string.IsNullOrEmpty(npcName))
                 _npcContexts.Remove(npcName);
+        }
+
+        /// <summary>
+        /// Clears all NPC context caches at once.
+        /// Called when the player shift-clicks the clear history button to clear everything.
+        /// </summary>
+        public void ClearAllContexts()
+        {
+            _npcContexts.Clear();
         }
 
         public void Cleanup()

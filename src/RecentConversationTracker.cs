@@ -75,5 +75,19 @@ namespace ValleytalkReborn
             LastInteractionTimes.Clear();
             LastPlayerChoice.Clear();
         }
+
+        /// <summary>
+        /// Clears short-term context for a single NPC.
+        /// Called when the player clicks the per-NPC clear history button.
+        /// </summary>
+        public static void Clear(string npcName)
+        {
+            if (string.IsNullOrWhiteSpace(npcName))
+                return;
+
+            LastResponses.Remove(npcName);
+            LastInteractionTimes.Remove(npcName);
+            LastPlayerChoice.Remove(npcName);
+        }
     }
 }
