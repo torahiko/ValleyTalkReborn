@@ -11,10 +11,21 @@ namespace ValleytalkReborn;
 /// </summary>
 internal sealed class LlmRequestGateway
 {
+    /// <summary>
+    /// Result of an LLM gateway request, including the response and end reason.
+    /// </summary>
+    internal sealed class GatewayResult
+    {
+        internal LlmResponse Response { get; init; }
+        internal DialogueModels.LlmRequestEndReason EndReason { get; init; }
+        internal Exception Error { get; init; }
+    }
+
     private readonly SemaphoreSlim _concurrency =
         new SemaphoreSlim(1, 1);
 
     private readonly int _timeoutSeconds;
+    private Task<LlmResponse> _underlyingTask = Task.FromResult<LlmResponse>(null);
 
     /// <summary>
     /// 创建 LLM 请求网关。
@@ -36,6 +47,7 @@ internal sealed class LlmRequestGateway
     {
         await _concurrency.WaitAsync(cancellationToken);
 
+        bool released = false;
         try
         {
             var llm = Llm.Instance;
@@ -49,13 +61,40 @@ internal sealed class LlmRequestGateway
 
             timeoutCts.CancelAfter(TimeSpan.FromSeconds(_timeoutSeconds));
 
-            var response = await llm.RunInference(
+            // Start the underlying inference task
+            var inferenceTask = llm.RunInference(
                 systemPrompt,
                 "",
                 "",
                 userPrompt,
-                "[")
-                .WaitAsync(timeoutCts.Token);
+                "[");
+
+            // Store the underlying task so we can track it
+            _underlyingTask = inferenceTask;
+
+            LlmResponse response;
+            try
+            {
+                response = await inferenceTask.WaitAsync(timeoutCts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                // Timeout or cancellation: the underlying task may still be running.
+                // We need to wait for it to complete in the background before
+                // releasing the semaphore to prevent concurrent underlying requests.
+                _ = Task.Run(async () =>
+                {
+                    try { await inferenceTask; }
+                    catch { /* ignored */ }
+                    finally
+                    {
+                        _concurrency.Release();
+                        released = true;
+                    }
+                });
+
+                return null;
+            }
 
             if (response == null)
                 return null;
@@ -68,7 +107,8 @@ internal sealed class LlmRequestGateway
         }
         finally
         {
-            _concurrency.Release();
+            if (!released)
+                _concurrency.Release();
         }
     }
 }

@@ -231,7 +231,7 @@ internal static class DialogueModels
             var participants = ResolveParticipants();
 
             bool anyNearPlayer = Game1.player != null && participants.Any(n =>
-                n != null && DialogueUtilities.IsInRangeSquared(n, (Farmer)Game1.player, AmbientBarkModule.DISPLAY_RANGE_SQ));
+                n != null && DialogueUtilities.IsInRangeSquared(n, (Farmer)Game1.player, DialogueConstants.DisplayRangeSquared));
 
             return !anyNearPlayer;
         }

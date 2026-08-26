@@ -63,14 +63,12 @@ internal static partial class DynamicBarkManager
 
     internal static void OnDialogueDayStarted()
     {
-        _coordinator?.AmbientBark.CleanupAll();
-        _coordinator?.A2A.SessionManager.OnDayStarted();
+        _coordinator?.ResetAllDialogueState("Legacy day-start entry");
     }
 
     internal static void OnDialogueReturnedToTitle()
     {
-        _coordinator?.AmbientBark.CleanupAll();
-        _coordinator?.A2A.SessionManager.OnReturnedToTitle();
+        _coordinator?.ResetAllDialogueState("Legacy returned-to-title entry");
     }
 
     internal static void OnAmbientBarkDayStarted()

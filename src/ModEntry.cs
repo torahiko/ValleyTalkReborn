@@ -268,7 +268,7 @@ namespace ValleytalkReborn
                 npcReservations, outputQueue, llmGateway, DialogueSettings, a2aPromptBuilder);
             var a2aModule = new A2AModule(a2aSessionManager);
 
-            _dialogueCoordinator = new DialogueCoordinator(helper, Monitor, ambientBarkModule, a2aModule, outputQueue);
+            _dialogueCoordinator = new DialogueCoordinator(helper, Monitor, ambientBarkModule, a2aModule, outputQueue, npcReservations);
 
             DynamicBarkManager.BindCoordinator(_dialogueCoordinator);
 

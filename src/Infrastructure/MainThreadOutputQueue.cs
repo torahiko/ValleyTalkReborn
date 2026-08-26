@@ -148,7 +148,7 @@ internal sealed class MainThreadOutputQueue
                 !DialogueUtilities.IsInRangeSquared(
                     npc,
                     Game1.player,
-                    AmbientBarkModule.DISPLAY_RANGE_SQ))
+                    DialogueConstants.DisplayRangeSquared))
             {
                 continue;
             }
