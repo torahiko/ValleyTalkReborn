@@ -105,7 +105,6 @@ public class Prompts
 
     CharacterData npcData;
     bool npcIsMale;
-    IEnumerable<DialogueValue> dialogueSample;
     IDialogueValue exactLine;
     private string giveGift;
     private SerializableDictionary<string, int> allPreviousActivities;
@@ -116,7 +115,6 @@ public class Prompts
         npcIsMale = npcData.Gender == StardewValley.Gender.Male;
         Context = context;
         Character = character;
-        dialogueSample = character.SelectDialogueSample(context);
         exactLine = SelectExactDialogue();
         giveGift = context.CanGiveGift ? SelectGiftGiven() : string.Empty;
 
@@ -452,9 +450,11 @@ public class Prompts
         DefaultOrOverride("Gift", GetGift, prompt);
         DefaultOrOverride("SpouseAction", GetSpouseAction, prompt);
 
-        bool talkedToToday = Game1.getPlayerOrEventFarmer()?.friendshipData?.TryGetValue(Character.Name, out var tempFriendshipData) == true && tempFriendshipData?.TalkedToToday == true;
-        if (flags?.IncludeShortTermContext == true || talkedToToday)
+        bool hasNoPlayerInput = !(Context?.ChatHistory?.Any(x => x.IsPlayerLine) ?? false);
+
+        if (!hasNoPlayerInput && flags?.IncludeShortTermContext == true)
         {
+            // 本轮会话中确实存在玩家台词 → 真正的"深入交流"场景
             prompt.AppendLine("<interaction_state>");
             prompt.AppendLine(isZh
                 ? "- 状态: 今天已有过基本寒暄，对话现已进入深入交流阶段。"
@@ -464,10 +464,9 @@ public class Prompts
                 : "- Goal: Directly continue the ongoing topic or atmosphere naturally.");
             prompt.AppendLine("</interaction_state>\n");
         }
-
-        bool hasNoPlayerInput = !(Context?.ChatHistory?.Any(x => x.IsPlayerLine) ?? false);
-        if (hasNoPlayerInput && flags?.IsSimpleGreeting != true)
+        else if (hasNoPlayerInput && flags?.IsSimpleGreeting != true)
         {
+            // 本轮会话中还没有任何玩家台词 → 视为刚照面，不论原版 TalkedToToday 是否为真
             prompt.AppendLine("<interaction_state>");
             prompt.AppendLine(isZh
                 ? "农夫刚刚走近你。请自然问候或主动分享你此刻关注的事情。"
@@ -1330,11 +1329,6 @@ public class Prompts
 
         instructions.AppendLine($"## {Util.GetString(Character, "instructionsHeading", new { Language = TargetLanguageName })}");
         instructions.AppendLine(Util.GetString(Character, "instructionsIntro", new { Name = Name }));
-
-        if (dialogueSample != null && dialogueSample.Any())
-        {
-            instructions.AppendLine(Util.GetString(Character, "instructionsSampleDialogue", new { Name = Name }));
-        }
 
         instructions.AppendLine(Util.GetString(Character, "instructionsFarmersName"));
         instructions.AppendLine(Util.GetString(Character, "instructionsBreaks"));

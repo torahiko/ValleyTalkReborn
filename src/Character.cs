@@ -19,14 +19,6 @@ public class Character : IDisposable
     // 🌟 #1: 删除死代码 filterTimes（从未被使用）
 
     private DialogueFile dialogueData;
-    private Season? _sampleCacheSeason;
-    private int? _sampleCacheDay;
-    private int? _sampleCacheHeartLevel;
-    private DialogueValue[] _sampleCache;
-
-    // 🌟 #9: 提取对话样本数量为常量
-    private const int DialogueSampleSize = 20;
-
     // 🌟 #11: 提取星露谷一年天数为常量（4 季 × 28 天）
     private const int StardewYearInDays = 112;
 
@@ -226,43 +218,6 @@ public class Character : IDisposable
 
         PossiblePreoccupations = new List<string>(_bioData.Preoccupations);
         PossiblePreoccupations.AddRange(GetLovedAndHatedGiftNames());
-    }
-
-    internal IEnumerable<DialogueValue> SelectDialogueSample(DialogueContext context)
-    {
-        if (_sampleCacheSeason == context.Season &&
-            _sampleCacheHeartLevel == context.Hearts &&
-            _sampleCacheDay == context.DayOfSeason)
-        {
-            return _sampleCache;
-        }
-
-        _sampleCacheSeason = context.Season;
-        _sampleCacheDay = context.DayOfSeason;
-        _sampleCacheHeartLevel = context.Hearts;
-
-        // Pick the most relevant dialogue entries
-        var orderedDialogue = DialogueData
-                    ?.AllEntries
-                    .OrderBy(x => context.CompareTo(x.Key));
-
-        var firstStep = orderedDialogue
-                    ?.Where(x => x.Value != null);
-
-        if (firstStep == null || !firstStep.Any())
-        {
-            _sampleCache = Array.Empty<DialogueValue>();
-            return _sampleCache;
-        }
-
-        // 🌟 #9: Take(20) → Take(DialogueSampleSize)
-        _sampleCache = firstStep
-                    .SelectMany(x => x.Value.AllValues)
-                    .Take(DialogueSampleSize)
-                    .ToArray()
-                    ?? Array.Empty<DialogueValue>();
-
-        return _sampleCache;
     }
 
     internal IEnumerable<Tuple<StardewTime, IHistory>> EventHistorySample()
