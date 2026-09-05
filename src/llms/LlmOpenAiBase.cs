@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Text;
+using StardewValley;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Threading;
@@ -295,6 +296,55 @@ namespace ValleytalkReborn
 
             string text = rawContent.Trim();
 
+            // 检测并移除代码块标记（```json、```javascript 等）
+            if (text.Contains("```"))
+            {
+                text = System.Text.RegularExpressions.Regex.Replace(
+                    text,
+                    @"```[\w]*\s*",
+                    "",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                text = text.Replace("```", "").Trim();
+            }
+
+            // 检测并移除 import/export 语句（整行删除）
+            var rawLines = text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+            var cleanedLines = new List<string>();
+            bool foundJsonStart = false;
+
+            foreach (var line in rawLines)
+            {
+                string trimmed = line.Trim();
+
+                // 跳过代码导入行
+                if (trimmed.StartsWith("import ") || trimmed.StartsWith("export "))
+                    continue;
+
+                // 跳过注释行
+                if (trimmed.StartsWith("//") || trimmed.StartsWith("/*") || trimmed == "*/")
+                    continue;
+
+                // 跳过空行（在找到 JSON 开头之前）
+                if (!foundJsonStart && string.IsNullOrWhiteSpace(trimmed))
+                    continue;
+
+                // 检测 JSON 数组开头
+                if (trimmed.StartsWith("["))
+                {
+                    foundJsonStart = true;
+                }
+
+                if (foundJsonStart)
+                {
+                    cleanedLines.Add(line);
+                }
+            }
+
+            if (cleanedLines.Count > 0)
+            {
+                text = string.Join("\n", cleanedLines).Trim();
+            }
+
             if (text.Contains("\n- (") || text.StartsWith("──") || text.StartsWith("---"))
             {
                 string[] lines = text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
@@ -344,7 +394,8 @@ namespace ValleytalkReborn
         private Dictionary<string, object> BuildRequestBody(
             List<object> messages,
             int nPredict,
-            bool stream = false)
+            bool stream = false,
+            bool includeTools = true)
         {
             var requestBody = new Dictionary<string, object>
             {
@@ -367,7 +418,7 @@ namespace ValleytalkReborn
                 requestBody["top_p"] = 0.9;
             }
 
-            if (ModEntry.Config.UseNativeToolCalling)
+            if (includeTools && ModEntry.Config.UseNativeToolCalling)
             {
                 requestBody["tools"] = AgentToolDefinitions.GetOpenAiToolsArray();
             }
@@ -392,6 +443,7 @@ namespace ValleytalkReborn
             // 🌟 核心拦截器：为了兼容 CF 强制流式要求
             // 只要开启了流式设置，即使是不带打字效果的后台生成，也强制走 SSE 流式请求，
             // 只是将回调设为 null 进行静默缓冲，等全部接收完再一起返回。
+            bool includeTools = cacheContext != "NO_TOOLS";
             if (ModEntry.Config.EnableStreaming && !AndroidHelper.IsAndroid)
             {
                 return await RunStreamingInference(
@@ -402,7 +454,8 @@ namespace ValleytalkReborn
                     onToken: null, // 隐藏回调，静默接收
                     CancellationToken.None, 
                     responseStart, 
-                    n_predict);
+                    n_predict,
+                    cacheContext);
             }
             promptString =
                 (gameCacheString ?? string.Empty) +
@@ -411,11 +464,9 @@ namespace ValleytalkReborn
 
             var messages = new List<object>();
 
-            string antiCoTRule = "\n【绝对输出指令】严禁输出任何思考过程、英文分析、草稿演练或自检！第一行必须直接输出以 '- ' 开头的角色台词。";
-
             if (!string.IsNullOrWhiteSpace(systemPromptString))
             {
-                messages.Add(new { role = "system", content = systemPromptString + antiCoTRule });
+                messages.Add(new { role = "system", content = systemPromptString });
             }
 
             messages.Add(new { role = "user", content = promptString });
@@ -426,7 +477,7 @@ namespace ValleytalkReborn
                 messages.Add(new { role = "assistant", content = responseStart });
             }
 
-            Dictionary<string, object> requestBody = BuildRequestBody(messages, n_predict, stream: false);
+            Dictionary<string, object> requestBody = BuildRequestBody(messages, n_predict, stream: false, includeTools);
             ThinkingModeStrategy strategy = DetectThinkingModeStrategy();
             ApplyThinkingModeParameters(requestBody, strategy);
 
@@ -604,7 +655,8 @@ namespace ValleytalkReborn
             Action<string> onToken,
             CancellationToken ct,
             string responseStart = "",
-            int n_predict = 2048)
+            int n_predict = 2048,
+            string cacheContext = "")
         {
             // Android 平台由于网络桥接库限制，回退为非流式
             if (AndroidHelper.IsAndroid)
@@ -624,11 +676,9 @@ namespace ValleytalkReborn
 
             var messages = new List<object>();
 
-            string antiCoTRule = "\n【绝对输出指令】严禁输出任何思考过程、英文分析、草稿演练或自检！第一行必须直接输出以 '- ' 开头的角色台词。";
-
             if (!string.IsNullOrWhiteSpace(systemPromptString))
             {
-                messages.Add(new { role = "system", content = systemPromptString + antiCoTRule });
+                messages.Add(new { role = "system", content = systemPromptString });
             }
 
             messages.Add(new { role = "user", content = promptString });
@@ -639,7 +689,8 @@ namespace ValleytalkReborn
                 messages.Add(new { role = "assistant", content = responseStart });
             }
 
-            Dictionary<string, object> requestBody = BuildRequestBody(messages, n_predict, stream: true);
+            bool includeTools = cacheContext != "NO_TOOLS";
+            Dictionary<string, object> requestBody = BuildRequestBody(messages, n_predict, stream: true, includeTools);
             ThinkingModeStrategy strategy = DetectThinkingModeStrategy();
             ApplyThinkingModeParameters(requestBody, strategy);
 

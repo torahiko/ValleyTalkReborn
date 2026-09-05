@@ -18,11 +18,6 @@ namespace ValleytalkReborn
         public static ModConfig Config;
 
         /// <summary>
-        /// 对话系统配置。
-        /// </summary>
-        internal static DialogueConfig DialogueSettings { get; private set; }
-
-        /// <summary>
         /// A2A 输出验证转发器（供 MainThreadOutputQueue 使用）。
         /// </summary>
         internal static bool A2AOutputValidator(string sessionId, int generation, string npcName)
@@ -246,12 +241,12 @@ namespace ValleytalkReborn
             OnConfigChanged();
 
             // ★ 装配对话协调器（唯一 SMAPI GameLoop 事件订阅入口）
-            DialogueSettings = Helper.ReadConfig<DialogueConfig>();
-            DialogueSettings.Validate(Monitor);
+            Config = Helper.ReadConfig<ModConfig>();
+            Config.ValidateDialogueConfig(Monitor);
 
             var npcReservations = new NpcReservationService();
             var outputQueue = new MainThreadOutputQueue(new A2AOutputValidatorImpl());
-            var llmGateway = new LlmRequestGateway(DialogueSettings.LlmTimeoutSeconds);
+            var llmGateway = new LlmRequestGateway(Config.LlmTimeoutSeconds);
 
             var ambientBarkStateStore = new AmbientBarkStateStore();
             var barkPromptBuilder = new BarkPromptBuilder(ambientBarkStateStore);
@@ -261,11 +256,11 @@ namespace ValleytalkReborn
                 npcReservations,
                 outputQueue,
                 llmGateway,
-                DialogueSettings);
+                Config);
 
             var a2aPromptBuilder = new A2APromptBuilder();
             var a2aSessionManager = new A2ASessionManager(
-                npcReservations, outputQueue, llmGateway, DialogueSettings, a2aPromptBuilder);
+                npcReservations, outputQueue, llmGateway, Config, a2aPromptBuilder);
             var a2aModule = new A2AModule(a2aSessionManager);
 
             _dialogueCoordinator = new DialogueCoordinator(helper, Monitor, ambientBarkModule, a2aModule, outputQueue, npcReservations);

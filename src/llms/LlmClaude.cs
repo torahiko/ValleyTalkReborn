@@ -168,7 +168,8 @@ internal class LlmClaude : Llm, IGetModelNames
     internal override async Task<LlmResponse> RunStreamingInference(
         string systemPromptString, string gameCacheString, string npcCacheString,
         string promptString, Action<string> onToken, CancellationToken ct,
-        string responseStart = "", int n_predict = 2048)
+        string responseStart = "", int n_predict = 2048,
+        string cacheContext = "")
     {
         if (AndroidHelper.IsAndroid && !NetworkHelper.IsNetworkAvailable())
             throw new InvalidOperationException("Network not available");

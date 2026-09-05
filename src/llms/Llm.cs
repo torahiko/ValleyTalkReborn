@@ -108,7 +108,8 @@ internal abstract class Llm
         Action<string> onToken,
         CancellationToken ct,
         string responseStart = "",
-        int n_predict = 2048)
+        int n_predict = 2048,
+        string cacheContext = "")
     {
         var result = await RunInference(
             systemPromptString, gameCacheString, npcCacheString,
