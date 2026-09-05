@@ -30,6 +30,43 @@ internal class LlmClaude : Llm, IGetModelNames
 #pragma warning restore IDE1006 // Naming Styles
     }
 
+    /// <summary>
+    /// 构建 Anthropic system 数组的分层 cache 结构。
+    /// 三段各自独立 cache breakpoint：systemPrompt（全局静态，人设不变）→
+    /// gameCache（按天级变化的游戏世界状态）→ npcCache（按天/事件级变化的 NPC 记忆与印象）。
+    /// Anthropic 支持链式增量复用：只要前面的 breakpoint 命中，后面即使变化也只需为变化部分付费，
+    /// 因此拆分粒度越细、越贴近实际变化频率，命中率越高。
+    /// </summary>
+    private static PromptElement[] BuildSystemBlocks(string systemPromptString, string gameCacheString, string npcCacheString)
+    {
+        var blocks = new List<PromptElement>
+        {
+            new() { type = "text", text = systemPromptString }
+        };
+
+        if (!string.IsNullOrWhiteSpace(gameCacheString))
+        {
+            blocks.Add(new PromptElement
+            {
+                type = "text",
+                cache_control = new { type = "ephemeral" },
+                text = gameCacheString
+            });
+        }
+
+        if (!string.IsNullOrWhiteSpace(npcCacheString))
+        {
+            blocks.Add(new PromptElement
+            {
+                type = "text",
+                cache_control = new { type = "ephemeral" },
+                text = npcCacheString
+            });
+        }
+
+        return blocks.ToArray();
+    }
+
     public LlmClaude(string apiKey, string modelName = null)
     {
         url = "https://api.anthropic.com/v1/messages";
@@ -45,9 +82,8 @@ internal class LlmClaude : Llm, IGetModelNames
     internal override async Task<LlmResponse> RunInference(
         string systemPromptString, string gameCacheString, string npcCacheString, 
         string promptString, string responseStart = "", int n_predict = 2048, 
-        string cacheContext = "", bool allowRetry = true)
+        string cacheContext = "", bool allowRetry = true) // TODO: cacheContext 参数当前未使用。若后续需要按会话/NPC分组缓存策略，可在此处理。
     {
-        var promptCached = gameCacheString;
         var tools = ModEntry.Config.UseNativeToolCalling
             ? (object)AgentToolDefinitions.GetAnthropicToolsArray()
             : null;
@@ -59,16 +95,12 @@ internal class LlmClaude : Llm, IGetModelNames
             max_tokens = n_predict,
             temperature = 0.9,
             top_p = 0.9,
-            system = new PromptElement[]
-            {
-                new() { type = "text", text = systemPromptString },
-                new() { type = "text", cache_control = new { type = "ephemeral" }, text = promptCached }
-            },
+            system = BuildSystemBlocks(systemPromptString, gameCacheString, npcCacheString),
             messages = string.IsNullOrWhiteSpace(responseStart)
-                ? new[] { new { role = "user", content = npcCacheString + promptString } }
+                ? new[] { new { role = "user", content = promptString } }
                 : new object[]
                 {
-                    new { role = "user", content = npcCacheString + promptString },
+                    new { role = "user", content = promptString },
                     new { role = "assistant", content = responseStart }
                 },
             tools
@@ -168,7 +200,7 @@ internal class LlmClaude : Llm, IGetModelNames
     internal override async Task<LlmResponse> RunStreamingInference(
         string systemPromptString, string gameCacheString, string npcCacheString,
         string promptString, Action<string> onToken, CancellationToken ct,
-        string responseStart = "", int n_predict = 2048,
+        string responseStart = "", int n_predict = 2048, // TODO: cacheContext 参数当前未使用。若后续需要按会话/NPC分组缓存策略，可在此处理。
         string cacheContext = "")
     {
         if (AndroidHelper.IsAndroid && !NetworkHelper.IsNetworkAvailable())
@@ -182,16 +214,12 @@ internal class LlmClaude : Llm, IGetModelNames
             temperature = 0.9,
             top_p = 0.9,
             stream = true,
-            system = new PromptElement[]
-            {
-                new() { type = "text", text = systemPromptString },
-                new() { type = "text", cache_control = new { type = "ephemeral" }, text = gameCacheString }
-            },
+            system = BuildSystemBlocks(systemPromptString, gameCacheString, npcCacheString),
             messages = string.IsNullOrWhiteSpace(responseStart)
-                ? new[] { new { role = "user", content = npcCacheString + promptString } }
+                ? new[] { new { role = "user", content = promptString } }
                 : new object[]
                 {
-                    new { role = "user", content = npcCacheString + promptString },
+                    new { role = "user", content = promptString },
                     new { role = "assistant", content = responseStart }
                 }
         });

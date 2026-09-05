@@ -89,6 +89,12 @@ namespace ValleytalkReborn
         public int A2AMaxParticipants { get; set; } = 4;
 
         /// <summary>
+        /// 停留意图判定：玩家需要连续命中雷达扫描多少次（每次约1秒）才会真正触发 Bark 请求。
+        /// 用于过滤"路过"场景，避免浪费 LLM 请求。
+        /// </summary>
+        public int BarkDwellScans { get; set; } = 2;
+
+        /// <summary>
         /// 校验并修正对话相关配置值到合法范围。
         /// </summary>
         public void ValidateDialogueConfig(IMonitor monitor)
@@ -97,6 +103,7 @@ namespace ValleytalkReborn
             BarkApiCooldownTicks = Clamp(BarkApiCooldownTicks, 30, 3600);
             BarkQueueSize = Clamp(BarkQueueSize, 1, 20);
             A2AMaxParticipants = Clamp(A2AMaxParticipants, 2, 4);
+            BarkDwellScans = Clamp(BarkDwellScans, 1, 10);
 
             monitor?.Log("[ModConfig] 对话配置已校验。", LogLevel.Debug);
         }

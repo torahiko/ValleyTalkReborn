@@ -70,13 +70,18 @@ public class LlmDialogueService
                 if (!string.IsNullOrEmpty(worldMemCtx))
                     prompts.SystemPrompt += "\n\n" + worldMemCtx;
 
-                // S3: EvolvedTraits（NPC 对农夫的长期印象，变动频率：数天一次）
-                var evolvedBlock = EvolvedTraitManager.GetPromptBlock(character.Name, context);
-                if (!string.IsNullOrEmpty(evolvedBlock))
-                    prompts.SystemPrompt += "\n\n" + evolvedBlock;
+                // S3: EvolvedTraits（按玩家当前输入实时重排，变动频率：每轮对话）
+                // 不能进 SystemPrompt：该段是 LlmClaude.cs 中零缓存的首段，每轮必变内容
+                // 放在这里会完全破坏前缀缓存。改为字段注入，由 GetCorePrompt() 内部读取。
+                prompts.PendingEvolvedTraitsBlock = EvolvedTraitManager.GetPromptBlock(character.Name, context);
 
-                // S4: 感知层（Town Gossip + Immediate Observations，变动频率：每次对话，最频繁，置于最后）
-                PerceptionInjector.Inject(character.Name, prompts);
+                // S4: 感知层（拆分处理）
+                //   - gossip（小镇传闻，每天去重，中频变化）→ SystemPrompt，作为背景设定
+                //   - local perceptions（gift/eat，每轮实时事件）→ CorePrompt，通过字段注入
+                var gossipBlock = PerceptionInjector.BuildGossipBlock(character.Name);
+                if (!string.IsNullOrEmpty(gossipBlock))
+                    prompts.SystemPrompt += "\n\n" + gossipBlock;
+                prompts.PendingLocalPerceptionBlock = PerceptionInjector.BuildLocalBlock(character.Name);
 
                 // S4.5: 偷听短期上下文（新增）
                 EavesdropInjector.Inject(character.Name, prompts);

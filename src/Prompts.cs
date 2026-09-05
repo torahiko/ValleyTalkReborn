@@ -70,6 +70,14 @@ public class Prompts
     private string _corePrompt;
     public string CorePrompt { get => _corePrompt ??= GetCorePrompt(); internal set => _corePrompt = value; }
 
+    // ── 动态注入占位：由 LlmDialogueService 在 CorePrompt 求值前赋值 ──
+    // 设计约束：这些是"每轮必变"的内容，必须避免落入 LlmClaude.cs 中
+    // 没有 cache_control 的 SystemPrompt 首段（block 0）。
+    // 通过字段暂存而非直接 += 到 CorePrompt 属性，确保 GetCorePrompt()
+    // 的求值时机不会被外部调用顺序意外提前。
+    public string PendingEvolvedTraitsBlock { get; set; }
+    public string PendingLocalPerceptionBlock { get; set; }
+
     private string _command;
     public string Command { get => _command ??= GetCommand(); internal set => _command = value; }
 
@@ -176,6 +184,14 @@ public class Prompts
         var gameConstantPrompt = new StringBuilder();
         gameConstantPrompt.AppendLine(Util.GetString(Character, "gameContext"));
         gameConstantPrompt.AppendLine(BuildStardewSummary());
+
+        if (CurrentFlags.IncludeFarmDetails)
+        {
+            string farmSummary = FarmStateScanner.BuildFarmSummary(IsChineseLanguage);
+            if (!string.IsNullOrEmpty(farmSummary))
+                gameConstantPrompt.AppendLine(farmSummary);
+        }
+
         return gameConstantPrompt.ToString();
     }
 
@@ -312,6 +328,7 @@ public class Prompts
 
             GetMicroEnvironment(prompt);
             InjectPendingTopic(prompt);
+
             return prompt.ToString();
         }
 
@@ -362,6 +379,14 @@ public class Prompts
             GetCurrentConversation(prompt);
             InjectSessionContinuity(prompt);
             InjectPendingTopic(prompt);
+
+            // 约会模式下仍需感知玩家当前的送礼/进食等动作
+            if (!string.IsNullOrEmpty(PendingEvolvedTraitsBlock))
+                prompt.AppendLine("\n" + PendingEvolvedTraitsBlock);
+
+            if (!string.IsNullOrEmpty(PendingLocalPerceptionBlock))
+                prompt.AppendLine("\n" + PendingLocalPerceptionBlock);
+
             return prompt.ToString();
         }
 
@@ -416,7 +441,7 @@ public class Prompts
         }
         else
         {
-            DefaultOrOverride("NonSpouseFriendshipLevel", GetNonSpouseFriendshipLevel, prompt);
+            GetNonSpouseFriendshipLevel(prompt);
             DefaultOrOverride("Spouse", GetSpouse, prompt);
             DefaultOrOverride("SpecialRelationshipStatus",
                 p => GetSpecialRelationshipStatus(p, friendship), prompt);
@@ -512,6 +537,14 @@ public class Prompts
         InjectSessionContinuity(prompt);
         InjectPendingTopic(prompt);
         InjectMovementInstruction(prompt);
+
+        // 追加"每轮动态但不属于 SystemPrompt 缓存前缀"的内容
+        // （由 LlmDialogueService 在 CorePrompt 求值前通过字段注入）
+        if (!string.IsNullOrEmpty(PendingEvolvedTraitsBlock))
+            prompt.AppendLine("\n" + PendingEvolvedTraitsBlock);
+
+        if (!string.IsNullOrEmpty(PendingLocalPerceptionBlock))
+            prompt.AppendLine("\n" + PendingLocalPerceptionBlock);
 
         string finalPrompt = prompt.ToString();
         LogRoutingDebug(finalPrompt, "FULL_CONTEXT_BUILD");
@@ -923,41 +956,85 @@ public class Prompts
 
     private void GetNonSpouseFriendshipLevel(StringBuilder prompt)
     {
-        var isASingle = npcData.CanBeRomanced;
-        var isChild = npcData.Age == NpcAge.Child;
+        int hearts = Context.Hearts ?? 0;
+        bool isSingle = npcData.CanBeRomanced;
+        bool isChild = npcData.Age == NpcAge.Child;
 
-        if (isASingle || Context.Hearts <= 6 || Context.Hearts == null)
+        // 检查是否已送花确认恋爱关系（原版星露谷未送花哪怕8心也只是挚友）
+        bool isDating = false;
+        if (Game1.player?.friendshipData.TryGetValue(Character.Name, out var fs) == true)
         {
-            prompt.AppendLine((Context.Hearts ?? 0) switch
-            {
-                -1 => Util.GetString(Character, "nonSpouseFriendshipFirstConversation", new { Name = Name }),
-                < 2 => Util.GetString(Character, "nonSpouseFreindshipStrangers", new { Name = Name }),
-                < 4 => Util.GetString(Character, "nonSpouseFriendshipAcquaintances", new { Name = Name }),
-                < 6 => Util.GetString(Character, "nonSpouseFriendshipFriends", new { Name = Name }),
-                < 8 => Util.GetString(Character, "nonSpouseFriendshipCloseFriends", new { Name = Name }),
-                <= 10 => Util.GetString(Character, "nonSpouseFriendshipWantToDate", new { Name = Name }),
-                <= 14 => Util.GetString(Character, "nonSpouseFriendshipIntimate", new { Name = Name }),
-                _ => Util.GetString(Character, "nonSpouseFriendshipIntimate", new { Name = Name })
-            });
+            isDating = fs.IsDating();
         }
-        else
-        {
-            if (Context.Hearts <= 8 && !isChild)
-            {
-                prompt.AppendLine(Util.GetString(Character, "nonSpouseFriendshipNonSingleAdult8", new { Name = Name }));
-            }
-            else if (isChild)
-            {
-                prompt.AppendLine(Util.GetString(Character, "nonSpouseFriendshipChild8Plus", new { Name = Name }));
-            }
-            else
-            {
-                prompt.AppendLine(Util.GetString(Character, "nonSpouseFriendshipNonSingleAdult10", new { Name = Name }));
-            }
-        }
+
+        string line = IsChineseLanguage
+            ? GetFriendshipTextZh(hearts, isSingle, isChild, isDating)
+            : GetFriendshipTextEn(hearts, isSingle, isChild, isDating);
+
+        if (!string.IsNullOrWhiteSpace(line))
+            prompt.AppendLine(line);
     }
 
-    
+    private string GetFriendshipTextZh(int hearts, bool isSingle, bool isChild, bool isDating)
+    {
+        string note = "（社交熟悉度基准；你对农夫的实际好恶与信任度请优先结合【长期印象】与【记忆】综合表现）";
+
+        if (hearts < 0)
+            return $"- 社交关系：初次正式碰面（-1心），彼此完全陌生。{note}";
+        if (hearts < 2)
+            return $"- 社交关系：点头之交（{hearts}心），彼此还很不了解，保持基本的社交防备与距离。{note}";
+        if (hearts < 4)
+            return $"- 社交关系：熟悉起来的邻居（{hearts}心），日常见面能聊上几句，但尚未深交。{note}";
+        if (hearts < 6)
+            return $"- 社交关系：熟识的朋友（{hearts}心），互相了解不少生活习惯。{note}";
+        if (hearts < 8)
+            return $"- 社交关系：彼此非常熟稔的至交（{hearts}心），相处时毫无拘束。{note}";
+
+        // 8心及以上
+        if (isChild)
+            return $"- 社交关系：经常陪伴的熟人（{hearts}心），互动带有孩子气的直率。{note}";
+
+        if (isSingle)
+        {
+            if (isDating)
+                return $"- 社交关系：恋人阶段（{hearts}心），属于公开约会关系。{note}";
+
+            return $"- 社交关系：极度熟识的至交好友（{hearts}心），彼此在小镇里交往甚密。{note}";
+        }
+
+        return $"- 社交关系：常年相识的深厚故交（{hearts}心），熟络度极高。{note}";
+    }
+
+    private string GetFriendshipTextEn(int hearts, bool isSingle, bool isChild, bool isDating)
+    {
+        string note = "(Base social familiarity; your actual emotional fondness/trust must be guided by your [IMPRESSIONS OF THE FARMER] and memories)";
+
+        if (hearts < 0)
+            return $"- Social Standing: First meeting (-1 hearts). Complete strangers. {note}";
+        if (hearts < 2)
+            return $"- Social Standing: Distant acquaintances ({hearts} hearts). Basic social boundaries apply. {note}";
+        if (hearts < 4)
+            return $"- Social Standing: Familiar neighbors ({hearts} hearts). Casual, surface-level neighborly rapport. {note}";
+        if (hearts < 6)
+            return $"- Social Standing: Well-acquainted friends ({hearts} hearts). Familiar with each other's routines. {note}";
+        if (hearts < 8)
+            return $"- Social Standing: Highly familiar companions ({hearts} hearts). Zero conversational formality. {note}";
+
+        if (isChild)
+            return $"- Social Standing: Very familiar presence ({hearts} hearts). Childlike openness. {note}";
+
+        if (isSingle)
+        {
+            if (isDating)
+                return $"- Social Standing: Dating relationship ({hearts} hearts). Public romantic involvement. {note}";
+
+            return $"- Social Standing: Closely bound best friends ({hearts} hearts). High social proximity. {note}";
+        }
+
+        return $"- Social Standing: Deeply established long-term bond ({hearts} hearts). Complete conversational ease. {note}";
+    }
+
+
     private void GetSpouseAction(StringBuilder prompt)
     {
         if (Context.Accept != null) return;

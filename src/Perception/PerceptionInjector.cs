@@ -40,11 +40,13 @@ internal static class PerceptionInjector
         string text = BuildPerceptionText(npcName);
         if (string.IsNullOrEmpty(text)) return;
 
-        // 🌟 注入 SystemPrompt 尾部，与 LlmDialogueService 架构对齐，避免在 CorePrompt 抢占对话注意力
+        // 兼容保留：将 gossip 与 local 合并为一段追加到 SystemPrompt。
+        // 注意：local perceptions（gift/eat）每轮都变，理论上应进 CorePrompt；
+        //       新代码请改用 BuildGossipBlock / BuildLocalBlock 分开调用。
         prompts.SystemPrompt += "\n\n" + text;
     }
 
-    private static string BuildGossipBlock(string npcName)
+    public static string BuildGossipBlock(string npcName)
     {
         var snapshots = PerceptionManager.Instance.GetGossipSnapshots();
         if (snapshots == null || snapshots.Count == 0) return string.Empty;
@@ -92,7 +94,7 @@ internal static class PerceptionInjector
         return lines.Count > 1 ? string.Join("\n", lines) : string.Empty;
     }
 
-   private static string BuildLocalBlock(string npcName)
+   public static string BuildLocalBlock(string npcName)
 {
     var perceptions = PerceptionManager.Instance.GetFilteredBucketFor(npcName, 2);
     if (perceptions == null || perceptions.Count == 0) return string.Empty;
