@@ -51,8 +51,8 @@
 
           "DialogueExamples": {
             "id": "DialogueExamples",
-            "Heading": "Few-Shot Output Examples",
-            "Description": "<User>: Training hard today, Alex?\n<Alex>: (tosses the Gridball hand to hand, grinning) You know it! Gotta stay in shape if I'm gonna go pro someday. Pretty solid, right? $h\n\n<User>: Is that a book you're reading?\n<Alex>: (snaps it shut fast, rubbing the back of his neck) Oh—uh, yeah. Just trying to learn some stuff on my own. Don't laugh, okay? I'm trying to prove I'm more than just muscle. $s\n\n<User>: You never really talk about your dad.\n<Alex>: (stops tossing the ball, staring at the ground, voice low) ...Yeah, well, there's not much to say. He was awful to my mom and he walked out on us. George and Evelyn took me in. I'm gonna make something of myself without him anyway. $8"
+            "Heading": "Dialogue Examples",
+            "Description": "- You know it, @! Gotta keep pushing the reps if I'm gonna lead the Zuzu City Tunnelers to a championship someday.#$b#Five miles on the beach, three sets of squats, and a dozen raw eggs before noon. You've gotta stay hungry, right? How's the farm workout treating you? $h\n% Farm chores are a whole different beast.\n% You're going to pull a muscle one of these days.\n\n- Oh—uh, hey, @. Didn't hear your boots on the path. Just... checking out some stuff on my own, you know?#$b#Don't laugh, alright? Everyone in town treats me like I'm just a brainless jock who can only throw a ball. I'm trying to prove to myself that I can actually use my head too. $s\n% There's nothing funny about wanting to learn.\n% What subject are you reading about?\n\n- ...Yeah, well, there's not much to tell, @. He was loud, he was mean to my mom, and then one day he just vanished into thin air.#$b#George and Evelyn took me in when I had nowhere else to go. I don't need his approval anyway—I'm gonna make my mom proud and become somebody on my own terms. $8\n% You're already making them proud, Alex.\n% You don't have to carry that weight alone.\n% Evelyn talks about how good you are to them."
           }
         },
 

@@ -25,9 +25,6 @@ namespace ValleytalkReborn
             if (__instance == null || __result == null) return;
             if (__result.Count == 0) return;
 
-            // 仅在 drawDialogue 调用链上才做历史记录
-            if (!Game1_DrawDialogue_Patch.DrawingDialogue) return;
-
             var currentDialogue = __result.Peek();
             if (currentDialogue?.dialogues == null || currentDialogue.dialogues.Count == 0) return;
 
@@ -57,10 +54,8 @@ namespace ValleytalkReborn
             _lastRecordedDialogue[__instance.Name] = combinedText;
             _lastRecordedTime[__instance.Name] = nowMs;
 
-            // 感知系统：窃听广播（无论 AI 还是原版对话都执行）
-            // 注意：vanilla/AI 对话的历史记录由 DialogueBox_Ctor_Patch 统一处理，此处不再重复记录。
-            var nearbyNpcs = Util.GetNearbyNpcs(__instance);
-            if (nearbyNpcs != null)
+            // 🌟【核心修复】：与 ActionSubscriber.Talk 统一采用 512px (8 格) 半径广播
+            if (__instance.currentLocation != null && Game1.player != null)
             {
                 var cleanedForEavesdrop = EavesdropTextCleaner.Clean(combinedText);
                 var farmerLabel = Util.GetString("generalFarmerLabel") ?? "农夫";
@@ -72,12 +67,22 @@ namespace ValleytalkReborn
                     : $"{farmerLabel}对{__instance.displayName}说话，{__instance.displayName}回应：\"{cleanedForEavesdrop}\"";
 
                 var eavesdropText = $"[Eavesdrop] {farmerSaid}";
-                foreach (var npc in nearbyNpcs)
+
+                foreach (var nearbyNpc in __instance.currentLocation.characters)
                 {
-                    if (npc != null && npc != __instance) 
-                        DialogueHistoryManager.Instance.RecordSystemEvent(npc.Name, eavesdropText, "eavesdrop");
+                    if (nearbyNpc == null || nearbyNpc == __instance) continue;
+
+                    // 统一以玩家或说话者为基准，距离 <= 512 像素即算作听见
+                    float dx = nearbyNpc.Position.X - Game1.player.Position.X;
+                    float dy = nearbyNpc.Position.Y - Game1.player.Position.Y;
+                    float distance = (float)System.Math.Sqrt(dx * dx + dy * dy);
+
+                    if (distance <= 512f)
+                    {
+                        DialogueHistoryManager.Instance.RecordSystemEvent(nearbyNpc.Name, eavesdropText, "eavesdrop");
+                    }
                 }
             }
         }
-    }
+    }   
 }

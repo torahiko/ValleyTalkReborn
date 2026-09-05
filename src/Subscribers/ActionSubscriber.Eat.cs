@@ -1,4 +1,5 @@
-﻿using StardewModdingAPI;
+﻿using System;
+using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 
@@ -48,13 +49,22 @@ internal static class EatSubscriber
         if (itemId == _lastItemId || string.IsNullOrEmpty(itemId)) return;
 
         string itemName = itemToEat.DisplayName ?? itemToEat.Name ?? "something";
+        bool isZh = LocalizedContentManager.CurrentLanguageCode.ToString()
+            .StartsWith("zh", StringComparison.OrdinalIgnoreCase);
 
-        string template = PerceptionManager.PickVariant(new[]
-        {
-            $"You noticed the farmer eating a [{itemName}] right in front of you.",
-            $"The farmer just pulled out a [{itemName}] and started eating it nearby.",
-            $"You watched the farmer snack on a [{itemName}] a moment ago.",
-        });
+        string template = isZh
+            ? PerceptionManager.PickVariant(new[]
+            {
+                $"你注意到农夫刚刚就在你面前吃了一个【{itemName}】。",
+                $"农夫刚才拿出了一个【{itemName}】，在旁边吃了起来。",
+                $"你刚刚看到农夫在旁边享用【{itemName}】。"
+            })
+            : PerceptionManager.PickVariant(new[]
+            {
+                $"You noticed the farmer eating a [{itemName}] right in front of you.",
+                $"The farmer just pulled out a [{itemName}] and started eating it nearby.",
+                $"You watched the farmer snack on a [{itemName}] a moment ago."
+            });
 
         int lifetime = ModEntry.Config.PerceptionActionLifetime;
         PerceptionManager.Instance.Record("Eat", template, null, lifetime,

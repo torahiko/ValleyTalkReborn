@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using Newtonsoft.Json;
 using StardewValley;
 
 namespace ValleytalkReborn
@@ -66,7 +68,19 @@ namespace ValleytalkReborn
 
         private static string Lookup(string key)
         {
-            // 优先使用 SMAPI 翻译机制（如果可用）
+            if (string.IsNullOrEmpty(key)) return string.Empty;
+
+            EnsureLocale();
+
+            // 1. 优先读取已成功加载的语言包字典（包括 ContentPack 与 i18n）
+            if (_locale != null && _locale.TryGetValue(key, out var val) && !string.IsNullOrEmpty(val))
+                return val;
+
+            // 2. 回退到默认英文语言包
+            if (_english != null && _english.TryGetValue(key, out val) && !string.IsNullOrEmpty(val))
+                return val;
+
+            // 3. 回退到 SMAPI Translation（若有配置）
             try
             {
                 if (ModEntry.SHelper?.Translation != null)
@@ -77,44 +91,69 @@ namespace ValleytalkReborn
             }
             catch { }
 
-            // 本地字典回退
-            EnsureLocale();
-            if (_locale != null && _locale.TryGetValue(key, out var v) && !string.IsNullOrEmpty(v)) return v;
-            if (_english != null && _english.TryGetValue(key, out v) && !string.IsNullOrEmpty(v)) return v;
-            
             return key;
         }
 
         private static Dictionary<string, string> Load(string locale)
         {
-            if (ModEntry.SHelper?.Data == null) return new Dictionary<string, string>();
+            string baseDir = ModEntry.SHelper?.DirectoryPath ?? AppDomain.CurrentDomain.BaseDirectory;
+            var candidates = new List<string>();
 
-            List<string> candidates = new List<string>();
-            if (locale == "default" || locale == "en")
+            void AddFileCandidates(string folderPath)
             {
-                candidates.Add("i18n/default.json");
-            }
-            else if (locale == "zh")
-            {
-                candidates.Add("i18n/zh.json");
-                candidates.Add("i18n/zh-CN.json");
-            }
-            else
-            {
-                candidates.Add($"i18n/{locale}.json");
-            }
-
-            foreach (var path in candidates)
-            {
+                if (string.IsNullOrWhiteSpace(folderPath)) return;
                 try
                 {
-                    var result = ModEntry.SHelper.Data.ReadJsonFile<Dictionary<string, string>>(path);
-                    if (result != null && result.Count > 0) return result;
+                    string fullFolder = Path.IsPathRooted(folderPath) 
+                        ? folderPath 
+                        : Path.GetFullPath(Path.Combine(baseDir, folderPath));
+
+                    if (locale == "default" || locale == "en")
+                    {
+                        candidates.Add(Path.Combine(fullFolder, "default.json"));
+                    }
+                    else if (locale == "zh")
+                    {
+                        candidates.Add(Path.Combine(fullFolder, "zh.json"));
+                        candidates.Add(Path.Combine(fullFolder, "zh-CN.json"));
+                    }
+                    else
+                    {
+                        candidates.Add(Path.Combine(fullFolder, $"{locale}.json"));
+                    }
                 }
                 catch { }
             }
 
-            // 小语种找不到文件时回退到英文
+            // 1. 扫描同级或子级的 ContentPack 目录（物理安全穿透）
+            AddFileCandidates("../ContentPack/i18n");
+            AddFileCandidates("../[CP] ValleyTalkReborn Base/i18n");
+            AddFileCandidates("ContentPack/i18n");
+            AddFileCandidates("[CP] ValleyTalkReborn Base/i18n");
+
+            // 2. 回退扫描当前主模组根目录下的 i18n
+            AddFileCandidates("i18n");
+
+            foreach (var filePath in candidates)
+            {
+                try
+                {
+                    if (File.Exists(filePath))
+                    {
+                        string json = File.ReadAllText(filePath);
+                        if (!string.IsNullOrWhiteSpace(json))
+                        {
+                            var result = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
+                            if (result != null && result.Count > 0)
+                            {
+                                return result;
+                            }
+                        }
+                    }
+                }
+                catch { }
+            }
+
             return _english ?? new Dictionary<string, string>();
         }
 
@@ -135,12 +174,11 @@ namespace ValleytalkReborn
             return Lookup("Memory.CharacterLimit")
                 .Replace("{{value}}", maxLen.ToString())
                 .Replace("{{0}}", maxLen.ToString());
-            
         }
-        
+
         public static string ResponseStart() => Lookup("responseStart");
         public static string Get(string key) => Lookup(key);
-        
+
         public static class Memory
         {
             public static string Title(string name, int count)
@@ -195,14 +233,14 @@ namespace ValleytalkReborn
                     .Replace("{{value}}", max.ToString())
                     .Replace("{{Max}}", max.ToString())
                     .Replace("{{max}}", max.ToString());
-            
+
             public static string MenuTitle() => Lookup("Memory.MenuTitle");
             public static string TabNpc(string name) => FormatNpc(Lookup("Memory.TabNpc"), name);
             public static string TabWorld() => Lookup("Memory.TabWorld");
             public static string WorldEmpty() => Lookup("Memory.WorldEmpty");
             public static string WorldEditTitle() => Lookup("Memory.WorldEditTitle");
             public static string WorldAddTitle() => Lookup("Memory.WorldAddTitle");
-            public static string WorldAddHint(int max) 
+            public static string WorldAddHint(int max)
                 => Lookup("Memory.WorldAddHint")
                     .Replace("{{max}}", max.ToString())
                     .Replace("{{Max}}", max.ToString())
@@ -247,7 +285,6 @@ namespace ValleytalkReborn
             public static string SafetyLoose() => Lookup("Profile.SafetyLoose");
             public static string SafetyOff() => Lookup("Profile.SafetyOff");
             public static string SafetyDescription() => Lookup("Profile.SafetyDescription");
-            
         }
 
         public static class AdvancedSettings

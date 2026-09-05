@@ -28,16 +28,17 @@ internal class PerceptionManager
     private readonly Queue<PerceptionEntry> _globalGossip = new Queue<PerceptionEntry>();
     private const int MaxGossipEntries = 2;
 
-    // Track 2: farmer's personal bucket (max 3, Deduplicated-FIFO)
+    // Track 2: farmer's personal bucket (max 6, Deduplicated-FIFO)
     private readonly Queue<PerceptionEntry> _farmerBucket = new Queue<PerceptionEntry>();
-    private const int MaxBucketEntries = 3;
+    private const int MaxBucketEntries = 6;
 
     private PerceptionManager()
     {
         if (ModEntry.SHelper != null)
         {
             ModEntry.SHelper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
-            ModEntry.SHelper.Events.GameLoop.DayStarted   += OnDayStarted;}
+            ModEntry.SHelper.Events.GameLoop.DayStarted   += OnDayStarted;
+        }
     }
 
     // ─────────────────────────────────────────────
@@ -115,11 +116,46 @@ internal class PerceptionManager
                 LogLevel.Debug);
         }
     }
+    
+    /// <summary>
+    /// 显式驱逐指定的感知条目（用于即时身体/伴随状态消除，如宠物远离、脱下帽子等）。
+    /// </summary>
+    /// <param name="key">要清除的 PerceptionEntry Key（如 "PlayerPet"、"PlayerHat" 等）</param>
+    public void Evict(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key)) return;
+
+        lock (_lock)
+        {
+            // 若队列中不存在该 Key，直接返回避免重新装载队列
+            if (!_farmerBucket.Any(e => string.Equals(e.Key, key, StringComparison.OrdinalIgnoreCase)))
+                return;
+
+            // 过滤掉所有匹配指定 Key 的历史条目
+            var remaining = _farmerBucket
+                .Where(e => !string.Equals(e.Key, key, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            _farmerBucket.Clear();
+            foreach (var item in remaining)
+            {
+                _farmerBucket.Enqueue(item);
+            }
+        }
+
+        if (ModEntry.Config?.Debug == true)
+        {
+            ModEntry.SMonitor?.Log(
+                $"[PerceptionManager] Evicted key '{key}' from farmer bucket.",
+                LogLevel.Debug);
+        }
+    }
+    
 
     public void RecordGossip(string key, string template, int lifetimeHours = 20)
     {
         Record(
-            key:key,
+            key:           key,
             template:      template,
             npcName:       null,
             lifetimeHours: lifetimeHours,
@@ -142,7 +178,8 @@ internal class PerceptionManager
         if (string.IsNullOrEmpty(npcName)) return;
         lock (_lock)
         {
-            foreach (var e in _farmerBucket){
+            foreach (var e in _farmerBucket)
+            {
                 if (e.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase))
                     e.IsConsolidated = true;
             }
@@ -158,7 +195,7 @@ internal class PerceptionManager
         if (string.IsNullOrEmpty(npcName)) return new List<PerceptionEntry>();
 
         string npcLocation = GetNpcCurrentLocation(npcName);
-        NPC    npc         = GetNpcSafe(npcName);  // 查一次，下面复用
+        NPC    npc         = GetNpcSafe(npcName);
 
         lock (_lock)
         {
@@ -193,7 +230,6 @@ internal class PerceptionManager
 
     private void EnqueueGossip(PerceptionEntry entry)
     {
-        // Key dedup: new entry with same Key replaces old one to keep Track 1 diverse
         var existing = _globalGossip.FirstOrDefault(e =>
             string.Equals(e.Key, entry.Key, StringComparison.OrdinalIgnoreCase));
 
@@ -214,7 +250,7 @@ internal class PerceptionManager
         PerceptionEntry duplicate = _farmerBucket.FirstOrDefault(e =>
             e.Key == entry.Key &&
             (
-                (!string.IsNullOrEmpty(e.NpcName)&& !string.IsNullOrEmpty(entry.NpcName)
+                (!string.IsNullOrEmpty(e.NpcName) && !string.IsNullOrEmpty(entry.NpcName)
                     && string.Equals(e.NpcName, entry.NpcName, StringComparison.OrdinalIgnoreCase))
                 ||
                 (string.IsNullOrEmpty(e.NpcName)
@@ -249,24 +285,26 @@ internal class PerceptionManager
         return entry.Key switch
         {
             "Gift"  => 8f,
+            "PlayerLowHealth"    => 7f,
+            "PlayerExhausted"    => 7f,
+            "PlayerFainted"      => 7f,
+            "PlayerDrunk"        => 6f,
             "Talk"  => 6f,
+            "PlayerHasPendant"   => 5f,
+            "PlayerWeddingOutfit"=> 5f,
+            "PlayerTired"        => 5f,
             "Eat"   => 4f,
             "Fish"  => 4f,
             "Chop"  => 3f,
             "Place" => 3f,
-            _       => 3f
+            _       => 2f
         };
     }
 
-    /// <summary>
-    /// Salience = basePriority × timeDecay × personalityMultiplier.
-    /// npc may be null (e.g. NPC not currently loaded); personality factor defaults to 1.0 in that case.
-    /// </summary>
     private static float ComputeSalience(PerceptionEntry entry, NPC npc)
     {
         float base_ = GetBasePriority(entry);
 
-        // Time decay
         float decay = 1f;
         if (entry.LifetimeHours < 20)
         {
@@ -279,121 +317,62 @@ internal class PerceptionManager
             decay = Math.Clamp(1f - (float)elapsedMins / lifetimeMins, 0f, 1f);
         }
 
-        // Personality multiplier
         float personality = npc != null ? GetPersonalityMultiplier(entry, npc) : 1f;
 
         return base_ * decay * personality;
     }
 
-    /// <summary>
-    /// Returns a multiplier [0.1, 1.5] that adjusts salience based on the NPC's personality
-    /// and the event type.
-    ///
-    /// Sources used (all exposed by SDV's NPC class, no reflection needed):
-    ///   npc.Manners       — 0=neutral, 1=polite, 2=rude
-    ///   npc.SocialAnxiety — 0=outgoing, 1=shy
-    ///   npc.Optimism      — 0=positive, 1=negative
-    ///
-    /// A small set of named overrides handles NPCs whose personality is better described
-    /// by their lore than by these three flags (e.g. Linus, Penny, Harvey).
-    ///
-    /// Rule of thumb:
-    ///   1.5 = this NPC would almost certainly bring this up
-    ///   1.0 = neutral / no strong opinion
-    ///   0.5 = probably wouldn't care much
-    ///   0.1 = very unlikely to notice or mention this
-    /// </summary>
     private static float GetPersonalityMultiplier(PerceptionEntry entry, NPC npc)
     {
-        // ── Named overrides (lore-based, highest priority) ──────────────────
         float? named = GetNamedOverride(entry.Key, npc.Name);
         if (named.HasValue) return named.Value;
 
-        // ── Trait-based rules ───────────────────────────────────────────────
         return entry.Key switch
         {
-            "Gift" =>
-                // Polite NPCs are more touched by gifts; rude ones react but differently —
-                // the template text handles tone, salience stays high for both.
-                npc.Manners == NPC.polite ? 1.4f : 1.0f,
-
-            "Talk" =>
-                // Outgoing NPCs are more interested in nearby conversations;
-                // shy NPCs tend to look away.
-                npc.SocialAnxiety == NPC.shy ? 0.5f : 1.2f,
-
-            "Eat" =>
-                // Universally noticeable regardless of personality.
-                1.0f,
-
-            "Fish" =>
-                // Positive / optimistic NPCs are more impressed by a catch.
-                npc.Optimism == NPC.positive ? 1.2f : 0.8f,
-
-            "Chop" =>
-                // Rude NPCs don't mind noise; polite/positive ones may find it jarring.
-                npc.Manners == NPC.rude ? 0.7f : 1.0f,
-
-            "Place" =>
-                // Outgoing NPCs are more observant of their surroundings.
-                npc.SocialAnxiety == NPC.shy ? 0.6f : 1.0f,
-
-            "Harvest" =>
-                // Landmark — everyone hears town-wide news, but optimistic NPCs
-                // are more likely to bring it up in conversation.
-                npc.Optimism == NPC.positive ? 1.3f : 1.0f,
-
+            "Gift" => npc.Manners == NPC.polite ? 1.4f : 1.0f,
+            "Talk" => npc.SocialAnxiety == NPC.shy ? 0.5f : 1.2f,
+            "Eat" => 1.0f,
+            "Fish" => npc.Optimism == NPC.positive ? 1.2f : 0.8f,
+            "Chop" => npc.Manners == NPC.rude ? 0.7f : 1.0f,
+            "Place" => npc.SocialAnxiety == NPC.shy ? 0.6f : 1.0f,
+            "Harvest" => npc.Optimism == NPC.positive ? 1.3f : 1.0f,
             _ => 1.0f
         };
     }
 
-    /// <summary>
-    /// Named overrides for NPCs whose personality is better described by lore
-    /// than by the Manners/SocialAnxiety/Optimism flags.
-    /// Returns null if no override applies for this (key, npcName) pair.
-    /// </summary>
     private static float? GetNamedOverride(string key, string npcName)
     {
         return (key, npcName) switch
         {
-            // Linus lives in nature — deeply moved by farming/foraging news, dislikes chopping
             ("Harvest", "Linus") => 1.5f,
-            ("Chop",    "Linus") => 0.1f,  // would genuinely be bothered
+            ("Chop",    "Linus") => 0.1f,
             ("Fish",    "Linus") => 1.4f,
 
-            // Penny is gentle and dislikes destruction; loves seeing the farmer care for things
             ("Chop",    "Penny") => 0.1f,
             ("Harvest", "Penny") => 1.4f,
             ("Gift",    "Penny") => 1.5f,
 
-            // Harvey is observant and health-conscious — notices what people eat
             ("Eat",     "Harvey") => 1.5f,
-            ("Fish",    "Harvey") => 1.2f,  // appreciates outdoor activity
+            ("Fish",    "Harvey") => 1.2f,
 
-            // Leah is an artist who appreciates nature; hates seeing trees felled
             ("Chop",    "Leah") => 0.1f,
             ("Harvest", "Leah") => 1.3f,
-            ("Place",   "Leah") => 1.3f,   // notices things placed in the world
+            ("Place",   "Leah") => 1.3f,
 
-            // Willy is a fisherman — any fish catch is big news to him
             ("Fish",    "Willy") => 1.5f,
 
-            // Sebastian is introverted — not interested in social observations
             ("Talk",    "Sebastian") => 0.3f,
             ("Place",   "Sebastian") => 0.4f,
 
-            // Emily is expressive and warm — notices gifts and acts of care
             ("Gift",    "Emily") => 1.4f,
             ("Eat",     "Emily") => 1.2f,
 
-            // Haley is fashion-conscious — not interested in outdoor farm work
-            ("Chop",    "Haley")    => 0.2f,
-            ("Harvest", "Haley")    => 0.4f,
-            ("Fish",    "Haley")    => 0.3f,
+            ("Chop",    "Haley") => 0.2f,
+            ("Harvest", "Haley") => 0.4f,
+            ("Fish",    "Haley") => 0.3f,
 
-            // Maru is curious and scientific — interested in unusual catches
-            ("Fish",    "Maru")    => 1.3f,
-            ("Harvest", "Maru")    => 1.1f,
+            ("Fish",    "Maru") => 1.3f,
+            ("Harvest", "Maru") => 1.1f,
 
             _ => null
         };
@@ -407,6 +386,18 @@ internal class PerceptionManager
         PerceptionEntry entry, string npcName, string npcLocation)
     {
         if (entry.IsLandmark) return true;
+
+        // 玩家自身身体状态（PlayerStateScanner 产出的 Player* Key）属于面对面即时感知，
+        // 不受地理定位判定限制——帽子、醉酒、疲惫等无需"在同一地图"即可被眼前 NPC 察觉。
+        if (entry.Key.StartsWith("Player", StringComparison.OrdinalIgnoreCase)) return true;
+
+        // 【核心修复】对话旁听（Talk）严格定向：只有指定的旁听者本人才能感知
+        // 杜绝因同处于一个房间而将旁听记忆塞给说话者自己（如哈坎自己旁听自己）
+        if (entry.Key == "Talk")
+        {
+            return !string.IsNullOrEmpty(entry.NpcName) &&
+                   entry.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase);
+        }
 
         if (!string.IsNullOrEmpty(entry.NpcName) &&
             entry.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase))

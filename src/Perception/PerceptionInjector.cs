@@ -59,9 +59,13 @@ internal static class PerceptionInjector
             isZh 
                 ? "[小镇背景传闻]（背景认知：仅在与农夫当前对话主题高度契合时顺带提及，优先响应农夫的发言。）"
                 : "[Town Gossip] (Background context: Only mention if directly relevant to the ongoing conversation.)"
-        };
+    };
 
-        foreach (var p in snapshots.Take(1))
+        // 优先展现 S-tier 人生大事（结婚/生子等），避免被日常世界新闻淹没
+        var targetSnapshot = snapshots.FirstOrDefault(p => p.Key == "LifeEvent")
+                            ?? snapshots.FirstOrDefault();
+
+        foreach (var p in new[] { targetSnapshot }.Where(x => x != null))
         {
             if (p == null || string.IsNullOrWhiteSpace(p.Template)) continue;
 
@@ -95,11 +99,11 @@ internal static class PerceptionInjector
     }
 
    public static string BuildLocalBlock(string npcName)
-{
-    var perceptions = PerceptionManager.Instance.GetFilteredBucketFor(npcName, 2);
-    if (perceptions == null || perceptions.Count == 0) return string.Empty;
+   {
+        var perceptions = PerceptionManager.Instance.GetFilteredBucketFor(npcName, 3);
+        if (perceptions == null || perceptions.Count == 0) return string.Empty;
 
-    bool isZh = IsChineseLanguage;
+        bool isZh = IsChineseLanguage;
 
     // 礼物类感知单独提取，注入为强上下文而非弱背景
     var giftPerceptions = perceptions

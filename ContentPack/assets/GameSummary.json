@@ -115,160 +115,160 @@
           }
         },
         "Locations": {
-          "Text": "Key locations and points of interest across the valley include:",
+          "Text": "{{i18n:summaryLocationsHeading}}",
           "Entries": {
             "TheFarm": {
               "id": "TheFarm",
               "Region": "The Farm",
-              "Name": "The Farm",
-              "Description": "The farmer's home and primary homestead. Features farm structures like the Barn, Coop, Greenhouse, Silo, Stable, Shed, and Fish Pond."
+              "Name": "{{i18n:summaryLocTheFarmName}}",
+              "Description": "{{i18n:summaryLocTheFarmDesc}}"
             },
             "PelicanTown_SeedShop": {
               "id": "PelicanTown/SeedShop",
               "Region": "Pelican Town",
-              "Name": "Pierre's General Store",
-              "Description": "Local shop selling seeds and supplies. Owned by Pierre, who lives here with Caroline and Abigail."
+              "Name": "{{i18n:summaryLocSeedShopName}}",
+              "Description": "{{i18n:summaryLocSeedShopDesc}}"
             },
             "PelicanTown_JojaMart": {
               "id": "PelicanTown/JojaMart",
               "Region": "Pelican Town",
-              "Name": "JojaMart",
-              "Description": "A mega-corporate supermarket competing with Pierre's. Employs Shane, Sam, and Manager Morris."
+              "Name": "{{i18n:summaryLocJojaMartName}}",
+              "Description": "{{i18n:summaryLocJojaMartDesc}}"
             },
             "PelicanTown_StardropSaloon": {
               "id": "PelicanTown/StardropSaloon",
               "Region": "Pelican Town",
-              "Name": "Stardrop Saloon",
-              "Description": "The local social hub owned and managed by Gus, assisted by Emily. Features food, drinks, pool, and arcade games."
+              "Name": "{{i18n:summaryLocSaloonName}}",
+              "Description": "{{i18n:summaryLocSaloonDesc}}"
             },
             "PelicanTown_HarveysClinic": {
               "id": "PelicanTown/HarveysClinic",
               "Region": "Pelican Town",
-              "Name": "Harvey's Clinic",
-              "Description": "Town medical clinic run by Dr. Harvey, with Maru working part-time as a nurse."
+              "Name": "{{i18n:summaryLocClinicName}}",
+              "Description": "{{i18n:summaryLocClinicDesc}}"
             },
             "PelicanTown_Blacksmith": {
               "id": "PelicanTown/Blacksmith",
               "Region": "Pelican Town",
-              "Name": "Blacksmith",
-              "Description": "Run by Clint, who processes geodes and upgrades farming tools."
+              "Name": "{{i18n:summaryLocBlacksmithName}}",
+              "Description": "{{i18n:summaryLocBlacksmithDesc}}"
             },
             "PelicanTown_LibraryMuseum": {
               "id": "PelicanTown/LibraryMuseum",
               "Region": "Pelican Town",
-              "Name": "Library & Museum",
-              "Description": "Curated by Gunther. Houses donated artifacts, minerals, and lost books."
+              "Name": "{{i18n:summaryLocMuseumName}}",
+              "Description": "{{i18n:summaryLocMuseumDesc}}"
             },
             "PelicanTown_CommunityCenter": {
               "id": "PelicanTown/CommunityCenter",
               "Region": "Pelican Town",
-              "Name": "Community Center",
-              "Description": "The historic heart of town, currently neglected. Can be restored by Junimos or turned into a Joja Warehouse."
+              "Name": "{{i18n:summaryLocCommunityCenterName}}",
+              "Description": "{{i18n:summaryLocCommunityCenterDesc}}"
             },
             "CindersapForest": {
               "id": "CindersapForest",
               "Region": "Cindersap Forest",
-              "Name": "Cindersap Forest",
-              "Description": "Lush forest housing Leah's Cottage, Marnie's Ranch, and the Wizard's Tower. The Travelling Cart visits Fridays and Sundays."
+              "Name": "{{i18n:summaryLocCindersapForestName}}",
+              "Description": "{{i18n:summaryLocCindersapForestDesc}}"
             },
             "CindersapForest_MarniesRanch": {
               "id": "CindersapForest/MarniesRanch",
               "Region": "Cindersap Forest",
-              "Name": "Marnie's Ranch",
-              "Description": "Sells livestock and animal supplies. Marnie lives here with Jas and Shane."
+              "Name": "{{i18n:summaryLocMarniesRanchName}}",
+              "Description": "{{i18n:summaryLocMarniesRanchDesc}}"
             },
             "CindersapForest_WizardsTower": {
               "id": "CindersapForest/WizardsTower",
               "Region": "Cindersap Forest",
-              "Name": "Wizard's Tower",
-              "Description": "Home of M. Rasmodius the Wizard. Most villagers view it with local curiosity or superstition."
+              "Name": "{{i18n:summaryLocWizardsTowerName}}",
+              "Description": "{{i18n:summaryLocWizardsTowerDesc}}"
             },
             "Mountain": {
               "id": "Mountain",
               "Region": "Mountain",
-              "Name": "Mountain",
-              "Description": "Scenic northern area featuring Robin's Carpenter Shop, Linus's tent, the Mines, and the Adventurer's Guild."
+              "Name": "{{i18n:summaryLocMountainName}}",
+              "Description": "{{i18n:summaryLocMountainDesc}}"
             },
             "Mountain_AdventurersGuild": {
               "id": "Mountain/AdventurersGuild",
               "Region": "Mountain",
-              "Name": "Adventurer's Guild",
-              "Description": "Headquarters for local monster hunters, managed by Marlon and Gil."
+              "Name": "{{i18n:summaryLocAdventurersGuildName}}",
+              "Description": "{{i18n:summaryLocAdventurersGuildDesc}}"
             },
             "Mountain_TheMines": {
               "id": "Mountain/TheMines",
               "Region": "Mountain",
-              "Name": "The Mines",
-              "Description": "Deep, cavernous mines filled with ores, minerals, and monsters. Explored by adventurous villagers."
+              "Name": "{{i18n:summaryLocTheMinesName}}",
+              "Description": "{{i18n:summaryLocTheMinesDesc}}"
             },
             "Mountain_Spa": {
               "id": "Mountain/Spa",
               "Region": "Mountain",
-              "Name": "Spa",
-              "Description": "A bathhouse near the railroad. Its thermal pool restores energy and health."
+              "Name": "{{i18n:summaryLocSpaName}}",
+              "Description": "{{i18n:summaryLocSpaDesc}}"
             },
             "Beach_FishShop": {
               "id": "Beach/FishShop",
               "Region": "Beach",
-              "Name": "Fish Shop",
-              "Description": "Willy's seaside shop selling fishing gear and tackle. Features a boat to Ginger Island once repaired."
+              "Name": "{{i18n:summaryLocFishShopName}}",
+              "Description": "{{i18n:summaryLocFishShopDesc}}"
             },
             "Desert_Oasis": {
               "id": "Desert/Oasis",
               "Region": "Desert",
-              "Name": "Oasis",
-              "Description": "Sandy's shop in the Calico Desert selling exotic seeds and goods. Accessible via the repaired Desert Bus."
+              "Name": "{{i18n:summaryLocOasisName}}",
+              "Description": "{{i18n:summaryLocOasisDesc}}"
             },
             "GingerIsland": {
               "id": "GingerIsland",
               "Region": "Ginger Island",
-              "Name": "Ginger Island",
-              "Description": "A tropical paradise featuring an island farm, beach resort, and volcano dungeon."
+              "Name": "{{i18n:summaryLocGingerIslandName}}",
+              "Description": "{{i18n:summaryLocGingerIslandDesc}}"
             }
           }
         },
         "Festivals": {
-          "Text": "Pelican Town hosts several seasonal community festivals throughout the year:",
+          "Text": "{{i18n:summaryFestivalsHeading}}",
           "Entries": {
             "spring13": {
               "id": "spring13",
-              "Name": "Egg Festival",
-              "Description": "Spring 13. Features an egg hunt competition."
+              "Name": "{{i18n:summaryFestEggFestivalName}}",
+              "Description": "{{i18n:summaryFestEggFestivalDesc}}"
             },
             "spring24": {
               "id": "spring24",
-              "Name": "Flower Dance",
-              "Description": "Spring 24. A traditional spring dance where players can ask an eligible villager to pair up."
+              "Name": "{{i18n:summaryFestFlowerDanceName}}",
+              "Description": "{{i18n:summaryFestFlowerDanceDesc}}"
             },
             "summer11": {
               "id": "summer11",
-              "Name": "Luau",
-              "Description": "Summer 11. A beachside potluck where villagers contribute ingredients to a communal soup for the Governor."
+              "Name": "{{i18n:summaryFestLuauName}}",
+              "Description": "{{i18n:summaryFestLuauDesc}}"
             },
             "summer28": {
               "id": "summer28",
-              "Name": "Dance of the Moonlight Jellies",
-              "Description": "Summer 28. An evening gathering at the beach to watch migrating bioluminescent jellyfish."
+              "Name": "{{i18n:summaryFestMoonlightJelliesName}}",
+              "Description": "{{i18n:summaryFestMoonlightJelliesDesc}}"
             },
             "fall16": {
               "id": "fall16",
-              "Name": "Stardew Valley Fair",
-              "Description": "Fall 16. A town fair with carnival minigames and the Grange Display contest."
+              "Name": "{{i18n:summaryFestStardewFairName}}",
+              "Description": "{{i18n:summaryFestStardewFairDesc}}"
             },
             "fall27": {
               "id": "fall27",
-              "Name": "Spirit's Eve",
-              "Description": "Fall 27. A spooky festival featuring a haunted maze and seasonal treats."
+              "Name": "{{i18n:summaryFestSpiritsEveName}}",
+              "Description": "{{i18n:summaryFestSpiritsEveDesc}}"
             },
             "winter8": {
               "id": "winter8",
-              "Name": "Festival of Ice",
-              "Description": "Winter 8. Features ice sculptures, igloos, and an ice fishing competition."
+              "Name": "{{i18n:summaryFestIceFestivalName}}",
+              "Description": "{{i18n:summaryFestIceFestivalDesc}}"
             },
             "winter25": {
               "id": "winter25",
-              "Name": "Feast of the Winter Star",
-              "Description": "Winter 25. A holiday celebration centered around secret gift-giving."
+              "Name": "{{i18n:summaryFestWinterStarName}}",
+              "Description": "{{i18n:summaryFestWinterStarDesc}}"
             }
           }
         },

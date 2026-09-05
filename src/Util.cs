@@ -115,6 +115,16 @@ namespace ValleytalkReborn
                 }
             }
 
+            // 5. 回退到 I18n 字典（支持 ContentPack/i18n 加载）
+            if (result == null)
+            {
+                var i18nValue = I18n.Get(key);
+                if (i18nValue != null && i18nValue != key)
+                {
+                    return ReplaceTokens(i18nValue, tokens);
+                }
+            }
+
             if (result == null)
             {
                 return returnNull ? null : string.Empty;
@@ -145,6 +155,13 @@ namespace ValleytalkReborn
                 {
                     return translation.ToString();
                 }
+            }
+
+            // 3. 回退到 I18n 字典（支持 ContentPack/i18n 加载）
+            var i18nResult = I18n.Get(key);
+            if (i18nResult != null && i18nResult != key)
+            {
+                return ReplaceTokens(i18nResult, tokens);
             }
 
             return returnNull ? null : string.Empty;

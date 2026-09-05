@@ -14,11 +14,16 @@ namespace ValleytalkReborn
         /// 组装完整的场景感知块（地点、时间、天气、节日、周围实体）。
         /// 以 centerNpc 为中心扫描，若为 null 则以玩家为中心。
         /// </summary>
+        /// <summary>
+        /// 组装完整的场景感知块（地点、时间、天气、节日、周围实体）。
+        /// 以 centerNpc 为中心扫描，若为 null 则以玩家为中心。
+        /// </summary>
         public static string BuildSceneBlock(NPC centerNpc, int radiusTiles = 5, int maxItems = 5,
             IEnumerable<string> excludeNames = null)
         {
+            bool isZh = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
             var sb = new StringBuilder();
-            sb.AppendLine("### [SCENE AWARENESS]");
+            sb.AppendLine(isZh ? "### [场景感知]" : "### [SCENE AWARENESS]");
 
             // 地点 / 时间 / 天气
             string locationName = EnvironmentScanner.GetLocationFriendlyName(
@@ -27,23 +32,34 @@ namespace ValleytalkReborn
             int timeOfDay  = Game1.timeOfDay;
             string timeStr = $"{(timeOfDay / 100) % 24}:{timeOfDay % 100:00}";
 
-            var weatherParts = new List<string>();
-            if (Game1.IsRainingHere())   weatherParts.Add("Rainy");
-            if (Game1.IsSnowingHere())   weatherParts.Add("Snowy");
-            if (Game1.IsLightningHere()) weatherParts.Add("Thunder");
-            if (weatherParts.Count == 0) weatherParts.Add("Sunny");
+            string seasonStr = isZh ? Game1.CurrentSeasonDisplayName : Game1.currentSeason;
 
-            sb.AppendLine($"- Location: {locationName} ({timeStr}, {Game1.currentSeason}, {string.Join(", ", weatherParts)})");
+            var weatherParts = new List<string>();
+            if (Game1.IsRainingHere())   weatherParts.Add(isZh ? "雨天" : "Rainy");
+            if (Game1.IsSnowingHere())   weatherParts.Add(isZh ? "飞雪" : "Snowy");
+            if (Game1.IsLightningHere()) weatherParts.Add(isZh ? "雷雨" : "Thunder");
+            if (weatherParts.Count == 0) weatherParts.Add(isZh ? "晴天" : "Sunny");
+
+            string weatherCombined = string.Join(", ", weatherParts);
+
+            if (isZh)
+            {
+                sb.AppendLine($"- 地点: {locationName} ({timeStr}, {seasonStr}, {weatherCombined})");
+            }
+            else
+            {
+                sb.AppendLine($"- Location: {locationName} ({timeStr}, {seasonStr}, {weatherCombined})");
+            }
 
             // 节日
             string festival = EnvironmentScanner.GetTodayFestivalName();
             if (!string.IsNullOrEmpty(festival))
-                sb.AppendLine($"- Event: {festival}");
+                sb.AppendLine(isZh ? $"- 节日活动: {festival}" : $"- Event: {festival}");
 
-            // 周围实体（物品 + NPC）
+            // 周围实体（物品 + 玩家）
             var nearby = BuildNearbyList(centerNpc, radiusTiles, maxItems, excludeNames);
             if (nearby.Count > 0)
-                sb.AppendLine($"- Nearby: {string.Join(", ", nearby)}");
+                sb.AppendLine(isZh ? $"- 附近: {string.Join(", ", nearby)}" : $"- Nearby: {string.Join(", ", nearby)}");
 
             return sb.ToString().TrimEnd();
         }

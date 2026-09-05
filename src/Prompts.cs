@@ -206,6 +206,12 @@ public class Prompts
 
             bio = Regex.Replace(bio, @"\n{2,}", "\n");
 
+            // 🌟 拦截点 1：将传记正文中的英文名全部洗成标准中文
+            if (IsChineseLanguage)
+            {
+                bio = NpcNameLocalizer.LocalizeNamesInText(bio);
+            }
+
             npcConstantPrompt.AppendLine(bio);
 
             if ((Character.Bio.Relationships?.Any() ?? false) && !Character.Bio.IsKnownNpc)
@@ -218,7 +224,19 @@ public class Prompts
                 {
                     npcConstantPrompt.AppendLine($"## {Util.GetString("biographyRelationships")}:");
                     foreach (var relationship in visible)
-                        npcConstantPrompt.AppendLine($"* **{relationship.Heading}**: {relationship.Description}");
+                    {
+                        string heading = relationship.Heading;
+                        string desc = relationship.Description;
+
+                        // 🌟 拦截点 2：将关系网标题与描述里的英文名洗成标准中文
+                        if (IsChineseLanguage)
+                        {
+                            heading = NpcNameLocalizer.GetZhName(heading);
+                            desc = NpcNameLocalizer.LocalizeNamesInText(desc);
+                        }
+
+                        npcConstantPrompt.AppendLine($"* **{heading}**: {desc}");
+                    }
                 }
             }
 
@@ -232,7 +250,19 @@ public class Prompts
                 {
                     npcConstantPrompt.AppendLine($"## {Util.GetString("biographyPersonality")}:");
                     foreach (var trait in visible)
-                        npcConstantPrompt.AppendLine($"* **{trait.Heading}**: {trait.Description}");
+                    {
+                        string heading = trait.Heading;
+                        string desc = trait.Description;
+
+                        // 🌟 拦截点 3：将性格特征标题与描述里的英文名洗成标准中文
+                        if (IsChineseLanguage)
+                        {
+                            heading = NpcNameLocalizer.GetZhName(heading);
+                            desc = NpcNameLocalizer.LocalizeNamesInText(desc);
+                        }
+
+                        npcConstantPrompt.AppendLine($"* **{heading}**: {desc}");
+                    }
                 }
             }
 
@@ -243,45 +273,40 @@ public class Prompts
 
     private void GetMicroEnvironment(StringBuilder prompt)
     {
-        bool isZh = IsChineseLanguage;
-
-        prompt.AppendLine(isZh ? "### 场景感知" : "### SCENE AWARENESS");
+        prompt.AppendLine(Util.GetString(Character, "sceneHeading"));
         prompt.AppendLine("<scene_context>");
 
         string friendlyLocation = EnvironmentScanner.GetLocationFriendlyName(Context.Location);
-        prompt.AppendLine(isZh ? $"- 位置: {friendlyLocation}" : $"- Location: {friendlyLocation}");
+        prompt.AppendLine(Util.GetString(Character, "sceneLocation", new { Location = friendlyLocation }));
 
         string festival = EnvironmentScanner.GetTodayFestivalName();
         if (!string.IsNullOrEmpty(festival))
         {
             if (EnvironmentScanner.IsFestivalCurrentlyActive())
-                prompt.AppendLine(isZh ? $"- 节日活动: 正在参加【{festival}】，氛围热闹热闹。" : $"- Special Event: Attending the {festival} with a festive atmosphere.");
+                prompt.AppendLine(Util.GetString(Character, "sceneFestivalActive", new { Festival = festival }));
             else
-                prompt.AppendLine(isZh ? $"- 节日活动: 今天是【{festival}】，小镇沉浸在筹备氛围中。" : $"- Special Event: Today is the {festival}, preparations are underway.");
+                prompt.AppendLine(Util.GetString(Character, "sceneFestivalToday", new { Festival = festival }));
         }
 
-        prompt.AppendLine(isZh 
-            ? $"- 时间: {Context.TimeOfDay} | 季节: {Game1.CurrentSeasonDisplayName} (第 {Context.DayOfSeason} 天)" 
-            : $"- Time: {Context.TimeOfDay} | Season: {Game1.CurrentSeasonDisplayName} (Day {Context.DayOfSeason})");
+        prompt.AppendLine(Util.GetString(Character, "sceneTimeSeason", new { Time = Context.TimeOfDay, Season = Game1.CurrentSeasonDisplayName, Day = Context.DayOfSeason }));
 
         if (Context.Weather != null && Context.Weather.Any())
         {
-            prompt.AppendLine(isZh ? $"- 天气: {string.Join(", ", Context.Weather)}" : $"- Weather: {string.Join(", ", Context.Weather)}");
+            string sensoryWeather = GetSensoryWeatherDescription(Context.Weather);
+            prompt.AppendLine(Util.GetString(Character, "sceneWeather", new { Weather = sensoryWeather }));
         }
 
         var nearbyObjects = EnvironmentScanner.ScanNearbyObjects(Character.StardewNpc, 5, 8);
         if (nearbyObjects.Any())
         {
-            prompt.AppendLine(isZh ? $"- 近景物件: {string.Join(", ", nearbyObjects)}" : $"- Immediate Objects: {string.Join(", ", nearbyObjects)}");
+            prompt.AppendLine(Util.GetString(Character, "sceneObjects", new { Objects = string.Join(", ", nearbyObjects) }));
         }
 
         string npcLocationName = Character.StardewNpc.currentLocation?.Name ?? "";
         string playerLocationName = Game1.getPlayerOrEventFarmer().currentLocation?.Name ?? "";
         if (string.Equals(npcLocationName, playerLocationName, StringComparison.OrdinalIgnoreCase))
         {
-            prompt.AppendLine(isZh 
-                ? "- 空间状态: 与农夫处于同一现场，专注于回应农夫的存在与当前交流。" 
-                : "- Spatial Status: Co-present with the farmer. Focus on reacting to their presence and active conversation.");
+            prompt.AppendLine(Util.GetString(Character, "sceneSpatialCoPresent"));
         }
 
         if (CurrentFlags.IncludeEnvironment)
@@ -289,9 +314,7 @@ public class Prompts
             var otherNpcs = Util.GetNearbyNpcs(Character.StardewNpc);
             if (otherNpcs.Any())
             {
-                prompt.AppendLine(isZh 
-                    ? $"- 现场其他村民: {string.Join(", ", otherNpcs.Select(n => n.displayName))}" 
-                    : $"- Nearby Villagers: {string.Join(", ", otherNpcs.Select(n => n.displayName))}");
+                prompt.AppendLine(Util.GetString(Character, "sceneNearbyVillagers", new { Villagers = string.Join(", ", otherNpcs.Select(n => n.displayName)) }));
             }
         }
 
@@ -300,6 +323,36 @@ public class Prompts
             prompt.AppendLine(poiContext);
 
         prompt.AppendLine("</scene_context>\n");
+    }
+
+    /// <summary>
+    /// 将原生天气字符串列表映射为感官化的环境描写。
+    /// </summary>
+    private string GetSensoryWeatherDescription(List<string> weatherList)
+    {
+        if (weatherList == null || !weatherList.Any())
+            return string.Empty;
+
+        var descriptions = new List<string>();
+        foreach (var raw in weatherList)
+        {
+            string key = raw.ToLowerInvariant() switch
+            {
+                "sun" or "clear" => "weatherDescSun",
+                "rain" => "weatherDescRain",
+                "storm" or "lightning" => "weatherDescStorm",
+                "snow" => "weatherDescSnow",
+                "wind" or "debris" => "weatherDescWind",
+                "greenrain" => "weatherDescGreenRain",
+                _ => null
+            };
+
+            string desc = key != null ? Util.GetString(Character, key) : raw;
+            if (!string.IsNullOrEmpty(desc))
+                descriptions.Add(desc);
+        }
+
+        return string.Join(" ", descriptions);
     }
 
     private string GetCorePrompt()
@@ -456,21 +509,15 @@ public class Prompts
         {
             // 本轮会话中确实存在玩家台词 → 真正的"深入交流"场景
             prompt.AppendLine("<interaction_state>");
-            prompt.AppendLine(isZh
-                ? "- 状态: 今天已有过基本寒暄，对话现已进入深入交流阶段。"
-                : "- Status: Ongoing interaction after initial greetings today.");
-            prompt.AppendLine(isZh
-                ? "- 目标: 直接接续农夫提出的最新话题或当下氛围，保持自然连贯。"
-                : "- Goal: Directly continue the ongoing topic or atmosphere naturally.");
+            prompt.AppendLine(Util.GetString(Character, "interactionOngoingState"));
+            prompt.AppendLine(Util.GetString(Character, "interactionOngoingGoal"));
             prompt.AppendLine("</interaction_state>\n");
         }
         else if (hasNoPlayerInput && flags?.IsSimpleGreeting != true)
         {
             // 本轮会话中还没有任何玩家台词 → 视为刚照面，不论原版 TalkedToToday 是否为真
             prompt.AppendLine("<interaction_state>");
-            prompt.AppendLine(isZh
-                ? "农夫刚刚走近你。请自然问候或主动分享你此刻关注的事情。"
-                : "The farmer has walked over. Acknowledge their presence naturally or share what is on your mind.");
+            prompt.AppendLine(Util.GetString(Character, "interactionApproaching"));
             prompt.AppendLine("</interaction_state>\n");
         }
 
@@ -537,13 +584,31 @@ public class Prompts
         InjectPendingTopic(prompt);
         InjectMovementInstruction(prompt);
 
-        // 追加"每轮动态但不属于 SystemPrompt 缓存前缀"的内容
-        // （由 LlmDialogueService 在 CorePrompt 求值前通过字段注入）
+        // ── Dynamic per-turn injections (outside SystemPrompt cache) ──
         if (!string.IsNullOrEmpty(PendingEvolvedTraitsBlock))
             prompt.AppendLine("\n" + PendingEvolvedTraitsBlock);
 
         if (!string.IsNullOrEmpty(PendingLocalPerceptionBlock))
             prompt.AppendLine("\n" + PendingLocalPerceptionBlock);
+
+        // === World News & Extreme Activity Injection (Track 1 Non-LifeEvent) ===
+        var gossipSnapshots = PerceptionManager.Instance.GetGossipSnapshots();
+        var newsEntries = gossipSnapshots
+            .Where(e => !string.Equals(e.Key, "LifeEvent", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (newsEntries.Any())
+        {
+            string newsHeader = IsChineseLanguage
+                ? "【今日新闻】（可作为开场话题或自然衔接点；若与当前对话无关则不必强行提及）"
+                : "[Today's News] (May be used as an opening topic or natural transition; skip if irrelevant to current exchange.)";
+
+            prompt.AppendLine(newsHeader);
+            foreach (var entry in newsEntries)
+                prompt.AppendLine($"- {entry.Template}");
+            prompt.AppendLine();
+        }
+        // ======================================================================
 
         string finalPrompt = prompt.ToString();
         LogRoutingDebug(finalPrompt, "FULL_CONTEXT_BUILD");
@@ -679,27 +744,20 @@ public class Prompts
 
         if (isToday) return; // Already spoke today — InjectSessionContinuity handles it
 
-        bool isZh = IsChineseLanguage;
         int dayGap = (int)Math.Round(now.TotalDays - lastTime.TotalDays);
 
         prompt.AppendLine("<greeting_context>");
         if (dayGap == 1)
         {
-            prompt.AppendLine(isZh
-                ? "- 这是今天与农夫的第一次对话。昨天你们有过交流，可以自然地衔接昨天的话题，或者简单地打个招呼。不需要刻意说\"早上好\"，但要有重新见面的感觉。"
-                : "- This is your first conversation today. You spoke yesterday — naturally continue from yesterday's thread or give a light greeting. Avoid a stiff 'Good morning', but acknowledge seeing them again.");
+            prompt.AppendLine(Util.GetString(Character, "greetingYesterday"));
         }
         else if (dayGap <= 3)
         {
-            prompt.AppendLine(isZh
-                ? "- 这是今天与农夫的第一次对话，你们已经 " + dayGap + " 天没说话了。重新建立连接，可以提到上次聊的事，或表示你注意到对方这几天的动态。"
-                : "- This is your first conversation today. It has been " + dayGap + " days since you last spoke. Re-establish connection naturally — reference your last conversation or note their recent presence.");
+            prompt.AppendLine(Util.GetString(Character, "greetingFewDays", new { DayGap = dayGap }));
         }
         else
         {
-            prompt.AppendLine(isZh
-                ? "- 这是今天与农夫的第一次对话，你们已经 " + dayGap + " 天没有交流了。重新见面时要有一种久违的感觉，可以好奇对方这段时间在忙什么。"
-                : "- First conversation today after " + dayGap + " days apart. Show a sense of catching up — you might wonder what they've been up to.");
+            prompt.AppendLine(Util.GetString(Character, "greetingLongTime", new { DayGap = dayGap }));
         }
         prompt.AppendLine("</greeting_context>\n");
     }
@@ -709,22 +767,47 @@ public class Prompts
         var session = SessionCache.Instance.GetOrCreate(Character.Name);
         if (session.RecentTurns.Count == 0) return;
 
-        // Skip if the session was last updated on a different day — avoid presenting
-        // yesterday's conversation as "earlier today"
+        // 仅在当天生效
         if (StardewModdingAPI.Context.IsWorldReady &&
             (session.LastUpdatedYear != Game1.year ||
              session.LastUpdatedSeason != (Season)Game1.season ||
              session.LastUpdatedDay != Game1.dayOfMonth))
             return;
 
-        string Normalize(string s) => Regex.Replace(s ?? "", @"[\s\$\#\@\{\}\[\]]", "");
-        var currentNorms = Context.ChatHistory.Select(x => Normalize(x.Text)).ToHashSet();
+        // 1. 规范化清洗：同时抹平 @ 和 玩家实际名字、分屏符号、肖像代码等
+        string playerName = Game1.player?.Name ?? "";
+        string Normalize(string s)
+        {
+            if (string.IsNullOrWhiteSpace(s)) return "";
+            string clean = s;
+            if (!string.IsNullOrEmpty(playerName))
+                clean = clean.Replace(playerName, "");
+            return Regex.Replace(clean, @"[\s\$\#\@\{\}\[\]\(\)]", "");
+        }
 
-        var previousTurns = session.RecentTurns
+        var currentNorms = Context.ChatHistory
+            .Select(x => Normalize(x.Text))
+            .Where(x => !string.IsNullOrEmpty(x))
+            .ToHashSet();
+
+        // 2. 核心防御：剔除当前轮次已有的文本
+        var candidateTurns = session.RecentTurns
             .Where(t => !string.IsNullOrWhiteSpace(t.Text) && !currentNorms.Contains(Normalize(t.Text)))
             .ToList();
 
-        if (previousTurns.Count == 0) return;
+        // 3. 终极保护：如果候选池与刚刚发生的一样，或者当前正在对话（ChatHistory有内容），
+        // 排除最近写入的 1~2 个 turn（防止因格式微差漏网）
+        if (Context.ChatHistory.Any() && candidateTurns.Count > 0)
+        {
+            // 确保不会把上一次刚刚结束的发言作为“早先回顾”
+            int skipRecentCount = Math.Min(2, candidateTurns.Count);
+            candidateTurns = candidateTurns.Take(candidateTurns.Count - skipRecentCount).ToList();
+        }
+
+        if (candidateTurns.Count == 0) return;
+
+        // 只取最近的 2~3 轮真正历史
+        var previousTurns = candidateTurns.TakeLast(3).ToList();
 
         bool isZh = IsChineseLanguage;
         prompt.AppendLine(isZh ? "### 早先交流回顾" : "### EARLIER IN OUR CONVERSATION");
@@ -959,78 +1042,44 @@ public class Prompts
         bool isSingle = npcData.CanBeRomanced;
         bool isChild = npcData.Age == NpcAge.Child;
 
-        // 检查是否已送花确认恋爱关系（原版星露谷未送花哪怕8心也只是挚友）
         bool isDating = false;
         if (Game1.player?.friendshipData.TryGetValue(Character.Name, out var fs) == true)
         {
             isDating = fs.IsDating();
         }
 
-        string line = IsChineseLanguage
-            ? GetFriendshipTextZh(hearts, isSingle, isChild, isDating)
-            : GetFriendshipTextEn(hearts, isSingle, isChild, isDating);
-
+        string line = GetFriendshipText(hearts, isSingle, isChild, isDating);
         if (!string.IsNullOrWhiteSpace(line))
             prompt.AppendLine(line);
     }
 
-    private string GetFriendshipTextZh(int hearts, bool isSingle, bool isChild, bool isDating)
+    private string GetFriendshipText(int hearts, bool isSingle, bool isChild, bool isDating)
     {
-        string note = "（社交熟悉度基准；你对农夫的实际好恶与信任度请优先结合【长期印象】与【记忆】综合表现）";
+        string note = Util.GetString(Character, "friendshipNote");
 
         if (hearts < 0)
-            return $"- 社交关系：初次正式碰面（-1心），彼此完全陌生。{note}";
+            return Util.GetString(Character, "friendshipFirstMeeting", new { Note = note });
         if (hearts < 2)
-            return $"- 社交关系：点头之交（{hearts}心），彼此还很不了解，保持基本的社交防备与距离。{note}";
+            return Util.GetString(Character, "friendshipStrangers", new { Hearts = hearts, Note = note });
         if (hearts < 4)
-            return $"- 社交关系：熟悉起来的邻居（{hearts}心），日常见面能聊上几句，但尚未深交。{note}";
+            return Util.GetString(Character, "friendshipNeighbors", new { Hearts = hearts, Note = note });
         if (hearts < 6)
-            return $"- 社交关系：熟识的朋友（{hearts}心），互相了解不少生活习惯。{note}";
+            return Util.GetString(Character, "friendshipFriends", new { Hearts = hearts, Note = note });
         if (hearts < 8)
-            return $"- 社交关系：彼此非常熟稔的至交（{hearts}心），相处时毫无拘束。{note}";
+            return Util.GetString(Character, "friendshipCloseFriends", new { Hearts = hearts, Note = note });
 
-        // 8心及以上
         if (isChild)
-            return $"- 社交关系：经常陪伴的熟人（{hearts}心），互动带有孩子气的直率。{note}";
+            return Util.GetString(Character, "friendshipChild8Plus", new { Hearts = hearts, Note = note });
 
         if (isSingle)
         {
             if (isDating)
-                return $"- 社交关系：恋人阶段（{hearts}心），属于公开约会关系。{note}";
+                return Util.GetString(Character, "friendshipDating", new { Hearts = hearts, Note = note });
 
-            return $"- 社交关系：极度熟识的至交好友（{hearts}心），彼此在小镇里交往甚密。{note}";
+            return Util.GetString(Character, "friendshipBestFriends", new { Hearts = hearts, Note = note });
         }
 
-        return $"- 社交关系：常年相识的深厚故交（{hearts}心），熟络度极高。{note}";
-    }
-
-    private string GetFriendshipTextEn(int hearts, bool isSingle, bool isChild, bool isDating)
-    {
-        string note = "(Base social familiarity; your actual emotional fondness/trust must be guided by your [IMPRESSIONS OF THE FARMER] and memories)";
-
-        if (hearts < 0)
-            return $"- Social Standing: First meeting (-1 hearts). Complete strangers. {note}";
-        if (hearts < 2)
-            return $"- Social Standing: Distant acquaintances ({hearts} hearts). Basic social boundaries apply. {note}";
-        if (hearts < 4)
-            return $"- Social Standing: Familiar neighbors ({hearts} hearts). Casual, surface-level neighborly rapport. {note}";
-        if (hearts < 6)
-            return $"- Social Standing: Well-acquainted friends ({hearts} hearts). Familiar with each other's routines. {note}";
-        if (hearts < 8)
-            return $"- Social Standing: Highly familiar companions ({hearts} hearts). Zero conversational formality. {note}";
-
-        if (isChild)
-            return $"- Social Standing: Very familiar presence ({hearts} hearts). Childlike openness. {note}";
-
-        if (isSingle)
-        {
-            if (isDating)
-                return $"- Social Standing: Dating relationship ({hearts} hearts). Public romantic involvement. {note}";
-
-            return $"- Social Standing: Closely bound best friends ({hearts} hearts). High social proximity. {note}";
-        }
-
-        return $"- Social Standing: Deeply established long-term bond ({hearts} hearts). Complete conversational ease. {note}";
+        return Util.GetString(Character, "friendshipLongTermBond", new { Hearts = hearts, Note = note });
     }
 
 

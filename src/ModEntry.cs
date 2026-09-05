@@ -244,6 +244,21 @@ namespace ValleytalkReborn
             Config = Helper.ReadConfig<ModConfig>();
             Config.ValidateDialogueConfig(Monitor);
 
+            InitializeDialogueCoordinator();
+
+            helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+
+            Log.Debug($"[{DateTime.Now}] Mod loaded");
+        }
+
+        /// <summary>
+        /// 装配对话协调器：构建所有模块、绑定 DynamicBarkManager 并订阅 SMAPI 事件。
+        /// 在 Entry 与 OnSaveLoaded 中复用，确保返回标题后重新读档时协调器被复活。
+        /// </summary>
+        private void InitializeDialogueCoordinator()
+        {
+            _dialogueCoordinator?.Unsubscribe();
+
             var npcReservations = new NpcReservationService();
             var outputQueue = new MainThreadOutputQueue(new A2AOutputValidatorImpl());
             var llmGateway = new LlmRequestGateway(Config.LlmTimeoutSeconds);
@@ -263,13 +278,11 @@ namespace ValleytalkReborn
                 npcReservations, outputQueue, llmGateway, Config, a2aPromptBuilder);
             var a2aModule = new A2AModule(a2aSessionManager);
 
-            _dialogueCoordinator = new DialogueCoordinator(helper, Monitor, ambientBarkModule, a2aModule, outputQueue, npcReservations);
+            _dialogueCoordinator = new DialogueCoordinator(
+                Helper, Monitor, ambientBarkModule, a2aModule, outputQueue, npcReservations);
 
             DynamicBarkManager.BindCoordinator(_dialogueCoordinator);
-
-            helper.Events.GameLoop.GameLaunched += OnGameLaunched;
-
-            Log.Debug($"[{DateTime.Now}] Mod loaded");
+            _dialogueCoordinator.Subscribe();
         }
 
         /// <summary>
@@ -744,6 +757,10 @@ namespace ValleytalkReborn
         
         private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
         {
+            // 修复：返回标题后 Cleanup 会销毁 _dialogueCoordinator，
+            // 重新读档时必须重建并订阅，否则 A2A 雷达与 AmbientBark 状态机将永久停摆。
+            InitializeDialogueCoordinator();
+
             // 修复：返回标题后 Cleanup 会取消 TextInputManager 的 UpdateTicked 订阅，
             // 重新读档时必须重新初始化，否则从对话选项触发的自定义回复会卡在 pending。
             TextInputManager.Initialize(Helper.Events);

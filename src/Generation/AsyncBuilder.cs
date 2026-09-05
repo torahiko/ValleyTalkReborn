@@ -278,6 +278,42 @@ public class AsyncBuilder
                         DialogueHistoryManager.Instance.RecordGiftReaction(npc.Name, cleanResponseText);
                     else
                         DialogueHistoryManager.Instance.RecordNpcDialogue(npc.Name, cleanResponseText, "conversation");
+
+                    // 🌟【核心对齐】：向周围 512 像素（8 格）内的旁观 NPC 广播偷听内容
+                    if (npc.currentLocation != null && Game1.player != null)
+                    {
+                        var farmerLabel = Util.GetString("generalFarmerLabel") ?? "农夫";
+                        string speakerName = npc.displayName ?? npc.Name;
+
+                        string eavesdropText;
+                        if (!string.IsNullOrWhiteSpace(lastPlayerChoice))
+                        {
+                            eavesdropText = $"[Eavesdrop] {farmerLabel}对{speakerName}说：\"{lastPlayerChoice}\"，{speakerName}回应：\"{cleanResponseText}\"";
+                        }
+                        else
+                        {
+                            eavesdropText = $"[Eavesdrop] {farmerLabel}对{speakerName}说话，{speakerName}回应：\"{cleanResponseText}\"";
+                        }
+
+                        foreach (var nearbyNpc in npc.currentLocation.characters)
+                        {
+                            if (nearbyNpc == null || nearbyNpc == npc || nearbyNpc.Name.Equals(npc.Name, StringComparison.OrdinalIgnoreCase))
+                                continue;
+
+                            float dx = nearbyNpc.Position.X - Game1.player.Position.X;
+                            float dy = nearbyNpc.Position.Y - Game1.player.Position.Y;
+                            float distance = (float)Math.Sqrt(dx * dx + dy * dy);
+
+                            // 与 ActionSubscriber.Talk.cs 统一使用 512 像素判定
+                            if (distance <= 512f)
+                            {
+                                DialogueHistoryManager.Instance.RecordSystemEvent(
+                                    nearbyNpc.Name,
+                                    eavesdropText,
+                                    "eavesdrop");
+                            }
+                        }
+                    }
                 }
             });
         }
@@ -426,16 +462,16 @@ public class AsyncBuilder
     }
 
     public bool ConsumeGiftInteractionMark(string npcName)
-        {
-            if (string.IsNullOrEmpty(npcName)) return false;
-            return _pendingGiftNpcs.Remove(npcName);
-        }
+    {
+        if (string.IsNullOrEmpty(npcName)) return false;
+        return _pendingGiftNpcs.Remove(npcName);
+    }
 
-        public bool HasGiftInteractionPending(string npcName)
-        {
-            if (string.IsNullOrEmpty(npcName)) return false;
-            return _pendingGiftNpcs.Contains(npcName);
-        }
+    public bool HasGiftInteractionPending(string npcName)
+    {
+        if (string.IsNullOrEmpty(npcName)) return false;
+        return _pendingGiftNpcs.Contains(npcName);
+    }
 
     internal bool TryRequestNpcBasic(NPC currentNpc, string dialogueKey, string originalLine)
     {

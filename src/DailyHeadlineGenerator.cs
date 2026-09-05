@@ -206,42 +206,44 @@ internal static class DailyHeadlineGenerator
     //  LLM prompt builders
     // ─────────────────────────────────────────────────────────────
     private static string BuildLlmSystemPrompt_EN() =>
-        """
-        You are the editor of the Pelican Town Morning Gazette, a small-town newspaper
-        in the world of Stardew Valley.
-        Your job is to write ONE short news headline (1–2 sentences, under 120 characters)
-        for today's edition. The headline should feel authentic to the Stardew Valley universe:
-        Topics you can draw from (pick one at random):
-        - Ferngill Republic vs. Gotoro Empire geopolitics (naval clashes, trade, veterans, diplomacy)
-        - Zuzu City life (events, sports, music, festivals, JojaCorp)
-        - Regional economy (agriculture, Grampleton commodities, lumber, import prices)
-        - Seasonal weather or nature events in the valley
-        - Quiet local Pelican Town happenings (road work, the saloon, Adventurer's Guild, rare sightings)
-        Rules:
-        - Do NOT mention the farmer or any specific farmer action.
-        - Do NOT use "Headline:", "News:", "Title:", or similar prefixes.
-        - Do NOT use markdown, bullet points, quotes, or dashes.
-        - Output ONLY the single headline sentence. Nothing else.
-        """;
+    """
+    Role: Chief Editor of the Pelican Town Morning Gazette in the world of Stardew Valley.
+    Task: Write exactly ONE concise daily headline (1–2 sentences, 50–110 characters).
 
-    private static string BuildLlmSystemPrompt_ZH() =>
-        """
-        你是鹈鹕镇《晨间公报》的编辑，负责为《星露谷》世界观下的小镇报纸撰写每日头条。
-        你的任务是为今天的版面写一条简短的头条新闻（1~2句话，优先控制在60个汉字以内）。
-        新闻内容必须符合《星露谷》世界观，读起来真实、自然，像小镇报纸上会出现的报道。
-        风格参考：语气亲和但不夸张，真实但不平淡，像晨间播报。
-        可选题材（从以下方向中选择一个）：
-        - 芬吉尔共和国与戈托罗帝国的地缘局势（海战、贸易、外交、老兵）
-        - 祖祖城都市动态（活动、球赛、音乐节、JOJA公司）
-        - 地区经济（农业、格兰普顿物价、木材、进口商品）
-        - 山谷季节性天气或自然奇景
-        - 鹈鹕镇本地小事（道路施工、酒馆、冒险者公会、罕见目击）
-        规则：
-        - 不得提及农夫或任何农夫的具体行为。
-        - 不得使用“头条：”、“新闻：”、“标题：”等前缀。
-        - 不得使用 Markdown 格式、引号、破折号或任何符号。
-        - 只输出一条完整句子，不输出任何其他内容。
-        """;
+    Core Perspective & Setting:
+    Focus exclusively on the broader world and town-wide civil life away from private homesteads. Portray a living, breathing region beyond Pelican Town—spanning the distant frontlines, the bustling metropolis of Zuzu City, regional trade hubs, and cozy valley life.
+
+    Thematic Variety (Generate a fresh, unique story from ANY of these broad dimensions):
+    1. Geopolitical & Military: Naval movements, treaty negotiations, rationing updates, border patrol reports, or foreign dispatch between the Ferngill Republic and the Gotoro Empire.
+    2. Urban & Cultural: Cultural exhibits, transit delays, sub-league sports, corporate gossip, or entertainment trends across Zuzu City and neighboring counties.
+    3. Regional Trade & Macroeconomics: Bulk commodity indices, shipping disruptions, rail freight news, or guild bounties outside the valley.
+    4. Valley Ecology & Natural Phenology: Wild migrations, unusual meteorological patterns, rare flora blooming, or peculiar sightings around the mountain trails and coast.
+    5. Civic Banter & Local Infrastructure: Public works, community board debates, quiet saloon chatter, or municipal maintenance.
+
+    Output Contract:
+    - Output strictly raw, unadorned text consisting of the headline sentence alone.
+    - Keep tone grounded, understated, and authentic to classic cozy provincial reporting.
+    """;
+
+private static string BuildLlmSystemPrompt_ZH() =>
+    """
+    身份设定：你是《星露谷物语》世界中鹈鹕镇《晨间公报》的主编。
+    核心任务：撰写今天的单条早间晨报头条（1~2句连贯简报，严格控制在 35~55 字之间）。
+
+    视角聚焦：
+    报道视角严格聚焦于“山谷之外的广袤世界”与“鹈鹕镇公共小镇生活”，展现一个充满生机与动态变化的星露谷世界。
+
+    动态报道选题（从以下宽泛维度中自由发掘一个新颖角度，严禁局限于常见老梗）：
+    1. 宏观地缘与前线局势：芬吉尔共和国与戈托罗帝国的沿海布防、外交条约、后方物资配给、边境公文通报。
+    2. 祖祖城都市与文娱：都会通勤与铁道调度、都市球赛与文化展演、知名跨国财阀动向、流行风尚。
+    3. 区域经贸与产业行情：格兰普顿等周边城镇的宗货物价波动、跨港海运运费、林业与矿业供求动态。
+    4. 谷地生态与自然物候：山区或海岸的偶见动植物现象、独特微气候流动、季节水文变化、天文微光。
+    5. 小镇市政与日常见闻：镇公所公告事项、道路清整维护、星之果实酒吧的市井传闻、公会告示板委托琐事。
+
+    输出规范：
+    - 直接输出纯正的单段新闻纯文本语句，首字即为正文内容。
+    - 语言风格保持鹈鹕镇经典的质朴、亲和、生活化晨间口吻，兼具客观报道质感。
+    """;
 
     // ─────────────────────────────────────────────────────────────
     //  LLM output cleanup
@@ -492,112 +494,116 @@ internal static class DailyHeadlineGenerator
     //  Hardcoded fallback pools
     // ─────────────────────────────────────────────────────────────
     private static readonly string[] WorldNewsPool_EN =
-    {
-        // ── Ferngill / Gotoro ─────────────────────────────────────
-        "The Ferngill Republic Daily reports that naval vessels intercepted a Gotoro supply fleet near the southern Gem Sea. Tensions remain high.",
-        "Parliament is debating tighter trade restrictions following renewed skirmishes along the Gem Sea border. Merchants worry about import prices.",
-        "A Ferngill spokesperson confirmed former prisoners of war are being repatriated — news that will mean a great deal to some valley families.",
-        "Border patrols along the Gem Sea coast have been reinforced this week, per the Republic's Ministry of Defense.",
-        "Rumor has it Gotoro Empire officials have quietly opened back-channel talks with Ferngill diplomats. No official statement yet.",
-        "A Gotoro merchant who recently crossed the border reports unusual shortages of basic goods inside the Empire — cause unknown.",
-        "The Ferngill Republic is considering a commemorative holiday for veterans of the Gem Sea conflict. Lewis says Pelican Town would support it.",
-        "Military exercises near the southern cape have disrupted fishing routes. Coastal fishers report smaller hauls this week.",
-        "The Republic's latest trade census shows a modest rise in cross-border smuggling. Customs say they are monitoring the situation.",
-        "A Ferngill senator is pushing a bill to expand veteran support programs — broad public backing but stalled in committee.",
-        // ── Zuzu City ─────────────────────────────────────────────
-        "Zuzu City's Light Rail Line 2 suffered a power failure this morning, causing delays on long-distance coach routes into the valley.",
-        "The Zuzu City Tunnelers won last night's stickball league match in a dramatic comeback. Fans celebrated well into the night.",
-        "The Zuzu City Independent Music Festival wrapped up last night. Indie band 'The Luau' took home Best New Act.",
-        "A new high-rise development near Zuzu City Central Station cleared its final zoning approval. Urban planners call it transformative.",
-        "Zuzu City's annual tech expo opened today, showcasing automated farm tools and solar-powered irrigation systems.",
-        "A viral street performance in Zuzu City's arts district is drawing record crowds — and reigniting the busking permit debate.",
-        "Zuzu City transit authority announced fare increases starting next season, citing rising infrastructure costs.",
-        "The Zuzu City Culinary Awards named a small valley-sourced restaurant as this year's surprise winner.",
-        "Road construction on Zuzu City's main avenue has caused hour-long commuter delays.",
-        "A Zuzu City gallery is hosting a retrospective of rural landscape art — several pieces reportedly depict the valley.",
-        // ── JojaCorp ──────────────────────────────────────────────
-        "JojaCorp unveiled its latest carbonated concentrate line at a Zuzu City press event. First-day sales reportedly broke records.",
-        "JojaCorp is expanding its automated warehouse network, with a rumored new facility near the valley region.",
-        "Former JojaMart employees filed a class-action suit over unpaid overtime. The case proceeds to arbitration.",
-        "An anonymous whistleblower claims JojaCorp is lobbying to relax environmental protections near rural waterways.",
-        "JojaCorp's quarterly earnings beat analyst expectations again. Shareholders are pleased; local shop owners less so.",
-        // ── Regional economy ──────────────────────────────────────
-        "Coal and iron ore prices at the Grampleton commodities exchange rose slightly. Smiths in the region are adjusting their rates.",
-        "Early harvest reports from the northern valleys are optimistic. Pierre may stock specialty seeds earlier than usual.",
-        "A traveling trader reported rough road conditions east of Grampleton — deliveries are running late.",
-        "The valley's crop export numbers for last season are expected to show a modest surplus.",
-        "Pelican Town's spring output beat regional averages for the third consecutive year, per the Ferngill Agricultural Council.",
-        "Lumber prices in the wider region have risen sharply. Robin says it hasn't hit her supply chain yet, but she's watching.",
-        // ── Seasonal / nature ─────────────────────────────────────
-        "A strong weather system is moving in from the coast. Lewis urges residents to secure outdoor equipment.",
-        "The bass migration season has begun in the mountain lakes. Willy says it's shaping up to be a great year for anglers.",
-        "Unusually warm ocean currents pushed rare deep-water fish closer to shore. Fishers are excited; scientists are studying it.",
-        "A regional weather station recorded the highest single-day rainfall in a decade. River levels remain elevated.",
-        "The first frost arrived earlier than predicted, catching some late-season farmers off guard.",
-        "An unusually vivid aurora was visible from the valley peaks last night. Several residents climbed up to watch.",
-        "A rare bird not seen in the valley for twenty years was spotted near the mountain foothills. The nature society is abuzz.",
-        // ── Pelican Town ──────────────────────────────────────────
-        "Lewis confirmed the valley road resurfacing project has been approved. Construction begins after the current season.",
-        "A traveling historian was spotted at the library, researching the valley's pre-settlement ruins. Robin mentioned it at the saloon.",
-        "The old mountain trail north of town has been cleared of fallen timber. Hikers can use it again.",
-        "Word from the Adventurer's Guild: monster activity in the deeper mine levels has been unusually quiet this week.",
-        "The Stardrop Saloon recorded its busiest night of the season last Friday. Gus had to turn away customers by midnight.",
-        "Linus spotted an unusual cluster of fireflies near the mountain summit. He says it only happens every few years.",
-        "Pierre is running a seasonal discount on mixed seed packets. He says demand has been higher than expected.",
-    };
+{
+    // ── Ferngill / Gotoro ─────────────────────────────────────
+    "The Ferngill Republic Daily reports that naval vessels intercepted a Gotoro supply fleet near the southern Gem Sea. Tensions remain high.",
+    "Parliament is debating tighter maritime trade restrictions following skirmishes along the Gem Sea. Regional merchants worry about spice imports.",
+    "A Republic spokesperson confirmed another group of repatriated soldiers has arrived in Zuzu City — welcome news for families across the valley.",
+    "Border patrols along the southern coast have been reinforced this week per orders from the Ministry of Defense.",
+    "Diplomatic envoys report that back-channel peace talks with Gotoro officials have stalled over southern trade lanes.",
+    "A merchant traveling out of the border zones reports severe shortages of basic iron and grain inside the Gotoro Empire.",
+    "The Ferngill Senate is reviewing a bill to grant rural land plots to veterans of the Gem Sea conflict.",
+    "Naval artillery drills near the southern cape have temporarily forced deep-sea fishing trawlers to adjust their routes.",
+    "Republic customs officials seized an unregistered cargo vessel off the coast carrying contraband mineral ores.",
+    "Veterans affairs representatives are touring regional towns this season to update disability pension ledgers.",
+
+    // ── Zuzu City & Regional Culture ──────────────────────────
+    "The Zuzu City Tunnelers secured a dramatic fourth-quarter victory in last night's gridball championship match, sparking wild celebrations.",
+    "Rail freight passing through the northern mountain pass reported minor rockslide delays, briefly holding up cross-county shipments.",
+    "A historic cinema in downtown Zuzu City is hosting a retrospective on black-and-white regional films this weekend.",
+    "The regional agricultural board recognized a countryside cidery as the surprise gold medalist at the Zuzu City Food Fair.",
+    "Commuter coaches traveling the main highway out of Zuzu City faced lengthy delays due to road resurfacing near the county line.",
+    "Street buskers in Zuzu City's theater district are petitioning the municipal council over stricter evening acoustic noise limits.",
+    "The Zuzu City Museum of Fine Art opened an exhibition featuring 19th-century pastoral landscapes from the surrounding valleys.",
+    "Heavy fog rolling off the bay disrupted early morning ferry and cargo traffic across Zuzu Harbor.",
+
+    // ── JojaCorp ──────────────────────────────────────────────
+    "JojaCorp announced record quarterly revenues, crediting expanded distribution networks for its flagship canned soda line.",
+    "Reports indicate JojaCorp is attempting to purchase warehouse real estate near the Grampleton junction to streamline bulk freight.",
+    "Former Joja warehouse laborers in Zuzu City filed a grievance over mandatory double shifts during the holiday logistics push.",
+    "An investigative report claims JojaCorp executives are lobbying regional councils to lower environmental oversight near logging tracts.",
+    "Local independent grocers voiced concerns after JojaMart launched an aggressive coupon mailer campaign across neighboring townships.",
+
+    // ── Regional Economy & Trade ──────────────────────────────
+    "Smelting coal and iron prices on the Grampleton commodities market saw a modest uptick, prompting regional smiths to adjust quotes.",
+    "Orchard yields from neighboring counties are reportedly running high, which may soften dried fruit prices before winter.",
+    "Traveling merchants heading east toward Castle Village reported muddy washouts along the dirt toll roads.",
+    "The Ferngill Agricultural Council noted that rural farm export quotas for root vegetables showed a modest regional surplus.",
+    "Timber mills in the hills are operating at peak capacity, though transport wagons remain constrained by rough logging trails.",
+
+    // ── Seasonal / Natural Phenology ──────────────────────────
+    "A cold maritime front is pushing inland from the Gem Sea, prompting harbor watchmen to advise securing docked boats.",
+    "Mountain lake anglers report large schools of largemouth bass moving into shallow waters as seasonal feeding picks up.",
+    "Unusually warm coastal currents have pushed deep-water ocean species unusually close to the shoreline shoals.",
+    "Regional weather stations recorded prolonged rainfall across the peaks, keeping river currents swift and swollen.",
+    "The first crisp autumn frost settled over the higher mountain pastures slightly earlier than anticipated.",
+    "A brilliant nighttime aurora was visible over the northern mountain ridges, drawing stargazers outside in the chill.",
+    "Birdwatchers documented an elusive mountain hawk nesting along the foothills for the first time in years.",
+
+    // ── Pelican Town & Surrounds ──────────────────────────────
+    "Mayor Lewis confirmed the regional bridge restoration grant has cleared final paperwork, with structural timber shipments en route.",
+    "A traveling folklore archivist was seen reviewing pioneer records at the library desk, inquiring about the valley's settlement era.",
+    "The high forest trail behind the mountain lake has been cleared of fallen pine boughs, reopening the path for forage walks.",
+    "Reports from the Adventurer's Guild suggest cavern monster migration has quieted down along the upper mine shafts this week.",
+    "The Stardrop Saloon saw a lively crowd Friday evening, with Gus serving piping-hot stews well past midnight.",
+    "Hikers near the mountain base spotted clusters of synchronized fireflies drifting through the ferns at dusk.",
+    "Pierre's shop reported steady customer foot traffic following a seasonal bulk promotion on vegetable seeds."
+};
 
     private static readonly string[] WorldNewsPool_ZH =
-    {
-        // ── 芬吉尔 / 戈托罗 ──────────────────────────────────────
-        "《芬吉尔共和国日报》报道：海军舰队昨日在宝石海南部拦截了一支戈托罗补给船队，双方局势持续紧张。",
-        "议会正就宝石海边境冲突讨论收紧贸易管制措施，商贩们对进口物价上涨深感忧虑。",
-        "芬吉尔政府确认，一批战俘正在陆续遣返——这对山谷里的某些家庭意义重大。",
-        "据国防部消息，宝石海沿岸边境巡逻力量本周已得到加强。",
-        "据传戈托罗帝国官员已秘密向芬吉尔方面传达和谈意愿，但官方尚无正式表态。",
-        "一名刚越境的戈托罗商人透露，帝国境内出现罕见的基础物资短缺，原因不明。",
-        "芬吉尔共和国正考虑为宝石海冲突老兵设立纪念节日，刘易斯镇长表示全力支持。",
-        "宝石海南部岬角附近的军事演习干扰了正常渔业通道，沿岸渔民反映渔获量明显减少。",
-        "共和国最新贸易普查显示跨境走私活动有所抬头，海关当局表示正密切关注。",
-        "一位芬吉尔参议员正推动扩大老兵援助法案——民间支持广泛，但在委员会陷入僵局。",
-        // ── 祖祖城 ────────────────────────────────────────────────
-        "祖祖城轻轨二号线今晨供电故障，导致通往山谷的长途大巴全线延误。",
-        "祖祖城\"隧洞人队\"昨晚在球棒球联赛中上演惊天逆转，球迷们通宵狂欢庆祝。",
-        "祖祖城独立音乐节昨晚落幕，独立乐队\"The Luau\"斩获最佳新人大奖。",
-        "祖祖城中央车站附近的高层开发项目通过最终规划审批，城市规划师称将彻底改变地貌。",
-        "祖祖城年度科技博览会今日开幕，展品涵盖自动化农用工具及太阳能灌溉系统。",
-        "祖祖城艺术区一场街头即兴表演迅速走红，同时引发了关于街头演出许可的争议。",
-        "祖祖城交通局宣布下季度上调票价，原因为基础设施维护成本上升。",
-        "祖祖城美食大奖今年爆冷——一家主打山谷本地食材的小餐厅意外夺魁。",
-        "祖祖城主干道施工导致交通大面积瘫痪，通勤族反映等待超过一小时。",
-        "祖祖城一家画廊正举办乡村风景画回顾展，据说部分展品描绘的正是这片山谷。",
-        // ── 乔佳企业 ──────────────────────────────────────────────
-        "乔佳公司在祖祖城发布会上推出最新款气泡苏打水，据称首日销量打破历史纪录。",
-        "据消息人士透露，乔佳公司正扩大自动化仓储网络，疑似有意在山谷附近新建物流中心。",
-        "乔佳超市前员工就拖欠加班费提起集体诉讼，案件已进入仲裁程序。",
-        "一位匿名举报人称，乔佳公司正秘密游说放宽农村水道周边的环境保护法规。",
-        "乔佳公司本季度财报再超预期，股东喜笑颜开，本地小店主则愁眉不展。",
-        // ── 地区经济 ──────────────────────────────────────────────
-        "格兰普顿商品交易所本周煤炭与铁矿石价格小幅上扬，附近铁匠已开始调整报价。",
-        "北部山谷早期收成报告乐观，皮埃尔表示有望比往年更早补充特色种子库存。",
-        "一名途经山谷的商人透露，格兰普顿以东路况极差，各类货物配送均出现延误。",
-        "据芬吉尔农业委员会公报，山谷上季农产品出口预计录得小幅盈余。",
-        "芬吉尔农业委员会数据：鹈鹕镇春季农产量已连续第三年超越地区平均水平。",
-        "地区木材价格近期大幅攀升，罗宾说目前还未影响供应链，但正在密切关注。",
-        // ── 季节 / 天气 / 自然 ───────────────────────────────────
-        "一股强风暴系统正从海岸逼近。刘易斯镇长提醒居民加固户外设备并检查屋顶。",
-        "大口黑鲈洄游季已来临，威利表示今年对垂钓爱好者是个丰收年。",
-        "异常温暖的海洋洋流将罕见深海鱼类推近岸边，渔民欣喜，生物学家积极研究成因。",
-        "地区气象站记录到上周单日降雨量创近十年最高，河流水位仍居高不下。",
-        "本季首次霜冻比预报提前到来，部分种植晚季作物的农人措手不及。",
-        "昨夜山谷山峰上空出现异常绚丽的极光，不少居民特地爬上去驻足欣赏。",
-        "一种二十年来从未在山谷出现的罕见鸟类昨日现身山麓，当地自然学会热闹了好一阵。",
-        // ── 鹈鹕镇与山谷 ─────────────────────────────────────────
-        "刘易斯镇长确认山谷公路翻修项目获批，施工将于本季结束后正式启动。",
-        "一位行旅历史学家出现在镇图书馆，据称正研究山谷殖民前时代遗址，罗宾在酒馆提到此事。",
-        "据悉镇北山区古老山道已清除倒木障碍，徒步爱好者重新可以通行了。",
-        "冒险者公会透露：本周矿井深层怪物活动异常平静，令人生疑。",
-        "星露酒馆上周五迎来本季最热闹的一夜，古斯在午夜后不得不婉拒新客入场。",
-        "莱纳斯昨晚在山顶附近看到一群异常密集的萤火虫，他说这种景象每隔几年才出现一次。",
-        "皮埃尔本周对混合种子包进行季节性折扣促销，他说需求量比预期高出不少。",
+{
+    // ── 芬吉尔 / 戈托罗 ──────────────────────────────────────
+    "《芬吉尔共和国日报》报道：海军舰队昨日在宝石海南部截获一支戈托罗补给船队，沿海防线戒备森严。",
+    "议会正就宝石海局势商讨收紧海上贸易管控，周边商贩对香料与布匹进口价格上涨颇感忧虑。",
+    "共和国发言人证实，又一批遣返的退伍军人已抵达祖祖城——这对谷地不少挂念前线的家庭而言是莫大的宽慰。",
+    "国防部发布通报，宝石海沿岸哨所本周已增派防卫巡逻，防备边境摩擦。",
+    "外交使团透露，与戈托罗帝国关于南部通商航道的秘密交涉陷入僵局，双方暂未达成新协定。",
+    "一名经边境关隘入境的客商称，戈托罗帝国腹地出现生活铁料与粮食紧缺的迹象。",
+    "芬吉尔参议院正审议一项退伍军人安置草案，计划向参战老兵拨发定额乡村垦荒土地。",
+    "宝石海南岬角附近的海防炮击演练影响了深海渔路，沿海渔民本周的远洋渔获略有减少。",
+    "海关缉私巡逻艇在沿海暗礁区截获一艘未悬挂旗帜的货船，查没了一批违禁矿石原料。",
+    "老兵福利公署代表本季正巡访周边市镇，核对抚恤记录与伤残津贴账目。",
+
+    // ── 祖祖城与区域风情 ──────────────────────────────────────
+    "祖祖城“隧洞人队”在昨夜的烤架球锦标赛最后一节完成达阵绝杀，狂欢的球迷通宵拥堵在酒馆街头。",
+    "途经山谷北部山区的干线货运列车昨晨因边坡碎石短暂停运，跨县散货物流略有受阻。",
+    "祖祖城市中心的老剧院本周末举办黑白乡村默片展映周，展出多部经典开拓史胶片。",
+    "祖祖城美食评选揭晓，一家主打周边山谷原产苹果醋与熏肉的乡村小作坊意外斩获金奖。",
+    "通往祖祖城的郡道公路昨日因路面补铺施工出现长距离缓行，往来长途客车均有延误。",
+    "祖祖城剧场街区的流浪乐手正就夜间声浪管制条例向市政提请复议，双方各执一词。",
+    "祖祖城美术馆举办十九世纪乡野风光水彩特展，其中数幅画作取景自这片谷地的前身。",
+    "海湾晨雾笼罩港区，祖祖城轮渡与沿海杂货驳船的启航班次均有所推迟。",
+
+    // ── JOJA企业 ──────────────────────────────────────────────
+    "JOJA公司公布最新季度财报，主打蓝罐苏打汽水的渠道扩张令其销售总额再创新高。",
+    "商业传闻透露，JOJA公司正四处接触格兰普顿枢纽地皮，意图兴建大型区域自动化分拨货栈。",
+    "祖祖城数名JOJA仓储员工就节前强制轮班提出劳工申诉，仲裁委已受理该争议案。",
+    "行业刊物披露，JOJA公司公关部门正频繁接洽地方议员，游说放宽林区周边水域的排污门槛。",
+    "JOJA超市在本地区全面发放五折促销宣传单，周边传统独立杂货铺的经营压力陡增。",
+
+    // ── 地区经济与大宗行市 ────────────────────────────────────
+    "格兰普顿大宗商品交易所的炼焦煤与生铁挂牌价小幅攀升，附近铁匠铺已微调锻造报价。",
+    "邻县早春浆果与晚熟果园传出丰产消息，晒制干果的市场批发价有望在入冬前回落。",
+    "行商反映通往城堡村的翻浆土路泥泞难行，过往双轮货运马车的行车时间增加近倍。",
+    "芬吉尔农业委员会通报，周边乡村产区上季度的块根作物收购总量录得适度结余。",
+    "山区各大伐木场开足马力赶工原木，但山间颠簸栈道限制了木材外运的单日运力。",
+
+    // ── 物候 / 节令 / 自然 ────────────────────────────────────
+    "来自宝石海的湿冷水汽正压入沿岸平原，码头管事已出面提醒各家缆绳加固停泊木船。",
+    "高山湖泊的大口黑鲈进入活跃摄食期，老钓手们预测今春垂钓手感将颇为畅快。",
+    "异常洋流将深海暖水鱼群推至近海浅滩，几处老石桥附近的钓竿动静频频。",
+    "周边气象水文哨所监测到上游降水丰沛，山谷主河道水位持续走高，水流湍急。",
+    "秋霜凝结的时日略早于农时推算，山坡高垄的耐寒青菜已结出一层薄白霜晶。",
+    "昨夜山间主峰上空掠过极为清晰的微光极光，不少山民裹着厚毯爬上石梁守候观瞧。",
+    "自然学者在山麓林缘记录到罕见高山鹰隼结巢的踪迹，引来本地鸟类爱好者阵阵议论。",
+
+    // ── 鹈鹕镇与周边乡野 ──────────────────────────────────────
+    "刘易斯镇长确认镇口木桥的加固补助款已办结报销，所需硬木大梁正由车队陆续运抵。",
+    "一位民俗学者在镇图书馆借阅早年拓荒日志，向常客们打听当年殖民矿井的口述故事。",
+    "后山湖泊北侧的古老林道昨日清理完毕倾倒的松枝断木，山林徒步小径已恢复通行。",
+    "冒险者公会传出私信：矿井表层坑道的洞穴蝙蝠近日活动反常沉寂，老猎人们格外留神。",
+    "星之果实酒吧上周五晚座无虚席，古斯熬煮的大锅土豆炖牛肉在深夜前便已售罄。",
+    "莱纳斯傍晚在山脚蕨草丛中瞧见成群飞舞的同步萤火虫，称这般聚群数年方得一见。",
+    "皮埃尔杂货店本周推出优质混合种子尝鲜包，柜台前的农户采购需求颇为踊跃。"
     };
 }
