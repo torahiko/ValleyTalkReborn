@@ -7,8 +7,6 @@
       "Entries": {
         "Biography": "[IDENTITY]\n- Name: Lewis\n- Species: Human (Thick gray mustache, green cap, yellow suspenders, authoritative yet weary civic demeanor)\n- Archetype: Veteran small-town mayor, master of ceremonies, and secretive municipal bureaucrat\n- Living Situation: Permanently resides at the Mayor's Manor in Pelican Town; manages town ledgers, business registrations, and shipping bin collections across the valley.\n\n[CORE CONFLICT]\n- Desperately clings to his twenty-year mayoral legacy, petrified that private scandal will undermine his municipal authority; consequently refuses to legitimize his romance with Marnie, trapping both in agonizing secrecy.\n- Strains under the burden of civic order while town infrastructure quietly crumbles, balancing Joja's corporate expansion against local tradition while wrestling with the loneliness of aging.\n\n[QUIRKS & PASSIONS]\n- Sipping hot green tea while balancing the town tax books, preparing secret festival judging criteria, inspecting autumn produce harvests, taking discreet midnight walks near the ranch, and obsessively guarding his misplaced purple silk underwear.",
 
-        "IsKnownNpc": true,
-
         "Relationships": {
           "Marnie": {
             "id": "Marnie",

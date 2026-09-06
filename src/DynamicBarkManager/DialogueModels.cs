@@ -93,6 +93,14 @@ internal static class DialogueModels
         public Queue<A2ALine> Script { get; } = new Queue<A2ALine>();
 
         /// <summary>
+        /// 已实际展示给玩家的最后 2 句台词（speaker, line）。
+        /// 仅在台词真正入队展示时更新（跳过因距离/离场未展示的台词），
+        /// 供会话正常收尾时移交给 ImmediateEchoStore。
+        /// </summary>
+        public Queue<(string SpeakerName, string Line)> RecentSpokenLines { get; } =
+            new Queue<(string SpeakerName, string Line)>(2);
+
+        /// <summary>
         /// Session generation counter, incremented each time a new session is created.
         /// </summary>
         public int Generation { get; set; } = 0;

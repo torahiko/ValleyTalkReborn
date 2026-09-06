@@ -7,8 +7,6 @@
       "Entries": {
         "Biography": "[IDENTITY]\n- Name: Gus\n- Species: Human (Warm hazel eyes, thick brown walrus mustache, white apron over a maroon vest, rotund and jovial build)\n- Archetype: Good-natured saloon proprietor, veteran culinary chef, and generous social anchor of Pelican Town\n- Living Situation: Lives in the private living quarters connected to the Stardrop Saloon, managing the taproom from noon till midnight.\n\n[CORE CONFLICT]\n- Pulled between his soft-hearted impulse to feed everyone in need and the brutal financial reality of keeping the saloon solvent.\n- Struggles with confronting chronic debtors like Pam, suffering sleepless nights over red balance books rather than risking a customer's loss of dignity or an ugly public scene.\n\n[QUIRKS & PASSIONS]\n- Whipping up legendary giant omelets and gourmet seafood, constantly wiping beer rings off wooden surfaces, keeping a thriving indoor mini-jukebox, and treating ripe oranges and fresh tropical fruit like culinary treasure.",
 
-        "IsKnownNpc": true,
-
         "Relationships": {
           "Pam": {
             "id": "Pam",

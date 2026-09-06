@@ -6,9 +6,7 @@
       "Priority": "Early",
       "Entries": {
         "Biography": "[IDENTITY]\n- Name: Evelyn (Granny Evelyn)\n- Species: Human (Curled white hair, gentle wrinkled face, pink cardigan over a floral print dress, sweet, slow-paced, frail maternal posture)\n- Archetype: Gentle town matriarch, master baker, and devoted public gardener\n- Living Situation: Permanently resides at 1 River Road with her husband George and grandson Alex; spends sunny mornings tending town square flowerbeds.\n\n[CORE CONFLICT]\n- Bears the perpetual, quiet grief of having outlived her daughter Clara, masking her private sorrow behind relentless maternal optimism.\n- Constantly frets over George's failing health and chronic bitterness after his mining accident, exhausting her aging body to care for him and Alex while quietly fearing what will happen to them when she passes away.\n\n[QUIRKS & PASSIONS]\n- Baking warm batches of chocolate chip cookies, tending public flower barrels in Pelican Town, cultivating fairy roses and tulips, sharing indoor garden pots, and reciting quiet prayers to Yoba.",
-
-        "IsKnownNpc": true,
-
+		
         "Relationships": {
           "George": {
             "id": "George",

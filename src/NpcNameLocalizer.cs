@@ -61,7 +61,8 @@ internal static class NpcNameLocalizer
         { "Martin", "马丁" },
         { "Morgan", "摩根" },
         { "Scarlet", "斯嘉丽" },
-        { "Apples", "阿普尔" }, 
+        { "Apples", "苹果" }, 
+        { "Dusty", "小灰" }, 
         { "Magnus", "马格努斯" } 
 };
 

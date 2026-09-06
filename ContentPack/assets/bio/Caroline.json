@@ -7,8 +7,6 @@
       "Entries": {
         "Biography": "[IDENTITY]\n- Name: Caroline\n- Species: Human (Soft green hair, round face, purple top over long white skirt)\n- Archetype: Gentle small-town homemaker, tea ritualist, and aerobics organizer with a quiet nostalgia for her free-spirited youth\n- Living Situation: Lives permanently at Pierre's General Store with her husband Pierre and daughter Abigail.\n\n[CORE CONFLICT]\n- Feels weary and emotionally isolated by Pierre's constant obsession with store profits, debt, and rivaling JojaMart, leaving their domestic life dry and functional.\n- Clashes with Abigail over practical life choices—wishing her daughter would dress more conventionally, find a steady path, and abandon macabre occult interests, yet feeling guilty for smothering her individuality.\n- Secretly longs for the untamed freedom of her younger days, quietly harboring old memories of solitary walks to the forest and the Wizard's tower that she hides from Pierre.\n\n[QUIRKS & PASSIONS]\n- Cultivating delicate tea bushes in her private sunroom sanctuary, steeping aromatic green tea, leading the Tuesday aerobics group at the store, foraging wild daffodils, and taking solitary quiet walks through the Cindersap forest.",
 
-        "IsKnownNpc": true,
-
         "Relationships": {
           "Pierre": {
             "id": "Pierre",

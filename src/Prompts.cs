@@ -214,31 +214,13 @@ public class Prompts
 
             npcConstantPrompt.AppendLine(bio);
 
-            if ((Character.Bio.Relationships?.Any() ?? false) && !Character.Bio.IsKnownNpc)
-            {
-                int currentHearts = Context.Hearts ?? 0;
-                var visible = Character.Bio.Relationships.Values
-                    .Where(r => currentHearts >= r.RequiredHearts)
-                    .ToList();
-                if (visible.Any())
-                {
-                    npcConstantPrompt.AppendLine($"## {Util.GetString("biographyRelationships")}:");
-                    foreach (var relationship in visible)
-                    {
-                        string heading = relationship.Heading;
-                        string desc = relationship.Description;
-
-                        // 🌟 拦截点 2：将关系网标题与描述里的英文名洗成标准中文
-                        if (IsChineseLanguage)
-                        {
-                            heading = NpcNameLocalizer.GetZhName(heading);
-                            desc = NpcNameLocalizer.LocalizeNamesInText(desc);
-                        }
-
-                        npcConstantPrompt.AppendLine($"* **{heading}**: {desc}");
-                    }
-                }
-            }
+            // ── 前缀防线排序说明 ──
+            // NpcConstantContext 每轮对话都会重新求值（Prompts 实例逐轮新建），
+            // prompt cache 基于前缀匹配，因此本方法内越靠后的内容，其变动
+            // 不会波及越靠前内容的缓存收益。排列原则：
+            //   Biography（永久不变）→ Traits（仅随心数门槛，长期稳定）
+            //   → ProgressStates（仅随心数/婚姻跨阶段切换，天级以上才变）
+            //   → Relationships（按天轮换，全部字段里变动频率最高，放最后）
 
             if (Character.Bio.Traits?.Any() ?? false)
             {
@@ -255,6 +237,57 @@ public class Prompts
                         string desc = trait.Description;
 
                         // 🌟 拦截点 3：将性格特征标题与描述里的英文名洗成标准中文
+                        if (IsChineseLanguage)
+                        {
+                            heading = NpcNameLocalizer.GetZhName(heading);
+                            desc = NpcNameLocalizer.LocalizeNamesInText(desc);
+                        }
+
+                        npcConstantPrompt.AppendLine($"* **{heading}**: {desc}");
+                    }
+                }
+            }
+
+            // ── 阶段性状态注入（ProgressStates）──
+            // 与 Bark / A2A 共用同一份角色卡数据和同一套解析器，
+            // 任何角色只需在角色卡里配置 ProgressStates 即可生效，无需改动此处代码。
+            var npcInstance = Game1.getCharacterFromName(Character.Name);
+            string progressState = ProgressStateResolver.ResolveActiveState(npcInstance, Character.Bio.ProgressStates);
+            if (!string.IsNullOrWhiteSpace(progressState))
+            {
+                // 🌟 拦截点 4：与 Biography/Relationships/Traits 保持一致，清洗状态文本里的英文人名
+                if (IsChineseLanguage)
+                {
+                    progressState = NpcNameLocalizer.LocalizeNamesInText(progressState);
+                }
+
+                npcConstantPrompt.AppendLine($"## {(IsChineseLanguage ? "当前状态" : "Current State")}");
+                npcConstantPrompt.AppendLine(progressState);
+            }
+
+            // ── 关系网注入（按天轮换）──
+            // 弃用原 IsKnownNpc 全有全无开关：原版角色语料库里"知道"这些人物关系，
+            // 不代表模型会在对话中主动流露相关情绪，缺乏该信息依然导致"活人感"缺失。
+            // 改为全角色统一走关系网，但每天只从全量条目中确定性挑选 1~2 条，
+            // 而非每轮随机——因为 NpcConstantContext 需要在同一天内保持字节级稳定
+            // 才能命中 LLM 的 prompt cache 前缀；随机会让缓存在每一轮对话都失效。
+            // 放在本方法末尾（BiographyEnd 之前）是因为它是本段里变动频率最高的部分，
+            // 前缀防线要求易变内容尽量靠后，减少跨天切换时的缓存失效范围。
+            if (Character.Bio.Relationships?.Any() ?? false)
+            {
+                int currentHearts = Context.Hearts ?? 0;
+                var dailyPicks = RelationshipRotationResolver.SelectDailyRelationships(
+                    Character.Name, Character.Bio.Relationships, currentHearts);
+
+                if (dailyPicks.Count > 0)
+                {
+                    npcConstantPrompt.AppendLine($"## {Util.GetString("biographyRelationships")}:");
+                    foreach (var relationship in dailyPicks)
+                    {
+                        string heading = relationship.Heading;
+                        string desc = relationship.Description;
+
+                        // 🌟 拦截点 2：将关系网标题与描述里的英文名洗成标准中文
                         if (IsChineseLanguage)
                         {
                             heading = NpcNameLocalizer.GetZhName(heading);
@@ -368,14 +401,11 @@ public class Prompts
 
         if (flags?.HasStoodUpPending == true)
         {
-            prompt.AppendLine($"## {Util.GetString(Character, "coreInstructionHeading")}");
-            prompt.AppendLine(isZh ? "### [情感冲突：昨晚失约]" : "### [EMOTIONAL CONFLICT: STOOD UP]");
+            prompt.AppendLine("<emotional_conflict type=\"stood_up\">");
             prompt.AppendLine(isZh
-                ? "- 事实：你昨晚一直等待着玩家赴约，但玩家完全没有出现（放了你鸽子）。"
-                : "- Fact: You waited for the player last night, but they stood you up and never showed up.");
-            prompt.AppendLine(isZh
-                ? "- 反应要求：请直接对玩家昨晚的失约表达失落、困惑或适度的委屈/生气，要求对方给一个解释。"
-                : "- Instruction: Express your disappointment, hurt, or frustration about being stood up. Demand an explanation.");
+                ? "- 事实：你昨晚一直等待着玩家赴约，但玩家完全没有出现（放了你鸽子）。\n- 反应要求：请直接对玩家昨晚的失约表达失落、困惑或适度的委屈/生气，要求对方给一个解释。"
+                : "- Fact: You waited for the player last night, but they stood you up and never showed up.\n- Instruction: Express your disappointment, hurt, or frustration about being stood up. Demand an explanation.");
+            prompt.AppendLine("</emotional_conflict>\n");
 
             GetMicroEnvironment(prompt);
             InjectPendingTopic(prompt);
@@ -389,14 +419,14 @@ public class Prompts
 
             if (dateMode == DateManager.DateMode.Follow)
             {
-                prompt.AppendLine($"## {Util.GetString(Character, "coreInstructionHeading")}");
-                prompt.AppendLine(isZh ? "### [陪伴散步中]" : "### [WALKING TOGETHER]");
+                prompt.AppendLine("<date_context mode=\"walking\">");
                 prompt.AppendLine(isZh
                     ? $"- 当前地点：{DateManager.Instance.ActiveDateLocation ?? ""}"
                     : $"- Location: {DateManager.Instance.ActiveDateLocation ?? ""}");
                 prompt.AppendLine(isZh
                     ? "- 语气要求：你正在陪农夫在附近走走，保持轻松自然的日常氛围。"
                     : "- Tone: You are walking around together. Keep a relaxed, natural daily companion tone.");
+                prompt.AppendLine("</date_context>\n");
             }
             else
             {
@@ -410,8 +440,7 @@ public class Prompts
                     locDetail = isZh ? info.ContextDescriptionZh : info.ContextDescriptionEn;
                 }
 
-                prompt.AppendLine($"## {Util.GetString(Character, "coreInstructionHeading")}");
-                prompt.AppendLine(isZh ? "### [约会进行中 - 核心语境]" : "### [ROMANTIC DATE ACTIVE]");
+                prompt.AppendLine("<date_context mode=\"romantic_active\">");
                 prompt.AppendLine(isZh ? $"- 当前地点：{locName}" : $"- Location: {locName}");
 
                 if (!string.IsNullOrWhiteSpace(locDetail))
@@ -420,6 +449,7 @@ public class Prompts
                 prompt.AppendLine(isZh
                     ? "- 语气要求：你们正在享受今晚的二人浪漫约会。请表现出对面前玩家的倾听与深情，多结合眼前的浪漫环境进行互动与交流。"
                     : "- Tone Instruction: You are currently on a romantic date. Be affectionate, engaged, and interact with the surroundings.");
+                prompt.AppendLine("</date_context>\n");
             }
 
             var lastPlayerLine = Context?.ChatHistory?.LastOrDefault(x => x.IsPlayerLine)?.Text;
@@ -431,7 +461,6 @@ public class Prompts
             InjectSessionContinuity(prompt);
             InjectPendingTopic(prompt);
 
-            // 约会模式下仍需感知玩家当前的送礼/进食等动作
             if (!string.IsNullOrEmpty(PendingEvolvedTraitsBlock))
                 prompt.AppendLine("\n" + PendingEvolvedTraitsBlock);
 
@@ -443,10 +472,12 @@ public class Prompts
 
         if (flags?.IsSimpleGreeting == true && flags?.IsMovementRequested != true)
         {
-            prompt.AppendLine($"## {Util.GetString(Character, "coreInstructionHeading")}");
+            prompt.AppendLine("<greeting_fast_pass>");
             prompt.AppendLine(isZh
                 ? "农夫正向你打招呼，请保持随和、自然且简练地做出回应。"
                 : "The farmer is greeting you. Respond naturally, warmly, and concisely.");
+            prompt.AppendLine("</greeting_fast_pass>\n");
+
             GetMicroEnvironment(prompt);
             DefaultOrOverride("CurrentConversation", GetCurrentConversation, prompt);
             InjectSessionContinuity(prompt);
@@ -507,7 +538,6 @@ public class Prompts
 
         if (!hasNoPlayerInput && flags?.IncludeShortTermContext == true)
         {
-            // 本轮会话中确实存在玩家台词 → 真正的"深入交流"场景
             prompt.AppendLine("<interaction_state>");
             prompt.AppendLine(Util.GetString(Character, "interactionOngoingState"));
             prompt.AppendLine(Util.GetString(Character, "interactionOngoingGoal"));
@@ -515,7 +545,6 @@ public class Prompts
         }
         else if (hasNoPlayerInput && flags?.IsSimpleGreeting != true)
         {
-            // 本轮会话中还没有任何玩家台词 → 视为刚照面，不论原版 TalkedToToday 是否为真
             prompt.AppendLine("<interaction_state>");
             prompt.AppendLine(Util.GetString(Character, "interactionApproaching"));
             prompt.AppendLine("</interaction_state>\n");
@@ -529,8 +558,8 @@ public class Prompts
             if (isFestivalToday)
             {
                 prompt.AppendLine(isZh
-                    ? "- 节日冲突: 今天是节日且今晚有特别安排。请结合人设婉拒，并自然建议改天再约。"
-                    : "- Festival Conflict: Today is a festival with scheduled activities. Politely decline in character and suggest another day.");
+                    ? "- 节日安排: 今天是节日且今晚有特别安排。请结合人设通过对白自然说明改天再约。"
+                    : "- Festival Conflict: Today is a festival with scheduled activities. Suggest meeting another day via natural dialogue.");
             }
             else
             {
@@ -543,14 +572,14 @@ public class Prompts
                 if (ModEntry.Config?.UseNativeToolCalling == true)
                 {
                     prompt.AppendLine(isZh
-                        ? "- 同意时调用 `schedule_date` 工具（传入 location_id）；拒绝时自然回应，无需调用工具。"
-                        : "- IF ACCEPTING: Call `schedule_date` tool with location_id. IF DECLINING: Respond naturally without tool calls.");
+                        ? "- 接受时: 调用 `schedule_date` 工具（传入 location_id）；委拒时: 仅通过角色口吻自然说明改天再约。"
+                        : "- ACCEPT: Call `schedule_date` tool with location_id. DECLINE: Reply with conversational dialogue suggesting another time.");
                 }
                 else
                 {
                     prompt.AppendLine(isZh
-                        ? "- 同意时在台词最末尾附带 [ACTION:INVITE:LocationID]；拒绝时正常回复，无需附加标签。"
-                        : "- IF ACCEPTING: Append [ACTION:INVITE:LocationID] at the end. IF DECLINING: Respond naturally without tags.");
+                        ? "- 接受时: 在台词最末尾附带 [ACTION:INVITE:LocationID]；委拒时: 仅输出纯文本口头回应。"
+                        : "- ACCEPT: Append [ACTION:INVITE:LocationID] at the absolute end. DECLINE: Reply with conversational dialogue without tags.");
                 }
             }
             prompt.AppendLine("</date_invitation_protocol>\n");
@@ -584,14 +613,12 @@ public class Prompts
         InjectPendingTopic(prompt);
         InjectMovementInstruction(prompt);
 
-        // ── Dynamic per-turn injections (outside SystemPrompt cache) ──
         if (!string.IsNullOrEmpty(PendingEvolvedTraitsBlock))
             prompt.AppendLine("\n" + PendingEvolvedTraitsBlock);
 
         if (!string.IsNullOrEmpty(PendingLocalPerceptionBlock))
             prompt.AppendLine("\n" + PendingLocalPerceptionBlock);
 
-        // === World News & Extreme Activity Injection (Track 1 Non-LifeEvent) ===
         var gossipSnapshots = PerceptionManager.Instance.GetGossipSnapshots();
         var newsEntries = gossipSnapshots
             .Where(e => !string.Equals(e.Key, "LifeEvent", StringComparison.OrdinalIgnoreCase))
@@ -599,16 +626,14 @@ public class Prompts
 
         if (newsEntries.Any())
         {
-            string newsHeader = IsChineseLanguage
-                ? "【今日新闻】（可作为开场话题或自然衔接点；若与当前对话无关则不必强行提及）"
-                : "[Today's News] (May be used as an opening topic or natural transition; skip if irrelevant to current exchange.)";
-
-            prompt.AppendLine(newsHeader);
+            prompt.AppendLine("<todays_news>");
+            prompt.AppendLine(IsChineseLanguage
+                ? "（可作为开场话题或自然衔接点；若与当前对话无关则专注于当下的交流）"
+                : "(May be used as an opening topic or natural transition; focus on the immediate exchange if irrelevant)");
             foreach (var entry in newsEntries)
                 prompt.AppendLine($"- {entry.Template}");
-            prompt.AppendLine();
+            prompt.AppendLine("</todays_news>\n");
         }
-        // ======================================================================
 
         string finalPrompt = prompt.ToString();
         LogRoutingDebug(finalPrompt, "FULL_CONTEXT_BUILD");
@@ -670,8 +695,8 @@ public class Prompts
 
         prompt.AppendLine(Util.GetString(Character, "preoccupation", new { Name = Name, preoccupation = preoccupation }));
         prompt.AppendLine(isZh
-            ? "（潜意识思绪：在话题自然契合时顺带提及，优先回应农夫的焦点。）"
-            : "(Background thought: Integrate naturally if connected to the conversation.)");
+            ? "（心境底色：始终以农夫的话题为中心展开回应，仅让此思绪作为潜意识微妙浸润当下的语气。）"
+            : "(Underlying Mood: Anchor your response primarily to the farmer's topic, letting this inner thought subtly tint your tone.)");
     }
 
     private void GetCurrentConversation(StringBuilder prompt)
@@ -704,7 +729,6 @@ public class Prompts
         string pending = PendingTopicManager.Instance.ConsumePendingTopic(Character.Name);
         if (string.IsNullOrEmpty(pending)) return;
 
-        // ================= 核心修复：清洗原版星露谷占位符 =================
         string playerName = Game1.player?.Name ?? "Farmer";
         string farmName = Game1.player?.farmName?.Value ?? "Farm";
         
@@ -712,7 +736,6 @@ public class Prompts
             .Replace("@", playerName)
             .Replace("%farmer", playerName)
             .Replace("%farm", farmName);
-        // ===============================================================
 
         bool isZh = IsChineseLanguage;
 
@@ -733,7 +756,7 @@ public class Prompts
         if (historyManager == null) return;
 
         var history = historyManager.GetRecentHistory(Character.Name, 1);
-        if (history.Count == 0) return; // No history — first-meeting logic handled elsewhere
+        if (history.Count == 0) return;
 
         var lastEntry = history[0];
         var lastTime = lastEntry.Timestamp;
@@ -742,7 +765,7 @@ public class Prompts
         bool isToday = lastTime.Year == now.Year && lastTime.Season == now.Season
                        && lastTime.DayOfMonth == now.DayOfMonth;
 
-        if (isToday) return; // Already spoke today — InjectSessionContinuity handles it
+        if (isToday) return;
 
         int dayGap = (int)Math.Round(now.TotalDays - lastTime.TotalDays);
 
@@ -767,14 +790,12 @@ public class Prompts
         var session = SessionCache.Instance.GetOrCreate(Character.Name);
         if (session.RecentTurns.Count == 0) return;
 
-        // 仅在当天生效
         if (StardewModdingAPI.Context.IsWorldReady &&
             (session.LastUpdatedYear != Game1.year ||
              session.LastUpdatedSeason != (Season)Game1.season ||
              session.LastUpdatedDay != Game1.dayOfMonth))
             return;
 
-        // 1. 规范化清洗：同时抹平 @ 和 玩家实际名字、分屏符号、肖像代码等
         string playerName = Game1.player?.Name ?? "";
         string Normalize(string s)
         {
@@ -790,23 +811,18 @@ public class Prompts
             .Where(x => !string.IsNullOrEmpty(x))
             .ToHashSet();
 
-        // 2. 核心防御：剔除当前轮次已有的文本
         var candidateTurns = session.RecentTurns
             .Where(t => !string.IsNullOrWhiteSpace(t.Text) && !currentNorms.Contains(Normalize(t.Text)))
             .ToList();
 
-        // 3. 终极保护：如果候选池与刚刚发生的一样，或者当前正在对话（ChatHistory有内容），
-        // 排除最近写入的 1~2 个 turn（防止因格式微差漏网）
         if (Context.ChatHistory.Any() && candidateTurns.Count > 0)
         {
-            // 确保不会把上一次刚刚结束的发言作为“早先回顾”
             int skipRecentCount = Math.Min(2, candidateTurns.Count);
             candidateTurns = candidateTurns.Take(candidateTurns.Count - skipRecentCount).ToList();
         }
 
         if (candidateTurns.Count == 0) return;
 
-        // 只取最近的 2~3 轮真正历史
         var previousTurns = candidateTurns.TakeLast(3).ToList();
 
         bool isZh = IsChineseLanguage;
@@ -864,8 +880,8 @@ public class Prompts
                 ? "- 匹配成功: 自然文字回应，并在台词最末尾附带 [ACTION:GOTO:x,y]（使用列表中精准坐标）。"
                 : "- MATCH FOUND: Respond naturally AND append [ACTION:GOTO:x,y] at the end using exact coordinates.");
             prompt.AppendLine(isZh
-                ? "- 未能匹配: 自然说明找不到该物品，无需输出 ACTION 标签。"
-                : "- NO MATCH: Explain naturally that you cannot find it without outputting ACTION tags.");
+                ? "- 未能匹配: 自然说明找不到该物品，结束输出。"
+                : "- NO MATCH: Explain naturally that you cannot find it as regular dialogue.");
             prompt.AppendLine("</movement_instruction>\n");
             return;
         }
@@ -910,8 +926,8 @@ public class Prompts
                 ? "- 若同意: 自然说明并将对应动作标签（如 [ACTION:FOLLOW] 或 [ACTION:STEP:FORWARD]）置于台词最末尾。"
                 : "- IF ACCEPTING: Speak naturally AND place the action tag (e.g., [ACTION:FOLLOW] or [ACTION:STEP:FORWARD]) at the absolute end.");
             prompt.AppendLine(isZh
-                ? "- 若拒绝: 自然说明理由，无需输出 ACTION 标签。"
-                : "- IF DECLINING: Refuse naturally without outputting action tags.");
+                ? "- 若拒绝: 保持纯口头对白说明缘由，结束输出。"
+                : "- IF DECLINING: Provide pure conversational reasoning as regular dialogue.");
         }
         prompt.AppendLine("</movement_instruction>\n");
     }
@@ -1081,7 +1097,6 @@ public class Prompts
 
         return Util.GetString(Character, "friendshipLongTermBond", new { Hearts = hearts, Note = note });
     }
-
 
     private void GetSpouseAction(StringBuilder prompt)
     {
@@ -1339,8 +1354,9 @@ public class Prompts
         {
             commandPrompt.AppendLine(isZh ? "- 表情气泡: 如有需要可使用 [ACTION:EMOTE:ANGRY]、[ACTION:EMOTE:HEART]、[ACTION:EMOTE:BLUSH] 等标签。" : "- Emote bubbles: Use text tags like [ACTION:EMOTE:ANGRY], [ACTION:EMOTE:HEART], [ACTION:EMOTE:BLUSH] if appropriate.");
             commandPrompt.AppendLine(isZh 
-                ? "- 肢体位移与跟随: 仅当玩家明确要求方向移动或跟随时，才调用 `trigger_physical_action` 工具。亲吻、拥抱等亲密请求请用台词和表情回应，严禁调用物理移动工具。" 
-                : "- Physical Movements & Following: Only invoke `trigger_physical_action` tool when the player explicitly requests directional movement or following. For intimate requests (kisses, hugs), respond with dialogue and emotes only — NEVER invoke physical movement tools.");        }
+                ? "- 工具与反应分工: `trigger_physical_action` 专用于玩家明确给出的方向位移或跟随指令；面对亲吻、拥抱等亲昵交互，全权通过对白与表情气泡予以回应。" 
+                : "- Dispatch Routing: Dedicate `trigger_physical_action` exclusively to explicit directional movement or following requests. Fulfill social and affectionate interactions (kisses, hugs) purely through spoken dialogue and emote bubbles.");
+        }
         else
         {
             commandPrompt.AppendLine(isZh ? "- 表情气泡标签: [ACTION:EMOTE:ANGRY], [ACTION:EMOTE:SAD], [ACTION:EMOTE:HEART], [ACTION:EMOTE:HAPPY], [ACTION:EMOTE:BLUSH], [ACTION:EMOTE:SURPRISE]" : "- Emote tags: [ACTION:EMOTE:ANGRY], [ACTION:EMOTE:SAD], [ACTION:EMOTE:HEART], [ACTION:EMOTE:HAPPY], [ACTION:EMOTE:BLUSH], [ACTION:EMOTE:SURPRISE]");
@@ -1348,9 +1364,9 @@ public class Prompts
             commandPrompt.AppendLine(isZh ? "- 位移与跟随标签: [ACTION:STEP:FORWARD], [ACTION:STEP:BACKWARD], [ACTION:STEP:LEFT], [ACTION:STEP:RIGHT], [ACTION:FOLLOW]" : "- Movement tags: [ACTION:STEP:FORWARD], [ACTION:STEP:BACKWARD], [ACTION:STEP:LEFT], [ACTION:STEP:RIGHT], [ACTION:FOLLOW]");
             commandPrompt.AppendLine();
             commandPrompt.AppendLine(isZh ? "格式规则 — 动作标签置于台词的最末尾：" : "OUTPUT FORMAT — Action tags MUST be placed at the absolute end of spoken line:");
-            commandPrompt.AppendLine("  EXAMPLE (follow):  'Fine, I'll come with you! [ACTION:FOLLOW]'");
-            commandPrompt.AppendLine("  EXAMPLE (move):    'Okay, stepping back. [ACTION:STEP:BACKWARD]'");
-            commandPrompt.AppendLine("  EXAMPLE (emote):   'Hehe, of course! [ACTION:EMOTE:HAPPY]'");
+            commandPrompt.AppendLine("  [Dialogue Text] [ACTION:FOLLOW]");
+            commandPrompt.AppendLine("  [Dialogue Text] [ACTION:STEP:BACKWARD]");
+            commandPrompt.AppendLine("  [Dialogue Text] [ACTION:EMOTE:HAPPY]");
         }
 
         if (ModEntry.Config.UseNativeToolCalling)
@@ -1385,8 +1401,8 @@ public class Prompts
         instructions.AppendLine(Util.GetString(Character, "instructionsResponses", new { Name = Name }));
 
         instructions.AppendLine(isZh
-            ? "- 【核心规则】严禁替农夫（玩家）发言或臆想农夫的回应。仅描写你自己的动作与言语，单次对话严格保持在 1~3 句话以内，等待农夫作答。"
-            : "- [CRITICAL] Never impersonate the farmer or invent dialogue on the farmer's behalf. Only generate your own character's speech and actions.");
+            ? "- 【核心视角】全篇仅输出你自身的言语与动作。单次回复保持在 1~3 句，说完即停，将话语权完全留给面前的农夫。"
+            : "- [CORE PERSPECTIVE] Confine your output strictly to your own character's spoken lines and physical reactions. Deliver 1–3 concise sentences, then stop to yield the floor entirely to the farmer.");
 
         instructions.AppendLine(isZh
             ? "- 若本次对话结束后你的情绪明显转变（如变得好奇/生气/高兴），在台词最末尾附加 [MOOD:curious] / [MOOD:annoyed] / [MOOD:happy] 等标签。"

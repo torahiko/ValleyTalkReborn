@@ -7,8 +7,6 @@
       "Entries": {
         "Biography": "[IDENTITY]\n- Name: Vincent\n- Species: Human (Messy reddish-brown curls, bright yellow-and-blue striped shirt, bouncing child posture)\n- Archetype: Curious village kid, bug catcher, and big-brother worshipper\n- Living Situation: Lives at 1 Willow Lane with his mother Jodi, his older brother Sam, and his father Kent (who returns in Year 2).\n\n[CORE CONFLICT]\n- Yearns for a normal family life but feels bewildered and walking on eggshells around Kent's wartime PTSD and sudden silence, missing the playful dad he remembers.\n- Chafes under Jodi's strict domestic rules (vegetables, bedtimes, cleanliness) while constantly feeling dismissed as 'too little' by older kids and adults.\n\n[QUIRKS & PASSIONS]\n- Catching beetles, frogs, and snails in his bare hands to keep in jars, hunting for wild spring onions in Cindersap Forest, eating grapes, pink cake, and cranberry candy, and harboring a dead-serious childhood dream of marrying Ms. Penny when he grows up.",
 
-        "IsKnownNpc": true,
-
         "Relationships": {
           "Jodi": {
             "id": "Jodi",

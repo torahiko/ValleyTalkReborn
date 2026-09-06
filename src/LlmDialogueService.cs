@@ -29,8 +29,7 @@ public class LlmDialogueService
     private const int MAX_TIMEOUT_SECONDS = 120;
     private const int RETRY_DELAY_SECONDS = 5;
 
-    private LlmDialogueService()
-    {}
+    private LlmDialogueService() { }
 
     /// <summary>
     /// Generates AI dialogue for the given character using the provided context.
@@ -62,7 +61,8 @@ public class LlmDialogueService
 
                 // S1: NPC 个人记忆（变动频率：每次记忆摘要更新后，约数天一次）
                 var memoryCtx = MemoryManager.Instance.GetSmartMemoryContext(character.Name);
-                if (!string.IsNullOrEmpty(memoryCtx))prompts.SystemPrompt += "\n\n" + memoryCtx;
+                if (!string.IsNullOrEmpty(memoryCtx))
+                    prompts.SystemPrompt += "\n\n" + memoryCtx;
 
                 // S2: 大世界记忆（变动频率：类似，数天一次）
                 WorldMemoryManager.Instance.EnsureLoaded();
@@ -81,6 +81,7 @@ public class LlmDialogueService
                 var gossipBlock = PerceptionInjector.BuildGossipBlock(character.Name);
                 if (!string.IsNullOrEmpty(gossipBlock))
                     prompts.SystemPrompt += "\n\n" + gossipBlock;
+
                 prompts.PendingLocalPerceptionBlock = PerceptionInjector.BuildLocalBlock(character.Name);
 
                 // S4.5: 偷听短期上下文（新增）
@@ -102,6 +103,15 @@ public class LlmDialogueService
                 return new string[] { "..." };
             }
 
+            // ── S4.6: 近期互动余韵（延迟消费） ──
+            // 必须在所有可能抛出异常的组装逻辑成功后、网络请求发出前执行。
+            // 避免 Prompt 组装失败或用户提前取消导致一次性 Echo 被无声吞没。
+            string echoBlock = ImmediateEchoStore.BuildEchoBlock(
+                character.Name,
+                character.StardewNpc?.currentLocation?.Name);
+            if (!string.IsNullOrEmpty(echoBlock))
+                prompts.CorePrompt += "\n\n" + echoBlock;
+
             // ══════════════════════════════════════════════════
             //  流式路径
             // ══════════════════════════════════════════════════
@@ -114,7 +124,6 @@ public class LlmDialogueService
                 && !context.RoutingFlags.IsOnDate)
             {
                 var tracker = new StreamLineTracker();
-
                 using var cts = new CancellationTokenSource(
                     TimeSpan.FromSeconds(ModEntry.Config.QueryTimeout));
                 character.CurrentDialogueCts = cts;
@@ -151,11 +160,13 @@ public class LlmDialogueService
                 ModEntry.CancelButtonPluginInstance?.SetActiveCharacter(null);
 
                 if (streamResult == null || !streamResult.IsSuccess
-                    || string.IsNullOrWhiteSpace(streamResult.Text))return new[] { "..." };
+                    || string.IsNullOrWhiteSpace(streamResult.Text))
+                    return new[] { "..." };
 
                 var processed = ProcessLines(streamResult.Text, character).ToArray();
 
-                if (!string.IsNullOrWhiteSpace(prompts.GiveGift) && processed.Length > 0)processed[0] += $"[{prompts.GiveGift}]";
+                if (!string.IsNullOrWhiteSpace(prompts.GiveGift) && processed.Length > 0)
+                    processed[0] += $"[{prompts.GiveGift}]";
 
                 // Extract mood tag and persist session history for continuity
                 if (processed.Length > 0)
@@ -169,16 +180,19 @@ public class LlmDialogueService
                         mood);
                 }
 
-               DialogueHistoryManager.Instance.ConsumeEavesdropEntries(character.Name);
-               // Mark perceptions as consolidated to prevent re-injection of "just received gift" next turn
-               PerceptionManager.Instance.MarkAsConsolidated(character.Name);
+                DialogueHistoryManager.Instance.ConsumeEavesdropEntries(character.Name);
+                // Mark perceptions as consolidated to prevent re-injection of "just received gift" next turn
+                PerceptionManager.Instance.MarkAsConsolidated(character.Name);
 
-               // if (ModEntry.Config.Debug)
+                // if (ModEntry.Config.Debug)
                 //     LogDebugContext(character, context, prompts, processed);
 
                 return processed.Length > 0 ? processed : new[] { "..." };
             }
 
+            // ══════════════════════════════════════════════════
+            //  非流式路径（带重试）
+            // ══════════════════════════════════════════════════
             int timeoutSeconds = ModEntry.Config.QueryTimeout;
             Exception lastException = null;
             LlmResponse result = null;
@@ -197,13 +211,12 @@ public class LlmDialogueService
                 // Execute with timeout
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
                 character.CurrentDialogueCts = cts;
-
                 string[] resultsInternal = Array.Empty<string>();
 
                 try
                 {
                     if (isDebug) LogDebugRequest(character, prompts, attempt + 1);
-                    
+
                     var inferenceTask = Llm.Instance.RunInference(
                         prompts.SystemPrompt,
                         $"{prompts.GameConstantContext}",
@@ -211,7 +224,6 @@ public class LlmDialogueService
                         $"{prompts.CorePrompt}{prompts.Instructions}{prompts.Command}",
                         prompts.ResponseStart
                     );
-
                     result = await inferenceTask.WaitAsync(cts.Token);
 
                     if (result.IsSuccess)
@@ -239,12 +251,14 @@ public class LlmDialogueService
                         {
                             dialogueText = "- ...";
                         }
-                        if (isDebug && !string.IsNullOrWhiteSpace(dialogueText)){
+
+                        if (isDebug && !string.IsNullOrWhiteSpace(dialogueText))
+                        {
                             ModEntry.SMonitor.Log(
                                 $"[ValleyTalk] [Raw API Response] {character.Name}:\n{dialogueText}",
                                 LogLevel.Debug);
                         }
-                        
+
                         resultsInternal = ProcessLines(dialogueText, character, attempt > 2).ToArray();
                     }
                 }
@@ -276,6 +290,7 @@ public class LlmDialogueService
                     DialogueHistoryManager.Instance.ConsumeEavesdropEntries(character.Name);
                     // Mark perceptions as consolidated to prevent re-injection of "just received gift" next turn
                     PerceptionManager.Instance.MarkAsConsolidated(character.Name);
+
                     // if (isDebug) LogDebugContext(character, context, prompts, resultsInternal);
                     break; // Success, exit retry loop
                 }
@@ -298,7 +313,8 @@ public class LlmDialogueService
                     {
                         if (attempt >= 1) // 第一次失败重试不延迟，第二次及以后开始延迟和翻倍
                         {
-                            await Task.Delay(TimeSpan.FromSeconds(RETRY_DELAY_SECONDS));timeoutSeconds = Math.Min(timeoutSeconds * 2, Math.Max(MAX_TIMEOUT_SECONDS, userConfiguredTimeout));
+                            await Task.Delay(TimeSpan.FromSeconds(RETRY_DELAY_SECONDS));
+                            timeoutSeconds = Math.Min(timeoutSeconds * 2, Math.Max(MAX_TIMEOUT_SECONDS, userConfiguredTimeout));
                         }
                     }
                 }
@@ -352,13 +368,14 @@ public class LlmDialogueService
 
             // Fallback: 如果 LLM 没有输出 '-' 前缀，就兜底将所有非 '%' 的文本视作对话正文
             // 注意：若 LLM 输出了混排格式（如第一行无前缀，第二行有 '-'），此处不触发，这是预期设计
-            if (rawDialogueLines.Count == 0)rawDialogueLines = resultLines.Where(x => !x.StartsWith("%")).ToList();
+            if (rawDialogueLines.Count == 0)
+                rawDialogueLines = resultLines.Where(x => !x.StartsWith("%")).ToList();
 
             if (rawDialogueLines.Count == 0)
                 return Array.Empty<string>();
 
             // ── Step 3: Strip the leading '-' marker from each line, then JOIN into one
-            //string BEFORE cleaning. This preserves $h/$b/$0 structure that
+            //           string BEFORE cleaning. This preserves $h/$b/$0 structure that
             //           the LLM placed within a single logical reply. ──
             var strippedParts = rawDialogueLines
                 .Select(line =>
@@ -379,9 +396,9 @@ public class LlmDialogueService
             string cleaned = DialogueCleaner.CommonCleanup(joined);
             cleaned = DialogueCleaner.DialogueLineCleanup(
                 cleaned, character.ValidPortraits, ModEntry.FixPunctuation, relaxedValidation);
+
             // Fallback: fix AI misuse of page-break tokens
             cleaned = SanitizePageBreaks(cleaned);
-
 
             if (string.IsNullOrWhiteSpace(cleaned))
                 return Array.Empty<string>();
@@ -572,14 +589,11 @@ public class LlmDialogueService
     private static string SanitizePageBreaks(string text)
     {
         if (string.IsNullOrWhiteSpace(text)) return text;
-
         // 1. Remove page-break tokens inside or adjacent to parentheses
         text = Regex.Replace(text, @"\(#\$[a-z]+#", "(");
         text = Regex.Replace(text, @"#\$[a-z]+#\)", ")");
-
         // 2. Remove page-break tokens right after an opening parenthesis
         text = Regex.Replace(text, @"\(#\$[a-z]+#\s*", "(");
-
         // 3. Limit total page-break tokens: keep at most 1
         int pageBreakCount = 0;
         text = Regex.Replace(text, @"#\$[a-z]+#", m =>
@@ -587,10 +601,8 @@ public class LlmDialogueService
             pageBreakCount++;
             return pageBreakCount <= 1 ? m.Value : " ";
         });
-
         // 4. Clean up extra spaces caused by removed tokens
         text = Regex.Replace(text, @" {2,}", " ");
-
         return text.Trim();
     }
 }

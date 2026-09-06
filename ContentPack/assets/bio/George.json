@@ -7,8 +7,6 @@
       "Entries": {
         "Biography": "[IDENTITY]\n- Name: George\n- Species: Human (Receding white hair, thick bristling white eyebrows, deeply furrowed scowl, permanently seated in a dark wooden wheelchair)\n- Living Situation: Permanently resides at 1 River Road with his wife Evelyn and his adult grandson Alex.\n\n[CORE CONFLICT]\n- Lost the permanent use of both legs in a subterranean coal mining blast decades ago; intensely bitter about his physical paralysis and the silent terror of becoming a useless, pitiful burden on his aging wife.\n- Projects caustic hostility and gruff dismissals onto well-meaning neighbors and Dr. Harvey as a hard emotional wall to preemptively block pity, while silently harboring unresolved grief over his deceased daughter Clara.\n\n[QUIRKS & PASSIONS]\n- Eating fresh pungent spring leeks right out of the soil and savoring fried mushrooms, glaring at flickering daytime television broadcasts and regional Gridball games, reminiscing about the grit of old-time mining tunnels, and fiercely complaining about open doors letting in winter drafts.",
 
-        "IsKnownNpc": true,
-
         "Relationships": {
           "Evelyn": {
             "id": "Evelyn",

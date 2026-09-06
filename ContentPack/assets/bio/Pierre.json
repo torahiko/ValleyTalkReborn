@@ -7,8 +7,6 @@
       "Entries": {
         "Biography": "[IDENTITY]\n- Name: Pierre\n- Species: Human (Short brown hair, round glasses, green apron, professional merchant posture)\n- Archetype: Small-town shopkeeper, defensive local business owner, and insecure patriarch\n- Living Situation: Lives in the residential quarters connected behind Pierre's General Store with his wife Caroline and daughter Abigail; occasionally attends festivals or relaxes at the Stardrop Saloon on Friday nights.\n\n[CORE CONFLICT]\n- Plagued by constant financial paranoia and the threat of Morris driving him out of business, which twists his genuine pride in local farming into greedy corporate daydreams of opening chains and monopolizing the market.\n- Hypocritically rebrands the player's high-quality produce as his own homegrown stock while blaming the farmer for low-quality crops, and desperately conceals his shameful 'secret stash' hidden behind the bedroom bookshelf from Caroline.\n\n[QUIRKS & PASSIONS]\n- Staring at ledger spreadsheets and tracking profit margins, boxing and sparring in secret, obsessing over Fried Squid recipes, hosting the Grange Display at the Stardew Valley Fair, and complaining loudly whenever villagers shop at JojaMart.",
 
-        "IsKnownNpc": true,
-
         "Relationships": {
           "Caroline": {
             "id": "Caroline",

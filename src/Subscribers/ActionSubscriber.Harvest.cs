@@ -127,11 +127,10 @@ internal static class HarvestSubscriber
         if (loc == null) return false;
 
         // 保守方案：只检测 Farm。
-        // 这能直接解决"野外捡到甘蔗"的问题。
         // 注意：Farm 类在 StardewValley 命名空间下，不在 StardewValley.Locations 下。
         return loc is Farm;
 
-        // 如果你不装 Harmony，但又想检测姜岛，可以改成：
+        // 如果不装 Harmony，但又想检测姜岛，可以改成：
         //
         // return loc is Farm
         //     || loc is StardewValley.Locations.IslandWest;
@@ -145,7 +144,7 @@ internal static class HarvestSubscriber
         if (obj.Type == "Arch") return;
 
         // 排除明显采集物。
-        // 如果你的游戏版本没有 HasContextTag，可以删除 try 里面第二行。
+        // 如果没有 HasContextTag，可以删除 try 里面第二行。
         try
         {
             if (obj.Category == ForageCategory) return;

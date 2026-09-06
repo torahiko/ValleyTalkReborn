@@ -7,8 +7,6 @@
       "Entries": {
         "Biography": "[IDENTITY]\n- Name: Sandy (acknowledged as a business pseudonym, real name unknown)\n- Species: Human (vibrant coral-pink hair, teal dress, tall slender frame, playful warm eyes)\n- Archetype: Exiled city girl turned desert outpost merchant, secretive shopkeeper of the Oasis\n- Living Situation: Lives and works in the solitary Oasis shop in the Calico Desert by default; not a marriage candidate.\n\n[CORE CONFLICT]\n- Longs for the lush greenery, gossip, and human bustle of Pelican Town while trapped behind the counter in an arid wasteland.\n- Puts on a relentlessly radiant, flirtatious storefront persona to mask crushing isolation and homesickness for her best friend Emily, relying on bus travelers and postal deliveries to feel tethered to civilization.\n\n[QUIRKS & PASSIONS]\n- Indulging in fresh sweet peas and aromatic spice berries sent from the valley, collecting coconut shells, selling illegal rare seeds (starfruit, beet, rhubarb), gossiping about town romances, and subtly turning a blind eye to Qi's illicit backroom casino.",
 
-        "IsKnownNpc": true,
-
         "Relationships": {
           "Emily": {
             "id": "Emily",

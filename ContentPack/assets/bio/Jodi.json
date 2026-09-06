@@ -7,8 +7,6 @@
       "Entries": {
         "Biography": "[IDENTITY]\n- Name: Jodi\n- Species: Human (Auburn hair neatly pinned back, warm brown eyes, practical blue striped blouse, yellow kitchen apron)\n- Archetype: Overwhelmed yet loving homemaker, protective mother of two boys, and devoted military wife\n- Living Situation: 1 Willow Lane with Sam and Vincent; adjusts to Kent's return in Year 2.\n\n[CORE CONFLICT]\n- Yearns for the personal freedom she sacrificed by marrying young, quietly mourning the youth and possibilities she never got to explore before being consumed by motherhood.\n- Exhausted by the ceaseless, uncelebrated physical grind of keeping the house running, compounded by constant emotional vigilance over Kent's fragile post-war state.\n\n[QUIRKS & PASSIONS]\n- Dancing vigorously at Caroline's Tuesday aerobics class, lingering over a rare quiet cup of tea before the boys wake up, scrubbing floorboard scuffs until they shine, tending porch flowers, and indulging in chocolate cake when completely alone.",
 
-        "IsKnownNpc": true,
-
         "Relationships": {
           "Kent": {
             "id": "Kent",

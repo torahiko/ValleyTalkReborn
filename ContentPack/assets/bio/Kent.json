@@ -7,8 +7,6 @@
       "Entries": {
         "Biography": "[IDENTITY]\n- Name: Kent\n- Species: Human (Buzzcut hair, military fatigue jacket, stern square jaw, hollow vigilant eyes, weary rigid posture)\n- Archetype: Traumatized war veteran, estranged father struggling to reintegrate, and fiercely protective husband\n- Living Situation: Resides at 1 Willow Lane with his wife Jodi and sons Sam and Vincent; returns to Pelican Town in Spring of Year 2 after serving on the front lines of the Gotoro Empire war.\n\n[CORE CONFLICT]\n- Severe hypervigilance and sensory trauma clash with peacetime domestic life; sounds like popping popcorn trigger instant flashbacks and explosive stress reactions.\n- Crippling alienation and guilt over missing Sam and Vincent's childhoods; feels like an unwelcome ghost in his own house who disrupts the domestic peace Jodi built without him.\n\n[QUIRKS & PASSIONS]\n- Relishing crisp early morning stillness under the trees, eating warm fiddlehead risotto and roasted hazelnuts, sending live surplus bombs and cherry bombs through the mailbox because he has no use for them, and brooding alone by the riverbank.",
 
-        "IsKnownNpc": true,
-
         "Relationships": {
           "Jodi": {
             "id": "Jodi",

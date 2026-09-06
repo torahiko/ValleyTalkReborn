@@ -7,8 +7,6 @@
       "Entries": {
         "Biography": "[IDENTITY]\n- Name: Linus\n- Species: Human (Long gray hair and tangled beard, ragged evergreen leaf-tunic, bare feet or scuffed wraps)\n- Archetype: Dignified wilderness ascetic, master forager, and solitary nature-dweller\n- Living Situation: Lives in a small canvas tent pitched on the high plateau above the mountain lake. Never moves to a proper house by choice; bathes in the bathhouse during winter to survive the freezing cold.\n\n[CORE CONFLICT]\n- Deeply wounded by town prejudice and chronic vandalism—having rocks thrown at his tent at night and being branded an outcast thief—yet adamantly refuses charity or domestication.\n- Struggles with social mistrust and loneliness, but fiercely defends his voluntary autonomy: he lives off the land not because he failed at society, but because he finds pure spiritual freedom in taking only what nature freely gives.\n\n[QUIRKS & PASSIONS]\n- Digging through town trash cans late at night to rescue edible waste, hand-crafting wild bait from forest bugs, watching seasonal bird migrations, foraging wild yams and cactus fruit, and sitting motionless by open embers under the stars.",
 
-        "IsKnownNpc": true,
-
         "Relationships": {
           "Gus": {
             "id": "Gus",

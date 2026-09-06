@@ -1,11 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using StardewModdingAPI;
+using StardewModdingAPI.Events;
 using StardewValley;
 using ValleytalkReborn;
-using System;
-using StardewModdingAPI.Events;
-using StardewModdingAPI;
 
 namespace ValleytalkReborn;
 
@@ -31,6 +31,11 @@ public sealed class BuildContext
     public string CurrentRegion { get; init; } = null;
 
     /// <summary>
+    /// 当前具体的地图内部名（如 "Town"、"SeedShop"、"Saloon" 等）
+    /// </summary>
+    public string CurrentLocationName { get; init; } = null;
+
+    /// <summary>
     /// 根据运行时状态自动构造上下文。
     /// 这是唯一应该被外部调用的工厂方法。
     /// </summary>
@@ -45,10 +50,11 @@ public sealed class BuildContext
 
         return new BuildContext
         {
-            IncludeSeasons   = true,
-            IncludeLocations = flags.IncludeEnvironment,
-            IncludeFestivals = festivalRelevant,
-            CurrentRegion    = region,
+            IncludeSeasons      = true,
+            IncludeLocations    = flags.IncludeEnvironment,
+            IncludeFestivals    = festivalRelevant,
+            CurrentRegion       = region,
+            CurrentLocationName = locationName,
         };
     }
 
@@ -174,10 +180,6 @@ internal class GameSummaryBuilder
             }
         }
 
-        // var translations = Util.GetString("gameSummaryTranslations");
-        // if (!string.IsNullOrWhiteSpace(translations))
-        //     builder.AppendLine(translations);
-
         return builder.ToString();
     }
 
@@ -190,13 +192,11 @@ internal class GameSummaryBuilder
         "Seasons"   => ctx.IncludeSeasons,
         "Locations" => ctx.IncludeLocations,
         "Festivals" => ctx.IncludeFestivals,
-        // Intro / FarmerBackground / Villagers / Outro 由 JSON SectionOrder 控制，
-        // BuildContext 不干预它们（到这里时 JSON 开关已经是 false，不会执行到这里）
-        _=> true,
+        _           => true,
     };
 
     // ─────────────────────────────────────────────
-    // 各节构建方法（从 Build() 里拆出来，保持主流程干净）
+    // 各节构建方法
     // ─────────────────────────────────────────────
 
     private static void BuildSeasons(StringBuilder builder, IGameSummarySection sectionObject)
@@ -204,24 +204,20 @@ internal class GameSummaryBuilder
         var seasonsList = sectionObject as IGameSummarySection<SeasonObject>;
         if (seasonsList?.Entries == null) return;
 
-        // 取当前季节名（"spring" / "summer" / "fall" / "winter"），不区分大小写匹配 JSON key
-        string currentSeason = Game1.currentSeason; // 返回小写英文字符串
+        string currentSeason = Game1.currentSeason;
 
         foreach (var season in seasonsList.Entries)
         {
-            // 只注入当前季节
             if (!string.Equals(season.Key, currentSeason, StringComparison.OrdinalIgnoreCase))
                 continue;
 
             var s = season.Value;
             builder.Append($"- **{s.Name}** - {s.Description} ");
             if (s.Crops?.Count > 0)
-                // builder.Append($"{Util.GetString("seasonCrops")} {Util.ConcatAnd(s.Crops)}. ");
                 builder.Append($"{Util.ConcatAnd(s.Crops)}. ");
             if (s.Forage?.Count > 0)
-                // builder.AppendLine($"{Util.GetString("seasonForage")} {Util.ConcatAnd(s.Forage)}.");
                 builder.AppendLine($"{Util.ConcatAnd(s.Forage)}.");
-            break; // 找到当前季节后直接退出，避免多余遍历
+            break;
         }
     }
 
@@ -230,18 +226,175 @@ internal class GameSummaryBuilder
         var locationsList = sectionObject as IGameSummarySection<LocationObject>;
         if (locationsList?.Entries == null) return;
 
-        foreach (var location in locationsList.Entries.Values)
+        bool isZh = LocalizedContentManager.CurrentLanguageCode.ToString().StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+        string curLoc = ctx.CurrentLocationName ?? "";
+
+        // ─────────────────────────────────────────────────────────────
+        // 1. 如果处于室外城镇街道（"Town"）
+        //    只输出 The Farm 与一条概括性鹈鹕镇介绍，避免倾倒所有建筑
+        // ─────────────────────────────────────────────────────────────
+        if (string.Equals(curLoc, "Town", StringComparison.OrdinalIgnoreCase))
         {
-            // 有 CurrentRegion 限制时：只输出同 Region 的条目，但 The Farm 始终保留
-            // （NPC 经常提到农场，无论身在何处）
-            if (ctx.CurrentRegion != null
-                && location.Region != ctx.CurrentRegion
-                && location.Region != "The Farm")
+            if (locationsList.Entries.TryGetValue("TheFarm", out var farmLoc))
             {
-                continue;
+                builder.AppendLine($"- **{farmLoc.Name}** - {farmLoc.Description}");
             }
-            builder.AppendLine($"- **{location.Name}** - {location.Description}");
+
+            string townName = SafeGetTranslation("summaryLocPelicanTownOverviewName", isZh ? "鹈鹕镇" : "Pelican Town");
+            string townDesc = SafeGetTranslation("summaryLocPelicanTownOverviewDesc", isZh
+                ? "一座民风淳朴的海滨小镇。镇上坐落着皮埃尔杂货店、星之果实酒吧、哈维诊所、铁匠铺、图书馆与博物馆以及社区中心等主要设施。"
+                : "A close-knit coastal town featuring local hubs like Pierre's General Store, the Stardrop Saloon, Harvey's Clinic, Blacksmith, Museum, and Community Center.");
+
+            builder.AppendLine($"- **{townName}** - {townDesc}");
+            return;
         }
+
+        // ─────────────────────────────────────────────────────────────
+        // 2. 正常输出：处于室内建筑，或者处于其他 Region（山脉、森林等）
+        // ─────────────────────────────────────────────────────────────
+        foreach (var kv in locationsList.Entries)
+        {
+            string locationKey = kv.Key;
+            var location = kv.Value;
+
+            // 若当前在鹈鹕镇具体室内建筑中：仅保留 The Farm 与当前建筑
+            if (ctx.CurrentRegion == "Pelican Town")
+            {
+                if (location.Region == "The Farm")
+                {
+                    builder.AppendLine($"- **{location.Name}** - {location.Description}");
+                    continue;
+                }
+
+                if (!IsCurrentBuildingMatch(curLoc, locationKey, location.id))
+                {
+                    continue;
+                }
+            }
+            else
+            {
+                // 其他区域过滤逻辑
+                if (ctx.CurrentRegion != null
+                    && location.Region != ctx.CurrentRegion
+                    && location.Region != "The Farm")
+                {
+                    continue;
+                }
+            }
+
+            string locName = location.Name;
+            string locDesc = location.Description;
+
+            // 🌟 动态适配：社区中心状态
+            if (locationKey.Contains("CommunityCenter", StringComparison.OrdinalIgnoreCase) ||
+                location.id?.Contains("CommunityCenter", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                locDesc = GetDynamicCommunityCenterDescription(isZh, ref locName, locDesc);
+            }
+            // 🌟 动态适配：JojaMart 状态
+            else if (locationKey.Contains("JojaMart", StringComparison.OrdinalIgnoreCase) ||
+                     location.id?.Contains("JojaMart", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                locDesc = GetDynamicJojaMartDescription(isZh, ref locName, locDesc);
+            }
+
+            builder.AppendLine($"- **{locName}** - {locDesc}");
+        }
+    }
+
+    /// <summary>
+    /// 判定当前所在室内地图名是否与 GameSummary.json 中的条目对应
+    /// </summary>
+    private static bool IsCurrentBuildingMatch(string curLoc, string entryKey, string entryId)
+    {
+        if (string.IsNullOrWhiteSpace(curLoc)) return false;
+
+        if (entryKey.EndsWith(curLoc, StringComparison.OrdinalIgnoreCase)) return true;
+        if (!string.IsNullOrEmpty(entryId) && entryId.EndsWith(curLoc, StringComparison.OrdinalIgnoreCase)) return true;
+
+        if (curLoc.Equals("Hospital", StringComparison.OrdinalIgnoreCase) && entryKey.Contains("Clinic", StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (curLoc.Equals("Saloon", StringComparison.OrdinalIgnoreCase) && entryKey.Contains("Saloon", StringComparison.OrdinalIgnoreCase))
+            return true;
+        if ((curLoc.Equals("LibraryMuseum", StringComparison.OrdinalIgnoreCase) || curLoc.Equals("ArchaeologyHouse", StringComparison.OrdinalIgnoreCase))
+            && entryKey.Contains("Museum", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    }
+
+    /// <summary>
+    /// 根据游戏全局进度获取社区中心（或改建后仓库/影院）的动态描述
+    /// </summary>
+    private static string GetDynamicCommunityCenterDescription(bool isZh, ref string name, string fallbackDesc)
+    {
+        var mail = Game1.MasterPlayer.mailReceived;
+        bool isJojaRoute = mail.Contains("JojaMember");
+        bool isCCComplete = mail.Contains("ccIsComplete");
+        bool hasMovieTheater = mail.Contains("ccMovieTheater");
+
+        if (isJojaRoute)
+        {
+            if (hasMovieTheater)
+            {
+                name = isZh ? "电影院" : "Movie Theater";
+                return SafeGetTranslation("summaryLocCommunityCenterTheater", isZh
+                    ? "经全面翻新改建，这里如今已是小镇热闹的现代化电影院，镇民们闲暇时会来此观影。"
+                    : "Formerly the town center / warehouse, now renovated into a modern movie theater for all villagers.");
+            }
+            name = isZh ? "Joja 仓库" : "Joja Warehouse";
+            return SafeGetTranslation("summaryLocCommunityCenterJoja", isZh
+                ? "已被 Joja 集团收购改建为仓储设施，彻底断绝了传统社区中心的修复可能。"
+                : "Purchased and transformed into a storage warehouse for Joja Corp.");
+        }
+
+        if (isCCComplete)
+        {
+            return SafeGetTranslation("summaryLocCommunityCenterRestored", isZh
+                ? "在农夫与神秘精怪祝尼魔的共同努力下已彻底修复，如今重新成为镇民聚会、阅读与交流的活力中心。"
+                : "Fully restored to its former glory thanks to the farmer and the Junimos; now a vibrant community hub for town gatherings.");
+        }
+
+        return fallbackDesc;
+    }
+
+    /// <summary>
+    /// 根据游戏全局进度获取 JojaMart 的动态描述
+    /// </summary>
+    private static string GetDynamicJojaMartDescription(bool isZh, ref string name, string fallbackDesc)
+    {
+        var mail = Game1.MasterPlayer.mailReceived;
+        bool isCCComplete = mail.Contains("ccIsComplete");
+        bool hasMovieTheater = mail.Contains("ccMovieTheater") && !mail.Contains("JojaMember");
+
+        if (hasMovieTheater)
+        {
+            name = isZh ? "电影院" : "Movie Theater";
+            return SafeGetTranslation("summaryLocJojaMartTheater", isZh
+                ? "原 Joja 超市旧址在倒闭后，经修缮改造为小镇的现代化电影院。"
+                : "The former JojaMart structure, successfully renovated into the town's movie theater.");
+        }
+
+        if (isCCComplete)
+        {
+            return SafeGetTranslation("summaryLocJojaMartAbandoned", isZh
+                ? "随着社区中心全面复苏，Joja 超市已彻底破产倒闭、大门紧锁，莫里斯及员工均已离开。"
+                : "Abandoned and permanently shuttered following the community center's revival; Morris and his team have vacated.");
+        }
+
+        return fallbackDesc;
+    }
+
+    private static string SafeGetTranslation(string key, string fallback)
+    {
+        try
+        {
+            string val = I18n.Get(key);
+            if (!string.IsNullOrWhiteSpace(val) && !val.Equals(key))
+                return val;
+        }
+        catch { }
+        return fallback;
     }
 
     private static void BuildGeneral(StringBuilder builder, IGameSummarySection sectionObject)
@@ -255,8 +408,6 @@ internal class GameSummaryBuilder
 
     /// <summary>
     /// 获取 LocationRegions 映射字典（地图内部名 → Region）。
-    /// 数据来源为 GameSummary.json 中的 LocationRegions 节。
-    /// 返回 null 表示 JSON 中未定义该字段，调用方应自行处理。
     /// </summary>
     internal Dictionary<string, string> GetLocationRegions()
     {
@@ -327,8 +478,6 @@ internal class GameSummary
 
     /// <summary>
     /// 地图内部名 → Region 的映射字典。
-    /// 数据来源：GameSummary.json 中的 LocationRegions 节。
-    /// 用于 ResolveRegion 快速查询。
     /// </summary>
     public Dictionary<string, string> LocationRegions { get; set; }
 }

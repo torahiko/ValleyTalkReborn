@@ -15,7 +15,7 @@ namespace ValleytalkReborn
     {
         public static IMonitor SMonitor;
         public static IModHelper SHelper { get; private set; }
-        public static ModConfig Config;
+        public static ModConfig Config; 
 
         /// <summary>
         /// A2A 输出验证转发器（供 MainThreadOutputQueue 使用）。

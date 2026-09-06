@@ -13,6 +13,9 @@ internal static class WorldSubscriber
 {
     private static bool _initialized = false;
 
+    private static bool IsZh =>
+        LocalizedContentManager.CurrentLanguageCode.ToString().StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+
     public static void Initialize()
     {
         if (_initialized || ModEntry.SHelper == null) return;
@@ -64,13 +67,21 @@ internal static class WorldSubscriber
         {
             if (obj.Category == StardewValley.Object.furnitureCategory)
             {
-                string name = obj.DisplayName ?? obj.Name ?? "something";
-                string template = PerceptionManager.PickVariant(new[]
-                {
-                    $"You noticed the farmer setting down a {name} nearby.",
-                    $"The farmer just placed a {name} not far from where you were standing.",
-                    $"You saw the farmer arranging a {name} a moment ago.",
-                });
+                string name = obj.DisplayName ?? obj.Name ?? (IsZh ? "家具" : "something");
+                string template = IsZh
+                    ? PerceptionManager.PickVariant(new[]
+                    {
+                        $"你注意到农夫刚刚在附近摆放了一件【{name}】。",
+                        $"农夫刚才在离你不远的地方安置了一个【{name}】。",
+                        $"你看到农夫正在旁边整理摆放着的【{name}】。"
+                    })
+                    : PerceptionManager.PickVariant(new[]
+                    {
+                        $"You noticed the farmer setting down a {name} nearby.",
+                        $"The farmer just placed a {name} not far from where you were standing.",
+                        $"You saw the farmer arranging a {name} a moment ago.",
+                    });
+
                 PerceptionManager.Instance.Record("Place", template, null,
                     ModEntry.Config.PerceptionActionLifetime, isLandmark: false);
             }
@@ -86,14 +97,25 @@ internal static class WorldSubscriber
         if (feature == null) return;
         try
         {
-            if (feature is StardewValley.TerrainFeatures.Tree)
+            // 核心修复：只有 growthStage >= 5 的成年大树被砍倒才记录
+            // 彻底过滤掉镰刀打碎小树芽/树苗的情况
+            if (feature is StardewValley.TerrainFeatures.Tree tree &&
+                tree.growthStage.Value >= StardewValley.TerrainFeatures.Tree.treeStage)
             {
-                string template = PerceptionManager.PickVariant(new[]
-                {
-                    "You heard the crack of an axe — the farmer just felled a tree nearby.",
-                    "The farmer was swinging an axe at a tree close by and brought it down.",
-                    "You saw the farmer chopping down a tree not far from here.",
-                });
+                string template = IsZh
+                    ? PerceptionManager.PickVariant(new[]
+                    {
+                        "你听到了斧头劈下的闷响——农夫刚才就在附近砍倒了一棵大树。",
+                        "农夫刚才挥着斧头在不远处伐木，一棵大树应声倒地。",
+                        "你注意到农夫刚刚在离这儿不远的地方砍翻了一棵树。"
+                    })
+                    : PerceptionManager.PickVariant(new[]
+                    {
+                        "You heard the crack of an axe — the farmer just felled a tree nearby.",
+                        "The farmer was swinging an axe at a tree close by and brought it down.",
+                        "You saw the farmer chopping down a tree not far from here.",
+                    });
+
                 PerceptionManager.Instance.Record("Chop", template, null,
                     ModEntry.Config.PerceptionActionLifetime, isLandmark: false);
             }

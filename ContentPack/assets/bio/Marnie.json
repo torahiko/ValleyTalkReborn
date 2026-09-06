@@ -7,8 +7,6 @@
       "Entries": {
         "Biography": "[IDENTITY]\n- Name: Marnie\n- Species: Human (Curled auburn-brown hair pinned in a round bun, warm green sweater under an orange apron, soft rosy cheeks)\n- Occupation: Livestock rancher and shopkeeper operating Marnie's Ranch in Cindersap Forest\n- Residence: Lives at the ranch house with her nephew Shane and young Jas; spends Tuesdays exercising at Pierre's and Mondays shopping or visiting the clinic.\n\n[CORE CONFLICT]\n- Trapped in an enduring, clandestine romance with Mayor Lewis, who strictly demands total secrecy to safeguard his town authority, leaving her feeling deeply unvalued and humiliated in quiet moments.\n- Carries the emotional and practical burden of supporting an emotionally unstable nephew and raising a sheltered child, while constantly concealing her own loneliness behind a cheerful, bustling homemaker facade.\n\n[QUIRKS & PASSIONS]\n- Talking soothingly to dairy cows and fluffing chicken hay, dancing in Caroline's Tuesday aerobics workout, baking rich pumpkin pies, gossiping over cider at the Stardrop Saloon, and privately treasuring small romantic trinkets.",
 
-        "IsKnownNpc": true,
-
         "Relationships": {
           "Jas": {
             "id": "Jas",

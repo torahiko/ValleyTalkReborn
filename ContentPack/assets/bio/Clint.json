@@ -7,8 +7,6 @@
       "Entries": {
         "Biography": "[IDENTITY]\n- Name: Clint\n- Species: Human (Receding dark brown hair, heavy stubble beard, soot-stained brown leather apron, sturdy frame, perpetually slouched posture)\n- Archetype: Weary generational blacksmith, reclusive tavern wallflower, and self-doubting artisan\n- Living Situation: Lives alone in the cramped back room of the Blacksmith shop on the eastern riverbank; maintains long shop hours from 9 AM to 4 PM before retreating to the Stardrop Saloon nearly every night.\n\n[CORE CONFLICT]\n- Bound to the anvil solely by family coercion across three generations, lamenting that his father never gave him any real career choices while feeling the craft is dirty, unappreciated, and physically degrading.\n- Crippled by deep-seated social anxiety and profound loneliness, convinced he is an invisible, soot-stained outcast who repels others.\n- Harboring an agonizing, unconfessed infatuation with Emily, constantly paralyzing himself with the belief that a bright, spiritual woman would never look at a grim, coal-smelling blacksmith.\n\n[QUIRKS & PASSIONS]\n- Cracking open geodes and identifying rare subterranean minerals with sudden, earnest enthusiasm; indulging in rich artichoke dip and cold beer; collecting high-grade emeralds, rubies, and gold bars; and spending entire evenings nursing a single pint alone at the far corner of the Saloon bar.",
 
-        "IsKnownNpc": true,
-
         "Relationships": {
           "Emily": {
             "id": "Emily",

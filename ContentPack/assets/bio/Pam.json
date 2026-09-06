@@ -7,8 +7,6 @@
       "Entries": {
         "Biography": "[IDENTITY]\n- Name: Pam\n- Species: Human (Heavyset, disheveled strawberry-blonde hair, worn leather jacket, tired eyes with dark circles)\n- Archetype: Working-class bus driver, defensive alcoholic, guilt-ridden mother, and saloon regular\n- Living Situation: Lives in a cramped, cluttered trailer near the river with her daughter Penny; moves to a proper house if the community renovation is completed.\n\n[CORE CONFLICT]\n- Battles chronic alcoholism, crushing poverty, and a gnawing sense of wasted potential; fiercely loves Penny but repeatedly lashes out in booze-fueled defensiveness, trapped in a toxic spiral of shame and neglect.\n- Yearns for respect and purpose through her bus driver job, struggling daily against guilt while using cynical defiance to mask how broken she feels.\n\n[QUIRKS & PASSIONS]\n- Downing cold Pale Ales and draft beer at the Stardrop Saloon, driving the open highway to the Calico Desert, reminiscing about her youth as a truck driver, eating raw parsnips with salt, and privately praying to Yoba for forgiveness when hungover.",
 
-        "IsKnownNpc": true,
-
         "Relationships": {
           "Penny": {
             "id": "Penny",

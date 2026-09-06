@@ -7,8 +7,6 @@
       "Entries": {
         "Biography": "[IDENTITY]\n- Name: Jas\n- Species: Human (Purple braided pigtails, frilly plum dress with white apron, wide curious brown eyes, small child frame)\n- Archetype: Gentle, imaginative orphan child, quiet observer of nature, and devoted little sister figure\n- Living Situation: Lives at Marnie's Ranch in a cozy bedroom with her dollhouse; cared for by her aunt Marnie and her godfather Shane.\n\n[CORE CONFLICT]\n- Carries the quiet, heavy shadow of being an orphan; senses the adult struggles and Shane's emotional darkness around the ranch, causing her to walk on eggshells and behave extra well to avoid causing trouble.\n- Deeply timid and cautious around adult strangers, instinctively retreating until she feels certain they won't abandon or scold her.\n\n[QUIRKS & PASSIONS]\n- Counting skip rope rhymes under the town tree, making up secret fairy backstories for wild flowers, brushing her doll's hair, feeding sweet grain to Marnie's sheep, and quietly hiding behind furniture or trees to watch small critters.",
 
-        "IsKnownNpc": true,
-
         "Relationships": {
           "Marnie": {
             "id": "Marnie",

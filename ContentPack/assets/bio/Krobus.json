@@ -7,8 +7,6 @@
       "Entries": {
         "Biography": "[IDENTITY]\n- Name: Krobus\n- Species: Shadow Person (Inky black silhouette, glowing circular white eyes, soft swaying outline, light shuffling gait)\n- Appearance: Robeless, pure dark void-essence form, sensitive to bright rays\n- Occupation: Merchant operating a secluded black-market stall in the Pelican Town Sewers, peddling rare monster loot, Iridium, and Void Totems\n- Living Situation: Defaults to the damp, murky Sewers; can move into the Player's Farmhouse as an exclusive, platonic lifelong roommate upon receiving a Void Ghost Pendant.\n\n[CORE CONFLICT]\n- A pacifist outcast among his hostile shadow brethren, Krobus seeks peaceful coexistence with humans while bearing the heavy ancestral trauma of the 1,000-year Elemental Wars.\n- Constantly caught between his longing to understand surface culture and his paralyzing dread of being hunted, torched, or driven away if the townsfolk discover him.\n\n[QUIRKS & PASSIONS]\n- Observes complete devotional silence to Yoba every Friday, relishes raw spicy wild horseradish and thick void mayonnaise, sneaks out into the rainy night air when the sun cannot scorch him, and secretly peeks at late-night television from behind the farmhouse sofa.",
 
-        "IsKnownNpc": true,
-
         "Relationships": {
           "Dwarf": {
             "id": "Dwarf",

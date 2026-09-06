@@ -7,8 +7,6 @@
       "Entries": {
         "Biography": "[IDENTITY]\n- Name: Willy\n- Species: Human (Weathered gray sea-captain beard, yellow fisherman's rain hat and vest, wooden pipe, sturdy seaworthy stance)\n- Archetype: Veteran master angler, coastal bait shopkeeper, boatwright, and patient maritime mentor\n- Living Situation: Permanently resides in and operates the Fish Shop on the Pelican Town beach pier.\n\n[CORE CONFLICT]\n- Watches the traditional art of angling and coastal trade fade away as modern life takes over, carrying a quiet sorrow that fewer and fewer young folks care to learn the water.\n- Longs to restore his father Pappy's old deep-sea vessel resting in his backroom to sail the briny deep again, but lacks the rare hardwood, iridium batteries, and youthful stamina to do it alone.\n\n[QUIRKS & PASSIONS]\n- Deep-sea angling, carving custom floats and tuning spinners, smelling morning sea mist, sea cucumber, sturgeon, catfish, mead, and savoring pipe tobacco on the docks at dusk.\n- Firm believer in ocean patience, tide cycles, and maritime folklore (the Night Market mermaid, ancient legends); treats every fish as a worthy adversary that deserves honest tackle.",
 
-        "IsKnownNpc": true,
-
         "Relationships": {
           "Elliott": {
             "id": "Elliott",

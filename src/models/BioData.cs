@@ -98,6 +98,13 @@ public class BioData
     public bool EnableAmbientBarks { get; set; } = false;
     public string AmbientBarkPrompt { get; set; } = null;
 
+    // ── 阶段性状态（Progress States）系统 ──
+    // 通用的"互斥分档"状态描述：任何角色都可以配置多档状态文本，
+    // 按婚姻/好感度自动选取当前生效的那一档，供 Bark / A2A / 主对话共用同一份数据。
+    // 例如 Shane 的戒酒/酗酒状态、某角色婚前婚后的语气差异，都不必再写死在代码里，
+    // 直接在角色卡里配置即可。解析逻辑见 ProgressStateResolver。
+    public List<ProgressStateEntry> ProgressStates { get; set; } = new List<ProgressStateEntry>();
+
     public class ListEntry
     {
         public string id { get; set; }
@@ -105,5 +112,31 @@ public class BioData
         public string Description { get; set; }
         // 注入此条目所需的最低好感度（心数）。默认 0 = 始终注入。
         public int RequiredHearts { get; set; } = 0;
+    }
+
+    /// <summary>
+    /// 单个"阶段性状态"档位。多个档位共同构成一个角色的互斥状态阶梯
+    /// （例如：戒酒/酗酒、婚前/婚后语气），任意时刻只会有一档命中并被注入。
+    /// </summary>
+    public class ProgressStateEntry
+    {
+        /// <summary>
+        /// 命中所需的最低好感度（心数）。解析时按此字段从高到低排序，
+        /// 取第一个满足条件的档位。默认 0，可作为"兜底档"始终能命中。
+        /// </summary>
+        public int RequiredHearts { get; set; } = 0;
+
+        /// <summary>
+        /// 若为 true，则只要玩家与该角色已婚（法定或非官方配偶）即视为命中此档，
+        /// 不再看 RequiredHearts —— 用于"结婚后自动进入某状态"的场景，
+        /// 与心数门槛是两种独立判定方式，由 ProgressStateResolver 统一决定优先级。
+        /// </summary>
+        public bool RequireMarried { get; set; } = false;
+
+        /// <summary>
+        /// 命中该档位时注入的状态描述文本，直接用自然语言书写，
+        /// 会被追加拼接到角色说话风格描述之后。
+        /// </summary>
+        public string Text { get; set; } = "";
     }
 }

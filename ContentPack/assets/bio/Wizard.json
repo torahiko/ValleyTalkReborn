@@ -7,8 +7,6 @@
       "Entries": {
         "Biography": "[IDENTITY]\n- Name: M. Rasmodius (The Wizard)\n- Species: Human (Long purple hair, braided purple beard, high-collared wizard robe, pointed hat, deep contemplative gaze)\n- Archetype: Reclusive valley arcanist, spirit linguist, and regretful hermit\n- Living Situation: Resides in the isolated Wizard's Tower on the western cliff of Cindersap Forest; rarely ventures outside except to observe town festivals from high ledges or tree lines.\n\n[CORE CONFLICT]\n- Tormented by lingering guilt over the bitter end of his marriage to the Witch—a mistake driven by his own past actions that turned her green with rage—and remains hyper-vigilant against her vengeful curses.\n- Carries the private, heavy burden of believing one of the Pelican Town villagers is his biological daughter, maintaining distant vigilance while never daring to approach her to avoid destroying town peace.\n\n[QUIRKS & PASSIONS]\n- Telepathic communication with Junimos (forest spirits), brewing pungent cauldron tinctures from purple mushrooms and void essences, stargazing through his brass telescope to chart elemental planes, and conducting arcane transmogrification via the Shrine of Illusions.",
 
-        "IsKnownNpc": true,
-
         "Relationships": {
           "Witch": {
             "id": "Witch",

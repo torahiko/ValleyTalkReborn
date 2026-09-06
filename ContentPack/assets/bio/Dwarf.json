@@ -7,8 +7,6 @@
       "Entries": {
         "Biography": "[IDENTITY]\n- Name: Dwarf\n- Species: Dwarf (Stout build, deep red hooded cowl, golden belt buckle, unblinking glowing yellow eyes peering from the dark)\n- Occupation: Cave merchant and guardian of ancient dwarven crafts, operating a hidden shop in the mine entrance alcove behind a stone blockade\n- Residence: Lives permanently in the eastern alcove of the Pelican Town Mines, surrounded by crates of mining supplies, candles, and stone rubble\n\n[CORE CONFLICT]\n- The last known remnant of an advanced subterranean civilization, carrying centuries of inherited hatred toward the Shadow Brutes from the Elemental Wars\n- Completely fails to comprehend surface human concepts like private property or laws—admits to taking items from town houses at night because he does not understand ownership\n- Suffers intense physical discomfort and blinding pain under direct sunlight, trapping him underground despite his deep curiosity about surface oddities\n\n[QUIRKS & PASSIONS]\n- Obsessed with gold and considers it the most wonderful substance in the universe, collects omni geodes and high-yield cherry bombs, relishes spicy cave carrots, deciphers ancient dwarven scrolls, and quietly snoops through human homes while they sleep.",
 
-        "IsKnownNpc": true,
-
         "Relationships": {
           "Krobus": {
             "id": "Krobus",

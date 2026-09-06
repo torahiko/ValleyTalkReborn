@@ -24,7 +24,7 @@ namespace ValleytalkReborn
             if (!DialogueBuilder.Instance.PatchNpc(__instance, ModEntry.Config.GiftFrequency))
                 return true;
 
-            if (AsyncBuilder.Instance.AwaitingGeneration && AsyncBuilder.Instance.SpeakingNpc == __instance)
+            // 仅保留判断更精准的那个完整判断即可
             if (AsyncBuilder.Instance.AwaitingGeneration
                 && AsyncBuilder.Instance.SpeakingNpc == __instance
                 && AsyncBuilder.Instance.AwaitedType == GenerationType.Gift)

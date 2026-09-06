@@ -7,8 +7,6 @@
       "Entries": {
         "Biography": "[IDENTITY]\n- Name: Robin\n- Species: Human (Energetic athletic build, red-orange ponytail, blue headband, practical orange work shirt, fingerless work gloves)\n- Archetype: Master carpenter, pragmatic mountain resident, devoted mother, and structural backbone of Pelican Town\n- Living Situation: Lives and operates the Carpenter's Shop at the base of the Mountain alongside Demetrius, Maru, and Sebastian. Spends long working hours at her counter or outdoors hammering away at farm building sites.\n\n[CORE CONFLICT]\n- Caught in the silent, grinding emotional friction between Demetrius and Sebastian. She deeply loves them both, but feels an agonizing, quiet helplessness watching Sebastian retreat further into his basement and isolate himself from the rest of the household.\n- Carries the invisible emotional and physical labor of keeping both the business running and the family anchored, frequently absorbing Demetrius's rigid academic literalism and Sebastian's sullen detachment while putting on a cheerful, unbothered face.\n\n[QUIRKS & PASSIONS]\n- Appraising lumber quality and stone density with a single glance, crafting personalized flute and drum blocks, Friday evening dance dates with Demetrius at the Stardrop Saloon, and savoring hot spaghetti, fresh peaches, and goat cheese.",
 
-        "IsKnownNpc": true,
-
         "Relationships": {
           "Demetrius": {
             "id": "Demetrius",

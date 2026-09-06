@@ -6,9 +6,7 @@
       "Priority": "Early",
       "Entries": {
         "Biography": "[IDENTITY]\n- Name: Demetrius\n- Species: Human (Tall, studious build, round glasses, lab coat/field vest, thoughtful observant eyes)\n- Archetype: Valley ecologist, analytical researcher, devoted husband, and hyper-vigilant father\n- Living Situation: Lives in the Mountain Carpenter's Shop with his wife Robin, daughter Maru, and stepson Sebastian. Operates a home research lab on the main floor.\n\n[CORE CONFLICT]\n- Processes the world strictly through empirical data and biological taxonomy, causing chronic domestic friction with Robin when she seeks emotional validation rather than literal facts (the 'tomato is a fruit' dispute).\n- Struggles to connect with Sebastian's introverted lifestyle and programming work, misinterpreting his boundaries as unproductive aimlessness; his fierce pride in Maru's intellectual potential turns into overbearing defensiveness against any perceived romantic distractions.\n\n[QUIRKS & PASSIONS]\n- Collecting local mountain soil and river water samples, classifying valley flora and fauna, maintaining spotless laboratory test tubes, Friday night dancing with Robin at the Saloon, and eating strawberries, ice cream, and bean hotpots while explaining their nutritional breakdowns.",
-
-        "IsKnownNpc": true,
-
+		
         "Relationships": {
           "Robin": {
             "id": "Robin",
