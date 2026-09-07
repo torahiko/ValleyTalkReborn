@@ -8,20 +8,11 @@ using StardewValley;
 namespace ValleytalkReborn;
 
 /// <summary>
-/// Manages three separate perception queues:
-///
-///   Track 1 — _globalGossip (max 2): town-wide "Town Gossip" snapshots.
-///     Triggered by major events (date ended, etc.). Shared by all NPCs. Simple FIFO.
-///
-///   Track 2 — the farmer's personal short-term perception pocket, split into two
-///     independently-capped sub-buckets so that high-frequency player-state updates
-///     (hat, drunk, tired, ...) can't crowd out low-frequency but high-salience
-///     activity events (Gift, Talk, ...) via plain FIFO eviction:
-///       - _playerStateBucket (max 6): entries whose Key starts with "Player".
-///       - _activityBucket    (max 8): everything else (Gift/Talk/Eat/Fish/Chop/Place/Harvest/...).
-///     Both use Deduplicated-FIFO: same Key + NpcName (or Key + Location) replaces old entry.
-///     Injected per-NPC through an eyewitness filter at prompt-build time, merged and
-///     sorted by salience: basePriority × timeDecay × personalityMultiplier.
+/// 管理三大感知队列：
+///   Track 1 — _globalGossip (max 2): 全镇级别八卦快照与 Landmark（传说鱼、大事件）。
+///   Track 2 — 玩家即时状态与交互桶：
+///       - _playerStateBucket (max 6): 随身身体状态（Player*）。
+///       - _activityBucket    (max 8): 玩家日常交互事件（Gift/Talk/Eat/Fish/Chop/...）。
 /// </summary>
 internal class PerceptionManager
 {
@@ -90,7 +81,7 @@ internal class PerceptionManager
         string itemId        = null,
         string locationName  = null)
     {
-        if (!ShouldRecord(key, isGossip)) return;
+        if (!ShouldRecord(key, isGossip || isLandmark)) return;
         if (string.IsNullOrWhiteSpace(template)) return;
 
         string resolvedLocation = locationName
@@ -137,9 +128,9 @@ internal class PerceptionManager
                 LogLevel.Debug);
         }
     }
-    
+
     /// <summary>
-    /// 显式驱逐指定的感知条目（用于即时身体/伴随状态消除，如宠物远离、脱下帽子等）。
+    /// 显式驱逐指定的感知条目
     /// </summary>
     public void Evict(string key, bool fromGossip = false)
     {
@@ -211,7 +202,7 @@ internal class PerceptionManager
         if (string.IsNullOrEmpty(npcName)) return;
         lock (_lock)
         {
-            foreach (var e in _playerStateBucket.Concat(_activityBucket))
+            foreach (var e in _playerStateBucket.Concat(_activityBucket).Concat(_globalGossip))
             {
                 if (!e.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase))
                     continue;
@@ -227,6 +218,7 @@ internal class PerceptionManager
 
     /// <summary>
     /// 获取通过目击过滤并按突出度排序的感知记录。
+    /// 修复：联立扫描 _globalGossip，让 Landmark（如传说鱼）能同时被现场 NPC 感知对话引用。
     /// </summary>
     public List<PerceptionEntry> GetFilteredBucketFor(string npcName, int max = 3)
     {
@@ -239,6 +231,7 @@ internal class PerceptionManager
         {
             return _playerStateBucket
                 .Concat(_activityBucket)
+                .Concat(_globalGossip) // 联立扫描全镇八卦/Landmark
                 .Where(IsPerceptionTimeValid)
                 .Where(e => !e.IsConsolidated)
                 .Where(e => PassesEyewitnessFilter(e, npcName, npcLocation))
@@ -285,10 +278,6 @@ internal class PerceptionManager
         _globalGossip.Enqueue(entry);
     }
 
-    /// <summary>
-    /// 向指定的个人桶写入一条记录（Deduplicated-FIFO）。
-    /// 修复重点：随身身体状态（Player*）只根据 Key 去重，忽略地图差异，杜绝跨地图导致重复堆叠。
-    /// </summary>
     private static void EnqueueBucket(Queue<PerceptionEntry> bucket, int maxEntries, PerceptionEntry entry)
     {
         bool isPlayerState = entry.Key.StartsWith("Player", StringComparison.OrdinalIgnoreCase);
@@ -296,7 +285,7 @@ internal class PerceptionManager
         PerceptionEntry duplicate = bucket.FirstOrDefault(e =>
             e.Key == entry.Key &&
             (
-                isPlayerState // 随身状态无需匹配地图或 NPC，只要同 Key 直接替换
+                isPlayerState // 随身状态无需匹配地图或 NPC，同 Key 直接覆盖
                 ||
                 (!string.IsNullOrEmpty(e.NpcName) && !string.IsNullOrEmpty(entry.NpcName)
                     && string.Equals(e.NpcName, entry.NpcName, StringComparison.OrdinalIgnoreCase))
@@ -332,6 +321,7 @@ internal class PerceptionManager
 
         return entry.Key switch
         {
+            "LegendaryFish"      => 10f,
             "Gift"               => 8f,
             "PlayerLowHealth"    => 7f,
             "PlayerExhausted"    => 7f,
@@ -377,14 +367,15 @@ internal class PerceptionManager
 
         return entry.Key switch
         {
-            "Gift"    => npc.Manners == NPC.polite ? 1.4f : 1.0f,
-            "Talk"    => npc.SocialAnxiety == NPC.shy ? 0.5f : 1.2f,
-            "Eat"     => 1.0f,
-            "Fish"    => npc.Optimism == NPC.positive ? 1.2f : 0.8f,
-            "Chop"    => npc.Manners == NPC.rude ? 0.7f : 1.0f,
-            "Place"   => npc.SocialAnxiety == NPC.shy ? 0.6f : 1.0f,
-            "Harvest" => npc.Optimism == NPC.positive ? 1.3f : 1.0f,
-            _         => 1.0f
+            "LegendaryFish" => 1.5f,
+            "Gift"          => npc.Manners == NPC.polite ? 1.4f : 1.0f,
+            "Talk"          => npc.SocialAnxiety == NPC.shy ? 0.5f : 1.2f,
+            "Eat"           => 1.0f,
+            "Fish"          => npc.Optimism == NPC.positive ? 1.2f : 0.8f,
+            "Chop"          => npc.Manners == NPC.rude ? 0.7f : 1.0f,
+            "Place"         => npc.SocialAnxiety == NPC.shy ? 0.6f : 1.0f,
+            "Harvest"       => npc.Optimism == NPC.positive ? 1.3f : 1.0f,
+            _               => 1.0f
         };
     }
 
@@ -392,6 +383,9 @@ internal class PerceptionManager
     {
         return (key, npcName) switch
         {
+            ("LegendaryFish", "Willy") => 2.0f,
+            ("LegendaryFish", "Linus") => 1.6f,
+
             ("Harvest", "Linus") => 1.5f,
             ("Chop",    "Linus") => 0.1f,
             ("Fish",    "Linus") => 1.4f,
@@ -433,24 +427,25 @@ internal class PerceptionManager
     private static bool PassesEyewitnessFilter(
         PerceptionEntry entry, string npcName, string npcLocation)
     {
+        // Landmark 全镇传闻无视目击与距离限制
         if (entry.IsLandmark) return true;
 
-        // 玩家自身状态属于面对面直接观察，全场景对当前对话的 NPC 生效
+        // 玩家自身状态面对面直接感知
         if (entry.Key.StartsWith("Player", StringComparison.OrdinalIgnoreCase)) return true;
 
-        // 对话旁听严格定向：仅旁听者本人才能感知
+        // 对话严格定向
         if (entry.Key == "Talk")
         {
             return !string.IsNullOrEmpty(entry.NpcName) &&
                    entry.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase);
         }
 
-        // 针对当前 NPC 的定向事件（如本人收礼）
+        // 定向 NPC 事件（如收礼）
         if (!string.IsNullOrEmpty(entry.NpcName) &&
             entry.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase))
             return true;
 
-        // 同地图目击事件（如旁观给他人送礼、就地钓鱼、砍树、放置物品等）
+        // 同地图目击事件
         if (!string.IsNullOrEmpty(entry.LocationName) &&
             !string.IsNullOrEmpty(npcLocation) &&
             entry.LocationName.Equals(npcLocation, StringComparison.OrdinalIgnoreCase))
@@ -495,21 +490,22 @@ internal class PerceptionManager
         return (currentMins - recordedMins) <= (entry.LifetimeHours * 60);
     }
 
-    private static bool ShouldRecord(string key, bool isGossip)
+    private static bool ShouldRecord(string key, bool isGossipOrLandmark)
     {
         if (!ModEntry.Config.EnablePerceptionSystem) return false;
-        if (isGossip) return true;
+        if (isGossipOrLandmark) return true;
 
         return key switch
         {
-            "Eat"     => ModEntry.Config.EnablePerceptionEat,
-            "Fish"    => ModEntry.Config.EnablePerceptionFish,
-            "Chop"    => ModEntry.Config.EnablePerceptionChop,
-            "Place"   => ModEntry.Config.EnablePerceptionPlace,
-            "Talk"    => ModEntry.Config.EnableNearbyPerception,
-            "Harvest" => ModEntry.Config.EnablePerceptionHarvest,
-            "Gift"    => ModEntry.Config.EnablePerceptionGift,
-            _         => true
+            "Eat"           => ModEntry.Config.EnablePerceptionEat,
+            "Fish"          => ModEntry.Config.EnablePerceptionFish,
+            "LegendaryFish" => ModEntry.Config.EnablePerceptionFish,
+            "Chop"          => ModEntry.Config.EnablePerceptionChop,
+            "Place"         => ModEntry.Config.EnablePerceptionPlace,
+            "Talk"          => ModEntry.Config.EnableNearbyPerception,
+            "Harvest"       => ModEntry.Config.EnablePerceptionHarvest,
+            "Gift"          => ModEntry.Config.EnablePerceptionGift,
+            _               => true
         };
     }
 

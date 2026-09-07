@@ -257,5 +257,18 @@
   "summaryLocCommunityCenterJoja": "Acquired by Joja Corp and converted into a warehouse. Traditional restoration is no longer possible.",
   "summaryLocCommunityCenterTheater": "Renovated into a modern movie theater. Villagers visit during their free time.",
   "summaryLocJojaMartAbandoned": "Permanently shuttered following the Community Center's revival. Morris and staff have departed.",
-  "summaryLocJojaMartTheater": "The former JojaMart building, renovated into the town's movie theater."
+  "summaryLocJojaMartTheater": "The former JojaMart building, renovated into the town's movie theater.",
+"summaryLocBusStopName": "Bus Stop",
+  "summaryLocBusStopBrokenDesc": "The transit hub east of the Farm. The bus is currently broken down and out of service; travel to the Calico Desert is not possible.",
+  "summaryLocBusStopRepairedDesc": "The transit hub east of the Farm. The bus has been fully repaired; Pam drives it daily to take passengers to the Calico Desert.",
+  "summaryLocBlueMoonVineyardName": "Blue Moon Vineyard",
+  "summaryLocBlueMoonVineyardDesc": "A wine-producing farm in southern Cindersap Forest, owned and run by Sophia.",
+  "summaryLocFairhavenFarmName": "Fairhaven Farm",
+  "summaryLocFairhavenFarmDesc": "A struggling traditional farm in Cindersap Forest, owned and worked by Andy.",
+  "summaryLocAuroraVineyardName": "Aurora Vineyard",
+  "summaryLocAuroraVineyardDesc": "An abandoned vineyard in western forest that can become home to Apples the Junimo.",
+  "summaryLocGrampletonName": "Grampleton & Shearwater Bridge",
+  "summaryLocGrampletonDesc": "A neighboring city past the Shearwater Bridge east of town, home to Scarlett.",
+  "summaryLocHighlandsName": "Highlands",
+  "summaryLocHighlandsDesc": "A rugged mountainous region north of town, home to Lance, monster outposts, and ancient mysteries."
 }
