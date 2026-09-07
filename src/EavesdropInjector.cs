@@ -1,3 +1,4 @@
+// EavesdropInjector.cs
 using System.Linq;
 using System.Text;
 using StardewValley;
@@ -37,6 +38,10 @@ namespace ValleytalkReborn
             sb.AppendLine("</eavesdrop_context>");
 
             prompts.CorePrompt += "\n\n" + sb.ToString();
+
+            // ★ 核心落地：阅后即焚！
+            // 一旦注入当前轮次的 Prompt，立刻从该 NPC 的记忆库中彻底抹除，绝不留到下一次交互。
+            DialogueHistoryManager.Instance.ConsumeEavesdropEntries(npcName);
         }
     }
 }

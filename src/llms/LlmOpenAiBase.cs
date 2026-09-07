@@ -41,6 +41,8 @@ namespace ValleytalkReborn
         protected string apiKey;
         protected string modelName;
 
+        public override bool SupportsStreamingWithTools => true;
+
         private static readonly HttpClient SharedHttpClient = new HttpClient
         {
             Timeout = TimeSpan.FromMinutes(2)
@@ -444,7 +446,8 @@ namespace ValleytalkReborn
             // 只要开启了流式设置，即使是不带打字效果的后台生成，也强制走 SSE 流式请求，
             // 只是将回调设为 null 进行静默缓冲，等全部接收完再一起返回。
             bool includeTools = cacheContext != "NO_TOOLS";
-            if (ModEntry.Config.EnableStreaming && !AndroidHelper.IsAndroid)
+            // 保持常开以兼容 CF 强制流式要求（原玩家开关已移除，行为默认启用）。
+            if (!AndroidHelper.IsAndroid)
             {
                 return await RunStreamingInference(
                     systemPromptString, 
@@ -468,14 +471,14 @@ namespace ValleytalkReborn
             {
                 messages.Add(new { role = "system", content = systemPromptString });
             }
-
-            messages.Add(new { role = "user", content = promptString });
-
+            
             if (!string.IsNullOrWhiteSpace(responseStart) &&
                 !responseStart.Trim().Equals("responseStart", StringComparison.OrdinalIgnoreCase))
             {
-                messages.Add(new { role = "assistant", content = responseStart });
+                promptString += "\n\n" + responseStart;
             }
+
+            messages.Add(new { role = "user", content = promptString });
 
             Dictionary<string, object> requestBody = BuildRequestBody(messages, n_predict, stream: false, includeTools);
             ThinkingModeStrategy strategy = DetectThinkingModeStrategy();
@@ -604,6 +607,18 @@ namespace ValleytalkReborn
                         contentString = CleanRawResponse(contentString);
                     }
 
+                    // 🌟 退化重复过滤层：检测到满屏同一片段循环时，接丢弃这次结果并按失败处理.
+                    if (LooksLikeDegenerateRepetition(contentString))
+                    {
+                        Log.Debug("[LlmOpenAiBase] Discarded degenerate/repetitive response (non-streaming).");
+                        retryCount--;
+                        if (retryCount > 0)
+                        {
+                            await Task.Delay(250);
+                        }
+                        continue;
+                    }
+
                     if (toolResponse.ToolCalls.Count > 0)
                     {
                         toolResponse.Text = contentString ?? string.Empty;
@@ -681,13 +696,14 @@ namespace ValleytalkReborn
                 messages.Add(new { role = "system", content = systemPromptString });
             }
 
-            messages.Add(new { role = "user", content = promptString });
-
+            // 🌟 同上：不再使用 assistant 角色预填充，改为拼进 user 消息末尾。
             if (!string.IsNullOrWhiteSpace(responseStart) &&
                 !responseStart.Trim().Equals("responseStart", StringComparison.OrdinalIgnoreCase))
             {
-                messages.Add(new { role = "assistant", content = responseStart });
+                promptString += "\n\n" + responseStart;
             }
+
+            messages.Add(new { role = "user", content = promptString });
 
             bool includeTools = cacheContext != "NO_TOOLS";
             Dictionary<string, object> requestBody = BuildRequestBody(messages, n_predict, stream: true, includeTools);
@@ -723,6 +739,7 @@ namespace ValleytalkReborn
 
                             var fullContentBuilder = new StringBuilder();
                             var toolCallsDict = new Dictionary<int, (string Name, StringBuilder Args)>();
+                            bool degenerateDetected = false;
 
                             using (var stream = await response.Content.ReadAsStreamAsync())
                             using (var reader = new StreamReader(stream, Encoding.UTF8))
@@ -784,6 +801,21 @@ namespace ValleytalkReborn
                                         if (!string.IsNullOrEmpty(textToken))
                                         {
                                             fullContentBuilder.Append(textToken);
+
+                                            // 🌟 退化重复过滤层（流式）：每收到一个分片就检测一次末尾窗口，
+                                            // 一旦发现进入 "8b8b8b..." 这类无限自我重复，立刻停止把 token
+                                            // 推给 UI（onToken），并中断整个流式读取，避免玩家看到满屏乱码
+                                            // 或对话框卡死。已经推送出去的前半段内容无法撤回，但至少能防止
+                                            // 情况进一步恶化到把整段回复堆满。
+                                            if (!degenerateDetected &&
+                                                LooksLikeDegenerateRepetition(fullContentBuilder.ToString()))
+                                            {
+                                                degenerateDetected = true;
+                                                Log.Debug("[LlmOpenAiBase] Degenerate/repetitive output detected mid-stream; aborting.");
+                                                linkedCts.Cancel();
+                                                break;
+                                            }
+
                                             onToken?.Invoke(textToken);
                                         }
                                     }
@@ -792,6 +824,14 @@ namespace ValleytalkReborn
                                         Log.Debug("[LlmOpenAiBase] Chunk JSON parse skip: " + parseEx.Message);
                                     }
                                 }
+                            }
+
+                            if (degenerateDetected)
+                            {
+                                // 按失败处理返回，不把已收集到的垃圾文本交给上层。
+                                // 调用方（RunInference 的静默流式分支）会把这当作一次失败请求，
+                                // 走既有重试逻辑，而不是把 "8b8b8b..." 显示出来。
+                                return new LlmResponse("Discarded degenerate/repetitive streaming output.", 500);
                             }
 
                             string completeText = fullContentBuilder.ToString();
@@ -828,6 +868,48 @@ namespace ValleytalkReborn
         }
 
         #endregion
+
+        /// <summary>
+        /// 检测退化重复输出（如满屏 "8b8b8b8b..." 或其他 token 的无限自我重复）。
+        /// 原理：截取字符串结尾一段窗口，看是否由极少数几个短片段反复拼接而成。
+        /// 正常对话文本（含中文、标点、括号动作描写等）不会触发此规则。
+        /// </summary>
+        private bool LooksLikeDegenerateRepetition(string text, int minLength = 60)
+        {
+            if (string.IsNullOrWhiteSpace(text) || text.Length < minLength) return false;
+
+            // 只检查末尾一段窗口即可：退化循环一旦开始，会持续到生成截断为止，
+            // 不需要扫描整个大段文本。
+            int windowSize = Math.Min(text.Length, 400);
+            string window = text.Substring(text.Length - windowSize);
+
+            // 尝试用长度 1~4 的重复单元去匹配窗口末尾，如果发现一个很短的单元
+            // 反复出现且几乎占满整个窗口，判定为退化重复。
+            for (int unitLen = 1; unitLen <= 4; unitLen++)
+            {
+                if (window.Length < unitLen * 8) continue;
+
+                string unit = window.Substring(window.Length - unitLen);
+                if (string.IsNullOrWhiteSpace(unit)) continue;
+
+                int repeatCount = 0;
+                int pos = window.Length;
+                while (pos - unitLen >= 0 && window.Substring(pos - unitLen, unitLen) == unit)
+                {
+                    repeatCount++;
+                    pos -= unitLen;
+                }
+
+                // 同一个 1~4 字符的片段，在末尾窗口里连续重复超过 20 次，
+                // 基本可以确定是退化循环而非正常文本（正常台词里不会有这种模式）。
+                if (repeatCount >= 20)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         private bool LooksLikeErrorResponse(string response)
         {

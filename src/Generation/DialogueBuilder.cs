@@ -156,9 +156,21 @@ namespace ValleytalkReborn
 
             SetContext(instance.Name, context);
 
-// 🌟 全局放开流式限制：只要有回调且设置中开启了流式，即使包含工具调用也强制走流式通道。
-// 底层的 LlmOpenAiBase 现已完美支持流式 JSON 分片解析。
-            bool useStreaming = onStreamingToken != null && ModEntry.Config.EnableStreaming;
+// 流式传输策略：仅当（a）调用方提供了回调，且（b）当前这一回合大概率不需要工具调用，
+// 或者当前 Provider 已确认支持"流式 + 工具调用"（SupportsStreamingWithTools）时，才走流式通道。
+// 原因：LlmClaude / LlmGemini 的流式路径目前不会附带 tools schema，
+// 如果在期望工具调用的回合（跟随/移动/邀请/结束约会等）强行流式，模型不会产出工具调用，
+// 导致对应的游戏内动作被静默忽略（无报错、无日志）。
+            bool toolsLikelyNeededThisTurn =
+                context.RoutingFlags.IsActionRequested
+                || context.RoutingFlags.IsMovementRequested
+                || context.RoutingFlags.IsFollowing
+                || context.RoutingFlags.IsGotoRequested
+                || context.RoutingFlags.IsInviteRequested
+                || context.RoutingFlags.IsOnDate;
+
+            bool useStreaming = onStreamingToken != null
+                && (!toolsLikelyNeededThisTurn || Llm.Instance.SupportsStreamingWithTools);
             
             if (ModEntry.Config?.Debug ?? false)
             {
@@ -214,9 +226,27 @@ namespace ValleytalkReborn
         {
             var character = GetCharacter(instance);
             DialogueContext context = GetBasicContext(instance);
-            
-            // Gift reactions are independent events — clear history to avoid old dialogue polluting the prompt
-            context.ChatHistory = new List<ConversationElement>();
+
+            // Gift reactions are independent events — clear old chat history to avoid
+            // unrelated prior dialogue polluting the prompt, but keep a synthetic
+            // "player gave gift" line so downstream SessionCache/history retains
+            // the causal link for follow-up turns (e.g. "how did it taste?").
+            bool isZh = LocalizedContentManager.CurrentLanguageCode
+                .ToString().StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+
+            string giftName = gift.DisplayName ?? gift.Name ?? "礼物";
+            string giftLine = isZh
+                ? $"[农夫刚刚送给你一件礼物：{giftName}]"
+                : $"[The farmer just gave you a gift: {giftName}]";
+
+            context.ChatHistory = new List<ConversationElement>
+            {
+                new ConversationElement(giftLine, true)
+                {
+                    FuzzyTime = isZh ? "刚刚" : "Just now"
+                }
+            };
+
             context.Accept = gift;
             context.GiftTaste = taste;
 
@@ -404,10 +434,16 @@ namespace ValleytalkReborn
             }
             var children = ConvertChildren(farmer.getChildren());
             var weather = new List<string>();
-            if (Game1.IsRainingHere()) weather.Add("rain");
-            if (Game1.IsSnowingHere()) weather.Add("snow");
-            if (Game1.IsLightningHere()) weather.Add("lightning");
-            if (Game1.IsGreenRainingHere()) weather.Add("green rain");
+            if (Game1.IsGreenRainingHere()) weather.Add("greenrain");
+            else if (Game1.IsLightningHere()) weather.Add("storm");
+            else if (Game1.IsRainingHere()) weather.Add("rain");
+            else if (Game1.IsSnowingHere()) weather.Add("snow");
+            else if (Game1.isDebrisWeather) weather.Add("wind");
+            
+            if (weather.Count == 0)
+            {
+                weather.Add("sun");
+            }
             
             var hearts = farmer.friendshipData.ContainsKey(instance.Name) ? 
                     (
@@ -443,8 +479,8 @@ namespace ValleytalkReborn
                     var timeNow = new StardewTime(Game1.Date, Game1.timeOfDay);
                     context.ChatHistory = historyEntries
                         .Where(e =>
-                            e.DialogueType != "eavesdrop" &&
-                            e.DialogueType != "vanilla" &&   // ← 原版台词不进对话历史
+                            e.DialogueType != "eavesdrop" && 
+                            //e.DialogueType != "vanilla" &&   // ← 原版台词不进对话历史
                             e.DialogueType != "event" &&     // ← 剧情事件台词不进对话历史
                             e.DialogueType != "gift" &&      // ← 礼物系统条目不进对话历史
                             e.SpeakerType != SpeakerType.System)
@@ -452,7 +488,9 @@ namespace ValleytalkReborn
                         {
                             FuzzyTime = DialogueHistoryAdapter.GetFuzzyTime(e.Timestamp, timeNow)
                         })
-                        .Where(e => !string.IsNullOrWhiteSpace(e.Text))
+                        .Where(e => !string.IsNullOrWhiteSpace(e.Text) && 
+                                    // ★ 剔除农夫历史中的无意义纯省略号占位
+                                    !(e.IsPlayerLine && (e.Text.Trim() == "..." || e.Text.Trim() == "…" || e.Text.Trim() == "......")))
                         .ToList();
                 }
             }

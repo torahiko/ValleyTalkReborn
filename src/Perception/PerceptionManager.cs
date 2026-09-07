@@ -8,15 +8,20 @@ using StardewValley;
 namespace ValleytalkReborn;
 
 /// <summary>
-/// Manages two separate perception tracks:
+/// Manages three separate perception queues:
 ///
 ///   Track 1 — _globalGossip (max 2): town-wide "Town Gossip" snapshots.
 ///     Triggered by major events (date ended, etc.). Shared by all NPCs. Simple FIFO.
 ///
-///   Track 2 — _farmerBucket (max 3): the farmer's personal short-term perception pocket.
-///     Uses Deduplicated-FIFO: same Key + NpcName (or Key + Location) replaces old entry.
-///     Injected per-NPC through an eyewitness filter at prompt-build time.
-///     Sorted by salience: basePriority × timeDecay × personalityMultiplier.
+///   Track 2 — the farmer's personal short-term perception pocket, split into two
+///     independently-capped sub-buckets so that high-frequency player-state updates
+///     (hat, drunk, tired, ...) can't crowd out low-frequency but high-salience
+///     activity events (Gift, Talk, ...) via plain FIFO eviction:
+///       - _playerStateBucket (max 6): entries whose Key starts with "Player".
+///       - _activityBucket    (max 8): everything else (Gift/Talk/Eat/Fish/Chop/Place/Harvest/...).
+///     Both use Deduplicated-FIFO: same Key + NpcName (or Key + Location) replaces old entry.
+///     Injected per-NPC through an eyewitness filter at prompt-build time, merged and
+///     sorted by salience: basePriority × timeDecay × personalityMultiplier.
 /// </summary>
 internal class PerceptionManager
 {
@@ -24,13 +29,17 @@ internal class PerceptionManager
 
     private readonly object _lock = new object();
 
-    // Track 1: global gossip snapshots (max 2, simple FIFO)
+    // Track 1: 全局传闻快照（上限 2 条，简单 FIFO）
     private readonly Queue<PerceptionEntry> _globalGossip = new Queue<PerceptionEntry>();
     private const int MaxGossipEntries = 2;
 
-    // Track 2: farmer's personal bucket (max 6, Deduplicated-FIFO)
-    private readonly Queue<PerceptionEntry> _farmerBucket = new Queue<PerceptionEntry>();
-    private const int MaxBucketEntries = 6;
+    // Track 2: 玩家即时状态桶（上限 6 条，随身状态专用）
+    private readonly Queue<PerceptionEntry> _playerStateBucket = new Queue<PerceptionEntry>();
+    private const int MaxPlayerStateEntries = 6;
+
+    // Track 2: 行为与互动事件桶（上限 8 条，保证关键行为不被过早驱逐）
+    private readonly Queue<PerceptionEntry> _activityBucket = new Queue<PerceptionEntry>();
+    private const int MaxActivityEntries = 8;
 
     private PerceptionManager()
     {
@@ -57,7 +66,8 @@ internal class PerceptionManager
             lock (_lock)
             {
                 _globalGossip.Clear();
-                _farmerBucket.Clear();
+                _playerStateBucket.Clear();
+                _activityBucket.Clear();
             }
         }
         catch (Exception ex)
@@ -100,17 +110,28 @@ internal class PerceptionManager
             ItemId            = itemId
         };
 
+        string track;
         lock (_lock)
         {
-            if (isGossip || isLandmark)   // Landmark 事件提升到 Track 1
+            if (isGossip || isLandmark)   // Landmark 事件自动提升至 Track 1
+            {
                 EnqueueGossip(entry);
+                track = "Gossip";
+            }
+            else if (key.StartsWith("Player", StringComparison.OrdinalIgnoreCase))
+            {
+                EnqueueBucket(_playerStateBucket, MaxPlayerStateEntries, entry);
+                track = "PlayerState";
+            }
             else
-                EnqueueBucket(entry);
+            {
+                EnqueueBucket(_activityBucket, MaxActivityEntries, entry);
+                track = "Activity";
+            }
         }
 
         if (ModEntry.Config?.Debug == true)
         {
-            string track = isGossip ? "Gossip" : "Bucket";
             ModEntry.SMonitor?.Log(
                 $"[PerceptionManager] [{track}] '{key}' @ {resolvedLocation}: {template}",
                 LogLevel.Debug);
@@ -120,37 +141,49 @@ internal class PerceptionManager
     /// <summary>
     /// 显式驱逐指定的感知条目（用于即时身体/伴随状态消除，如宠物远离、脱下帽子等）。
     /// </summary>
-    /// <param name="key">要清除的 PerceptionEntry Key（如 "PlayerPet"、"PlayerHat" 等）</param>
-    public void Evict(string key)
+    public void Evict(string key, bool fromGossip = false)
     {
         if (string.IsNullOrWhiteSpace(key)) return;
 
+        bool removed;
         lock (_lock)
         {
-            // 若队列中不存在该 Key，直接返回避免重新装载队列
-            if (!_farmerBucket.Any(e => string.Equals(e.Key, key, StringComparison.OrdinalIgnoreCase)))
-                return;
-
-            // 过滤掉所有匹配指定 Key 的历史条目
-            var remaining = _farmerBucket
-                .Where(e => !string.Equals(e.Key, key, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
-            _farmerBucket.Clear();
-            foreach (var item in remaining)
+            if (fromGossip)
             {
-                _farmerBucket.Enqueue(item);
+                removed = EvictFromQueue(_globalGossip, key);
+            }
+            else
+            {
+                bool a = EvictFromQueue(_playerStateBucket, key);
+                bool b = EvictFromQueue(_activityBucket, key);
+                removed = a || b;
             }
         }
 
-        if (ModEntry.Config?.Debug == true)
+        if (removed && ModEntry.Config?.Debug == true)
         {
+            string track = fromGossip ? "gossip" : "farmer bucket";
             ModEntry.SMonitor?.Log(
-                $"[PerceptionManager] Evicted key '{key}' from farmer bucket.",
+                $"[PerceptionManager] Evicted key '{key}' from {track}.",
                 LogLevel.Debug);
         }
     }
-    
+
+    private static bool EvictFromQueue(Queue<PerceptionEntry> queue, string key)
+    {
+        if (!queue.Any(e => string.Equals(e.Key, key, StringComparison.OrdinalIgnoreCase)))
+            return false;
+
+        var remaining = queue
+            .Where(e => !string.Equals(e.Key, key, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        queue.Clear();
+        foreach (var item in remaining)
+            queue.Enqueue(item);
+
+        return true;
+    }
 
     public void RecordGossip(string key, string template, int lifetimeHours = 20)
     {
@@ -178,17 +211,22 @@ internal class PerceptionManager
         if (string.IsNullOrEmpty(npcName)) return;
         lock (_lock)
         {
-            foreach (var e in _farmerBucket)
+            foreach (var e in _playerStateBucket.Concat(_activityBucket))
             {
-                if (e.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase))
-                    e.IsConsolidated = true;
+                if (!e.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                // 礼物类感知依赖 lifetime 自然淡出，不应在单次对话后立刻失效
+                if (e.Key.Equals("Gift", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                e.IsConsolidated = true;
             }
         }
     }
 
     /// <summary>
-    /// Returns farmer bucket entries that pass the eyewitness filter for the given NPC,
-    /// sorted by salience = basePriority × timeDecay × personalityMultiplier.
+    /// 获取通过目击过滤并按突出度排序的感知记录。
     /// </summary>
     public List<PerceptionEntry> GetFilteredBucketFor(string npcName, int max = 3)
     {
@@ -199,7 +237,8 @@ internal class PerceptionManager
 
         lock (_lock)
         {
-            return _farmerBucket
+            return _playerStateBucket
+                .Concat(_activityBucket)
                 .Where(IsPerceptionTimeValid)
                 .Where(e => !e.IsConsolidated)
                 .Where(e => PassesEyewitnessFilter(e, npcName, npcLocation))
@@ -216,7 +255,8 @@ internal class PerceptionManager
     {
         lock (_lock)
         {
-            return _farmerBucket
+            return _playerStateBucket
+                .Concat(_activityBucket)
                 .Where(e => !string.IsNullOrEmpty(e.NpcName))
                 .Select(e => e.NpcName)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -245,11 +285,19 @@ internal class PerceptionManager
         _globalGossip.Enqueue(entry);
     }
 
-    private void EnqueueBucket(PerceptionEntry entry)
+    /// <summary>
+    /// 向指定的个人桶写入一条记录（Deduplicated-FIFO）。
+    /// 修复重点：随身身体状态（Player*）只根据 Key 去重，忽略地图差异，杜绝跨地图导致重复堆叠。
+    /// </summary>
+    private static void EnqueueBucket(Queue<PerceptionEntry> bucket, int maxEntries, PerceptionEntry entry)
     {
-        PerceptionEntry duplicate = _farmerBucket.FirstOrDefault(e =>
+        bool isPlayerState = entry.Key.StartsWith("Player", StringComparison.OrdinalIgnoreCase);
+
+        PerceptionEntry duplicate = bucket.FirstOrDefault(e =>
             e.Key == entry.Key &&
             (
+                isPlayerState // 随身状态无需匹配地图或 NPC，只要同 Key 直接替换
+                ||
                 (!string.IsNullOrEmpty(e.NpcName) && !string.IsNullOrEmpty(entry.NpcName)
                     && string.Equals(e.NpcName, entry.NpcName, StringComparison.OrdinalIgnoreCase))
                 ||
@@ -262,16 +310,16 @@ internal class PerceptionManager
 
         if (duplicate != null)
         {
-            var remaining = _farmerBucket.Where(e => e != duplicate).ToList();
-            _farmerBucket.Clear();
+            var remaining = bucket.Where(e => e != duplicate).ToList();
+            bucket.Clear();
             foreach (var item in remaining)
-                _farmerBucket.Enqueue(item);
+                bucket.Enqueue(item);
         }
 
-        while (_farmerBucket.Count >= MaxBucketEntries)
-            _farmerBucket.Dequeue();
+        while (bucket.Count >= maxEntries)
+            bucket.Dequeue();
 
-        _farmerBucket.Enqueue(entry);
+        bucket.Enqueue(entry);
     }
 
     // ─────────────────────────────────────────────
@@ -284,20 +332,20 @@ internal class PerceptionManager
 
         return entry.Key switch
         {
-            "Gift"  => 8f,
+            "Gift"               => 8f,
             "PlayerLowHealth"    => 7f,
             "PlayerExhausted"    => 7f,
             "PlayerFainted"      => 7f,
             "PlayerDrunk"        => 6f,
-            "Talk"  => 6f,
+            "Talk"               => 6f,
             "PlayerHasPendant"   => 5f,
             "PlayerWeddingOutfit"=> 5f,
             "PlayerTired"        => 5f,
-            "Eat"   => 4f,
-            "Fish"  => 4f,
-            "Chop"  => 3f,
-            "Place" => 3f,
-            _       => 2f
+            "Eat"                => 4f,
+            "Fish"               => 4f,
+            "Chop"               => 3f,
+            "Place"              => 3f,
+            _                    => 2f
         };
     }
 
@@ -329,14 +377,14 @@ internal class PerceptionManager
 
         return entry.Key switch
         {
-            "Gift" => npc.Manners == NPC.polite ? 1.4f : 1.0f,
-            "Talk" => npc.SocialAnxiety == NPC.shy ? 0.5f : 1.2f,
-            "Eat" => 1.0f,
-            "Fish" => npc.Optimism == NPC.positive ? 1.2f : 0.8f,
-            "Chop" => npc.Manners == NPC.rude ? 0.7f : 1.0f,
-            "Place" => npc.SocialAnxiety == NPC.shy ? 0.6f : 1.0f,
+            "Gift"    => npc.Manners == NPC.polite ? 1.4f : 1.0f,
+            "Talk"    => npc.SocialAnxiety == NPC.shy ? 0.5f : 1.2f,
+            "Eat"     => 1.0f,
+            "Fish"    => npc.Optimism == NPC.positive ? 1.2f : 0.8f,
+            "Chop"    => npc.Manners == NPC.rude ? 0.7f : 1.0f,
+            "Place"   => npc.SocialAnxiety == NPC.shy ? 0.6f : 1.0f,
             "Harvest" => npc.Optimism == NPC.positive ? 1.3f : 1.0f,
-            _ => 1.0f
+            _         => 1.0f
         };
     }
 
@@ -387,22 +435,22 @@ internal class PerceptionManager
     {
         if (entry.IsLandmark) return true;
 
-        // 玩家自身身体状态（PlayerStateScanner 产出的 Player* Key）属于面对面即时感知，
-        // 不受地理定位判定限制——帽子、醉酒、疲惫等无需"在同一地图"即可被眼前 NPC 察觉。
+        // 玩家自身状态属于面对面直接观察，全场景对当前对话的 NPC 生效
         if (entry.Key.StartsWith("Player", StringComparison.OrdinalIgnoreCase)) return true;
 
-        // 【核心修复】对话旁听（Talk）严格定向：只有指定的旁听者本人才能感知
-        // 杜绝因同处于一个房间而将旁听记忆塞给说话者自己（如哈坎自己旁听自己）
+        // 对话旁听严格定向：仅旁听者本人才能感知
         if (entry.Key == "Talk")
         {
             return !string.IsNullOrEmpty(entry.NpcName) &&
                    entry.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase);
         }
 
+        // 针对当前 NPC 的定向事件（如本人收礼）
         if (!string.IsNullOrEmpty(entry.NpcName) &&
             entry.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase))
             return true;
 
+        // 同地图目击事件（如旁观给他人送礼、就地钓鱼、砍树、放置物品等）
         if (!string.IsNullOrEmpty(entry.LocationName) &&
             !string.IsNullOrEmpty(npcLocation) &&
             entry.LocationName.Equals(npcLocation, StringComparison.OrdinalIgnoreCase))
@@ -421,6 +469,15 @@ internal class PerceptionManager
     {
         try { return Game1.getCharacterFromName(npcName)?.currentLocation?.Name ?? string.Empty; }
         catch { return string.Empty; }
+    }
+
+    private static void PurgeExpired(Queue<PerceptionEntry> queue)
+    {
+        if (!queue.Any(p => !IsPerceptionTimeValid(p))) return;
+
+        var valid = queue.Where(IsPerceptionTimeValid).ToList();
+        queue.Clear();
+        foreach (var item in valid) queue.Enqueue(item);
     }
 
     private static int GetInGameMinutes(int timeOfDay)
@@ -464,8 +521,7 @@ internal class PerceptionManager
     {
         if (variants == null || variants.Length == 0) return string.Empty;
         if (variants.Length == 1) return variants[0];
-        int index = (int)(Game1.ticks % (uint)variants.Length);
-        return variants[index];
+        return variants[Game1.random.Next(variants.Length)];
     }
 
     // ─────────────────────────────────────────────
@@ -476,12 +532,17 @@ internal class PerceptionManager
     {
         lock (_lock)
         {
-            _farmerBucket.Clear();
+            _playerStateBucket.Clear();
+            _activityBucket.Clear();
             _globalGossip.Clear();
         }
+
+        // 跨天或切存档时重置 Gossip 去重记录
+        PerceptionInjector.ResetMentionedGossipKeys();
+
         if (ModEntry.Config?.Debug == true)
             ModEntry.SMonitor?.Log(
-                "[PerceptionManager] Farmer bucket and gossip cleared on new day.",
+                "[PerceptionManager] Farmer buckets and gossip cleared on new day.",
                 LogLevel.Debug);
     }
 
@@ -491,24 +552,9 @@ internal class PerceptionManager
 
         lock (_lock)
         {
-            bool bucketDirty = _farmerBucket.Any(p => !IsPerceptionTimeValid(p));
-            bool gossipDirty = _globalGossip.Any(p => !IsPerceptionTimeValid(p));
-
-            if (!bucketDirty && !gossipDirty) return;
-
-            if (bucketDirty)
-            {
-                var valid = _farmerBucket.Where(IsPerceptionTimeValid).ToList();
-                _farmerBucket.Clear();
-                foreach (var item in valid) _farmerBucket.Enqueue(item);
-            }
-
-            if (gossipDirty)
-            {
-                var valid = _globalGossip.Where(IsPerceptionTimeValid).ToList();
-                _globalGossip.Clear();
-                foreach (var item in valid) _globalGossip.Enqueue(item);
-            }
+            PurgeExpired(_playerStateBucket);
+            PurgeExpired(_activityBucket);
+            PurgeExpired(_globalGossip);
         }
     }
 }

@@ -86,6 +86,16 @@ internal abstract class Llm
 
     public abstract bool IsHighlySensoredModel { get; }
     public abstract string ExtraInstructions { get; }
+
+    /// <summary>
+    /// True if this provider's RunStreamingInference implementation attaches the native
+    /// tool schema and correctly parses streamed tool-call deltas end-to-end.
+    /// Providers that only stream plain text (no tool_calls support in the streaming path)
+    /// must leave this false, or callers may silently lose expected tool calls when
+    /// streaming is requested on a turn that needs one.
+    /// Default: false. Override to true only once verified.
+    /// </summary>
+    public virtual bool SupportsStreamingWithTools => false;
     public string TokenStats => $"Prompt: {_totalPrompts} tokens in {_totalPromptTime}ms, Inference: {_totalInference} tokens in {_totalInferenceTime}ms";
     
     internal abstract Task<LlmResponse> RunInference(

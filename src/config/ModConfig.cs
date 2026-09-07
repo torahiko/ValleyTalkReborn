@@ -78,7 +78,6 @@ namespace ValleytalkReborn
         public bool UseNativeToolCalling { get; set; } = true;
         public bool EnableVanillaFirst { get; set; } = true;
         public bool EnableNightlyConsolidation { get; set; } = true;
-        public bool EnableStreaming { get; set; } = true;
 
         // ── 对话系统配置（从 DialogueConfig 合并） ──
         public bool EnableAmbientBarks { get; set; } = true;

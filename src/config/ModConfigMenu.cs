@@ -94,6 +94,9 @@ namespace ValleytalkReborn
                 {
                     modEntry.Helper.WriteConfig(ModEntry.Config);
 
+                    // ★ 即时响应开关关闭：秒杀正在进行的会话与残余台词
+                    ModEntry.CleanupOnConfigToggle();
+
                     // 🌟 核心修复：触发后台异步刷新模型缓存，彻底避免 Save 时 UI 假死
                     RefreshModelNamesCacheAsync();
 
@@ -121,7 +124,8 @@ namespace ValleytalkReborn
             ConfigMenu.AddBoolOption(
                 mod: ModManifest,
                 name: () => GetUIString("configLogging", "Enable Logging"),
-                tooltip: () => GetUIString("configLoggingTooltip", "Enable or disable logging of prompts and responses."),
+                tooltip: () =>
+                    GetUIString("configLoggingTooltip", "Enable or disable logging of prompts and responses."),
                 getValue: () => Config.Debug,
                 setValue: value => Config.Debug = value
             );
@@ -181,7 +185,8 @@ namespace ValleytalkReborn
                     ConfigMenu.AddTextOption(
                         mod: ModManifest,
                         name: () => GetUIString("configQuickSelect", "Quick Select Model"),
-                        tooltip: () => GetUIString("configQuickSelectTooltip", "Select a model and click Save to fill into Model Name."),
+                        tooltip: () => GetUIString("configQuickSelectTooltip",
+                            "Select a model and click Save to fill into Model Name."),
                         getValue: () => "--- Select to auto-fill ---",
                         setValue: (value) =>
                         {
@@ -198,7 +203,8 @@ namespace ValleytalkReborn
                 {
                     ConfigMenu.AddParagraph(
                         mod: ModManifest,
-                        text: () => GetUIString("configFetchHint", "Enter API Key and click 'Save' to fetch available models.")
+                        text: () => GetUIString("configFetchHint",
+                            "Enter API Key and click 'Save' to fetch available models.")
                     );
                 }
             }
@@ -217,14 +223,6 @@ namespace ValleytalkReborn
             }
 
             // ── 对话与输出选项 ──────────────────────────────────
-            ConfigMenu.AddBoolOption(
-                mod: ModManifest,
-                name: () => GetUIString("configStreaming", "Enable Streaming Output"),
-                tooltip: () => GetUIString("configStreamingTooltip", "Show AI responses word-by-word as they arrive. Only applies to typed conversations."),
-                getValue: () => Config.EnableStreaming,
-                setValue: value => Config.EnableStreaming = value
-            );
-
             ConfigMenu.AddBoolOption(
                 mod: ModManifest,
                 name: () => GetUIString("configTranslation", "Translate Outputs"),
@@ -283,7 +281,33 @@ namespace ValleytalkReborn
                 getValue: () => Config.DisableCharacters,
                 setValue: (value) => { Config.DisableCharacters = value; }
             );
-            
+
+            // ── ★ 环境气泡与 NPC 互动 (Bark & A2A) ─────────────────
+            ConfigMenu.AddSectionTitle(
+                mod: ModManifest,
+                text: () => GetUIString("configSectionAmbientDialogue", "Ambient & NPC Interactions")
+            );
+
+            // 1. Bark 随地气泡开关
+            ConfigMenu.AddBoolOption(
+                mod: ModManifest,
+                name: () => GetUIString("configEnableBark", "Enable NPC Self-Talk (Barks)"),
+                tooltip: () => GetUIString("configEnableBarkTooltip",
+                    "Allows nearby NPCs to display spontaneous overhead thought bubbles."),
+                getValue: () => Config.EnableAmbientBarks,
+                setValue: value => Config.EnableAmbientBarks = value
+            );
+
+            // 2. A2A NPC间对话开关
+            ConfigMenu.AddBoolOption(
+                mod: ModManifest,
+                name: () => GetUIString("configEnableA2A", "Enable NPC-to-NPC Conversations (A2A)"),
+                tooltip: () => GetUIString("configEnableA2ATooltip",
+                    "Allows NPCs who meet each other to engage in emergent dynamic conversations."),
+                getValue: () => Config.EnableA2A,
+                setValue: value => Config.EnableA2A = value
+            );
+
             // ── ★ 快捷键与控制设置 Section ──────────────────────
             ConfigMenu.AddSectionTitle(
                 mod: ModManifest,
@@ -307,7 +331,7 @@ namespace ValleytalkReborn
                 name: () => GetUIString("configQuickReplyKey", "Quick Reply Key"),
                 getValue: () => ModEntry.Config.QuickReplyKey,
                 setValue: (value) => ModEntry.Config.QuickReplyKey = value,
-                tooltip: () => GetUIString("configQuickReplyKeyTooltip", 
+                tooltip: () => GetUIString("configQuickReplyKeyTooltip",
                     "Key to quickly reply to the last spoken NPC within 5 seconds.")
             );
         }
@@ -322,6 +346,7 @@ namespace ValleytalkReborn
                 // 🌟 仅触发后台任务，不阻塞当前 UI 线程
                 RefreshModelNamesCacheAsync();
             }
+
             return _cachedModelNames ?? Array.Empty<string>();
         }
 
@@ -425,7 +450,8 @@ namespace ValleytalkReborn
                 return;
             }
 
-            Llm.SetLlm(llmType, apiKey: ModEntry.Config.ApiKey, modelName: ModEntry.Config.ModelName, url: ModEntry.Config.ServerAddress, promptFormat: ModEntry.Config.PromptFormat);
+            Llm.SetLlm(llmType, apiKey: ModEntry.Config.ApiKey, modelName: ModEntry.Config.ModelName,
+                url: ModEntry.Config.ServerAddress, promptFormat: ModEntry.Config.PromptFormat);
         }
     }
 }

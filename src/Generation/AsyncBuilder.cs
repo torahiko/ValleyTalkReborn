@@ -529,23 +529,15 @@ public class AsyncBuilder
 
     private async Task<Dialogue> GenerateNpcGift()
     {
-        Action<string> streamCallback = null;
-        if (ModEntry.Config.EnableStreaming)
-        {
-            _isStreaming = true;
-            streamCallback = token => _streamTokenQueue.Enqueue(token);
-        }
+        _isStreaming = true;
+        Action<string> streamCallback = token => _streamTokenQueue.Enqueue(token);
         return await DialogueBuilder.Instance.GenerateGift(_speakingNpc, _currentGift, _currentTaste, streamCallback);
     }
 
     private async Task<Dialogue> GenerateNpc()
     {
-        Action<string> streamCallback = null;
-        if (ModEntry.Config.EnableStreaming)
-        {
-            _isStreaming = true;
-            streamCallback = token => _streamTokenQueue.Enqueue(token);
-        }
+        _isStreaming = true;
+        Action<string> streamCallback = token => _streamTokenQueue.Enqueue(token);
         return await DialogueBuilder.Instance.Generate(_speakingNpc, _currentDialogueKey, _originalLine, streamCallback);
     }
 
@@ -554,12 +546,8 @@ public class AsyncBuilder
         var npc = _speakingNpc;
         var conversationList = _currentConversation?.ToList() ?? new List<ConversationElement>();
 
-        Action<string> streamCallback = null;
-        if (ModEntry.Config.EnableStreaming)
-        {
-            _isStreaming = true;
-            streamCallback = token => _streamTokenQueue.Enqueue(token);
-        }
+        _isStreaming = true;
+        Action<string> streamCallback = token => _streamTokenQueue.Enqueue(token);
 
         var newDialogue = await DialogueBuilder.Instance.GenerateResponse(npc, conversationList, true, streamCallback);
         if (newDialogue == null) return null;

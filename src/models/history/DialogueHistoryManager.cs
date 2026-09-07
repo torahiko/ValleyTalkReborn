@@ -90,6 +90,13 @@ namespace ValleytalkReborn
         {
             var sanitized = SanitizeForStorage(text);
             if (string.IsNullOrWhiteSpace(sanitized)) return;
+            
+            string trimmed = sanitized.Trim();
+            if (trimmed == "..." || trimmed == "…" || trimmed == "......" || trimmed == "。。。。")
+            {
+                return;
+            }
+
             var entry = new DialogueHistoryEntry(
                 "Player",
                 sanitized,

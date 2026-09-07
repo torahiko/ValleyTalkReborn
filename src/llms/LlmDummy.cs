@@ -9,7 +9,7 @@ internal class LlmDummy : Llm
     Random rand;
     public LlmDummy()
     {
-        rand = new Random();
+        rand = new Random(); 
     }
 
     public override string ExtraInstructions => "";

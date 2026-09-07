@@ -17,7 +17,6 @@ namespace ValleytalkReborn
         // ═══════════════════════════════════════════════════════════
         //  统一 LLM 调用（带超时）
         // ═══════════════════════════════════════════════════════════
-
         /// <summary>
         /// 统一的 LLM 调用封装：超时控制 + 异常捕获 + 文本清理。
         /// 返回 null 表示失败或超时。
@@ -44,13 +43,13 @@ namespace ValleytalkReborn
             {
                 ModEntry.SMonitor?.Log($"[DateFlow] LLM error: {ex.Message}", LogLevel.Debug);
             }
+
             return null;
         }
 
         // ═══════════════════════════════════════════════════════════
         //  问候语
         // ═══════════════════════════════════════════════════════════
-
         /// <summary>构建问候语的 System + User Prompt。</summary>
         public static (string sys, string user) BuildGreetingPrompt(
             string npcName, string locationId, LatenessLevel lateness)
@@ -65,19 +64,20 @@ namespace ValleytalkReborn
                     : $"{info.DisplayNameEn} (Atmosphere: {info.ContextDescriptionEn})";
             }
 
+            // 纯事实陈述：只说明玩家到达时间状态，不预设 NPC 情绪反应
             string latenessContext = isZh
                 ? lateness switch
                 {
-                    LatenessLevel.OnTime       => "玩家准时或提前到达，你感到开心期待。",
-                    LatenessLevel.SlightlyLate => "玩家迟到了一会儿（约 19:00-21:00 之间才到），你略带幽怨或调侃，但仍高兴他/她来了。",
-                    LatenessLevel.VeryLate     => "玩家严重迟到（21:00 后才到），你已经等得很焦虑，开场时带着明显的委屈与责备。",
+                    LatenessLevel.OnTime       => "玩家准时或提前到达。",
+                    LatenessLevel.SlightlyLate => "玩家迟到约 19:00-21:00 之间才到。",
+                    LatenessLevel.VeryLate     => "玩家严重迟到，21:00 后才到。",
                     _                          => ""
                 }
                 : lateness switch
                 {
-                    LatenessLevel.OnTime       => "The player arrived on time. You are happy and excited.",
-                    LatenessLevel.SlightlyLate => "The player is a bit late (arrived between 7pm and 9pm). You are mildly teasing or slightly pouty, but still glad they came.",
-                    LatenessLevel.VeryLate     => "The player is very late (arrived after 9pm). You have been waiting anxiously and open with noticeable reproach.",
+                    LatenessLevel.OnTime       => "The player arrived on time or early.",
+                    LatenessLevel.SlightlyLate => "The player arrived slightly late (between 7pm and 9pm).",
+                    LatenessLevel.VeryLate     => "The player arrived very late (after 9pm).",
                     _                          => ""
                 };
 
@@ -114,7 +114,6 @@ namespace ValleytalkReborn
         // ═══════════════════════════════════════════════════════════
         //  告别语
         // ═══════════════════════════════════════════════════════════
-
         /// <summary>构建告别语的 System + User Prompt。</summary>
         public static (string sys, string user) BuildFarewellPrompt(
             string npcName, string locationId)
@@ -129,9 +128,10 @@ namespace ValleytalkReborn
                 ? $"你是《星露谷物语》中的 {npcName}。你刚和面前的玩家（@）在 {locName} 结束了一场浪漫约会。现在已经是晚上，你需要回家了。"
                 : $"You are {npcName} from Stardew Valley. You and player (@) just finished a romantic date at {locName}. It is late.";
 
+           
             string user = isZh
-                ? "请向面前的玩家（@）说一句温情依依的告别台词（35字以内，直接输出台词）。"
-                : "Say a warm goodbye to player (@) in 1-2 short sentences.";
+                ? "请向面前的玩家（@）说一句告别台词（35字以内，直接输出台词）。"
+                : "Say a goodbye line to player (@) in 1-2 short sentences.";
 
             return (sys, user);
         }

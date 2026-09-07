@@ -99,7 +99,6 @@ internal class MemoryManager : IMemoryProvider
         try
         {
             string physicalDir = System.IO.Path.Combine(ModEntry.SHelper.DirectoryPath, saveDir);
-
             if (!System.IO.Directory.Exists(physicalDir))
             {
                 _isLoaded = true;
@@ -107,7 +106,6 @@ internal class MemoryManager : IMemoryProvider
             }
 
             var files = System.IO.Directory.GetFiles(physicalDir, "memory_*.json");
-
             foreach (var file in files)
             {
                 string fileName = System.IO.Path.GetFileName(file);
@@ -117,7 +115,6 @@ internal class MemoryManager : IMemoryProvider
                 if (list == null || list.Count == 0) continue;
 
                 string actualNpcName = list.First().NpcName;
-
                 if (string.IsNullOrWhiteSpace(actualNpcName))
                 {
                     ModEntry.SMonitor?.Log(
@@ -187,7 +184,6 @@ internal class MemoryManager : IMemoryProvider
             return MemoryOperationResult.CapacityFull;
 
         var trimmedContent = content.Trim();
-
         if (trimmedContent.Length > MaxMemoryLength)
             return MemoryOperationResult.TooLong;
 
@@ -233,7 +229,6 @@ internal class MemoryManager : IMemoryProvider
             return MemoryOperationResult.CapacityFull;
 
         var trimmed = content.Trim();
-
         if (trimmed.Length > MaxMemoryLength)
             return MemoryOperationResult.TooLong;
 
@@ -241,7 +236,6 @@ internal class MemoryManager : IMemoryProvider
             return MemoryOperationResult.Duplicate;
 
         int autoCapacity = MaxMemoriesPerNpc - manualCount;
-
         var autoEntries = list
             .Where(m => m.Source == "Auto")
             .OrderBy(m => m.CreatedAt)
@@ -252,7 +246,6 @@ internal class MemoryManager : IMemoryProvider
         {
             var oldest = autoEntries.First();
             list.Remove(oldest);
-
             ModEntry.SMonitor?.Log(
                 $"[MemoryManager] Auto-replaced oldest auto memory for [{npcName}]: \"{oldest.Content}\"",
                 LogLevel.Debug);
@@ -287,7 +280,6 @@ internal class MemoryManager : IMemoryProvider
             return MemoryOperationResult.NotFound;
 
         var trimmed = newContent.Trim();
-
         if (trimmed.Length > MaxMemoryLength)
             return MemoryOperationResult.TooLong;
 
@@ -315,7 +307,6 @@ internal class MemoryManager : IMemoryProvider
         if (entry == null) return false;
 
         list.Remove(entry);
-
         if (list.Count == 0) _memories.Remove(npcName);
 
         Save(npcName);
@@ -325,9 +316,7 @@ internal class MemoryManager : IMemoryProvider
     public List<MemoryEntry> GetMemories(string npcName)
     {
         EnsureLoaded();
-
         if (!_memories.TryGetValue(npcName, out var list)) return new List<MemoryEntry>();
-
         return list.OrderByDescending(m => m.CreatedAt).ToList();
     }
 
@@ -339,7 +328,7 @@ internal class MemoryManager : IMemoryProvider
 
     // ──────────────────────────────────────────────────────────────
     // 🌟 Prompt 注入：手动规则（高优先级）+ 自动事实（低优先级）
-    // 含情境触发判定
+    // 含情境触发判定（无色结构化标签）
     // ──────────────────────────────────────────────────────────────
     public string GetSmartMemoryContext(string npcName, int maxCount = MaxMemoriesInPrompt)
     {
@@ -394,19 +383,16 @@ internal class MemoryManager : IMemoryProvider
                 ? "=== 自动记录的近期事实与约定（背景参考）==="
                 : "=== AUTO-RECORDED RECENT FACTS & PROMISES (Background) ===");
             sb.AppendLine(isZh
-                ? "以下是系统自动整理的背景信息，仅作参考。若与玩家手动规则冲突，以玩家手动规则为准："
-                : "Auto-recorded background facts. If conflicts with player rules, player rules take priority:");
+                ? "以下是系统自动整理的背景信息，仅作参考。若与玩家手动规则冲突，以玩家手动规则为准。标记 [CONTEXT_RELEVANT] 的条目与当前场景相关："
+                : "Auto-recorded background facts for reference only. If conflicts with player rules, player rules take priority. Entries marked [CONTEXT_RELEVANT] are relevant to the current scene:");
             sb.AppendLine();
 
             foreach (var e in autoEntries)
             {
                 bool isRelevant = IsContextuallyRelevant(e.Content, currentLocation);
-
                 if (isRelevant)
                 {
-                    sb.AppendLine(isZh
-                        ? $"- [!!! 当前情境触发 !!!] {e.Content} (你们现在刚好处于这个情境，请自然提及这个约定或事实！)"
-                        : $"- [!!! CONTEXT TRIGGER !!!] {e.Content} (You are currently in this exact situation. Naturally bring up this promise or fact!)");
+                    sb.AppendLine($"- [CONTEXT_RELEVANT] {e.Content}");
                 }
                 else
                 {
@@ -463,7 +449,6 @@ internal class MemoryManager : IMemoryProvider
         foreach (var kvp in locationAliases)
         {
             bool locationMatch = lowerLocation.Contains(kvp.Key);
-
             if (locationMatch)
             {
                 foreach (var alias in kvp.Value)

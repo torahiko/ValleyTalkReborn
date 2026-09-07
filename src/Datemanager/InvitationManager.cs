@@ -69,14 +69,13 @@ namespace ValleytalkReborn
                         string locName = isZh ? loc.DisplayNameZh : loc.DisplayNameEn;
 
                         data[mailId] = isZh
-                            ? $"亲爱的 @：^^最近农场忙碌，不知你今晚是否有空？^" +
-                              $"如果可以的话，晚些时候来 {locName} 找我吧。^" +
-                              $"我想和你单独待一会儿。^^—— 期待见你的 {npcName} %item null %%[#]今晚的约会邀请"
-                            : $"Dear @,^^I know you've been working hard on the farm, " +
-                              $"and I was wondering if you're free tonight?^" +
-                              $"If you can make it, come find me at {locName} tonight.^" +
-                              $"I'd love to spend some time alone with you.^^" +
-                              $"Yours, {npcName} %item null %%[#]An Invitation for Tonight";
+                            ? $"@：^^今晚有空吗？^" +
+                              $"如果方便的话，晚些时候来 {locName} 找我。^" +
+                              $"想和你聊聊。^^—— {npcName} %item null %%[#]今晚的约会邀请"
+                            : $"@,^^Are you free tonight?^" +
+                              $"If you can, come find me at {locName} later.^" +
+                              $"I'd like to talk.^^" +
+                              $"— {npcName} %item null %%[#]An Invitation for Tonight";
                     }
                 }
             });

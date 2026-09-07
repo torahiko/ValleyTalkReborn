@@ -9,13 +9,44 @@ namespace ValleytalkReborn;
 /// <summary>
 /// Tracks likely harvests by listening to inventory additions instead of scanning the whole bag.
 /// If the optional Harmony Crop.harvest patch is installed, it will only record during a real harvest window.
+///
+/// 当天"最佳收获"判定：按 itemId 累计当天到目前为止的总收获量与见过的最高品质，
+/// 再用累计后的分数在所有作物之间比较，选出全天目前最值得说的那一种，
+/// 用同一个 "Harvest" key 重新 Record 顶替旧记录——因此感知桶里同一时刻永远只有
+/// 一条 Harvest，且这条反映的是真实累计的丰收状况，而不是"谁先被摘到就赢"。
 /// </summary>
 internal static class HarvestSubscriber
 {
     private static bool _initialized = false;
 
-    private static readonly HashSet<string> _recordedCropIds =
-        new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    /// <summary>当天各作物 itemId 累计到目前为止的（最高品质, 累计数量）。</summary>
+    private static readonly Dictionary<string, HarvestTotal> _todayHarvestTotals =
+        new Dictionary<string, HarvestTotal>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>当天目前为止分数最高（最值得说）的作物 itemId，null 表示今天还没有任何收获。</summary>
+    private static string _leaderItemId = null;
+
+    private readonly struct HarvestTotal
+    {
+        /// <summary>当天目前为止见过的最高品质（0普通/1银星/2金星/4铱星）。</summary>
+        public readonly int Quality;
+
+        /// <summary>当天目前为止累计的总数量（跨多次收获动作累加）。</summary>
+        public readonly int Amount;
+
+        public HarvestTotal(int quality, int amount)
+        {
+            Quality = quality;
+            Amount  = amount;
+        }
+
+        /// <summary>
+        /// 打分：品质是主要维度（哪怕只有一颗，铱星也比一大筐普通货更值得说），
+        /// 数量是次要维度，用于同品质下比较"谁的丰收更大"，也用于反映真实的累计规模。
+        /// 品质权重给得足够大，保证任何品质差距都能压过数量差距。
+        /// </summary>
+        public double Score => Quality * 1000.0 + Amount;
+    }
 
     // 如果安装了 Harmony 真实收获补丁，则启用严格模式。
     private static bool _realHarvestMode = false;
@@ -25,6 +56,11 @@ internal static class HarvestSubscriber
 
     // Forage category，用于排除明显采集物。
     private const int ForageCategory = -81;
+
+    // 大丰收广播门槛：数量达标或品质到铱星才值得全镇皆知；
+    // 银星/金星单株不再触发 landmark，避免频繁挤占只有 2 个坑位的全局 gossip 队列。
+    private const int MajorHarvestAmountThreshold = 15;
+    private const int MajorHarvestQualityThreshold = 4; // 铱星
 
     private static bool IsZh =>
         LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
@@ -47,7 +83,8 @@ internal static class HarvestSubscriber
         ModEntry.SHelper.Events.Player.InventoryChanged -= OnInventoryChanged;
         ModEntry.SHelper.Events.GameLoop.DayStarted -= OnDayStarted;
 
-        _recordedCropIds.Clear();
+        _todayHarvestTotals.Clear();
+        _leaderItemId = null;
         _realHarvestMode = false;
         _lastRealHarvestTick = -1000;
         _initialized = false;
@@ -76,7 +113,8 @@ internal static class HarvestSubscriber
 
     private static void OnDayStarted(object sender, DayStartedEventArgs e)
     {
-        _recordedCropIds.Clear();
+        _todayHarvestTotals.Clear();
+        _leaderItemId = null;
     }
 
     private static void OnInventoryChanged(object sender, InventoryChangedEventArgs e)
@@ -159,29 +197,56 @@ internal static class HarvestSubscriber
         // 如果以后要支持果树/花卉，再扩展 Category。
         if (obj.Category != StardewValley.Object.VegetableCategory) return;
 
-        if (_recordedCropIds.Add(obj.ItemId))
+        string itemId = obj.ItemId;
+        int addAmount = Math.Max(1, addedAmount);
+
+        // 累加当天总量：同一 itemId 多次收获（哪怕分散在好几次 InventoryChanged 事件里）
+        // 会被正确地加总，而不是只看"这一批有多大"。品质取当天见过的最高值。
+        _todayHarvestTotals.TryGetValue(itemId, out var existing);
+        var updated = new HarvestTotal(
+            quality: Math.Max(existing.Quality, obj.Quality),
+            amount:  existing.Amount + addAmount);
+        _todayHarvestTotals[itemId] = updated;
+
+        // 判断这次更新后，这个作物是否（依然/重新）是全天分数最高的那个：
+        // - 今天还没有任何 leader → 直接成为 leader；
+        // - 这个作物本来就是 leader → 累计量变了，需要刷新显示；
+        // - 这个作物不是 leader，但累计分数已经超过当前 leader → 换人。
+        bool isLeader;
+        if (_leaderItemId == null || string.Equals(_leaderItemId, itemId, StringComparison.OrdinalIgnoreCase))
         {
-            RecordHarvestPerception(obj, Math.Max(1, addedAmount), isRealHarvest);
+            isLeader = true;
         }
+        else
+        {
+            var leaderTotal = _todayHarvestTotals[_leaderItemId];
+            isLeader = updated.Score > leaderTotal.Score;
+        }
+
+        if (!isLeader) return;
+
+        _leaderItemId = itemId;
+        RecordHarvestPerception(obj, updated.Quality, updated.Amount, isRealHarvest);
     }
 
     private static void RecordHarvestPerception(
         StardewValley.Object harvest,
-        int addedAmount,
+        int totalQuality,
+        int totalAmount,
         bool isRealHarvest)
     {
         string cropName = harvest.DisplayName ?? harvest.Name ?? "crops";
         bool isZh = IsZh;
 
         string qualityPrefix = isZh
-            ? harvest.Quality switch
+            ? totalQuality switch
             {
                 1 => "银星",
                 2 => "金星",
                 4 => "铱星",
                 _ => ""
             }
-            : harvest.Quality switch
+            : totalQuality switch
             {
                 1 => "silver-quality ",
                 2 => "gold-quality ",
@@ -224,9 +289,10 @@ internal static class HarvestSubscriber
             });
         }
 
-        // 大收获才做全局传闻；普通收获只做短时间的本地观察。
-        // 你可以按喜好调整阈值。
-        bool isMajorHarvest = addedAmount >= 10 || harvest.Quality >= 2;
+        // 大丰收才做全局传闻；普通收获只做短时间的本地观察。
+        // 门槛现在基于"当天累计总量"和"铱星品质"，避免单株银/金星就误判为全镇大事。
+        bool isMajorHarvest = totalAmount >= MajorHarvestAmountThreshold
+                           || totalQuality >= MajorHarvestQualityThreshold;
 
         PerceptionManager.Instance.Record(
             key: "Harvest",

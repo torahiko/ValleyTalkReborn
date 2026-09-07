@@ -69,24 +69,27 @@ internal static class FarmStateScanner
         // ── 1. 扫描农场室外作物 ──
         var (readyCrops, growingCrops, deadCrops, topReadyCropNames, topGrowingCropNames) = ScanCropsInLocation(farm);
 
-        // ── 2. 扫描温室 ──
-        // 直接以地图是否存在作为"已解锁"判据，比 hasOrWillReceiveMail 更可靠：
-        // 后者在 CC 剧情刚完成、邮件尚未真正投递的边界日会提前返回 true，
-        // 但此时 Greenhouse 地图可能还没有生成，会导致"已解锁但空置"的误导性文本。
+        // ── 2. 扫描果树（室外） ──
+        var (fruitTreeProducing, fruitTreeTypes, topFruits, fruitTreeGrowing) = ScanFruitTreesInLocation(farm);
+
+        // ── 3. 扫描温室 ──
+        // 检查实际收到的邮件状态：ccPantry（献祭路线）或 jojaGreenhouse（Joja 路线）
+        // 这样既解决了地图实例默认存在导致的误判，又避免了 hasOrWillReceiveMail 在献祭当天的提前判定问题
         var ghLocation = Game1.getLocationFromName("Greenhouse");
-        bool isGreenhouseUnlocked = ghLocation != null;
+        bool isGreenhouseUnlocked = Game1.MasterPlayer.mailReceived.Contains("ccPantry") ||
+                                    Game1.MasterPlayer.mailReceived.Contains("jojaGreenhouse");
 
         int ghReadyCrops = 0;
         int ghGrowingCrops = 0;
         List<string> ghTopReady = new();
         List<string> ghTopGrowing = new();
 
-        if (isGreenhouseUnlocked)
+        if (isGreenhouseUnlocked && ghLocation != null)
         {
             (ghReadyCrops, ghGrowingCrops, _, ghTopReady, ghTopGrowing) = ScanCropsInLocation(ghLocation);
         }
 
-        // ── 3. 扫描动物（仅统计数量与种类：天级粒度，纳入缓存） ──
+        // ── 4. 扫描动物（仅统计数量与种类：天级粒度，纳入缓存） ──
         // 注意：饥饿度(fullness)、抚摸状态(wasPet) 属于分钟级实时字段，故意不放进本摘要，
         // 避免污染按天缓存的 GameConstantContext。如需体现实时状态，
         // 请改在 Prompts.CorePrompt 中单独注入（该层本来就每轮重建，不受缓存分段影响）。
@@ -110,7 +113,7 @@ internal static class FarmStateScanner
             .Select(kv => kv.Key)
             .ToList();
 
-        // ── 4. 扫描鱼塘 ──
+        // ── 5. 扫描鱼塘 ──
         var fishPondInfos = new List<string>();
         foreach (var building in farm.buildings)
         {
@@ -121,7 +124,7 @@ internal static class FarmStateScanner
             }
         }
 
-        // ── 5. 格式化输出 ──
+        // ── 6. 格式化输出 ──
         if (isZh)
         {
             sb.AppendLine("### [农场经营状态]");
@@ -141,6 +144,24 @@ internal static class FarmStateScanner
                 sb.AppendLine($"- 农田异常: 发现了 {deadCrops} 株枯萎死去的作物。");
             }
 
+            // 果树展示
+            if (fruitTreeProducing > 0)
+            {
+                if (fruitTreeTypes > 3)
+                {
+                    sb.AppendLine($"- 果园状态: 果树品种丰富，共 {fruitTreeProducing} 棵树挂果待摘，涵盖 {fruitTreeTypes} 个品种（主要包括: {string.Join("、", topFruits)} 等）。");
+                }
+                else
+                {
+                    sb.AppendLine($"- 果园状态: 有 {fruitTreeProducing} 棵果树果实累累（包含: {string.Join("、", topFruits)}）。");
+                }
+            }
+            else if (fruitTreeGrowing > 0)
+            {
+                sb.AppendLine($"- 果园状态: 有 {fruitTreeGrowing} 棵幼年果树正在生长中。");
+            }
+
+            // 温室展示（修复后/破损废弃）
             if (isGreenhouseUnlocked)
             {
                 if (ghReadyCrops > 0)
@@ -153,8 +174,12 @@ internal static class FarmStateScanner
                 }
                 else
                 {
-                    sb.AppendLine("- 室内温室: 温室目前空置着，里面什么也没种。");
+                    sb.AppendLine("- 室内温室: 温室已修复但目前空置，里面什么也没种。");
                 }
+            }
+            else
+            {
+                sb.AppendLine("- 室内温室: 处于破损废弃状态（尚未修复）。");
             }
 
             if (totalAnimals > 0)
@@ -190,6 +215,24 @@ internal static class FarmStateScanner
                 sb.AppendLine($"- Field Warning: {deadCrops} withered crops spotted.");
             }
 
+            // Fruit Trees
+            if (fruitTreeProducing > 0)
+            {
+                if (fruitTreeTypes > 3)
+                {
+                    sb.AppendLine($"- Orchard: Diverse orchard with {fruitTreeProducing} trees bearing ripe fruit across {fruitTreeTypes} varieties (mainly: {string.Join(", ", topFruits)}, etc.).");
+                }
+                else
+                {
+                    sb.AppendLine($"- Orchard: {fruitTreeProducing} fruit trees are bearing ripe fruit (including: {string.Join(", ", topFruits)}).");
+                }
+            }
+            else if (fruitTreeGrowing > 0)
+            {
+                sb.AppendLine($"- Orchard: {fruitTreeGrowing} young fruit trees are growing.");
+            }
+
+            // Greenhouse
             if (isGreenhouseUnlocked)
             {
                 if (ghReadyCrops > 0)
@@ -202,8 +245,12 @@ internal static class FarmStateScanner
                 }
                 else
                 {
-                    sb.AppendLine("- Greenhouse: The greenhouse is currently completely empty with nothing planted.");
+                    sb.AppendLine("- Greenhouse: Repaired but currently empty with nothing planted.");
                 }
+            }
+            else
+            {
+                sb.AppendLine("- Greenhouse: Dilapidated and abandoned (not yet repaired).");
             }
 
             if (totalAnimals > 0)
@@ -267,6 +314,51 @@ internal static class FarmStateScanner
         var topGrowing = growingMap.OrderByDescending(kv => kv.Value).Take(3).Select(kv => kv.Key).ToList();
 
         return (readyCount, growingCount, deadCount, topReady, topGrowing);
+    }
+
+    private static (int producingTreeCount, int fruitTypeCount, List<string> topFruits, int growingCount) ScanFruitTreesInLocation(GameLocation location)
+    {
+        if (location == null) return (0, 0, new List<string>(), 0);
+
+        int producingTreeCount = 0;
+        int growingCount = 0;
+        var fruitCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var pair in location.terrainFeatures.Pairs)
+        {
+            if (pair.Value is FruitTree tree)
+            {
+                // 1.6+ 写法：tree.fruit 是果实列表，Count > 0 表示挂果
+                if (tree.fruit != null && tree.fruit.Count > 0)
+                {
+                    producingTreeCount++;
+
+                    // 直接从树上挂着的果实 Item 实体安全获取显示名
+                    string fruitName = tree.fruit[0]?.DisplayName;
+                    if (string.IsNullOrWhiteSpace(fruitName))
+                    {
+                        fruitName = "水果";
+                    }
+
+                    fruitCounts[fruitName] = fruitCounts.GetValueOrDefault(fruitName, 0) + 1;
+                }
+                // 处于成长阶段（未达到最终成熟树形态）
+                else if (tree.growthStage.Value < FruitTree.treeStage)
+                {
+                    growingCount++;
+                }
+            }
+        }
+
+        int fruitTypeCount = fruitCounts.Count;
+
+        var topFruits = fruitCounts
+            .OrderByDescending(kv => kv.Value)
+            .Take(3)
+            .Select(kv => kv.Key)
+            .ToList();
+
+        return (producingTreeCount, fruitTypeCount, topFruits, growingCount);
     }
 
     /// <summary>

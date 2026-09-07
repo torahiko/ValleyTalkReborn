@@ -6,7 +6,8 @@ using StardewValley;
 namespace ValleytalkReborn;
 
 /// <summary>
-/// Subscribes to eat events and records perceptions when the player eats items.
+/// 监听玩家进食事件并记录即时感知。
+/// 具备完整的重置机制与超短生命周期（阅后即焚）。
 /// </summary>
 internal static class EatSubscriber
 {
@@ -36,8 +37,16 @@ internal static class EatSubscriber
         var player = Game1.player;
         if (player == null) return;
 
+        // 1. 开始进食瞬间触发
         if (player.isEating && !_wasEating)
+        {
             RecordEatPerception(player.itemToEat);
+        }
+        // 2. 进食动作彻底结束时，重置防重缓存，允许下一次吃同一种物品继续触发
+        else if (!player.isEating && _wasEating)
+        {
+            _lastItemId = null;
+        }
 
         _wasEating = player.isEating;
     }
@@ -46,7 +55,7 @@ internal static class EatSubscriber
     {
         if (itemToEat == null) return;
         string itemId = itemToEat.ItemId;
-        if (itemId == _lastItemId || string.IsNullOrEmpty(itemId)) return;
+        if (string.IsNullOrEmpty(itemId) || itemId == _lastItemId) return;
 
         string itemName = itemToEat.DisplayName ?? itemToEat.Name ?? "something";
         bool isZh = LocalizedContentManager.CurrentLanguageCode.ToString()
@@ -66,9 +75,20 @@ internal static class EatSubscriber
                 $"You watched the farmer snack on a [{itemName}] a moment ago."
             });
 
-        int lifetime = ModEntry.Config.PerceptionActionLifetime;
-        PerceptionManager.Instance.Record("Eat", template, null, lifetime,
-            isLandmark: false, itemId: itemId);
+        // 阅后即焚生命周期：
+        // 1. 物理保质期只给 1 个游戏小时（超出即过期自动清理）
+        // 2. 严禁设置为 Landmark（非全镇长效广播）
+        const int BurnAfterReadingLifetime = 1;
+
+        PerceptionManager.Instance.Record(
+            key: "Eat",
+            template: template,
+            npcName: null,
+            lifetimeHours: BurnAfterReadingLifetime,
+            isLandmark: false,
+            itemId: itemId
+        );
+
         _lastItemId = itemId;
     }
 }

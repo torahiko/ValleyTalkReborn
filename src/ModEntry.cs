@@ -15,7 +15,7 @@ namespace ValleytalkReborn
     {
         public static IMonitor SMonitor;
         public static IModHelper SHelper { get; private set; }
-        public static ModConfig Config; 
+        public static ModConfig Config;
 
         /// <summary>
         /// A2A 输出验证转发器（供 MainThreadOutputQueue 使用）。
@@ -24,6 +24,43 @@ namespace ValleytalkReborn
         {
             return _dialogueCoordinator?.A2A.SessionManager.ValidateA2AOutput(sessionId, generation, npcName) ?? false;
         }
+
+        /// <summary>
+        /// ★ GMCM 配置保存时调用：当 EnableAmbientBarks 或 EnableA2A 被关闭时，
+        /// 立即清理残留状态，实现零延迟即时生效。
+        /// </summary>
+        public static void CleanupOnConfigToggle()
+        {
+            // ── 关闭时：立即清理进行中的对话与残余状态 ──
+            if (!Config.EnableAmbientBarks)
+            {
+                _dialogueCoordinator?.AmbientBark.CleanupAll();
+                SMonitor?.Log("[ModEntry] EnableAmbientBarks disabled — AmbientBark state cleaned up.", LogLevel.Debug);
+            }
+
+            if (!Config.EnableA2A)
+            {
+                _dialogueCoordinator?.A2A.SessionManager.CancelAll("Config disabled A2A", applyCooldown: false);
+                SMonitor?.Log("[ModEntry] EnableA2A disabled — all A2A sessions cancelled.", LogLevel.Debug);
+            }
+
+            if (Config.EnableAmbientBarks)
+            {
+                // ★ 重新开启（或每次 save）：无条件软复位，抹除 NPC 残留的 NextAvailableAt 冷却。
+                // CleanupAll 是幂等的——若已清理过则无副作用。确保玩家关闭后再开启时，
+                // 雷达扫描不会因 IsInCooldown() 而跳过 NPC。
+                _dialogueCoordinator?.AmbientBark.CleanupAll();
+                SMonitor?.Log("[ModEntry] EnableAmbientBarks on save — soft reset for clean restart.", LogLevel.Debug);
+            }
+
+            // A2A 重新开启无需额外操作：CancelAll 已清除会话，雷达会在下次 Tick 自然发现新相遇。
+        }
+
+        /// <summary>
+        /// 暴露 DialogueCoordinator 引用，供 GMCM 配置菜单在开关切换时执行清理/复位。
+        /// Config 读取现已改为实时（AmbientBarkModule.Config => ModEntry.Config），无需重建。
+        /// </summary>
+        internal static DialogueCoordinator Coordinator => _dialogueCoordinator;
 
         /// <summary>
         /// A2A output validator implementation for MainThreadOutputQueue.
@@ -60,9 +97,9 @@ namespace ValleytalkReborn
         /// Cancel button plugin instance.
         /// </summary>
         private static CancelButtonPlugin _cancelButtonPlugin;
-        
+
         private int _lastDialogueCloseTick = -9999;
-        
+
         private NPC _lastSpokenNPC = null;
 
         /// <summary>
@@ -80,27 +117,29 @@ namespace ValleytalkReborn
                     _llmMap = new Dictionary<string, Type>(StringComparer.InvariantCultureIgnoreCase)
                     {
 #if DEBUG
-                        { "Dummy", typeof(LlmDummy)},
+                        { "Dummy", typeof(LlmDummy) },
 #endif
-                        { "LlamaCpp", typeof(LlmLlamaCpp)},
-                        { "Google", typeof(LlmGemini)},
-                        { "Anthropic", typeof(LlmClaude)},
-                        { "OpenAI", typeof(LlmOpenAi)},
-                        { "Mistral", typeof(LlmMistral)},
-                        { "Grok", typeof(LlmGrok)}, 
-                        { "DeepSeek", typeof(LlmDeepSeek)},
-                        { "VolcEngine", typeof(LlmVolcEngine)},
-                        { "OpenAiCompatible", typeof(LlmOAICompatible)}
+                        { "LlamaCpp", typeof(LlmLlamaCpp) },
+                        { "Google", typeof(LlmGemini) },
+                        { "Anthropic", typeof(LlmClaude) },
+                        { "OpenAI", typeof(LlmOpenAi) },
+                        { "Mistral", typeof(LlmMistral) },
+                        { "Grok", typeof(LlmGrok) },
+                        { "DeepSeek", typeof(LlmDeepSeek) },
+                        { "VolcEngine", typeof(LlmVolcEngine) },
+                        { "OpenAiCompatible", typeof(LlmOAICompatible) }
                     };
                 }
+
                 return _llmMap;
             }
         }
 
         public static bool BlockModdedContent { get; private set; } = false;
         private static CultureInfo _locale;
-        public static string Language 
-        { 
+
+        public static string Language
+        {
             get
             {
                 GetLocale();
@@ -122,15 +161,17 @@ namespace ValleytalkReborn
                         workingLocal = workingLocal.Parent;
                     }
                 }
+
                 yield return string.Empty;
             }
         }
 
         private static string _localeCache = string.Empty;
+
         private static void GetLocale()
         {
             if (_locale != null && SHelper.Translation.Locale == _localeCache) return;
-            
+
             try
             {
                 _locale = CultureInfo.GetCultureInfo(SHelper.Translation.Locale);
@@ -141,11 +182,12 @@ namespace ValleytalkReborn
                 _locale = null;
                 _localeCache = string.Empty;
             }
+
             if (_locale == null)
             {
                 _locale = CultureInfo.GetCultureInfo("en-US");
                 _localeCache = SHelper.Translation.Locale;
-            }   
+            }
         }
 
         private static bool? _fixPunctuation = null;
@@ -159,9 +201,12 @@ namespace ValleytalkReborn
                 if (_fixPunctuation == null || _localeCacheFixPunctuation != SHelper.Translation.Locale)
                 {
                     var suffixes = LanguageFileSuffixes.ToList();
-                    _fixPunctuation = suffixes.Count == 1 || suffixes.Any(x => x == ".en" || x == ".fr" || x == ".de" || x == ".es" || x == ".tr" || x == ".pt" || x == ".it" || x == ".nl" || x == ".pl" || x == ".id");
+                    _fixPunctuation = suffixes.Count == 1 || suffixes.Any(x =>
+                        x == ".en" || x == ".fr" || x == ".de" || x == ".es" || x == ".tr" || x == ".pt" ||
+                        x == ".it" || x == ".nl" || x == ".pl" || x == ".id");
                     _localeCacheFixPunctuation = SHelper.Translation.Locale;
                 }
+
                 return _fixPunctuation.Value;
             }
         }
@@ -173,7 +218,7 @@ namespace ValleytalkReborn
 
         public override void Entry(IModHelper helper)
         {
-            SHelper  = helper;
+            SHelper = helper;
             SMonitor = Monitor;
 
             // 1. 先清理旧状态（如果已初始化过）
@@ -315,7 +360,8 @@ namespace ValleytalkReborn
                 return;
             }
 
-            Llm.SetLlm(llmType, modelName: Config.ModelName, apiKey: Config.ApiKey, url: Config.ServerAddress, promptFormat: Config.PromptFormat);
+            Llm.SetLlm(llmType, modelName: Config.ModelName, apiKey: Config.ApiKey, url: Config.ServerAddress,
+                promptFormat: Config.PromptFormat);
 
             CheckContentPacks();
 
@@ -332,7 +378,7 @@ namespace ValleytalkReborn
                 MassGiftTracker.Initialize();
                 ConsecutiveTalkTracker.Initialize();
                 ExtremeActivityTracker.Initialize();
-                DailyHeadlineGenerator.Initialize(); 
+                DailyHeadlineGenerator.Initialize();
 
                 TrashCanTracker.Initialize(_harmony);
 
@@ -351,63 +397,79 @@ namespace ValleytalkReborn
         /// </summary>
         private void RegisterDebugConsoleCommands(IModHelper helper)
         {
-            helper.ConsoleCommands.Add("vt_test_date", "测试 Agent 约会预约分发器\n用法: vt_test_date <NPC名字> <地点ID>", (cmd, args) =>
-            {
-                string npcName = args.Length > 0 ? args[0] : "Abigail";
-                string location = args.Length > 1 ? args[1] : "Saloon";
+            helper.ConsoleCommands.Add("vt_test_date", "测试 Agent 约会预约分发器\n用法: vt_test_date <NPC名字> <地点ID>",
+                (cmd, args) =>
+                {
+                    string npcName = args.Length > 0 ? args[0] : "Abigail";
+                    string location = args.Length > 1 ? args[1] : "Saloon";
 
-                var npc = Game1.getCharacterFromName(npcName);
-                if (npc == null) { Monitor.Log($"[Test] 未找到 NPC: {npcName}", LogLevel.Error); return; }
+                    var npc = Game1.getCharacterFromName(npcName);
+                    if (npc == null)
+                    {
+                        Monitor.Log($"[Test] 未找到 NPC: {npcName}", LogLevel.Error);
+                        return;
+                    }
 
-                Monitor.Log($"[Test] >>> 正在测试分发 schedule_date: {npcName} -> {location}", LogLevel.Info);
-                AgentToolDispatcher.DispatchToolCall(npc, "schedule_date", $"{{\"location_id\":\"{location}\"}}");
-            });
+                    Monitor.Log($"[Test] >>> 正在测试分发 schedule_date: {npcName} -> {location}", LogLevel.Info);
+                    AgentToolDispatcher.DispatchToolCall(npc, "schedule_date", $"{{\"location_id\":\"{location}\"}}");
+                });
 
-            helper.ConsoleCommands.Add("vt_test_action", "测试 Agent 物理动作分发器\n用法: vt_test_action <NPC名字> <动作类型>", (cmd, args) =>
-            {
-                string npcName = args.Length > 0 ? args[0] : "Abigail";
-                string action = args.Length > 1 ? args[1] : "FOLLOW";
+            helper.ConsoleCommands.Add("vt_test_action", "测试 Agent 物理动作分发器\n用法: vt_test_action <NPC名字> <动作类型>",
+                (cmd, args) =>
+                {
+                    string npcName = args.Length > 0 ? args[0] : "Abigail";
+                    string action = args.Length > 1 ? args[1] : "FOLLOW";
 
-                var npc = Game1.getCharacterFromName(npcName);
-                if (npc == null) { Monitor.Log($"[Test] 未找到 NPC: {npcName}", LogLevel.Error); return; }
+                    var npc = Game1.getCharacterFromName(npcName);
+                    if (npc == null)
+                    {
+                        Monitor.Log($"[Test] 未找到 NPC: {npcName}", LogLevel.Error);
+                        return;
+                    }
 
-                Monitor.Log($"[Test] >>> 正在测试分发 trigger_physical_action: {npcName} -> {action}", LogLevel.Info);
-                AgentToolDispatcher.DispatchToolCall(npc, "trigger_physical_action", $"{{\"action_type\":\"{action}\"}}");
-            });
+                    Monitor.Log($"[Test] >>> 正在测试分发 trigger_physical_action: {npcName} -> {action}", LogLevel.Info);
+                    AgentToolDispatcher.DispatchToolCall(npc, "trigger_physical_action",
+                        $"{{\"action_type\":\"{action}\"}}");
+                });
 
             helper.ConsoleCommands.Add("vt_test_end", "测试 Agent 自然解约分发器\n用法: vt_test_end <NPC名字>", (cmd, args) =>
             {
                 string npcName = args.Length > 0 ? args[0] : "Abigail";
 
                 var npc = Game1.getCharacterFromName(npcName);
-                if (npc == null) { Monitor.Log($"[Test] 未找到 NPC: {npcName}", LogLevel.Error); return; }
+                if (npc == null)
+                {
+                    Monitor.Log($"[Test] 未找到 NPC: {npcName}", LogLevel.Error);
+                    return;
+                }
 
                 Monitor.Log($"[Test] >>> 正在测试分发 end_current_date: {npcName}", LogLevel.Info);
                 AgentToolDispatcher.DispatchToolCall(npc, "end_current_date", "{\"reason\":\"console_command_test\"}");
             });
 
-            helper.ConsoleCommands.Add("vt_test_llm_tools", "测试大模型 Native Tool Calling 是否正确返回 JSON", async (cmd, args) =>
-            {
-                string npcName = args.Length > 0 ? args[0] : "Abigail";
-                Monitor.Log($"[Test] 正在向大模型发送约会测试请求（Target: {npcName}）...", LogLevel.Info);
-
-                var systemPrompt = $"You are {npcName} from Stardew Valley. Speak in character.";
-                var userPrompt = "Hey, do you want to go on a date with me at the Saloon tonight at 20:00?";
-
-                var response = await Llm.Instance.RunInference(systemPrompt, "", "", userPrompt);
-
-                Monitor.Log($"[LLM 文本回应]: {response.Text}", LogLevel.Info);
-                Monitor.Log($"[LLM 解析到的工具调用数量]: {response.ToolCalls?.Count ?? 0}", LogLevel.Info);
-
-                if (response.ToolCalls != null && response.ToolCalls.Count > 0)
+            helper.ConsoleCommands.Add("vt_test_llm_tools", "测试大模型 Native Tool Calling 是否正确返回 JSON",
+                async (cmd, args) =>
                 {
-                    foreach (var tool in response.ToolCalls)
+                    string npcName = args.Length > 0 ? args[0] : "Abigail";
+                    Monitor.Log($"[Test] 正在向大模型发送约会测试请求（Target: {npcName}）...", LogLevel.Info);
+
+                    var systemPrompt = $"You are {npcName} from Stardew Valley. Speak in character.";
+                    var userPrompt = "Hey, do you want to go on a date with me at the Saloon tonight at 20:00?";
+
+                    var response = await Llm.Instance.RunInference(systemPrompt, "", "", userPrompt);
+
+                    Monitor.Log($"[LLM 文本回应]: {response.Text}", LogLevel.Info);
+                    Monitor.Log($"[LLM 解析到的工具调用数量]: {response.ToolCalls?.Count ?? 0}", LogLevel.Info);
+
+                    if (response.ToolCalls != null && response.ToolCalls.Count > 0)
                     {
-                        Monitor.Log($"  -> 工具名: {tool.FunctionName}", LogLevel.Warn);
-                        Monitor.Log($"  -> 参数: {tool.JsonArguments}", LogLevel.Warn);
+                        foreach (var tool in response.ToolCalls)
+                        {
+                            Monitor.Log($"  -> 工具名: {tool.FunctionName}", LogLevel.Warn);
+                            Monitor.Log($"  -> 参数: {tool.JsonArguments}", LogLevel.Warn);
+                        }
                     }
-                }
-            });
+                });
         }
 
         /// <summary>
@@ -423,15 +485,18 @@ namespace ValleytalkReborn
             {
                 NPC_CheckAction_Patch.TriggerKeyWasDown = NPC_CheckAction_Patch.IsTriggerKeyDown();
             }
+
             // 快捷键追问判定逻辑（原有代码不动）
             if (Context.IsPlayerFree && e.Button == Config.QuickReplyKey)
             {
                 int tickDiff = Game1.ticks - _lastDialogueCloseTick;
-        
+
                 if (tickDiff > 0 && tickDiff <= 300 && _lastSpokenNPC != null)
                 {
                     bool sameLocation = Game1.player.currentLocation == _lastSpokenNPC.currentLocation;
-                    float distance = sameLocation ? Vector2.Distance(Game1.player.Position, _lastSpokenNPC.Position) : float.MaxValue;
+                    float distance = sameLocation
+                        ? Vector2.Distance(Game1.player.Position, _lastSpokenNPC.Position)
+                        : float.MaxValue;
 
                     if (!sameLocation || distance > 256f)
                     {
@@ -439,23 +504,24 @@ namespace ValleytalkReborn
                     }
                     else
                     {
-                        Game1.playSound("bigSelect"); 
+                        Game1.playSound("bigSelect");
                         TextInputManager.RequestTextInput($"与 {_lastSpokenNPC.displayName} 交谈", _lastSpokenNPC);
                     }
-            
+
                     Helper.Input.Suppress(e.Button);
-                    return; 
+                    return;
                 }
             }
 
             if (Game1.keyboardDispatcher?.Subscriber is DialogueTextInputBox)
             {
-                bool isCtrlPressed = Game1.input.GetKeyboardState().IsKeyDown(Microsoft.Xna.Framework.Input.Keys.LeftControl) || 
-                                     Game1.input.GetKeyboardState().IsKeyDown(Microsoft.Xna.Framework.Input.Keys.RightControl);
+                bool isCtrlPressed =
+                    Game1.input.GetKeyboardState().IsKeyDown(Microsoft.Xna.Framework.Input.Keys.LeftControl) ||
+                    Game1.input.GetKeyboardState().IsKeyDown(Microsoft.Xna.Framework.Input.Keys.RightControl);
 
-                if (e.Button == SButton.Escape || e.Button == SButton.Enter || 
+                if (e.Button == SButton.Escape || e.Button == SButton.Enter ||
                     e.Button == SButton.Back || e.Button == SButton.Delete ||
-                    e.Button == SButton.Left || e.Button == SButton.Right || 
+                    e.Button == SButton.Left || e.Button == SButton.Right ||
                     e.Button == SButton.Up || e.Button == SButton.Down ||
                     e.Button == SButton.LeftControl || e.Button == SButton.RightControl ||
                     e.Button == SButton.LeftShift || e.Button == SButton.RightShift)
@@ -463,7 +529,8 @@ namespace ValleytalkReborn
                     return;
                 }
 
-                if (isCtrlPressed && (e.Button == SButton.C || e.Button == SButton.V || e.Button == SButton.X || e.Button == SButton.A || e.Button == SButton.Z))
+                if (isCtrlPressed && (e.Button == SButton.C || e.Button == SButton.V || e.Button == SButton.X ||
+                                      e.Button == SButton.A || e.Button == SButton.Z))
                 {
                     return;
                 }
@@ -505,7 +572,8 @@ namespace ValleytalkReborn
                 try
                 {
                     _harmony = null;
-                    Log.Debug("[ValleyTalkReborn] Harmony instance cleared, but patches retained to prevent AccessViolationException.");
+                    Log.Debug(
+                        "[ValleyTalkReborn] Harmony instance cleared, but patches retained to prevent AccessViolationException.");
                 }
                 catch (Exception ex)
                 {
@@ -587,8 +655,8 @@ namespace ValleytalkReborn
                     MassGiftTracker.Cleanup();
                     ConsecutiveTalkTracker.Cleanup();
                     ExtremeActivityTracker.Cleanup();
-                    DailyHeadlineGenerator.Cleanup(); 
-                    
+                    DailyHeadlineGenerator.Cleanup();
+
                     PerceptionManager.Instance?.Cleanup();
                     SpouseWaitingEvent.Cleanup();
                 }
@@ -686,7 +754,13 @@ namespace ValleytalkReborn
             }
             catch (Exception ex)
             {
-                try { Log.Error($"[ValleyTalkReborn] Critical error during cleanup: {ex.Message}"); } catch { }
+                try
+                {
+                    Log.Error($"[ValleyTalkReborn] Critical error during cleanup: {ex.Message}");
+                }
+                catch
+                {
+                }
             }
         }
 
@@ -696,15 +770,22 @@ namespace ValleytalkReborn
             var blockedContentPacks = contentPacks
                 .Where(p => !SldConstants.PermitListContentPacks.Contains(p.Manifest.UniqueID))
                 .Where(p =>
-                        !p.Manifest.ExtraFields.ContainsKey("PermitAiUse") ||
-                        !(p.Manifest.ExtraFields["PermitAiUse"] as bool? ?? false)
+                    !p.Manifest.ExtraFields.ContainsKey("PermitAiUse") ||
+                    !(p.Manifest.ExtraFields["PermitAiUse"] as bool? ?? false)
                 );
             if (blockedContentPacks.Any())
             {
-                SMonitor.Log("Note: Content packs have been found that don't have mod author approval for use with AI.", LogLevel.Warn);
-                SMonitor.Log("While content from content packs will be displayed in-game, it will not be use for AI dialogue generation.", LogLevel.Warn);
-                SMonitor.Log($"Content packs without author approval: {string.Join(", ", blockedContentPacks.Select(p => p.Manifest.Name))}", LogLevel.Info);
-                SMonitor.Log("Mod authors can permit their content to be used in dialogue generation by adding \"permitAiUse\":true to their mod's manifest.", LogLevel.Warn);
+                SMonitor.Log("Note: Content packs have been found that don't have mod author approval for use with AI.",
+                    LogLevel.Warn);
+                SMonitor.Log(
+                    "While content from content packs will be displayed in-game, it will not be use for AI dialogue generation.",
+                    LogLevel.Warn);
+                SMonitor.Log(
+                    $"Content packs without author approval: {string.Join(", ", blockedContentPacks.Select(p => p.Manifest.Name))}",
+                    LogLevel.Info);
+                SMonitor.Log(
+                    "Mod authors can permit their content to be used in dialogue generation by adding \"permitAiUse\":true to their mod's manifest.",
+                    LogLevel.Warn);
                 BlockModdedContent = true;
             }
         }
@@ -733,11 +814,11 @@ namespace ValleytalkReborn
                 CompanionScheduleManager.Instance.ReloadAssets();
             }
         }
-        
+
         private void OnMenuChanged(object sender, MenuChangedEventArgs e)
         {
             if (!Config.EnableMod) return;
-    
+
             if (e.OldMenu is StardewValley.Menus.DialogueBox oldDb && e.NewMenu == null)
             {
                 var speaker = oldDb.characterDialogue?.speaker ?? Game1.currentSpeaker;
@@ -754,7 +835,7 @@ namespace ValleytalkReborn
                 }
             }
         }
-        
+
         private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
         {
             // 修复：返回标题后 Cleanup 会销毁 _dialogueCoordinator，
@@ -774,6 +855,7 @@ namespace ValleytalkReborn
             DialogueHistoryManager.Instance.Load();
             RecentConversationTracker.Clear();
             SessionCache.Instance.ResetAll();
+            EatSubscriber.Initialize();
 
             // ★ 存档加载完成后载入 NPC 关系（此时 CP 资源包已 100% 挂载就绪）
             NpcRelationRegistry.Instance.LoadAll(Helper, Monitor);
@@ -781,9 +863,9 @@ namespace ValleytalkReborn
 
         private void OnDayStarted(object sender, DayStartedEventArgs e)
         {
-            PlayerStateScanner.OnDayStarted(); 
+            PlayerStateScanner.OnDayStarted();
             RecentConversationTracker.Clear();
-            NPC_CurrentDialogue_Patch.ClearDedupState();
+            //NPC_CurrentDialogue_Patch.ClearDedupState();
             NPC_CheckForNewCurrentDialogue_Patch.ClearDedupState();
             SessionCache.Instance.ResetAll();
         }
@@ -803,7 +885,7 @@ namespace ValleytalkReborn
         /// </summary>
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
         {
-        AgentToolDispatcher.ProcessMainThreadQueue();
+            AgentToolDispatcher.ProcessMainThreadQueue();
         }
     }
 }

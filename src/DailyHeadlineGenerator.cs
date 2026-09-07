@@ -222,7 +222,7 @@ internal static class DailyHeadlineGenerator
 
     Output Contract:
     - Output strictly raw, unadorned text consisting of the headline sentence alone.
-    - Keep tone grounded, understated, and authentic to classic cozy provincial reporting.
+    - Output strictly raw, unadorned text consisting of the headline sentence alone. No prefixes, 
     """;
 
 private static string BuildLlmSystemPrompt_ZH() =>
@@ -242,7 +242,7 @@ private static string BuildLlmSystemPrompt_ZH() =>
 
     输出规范：
     - 直接输出纯正的单段新闻纯文本语句，首字即为正文内容。
-    - 语言风格保持鹈鹕镇经典的质朴、亲和、生活化晨间口吻，兼具客观报道质感。
+    - 直接输出纯正的单段新闻纯文本语句，首字即为正文内容。不添加任何前缀、标签或格式标记。
     """;
 
     // ─────────────────────────────────────────────────────────────
@@ -447,7 +447,7 @@ private static string BuildLlmSystemPrompt_ZH() =>
             }),
             "Slayer" => PerceptionManager.PickVariant(new[]
             {
-                $"马尔隆摇着头，难以置信——农夫今天在矿井里消灭了 {num} 只怪物。这不叫务农，这叫打仗。",
+                $"马龙摇着头，难以置信——农夫今天在矿井里消灭了 {num} 只怪物。这不叫务农，这叫打仗。",
                 $"吉尔见过不少冒险者，但单日 {num} 次击杀？连他都不得不称赞。",
                 $"冒险者公会里炸开了锅——据说农夫今天一口气清了 {num} 只矿井怪物。",
             }),
@@ -457,7 +457,6 @@ private static string BuildLlmSystemPrompt_ZH() =>
                 $"海莉看起来极为崩溃。农夫今天大白天翻了 {num} 个垃圾桶，就在大家眼皮底下。",
                 $"莱纳斯轻声说起这件事——今天 {num} 个垃圾桶。他说他理解，但邻居们不理解。",
             }),
-            // ✅ 新增：恋爱官宣中文翻译
             "DatingAnnouncement" => PerceptionManager.PickVariant(new[]
             {
                 $"镇上都在传——农夫和{context}正式确立恋爱关系了！",

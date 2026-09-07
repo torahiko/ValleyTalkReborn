@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -63,20 +65,19 @@ internal static class TalkSubscriber
     {
         var currentLocation = Game1.currentLocation;
         var player = Game1.player;
+        if (currentLocation == null || player == null) return;
+
         string talkingNpcName = talkingNpc.displayName ?? talkingNpc.Name;
+        bool isZh = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
 
-        bool isZh = LocalizedContentManager.CurrentLanguageCode.ToString()
-            .StartsWith("zh", StringComparison.OrdinalIgnoreCase);
-
-        foreach (var npc in currentLocation.characters)
+        // 快照遍历防并发，并过滤非村民实体（排除马、宠物、怪物）
+        foreach (var character in currentLocation.characters.ToArray())
         {
-            // 排除当前正在交谈的 NPC 本人
+            if (character is not NPC npc || !npc.IsVillager) continue;
             if (npc == talkingNpc || npc.Name.Equals(talkingNpc.Name, StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            float dx = npc.Position.X - player.Position.X;
-            float dy = npc.Position.Y - player.Position.Y;
-            float distance = (float)System.Math.Sqrt(dx * dx + dy * dy);
+            float distance = Vector2.Distance(npc.Position, player.Position);
 
             // 8 tiles = 512 pixels
             if (distance <= 512f)

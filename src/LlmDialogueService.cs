@@ -115,13 +115,10 @@ public class LlmDialogueService
             // ══════════════════════════════════════════════════
             //  流式路径
             // ══════════════════════════════════════════════════
-            if (onStreamingToken != null
-                && ModEntry.Config.EnableStreaming
-                && !ModEntry.Config.UseNativeToolCalling
-                && !context.RoutingFlags.IsMovementRequested
-                && !context.RoutingFlags.IsGotoRequested
-                && !context.RoutingFlags.IsInviteRequested
-                && !context.RoutingFlags.IsOnDate)
+            // 流式决策已上移至 DialogueBuilder：其根据当前回合是否需要工具调用以及
+            // Provider 是否支持"流式 + 工具调用"（SupportsStreamingWithTools）决定
+            // 是否传入回调。此处仅在有回调时走流式通道，否则回退到非流式推理。
+            if (onStreamingToken != null)
             {
                 var tracker = new StreamLineTracker();
                 using var cts = new CancellationTokenSource(
@@ -183,6 +180,8 @@ public class LlmDialogueService
                 DialogueHistoryManager.Instance.ConsumeEavesdropEntries(character.Name);
                 // Mark perceptions as consolidated to prevent re-injection of "just received gift" next turn
                 PerceptionManager.Instance.MarkAsConsolidated(character.Name);
+                //本次对话已顺利消费该事件
+                PerceptionManager.Instance.Evict("Eat");
 
                 // if (ModEntry.Config.Debug)
                 //     LogDebugContext(character, context, prompts, processed);
@@ -290,6 +289,8 @@ public class LlmDialogueService
                     DialogueHistoryManager.Instance.ConsumeEavesdropEntries(character.Name);
                     // Mark perceptions as consolidated to prevent re-injection of "just received gift" next turn
                     PerceptionManager.Instance.MarkAsConsolidated(character.Name);
+                    //本次对话已顺利消费该事件
+                    PerceptionManager.Instance.Evict("Eat");
 
                     // if (isDebug) LogDebugContext(character, context, prompts, resultsInternal);
                     break; // Success, exit retry loop

@@ -1,4 +1,3 @@
-// PerceptionInjector.cs
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,10 +11,19 @@ namespace ValleytalkReborn;
 internal static class PerceptionInjector
 {
     private static bool IsChineseLanguage => 
-        LocalizedContentManager.CurrentLanguageCode.ToString().StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+        LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
 
-    private static readonly HashSet<string> _mentionedGossipKeys =
+    private static HashSet<string> _mentionedGossipKeys =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// 清空跨天/跨存档的 gossip 提及去重记录。
+    /// 由 PerceptionManager 在 DayStarted 时调用。
+    /// </summary>
+    public static void ResetMentionedGossipKeys()
+    {
+        _mentionedGossipKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    }
 
     public static string BuildPerceptionText(string npcName)
     {
@@ -40,9 +48,6 @@ internal static class PerceptionInjector
         string text = BuildPerceptionText(npcName);
         if (string.IsNullOrEmpty(text)) return;
 
-        // 兼容保留：将 gossip 与 local 合并为一段追加到 SystemPrompt。
-        // 注意：local perceptions（gift/eat）每轮都变，理论上应进 CorePrompt；
-        //       新代码请改用 BuildGossipBlock / BuildLocalBlock 分开调用。
         prompts.SystemPrompt += "\n\n" + text;
     }
 
@@ -53,15 +58,13 @@ internal static class PerceptionInjector
 
         bool isZh = IsChineseLanguage;
 
-        // 🌟 弱化提示，仅保留至多 1 条传闻，避免每轮无脑复读
         var lines = new List<string>
         {
             isZh 
                 ? "[小镇背景传闻]（背景认知：仅在与农夫当前对话主题高度契合时顺带提及，优先响应农夫的发言。）"
                 : "[Town Gossip] (Background context: Only mention if directly relevant to the ongoing conversation.)"
-    };
+        };
 
-        // 优先展现 S-tier 人生大事（结婚/生子等），避免被日常世界新闻淹没
         var targetSnapshot = snapshots.FirstOrDefault(p => p.Key == "LifeEvent")
                             ?? snapshots.FirstOrDefault();
 
@@ -81,14 +84,11 @@ internal static class PerceptionInjector
                 dayKey = "unknown-day";
             }
 
-            string dedupeKey =
-                $"{dayKey}:{npcName}:{p.Key ?? ""}:{p.Template}";
+            string dedupeKey = $"{dayKey}:{npcName}:{p.Key ?? ""}:{p.Template}";
 
-            // 防止 HashSet 无限增长
             if (_mentionedGossipKeys.Count > 10000)
                 _mentionedGossipKeys.Clear();
 
-            // 同一条 gossip，对同一个 NPC，每天最多注入一次
             if (!_mentionedGossipKeys.Add(dedupeKey))
                 continue;
 
@@ -98,74 +98,77 @@ internal static class PerceptionInjector
         return lines.Count > 1 ? string.Join("\n", lines) : string.Empty;
     }
 
-   public static string BuildLocalBlock(string npcName)
-   {
+    public static string BuildLocalBlock(string npcName)
+    {
         var perceptions = PerceptionManager.Instance.GetFilteredBucketFor(npcName, 3);
         if (perceptions == null || perceptions.Count == 0) return string.Empty;
 
         bool isZh = IsChineseLanguage;
 
-    // 礼物类感知单独提取，注入为强上下文而非弱背景
-    var giftPerceptions = perceptions
-        .Where(p => p?.Key == "Gift"
-            && !string.IsNullOrEmpty(p.NpcName)
-            && p.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase))
-        .ToList();
+        // 1. 本人收到的礼物：必须给出强反应，进入强指令块
+        var giftPerceptions = perceptions
+            .Where(p => p?.Key == "Gift"
+                && !string.IsNullOrEmpty(p.NpcName)
+                && p.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase))
+            .ToList();
 
-    var otherPerceptions = perceptions
-        .Where(p => p?.Key != "Gift")
-        .ToList();
+        // 2. 弱感知：非礼物事件 + 旁观别人收到礼物的目击事件（核心修复：不再排斥旁观送礼）
+        var otherPerceptions = perceptions
+            .Where(p => p?.Key != "Gift" || 
+                       (p.Key == "Gift" && !string.Equals(p.NpcName, npcName, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
 
-    var lines = new List<string>();
+        var lines = new List<string>();
 
-    // ── 礼物感知：以强指令形式出现 ──
-    if (giftPerceptions.Any())
-    {
-        lines.Add(isZh
-            ? "[礼物上下文]（强制要求：你刚刚收到了以下礼物，必须在本次回应中对此作出真实反应。）"
-            : "[Gift Context] (REQUIRED: You just received the following gift. You MUST react to it in your response.)");
-
-        foreach (var p in giftPerceptions)
+        // ── 礼物感知：以强指令形式出现 ──
+        if (giftPerceptions.Any())
         {
-            string itemName = !string.IsNullOrEmpty(p.ItemId)
-                ? GetItemDisplayName(p.ItemId)
-                : (!string.IsNullOrEmpty(p.Template) ? p.Template : "???");
-            string annotation = !string.IsNullOrEmpty(p.ItemId)
-                ? BuildGiftTasteAnnotation(npcName, p.ItemId, isZh)
-                : string.Empty;
+            lines.Add(isZh
+                ? "[礼物上下文]（强制要求：你刚刚收到了以下礼物，必须在本次回应中对此作出真实反应。）"
+                : "[Gift Context] (REQUIRED: You just received the following gift. You MUST react to it in your response.)");
 
-            string entry = isZh
-                ? $"- 礼物：{itemName}{annotation}"
-                : $"- Gift: {itemName}{annotation}";
+            foreach (var p in giftPerceptions)
+            {
+                string itemName = !string.IsNullOrEmpty(p.ItemId)
+                    ? GetItemDisplayName(p.ItemId)
+                    : (!string.IsNullOrEmpty(p.Template) ? p.Template : "???");
+                string annotation = !string.IsNullOrEmpty(p.ItemId)
+                    ? BuildGiftTasteAnnotation(npcName, p.ItemId, isZh)
+                    : string.Empty;
 
-            lines.Add(entry);
+                string entry = isZh
+                    ? $"- 礼物：{itemName}{annotation}"
+                    : $"- Gift: {itemName}{annotation}";
+
+                lines.Add(entry);
+            }
         }
-    }
 
-    // ── 其他近距离观察：保持弱感知形式 ──
-    if (otherPerceptions.Any())
-    {
-        lines.Add(isZh
-            ? "[近期近距离观察]（潜意识印象：若与当前话题无关请忽略，切勿主动生硬开启该话题。）"
-            : "[NPC's Recent Observations] (Subconscious context: Ignore if irrelevant to the farmer's current topic.)");
-
-        foreach (var p in otherPerceptions)
+        // ── 其他近距离观察：弱感知形式 ──
+        if (otherPerceptions.Any())
         {
-            string template = ResolveTemplate(p, npcName, isZh);
-            string line = $"- {template}";
-            if (p.Key == "Eat" && !string.IsNullOrEmpty(p.ItemId))
-                line += BuildGiftTasteAnnotation(npcName, p.ItemId, isZh);
-            lines.Add(line);
-        }
-    }
+            lines.Add(isZh
+                ? "[近期近距离观察]（潜意识印象：若与当前话题无关请忽略，切勿主动生硬开启该话题。）"
+                : "[NPC's Recent Observations] (Subconscious context: Ignore if irrelevant to the farmer's current topic.)");
 
-    return lines.Count > 1 ? string.Join("\n", lines) : string.Empty;
-}
+            foreach (var p in otherPerceptions)
+            {
+                string template = ResolveTemplate(p, npcName, isZh);
+                string line = $"- {template}";
+                if (p.Key == "Eat" && !string.IsNullOrEmpty(p.ItemId))
+                    line += BuildGiftTasteAnnotation(npcName, p.ItemId, isZh);
+                lines.Add(line);
+            }
+        }
+
+        return lines.Count > 1 ? string.Join("\n", lines) : string.Empty;
+    }
 
     private static string ResolveTemplate(PerceptionEntry entry, string npcName, bool isZh)
     {
         if (entry.Key != "Gift") return entry.Template;
 
+        // 如果不是接收者，直接返回旁观者视角的 Template（例如："农夫递给了【海莉】一件礼物：【向日葵】。"）
         bool isRecipient = !string.IsNullOrEmpty(entry.NpcName)
             && entry.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase);
 

@@ -1,4 +1,6 @@
 // NPC_CheckAction_Patch.cs
+using System;
+using System.Linq;
 using HarmonyLib;
 using StardewValley;
 using StardewModdingAPI;
@@ -59,10 +61,10 @@ namespace ValleytalkReborn
                 DialogueBuilder.Instance.ClearContext(__instance.Name);
                 var character = DialogueBuilder.Instance.GetCharacter(__instance);
 
-                if (Game1.player.friendshipData.TryGetValue(__instance.Name, out var caFriendship))caFriendship.TalkedToToday = true;
+                if (Game1.player.friendshipData.TryGetValue(__instance.Name, out var caFriendship)) caFriendship.TalkedToToday = true;
 
                 var displayName = __instance.displayName ?? __instance.Name ?? "NPC";
-                var prompt = Util.GetString(character, "uiStartConversation", new { Name = displayName })?? $"What do you want to say to {displayName}?";
+                var prompt = Util.GetString(character, "uiStartConversation", new { Name = displayName }) ?? $"What do you want to say to {displayName}?";
 
                 TextInputManager.RequestTextInput(prompt, __instance);
 
@@ -82,7 +84,71 @@ namespace ValleytalkReborn
                 return true;
 
             // ══════════════════════════════════════════════
-            // 分支 B：InfiniteChat → 标记续聊语境
+            // ★ 核心优先：原版对话优先逻辑 (必须在 InfiniteChat 之前检查与放行)
+            // ══════════════════════════════════════════════
+            if (ModEntry.Config.EnableVanillaFirst)
+            {
+                if (__instance.CurrentDialogue != null && __instance.CurrentDialogue.Count > 0)
+                {
+                    try
+                    {
+                        var curDiag = __instance.CurrentDialogue.Peek();
+                        if (curDiag?.dialogues != null && curDiag.dialogues.Count > 0)
+                        {
+                            var rawText = string.Join(" ", curDiag.dialogues
+                                .Where(x => x != null && !string.IsNullOrWhiteSpace(x.Text))
+                                .Select(x => x.Text));
+
+                            if (!string.IsNullOrWhiteSpace(rawText) &&
+                                !rawText.Contains(SldConstants.DialogueGenerationTag) &&
+                                !rawText.Contains(SldConstants.DialogueSkipTag) &&
+                                !rawText.StartsWith("skip#"))
+                            {
+                                var cleanedText = DialogueHistoryManager.SanitizeForStorage(rawText);
+                                if (!string.IsNullOrWhiteSpace(cleanedText))
+                                {
+                                    // 1. 记录发话者自身原版对话（供后续 AI 续聊直接读取）
+                                    DialogueHistoryManager.Instance.RecordNpcDialogue(
+                                        __instance.Name,
+                                        cleanedText,
+                                        "vanilla"
+                                    );
+
+                                    // 2. 偷听广播给 512 像素内的路人 NPC（供 EavesdropInjector 使用）
+                                    if (__instance.currentLocation != null && Game1.player != null)
+                                    {
+                                        var farmerLabel = Util.GetString("generalFarmerLabel") ?? "农夫";
+                                        var eavesdropText = $"{farmerLabel}与{__instance.displayName}交谈，{__instance.displayName}说道：\"{cleanedText}\"";
+
+                                        foreach (var nearbyNpc in __instance.currentLocation.characters)
+                                        {
+                                            if (nearbyNpc == null || nearbyNpc == __instance) continue;
+
+                                            float dx = nearbyNpc.Position.X - __instance.Position.X;
+                                            float dy = nearbyNpc.Position.Y - __instance.Position.Y;
+                                            float distance = (float)Math.Sqrt(dx * dx + dy * dy);
+
+                                            if (distance <= 512f)
+                                            {
+                                                DialogueHistoryManager.Instance.RecordSystemEvent(nearbyNpc.Name, eavesdropText, "eavesdrop");
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        ModEntry.SMonitor?.Log($"[CheckAction] Failed to record vanilla/eavesdrop: {ex.Message}", LogLevel.Trace);
+                    }
+
+                    return true; // 正常放行原版对话框播放
+                }
+            }
+
+            // ══════════════════════════════════════════════
+            // 分支 B：InfiniteChat → 仅在确定原版无词、进入 AI 交互时标记续聊
             // ══════════════════════════════════════════════
             if (ModEntry.Config.EnableInfiniteChat && who.IsLocalPlayer)
             {
@@ -155,7 +221,7 @@ namespace ValleytalkReborn
                                 ? new[] { "晚上好。", "嗯...", "你好。" }
                                 : new[] { "Good evening.", "Hello.", "Greetings." };
                         }
-                        
+
                         string greeting = pool[StardewValley.Game1.random.Next(pool.Length)];
 
                         __instance.showTextAboveHead(greeting);
@@ -163,12 +229,6 @@ namespace ValleytalkReborn
                         return false;
                     }
                 }
-            }
-
-            if (ModEntry.Config.EnableVanillaFirst)
-            {
-                if (__instance.CurrentDialogue != null && __instance.CurrentDialogue.Count > 0)
-                    return true;
             }
 
             if (fsc != null) fsc.TalkedToToday = true;
