@@ -84,11 +84,97 @@ namespace ValleytalkReborn
                 return true;
 
             // ══════════════════════════════════════════════
-            // ★ 核心优先：原版对话优先逻辑 (必须在 InfiniteChat 之前检查与放行)
+            // 🌟【健壮性修复】：确保未结识的 NPC（如克莱尔）在玩家的好感度字典中已建档，
+            // 彻底防止因 TryGetValue 失败导致 fsc 为 null，进而引发无限对话拦截失效的 Bug
             // ══════════════════════════════════════════════
-            if (ModEntry.Config.EnableVanillaFirst)
+            if (!who.friendshipData.ContainsKey(__instance.Name))
             {
-                if (__instance.CurrentDialogue != null && __instance.CurrentDialogue.Count > 0)
+                who.friendshipData.Add(__instance.Name, new Friendship());
+            }
+            var fsc = who.friendshipData[__instance.Name];
+
+            // ══════════════════════════════════════════════
+            // ★★★ 第二道防线：将"已交谈"拦截前置 ★★★
+            // 在检查原版对话之前，先判断是否已聊过天且未开启无限对话
+            // ══════════════════════════════════════════════
+            if (fsc.TalkedToToday && !ModEntry.Config.EnableInfiniteChat)
+            {
+                bool isRomantic = fsc.IsMarried() || fsc.IsDating() || fsc.IsEngaged();
+
+                if (isRomantic)
+                {
+                    if (__instance.hasBeenKissedToday.Value)
+                    {
+                        // 今天已通过原版互动亲过，只显示爱心表情，不再触发对话
+                        __instance.doEmote(20);
+                        __result = true;
+                        return false;
+                    }
+                    // 配偶/恋人：放行让原版处理亲亲逻辑，不拦截
+                    return true;
+                }
+                else
+                {
+                    // 非恋爱关系且今天已聊过：只显示头顶气泡，不弹对话框
+                    bool isChinese = StardewValley.LocalizedContentManager.CurrentLanguageCode == StardewValley.LocalizedContentManager.LanguageCode.zh;
+                    int timeOfDay = StardewValley.Game1.timeOfDay;
+
+                    string[] pool;
+
+                    if (timeOfDay < 1200)
+                    {
+                        pool = isChinese
+                            ? new[] { "早上好。", "嗯...", "你好。" }
+                            : new[] { "Good morning.", "Hello.", "Greetings." };
+                    }
+                    else if (timeOfDay < 1800)
+                    {
+                        pool = isChinese
+                            ? new[] { "下午好。", "嗯...", "你好。" }
+                            : new[] { "Good afternoon.", "Hello.", "Greetings." };
+                    }
+                    else
+                    {
+                        pool = isChinese
+                            ? new[] { "晚上好。", "嗯...", "你好。" }
+                            : new[] { "Good evening.", "Hello.", "Greetings." };
+                    }
+
+                    string greeting = pool[StardewValley.Game1.random.Next(pool.Length)];
+
+                    __instance.showTextAboveHead(greeting);
+                    __result = true;
+                    return false;
+                }
+            }
+
+            // ══════════════════════════════════════════════
+            // ★ 核心优先：原版对话优先逻辑 (清洗 $$$%%% 脏数据并放行有效原版对白)
+            // ══════════════════════════════════════════════
+            if (__instance.CurrentDialogue != null && __instance.CurrentDialogue.Count > 0)
+            {
+                // 🌟 第一道防线：清洗栈顶的 $$$%%% 幽灵脏数据
+                // 如果栈顶残留的是生成标签或跳过标签，直接弹出销毁，防止原版直接把它画在屏幕上！
+                while (__instance.CurrentDialogue.Count > 0)
+                {
+                    var peek = __instance.CurrentDialogue.Peek();
+                    var peekText = peek?.dialogues?.FirstOrDefault()?.Text;
+                    if (peekText != null && (
+                        peekText == SldConstants.DialogueGenerationTag ||
+                        peekText.Contains("$$$%%%") ||
+                        peekText.StartsWith(SldConstants.DialogueSkipTag) ||
+                        peekText.StartsWith("skip#")))
+                    {
+                        __instance.CurrentDialogue.Pop(); // 丢弃幽灵脏数据
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                // 清洗完毕后，若依然存在真正的原版剧情/日常台词，且开启了 VanillaFirst，则放行原版
+                if (ModEntry.Config.EnableVanillaFirst && __instance.CurrentDialogue.Count > 0)
                 {
                     try
                     {
@@ -99,10 +185,7 @@ namespace ValleytalkReborn
                                 .Where(x => x != null && !string.IsNullOrWhiteSpace(x.Text))
                                 .Select(x => x.Text));
 
-                            if (!string.IsNullOrWhiteSpace(rawText) &&
-                                !rawText.Contains(SldConstants.DialogueGenerationTag) &&
-                                !rawText.Contains(SldConstants.DialogueSkipTag) &&
-                                !rawText.StartsWith("skip#"))
+                            if (!string.IsNullOrWhiteSpace(rawText))
                             {
                                 var cleanedText = DialogueHistoryManager.SanitizeForStorage(rawText);
                                 if (!string.IsNullOrWhiteSpace(cleanedText))
@@ -152,15 +235,15 @@ namespace ValleytalkReborn
             // ══════════════════════════════════════════════
             if (ModEntry.Config.EnableInfiniteChat && who.IsLocalPlayer)
             {
-                if (who.friendshipData.TryGetValue(__instance.Name, out var fs) && fs.TalkedToToday)
+                if (fsc.TalkedToToday)
                 {
-                    fs.TalkedToToday = false;
+                    fsc.TalkedToToday = false;
                     InfiniteChatTracker.SetContinuing(__instance.Name);
                 }
             }
 
             // ══════════════════════════════════════════════
-            // 分支 C：普通点击 → 触发 AI 对话 / 亲吻与防死锁分支
+            // 分支 C：普通点击 → 触发 AI 对话与防死锁分支
             // ══════════════════════════════════════════════
             if (__instance.hasTemporaryMessageAvailable()) return true;
             if (__instance.currentMarriageDialogue.Count > 0) return true;
@@ -179,59 +262,7 @@ namespace ValleytalkReborn
             if (HasVanillaSpecialAction(__instance))
                 return true;
 
-            if (who.friendshipData.TryGetValue(__instance.Name, out var fsc) && fsc.TalkedToToday)
-            {
-                if (!ModEntry.Config.EnableInfiniteChat)
-                {
-                    bool isRomantic = fsc.IsMarried() || fsc.IsDating() || fsc.IsEngaged();
-
-                    if (isRomantic)
-                    {
-                        if (__instance.hasBeenKissedToday.Value)
-                        {
-                            // 今天已通过原版互动亲过，只显示爱心表情，不再触发对话
-                            __instance.doEmote(20);
-                            __result = true;
-                            return false;
-                        }
-                        return true;
-                    }
-                    else
-                    {
-                        bool isChinese = StardewValley.LocalizedContentManager.CurrentLanguageCode == StardewValley.LocalizedContentManager.LanguageCode.zh;
-                        int timeOfDay = StardewValley.Game1.timeOfDay;
-
-                        string[] pool;
-
-                        if (timeOfDay < 1200) // 上午 (6:00 - 11:50)
-                        {
-                            pool = isChinese
-                                ? new[] { "早上好。", "嗯...", "你好。" }
-                                : new[] { "Good morning.", "Hello.", "Greetings." };
-                        }
-                        else if (timeOfDay < 1800) // 下午 (12:00 - 17:50)
-                        {
-                            pool = isChinese
-                                ? new[] { "下午好。", "嗯...", "你好。" }
-                                : new[] { "Good afternoon.", "Hello.", "Greetings." };
-                        }
-                        else // 傍晚与夜间 (18:00 - 26:00)
-                        {
-                            pool = isChinese
-                                ? new[] { "晚上好。", "嗯...", "你好。" }
-                                : new[] { "Good evening.", "Hello.", "Greetings." };
-                        }
-
-                        string greeting = pool[StardewValley.Game1.random.Next(pool.Length)];
-
-                        __instance.showTextAboveHead(greeting);
-                        __result = true;
-                        return false;
-                    }
-                }
-            }
-
-            if (fsc != null) fsc.TalkedToToday = true;
+            fsc.TalkedToToday = true;
 
             __instance.CurrentDialogue.Clear();
 
@@ -246,8 +277,16 @@ namespace ValleytalkReborn
             if (!accepted)
                 return true;
 
+            // 🌟 立即定格 NPC 并面向玩家
+            __instance.Halt();
+            __instance.movementPause = 20;
+            __instance.facePlayer(who);
+
+            // 🌟 使用纯空格占位，界面完全透明隐形，且触发 IsNullOrWhiteSpace 保护，绝不入库
+            AsyncBuilder.SuppressHistory = true;
             Game1.activeClickableMenu = new StardewValley.Menus.DialogueBox(
                 new Dialogue(__instance, "", "   "));
+            AsyncBuilder.SuppressHistory = false;
 
             ModEntry.SHelper?.Input?.Suppress(SButton.MouseRight);
             ModEntry.SHelper?.Input?.Suppress(SButton.MouseLeft);

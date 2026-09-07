@@ -20,12 +20,8 @@ namespace ValleytalkReborn
                 return true;
             }
 
-            if (translationKey.StartsWith("Characters\\Dialogue\\rainy:"))
-            {
-                __result = new Dialogue(speaker, translationKey, SldConstants.DialogueGenerationTag);
-                return false;
-            }
-
+            // 🌟 核心修复：放行雨天键值（不再强行拦截返回 $$$%%% 假对话）。
+            // 保证 VanillaFirst 能正常读取真实雨天文本注入上下文，彻底消灭雨天与农舍偶现的 $$$%%% 乱码。
             return true;
         }
     }

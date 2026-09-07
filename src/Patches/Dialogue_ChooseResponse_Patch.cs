@@ -33,10 +33,13 @@ namespace ValleytalkReborn
                 return true;
             }
 
-            // 处理静默选项
+            // 🌟【精准修复】：记录为明确的行为动作，避免被 DialogueBuilder 当作异常符号过滤，
+            // 同时赋予大模型真实的“冷场/沉默”剧情感知
             if (response.responseKey == $"{SldConstants.DialogueKeyPrefix}Silent")
             {
-                DialogueHistoryManager.Instance.RecordPlayerDialogue(__instance.speaker.Name, "...");
+                bool isZh = LocalizedContentManager.CurrentLanguageCode.ToString().StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+                string silentText = isZh ? "*保持沉默，什么也没说*" : "*remains silent*";
+                DialogueHistoryManager.Instance.RecordPlayerDialogue(__instance.speaker.Name, silentText);
                 __result = true;
                 return false;
             }
@@ -74,7 +77,7 @@ namespace ValleytalkReborn
 
             string farmerResponse = response.responseText ?? string.Empty;
 
-// 【修复】确保记录前清理玩家选项中的 @ 符号
+            // 【修复】确保记录前清理玩家选项中的 @ 符号
             if (farmerResponse.Contains('@') && Game1.player != null)
             {
                 farmerResponse = farmerResponse.Replace("@", Game1.player.Name);

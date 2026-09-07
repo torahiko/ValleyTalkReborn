@@ -53,18 +53,9 @@ namespace ValleytalkReborn
                 return true; // Use default behavior
             }
 
-            if (!ModEntry.Config.EnableVanillaFirst)
-            {
-                var currentLocationName = Game1.player?.currentLocation?.Name;
-                if (currentLocationName == "Saloon" || currentLocationName == "IslandSouth")
-                {
-                    var newDialogue = new Dialogue(__instance, currentLocationName, SldConstants.DialogueGenerationTag);
-                    __instance.CurrentDialogue.Push(newDialogue);
-                    __result = true;
-                    return false;
-                }
-            }
-
+            // 🌟 核心修复：移除原先向 CurrentDialogue.Push(DialogueGenerationTag) 强塞 $$$%%% 假对象的逻辑。
+            // 避免污染 NPC 堆栈并在农舍等场景弹出 $$$%%%。
+            // AI 对话全权由 NPC_CheckAction_Patch 统一调度。
             return true;
         }
     }
