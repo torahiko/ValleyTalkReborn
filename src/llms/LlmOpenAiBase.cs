@@ -420,7 +420,10 @@ namespace ValleytalkReborn
                 requestBody["top_p"] = 0.9;
             }
 
-            if (includeTools && ModEntry.Config.UseNativeToolCalling)
+            // 推理模型（deepseek-r1 非蒸馏版、早期 o1-preview 等）官方明确不支持 tools
+            // 参数，塞了会被服务端直接拒绝（常见 400 unrecognized parameter）。
+            // 复用上面已有的 reasoningModel 探测结果做排除，不再额外维护一份模型名单。
+            if (includeTools && !reasoningModel && ModEntry.Config.UseNativeToolCalling)
             {
                 requestBody["tools"] = AgentToolDefinitions.GetOpenAiToolsArray();
             }

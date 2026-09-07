@@ -79,6 +79,8 @@ internal class LlmClaude : Llm, IGetModelNames
     public override string ExtraInstructions => "";
     public override bool IsHighlySensoredModel => true;
 
+    public override bool SupportsStreamingWithTools => true;
+
     internal override async Task<LlmResponse> RunInference(
         string systemPromptString, string gameCacheString, string npcCacheString, 
         string promptString, string responseStart = "", int n_predict = 2048, 
@@ -206,6 +208,10 @@ internal class LlmClaude : Llm, IGetModelNames
         if (AndroidHelper.IsAndroid && !NetworkHelper.IsNetworkAvailable())
             throw new InvalidOperationException("Network not available");
 
+        var tools = ModEntry.Config.UseNativeToolCalling
+            ? (object)AgentToolDefinitions.GetAnthropicToolsArray()
+            : null;
+
         var inputString = JsonConvert.SerializeObject(new
         {
             thinking = new { type = "disabled" },
@@ -221,10 +227,14 @@ internal class LlmClaude : Llm, IGetModelNames
                 {
                     new { role = "user", content = promptString },
                     new { role = "assistant", content = responseStart }
-                }
+                },
+            tools
         });
 
         var fullText = new StringBuilder();
+
+        var streamedToolCalls = new List<ToolCallData>();
+        var toolBlocksByIndex = new Dictionary<int, (string name, StringBuilder args)>();
 
         try
         {
@@ -259,15 +269,70 @@ internal class LlmClaude : Llm, IGetModelNames
                 try
                 {
                     var json = JObject.Parse(data);
-                    if (json["type"]?.ToString() != "content_block_delta") continue;
-                    var delta = json["delta"]?["text"]?.ToString();
-                    if (!string.IsNullOrEmpty(delta))
+
+                    var eventType = json["type"]?.ToString();
+
+                    if (eventType == "content_block_start")
                     {
-                        fullText.Append(delta);
-                        onToken(delta);
+                        var blockType = json["content_block"]?["type"]?.ToString();
+                        if (blockType == "tool_use")
+                        {
+                            int index = json["index"]?.Value<int>() ?? 0;
+                            var blockName = json["content_block"]?["name"]?.ToString();
+                            toolBlocksByIndex[index] = (blockName ?? "", new StringBuilder());
+                        }
+                        continue;
+                    }
+
+                    if (eventType == "content_block_delta")
+                    {
+                        var delta = json["delta"];
+                        if (delta == null) continue;
+
+                        var deltaType = delta["type"]?.ToString();
+                        if (deltaType == "text_delta")
+                        {
+                            var text = delta["text"]?.ToString();
+                            if (!string.IsNullOrEmpty(text))
+                            {
+                                fullText.Append(text);
+                                onToken(text);
+                            }
+                        }
+                        else if (deltaType == "input_json_delta")
+                        {
+                            int index = json["index"]?.Value<int>() ?? 0;
+                            var partialJson = delta["partial_json"]?.ToString();
+                            if (!string.IsNullOrEmpty(partialJson) && toolBlocksByIndex.TryGetValue(index, out var entry))
+                            {
+                                entry.args.Append(partialJson);
+                            }
+                        }
+                        continue;
+                    }
+
+                    if (eventType == "content_block_stop")
+                    {
+                        int index = json["index"]?.Value<int>() ?? 0;
+                        if (toolBlocksByIndex.TryGetValue(index, out var entry))
+                        {
+                            streamedToolCalls.Add(new ToolCallData
+                            {
+                                FunctionName = entry.name,
+                                JsonArguments = entry.args.ToString()
+                            });
+                            toolBlocksByIndex.Remove(index);
+                        }
                     }
                 }
                 catch { }
+            }
+
+            if (streamedToolCalls.Count > 0)
+            {
+                var toolResp = new LlmResponse(fullText.ToString(), true);
+                toolResp.ToolCalls.AddRange(streamedToolCalls);
+                return toolResp;
             }
 
             return new LlmResponse(fullText.ToString(), fullText.Length > 0);

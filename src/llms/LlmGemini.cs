@@ -31,6 +31,8 @@ internal class LlmGemini : Llm, IGetModelNames
     public override string ExtraInstructions => "";
     public override bool IsHighlySensoredModel => false;
 
+    public override bool SupportsStreamingWithTools => true;
+
     public async Task<string[]> GetModelNamesAsync()
     {
         try
@@ -219,6 +221,10 @@ internal class LlmGemini : Llm, IGetModelNames
         if (AndroidHelper.IsAndroid && !NetworkHelper.IsNetworkAvailable())
             throw new InvalidOperationException("Network not available");
 
+        var toolsPayload = ModEntry.Config.UseNativeToolCalling
+            ? new[] { new { functionDeclarations = AgentToolDefinitions.GetGeminiToolsArray() } }
+            : null;
+
         bool isGemmaModel = !string.IsNullOrEmpty(modelName) && modelName.IndexOf("gemma", StringComparison.OrdinalIgnoreCase) >= 0;
 
         object generationConfig = isGemmaModel
@@ -234,13 +240,16 @@ internal class LlmGemini : Llm, IGetModelNames
             },
             system_instruction = new { parts = new[] { new { text = systemPromptString } } },
             contents = new[] { new { parts = new[] { new { text = gameCacheString + npcCacheString + promptString } } } },
-            generationConfig
+            generationConfig,
+            tools = toolsPayload
         });
 
         var streamUrl = $"https://generativelanguage.googleapis.com/v1beta/models/" +
                         $"{modelName}:streamGenerateContent?alt=sse&key={apiKey}";
 
         var fullText = new StringBuilder();
+
+        var streamedToolCalls = new List<ToolCallData>();
 
         try
         {
@@ -274,14 +283,40 @@ internal class LlmGemini : Llm, IGetModelNames
                     var json = JObject.Parse(data);
                     var candidates = json["candidates"] as JArray;
                     var parts = candidates?[0]?["content"]?["parts"] as JArray;
-                    var text = parts?[0]?["text"]?.ToString();
-                    if (!string.IsNullOrEmpty(text))
+
+                    if (parts == null) continue;
+
+                    foreach (var part in parts)
                     {
-                        fullText.Append(text);
-                        onToken(text);
+                        var funcCallToken = part["functionCall"];
+                        if (funcCallToken != null)
+                        {
+                            var funcName = funcCallToken["name"]?.ToString();
+                            var argsToken = funcCallToken["args"];
+                            var funcArgs = argsToken != null ? argsToken.ToString(Formatting.None) : "{}";
+                            if (!string.IsNullOrEmpty(funcName))
+                            {
+                                streamedToolCalls.Add(new ToolCallData { FunctionName = funcName, JsonArguments = funcArgs });
+                            }
+                            continue;
+                        }
+
+                        var text = part["text"]?.ToString();
+                        if (!string.IsNullOrEmpty(text))
+                        {
+                            fullText.Append(text);
+                            onToken(text);
+                        }
                     }
                 }
                 catch { }
+            }
+
+            if (streamedToolCalls.Count > 0)
+            {
+                var toolResp = new LlmResponse(fullText.ToString(), true);
+                toolResp.ToolCalls.AddRange(streamedToolCalls);
+                return toolResp;
             }
 
             return new LlmResponse(fullText.ToString(), fullText.Length > 0);

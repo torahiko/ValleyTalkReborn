@@ -154,13 +154,36 @@ public class LlmDialogueService
                 }
 
                 character.CurrentDialogueCts = null;
-                ModEntry.CancelButtonPluginInstance?.SetActiveCharacter(null);
+               ModEntry.CancelButtonPluginInstance?.SetActiveCharacter(null);
 
-                if (streamResult == null || !streamResult.IsSuccess
-                    || string.IsNullOrWhiteSpace(streamResult.Text))
+                if (streamResult == null || !streamResult.IsSuccess)
                     return new[] { "..." };
 
-                var processed = ProcessLines(streamResult.Text, character).ToArray();
+                var streamToolCalls = streamResult.ToolCalls;
+                if (streamToolCalls?.Count > 0)
+                {
+                    var npc = character.StardewNpc;
+                    foreach (var tool in streamToolCalls)
+                    {
+                        bool usedBubble = AgentToolDispatcher.DispatchToolCall(npc, tool.FunctionName, tool.JsonArguments);
+                        if (usedBubble) streamResult.UsedBubble = true;
+                    }
+                }
+
+                // speak_in_bubble 与对话框互斥：气泡模式下跳过文本输出（与非流式分支保持一致）
+                if (streamResult.UsedBubble)
+                    return Array.Empty<string>();
+
+                var streamDialogueText = streamResult.Text;
+                if (streamToolCalls?.Count > 0 && string.IsNullOrWhiteSpace(streamDialogueText))
+                {
+                    streamDialogueText = "- ...";
+                }
+
+                if (string.IsNullOrWhiteSpace(streamDialogueText))
+                    return new[] { "..." };
+
+                var processed = ProcessLines(streamDialogueText, character).ToArray();
 
                 if (!string.IsNullOrWhiteSpace(prompts.GiveGift) && processed.Length > 0)
                     processed[0] += $"[{prompts.GiveGift}]";
