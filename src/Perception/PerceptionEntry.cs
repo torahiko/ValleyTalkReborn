@@ -1,7 +1,12 @@
+using System;
+using System.Collections.Generic;
+
 namespace ValleytalkReborn;
 
 internal class PerceptionEntry
 {
+    private readonly object _entryLock = new object();
+
     public string Key { get; set; } = string.Empty;
     public string Template { get; set; } = string.Empty;
 
@@ -41,4 +46,38 @@ internal class PerceptionEntry
     /// True → already processed by nightly consolidation; skip during prompt injection the next day.
     /// </summary>
     public bool IsConsolidated { get; set; } = false;
+
+    /// <summary>
+    /// 记录已消费此事件的 NPC 名称集合（避免单例事件在多 NPC 旁观时相互踩踏）。
+    /// </summary>
+    public HashSet<string> ConsumedByNpcs { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// 判断该条目对指定 NPC 是否已被消费。
+    /// 若已被全局合并 (IsConsolidated) 或已被该 NPC 消费，则返回 true。
+    /// </summary>
+    public bool IsConsumedBy(string npcName)
+    {
+        if (IsConsolidated) return true;
+        if (string.IsNullOrEmpty(npcName)) return false;
+
+        lock (_entryLock)
+        {
+            return ConsumedByNpcs.Contains(npcName);
+        }
+    }
+
+    /// <summary>
+    /// 为指定 NPC 标记消费此条目。
+    /// </summary>
+    public void ConsumeFor(string npcName)
+    {
+        if (!string.IsNullOrEmpty(npcName))
+        {
+            lock (_entryLock)
+            {
+                ConsumedByNpcs.Add(npcName);
+            }
+        }
+    }
 }

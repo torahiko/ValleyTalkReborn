@@ -66,8 +66,6 @@
   "ui.thinking": "思考中...",
   "ui.cancelled": "请求已取消。",
   "configFetchHint": "请输入 API Key 并点击保存以获取可用模型列表。",
-  "configStreaming": "启用流式输出",
-  "configStreamingTooltip": "逐字实时显示 AI 的打字回复（仅适用于打字输入对话）。",
   "configDiableForCharacters": "对特定角色禁用",
   "configDiableForCharactersTooltip": "填入不启用本 Mod 的村民英文名，用逗号分隔，例如（\"Abigail,Leah,Sam\"）。",
   "configSectionKeybinds": "按键与控制设置",
@@ -76,8 +74,8 @@
   "Memory.AddWorldButton": "+ 添加世界记忆",
   "DialogueInput.DefaultTitleWithNpc": "与 {{npcName}} 对话",
   "configSectionAmbientDialogue": "环境对话与互动",
-  "configEnableBark": "启用角色冒泡吐槽 (Bark)",
-  "configEnableBarkTooltip": "NPC 会在玩家路过或跟随闲逛时，在头顶冒出心理独白气泡。",
-  "configEnableA2A": "启用 NPC 之间对话 (A2A)",
-  "configEnableA2ATooltip": "相遇的两个或多个 NPC 会驻足交谈，生成多轮动态互动与对话。"
+  "configEnableBark": "启用 NPC 随性碎碎念 (气泡闲聊)",
+  "configEnableBarkTooltip": "NPC 在路过、发呆或跟随你时，头顶会偶尔冒出切合当下场景的心声或碎碎念气泡。（会消耗少许Token）",
+  "configEnableA2A": "启用村民自主闲聊 (街头偶遇)",
+  "configEnableA2ATooltip": "当两个或多个 NPC 在路上或室内相遇时，会驻足停步互相攀谈、随性聊起日常。（会消耗少许Token）"
 }

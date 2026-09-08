@@ -66,8 +66,6 @@
   "ui.thinking": "Thinking...",
   "ui.cancelled": "Request cancelled.",
   "configFetchHint": "Enter your API Key and click 'Save' to fetch available models.",
-  "configStreaming": "Enable Streaming Output",
-  "configStreamingTooltip": "Display AI responses word-by-word in real time (typed chat only).",
   "configDiableForCharacters": "Disable for Specific Villagers",
   "configDiableForCharactersTooltip": "Comma-separated list of villager internal names to disable the mod for (e.g., \"Abigail,Leah,Sam\").",
   "configSectionKeybinds": "Keybinds & Controls",
@@ -76,8 +74,8 @@
   "Memory.AddWorldButton": "+ Add World Memory",
   "DialogueInput.DefaultTitleWithNpc": "Talk with {{npcName}}",
   "configSectionAmbientDialogue": "Ambient & NPC Interactions",
-  "configEnableBark": "Enable NPC Self-Talk (Barks)",
-  "configEnableBarkTooltip": "Allows nearby NPCs to display spontaneous overhead thought bubbles.",
-  "configEnableA2A": "Enable NPC-to-NPC Conversations (A2A)",
-  "configEnableA2ATooltip": "Allows NPCs who meet each other to engage in emergent dynamic conversations."
+  "configEnableBark": "Enable Ambient Overhead Chatter",
+  "configEnableBarkTooltip": "NPCs will occasionally mutter thoughts or react to their surroundings with overhead speech bubbles as you pass by. (Consumes a small amount of tokens)",
+  "configEnableA2A": "Enable NPC-to-NPC Banter",
+  "configEnableA2ATooltip": "When villagers cross paths, they will stop and have organic, multi-line conversations with each other. (Consumes a small amount of tokens)"
 }

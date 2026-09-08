@@ -61,38 +61,50 @@ internal static class PerceptionInjector
         var lines = new List<string>
         {
             isZh 
-                ? "[小镇背景传闻]（背景认知：仅在与农夫当前对话主题高度契合时顺带提及，优先响应农夫的发言。）"
-                : "[Town Gossip] (Background context: Only mention if directly relevant to the ongoing conversation.)"
+                ? "[小镇传闻]（小镇近期的日常谈资与背景印象）"
+                : "[Town Rumors] (Passive background information circulating around town)"
         };
 
-        var targetSnapshot = snapshots.FirstOrDefault(p => p.Key == "LifeEvent")
-                            ?? snapshots.FirstOrDefault();
-
-        foreach (var p in new[] { targetSnapshot }.Where(x => x != null))
+        string dayKey;
+        try
         {
-            if (p == null || string.IsNullOrWhiteSpace(p.Template)) continue;
+            dayKey = Game1.Date != null
+                ? Game1.Date.TotalDays.ToString()
+                : $"{Game1.year}-{Game1.season}-{Game1.dayOfMonth}";
+        }
+        catch
+        {
+            dayKey = "unknown-day";
+        }
 
-            string dayKey;
-            try
-            {
-                dayKey = Game1.Date != null
-                    ? Game1.Date.TotalDays.ToString()
-                    : $"{Game1.year}-{Game1.season}-{Game1.dayOfMonth}";
-            }
-            catch
-            {
-                dayKey = "unknown-day";
-            }
+        // 按优先级排队候选：优先 LifeEvent，其余按原顺序补上，
+        // 直到找到一条今天还没对该 NPC 提过的八卦为止。
+        var orderedCandidates = snapshots
+            .Where(p => p != null && !string.IsNullOrWhiteSpace(p.Template))
+            .OrderByDescending(p => p.Key == "LifeEvent")
+            .ToList();
 
-            string dedupeKey = $"{dayKey}:{npcName}:{p.Key ?? ""}:{p.Template}";
+        PerceptionEntry targetSnapshot = null;
+        string targetDedupeKey = null;
 
+        foreach (var candidate in orderedCandidates)
+        {
+            string dedupeKey = $"{dayKey}:{npcName}:{candidate.Key ?? ""}:{candidate.Template}";
+            if (_mentionedGossipKeys.Contains(dedupeKey))
+                continue; // 今天已经跟这个 NPC 提过这条八卦了，跳过
+
+            targetSnapshot   = candidate;
+            targetDedupeKey  = dedupeKey;
+            break;
+        }
+
+        if (targetSnapshot != null)
+        {
             if (_mentionedGossipKeys.Count > 10000)
                 _mentionedGossipKeys.Clear();
 
-            if (!_mentionedGossipKeys.Add(dedupeKey))
-                continue;
-
-            lines.Add($"- {p.Template}");
+            _mentionedGossipKeys.Add(targetDedupeKey);
+            lines.Add($"- {targetSnapshot.Template}");
         }
 
         return lines.Count > 1 ? string.Join("\n", lines) : string.Empty;
@@ -112,7 +124,7 @@ internal static class PerceptionInjector
                 && p.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        // 2. 弱感知：非礼物事件 + 旁观别人收到礼物的目击事件（核心修复：不再排斥旁观送礼）
+        // 2. 弱感知：非礼物事件 + 旁观别人收到礼物的目击事件
         var otherPerceptions = perceptions
             .Where(p => p?.Key != "Gift" || 
                        (p.Key == "Gift" && !string.Equals(p.NpcName, npcName, StringComparison.OrdinalIgnoreCase)))
@@ -124,8 +136,8 @@ internal static class PerceptionInjector
         if (giftPerceptions.Any())
         {
             lines.Add(isZh
-                ? "[礼物上下文]（强制要求：你刚刚收到了以下礼物，必须在本次回应中对此作出真实反应。）"
-                : "[Gift Context] (REQUIRED: You just received the following gift. You MUST react to it in your response.)");
+                ? "[即时事件] 你刚刚收到了玩家递来的礼物，请对此作出符合人设的回应："
+                : "[Immediate Event] You just received a gift from the player. Respond naturally according to your character:");
 
             foreach (var p in giftPerceptions)
             {
@@ -142,14 +154,16 @@ internal static class PerceptionInjector
 
                 lines.Add(entry);
             }
+
+            PerceptionManager.Instance.ConsumePerceptions(npcName, giftPerceptions);
         }
 
         // ── 其他近距离观察：弱感知形式 ──
         if (otherPerceptions.Any())
         {
             lines.Add(isZh
-                ? "[近期近距离观察]（潜意识印象：若与当前话题无关请忽略，切勿主动生硬开启该话题。）"
-                : "[NPC's Recent Observations] (Subconscious context: Ignore if irrelevant to the farmer's current topic.)");
+                ? "[目击到的近况与现场细节]"
+                : "[Observed Context]");
 
             foreach (var p in otherPerceptions)
             {
@@ -158,17 +172,57 @@ internal static class PerceptionInjector
                 if (p.Key == "Eat" && !string.IsNullOrEmpty(p.ItemId))
                     line += BuildGiftTasteAnnotation(npcName, p.ItemId, isZh);
                 lines.Add(line);
+
+                // ★ 关键防复读：随身物品一旦真正进入当前 NPC 的对话 Prompt，标记为当日已阅
+                if (p.Key == "PlayerActiveItem" && !string.IsNullOrEmpty(p.ItemId))
+                {
+                    PerceptionManager.Instance.MarkItemNoticedToday(npcName, p.ItemId);
+                }
+            }
+
+            // 核心消费：仅消费真正注入了当前 Prompt 的瞬态动作事件（Eat, Fish, Chop 等）
+            var transientActions = otherPerceptions
+                .Where(p => IsTransientAction(p.Key))
+                .ToList();
+
+            if (transientActions.Any())
+            {
+                PerceptionManager.Instance.ConsumePerceptions(npcName, transientActions);
             }
         }
 
         return lines.Count > 1 ? string.Join("\n", lines) : string.Empty;
     }
 
+    /// <summary>
+    /// 判断事件是否为单次瞬态动作（注入后立即对该 NPC 消费，避免同一次对话连续复读）。
+    /// </summary>
+    private static bool IsTransientAction(string key)
+    {
+        if (string.IsNullOrEmpty(key)) return false;
+
+        // 玩家自身持续身体/装备/精神状态不属于瞬态动作，保持自然存活
+        if (key.StartsWith("Player", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        return key switch
+        {
+            "Gift"          => true, // 旁观他人收礼
+            "Eat"           => true, // 吃东西
+            "Fish"          => true, // 钓鱼
+            "LegendaryFish" => true, // 钓上传说鱼的现场目击
+            "Chop"          => true, // 砍树
+            "Place"         => true, // 放置物品
+            "Harvest"       => true, // 收获作物
+            "Talk"          => true, // 与他人交谈
+            _               => false
+        };
+    }
+
     private static string ResolveTemplate(PerceptionEntry entry, string npcName, bool isZh)
     {
         if (entry.Key != "Gift") return entry.Template;
 
-        // 如果不是接收者，直接返回旁观者视角的 Template（例如："农夫递给了【海莉】一件礼物：【向日葵】。"）
         bool isRecipient = !string.IsNullOrEmpty(entry.NpcName)
             && entry.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase);
 
@@ -212,11 +266,11 @@ internal static class PerceptionInjector
 
             return npc.getGiftTasteForThisItem(item) switch
             {
-                NPC.gift_taste_love    => isZh ? "（最爱物品，请表现出明显的惊喜与喜悦。）"  : " (Loved item — react with clear delight and gratitude.)",
-                NPC.gift_taste_like    => isZh ? "（喜欢的物品，语气温暖积极。）"           : " (Liked item — warm and appreciative tone.)",
-                NPC.gift_taste_dislike => isZh ? "（不喜欢的物品，可礼貌委婉地表达遗憾。）"   : " (Disliked item — politely hint at disappointment.)",
-                NPC.gift_taste_hate    => isZh ? "（讨厌的物品，可表现出明显的不适或困惑。）"  : " (Hated item — react with clear discomfort or confusion.)",
-                _                      => isZh ? "（普通物品，平淡接受即可。）"              : " (Neutral item — accept graciously without strong reaction.)",
+                NPC.gift_taste_love    => isZh ? "（最爱的礼物）" : " (Loved gift)",
+                NPC.gift_taste_like    => isZh ? "（喜欢的礼物）" : " (Liked gift)",
+                NPC.gift_taste_dislike => isZh ? "（不喜欢的礼物）" : " (Disliked gift)",
+                NPC.gift_taste_hate    => isZh ? "（讨厌的礼物）" : " (Hated gift)",
+                _                      => isZh ? "（普通礼物）" : " (Neutral gift)",
             };
         }
         catch

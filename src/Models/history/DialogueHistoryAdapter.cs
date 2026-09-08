@@ -15,9 +15,12 @@
 
         public string Format(string npcName)
         {
+            bool isZh = IsChinese();
+            string defaultFarmerLabel = isZh ? "农夫" : "The Farmer";
+
             string speakerLabel = _entry.SpeakerType switch
             {
-                SpeakerType.Player => Util.GetString("generalFarmerLabel") ?? "农夫",
+                SpeakerType.Player => Util.GetString("generalFarmerLabel") ?? defaultFarmerLabel,
                 SpeakerType.System => "***",
                 _ => npcName
             };
@@ -27,17 +30,33 @@
             // Convert raw system gift log into natural memory from NPC's perspective
             if (_entry.SpeakerType == SpeakerType.System && !string.IsNullOrEmpty(_entry.GiftName))
             {
-                string farmer = Util.GetString("generalFarmerLabel") ?? "农夫";
-                string tasteDesc = _entry.GiftTaste switch
-                {
-                    0 => "你非常喜欢，甚至爱不释手",
-                    2 => "你挺喜欢的，心里很温暖",
-                    4 => "你不太喜欢，但还是收下了",
-                    6 => "你非常讨厌这个物品",
-                    _ => "你平淡地收下了"
-                };
+                string farmer = Util.GetString("generalFarmerLabel") ?? defaultFarmerLabel;
 
-                return $"- {farmer}送了你一份礼物：[{_entry.GiftName}]（{tasteDesc}）。";
+                string tasteDesc;
+                if (isZh)
+                {
+                    tasteDesc = _entry.GiftTaste switch
+                    {
+                        0 => "你非常喜欢",
+                        2 => "你挺喜欢的",
+                        4 => "你不太喜欢",
+                        6 => "你非常讨厌这个物品",
+                        _ => "你平淡地收下了"
+                    };
+                    return $"- {farmer}送了你一份礼物：[{_entry.GiftName}]（{tasteDesc}）。";
+                }
+                else
+                {
+                    tasteDesc = _entry.GiftTaste switch
+                    {
+                        0 => "you loved it",
+                        2 => "you liked it",
+                        4 => "you disliked it",
+                        6 => "you hated it",
+                        _ => "you felt neutral about it"
+                    };
+                    return $"- {farmer} gave you a gift: [{_entry.GiftName}] ({tasteDesc}).";
+                }
             }
 
             return $"- {speakerLabel}: {text}";
@@ -45,9 +64,7 @@
 
         public static string GetFuzzyTime(StardewTime entryTime, StardewTime now)
         {
-            bool isZh = LocalizedContentManager.CurrentLanguageCode
-                .ToString()
-                .StartsWith("zh", System.StringComparison.OrdinalIgnoreCase);
+            bool isZh = IsChinese();
 
             int dayDiff = TotalDays(now) - TotalDays(entryTime);
             if (dayDiff < 0) dayDiff = 0;
@@ -75,6 +92,13 @@
             if (dayDiff <= 28)
                 return isZh ? "本季度早些时候" : "Earlier this season";
             return isZh ? "很久以前" : "A long time ago";
+        }
+
+        private static bool IsChinese()
+        {
+            return LocalizedContentManager.CurrentLanguageCode
+                .ToString()
+                .StartsWith("zh", System.StringComparison.OrdinalIgnoreCase);
         }
 
         private static int ToTotalMinutes(int timeOfDay)

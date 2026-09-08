@@ -53,7 +53,7 @@ internal static class PolyamorySweetLoveBridge
                 _available = true;
 
                 ModEntry.SMonitor?.Log(
-                    "[PolyBridge] PolyamorySweetLove 已检测到，多角恋关系判断已启用。",
+                    "[PolyBridge] PolyamorySweetLove已检测到，多角恋关系判断已启用。",
                     LogLevel.Debug);
             }
         }
