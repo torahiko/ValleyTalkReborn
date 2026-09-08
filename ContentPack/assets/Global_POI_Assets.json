@@ -1,0 +1,410 @@
+{
+  "Farm_Morning": {
+    "MapName": "Farm",
+    "TargetTile": { "X": 0, "Y": 0 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny", "Rainy", "Snowy", "Stormy"],
+      "TimeRange": [700, 1100]
+    },
+    "StayMinutes": 90,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "spending the morning at home on the farm, tending to the animals and enjoying a gentle start to the day"
+  },
+  "Farm_Afternoon": {
+    "MapName": "Farm",
+    "TargetTile": { "X": 0, "Y": 0 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny", "Rainy", "Snowy", "Stormy"],
+      "TimeRange": [1200, 1800]
+    },
+    "StayMinutes": 120,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "relaxing around the farm, taking in the peaceful home atmosphere while waiting for your return"
+  },
+  "Farm_Evening": {
+    "MapName": "Farm",
+    "TargetTile": { "X": 0, "Y": 0 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny", "Rainy", "Snowy", "Stormy"],
+      "TimeRange": [1600, 2000]
+    },
+    "StayMinutes": 90,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "resting near the warm porch of the farmhouse, watching the evening settle over the valley"
+  },
+  "Farm_Rainy": {
+    "MapName": "Farm",
+    "TargetTile": { "X": 0, "Y": 0 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Rainy", "Stormy"],
+      "TimeRange": [700, 2000]
+    },
+    "StayMinutes": 180,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "staying home all day cozy indoors away from the rain, keeping busy around the farmhouse"
+  },
+  "Saloon_Arcade": {
+    "MapName": "Saloon",
+    "TargetTile": { "X": 25, "Y": 21 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny", "Rainy", "Snowy", "Stormy"],
+      "TimeRange": [1200, 2300]
+    },
+    "StayMinutes": 120,
+    "CsharpAnimation": "PlayArcade",
+    "DescriptionForLLM": "playing the Journey of the Prairie King arcade machine at the Stardrop Saloon"
+  },
+  "Saloon_Bar": {
+    "MapName": "Saloon",
+    "TargetTile": { "X": 10, "Y": 18 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny", "Rainy", "Snowy", "Stormy"],
+      "TimeRange": [1200, 2300]
+    },
+    "StayMinutes": 150,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "relaxing with a refreshing drink at the bar in the Stardrop Saloon"
+  },
+  "Saloon_Table": {
+    "MapName": "Saloon",
+    "TargetTile": { "X": 17, "Y": 21 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny", "Rainy", "Snowy", "Stormy"],
+      "TimeRange": [1200, 2200]
+    },
+    "StayMinutes": 120,
+    "CsharpAnimation": "SitOnBench",
+    "DescriptionForLLM": "sitting comfortably at a dining table in the saloon, enjoying a hot meal and town chatter"
+  },
+  "Beach_Shore": {
+    "MapName": "Beach",
+    "TargetTile": { "X": 35, "Y": 28 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny"],
+      "TimeRange": [800, 1800]
+    },
+    "StayMinutes": 90,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "walking along the beach shoreline, enjoying the fresh ocean breeze"
+  },
+  "Beach_Pier": {
+    "MapName": "Beach",
+    "TargetTile": { "X": 81, "Y": 14 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny"],
+      "TimeRange": [700, 1900]
+    },
+    "StayMinutes": 120,
+    "CsharpAnimation": "FishingPose",
+    "DescriptionForLLM": "sitting quietly on the wooden pier at the beach, watching the ocean waves"
+  },
+  "Beach_Rain": {
+    "MapName": "Beach",
+    "TargetTile": { "X": 49, "Y": 11 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Rainy", "Stormy"],
+      "TimeRange": [900, 1900]
+    },
+    "StayMinutes": 90,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "standing by the rainy beach near the docks, watching storm waves crash against the shoreline"
+  },
+  "Forest_Path": {
+    "MapName": "Forest",
+    "TargetTile": { "X": 30, "Y": 20 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny"],
+      "TimeRange": [800, 1700]
+    },
+    "StayMinutes": 90,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "taking a peaceful nature walk through Cindersap Forest"
+  },
+  "Forest_River": {
+    "MapName": "Forest",
+    "TargetTile": { "X": 72, "Y": 19 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall"],
+      "AllowedWeather": ["Sunny", "Rainy"],
+      "TimeRange": [800, 1800]
+    },
+    "StayMinutes": 90,
+    "CsharpAnimation": "FishingPose",
+    "DescriptionForLLM": "relaxing by the forest riverbank, listening to the flow of water among the trees"
+  },
+  "Mountain_Lake": {
+    "MapName": "Mountain",
+    "TargetTile": { "X": 30, "Y": 20 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny", "Rainy", "Snowy"],
+      "TimeRange": [700, 1900]
+    },
+    "StayMinutes": 120,
+    "CsharpAnimation": "FishingPose",
+    "DescriptionForLLM": "fishing quietly by the serene mountain lake"
+  },
+  "Mine_Entrance": {
+    "MapName": "Mine",
+    "TargetTile": { "X": 18, "Y": 13 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny", "Rainy", "Snowy", "Stormy"],
+      "TimeRange": [900, 1900]
+    },
+    "StayMinutes": 90,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "exploring the eerie entrance of the mountain mines, examining cool stone and ore fragments"
+  },
+  "Town_Bench": {
+    "MapName": "Town",
+    "TargetTile": { "X": 49, "Y": 16 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny"],
+      "TimeRange": [900, 1700]
+    },
+    "StayMinutes": 90,
+    "CsharpAnimation": "SitOnBench",
+    "DescriptionForLLM": "sitting comfortably on a bench in the town square, watching daily village life go by"
+  },
+  "Pierre_Shop": {
+    "MapName": "SeedShop",
+    "TargetTile": { "X": 4, "Y": 19 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny", "Rainy", "Snowy"],
+      "TimeRange": [900, 1700]
+    },
+    "StayMinutes": 60,
+    "CsharpAnimation": "BrowseShop",
+    "DescriptionForLLM": "browsing fresh seeds and household goods inside Pierre's General Store"
+  },
+  "Pierre_Altar": {
+    "MapName": "SeedShop",
+    "TargetTile": { "X": 22, "Y": 5 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny", "Rainy", "Snowy", "Stormy"],
+      "TimeRange": [900, 1700]
+    },
+    "StayMinutes": 60,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "finding a quiet moment of reflection near the Yoba altar room inside Pierre's store"
+  },
+  "Library": {
+    "MapName": "ArchaeologyHouse",
+    "TargetTile": { "X": 8, "Y": 8 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny", "Rainy", "Snowy", "Stormy"],
+      "TimeRange": [900, 1700]
+    },
+    "StayMinutes": 120,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "reading and studying quietly at the Pelican Town library and museum"
+  },
+  "Library_Study": {
+    "MapName": "ArchaeologyHouse",
+    "TargetTile": { "X": 17, "Y": 9 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny", "Rainy", "Snowy", "Stormy"],
+      "TimeRange": [900, 1700]
+    },
+    "StayMinutes": 120,
+    "CsharpAnimation": "SitOnBench",
+    "DescriptionForLLM": "sitting at the library study table, focused intently on an intriguing book"
+  },
+  "Graveyard": {
+    "MapName": "Town",
+    "TargetTile": { "X": 77, "Y": 17 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny", "Rainy", "Snowy"],
+      "TimeRange": [800, 2000]
+    },
+    "StayMinutes": 60,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "visiting the quiet town graveyard, reflecting peacefully among the ancient tombstones"
+  },
+  "Clinic_Waiting": {
+    "MapName": "Hospital",
+    "TargetTile": { "X": 8, "Y": 12 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny", "Rainy", "Snowy"],
+      "TimeRange": [900, 1600]
+    },
+    "StayMinutes": 60,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "waiting comfortably at Harvey's clinic for a routine health check-up"
+  },
+  "Leah_Cottage": {
+    "MapName": "Forest",
+    "TargetTile": { "X": 101, "Y": 33 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny", "Rainy", "Snowy"],
+      "TimeRange": [700, 2000]
+    },
+    "StayMinutes": 90,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "spending time near Leah's forest cottage, sketching and enjoying the quiet woods"
+  },
+  "BathHouse_Soak": {
+    "MapName": "BathHouse_Pool",
+    "TargetTile": { "X": 10, "Y": 10 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny", "Rainy", "Snowy", "Stormy"],
+      "TimeRange": [900, 1900]
+    },
+    "StayMinutes": 120,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "soaking in the warm mineral spring at the spa bathhouse, feeling completely relaxed"
+  },
+  "Railroad_Walk": {
+    "MapName": "Railroad",
+    "TargetTile": { "X": 30, "Y": 42 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny"],
+      "TimeRange": [900, 1700]
+    },
+    "StayMinutes": 80,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "taking a peaceful stroll along the railroad tracks, enjoying the open sky and mountain view"
+  },
+  "SecretWoods_Stroll": {
+    "MapName": "Woods",
+    "TargetTile": { "X": 24, "Y": 26 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall"],
+      "AllowedWeather": ["Sunny", "Rainy"],
+      "TimeRange": [800, 1600]
+    },
+    "StayMinutes": 90,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "wandering through the enchanted secret woods, listening to the soothing sounds of nature"
+  },
+  "Greenhouse_Wander": {
+    "MapName": "Greenhouse",
+    "TargetTile": { "X": 10, "Y": 9 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny", "Rainy", "Snowy", "Stormy"],
+      "TimeRange": [800, 1900]
+    },
+    "StayMinutes": 60,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "strolling through the greenhouse, admiring lush vibrant plants growing in warm humid air"
+  },
+  "Summit_Overlook": {
+    "MapName": "Summit",
+    "TargetTile": { "X": 16, "Y": 11 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall"],
+      "AllowedWeather": ["Sunny"],
+      "TimeRange": [800, 1700]
+    },
+    "StayMinutes": 90,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "standing at the mountain summit viewpoint, gazing out over the vast valley below"
+  },
+  "WizardTower_Browse": {
+    "MapName": "WizardHouse",
+    "TargetTile": { "X": 4, "Y": 12 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny", "Rainy", "Snowy", "Stormy"],
+      "TimeRange": [1000, 1900]
+    },
+    "StayMinutes": 90,
+    "CsharpAnimation": "BrowseShop",
+    "DescriptionForLLM": "curiously browsing mysterious arcane tomes and magical artifacts inside the Wizard's tower"
+  },
+  "MarnieRanch_Yard": {
+    "MapName": "AnimalShop",
+    "TargetTile": { "X": 12, "Y": 14 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny", "Rainy", "Snowy"],
+      "TimeRange": [900, 1700]
+    },
+    "StayMinutes": 90,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "visiting Marnie's ranch to pet the animals and enjoy the peaceful countryside atmosphere"
+  },
+  "Desert_Wander": {
+    "MapName": "Desert",
+    "TargetTile": { "X": 30, "Y": 28 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny"],
+      "TimeRange": [900, 1700]
+    },
+    "StayMinutes": 120,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "wandering through the vast Calico Desert, marveling at the endless golden sand dunes"
+  },
+  "Blacksmith_Watch": {
+    "MapName": "Blacksmith",
+    "TargetTile": { "X": 8, "Y": 14 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny", "Rainy", "Snowy"],
+      "TimeRange": [900, 1600]
+    },
+    "StayMinutes": 60,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "watching Clint work at the forge, fascinated by the glowing metal and rhythm of hammering"
+  },
+  "Backwoods_Morning": {
+    "MapName": "Backwoods",
+    "TargetTile": { "X": 42, "Y": 10 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny"],
+      "TimeRange": [700, 1100]
+    },
+    "StayMinutes": 80,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "enjoying an early morning walk through the scenic backwoods path behind the farm"
+  },
+  "BusStop_Bench": {
+    "MapName": "BusStop",
+    "TargetTile": { "X": 12, "Y": 11 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny"],
+      "TimeRange": [900, 1600]
+    },
+    "StayMinutes": 60,
+    "CsharpAnimation": "SitOnBench",
+    "DescriptionForLLM": "sitting comfortably on the bench at the bus stop, watching clouds drift by"
+  },
+  "ManorHouse_Visit": {
+    "MapName": "ManorHouse",
+    "TargetTile": { "X": 8, "Y": 10 },
+    "Conditions": {
+      "AllowedSeasons": ["spring", "summer", "fall", "winter"],
+      "AllowedWeather": ["Sunny", "Rainy", "Snowy"],
+      "TimeRange": [1000, 1800]
+    },
+    "StayMinutes": 60,
+    "CsharpAnimation": "",
+    "DescriptionForLLM": "paying a visit to the manor house, admiring the elegant old decor and quiet ambiance"
+  }
+}

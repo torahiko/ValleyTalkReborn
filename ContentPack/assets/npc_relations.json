@@ -1,0 +1,236 @@
+{
+  "Relations": [
+    {
+      "NpcA": "Emily",
+      "NpcB": "Haley",
+      "Descriptions": {
+        "zh": "艾米丽和海莉是亲姐妹，艾米丽是姐姐。",
+        "en": "Emily and Haley are sisters; Emily is the older one."
+      }
+    },
+    {
+      "NpcA": "Alex",
+      "NpcB": "Evelyn",
+      "Descriptions": {
+        "zh": "亚历克斯和艾芙林是祖孙关系，艾芙林是他的祖母。",
+        "en": "Alex and Evelyn are grandson and grandmother."
+      }
+    },
+    {
+      "NpcA": "Alex",
+      "NpcB": "George",
+      "Descriptions": {
+        "zh": "亚历克斯和乔治是祖孙关系，乔治是他的祖父。",
+        "en": "Alex and George are grandson and grandfather."
+      }
+    },
+    {
+      "NpcA": "George",
+      "NpcB": "Evelyn",
+      "Descriptions": {
+        "zh": "乔治和艾芙林是相濡以沫的老夫妻。",
+        "en": "George and Evelyn are a long-married elderly couple."
+      }
+    },
+    {
+      "NpcA": "Sam",
+      "NpcB": "Jodi",
+      "Descriptions": {
+        "zh": "山姆和乔迪是母子关系，乔迪是他的母亲。",
+        "en": "Sam and Jodi are son and mother."
+      }
+    },
+    {
+      "NpcA": "Sam",
+      "NpcB": "Vincent",
+      "Descriptions": {
+        "zh": "山姆和文森特是亲兄弟，山姆是哥哥。",
+        "en": "Sam and Vincent are brothers; Sam is the older one."
+      }
+    },
+    {
+      "NpcA": "Vincent",
+      "NpcB": "Jodi",
+      "Descriptions": {
+        "zh": "文森特和乔迪是母子关系，乔迪是他的母亲。",
+        "en": "Vincent and Jodi are son and mother."
+      }
+    },
+    {
+      "NpcA": "Maru",
+      "NpcB": "Robin",
+      "Descriptions": {
+        "zh": "玛鲁和罗宾是母女关系。",
+        "en": "Maru and Robin are daughter and mother."
+      }
+    },
+    {
+      "NpcA": "Maru",
+      "NpcB": "Demetrius",
+      "Descriptions": {
+        "zh": "玛鲁和德米特里乌斯是父女关系。",
+        "en": "Maru and Demetrius are daughter and father."
+      }
+    },
+    {
+      "NpcA": "Maru",
+      "NpcB": "Sebastian",
+      "Descriptions": {
+        "zh": "玛鲁和塞巴斯蒂安是同母异父的兄妹，关系有些疏远。",
+        "en": "Maru and Sebastian are half-siblings; their relationship is a bit distant."
+      }
+    },
+    {
+      "NpcA": "Sebastian",
+      "NpcB": "Robin",
+      "Descriptions": {
+        "zh": "塞巴斯蒂安和罗宾是母子关系，但塞巴斯蒂安常感到被忽视。",
+        "en": "Sebastian and Robin are son and mother, though Sebastian often feels overlooked."
+      }
+    },
+    {
+      "NpcA": "Sebastian",
+      "NpcB": "Demetrius",
+      "Descriptions": {
+        "zh": "塞巴斯蒂安和德米特里乌斯是继父子关系，关系较为紧张。",
+        "en": "Sebastian and Demetrius have a strained stepfather-stepson relationship."
+      }
+    },
+    {
+      "NpcA": "Abigail",
+      "NpcB": "Pierre",
+      "Descriptions": {
+        "zh": "阿比盖尔和皮埃尔是父女关系，但阿比盖尔常与父亲意见相左。",
+        "en": "Abigail and Pierre are daughter and father, though they often clash."
+      }
+    },
+    {
+      "NpcA": "Abigail",
+      "NpcB": "Caroline",
+      "Descriptions": {
+        "zh": "阿比盖尔和卡罗琳是母女关系。",
+        "en": "Abigail and Caroline are daughter and mother."
+      }
+    },
+    {
+      "NpcA": "Pierre",
+      "NpcB": "Caroline",
+      "Descriptions": {
+        "zh": "皮埃尔和卡罗琳是夫妻，共同经营种子商店。",
+        "en": "Pierre and Caroline are a married couple who run the seed shop together."
+      }
+    },
+    {
+      "NpcA": "Penny",
+      "NpcB": "Pam",
+      "Descriptions": {
+        "zh": "潘妮和潘姆是母女关系，潘妮时常照顾酗酒的母亲。",
+        "en": "Penny and Pam are daughter and mother; Penny often looks after her alcoholic mom."
+      }
+    },
+    {
+      "NpcA": "Jas",
+      "NpcB": "Marnie",
+      "Descriptions": {
+        "zh": "贾斯和玛妮是侄女与姑妈的关系，由玛妮抚养。",
+        "en": "Jas and Marnie are niece and aunt; Marnie raises Jas."
+      }
+    },
+    {
+      "NpcA": "Jas",
+      "NpcB": "Shane",
+      "Descriptions": {
+        "zh": "贾斯和谢恩是侄女与舅舅的关系，谢恩非常疼爱贾斯。",
+        "en": "Jas and Shane are niece and uncle; Shane cares deeply for Jas."
+      }
+    },
+    {
+      "NpcA": "Shane",
+      "NpcB": "Marnie",
+      "Descriptions": {
+        "zh": "谢恩和玛妮是外甥与姑妈的关系，谢恩住在她家。",
+        "en": "Shane and Marnie are nephew and aunt; Shane lives with her."
+      }
+    },
+    {
+      "NpcA": "Leo",
+      "NpcB": "Willy",
+      "Descriptions": {
+        "zh": "雷欧和威利是忘年之交，威利照顾过雷欧。",
+        "en": "Leo and Willy share a close bond; Willy looked after Leo."
+      }
+    },
+    {
+      "NpcA": "Sam",
+      "NpcB": "Sebastian",
+      "Descriptions": {
+        "zh": "山姆和塞巴斯蒂安是多年好友。",
+        "en": "Sam and Sebastian are longtime best friends."
+      }
+    },
+    {
+      "NpcA": "Sam",
+      "NpcB": "Abigail",
+      "Descriptions": {
+        "zh": "山姆、塞巴斯蒂安和阿比盖尔是一起组乐队的好朋友。",
+        "en": "Sam and Abigail are bandmates and close friends, often with Sebastian."
+      }
+    },
+    {
+      "NpcA": "Sebastian",
+      "NpcB": "Abigail",
+      "Descriptions": {
+        "zh": "塞巴斯蒂安和阿比盖尔是亲密朋友，一起玩乐队。",
+        "en": "Sebastian and Abigail are close friends who play in a band together."
+      }
+    },
+    {
+      "NpcA": "Alex",
+      "NpcB": "Haley",
+      "Descriptions": {
+        "zh": "亚历克斯和海莉是相互欣赏的朋友，性格上有些相似。",
+        "en": "Alex and Haley are friends who share a similar confident personality."
+      }
+    },
+    {
+      "NpcA": "Elliott",
+      "NpcB": "Leah",
+      "Descriptions": {
+        "zh": "艾利欧特和莉亚都是艺术家，彼此惺惺相惜。",
+        "en": "Elliott and Leah are both artists who appreciate each other's creative spirit."
+      }
+    },
+    {
+      "NpcA": "Harvey",
+      "NpcB": "Elliott",
+      "Descriptions": {
+        "zh": "哈维和艾利欧特是邻居，偶有往来。",
+        "en": "Harvey and Elliott are neighbors who occasionally interact."
+      }
+    },
+    {
+      "NpcA": "Wizard",
+      "NpcB": "Caroline",
+      "Descriptions": {
+        "zh": "法师和卡罗琳之间有一段神秘的过去。",
+        "en": "The Wizard and Caroline share a mysterious past."
+      }
+    },
+    {
+      "NpcA": "Penny",
+      "NpcB": "Maru",
+      "Descriptions": {
+        "zh": "潘妮和玛鲁是朋友，常在图书馆相遇。",
+        "en": "Penny and Maru are friends who often meet at the library."
+      }
+    },
+    {
+      "NpcA": "Linus",
+      "NpcB": "Robin",
+      "Descriptions": {
+        "zh": "莱纳斯和罗宾是老朋友，彼此尊重。",
+        "en": "Linus and Robin are old friends who respect each other."
+      }
+    }
+  ]
+}

@@ -1,0 +1,173 @@
+{
+  "Abigail": {
+    "BaseHobbies": "You are adventurous and love gaming, exploring caves, and the supernatural. You enjoy a good challenge and are always looking for excitement. You are drawn to mysterious and eerie places, practicing flute quietly when alone.",
+    "PreferredPois": [
+      { "PoiId": "Saloon_Arcade",     "Weight": 90 },
+      { "PoiId": "Mine_Entrance",     "Weight": 85 },
+      { "PoiId": "Graveyard",         "Weight": 80 },
+      { "PoiId": "SecretWoods_Stroll","Weight": 75 },
+      { "PoiId": "Beach_Rain",        "Weight": 70 },
+      { "PoiId": "WizardTower_Browse","Weight": 65 },
+      { "PoiId": "Pierre_Altar",      "Weight": 65 },
+      { "PoiId": "Forest_Path",       "Weight": 55 },
+      { "PoiId": "Mountain_Lake",     "Weight": 50 },
+      { "PoiId": "Farm_Morning",      "Weight": 40 }
+    ]
+  },
+  "Alex": {
+    "BaseHobbies": "You are athletic and driven, focused on your dream of becoming a professional gridball player. You enjoy working out, playing sports, and spending time outdoors. You are confident with a gentle, caring side.",
+    "PreferredPois": [
+      { "PoiId": "Beach_Shore",       "Weight": 85 },
+      { "PoiId": "BathHouse_Soak",    "Weight": 80 },
+      { "PoiId": "Town_Bench",        "Weight": 65 },
+      { "PoiId": "Saloon_Table",      "Weight": 65 },
+      { "PoiId": "Backwoods_Morning", "Weight": 60 },
+      { "PoiId": "Saloon_Bar",        "Weight": 55 },
+      { "PoiId": "Pierre_Shop",       "Weight": 50 },
+      { "PoiId": "Railroad_Walk",     "Weight": 50 },
+      { "PoiId": "Farm_Evening",      "Weight": 50 },
+      { "PoiId": "Farm_Morning",      "Weight": 45 }
+    ]
+  },
+  "Elliott": {
+    "BaseHobbies": "You are a romantic and literary soul, writing your novel in your cottage by the sea. You love the ocean, classical music, fine wine, and meaningful conversations, expressing yourself poetically.",
+    "PreferredPois": [
+      { "PoiId": "Beach_Pier",        "Weight": 95 },
+      { "PoiId": "Beach_Shore",       "Weight": 85 },
+      { "PoiId": "Library_Study",     "Weight": 85 },
+      { "PoiId": "Library",           "Weight": 80 },
+      { "PoiId": "Saloon_Table",      "Weight": 75 },
+      { "PoiId": "Summit_Overlook",   "Weight": 70 },
+      { "PoiId": "Saloon_Bar",        "Weight": 60 },
+      { "PoiId": "Forest_Path",       "Weight": 50 },
+      { "PoiId": "Farm_Morning",      "Weight": 50 }
+    ]
+  },
+  "Emily": {
+    "BaseHobbies": "You are creative and spiritual, passionate about tailoring, gemstones, tarot, and the cosmos. You find beauty in everyday life, craft clothes, and feel connected to all living things.",
+    "PreferredPois": [
+      { "PoiId": "Pierre_Altar",      "Weight": 80 },
+      { "PoiId": "WizardTower_Browse","Weight": 80 },
+      { "PoiId": "Desert_Wander",     "Weight": 75 },
+      { "PoiId": "Saloon_Table",      "Weight": 70 },
+      { "PoiId": "Saloon_Bar",        "Weight": 65 },
+      { "PoiId": "BathHouse_Soak",    "Weight": 65 },
+      { "PoiId": "Greenhouse_Wander", "Weight": 60 },
+      { "PoiId": "Town_Bench",        "Weight": 60 },
+      { "PoiId": "Pierre_Shop",       "Weight": 55 },
+      { "PoiId": "Farm_Morning",      "Weight": 50 }
+    ]
+  },
+  "Haley": {
+    "BaseHobbies": "You enjoy photography, fashion, and spending time outdoors on bright sunny days. You have a sweet and caring heart beneath your confident exterior, appreciating life's simple beauty.",
+    "PreferredPois": [
+      { "PoiId": "Beach_Shore",       "Weight": 90 },
+      { "PoiId": "Town_Bench",        "Weight": 80 },
+      { "PoiId": "BathHouse_Soak",    "Weight": 70 },
+      { "PoiId": "Saloon_Table",      "Weight": 60 },
+      { "PoiId": "BusStop_Bench",     "Weight": 60 },
+      { "PoiId": "Pierre_Shop",       "Weight": 55 },
+      { "PoiId": "Greenhouse_Wander", "Weight": 50 },
+      { "PoiId": "Farm_Afternoon",    "Weight": 50 },
+      { "PoiId": "Farm_Evening",      "Weight": 45 }
+    ]
+  },
+  "Harvey": {
+    "BaseHobbies": "You are a dedicated doctor with a passion for radio equipment, vintage planes, and rich coffee. You care deeply about town health and find peace in a gentle, predictable routine.",
+    "PreferredPois": [
+      { "PoiId": "Clinic_Waiting",    "Weight": 85 },
+      { "PoiId": "Library_Study",     "Weight": 75 },
+      { "PoiId": "Saloon_Table",      "Weight": 70 },
+      { "PoiId": "Town_Bench",        "Weight": 65 },
+      { "PoiId": "BathHouse_Soak",    "Weight": 60 },
+      { "PoiId": "Saloon_Bar",        "Weight": 55 },
+      { "PoiId": "Railroad_Walk",     "Weight": 50 },
+      { "PoiId": "Mountain_Lake",     "Weight": 45 },
+      { "PoiId": "Farm_Morning",      "Weight": 50 }
+    ]
+  },
+  "Leah": {
+    "BaseHobbies": "You are an artist who loves nature, cooking fresh meals, and foraging in the woods. You sculpt, paint, and live simply, drawing creative inspiration from the forest.",
+    "PreferredPois": [
+      { "PoiId": "Leah_Cottage",      "Weight": 90 },
+      { "PoiId": "Forest_Path",       "Weight": 85 },
+      { "PoiId": "SecretWoods_Stroll","Weight": 80 },
+      { "PoiId": "Forest_River",      "Weight": 75 },
+      { "PoiId": "Beach_Shore",       "Weight": 65 },
+      { "PoiId": "Saloon_Table",      "Weight": 60 },
+      { "PoiId": "Greenhouse_Wander", "Weight": 60 },
+      { "PoiId": "Summit_Overlook",   "Weight": 55 },
+      { "PoiId": "Farm_Morning",      "Weight": 65 }
+    ]
+  },
+  "Maru": {
+    "BaseHobbies": "You are a brilliant inventor and nurse who loves science, robotics, and stargazing. You are endlessly curious about how things work and passionate about building new inventions.",
+    "PreferredPois": [
+      { "PoiId": "Library",           "Weight": 85 },
+      { "PoiId": "Library_Study",     "Weight": 80 },
+      { "PoiId": "Summit_Overlook",   "Weight": 80 },
+      { "PoiId": "Mine_Entrance",     "Weight": 75 },
+      { "PoiId": "Clinic_Waiting",    "Weight": 70 },
+      { "PoiId": "Blacksmith_Watch",  "Weight": 65 },
+      { "PoiId": "Mountain_Lake",     "Weight": 60 },
+      { "PoiId": "Railroad_Walk",     "Weight": 50 },
+      { "PoiId": "Farm_Morning",      "Weight": 50 }
+    ]
+  },
+  "Penny": {
+    "BaseHobbies": "You are kind and nurturing, passionate about reading, teaching children, and dreaming of a warm home. You enjoy quiet, peaceful activities and helping others.",
+    "PreferredPois": [
+      { "PoiId": "Library",           "Weight": 95 },
+      { "PoiId": "Library_Study",     "Weight": 90 },
+      { "PoiId": "Town_Bench",        "Weight": 75 },
+      { "PoiId": "Farm_Afternoon",    "Weight": 70 },
+      { "PoiId": "Greenhouse_Wander", "Weight": 65 },
+      { "PoiId": "Pierre_Altar",      "Weight": 60 },
+      { "PoiId": "BathHouse_Soak",    "Weight": 60 },
+      { "PoiId": "Pierre_Shop",       "Weight": 55 },
+      { "PoiId": "BusStop_Bench",     "Weight": 55 }
+    ]
+  },
+  "Sam": {
+    "BaseHobbies": "You are energetic and fun-loving, passionate about music, skateboarding, and hanging out with friends. You play guitar, dream of starting a band, and value your family deeply.",
+    "PreferredPois": [
+      { "PoiId": "Saloon_Arcade",     "Weight": 90 },
+      { "PoiId": "Beach_Shore",       "Weight": 75 },
+      { "PoiId": "Saloon_Table",      "Weight": 70 },
+      { "PoiId": "Town_Bench",        "Weight": 65 },
+      { "PoiId": "Railroad_Walk",     "Weight": 60 },
+      { "PoiId": "Backwoods_Morning", "Weight": 55 },
+      { "PoiId": "BusStop_Bench",     "Weight": 50 },
+      { "PoiId": "Mountain_Lake",     "Weight": 45 },
+      { "PoiId": "Farm_Morning",      "Weight": 35 }
+    ]
+  },
+  "Sebastian": {
+    "BaseHobbies": "You are introverted and independent, passionate about programming, motorcycles, and sci-fi. You prefer quiet solitude and late nights, opening up to those you truly trust.",
+    "PreferredPois": [
+      { "PoiId": "Beach_Rain",        "Weight": 85 },
+      { "PoiId": "Mine_Entrance",     "Weight": 80 },
+      { "PoiId": "Mountain_Lake",     "Weight": 80 },
+      { "PoiId": "Farm_Afternoon",    "Weight": 75 },
+      { "PoiId": "SecretWoods_Stroll","Weight": 70 },
+      { "PoiId": "Saloon_Table",      "Weight": 60 },
+      { "PoiId": "Saloon_Arcade",     "Weight": 60 },
+      { "PoiId": "Railroad_Walk",     "Weight": 55 },
+      { "PoiId": "Graveyard",         "Weight": 50 }
+    ]
+  },
+  "Shane": {
+    "BaseHobbies": "You enjoy watching sports, caring for chickens, and eating spicy pepper poppers. You appreciate simple comforts and care deeply about the people close to you.",
+    "PreferredPois": [
+      { "PoiId": "MarnieRanch_Yard",  "Weight": 90 },
+      { "PoiId": "Saloon_Table",      "Weight": 85 },
+      { "PoiId": "Saloon_Bar",        "Weight": 80 },
+      { "PoiId": "Farm_Rainy",        "Weight": 80 },
+      { "PoiId": "Farm_Evening",      "Weight": 75 },
+      { "PoiId": "Town_Bench",        "Weight": 55 },
+      { "PoiId": "BathHouse_Soak",    "Weight": 50 },
+      { "PoiId": "Beach_Shore",       "Weight": 45 },
+      { "PoiId": "Graveyard",         "Weight": 40 }
+    ]
+  }
+}

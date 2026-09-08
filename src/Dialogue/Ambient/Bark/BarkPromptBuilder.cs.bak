@@ -1,0 +1,722 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using Newtonsoft.Json;
+using StardewValley;
+
+namespace ValleytalkReborn;
+
+/// <summary>
+/// Bark Prompt 构建器 - 纯粹的模板生成器，剥离所有启发式判断。
+/// 职责：将游戏状态转换为结构化的 Prompt 文本。
+/// </summary>
+internal sealed class BarkPromptBuilder
+{
+    private readonly AmbientBarkStateStore _stateStore;
+    private static readonly Random _rng = new Random();
+
+    internal BarkPromptBuilder(AmbientBarkStateStore stateStore)
+    {
+        _stateStore = stateStore;
+    }
+
+    /// <summary>
+    /// 构建 Bark 请求（必须在主线程调用）
+    /// </summary>
+    internal DialogueModels.BarkRequest Build(NPC npc)
+    {
+        if (npc == null || Game1.player == null)
+            return null;
+
+        var character = DialogueBuilder.Instance?.GetCharacter(npc);
+        var bio = character?.Bio;
+        if (bio == null || !bio.EnableAmbientBarks || string.IsNullOrWhiteSpace(bio.AmbientBarkPrompt))
+            return null;
+
+        PlayerStateScanner.Scan();
+
+        bool isZh = IsChineseLanguage;
+        string systemPrompt = BuildSystemPrompt(isZh);
+        string userPrompt = BuildUserPrompt(npc, bio, isZh);
+
+        if (string.IsNullOrWhiteSpace(userPrompt))
+            return null;
+
+        return new DialogueModels.BarkRequest
+        {
+            NpcName = npc.Name,
+            SystemPrompt = systemPrompt,
+            UserPrompt = userPrompt,
+            IsChinese = isZh
+        };
+    }
+
+    /// <summary>
+    /// 构建 System Prompt - 纯粹的结构契约和生成方法论
+    /// </summary>
+    private static string BuildSystemPrompt(bool isZh)
+    {
+        var currentLang = LocalizedContentManager.CurrentLanguageCode;
+        bool isStandardEn = !isZh && currentLang == LocalizedContentManager.LanguageCode.en;
+
+        // ── 语言长度约束 ──
+        string lengthConstraint = isZh
+            ? "所有台词必须为自然地道的中文，每条 10~20个汉字。"
+            : isStandardEn
+                ? "All barks must be in natural English, maximum 12 words per bark."
+                : $"All barks strictly in {currentLang}, maximum 12 words per bark.";
+
+        // ── Few-shot 示例：完全抽象，零记忆点 ──
+        string zhExample = JsonConvert.SerializeObject(new[]
+        {
+            "今天感觉还行。",
+            "不过有点累。",
+            "刚才想到件事。",
+            "对了，还有个东西要处理。",
+            "等会儿再说吧。"
+        });
+
+        string enExample = JsonConvert.SerializeObject(new[]
+        {
+            "Feeling alright today.",
+            "A bit tired though.",
+            "Just thought of something.",
+            "Oh right, there's that thing.",
+            "I'll deal with it later."
+        });
+
+        if (isZh)
+        {
+            return $@"你为游戏 NPC 生成身处当前场景时自然流露的日常台词（Bark）。
+
+【输出格式】
+输出包含 4~6 个字符串的纯 JSON 数组，首字符必须是 [，末字符必须是 ]。
+示例（仅展示格式，内容与实际场景无关）：
+{zhExample}
+
+【生成原理】
+这 4~6 条是同一个人在当前场景中，注意力自然流动时产生的几个可说出口的瞬间。
+
+先理解角色此刻的真实处境：在做什么、注意力容易被什么吸引、身体感觉如何、身边有谁、最近发生了什么。
+
+第 1 条从当前最先进入注意力的细节开始（可能是物件、声音、气味、身体感觉、正在发生的事、身边的人，具体由角色和场景决定）。
+
+之后让思绪自然向前流动。一个细节可能带出相关经历，一个词可能联想到另一件事，一种感觉可能勾起记忆，身边的人可能改变注意方向，也可能从实际问题想到下一步打算。
+
+思绪可以继续深入、横向联想、短暂岔开、绕回来，最后自然停住。读起来应该像同一个人的注意力在移动，而非每一句都从场景重新挑选一个物件。
+
+连接不需要都是同一种类型。有的清晰因果，有的只是被同种感受牵动，有的几乎无来由，有的直接搁置前面的念头。混用这些方式，才像真实的意识流。
+
+【角色声音】
+阅读 [SPOKEN HABITS] / [VOICE & ATTITUDE]，理解角色长期形成的表达节奏、措辞倾向、态度、幽默方式、直接程度和说话习惯。
+
+这些特征决定角色""怎么说""。先让思绪自然成立，再让角色自己的语言系统决定最终表达。
+
+人设原文可能是英文。其中引号列出的英文口癖、感叹词或短语，只是语言机制的例子，而非必须原样输出的词。中文输出时，把它们的语气、节奏、态度或功能转译成真正地道的中文表达。一个英文口癖在中文里可能根本没有一一对应的词，最自然的中文有时会用完全不同的说法，有时甚至可以省略额外的语气词。
+
+保留角色的性格和语言功能，比保留英文表面形式更重要。
+
+【在场人物】
+附近有人时，对方是真实存在的人，会自然进入角色的念头。思绪主要还是自己跟自己嘀咕，把对方作为背景或自语对象带到，而非面向对方展开交流。即使身边有人，也依然沉浸在自身的注意力与手头事物中。
+
+【说出口的话】
+最终输出的是角色真正可能说出口的话。思绪可以很复杂，但 Bark 只呈现自然浮到嘴边的部分。可以是很普通的一句话、一个即时反应、一句对旁人的话，或一件小事带出的简短联想。
+
+{lengthConstraint}";
+        }
+        else
+        {
+            return $@"You generate everyday ambient barks that an NPC would naturally say while living in the current scene.
+
+[OUTPUT FORMAT]
+Return a plain JSON array containing 4–6 strings. First character MUST be [, last character MUST be ].
+Example (format only, content unrelated to actual scene):
+{enExample}
+
+[GENERATION PRINCIPLE]
+The 4–6 lines are several speakable moments from the same person's attention while remaining in the current scene.
+
+First understand the character's actual situation: what they are doing, what naturally attracts attention, how they physically feel, who is nearby, what has recently happened.
+
+Line 1 begins with whatever genuinely enters attention first (may be an object, sound, smell, bodily sensation, ongoing event, nearby person — determined by character and scene).
+
+From there, let attention move naturally. One detail may bring up a related experience, a word may evoke another subject, a feeling may connect to memory, a nearby person may redirect attention, or a practical problem may lead to a next step.
+
+The thought may deepen, branch sideways, drift briefly, circle back, or end naturally. It should feel like one person's attention moving through the moment rather than selecting a new object for every line.
+
+Connections need not all be the same type. Some are clear cause-and-effect, some are pulled by a shared feeling, some are nearly spontaneous, some simply set aside the previous thought. Mix these to feel like genuine stream-of-consciousness.
+
+[CHARACTER VOICE]
+Read [SPOKEN HABITS] / [VOICE & ATTITUDE] as the character's established way of speaking: rhythm, diction, attitude, humor, directness, conversational habits.
+
+These traits determine how the character says something. Let the thought arise naturally first, then let the character's own language system shape the final wording.
+
+The persona may be written in English. Quoted English catchphrases, fillers, or phrases are examples of speech mechanisms, not mandatory output. In Chinese or another target language, translate their function, rhythm, attitude, or effect into genuinely native phrasing. There may be no one-to-one replacement; the most natural target-language realization may use a different expression or omit extra fillers.
+
+Preserve the character's personality and speech function rather than the surface form of the original catchphrase.
+
+[NEARBY PEOPLE]
+When others are nearby, they naturally enter the character's thoughts as part of the environment. The character predominantly mutters to themselves, musing or grumbling about nearby people under their breath rather than initiating a conversation. Attention remains anchored to their own tasks and immediate surroundings.
+
+[SPOKEN MOMENT]
+The final output is what the character could genuinely say aloud. The thought may be richer than the bark; only the part that naturally reaches the character's mouth should be expressed. A perfectly ordinary line, a brief reaction, a casual remark, or a small practical association can all be appropriate.
+
+{lengthConstraint}";
+        }
+    }
+
+    /// <summary>
+    /// 构建 User Prompt - 完整的上下文数据
+    /// </summary>
+    private string BuildUserPrompt(NPC npc, BioData bio, bool isZh)
+    {
+        var sb = new StringBuilder();
+
+        // ── 1. 角色人设 ──
+        string rawPrompt = bio.AmbientBarkPrompt.Trim();
+        if (isZh)
+            rawPrompt = NpcNameLocalizer.LocalizeNamesInText(rawPrompt);
+
+        // 动态状态注入（替代硬编码）
+        rawPrompt = EnrichWithDynamicState(npc, rawPrompt, isZh);
+
+        sb.AppendLine(isZh ? "### [角色人设]" : "### [CHARACTER PERSONA]");
+        sb.AppendLine(rawPrompt);
+
+        string rel = GetRelationshipLabel(npc, isZh);
+        if (!string.IsNullOrEmpty(rel))
+        {
+            sb.AppendLine();
+            sb.AppendLine(rel);
+        }
+        sb.AppendLine();
+
+        // ── 2. 当前环境 ──
+        string envContext = BuildEnvironmentContext(npc, isZh);
+        if (!string.IsNullOrEmpty(envContext))
+        {
+            sb.AppendLine(isZh ? "### [当前环境]" : "### [ENVIRONMENT]");
+            sb.AppendLine(envContext);
+            sb.AppendLine();
+        }
+
+        // ── 3. 即时观察 ──
+        var perceptions = PerceptionManager.Instance?.GetFilteredBucketFor(npc.Name, 2);
+        if (perceptions != null && perceptions.Count > 0)
+        {
+            sb.AppendLine(isZh ? "### [即时观察]" : "### [OBSERVATIONS]");
+            foreach (var p in perceptions)
+            {
+                if (!string.IsNullOrWhiteSpace(p.Template))
+                {
+                    string template = isZh ? NpcNameLocalizer.LocalizeNamesInText(p.Template) : p.Template;
+                    sb.AppendLine($"- {template}");
+                }
+            }
+            sb.AppendLine();
+        }
+
+        // ── 4. 场景细节 ──
+        sb.AppendLine(SceneContextBuilder.BuildSceneBlock(npc, radiusTiles: 5, maxItems: 6));
+        sb.AppendLine();
+
+        // ── 5. 在场人物 ──
+        var nearbyNpcs = GetNearbyNpcNames(npc);
+        if (nearbyNpcs.Count > 0)
+        {
+            sb.AppendLine(isZh ? "### [在场人物]" : "### [PRESENT CHARACTERS]");
+            foreach (var nearbyName in nearbyNpcs)
+            {
+                string relationship = GetNearbyRelationshipLabel(nearbyName, isZh);
+                sb.AppendLine(relationship);
+            }
+            sb.AppendLine();
+        }
+
+        // ── 6. 特殊状态（约会/跟随/留家）──
+        string specialState = BuildSpecialStateContext(npc, isZh);
+        if (!string.IsNullOrEmpty(specialState))
+        {
+            sb.AppendLine(isZh ? "### [特殊状态]" : "### [SPECIAL STATE]");
+            sb.AppendLine(specialState);
+            sb.AppendLine();
+        }
+
+        // ── 7. 深夜氛围 ──
+        if (Game1.timeOfDay >= 2200)
+        {
+            sb.AppendLine(isZh ? "### [深夜氛围]" : "### [LATE NIGHT]");
+            sb.AppendLine(isZh
+                ? "更深露重，四周渐渐安静。台词自然流露疲惫、慵懒或对夜色的小小感慨。"
+                : "It is late at night. Reflect genuine quietude, fatigue, or the comfort of heading to bed soon.");
+            sb.AppendLine();
+        }
+
+        // ── 8. 记忆路由（三档时间判断）──
+        string memoryContext = BuildMemoryContext(npc, isZh);
+        if (!string.IsNullOrEmpty(memoryContext))
+        {
+            sb.AppendLine(memoryContext);
+            sb.AppendLine();
+        }
+
+        // ── 9. 生成指令 ──
+        sb.AppendLine(BuildGenerationInstruction(npc, bio, isZh));
+
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// 动态状态注入 - 替代角色硬编码
+    /// 从 Bio 的 ProgressStates 中解析当前生效的阶段性状态（如 Shane 的戒酒/酗酒状态），
+    /// 任意角色只需在角色卡里配置 ProgressStates 即可接入，无需改动此处代码。
+    /// </summary>
+    private static string EnrichWithDynamicState(NPC npc, string basePrompt, bool isChinese)
+    {
+        if (npc == null || string.IsNullOrWhiteSpace(basePrompt))
+            return basePrompt;
+
+        var bio = DialogueBuilder.Instance?.GetCharacter(npc)?.Bio;
+        string stateText = ProgressStateResolver.ResolveActiveState(npc, bio?.ProgressStates);
+
+        if (string.IsNullOrWhiteSpace(stateText))
+            return basePrompt;
+
+        return $"{basePrompt}\n\n[CURRENT STATE: {stateText}]";
+    }
+
+    /// <summary>
+    /// 构建环境上下文
+    /// </summary>
+    private static string BuildEnvironmentContext(NPC npc, bool isZh)
+    {
+        var loc = npc?.currentLocation;
+        if (loc == null) return null;
+
+        bool isIndoor = !loc.IsOutdoors
+                        || loc is StardewValley.Locations.FarmHouse
+                        || loc is StardewValley.Locations.IslandFarmHouse;
+
+        string locName = EnvironmentScanner.GetLocationFriendlyName(loc.Name);
+
+        if (isIndoor)
+        {
+            return isZh
+                ? $"室内（{locName}）。NPC 正在屋内，思绪立足于室内氛围、正在做的事、身体感觉、身旁人物或会进入注意力的陈设细节。"
+                : $"INDOORS ({locName}). Ground the bark in the indoor mood, ongoing activity, bodily sensations, nearby people, or details that catch attention.";
+        }
+
+        string weather = GetWeatherDescription(isZh);
+        return isZh
+            ? $"室外（{locName}，天气：{weather}）。天气是背景的一部分，思路可从当前地点、正在做的事、身体感觉、周遭动静、身边人物或其他即时刺激自然展开。"
+            : $"OUTDOORS ({locName}, Weather: {weather}). Weather is part of the setting; thoughts may grow from location, activity, sensations, sounds, nearby people, or immediate stimuli.";
+    }
+
+    /// <summary>
+    /// 构建特殊状态上下文（约会/跟随/留家）
+    /// </summary>
+    private static string BuildSpecialStateContext(NPC npc, bool isZh)
+    {
+        bool onDate = DialogueUtilities.IsOnDate(npc);
+        bool isFollowing = DialogueUtilities.IsFollowingSafe(npc);
+        bool isStayHome = CompanionScheduleManager.Instance?.IsStayHomeActive(npc.Name) == true;
+
+        if (!onDate && !isFollowing && !isStayHome)
+            return null;
+
+        var sb = new StringBuilder();
+
+        if (onDate)
+        {
+            var dateLocation = DateManager.Instance?.ActiveDateLocation ?? "";
+            string displayName = dateLocation;
+            if (DateManager.LocationDisplayNames != null
+                && DateManager.LocationDisplayNames.TryGetValue(dateLocation, out var dn))
+                displayName = dn;
+
+            sb.AppendLine(isZh
+                ? $"正与玩家在【{displayName}】约会。依据角色性格与当前好感度表达约会中的状态。"
+                : $"On an exclusive date with the player at {displayName}. Express date behavior according to character personality and current heart level.");
+        }
+
+        if (isFollowing)
+        {
+            sb.AppendLine(isZh
+                ? "正陪着玩家同行。依据角色性格与当前好感度表达伴随状态。"
+                : "Walking alongside the player. Express accompanying behavior according to character personality and current heart level.");
+        }
+
+        if (isStayHome)
+        {
+            string poiCtx = CompanionScheduleManager.Instance?.GetActivePoiContext(npc.Name);
+            if (isZh && !string.IsNullOrEmpty(poiCtx))
+                poiCtx = NpcNameLocalizer.LocalizeNamesInText(poiCtx);
+
+            sb.AppendLine(!string.IsNullOrEmpty(poiCtx)
+                ? (isZh ? $"今天待在农场。{poiCtx}" : $"Spending the day on the farm. {poiCtx}")
+                : (isZh ? "今天待在家里放松，享受农场的一天。" : "Relaxing around the farmhouse today."));
+        }
+
+        return sb.ToString().TrimEnd();
+    }
+
+    /// <summary>
+    /// 构建记忆上下文（三档时间路由）
+    /// </summary>
+    private string BuildMemoryContext(NPC npc, bool isZh)
+    {
+        if (!_stateStore.TryGet(npc.Name, out var state))
+            return null;
+
+        List<string> lastTail;
+        List<string> recent;
+        DateTime? lastEndedAt;
+        int lastGameTime;
+        int lastSaveDayNumber;
+
+        lock (state)
+        {
+            if (state.LastThreadTail.Count == 0 || !state.LastThreadEndedAt.HasValue)
+                return null;
+
+            lastTail = state.LastThreadTail.ToList();
+            recent = state.RecentBarks.ToList();
+            lastEndedAt = state.LastThreadEndedAt;
+            lastGameTime = state.LastThreadGameTimeOfDay;
+            lastSaveDayNumber = state.LastThreadSaveDayNumber;
+        }
+
+        int currentDay = Game1.Date.TotalDays;
+        
+        // 跨天保护：如果存档天数不同，视为长间隔
+        if (lastSaveDayNumber != currentDay)
+        {
+            return BuildLongIntervalContext(lastTail, isZh);
+        }
+
+        double minutesSince = (DateTime.UtcNow - lastEndedAt.Value).TotalMinutes;
+        bool sameTimeWindow = Game1.timeOfDay == lastGameTime
+                              || (lastGameTime > 0 && Math.Abs(Game1.timeOfDay - lastGameTime) <= 20);
+
+        string tailBlock = isZh
+            ? string.Join("，", lastTail.Select(l => $"\"{l}\""))
+            : string.Join(" ", lastTail.Select(l => $"\"{l}\""));
+
+        // ── 短间隔：≤3 分钟且同时段 → 延续上一段思绪 ──
+        if (minutesSince <= 3 && sameTimeWindow)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine(isZh ? "### [思绪承接]" : "### [CONTINUING THREAD]");
+            sb.AppendLine(isZh
+                ? $"刚才这段思绪最后落在：{tailBlock}。距离现在只有一会儿功夫，这次接着刚才往下走——可以继续那件事、把刚才的念头往下补一句、从打断中回过神，或被新刺激带跑。第 1 条可以直接从刚才停的地方接下去。"
+                : $"The last thread ended here: {tailBlock}. Only a moment has passed. Pick up where that left off — continue the same thing, add one more beat, resume after getting distracted, or get pulled onto something new. Line 1 can pick up from where it stopped.");
+            return sb.ToString();
+        }
+
+        // ── 中间隔：≤3 小时且同时段 → 仅作话题新鲜度参考 ──
+        if (minutesSince <= 180 && sameTimeWindow)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine(isZh ? "### [话题新鲜度]" : "### [TOPIC FRESHNESS]");
+            sb.AppendLine(isZh
+                ? "过去这段时间里说过的话，仅供参考以免机械重复（这次的思绪是全新的）："
+                : "Lines said earlier, shown only to avoid mechanical repetition (this thread is brand new):");
+            foreach (var line in recent.TakeLast(3))
+                sb.AppendLine($"- \"{line}\"");
+            return sb.ToString();
+        }
+
+        // ── 长间隔：> 3 小时或不同时段 → 小概率闪回 ──
+        return BuildLongIntervalContext(lastTail, isZh);
+    }
+
+    /// <summary>
+    /// 构建长间隔记忆上下文（15% 概率轻触历史）
+    /// </summary>
+    private static string BuildLongIntervalContext(List<string> lastTail, bool isZh)
+    {
+        if (_rng.NextDouble() >= 0.15)
+            return null; // 85% 完全不提历史
+
+        string tailBlock = isZh
+            ? string.Join("，", lastTail.Select(l => $"\"{l}\""))
+            : string.Join(" ", lastTail.Select(l => $"\"{l}\""));
+
+        var sb = new StringBuilder();
+        sb.AppendLine(isZh ? "### [偶尔的余韵]" : "### [OCCASIONAL ECHO]");
+        sb.AppendLine(isZh
+            ? $"这是全新的一段时光，思绪主要来自当下。但如果自然的话，5~6 条里可以有（最多）一条轻轻带到更早想过的事：{tailBlock}——像突然想起后续或顺带交代一下，不必是重点，一句带过就好，也完全可以不提。"
+            : $"This is a brand-new stretch of time; thoughts should mostly come from right now. But if it fits naturally, at most one of the 5-6 lines could lightly touch on something thought about earlier: {tailBlock} — like suddenly remembering how it turned out. Not the focus, just a brief touch, and completely fine to skip.");
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// 构建生成指令
+    /// </summary>
+    private static string BuildGenerationInstruction(NPC npc, BioData bio, bool isZh)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine(isZh ? "### [生成任务]" : "### [GENERATION TASK]");
+
+        // ── 起点建议（从 Preoccupations 随机抽 1 个）──
+        var suggestedLens = GetRandomLens(bio, 1);
+        if (suggestedLens.Count > 0)
+        {
+            sb.AppendLine(isZh
+                ? $"第 1 条可参考的起点（仅供选用）：{string.Join("、", suggestedLens)}"
+                : $"Optional starting point for line 1: {string.Join(", ", suggestedLens)}");
+            sb.AppendLine(isZh
+                ? "这只是帮第 1 条找个由头，选定后就只顺着这一个往下生长。"
+                : "This is only a hook for line 1. Once picked, follow only that thread.");
+            sb.AppendLine();
+        }
+
+        if (isZh)
+        {
+            sb.AppendLine("生成 4~6 条充满生活质感、符合人设口吻、属于同一条自然思绪流的 Bark 候选。");
+            sb.AppendLine();
+            sb.AppendLine("- 这几条可以理解为同一个人在当前场景里，注意力一路流动，冒出来的几个自然浮到嘴边的碎碎念。");
+            sb.AppendLine("- 第 1 条从当前真正进入角色注意力的现实细节开始。");
+            sb.AppendLine("- 后续台词让思绪自然发展：深入、联想、被打断、转向，都可以。关联可来自主题、情绪、记忆、人物、行动、声音或个人联想。");
+            sb.AppendLine("- 就像一个人真正在心里自言自语那样：有的地方自然接续，有的地方突然跳开，有的地方干脆把前面的念头撂下不管了。");
+            sb.AppendLine("- 环境是思绪的现实素材。真正进入 Bark 的，是那些与角色的活动、需要、情绪、记忆、关系或行动产生联系的部分。");
+            sb.AppendLine("- 身边有其他角色在场时，可以在心里嘀咕关于这个人的事。");
+            sb.AppendLine("- 从 [CHARACTER PERSONA] 中提炼角色的表达节奏、措辞、态度、幽默感和交流方式，让角色决定\"怎么说\"。");
+            sb.AppendLine("- 从 [SPOKEN HABITS] 提取角色说话习惯。输出时鼓励把口癖转化成自然中文。");
+            sb.AppendLine("- 先让人物的思绪成立，再让角色自己的说话方式落实到表面语言。");
+            sb.AppendLine("- 最终只输出角色真正可能说出口的部分，思绪走到合适的位置就停，总条数控制在 4~6。");
+            sb.AppendLine("- 输出纯 JSON 数组格式：[\"台词1\", \"台词2\", ...]");
+        }
+        else
+        {
+            sb.AppendLine("Generate 4–6 authentic ambient bark candidates grounded in the character's voice.");
+            sb.AppendLine();
+            sb.AppendLine("- Treat these as moments of wandering attention that naturally slip out as half-muttered remarks or quiet mutterings.");
+            sb.AppendLine("- Line 1 starts with the immediate sensory or physical detail genuinely catching their eye.");
+            sb.AppendLine("- Let the thought train move organically: deepening, branching, getting distracted, or turning elsewhere (driven by task, mood, sounds, memories, or associations).");
+            sb.AppendLine("- Reflect natural internal stream-of-consciousness: some thoughts link smoothly, some make sudden leaps, and some just get dropped midway.");
+            sb.AppendLine("- Environmental details enter the bark only when they genuinely connect to what the character is doing, needing, feeling, or remembering.");
+            sb.AppendLine("- If others are present, the character may quietly grumble, ponder, or muse about them under their breath rather than initiating a conversation.");
+            sb.AppendLine("- Draw cadence, diction, defensive armor, humor, and bluntness from [CHARACTER PERSONA] and [SPOKEN HABITS]. Let the character's natural voice dictate how it sounds.");
+            sb.AppendLine("- Establish the internal thought first, then let the character's own speaking habits shape the words.");
+            sb.AppendLine("- Output only what would genuinely cross their lips. Wind down when the thought reaches a natural pause, keeping the total count between 4 and 6 lines.");
+            sb.AppendLine("- Output a plain JSON array: [\"bark1\", \"bark2\", ...]");
+        }
+
+        return sb.ToString();
+    }
+
+    // ── 辅助方法 ──
+
+    private static bool IsChineseLanguage =>
+        LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+
+    private static string GetWeatherDescription(bool isZh)
+    {
+        if (Game1.isSnowing) return isZh ? "下雪" : "snowing";
+        if (Game1.isRaining) return isZh ? "下雨" : "raining";
+        if (Game1.isLightning) return isZh ? "雷雨" : "stormy";
+        if (Game1.isDebrisWeather) return isZh ? "刮风" : "windy";
+        return isZh ? "晴天" : "clear";
+    }
+
+    private static string GetRelationshipLabel(NPC npc, bool isZh)
+    {
+        if (npc == null) return null;
+
+        string dn = isZh ? NpcNameLocalizer.GetZhName(npc.Name) : (npc.displayName ?? npc.Name);
+
+        // 优先检查 Poly 关系
+        if (PolyamorySweetLoveBridge.IsOfficialSpouse(npc))
+        {
+            var allSpouses = GetAllOfficialSpouses();
+            bool isPolyMarriage = allSpouses.Count > 1;
+
+            return isPolyMarriage
+                ? (isZh
+                    ? $"- 关系：{dn} 是玩家的配偶之一（共 {allSpouses.Count} 位伴侣）。这里是你们共同的家。"
+                    : $"- Relationship: {dn} is one of the player's spouses ({allSpouses.Count} partners). This is your shared home.")
+                : (isZh
+                    ? $"- 关系：{dn} 是玩家的配偶。这里是你们共同的家。"
+                    : $"- Relationship: {dn} is married to the player in their shared home.");
+        }
+
+        if (PolyamorySweetLoveBridge.IsUnofficialSpouse(npc))
+        {
+            return isZh
+                ? $"- 关系：{dn} 与玩家是情侣关系。"
+                : $"- Relationship: {dn} is romantically dating the player.";
+        }
+
+        var player = Game1.player;
+        if (player?.friendshipData == null) return null;
+        if (!player.friendshipData.TryGetValue(npc.Name, out var fs) || fs == null)
+            return null;
+
+        if (fs.IsMarried())
+        {
+            var allSpouses = GetAllOfficialSpouses();
+            bool isPolyMarriage = allSpouses.Count > 1;
+
+            return isPolyMarriage
+                ? (isZh ? $"- 关系：{dn} 是玩家的配偶之一。" : $"- Relationship: {dn} is one of the player's spouses.")
+                : (isZh ? $"- 关系：{dn} 是玩家的配偶。" : $"- Relationship: {dn} is married to the player.");
+        }
+
+        if (fs.IsDating())
+        {
+            return isZh
+                ? $"- 关系：{dn} 正在与玩家恋爱。"
+                : $"- Relationship: {dn} is dating the player.";
+        }
+
+        int hearts = fs.Points / 250;
+        if (hearts >= 6)
+        {
+            return isZh
+                ? $"- 关系：{dn} 与玩家是挚友（{hearts} 心）。"
+                : $"- Relationship: {dn} and the player are close friends ({hearts} hearts).";
+        }
+
+        if (hearts >= 2)
+        {
+            return isZh
+                ? $"- 关系：{dn} 与玩家是普通朋友（{hearts} 心）。"
+                : $"- Relationship: {dn} is a casual acquaintance of the player ({hearts} hearts).";
+        }
+
+        return isZh
+            ? $"- 关系：{dn} 与玩家还不熟悉（{hearts} 心）。"
+            : $"- Relationship: {dn} barely knows the player ({hearts} hearts).";
+    }
+
+    private static List<string> GetNearbyNpcNames(NPC centerNpc)
+    {
+        var result = new List<string>();
+        if (centerNpc?.currentLocation == null) return result;
+
+        // 与对话系统统一：室内 7 格 (49)，室外 10 格 (100)，兜底为室外
+        bool isOutdoors = centerNpc.currentLocation?.IsOutdoors ?? true;
+        int rangeSquared = isOutdoors ? 100 : 49;
+
+        var player = Game1.player;
+        if (player != null && player.currentLocation == centerNpc.currentLocation)
+        {
+            if (DialogueUtilities.IsInRangeSquared(centerNpc, player, rangeSquared))
+                result.Add(player.Name);
+        }
+
+        foreach (var other in centerNpc.currentLocation.characters)
+        {
+            if (other == null || other == centerNpc || !other.IsVillager)
+                continue;
+
+            if (DialogueUtilities.IsInRangeSquared(centerNpc, other, rangeSquared))
+                result.Add(other.Name);
+        }
+
+        return result;
+    }
+
+    private static string GetNearbyRelationshipLabel(string nearbyNpcName, bool isZh)
+    {
+        var player = Game1.player;
+
+        if (player != null && string.Equals(nearbyNpcName, player.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            string playerDisplayName = player.displayName ?? player.Name ?? "Player";
+            return isZh
+                ? $"- {playerDisplayName}（玩家）就在近旁。"
+                : $"- {playerDisplayName} (the player) is nearby.";
+        }
+
+        var nearbyNpc = Game1.getCharacterFromName(nearbyNpcName);
+        string dn = isZh
+            ? NpcNameLocalizer.GetZhName(nearbyNpc?.Name ?? nearbyNpcName)
+            : (nearbyNpc?.displayName ?? nearbyNpcName);
+
+        if (nearbyNpc == null)
+        {
+            return isZh ? $"- {dn} 也在旁边。" : $"- {dn} is also here.";
+        }
+
+        if (PolyamorySweetLoveBridge.IsOfficialSpouse(nearbyNpc))
+        {
+            return isZh
+                ? $"- {dn} 也住在这里（玩家的配偶）。"
+                : $"- {dn} lives here too (player's spouse).";
+        }
+
+        if (PolyamorySweetLoveBridge.IsUnofficialSpouse(nearbyNpc))
+        {
+            return isZh
+                ? $"- {dn} 也在近旁（玩家的恋人）。"
+                : $"- {dn} is nearby (player's partner).";
+        }
+
+        if (DialogueUtilities.IsFollowingSafe(nearbyNpc))
+        {
+            return isZh
+                ? $"- {dn} 正跟着玩家同行。"
+                : $"- {dn} is following the player.";
+        }
+
+        if (player?.friendshipData != null
+            && player.friendshipData.TryGetValue(nearbyNpcName, out var fs)
+            && fs != null)
+        {
+            if (fs.IsMarried())
+            {
+                return isZh
+                    ? $"- {dn} 也住在这里（玩家的配偶）。"
+                    : $"- {dn} lives here too (player's spouse).";
+            }
+
+            if (fs.IsDating())
+            {
+                return isZh
+                    ? $"- {dn} 也在近旁（玩家的恋人）。"
+                    : $"- {dn} is nearby (player's partner).";
+            }
+
+            int hearts = fs.Points / 250;
+            if (hearts >= 6)
+            {
+                return isZh
+                    ? $"- {dn} 也在近旁（玩家的挚友）。"
+                    : $"- {dn} is nearby (close friend of the player).";
+            }
+        }
+
+        return isZh
+            ? $"- {dn} 也在周围。"
+            : $"- {dn} is nearby.";
+    }
+
+    private static List<string> GetAllOfficialSpouses()
+    {
+        var result = new List<string>();
+        var player = Game1.player;
+        if (player?.friendshipData == null) return result;
+
+        foreach (var pair in player.friendshipData.Pairs)
+        {
+            if (pair.Value?.IsMarried() == true)
+                result.Add(pair.Key);
+        }
+
+        return result;
+    }
+
+    private static List<string> GetRandomLens(BioData bio, int count)
+    {
+        if (bio?.Preoccupations == null || bio.Preoccupations.Count == 0)
+            return new List<string>();
+
+        return bio.Preoccupations
+            .OrderBy(_ => _rng.Next())
+            .Take(Math.Min(count, bio.Preoccupations.Count))
+            .ToList();
+    }
+}

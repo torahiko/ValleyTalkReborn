@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Version>2.0.1</Version>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <GamePath>H:\ValleytalkReborn\Stardew Valley</GamePath>
+    <EnableHarmony>true</EnableHarmony>
+    <Platforms>AnyCPU;x64</Platforms>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ModFolderName>ValleyTalkReborn</ModFolderName>
+    <Authors>srkgou/dandm1</Authors>
+    <PackageId>ValleytalkReborn</PackageId>
+    <Product>ValleytalkReborn</Product>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="newtonsoft.json" Version="13.0.5-beta1" />
+    <PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.4.0" />
+    <PackageReference Include="TextCopy" Version="6.2.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="manifest.json">
+      <Link>%(Filename)%(Extension)</Link> 
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="i18n/**">
+      <Link>i18n/%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="assets/**">
+      <Link>assets/%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ContentPacks Include="../ContentPack" FolderName="[CP] ValleyTalkReborn Base" Version="$(Version)" />
+  </ItemGroup>
+</Project>

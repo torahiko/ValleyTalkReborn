@@ -1,0 +1,920 @@
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Xna.Framework;
+using StardewModdingAPI;
+using StardewModdingAPI.Events;
+using StardewValley;
+using StardewValley.Menus;
+using StardewValley.Pathfinding;
+
+namespace ValleytalkReborn
+{
+    // ══════════════════════════════════════════════════════════════
+    //  约会阶段枚举（替换原来的 DateWindowOpen / DateStarted / DateConsumed 三个 bool）
+    // ══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// 描述一次约会的生命周期阶段。
+    /// <list type="bullet">
+    ///   <item><term>None</term><description>无进行中约会。</description></item>
+    ///   <item><term>Pending</term><description>已预约，等待玩家到达约会地点（原 DateWindowOpen=true, DateStarted=false）。</description></item>
+    ///   <item><term>Active</term><description>约会进行中（原 DateStarted=true, DateConsumed=true）。</description></item>
+    ///   <item><term>Closing</term><description>告别对话播放中，等待玩家关闭对话框后清理（原 _farewellPending=true）。</description></item>
+    /// </list>
+    /// </summary>
+    public enum DatePhase
+    {
+        None,
+        Pending,
+        Active,
+        Closing,
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  1. 约会地点元数据池（POI 环境细节）
+    // ══════════════════════════════════════════════════════════════
+    public class DateLocationInfo
+    {
+        public string LocationId { get; set; }
+        public string DisplayNameZh { get; set; }
+        public string DisplayNameEn { get; set; }
+        public string ContextDescriptionZh { get; set; }
+        public string ContextDescriptionEn { get; set; }
+    }
+
+    public static class DateLocationRegistry
+    {
+        public static readonly Dictionary<string, DateLocationInfo> Locations =
+            new(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Saloon"] = new DateLocationInfo
+                {
+                    LocationId = "Saloon",
+                    DisplayNameZh = "星之果实酒吧 (Saloon)",
+                    DisplayNameEn = "the Stardrop Saloon",
+                    ContextDescriptionZh = "酒吧里暖意融融，壁炉柴火噼啪作响，空气中弥漫着麦芽酒与披萨的香气，还有点唱机的轻柔旋律。",
+                    ContextDescriptionEn =
+                        "The saloon is warm and bustling, with the gentle crackle of the fireplace, aroma of food, and soft music."
+                },
+                ["Beach"] = new DateLocationInfo
+                {
+                    LocationId = "Beach",
+                    DisplayNameZh = "海滩码头 (Beach)",
+                    DisplayNameEn = "the Beach Pier",
+                    ContextDescriptionZh = "夜晚的海风带着微咸的湿气，海浪一下下拍打着栈桥，头顶是无垠的星空与粼粼的波光。",
+                    ContextDescriptionEn =
+                        "The evening ocean breeze is gentle and cool, with waves softly lapping against the wooden pier beneath a starry sky."
+                },
+                ["Forest"] = new DateLocationInfo
+                {
+                    LocationId = "Forest",
+                    DisplayNameZh = "秘密森林 (Forest)",
+                    DisplayNameEn = "the Secret Forest",
+                    ContextDescriptionZh = "幽静的森林深处荧光闪烁，古树环绕，池塘水面倒映着夜色，四周静谧得只有虫鸣与树叶沙沙声。",
+                    ContextDescriptionEn =
+                        "Secluded deep within ancient trees, with faint glowing mushrooms, still waters, and soft whispers of nature."
+                },
+                ["Mountain"] = new DateLocationInfo
+                {
+                    LocationId = "Mountain",
+                    DisplayNameZh = "深山湖畔 (Mountain)",
+                    DisplayNameEn = "the Mountain Lake",
+                    ContextDescriptionZh = "山顶湖畔夜风清凉，远眺能看到小镇的零星灯火，倒映在清澈冰凉的湖面上，格外浪漫开阔。",
+                    ContextDescriptionEn =
+                        "Cool crisp mountain air overlooking the lake, with distant town lights twinkling on the water."
+                },
+                ["Town"] = new DateLocationInfo
+                {
+                    LocationId = "Town",
+                    DisplayNameZh = "鹈鹕镇广场 (Town)",
+                    DisplayNameEn = "Pelican Town Square",
+                    ContextDescriptionZh = "小镇广场的路灯泛着暖黄色的光晕，两人在石板路边散步，气氛悠闲而日常。",
+                    ContextDescriptionEn =
+                        "Streetlamps cast a warm golden glow across the cobblestone square, creating a peaceful evening stroll."
+                }
+            };
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  2. 约会会话专属上下文收集容器
+    // ══════════════════════════════════════════════════════════════
+    public sealed record DialogueRecord(string Speaker, string Text);
+
+    public sealed record GiftRecord(string ItemName, int Taste);
+
+    public sealed record ActionRecord(string Description);
+
+    public class DateSessionData
+    {
+        public string NpcName { get; }
+        public string TargetLocation { get; }
+        public int StartTime { get; }
+        public int EndTime { get; set; }
+
+        public LatenessLevel Lateness { get; set; } = LatenessLevel.OnTime;
+
+        public List<DialogueRecord> DialogueLogs { get; } = new();
+        public List<GiftRecord> GiftLogs { get; } = new();
+        public List<ActionRecord> ActionLogs { get; } = new();
+
+        public bool PlayerGaveGift { get; set; } = false;
+        public string GivenGiftName { get; set; } = "";
+        public int GiftTaste { get; set; } = -1;
+
+        public DateSessionData(string npcName, string location, int startTime)
+        {
+            NpcName = npcName;
+            TargetLocation = location;
+            StartTime = startTime;
+        }
+
+        public void RecordDialogue(string speaker, string text)
+            => DialogueLogs.Add(new DialogueRecord(speaker, text));
+
+        public void RecordGift(string giftName, int taste)
+        {
+            PlayerGaveGift = true;
+            GivenGiftName = giftName;
+            GiftTaste = taste;
+            GiftLogs.Add(new GiftRecord(giftName, taste));
+        }
+
+        public void RecordAction(string description)
+            => ActionLogs.Add(new ActionRecord(description));
+
+        public string ToReviewPromptContext()
+        {
+            string latenessNote = Lateness switch
+            {
+                LatenessLevel.OnTime => "（玩家准时到达）",
+                LatenessLevel.SlightlyLate => "（玩家轻度迟到，19:00-21:00 之间到达）",
+                LatenessLevel.VeryLate => "（玩家严重迟到，21:00-22:00 之间到达）",
+                _ => ""
+            };
+
+            return $@"
+=== 约会概要 ===
+对象: {NpcName}
+地点: {TargetLocation}
+时间段: {StartTime} - {EndTime}
+守时情况: {latenessNote}
+
+=== 互动对话流水 ===
+{(DialogueLogs.Count > 0 ? string.Join("\n", DialogueLogs.Select(d => $"[{d.Speaker}]: {d.Text}")) : "（两人安静相伴散步，未进行长篇交流）")}
+
+=== 礼物与互动行为 ===
+{(GiftLogs.Count > 0 ? string.Join("\n", GiftLogs.Select(g => $"玩家赠送了礼物【{g.ItemName}】(喜好评级: {g.Taste})")) : "（未赠送额外礼物）")}
+{(ActionLogs.Count > 0 ? string.Join("\n", ActionLogs.Select(a => a.Description)) : "")}
+".Trim();
+        }
+    }
+
+    public enum LatenessLevel
+    {
+        OnTime, // 19:00 之前到达
+        SlightlyLate, // 19:00 ~ 21:00
+        VeryLate // 21:00 ~ 22:00
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  3. 约会系统总状态机（DateManager）
+    // ══════════════════════════════════════════════════════════════
+    internal class DateManager : IDateStateProvider
+    {
+        // ─── Singleton ───────────────────────────────────────────────
+        public static readonly DateManager Instance = new();
+
+        // ─── 枚举 ────────────────────────────────────────────────────
+        public enum DateMode
+        {
+            None,
+            Scheduled,
+            Follow
+        }
+
+        public enum DateOrigin
+        {
+            NpcInitiated,
+            PlayerInitiated
+        }
+
+        // ─── 工具 ────────────────────────────────────────────────────
+        private static bool IsChineseLanguage =>
+            LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+
+        // ─── 只读派生集合（供外部查询）───────────────────────────────
+        public static readonly Dictionary<string, string> LocationDisplayNames =
+            DateLocationRegistry.Locations.ToDictionary(
+                k => k.Key,
+                v => $"{v.Value.DisplayNameZh} / {v.Value.DisplayNameEn}",
+                StringComparer.OrdinalIgnoreCase);
+
+        public static readonly HashSet<string> WhitelistedLocations =
+            new(DateLocationRegistry.Locations.Keys, StringComparer.OrdinalIgnoreCase);
+
+        // ─── 时间常量 ─────────────────────────────────────────────────
+        private const int EarliestDateTriggerTime = 1800;
+        private const int ScheduledDateTriggerCutoff = 2130;
+        private const int OnTimeCutoff = 1900;
+        private const int SlightlyLateCutoff = 2100;
+        private const int HardEndTime = 2200;
+        private const int FollowDurationMinutes = 120;
+        private const int ScheduledDurationMinutes = 180;
+        private const int BarkGlobalCooldownSeconds = 60;
+
+        // ─── 核心状态 ─────────────────────────────────────────────────
+
+        /// <summary>当前约会阶段。替代原来的 DateWindowOpen / DateStarted / DateConsumed。</summary>
+        public DatePhase Phase { get; private set; } = DatePhase.None;
+
+        public string ActiveDateNpcName { get; private set; } = "";
+        public string ActiveDateLocation { get; private set; } = "";
+        public DateMode CurrentDateMode { get; private set; } = DateMode.None;
+        public DateOrigin CurrentDateOrigin { get; private set; } = DateOrigin.NpcInitiated;
+        public int DynamicEndTime { get; private set; } = HardEndTime;
+        public DateSessionData CurrentSession { get; private set; }
+
+        // 外部系统仍需要的状态（保持 public，供 NpcReceiveGiftPatch 等使用）
+        public bool SpouseMorningInvitePending { get; set; } = false;
+        public bool HasGivenDateGiftThisSession { get; set; } = false;
+
+        // ─── 私有状态 ─────────────────────────────────────────────────
+        private double _lastBarkTimestamp = 0;
+
+        // 约会会话版本号，用于拦截过期的异步 LLM 回调
+        private int _dateSessionVersion = 0;
+
+        // 主线程任务队列：异步线程将回调 Enqueue 到这里，UpdateTicked 统一 Drain
+
+        private readonly ConcurrentQueue<Action> _mainThreadQueue = new();
+
+        // 告别对话关闭轮询
+        private string _farewellCloseNpcName = null;
+
+        // ─── 构造 / 初始化 / 清理 ────────────────────────────────────
+
+        private DateManager()
+        {
+        }
+
+        /// <summary>
+        /// 由 ModEntry.Entry() 显式调用，替代原来在构造函数中注册事件的反模式。
+        /// </summary>
+        public void Initialize(IModHelper helper)
+        {
+            helper.Events.GameLoop.TimeChanged += OnTimeChanged;
+            helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
+            helper.Events.GameLoop.DayStarted += OnDayStarted;
+            helper.Events.GameLoop.DayEnding += OnDayEnding;
+            helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
+            helper.Events.Player.Warped += OnPlayerWarped;
+            helper.Events.Display.MenuChanged += OnMenuChanged;
+        }
+
+        public void Cleanup(IModHelper helper)
+        {
+            helper.Events.GameLoop.TimeChanged -= OnTimeChanged;
+            helper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
+            helper.Events.GameLoop.DayStarted -= OnDayStarted;
+            helper.Events.GameLoop.DayEnding -= OnDayEnding;
+            helper.Events.GameLoop.SaveLoaded -= OnSaveLoaded;
+            helper.Events.Player.Warped -= OnPlayerWarped;
+            helper.Events.Display.MenuChanged -= OnMenuChanged;
+
+            if (!string.IsNullOrEmpty(ActiveDateNpcName))
+            {
+                ReleaseNpc(ActiveDateNpcName);
+                ResetDateState();
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        //  对外 API
+        // ─────────────────────────────────────────────────────────────
+
+        public bool TryScheduleDate(
+            NPC npc,
+            string locationId,
+            DateOrigin origin = DateOrigin.NpcInitiated)
+        {
+            var world = CaptureWorldSnapshot();
+            if (!DateRules.CanScheduleDate(world, locationId, ActiveDateNpcName, npc.Name,
+                    WhitelistedLocations, ScheduledDateTriggerCutoff))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[DateManager] Date rejected by rules: festival={world.IsFestivalDay}, " +
+                    $"time={world.TimeOfDay}, loc={locationId}, busy={ActiveDateNpcName}.",
+                    LogLevel.Debug);
+                return false;
+            }
+
+            ActiveDateNpcName = npc.Name;
+            ActiveDateLocation = locationId;
+            CurrentDateMode = DateMode.Scheduled;
+            CurrentDateOrigin = origin;
+            Phase = DatePhase.Pending;
+            DynamicEndTime = HardEndTime;
+
+            ModEntry.SMonitor?.Log(
+                $"[DateManager] Scheduled date confirmed: {npc.Name} @ {locationId} (origin={origin}).",
+                LogLevel.Info);
+
+            CompanionScheduleManager.Instance?.ClearScheduleForOverride("DateScheduled", npc.Name);
+            return true;
+        }
+
+        public bool TryStartFollow(NPC npc)
+        {
+            var world = CaptureWorldSnapshot();
+            if (!DateRules.CanStartFollow(world, ActiveDateNpcName, npc.Name, HardEndTime))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[DateManager] Follow rejected by rules: festival={world.IsFestivalDay}, " +
+                    $"time={world.TimeOfDay}, busy={ActiveDateNpcName}.",
+                    LogLevel.Debug);
+                return false;
+            }
+
+            // 🔥 修复 3：Follow 开始时，使之前可能残留的 Scheduled LLM 任务失效
+            InvalidateDateSession();
+
+            int rawEndTime = Utility.ModifyTime(Game1.timeOfDay, FollowDurationMinutes);
+            int followEndTime = Math.Min(rawEndTime, HardEndTime);
+
+            ActiveDateNpcName = npc.Name;
+            ActiveDateLocation = Game1.player.currentLocation?.Name ?? "";
+            CurrentDateMode = DateMode.Follow;
+            Phase = DatePhase.Pending;
+            DynamicEndTime = followEndTime;
+
+            ModEntry.SMonitor?.Log(
+                $"[DateManager] Follow started: {npc.Name}, endTime={followEndTime}.",
+                LogLevel.Info);
+
+            StartDateFollowImmediate(npc, followEndTime);
+            return true;
+        }
+
+        /// <summary>
+        /// IDateStateProvider 接口实现。
+        /// Phase >= Active 时视为"已消费"，外部调用通常不需要这个方法了，
+        /// 但保留以维持接口兼容。
+        /// </summary>
+        [Obsolete("状态机已改用 DatePhase，此方法已废弃。")]
+        public void ConsumeDate(string npcName)
+        {
+        }
+
+        public void EndDateGracefully(string npcName, string reason = "Player_Requested")
+        {
+            if (ActiveDateNpcName != npcName || Phase != DatePhase.Active) return;
+
+            ModEntry.SMonitor?.Log(
+                $"[DateManager] Date ended gracefully: {npcName} (reason: {reason}).",
+                LogLevel.Info);
+
+            if (CurrentSession != null)
+            {
+                CurrentSession.EndTime = Game1.timeOfDay;
+                _ = ReviewDateSessionAsync(CurrentSession);
+            }
+
+            ReleaseNpc(npcName);
+            ResetDateState();
+        }
+
+        public bool IsOnDate(string npcName) => Phase == DatePhase.Active
+                                                && ActiveDateNpcName == npcName
+                                                && Game1.timeOfDay < DynamicEndTime;
+
+        public void RecordDateDialogue(string speaker, string text)
+        {
+            if (CurrentDateMode == DateMode.Scheduled && CurrentSession != null)
+                CurrentSession.RecordDialogue(speaker, text);
+        }
+
+        public void RecordDateGift(string giftName, int taste)
+        {
+            if (CurrentDateMode == DateMode.Scheduled && CurrentSession != null)
+                CurrentSession.RecordGift(giftName, taste);
+        }
+
+        public bool CanTriggerTownieBark()
+        {
+            if (CurrentDateMode != DateMode.Scheduled || Phase != DatePhase.Active)
+                return false;
+
+            double now = Game1.currentGameTime.TotalGameTime.TotalSeconds;
+            if (now - _lastBarkTimestamp >= BarkGlobalCooldownSeconds)
+            {
+                _lastBarkTimestamp = now;
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool CanTriggerTwoStageCallout()
+            => CurrentDateMode == DateMode.Scheduled
+               && Phase == DatePhase.Active
+               && Game1.activeClickableMenu == null
+               && !Game1.player.UsingTool
+               && !Game1.player.isRidingHorse()
+               && !Game1.eventUp
+               && !Game1.isFestival();
+
+        // ─────────────────────────────────────────────────────────────
+        //  内部流程：开场
+        // ─────────────────────────────────────────────────────────────
+
+        private void StartDateFollowImmediate(NPC npc, int endTime)
+        {
+            if (Phase == DatePhase.Active) return;
+
+            Phase = DatePhase.Active;
+            DynamicEndTime = endTime;
+
+            npc.controller = null;
+            npc.temporaryController = null;
+            npc.doingEndOfRouteAnimation.Value = false;
+            npc.Schedule?.Clear();
+            npc.CurrentDialogue.Clear();
+
+            Vector2 spawnTile = FindSafeTileNearPlayer(npc);
+            Game1.warpCharacter(npc, Game1.player.currentLocation, spawnTile);
+
+            MovementManager.Instance.StartDateFollow(npc, endTime);
+            ModEntry.SMonitor?.Log($"[DateManager] Immediate follow active for {npc.Name}.", LogLevel.Info);
+        }
+
+        private void StartScheduledDateWithFade(NPC npc, int endTime)
+        {
+            if (Phase == DatePhase.Active) return;
+
+            Phase = DatePhase.Active;
+            DynamicEndTime = endTime;
+
+            LatenessLevel lateness = DateRules.GetLatenessLevel(Game1.timeOfDay, OnTimeCutoff, SlightlyLateCutoff);
+
+            CurrentSession = new DateSessionData(npc.Name, ActiveDateLocation, Game1.timeOfDay)
+            {
+                Lateness = lateness
+            };
+
+            string npcNameSnapshot = npc.Name;
+            string locationSnapshot = ActiveDateLocation;
+            int endTimeSnapshot = endTime;
+
+            int currentSessionVersion = StartNewDateGeneration();
+            Game1.globalFadeToBlack(() =>
+            {
+                npc.controller = null;
+                npc.temporaryController = null;
+                npc.doingEndOfRouteAnimation.Value = false;
+                npc.Schedule?.Clear();
+                npc.CurrentDialogue.Clear();
+
+                Vector2 spawnTile = FindSafeTileNearPlayer(npc);
+                Game1.warpCharacter(npc, Game1.player.currentLocation, spawnTile);
+                npc.facePlayer(Game1.player);
+                Game1.player.faceGeneralDirection(npc.getStandingPosition());
+
+                _ = FetchAndQueueGreetingAsync(npcNameSnapshot, locationSnapshot, lateness, endTimeSnapshot, currentSessionVersion);
+            });
+        }
+
+        /// <summary>独立的异步问候语获取方法。</summary>
+        private async Task FetchAndQueueGreetingAsync(string npcName, string location, LatenessLevel lateness, int endTime, int sessionVersion)
+        {
+            var (sys, user) = DateFlowService.BuildGreetingPrompt(npcName, location, lateness);
+            string greeting = await DateFlowService.FetchLlmResponse(sys, user, 2500);
+            if (string.IsNullOrWhiteSpace(greeting))
+                greeting = DateFlowService.BuildDefaultGreeting(lateness);
+
+            _mainThreadQueue.Enqueue(() =>
+            {
+                if (sessionVersion != _dateSessionVersion || ActiveDateNpcName != npcName)
+                {
+                    ModEntry.SMonitor?.Log("[DateManager] 丢弃过期的 LLM 问候语 (Session Mismatch).", LogLevel.Debug);
+                    return;
+                }
+                ShowGreeting(npcName, greeting, endTime);
+            });
+        }
+
+        private void ShowGreeting(string npcName, string greeting, int endTime)
+        {
+            if (!Context.IsWorldReady) return;
+
+            Game1.globalFadeToClear(() =>
+            {
+                NPC targetNpc = Game1.getCharacterFromName(npcName);
+                if (targetNpc == null) return;
+
+                targetNpc.doEmote(32);
+                MovementManager.Instance.StartDateFollow(targetNpc, endTime);
+                targetNpc.CurrentDialogue.Clear();
+                targetNpc.CurrentDialogue.Push(new Dialogue(targetNpc, null, greeting));
+                Game1.drawDialogue(targetNpc);
+                RecordDateDialogue(targetNpc.Name, greeting);
+            });
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        //  内部流程：结束
+        // ─────────────────────────────────────────────────────────────
+
+        private void TriggerFarewellDialogue(NPC npc)
+        {
+            // Phase 已在调用前由调用方设为 Closing，防止重复触发
+            if (CurrentSession != null)
+            {
+                CurrentSession.EndTime = Game1.timeOfDay;
+                _ = ReviewDateSessionAsync(CurrentSession);
+            }
+
+            MovementManager.Instance.StopDateFollow(npc);
+            npc.Halt();
+            npc.controller = null;
+            npc.facePlayer(Game1.player);
+
+            string npcNameSnapshot = npc.Name;
+            string locationSnapshot = ActiveDateLocation;
+            int currentSessionVersion = _dateSessionVersion;
+
+            _ = FetchAndQueueFarewellAsync(npcNameSnapshot, locationSnapshot, currentSessionVersion);
+        }
+
+        private void ShowFarewellDialogue(string npcName, string line)
+        {
+            // 检查世界状态，以及约会是否还处于 Closing 阶段
+            if (!Context.IsWorldReady || Phase != DatePhase.Closing || Game1.timeOfDay >= 2300)
+            {
+                ReleaseNpc(npcName);
+                ResetDateState();
+                return;
+            }
+
+            NPC npc = Game1.getCharacterFromName(npcName);
+            if (npc == null)
+            {
+                ReleaseNpc(npcName);
+                ResetDateState();
+                return;
+            }
+
+            npc.CurrentDialogue.Clear();
+            npc.CurrentDialogue.Push(new Dialogue(npc, null, line));
+            Game1.drawDialogue(npc);
+
+            // 记录正在等待关闭的 NPC，OnMenuChanged 事件会处理释放
+            _farewellCloseNpcName = npcName;
+        }
+
+        /// <summary>独立的异步告别语获取方法。</summary>
+        private async Task FetchAndQueueFarewellAsync(string npcName, string location, int sessionVersion)
+        {
+            var (sys, user) = DateFlowService.BuildFarewellPrompt(npcName, location);
+            string farewellLine = await DateFlowService.FetchLlmResponse(sys, user, 10000);
+            string line = string.IsNullOrWhiteSpace(farewellLine)
+                ? DateFlowService.BuildDefaultFarewell()
+                : farewellLine;
+
+            _mainThreadQueue.Enqueue(() =>
+            {
+                if (sessionVersion != _dateSessionVersion || ActiveDateNpcName != npcName)
+                {
+                    ModEntry.SMonitor?.Log("[DateManager] 丢弃过期的 LLM 告别语 (Session Mismatch).", LogLevel.Debug);
+                    return;
+                }
+                ShowFarewellDialogue(npcName, line);
+            });
+        }
+
+        /// <summary>
+        /// 事件驱动替代 PollFarewellClose 轮询：
+        /// 当告别对话框被玩家关闭时，释放 NPC 并重置约会状态。
+        /// </summary>
+        private void OnMenuChanged(object sender, MenuChangedEventArgs e)
+        {
+            // 只关心告别对话的关闭
+            if (_farewellCloseNpcName == null) return;
+
+            // 旧菜单是 DialogueBox 且新菜单为 null → 对话框被真正关闭
+            if (e.OldMenu is DialogueBox && e.NewMenu == null)
+            {
+                var name = _farewellCloseNpcName;
+                _farewellCloseNpcName = null;
+
+                ModEntry.SMonitor?.Log(
+                    $"[DateManager] Farewell dialogue closed for {name}. Releasing NPC.",
+                    LogLevel.Info);
+
+                ReleaseNpc(name);
+                ResetDateState();
+            }
+        }
+
+        private async Task ReviewDateSessionAsync(DateSessionData session)
+        {
+            try
+            {
+                string reviewContext = session.ToReviewPromptContext();
+                ModEntry.SMonitor?.Log(
+                    $"[DateManager] 提交约会终极复盘与心锚记录:\n{reviewContext}",
+                    LogLevel.Trace);
+                // TODO: 接入 DateReviewService 实现实际 LLM 复盘
+            }
+            catch (Exception ex)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[DateManager] 约会终极复盘失败: {ex.Message}",
+                    LogLevel.Warn);
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        //  NPC 释放（清理约会状态，回家委托给 MovementManager）
+        // ─────────────────────────────────────────────────────────────
+
+        private void ReleaseNpc(string npcName)
+        {
+            NPC dateNpc = Game1.getCharacterFromName(npcName);
+            if (dateNpc == null) return;
+
+            // 清理约会专属 NPC 状态
+            MovementManager.Instance.StopDateFollow(dateNpc);
+            dateNpc.Halt();
+            dateNpc.movementPause = 0;
+            dateNpc.addedSpeed = 0;
+            dateNpc.doingEndOfRouteAnimation.Value = false;
+            dateNpc.controller = null;
+            dateNpc.temporaryController = null;
+
+            // 委托 MovementManager 负责回家 + 恢复日程
+            MovementManager.Instance.TryRestoreSchedule(dateNpc);
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        //  辅助工具
+        // ─────────────────────────────────────────────────────────────
+
+        private static Vector2 FindSafeTileNearPlayer(NPC npc)
+        {
+            var location = Game1.player.currentLocation;
+            var origin = Game1.player.Tile;
+
+            Vector2[] candidates =
+            {
+                new(origin.X + 1, origin.Y),
+                new(origin.X - 1, origin.Y),
+                new(origin.X, origin.Y - 1),
+                new(origin.X, origin.Y + 1),
+            };
+
+            foreach (var tile in candidates)
+            {
+                if (location.isTilePassable(
+                        new xTile.Dimensions.Location((int)tile.X, (int)tile.Y),
+                        Game1.viewport))
+                    return tile;
+            }
+
+            return origin;
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        //  事件监听
+        // ─────────────────────────────────────────────────────────────
+
+        private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
+        {
+            // ① 统一 Drain 主线程队列（异步 LLM 结果在这里落地）
+            while (_mainThreadQueue.TryDequeue(out var action))
+            {
+                try
+                {
+                    action();
+                }
+                catch (Exception ex)
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[DateManager] MainThread action error: {ex.Message}",
+                        LogLevel.Warn);
+                }
+            }
+
+            // ② 约会触发检测（Pending 阶段，每 30 tick 轮询一次）
+            if (Phase != DatePhase.Pending
+                || CurrentDateMode != DateMode.Scheduled
+                || string.IsNullOrEmpty(ActiveDateNpcName))
+                return;
+
+            if (!e.IsMultipleOf(30)) return;
+
+            var world = CaptureWorldSnapshot();
+            if (!DateRules.ShouldTriggerDate(world, ActiveDateLocation,
+                    EarliestDateTriggerTime, ScheduledDateTriggerCutoff))
+                return;
+
+            NPC npc = Game1.getCharacterFromName(ActiveDateNpcName);
+            if (npc == null) return;
+
+            int durationMinutes = DateRules.GetDateDurationMinutes(
+                Game1.timeOfDay, OnTimeCutoff, SlightlyLateCutoff, ScheduledDurationMinutes);
+
+            int rawEnd = Utility.ModifyTime(Game1.timeOfDay, durationMinutes);
+            int scheduledEndTime = Math.Min(rawEnd, HardEndTime);
+            StartScheduledDateWithFade(npc, scheduledEndTime);
+        }
+
+        private void OnTimeChanged(object sender, TimeChangedEventArgs e)
+        {
+            if (Phase == DatePhase.None) return;
+
+            // ── Pending 阶段（等待玩家到达）──────────────────────────
+            if (Phase == DatePhase.Pending && CurrentDateMode == DateMode.Scheduled)
+            {
+                if (e.NewTime == SlightlyLateCutoff)
+                {
+                    string npcDisplayName =
+                        Game1.getCharacterFromName(ActiveDateNpcName)?.displayName ?? ActiveDateNpcName;
+                    bool isZh = IsChineseLanguage;
+                    Game1.showGlobalMessage(isZh
+                        ? $"{npcDisplayName} 已经在等你很久了……"
+                        : $"{npcDisplayName} has been waiting for you for a long time...");
+                    ModEntry.SMonitor?.Log(
+                        $"[DateManager] Player has not arrived by {SlightlyLateCutoff}. NPC is getting impatient.",
+                        LogLevel.Info);
+                }
+
+                if (e.NewTime >= ScheduledDateTriggerCutoff)
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[DateManager] Player never arrived. Recording stood-up at {e.NewTime}.",
+                        LogLevel.Info);
+                    if (CurrentDateOrigin == DateOrigin.PlayerInitiated)
+                        StoodUpTracker.Instance.RecordStoodUp(ActiveDateNpcName);
+                    else
+                        ModEntry.SMonitor?.Log(
+                            "[DateManager] NPC-initiated date missed — no stood-up penalty.",
+                            LogLevel.Info);
+
+                    ReleaseNpc(ActiveDateNpcName);
+                    ResetDateState();
+                }
+
+                return;
+            }
+
+            // ── Active 阶段：检查是否到结束时间 ──────────────────────
+            if (Phase != DatePhase.Active) return;
+            if (e.NewTime < DynamicEndTime && e.NewTime < HardEndTime) return;
+
+            if (CurrentDateMode == DateMode.Follow)
+            {
+                ModEntry.SMonitor?.Log($"[DateManager] Follow mode ended at {e.NewTime}.", LogLevel.Info);
+                ReleaseNpc(ActiveDateNpcName);
+                ResetDateState();
+                return;
+            }
+
+            // Scheduled 约会时间到，触发告别
+            NPC dateNpc = Game1.getCharacterFromName(ActiveDateNpcName);
+            if (dateNpc != null)
+            {
+                Phase = DatePhase.Closing; // 先切换，防止 TriggerFarewellDialogue 重入
+                TriggerFarewellDialogue(dateNpc);
+            }
+            else
+            {
+                ReleaseNpc(ActiveDateNpcName);
+                ResetDateState();
+            }
+        }
+
+        private void OnPlayerWarped(object sender, WarpedEventArgs e)
+        {
+            if (Phase == DatePhase.None || string.IsNullOrEmpty(ActiveDateNpcName)) return;
+            if (!DateRules.IsIllegalDateLocation(e.NewLocation.Name)) return;
+
+            NPC partner = Game1.getCharacterFromName(ActiveDateNpcName);
+
+            if (CurrentDateMode == DateMode.Follow)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[DateManager] Entered hazardous location during follow. Releasing {ActiveDateNpcName}.",
+                    LogLevel.Info);
+                ReleaseNpc(ActiveDateNpcName);
+                ResetDateState();
+            }
+            else if (CurrentDateMode == DateMode.Scheduled)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[DateManager] Player abandoned date by going to illegal area!",
+                    LogLevel.Warn);
+
+                StoodUpTracker.Instance.RecordStoodUp(ActiveDateNpcName);
+                bool isZh = IsChineseLanguage;
+                Game1.showRedMessage(isZh
+                    ? $"{ActiveDateNpcName} 发现你独自前往危险区域，伤心地回家了……"
+                    : $"{ActiveDateNpcName} saw you leave alone and went home, heartbroken...");
+
+                if (partner != null)
+                {
+                    // 直接 warp 回家，不走告别流程
+                    Game1.warpCharacter(
+                        partner,
+                        partner.DefaultMap,
+                        new Vector2(partner.DefaultPosition.X / 64f, partner.DefaultPosition.Y / 64f));
+                }
+
+                ReleaseNpc(ActiveDateNpcName);
+                ResetDateState();
+            }
+        }
+
+        private void OnDayEnding(object sender, DayEndingEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(ActiveDateNpcName) && CurrentDateMode == DateMode.Scheduled)
+            {
+                if (Phase == DatePhase.Pending && CurrentDateOrigin == DateOrigin.PlayerInitiated)
+                {
+                    // 玩家主动约但没去赴约，直接睡觉算放鸽子
+                    StoodUpTracker.Instance.RecordStoodUp(ActiveDateNpcName);
+                }
+                else if (Phase == DatePhase.Active && CurrentSession != null)
+                {
+                    // 约会中途去睡觉，补一次复盘结算
+                    CurrentSession.EndTime = Game1.timeOfDay;
+                    _ = ReviewDateSessionAsync(CurrentSession);
+                    ModEntry.SMonitor?.Log(
+                        $"[DateManager] Player slept during active date with {ActiveDateNpcName}. Settling session.",
+                        LogLevel.Info);
+                }
+            }
+
+            ReleaseNpc(ActiveDateNpcName);
+            ResetDateState();
+        }
+
+        private void OnDayStarted(object sender, DayStartedEventArgs e)
+        {
+            ResetDateState();
+        }
+
+        private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
+        {
+            ResetDateState();
+            StoodUpTracker.Instance.Load();
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        //  状态重置
+        // ─────────────────────────────────────────────────────────────
+
+        private void ResetDateState()
+        {
+            InvalidateDateSession();
+            Phase = DatePhase.None;
+            ActiveDateNpcName = "";
+            ActiveDateLocation = "";
+            CurrentDateMode = DateMode.None;
+            CurrentDateOrigin = DateOrigin.NpcInitiated;
+            DynamicEndTime = HardEndTime;
+            SpouseMorningInvitePending = false;
+            HasGivenDateGiftThisSession = false;
+            CurrentSession = null;
+            _farewellCloseNpcName = null;
+            _lastBarkTimestamp = 0;
+
+            // 清空队列中残留的回调，防止跨天或跨存档执行
+            while (_mainThreadQueue.TryDequeue(out _))
+            {
+            }
+        }
+
+        /// <summary>从 Game1 捕获当前世界状态快照，供 DateRules 使用。</summary>
+        private static DateWorldSnapshot CaptureWorldSnapshot() => new(
+            TimeOfDay: Game1.timeOfDay,
+            PlayerLocationName: Game1.player?.currentLocation?.Name ?? "",
+            IsFestivalDay: Utility.isFestivalDay(Game1.dayOfMonth, Game1.season),
+            IsWorldReady: Context.IsWorldReady
+        );
+
+        /// <summary>开启新一代约会会话，返回新的世代号。</summary>
+        private int StartNewDateGeneration()
+        {
+            unchecked { return ++_dateSessionVersion; }
+        }
+
+        /// <summary>使当前会话失效（用于中断旧的异步 LLM 任务）。</summary>
+        private void InvalidateDateSession()
+        {
+            unchecked { _dateSessionVersion++; }
+        }
+    }
+}
