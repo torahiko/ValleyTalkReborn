@@ -94,7 +94,7 @@ public class BioData
     public bool IsKnownNpc { get; set; } = false;
 
     // ── 环境自言自语（Ambient Bark）系统 ──
-    // 这两个字段仅供 DynamicBarkManager 使用，严禁注入到标准对话上下文（DialogueBuilder / Prompts）。
+    // 这两个字段仅供 DynamicBarkManager 使用，（DialogueBuilder / Prompts）。
     public bool EnableAmbientBarks { get; set; } = false;
     public string AmbientBarkPrompt { get; set; } = null;
 
