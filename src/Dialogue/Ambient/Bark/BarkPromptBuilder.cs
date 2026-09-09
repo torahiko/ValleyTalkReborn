@@ -37,11 +37,40 @@ internal sealed class BarkPromptBuilder
         PlayerStateScanner.Scan();
 
         bool isZh = IsChineseLanguage;
+
+        // 焦点决策：在 PlayerStateScanner 扫描完成后立即执行，确保感知数据已入桶
+        if (!_stateStore.TryGet(npc.Name, out var barkState))
+            barkState = _stateStore.GetOrCreate(npc.Name);
+
+        var focusDecision = BarkFocusRouter.Decide(npc, barkState, bio, isZh);
+
+        // ★ 核心消费闭环：若本轮选中了感知条目，立即标记已阅与审美疲劳
+        if (focusDecision.MatchedPerception != null)
+        {
+            var p = focusDecision.MatchedPerception;
+            if (p.Key == "PlayerActiveItem" && !string.IsNullOrEmpty(p.ItemId))
+            {
+                PerceptionManager.Instance?.MarkItemNoticedToday(npc.Name, p.ItemId);
+            }
+
+            if (PerceptionInjector.ShouldConsumeAfterInjection(p.Key))
+            {
+                PerceptionManager.Instance?.ConsumePerceptions(npc.Name, new[] { p });
+            }
+        }
+
         string systemPrompt = BuildSystemPrompt(isZh);
-        string userPrompt = BuildUserPrompt(npc, bio, isZh);
+        string userPrompt = BuildUserPrompt(npc, bio, isZh, focusDecision);
 
         if (string.IsNullOrWhiteSpace(userPrompt))
             return null;
+
+        // 回写本轮焦点决策到 State，供下一轮疲劳阻尼使用（主线程，无需额外锁）
+        lock (barkState)
+        {
+            barkState.LastFocusType  = focusDecision.FocusType;
+            barkState.LastSensoryKey = focusDecision.SensoryItemKey;
+        }
 
         return new DialogueModels.BarkRequest
         {
@@ -155,232 +184,156 @@ Format example below (random content, unrelated to actual scene, don't copy topi
     }
 
     /// <summary>
-    /// 构建 User Prompt - 把"场景数据"变成"此刻正在发生的事"
+    /// 构建 User Prompt - 消费 Router 决策输出，仅组装，不自行判断
     /// </summary>
-    private string BuildUserPrompt(NPC npc, BioData bio, bool isZh)
+    private string BuildUserPrompt(NPC npc, BioData bio, bool isZh, BarkFocusDecision decision)
     {
         var sb = new StringBuilder();
 
-        // ── 1. 角色人设（保持不变）──
+        // ── 1. 角色人设 ──
         string rawPrompt = bio.AmbientBarkPrompt.Trim();
         if (isZh)
             rawPrompt = NpcNameLocalizer.LocalizeNamesInText(rawPrompt);
 
         rawPrompt = EnrichWithDynamicState(npc, rawPrompt, isZh);
 
+        // 关系标签降级为人设末尾静态注脚，不再独立占段，彻底去除强锚点宣告
+        string relNote = GetRelationshipNote(npc, isZh);
+        if (!string.IsNullOrEmpty(relNote))
+            rawPrompt = rawPrompt + "\n" + relNote;
+
         sb.AppendLine(isZh ? "### [你是谁]" : "### [WHO YOU ARE]");
         sb.AppendLine(rawPrompt);
-
-        string rel = GetRelationshipLabel(npc, isZh);
-        if (!string.IsNullOrEmpty(rel))
-        {
-            sb.AppendLine();
-            sb.AppendLine(rel);
-        }
         sb.AppendLine();
 
-        // ── 2. 此刻正在发生的事（重写：去掉"清单感"）──
-        string situation = BuildCurrentSituation(npc, isZh);
-        if (!string.IsNullOrEmpty(situation))
+        // ── 2. 环境底色（最弱的地点/时段/持续状态描述）──
+        string ambientScene = BuildAmbientScene(npc, isZh);
+        if (!string.IsNullOrEmpty(ambientScene))
         {
-            sb.AppendLine(isZh ? "### [此刻的状况]" : "### [RIGHT NOW]");
-            sb.AppendLine(situation);
+            sb.AppendLine(isZh ? "### [此刻]" : "### [RIGHT NOW]");
+            sb.AppendLine(ambientScene);
             sb.AppendLine();
         }
 
-        // ── 3. 记忆路由（三档时间判断）──
-        string memoryContext = BuildMemoryContext(npc, isZh);
-        if (!string.IsNullOrEmpty(memoryContext))
+        // ── 3. 单焦点注入（Router 决选的唯一触点，FreeDrift 时为空）──
+        if (!string.IsNullOrEmpty(decision.InjectedContextLine))
         {
-            sb.AppendLine(memoryContext);
+            sb.AppendLine(isZh ? "### [注意力落在]" : "### [ATTENTION LANDS ON]");
+            sb.AppendLine(decision.InjectedContextLine);
             sb.AppendLine();
         }
 
-        // ── 4. 生成指令（彻底重写：去掉所有"怎么生成"的元层指导）──
-        sb.AppendLine(BuildThinkingPrompt(bio, isZh));
+        // ── 4. 生成指令 ──
+        sb.AppendLine(BuildThinkingPrompt(bio, isZh, decision.AllowThinkingLens));
 
         return sb.ToString();
     }
 
     /// <summary>
-    /// 构建"此刻的状况" - 把环境/观察/场景/人物融合成"你正在经历什么"
+    /// 构建最弱的环境底色：仅包含地点、时段、跟随/约会持续状态、POI 动作现状（降级为一行）。
+    /// NearbyNPCs、Perceptions、SceneContext 全部移除，由 BarkFocusRouter 单点控制。
     /// </summary>
-    private static string BuildCurrentSituation(NPC npc, bool isZh)
+    private static string BuildAmbientScene(NPC npc, bool isZh)
     {
-        var sb = new StringBuilder();
         var loc = npc?.currentLocation;
         if (loc == null) return null;
 
-        bool isIndoor = !loc.IsOutdoors
-                        || loc is StardewValley.Locations.FarmHouse
+        bool isIndoor = !loc.IsOutdoors    || loc is StardewValley.Locations.FarmHouse
                         || loc is StardewValley.Locations.IslandFarmHouse;
 
-        string locName = EnvironmentScanner.GetLocationFriendlyName(loc.Name);
-        string weather = GetWeatherDescription(isZh);
+        string locName  = EnvironmentScanner.GetLocationFriendlyName(loc.Name);
         string timeDesc = GetTimeOfDayDescription(isZh);
+        string weather  = (!isIndoor) ? GetWeatherDescription(isZh) : null;
 
-        // ★ 核心改动：不再分段列举，而是描述"你正在做什么/处于什么状态"
+        var sb = new StringBuilder();
+
         if (isZh)
         {
             sb.Append($"你在 {locName}");
-
-            if (isIndoor)
-                sb.Append("（室内）");
-            else
-                sb.Append($"（室外，{weather}）");
-
+            if (isIndoor)  sb.Append("（室内）");
+            else           sb.Append($"（室外，{weather}）");
             sb.Append($"，{timeDesc}。");
 
-            // 特殊状态优先（约会/跟随优先级最高）
+            // 跟随/约会：降级为一句无戏剧性陈述（底色）
             if (DialogueUtilities.IsOnDate(npc))
             {
-                var dateLocation = DateManager.Instance?.ActiveDateLocation ?? "";
-                string displayName = dateLocation;
-                if (DateManager.LocationDisplayNames != null
-                    && DateManager.LocationDisplayNames.TryGetValue(dateLocation, out var dn))
-                    displayName = dn;
-
-                sb.Append($" 你和玩家在【{displayName}】约会。");
+                sb.Append(" 和玩家出来走走。");
             }
             else if (DialogueUtilities.IsFollowingSafe(npc))
             {
-                sb.Append(" 你陪着玩家到处走。");
+                sb.Append(" 陪着玩家走着。");
             }
             else if (CompanionScheduleManager.Instance?.IsStayHomeActive(npc.Name) == true)
             {
+                // POI context 降级为最平淡的一句陈述
                 string poiCtx = CompanionScheduleManager.Instance?.GetActivePoiContext(npc.Name);
                 if (!string.IsNullOrEmpty(poiCtx))
-                    sb.Append($" {NpcNameLocalizer.LocalizeNamesInText(poiCtx)}");
-                else
-                    sb.Append(" 今天待在农场。");
+                {
+                    // 只取第一句，避免 POI 描述过长成为新的强锚点
+                    string firstSentence = poiCtx.Split(new[]{'。','.'}, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
+                    if (!string.IsNullOrEmpty(firstSentence))
+                        sb.Append($" {NpcNameLocalizer.LocalizeNamesInText(firstSentence)}。");
+                }
             }
         }
         else
         {
             sb.Append($"You're in {locName}");
-
-            if (isIndoor)
-                sb.Append(" (indoors)");
-            else
-                sb.Append($" (outdoors, {weather})");
-
+            if (isIndoor)  sb.Append(" (indoors)");
+            else           sb.Append($" (outdoors, {weather})");
             sb.Append($", {timeDesc}.");
 
             if (DialogueUtilities.IsOnDate(npc))
             {
-                var dateLocation = DateManager.Instance?.ActiveDateLocation ?? "";
-                string displayName = dateLocation;
-                if (DateManager.LocationDisplayNames != null
-                    && DateManager.LocationDisplayNames.TryGetValue(dateLocation, out var dn))
-                    displayName = dn;
-
-                sb.Append($" You're on a date with the player at {displayName}.");
+                sb.Append(" Out with the player.");
             }
             else if (DialogueUtilities.IsFollowingSafe(npc))
             {
-                sb.Append(" You're walking around with the player.");
+                sb.Append(" Walking with the player.");
             }
             else if (CompanionScheduleManager.Instance?.IsStayHomeActive(npc.Name) == true)
             {
                 string poiCtx = CompanionScheduleManager.Instance?.GetActivePoiContext(npc.Name);
                 if (!string.IsNullOrEmpty(poiCtx))
-                    sb.Append($" {poiCtx}");
-                else
-                    sb.Append(" Spending the day on the farm.");
-            }
-        }
-
-        sb.AppendLine();
-        sb.AppendLine();
-
-        // 在场人物（改成"谁在附近"而不是"人物列表"）
-        var nearbyNpcs = GetNearbyNpcNames(npc);
-        if (nearbyNpcs.Count > 0)
-        {
-            sb.Append(isZh ? "附近有：" : "Nearby: ");
-            var nearbyLabels = new List<string>();
-            foreach (var nearbyName in nearbyNpcs)
-            {
-                string label = GetNearbyRelationshipLabel(nearbyName, isZh);
-                nearbyLabels.Add(label);
-            }
-            sb.AppendLine(string.Join(isZh ? "、" : ", ", nearbyLabels));
-            sb.AppendLine();
-        }
-
-        // 即时观察 + 场景细节（融合：只保留"可能进入注意力的东西"）
-        var perceptions = PerceptionManager.Instance?.GetFilteredBucketFor(npc.Name, 2);
-        bool hasPerceptions = perceptions != null && perceptions.Count > 0;
-
-        if (hasPerceptions || isIndoor)
-        {
-            sb.AppendLine(isZh ? "周围有些东西可能会进入你的注意力：" : "Things around that might catch your attention:");
-
-            if (hasPerceptions)
-            {
-                var consumablePerceptions = new List<PerceptionEntry>();
-                foreach (var p in perceptions)
                 {
-                    if (!string.IsNullOrWhiteSpace(p.Template))
-                    {
-                        string template = isZh ? NpcNameLocalizer.LocalizeNamesInText(p.Template) : p.Template;
-                        sb.AppendLine($"- {template}");
-
-                        // 随身普通物品进入 Prompt 后标记单人单日审美疲劳
-                        if (p.Key == "PlayerActiveItem" && !string.IsNullOrEmpty(p.ItemId))
-                        {
-                            PerceptionManager.Instance?.MarkItemNoticedToday(npc.Name, p.ItemId);
-                        }
-
-                        // 收集需要阅后即焚的条目（动作、装束、信物、生理/Buff 状态）
-                        if (PerceptionInjector.ShouldConsumeAfterInjection(p.Key))
-                        {
-                            consumablePerceptions.Add(p);
-                        }
-                    }
-                }
-
-                // 核心消费：注入 Bark Prompt 后立即消费，杜绝后续 Bark 循环复读同一状态
-                if (consumablePerceptions.Count > 0)
-                {
-                    PerceptionManager.Instance?.ConsumePerceptions(npc.Name, consumablePerceptions);
-                }
-            }
-
-            // 只在室内/特定场景补充环境细节（室外大场景不列物品）
-            if (isIndoor)
-            {
-                string sceneBlock = SceneContextBuilder.BuildSceneBlock(npc, radiusTiles: 4, maxItems: 3);
-                if (!string.IsNullOrWhiteSpace(sceneBlock))
-                {
-                    var lines = sceneBlock.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                    foreach (var line in lines.Skip(1)) // 跳过标题行
-                    {
-                        if (!string.IsNullOrWhiteSpace(line))
-                            sb.AppendLine(line);
-                    }
+                    string firstSentence = poiCtx.Split(new[]{'.',';'}, StringSplitOptions.RemoveEmptyEntries)
+                                                 .FirstOrDefault()?.Trim();
+                    if (!string.IsNullOrEmpty(firstSentence))
+                        sb.Append($" {firstSentence}.");
                 }
             }
         }
 
-        return sb.ToString().TrimEnd();
+        return sb.ToString();
     }
 
     /// <summary>
     /// 构建"思考提示" - 不再是"生成任务"，而是"开始想吧"
     /// </summary>
-    private static string BuildThinkingPrompt(BioData bio, bool isZh)
+    private static string BuildThinkingPrompt(BioData bio, bool isZh, bool allowLens)
     {
         var sb = new StringBuilder();
         sb.AppendLine(isZh ? "### [开始想]" : "### [START THINKING]");
 
-        // 提供一个可选的"注意力入口"（不是话题，是感知角度）
-        var lenses = GetRandomThinkingLens(bio, 1, isZh);
-        if (lenses.Count > 0)
+        // 仅当焦点决策允许时注入 Preoccupation lens（Introspective 心事焦点时开启）
+        if (allowLens)
+        {
+            var lenses = GetRandomThinkingLens(bio, 1, isZh);
+            if (lenses.Count > 0)
+            {
+                sb.AppendLine(isZh
+                    ? $"你的注意力可能先落在：{lenses[0]}（也可以从别的地方开始）"
+                    : $"Your attention might land on: {lenses[0]} (or start elsewhere)");
+                sb.AppendLine();
+            }
+        }
+
+        // FreeDrift / Sensory / Interactive 时提供正向落脚点
+        if (!allowLens)
         {
             sb.AppendLine(isZh
-                ? $"你的注意力可能先落在：{lenses[0]}（也可以从别的地方开始）"
-                : $"Your attention might land on: {lenses[0]} (or start elsewhere)");
+                ? "此时脑子里没有任何特定心事。注意力随处落脚——周围的细微动静、当下的身体感觉、脚下的路、或是单纯走神放空，把冒出的念头说出半句："
+                : "No particular thoughts on your mind right now. Attention lands anywhere — ambient sounds, a physical sensation, the ground underfoot, or just drifting — mutter whatever surfaces:");
             sb.AppendLine();
         }
 
@@ -420,96 +373,6 @@ Format example below (random content, unrelated to actual scene, don't copy topi
             .ToList();
     }
 
-    /// <summary>
-    /// 构建记忆上下文（三档时间路由）- 保持原逻辑，但改写提示语言
-    /// </summary>
-    private string BuildMemoryContext(NPC npc, bool isZh)
-    {
-        if (!_stateStore.TryGet(npc.Name, out var state))
-            return null;
-
-        List<string> lastTail;
-        List<string> recent;
-        DateTime? lastEndedAt;
-        int lastGameTime;
-        int lastSaveDayNumber;
-
-        lock (state)
-        {
-            if (state.LastThreadTail.Count == 0 || !state.LastThreadEndedAt.HasValue)
-                return null;
-
-            lastTail = state.LastThreadTail.ToList();
-            recent = state.RecentBarks.ToList();
-            lastEndedAt = state.LastThreadEndedAt;
-            lastGameTime = state.LastThreadGameTimeOfDay;
-            lastSaveDayNumber = state.LastThreadSaveDayNumber;
-        }
-
-        int currentDay = Game1.Date.TotalDays;
-
-        // 跨天直接走长间隔（避免读档/时间突变的误判）
-        if (lastSaveDayNumber != currentDay)
-        {
-            return BuildLongIntervalContext(lastTail, isZh);
-        }
-
-        double minutesSince = (DateTime.UtcNow - lastEndedAt.Value).TotalMinutes;
-        bool sameTimeWindow = Game1.timeOfDay == lastGameTime
-                              || (lastGameTime > 0 && Math.Abs(Game1.timeOfDay - lastGameTime) <= 20);
-
-        string tailBlock = isZh
-            ? string.Join("，", lastTail.Select(l => $"「{l}」"))
-            : string.Join(" ", lastTail.Select(l => $"\"{l}\""));
-
-        // ── 短间隔：≤3 分钟且同时段 → 延续上一段思绪 ──
-        if (minutesSince <= 3 && sameTimeWindow)
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine(isZh ? "### [刚才想到哪儿了]" : "### [WHERE YOU LEFT OFF]");
-            sb.AppendLine(isZh
-                ? $"你刚才最后想的是：{tailBlock}。才过了一会儿，接着往下想——可以继续那个，可以补一句，可以被新东西带跑，也可以回过神来想别的。"
-                : $"You were just thinking: {tailBlock}. Only a moment ago. Pick up from there — continue it, add one more beat, get pulled onto something new, or snap back to something else.");
-            return sb.ToString();
-        }
-
-        // ── 中间隔：≤3 小时且同时段 → 仅作新鲜度参考 ──
-        if (minutesSince <= 180 && sameTimeWindow)
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine(isZh ? "### [之前说过的]" : "### [SAID EARLIER]");
-            sb.AppendLine(isZh
-                ? "过去这段时间你说过这些（别机械重复，这次想新的）："
-                : "You said these earlier (avoid mechanical repetition, think fresh this time):");
-            foreach (var line in recent.TakeLast(3))
-                sb.AppendLine($"- 「{line}」");
-            return sb.ToString();
-        }
-
-        // ── 长间隔：> 3 小时或不同时段 → 小概率闪回 ──
-        return BuildLongIntervalContext(lastTail, isZh);
-    }
-
-    /// <summary>
-    /// 构建长间隔记忆上下文（15% 概率轻触历史）
-    /// </summary>
-    private static string BuildLongIntervalContext(List<string> lastTail, bool isZh)
-    {
-        if (_rng.NextDouble() >= 0.15)
-            return null; // 85% 完全不提历史
-
-        string tailBlock = isZh
-            ? string.Join("，", lastTail.Select(l => $"「{l}」"))
-            : string.Join(" ", lastTail.Select(l => $"\"{l}\""));
-
-        var sb = new StringBuilder();
-        sb.AppendLine(isZh ? "### [更早之前]" : "### [EARLIER MEMORY]");
-        sb.AppendLine(isZh
-            ? $"这是新的一段时间，主要想当下的事。但如果自然的话，可以有一条轻轻带到更早想过的：{tailBlock}——像突然想起后续怎么样了，一句带过就行，也完全可以不提。"
-            : $"This is a fresh stretch of time; mostly think about right now. But if it fits naturally, one line could lightly touch on something thought about earlier: {tailBlock} — like suddenly remembering how it turned out, brief touch, totally fine to skip.");
-        return sb.ToString();
-    }
-
     // ══════════════════════════════════════════════════════════════
     // 辅助方法（保持原有逻辑，仅做小幅调整）
     // ══════════════════════════════════════════════════════════════
@@ -528,155 +391,42 @@ Format example below (random content, unrelated to actual scene, don't copy topi
         return $"{basePrompt}\n\n[CURRENT STATE: {stateText}]";
     }
 
-    private static string GetRelationshipLabel(NPC npc, bool isZh)
+    /// <summary>
+    /// 将关系信息降级为人设末尾的静态注脚（一行克制文本），而非独立段落。
+    /// 仅在有真实关系（恋爱/婚姻/≥6 心好友）时注入，普通认识不注入。
+    /// </summary>
+    private static string GetRelationshipNote(NPC npc, bool isZh)
     {
         if (npc == null) return null;
 
-        string dn = isZh ? NpcNameLocalizer.GetZhName(npc.Name) : (npc.displayName ?? npc.Name);
-
-        // 优先检查 Poly 关系
-        if (PolyamorySweetLoveBridge.IsOfficialSpouse(npc))
-        {
-            var allSpouses = GetAllOfficialSpouses();
-            bool isPolyMarriage = allSpouses.Count > 1;
-
-            return isPolyMarriage
-                ? (isZh
-                    ? $"你和玩家是伴侣关系（TA 有 {allSpouses.Count} 位伴侣）。这是你们共同的家。"
-                    : $"You're one of the player's partners ({allSpouses.Count} total). This is your shared home.")
-                : (isZh
-                    ? "你和玩家结婚了，这是你们的家。"
-                    : "You're married to the player. This is your shared home.");
-        }
-
-        if (PolyamorySweetLoveBridge.IsUnofficialSpouse(npc))
+        if (PolyamorySweetLoveBridge.IsOfficialSpouse(npc) || PolyamorySweetLoveBridge.IsUnofficialSpouse(npc))
         {
             return isZh
-                ? "你和玩家是恋人关系。"
-                : "You're romantically dating the player.";
+                ? "[Identity Note: 你和玩家是伴侣关系。]"
+                : "[Identity Note: You are in a romantic relationship with the player.]";
         }
 
         var player = Game1.player;
         if (player?.friendshipData == null) return null;
-        if (!player.friendshipData.TryGetValue(npc.Name, out var fs) || fs == null)
-            return null;
+        if (!player.friendshipData.TryGetValue(npc.Name, out var fs) || fs == null) return null;
 
-        if (fs.IsMarried())
-        {
-            var allSpouses = GetAllOfficialSpouses();
-            bool isPolyMarriage = allSpouses.Count > 1;
-
-            return isPolyMarriage
-                ? (isZh ? "你和玩家是伴侣关系。" : "You're one of the player's partners.")
-                : (isZh ? "你和玩家结婚了。" : "You're married to the player.");
-        }
-
-        if (fs.IsDating())
+        if (fs.IsMarried() || fs.IsDating())
         {
             return isZh
-                ? "你和玩家在恋爱。"
-                : "You're dating the player.";
+                ? "[Identity Note: 你和玩家是伴侣关系。]"
+                : "[Identity Note: You are in a romantic relationship with the player.]";
         }
 
+        // ≥6 心好友：注入但措辞更淡
         int hearts = fs.Points / 250;
         if (hearts >= 6)
         {
             return isZh
-                ? $"你和玩家是好朋友（{hearts} 心）。"
-                : $"You and the player are close friends ({hearts} hearts).";
+                ? $"[Identity Note: 你和玩家是好朋友（{hearts} 心）。]"
+                : $"[Identity Note: You and the player are close friends ({hearts} hearts).]";
         }
 
-        if (hearts >= 2)
-        {
-            return isZh
-                ? $"你和玩家算是认识（{hearts} 心）。"
-                : $"You're casually acquainted with the player ({hearts} hearts).";
-        }
-
-        return isZh
-            ? $"你对玩家还不太熟（{hearts} 心）。"
-            : $"You barely know the player ({hearts} hearts).";
-    }
-
-    private static string GetNearbyRelationshipLabel(string nearbyNpcName, bool isZh)
-    {
-        var player = Game1.player;
-
-        if (player != null && string.Equals(nearbyNpcName, player.Name, StringComparison.OrdinalIgnoreCase))
-        {
-            string playerDisplayName = player.displayName ?? player.Name ?? "Player";
-            return isZh ? $"{playerDisplayName}（玩家）" : $"{playerDisplayName} (player)";
-        }
-
-        var nearbyNpc = Game1.getCharacterFromName(nearbyNpcName);
-        string dn = isZh
-            ? NpcNameLocalizer.GetZhName(nearbyNpc?.Name ?? nearbyNpcName)
-            : (nearbyNpc?.displayName ?? nearbyNpcName);
-
-        if (nearbyNpc == null)
-        {
-            return dn;
-        }
-
-        // 特殊关系标注
-        if (PolyamorySweetLoveBridge.IsOfficialSpouse(nearbyNpc))
-        {
-            return isZh ? $"{dn}（玩家的伴侣）" : $"{dn} (player's partner)";
-        }
-
-        if (PolyamorySweetLoveBridge.IsUnofficialSpouse(nearbyNpc))
-        {
-            return isZh ? $"{dn}（玩家的恋人）" : $"{dn} (player's partner)";
-        }
-
-        if (DialogueUtilities.IsFollowingSafe(nearbyNpc))
-        {
-            return isZh ? $"{dn}（正跟着玩家）" : $"{dn} (following player)";
-        }
-
-        return dn;
-    }
-
-    private static List<string> GetNearbyNpcNames(NPC centerNpc)
-    {
-        var result = new List<string>();
-        if (centerNpc?.currentLocation == null) return result;
-
-        bool isOutdoors = centerNpc.currentLocation?.IsOutdoors ?? true;
-        int rangeSquared = isOutdoors ? 100 : 49;
-
-        var player = Game1.player;
-        if (player != null && player.currentLocation == centerNpc.currentLocation)
-        {
-            if (DialogueUtilities.IsInRangeSquared(centerNpc, player, rangeSquared))
-                result.Add(player.Name);
-        }
-
-        foreach (var other in centerNpc.currentLocation.characters)
-        {
-            if (other == null || other == centerNpc || !other.IsVillager)
-                continue;
-
-            if (DialogueUtilities.IsInRangeSquared(centerNpc, other, rangeSquared))
-                result.Add(other.Name);
-        }
-
-        return result;
-    }
-
-    private static List<string> GetAllOfficialSpouses()
-    {
-        var result = new List<string>();
-        var player = Game1.player;
-        if (player?.friendshipData == null) return result;
-
-        foreach (var pair in player.friendshipData.Pairs)
-        {
-            if (pair.Value?.IsMarried() == true)
-                result.Add(pair.Key);
-        }
-
-        return result;
+        return null; // <6 心不注入，陌生/普通关系不构成有效 Identity Note
     }
 
     private static string GetWeatherDescription(bool isZh)

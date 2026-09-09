@@ -70,6 +70,21 @@ internal sealed class AmbientBarkStateStore
         /// </summary>
         public Queue<string> RecentBarks { get; } = new Queue<string>(3);
 
+        // ── 注意力流转记忆（疲劳阻尼依据）──
+
+        /// <summary>
+        /// 上一轮 Bark 选中的焦点类型。仅在 Clear()（硬重置）时清空，
+        /// ClearRuntimeState()（软重置）不清，确保跨冷却周期的疲劳阻尼持续有效。
+        /// </summary>
+        public BarkFocusType LastFocusType { get; set; } = BarkFocusType.FreeDrift;
+
+        /// <summary>
+        /// 上一轮 Sensory 焦点的细粒度去重键（如 "weather_rain"、"object_fireplace"）。
+        /// 用于单次阻尼：只阻止"连续两轮相同感官触点"。
+        /// 同上，仅 Clear() 清空。
+        /// </summary>
+        public string LastSensoryKey { get; set; } = null;
+
         // ── 辅助方法 ──
 
         public void AddRecentBark(string bark)
@@ -112,6 +127,8 @@ internal sealed class AmbientBarkStateStore
             LastThreadGameTimeOfDay = 0;
             LastThreadSaveDayNumber = 0;
             RecentBarks.Clear();
+            LastFocusType  = BarkFocusType.FreeDrift;
+            LastSensoryKey = null;
         }
 
         /// <summary>
@@ -121,6 +138,8 @@ internal sealed class AmbientBarkStateStore
         /// </summary>
         public void ClearRuntimeState()
         {
+            // 注意：LastFocusType / LastSensoryKey 属于跨冷却周期的流转记忆，
+            // 软重置刻意保留，确保疲劳阻尼跨轮有效。仅 Clear()（硬重置）负责清空。
             ReplaceCts();
             BarkQueue.Clear();
             IsRequesting = false;
