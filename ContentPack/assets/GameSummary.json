@@ -33,12 +33,14 @@
           "BigCoop": "The Farm",
           "DeluxeCoop": "The Farm",
           "SlimeHutch": "The Farm",
-
+          "Cabin": "The Farm",
           "BusStop": "Pelican Town",
           "Tunnel": "Pelican Town",
           "Town": "Pelican Town",
           "SeedShop": "Pelican Town",
+          "Sunroom": "Pelican Town",
           "JojaMart": "Pelican Town",
+          "AbandonedJojaMart": "Pelican Town",
           "Saloon": "Pelican Town",
           "Hospital": "Pelican Town",
           "Blacksmith": "Pelican Town",
@@ -53,8 +55,8 @@
           "Trailer_Big": "Pelican Town",
           "MovieTheater": "Pelican Town",
           "Sewer": "Pelican Town",
+          "BugLand": "Pelican Town",
           "Backwoods": "Pelican Town",
-
           "Forest": "Cindersap Forest",
           "Woods": "Cindersap Forest",
           "LeahHouse": "Cindersap Forest",
@@ -64,7 +66,7 @@
           "WitchHut": "Cindersap Forest",
           "WitchWarpCave": "Cindersap Forest",
           "AnimalShop": "Cindersap Forest",
-
+          "MasteryCave": "Cindersap Forest",
           "Mountain": "Mountain",
           "Mine": "Mountain",
           "UndergroundMine": "Mountain",
@@ -73,24 +75,26 @@
           "ScienceHouse": "Mountain",
           "SebastianRoom": "Mountain",
           "LinusTent": "Mountain",
+          "Tent": "Mountain",
+          "LeoTreeHouse": "Mountain",
           "BathHouse_Entry": "Mountain",
           "BathHouse_Pool": "Mountain",
           "BathHouse_MensLocker": "Mountain",
           "BathHouse_WomensLocker": "Mountain",
+          "BathHouse_Mens": "Mountain",
+          "BathHouse_Womens": "Mountain",
           "Summit": "Mountain",
           "SubCyan": "Mountain",
-
           "Beach": "Beach",
           "FishShop": "Beach",
           "ElliottHouse": "Beach",
           "tide_pools": "Beach",
-
+          "Submarine": "Beach",
           "Desert": "Desert",
           "SandyHouse": "Desert",
           "SkullCave": "Desert",
           "Club": "Desert",
           "DesertFestival": "Desert",
-
           "IslandSouth": "Ginger Island",
           "IslandNorth": "Ginger Island",
           "IslandWest": "Ginger Island",
@@ -105,39 +109,54 @@
           "IslandHut": "Ginger Island",
           "CaptainRoom": "Ginger Island",
           "FieldOffice": "Ginger Island",
+          "IslandFieldOffice": "Ginger Island",
           "Volcano_Entrance": "Ginger Island",
+          "VolcanoDungeon": "Ginger Island",
           "Volcano_5": "Ginger Island",
           "Volcano_10": "Ginger Island",
           "Caldera": "Ginger Island",
-
+          "QiNutRoom": "Ginger Island",
+          "IslandWestCave1": "Ginger Island",
+          "Custom_GrandpasShed": "The Farm",
+          "Custom_GrandpasShedGreenhouse": "The Farm",
+          "Custom_ShearwaterBridge": "Pelican Town",
+          "Custom_JenkinsHouse": "Pelican Town",
+          "Custom_JenkinsCellar": "Pelican Town",
+          "Custom_GrampletonSuburbs": "Pelican Town",
+          "Custom_ScarlettHouse": "Pelican Town",
+          "Custom_ClaireHouse": "Pelican Town",
+          "Custom_MartinHouse": "Pelican Town",
+          "Custom_MorrisHouse": "Pelican Town",
+          "Custom_GuntherHouse": "Pelican Town",
           "Custom_BlueMoonVineyard": "Cindersap Forest",
           "Custom_SophiaHouse": "Cindersap Forest",
           "Custom_SophiaCellar": "Cindersap Forest",
           "Custom_FairhavenFarm": "Cindersap Forest",
           "Custom_AndyHouse": "Cindersap Forest",
+          "Custom_SusanHouse": "Cindersap Forest",
+          "Custom_EmeraldFarm": "Cindersap Forest",
           "Custom_AuroraVineyard": "Cindersap Forest",
           "Custom_AuroraVineyardCellar": "Cindersap Forest",
+          "Custom_AuroraVineyardBasement": "Cindersap Forest",
+          "Custom_ApplesRoom": "Cindersap Forest",
           "Custom_ForestWest": "Cindersap Forest",
           "Custom_BearCave": "Cindersap Forest",
+          "Custom_BearShrine": "Cindersap Forest",
           "Custom_JunimoWoods": "Cindersap Forest",
           "Custom_SpriteSpring": "Cindersap Forest",
-
-          "Custom_GrandpasShed": "The Farm",
-          "Custom_GrandpasShedGreenhouse": "The Farm",
-
-          "Custom_ShearwaterBridge": "Pelican Town",
-          "Custom_JenkinsCellar": "Pelican Town",
-          "Custom_GrampletonSuburbs": "Pelican Town",
-          "Custom_ScarlettHouse": "Pelican Town",
-
+          "Custom_EnchantedGrove": "Cindersap Forest",
           "Custom_Highlands": "Mountain",
           "Custom_HighlandsCavern": "Mountain",
           "Custom_HighlandsOutpost": "Mountain",
           "Custom_LanceHouse": "Mountain",
-
+          "Custom_AdventurersGuildBarracks": "Mountain",
+          "Custom_MarlonFayHouse": "Mountain",
           "Custom_Badlands": "Desert",
           "Custom_BadlandsCave": "Desert",
-          "Custom_CastleVillageOutpost": "Desert"
+          "Custom_CrimsonBadlands": "Desert",
+          "Custom_CrimsonBadlandsMines": "Desert",
+          "Custom_CastleVillageOutpost": "Desert",
+          "Custom_FableReef": "Ginger Island"
         },
         "FarmerBackground": {
           "Text": "",
@@ -226,6 +245,54 @@
               "Name": "{{i18n:summaryLocCommunityCenterName}}",
               "Description": "{{i18n:summaryLocCommunityCenterDesc}}"
             },
+            "PelicanTown_HaleyHouse": {
+              "id": "PelicanTown/HaleyHouse",
+              "Region": "Pelican Town",
+              "Name": "{{i18n:summaryLocHaleyHouseName}}",
+              "Description": "{{i18n:summaryLocHaleyHouseDesc}}"
+            },
+            "PelicanTown_SamHouse": {
+              "id": "PelicanTown/SamHouse",
+              "Region": "Pelican Town",
+              "Name": "{{i18n:summaryLocSamHouseName}}",
+              "Description": "{{i18n:summaryLocSamHouseDesc}}"
+            },
+            "PelicanTown_JoshHouse": {
+              "id": "PelicanTown/JoshHouse",
+              "Region": "Pelican Town",
+              "Name": "{{i18n:summaryLocJoshHouseName}}",
+              "Description": "{{i18n:summaryLocJoshHouseDesc}}"
+            },
+            "PelicanTown_ManorHouse": {
+              "id": "PelicanTown/ManorHouse",
+              "Region": "Pelican Town",
+              "Name": "{{i18n:summaryLocManorHouseName}}",
+              "Description": "{{i18n:summaryLocManorHouseDesc}}"
+            },
+            "PelicanTown_Trailer": {
+              "id": "PelicanTown/Trailer",
+              "Region": "Pelican Town",
+              "Name": "{{i18n:summaryLocTrailerName}}",
+              "Description": "{{i18n:summaryLocTrailerDesc}}"
+            },
+            "PelicanTown_Sewer": {
+              "id": "PelicanTown/Sewer",
+              "Region": "Pelican Town",
+              "Name": "{{i18n:summaryLocSewerName}}",
+              "Description": "{{i18n:summaryLocSewerDesc}}"
+            },
+            "PelicanTown_MovieTheater": {
+              "id": "PelicanTown/MovieTheater",
+              "Region": "Pelican Town",
+              "Name": "{{i18n:summaryLocMovieTheaterName}}",
+              "Description": "{{i18n:summaryLocMovieTheaterDesc}}"
+            },
+            "PelicanTown_JenkinsHouse": {
+              "id": "PelicanTown/Custom_JenkinsHouse",
+              "Region": "Pelican Town",
+              "Name": "{{i18n:summaryLocJenkinsHouseName}}",
+              "Description": "{{i18n:summaryLocJenkinsHouseDesc}}"
+            },
             "CindersapForest": {
               "id": "CindersapForest",
               "Region": "Cindersap Forest",
@@ -238,6 +305,12 @@
               "Name": "{{i18n:summaryLocMarniesRanchName}}",
               "Description": "{{i18n:summaryLocMarniesRanchDesc}}"
             },
+            "CindersapForest_LeahHouse": {
+              "id": "CindersapForest/LeahHouse",
+              "Region": "Cindersap Forest",
+              "Name": "{{i18n:summaryLocLeahHouseName}}",
+              "Description": "{{i18n:summaryLocLeahHouseDesc}}"
+            },
             "CindersapForest_WizardsTower": {
               "id": "CindersapForest/WizardsTower",
               "Region": "Cindersap Forest",
@@ -249,6 +322,18 @@
               "Region": "Mountain",
               "Name": "{{i18n:summaryLocMountainName}}",
               "Description": "{{i18n:summaryLocMountainDesc}}"
+            },
+            "Mountain_ScienceHouse": {
+              "id": "Mountain/ScienceHouse",
+              "Region": "Mountain",
+              "Name": "{{i18n:summaryLocScienceHouseName}}",
+              "Description": "{{i18n:summaryLocScienceHouseDesc}}"
+            },
+            "Mountain_LinusTent": {
+              "id": "Mountain/LinusTent",
+              "Region": "Mountain",
+              "Name": "{{i18n:summaryLocLinusTentName}}",
+              "Description": "{{i18n:summaryLocLinusTentDesc}}"
             },
             "Mountain_AdventurersGuild": {
               "id": "Mountain/AdventurersGuild",
@@ -268,11 +353,23 @@
               "Name": "{{i18n:summaryLocSpaName}}",
               "Description": "{{i18n:summaryLocSpaDesc}}"
             },
+            "Beach": {
+              "id": "Beach",
+              "Region": "Beach",
+              "Name": "{{i18n:summaryLocBeachName}}",
+              "Description": "{{i18n:summaryLocBeachDesc}}"
+            },
             "Beach_FishShop": {
               "id": "Beach/FishShop",
               "Region": "Beach",
               "Name": "{{i18n:summaryLocFishShopName}}",
               "Description": "{{i18n:summaryLocFishShopDesc}}"
+            },
+            "Beach_ElliottHouse": {
+              "id": "Beach/ElliottHouse",
+              "Region": "Beach",
+              "Name": "{{i18n:summaryLocElliottHouseName}}",
+              "Description": "{{i18n:summaryLocElliottHouseDesc}}"
             },
             "Desert_Oasis": {
               "id": "Desert/Oasis",
@@ -304,6 +401,12 @@
               "Name": "{{i18n:summaryLocAuroraVineyardName}}",
               "Description": "{{i18n:summaryLocAuroraVineyardDesc}}"
             },
+            "CindersapForest_EnchantedGrove": {
+              "id": "CindersapForest/Custom_EnchantedGrove",
+              "Region": "Cindersap Forest",
+              "Name": "{{i18n:summaryLocEnchantedGroveName}}",
+              "Description": "{{i18n:summaryLocEnchantedGroveDesc}}"
+            },
             "PelicanTown_GrampletonBridge": {
               "id": "PelicanTown/GrampletonBridge",
               "Region": "Pelican Town",
@@ -315,6 +418,18 @@
               "Region": "Mountain",
               "Name": "{{i18n:summaryLocHighlandsName}}",
               "Description": "{{i18n:summaryLocHighlandsDesc}}"
+            },
+            "Desert_Badlands": {
+              "id": "Desert/Custom_CrimsonBadlands",
+              "Region": "Desert",
+              "Name": "{{i18n:summaryLocCrimsonBadlandsName}}",
+              "Description": "{{i18n:summaryLocCrimsonBadlandsDesc}}"
+            },
+            "GingerIsland_FableReef": {
+              "id": "GingerIsland/Custom_FableReef",
+              "Region": "Ginger Island",
+              "Name": "{{i18n:summaryLocFableReefName}}",
+              "Description": "{{i18n:summaryLocFableReefDesc}}"
             }
           }
         },

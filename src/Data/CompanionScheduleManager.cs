@@ -273,7 +273,7 @@ namespace ValleytalkReborn
                     "relaxing at home today, spending a quiet and peaceful day around the farmhouse",
 
                 ScheduleContextPhase.TravelingToPoi =>
-                    $"on the way to {extraContext}, walking through the valley",
+                    $"on the way to {extraContext.Replace('_', ' ')}, walking through the valley",
 
                 ScheduleContextPhase.ActiveAtPoi =>
                     extraContext,
@@ -281,7 +281,7 @@ namespace ValleytalkReborn
                 ScheduleContextPhase.ReturningHome =>
                     string.IsNullOrWhiteSpace(extraContext)
                         ? "heading back home to the farm"
-                        : $"heading back home to the farm after spending time at {extraContext}",
+                        : $"heading back home to the farm after spending time at {extraContext.Replace('_', ' ')}",
 
                 ScheduleContextPhase.ArrivedHomeEarly =>
                     "back at the farmhouse, unwinding and resting after going out earlier today",
@@ -727,7 +727,7 @@ namespace ValleytalkReborn
             {
                 ModEntry.SMonitor?.Log($"[CSM] No legal POIs for {npc.Name} — fallback to stay home.", LogLevel.Info);
                 state.IsStayHome           = true;
-                state.ActivePoiDescription = "staying home today (no destinations available)";
+                TransitionScheduleContext(state, ScheduleContextPhase.AllDayStayHome);
                 state.WanderCooldownTicks  = Game1.random.Next(60, 180);
                 return;
             }
@@ -1067,7 +1067,8 @@ namespace ValleytalkReborn
                 {
                     // 已经站在目标点上，视为立即抵达。
                     MarkEntryArrived(entry, Game1.timeOfDay);
-                    state.ActivePoiDescription = asset.DescriptionForLLM;
+                    state.PreviousPoiId = entry.PoiId;
+                    TransitionScheduleContext(state, ScheduleContextPhase.ActiveAtPoi, asset.DescriptionForLLM);
                     TryPlayAnimation(npc, asset.CsharpAnimation);
                     return;
                 }
@@ -1085,7 +1086,8 @@ namespace ValleytalkReborn
                         LogLevel.Info);
                     // 寻路失败也视为"抵达"（原地站着），否则会永远卡在"未到达"状态导致回家判断失灵。
                     MarkEntryArrived(entry, Game1.timeOfDay);
-                    state.ActivePoiDescription = asset.DescriptionForLLM;
+                    state.PreviousPoiId = entry.PoiId;
+                    TransitionScheduleContext(state, ScheduleContextPhase.ActiveAtPoi, asset.DescriptionForLLM);
                     TryPlayAnimation(npc, asset.CsharpAnimation);
                 }
                 return;
@@ -1115,7 +1117,8 @@ namespace ValleytalkReborn
                     $"[CSM] {npc.Name} failed to reach '{entry.PoiId}' — marking arrived in place to avoid getting stuck.",
                     LogLevel.Warn);
                 MarkEntryArrived(entry, Game1.timeOfDay);
-                state.ActivePoiDescription = asset.DescriptionForLLM;
+                state.PreviousPoiId = entry.PoiId;
+                TransitionScheduleContext(state, ScheduleContextPhase.ActiveAtPoi, asset.DescriptionForLLM);
             }
 
             // 只有当目的地恰好是"农场本身的某个坐标"时才会走到这个分支：此时 NPC 是刚发起寻路，
@@ -1148,7 +1151,8 @@ namespace ValleytalkReborn
             state.OnFarmPoiArrived = () =>
             {
                 MarkEntryArrived(entry, Game1.timeOfDay);
-                state.ActivePoiDescription = asset.DescriptionForLLM;
+                state.PreviousPoiId = entry.PoiId;
+                TransitionScheduleContext(state, ScheduleContextPhase.ActiveAtPoi, asset.DescriptionForLLM);
                 ModEntry.SMonitor?.Log($"[CSM] {npc.Name} arrived at farm POI '{entry.PoiId}'.", LogLevel.Info);
                 TryPlayAnimation(npc, asset.CsharpAnimation);
             };
@@ -1196,7 +1200,7 @@ namespace ValleytalkReborn
                     state.WaitingToDepart         = false;
                     state.PlayerLeaveWaitTicks    = 0;
                     state.LeaveWaitReason         = PlayerLeaveWaitReason.ReturnHome;
-                    state.ActivePoiDescription    = "spending time with you";
+                    TransitionScheduleContext(state, ScheduleContextPhase.WaitingForPlayer);
                     ModEntry.SMonitor?.Log(
                         $"[CSM] {npc.Name} ready to go home but player is here — waiting.",
                         LogLevel.Info);
@@ -1234,7 +1238,7 @@ namespace ValleytalkReborn
             state.WaitingForPlayerToLeave = false;
             state.WaitingToDepart         = false;
             state.LeaveWaitReason         = PlayerLeaveWaitReason.None;
-            state.ActivePoiDescription    = "heading home";
+            TransitionScheduleContext(state, ScheduleContextPhase.ReturningHome, state.PreviousPoiId);
 
             var currentMap = npc.currentLocation?.Name ?? "";
             ModEntry.SMonitor?.Log(
@@ -1252,7 +1256,7 @@ namespace ValleytalkReborn
                     state.IsStayHome           = true;
                     state.WentViaBusStop       = false;
                     state.WanderCooldownTicks  = Game1.random.Next(60, 180);
-                    state.ActivePoiDescription = "relaxing at home";
+                    TransitionScheduleContext(state, ScheduleContextPhase.ArrivedHomeEarly);
                     ApplyHomeDispersal(npc);
                     ModEntry.SMonitor?.Log($"[CSM] {npc.Name} arrived home.", LogLevel.Info);
                 },
@@ -1264,7 +1268,7 @@ namespace ValleytalkReborn
                     state.IsStayHome           = true;
                     state.WentViaBusStop       = false;
                     state.WanderCooldownTicks  = Game1.random.Next(60, 180);
-                    state.ActivePoiDescription = "relaxing at home";
+                    TransitionScheduleContext(state, ScheduleContextPhase.ArrivedHomeEarly);
                     ApplyHomeDispersal(npc);
                     ModEntry.SMonitor?.Log(
                         $"[CSM] {npc.Name} return-home had a pathing hiccup but was warped inside as fallback.",
@@ -1372,7 +1376,7 @@ namespace ValleytalkReborn
                     state.WaitingForPlayerToLeave = false;
                     state.WaitingToDepart         = false;
                     state.OnFarmPoiArrived        = null;
-                    state.ActivePoiDescription    = "";
+                    TransitionScheduleContext(state, ScheduleContextPhase.None);
                     state.IsStayHome              = false;
                 }
                 ModEntry.SMonitor?.Log(
@@ -1388,7 +1392,7 @@ namespace ValleytalkReborn
             s.WaitingForPlayerToLeave = false;
             s.WaitingToDepart         = false;
             s.OnFarmPoiArrived        = null;
-            s.ActivePoiDescription    = "";
+            TransitionScheduleContext(s, ScheduleContextPhase.None);
             s.IsStayHome              = false;
 
             var npc = s.TrackedNpc;
@@ -1419,7 +1423,7 @@ namespace ValleytalkReborn
             state.WaitingForPlayerToLeave = false;
             state.WaitingToDepart         = false;
             state.OnFarmPoiArrived        = null;
-            state.ActivePoiDescription    = "staying home today";
+            TransitionScheduleContext(state, ScheduleContextPhase.AllDayStayHome);
             state.WanderCooldownTicks     = 60;
 
             if (!string.Equals(npc.currentLocation?.Name, "Farm",      StringComparison.OrdinalIgnoreCase) &&
@@ -1453,7 +1457,7 @@ namespace ValleytalkReborn
             state.WaitingForPlayerToLeave = false;
             state.WaitingToDepart         = false;
             state.OnFarmPoiArrived        = null;
-            state.ActivePoiDescription    = "spending the day with you";
+            TransitionScheduleContext(state, ScheduleContextPhase.FollowingPlayer);
             state.Dispatched              = true;
 
             npc.controller = null;
@@ -1549,6 +1553,13 @@ namespace ValleytalkReborn
                         var tile = new Vector2(center.X + x, center.Y + y);
                         if (MovementPathfinding.IsTileWalkable(loc, tile, npc))
                         {
+                            // 农舍内：避开正门落脚点周围通道，防止配偶离散后堵门
+                            if (string.Equals(loc.Name, "FarmHouse", StringComparison.OrdinalIgnoreCase))
+                            {
+                                if (Math.Abs(tile.X - center.X) <= 1 && tile.Y >= center.Y - 1)
+                                    continue;
+                            }
+
                             // 检查是否有其他 NPC 正好站在此处
                             bool occupiedByOtherNpc = loc.characters.Any(c => c != null && c != npc && c.Tile == tile);
                             if (!occupiedByOtherNpc)
@@ -1610,7 +1621,7 @@ namespace ValleytalkReborn
                     state.WaitingForPlayerToLeave = true;
                     state.LeaveWaitReason         = PlayerLeaveWaitReason.DepartToSchedule;
                     state.PlayerLeaveWaitTicks    = 0;
-                    state.ActivePoiDescription    = "waiting for the right moment to head out";
+                    TransitionScheduleContext(state, ScheduleContextPhase.WaitingForPlayer);
                     ModEntry.SMonitor?.Log(
                         $"[CSM] {npc.Name} is at '{npc.currentLocation?.Name}' — waiting for player to leave before departing.",
                         LogLevel.Info);
@@ -1660,7 +1671,8 @@ namespace ValleytalkReborn
             {
                 MultiMapNavigator.WarpDirectTo(npc, asset.MapName, target);
                 MarkEntryArrived(entry, Game1.timeOfDay);
-                state.ActivePoiDescription = asset.DescriptionForLLM;
+                state.PreviousPoiId = entry.PoiId;
+                TransitionScheduleContext(state, ScheduleContextPhase.ActiveAtPoi, asset.DescriptionForLLM);
                 TryPlayAnimation(npc, asset.CsharpAnimation);
                 return;
             }
@@ -1672,7 +1684,8 @@ namespace ValleytalkReborn
                 if (Vector2.Distance(npc.Tile, safeTarget) < 1.5f)
                 {
                     MarkEntryArrived(entry, Game1.timeOfDay);
-                    state.ActivePoiDescription = asset.DescriptionForLLM;
+                    state.PreviousPoiId = entry.PoiId;
+                    TransitionScheduleContext(state, ScheduleContextPhase.ActiveAtPoi, asset.DescriptionForLLM);
                     TryPlayAnimation(npc, asset.CsharpAnimation);
                     return;
                 }
@@ -1686,7 +1699,8 @@ namespace ValleytalkReborn
                 else
                 {
                     MarkEntryArrived(entry, Game1.timeOfDay);
-                    state.ActivePoiDescription = asset.DescriptionForLLM;
+                    state.PreviousPoiId = entry.PoiId;
+                    TransitionScheduleContext(state, ScheduleContextPhase.ActiveAtPoi, asset.DescriptionForLLM);
                     TryPlayAnimation(npc, asset.CsharpAnimation);
                 }
                 return;
@@ -1726,7 +1740,8 @@ namespace ValleytalkReborn
                     LogLevel.Warn);
                 MultiMapNavigator.WarpDirectTo(npc, asset.MapName, target);
                 MarkEntryArrived(entry, Game1.timeOfDay);
-                state.ActivePoiDescription = asset.DescriptionForLLM;
+                state.PreviousPoiId = entry.PoiId;
+                TransitionScheduleContext(state, ScheduleContextPhase.ActiveAtPoi, asset.DescriptionForLLM);
                 TryPlayAnimation(npc, asset.CsharpAnimation);
                 return;
             }
@@ -1737,7 +1752,8 @@ namespace ValleytalkReborn
                 {
                     MultiMapNavigator.WarpDirectTo(npc, asset.MapName, target);
                     MarkEntryArrived(entry, Game1.timeOfDay);
-                    state.ActivePoiDescription = asset.DescriptionForLLM;
+                    state.PreviousPoiId = entry.PoiId;
+                    TransitionScheduleContext(state, ScheduleContextPhase.ActiveAtPoi, asset.DescriptionForLLM);
                     TryPlayAnimation(npc, asset.CsharpAnimation);
                     ModEntry.SMonitor?.Log(
                         $"[CSM] {npc.Name} exited '{loc.Name}' via nearest warp → arrived at '{entry.PoiId}'.",
@@ -1750,7 +1766,8 @@ namespace ValleytalkReborn
                         LogLevel.Warn);
                     MultiMapNavigator.WarpDirectTo(npc, asset.MapName, target);
                     MarkEntryArrived(entry, Game1.timeOfDay);
-                    state.ActivePoiDescription = asset.DescriptionForLLM;
+                    state.PreviousPoiId = entry.PoiId;
+                    TransitionScheduleContext(state, ScheduleContextPhase.ActiveAtPoi, asset.DescriptionForLLM);
                     TryPlayAnimation(npc, asset.CsharpAnimation);
                 });
         }

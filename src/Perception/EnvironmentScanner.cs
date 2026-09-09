@@ -62,7 +62,7 @@ namespace ValleytalkReborn
                 },
             };
 
-        // ── 双语地图友好名映射（全面补全原版 + SVE 地图） ──
+        // ── 双语地图友好名映射（全面补全原版 1.6 + SVE 地图，全量别名兼容） ──
         private static readonly Dictionary<string, (string En, string Zh)> LocationFriendlyNames =
             new(StringComparer.OrdinalIgnoreCase)
             {
@@ -80,9 +80,10 @@ namespace ValleytalkReborn
                 ["Woods"]               = ("the Secret Woods", "秘密森林"),
                 ["Backwoods"]           = ("the backwoods", "农场后山小径"),
                 ["CommunityCenter"]     = ("the Community Center", "社区中心"),
+                ["Summit"]              = ("the Summit", "山顶绝壁"),
 
                 // ==========================================
-                //  2. 原版：地下、特殊与水域区域
+                //  2. 原版：地下、特殊与水域区域（含 1.6）
                 // ==========================================
                 ["Mine"]                = ("the mines", "矿洞"),
                 ["UndergroundMine"]     = ("the mines", "矿井深处"),
@@ -91,12 +92,16 @@ namespace ValleytalkReborn
                 ["BugLand"]             = ("the Mutant Bug Lair", "变异虫穴"),
                 ["WitchSwamp"]          = ("the Witch's Swamp", "女巫沼泽"),
                 ["WitchHut"]            = ("the Witch's Hut", "女巫小屋"),
+                ["WitchWarpCave"]       = ("the Witch's Warp Cave", "女巫传送洞穴"),
                 ["Submarine"]           = ("the deep-sea submarine", "深海潜艇内部"),
                 ["BathHouse_Pool"]      = ("the public bath pool", "公共浴场温水池"),
                 ["BathHouse_Entry"]     = ("the bathhouse entrance", "浴室前厅"),
                 ["BathHouse_Mens"]      = ("the men's locker room", "浴室男更衣室"),
+                ["BathHouse_MensLocker"]= ("the men's locker room", "浴室男更衣室"),
                 ["BathHouse_Womens"]    = ("the women's locker room", "浴室女更衣室"),
+                ["BathHouse_WomensLocker"] = ("the women's locker room", "浴室女更衣室"),
                 ["Club"]                = ("the Oasis Casino", "绿洲赌场"),
+                ["MasteryCave"]         = ("the Mastery Cave", "专精洞穴"),
 
                 // ==========================================
                 //  3. 原版：农场建筑与室内
@@ -106,8 +111,15 @@ namespace ValleytalkReborn
                 ["Greenhouse"]          = ("the greenhouse", "温室"),
                 ["Cellar"]              = ("the farmhouse cellar", "农舍地窖"),
                 ["Barn"]                = ("the barn", "畜棚内部"),
+                ["BigBarn"]             = ("the big barn", "大畜棚内部"),
+                ["DeluxeBarn"]          = ("the deluxe barn", "高级畜棚内部"),
                 ["Coop"]                = ("the coop", "鸡舍内部"),
+                ["BigCoop"]             = ("the big coop", "大鸡舍内部"),
+                ["DeluxeCoop"]          = ("the deluxe coop", "高级鸡舍内部"),
                 ["Shed"]                = ("the shed", "储物木棚"),
+                ["BigShed"]             = ("the big shed", "大储物木棚"),
+                ["SlimeHutch"]          = ("the slime hutch", "史莱姆屋"),
+                ["FarmCave"]            = ("the farm cave", "农场洞穴"),
 
                 // ==========================================
                 //  4. 原版：商铺与公共建筑室内
@@ -115,14 +127,17 @@ namespace ValleytalkReborn
                 ["Saloon"]              = ("the Stardrop Saloon", "星之果实酒吧"),
                 ["Hospital"]            = ("Harvey's Clinic", "哈维的诊所"),
                 ["SeedShop"]            = ("Pierre's General Store", "皮埃尔杂货店"),
+                ["Sunroom"]             = ("Caroline's Sunroom", "卡洛琳的日光温室"),
                 ["Blacksmith"]          = ("Clint's Blacksmith", "克林特铁匠铺"),
                 ["ArchaeologyHouse"]    = ("the Museum and Library", "图书馆与博物馆"),
+                ["LibraryMuseum"]       = ("the Museum and Library", "图书馆与博物馆"),
                 ["ManorHouse"]          = ("the Mayor's Manor", "镇长大宅"),
                 ["JojaMart"]            = ("JojaMart", "Joja 超市"),
                 ["AbandonedJojaMart"]   = ("the abandoned JojaMart", "废弃的 Joja 超市"),
                 ["MovieTheater"]        = ("the Movie Theater", "星露谷电影院"),
                 ["FishShop"]            = ("Willy's Fish Shop", "威利的鱼店"),
                 ["SandyHouse"]          = ("the Oasis Store", "绿洲商店"),
+                ["AdventureGuild"]      = ("the Adventurer's Guild", "探险家公会"),
 
                 // ==========================================
                 //  5. 原版：村民住宅
@@ -137,9 +152,11 @@ namespace ValleytalkReborn
                 ["Trailer"]             = ("Pam's trailer", "潘姆的房车"),
                 ["Trailer_Big"]         = ("Pam's restored house", "潘姆修缮后的新房"),
                 ["Tent"]                = ("Linus's tent", "莱纳斯的帐篷"),
+                ["LinusTent"]           = ("Linus's tent", "莱纳斯的帐篷"),
                 ["WizardHouse"]         = ("the Wizard's Tower", "法师塔"),
                 ["WizardHouseBasement"] = ("the Wizard's basement", "法师塔地下密室"),
                 ["ElliottHouse"]        = ("Elliott's beach cabin", "艾利欧特的海边小屋"),
+                ["LeoTreeHouse"]        = ("Leo's treehouse", "雷欧的树屋"),
 
                 // ==========================================
                 //  6. 原版：姜岛区域 (Ginger Island)
@@ -153,13 +170,22 @@ namespace ValleytalkReborn
                 ["IslandFarmHouse"]     = ("the island farmhouse", "姜岛农舍内部"),
                 ["IslandFarmCave"]      = ("the island farm cave", "姜岛农场洞穴"),
                 ["IslandFieldOffice"]   = ("the Island Field Office", "姜岛野外考察办事处"),
-                ["IslandHut"]           = ("Leo's treehouse", "雷欧的树屋"),
+                ["FieldOffice"]         = ("the Island Field Office", "姜岛野外考察办事处"),
+                ["IslandHut"]           = ("Leo's island hut", "雷欧的姜岛小屋"),
+                ["IslandResort"]        = ("the Island Resort", "姜岛度假村"),
                 ["Caldera"]             = ("the Volcano Caldera", "火山破火山口锻造台"),
                 ["VolcanoDungeon"]      = ("the Volcano Dungeon", "姜岛火山地牢"),
+                ["Volcano_Entrance"]    = ("the Volcano entrance", "火山地牢入口"),
+                ["QiNutRoom"]           = ("Qi's Walnut Room", "齐先生的金色核桃房"),
+                ["IslandWestCave1"]     = ("the Gourmand Frog's Cave", "美食家青蛙洞穴"),
 
                 // ==========================================
                 //  7. SVE (Stardew Valley Expanded) 拓展地点
                 // ==========================================
+                // 农场拓展
+                ["Custom_GrandpasShed"]             = ("Grandpa's Shed", "爷爷的储物木棚"),
+                ["Custom_GrandpasShedGreenhouse"]   = ("Grandpa's Shed Greenhouse", "爷爷的木棚温室"),
+
                 // 蓝月葡萄园 (Sophia)
                 ["Custom_BlueMoonVineyard"]         = ("Blue Moon Vineyard", "蓝月葡萄园"),
                 ["Custom_SophiaHouse"]              = ("Sophia's Cottage", "苏菲亚的小屋"),
@@ -172,6 +198,8 @@ namespace ValleytalkReborn
                 // 极光葡萄园 (Apples / Junimo)
                 ["Custom_AuroraVineyard"]           = ("Aurora Vineyard", "极光葡萄园"),
                 ["Custom_AuroraVineyardBasement"]   = ("Aurora Vineyard Cellar", "极光葡萄园地窖"),
+                ["Custom_AuroraVineyardCellar"]     = ("Aurora Vineyard Cellar", "极光葡萄园地窖"),
+                ["Custom_ApplesRoom"]               = ("Apples' Junimo Room", "小苹果的祝尼魔之室"),
 
                 // 詹金斯洋房 (Olivia & Victor)
                 ["Custom_JenkinsHouse"]             = ("the Jenkins Residence", "詹金斯家大宅"),
@@ -182,6 +210,7 @@ namespace ValleytalkReborn
                 ["Custom_HighlandsOutpost"]         = ("the Highlands Outpost", "高地探险哨所"),
                 ["Custom_HighlandsCavern"]          = ("the Highlands Cavern", "高地幽深洞窟"),
                 ["Custom_LanceHouse"]               = ("Lance's Quarters", "兰斯的居所"),
+                ["Custom_AdventurersGuildBarracks"] = ("the Guild Barracks", "探险家公会宿营区"),
 
                 // 剪水大桥与格兰普顿近郊 (Scarlett / Grampleton)
                 ["Custom_ShearwaterBridge"]         = ("Shearwater Bridge", "剪水大桥"),
@@ -189,21 +218,27 @@ namespace ValleytalkReborn
                 ["Custom_ScarlettHouse"]            = ("Scarlett's House", "斯嘉丽的家"),
 
                 // 深红荒地与冒险家营地 (Crimson Badlands / Camilla / Alesia)
+                ["Custom_Badlands"]                 = ("the Crimson Badlands", "深红荒地"),
+                ["Custom_BadlandsCave"]             = ("the Badlands Caverns", "荒地危险洞窟"),
                 ["Custom_CrimsonBadlands"]          = ("the Crimson Badlands", "深红荒地"),
                 ["Custom_CrimsonBadlandsMines"]     = ("the Badlands Caverns", "荒地危险洞窟"),
-                ["Custom_AdventurersGuildBarracks"] = ("the Guild Barracks", "探险家公会宿营区"),
                 ["Custom_CastleVillageOutpost"]     = ("Castle Village Outpost", "城堡村前哨站"),
 
                 // 森林与小镇新增建筑
                 ["Custom_ForestWest"]               = ("Western Cindersap Forest", "煤块森林西部荒野"),
-                ["Custom_BearShrine"]               = ("the Bear Shrine", "巨熊神龛"),
+                ["Custom_BearCave"]                 = ("the Bear Cave", "巨熊洞穴"),
+                ["Custom_BearShrine"]               = ("the Bear Cave", "巨熊洞穴"),
+                ["Custom_JunimoWoods"]              = ("the Junimo Woods", "祝尼魔神秘森林"),
+                ["Custom_SpriteSpring"]             = ("Sprite Spring", "小精灵泉水"),
+                ["Custom_EnchantedGrove"]           = ("the Enchanted Grove", "魔导树丛"),
                 ["Custom_SusanHouse"]               = ("Susan's Farmhouse", "苏珊的农舍"),
+                ["Custom_EmeraldFarm"]              = ("Emerald Farm", "翡翠农场"),
                 ["Custom_ClaireHouse"]              = ("Claire's Apartment", "克莱尔的公寓"),
                 ["Custom_MartinHouse"]              = ("Martin's House", "马丁的住处"),
                 ["Custom_MorrisHouse"]              = ("Morris's Apartment", "莫里斯的公寓"),
                 ["Custom_GuntherHouse"]             = ("Gunther's Quarters", "冈瑟的住处"),
-                ["Custom_MarlonFayHouse"]           = ("Marlon's Homestead", "马龙与费伊的居所"),
-                ["Custom_ApplesRoom"]               = ("Apples' Junimo Room", "小苹果的祝尼魔之室"),
+                ["Custom_MarlonFayHouse"]           = ("Marlon and Fay's Homestead", "马龙与费伊的居所"),
+                ["Custom_FableReef"]                = ("Fable Reef", "寓言暗礁")
             };
 
         // ═════════════════════════════════════════════════════════════
@@ -300,6 +335,13 @@ namespace ValleytalkReborn
                 string stripped = locationName.Substring("Custom_".Length);
                 if (LocationFriendlyNames.TryGetValue(stripped, out var strippedInfo))
                     return IsChineseLanguage ? strippedInfo.Zh : strippedInfo.En;
+            }
+            // 兼容补充 Custom_ 前缀后再尝试匹配
+            else
+            {
+                string added = "Custom_" + locationName;
+                if (LocationFriendlyNames.TryGetValue(added, out var addedInfo))
+                    return IsChineseLanguage ? addedInfo.Zh : addedInfo.En;
             }
 
             // 3. 回退为原始名称

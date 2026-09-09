@@ -71,6 +71,12 @@ internal class PerceptionManager
                 _interactedNpcNamesToday.Clear();
                 _npcNoticedItemIdsToday.Clear();
             }
+
+            // ★ 静态字段跨存档残留修复：_mentionedGossipKeys 是 PerceptionInjector 里的
+            // 静态字段，PerceptionManager 是单例。退出当前存档/切换存档时若不在这里同步
+            // 清空，旧存档的八卦去重记录会带进下一个存档，导致新存档里本该出现的八卦
+            // 被误判为"今天已对该NPC提过"而被跳过。
+            PerceptionInjector.ResetMentionedGossipKeys();
         }
         catch (Exception ex)
         {

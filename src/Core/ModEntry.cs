@@ -658,6 +658,7 @@ namespace ValleytalkReborn
                     DailyHeadlineGenerator.Cleanup();
 
                     PerceptionManager.Instance?.Cleanup();
+                    PlayerStateScanner.ResetOnSaveExit();
                     SpouseWaitingEvent.Cleanup();
                 }
                 catch (Exception ex)

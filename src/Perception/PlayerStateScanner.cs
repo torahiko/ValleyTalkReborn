@@ -769,4 +769,18 @@ internal static class PlayerStateScanner
             FaintedToday = false;
         }
     }
+
+    /// <summary>
+    /// ★ 存档切换/卸载修复：WasFaintingPending 和 FaintedToday 都是静态字段，
+    /// 如果玩家在 A 存档触发了 OnDayEnding（WasFaintingPending=true）后，
+    /// 未经过 A 存档自己的 OnDayStarted 就切换/退出到另一个存档 B，
+    /// 残留的 true 会在 B 存档的下一次 OnDayStarted 里被错误地读取，
+    /// 导致 B 存档里从未晕倒过的玩家也被 NPC 认为"昨晚精疲力竭晕倒"。
+    /// 必须在 ReturnedToTitle / 存档卸载回调中调用本方法。
+    /// </summary>
+    public static void ResetOnSaveExit()
+    {
+        WasFaintingPending = false;
+        FaintedToday = false;
+    }
 }
