@@ -146,7 +146,7 @@ namespace ValleytalkReborn
             _viewHistory = new ClickableTextureComponent(
                 new Rectangle(
                     (int)_menuPosition.X + 3 * Margin + ButtonSize,
-                    (int)_menuPosition.Y + _currentMenuHeight - 2 * Margin - ButtonSize,
+                    (int)_menuPosition.Y + _currentMenuHeight - 2 * Margin - ButtonSize + 5,
                     ButtonSize,
                     ButtonSize
                 ),
@@ -294,7 +294,7 @@ namespace ValleytalkReborn
 
             _viewHistory.bounds = new Rectangle(
                 (int)_menuPosition.X + 3 * Margin + ButtonSize,
-                (int)_menuPosition.Y + _currentMenuHeight - 2 * Margin - ButtonSize,
+                (int)_menuPosition.Y + _currentMenuHeight - 2 * Margin - ButtonSize + 5,
                 ButtonSize,
                 ButtonSize
             );

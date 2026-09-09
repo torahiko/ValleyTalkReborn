@@ -399,34 +399,48 @@ Format example below (random content, unrelated to actual scene, don't copy topi
     {
         if (npc == null) return null;
 
-        if (PolyamorySweetLoveBridge.IsOfficialSpouse(npc) || PolyamorySweetLoveBridge.IsUnofficialSpouse(npc))
+        var parts = new List<string>();
+
+        // 1. 婚姻/恋爱关系
+        bool isSpouse = PolyamorySweetLoveBridge.IsOfficialSpouse(npc)
+                     || PolyamorySweetLoveBridge.IsUnofficialSpouse(npc);
+
+        if (!isSpouse)
         {
-            return isZh
-                ? "[Identity Note: 你和玩家是伴侣关系。]"
-                : "[Identity Note: You are in a romantic relationship with the player.]";
+            var player = Game1.player;
+            if (player?.friendshipData != null
+                && player.friendshipData.TryGetValue(npc.Name, out var fs) && fs != null)
+            {
+                if (fs.IsMarried() || fs.IsDating())
+                {
+                    isSpouse = true;
+                }
+                else
+                {
+                    int hearts = fs.Points / 250;
+                    if (hearts >= 6)
+                        parts.Add(isZh
+                            ? $"你和玩家是好朋友（{hearts} 心）"
+                            : $"Close friends with the player ({hearts} hearts)");
+                }
+            }
         }
 
-        var player = Game1.player;
-        if (player?.friendshipData == null) return null;
-        if (!player.friendshipData.TryGetValue(npc.Name, out var fs) || fs == null) return null;
+        if (isSpouse)
+            parts.Add(isZh ? "你和玩家是伴侣关系" : "In a romantic relationship with the player");
 
-        if (fs.IsMarried() || fs.IsDating())
-        {
-            return isZh
-                ? "[Identity Note: 你和玩家是伴侣关系。]"
-                : "[Identity Note: You are in a romantic relationship with the player.]";
-        }
+        // 2. 专属称谓注入（单点直取，不读记忆列表）
+        string callsign = MemoryManager.Instance.GetCustomCallsign(npc.Name);
+        if (!string.IsNullOrWhiteSpace(callsign))
+            parts.Add(isZh
+                ? $"提及玩家时的称谓习惯：\"{callsign}\""
+                : $"Callsign habit for the player: \"{callsign}\"");
 
-        // ≥6 心好友：注入但措辞更淡
-        int hearts = fs.Points / 250;
-        if (hearts >= 6)
-        {
-            return isZh
-                ? $"[Identity Note: 你和玩家是好朋友（{hearts} 心）。]"
-                : $"[Identity Note: You and the player are close friends ({hearts} hearts).]";
-        }
+        if (parts.Count == 0) return null;
 
-        return null; // <6 心不注入，陌生/普通关系不构成有效 Identity Note
+        return isZh
+            ? $"[身份与指代注脚：{string.Join("，", parts)}]"
+            : $"[Identity & Callsign Note: {string.Join(". ", parts)}.]";
     }
 
     private static string GetWeatherDescription(bool isZh)

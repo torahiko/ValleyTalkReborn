@@ -36,14 +36,17 @@ internal class MemoryManager : IMemoryProvider
 {
     public static readonly MemoryManager Instance = new MemoryManager();
 
-    private const string SaveDataKey = "valleytalk.npc-memories";
+    private const string SaveDataKey         = "valleytalk.npc-memories";
+    private const string CallsignSaveDataKey = "valleytalk.npc-callsigns";
 
-    public const int MaxMemoryLength = 60;
-    public const int MaxMemoriesPerNpc = 10;
+    public const int MaxMemoryLength    = 60;
+    public const int MaxCallsignLength  = 20;
+    public const int MaxMemoriesPerNpc  = 10;
     public const int MaxMemoriesInPrompt = 5;
-    public const int MaxAutoInPrompt = 3;
+    public const int MaxAutoInPrompt    = 3;
 
     private Dictionary<string, List<MemoryEntry>> _memories = new();
+    private Dictionary<string, string> _customCallsigns = new(StringComparer.OrdinalIgnoreCase);
     private bool _isLoaded = false;
 
     private static bool IsChineseLanguage =>
@@ -77,6 +80,8 @@ internal class MemoryManager : IMemoryProvider
         {
             _memories?.Clear();
             _memories = new Dictionary<string, List<MemoryEntry>>();
+            _customCallsigns?.Clear();
+            _customCallsigns = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             _isLoaded = false;
         }
         catch (Exception ex)
@@ -111,6 +116,12 @@ internal class MemoryManager : IMemoryProvider
                 MigrateLegacyFiles();
             }
 
+            // 独立读取专属称谓，key 不存在时静默回退空字典
+            var loadedCallsigns = ModEntry.SHelper.Data.ReadSaveData<Dictionary<string, string>>(CallsignSaveDataKey);
+            _customCallsigns = loadedCallsigns != null
+                ? new Dictionary<string, string>(loadedCallsigns, StringComparer.OrdinalIgnoreCase)
+                : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
             _isLoaded = true;
         }
         catch (Exception ex)
@@ -125,7 +136,6 @@ internal class MemoryManager : IMemoryProvider
         {
             if (!Context.IsWorldReady || ModEntry.SHelper == null) return;
 
-            // 整体写入存档，无需再为每个 NPC 单独创建文件
             ModEntry.SHelper.Data.WriteSaveData(SaveDataKey, _memories);
         }
         catch (Exception ex)
@@ -137,6 +147,50 @@ internal class MemoryManager : IMemoryProvider
     public void SaveAll()
     {
         Save();
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // 专属称谓 API — 独立存储，不占用记忆额度
+    // ──────────────────────────────────────────────────────────────
+
+    /// <summary>获取该 NPC 对玩家的专属称谓，未设置则返回 null。</summary>
+    public string GetCustomCallsign(string npcName)
+    {
+        if (string.IsNullOrWhiteSpace(npcName)) return null;
+        EnsureLoaded();
+        return _customCallsigns.TryGetValue(npcName, out var c) && !string.IsNullOrWhiteSpace(c)
+            ? c.Trim()
+            : null;
+    }
+
+    /// <summary>设置称谓；传 null 或空白则清除，恢复默认。</summary>
+    public void SetCustomCallsign(string npcName, string callsign)
+    {
+        if (string.IsNullOrWhiteSpace(npcName)) return;
+        EnsureLoaded();
+
+        if (string.IsNullOrWhiteSpace(callsign))
+        {
+            _customCallsigns.Remove(npcName);
+        }
+        else
+        {
+            string trimmed = callsign.Trim();
+            if (trimmed.Length > MaxCallsignLength)
+                trimmed = trimmed.Substring(0, MaxCallsignLength);
+            _customCallsigns[npcName] = trimmed;
+        }
+
+        // 仅写称谓 key，不触发记忆字典的重复序列化
+        try
+        {
+            if (!Context.IsWorldReady || ModEntry.SHelper == null) return;
+            ModEntry.SHelper.Data.WriteSaveData(CallsignSaveDataKey, _customCallsigns);
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log($"[MemoryManager] SaveCallsign failed: {ex.Message}", LogLevel.Warn);
+        }
     }
 
     /// <summary>

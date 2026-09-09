@@ -30,6 +30,7 @@ namespace ValleytalkReborn
 
         private Rectangle _tabNpcRect;
         private Rectangle _tabWorldRect;
+        private Rectangle _callsignRect;
 
         // 🌟 改为缓存列表，避免每次 draw/input 都重新排序和 ToList
         private List<MemoryEntry> _cachedEntries = new();
@@ -126,8 +127,15 @@ namespace ValleytalkReborn
             int tabBaseX = xPositionOnScreen + LeftPadding;
             int tabBaseY = yPositionOnScreen + TabBarY;
 
-            _tabNpcRect = new Rectangle(tabBaseX, tabBaseY, TabWidth, TabHeight);
+            _tabNpcRect  = new Rectangle(tabBaseX, tabBaseY, TabWidth, TabHeight);
             _tabWorldRect = new Rectangle(tabBaseX + TabWidth + TabGap, tabBaseY, TabWidth, TabHeight);
+
+            // 称谓框：宽 280，贴右边界留 60px 给关闭按钮，左侧空白充裕
+            _callsignRect = new Rectangle(
+                xPositionOnScreen + width - RightPadding - 60 - 280,
+                tabBaseY,
+                280,
+                TabHeight);
 
             // 🌟 初始化时读取一次缓存数据
             RefreshEntries();
@@ -255,6 +263,13 @@ namespace ValleytalkReborn
             if (_tabWorldRect.Contains(x, y))
             {
                 SwitchTab(1);
+                return;
+            }
+
+            if (_currentTab == 0 && _callsignRect.Contains(x, y))
+            {
+                Game1.playSound("bigSelect");
+                Game1.activeClickableMenu = new SetCallsignInputMenu(_npcName, this);
                 return;
             }
 
@@ -408,6 +423,8 @@ namespace ValleytalkReborn
             DrawTab(b, _tabNpcRect, I18n.Memory.TabNpc(_npcName), _currentTab == 0, mx, my);
             DrawTab(b, _tabWorldRect, I18n.Memory.TabWorld(), _currentTab == 1, mx, my);
 
+            if (_currentTab == 0) DrawCallsignButton(b, mx, my);
+
             b.Draw(Game1.staminaRect,
                 new Rectangle(xPositionOnScreen + LeftPadding,
                               yPositionOnScreen + TabBarY + TabHeight + 4,
@@ -555,6 +572,193 @@ namespace ValleytalkReborn
 
             if (_ownerMenu != null)
                 Game1.activeClickableMenu = _ownerMenu;
+        }
+
+        private void DrawCallsignButton(SpriteBatch b, int mx, int my)
+        {
+            bool hover     = _callsignRect.Contains(mx, my);
+            string callsign = MemoryManager.Instance.GetCustomCallsign(_npcName);
+            bool hasValue  = !string.IsNullOrEmpty(callsign);
+
+            Color bg = hover ? new Color(255, 235, 205) : new Color(210, 180, 140) * 0.8f;
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
+                new Rectangle(432, 439, 9, 9),
+                _callsignRect.X, _callsignRect.Y, _callsignRect.Width, _callsignRect.Height,
+                bg, 4f, false);
+
+            bool isZh = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+            string prefix    = isZh ? "称呼: " : "Call me: ";
+            string valueText = hasValue ? $"[{callsign}]" : (isZh ? "(点击设置)" : "(Click to set)");
+            Color  valueColor = hover
+                ? Game1.textColor
+                : (hasValue ? Game1.textColor * 0.9f : Color.Gray);
+
+            string fullText = prefix + valueText;
+            var    textSize = Game1.smallFont.MeasureString(fullText);
+
+            b.DrawString(Game1.smallFont, fullText,
+                new Vector2(
+                    _callsignRect.X + (_callsignRect.Width  - textSize.X) / 2f,
+                    _callsignRect.Y + (_callsignRect.Height - textSize.Y) / 2f),
+                valueColor);
+        }
+    }
+
+    // ─── 专属称谓设置对话框 ──────────────────────────────────────────
+    internal class SetCallsignInputMenu : IClickableMenu
+    {
+        private readonly string _npcName;
+        private readonly ScrollableMemoryMenu _returnMenu;
+        private readonly DialogueTextInputBox _inputBox;
+        private readonly ClickableTextureComponent _okButton;
+        private readonly ClickableTextureComponent _cancelButton;
+
+        private float _okButtonHoverScale = 1f;
+        private float _cancelButtonHoverScale = 1f;
+        private const int MenuWidth  = 560;
+        private const int MenuHeight = 240;
+
+        public SetCallsignInputMenu(string npcName, ScrollableMemoryMenu returnMenu)
+        {
+            _npcName    = npcName;
+            _returnMenu = returnMenu;
+
+            xPositionOnScreen = (Game1.uiViewport.Width  - MenuWidth)  / 2;
+            yPositionOnScreen = (Game1.uiViewport.Height - MenuHeight) / 2;
+            width  = MenuWidth;
+            height = MenuHeight;
+
+            _inputBox = new DialogueTextInputBox(MemoryManager.MaxCallsignLength, 15)
+            {
+                Position  = new Vector2(xPositionOnScreen + 40, yPositionOnScreen + 100),
+                Extent    = new Vector2(width - 80, 50),
+                Font      = Game1.dialogueFont,
+                TextColor = Game1.textColor,
+                Selected  = true
+            };
+
+            string current = MemoryManager.Instance.GetCustomCallsign(_npcName);
+            if (!string.IsNullOrEmpty(current))
+                _inputBox.SetText(current);
+
+            _inputBox.OnSubmit += sender => Submit(sender.Text);
+            Game1.keyboardDispatcher.Subscriber = _inputBox;
+
+            int btnY = yPositionOnScreen + height - 70;
+            _okButton = new ClickableTextureComponent(
+                new Rectangle(xPositionOnScreen + width - 2 * 24 - 54, btnY, 54, 54),
+                Game1.mouseCursors,
+                Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 46, -1, -1), 0.9f);
+
+            _cancelButton = new ClickableTextureComponent(
+                new Rectangle(xPositionOnScreen + width - 3 * 24 - 2 * 54, btnY, 54, 54),
+                Game1.mouseCursors,
+                Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 47, -1, -1), 0.9f);
+
+            // 任何关闭路径（含手柄B键）都通过 exitFunction 归还键盘焦点
+            exitFunction = () =>
+            {
+                if (Game1.keyboardDispatcher.Subscriber == _inputBox)
+                    Game1.keyboardDispatcher.Subscriber = null;
+            };
+        }
+
+        private void Submit(string text)
+        {
+            MemoryManager.Instance.SetCustomCallsign(_npcName, text);
+            Game1.playSound("coin");
+            ReturnToMemoryMenu();
+        }
+
+        private void ReturnToMemoryMenu()
+        {
+            // exitFunction 已负责清理键盘焦点，exitThisMenu 会触发它
+            exitThisMenu();
+            Game1.activeClickableMenu = _returnMenu;
+        }
+
+        public override void receiveLeftClick(int x, int y, bool playSound = true)
+        {
+            base.receiveLeftClick(x, y, playSound);
+
+            if (_inputBox.ReceiveLeftClick(x, y)) return;
+
+            if (_okButton.containsPoint(x, y))
+            {
+                Submit(_inputBox.Text);
+            }
+            else if (_cancelButton.containsPoint(x, y))
+            {
+                Game1.playSound("bigDeSelect");
+                ReturnToMemoryMenu();
+            }
+        }
+
+        public override void receiveKeyPress(Keys key)
+        {
+            if (Game1.keyboardDispatcher.Subscriber == _inputBox)
+            {
+                if (key == Keys.Escape)
+                {
+                    Game1.playSound("bigDeSelect");
+                    ReturnToMemoryMenu();
+                    return;
+                }
+
+                if (key == Keys.Enter)
+                {
+                    Submit(_inputBox.Text);
+                    return;
+                }
+
+                if (!DialogueTextInputBox.IsControlKeyDown())
+                    _inputBox.RecieveSpecialInput(key);
+
+                return;
+            }
+
+            base.receiveKeyPress(key);
+        }
+
+        public override void draw(SpriteBatch b)
+        {
+            _inputBox.Update(Game1.currentGameTime);
+
+            b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.4f);
+            IClickableMenu.drawTextureBox(b, xPositionOnScreen, yPositionOnScreen, width, height, Color.White);
+
+            bool isZh  = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+            string title = isZh
+                ? $"设置 {_npcName} 对你的专属称谓"
+                : $"Set {_npcName}'s callsign for you";
+            string hint  = isZh
+                ? "留空则使用默认名字。称谓将在心声与对话中生效。"
+                : "Leave blank for default. Used in barks and dialogues.";
+
+            var titleSize = Game1.dialogueFont.MeasureString(title);
+            b.DrawString(Game1.dialogueFont, title,
+                new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f, yPositionOnScreen + 18),
+                Game1.textColor);
+
+            var hintSize = Game1.smallFont.MeasureString(hint);
+            b.DrawString(Game1.smallFont, hint,
+                new Vector2(xPositionOnScreen + (width - hintSize.X) / 2f, yPositionOnScreen + 58),
+                Color.Gray);
+
+            _inputBox.Draw(b);
+
+            int mx = Game1.getMouseX();
+            int my = Game1.getMouseY();
+
+            UiHelper.UpdateButtonScale(ref _okButtonHoverScale, _okButton, mx, my);
+            UiHelper.UpdateButtonScale(ref _cancelButtonHoverScale, _cancelButton, mx, my);
+
+            _okButton.scale = 0.9f * _okButtonHoverScale;
+            _cancelButton.scale = 0.9f * _cancelButtonHoverScale;
+
+            _okButton.draw(b);
+            _cancelButton.draw(b);
+            drawMouse(b);
         }
     }
 

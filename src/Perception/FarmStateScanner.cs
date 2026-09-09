@@ -132,11 +132,13 @@ internal static class FarmStateScanner
 
             if (readyCrops > 0)
             {
-                sb.AppendLine($"- 农田作物: 有 {readyCrops} 块作物已成熟待收割（包含: {string.Join("、", topReadyCropNames)} 等）。");
+                string sample = topReadyCropNames.Count > 0 ? $"（包含: {string.Join("、", topReadyCropNames)} 等）" : "";
+                sb.AppendLine($"- 农田作物: 有 {readyCrops} 块作物已成熟待收割{sample}。");
             }
             else if (growingCrops > 0)
             {
-                sb.AppendLine($"- 农田作物: 有 {growingCrops} 块作物正在生长中（包含: {string.Join("、", topGrowingCropNames)} 等）。");
+                string sample = topGrowingCropNames.Count > 0 ? $"（包含: {string.Join("、", topGrowingCropNames)} 等）" : "";
+                sb.AppendLine($"- 农田作物: 有 {growingCrops} 块作物正在生长中{sample}。");
             }
 
             if (deadCrops > 0)
@@ -149,11 +151,13 @@ internal static class FarmStateScanner
             {
                 if (fruitTreeTypes > 3)
                 {
-                    sb.AppendLine($"- 果园状态: 果树品种丰富，共 {fruitTreeProducing} 棵树挂果待摘，涵盖 {fruitTreeTypes} 个品种（主要包括: {string.Join("、", topFruits)} 等）。");
+                    string sample = topFruits.Count > 0 ? $"（主要包括: {string.Join("、", topFruits)} 等）" : "";
+                    sb.AppendLine($"- 果园状态: 果树品种丰富，共 {fruitTreeProducing} 棵树挂果待摘，涵盖 {fruitTreeTypes} 个品种{sample}。");
                 }
                 else
                 {
-                    sb.AppendLine($"- 果园状态: 有 {fruitTreeProducing} 棵果树果实累累（包含: {string.Join("、", topFruits)}）。");
+                    string sample = topFruits.Count > 0 ? $"（包含: {string.Join("、", topFruits)}）" : "";
+                    sb.AppendLine($"- 果园状态: 有 {fruitTreeProducing} 棵果树果实累累{sample}。");
                 }
             }
             else if (fruitTreeGrowing > 0)
@@ -166,11 +170,13 @@ internal static class FarmStateScanner
             {
                 if (ghReadyCrops > 0)
                 {
-                    sb.AppendLine($"- 室内温室: 有 {ghReadyCrops} 块作物已成熟待收割（包含: {string.Join("、", ghTopReady)} 等）。");
+                    string sample = ghTopReady.Count > 0 ? $"（包含: {string.Join("、", ghTopReady)} 等）" : "";
+                    sb.AppendLine($"- 室内温室: 有 {ghReadyCrops} 块作物已成熟待收割{sample}。");
                 }
                 else if (ghGrowingCrops > 0)
                 {
-                    sb.AppendLine($"- 室内温室: 有 {ghGrowingCrops} 块作物正在生长中（包含: {string.Join("、", ghTopGrowing)} 等）。");
+                    string sample = ghTopGrowing.Count > 0 ? $"（包含: {string.Join("、", ghTopGrowing)} 等）" : "";
+                    sb.AppendLine($"- 室内温室: 有 {ghGrowingCrops} 块作物正在生长中{sample}。");
                 }
                 else
                 {
@@ -203,11 +209,13 @@ internal static class FarmStateScanner
 
             if (readyCrops > 0)
             {
-                sb.AppendLine($"- Outdoor Crops: {readyCrops} crops are ripe and ready to harvest (including: {string.Join(", ", topReadyCropNames)}).");
+                string sample = topReadyCropNames.Count > 0 ? $" (including: {string.Join(", ", topReadyCropNames)})" : "";
+                sb.AppendLine($"- Outdoor Crops: {readyCrops} crops are ripe and ready to harvest{sample}.");
             }
             else if (growingCrops > 0)
             {
-                sb.AppendLine($"- Outdoor Crops: {growingCrops} crops growing (including: {string.Join(", ", topGrowingCropNames)}).");
+                string sample = topGrowingCropNames.Count > 0 ? $" (including: {string.Join(", ", topGrowingCropNames)})" : "";
+                sb.AppendLine($"- Outdoor Crops: {growingCrops} crops growing{sample}.");
             }
 
             if (deadCrops > 0)
@@ -220,11 +228,13 @@ internal static class FarmStateScanner
             {
                 if (fruitTreeTypes > 3)
                 {
-                    sb.AppendLine($"- Orchard: Diverse orchard with {fruitTreeProducing} trees bearing ripe fruit across {fruitTreeTypes} varieties (mainly: {string.Join(", ", topFruits)}, etc.).");
+                    string sample = topFruits.Count > 0 ? $" (mainly: {string.Join(", ", topFruits)}, etc.)" : "";
+                    sb.AppendLine($"- Orchard: Diverse orchard with {fruitTreeProducing} trees bearing ripe fruit across {fruitTreeTypes} varieties{sample}.");
                 }
                 else
                 {
-                    sb.AppendLine($"- Orchard: {fruitTreeProducing} fruit trees are bearing ripe fruit (including: {string.Join(", ", topFruits)}).");
+                    string sample = topFruits.Count > 0 ? $" (including: {string.Join(", ", topFruits)})" : "";
+                    sb.AppendLine($"- Orchard: {fruitTreeProducing} fruit trees are bearing ripe fruit{sample}.");
                 }
             }
             else if (fruitTreeGrowing > 0)
@@ -237,11 +247,13 @@ internal static class FarmStateScanner
             {
                 if (ghReadyCrops > 0)
                 {
-                    sb.AppendLine($"- Greenhouse: {ghReadyCrops} crops ripe and ready to harvest (including: {string.Join(", ", ghTopReady)}).");
+                    string sample = ghTopReady.Count > 0 ? $" (including: {string.Join(", ", ghTopReady)})" : "";
+                    sb.AppendLine($"- Greenhouse: {ghReadyCrops} crops ripe and ready to harvest{sample}.");
                 }
                 else if (ghGrowingCrops > 0)
                 {
-                    sb.AppendLine($"- Greenhouse: {ghGrowingCrops} crops growing (including: {string.Join(", ", ghTopGrowing)}).");
+                    string sample = ghTopGrowing.Count > 0 ? $" (including: {string.Join(", ", ghTopGrowing)})" : "";
+                    sb.AppendLine($"- Greenhouse: {ghGrowingCrops} crops growing{sample}.");
                 }
                 else
                 {
@@ -293,19 +305,23 @@ internal static class FarmStateScanner
                 }
 
                 bool isReady = dirt.crop.currentPhase.Value >= dirt.crop.phaseDays.Count - 1;
-                // 若无法解析作物名（例如 mod 数据异常），兜底为"未知作物"而不是丢弃计数，
-                // 保证 readyCount/growingCount 与展示的 top 名单数量语义一致。
-                string cropName = SafeGetDisplayName(dirt.crop.indexOfHarvest.Value) ?? "未知作物";
+                string cropName = SafeGetDisplayName(dirt.crop.indexOfHarvest.Value);
 
                 if (isReady)
                 {
                     readyCount++;
-                    readyMap[cropName] = readyMap.GetValueOrDefault(cropName, 0) + 1;
+                    if (!string.IsNullOrWhiteSpace(cropName))
+                    {
+                        readyMap[cropName] = readyMap.GetValueOrDefault(cropName, 0) + 1;
+                    }
                 }
                 else
                 {
                     growingCount++;
-                    growingMap[cropName] = growingMap.GetValueOrDefault(cropName, 0) + 1;
+                    if (!string.IsNullOrWhiteSpace(cropName))
+                    {
+                        growingMap[cropName] = growingMap.GetValueOrDefault(cropName, 0) + 1;
+                    }
                 }
             }
         }
@@ -333,14 +349,15 @@ internal static class FarmStateScanner
                 {
                     producingTreeCount++;
 
-                    // 直接从树上挂着的果实 Item 实体安全获取显示名
-                    string fruitName = tree.fruit[0]?.DisplayName;
-                    if (string.IsNullOrWhiteSpace(fruitName))
+                    Item fruit = tree.fruit[0];
+                    if (IsValidItem(fruit))
                     {
-                        fruitName = "水果";
+                        string fruitName = fruit.DisplayName;
+                        if (!string.IsNullOrWhiteSpace(fruitName))
+                        {
+                            fruitCounts[fruitName] = fruitCounts.GetValueOrDefault(fruitName, 0) + 1;
+                        }
                     }
-
-                    fruitCounts[fruitName] = fruitCounts.GetValueOrDefault(fruitName, 0) + 1;
                 }
                 // 处于成长阶段（未达到最终成熟树形态）
                 else if (tree.growthStage.Value < FruitTree.treeStage)
@@ -362,7 +379,36 @@ internal static class FarmStateScanner
     }
 
     /// <summary>
-    /// 安全获取物品显示名，避免因无效/异常 ItemId（例如部分 mod 数据错误）导致整个扫描抛异常。
+    /// 无视语言：检查物品实例是否有效且存在于当前游戏注册表中
+    /// </summary>
+    private static bool IsValidItem(Item item)
+    {
+        if (item == null) return false;
+
+        // 1. 检查类名是否为内部的 ErrorItem
+        if (item.GetType().Name.Contains("Error", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        // 2. 检查 QualifiedItemId 是否包含 Error 占位
+        if (!string.IsNullOrEmpty(item.QualifiedItemId) && item.QualifiedItemId.Contains("Error", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        // 3. 检查数据项是否在当前游戏中注册
+        var parsedData = ItemRegistry.GetData(item.QualifiedItemId);
+        if (parsedData == null)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 安全获取物品显示名，过滤掉任何无效或缺失 Mod 的异常占位物品。
     /// </summary>
     private static string SafeGetDisplayName(string itemId)
     {
@@ -370,7 +416,13 @@ internal static class FarmStateScanner
 
         try
         {
-            return ItemRegistry.Create(itemId)?.DisplayName;
+            Item item = ItemRegistry.Create(itemId);
+            if (!IsValidItem(item))
+            {
+                return null;
+            }
+
+            return item.DisplayName;
         }
         catch
         {
