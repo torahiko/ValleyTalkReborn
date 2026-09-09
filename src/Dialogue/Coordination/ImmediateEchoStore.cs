@@ -123,8 +123,8 @@ internal static class ImmediateEchoStore
 
     /// <summary>
     /// 供 LlmDialogueService 在组装 CorePrompt 时调用。
-    /// 命中且有效则渲染为 XML 块并立即从字典移除（一次性消费）；
-    /// 否则返回 null（调用方不应追加任何内容）。
+    /// 只读预览：命中且有效则渲染为 XML 块；不再在此处从字典移除。
+    /// 移除动作移交 ConsumeEcho，由调用方在确认已注入本轮 Prompt 后调用。
     /// </summary>
     internal static string BuildEchoBlock(string npcName, string currentLocationName)
     {
@@ -134,14 +134,20 @@ internal static class ImmediateEchoStore
         if (!_store.TryGetValue(npcName, out var entry))
             return null;
 
-        // 无论有效与否，命中后都从字典移除——过期/错位的条目也不该
-        // 继续占位等待下一次访问。
-        _store.TryRemove(npcName, out _);
-
         if (entry.Consumed || IsExpired(entry) || !LocationMatches(entry, currentLocationName))
-            return null;
+            return null; // 过期/错位条目保留在表中，由 CleanupExpired 按 TTL 自然回收
 
         return RenderEcho(entry);
+    }
+
+    /// <summary>
+    /// 在确认 Echo 内容已经真正进入本轮 Prompt 后调用，移除该 NPC 的条目，
+    /// 保证"每个 NPC 最多注入一次"。
+    /// </summary>
+    internal static void ConsumeEcho(string npcName)
+    {
+        if (string.IsNullOrWhiteSpace(npcName)) return;
+        _store.TryRemove(npcName, out _);
     }
 
     /// <summary>

@@ -459,6 +459,23 @@ public class Prompts
             GetMicroEnvironment(prompt);
             InjectPendingTopic(prompt);
 
+            // ── 🔧 一次性动态模块注入（与完整分支保持同一"背景→即时"顺序） ──
+            if (!string.IsNullOrEmpty(PendingEavesdropBlock))
+            {
+                prompt.AppendLine(PendingEavesdropBlock);
+                prompt.AppendLine();
+            }
+            if (!string.IsNullOrEmpty(PendingSpouseWaitingBlock))
+            {
+                prompt.AppendLine(PendingSpouseWaitingBlock);
+                prompt.AppendLine();
+            }
+            if (!string.IsNullOrEmpty(PendingEchoBlock))
+            {
+                prompt.AppendLine(PendingEchoBlock);
+                prompt.AppendLine();
+            }
+
             // ── 🔧 补齐动态注入（与 date context 分支保持一致） ──
             if (!string.IsNullOrEmpty(PendingEvolvedTraitsBlock))
                 prompt.AppendLine("\n" + PendingEvolvedTraitsBlock);
@@ -512,6 +529,24 @@ public class Prompts
                 DateManager.Instance.RecordDateDialogue(Game1.player?.Name ?? "Farmer", lastPlayerLine);
 
             GetMicroEnvironment(prompt);
+
+            // ── 🔧 一次性动态模块注入（背景感知先于对话历史，与完整分支同一顺序） ──
+            if (!string.IsNullOrEmpty(PendingEavesdropBlock))
+            {
+                prompt.AppendLine(PendingEavesdropBlock);
+                prompt.AppendLine();
+            }
+            if (!string.IsNullOrEmpty(PendingSpouseWaitingBlock))
+            {
+                prompt.AppendLine(PendingSpouseWaitingBlock);
+                prompt.AppendLine();
+            }
+            if (!string.IsNullOrEmpty(PendingEchoBlock))
+            {
+                prompt.AppendLine(PendingEchoBlock);
+                prompt.AppendLine();
+            }
+
             GetCurrentConversation(prompt);
             InjectSessionContinuity(prompt);
             InjectPendingTopic(prompt);
@@ -538,6 +573,23 @@ public class Prompts
             DefaultOrOverride("CurrentConversation", GetCurrentConversation, prompt);
             InjectSessionContinuity(prompt);
             InjectPendingTopic(prompt);
+
+            // ── 🔧 一次性动态模块注入（在 PlayerProfile 之前） ──
+            if (!string.IsNullOrEmpty(PendingEavesdropBlock))
+            {
+                prompt.AppendLine(PendingEavesdropBlock);
+                prompt.AppendLine();
+            }
+            if (!string.IsNullOrEmpty(PendingSpouseWaitingBlock))
+            {
+                prompt.AppendLine(PendingSpouseWaitingBlock);
+                prompt.AppendLine();
+            }
+            if (!string.IsNullOrEmpty(PendingEchoBlock))
+            {
+                prompt.AppendLine(PendingEchoBlock);
+                prompt.AppendLine();
+            }
 
             // ── 🔧 补齐动态注入（在 PlayerProfile 之前） ──
             if (!string.IsNullOrEmpty(PendingEvolvedTraitsBlock))
@@ -682,39 +734,40 @@ public class Prompts
         // 1. Eavesdrop（偷听上下文，短期背景）
         // 2. SpouseWaiting（配偶等待事件，情境背景）
         // 3. Echo（近期互动余韵，情感延续）
-        // → 然后是对话历史（CurrentConversation，置底）
-        // → 最后是具身动作指令（movement_instruction，紧咬对话）
+        // 4. EvolvedTraits + LocalPerception（人格特质 + 现场目击，环境背景）
+        // → 然后对话历史（CurrentConversation）稳居底部，直接承接生成入口
+        // → 动作指令（movement_instruction）紧咬对话
         // ══════════════════════════════════════════════════════════════════════
-      
+
         if (!string.IsNullOrEmpty(PendingEavesdropBlock))
         {
             prompt.AppendLine(PendingEavesdropBlock);
             prompt.AppendLine();
         }
-      
+
         if (!string.IsNullOrEmpty(PendingSpouseWaitingBlock))
         {
             prompt.AppendLine(PendingSpouseWaitingBlock);
             prompt.AppendLine();
         }
-      
+
         if (!string.IsNullOrEmpty(PendingEchoBlock))
         {
             prompt.AppendLine(PendingEchoBlock);
             prompt.AppendLine();
         }
 
-        // ── 对话历史与动作指令（保持末尾，紧密相连） ──
+        // ── 🎯 特质与现场目击是环境背景，必须先于对话历史注入（防注意力劫持） ──
+        if (!string.IsNullOrEmpty(PendingEvolvedTraitsBlock))
+            prompt.AppendLine(PendingEvolvedTraitsBlock + "\n");
+        if (!string.IsNullOrEmpty(PendingLocalPerceptionBlock))
+            prompt.AppendLine(PendingLocalPerceptionBlock + "\n");
+
+        // ── 对话历史置底（绝对贴合生成入口，Recency Bias 最优） ──
         DefaultOrOverride("CurrentConversation", GetCurrentConversation, prompt);
         InjectSessionContinuity(prompt);
         InjectPendingTopic(prompt);
         InjectMovementInstruction(prompt);
-
-        // ── EvolvedTraits 和 LocalPerception（对话历史之后，格式约束之前） ──
-        if (!string.IsNullOrEmpty(PendingEvolvedTraitsBlock))
-            prompt.AppendLine("\n" + PendingEvolvedTraitsBlock);
-        if (!string.IsNullOrEmpty(PendingLocalPerceptionBlock))
-            prompt.AppendLine("\n" + PendingLocalPerceptionBlock);
 
         // ══════════════════════════════════════════════════════════════════════
         // ❌ [REMOVAL] 删除重复的 gossipSnapshots 注入（已在 SystemPrompt 中处理）
@@ -767,15 +820,28 @@ public class Prompts
             sb.AppendLine($"║   PendingEchoBlock: {(!string.IsNullOrEmpty(PendingEchoBlock) ? "✓ Injected" : "✗ Empty")}");
 
             // ── 2. 拓扑结构验证 ──
+            // 探测关键字兼容 i18n 实际渲染的标题（zh: 对话历史记录 / en: Conversation History）
             sb.AppendLine("║");
             sb.AppendLine("║ [Topology Structure]");
-          
-            bool hasCurrentConversation = finalPrompt.Contains("### 当前对话") || finalPrompt.Contains("### CURRENT");
+
+            bool hasCurrentConversation = finalPrompt.Contains("### 当前对话")
+                || finalPrompt.Contains("### 对话历史")
+                || finalPrompt.Contains("### Conversation History")
+                || finalPrompt.Contains("### CURRENT");
+
+            // movement_instruction 仅在玩家请求移动/跟随时注入，站立闲聊本就不需要；
+            // 区分"不需要位移"与"期望位移但缺失"，避免正常闲聊被判假警报。
             bool hasMovementInstruction = finalPrompt.Contains("<movement_instruction");
-            bool hasInstructions = finalPrompt.Contains("## 输出指令") || finalPrompt.Contains("## OUTPUT INSTRUCTIONS");
-          
+            bool isMovementExpected = CurrentFlags?.IsMovementRequested == true || CurrentFlags?.IsFollowing == true;
+
+            // 兼容 i18n 实际渲染的标题（zh: 格式与排版要求 / en: Formatting & Output Requirements）
+            bool hasInstructions = finalPrompt.Contains("## 输出指令")
+                || finalPrompt.Contains("## 格式与排版要求")
+                || finalPrompt.Contains("## OUTPUT INSTRUCTIONS")
+                || finalPrompt.Contains("## Formatting & Output Requirements");
+
             sb.AppendLine($"║   CurrentConversation: {(hasCurrentConversation ? "✓ Present" : "✗ Missing")}");
-            sb.AppendLine($"║   MovementInstruction: {(hasMovementInstruction ? "✓ Present" : "✗ Missing")}");
+            sb.AppendLine($"║   MovementInstruction: {(hasMovementInstruction ? "✓ Present" : (isMovementExpected ? "✗ Missing" : "– Not Required"))}");
             sb.AppendLine($"║   Instructions (at end): {(hasInstructions ? "✓ Present" : "✗ Missing")}");
 
             // ── 3. 对话历史位置验证（关键：必须在 movement_instruction 之前） ──
@@ -783,13 +849,17 @@ public class Prompts
             {
                 int conversationPos = finalPrompt.LastIndexOf("### 当前对话", StringComparison.Ordinal);
                 if (conversationPos < 0)
+                    conversationPos = finalPrompt.LastIndexOf("### 对话历史", StringComparison.Ordinal);
+                if (conversationPos < 0)
+                    conversationPos = finalPrompt.LastIndexOf("### Conversation History", StringComparison.Ordinal);
+                if (conversationPos < 0)
                     conversationPos = finalPrompt.LastIndexOf("### CURRENT", StringComparison.Ordinal);
-              
+
                 int movementPos = finalPrompt.LastIndexOf("<movement_instruction", StringComparison.Ordinal);
-              
+
                 bool correctOrder = conversationPos < movementPos;
                 sb.AppendLine($"║   Conversation → Movement order: {(correctOrder ? "✓ Correct" : "✗ INVERTED (BUG!)")}");
-              
+
                 if (!correctOrder)
                 {
                     sb.AppendLine("║   ⚠ WARNING: Movement instruction appears BEFORE conversation history!");

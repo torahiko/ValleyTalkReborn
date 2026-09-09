@@ -248,6 +248,9 @@ namespace ValleytalkReborn
             // 拦截外部输入，防止打字时触发其他MOD的热键
             helper.Events.Input.ButtonPressed += OnButtonPressed;
 
+            // ★ 取消跟随热键（与 QuickReplyKey 共用 ButtonPressed 事件，在 OnButtonPressed 内部分流）
+            helper.Events.Input.ButtonPressed += OnDismissFollowerButtonPressed;
+
             // ★ 监听 CP 热重载（使用规范的 AssetsInvalidated 事件）
             helper.Events.Content.AssetsInvalidated += OnAssetsInvalidated;
 
@@ -540,6 +543,82 @@ namespace ValleytalkReborn
                     Helper.Input.Suppress(e.Button);
                 }
             }
+        }
+
+        /// <summary>
+        /// 取消跟随热键处理：弹出确认框 → 气泡反馈 → 调用 MovementManager.StopFollow。
+        /// 普通跟随走 BeginSmoothDeparture；约会跟随走 StopDateFollow + EndDateGracefully。
+        /// </summary>
+        private void OnDismissFollowerButtonPressed(object sender, ButtonPressedEventArgs e)
+        {
+            if (!Context.IsWorldReady || !Context.IsPlayerFree)
+                return;
+
+            if (e.Button != Config.DismissFollowerKey)
+                return;
+
+            var movement = MovementManager.Instance;
+            if (!movement.HasActiveFollow)
+                return;
+
+            // ★ 抑制按键：防止同一个热键被其他 mod 或游戏逻辑重复处理
+            Helper.Input.Suppress(e.Button);
+            TryShowDismissConfirmation(movement);
+        }
+
+        private static void TryShowDismissConfirmation(MovementManager movement)
+        {
+            NPC npc = movement.CurrentFollowingNpc;
+            if (npc == null)
+                return;
+
+            bool isDate = movement.HasActiveDateFollow;
+            string prompt = isDate
+                ? $"确定要提前结束与 {npc.displayName} 的约会吗？"
+                : $"要让 {npc.displayName} 结束跟随并返回吗？";
+
+            var responses = new Response[]
+            {
+                new Response("Yes", "是"),
+                new Response("No", "否")
+            };
+
+            Game1.currentLocation.createQuestionDialogue(
+                prompt,
+                responses,
+                (farmer, answerKey) =>
+                {
+                    if (answerKey != "Yes")
+                        return;
+
+                    // ★ 二次确认：弹窗期间跟随可能已被其他路径终止（如时间到期、NPC 对话等），
+                    // 此时 CurrentFollowingNpc 已变，旧 npc 引用不再有效，必须拦截。
+                    if (MovementManager.Instance.CurrentFollowingNpc != npc)
+                        return;
+
+                    DismissFollower(npc, isDate);
+                }
+            );
+        }
+
+        private static void DismissFollower(NPC npc, bool isDate)
+        {
+            // 头顶气泡反馈：非阻塞、不等 LLM；NPC 不在视野内时静默无害
+            if (isDate)
+            {
+                npc.showTextAboveHead("今天就先到这里吗？那我先回去了。");
+                npc.doEmote(24);
+            }
+            else
+            {
+                npc.showTextAboveHead("那我先回去啦，晚点见！");
+                npc.doEmote(32);
+            }
+
+            // 核心释放：
+            // - 普通跟随 → StopFollowInternal → BeginSmoothDeparture → ResumeScheduleAfterFollow
+            // - 约会跟随 → StopDateFollow → DateManager.EndDateGracefully（结算 Session，回家）
+            MovementManager.Instance.StopFollow(npc);
         }
 
         /// <summary>

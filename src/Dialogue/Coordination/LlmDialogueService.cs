@@ -87,14 +87,15 @@ public class LlmDialogueService
                 prompts.PendingLocalPerceptionBlock = PerceptionInjector.BuildLocalBlock(character.Name);
 
                 // ══════════════════════════════════════════════════════════════════════
-                // S4.5: 偷听短期上下文（改为字段注入）
+                // S4.5: 偷听短期上下文（仅预览，不消费）
                 // ══════════════════════════════════════════════════════════════════════
                 prompts.PendingEavesdropBlock = EavesdropInjector.BuildBlock(character.Name);
 
                 // ══════════════════════════════════════════════════════════════════════
-                // S5: 配偶深夜等待事件（改为字段注入）
+                // S5: 配偶深夜等待事件（仅探测是否存在，不消费）
                 // ══════════════════════════════════════════════════════════════════════
-                if (SpouseWaitingEvent.TryConsumeSpouseDialogue(character.Name))
+                bool hasSpouseWaiting = SpouseWaitingEvent.HasPendingSpouseDialogue(character.Name);
+                if (hasSpouseWaiting)
                 {
                     string porchCtx = SpouseWaitingEvent.GetPorchContext();
                     if (!string.IsNullOrEmpty(porchCtx))
@@ -174,7 +175,7 @@ public class LlmDialogueService
                     // ══════════════════════════════════════════════════════════════════════
                     try
                     {
-                        DialogueHistoryManager.Instance?.ConsumeEavesdropEntries(character.Name);
+                        ConfirmDynamicBlocksConsumed(context, character, prompts);
                         PerceptionManager.Instance?.MarkAsConsolidated(character.Name);
                         PerceptionManager.Instance?.Evict("Eat");
                     }
@@ -245,7 +246,7 @@ public class LlmDialogueService
                         mood);
                 }
 
-                DialogueHistoryManager.Instance.ConsumeEavesdropEntries(character.Name);
+                ConfirmDynamicBlocksConsumed(context, character, prompts);
                 // Mark perceptions as consolidated to prevent re-injection of "just received gift" next turn
                 PerceptionManager.Instance.MarkAsConsolidated(character.Name);
                 //本次对话已顺利消费该事件
@@ -340,7 +341,7 @@ public class LlmDialogueService
                     // 🔧 清理已注入的感知，避免重复（与流式路径保持一致）
                     try
                     {
-                        DialogueHistoryManager.Instance?.ConsumeEavesdropEntries(character.Name);
+                        ConfirmDynamicBlocksConsumed(context, character, prompts);
                         PerceptionManager.Instance?.MarkAsConsolidated(character.Name);
                         PerceptionManager.Instance?.Evict("Eat");
                     }
@@ -370,7 +371,7 @@ public class LlmDialogueService
                         SanitizeForSession(resultsInternal[0]),
                         mood);
 
-                    DialogueHistoryManager.Instance.ConsumeEavesdropEntries(character.Name);
+                    ConfirmDynamicBlocksConsumed(context, character, prompts);
                     // Mark perceptions as consolidated to prevent re-injection of "just received gift" next turn
                     PerceptionManager.Instance.MarkAsConsolidated(character.Name);
                     //本次对话已顺利消费该事件
@@ -431,6 +432,24 @@ public class LlmDialogueService
             // 确保方法任何出口点都会释放标志位
             _isRequestInProgress = false;
         }
+    }
+
+    /// <summary>
+    /// 在确认本轮 Prompt 已经成功发出/成功生成回复后调用。
+    /// 三个一次性动态模块（Eavesdrop / SpouseWaiting / Echo）只有在这里
+    /// 才真正被标记为"已消费"，避免 STOOD_UP / DATE_CONTEXT /
+    /// SIMPLE_GREETING 等早返回分支静默丢弃了尚未展示给玩家的内容。
+    /// </summary>
+    private static void ConfirmDynamicBlocksConsumed(DialogueContext context, Character character, Prompts prompts)
+    {
+        if (prompts == null || character == null) return;
+
+        if (!string.IsNullOrEmpty(prompts.PendingEavesdropBlock))
+            DialogueHistoryManager.Instance?.ConsumeEavesdropEntries(character.Name);
+        if (!string.IsNullOrEmpty(prompts.PendingSpouseWaitingBlock))
+            SpouseWaitingEvent.ConfirmSpouseDialogueConsumed(character.Name);
+        if (!string.IsNullOrEmpty(prompts.PendingEchoBlock))
+            ImmediateEchoStore.ConsumeEcho(character.Name);
     }
 
     /// <summary>

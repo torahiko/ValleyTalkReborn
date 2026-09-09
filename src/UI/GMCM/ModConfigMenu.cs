@@ -334,6 +334,16 @@ namespace ValleytalkReborn
                 tooltip: () => GetUIString("configQuickReplyKeyTooltip",
                     "Key to quickly reply to the last spoken NPC within 5 seconds.")
             );
+
+            // 3. 取消跟随快捷键
+            ConfigMenu.AddKeybind(
+                mod: ModManifest,
+                name: () => GetUIString("configDismissFollowerKey", "Dismiss Follower Key"),
+                getValue: () => ModEntry.Config.DismissFollowerKey,
+                setValue: (value) => ModEntry.Config.DismissFollowerKey = value,
+                tooltip: () => GetUIString("configDismissFollowerKeyTooltip",
+                    "Key to dismiss the currently following NPC (regular or date).")
+            );
         }
 
         /// <summary>

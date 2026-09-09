@@ -119,6 +119,10 @@ namespace ValleytalkReborn
         public Action                  OnFarmPoiArrived     { get; set; } = null;
         public string                  ActivePoiDescription { get; set; } = "";
         public int                     WanderCooldownTicks  { get; set; } = 0;
+        /// <summary>正在执行 DepartFromFarmHouse 出门流程中，防止 TickWander 重复触发。</summary>
+        public bool                    IsDepartingToFarm     { get; set; } = false;
+        /// <summary>是否已经走出过 FarmHouse 到 Farm（晴天游荡模式已激活）。</summary>
+        public bool                    HasDepartedToFarm     { get; set; } = false;
         /// <summary>当前上下文生命周期阶段。由 TransitionScheduleContext 统一维护。</summary>
         public ScheduleContextPhase    CurrentPhase         { get; set; } = ScheduleContextPhase.None;
         /// <summary>上一个活跃 POI 的 ID，用于回程/提前回家时生成"after spending time at {PoiId}"上下文。</summary>
@@ -152,6 +156,9 @@ namespace ValleytalkReborn
 
         private const int WANDER_COOLDOWN_MIN = 1800;
         private const int WANDER_COOLDOWN_MAX = 3600;
+
+        // Farm 游荡锚点半径（格）
+        private const int FARM_WANDER_RADIUS = 8;
 
         private Dictionary<string, PoiAsset>      _poiAssets      = new(StringComparer.OrdinalIgnoreCase);
         private Dictionary<string, NpcPreference> _npcPreferences = new(StringComparer.OrdinalIgnoreCase);
@@ -396,10 +403,46 @@ namespace ValleytalkReborn
 
             if (e.NewTime == 2000)
                 MultiMapNavigator.Instance.CancelAll();
+
+            // 分批回家调度：18:00~21:00 每小时随机召回一名配偶；22:00 全部召回。
+            // 错峰触发是为了绕开 MovementManager._goto 单槽竞争（详见 RecallAllRemainingSpouses）。
+            if (e.NewTime is 1800 or 1900 or 2000 or 2100)
+            {
+                TryRecallOneSpouse(e.NewTime);
+            }
+            else if (e.NewTime == 2200)
+            {
+                RecallAllRemainingSpouses();
+            }
         }
 
         private void OnDayEnding(object sender, DayEndingEventArgs e)
         {
+            // 换日安全网：玩家提前睡觉时，将所有尚未回家的配偶直接瞬移到 FarmHouse，
+            // 此时玩家已进入换日流程看不到瞬移过程，无需平滑退场。
+            foreach (var kvp in _states)
+            {
+                var s = kvp.Value;
+                if (s.IsStayHome) continue; // 已在家，跳过
+
+                var npc = s.TrackedNpc;
+                if (npc == null) continue;
+
+                try
+                {
+                    var (homeMap, homeTile) = GetHomeDestinationPublic(npc);
+                    Game1.warpCharacter(npc, homeMap, new Point((int)homeTile.X, (int)homeTile.Y));
+                    ModEntry.SMonitor?.Log(
+                        $"[CSM] DayEnding safety warp: {npc.Name} → {homeMap} ({homeTile.X},{homeTile.Y}).",
+                        LogLevel.Debug);
+                }
+                catch (Exception ex)
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[CSM] DayEnding safety warp failed for {npc.Name}: {ex.Message}", LogLevel.Warn);
+                }
+            }
+
             // 收集当天已执行 POI 到历史疲劳度记录
             foreach (var kvp in _states)
             {
@@ -475,6 +518,42 @@ namespace ValleytalkReborn
             if (npc == null || npc.currentLocation == null) return;
             if (Game1.activeClickableMenu != null || Game1.dialogueUp) return;
 
+            // 正在回家中，不游荡
+            if (state.IsReturningHome) return;
+
+            // 正在出门途中，不重复触发
+            if (state.IsDepartingToFarm) return;
+
+            var loc = npc.currentLocation;
+            bool isFarmHouse = string.Equals(loc.Name, "FarmHouse", StringComparison.OrdinalIgnoreCase);
+            bool isFarm      = string.Equals(loc.Name, "Farm",      StringComparison.OrdinalIgnoreCase);
+
+            // ── 天气守卫（最外层）──
+            bool badWeather = Game1.isRaining || Game1.isSnowing || Game1.isLightning;
+
+            // 恶劣天气在 Farm 上：平滑走回室内，不游荡
+            if (badWeather && isFarm)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[CSM] Bad weather — {npc.Name} returning indoors.", LogLevel.Debug);
+                state.IsDepartingToFarm = true; // 占位，防止重入
+                FarmBusStopNavigator.ReturnHome(npc, wentViaBusStop: false,
+                    onArrivedHome: () =>
+                    {
+                        state.IsDepartingToFarm  = false;
+                        state.HasDepartedToFarm  = false;
+                        state.WanderCooldownTicks = WANDER_COOLDOWN_MIN;
+                    },
+                    onFail: () =>
+                    {
+                        state.IsDepartingToFarm = false;
+                    });
+                return;
+            }
+
+            // 恶劣天气且在 FarmHouse：只允许室内游荡，不出门
+            // （直接落到下面的冷却/游荡逻辑，不执行出门分支）
+
             if (state.WanderCooldownTicks > 0)
             {
                 state.WanderCooldownTicks--;
@@ -484,6 +563,8 @@ namespace ValleytalkReborn
             if (IsBlockedByDate(npc)) return;
             if (MultiMapNavigator.Instance.IsNavigating(npc)) return;
             if (MovementManager.Instance.CurrentFollowingNpc == npc) return;
+            // 全局 _goto 单槽：若任一 NPC 正在 GoTo 途中，让位并重试下一帧，避免静默覆盖
+            if (MovementManager.Instance.IsMoving) return;
             if (npc.controller != null && !MovementPathfinding.IsPathDone(npc.controller)) return;
 
             if (npc.controller != null)
@@ -493,71 +574,131 @@ namespace ValleytalkReborn
                 npc.Halt();
             }
 
-            var loc = npc.currentLocation;
-            bool isFarm = string.Equals(loc.Name, "Farm", StringComparison.OrdinalIgnoreCase);
-            bool isFarmHouse = string.Equals(loc.Name, "FarmHouse", StringComparison.OrdinalIgnoreCase);
-
-            // 天气检查：恶劣天气在室外游荡时，平滑走回室内，拒绝突兀瞬移
-            if (isFarm && (Game1.isRaining || Game1.isSnowing || Game1.isLightning))
+            // ── 晴天 + 在 FarmHouse + 尚未出门：触发出门流程 ──
+            if (!badWeather && isFarmHouse && !state.HasDepartedToFarm)
             {
-                ModEntry.SMonitor?.Log($"[CSM] Bad weather detected for {npc.Name} on Farm — returning indoors smoothly.", LogLevel.Debug);
-                FarmBusStopNavigator.ReturnHome(npc, wentViaBusStop: false, onArrivedHome: () =>
-                {
-                    state.WanderCooldownTicks = 600;
-                }, onFail: null);
+                var farm      = Game1.getFarm();
+                var farmEntry = farm.GetMainFarmHouseEntry();
+                var destTile  = MovementPathfinding.FindNearestWalkableTile(
+                    farm, new Vector2(farmEntry.X, farmEntry.Y + 1), npc, 3);
+
+                state.IsDepartingToFarm   = true;
+                state.WanderCooldownTicks = WANDER_COOLDOWN_MIN; // 出门期间屏蔽冷却重置
+
+                ModEntry.SMonitor?.Log(
+                    $"[CSM] {npc.Name} sunny day — departing FarmHouse to Farm.", LogLevel.Info);
+
+                FarmBusStopNavigator.DepartFromFarmHouse(npc, "Farm", destTile,
+                    onArrived: (_) =>
+                    {
+                        state.IsDepartingToFarm   = false;
+                        state.HasDepartedToFarm   = true;
+                        state.WanderCooldownTicks = WANDER_COOLDOWN_MIN +
+                            Game1.random.Next(WANDER_COOLDOWN_MAX - WANDER_COOLDOWN_MIN);
+                        ModEntry.SMonitor?.Log(
+                            $"[CSM] {npc.Name} arrived on Farm for outdoor wander.", LogLevel.Info);
+                    },
+                    onFail: () =>
+                    {
+                        state.IsDepartingToFarm   = false;
+                        state.WanderCooldownTicks = WANDER_COOLDOWN_MIN;
+                        ModEntry.SMonitor?.Log(
+                            $"[CSM] {npc.Name} depart to Farm failed — staying indoors.", LogLevel.Warn);
+                    });
                 return;
             }
 
-            // 40% 几率原地变换朝向发呆
+            // ── 40% 概率原地小动作 ──
             if (Game1.random.Next(100) < 40)
             {
                 npc.faceDirection(Game1.random.Next(4));
-                state.WanderCooldownTicks = WANDER_COOLDOWN_MIN / 2;
+                if (Game1.random.Next(100) < 50) npc.doEmote(Game1.random.Next(2) == 0 ? 32 : 8);
+                state.WanderCooldownTicks = WANDER_COOLDOWN_MIN / 2 +
+                    Game1.random.Next(WANDER_COOLDOWN_MIN / 2);
                 return;
             }
 
-            // 动态获取农舍正门坐标，避免在门口通道停留堵门
-            Point doorTile = Point.Zero;
-            if (isFarmHouse)
+            // ── 选取游荡目标点 ──
+            var target = PickWanderTargetTile(npc, loc, isFarm);
+            if (target == null)
             {
-                var exitWarp = loc.warps?.FirstOrDefault(w => string.Equals(w.TargetName, "Farm", StringComparison.OrdinalIgnoreCase));
+                state.WanderCooldownTicks = WANDER_COOLDOWN_MIN / 3;
+                return;
+            }
+
+            if (!MovementPathfinding.TryCreatePath(npc, loc, target.Value, out var controller, out _))
+            {
+                state.WanderCooldownTicks = WANDER_COOLDOWN_MIN / 3;
+                return;
+            }
+
+            npc.controller = controller;
+            npc.addedSpeed = 0;
+            state.WanderCooldownTicks = WANDER_COOLDOWN_MIN +
+                Game1.random.Next(WANDER_COOLDOWN_MAX - WANDER_COOLDOWN_MIN);
+        }
+
+        /// <summary>
+        /// 为游荡选取目标点：以当前 NPC 位置为中心，外圈逐层扫描可行走 tile，
+        /// 收集候选后随机选一个。职责与 GetDispersedWalkableTile（防重叠）不同，独立实现。
+        /// </summary>
+        private static Vector2? PickWanderTargetTile(NPC npc, GameLocation loc, bool isFarm)
+        {
+            // 获取约束锚点
+            Point doorTile  = Point.Zero;
+            Vector2 farmAnchor = Vector2.Zero;
+
+            if (!isFarm)
+            {
+                // 室内：取 FarmHouse→Farm warp 坐标作为禁足中心
+                var exitWarp = loc.warps?.FirstOrDefault(
+                    w => string.Equals(w?.TargetName, "Farm", StringComparison.OrdinalIgnoreCase));
                 if (exitWarp != null) doorTile = new Point(exitWarp.X, exitWarp.Y);
             }
-            var farmEntry = Game1.getFarm().GetMainFarmHouseEntry();
-
-            for (int attempt = 0; attempt < 20; attempt++)
+            else
             {
-                int dx = Game1.random.Next(-5, 6);
-                int dy = Game1.random.Next(-5, 6);
-                if (dx == 0 && dy == 0) continue;
-
-                var target = new Vector2(npc.Tile.X + dx, npc.Tile.Y + dy);
-
-                // 室内限制：离正门 Warp 2 格以内禁止停留
-                if (isFarmHouse && doorTile != Point.Zero)
-                {
-                    if (Math.Abs(target.X - doorTile.X) <= 1 && Math.Abs(target.Y - doorTile.Y) <= 2)
-                        continue;
-                }
-
-                // 农场室外限制：锚定在农舍门口 8 格范围内
-                if (isFarm)
-                {
-                    if (Vector2.Distance(target, new Vector2(farmEntry.X, farmEntry.Y)) > 8f)
-                        continue;
-                }
-
-                if (!MovementPathfinding.IsTileWalkable(loc, target, npc)) continue;
-                if (!MovementPathfinding.TryCreatePath(npc, loc, target, out var controller, out _)) continue;
-
-                npc.controller = controller;
-                npc.addedSpeed = 0; // 悠闲漫步速度
-
-                state.WanderCooldownTicks = WANDER_COOLDOWN_MIN + Game1.random.Next(WANDER_COOLDOWN_MAX - WANDER_COOLDOWN_MIN);
-                return;
+                farmAnchor = new Vector2(
+                    Game1.getFarm().GetMainFarmHouseEntry().X,
+                    Game1.getFarm().GetMainFarmHouseEntry().Y);
             }
 
-            state.WanderCooldownTicks = WANDER_COOLDOWN_MIN / 3;
+            var candidates = new List<Vector2>();
+
+            for (int r = 1; r <= 5; r++)
+            {
+                for (int x = -r; x <= r; x++)
+                {
+                    for (int y = -r; y <= r; y++)
+                    {
+                        if (Math.Abs(x) != r && Math.Abs(y) != r) continue; // 仅外圈
+
+                        var tile = new Vector2(npc.Tile.X + x, npc.Tile.Y + y);
+
+                        // 室内：门口禁足区（warp 周围 2 格内不停留）
+                        if (!isFarm && doorTile != Point.Zero)
+                        {
+                            if (Math.Abs(tile.X - doorTile.X) <= 1 &&
+                                Math.Abs(tile.Y - doorTile.Y) <= 2)
+                                continue;
+                        }
+
+                        // 室外：锚定在农舍门口 FARM_WANDER_RADIUS 格以内
+                        if (isFarm && farmAnchor != Vector2.Zero)
+                        {
+                            if (Vector2.Distance(tile, farmAnchor) > FARM_WANDER_RADIUS)
+                                continue;
+                        }
+
+                        if (MovementPathfinding.IsTileWalkable(loc, tile, npc))
+                            candidates.Add(tile);
+                    }
+                }
+
+                if (candidates.Count >= 3) break; // 找到足够候选就停止扩展
+            }
+
+            if (candidates.Count == 0) return null;
+            return candidates[Game1.random.Next(candidates.Count)];
         }
 
         /// <summary>
@@ -935,11 +1076,6 @@ namespace ValleytalkReborn
         // ──────────────────────────────────────────────────────
         //  日程执行
         // ──────────────────────────────────────────────────────
-        /// <summary>
-        /// 超过这个时间点仍未完成日程的 NPC 会被强制结束当前 POI 并回家，
-        /// 防止 EndTime 落在 2000 之后导致 NPC 卡在外面过夜（OnTimeChanged 在 2000 后不再 tick 日程）。
-        /// </summary>
-        private const int FORCE_RETURN_HOME_TIME = 1930;
 
         private void TryExecuteNextEntry(SpouseScheduleState state, int currentTime)
         {
@@ -985,7 +1121,8 @@ namespace ValleytalkReborn
             // 全部条目都已 Executed。是否该回家取决于 currentActive 的到达状态：
             //   - EndTime == null：说明 NPC 还没抵达（还在路上/寻路中），不能回家。
             //   - EndTime.HasValue 且 currentTime >= EndTime：停留时间已满，回家。
-            //   - 超过 FORCE_RETURN_HOME_TIME 仍未到达或仍未到 EndTime：强制回家兜底，防止卡到打烊/过夜。
+            // 仍未回家的配偶由 OnTimeChanged 的分批召回（1800~2100 每小时召回一名，2200 全部召回）兜底，
+            // 防止卡到打烊/过夜。
             if (currentActive == null)
             {
                 TryReturnHome(npc, state);
@@ -997,15 +1134,6 @@ namespace ValleytalkReborn
                 ModEntry.SMonitor?.Log(
                     $"[CSM] {npc.Name} finished stay at '{currentActive.PoiId}' (EndTime={currentActive.EndTime}). Heading home.",
                     LogLevel.Info);
-                TryReturnHome(npc, state);
-                return;
-            }
-
-            if (currentTime >= FORCE_RETURN_HOME_TIME)
-            {
-                ModEntry.SMonitor?.Log(
-                    $"[CSM] {npc.Name} force-returning home at {currentTime} (EndTime={(currentActive.EndTime?.ToString() ?? "not-arrived")}) to avoid staying out overnight.",
-                    LogLevel.Warn);
                 TryReturnHome(npc, state);
             }
         }
@@ -1187,6 +1315,70 @@ namespace ValleytalkReborn
             return new Vector2(entry.X, entry.Y);
         }
 
+        /// <summary>
+        /// 从当前仍在外面的配偶中随机选一名触发回家。
+        /// </summary>
+        private void TryRecallOneSpouse(int currentTime)
+        {
+            var eligible = _states.Values
+                .Where(s => !s.IsStayHome && !s.IsReturningHome)
+                .ToList();
+
+            if (eligible.Count == 0) return;
+
+            var target = eligible[Game1.random.Next(eligible.Count)];
+            RecallSpouseNow(target, currentTime);
+        }
+
+        /// <summary>
+        /// 把所有仍在外面的配偶全部触发回家。
+        /// 2200 时就算多个 MoveToTile 互相覆盖、部分 NPC 没走完平滑回家动画，玩家也不在乎——
+        /// 换日安全网（OnDayEnding）会把漏网之鱼直接瞬移回家。分批回家只是尽力而为。
+        /// RecallSpouseNow 内部的 Context.IsWorldReady 守卫负责拦截换日期间不该执行的回调。
+        /// </summary>
+        private void RecallAllRemainingSpouses()
+        {
+            foreach (var state in _states.Values.ToArray())
+            {
+                if (state.IsStayHome || state.IsReturningHome) continue;
+                RecallSpouseNow(state, Game1.timeOfDay);
+            }
+        }
+
+        /// <summary>
+        /// 清理寻路状态后触发单个配偶的回家流程。
+        /// </summary>
+        private void RecallSpouseNow(SpouseScheduleState state, int currentTime)
+        {
+            // 换日期间 Context.IsWorldReady 会变为 false，此时延迟回调不应执行
+            if (!Context.IsWorldReady) return;
+
+            var npc = state.TrackedNpc;
+            if (npc == null) return;
+            if (state.IsStayHome || state.IsReturningHome) return; // 二次确认，延迟期间状态可能已变
+
+            ModEntry.SMonitor?.Log(
+                $"[CSM] Recalling {npc.Name} home at {currentTime}.", LogLevel.Info);
+
+            // 清理进行中的寻路，防止召回后指令冲突
+            MultiMapNavigator.Instance.Cancel(npc.Name);
+            MovementManager.Instance.CancelMoveToTile(npc, invokeFailCallback: false);
+            npc.controller = null;
+            npc.addedSpeed = 0;
+            npc.Halt();
+
+            // 清空队列中未执行条目，防止 TryExecuteNextEntry 继续推进
+            lock (state.Queue)
+            {
+                state.Queue.Clear();
+            }
+
+            // 重置出门标志，防止回家后 TickWander 重新触发出门
+            state.IsDepartingToFarm = false;
+
+            TryReturnHome(npc, state);
+        }
+
         private void TryReturnHome(NPC npc, SpouseScheduleState state)
         {
             if (npc == null || state.IsReturningHome) return;
@@ -1331,6 +1523,10 @@ namespace ValleytalkReborn
                     npc.Halt();
                 }
                 lock (s.Queue) { s.Queue.Clear(); }
+
+                // 重置出门标志，防止跨日残留导致 TickWander 误判
+                s.IsDepartingToFarm = false;
+                s.HasDepartedToFarm = false;
             }
             _states.Clear();
         }

@@ -40,11 +40,10 @@ namespace ValleytalkReborn
                 sb.AppendLine($"- {entry.Text}");
 
             sb.AppendLine("</eavesdrop_context>");
-            
-            // ★ 核心落地：阅后即焚！
-            // 一旦注入当前轮次的 Prompt，立刻从该 NPC 的记忆库中彻底抹除，绝不留到下一次交互。
-            DialogueHistoryManager.Instance.ConsumeEavesdropEntries(npcName);
-            
+
+            // 消费时机后移至 LlmDialogueService：确认「本轮 Prompt 已成功送出」之后，
+            // 由 ConfirmDynamicBlocksConsumed 统一调用 ConsumeEavesdropEntries。
+            // 此处只做纯构建，保证 peek 语义——同一 npcName 可安全调用多次、幂等返回相同内容。
             return sb.ToString();
         }
     }

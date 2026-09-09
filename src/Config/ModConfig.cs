@@ -25,7 +25,9 @@ namespace ValleytalkReborn
         public int GiftFrequency { get; set; } = 4;
         public string TypedResponses { get; set; } = "With Generated";
         public SButton InitiateTypedDialogueKey { get; set; } = SButton.LeftAlt;
-        public SButton QuickReplyKey { get; set; } = SButton.Enter; 
+        public SButton QuickReplyKey { get; set; } = SButton.Enter;
+        /// <summary>主动取消 NPC 跟随（普通跟随 / 约会跟随）的热键。</summary>
+        public SButton DismissFollowerKey { get; set; } = SButton.G;
         public bool SuppressConnectionCheck { get; set; } = false;
         public bool EnableMemoryCompression { get; set; } = true;
         public int MemoryRecentCount { get; set; } = 10;

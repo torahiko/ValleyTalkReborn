@@ -341,11 +341,26 @@ namespace ValleytalkReborn
 
         // ── Phase 4: Dialogue Context & Quiet Reassurance ──────────
 
-        public static bool TryConsumeSpouseDialogue(string npcName)
+        /// <summary>
+        /// 只读探测：是否存在待消费的配偶等待事件。不产生任何副作用。
+        /// </summary>
+        public static bool HasPendingSpouseDialogue(string npcName)
         {
             if (!_waitingActive) return false;
+            return string.Equals(npcName, _spouseName, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// 确认消费：记录"被看见"的正向回响记忆，并将等待事件标记为已回应。
+        /// 必须只在确认 PendingSpouseWaitingBlock 已经真正进入本轮 Prompt 之后调用，
+        /// 否则会出现"状态已消费，但玩家从未看到台词"的静默丢失。
+        /// </summary>
+        public static void ConfirmSpouseDialogueConsumed(string npcName)
+        {
+            if (!_waitingActive) return;
             if (!string.Equals(npcName, _spouseName, StringComparison.OrdinalIgnoreCase))
-                return false;
+                return;
+            if (_playerResponded) return; // 幂等守卫：同一次等待事件只记录一次回响
 
             _playerResponded = true;
 
@@ -395,8 +410,6 @@ namespace ValleytalkReborn
             ModEntry.SMonitor?.Log(
                 $"[SpouseWaitingEvent] Phase 4: {_spouseName} felt seen — quiet reassurance recorded.",
                 LogLevel.Debug);
-
-            return true;
         }
 
         public static string GetPorchContext() => _porchContext ?? string.Empty;
