@@ -29,13 +29,14 @@ internal sealed class AmbientBarkStateStore
         public int DisplayCountdown { get; set; }
         public bool HasPlayedFirst { get; set; }
 
-        // ── 冷却控制（真实时钟，彻底解决暂停/读档问题）──
+        // ── 冷却控制（Tick 计数，与游戏暂停/加速完全同步）──
 
         /// <summary>
-        /// 下次可触发的最早时间（UTC）。null 表示立即可触发。
-        /// 使用 DateTime 而非游戏 tick，避免暂停/读档导致的冷却异常。
+        /// 冷却剩余 Ticks（游戏帧）。null 或 &lt;= 0 表示立即可触发。
+        /// 使用 Tick 而非 DateTime，确保与游戏暂停/加速完全同步。
+        /// 30 秒 = 1800 Ticks（60 FPS）。
         /// </summary>
-        public DateTime? NextAvailableAt { get; set; }
+        public int? CooldownTicksRemaining { get; set; }
 
         // ── 记忆系统（三档时间路由）──
 
@@ -124,7 +125,11 @@ internal sealed class AmbientBarkStateStore
             IsRequesting = false;
             DisplayCountdown = 0;
             HasPlayedFirst = false;
-            NextAvailableAt = null;
+            // ★ 不清空 CooldownTicksRemaining，保留冷却时间
+            // CooldownTicksRemaining 只能通过以下方式修改：
+            // 1. NotifyPlayerInteracted 主动施加新冷却
+            // 2. FinalizeThreadLocked 自然播完后施加冷却
+            // 3. OnDayStarted / Clear() 换天清理
         }
 
         /// <summary>
@@ -132,10 +137,10 @@ internal sealed class AmbientBarkStateStore
         /// </summary>
         public bool IsInCooldown()
         {
-            if (!NextAvailableAt.HasValue)
+            if (!CooldownTicksRemaining.HasValue)
                 return false;
 
-            return DateTime.UtcNow < NextAvailableAt.Value;
+            return CooldownTicksRemaining.Value > 0;
         }
     }
 

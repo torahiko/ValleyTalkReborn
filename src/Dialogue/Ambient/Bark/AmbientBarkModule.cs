@@ -166,7 +166,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
                 {
                     state.IsRequesting = false;
                     SalvageToEchoStore();
-                    state.NextAvailableAt = DateTime.UtcNow.AddSeconds(30);
+                    state.CooldownTicksRemaining = 1800; // 30 秒
                     _proximityScans.Remove(result.NpcName);
                     continue;
                 }
@@ -175,7 +175,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
                 {
                     state.IsRequesting = false;
                     SalvageToEchoStore();
-                    state.NextAvailableAt = DateTime.UtcNow.AddSeconds(30);
+                    state.CooldownTicksRemaining = 1800; // 30 秒
                     continue;
                 }
 
@@ -193,7 +193,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
                     SalvageToEchoStore();
                     state.IsRequesting = false;
                     state.BarkQueue.Clear();
-                    state.NextAvailableAt = DateTime.UtcNow.AddSeconds(60);
+                    state.CooldownTicksRemaining = 3600; // 60 秒
                     continue;
                 }
 
@@ -334,7 +334,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
                 npcState.IsRequesting = false;
                 npcState.HasPlayedFirst = false;
                 npcState.DisplayCountdown = FIRST_BARK_POLL_TICKS;
-                npcState.NextAvailableAt = null;
+                npcState.CooldownTicksRemaining = null;
                 npcState.ReplaceCts();
             }
 
@@ -351,19 +351,49 @@ internal sealed class AmbientBarkModule : IDialogueModule
     /// </summary>
     internal void NotifyPlayerInteracted(string npcName, int cooldownSeconds = 30)
     {
-        if (string.IsNullOrWhiteSpace(npcName)) return;
+        if (string.IsNullOrWhiteSpace(npcName))
+            return;
+
+        int cooldownTicks = cooldownSeconds * 60; // 30 秒 = 1800 Ticks
+
+        // 边界防御：如果 NPC 不在当前地图或不存在，只施加冷却但跳过状态清理
+        var npc = Game1.getCharacterFromName(npcName);
+        bool npcInCurrentLocation = npc != null
+            && npc.currentLocation != null
+            && Game1.currentLocation != null
+            && npc.currentLocation == Game1.currentLocation;
+
+        if (!npcInCurrentLocation)
+        {
+            ModEntry.SMonitor?.Log(
+                $"[AmbientBark] NotifyPlayerInteracted: {npcName} 不在当前地图或不存在，跳过状态清理但施加冷却",
+                LogLevel.Trace);
+
+            var stateOutOfMap = _stateStore.GetOrCreate(npcName);
+            lock (stateOutOfMap)
+            {
+                stateOutOfMap.CooldownTicksRemaining = cooldownTicks;
+            }
+
+            return;
+        }
 
         RemoveFromGlobalQueue(npcName);
         _proximityScans.Remove(npcName);
 
-        var npc = Game1.getCharacterFromName(npcName);
-        string locationName = npc?.currentLocation?.Name ?? Game1.currentLocation?.Name;
+        string locationName = npc.currentLocation.Name;
 
         if (_stateStore.TryGet(npcName, out var state))
         {
             lock (state)
             {
-                // ★ 潜意识利用 1：截获队列中未来得及冒出头顶的台词
+                // 幂等性检查：如果冷却已经生效且剩余 > 1500 Ticks（25 秒），跳过重复操作
+                if (state.CooldownTicksRemaining.HasValue && state.CooldownTicksRemaining.Value > 1500)
+                {
+                    return;
+                }
+
+                // 潜意识利用 1：截获队列中未来得及冒出头顶的台词
                 if (state.BarkQueue.Count > 0)
                 {
                     var unplayedTail = state.BarkQueue.Take(2).ToList();
@@ -374,18 +404,29 @@ internal sealed class AmbientBarkModule : IDialogueModule
                         LogLevel.Debug);
                 }
 
-                // 取消在途的异步请求并清理运行态
                 state.ReplaceCts();
                 state.IsRequesting = false;
                 state.BarkQueue.Clear();
                 state.HasPlayedFirst = false;
                 state.DisplayCountdown = 0;
-                state.NextAvailableAt = DateTime.UtcNow.AddSeconds(cooldownSeconds);
+                state.CooldownTicksRemaining = cooldownTicks;
             }
 
             ModEntry.SMonitor?.Log(
                 $"[AmbientBark] 玩家已与 {npcName} 对话，已中断 Bark 并锁定冷静期 {cooldownSeconds}s",
                 LogLevel.Debug);
+        }
+        else
+        {
+            var newState = _stateStore.GetOrCreate(npcName);
+            lock (newState)
+            {
+                newState.CooldownTicksRemaining = cooldownTicks;
+            }
+
+            ModEntry.SMonitor?.Log(
+                $"[AmbientBark] {npcName} 首次交互，已创建 State 并施加 {cooldownSeconds}s 冷却",
+                LogLevel.Trace);
         }
     }
 
@@ -482,6 +523,12 @@ internal sealed class AmbientBarkModule : IDialogueModule
 
             lock (state)
             {
+                // 推进冷却递减（每 Tick 减 1）
+                if (state.CooldownTicksRemaining.HasValue && state.CooldownTicksRemaining.Value > 0)
+                {
+                    state.CooldownTicksRemaining--;
+                }
+
                 // 1. 处于冷却期中，跳过调度
                 if (state.IsInCooldown())
                 {
@@ -493,7 +540,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
                 else if (state.BarkQueue.Count == 0 &&
                          !state.IsRequesting &&
                          !state.HasPlayedFirst &&
-                         state.NextAvailableAt.HasValue)
+                         state.CooldownTicksRemaining.HasValue)
                 {
                     _stateStore.ClearRuntimeStateOnly(npcName);
                     _proximityScans.Remove(npcName);
@@ -576,10 +623,10 @@ internal sealed class AmbientBarkModule : IDialogueModule
         bool isFollowOrDate = DialogueUtilities.IsFollowingSafe(npc) || DialogueUtilities.IsOnDate(npc);
         int cooldownSeconds = isFollowOrDate ? 60 : 120;
 
-        state.NextAvailableAt = DateTime.UtcNow.AddSeconds(cooldownSeconds);
+        state.CooldownTicksRemaining = cooldownSeconds * 60;
 
         ModEntry.SMonitor?.Log(
-            $"[AmbientBark] {npc.Name} 台词播完，已记录思绪收尾，冷却至 {state.NextAvailableAt:HH:mm:ss}",
+            $"[AmbientBark] {npc.Name} 台词播完，已记录思绪收尾，冷却 {cooldownSeconds}s（{state.CooldownTicksRemaining} ticks）",
             LogLevel.Trace);
     }
 
@@ -643,7 +690,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
             npcState.IsRequesting = false;
             npcState.HasPlayedFirst = false;
             npcState.DisplayCountdown = FIRST_BARK_POLL_TICKS;
-            npcState.NextAvailableAt = null;
+            npcState.CooldownTicksRemaining = null;
             npcState.ReplaceCts();
         }
 
@@ -719,6 +766,21 @@ internal sealed class AmbientBarkModule : IDialogueModule
 
     private static bool IsChineseLanguage =>
         LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+
+    /// <summary>
+    /// 从全局请求队列中移除指定 NPC（公开接口，供 DialogueCoordinator 调用）。
+    /// </summary>
+    internal void RemoveFromQueueIfPresent(string npcName)
+    {
+        if (string.IsNullOrWhiteSpace(npcName))
+            return;
+
+        RemoveFromGlobalQueue(npcName);
+
+        ModEntry.SMonitor?.Log(
+            $"[AmbientBark] {npcName} 已从全局请求队列移除",
+            LogLevel.Trace);
+    }
 
     private void RemoveFromGlobalQueue(NPC npc)
     {

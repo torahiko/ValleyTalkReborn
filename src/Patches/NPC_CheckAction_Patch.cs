@@ -39,9 +39,9 @@ namespace ValleytalkReborn
 
         public static bool Prefix(ref NPC __instance, ref bool __result, Farmer who, GameLocation l)
         {
-            // ★ 原版交互优先：玩家与 NPC 交互时，取消该 NPC 参与的所有 A2A 会话
-            if (__instance != null && !__instance.IsInvisible && !__instance.isSleeping.Value && who != null && who.CanMove)
-                DynamicBarkManager.CancelA2AForNpc(__instance.Name, "Player interaction");
+            // ★ 交互拦截已迁移至 DialogueCoordinator 的边沿触发逻辑（阶段 2）
+            // A2A 会话在 Game1.dialogueUp 期间会自然挂起（见 A2ASessionManager.TickA2ASessions）
+            // Bark 请求会在对话开始时由 DialogueCoordinator 调用 NotifyPlayerInteracted 取消
 
             if (__instance == null || who == null) return true;
             if (__instance.IsInvisible || __instance.isSleeping.Value || !who.CanMove)

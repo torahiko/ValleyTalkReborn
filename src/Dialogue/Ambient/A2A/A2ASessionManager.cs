@@ -421,6 +421,12 @@ internal sealed class A2ASessionManager
                 if (session.ReadCooldownTicks < 90)
                 {
                     session.ReadCooldownTicks = 90;
+
+                    // ★ 首次挂起时记录日志（ReadCooldownTicks 从小于 90 跳变到 90 的瞬间）
+                    string names = string.Join(" & ", session.ParticipantNames);
+                    ModEntry.SMonitor?.Log(
+                        $"[A2A] 会话挂起（玩家对话中）：{names}",
+                        LogLevel.Trace);
                 }
                 continue; // 跳过本 Tick，静默等待玩家关闭对话框
             }
@@ -538,9 +544,20 @@ internal sealed class A2ASessionManager
 
         var a2aNearbyNpcs = new List<NPC>();
 
+        // ★ 排除玩家正在对话的 NPC（防止 A2A 拉入正在与玩家交谈的对象）
+        string currentSpeakerName = Game1.currentSpeaker?.Name;
+
         foreach (var npc in allNpcs)
         {
-            if (npc == null || DialogueUtilities.IsNpcSleeping(npc) || !npc.IsVillager) continue;
+            if (npc == null || DialogueUtilities.IsNpcSleeping(npc) || !npc.IsVillager)
+                continue;
+
+            // ★ 排除玩家正在对话的 NPC
+            if (!string.IsNullOrEmpty(currentSpeakerName)
+                && string.Equals(npc.Name, currentSpeakerName, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
 
             if (DialogueUtilities.IsInRangeSquared(npc, (Farmer)Game1.player, A2A_RADAR_RANGE_SQ))
                 a2aNearbyNpcs.Add(npc);
@@ -635,9 +652,27 @@ internal sealed class A2ASessionManager
 
         var candidateNpcs = cluster
             .Where(n =>
-                n != null &&
-                !_a2aPersonalCooldowns.ContainsKey(n.Name) &&
-                !_reservations.IsReserved(n.Name))
+            {
+                if (n == null)
+                    return false;
+
+                // 排除个人冷却期内的 NPC
+                if (_a2aPersonalCooldowns.ContainsKey(n.Name))
+                    return false;
+
+                // 排除已被其他模块占用的 NPC（包括 AmbientBark、其他 A2A 会话）
+                if (_reservations.IsReserved(n.Name))
+                    return false;
+
+                // ★ 排除玩家正在对话的 NPC（二次防御）
+                if (Game1.currentSpeaker != null
+                    && string.Equals(n.Name, Game1.currentSpeaker.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+
+                return true;
+            })
             .ToList();
 
         if (candidateNpcs.Count < 2)

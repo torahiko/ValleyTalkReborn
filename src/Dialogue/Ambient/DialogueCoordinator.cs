@@ -1,3 +1,4 @@
+using System;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -27,7 +28,9 @@ internal sealed class DialogueCoordinator
 
     private bool _subscribed;
 
+    // ★ 状态跟踪：记录上一帧的对话状态，用于检测状态跳变（边沿触发）
     private string _activeInteractingSpeaker = null;
+    private bool _wasDialogueActiveLastFrame = false;
 
     internal DialogueCoordinator(
         IModHelper helper,
@@ -45,7 +48,27 @@ internal sealed class DialogueCoordinator
         _reservations = reservations;
 
         // 绑定 A2A 锁定回调：A2A 锁定时清理对应 NPC 的单人 Bark 状态
-        _a2a.SessionManager.OnNpcA2ALocked = name => _ambientBark.ResetForNpc(name);
+        _a2a.SessionManager.OnNpcA2ALocked = npcName =>
+        {
+            try
+            {
+                // 1. 硬重置 Bark 状态（清空队列、取消请求、清空思绪记忆）
+                _ambientBark.ResetForNpc(npcName);
+
+                // 2. 从全局请求队列移除（防止已入队但未派发的请求）
+                _ambientBark.RemoveFromQueueIfPresent(npcName);
+
+                monitor.Log(
+                    $"[DialogueCoordinator] A2A 锁定 {npcName}，已清理 Bark 状态",
+                    LogLevel.Trace);
+            }
+            catch (Exception ex)
+            {
+                monitor.Log(
+                    $"[DialogueCoordinator] A2A 锁定回调异常：{npcName} | {ex.Message}",
+                    LogLevel.Error);
+            }
+        };
 
         // 绑定 A2A 冷静期查询：AmbientBark 雷达扫描时借此过滤掉刚结束
         // A2A 会话的 NPC，防止会话一散场就立刻把参与者重新拉进请求队列。
@@ -70,6 +93,7 @@ internal sealed class DialogueCoordinator
         _helper.Events.GameLoop.DayStarted += OnDayStarted;
         _helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
         _helper.Events.GameLoop.ReturnedToTitle += OnReturnedToTitle;
+        _helper.Events.Player.Warped += OnPlayerWarped; // 传送/地图切换时清理交互状态
     }
 
     /// <summary>
@@ -84,6 +108,7 @@ internal sealed class DialogueCoordinator
         _helper.Events.GameLoop.DayStarted -= OnDayStarted;
         _helper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
         _helper.Events.GameLoop.ReturnedToTitle -= OnReturnedToTitle;
+        _helper.Events.Player.Warped -= OnPlayerWarped;
 
         _subscribed = false;
     }
@@ -190,32 +215,51 @@ internal sealed class DialogueCoordinator
         }
 
         // ════════════════════════════════════════════════════════════
-        // 阶段 2：交互拦截与挂起
+        // 阶段 2：交互拦截与状态跳变检测（边沿触发）
         // ════════════════════════════════════════════════════════════
 
-        // 检测玩家是否正在与 NPC 进行原版主对话
         bool isDialogueActive = Game1.dialogueUp;
         string currentSpeakerName = Game1.currentSpeaker?.Name;
 
-        if (isDialogueActive)
+        // ★ 边沿触发 1：对话开始（从无到有）
+        if (isDialogueActive && !_wasDialogueActiveLastFrame)
         {
             if (!string.IsNullOrEmpty(currentSpeakerName))
             {
                 _activeInteractingSpeaker = currentSpeakerName;
 
-                // 单人 Bark：取消正在空中的 Bark 请求；已在队列里的头顶台词转入 ImmediateEchoStore
+                // 🔥 只在对话开始的瞬间执行一次
                 _ambientBark.NotifyPlayerInteracted(currentSpeakerName, cooldownSeconds: 30);
-            }
 
-            // ★ A2A 模块：不需要调用 CancelForNpc，让它在后台静默挂起即可！
-            // A2ASessionManager.TickA2ASessions 中的挂起检测会冻结播放推进。
-            return;
+                _monitor.Log(
+                    $"[DialogueCoordinator] 对话开始：{currentSpeakerName}，已施加 30 秒冷却",
+                    LogLevel.Trace);
+            }
         }
-        else if (!string.IsNullOrEmpty(_activeInteractingSpeaker))
+
+        // ★ 边沿触发 2：对话结束（从有到无）
+        if (!isDialogueActive && _wasDialogueActiveLastFrame)
         {
-            // 对话刚刚关闭的瞬间，再次确保 Bark 冷静期生效
-            _ambientBark.NotifyPlayerInteracted(_activeInteractingSpeaker, cooldownSeconds: 30);
-            _activeInteractingSpeaker = null;
+            if (!string.IsNullOrEmpty(_activeInteractingSpeaker))
+            {
+                // 🔥 对话结束瞬间的补偿冷却（防御性）
+                _ambientBark.NotifyPlayerInteracted(_activeInteractingSpeaker, cooldownSeconds: 30);
+
+                _monitor.Log(
+                    $"[DialogueCoordinator] 对话结束：{_activeInteractingSpeaker}，已刷新冷却",
+                    LogLevel.Trace);
+
+                _activeInteractingSpeaker = null;
+            }
+        }
+
+        // 更新状态跟踪
+        _wasDialogueActiveLastFrame = isDialogueActive;
+
+        // ★ 对话进行中：挂起所有推进逻辑
+        if (isDialogueActive)
+        {
+            return;
         }
 
         if (Game1.activeClickableMenu != null || Game1.eventUp)
@@ -299,6 +343,23 @@ internal sealed class DialogueCoordinator
         }
     }
 
+    private void OnPlayerWarped(object sender, StardewModdingAPI.Events.WarpedEventArgs e)
+    {
+        // 玩家传送/地图切换时，清理活跃交互状态
+        // 防止 Event/传送导致 _activeInteractingSpeaker 悬空引用
+        if (!string.IsNullOrEmpty(_activeInteractingSpeaker))
+        {
+            _monitor.Log(
+                $"[DialogueCoordinator] 玩家传送（{e.OldLocation?.Name} → {e.NewLocation?.Name}），清理活跃交互状态：{_activeInteractingSpeaker}",
+                LogLevel.Trace);
+
+            _activeInteractingSpeaker = null;
+        }
+
+        // 传送后重置对话状态跟踪，避免跨地图的状态污染
+        _wasDialogueActiveLastFrame = false;
+    }
+
     private void OnReturnedToTitle(object sender, ReturnedToTitleEventArgs e)
     {
         try
@@ -350,6 +411,10 @@ internal sealed class DialogueCoordinator
         _reservations.Clear();
         _outputQueue.Clear();
         ImmediateEchoStore.Clear();
+
+        // ★ 新增：清理状态跟踪字段
+        _activeInteractingSpeaker = null;
+        _wasDialogueActiveLastFrame = false;
     }
 
     /// <summary>

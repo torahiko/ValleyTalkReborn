@@ -172,10 +172,19 @@ internal static class ImmediateEchoStore
 
     private static bool LocationMatches(EchoEntry entry, string currentLocationName)
     {
-        // 位置信息缺失时保守处理：不注入，避免跨地图错配现场感。
+        // 优先精确匹配：NPC 和玩家在同一地图
+        if (!string.IsNullOrEmpty(entry.LocationName) && !string.IsNullOrEmpty(currentLocationName))
+        {
+            if (string.Equals(entry.LocationName, currentLocationName, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        // 回退：Location 缺失时允许跨地图消费（NPC 可能在请求发出后移动了地图）
+        // 仅在位置信息不完整时生效，避免"精确已知不在同一地图"时的误注入
         if (string.IsNullOrEmpty(entry.LocationName) || string.IsNullOrEmpty(currentLocationName))
-            return false;
-        return string.Equals(entry.LocationName, currentLocationName, StringComparison.OrdinalIgnoreCase);
+            return true;
+
+        return false;
     }
 
     private static int SafeCurrentDay()

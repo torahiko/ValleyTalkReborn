@@ -46,7 +46,7 @@ namespace ValleytalkReborn
 
             if (Config.EnableAmbientBarks)
             {
-                // ★ 重新开启（或每次 save）：无条件软复位，抹除 NPC 残留的 NextAvailableAt 冷却。
+                // ★ 重新开启（或每次 save）：无条件软复位，抹除 NPC 残留的 CooldownTicksRemaining 冷却。
                 // CleanupAll 是幂等的——若已清理过则无副作用。确保玩家关闭后再开启时，
                 // 雷达扫描不会因 IsInCooldown() 而跳过 NPC。
                 _dialogueCoordinator?.AmbientBark.CleanupAll();
