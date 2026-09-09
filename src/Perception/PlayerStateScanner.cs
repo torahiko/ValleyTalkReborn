@@ -248,10 +248,10 @@ internal static class PlayerStateScanner
                 : $"[Ambient detail] The player is casually holding some mundane materials [{name}] (signs of farm work.).";
         }
 
-        // 5. 常规物品通用保底
+        // 5. 常规物品通用保底：弱化动作指向，客观记录随身携带
         return isZh
-            ? $"[随身细节] 你看到面前的玩家（@）手里正拿着一件【{name}】。"
-            : $"[Item detail] The player (@) is holding [{name}] in hand.";
+            ? $"[随身细节] 玩家随身带着一件【{name}】（日常携带物）。"
+            : $"[Item detail] The player is carrying [{name}] (everyday carry).";
     }
 
     // ─────────────────────────────────────────────
@@ -457,7 +457,8 @@ internal static class PlayerStateScanner
                     ? $"[装束细节] 玩家头上正戴着一顶醒目的【{hatName}】。"
                     : $"[Visual detail] The player is wearing a notable hat: [{hatName}].",
                 lifetimeHours: 20,
-                isLandmark: false);
+                isLandmark: false,
+                itemId: hat.QualifiedItemId);
         }
         else
         {
@@ -491,7 +492,8 @@ internal static class PlayerStateScanner
                     ? "[装束细节] 玩家下身正大摇大摆地穿着镇长刘易斯那条带着金边的紫色幸运短裤。"
                     : "[Visual detail] The player is brazenly wearing Mayor Lewis's trimmed purple lucky shorts.",
                 lifetimeHours: 20,
-                isLandmark: false);
+                isLandmark: false,
+                itemId: pantsId);
         }
         else
         {
@@ -506,7 +508,8 @@ internal static class PlayerStateScanner
                     ? "[装束细节] 玩家身上正穿着隆重喜庆的婚礼礼服。"
                     : "[Visual detail] The player is dressed in formal wedding attire.",
                 lifetimeHours: 20,
-                isLandmark: false);
+                isLandmark: false,
+                itemId: shirtId);
 
             PerceptionManager.Instance.Evict("PlayerHat");
         }
@@ -523,7 +526,8 @@ internal static class PlayerStateScanner
                     ? "[装束细节] 玩家头上顶着一个垃圾桶盖，身上穿着垃圾桶风格的外观。"
                     : "[Visual detail] The player is wearing a trash can lid hat and garbage-themed outfit.",
                 lifetimeHours: 20,
-                isLandmark: false);
+                isLandmark: false,
+                itemId: hatId);
         }
         else
         {
@@ -538,7 +542,8 @@ internal static class PlayerStateScanner
                     ? "[装束细节] 玩家全身套在极其厚重严密的防辐射生化服里。"
                     : "[Visual detail] The player is suited up in a heavy full-body hazmat suit.",
                 lifetimeHours: 20,
-                isLandmark: false);
+                isLandmark: false,
+                itemId: shirtId);
         }
         else
         {
@@ -770,14 +775,6 @@ internal static class PlayerStateScanner
         }
     }
 
-    /// <summary>
-    /// ★ 存档切换/卸载修复：WasFaintingPending 和 FaintedToday 都是静态字段，
-    /// 如果玩家在 A 存档触发了 OnDayEnding（WasFaintingPending=true）后，
-    /// 未经过 A 存档自己的 OnDayStarted 就切换/退出到另一个存档 B，
-    /// 残留的 true 会在 B 存档的下一次 OnDayStarted 里被错误地读取，
-    /// 导致 B 存档里从未晕倒过的玩家也被 NPC 认为"昨晚精疲力竭晕倒"。
-    /// 必须在 ReturnedToTitle / 存档卸载回调中调用本方法。
-    /// </summary>
     public static void ResetOnSaveExit()
     {
         WasFaintingPending = false;

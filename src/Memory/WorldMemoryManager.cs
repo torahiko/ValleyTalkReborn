@@ -12,6 +12,8 @@ namespace ValleytalkReborn
     {
         public static readonly WorldMemoryManager Instance = new WorldMemoryManager();
 
+        private const string SaveDataKey = "valleytalk.world-memories";
+
         public const int MaxEntries = 10;
         public const int MaxEntryLength = 60;
 
@@ -48,39 +50,24 @@ namespace ValleytalkReborn
             _entries.Clear();
             _isLoaded = false;
 
-            if (string.IsNullOrWhiteSpace(Constants.SaveFolderName) || ModEntry.SHelper == null)
+            if (!Context.IsWorldReady || ModEntry.SHelper == null)
             {
                 _isLoaded = true;
                 return;
             }
 
-            string path = $"data/{Constants.SaveFolderName}/WorldMemory.json";
-
             try
             {
-                var loaded = ModEntry.SHelper.Data.ReadJsonFile<List<MemoryEntry>>(path);
+                var loaded = ModEntry.SHelper.Data.ReadSaveData<List<MemoryEntry>>(SaveDataKey);
 
                 if (loaded != null)
                 {
-                    foreach (var entry in loaded)
-                    {
-                        if (entry == null)
-                            continue;
-
-                        if (string.IsNullOrWhiteSpace(entry.Content))
-                            continue;
-
-                        if (string.IsNullOrWhiteSpace(entry.Id))
-                            entry.Id = Guid.NewGuid().ToString();
-
-                        entry.NpcName = "WORLD";
-                        entry.Content = entry.Content.Trim();
-
-                        if (entry.CreatedAt == default(DateTime))
-                            entry.CreatedAt = DateTime.Now;
-
-                        _entries.Add(entry);
-                    }
+                    PopulateEntries(loaded);
+                }
+                else
+                {
+                    // 兼容迁移旧版文件
+                    MigrateLegacyFile();
                 }
 
                 _isLoaded = true;
@@ -93,24 +80,56 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
-        /// [FIX-1] 统一使用 Data API，不再混用 File.Delete
+        /// SaveData 模式：直接写入存档容器
         /// </summary>
         public void Save()
         {
-            if (string.IsNullOrWhiteSpace(Constants.SaveFolderName) || ModEntry.SHelper == null)
+            if (!Context.IsWorldReady || ModEntry.SHelper == null)
                 return;
-
-            string path = $"data/{Constants.SaveFolderName}/WorldMemory.json";
 
             try
             {
-                ModEntry.SHelper.Data.WriteJsonFile(path, _entries);
+                ModEntry.SHelper.Data.WriteSaveData(SaveDataKey, _entries);
             }
             catch (Exception ex)
             {
                 ModEntry.SMonitor?.Log(
                     $"[WorldMemoryManager] Save failed: {ex.Message}", LogLevel.Warn);
             }
+        }
+
+        private void PopulateEntries(IEnumerable<MemoryEntry> list)
+        {
+            foreach (var entry in list)
+            {
+                if (entry == null || string.IsNullOrWhiteSpace(entry.Content)) continue;
+                if (string.IsNullOrWhiteSpace(entry.Id)) entry.Id = Guid.NewGuid().ToString();
+
+                entry.NpcName = "WORLD";
+                entry.Content = entry.Content.Trim();
+                if (entry.CreatedAt == default(DateTime))
+                    entry.CreatedAt = DateTime.Now;
+
+                _entries.Add(entry);
+            }
+        }
+
+        private void MigrateLegacyFile()
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(Constants.SaveFolderName)) return;
+                string path = $"data/{Constants.SaveFolderName}/WorldMemory.json";
+
+                var loaded = ModEntry.SHelper.Data.ReadJsonFile<List<MemoryEntry>>(path);
+                if (loaded != null && loaded.Count > 0)
+                {
+                    PopulateEntries(loaded);
+                    Save();
+                    ModEntry.SMonitor?.Log($"[WorldMemoryManager] Migrated WorldMemory.json into SaveData.", LogLevel.Info);
+                }
+            }
+            catch { /* 忽略旧文件不存在的情况 */ }
         }
 
         public void Cleanup()

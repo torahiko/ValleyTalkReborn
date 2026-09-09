@@ -18,7 +18,7 @@ internal static class PerceptionInjector
 
     /// <summary>
     /// 清空跨天/跨存档的 gossip 提及去重记录。
-    /// 由 PerceptionManager 在 DayStarted 时调用。
+    /// 由 PerceptionManager 在 DayStarted 与 Cleanup 时调用。
     /// </summary>
     public static void ResetMentionedGossipKeys()
     {
@@ -77,8 +77,6 @@ internal static class PerceptionInjector
             dayKey = "unknown-day";
         }
 
-        // 按优先级排队候选：优先 LifeEvent，其余按原顺序补上，
-        // 直到找到一条今天还没对该 NPC 提过的八卦为止。
         var orderedCandidates = snapshots
             .Where(p => p != null && !string.IsNullOrWhiteSpace(p.Template))
             .OrderByDescending(p => p.Key == "LifeEvent")
@@ -91,7 +89,7 @@ internal static class PerceptionInjector
         {
             string dedupeKey = $"{dayKey}:{npcName}:{candidate.Key ?? ""}:{candidate.Template}";
             if (_mentionedGossipKeys.Contains(dedupeKey))
-                continue; // 今天已经跟这个 NPC 提过这条八卦了，跳过
+                continue;
 
             targetSnapshot   = candidate;
             targetDedupeKey  = dedupeKey;
@@ -161,9 +159,12 @@ internal static class PerceptionInjector
         // ── 其他近距离观察：弱感知形式 ──
         if (otherPerceptions.Any())
         {
+            // 正向聚焦指引：专注当下言行意图，背景侧影仅作自然参照，杜绝否定词
             lines.Add(isZh
-                ? "[目击到的近况与现场细节]"
-                : "[Observed Context]");
+                ? "[目击到的近况与现场细节]\n" +
+                  "（此类信息为当下的物理环境与伴随侧影。交谈时始终专注于对方当下的言行与交流意图，仅在话题自然切中时将其作为背景参照）"
+                : "[Observed Context]\n" +
+                  "(Physical environment and incidental context. Focus primarily on the current conversation and dialogue intent, using these details as background reference only when organically relevant.)");
 
             foreach (var p in otherPerceptions)
             {
@@ -173,21 +174,21 @@ internal static class PerceptionInjector
                     line += BuildGiftTasteAnnotation(npcName, p.ItemId, isZh);
                 lines.Add(line);
 
-                // ★ 关键防复读：随身物品一旦真正进入当前 NPC 的对话 Prompt，标记为当日已阅
+                // 随身普通物品进入 Prompt 后标记单人单日审美疲劳
                 if (p.Key == "PlayerActiveItem" && !string.IsNullOrEmpty(p.ItemId))
                 {
                     PerceptionManager.Instance.MarkItemNoticedToday(npcName, p.ItemId);
                 }
             }
 
-            // 核心消费：仅消费真正注入了当前 Prompt 的瞬态动作事件（Eat, Fish, Chop 等）
-            var transientActions = otherPerceptions
-                .Where(p => IsTransientAction(p.Key))
+            // 核心消费：消费真正注入了当前 Prompt 的瞬态动作与需避免同日/同场对话复读的长效装束/状态
+            var consumablePerceptions = otherPerceptions
+                .Where(p => ShouldConsumeAfterInjection(p.Key))
                 .ToList();
 
-            if (transientActions.Any())
+            if (consumablePerceptions.Any())
             {
-                PerceptionManager.Instance.ConsumePerceptions(npcName, transientActions);
+                PerceptionManager.Instance.ConsumePerceptions(npcName, consumablePerceptions);
             }
         }
 
@@ -195,18 +196,19 @@ internal static class PerceptionInjector
     }
 
     /// <summary>
-    /// 判断事件是否为单次瞬态动作（注入后立即对该 NPC 消费，避免同一次对话连续复读）。
+    /// 判断感知条目是否在注入当前 NPC 的 Prompt 后即完成消费。
+    /// 包含：
+    /// 1. 瞬态交互动作（钓鱼、吃东西、送礼等，目击一次即消费）；
+    /// 2. 静态长效装束与环境背景（帽子、特殊服饰、昨夜晕倒、宠物坐骑等），
+    ///    注入后对当前 NPC 标记已阅，避免在同场对话或后续轮次中重复注入。
     /// </summary>
-    private static bool IsTransientAction(string key)
+    private static bool ShouldConsumeAfterInjection(string key)
     {
         if (string.IsNullOrEmpty(key)) return false;
 
-        // 玩家自身持续身体/装备/精神状态不属于瞬态动作，保持自然存活
-        if (key.StartsWith("Player", StringComparison.OrdinalIgnoreCase))
-            return false;
-
         return key switch
         {
+            // 瞬态动作事件（目击一次即消费）
             "Gift"          => true, // 旁观他人收礼
             "Eat"           => true, // 吃东西
             "Fish"          => true, // 钓鱼
@@ -215,7 +217,22 @@ internal static class PerceptionInjector
             "Place"         => true, // 放置物品
             "Harvest"       => true, // 收获作物
             "Talk"          => true, // 与他人交谈
-            _               => false
+
+            // 外观装束与历史/伴随细节（注入后对当前 NPC 消费，避免同场对话每句复读）
+            "PlayerHat"                  => true, // 帽子
+            "PlayerWeddingOutfit"        => true, // 婚礼礼服
+            "PlayerSpecialOutfit_Shorts" => true, // 镇长幸运短裤
+            "PlayerSpecialOutfit_Trash"  => true, // 垃圾桶外观
+            "PlayerSpecialOutfit_Hazmat" => true, // 防化生化服
+            "PlayerFainted"              => true, // 昨夜晕倒经历
+            "PlayerPet"                  => true, // 随行宠物
+            "PlayerHorseNearby"          => true, // 附近坐骑
+            "PlayerRidingHorse"          => true, // 骑乘状态
+            "PlayerBagFull"              => true, // 背包满载
+            "PlayerActiveItem"           => true, // 手持携带物
+
+            // 生理/Buff/信物（重伤、力竭、醉酒、花束、求婚吊坠等）保持自然存活或由状态解除时显式 Evict
+            _ => false
         };
     }
 

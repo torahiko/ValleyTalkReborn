@@ -36,6 +36,8 @@ internal class MemoryManager : IMemoryProvider
 {
     public static readonly MemoryManager Instance = new MemoryManager();
 
+    private const string SaveDataKey = "valleytalk.npc-memories";
+
     public const int MaxMemoryLength = 60;
     public const int MaxMemoriesPerNpc = 10;
     public const int MaxMemoriesInPrompt = 5;
@@ -92,18 +94,63 @@ internal class MemoryManager : IMemoryProvider
         _memories.Clear();
         _isLoaded = false;
 
-        if (string.IsNullOrWhiteSpace(Constants.SaveFolderName) || ModEntry.SHelper == null) return;
-
-        string saveDir = $"data/{Constants.SaveFolderName}";
+        if (!Context.IsWorldReady || ModEntry.SHelper == null) return;
 
         try
         {
-            string physicalDir = System.IO.Path.Combine(ModEntry.SHelper.DirectoryPath, saveDir);
-            if (!System.IO.Directory.Exists(physicalDir))
+            // 优先从 SMAPI 存档数据读取（玩家完全看不到此文件）
+            var loaded = ModEntry.SHelper.Data.ReadSaveData<Dictionary<string, List<MemoryEntry>>>(SaveDataKey);
+
+            if (loaded != null)
             {
-                _isLoaded = true;
-                return;
+                _memories = loaded;
             }
+            else
+            {
+                // 平滑迁移：SaveData 为空时，尝试导入旧版 data/{SaveFolderName}/memory_*.json
+                MigrateLegacyFiles();
+            }
+
+            _isLoaded = true;
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log($"[MemoryManager] Load failed: {ex.Message}", LogLevel.Warn);
+        }
+    }
+
+    public void Save(string npcName = null)
+    {
+        try
+        {
+            if (!Context.IsWorldReady || ModEntry.SHelper == null) return;
+
+            // 整体写入存档，无需再为每个 NPC 单独创建文件
+            ModEntry.SHelper.Data.WriteSaveData(SaveDataKey, _memories);
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log($"[MemoryManager] Save failed: {ex.Message}", LogLevel.Warn);
+        }
+    }
+
+    public void SaveAll()
+    {
+        Save();
+    }
+
+    /// <summary>
+    /// 兼容旧版：自动读取并迁移旧 json 文件到 SaveData
+    /// </summary>
+    private void MigrateLegacyFiles()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(Constants.SaveFolderName)) return;
+
+            string saveDir = $"data/{Constants.SaveFolderName}";
+            string physicalDir = System.IO.Path.Combine(ModEntry.SHelper.DirectoryPath, saveDir);
+            if (!System.IO.Directory.Exists(physicalDir)) return;
 
             var files = System.IO.Directory.GetFiles(physicalDir, "memory_*.json");
             foreach (var file in files)
@@ -115,52 +162,22 @@ internal class MemoryManager : IMemoryProvider
                 if (list == null || list.Count == 0) continue;
 
                 string actualNpcName = list.First().NpcName;
-                if (string.IsNullOrWhiteSpace(actualNpcName))
+                if (!string.IsNullOrWhiteSpace(actualNpcName))
                 {
-                    ModEntry.SMonitor?.Log(
-                        $"[MemoryManager] Skipping {fileName}: NpcName is empty.",
-                        LogLevel.Warn);
-                    continue;
+                    _memories[actualNpcName] = list;
                 }
-
-                _memories[actualNpcName] = list;
             }
 
-            _isLoaded = true;
-        }
-        catch (Exception ex)
-        {
-            ModEntry.SMonitor?.Log($"[MemoryManager] Load failed: {ex.Message}", LogLevel.Warn);
-        }
-    }
-
-    public void Save(string npcName)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(Constants.SaveFolderName) || ModEntry.SHelper == null) return;
-
-            string path = $"data/{Constants.SaveFolderName}/memory_{npcName}.json";
-
-            if (!_memories.TryGetValue(npcName, out var list) || list.Count == 0)
+            if (_memories.Count > 0)
             {
-                ModEntry.SHelper.Data.WriteJsonFile(path, new List<MemoryEntry>());
-            }
-            else
-            {
-                ModEntry.SHelper.Data.WriteJsonFile(path, list);
+                Save();
+                ModEntry.SMonitor?.Log($"[MemoryManager] Successfully migrated legacy JSON memories into SaveData.", LogLevel.Info);
             }
         }
         catch (Exception ex)
         {
-            ModEntry.SMonitor?.Log($"[MemoryManager] Save failed for {npcName}: {ex.Message}", LogLevel.Warn);
+            ModEntry.SMonitor?.Log($"[MemoryManager] Legacy migration failed: {ex.Message}", LogLevel.Warn);
         }
-    }
-
-    public void SaveAll()
-    {
-        foreach (var npcName in _memories.Keys.ToList())
-            Save(npcName);
     }
 
     // ──────────────────────────────────────────────────────────────

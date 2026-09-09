@@ -72,10 +72,6 @@ internal class PerceptionManager
                 _npcNoticedItemIdsToday.Clear();
             }
 
-            // ★ 静态字段跨存档残留修复：_mentionedGossipKeys 是 PerceptionInjector 里的
-            // 静态字段，PerceptionManager 是单例。退出当前存档/切换存档时若不在这里同步
-            // 清空，旧存档的八卦去重记录会带进下一个存档，导致新存档里本该出现的八卦
-            // 被误判为"今天已对该NPC提过"而被跳过。
             PerceptionInjector.ResetMentionedGossipKeys();
         }
         catch (Exception ex)
@@ -126,7 +122,7 @@ internal class PerceptionManager
                 _interactedNpcNamesToday.Add(npcName);
             }
 
-            if (isGossip || isLandmark)   // Landmark 事件自动提升至 Track 1
+            if (isGossip || isLandmark)
             {
                 EnqueueGossip(entry);
                 track = "Gossip";
@@ -276,9 +272,6 @@ internal class PerceptionManager
         }
     }
 
-    /// <summary>
-    /// 修复后的会话归档：只归档定向指派给该 NPC 的事件，绝对不误杀未注入的同场景环境事件
-    /// </summary>
     public void MarkAsConsolidated(string npcName)
     {
         if (string.IsNullOrEmpty(npcName)) return;
@@ -315,9 +308,6 @@ internal class PerceptionManager
                 .Where(IsPerceptionTimeValid)
                 .Where(e => !e.IsConsumedBy(npcName))
                 .Where(e => PassesEyewitnessFilter(e, npcName, npcLocation))
-                // ★ 已经对该 NPC 产生审美疲劳的随身物品直接剔除候选池，
-                //   而不只是在打分阶段降权——避免"看腻了但没有别的可选，
-                //   于是还是被塞进 Prompt"的情况。
                 .Where(e => !(e.Key == "PlayerActiveItem"
                               && !string.IsNullOrEmpty(e.ItemId)
                               && HasNoticedItemToday(npcName, e.ItemId)))
@@ -404,6 +394,20 @@ internal class PerceptionManager
 
         if (duplicate != null)
         {
+            // ★ 状态生命周期承接核心：若状态未发生实质变更（同Key、同描述文本、同物品ID），
+            // 完整继承已消费该状态的 NPC 记录，确保同一 NPC 在该状态持续期间不会在后续对话轮次中重复复读。
+            if (string.Equals(duplicate.Template, entry.Template, StringComparison.Ordinal)
+                && string.Equals(duplicate.ItemId, entry.ItemId, StringComparison.OrdinalIgnoreCase))
+            {
+                lock (duplicate)
+                {
+                    foreach (var npcName in duplicate.ConsumedByNpcs)
+                    {
+                        entry.ConsumedByNpcs.Add(npcName);
+                    }
+                }
+            }
+
             var remaining = bucket.Where(e => e != duplicate).ToList();
             bucket.Clear();
             foreach (var item in remaining)
@@ -489,7 +493,6 @@ internal class PerceptionManager
         float finalScore = base_ * decay * personality;
 
         // ★ 绝对天花板封顶（Hard Cap）：死物/随身物无论乘数多高，最终得分严禁超过 3.8 分
-        // 彻底杜绝背包物品反超残血、力竭、醉酒和刚刚完成的钓鱼/进食动作
         if (entry.Key is "PlayerActiveItem" or "PlayerBagFull" or "PlayerHat")
         {
             finalScore = Math.Min(finalScore, 3.8f);
@@ -498,12 +501,6 @@ internal class PerceptionManager
         return finalScore;
     }
 
-    /// <summary>
-    /// 星露谷原版全村民个性化关注度矩阵
-    /// </summary>
-    /// <summary>
-    /// 星露谷原版全村民个性化关注度矩阵
-    /// </summary>
     /// <summary>
     /// 星露谷原版全村民个性化关注度矩阵
     /// </summary>
@@ -792,7 +789,7 @@ internal class PerceptionManager
             _activityBucket.Clear();
             _globalGossip.Clear();
             _interactedNpcNamesToday.Clear();
-            _npcNoticedItemIdsToday.Clear(); // 跨天重置审美疲劳
+            _npcNoticedItemIdsToday.Clear();
         }
 
         PerceptionInjector.ResetMentionedGossipKeys();

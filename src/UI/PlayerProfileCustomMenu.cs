@@ -266,29 +266,11 @@ namespace ValleytalkReborn
             // Save global settings to config.json
             ModEntry.SHelper.Data.WriteJsonFile("config.json", config);
 
-            // Save save-specific custom bio
-            if (!string.IsNullOrWhiteSpace(StardewModdingAPI.Constants.SaveFolderName))
-            {
-                string bioText = _bioTextBox.Text.Length > MaxBioLength
-                    ? _bioTextBox.Text.Substring(0, MaxBioLength)
-                    : _bioTextBox.Text;
-
-                string path = $"data/{StardewModdingAPI.Constants.SaveFolderName}/PlayerProfile.json";
-                try
-                {
-                    var saveData = new Dictionary<string, string>
-                    {
-                        { "PlayerCustomBio", bioText }
-                    };
-                    ModEntry.SHelper.Data.WriteJsonFile(path, saveData);
-                    ModEntry.SMonitor?.Log($"[ValleytalkReborn] Successfully saved custom bio.", LogLevel.Trace);
-                    PlayerProfileManager.InvalidateBioCache();
-                }
-                catch (Exception ex)
-                {
-                    ModEntry.SMonitor?.Log($"[ValleytalkReborn] Failed to save PlayerProfile.json: {ex.Message}", LogLevel.Error);
-                }
-            }
+            // Save save-specific custom bio via SaveData API
+            string bioText = _bioTextBox.Text.Length > MaxBioLength
+                ? _bioTextBox.Text.Substring(0, MaxBioLength)
+                : _bioTextBox.Text;
+            PlayerProfileManager.SaveCustomBio(bioText);
         }
 
         private void SetScrollbarPosition()

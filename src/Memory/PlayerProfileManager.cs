@@ -18,8 +18,9 @@ namespace ValleytalkReborn
         // ──────────────────────────────────────────────────────────────
         // Bio cache
         // ──────────────────────────────────────────────────────────────
+        private const string SaveDataKey = "valleytalk.player-profile";
+
         private static string _cachedBio = string.Empty;
-        private static string _cachedBioPath = null;
         private static bool _bioCacheLoaded;
 
         // ──────────────────────────────────────────────────────────────
@@ -37,7 +38,6 @@ namespace ValleytalkReborn
         public static void InvalidateBioCache()
         {
             _cachedBio = string.Empty;
-            _cachedBioPath = null;
             _bioCacheLoaded = false;
         }
 
@@ -223,24 +223,36 @@ namespace ValleytalkReborn
         /// </summary>
         private static string GetSaveCustomBio()
         {
-            if (string.IsNullOrWhiteSpace(Constants.SaveFolderName) || ModEntry.SHelper == null)
+            if (!Context.IsWorldReady || ModEntry.SHelper == null)
                 return string.Empty;
 
-            string path = $"data/{Constants.SaveFolderName}/PlayerProfile.json";
-
-            if (_bioCacheLoaded && _cachedBioPath == path)
+            if (_bioCacheLoaded)
                 return _cachedBio;
 
             try
             {
-                var saveData = ModEntry.SHelper.Data.ReadJsonFile<Dictionary<string, string>>(path);
+                // 1. 从 SaveData 读取
+                var saveData = ModEntry.SHelper.Data.ReadSaveData<Dictionary<string, string>>(SaveDataKey);
+
                 if (saveData != null && saveData.TryGetValue("PlayerCustomBio", out string bio))
                 {
                     _cachedBio = bio ?? string.Empty;
                 }
                 else
                 {
-                    _cachedBio = string.Empty;
+                    // 2. 兼容迁移旧文件
+                    string oldPath = $"data/{Constants.SaveFolderName}/PlayerProfile.json";
+                    var oldData = ModEntry.SHelper.Data.ReadJsonFile<Dictionary<string, string>>(oldPath);
+                    if (oldData != null && oldData.TryGetValue("PlayerCustomBio", out string oldBio))
+                    {
+                        _cachedBio = oldBio ?? string.Empty;
+                        // 迁移写入 SaveData
+                        ModEntry.SHelper.Data.WriteSaveData(SaveDataKey, oldData);
+                    }
+                    else
+                    {
+                        _cachedBio = string.Empty;
+                    }
                 }
             }
             catch
@@ -248,9 +260,25 @@ namespace ValleytalkReborn
                 _cachedBio = string.Empty;
             }
 
-            _cachedBioPath = path;
             _bioCacheLoaded = true;
             return _cachedBio;
+        }
+
+        /// <summary>
+        /// 当玩家在 UI 里修改了个人设定时调用
+        /// </summary>
+        public static void SaveCustomBio(string newBio)
+        {
+            if (!Context.IsWorldReady || ModEntry.SHelper == null) return;
+
+            var data = new Dictionary<string, string>
+            {
+                ["PlayerCustomBio"] = newBio ?? string.Empty
+            };
+
+            ModEntry.SHelper.Data.WriteSaveData(SaveDataKey, data);
+            _cachedBio = newBio ?? string.Empty;
+            _bioCacheLoaded = true;
         }
 
         /// <summary>
