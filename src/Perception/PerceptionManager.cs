@@ -39,6 +39,10 @@ internal class PerceptionManager
     private readonly Dictionary<string, HashSet<string>> _npcNoticedItemIdsToday =
         new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
 
+    // ★ 键名 -> 静默截止时间（游戏内时间），用于短时屏蔽特定感知键的录入
+    private readonly Dictionary<string, int> _suppressedKeys =
+        new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
     private const int BuildingResourcesCategory = -16;
 
     private PerceptionManager()
@@ -70,6 +74,7 @@ internal class PerceptionManager
                 _activityBucket.Clear();
                 _interactedNpcNamesToday.Clear();
                 _npcNoticedItemIdsToday.Clear();
+                _suppressedKeys.Clear();
             }
 
             PerceptionInjector.ResetMentionedGossipKeys();
@@ -96,6 +101,23 @@ internal class PerceptionManager
     {
         if (!ShouldRecord(key, isGossip || isLandmark)) return;
         if (string.IsNullOrWhiteSpace(template)) return;
+
+        // 检查该键是否处于静默期（用于送礼等瞬态事件屏蔽深度感知注入）
+        lock (_lock)
+        {
+            if (_suppressedKeys.TryGetValue(key, out int suppressUntil))
+            {
+                if (Game1.timeOfDay < suppressUntil)
+                {
+                    if (ModEntry.Config?.Debug == true)
+                        ModEntry.SMonitor?.Log(
+                            $"[PerceptionManager] Key '{key}' suppressed until {suppressUntil}.",
+                            LogLevel.Trace);
+                    return;
+                }
+                _suppressedKeys.Remove(key);
+            }
+        }
 
         string resolvedLocation = locationName
             ?? Game1.currentLocation?.Name
@@ -173,6 +195,29 @@ internal class PerceptionManager
                 $"[PerceptionManager] Evicted key '{key}' from {track}.",
                 LogLevel.Debug);
         }
+    }
+
+    /// <summary>
+    /// 临时屏蔽指定键的录入，直到指定游戏时间流逝（用于送礼等瞬态事件驱逐后防止深度感知立即回填）。
+    /// </summary>
+    public void SuppressKeyTemporarily(string key, int durationMinutes = 10)
+    {
+        if (string.IsNullOrWhiteSpace(key)) return;
+
+        int currentTime = Game1.timeOfDay;
+        int currentMins = (currentTime / 100) * 60 + (currentTime % 100);
+        int targetMins  = currentMins + durationMinutes;
+        int targetTime  = (targetMins / 60) * 100 + (targetMins % 60);
+
+        lock (_lock)
+        {
+            _suppressedKeys[key] = targetTime;
+        }
+
+        if (ModEntry.Config?.Debug == true)
+            ModEntry.SMonitor?.Log(
+                $"[PerceptionManager] Key '{key}' suppressed until {targetTime}.",
+                LogLevel.Debug);
     }
 
     private static bool EvictFromQueue(Queue<PerceptionEntry> queue, string key)
@@ -811,6 +856,7 @@ internal class PerceptionManager
             _globalGossip.Clear();
             _interactedNpcNamesToday.Clear();
             _npcNoticedItemIdsToday.Clear();
+            _suppressedKeys.Clear();
         }
 
         PerceptionInjector.ResetMentionedGossipKeys();

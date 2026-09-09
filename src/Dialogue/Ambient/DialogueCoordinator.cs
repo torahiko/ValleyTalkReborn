@@ -28,9 +28,8 @@ internal sealed class DialogueCoordinator
 
     private bool _subscribed;
 
-    // ★ 状态跟踪：记录上一帧的对话状态，用于检测状态跳变（边沿触发）
+    // 状态跟踪：当前正在与玩家交互的 NPC 名字（null = 未交互）
     private string _activeInteractingSpeaker = null;
-    private bool _wasDialogueActiveLastFrame = false;
 
     internal DialogueCoordinator(
         IModHelper helper,
@@ -215,46 +214,37 @@ internal sealed class DialogueCoordinator
         }
 
         // ════════════════════════════════════════════════════════════
-        // 阶段 2：交互拦截与状态跳变检测（边沿触发）
+        // 阶段 2：交互拦截与状态跳变检测（基于发话者身份跃迁）
         // ════════════════════════════════════════════════════════════
 
-        bool isDialogueActive = Game1.dialogueUp;
-        string currentSpeakerName = Game1.currentSpeaker?.Name;
+        // 同时检测 dialogueUp 和 DialogueBox 菜单，捕获 dialogueUp 延迟设置的边界
+        bool isDialogueActive = Game1.dialogueUp
+            || Game1.activeClickableMenu is StardewValley.Menus.DialogueBox;
+        string currentSpeaker = isDialogueActive ? Game1.currentSpeaker?.Name : null;
 
-        // ★ 边沿触发 1：对话开始（从无到有）
-        if (isDialogueActive && !_wasDialogueActiveLastFrame)
+        // 发话者身份发生变化（包含：开始交谈、关闭对话、中途换人）
+        if (!string.Equals(_activeInteractingSpeaker, currentSpeaker, StringComparison.OrdinalIgnoreCase))
         {
-            if (!string.IsNullOrEmpty(currentSpeakerName))
-            {
-                _activeInteractingSpeaker = currentSpeakerName;
-
-                // 🔥 只在对话开始的瞬间执行一次
-                _ambientBark.NotifyPlayerInteracted(currentSpeakerName, cooldownSeconds: 30);
-
-                _monitor.Log(
-                    $"[DialogueCoordinator] 对话开始：{currentSpeakerName}，已施加 30 秒冷却",
-                    LogLevel.Trace);
-            }
-        }
-
-        // ★ 边沿触发 2：对话结束（从有到无）
-        if (!isDialogueActive && _wasDialogueActiveLastFrame)
-        {
+            // 旧角色离开对话态：施加 30s 冷却
             if (!string.IsNullOrEmpty(_activeInteractingSpeaker))
             {
-                // 🔥 对话结束瞬间的补偿冷却（防御性）
                 _ambientBark.NotifyPlayerInteracted(_activeInteractingSpeaker, cooldownSeconds: 30);
-
                 _monitor.Log(
-                    $"[DialogueCoordinator] 对话结束：{_activeInteractingSpeaker}，已刷新冷却",
+                    $"[DialogueCoordinator] {_activeInteractingSpeaker} 离开对话态，刷新 30s 冷却",
                     LogLevel.Trace);
-
-                _activeInteractingSpeaker = null;
             }
-        }
 
-        // 更新状态跟踪
-        _wasDialogueActiveLastFrame = isDialogueActive;
+            // 新角色进入对话态：立即截断 Bark
+            if (!string.IsNullOrEmpty(currentSpeaker))
+            {
+                _ambientBark.NotifyPlayerInteracted(currentSpeaker, cooldownSeconds: 30);
+                _monitor.Log(
+                    $"[DialogueCoordinator] {currentSpeaker} 进入对话态，打断 Bark 并锁定",
+                    LogLevel.Trace);
+            }
+
+            _activeInteractingSpeaker = currentSpeaker;
+        }
 
         // ★ 对话进行中：挂起所有推进逻辑
         if (isDialogueActive)
@@ -355,9 +345,6 @@ internal sealed class DialogueCoordinator
 
             _activeInteractingSpeaker = null;
         }
-
-        // 传送后重置对话状态跟踪，避免跨地图的状态污染
-        _wasDialogueActiveLastFrame = false;
     }
 
     private void OnReturnedToTitle(object sender, ReturnedToTitleEventArgs e)
@@ -412,9 +399,8 @@ internal sealed class DialogueCoordinator
         _outputQueue.Clear();
         ImmediateEchoStore.Clear();
 
-        // ★ 新增：清理状态跟踪字段
+        // 清理状态跟踪字段
         _activeInteractingSpeaker = null;
-        _wasDialogueActiveLastFrame = false;
     }
 
     /// <summary>

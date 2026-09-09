@@ -106,6 +106,7 @@ internal sealed class AmbientBarkStateStore
         public void Clear()
         {
             ClearRuntimeState();
+            CooldownTicksRemaining = null; // 硬重置彻底清空冷却
             LastThreadTail.Clear();
             LastThreadEndedAt = null;
             LastThreadGameTimeOfDay = 0;
@@ -125,11 +126,7 @@ internal sealed class AmbientBarkStateStore
             IsRequesting = false;
             DisplayCountdown = 0;
             HasPlayedFirst = false;
-            // ★ 不清空 CooldownTicksRemaining，保留冷却时间
-            // CooldownTicksRemaining 只能通过以下方式修改：
-            // 1. NotifyPlayerInteracted 主动施加新冷却
-            // 2. FinalizeThreadLocked 自然播完后施加冷却
-            // 3. OnDayStarted / Clear() 换天清理
+            CooldownTicksRemaining = null; // 必须清空为 null，关闭 TickStates 分支 2 的触发条件
         }
 
         /// <summary>

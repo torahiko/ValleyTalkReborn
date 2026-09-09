@@ -75,8 +75,6 @@
 
         "Unique": "holding a football",
         "HomeLocationBed": true,
-        "EnableAmbientBarks": true,
-
         "ProgressStates": [
           {
             "RequireMarried": true,
@@ -95,7 +93,7 @@
             "Text": "High-energy, brash, and boastful. Constant swagger focused on Gridball fame, workout numbers, and physical appearance. Defensively avoids serious emotional topics or intellectual challenges, brushing off genuine vulnerability with cocky banter."
           }
         ],
-
+        "EnableAmbientBarks": true,
         "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nEnergetic, breezy, athletic cadence with an unpolished sincerity. Reads his surroundings in terms of movement, stamina, and usefulness.\n\n[OBSERVATION LENSES]\n- Spatial Utility: sizing up open space for a throw or a sprint, testing whether a floor or ceiling works for pushups or drills\n- Body & Stamina: soreness, recovery, temperature, and whether he's hungry for something protein-heavy\n- Weather & Terrain: wind messing with a throw, mud or slick floors underfoot, feeling cooped up indoors\n- Chores & Upkeep: whether something needs lifting, fixing, or hauling, and who could use a hand\n- Self-Image: catching himself near a book or anything 'smart-looking' and feeling a flash of self-consciousness\n\n[SPOKEN HABITS]\nStarts things off with 'Man...', 'Whoa,', 'Look at that,', 'No sweat,'. Short, punchy first-reaction lines, never explaining what he's doing."
       }
     }

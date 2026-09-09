@@ -58,6 +58,9 @@ namespace ValleytalkReborn
                 if (!ModEntry.Config.EnableMod || !DialogueBuilder.Instance.PatchNpc(__instance))
                     return true;
 
+                // 补齐打字交互通知：防止玩家敲字期间 NPC 自言自语
+                ModEntry.Coordinator?.AmbientBark?.NotifyPlayerInteracted(__instance.Name, cooldownSeconds: 30);
+
                 DialogueBuilder.Instance.ClearContext(__instance.Name);
                 var character = DialogueBuilder.Instance.GetCharacter(__instance);
 

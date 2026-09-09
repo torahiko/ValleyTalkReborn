@@ -264,28 +264,26 @@ internal static class PerceptionInjector
 
     /// <summary>
     /// 判断感知条目是否在注入当前 NPC 的 Prompt 后即完成消费。
-    /// 包含：
-    /// 1. 瞬态交互动作（钓鱼、吃东西、送礼等，目击一次即消费）；
-    /// 2. 静态长效装束与环境背景（帽子、特殊服饰、昨夜晕倒、宠物坐骑等），
-    ///    注入后对当前 NPC 标记已阅，避免在同场对话或后续轮次中重复注入。
+    /// 所有可被 NPC 观察到的状态、动作与信物在注入后均对当前 NPC 标记已阅（阅后即焚），
+    /// 避免在后续对话轮次或连续 Bark 中反复抢占角色注意力。
     /// </summary>
-    private static bool ShouldConsumeAfterInjection(string key)
+    internal static bool ShouldConsumeAfterInjection(string key)
     {
         if (string.IsNullOrEmpty(key)) return false;
 
         return key switch
         {
-            // 瞬态动作事件（目击一次即消费）
-            "Gift"          => true, // 旁观他人收礼
-            "Eat"           => true, // 吃东西
-            "Fish"          => true, // 钓鱼
-            "LegendaryFish" => true, // 钓上传说鱼的现场目击
-            "Chop"          => true, // 砍树
-            "Place"         => true, // 放置物品
-            "Harvest"       => true, // 收获作物
-            "Talk"          => true, // 与他人交谈
+            // 1. 瞬态交互动作（目击一次即消费）
+            "Gift"                       => true, // 旁观他人收礼
+            "Eat"                        => true, // 吃东西
+            "Fish"                       => true, // 钓鱼
+            "LegendaryFish"              => true, // 钓上传说鱼的现场目击
+            "Chop"                       => true, // 砍树
+            "Place"                      => true, // 放置物品
+            "Harvest"                    => true, // 收获作物
+            "Talk"                       => true, // 与他人交谈
 
-            // 外观装束与历史/伴随细节（注入后对当前 NPC 消费，避免同场对话每句复读）
+            // 2. 外观装束与随身/伴随细节
             "PlayerHat"                  => true, // 帽子
             "PlayerWeddingOutfit"        => true, // 婚礼礼服
             "PlayerSpecialOutfit_Shorts" => true, // 镇长幸运短裤
@@ -298,7 +296,21 @@ internal static class PerceptionInjector
             "PlayerBagFull"              => true, // 背包满载
             "PlayerActiveItem"           => true, // 手持携带物
 
-            // 生理/Buff/信物（重伤、力竭、醉酒、花束、求婚吊坠等）保持自然存活或由状态解除时显式 Evict
+            // 3. 信物与关键随身物（提及一次即归于平淡，避免每个路人反复谈及）
+            "PlayerHasPendant"           => true, // 求婚信物（美人鱼吊坠）
+            "PlayerHasBouquet"           => true, // 确立关系信物（花束）
+
+            // 4. 生理状态与 Buff 光环（注意力阅后即焚，物理生命周期由 PlayerStateScanner.Evict 负责）
+            "PlayerExhausted"            => true, // 精疲力竭
+            "PlayerTired"                => true, // 疲惫
+            "PlayerLowHealth"            => true, // 残血负伤
+            "PlayerDrunk"                => true, // 醉酒
+            "PlayerSpeedBuff"            => true, // 步伐飞速/咖啡亢奋
+            "PlayerGarlicSmell"          => true, // 大蒜油气味
+            "PlayerMonsterMusk"          => true, // 怪物麝香腥气
+            "PlayerGlowing"              => true, // 戒指光晕
+            "PlayerLateNight"            => true, // 深夜独自游荡
+
             _ => false
         };
     }

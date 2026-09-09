@@ -318,13 +318,32 @@ Format example below (random content, unrelated to actual scene, don't copy topi
 
             if (hasPerceptions)
             {
+                var consumablePerceptions = new List<PerceptionEntry>();
                 foreach (var p in perceptions)
                 {
                     if (!string.IsNullOrWhiteSpace(p.Template))
                     {
                         string template = isZh ? NpcNameLocalizer.LocalizeNamesInText(p.Template) : p.Template;
                         sb.AppendLine($"- {template}");
+
+                        // 随身普通物品进入 Prompt 后标记单人单日审美疲劳
+                        if (p.Key == "PlayerActiveItem" && !string.IsNullOrEmpty(p.ItemId))
+                        {
+                            PerceptionManager.Instance?.MarkItemNoticedToday(npc.Name, p.ItemId);
+                        }
+
+                        // 收集需要阅后即焚的条目（动作、装束、信物、生理/Buff 状态）
+                        if (PerceptionInjector.ShouldConsumeAfterInjection(p.Key))
+                        {
+                            consumablePerceptions.Add(p);
+                        }
                     }
+                }
+
+                // 核心消费：注入 Bark Prompt 后立即消费，杜绝后续 Bark 循环复读同一状态
+                if (consumablePerceptions.Count > 0)
+                {
+                    PerceptionManager.Instance?.ConsumePerceptions(npc.Name, consumablePerceptions);
                 }
             }
 

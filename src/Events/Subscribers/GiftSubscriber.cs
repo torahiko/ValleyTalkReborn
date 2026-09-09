@@ -134,6 +134,10 @@ internal static class GiftSubscriber
             itemId: itemId,
             locationName: location);
 
+        // 送礼后物品栏变空，驱逐手持物感知并短时屏蔽深度感知回填
+        PerceptionManager.Instance.Evict("PlayerActiveItem");
+        PerceptionManager.Instance.SuppressKeyTemporarily("PlayerActiveItem", durationMinutes: 10);
+
         if (ModEntry.Config.Debug)
             ModEntry.SMonitor?.Log(
                 $"[GiftSubscriber] [{itemName ?? "unknown item"}] → {npcName} @ {location}",

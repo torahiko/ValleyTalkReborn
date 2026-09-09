@@ -387,12 +387,6 @@ internal sealed class AmbientBarkModule : IDialogueModule
         {
             lock (state)
             {
-                // 幂等性检查：如果冷却已经生效且剩余 > 1500 Ticks（25 秒），跳过重复操作
-                if (state.CooldownTicksRemaining.HasValue && state.CooldownTicksRemaining.Value > 1500)
-                {
-                    return;
-                }
-
                 // 潜意识利用 1：截获队列中未来得及冒出头顶的台词
                 if (state.BarkQueue.Count > 0)
                 {
@@ -400,7 +394,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
                     ImmediateEchoStore.RecordBark(npcName, unplayedTail, locationName);
 
                     ModEntry.SMonitor?.Log(
-                        $"[AmbientBark] 玩家发起对话：已将 {npcName} 队列中未播放的 {unplayedTail.Count} 条台词转入 ImmediateEchoStore 作为潜意识",
+                        $"[AmbientBark] 玩家交互打断：已将 {npcName} 队列中未播放的 {unplayedTail.Count} 条台词转入潜意识",
                         LogLevel.Debug);
                 }
 
@@ -409,11 +403,11 @@ internal sealed class AmbientBarkModule : IDialogueModule
                 state.BarkQueue.Clear();
                 state.HasPlayedFirst = false;
                 state.DisplayCountdown = 0;
-                state.CooldownTicksRemaining = cooldownTicks;
+                state.CooldownTicksRemaining = cooldownTicks; // 始终刷新冷却
             }
 
             ModEntry.SMonitor?.Log(
-                $"[AmbientBark] 玩家已与 {npcName} 对话，已中断 Bark 并锁定冷静期 {cooldownSeconds}s",
+                $"[AmbientBark] 玩家已与 {npcName} 交互，已中断 Bark 并锁定冷静期 {cooldownSeconds}s",
                 LogLevel.Debug);
         }
         else

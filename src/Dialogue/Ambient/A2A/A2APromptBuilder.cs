@@ -46,8 +46,6 @@ internal sealed class A2APromptBuilder
         if (Game1.player == null)
             return null;
 
-        PlayerStateScanner.Scan();
-
         bool isZh = IsChineseLanguage;
 
         // 角色名替换：中文模式下使用 NpcNameLocalizer 获得精确的本地化显示名字
