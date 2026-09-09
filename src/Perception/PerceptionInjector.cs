@@ -1,3 +1,56 @@
+// PerceptionInjector.cs
+// ═══════════════════════════════════════════════════════════════════════════
+// PERCEPTION INJECTION ARCHITECTURE
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// This file is responsible for building perception text blocks that inform the
+// NPC about recent events, ambient context, and player actions. It implements
+// a two-tier perception system:
+//
+// 1. Gossip Perceptions (Background Rumors)
+//    - Town-wide events and ambient social context
+//    - Injected into SystemPrompt (static cache layer)
+//    - Daily rotation with strict deduplication
+//    - Examples: marriages, new babies, festivals, mayor scandals
+//
+// 2. Local Perceptions (Immediate Context)
+//    - Events happening in NPC's immediate vicinity
+//    - Injected into CorePrompt (dynamic layer)
+//    - Split into strong directives and weak observations
+//
+// ───────────────────────────────────────────────────────────────────────────
+// LOCAL PERCEPTION TIERS:
+// ───────────────────────────────────────────────────────────────────────────
+//
+// TIER 1: Strong Directives (Immediate Events)
+//   +- Gift reception: "You just received a gift from the player"
+//      - Always triggers strong response
+//      - Never suppressed by routing flags
+//      - Consumed immediately after injection
+//      - Includes taste annotation (loved/liked/disliked/hated)
+//
+// TIER 2: Weak Observations (Contextual Background)
+//   +- Player eating food nearby
+//   +- Player fishing
+//   +- Witnessing someone else receive a gift
+//   +- Player appearance (hat, outfit, wedding dress)
+//   +- Player held item (ordinary items, suppressed in Turn 1+)
+//   +- Player buffs (drunk, exhausted, injured)
+//   +- Ambient details (pet, horse, bag full)
+//
+// ───────────────────────────────────────────────────────────────────────────
+// GIFT PROTECTION MECHANISM:
+// ───────────────────────────────────────────────────────────────────────────
+// Gift reactions are a core game mechanic and MUST NEVER be suppressed.
+//
+// Protection layers:
+// 1. Dedicated code path (giftPerceptions list, processed separately)
+// 2. Strong directive format ("[Immediate Event] You just received...")
+// 3. Independent return branch (if only gift, return immediately)
+// 4. Explicit comment blocks warning against future modification
+//
+// ═══════════════════════════════════════════════════════════════════════════
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -153,7 +206,21 @@ internal static class PerceptionInjector
                 lines.Add(entry);
             }
 
+            // 🔑 礼物感知注入后立即消费，防止多轮复读
             PerceptionManager.Instance.ConsumePerceptions(npcName, giftPerceptions);
+
+            // ════════════════════════════════════════════════════════════════════════════════
+            // 🔒 CRITICAL: 礼物感知穿透保护 - 以下逻辑确保礼物感知永不被路由屏蔽
+            //    即使 IncludeEnvironment/IncludeShortTermContext 为 false，
+            //    礼物感知也必须独立于路由控制，始终注入到 Prompt 中。
+            //    修改此逻辑前请确认：NPC 收到礼物后必须做出反应，这是核心游戏机制。
+            // ════════════════════════════════════════════════════════════════════════════════
+
+            // 🔒 如果只有礼物感知且无其他感知，直接返回（避免空的"目击到的近况"块）
+            if (!otherPerceptions.Any())
+            {
+                return string.Join("\n", lines);
+            }
         }
 
         // ── 其他近距离观察：弱感知形式 ──

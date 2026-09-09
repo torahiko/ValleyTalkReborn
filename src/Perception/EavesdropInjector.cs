@@ -11,16 +11,20 @@ namespace ValleytalkReborn
     /// </summary>
     internal static class EavesdropInjector
     {
-        public static void Inject(string npcName, Prompts prompts)
+        /// <summary>
+        /// Builds the eavesdrop context block for the given NPC.
+        /// Returns a formatted string ready to be injected into prompts, or empty string if no eavesdrop context exists.
+        /// </summary>
+        public static string BuildBlock(string npcName)
         {
-            if (string.IsNullOrEmpty(npcName) || prompts == null) return;
+            if (string.IsNullOrEmpty(npcName)) return string.Empty;
 
             var entries = DialogueHistoryManager.Instance.GetHistory(npcName)
                 .Where(e => e.DialogueType == "eavesdrop")
                 .TakeLast(2)
                 .ToList();
 
-            if (entries.Count == 0) return;
+            if (entries.Count == 0) return string.Empty;
 
             bool isZh = LocalizedContentManager.CurrentLanguageCode
                 .ToString()
@@ -36,12 +40,12 @@ namespace ValleytalkReborn
                 sb.AppendLine($"- {entry.Text}");
 
             sb.AppendLine("</eavesdrop_context>");
-
-            prompts.CorePrompt += "\n\n" + sb.ToString();
-
+            
             // ★ 核心落地：阅后即焚！
             // 一旦注入当前轮次的 Prompt，立刻从该 NPC 的记忆库中彻底抹除，绝不留到下一次交互。
             DialogueHistoryManager.Instance.ConsumeEavesdropEntries(npcName);
+            
+            return sb.ToString();
         }
     }
 }

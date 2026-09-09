@@ -1,4 +1,4 @@
-// DialogueBuilder.cs
+﻿// DialogueBuilder.cs
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -99,6 +99,15 @@ namespace ValleytalkReborn
             var character = GetCharacter(instance);
 
             DialogueContext context = GetContext(instance.Name) ?? GetBasicContext(instance);
+
+            // ── 🔑 [TURN TRACKING] 标记为连续对话（Turn 1+） ──
+            context.IsActiveTurn = true;
+
+            // ── 生成或复用会话 ID ──
+            if (string.IsNullOrEmpty(context.DialogueSessionId))
+            {
+                context.DialogueSessionId = $"{instance.Name}_{Game1.Date?.TotalDays ?? 0}_{DateTime.UtcNow.Ticks}";
+            }
 
             var fullHistory = context.ChatHistory.ToList();
 
@@ -234,6 +243,10 @@ namespace ValleytalkReborn
             var character = GetCharacter(instance);
             DialogueContext context = GetBasicContext(instance);
 
+            // ── 🔑 [TURN TRACKING] 送礼是独立事件，标记为新开场 ──
+            context.IsActiveTurn = false;
+            context.DialogueSessionId = $"{instance.Name}_Gift_{Game1.Date?.TotalDays ?? 0}_{DateTime.UtcNow.Ticks}";
+
             // Gift reactions are independent events — clear old chat history to avoid
             // unrelated prior dialogue polluting the prompt, but keep a synthetic
             // "player gave gift" line so downstream SessionCache/history retains
@@ -301,6 +314,10 @@ namespace ValleytalkReborn
             }
             var character = GetCharacter(instance);
             DialogueContext context = GetBasicContext(instance);
+
+            // ── 🔑 [TURN TRACKING] 新开场对话，标记为 Turn 0 ──
+            context.IsActiveTurn = false;
+
             var splitKey = dialogueKey.Split('_');
             var firstElement = splitKey.Any() ? splitKey[0] : "";
             if (Enum.TryParse<RandomAction>(firstElement, true, out var randomAction))

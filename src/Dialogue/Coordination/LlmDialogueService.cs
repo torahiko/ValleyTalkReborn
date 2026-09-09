@@ -86,15 +86,21 @@ public class LlmDialogueService
 
                 prompts.PendingLocalPerceptionBlock = PerceptionInjector.BuildLocalBlock(character.Name);
 
-                // S4.5: 偷听短期上下文（新增）
-                EavesdropInjector.Inject(character.Name, prompts);
+                // ══════════════════════════════════════════════════════════════════════
+                // S4.5: 偷听短期上下文（改为字段注入）
+                // ══════════════════════════════════════════════════════════════════════
+                prompts.PendingEavesdropBlock = EavesdropInjector.BuildBlock(character.Name);
 
-                // S5: 配偶深夜等待事件（极低频触发，注入 CorePrompt 末尾，不影响 SystemPrompt 缓存）
+                // ══════════════════════════════════════════════════════════════════════
+                // S5: 配偶深夜等待事件（改为字段注入）
+                // ══════════════════════════════════════════════════════════════════════
                 if (SpouseWaitingEvent.TryConsumeSpouseDialogue(character.Name))
                 {
                     string porchCtx = SpouseWaitingEvent.GetPorchContext();
                     if (!string.IsNullOrEmpty(porchCtx))
-                        prompts.CorePrompt += "\n\n" + SpouseWaitingEvent.BuildStatusPrompt(porchCtx);
+                    {
+                        prompts.PendingSpouseWaitingBlock = SpouseWaitingEvent.BuildStatusPrompt(porchCtx);
+                    }
                 }
             }
             catch (Exception ex)
@@ -105,14 +111,15 @@ public class LlmDialogueService
                 return new string[] { "..." };
             }
 
-            // ── S4.6: 近期互动余韵（延迟消费） ──
-            // 必须在所有可能抛出异常的组装逻辑成功后、网络请求发出前执行。
-            // 避免 Prompt 组装失败或用户提前取消导致一次性 Echo 被无声吞没。
-            string echoBlock = ImmediateEchoStore.BuildEchoBlock(
+            // ══════════════════════════════════════════════════════════════════════
+            // S4.6: 近期互动余韵（改为字段注入）
+            // ══════════════════════════════════════════════════════════════════════
+            // 注意：Echo 是延迟消费的一次性内容（如共进晚餐的余韵），
+            //       必须在 Prompt 组装成功后、网络请求发出前执行，
+            //       避免因 Prompt 组装失败或用户提前取消导致 Echo 被无声吞没。
+            prompts.PendingEchoBlock = ImmediateEchoStore.BuildEchoBlock(
                 character.Name,
                 character.StardewNpc?.currentLocation?.Name);
-            if (!string.IsNullOrEmpty(echoBlock))
-                prompts.CorePrompt += "\n\n" + echoBlock;
 
             // ── 终局出口去重：优先保留下方 CorePrompt 的即时条目，剔除上方 SystemPrompt 的冗余条目 ──
             PromptDeduplicator.DeduplicatePrompts(prompts);
@@ -155,6 +162,27 @@ public class LlmDialogueService
                     Log.Debug($"Streaming cancelled for {character.Name}.");
                     character.CurrentDialogueCts = null;
                     ModEntry.CancelButtonPluginInstance?.SetActiveCharacter(null);
+                  
+                    // ══════════════════════════════════════════════════════════════════════
+                    // 🔧 [PERCEPTION CLEANUP] 即使取消，也要清理已注入的感知，避免重复
+                    // ══════════════════════════════════════════════════════════════════════
+                    // 业务逻辑：
+                    // 1. Prompt 已经组装完成（包含送礼、吃东西等感知）
+                    // 2. 这些感知已经"展示"给 LLM（即使 LLM 未返回完整响应）
+                    // 3. 如果不清理，下次对话会重复注入，导致"你刚刚收到礼物"反复出现
+                    // 4. 清理操作幂等且安全，不会影响正常流程
+                    // ══════════════════════════════════════════════════════════════════════
+                    try
+                    {
+                        DialogueHistoryManager.Instance?.ConsumeEavesdropEntries(character.Name);
+                        PerceptionManager.Instance?.MarkAsConsolidated(character.Name);
+                        PerceptionManager.Instance?.Evict("Eat");
+                    }
+                    catch (Exception cleanupEx)
+                    {
+                        Log.Warning($"Perception cleanup failed after streaming cancellation: {cleanupEx.Message}");
+                    }
+                  
                     return new[] { "..." };
                 }
 
@@ -308,6 +336,19 @@ public class LlmDialogueService
                 {
                     // User-initiated cancellation, silent handling, no error logging
                     Log.Debug($"AI request cancelled for {character.Name}.");
+                  
+                    // 🔧 清理已注入的感知，避免重复（与流式路径保持一致）
+                    try
+                    {
+                        DialogueHistoryManager.Instance?.ConsumeEavesdropEntries(character.Name);
+                        PerceptionManager.Instance?.MarkAsConsolidated(character.Name);
+                        PerceptionManager.Instance?.Evict("Eat");
+                    }
+                    catch (Exception cleanupEx)
+                    {
+                        Log.Warning($"Perception cleanup failed after cancellation: {cleanupEx.Message}");
+                    }
+                  
                     resultsInternal = new string[] { "..." };
                     results = resultsInternal;
                     break; // Exit retry loop, no further retries
@@ -674,21 +715,102 @@ public class LlmDialogueService
         };
 
         /// <summary>
-        /// 跨段去重：优先保留下方 CorePrompt 的即时条目，剔除上方 SystemPrompt 中的冗余条目
+        /// 智能去重：只对动态内容（CorePrompt）去重，保持静态内容（SystemPrompt）完全不变。
         /// </summary>
+        /// <remarks>
+        /// <para><strong>KV-Cache 保护原则：</strong></para>
+        /// <para>1. SystemPrompt 必须保持完全静态，任何修改都会导致前缀缓存失效</para>
+        /// <para>2. 前缀缓存的价值在于多轮对话中 SystemPrompt 一字不变，LLM 可复用已计算的 KV 状态</para>
+        /// <para>3. 如果 SystemPrompt 和 CorePrompt 中存在重复内容（如 gossip），应在注入阶段就避免重复</para>
+        /// <para>
+        /// <strong>为何不直接删除去重器？</strong><br/>
+        /// 保留此方法作为防御性编程手段，捕获潜在的动态注入错误（如未来新增模块意外重复注入）。
+        /// 但去重操作仅限于 CorePrompt，绝不触碰 SystemPrompt。
+        /// </para>
+        /// </remarks>
         public static void DeduplicatePrompts(Prompts prompts)
         {
             if (prompts == null) return;
 
             var seenEntries = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            // 1. 先收集 CorePrompt（下方即时条目获得优先保留权）
+            // ══════════════════════════════════════════════════════════════════════
+            // [KV-CACHE PROTECTION] 只对 CorePrompt 去重，SystemPrompt 保持完全静态
+            // ══════════════════════════════════════════════════════════════════════
+          
+            // 1. 先收集 SystemPrompt 中的条目（用于检测重复，但不修改 SystemPrompt）
+            int systemEntriesCount = seenEntries.Count;
+            CollectEntriesWithoutModifying(prompts.SystemPrompt, seenEntries);
+            systemEntriesCount = seenEntries.Count - systemEntriesCount;
+
+            // 2. 只清洗 CorePrompt（若与 SystemPrompt 撞车，CorePrompt 中的副本被移除）
+            string originalCorePrompt = prompts.CorePrompt;
             prompts.CorePrompt = DeduplicateInternal(prompts.CorePrompt, seenEntries);
 
-            // 2. 再清洗 SystemPrompt（若与 CorePrompt 撞车，上方 SystemPrompt 中的副本被移除）
-            prompts.SystemPrompt = DeduplicateInternal(prompts.SystemPrompt, seenEntries);
+            // 3. SystemPrompt 完全不动，保持前缀缓存有效性
+            // prompts.SystemPrompt 保持原样
+
+            // 4. Debug 日志：记录去重结果
+            if (ModEntry.Config?.Debug ?? false)
+            {
+                int coreEntriesRemoved = 0;
+                if (!string.IsNullOrEmpty(originalCorePrompt))
+                {
+                    int originalLines = originalCorePrompt.Split('\n').Count(l => l.TrimStart().StartsWith("- "));
+                    int finalLines = prompts.CorePrompt.Split('\n').Count(l => l.TrimStart().StartsWith("- "));
+                    coreEntriesRemoved = originalLines - finalLines;
+                }
+
+                if (coreEntriesRemoved > 0 || systemEntriesCount > 0)
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[PromptDeduplicator] SystemPrompt entries: {systemEntriesCount}, " +
+                        $"CorePrompt duplicates removed: {coreEntriesRemoved}",
+                        StardewModdingAPI.LogLevel.Debug);
+                }
+            }
         }
 
+        /// <summary>
+        /// 只收集 SystemPrompt 中的条目到 seenEntries，不做任何修改。
+        /// 用于去重时让 CorePrompt 知晓 SystemPrompt 已有哪些内容，但绝不触碰 SystemPrompt 本身。
+        /// </summary>
+        private static void CollectEntriesWithoutModifying(string rawText, HashSet<string> seenEntries)
+        {
+            if (string.IsNullOrWhiteSpace(rawText))
+                return;
+
+            using (var reader = new StringReader(rawText))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    string trimmed = line.TrimStart();
+
+                    if (trimmed.StartsWith("- ", StringComparison.Ordinal))
+                    {
+                        bool isProtected = false;
+                        for (int i = 0; i < ProtectedPrefixes.Length; i++)
+                        {
+                            if (trimmed.StartsWith(ProtectedPrefixes[i], StringComparison.OrdinalIgnoreCase))
+                            {
+                                isProtected = true;
+                                break;
+                            }
+                        }
+
+                        if (!isProtected)
+                        {
+                            string content = trimmed.Substring(2).Trim();
+                            if (content.Length >= 4)
+                            {
+                                seenEntries.Add(content); // 只收集，不修改任何内容
+                            }
+                        }
+                    }
+                }
+            }
+        }
         private static string DeduplicateInternal(string rawText, HashSet<string> seenEntries)
         {
             if (string.IsNullOrWhiteSpace(rawText))

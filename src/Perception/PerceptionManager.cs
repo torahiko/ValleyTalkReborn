@@ -314,6 +314,27 @@ internal class PerceptionManager
                 .OrderByDescending(e => ComputeSalience(e, npc))
                 .ToList();
 
+            // ── 🔍 Debug 日志：记录审美疲劳静默 ──
+            if (ModEntry.Config?.Debug ?? false)
+            {
+                var silencedItems = _playerStateBucket
+                    .Concat(_activityBucket)
+                    .Where(e => e.Key == "PlayerActiveItem"
+                             && !string.IsNullOrEmpty(e.ItemId)
+                             && HasNoticedItemToday(npcName, e.ItemId))
+                    .Select(e => e.ItemId)
+                    .Distinct()
+                    .ToList();
+
+                if (silencedItems.Any())
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[PerceptionManager] Aesthetic fatigue for {npcName}: " +
+                        $"Suppressed {silencedItems.Count} already-noticed items ({string.Join(", ", silencedItems.Take(3))})",
+                        StardewModdingAPI.LogLevel.Debug);
+                }
+            }
+
             if (validCandidates.Count == 0) return new List<PerceptionEntry>();
 
             var result = new List<PerceptionEntry>();

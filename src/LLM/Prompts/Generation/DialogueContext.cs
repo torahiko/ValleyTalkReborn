@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -37,6 +37,22 @@ public class DialogueContext
     public string ChatID { get; init; }
     public List<ConversationElement> ChatHistory { get; set; } = new List<ConversationElement>();
     public bool LastLineIsPlayerInput { get; set; } = false; // Tracks if the last line came from the player
+
+    // ── 【新增】是否为当前活跃对话框内的连续交互 ──
+    /// <summary>
+    /// Indicates whether this is a continuation within the currently active dialogue box.
+    /// TRUE = Turn 1+ (player is continuing the conversation within the same dialogue session).
+    /// FALSE = Turn 0 (player just opened dialogue / NPC approached).
+    /// </summary>
+    public bool IsActiveTurn { get; set; } = false;
+
+    // ── 【新增】对话框会话 ID（用于识别同一对话框内的多轮交互） ──
+    /// <summary>
+    /// Unique identifier for the current dialogue session.
+    /// Changes each time the dialogue box is closed and reopened.
+    /// Used to track multi-turn continuity within a single session.
+    /// </summary>
+    public string DialogueSessionId { get; set; }
 
     // 【新增】用于接收和传递 ContextRouter 动态计算出的路由标志位
     public ContextFlags RoutingFlags { get; set; } = new ContextFlags 
