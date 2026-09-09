@@ -59,6 +59,13 @@ internal sealed class A2ASessionManager
     /// </summary>
     private readonly Dictionary<string, int> _a2aPostSessionCooldowns = new Dictionary<string, int>();
 
+    /// <summary>
+    /// 每对 NPC 上一轮会话的最后一句台词，用于跨轮防复读注入。
+    /// Key 为 pairKey（与 _a2aCooldowns 相同），Value 为尾句文本。
+    /// 换天时清空。
+    /// </summary>
+    private readonly Dictionary<string, string> _a2aPreviousTopics = new Dictionary<string, string>();
+
     private int _a2aSessionGeneration = 0;
 
     private readonly ConcurrentQueue<DialogueModels.A2ACompletedResult> _pendingA2AResults =
@@ -296,6 +303,7 @@ internal sealed class A2ASessionManager
         _a2aCooldowns.Clear();
         _a2aPersonalCooldowns.Clear();
         _a2aPostSessionCooldowns.Clear();
+        _a2aPreviousTopics.Clear();
 
         // 排空异步回传残留，防止次日处理到前日滞留的过期结果
         while (_pendingA2AResults.TryDequeue(out _)) { }
@@ -313,6 +321,7 @@ internal sealed class A2ASessionManager
         _a2aCooldowns.Clear();
         _a2aPersonalCooldowns.Clear();
         _a2aPostSessionCooldowns.Clear();
+        _a2aPreviousTopics.Clear();
 
         while (_pendingA2AResults.TryDequeue(out _)) { }
         A2APromptBuilder.ResetGossipCache();
@@ -434,7 +443,8 @@ internal sealed class A2ASessionManager
             if (session.RoundsLeft <= 0 && session.Script.Count == 0)
             {
                 string pairKey = DialogueUtilities.MakePairKey(session.ParticipantNames);
-                _a2aCooldowns[pairKey] = A2A_COOLDOWN_TICKS;
+                // 2 人配对拉长冷却；3+ 人群体维持原时长（群体再聚集概率低，保留活跃度）
+                _a2aCooldowns[pairKey] = session.ParticipantNames.Count == 2 ? 14400 : 7200;
 
                 foreach (var name in session.ParticipantNames)
                 {
@@ -452,6 +462,10 @@ internal sealed class A2ASessionManager
                         session.ParticipantNames,
                         session.RecentSpokenLines,
                         locationName);
+
+                    // 记录尾句供下轮防复读使用（只在正常结束路径写入，打断路径不写）
+                    string pairKeyForTopic = DialogueUtilities.MakePairKey(session.ParticipantNames);
+                    _a2aPreviousTopics[pairKeyForTopic] = session.RecentSpokenLines.Last().Item2;
                 }
 
                 InterruptA2ASession(session, "会话结束", applyHalfPersonalCooldown: false);
@@ -462,7 +476,9 @@ internal sealed class A2ASessionManager
             {
                 if (session.TryStartRequest())
                 {
-                    var request = _promptBuilder.Build(session);
+                    string pairKeyForPrev = DialogueUtilities.MakePairKey(session.ParticipantNames);
+                    _a2aPreviousTopics.TryGetValue(pairKeyForPrev, out string prevTopic);
+                    var request = _promptBuilder.Build(session, prevTopic);
 
                     if (request == null)
                     {

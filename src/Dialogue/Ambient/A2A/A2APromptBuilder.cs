@@ -34,7 +34,9 @@ internal sealed class A2APromptBuilder
     /// <summary>
     /// 构建 A2A 请求。必须在主线程调用。
     /// </summary>
-    internal DialogueModels.A2ARequest Build(DialogueModels.A2ASession session)
+    internal DialogueModels.A2ARequest Build(
+        DialogueModels.A2ASession session,
+        string previousTopicLine = null)
     {
         if (session == null) return null;
 
@@ -54,10 +56,21 @@ internal sealed class A2APromptBuilder
             .ToList();
 
         // 收集 Name、displayName 以及中文名，确保 SceneContextBuilder 排除自身
+        // 同时排除参与者自身与玩家的所有名字/称谓，防止玩家泄漏进场景物体列表
+        var playerNames = new List<string>();
+        if (Game1.player != null)
+        {
+            playerNames.Add(Game1.player.Name);
+            playerNames.Add(Game1.player.displayName);
+            playerNames.Add("Farmer");
+            if (isZh) { playerNames.Add("农夫"); }
+        }
+
         var excludeNames = participants
-            .SelectMany(n => isZh 
-                ? new[] { n.Name, n.displayName, NpcNameLocalizer.GetZhName(n.Name) } 
+            .SelectMany(n => isZh
+                ? new[] { n.Name, n.displayName, NpcNameLocalizer.GetZhName(n.Name) }
                 : new[] { n.Name, n.displayName })
+            .Concat(playerNames)
             .Where(s => !string.IsNullOrEmpty(s))
             .Distinct()
             .ToList();
@@ -91,24 +104,13 @@ internal sealed class A2APromptBuilder
         string sceneBlock = SceneContextBuilder.BuildSceneBlock(
             participants[0],
             radiusTiles: 5,
-            maxItems: 5,
+            maxItems: 2,
             excludeNames: excludeNames.ToArray());
 
-        string locationName =
-            Game1.player?.currentLocation?.Name ?? (isZh ? "山谷" : "the valley");
-
         string gossip = TryGetRecentGossip();
-
-        if (string.IsNullOrWhiteSpace(gossip))
-        {
-            gossip = isZh
-                ? $"玩家最近一直在探索{locationName}。"
-                : $"The player has been exploring {locationName} lately.";
-        }
-        else if (isZh)
-        {
+        if (!string.IsNullOrWhiteSpace(gossip) && isZh)
             gossip = NpcNameLocalizer.LocalizeNamesInText(gossip);
-        }
+        // gossip 为空时整行不输出，避免空标签污染模型注意力
 
         string lengthDesc = isZh ? "单句口语（10~25字）" : "snappy spoken lines (10-25 words)";
 
@@ -116,8 +118,8 @@ internal sealed class A2APromptBuilder
         if (Game1.timeOfDay >= 2200)
         {
             lateNightBlock = isZh
-                ? "- 当前时间：深夜/酒吧打烊前，语气带点疲惫或微醺。"
-                : "- Current Time: Late night / near closing time. The tone carries slight fatigue, coziness, or a mellow buzz.";
+                ? "- 当前时间：深夜/酒吧打烊前。"
+                : "- Current Time: Late night / near closing time.";
         }
 
         string allNames = string.Join(isZh ? "、" : ", ", displayNames);
@@ -129,32 +131,35 @@ internal sealed class A2APromptBuilder
         foreach (var pl in personaLines)
             sysSb.AppendLine(pl);
 
-        var relToPlayer = participants
-            .Select(n => GetRelationshipLabel(n, isZh, forA2A: true))
-            .Where(r => !string.IsNullOrEmpty(r))
-            .ToList();
+        string interRel = GetInterNpcRelationships(participants, isZh);
+        if (isZh && !string.IsNullOrEmpty(interRel))
+            interRel = NpcNameLocalizer.LocalizeNamesInText(interRel);
 
-        if (relToPlayer.Count > 0)
+        // 多配偶同住事实：仅当全员均为配偶时注入，与 interRel 是否存在完全解耦
+        string cohabitLine = null;
+        if (participants.All(IsSpouse))
         {
-            sysSb.AppendLine(isZh ? "## [与玩家的关系]" : "## [Relationship with Player]");
+            bool inFarmhouse = participants[0]?.currentLocation is StardewValley.Locations.FarmHouse
+                            || participants[0]?.currentLocation is StardewValley.Locations.IslandFarmHouse
+                            || (participants[0]?.currentLocation?.Name ?? "").Contains("Cabin", StringComparison.OrdinalIgnoreCase);
 
-            foreach (var r in relToPlayer)
-                sysSb.AppendLine(r);
-
-            sysSb.AppendLine();
+            cohabitLine = isZh
+                ? (inFarmhouse
+                    ? "- 双方均已与农夫结婚，共同居住在此处农舍。"
+                    : "- 双方均已与农夫结婚，共同生活在农场。")
+                : (inFarmhouse
+                    ? "- Both are married to the farmer and share this farmhouse."
+                    : "- Both are married to the farmer and share life on the farm.");
         }
 
-        string interRel = GetInterNpcRelationships(participants, isZh);
-
-        if (!string.IsNullOrEmpty(interRel))
+        // 只要 interRel 或 cohabitLine 任一有内容，就输出该段落
+        if (!string.IsNullOrEmpty(interRel) || cohabitLine != null)
         {
-            if (isZh)
-            {
-                interRel = NpcNameLocalizer.LocalizeNamesInText(interRel);
-            }
-
             sysSb.AppendLine(isZh ? "## [参与者之间的关系]" : "## [Relationships Among Participants]");
-            sysSb.AppendLine(interRel);
+            if (!string.IsNullOrEmpty(interRel))
+                sysSb.AppendLine(interRel);
+            if (cohabitLine != null)
+                sysSb.AppendLine(cohabitLine);
             sysSb.AppendLine();
         }
 
@@ -166,8 +171,21 @@ internal sealed class A2APromptBuilder
         if (!string.IsNullOrEmpty(lateNightBlock))
             userSb.AppendLine(lateNightBlock);
         userSb.AppendLine();
-        userSb.AppendLine($"Recent town gossip: {gossip}");
+        if (!string.IsNullOrWhiteSpace(gossip))
+            userSb.AppendLine($"Recent town gossip: {gossip}");
         userSb.AppendLine();
+
+        // 跨轮防复读：如有上轮尾句，轻描淡写带过，促使模型切换新话题切面
+        if (!string.IsNullOrWhiteSpace(previousTopicLine))
+        {
+            string quoted = isZh
+                ? "“" + previousTopicLine + "”"
+                : "\"" + previousTopicLine + "\"";
+            userSb.AppendLine(isZh
+                ? $"（你们不久前刚聊过，刚才最后提到的是：{quoted}。本次交谈请自然开启新话题，避免重复上述内容。）"
+                : $"(You two recently had a conversation; the last thing mentioned was: {quoted}. Start a fresh topic this time and avoid repeating it.)");
+            userSb.AppendLine();
+        }
 
         userSb.Append(BuildA2AConversationGuidance(topicHook, lengthDesc, isZh));
         userSb.AppendLine();
@@ -356,7 +374,8 @@ internal sealed class A2APromptBuilder
    private static string GenerateConversationTopic(List<NPC> participants, bool isChinese)
 {
     int time = Game1.timeOfDay;
-    var loc = Game1.player?.currentLocation;
+    // 使用参与者自身位置，而非玩家位置
+    var loc = participants[0]?.currentLocation ?? Game1.player?.currentLocation;
     string locName = loc?.Name ?? "";
     bool isOutdoors = loc?.IsOutdoors ?? false;
     string season = Game1.currentSeason?.ToLowerInvariant() ?? "spring";
@@ -380,8 +399,10 @@ internal sealed class A2APromptBuilder
         _ => "the current seasonal atmosphere"
     };
 
-    bool isHome = locName.Contains("Farm", StringComparison.OrdinalIgnoreCase) || 
-                  locName.Contains("Cabin", StringComparison.OrdinalIgnoreCase);
+    // 精确类型匹配，避免 FarmCave / Greenhouse 等误命中
+    bool isHome = loc is StardewValley.Locations.FarmHouse
+               || loc is StardewValley.Locations.IslandFarmHouse
+               || locName.Contains("Cabin", StringComparison.OrdinalIgnoreCase);
 
     if (isChinese)
     {
@@ -389,62 +410,57 @@ internal sealed class A2APromptBuilder
         if (isHome)
         {
             if (time < 1100)
-                return $"清晨的农舍，伴随着{seasonMoodZh}。围绕刚睡醒的困倦、屋里的温度、或是今天各自的打算随口闲聊。";
+                return $"清晨的农舍室内，{seasonMoodZh}，炉火刚生起来。围绕屋里的温度、今天各自的日程或早晨的动静随口搭话。";
             if (time >= 2100)
-                return "深夜的农舍，白天的活计告一段落。聊聊身体的疲惫感、对炉火或夜宵的渴望，享受安歇前的松弛时光。";
-            return "在农舍里的随性日常。吐槽一下屋里的琐碎小事、分享此刻偷闲的心情，或是顺着手头的动静搭两句话。";
+                return $"深夜的农舍，屋外{seasonMoodZh}。围绕今天的收尾、身体状态或明天打算随口搭话。";
+            return $"农舍室内，{seasonMoodZh}。围绕当前的炉火温度、屋里的动静或手头各自的事情随口搭话。";
         }
 
-        // ── 聚会与休闲场所 ──
         if (locName.Contains("Saloon", StringComparison.OrdinalIgnoreCase))
-            return "星之果实酒吧的聚会时光。就着手中的饮品、周遭喧闹的谈笑声或一天的疲惫，放松地调侃几句。";
+            return $"星之果实酒吧内，{seasonMoodZh}，酒吧背景杂音连绵。围绕今天的行程、手里的饮品或镇上的近况随口搭话。";
 
         if (locName.Contains("Club", StringComparison.OrdinalIgnoreCase) || locName.Contains("CommunityCenter", StringComparison.OrdinalIgnoreCase))
-            return "社区中心宽敞整洁的室内。聊聊这里的开阔安静、走动时的脚步声，或是享受这一刻的闲适。";
+            return "社区中心宽敞的室内，脚步声回响。围绕这里的宽敞安静或各自的来意随口搭话。";
 
-        // ── 商业与工作场所 ──
         if (locName.Contains("SeedShop", StringComparison.OrdinalIgnoreCase) || locName.Contains("GeneralStore", StringComparison.OrdinalIgnoreCase))
-            return "皮埃尔杂货店内。顺着货架间的过道、柜台的动静，或是各自打算采买的东西随意搭话。";
+            return "皮埃尔杂货店内，货架与柜台之间。围绕各自要采买的东西或店里的陈设随口搭话。";
 
         if (locName.Contains("Hospital", StringComparison.OrdinalIgnoreCase) || locName.Contains("Clinic", StringComparison.OrdinalIgnoreCase))
-            return "哈维诊所安静的候诊室。压低声音聊聊近来的身体状态、屋里的药草消毒水味，或是单纯打发等待的时间。";
+            return "哈维诊所安静的候诊室，带着淡淡药草气味。围绕近来的身体状态或等候时间随口搭话。";
 
         if (locName.Contains("ArchaeologyHouse", StringComparison.OrdinalIgnoreCase) || locName.Contains("Library", StringComparison.OrdinalIgnoreCase))
-            return "博物馆兼图书馆内。在整齐的书架与展柜间放低嗓音，聊聊这里的清静、翻书声或某个引起好奇的陈设。";
+            return "博物馆兼图书馆内，书架与展柜安静陈列。围绕某个展陈或各自手边的事情轻声搭话。";
 
         if (locName.Contains("ScienceHouse", StringComparison.OrdinalIgnoreCase) || locName.Contains("Carpenter", StringComparison.OrdinalIgnoreCase))
-            return "罗宾的木匠工坊内。伴随着周围木材的气味或敲打加工的动静，随口聊聊家里需要修整的地方或闲聊近况。";
+            return "罗宾的木匠工坊内，木材气味与加工动静交织。围绕房屋修整事宜或各自近况随口搭话。";
 
         if (locName.Contains("AnimalShop", StringComparison.OrdinalIgnoreCase) || locName.Contains("Ranch", StringComparison.OrdinalIgnoreCase))
-            return "玛妮的牧场小屋。感受着屋里的暖意与牲畜饲料的气味，聊聊牲畜的动静或打理农庄的琐碎杂事。";
+            return "玛妮的牧场小屋内，传来牲畜动静与饲料气味。围绕牲畜状态或农场打理随口搭话。";
 
         if (locName.Contains("Blacksmith", StringComparison.OrdinalIgnoreCase))
-            return "克林特的铁匠铺。伴随着铁砧与炉火的阵阵热浪，就着刺耳的金属敲击声或工具修整随口闲聊两句。";
+            return "克林特的铁匠铺内，炉火正旺，铁砧敲击声阵阵。围绕工具或手头活计随口搭话。";
 
-        // ── 户外区域 ──
         if (isOutdoors)
         {
             if (locName.Contains("Beach", StringComparison.OrdinalIgnoreCase))
-                return $"海风拂面的沙滩边。伴随着{seasonMoodZh}，踩着潮湿沙子随口聊聊浪花声或眼前的开阔景色。";
+                return $"海边沙滩，{seasonMoodZh}，浪声连绵。围绕眼前景色或各自的来意随口搭话。";
 
             if (locName.Contains("Forest", StringComparison.OrdinalIgnoreCase))
-                return $"树影斑驳的煤矿森林。伴随着{seasonMoodZh}，踩着落叶与泥土小径，聊聊林间的清幽、鸟鸣动静或散步的惬意。";
+                return $"煤矿森林树影间，{seasonMoodZh}，脚下是落叶与泥土小径。围绕林间动静或行程随口搭话。";
 
             if (locName.Contains("Mountain", StringComparison.OrdinalIgnoreCase))
-                return $"山道湖畔的开阔处。伴随着{seasonMoodZh}与山风，随口聊聊清澈的湖水、微凉的山路或当下的脚力。";
+                return $"山道湖畔，{seasonMoodZh}，山风阵阵。围绕湖景、山路或各自的目的地随口搭话。";
 
             if (locName.Contains("Mine", StringComparison.OrdinalIgnoreCase))
-                return "昏暗清凉的矿洞入口。感受着岩壁传来的阵阵凉气与回音，随口提醒注意脚下或聊聊里面的幽深。";
+                return "矿洞入口，岩壁传来阵阵凉气与回响。围绕入洞准备或脚下安全随口搭话。";
 
             if (locName.Contains("Railroad", StringComparison.OrdinalIgnoreCase))
-                return $"空旷孤寂的铁轨尽头。伴随着{seasonMoodZh}与穿堂风，就着延展向远方的铁轨与高处的微凉。";
+                return $"铁轨延伸处，{seasonMoodZh}，穿堂风阵阵。围绕远处景色或各自的来意随口搭话。";
 
-            // 鹈鹕镇主街道兜底
-            return $"在镇上街道不期而遇。伴随着{seasonMoodZh}，以熟络自然的口吻开启一段短促的街头交谈。";
+            return $"镇上街道，{seasonMoodZh}，路过偶遇。围绕今天的行程或路上所见随口搭话。";
         }
 
-        // ── 通用室内兜底 ──
-        return "在室内偶遇。就着当前的场所氛围与各自手头正在留意的事情，随性搭几句话。";
+        return "室内偶遇，当前场所的氛围静默。围绕眼前动静或各自手头的事情随口搭话。";
     }
     else
     {
@@ -452,67 +468,72 @@ internal sealed class A2APromptBuilder
         if (isHome)
         {
             if (time < 1100)
-                return $"Morning in the farmhouse amid {seasonMoodEn}. Casual talk driven by grogginess, room temperature, or thoughts about the day ahead.";
+                return $"Morning in the farmhouse, {seasonMoodEn}, fire just getting started. Offhand remarks about the room temperature, the day's schedule, or the morning's stirrings.";
             if (time >= 2100)
-                return "Late night winding down at the farmhouse. Relaxed banter about sore muscles, craving a late bite, or savoring the quiet before bed.";
-            return "Casual domestic moments inside. Relaxed banter about minor household clutter, an idle afternoon mood, or whatever is close at hand.";
-        } 
+                return $"Late night in the farmhouse, {seasonMoodEn} outside. Offhand remarks about winding down, how the body feels, or tomorrow's plans.";
+            return $"Inside the farmhouse, {seasonMoodEn}. Offhand remarks about the fire's warmth, household goings-on, or whatever each is occupied with.";
+        }
 
-        // ── Hangouts & Social Spots ──
         if (locName.Contains("Saloon", StringComparison.OrdinalIgnoreCase))
-            return "Hanging out at the Stardrop Saloon. Chatting over drinks, background chatter, or unwinding from the day.";
+            return $"Inside the Stardrop Saloon, {seasonMoodEn}, background noise of the bar. Offhand remarks about the day's errands, drinks in hand, or recent town happenings.";
 
         if (locName.Contains("Club", StringComparison.OrdinalIgnoreCase) || locName.Contains("CommunityCenter", StringComparison.OrdinalIgnoreCase))
-            return "Inside the airy Community Center. Casual conversation sparked by the stillness, echoing footsteps, or taking a relaxed breather.";
+            return "Inside the spacious Community Center, footsteps echoing. Offhand remarks about the quiet openness or why they stopped by.";
 
-        // ── Town Shops & Workplaces ──
         if (locName.Contains("SeedShop", StringComparison.OrdinalIgnoreCase) || locName.Contains("GeneralStore", StringComparison.OrdinalIgnoreCase))
-            return "Inside Pierre's General Store. Offhand comments browsing the aisles, listening to register chatter, or errands yet to run.";
+            return "Inside Pierre's General Store, between shelves and counter. Offhand remarks about what each is shopping for or the shop's displays.";
 
         if (locName.Contains("Hospital", StringComparison.OrdinalIgnoreCase) || locName.Contains("Clinic", StringComparison.OrdinalIgnoreCase))
-            return "Harvey's quiet waiting room. Lowering voices to chat about everyday health, the clean herbal smell, or passing the time.";
+            return "Harvey's quiet waiting room with a faint herbal scent. Offhand remarks about recent health or the wait.";
 
         if (locName.Contains("ArchaeologyHouse", StringComparison.OrdinalIgnoreCase) || locName.Contains("Library", StringComparison.OrdinalIgnoreCase))
-            return "Inside the library and museum. Keeping tones hushed amidst the shelves, idle curiosity about displays, or enjoying the calm.";
+            return "Inside the library and museum, shelves and display cases quietly arranged. Soft remarks about an exhibit or whatever each has at hand.";
 
         if (locName.Contains("ScienceHouse", StringComparison.OrdinalIgnoreCase) || locName.Contains("Carpenter", StringComparison.OrdinalIgnoreCase))
-            return "Robin's carpentry shop. Banter surrounded by sawdust scents and workbench sounds, touching on house upkeep or casual gossip.";
+            return "Robin's carpentry shop, wood scent and work sounds filling the space. Offhand remarks about house repairs or catching up.";
 
         if (locName.Contains("AnimalShop", StringComparison.OrdinalIgnoreCase) || locName.Contains("Ranch", StringComparison.OrdinalIgnoreCase))
-            return "Marnie's ranch parlor. Grounded by indoor warmth and livestock sounds outside, trading remarks on barn chores or farm life.";
+            return "Marnie's ranch parlor, livestock sounds and feed smells drifting in. Offhand remarks about the animals or farm upkeep.";
 
         if (locName.Contains("Blacksmith", StringComparison.OrdinalIgnoreCase))
-            return "Clint's blacksmith shop. Shouting over glowing forge heat and striking metal, talking about stubborn tools or work fatigue.";
+            return "Clint's blacksmith shop, forge blazing, hammer on anvil ringing. Offhand remarks about tools or current work.";
 
-        // ── Outdoor Locations ──
         if (isOutdoors)
         {
             if (locName.Contains("Beach", StringComparison.OrdinalIgnoreCase))
-                return $"Along the shore with sea air and {seasonMoodEn}. Casual talk inspired by breaking waves, damp sand, or the open horizon.";
+                return $"Along the beach, {seasonMoodEn}, waves murmuring. Offhand remarks about the scenery or why each came down here.";
 
             if (locName.Contains("Forest", StringComparison.OrdinalIgnoreCase))
-                return $"Under the leafy canopy of Cindersap Forest. Grounded in {seasonMoodEn}, rambling dirt paths, bird calls, or peaceful quiet.";
+                return $"Under the tree canopy of Cindersap Forest, {seasonMoodEn}, dirt paths underfoot. Offhand remarks about the woods or the day's errands.";
 
             if (locName.Contains("Mountain", StringComparison.OrdinalIgnoreCase))
-                return $"By the mountain lakeside. Spurred by mountain gusts, {seasonMoodEn}, clear lake waters, or taking a stroll along the slope.";
+                return $"By the mountain lakeside, {seasonMoodEn}, mountain breezes. Offhand remarks about the lake view, trail, or where each is headed.";
 
             if (locName.Contains("Mine", StringComparison.OrdinalIgnoreCase))
-                return "The cool, dim mouth of the Mines. Banter stirred by the chilly draft from the depths, echoing rocks, or caution on the steps.";
+                return "At the mine entrance, cool drafts and echoes from the rock walls. Offhand remarks about gearing up or footing safety.";
 
             if (locName.Contains("Railroad", StringComparison.OrdinalIgnoreCase))
-                return $"The empty, breezy railroad stretch. Light remarks colored by {seasonMoodEn}, distant treelines, and open skies.";
+                return $"Along the railroad stretch, {seasonMoodEn}, crosswinds blowing. Offhand remarks about the distant scenery or why each came this way.";
 
-            // Town Center fallback
-            return $"Crossing paths outdoors in town amidst {seasonMoodEn}. A brief, natural chat fitting the shared weather and familiarity.";
+            return $"Crossing paths on a town street, {seasonMoodEn}. Offhand remarks about the day's plans or what each noticed along the way.";
         }
 
-        // ── Generic Indoor Fallback ──
-        return "Crossing paths indoors. A relaxed, offhand exchange grounded in the room's atmosphere and whatever caught their eye.";
+        return "Crossing paths indoors, the room quiet. Offhand remarks about what's going on around them or whatever each has at hand.";
     }
 }
 
     private static bool IsChineseLanguage =>
         LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+
+    // 三条配偶判断路径取 OR 并集，供多配偶同住注入使用
+    private static bool IsSpouse(NPC npc)
+    {
+        if (npc == null) return false;
+        if (PolyamorySweetLoveBridge.IsOfficialSpouse(npc)) return true;
+        if (PolyamorySweetLoveBridge.IsUnofficialSpouse(npc)) return true;
+        return Game1.player?.friendshipData?.TryGetValue(npc.Name, out var fs) == true
+               && fs != null && fs.IsMarried();
+    }
 
     private static string EnrichBarkPromptWithState(NPC npc, string basePrompt, bool isChinese)
     {
