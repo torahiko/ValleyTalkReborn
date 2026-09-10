@@ -469,7 +469,7 @@ namespace ValleytalkReborn
 
                     // 🌟 区分手动/自动记忆
                     bool isAuto = entry.Source == "Auto";
-                    string prefix = isAuto ? "[自动] " : "";
+                    string prefix = isAuto ? I18n.Memory.AutoPrefix() : "";
                     string text = $"{idx + 1}. {prefix}{entry.Content}";
                     Color textColor = isAuto ? new Color(120, 140, 160) : Game1.textColor;
 
@@ -586,9 +586,8 @@ namespace ValleytalkReborn
                 _callsignRect.X, _callsignRect.Y, _callsignRect.Width, _callsignRect.Height,
                 bg, 4f, false);
 
-            bool isZh = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
-            string prefix    = isZh ? "称呼: " : "Call me: ";
-            string valueText = hasValue ? $"[{callsign}]" : (isZh ? "(点击设置)" : "(Click to set)");
+            string prefix = I18n.Memory.CallsignPrefix();
+            string valueText = hasValue ? $"[{callsign}]" : I18n.Memory.CallsignUnset();
             Color  valueColor = hover
                 ? Game1.textColor
                 : (hasValue ? Game1.textColor * 0.9f : Color.Gray);
@@ -727,13 +726,8 @@ namespace ValleytalkReborn
             b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.4f);
             IClickableMenu.drawTextureBox(b, xPositionOnScreen, yPositionOnScreen, width, height, Color.White);
 
-            bool isZh  = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
-            string title = isZh
-                ? $"设置 {_npcName} 对你的专属称谓"
-                : $"Set {_npcName}'s callsign for you";
-            string hint  = isZh
-                ? "留空则使用默认名字。称谓将在心声与对话中生效。"
-                : "Leave blank for default. Used in barks and dialogues.";
+            string title = I18n.Memory.CallsignTitle(_npcName);
+            string hint  = I18n.Memory.CallsignHint();
 
             var titleSize = Game1.dialogueFont.MeasureString(title);
             b.DrawString(Game1.dialogueFont, title,
@@ -997,7 +991,7 @@ namespace ValleytalkReborn
 
             string hint = _tab == 1
                 ? I18n.Memory.WorldAddHint(WorldMemoryManager.MaxEntryLength)
-                : I18n.Memory.AddHint();
+                : I18n.Memory.AddHint(_npcName);
 
             var hintSize = Game1.smallFont.MeasureString(hint);
 

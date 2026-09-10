@@ -834,15 +834,20 @@ public class Prompts
             bool hasMovementInstruction = finalPrompt.Contains("<movement_instruction");
             bool isMovementExpected = CurrentFlags?.IsMovementRequested == true || CurrentFlags?.IsFollowing == true;
 
+            
             // 兼容 i18n 实际渲染的标题（zh: 格式与排版要求 / en: Formatting & Output Requirements）
-            bool hasInstructions = finalPrompt.Contains("## 输出指令")
-                || finalPrompt.Contains("## 格式与排版要求")
-                || finalPrompt.Contains("## OUTPUT INSTRUCTIONS")
-                || finalPrompt.Contains("## Formatting & Output Requirements");
+            // 兼容检查：Instructions 作为独立块管理，检查其属性是否已正确生成并包含有效指令
+            string instructionsText = Instructions ?? "";
+            bool hasInstructions = instructionsText.Contains("## 输出指令")
+                                   || instructionsText.Contains("## 格式与排版要求")
+                                   || instructionsText.Contains("## OUTPUT INSTRUCTIONS")
+                                   || instructionsText.Contains("## Formatting & Output Requirements")
+                                   || !string.IsNullOrWhiteSpace(instructionsText);
+            
 
             sb.AppendLine($"║   CurrentConversation: {(hasCurrentConversation ? "✓ Present" : "✗ Missing")}");
             sb.AppendLine($"║   MovementInstruction: {(hasMovementInstruction ? "✓ Present" : (isMovementExpected ? "✗ Missing" : "– Not Required"))}");
-            sb.AppendLine($"║   Instructions (at end): {(hasInstructions ? "✓ Present" : "✗ Missing")}");
+            sb.AppendLine($"║   InstructionsBlock: {(hasInstructions ? "✓ Present" : "✗ Missing")}");
 
             // ── 3. 对话历史位置验证（关键：必须在 movement_instruction 之前） ──
             if (hasCurrentConversation && hasMovementInstruction)
@@ -1591,9 +1596,14 @@ public class Prompts
             commandPrompt.AppendLine("</dual_output_rule>");
         }
 
-        if (ModEntry.Config.ApplyTranslation)
+        // Skip language instruction when target is English or InvariantCulture (no meaningful constraint)
+        string targetLang = TargetLanguageName;
+        if (ModEntry.Config.ApplyTranslation
+            && !string.Equals(targetLang, "Invariant Language (Invariant Country)", StringComparison.Ordinal)
+            && !string.Equals(targetLang, "English", StringComparison.OrdinalIgnoreCase)
+            && LocalizedContentManager.CurrentLanguageCode != LocalizedContentManager.LanguageCode.en)
         {
-            commandPrompt.AppendLine(Util.GetString(Character, "instructionsTranslate", new { Language = ModEntry.Language }));
+            commandPrompt.AppendLine(Util.GetString(Character, "instructionsTranslate", new { Language = targetLang }));
         }
         return commandPrompt.ToString();
     }
@@ -1608,7 +1618,7 @@ public class Prompts
         instructions.AppendLine(Util.GetString(Character, "instructionsBreaks"));
         instructions.AppendLine(Util.GetString(Character, "instructionsSingleLine"));
         instructions.AppendLine(Util.GetString(Character, "instructionsResponses", new { Name = Name }));
-        instructions.AppendLine(Util.GetString(Character, "instructionsFallback"));
+        instructions.AppendLine(Util.GetString(Character, "instructionsFallback", new { Name = Name }));
         instructions.AppendLine(isZh
             ? "- 【核心视角】仅输出你自身角色的言语、动作与神态反应。完成当前台词表达后立即停下，将话语权交还给面前的农夫。"
             : "- [CORE PERSPECTIVE] Output only your own character's dialogue, actions, and mannerisms. Conclude your lines cleanly and yield the floor to the farmer.");

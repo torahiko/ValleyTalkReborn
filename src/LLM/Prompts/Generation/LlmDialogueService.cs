@@ -31,7 +31,7 @@ public class LlmDialogueService
     private const int MAX_TIMEOUT_SECONDS = 120;
     private const int RETRY_DELAY_SECONDS = 5;
 
-    private LlmDialogueService() { }
+    private LlmDialogueService() { }  
 
     /// <summary>
     /// Generates AI dialogue for the given character using the provided context.
@@ -595,6 +595,18 @@ public class LlmDialogueService
         {
             sb.AppendLine($"║   {line.TrimEnd()}");
         }
+        sb.AppendLine($"║");
+        sb.AppendLine($"║ 【Length Statistics】");
+        sb.AppendLine($"║   CorePrompt Length: {prompts.CorePrompt.Length} chars");
+        int totalPromptChars = (prompts.SystemPrompt?.Length ?? 0)
+                             + (prompts.GameConstantContext?.Length ?? 0)
+                             + (prompts.NpcConstantContext?.Length ?? 0)
+                             + (prompts.Instructions?.Length ?? 0)
+                             + (prompts.CorePrompt?.Length ?? 0)
+                             + (prompts.Command?.Length ?? 0);
+        // Mixed CJK/Latin payload ≈ 3.8 chars/token
+        int estimatedTokens = (int)Math.Ceiling(totalPromptChars / 3.8);
+        sb.AppendLine($"║   Total Request Length: {totalPromptChars} chars (~{estimatedTokens} Tokens)");
         sb.AppendLine($"╚═══════════════════════════════════════════════════════════════════");
         Log.Debug(sb.ToString());
     }

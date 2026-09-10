@@ -15,23 +15,20 @@ namespace ValleytalkReborn
         private static string[] _cachedModelNames = null;
         private static string _cachedProvider = null;
 
-        private static Dictionary<int, string> freqs = new Dictionary<int, string>()
-        {
-            { 0, "Never (0%)" },
-            { 1, "Rarely (25%)" },
-            { 2, "Occasionally (50%)" },
-            { 3, "Mostly (75%)" },
-            { 4, "Always (100%)" }
-        };
+        private static readonly string[] FrequencyValues = { "0", "1", "2", "3", "4" };
 
-        private static readonly Dictionary<string, int> freqReverseLookup = new Dictionary<string, int>
+        private static string FormatFrequency(string val)
         {
-            { "Never (0%)", 0 },
-            { "Rarely (25%)", 1 },
-            { "Occasionally (50%)", 2 },
-            { "Mostly (75%)", 3 },
-            { "Always (100%)", 4 }
-        };
+            return GetUIString($"configFrequencyLevel_{val}", val switch
+            {
+                "0" => "Never (0%)",
+                "1" => "Rarely (25%)",
+                "2" => "Occasionally (50%)",
+                "3" => "Mostly (75%)",
+                "4" => "Always (100%)",
+                _ => val
+            });
+        }
 
         private static string GetUIString(string key, string fallback, object tokens = null)
         {
@@ -180,17 +177,19 @@ namespace ValleytalkReborn
                 // 快捷下拉框选择
                 if (_cachedModelNames != null && _cachedModelNames.Length > 0)
                 {
-                    var quickSelectOptions = new List<string> { "--- Select to auto-fill ---" };
+                    string placeholder = GetUIString("configQuickSelectPlaceholder", "--- Select to auto-fill ---");
+                    var quickSelectOptions = new List<string> { placeholder };
                     quickSelectOptions.AddRange(_cachedModelNames);
+
                     ConfigMenu.AddTextOption(
                         mod: ModManifest,
                         name: () => GetUIString("configQuickSelect", "Quick Select Model"),
                         tooltip: () => GetUIString("configQuickSelectTooltip",
                             "Select a model and click Save to fill into Model Name."),
-                        getValue: () => "--- Select to auto-fill ---",
+                        getValue: () => placeholder,
                         setValue: (value) =>
                         {
-                            if (value != "--- Select to auto-fill ---")
+                            if (value != placeholder)
                             {
                                 Config.ModelName = value;
                             }
@@ -237,13 +236,14 @@ namespace ValleytalkReborn
                 name: () => GetUIString("configFrequencyGeneral", "Frequency of general lines"),
                 tooltip: () => GetUIString("configFrequencyGeneralTooltip",
                     "How often should the mod generate general lines."),
-                getValue: () => freqs[Config.GeneralFrequency],
+                getValue: () => Config.GeneralFrequency.ToString(),
                 setValue: (value) =>
                 {
-                    Config.GeneralFrequency =
-                        freqReverseLookup.TryGetValue(value, out var k) ? k : Config.GeneralFrequency;
+                    if (int.TryParse(value, out int val))
+                        Config.GeneralFrequency = Math.Clamp(val, 0, 4);
                 },
-                allowedValues: freqs.Values.ToArray()
+                allowedValues: FrequencyValues,
+                formatAllowedValue: FormatFrequency
             );
 
             ConfigMenu.AddTextOption(
@@ -251,12 +251,14 @@ namespace ValleytalkReborn
                 name: () => GetUIString("configFrequencyGift", "Frequency of gift responses"),
                 tooltip: () =>
                     GetUIString("configFrequencyGiftTooltip", "How often should the mod generate gift responses."),
-                getValue: () => freqs[Config.GiftFrequency],
+                getValue: () => Config.GiftFrequency.ToString(),
                 setValue: (value) =>
                 {
-                    Config.GiftFrequency = freqReverseLookup.TryGetValue(value, out var k) ? k : Config.GiftFrequency;
+                    if (int.TryParse(value, out int val))
+                        Config.GiftFrequency = Math.Clamp(val, 0, 4);
                 },
-                allowedValues: freqs.Values.ToArray()
+                allowedValues: FrequencyValues,
+                formatAllowedValue: FormatFrequency
             );
 
             ConfigMenu.AddTextOption(
@@ -264,20 +266,21 @@ namespace ValleytalkReborn
                 name: () => GetUIString("configFrequencyMarriage", "Frequency of marriage lines"),
                 tooltip: () => GetUIString("configFrequencyMarriageTooltip",
                     "How often should the mod generate marriage lines."),
-                getValue: () => freqs[Config.MarriageFrequency],
+                getValue: () => Config.MarriageFrequency.ToString(),
                 setValue: (value) =>
                 {
-                    Config.MarriageFrequency =
-                        freqReverseLookup.TryGetValue(value, out var k) ? k : Config.MarriageFrequency;
+                    if (int.TryParse(value, out int val))
+                        Config.MarriageFrequency = Math.Clamp(val, 0, 4);
                 },
-                allowedValues: freqs.Values.ToArray()
+                allowedValues: FrequencyValues,
+                formatAllowedValue: FormatFrequency
             );
 
             ConfigMenu.AddTextOption(
                 mod: ModManifest,
-                name: () => GetUIString("configDiableForCharacters", "Disable for specific NPCs"),
-                tooltip: () => GetUIString("configDiableForCharactersTooltip",
-                    "Comma-separated list of villagers to disable the mod for, e.g. (\"Abigail,Leah,Sam\")"),
+                name: () => GetUIString("configDisableForCharacters", GetUIString("configDiableForCharacters", "Disable for specific NPCs")),
+                tooltip: () => GetUIString("configDisableForCharactersTooltip", GetUIString("configDiableForCharactersTooltip",
+                    "Comma-separated list of villagers to disable the mod for, e.g. (\"Abigail,Leah,Sam\")")),
                 getValue: () => Config.DisableCharacters,
                 setValue: (value) => { Config.DisableCharacters = value; }
             );

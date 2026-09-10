@@ -391,6 +391,29 @@ internal class MemoryManager : IMemoryProvider
         return list.OrderByDescending(m => m.CreatedAt).ToList();
     }
 
+    private static readonly Random _memoryRng = new Random();
+
+    /// <summary>
+    /// 随机抽取一条该 NPC 的自动记忆碎片文本，供 Bark 记忆闪回（一缓）使用。
+    /// 优先取 Auto 条目（夜间提取的背景事实），无 Auto 时回退 Manual。
+    /// 无记忆时返回 null。
+    /// </summary>
+    public string GetRandomMemoryFragment(string npcName)
+    {
+        EnsureLoaded();
+        if (!_memories.TryGetValue(npcName, out var list) || list.Count == 0)
+            return null;
+
+        // 优先 Auto 条目（夜间自动提取的事实碎片，更适合走神闪回）
+        var autoPool = list.Where(m => m.Source == "Auto").ToList();
+        var pool = autoPool.Count > 0 ? autoPool : list;
+
+        if (pool.Count == 0) return null;
+
+        var chosen = pool[_memoryRng.Next(pool.Count)];
+        return string.IsNullOrWhiteSpace(chosen.Content) ? null : chosen.Content.Trim();
+    }
+
     public int GetMemoryCount(string npcName)
     {
         EnsureLoaded();

@@ -8,13 +8,12 @@ using StardewValley;
 namespace ValleytalkReborn;
 
 /// <summary>
-/// Bark Prompt 构建器 - 纯粹的模板生成器，彻底剥离启发式判断。
-/// 职责：将游戏状态转换为"此刻正在发生的事 + 角色如何感知"的认知场景。
+/// Bark Prompt 构建器 - 纯粹的模板生成器，彻底剥离启发式判断[cite: 4]。
+/// 职责：将游戏状态转换为"此刻正在发生的事 + 角色如何感知"的认知场景[cite: 4]。
 /// </summary>
 internal sealed class BarkPromptBuilder
 {
     private readonly AmbientBarkStateStore _stateStore;
-    private static readonly Random _rng = new Random();
 
     internal BarkPromptBuilder(AmbientBarkStateStore stateStore)
     {
@@ -22,7 +21,7 @@ internal sealed class BarkPromptBuilder
     }
 
     /// <summary>
-    /// 构建 Bark 请求（必须在主线程调用）
+    /// 构建 Bark 请求（必须在主线程调用）[cite: 4]
     /// </summary>
     internal DialogueModels.BarkRequest Build(NPC npc)
     {
@@ -38,13 +37,13 @@ internal sealed class BarkPromptBuilder
 
         bool isZh = IsChineseLanguage;
 
-        // 焦点决策：在 PlayerStateScanner 扫描完成后立即执行，确保感知数据已入桶
+        // 焦点决策：在 PlayerStateScanner 扫描完成后立即执行，确保感知数据已入桶[cite: 4]
         if (!_stateStore.TryGet(npc.Name, out var barkState))
             barkState = _stateStore.GetOrCreate(npc.Name);
 
         var focusDecision = BarkFocusRouter.Decide(npc, barkState, bio, isZh);
 
-        // ★ 核心消费闭环：若本轮选中了感知条目，立即标记已阅与审美疲劳
+        // ★ 核心消费闭环：若本轮选中了感知条目，立即标记已阅与审美疲劳[cite: 4]
         if (focusDecision.MatchedPerception != null)
         {
             var p = focusDecision.MatchedPerception;
@@ -65,7 +64,7 @@ internal sealed class BarkPromptBuilder
         if (string.IsNullOrWhiteSpace(userPrompt))
             return null;
 
-        // 回写本轮焦点决策到 State，供下一轮疲劳阻尼使用（主线程，无需额外锁）
+        // 回写本轮焦点决策到 State，供下一轮疲劳阻尼使用（主线程，无需额外锁）[cite: 4]
         lock (barkState)
         {
             barkState.LastFocusType  = focusDecision.FocusType;
@@ -82,21 +81,17 @@ internal sealed class BarkPromptBuilder
     }
 
     /// <summary>
-    /// 构建 System Prompt - 认知基石：模拟"注意力自然流动"而非"生成台词"
+    /// 构建 System Prompt - 认知基石：模拟"注意力自然流动"而非"生成台词"[cite: 4]
     /// </summary>
     private static string BuildSystemPrompt(bool isZh)
     {
         var currentLang = LocalizedContentManager.CurrentLanguageCode;
         bool isStandardEn = !isZh && currentLang == LocalizedContentManager.LanguageCode.en;
+        string targetLangName = GetTargetLanguageName(currentLang);
 
-        string lengthNotice = isZh
-            ? "每条 15~25 个汉字，口语碎片的自然长度。"
-            : isStandardEn
-                ? "8-15 words per line, natural spoken fragment length."
-                : $"In {currentLang}, 8-15 words per line.";
+        string lengthNotice = GetLengthNotice(currentLang, targetLangName, isZh);
 
-        // ★ 核心改动：Few-shot 示例彻底去除任何"逻辑链"痕迹，
-        // 只保留"碎片 + 跳跃 + 搁置"的非线性质感
+        // Few-shot 示例保留"碎片 + 跳跃 + 搁置"的非线性质感[cite: 4]
         string zhExample = JsonConvert.SerializeObject(new[]
         {
             "唔，手有点凉。",
@@ -150,8 +145,20 @@ internal sealed class BarkPromptBuilder
         }
         else
         {
-            return $@"You simulate a real person's wandering attention in the current scene — the half-formed thoughts that surface when their mind drifts.
+            string langRequirementSection = isStandardEn ? "" : $@"
+[LANGUAGE REQUIREMENT]
+All thoughts and uttered fragments MUST be strictly written in {targetLangName}.
+Do not output in English or any other language unless quoting an untranslated name.
+";
 
+            string catchphraseGuidance = isStandardEn
+                ? "If the persona lists English catchphrases (Man / Dude / Heh), don't copy them literally — grasp their FEEL and express it naturally."
+                : $"If the persona lists English catchphrases (Man / Dude / Heh), don't copy them literally — grasp their FEEL and express it naturally in {targetLangName}.";
+
+            string langOutputConstraint = isStandardEn ? "" : $"\n- MUST be written strictly in {targetLangName}";
+
+            return $@"You simulate a real person's wandering attention in the current scene — the half-formed thoughts that surface when their mind drifts.
+{langRequirementSection}
 [WHAT YOU'RE DOING]
 Imagine you ARE this character, standing/sitting/moving in this place right now. Where does your attention land? What makes it stick or drift away? What do you suddenly remember, then suddenly drop?
 
@@ -170,12 +177,12 @@ When thoughts turn in your head, only some reach the lips as muttered fragments.
 Not full sentences — the ""hmm..."" ""forget it"" ""maybe later..."" ""huh"" kind of half-spoken bits.
 
 Check [SPOKEN HABITS] / [VOICE & ATTITUDE] in the persona. However they normally talk, these mutterings are the internal version of that style.
-If the persona lists English catchphrases (Man / Dude / Heh), don't copy them literally — grasp their FEEL and express it naturally in the target language.
+{catchphraseGuidance}
 
 [OUTPUT FORMAT]
 Plain JSON array: [""thought1"", ""thought2"", ...]
 - 4-6 lines
-- {lengthNotice}
+- {lengthNotice}{langOutputConstraint}
 - Must start with [ and end with ], no Markdown wrapping
 
 Format example below (random content, unrelated to actual scene, don't copy topics):
@@ -184,7 +191,7 @@ Format example below (random content, unrelated to actual scene, don't copy topi
     }
 
     /// <summary>
-    /// 构建 User Prompt - 消费 Router 决策输出，仅组装，不自行判断
+    /// 构建 User Prompt - 消费 Router 决策输出，仅组装，彻底杜绝二次摇号[cite: 4]
     /// </summary>
     private string BuildUserPrompt(NPC npc, BioData bio, bool isZh, BarkFocusDecision decision)
     {
@@ -197,7 +204,6 @@ Format example below (random content, unrelated to actual scene, don't copy topi
 
         rawPrompt = EnrichWithDynamicState(npc, rawPrompt, isZh);
 
-        // 关系标签降级为人设末尾静态注脚，不再独立占段，彻底去除强锚点宣告
         string relNote = GetRelationshipNote(npc, isZh);
         if (!string.IsNullOrEmpty(relNote))
             rawPrompt = rawPrompt + "\n" + relNote;
@@ -216,22 +222,23 @@ Format example below (random content, unrelated to actual scene, don't copy topi
         }
 
         // ── 3. 单焦点注入（Router 决选的唯一触点，FreeDrift 时为空）──
-        if (!string.IsNullOrEmpty(decision.InjectedContextLine))
+        bool isFreeDrift = string.IsNullOrWhiteSpace(decision.InjectedContextLine);
+        if (!isFreeDrift)
         {
             sb.AppendLine(isZh ? "### [注意力落在]" : "### [ATTENTION LANDS ON]");
             sb.AppendLine(decision.InjectedContextLine);
             sb.AppendLine();
         }
 
-        // ── 4. 生成指令 ──
-        sb.AppendLine(BuildThinkingPrompt(bio, isZh, decision.AllowThinkingLens));
+        // ── 4. 生成指令（无缝对齐是否有单一焦点）──
+        sb.AppendLine(BuildThinkingPrompt(isZh, isFreeDrift));
 
         return sb.ToString();
     }
 
     /// <summary>
-    /// 构建最弱的环境底色：仅包含地点、时段、跟随/约会持续状态、POI 动作现状（降级为一行）。
-    /// NearbyNPCs、Perceptions、SceneContext 全部移除，由 BarkFocusRouter 单点控制。
+    /// 构建最弱的环境底色：仅包含地点、时段、跟随/约会持续状态、POI 动作现状（降级为一行）[cite: 4]。
+    /// NearbyNPCs、Perceptions、SceneContext 全部移除，由 BarkFocusRouter 单点控制[cite: 4]。
     /// </summary>
     private static string BuildAmbientScene(NPC npc, bool isZh)
     {
@@ -254,7 +261,7 @@ Format example below (random content, unrelated to actual scene, don't copy topi
             else           sb.Append($"（室外，{weather}）");
             sb.Append($"，{timeDesc}。");
 
-            // 跟随/约会：降级为一句无戏剧性陈述（底色）
+            // 跟随/约会：降级为一句无戏剧性陈述（底色）[cite: 4]
             if (DialogueUtilities.IsOnDate(npc))
             {
                 sb.Append(" 和玩家出来走走。");
@@ -265,11 +272,9 @@ Format example below (random content, unrelated to actual scene, don't copy topi
             }
             else if (CompanionScheduleManager.Instance?.IsStayHomeActive(npc.Name) == true)
             {
-                // POI context 降级为最平淡的一句陈述
                 string poiCtx = CompanionScheduleManager.Instance?.GetActivePoiContext(npc.Name);
                 if (!string.IsNullOrEmpty(poiCtx))
                 {
-                    // 只取第一句，避免 POI 描述过长成为新的强锚点
                     string firstSentence = poiCtx.Split(new[]{'。','.'}, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
                     if (!string.IsNullOrEmpty(firstSentence))
                         sb.Append($" {NpcNameLocalizer.LocalizeNamesInText(firstSentence)}。");
@@ -308,39 +313,31 @@ Format example below (random content, unrelated to actual scene, don't copy topi
     }
 
     /// <summary>
-    /// 构建"思考提示" - 不再是"生成任务"，而是"开始想吧"
+    /// 构建"思考提示" - 彻底剥离二次摇号，根据单焦点状态提供无冲突的生成指令
     /// </summary>
-    private static string BuildThinkingPrompt(BioData bio, bool isZh, bool allowLens)
+    private static string BuildThinkingPrompt(bool isZh, bool isFreeDrift)
     {
         var sb = new StringBuilder();
         sb.AppendLine(isZh ? "### [开始想]" : "### [START THINKING]");
 
-        // 仅当焦点决策允许时注入 Preoccupation lens（Introspective 心事焦点时开启）
-        if (allowLens)
+        if (isFreeDrift)
         {
-            var lenses = GetRandomThinkingLens(bio, 1, isZh);
-            if (lenses.Count > 0)
-            {
-                sb.AppendLine(isZh
-                    ? $"你的注意力可能先落在：{lenses[0]}（也可以从别的地方开始）"
-                    : $"Your attention might land on: {lenses[0]} (or start elsewhere)");
-                sb.AppendLine();
-            }
-        }
-
-        // FreeDrift / Sensory / Interactive 时提供正向落脚点
-        if (!allowLens)
-        {
+            // 真正放空时，给模型正向漫游指引[cite: 4]
             sb.AppendLine(isZh
                 ? "此时脑子里没有任何特定心事。注意力随处落脚——周围的细微动静、当下的身体感觉、脚下的路、或是单纯走神放空，把冒出的念头说出半句："
                 : "No particular thoughts on your mind right now. Attention lands anywhere — ambient sounds, a physical sensation, the ground underfoot, or just drifting — mutter whatever surfaces:");
-            sb.AppendLine();
         }
+        else
+        {
+            // 已有确定落脚点（心事/记忆/感官/邻里/群体氛围），顺承流动
+            sb.AppendLine(isZh
+                ? "顺着你当下的注意力自然流动，把脑子里冒出来的念头说出半句："
+                : "Let your attention flow naturally from what you notice, muttering whatever surfaces:");
+        }
+        sb.AppendLine();
 
         if (isZh)
         {
-            sb.AppendLine("现在，让你的注意力自然流动，把那些冒出来的念头说出半句：");
-            sb.AppendLine();
             sb.AppendLine("- 4~6 条，每条 15~25 个汉字");
             sb.AppendLine("- 可以连着想，可以突然跳开，可以想到一半就算了");
             sb.AppendLine("- 用你自己的说话方式（看上面 [你是谁] 里的语言习惯）");
@@ -348,33 +345,26 @@ Format example below (random content, unrelated to actual scene, don't copy topi
         }
         else
         {
-            sb.AppendLine("Now, let your attention flow naturally and mutter those surfacing thoughts:");
-            sb.AppendLine();
-            sb.AppendLine("- 4-6 lines, 8-15 words each");
+            var currentLang = LocalizedContentManager.CurrentLanguageCode;
+            bool isStandardEn = currentLang == LocalizedContentManager.LanguageCode.en;
+            string targetLangName = GetTargetLanguageName(currentLang);
+            string lengthBullet = GetLengthBulletDescription(currentLang, targetLangName);
+
+            sb.AppendLine($"- 4-6 lines, {lengthBullet}");
             sb.AppendLine("- Can flow together, jump around, or drop mid-thought");
             sb.AppendLine("- Use your own speaking style (see [WHO YOU ARE] above)");
+            if (!isStandardEn)
+            {
+                sb.AppendLine($"- MUST be written in {targetLangName}");
+            }
             sb.AppendLine("- Output plain JSON array: [\"...\", \"...\", ...]");
         }
 
         return sb.ToString();
     }
 
-    /// <summary>
-    /// 获取随机的"注意力入口"（不是话题，是感知角度）
-    /// </summary>
-    private static List<string> GetRandomThinkingLens(BioData bio, int count, bool isZh)
-    {
-        if (bio?.Preoccupations == null || bio.Preoccupations.Count == 0)
-            return new List<string>();
-
-        return bio.Preoccupations
-            .OrderBy(_ => _rng.Next())
-            .Take(Math.Min(count, bio.Preoccupations.Count))
-            .ToList();
-    }
-
     // ══════════════════════════════════════════════════════════════
-    // 辅助方法（保持原有逻辑，仅做小幅调整）
+    // 辅助方法与多语言适配[cite: 4]
     // ══════════════════════════════════════════════════════════════
 
     private static string EnrichWithDynamicState(NPC npc, string basePrompt, bool isChinese)
@@ -392,8 +382,8 @@ Format example below (random content, unrelated to actual scene, don't copy topi
     }
 
     /// <summary>
-    /// 将关系信息降级为人设末尾的静态注脚（一行克制文本），而非独立段落。
-    /// 仅在有真实关系（恋爱/婚姻/≥6 心好友）时注入，普通认识不注入。
+    /// 将关系信息降级为人设末尾的静态注脚（一行克制文本），而非独立段落[cite: 4]。
+    /// 仅在有真实关系（恋爱/婚姻/≥6 心好友）时注入，普通认识不注入[cite: 4]。
     /// </summary>
     private static string GetRelationshipNote(NPC npc, bool isZh)
     {
@@ -401,7 +391,7 @@ Format example below (random content, unrelated to actual scene, don't copy topi
 
         var parts = new List<string>();
 
-        // 1. 婚姻/恋爱关系
+        // 1. 婚姻/恋爱关系[cite: 4]
         bool isSpouse = PolyamorySweetLoveBridge.IsOfficialSpouse(npc)
                      || PolyamorySweetLoveBridge.IsUnofficialSpouse(npc);
 
@@ -429,7 +419,7 @@ Format example below (random content, unrelated to actual scene, don't copy topi
         if (isSpouse)
             parts.Add(isZh ? "你和玩家是伴侣关系" : "In a romantic relationship with the player");
 
-        // 2. 专属称谓注入（单点直取，不读记忆列表）
+        // 2. 专属称谓注入（单点直取，不读记忆列表）[cite: 4]
         string callsign = MemoryManager.Instance.GetCustomCallsign(npc.Name);
         if (!string.IsNullOrWhiteSpace(callsign))
             parts.Add(isZh
@@ -466,4 +456,90 @@ Format example below (random content, unrelated to actual scene, don't copy topi
 
     private static bool IsChineseLanguage =>
         LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+
+    /// <summary>
+    /// 解析当前游戏环境对应的目标自然语言英文全称（供 LLM 认知）[cite: 4]
+    /// </summary>
+    private static string GetTargetLanguageName(LocalizedContentManager.LanguageCode code)
+    {
+        switch (code)
+        {
+            case LocalizedContentManager.LanguageCode.zh:
+                return "Chinese";
+            case LocalizedContentManager.LanguageCode.ja:
+                return "Japanese";
+            case LocalizedContentManager.LanguageCode.ru:
+                return "Russian";
+            case LocalizedContentManager.LanguageCode.pt:
+                return "Portuguese";
+            case LocalizedContentManager.LanguageCode.es:
+                return "Spanish";
+            case LocalizedContentManager.LanguageCode.de:
+                return "German";
+            case LocalizedContentManager.LanguageCode.th:
+                return "Thai";
+            case LocalizedContentManager.LanguageCode.fr:
+                return "French";
+            case LocalizedContentManager.LanguageCode.ko:
+                return "Korean";
+            case LocalizedContentManager.LanguageCode.it:
+                return "Italian";
+            case LocalizedContentManager.LanguageCode.tr:
+                return "Turkish";
+            case LocalizedContentManager.LanguageCode.hu:
+                return "Hungarian";
+            default:
+                try
+                {
+                    if (code == LocalizedContentManager.LanguageCode.mod && LocalizedContentManager.CurrentModLanguage != null)
+                    {
+                        return LocalizedContentManager.CurrentModLanguage.LanguageCode
+                               ?? LocalizedContentManager.CurrentModLanguage.Id
+                               ?? "English";
+                    }
+                }
+                catch
+                {
+                    // 降级容错[cite: 4]
+                }
+                return "English";
+        }
+    }
+
+    /// <summary>
+    /// 根据语言特性（表意字符 vs 拼音分词）获取 System Prompt 里的长度说明[cite: 4]
+    /// </summary>
+    private static string GetLengthNotice(LocalizedContentManager.LanguageCode currentLang, string targetLangName, bool isZh)
+    {
+        if (isZh)
+            return "每条 15~25 个汉字，口语碎片的自然长度。";
+
+        if (currentLang == LocalizedContentManager.LanguageCode.ja)
+            return "15-30 Japanese characters per line, natural spoken fragment length.";
+
+        if (currentLang == LocalizedContentManager.LanguageCode.ko)
+            return "15-30 Korean characters/syllables per line, natural spoken fragment length.";
+
+        if (currentLang == LocalizedContentManager.LanguageCode.en)
+            return "8-15 words per line, natural spoken fragment length.";
+
+        return $"8-15 words per line in {targetLangName}, natural spoken fragment length.";
+    }
+
+    /// <summary>
+    /// 获取 Thinking Prompt 列表清单里的长度约束行[cite: 4]
+    /// </summary>
+    private static string GetLengthBulletDescription(LocalizedContentManager.LanguageCode currentLang, string targetLangName)
+    {
+        if (currentLang == LocalizedContentManager.LanguageCode.ja)
+            return "15-30 Japanese characters each";
+
+        if (currentLang == LocalizedContentManager.LanguageCode.ko)
+            return "15-30 Korean syllables each";
+
+        if (currentLang == LocalizedContentManager.LanguageCode.en)
+            return "8-15 words each";
+
+        return $"8-15 words each in {targetLangName}";
+    }
 }

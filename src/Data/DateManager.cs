@@ -223,7 +223,9 @@ namespace ValleytalkReborn
         private const int HardEndTime = 2200;
         private const int FollowDurationMinutes = 120;
         private const int ScheduledDurationMinutes = 180;
-        private const int BarkGlobalCooldownSeconds = 60;
+
+        // 路人目击约会的冷却（游戏内分钟）
+        private const int TownieWitnessCooldownGameMinutes = 60;
 
         // ─── 核心状态 ─────────────────────────────────────────────────
 
@@ -242,7 +244,10 @@ namespace ValleytalkReborn
         public bool HasGivenDateGiftThisSession { get; set; } = false;
 
         // ─── 私有状态 ─────────────────────────────────────────────────
-        private double _lastBarkTimestamp = 0;
+
+        // 路人 NPC 上次目击约会的游戏时间（用于每 NPC 独立的 60 分钟冷却）
+        private readonly Dictionary<string, int> _npcLastWitnessTime =
+            new(StringComparer.OrdinalIgnoreCase);
 
         // 约会会话版本号，用于拦截过期的异步 LLM 回调
         private int _dateSessionVersion = 0;
@@ -402,19 +407,69 @@ namespace ValleytalkReborn
                 CurrentSession.RecordGift(giftName, taste);
         }
 
-        public bool CanTriggerTownieBark()
+        // ══════════════════════════════════════════════════════════════
+        //  路人目击约会接口（供 BarkFocusRouter 调用）
+        // ══════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// 检查该路人 NPC 是否可以在 Bark 中目击并关注当下的约会。
+        /// 条件：约会 Active 阶段、该 NPC 不是约会对象本人、距上次目击已过去 ≥60 游戏分钟。
+        /// </summary>
+        public bool CanNpcWitnessDate(string bystanderName)
         {
-            if (CurrentDateMode != DateMode.Scheduled || Phase != DatePhase.Active)
+            if (Phase != DatePhase.Active || CurrentDateMode != DateMode.Scheduled)
                 return false;
 
-            double now = Game1.currentGameTime.TotalGameTime.TotalSeconds;
-            if (now - _lastBarkTimestamp >= BarkGlobalCooldownSeconds)
+            if (string.IsNullOrEmpty(ActiveDateNpcName) || string.IsNullOrEmpty(bystanderName))
+                return false;
+
+            // 约会主角本人不属于"路人目击"
+            if (string.Equals(bystanderName, ActiveDateNpcName, StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            if (_npcLastWitnessTime.TryGetValue(bystanderName, out int lastWitnessTime))
             {
-                _lastBarkTimestamp = now;
-                return true;
+                int elapsedMinutes = GameMinutesBetween(lastWitnessTime, Game1.timeOfDay);
+                // 时间差未达 60 分钟（且无跨天异常回流）→ 冷却中
+                if (elapsedMinutes >= 0 && elapsedMinutes < TownieWitnessCooldownGameMinutes)
+                    return false;
             }
 
-            return false;
+            return true;
+        }
+
+        /// <summary>
+        /// 计算两个星露谷游戏时间之间相差的分钟数。
+        /// 游戏时间格式为 HHMM（如 1800、1920），分钟部分为 0/10/20/30/40/50。
+        /// </summary>
+        private static int GameMinutesBetween(int earlierTime, int laterTime)
+        {
+            if (laterTime < earlierTime) return -1; // 跨天回流，视为无效
+
+            int earlierHours = earlierTime / 100;
+            int earlierMinutes = earlierTime % 100;
+            int laterHours = laterTime / 100;
+            int laterMinutes = laterTime % 100;
+
+            int earlierTotal = earlierHours * 60 + earlierMinutes;
+            int laterTotal = laterHours * 60 + laterMinutes;
+
+            return laterTotal - earlierTotal;
+        }
+
+        /// <summary>
+        /// 记录该路人 NPC 已在当前游戏时间目击了约会（进入 60 游戏分钟冷却）。
+        /// 由 BarkFocusRouter 在成功注入焦点后调用。
+        /// </summary>
+        public void RecordNpcWitnessDate(string bystanderName)
+        {
+            if (string.IsNullOrWhiteSpace(bystanderName)) return;
+
+            _npcLastWitnessTime[bystanderName] = Game1.timeOfDay;
+
+            ModEntry.SMonitor?.Log(
+                $"[DateManager] 路人 [{bystanderName}] 目击约会，记录时间 {Game1.timeOfDay}（60 分钟冷却生效）",
+                LogLevel.Debug);
         }
 
         public bool CanTriggerTwoStageCallout()
@@ -774,16 +829,7 @@ namespace ValleytalkReborn
                 }
             }
 
-            // ② 路人起哄 Bark（Active 阶段，复用 CanTriggerTownieBark 的冷却判定）
-            if (Phase == DatePhase.Active && CurrentDateMode == DateMode.Scheduled)
-            {
-                if (e.IsMultipleOf(120) && CanTriggerTownieBark())
-                {
-                    TryTriggerTownieTease();
-                }
-            }
-
-            // ③ 约会触发检测（Pending 阶段，每 30 tick 轮询一次）
+            // ② 约会触发检测（Pending 阶段，每 30 tick 轮询一次）
             if (Phase != DatePhase.Pending
                 || CurrentDateMode != DateMode.Scheduled
                 || string.IsNullOrEmpty(ActiveDateNpcName))
@@ -805,192 +851,6 @@ namespace ValleytalkReborn
             int rawEnd = Utility.ModifyTime(Game1.timeOfDay, durationMinutes);
             int scheduledEndTime = Math.Min(rawEnd, HardEndTime);
             StartScheduledDateWithFade(npc, scheduledEndTime);
-        }
-
-        /// <summary>
-        /// 寻找玩家附近的路人 NPC 并触发起哄气泡。
-        /// 仅在 CanTriggerTownieBark 冷却通过时由 OnUpdateTicked 调用。
-        /// </summary>
-        private void TryTriggerTownieTease()
-        {
-            try
-            {
-                var location = Game1.player?.currentLocation;
-                if (location == null) return;
-
-                var playerTile = Game1.player.Tile;
-
-                // 寻找距离玩家 6 格内、非约会对象、非怪物的路人 NPC
-                NPC bystander = null;
-                int bestDistance = int.MaxValue;
-
-                foreach (var character in location.characters)
-                {
-                    if (character is not NPC candidate) continue;
-                    if (string.Equals(candidate.Name, ActiveDateNpcName, StringComparison.OrdinalIgnoreCase)) continue;
-                    if (candidate.IsMonster) continue;
-                    if (candidate.CurrentDialogue.Count > 0) continue; // 正在说话的路人不打断
-
-                    int dist = Math.Abs((int)candidate.Tile.X - (int)playerTile.X)
-                             + Math.Abs((int)candidate.Tile.Y - (int)playerTile.Y);
-
-                    if (dist <= 6 && dist < bestDistance)
-                    {
-                        bestDistance = dist;
-                        bystander = candidate;
-                    }
-                }
-
-                if (bystander == null) return;
-
-                string tease = GetTownieTeaseLine(bystander);
-                bystander.showTextAboveHead(tease);
-                bystander.doEmote(32); // 爱心/开心情绪气泡
-            }
-            catch (Exception ex)
-            {
-                ModEntry.SMonitor?.Log(
-                    $"[DateManager] Townie tease bark failed: {ex.Message}",
-                    LogLevel.Trace);
-            }
-        }
-
-        /// <summary>
-        /// 根据路人NPC的性格/身份返回对应的起哄台词。
-        /// 优先使用角色专属台词，否则使用通用友好调侃。
-        /// </summary>
-        private string GetTownieTeaseLine(NPC npc)
-        {
-            bool isZh = IsChineseLanguage;
-            string partner = Game1.getCharacterFromName(ActiveDateNpcName)?.displayName ?? ActiveDateNpcName;
-
-            // 角色专属台词池（基于人设与关系的差异化反应）
-            switch (npc.Name)
-            {
-                case "Gus":
-                    return isZh
-                        ? $"哟，{partner} 和农夫！今晚酒吧打八折，祝你们约会愉快！"
-                        : $"Hey, {partner} and the farmer! Drinks are on the house tonight!";
-                case "Pam":
-                    return isZh
-                        ? "唉哟，年轻可真好啊……你们继续，当我不存在。"
-                        : "Ah, to be young again... Don't mind me, carry on.";
-                case "Haley":
-                    return isZh
-                        ? "啧，怎么走到哪都能撞见你们两个……"
-                        : "Ugh, you two are everywhere I look...";
-                case "Emily":
-                    return isZh
-                        ? "你们的能量场好甜啊～！"
-                        : "The aura between you two is so sweet!";
-                case "Abigail":
-                    return isZh
-                        ? "哇哦，约会呢？小心别被怪兽抓走哦，勇者大人～"
-                        : "Ooh, a date? Don't let the monsters get you, brave ones!";
-                case "Maru":
-                    return isZh
-                        ? "检测到约会中……恭喜，好感度上升中。"
-                        : "Date mode detected... Congratulations, affection rising.";
-                case "Sebastian":
-                    return isZh
-                        ? "……行吧，你们开心就好。"
-                        : "...Fine. Just be happy, I guess.";
-                case "Penny":
-                    return isZh
-                        ? "啊，你们在约会吗？玩得开心点！"
-                        : "Oh, are you two on a date? Have fun!";
-                case "Sam":
-                    return isZh
-                        ? "Yo！约会中的情侣！来段即兴 Rap 庆祝一下？"
-                        : "Yo! Love birds! How about a celebratory jam?";
-                case "Leah":
-                    return isZh
-                        ? "你们看起来好般配，真美。"
-                        : "You two look wonderful together. Truly.";
-                case "Shane":
-                    return isZh
-                        ? "啧……算了，今天心情不错，不跟你们计较。"
-                        : "Tch... Whatever. I'm in a good mood today. Carry on.";
-                case "Harvey":
-                    return isZh
-                        ? "记得保持社交距离……算了，约会嘛，开心就好。"
-                        : "Remember to maintain social distance... Never mind. Enjoy your date.";
-                case "Evelyn":
-                    return isZh
-                        ? "哎呀，让我想起我和乔治年轻的时候……"
-                        : "Oh my, this reminds me when George and I were young...";
-                case "Caroline":
-                    return isZh
-                        ? "皮埃尔要是有一半这么浪漫就好了……"
-                        : "If only Pierre had half this much romance...";
-                case "Demetrius":
-                    return isZh
-                        ? "嗯……人类求偶行为观察样本 +1。"
-                        : "Fascinating... Human courtship behavior sample +1.";
-                case "Willy":
-                    return isZh
-                        ? "约会？不如跟我出海钓鱼！……开玩笑的。"
-                        : "A date? Better come fishing with me! ...Just kidding.";
-                case "Sandy" when !isZh:
-                    return "Oh! You two are so cute together!";
-                case "Sandy":
-                    return "哦～你们两个好般配呀！";
-                case "Linus":
-                    return isZh
-                        ? "自然的爱情……就像蘑菇一样自然生长。"
-                        : "Natural love... It grows like mushrooms.";
-                case "Krobus":
-                    return isZh
-                        ? "……人类的约会仪式，有趣。"
-                        : "...Human courtship rituals. Fascinating.";
-                default:
-                    break;
-            }
-
-            // 通用友好调侃池（按好感度随机抽取）
-            string[] genericPool;
-
-            if (Game1.player?.friendshipData?.TryGetValue(npc.Name, out var friendship) == true
-                && friendship != null && friendship.Points >= NPC.friendshipPointsPerHeartLevel * 6)
-            {
-                // 高好感通用池
-                genericPool = isZh
-                    ? new[] {
-                        $"哟，和 {partner} 约会呢？",
-                        "你们俩挺般配的嘛。",
-                        "嘻嘻，玩得开心点！",
-                        "哦～好浪漫啊。",
-                        $"（冲 {partner} 眨了眨眼）"
-                    }
-                    : new[] {
-                        $"On a date with {partner}, I see?",
-                        "You two make a cute couple.",
-                        "Have fun, lovebirds!",
-                        "Oh~ how romantic.",
-                        $"(winks at {partner})"
-                    };
-            }
-            else
-            {
-                // 低好感通用池（更克制、更日常）
-                genericPool = isZh
-                    ? new[] {
-                        "……嗯。",
-                        "哦。",
-                        "（点了点头）",
-                        "你们好。",
-                        "（微笑）"
-                    }
-                    : new[] {
-                        "...",
-                        "Oh.",
-                        "(nods)",
-                        "Hello there.",
-                        "(smiles)"
-                    };
-            }
-
-            return genericPool[Game1.random.Next(genericPool.Length)];
         }
 
         private void OnTimeChanged(object sender, TimeChangedEventArgs e)
@@ -1151,7 +1011,9 @@ namespace ValleytalkReborn
             HasGivenDateGiftThisSession = false;
             CurrentSession = null;
             _farewellCloseNpcName = null;
-            _lastBarkTimestamp = 0;
+
+            // ★ 生命周期回收：清空所有路人的目击冷却记录
+            _npcLastWitnessTime.Clear();
 
             // 清空队列中残留的回调，防止跨天或跨存档执行
             while (_mainThreadQueue.TryDequeue(out _))

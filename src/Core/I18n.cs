@@ -195,7 +195,7 @@ namespace ValleytalkReborn
             public static string EditButtonHover() => Lookup("Memory.EditButtonHover");
             public static string DeleteButtonHover() => Lookup("Memory.DeleteButtonHover");
             public static string AddTitle(string name) => FormatNpc(Lookup("Memory.AddTitle"), name);
-            public static string AddHint() => Lookup("Memory.AddHint");
+            public static string AddHint(string npcName) => FormatNpc(Lookup("Memory.AddHint"), npcName);
             public static string AddSuccess() => Lookup("Memory.AddSuccess");
 
             public static string AddFailedFull(int max)
@@ -246,6 +246,12 @@ namespace ValleytalkReborn
                     .Replace("{{Max}}", max.ToString())
                     .Replace("{{value}}", max.ToString())
                     .Replace("{{0}}", max.ToString());
+
+            public static string AutoPrefix() => Lookup("Memory.AutoPrefix");
+            public static string CallsignPrefix() => Lookup("Memory.CallsignPrefix");
+            public static string CallsignUnset() => Lookup("Memory.CallsignUnset");
+            public static string CallsignTitle(string npcName) => FormatNpc(Lookup("Memory.CallsignTitle"), npcName);
+            public static string CallsignHint() => Lookup("Memory.CallsignHint");
         }
 
         public static class DialogueInput

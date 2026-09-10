@@ -182,49 +182,32 @@ namespace ValleytalkReborn
                 // ==========================================
                 //  7. SVE (Stardew Valley Expanded) 拓展地点
                 // ==========================================
-                // 农场拓展
                 ["Custom_GrandpasShed"]             = ("Grandpa's Shed", "爷爷的储物木棚"),
                 ["Custom_GrandpasShedGreenhouse"]   = ("Grandpa's Shed Greenhouse", "爷爷的木棚温室"),
-
-                // 蓝月葡萄园 (Sophia)
                 ["Custom_BlueMoonVineyard"]         = ("Blue Moon Vineyard", "蓝月葡萄园"),
                 ["Custom_SophiaHouse"]              = ("Sophia's Cottage", "苏菲亚的小屋"),
                 ["Custom_SophiaCellar"]             = ("Sophia's Wine Cellar", "苏菲亚的藏酒窖"),
-
-                // 费尔黑文农场 (Andy)
                 ["Custom_FairhavenFarm"]            = ("Fairhaven Farm", "费尔黑文农场"),
                 ["Custom_AndyHouse"]                = ("Andy's House", "安迪的农舍"),
-
-                // 极光葡萄园 (Apples / Junimo)
                 ["Custom_AuroraVineyard"]           = ("Aurora Vineyard", "极光葡萄园"),
                 ["Custom_AuroraVineyardBasement"]   = ("Aurora Vineyard Cellar", "极光葡萄园地窖"),
                 ["Custom_AuroraVineyardCellar"]     = ("Aurora Vineyard Cellar", "极光葡萄园地窖"),
                 ["Custom_ApplesRoom"]               = ("Apples' Junimo Room", "小苹果的祝尼魔之室"),
-
-                // 詹金斯洋房 (Olivia & Victor)
                 ["Custom_JenkinsHouse"]             = ("the Jenkins Residence", "詹金斯家大宅"),
                 ["Custom_JenkinsCellar"]            = ("the Jenkins Wine Cellar", "詹金斯家酒窖"),
-
-                // 高地与前哨站 (Lance / Highlands)
                 ["Custom_Highlands"]                = ("the Highlands", "高地山区"),
                 ["Custom_HighlandsOutpost"]         = ("the Highlands Outpost", "高地探险哨所"),
                 ["Custom_HighlandsCavern"]          = ("the Highlands Cavern", "高地幽深洞窟"),
                 ["Custom_LanceHouse"]               = ("Lance's Quarters", "兰斯的居所"),
                 ["Custom_AdventurersGuildBarracks"] = ("the Guild Barracks", "探险家公会宿营区"),
-
-                // 剪水大桥与格兰普顿近郊 (Scarlett / Grampleton)
                 ["Custom_ShearwaterBridge"]         = ("Shearwater Bridge", "剪水大桥"),
                 ["Custom_GrampletonSuburbs"]        = ("Grampleton Suburbs", "格兰普顿城郊"),
                 ["Custom_ScarlettHouse"]            = ("Scarlett's House", "斯嘉丽的家"),
-
-                // 深红荒地与冒险家营地 (Crimson Badlands / Camilla / Alesia)
                 ["Custom_Badlands"]                 = ("the Crimson Badlands", "深红荒地"),
                 ["Custom_BadlandsCave"]             = ("the Badlands Caverns", "荒地危险洞窟"),
                 ["Custom_CrimsonBadlands"]          = ("the Crimson Badlands", "深红荒地"),
                 ["Custom_CrimsonBadlandsMines"]     = ("the Badlands Caverns", "荒地危险洞窟"),
                 ["Custom_CastleVillageOutpost"]     = ("Castle Village Outpost", "城堡村前哨站"),
-
-                // 森林与小镇新增建筑
                 ["Custom_ForestWest"]               = ("Western Cindersap Forest", "煤块森林西部荒野"),
                 ["Custom_BearCave"]                 = ("the Bear Cave", "巨熊洞穴"),
                 ["Custom_BearShrine"]               = ("the Bear Cave", "巨熊洞穴"),
@@ -270,10 +253,29 @@ namespace ValleytalkReborn
 
         private static readonly HashSet<string> Blacklist = new(StringComparer.OrdinalIgnoreCase)
         {
+            // ── 地面、地板与道路铺设 ──
             "Stone Floor", "Wood Floor", "Straw Floor", "Weathered Floor", "Crystal Floor",
+            "Brick Floor", "Rustic Plank Floor", "Stone Walkway Floor",
             "Stepping Stone Path", "Gravel Path", "Wood Path", "Cobblestone Path",
-            "Chest", "Stone Chest", "Junimo Chest",
+
+            // ── 容器与储物 ──
+            "Chest", "Stone Chest", "Junimo Chest", "Big Chest", "Big Stone Chest",
+
+            // ── 地面挖掘点与生成点（远古斑点/蚯蚓/种子斑点/补给箱等） ──
+            "Artifact Spot", "590", "Seed Spot", "SeedSpot", "Supply Crate", "SupplyCrate",
+            "远古斑点", "发掘点", "挖掘点", "発掘ポイント", "种子斑点",
+
+            // ── 地面自然杂物 ──
             "Weeds", "Stone", "Twig", "Fiber",
+            "杂草", "杂草丛", "石头", "树枝", "纤维",
+
+            // ── 废弃物与垃圾 ──
+            "Trash", "Driftwood", "Soggy Newspaper", "Broken CD", "Broken Glasses", "Rotten Plant",
+            "Joja Cola", "Trash Can",
+
+            // ── 基础农场围栏与灌溉工具（避免霸占视野） ──
+            "Wood Fence", "Stone Fence", "Iron Fence", "Hardwood Fence", "Gate",
+            "Sprinkler", "Quality Sprinkler", "Iridium Sprinkler",
             "Workbench", "Recycling Machine", "Mini-Obelisk",
         };
 
@@ -294,6 +296,43 @@ namespace ValleytalkReborn
             "地毯", "地砖", "地板", "垫子", "Rug", "Carpet", "Mat", "Floor", "Path",
             "桌布", "Tablecloth"
         };
+
+        // ─────────────────────────────────────────────
+        //  黑名单安全判定（多语言与底层元数据双重兜底）
+        // ─────────────────────────────────────────────
+        private static bool IsBlacklistedObject(StardewValley.Object obj)
+        {
+            if (obj == null) return true;
+
+            string name = obj.DisplayName ?? string.Empty;
+            string internalName = obj.Name ?? string.Empty;
+            string itemId = obj.ItemId ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(name)) return true;
+
+            // 1. 基础集合匹配（支持 ID、原英文名、本地化译名）
+            if (Blacklist.Contains(name) ||
+                Blacklist.Contains(internalName) ||
+                Blacklist.Contains(itemId))
+            {
+                return true;
+            }
+
+            // 2. 远古斑点与挖掘点底层元数据兜底（兼容 1.5/1.6）
+            if (obj.ParentSheetIndex == 590 ||
+                itemId == "590" ||
+                itemId.Equals("SeedSpot", StringComparison.OrdinalIgnoreCase) ||
+                internalName.IndexOf("Artifact Spot", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                internalName.IndexOf("Seed Spot", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                name.Contains("远古斑点") ||
+                name.Contains("発掘ポイント") ||
+                name.Contains("挖掘点"))
+            {
+                return true;
+            }
+
+            return false;
+        }
 
         // ─────────────────────────────────────────────
         //  对外 API
@@ -360,7 +399,6 @@ namespace ValleytalkReborn
         {
             var rawResults = ScanInternal(npc, radiusTiles, maxItems * SCAN_BUFFER_MULTIPLIER);
 
-            // 核心修复：纯展示文本层剔除 NPC，现场村民由 sceneNearbyVillagers 独立感知呈现
             var objectResults = rawResults.Where(item => item.Type != "NPC");
 
             // 按优先级分桶组装
@@ -392,9 +430,6 @@ namespace ValleytalkReborn
             return results;
         }
 
-        /// <summary>
-        /// 统一使用内部扫描管线
-        /// </summary>
         public static List<(string Description, Vector2 Tile)> ScanNearbyObjectsWithTiles(
             NPC npc, int radiusTiles = 15, int maxItems = 20)
         {
@@ -469,7 +504,7 @@ namespace ValleytalkReborn
 
             try
             {
-                // ── 1. 扫描周围 NPC（Tier 1：NPC 列表很小，直接按列表过滤）──
+                // ── 1. 扫描周围 NPC ──
                 foreach (var character in location.characters)
                 {
                     if (character == null || character == npc) continue;
@@ -484,7 +519,7 @@ namespace ValleytalkReborn
                     if (results.Count >= maxRawItems) return results;
                 }
 
-                // ── 2. 扫描地形特征与放置物品（局部定界查询，杜绝全图遍历）──
+                // ── 2. 扫描地形特征与放置物品（局部定界查询）──
                 int minX = (int)centerTile.X - radiusTiles;
                 int maxX = (int)centerTile.X + radiusTiles;
                 int minY = (int)centerTile.Y - radiusTiles;
@@ -515,35 +550,30 @@ namespace ValleytalkReborn
                         // 2.2 放置物品 (Machines, Storage, Forageables 等)
                         if (location.Objects.TryGetValue(tile, out var obj) && obj != null)
                         {
-                            string name = obj.DisplayName;
-                            string internalObjName = obj.Name ?? string.Empty;
-                            string itemId = obj.ItemId ?? string.Empty;
+                            if (IsBlacklistedObject(obj)) continue;
 
-                            if (!string.IsNullOrWhiteSpace(name) &&
-                                !Blacklist.Contains(name) &&
-                                !Blacklist.Contains(internalObjName) &&
-                                !Blacklist.Contains(itemId))
+                            string desc = DescribeObject(obj);
+                            if (!string.IsNullOrEmpty(desc))
                             {
-                                string desc = DescribeObject(obj);
-                                if (!string.IsNullOrEmpty(desc))
-                                {
-                                    int priority = 3;
-                                    if (Tier1_Creatures.Contains(internalObjName) || Tier1_Creatures.Contains(name))
-                                        priority = 1;
-                                    else if (Tier2_ActiveDevices.Contains(internalObjName) || Tier2_ActiveDevices.Contains(name))
-                                        priority = 2;
-                                    else if (Tier3_Landmarks.Contains(internalObjName) || Tier3_Landmarks.Contains(name))
-                                        priority = 3;
+                                int priority = 3;
+                                string internalObjName = obj.Name ?? string.Empty;
+                                string name = obj.DisplayName ?? string.Empty;
 
-                                    results.Add(new ScanItem(desc, tile, priority, "Object"));
-                                    if (results.Count >= maxRawItems) return results;
-                                }
+                                if (Tier1_Creatures.Contains(internalObjName) || Tier1_Creatures.Contains(name))
+                                    priority = 1;
+                                else if (Tier2_ActiveDevices.Contains(internalObjName) || Tier2_ActiveDevices.Contains(name))
+                                    priority = 2;
+                                else if (Tier3_Landmarks.Contains(internalObjName) || Tier3_Landmarks.Contains(name))
+                                    priority = 3;
+
+                                results.Add(new ScanItem(desc, tile, priority, "Object"));
+                                if (results.Count >= maxRawItems) return results;
                             }
                         }
                     }
                 }
 
-                // ── 3. 扫描家具（通常只在室内出现，家具列表极小）──
+                // ── 3. 扫描家具 ──
                 if (location is StardewValley.Locations.DecoratableLocation decoratable)
                 {
                     foreach (var furniture in decoratable.furniture)
@@ -598,18 +628,10 @@ namespace ValleytalkReborn
         private static string DescribeObject(StardewValley.Object obj)
         {
             if (obj == null) return null;
+            if (IsBlacklistedObject(obj)) return null;
 
             string name = SanitizeObjectName(obj.DisplayName);
-            string internalName = obj.Name ?? string.Empty;
-            string itemId = obj.ItemId ?? string.Empty;
-
-            if (string.IsNullOrWhiteSpace(name) ||
-                Blacklist.Contains(name) ||
-                Blacklist.Contains(internalName) ||
-                Blacklist.Contains(itemId))
-            {
-                return null;
-            }
+            if (string.IsNullOrWhiteSpace(name)) return null;
 
             if (obj.bigCraftable.Value)
                 return name;

@@ -149,6 +149,70 @@ internal sealed class NpcRelationRegistry
         return lines.Count > 0 ? string.Join("\n", lines) : null;
     }
 
+    // ══════════════════════════════════════════════════════════
+    //  Bark 焦点路由用：快速点对点关系查询
+    // ══════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// 查询两个 NPC 之间是否存在预设关系（亲属、死党、乐队同伴等）。
+    /// 供 BarkFocusRouter 的 T2 关系网分层使用。
+    /// </summary>
+    public bool TryGetRelation(string npcA, string npcB, bool isZh, out string description)
+    {
+        description = null;
+        if (string.IsNullOrWhiteSpace(npcA) || string.IsNullOrWhiteSpace(npcB)) return false;
+
+        if (!_loaded)
+            LoadAll(ModEntry.SHelper, ModEntry.SMonitor);
+
+        if (!_loaded || _relations.Count == 0) return false;
+
+        string key = MakeKey(npcA, npcB);
+
+        lock (_lock)
+        {
+            if (!_relations.TryGetValue(key, out var entry) || entry.Disabled)
+                return false;
+
+            if (entry.Descriptions == null) return false;
+
+            string langCode = LocalizedContentManager.CurrentLanguageCode.ToString().ToLowerInvariant();
+
+            if (isZh)
+            {
+                if (!entry.Descriptions.TryGetValue("zh", out var desc) || string.IsNullOrWhiteSpace(desc))
+                    entry.Descriptions.TryGetValue("en", out desc);
+                description = desc;
+            }
+            else
+            {
+                entry.Descriptions.TryGetValue("en", out description);
+            }
+
+            return !string.IsNullOrWhiteSpace(description);
+        }
+    }
+
+    /// <summary>
+    /// 快速检查两个 NPC 是否在关系网中（不返回描述文本，仅布尔判定）。
+    /// </summary>
+    public bool HasRelation(string npcA, string npcB)
+    {
+        if (string.IsNullOrWhiteSpace(npcA) || string.IsNullOrWhiteSpace(npcB)) return false;
+
+        if (!_loaded)
+            LoadAll(ModEntry.SHelper, ModEntry.SMonitor);
+
+        if (!_loaded || _relations.Count == 0) return false;
+
+        string key = MakeKey(npcA, npcB);
+
+        lock (_lock)
+        {
+            return _relations.TryGetValue(key, out var entry) && !entry.Disabled;
+        }
+    }
+
     private static string MakeKey(string a, string b) =>
         string.Compare(a, b, StringComparison.OrdinalIgnoreCase) <= 0
             ? $"{a}|{b}"

@@ -94,13 +94,16 @@ internal static class BarkFocusRouter
             return list;
         }
 
-        // ── 池 1：Introspective（角色心事，受疲劳阻尼） ──
+        // ── 池 1：Introspective（内心世界） ──
+        // 1a. 心事常态（解除硬编码 0.2，基准权重 0.7f）
         TryAddPreoccupation(bio, lastType, list);
+        // 1b. 记忆闪回（低频彩蛋 0.25f，受时空心境门槛限制）
+        TryAddLongIntervalEcho(npc, lastType, isZh, list);
 
-        // ── 池 2：Interactive（瞬态感知 + 在场最熟悉者） ──
+        // ── 池 2：Interactive（外部互动与在场感知） ──
         TryAddInteractive(npc, lastType, isZh, list);
 
-        // ── 池 3：Sensory（体感/天气/室内物件） ──
+        // ── 池 3：Sensory（体感/天气/室内物件，基准 1.8f） ──
         TryAddSensory(npc, lastType, lastSensoryKey, isZh, list);
 
         return list;
@@ -158,7 +161,7 @@ internal static class BarkFocusRouter
     }
 
     // ──────────────────────────────────────────────────────────
-    //  池 1：Introspective（仅 Preoccupation 心事，受疲劳阻尼）
+    //  池 1a：心事常态 (Preoccupation) - 一放
     // ──────────────────────────────────────────────────────────
 
     private static void TryAddPreoccupation(
@@ -169,10 +172,11 @@ internal static class BarkFocusRouter
         if (bio?.Preoccupations != null && bio.Preoccupations.Count > 0)
         {
             var picked = bio.Preoccupations[_rng.Next(bio.Preoccupations.Count)];
-            float weight = 1.0f;
-            if (lastType == BarkFocusType.Introspective) weight *= 0.3f;
 
-            weight *= 0.2f;
+            // 基准权重 0.7f：低于感官(1.8f)，但在平静时刻能自然浮现
+            float weight = 0.7f;
+            if (lastType == BarkFocusType.Introspective)
+                weight *= 0.3f; // 疲劳阻尼：防连续自我内耗
 
             if (weight > 0.01f)
             {
@@ -188,7 +192,56 @@ internal static class BarkFocusRouter
     }
 
     // ──────────────────────────────────────────────────────────
-    //  池 2：Interactive
+    //  池 1b：记忆闪回 (LongIntervalEcho) - 一缓
+    // ──────────────────────────────────────────────────────────
+
+    private static void TryAddLongIntervalEcho(
+        NPC npc,
+        BarkFocusType lastType,
+        bool isZh,
+        List<Candidate> list)
+    {
+        var loc = npc?.currentLocation;
+        if (loc == null) return;
+
+        // 门槛闸门：仅在情绪易泛滥的情境下才允许闪回
+        bool isQuietTime    = Game1.timeOfDay >= 2000;
+        bool isGloomyWeather = Game1.isRaining || Game1.isSnowing || Game1.isLightning;
+        bool isIndoorQuiet  = !loc.IsOutdoors && loc.characters.Count <= 3;
+
+        if (!isQuietTime && !isGloomyWeather && !isIndoorQuiet)
+            return;
+
+        var memoryMgr = MemoryManager.Instance;
+        if (memoryMgr == null) return;
+
+        string echoText = memoryMgr.GetRandomMemoryFragment(npc.Name);
+        if (string.IsNullOrWhiteSpace(echoText)) return;
+
+        // 极低频彩蛋权重（0.25f）
+        float fatigueMult = (lastType == BarkFocusType.Introspective) ? 0.3f : 1.0f;
+        float weight = 0.25f * fatigueMult;
+
+        if (weight > 0.01f)
+        {
+            // 碎片化包装：引导模型只捕捉情绪余波，不要复述日记
+            string cleanedMemory = echoText.Trim().TrimEnd('。', '.', '！', '!');
+            string contextLine = isZh
+                ? $"脑子里忽然掠过以前的一点事（{cleanedMemory}）... 只是闪了一下念头。"
+                : $"A fleeting trace of the past crossed your mind ({cleanedMemory})... just a passing thought.";
+
+            list.Add(new Candidate(weight, new BarkFocusDecision
+            {
+                FocusType           = BarkFocusType.Introspective,
+                InjectedContextLine = contextLine,
+                AllowThinkingLens   = false,
+                SensoryItemKey      = null
+            }));
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────
+    //  池 2：Interactive（含关系网分层） - 一限
     // ──────────────────────────────────────────────────────────
 
     private static void TryAddInteractive(
@@ -199,7 +252,7 @@ internal static class BarkFocusRouter
     {
         float fatigueMult = (lastType == BarkFocusType.Interactive) ? 0.3f : 1.0f;
 
-        // 2a. 瞬态感知（携带感知对象以供即焚）
+        // 2a. 瞬态感知（最高优先级交互）
         var perceptions = PerceptionManager.Instance?.GetFilteredBucketFor(npc.Name, 1);
         if (perceptions != null && perceptions.Count > 0)
         {
@@ -209,33 +262,85 @@ internal static class BarkFocusRouter
                 string cleaned = FormatPerceptionForBark(entry.Template, isZh);
                 if (!string.IsNullOrWhiteSpace(cleaned))
                 {
-                    float weight = 2.5f * fatigueMult;
-                    list.Add(new Candidate(weight, new BarkFocusDecision
+                    list.Add(new Candidate(2.5f * fatigueMult, new BarkFocusDecision
                     {
                         FocusType           = BarkFocusType.Interactive,
                         InjectedContextLine = cleaned,
                         AllowThinkingLens   = false,
                         SensoryItemKey      = null,
-                        MatchedPerception   = entry // 绑定命中条目
+                        MatchedPerception   = entry
                     }));
                 }
             }
         }
 
-        // 2b. 在场最熟悉者（仅限玩家或配偶）
-        var notable = FindMostNotableNearby(npc, isZh);
-        if (notable != null)
+        // 2b. 约会目击
+        var witnessDecision = TryGetWitnessDateFocus(npc, isZh);
+        if (witnessDecision != null)
         {
-            float weight = 1.5f * fatigueMult;
-            list.Add(new Candidate(weight, new BarkFocusDecision
+            list.Add(new Candidate(3.0f * fatigueMult, witnessDecision));
+        }
+
+        // 2c. 附近人物感知（分层竞争：T1-T4 关系网阶梯）
+        var nearbyCandidates = EvaluateNearbyPresence(npc, isZh);
+        foreach (var person in nearbyCandidates)
+        {
+            list.Add(new Candidate(person.Weight * fatigueMult, new BarkFocusDecision
             {
                 FocusType           = BarkFocusType.Interactive,
-                InjectedContextLine = notable,
+                InjectedContextLine = person.Description,
                 AllowThinkingLens   = false,
                 SensoryItemKey      = null,
                 MatchedPerception   = null
             }));
         }
+    }
+
+    /// <summary>
+    /// 检查该路人 NPC 是否正在目击玩家与约会对象的约会。
+    /// 若是，返回 Interactive 焦点决策（纯事实描述，情绪由模型依据人设自由发挥）；
+    /// 若否，返回 null。
+    /// 命中后立即调用 DateManager.RecordNpcWitnessDate 记录 60 分钟冷却。
+    /// </summary>
+    private static BarkFocusDecision TryGetWitnessDateFocus(
+        NPC npc,
+        bool isZh)
+    {
+        var dateManager = DateManager.Instance;
+        if (dateManager == null) return null;
+        if (!dateManager.CanNpcWitnessDate(npc.Name)) return null;
+
+        // 空间感知：路人 NPC 与玩家必须在同一地图，且处于视线范围（7 格）
+        var player = Game1.player;
+        if (player == null || npc.currentLocation != player.currentLocation) return null;
+
+        const int WitnessRangeSquared = 49; // 7×7 格
+        if (!DialogueUtilities.IsInRangeSquared(npc, player, WitnessRangeSquared))
+            return null;
+
+        string datePartner = dateManager.ActiveDateNpcName;
+        if (string.IsNullOrEmpty(datePartner)) return null;
+
+        string partnerName = isZh
+            ? NpcNameLocalizer.GetZhName(datePartner)
+            : (Game1.getCharacterFromName(datePartner)?.displayName ?? datePartner);
+
+        // 成功消费门票：记录该 NPC 的 60 游戏分钟冷却
+        dateManager.RecordNpcWitnessDate(npc.Name);
+
+        // 纯事实描述，绝不预设情绪（让模型依据人设自由发挥好奇、祝福、吃味或调侃）
+        string context = isZh
+            ? $"你注意到农夫正和 {partnerName} 在一起，从两人的举止神态和氛围来看，明显是在约会。"
+            : $"You notice the farmer and {partnerName} together nearby. From their closeness and the atmosphere, they are clearly on a date.";
+
+        return new BarkFocusDecision
+        {
+            FocusType           = BarkFocusType.Interactive,
+            InjectedContextLine = context,
+            AllowThinkingLens   = false,  // 观察外界生动事件时，关闭内耗心事
+            SensoryItemKey      = null,
+            MatchedPerception   = null
+        };
     }
 
     // ──────────────────────────────────────────────────────────
@@ -377,57 +482,153 @@ internal static class BarkFocusRouter
     }
 
     // ══════════════════════════════════════════════════════════
-    //  辅助：Interactive 在场最熟悉者
+    //  辅助：Interactive 附近人物感知（关系网分层 T1-T4）
     // ══════════════════════════════════════════════════════════
 
-    private static string FindMostNotableNearby(NPC npc, bool isZh)
+    private readonly struct PersonCandidate
     {
-        var loc = npc?.currentLocation;
-        if (loc == null || Game1.player == null) return null;
-
-        bool isOutdoors   = loc.IsOutdoors;
-        int rangeSquared  = isOutdoors ? 100 : 49;
-
-        int bestHearts   = 2; // >2 心保底
-        string bestLabel = null;
-
-        // 检查玩家
-        var player = Game1.player;
-        if (player.currentLocation == loc &&
-            DialogueUtilities.IsInRangeSquared(npc, player, rangeSquared))
-        {
-            if (player.friendshipData != null &&
-                player.friendshipData.TryGetValue(npc.Name, out var fs) && fs != null)
-            {
-                int hearts = fs.Points / 250;
-                if (hearts > bestHearts)
-                {
-                    bestHearts = hearts;
-                    string pName = player.displayName ?? player.Name ?? "player";
-                    bestLabel = isZh
-                        ? $"玩家{pName}就在附近。"
-                        : $"{pName} is nearby.";
-                }
-            }
-        }
-
-        // 检查其他 NPC（仅当对方是配偶或有特殊羁绊时触发，严禁使用玩家的 friendshipData）
-        string spouseName = npc.getSpouse()?.Name;
-        foreach (var other in loc.characters)
-        {
-            if (other == null || other == npc || !other.IsVillager) continue;
-            if (!DialogueUtilities.IsInRangeSquared(npc, other, rangeSquared)) continue;
-
-            // 如果是已婚配偶路过，赋予最高吸引力
-            if (!string.IsNullOrEmpty(spouseName) && string.Equals(other.Name, spouseName, StringComparison.OrdinalIgnoreCase))
-            {
-                string dn = isZh ? NpcNameLocalizer.GetZhName(other.Name) : (other.displayName ?? other.Name);
-                return isZh ? $"{dn}就在不远处。" : $"{dn} is nearby.";
-            }
-        }
-
-        return bestLabel;
+        public readonly float Weight;
+        public readonly string Description;
+        public PersonCandidate(float weight, string description) { Weight = weight; Description = description; }
     }
+
+    /// <summary>
+/// 基于关系网、好感度与人群密度，动态评估在场人物与氛围
+/// 彻底适配星落酒吧（高密度）与节日广场等拥挤场景
+/// </summary>
+private static List<PersonCandidate> EvaluateNearbyPresence(NPC npc, bool isZh)
+{
+    var result = new List<PersonCandidate>();
+    var loc = npc?.currentLocation;
+    if (loc == null) return result;
+
+    bool isFestival = Game1.isFestival() || Game1.CurrentEvent?.isFestival == true;
+    int rangeSquared = loc.IsOutdoors ? 100 : 49;
+    var player = Game1.player;
+
+    // ── 1. 节日专属氛围拦截 ──
+    if (isFestival)
+    {
+        // 节日时全员聚拢，注意力首选节日整体氛围，不再逐个挑路人
+        string festivalName = Game1.CurrentEvent?.FestivalName ?? (isZh ? "节日" : "festival");
+        string festDesc = isZh
+            ? $"今天是{festivalName}，广场上到处都是镇民，气氛格外喧闹。"
+            : $"It's the {festivalName} today — the whole town is gathered around, bustling and loud.";
+
+        result.Add(new PersonCandidate(1.2f, festDesc));
+
+        // 节日里如果有配偶在身边，依然保留极高亲密注目
+        string spouseN = npc.getSpouse()?.Name;
+        if (!string.IsNullOrEmpty(spouseN) && loc.getCharacterFromName(spouseN) is NPC sp &&
+            DialogueUtilities.IsInRangeSquared(npc, sp, rangeSquared))
+        {
+            string sName = isZh ? NpcNameLocalizer.GetZhName(sp.Name) : (sp.displayName ?? sp.Name);
+            result.Add(new PersonCandidate(1.6f, isZh ? $"{sName}就在你身边。" : $"{sName} is right by your side."));
+        }
+
+        return result; // 节日直接收口，不再处理日常人际扫描
+    }
+
+    // ── 2. 玩家在场判定 ──
+    if (player != null && player.currentLocation == loc && DialogueUtilities.IsInRangeSquared(npc, player, rangeSquared))
+    {
+        int hearts = 0;
+        if (player.friendshipData != null && player.friendshipData.TryGetValue(npc.Name, out var fs) && fs != null)
+        {
+            hearts = fs.Points / 250;
+        }
+
+        string pName = player.displayName ?? player.Name ?? "农夫";
+
+        if (hearts >= 8)
+        {
+            result.Add(new PersonCandidate(1.6f, isZh ? $"{pName}就在身边。" : $"{pName} is right nearby."));
+        }
+        else if (hearts >= 2)
+        {
+            result.Add(new PersonCandidate(0.5f, isZh ? $"注意到农夫就在不远处。" : "Noticed the farmer nearby."));
+        }
+        else
+        {
+            // 低好感玩家做虚焦处理
+            result.Add(new PersonCandidate(0.35f, isZh ? "有人从不远处走过去了。" : "Caught sight of someone walking past."));
+        }
+    }
+
+    // ── 3. 其他村民与人群密度计算 ──
+    string spouseName = npc.getSpouse()?.Name;
+    var inRangeVillagers = loc.characters
+        .Where(c => c != null && c != npc && c.IsVillager && DialogueUtilities.IsInRangeSquared(npc, c, rangeSquared))
+        .ToList();
+
+    int crowdCount = inRangeVillagers.Count;
+    if (crowdCount == 0)
+        return result;
+
+    // 优先 3.1: 配偶在场 (最高优先级)
+    var spouse = inRangeVillagers.FirstOrDefault(c =>
+        !string.IsNullOrEmpty(spouseName) && string.Equals(c.Name, spouseName, StringComparison.OrdinalIgnoreCase));
+
+    if (spouse != null)
+    {
+        string sName = isZh ? NpcNameLocalizer.GetZhName(spouse.Name) : (spouse.displayName ?? spouse.Name);
+        result.Add(new PersonCandidate(1.6f, isZh ? $"{sName}就在不远处。" : $"{sName} is nearby."));
+        return result;
+    }
+
+    // 优先 3.2: 关系网命中（亲属、死党、乐队同伴）
+    var relatedVillagers = new List<(NPC character, string relDesc)>();
+    foreach (var other in inRangeVillagers)
+    {
+        if (NpcRelationRegistry.Instance.TryGetRelation(npc.Name, other.Name, isZh, out var relDesc))
+        {
+            relatedVillagers.Add((other, relDesc));
+        }
+    }
+
+    if (relatedVillagers.Count > 0)
+    {
+        var chosen = relatedVillagers[_rng.Next(relatedVillagers.Count)];
+        string oName = isZh ? NpcNameLocalizer.GetZhName(chosen.character.Name) : (chosen.character.displayName ?? chosen.character.Name);
+
+        // 如果在拥挤的室内（如酒吧），描述加上空间距离感
+        string noticeLine = (crowdCount >= 4 && !loc.IsOutdoors)
+            ? (isZh ? $"隔着人群看到{oName}也在那边。" : $"Spotted {oName} over through the crowd.")
+            : (isZh ? $"看见{oName}也在附近。" : $"Noticed {oName} around here too.");
+
+        result.Add(new PersonCandidate(0.8f, noticeLine));
+        return result;
+    }
+
+    // ── 3.3 降级处理：无特殊关系时的环境反馈 ──
+    if (crowdCount >= 4)
+    {
+        // ★ 高密度人群特异化（酒吧/聚会）：将注意力转向整体环境氛围，权重提升至 0.7f
+        if (!loc.IsOutdoors)
+        {
+            // 典型场景：星落酒吧周五晚
+            string barAtmosphere = isZh
+                ? "周围聚了不少人，满是断断续续的说笑和碰杯声。"
+                : "The place is quite packed, filled with intermittent chatter and clinking glasses.";
+            result.Add(new PersonCandidate(0.7f, barAtmosphere));
+        }
+        else
+        {
+            // 典型场景：户外集会
+            string outdoorCrowd = isZh
+                ? "附近聚着好些镇民，周围显得有些嘈杂。"
+                : "A good number of townsfolk have gathered around, pretty bustling.";
+            result.Add(new PersonCandidate(0.6f, outdoorCrowd));
+        }
+    }
+    else
+    {
+        // 普通低密度场景：1~3 个无关系路人，依然采用淡化虚焦
+        result.Add(new PersonCandidate(0.35f, isZh ? "周围有镇民在走动散步。" : "A few townsfolk are milling about nearby."));
+    }
+
+    return result;
+}
 
     // ══════════════════════════════════════════════════════════
     //  辅助：Perception 模板净化
