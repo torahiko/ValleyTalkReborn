@@ -105,10 +105,21 @@ namespace ValleytalkReborn
                 {
                     if (Game1.random.NextDouble() < 0.15)
                     {
-                        // 设置标志，让配偶 NPC 的对话系统在早上触发口头邀请
+                        // 随机选取一个约会地点
+                        var locKeys = DateLocationRegistry.Locations.Keys.ToList();
+                        string chosenLocId = locKeys[Game1.random.Next(locKeys.Count)];
+
+                        // 写入待处理邀约队列，供 CheckAction 拦截消费
+                        DateManager.Instance.TrySetPendingInvite(new DatePendingInvite
+                        {
+                            NpcName    = spouseName,
+                            LocationId = chosenLocId,
+                            Channel    = DateInviteChannel.Verbal
+                        });
+
                         DateManager.Instance.SpouseMorningInvitePending = true;
                         ModEntry.SMonitor?.Log(
-                            $"[InvitationManager] Spouse {spouseName} will invite verbally today.",
+                            $"[InvitationManager] Spouse {spouseName} will invite verbally today @ {chosenLocId}.",
                             LogLevel.Info);
                         return;
                     }

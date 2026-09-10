@@ -669,6 +669,7 @@ public class LlmDialogueService
         string s = Regex.Replace(text, @"#\$[^\#]+#?", "");
         s = Regex.Replace(s, @"\$[a-zA-Z0-9]", "");
         s = Regex.Replace(s, @"\[ACTION:.*?\]", "");
+        s = Regex.Replace(s, @"\[UI:.*?\]", "");        // 清洗 UI 驱动标签，防止污染会话历史
         s = Regex.Replace(s, @"\[MOOD:\w+\]", "");
         s = Regex.Replace(s, @"\[\d+\]", "");
         // Clean up empty parentheses left after removing page-break tokens, e.g. (##) or ()

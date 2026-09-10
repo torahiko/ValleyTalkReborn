@@ -34,74 +34,26 @@ namespace ValleytalkReborn
     }
 
     // ══════════════════════════════════════════════════════════════
-    //  1. 约会地点元数据池（POI 环境细节）
+    //  1-b. 待处理邀约类型（T7′ 前置数据结构）
     // ══════════════════════════════════════════════════════════════
-    public class DateLocationInfo
+
+    public enum DateInviteChannel
     {
-        public string LocationId { get; set; }
-        public string DisplayNameZh { get; set; }
-        public string DisplayNameEn { get; set; }
-        public string ContextDescriptionZh { get; set; }
-        public string ContextDescriptionEn { get; set; }
+        Verbal,
+        Mail
     }
 
-    public static class DateLocationRegistry
+    public sealed record DatePendingInvite
     {
-        public static readonly Dictionary<string, DateLocationInfo> Locations =
-            new(StringComparer.OrdinalIgnoreCase)
-            {
-                ["Saloon"] = new DateLocationInfo
-                {
-                    LocationId = "Saloon",
-                    DisplayNameZh = "星之果实酒吧 (Saloon)",
-                    DisplayNameEn = "the Stardrop Saloon",
-                    ContextDescriptionZh = "酒吧里暖意融融，壁炉柴火噼啪作响，空气中弥漫着麦芽酒与披萨的香气，还有点唱机的轻柔旋律。",
-                    ContextDescriptionEn =
-                        "The saloon is warm and bustling, with the gentle crackle of the fireplace, aroma of food, and soft music."
-                },
-                ["Beach"] = new DateLocationInfo
-                {
-                    LocationId = "Beach",
-                    DisplayNameZh = "海滩码头 (Beach)",
-                    DisplayNameEn = "the Beach Pier",
-                    ContextDescriptionZh = "夜晚的海风带着微咸的湿气，海浪一下下拍打着栈桥，头顶是无垠的星空与粼粼的波光。",
-                    ContextDescriptionEn =
-                        "The evening ocean breeze is gentle and cool, with waves softly lapping against the wooden pier beneath a starry sky."
-                },
-                ["Forest"] = new DateLocationInfo
-                {
-                    LocationId = "Forest",
-                    DisplayNameZh = "秘密森林 (Forest)",
-                    DisplayNameEn = "the Secret Forest",
-                    ContextDescriptionZh = "幽静的森林深处荧光闪烁，古树环绕，池塘水面倒映着夜色，四周静谧得只有虫鸣与树叶沙沙声。",
-                    ContextDescriptionEn =
-                        "Secluded deep within ancient trees, with faint glowing mushrooms, still waters, and soft whispers of nature."
-                },
-                ["Mountain"] = new DateLocationInfo
-                {
-                    LocationId = "Mountain",
-                    DisplayNameZh = "深山湖畔 (Mountain)",
-                    DisplayNameEn = "the Mountain Lake",
-                    ContextDescriptionZh = "山顶湖畔夜风清凉，远眺能看到小镇的零星灯火，倒映在清澈冰凉的湖面上，格外浪漫开阔。",
-                    ContextDescriptionEn =
-                        "Cool crisp mountain air overlooking the lake, with distant town lights twinkling on the water."
-                },
-                ["Town"] = new DateLocationInfo
-                {
-                    LocationId = "Town",
-                    DisplayNameZh = "鹈鹕镇广场 (Town)",
-                    DisplayNameEn = "Pelican Town Square",
-                    ContextDescriptionZh = "小镇广场的路灯泛着暖黄色的光晕，两人在石板路边散步，气氛悠闲而日常。",
-                    ContextDescriptionEn =
-                        "Streetlamps cast a warm golden glow across the cobblestone square, creating a peaceful evening stroll."
-                }
-            };
+        public string NpcName     { get; init; } = "";
+        public string LocationId  { get; init; } = "";
+        public DateInviteChannel Channel { get; init; } = DateInviteChannel.Verbal;
     }
 
     // ══════════════════════════════════════════════════════════════
     //  2. 约会会话专属上下文收集容器
     // ══════════════════════════════════════════════════════════════
-    public sealed record DialogueRecord(string Speaker, string Text);
+    public sealed record DialogueRecord(string Speaker, string Text, int GameTime);
 
     public sealed record GiftRecord(string ItemName, int Taste);
 
@@ -132,7 +84,7 @@ namespace ValleytalkReborn
         }
 
         public void RecordDialogue(string speaker, string text)
-            => DialogueLogs.Add(new DialogueRecord(speaker, text));
+            => DialogueLogs.Add(new DialogueRecord(speaker, text, Game1.timeOfDay));
 
         public void RecordGift(string giftName, int taste)
         {
@@ -149,9 +101,11 @@ namespace ValleytalkReborn
         {
             string latenessNote = Lateness switch
             {
+                LatenessLevel.TooEarly => "（玩家过早到达，早于 18:00）",
                 LatenessLevel.OnTime => "（玩家准时到达）",
                 LatenessLevel.SlightlyLate => "（玩家轻度迟到，19:00-21:00 之间到达）",
                 LatenessLevel.VeryLate => "（玩家严重迟到，21:00-22:00 之间到达）",
+                LatenessLevel.MissedWindow => "（玩家错过约会窗口，22:00 后才到达）",
                 _ => ""
             };
 
@@ -163,7 +117,7 @@ namespace ValleytalkReborn
 守时情况: {latenessNote}
 
 === 互动对话流水 ===
-{(DialogueLogs.Count > 0 ? string.Join("\n", DialogueLogs.Select(d => $"[{d.Speaker}]: {d.Text}")) : "（两人安静相伴散步，未进行长篇交流）")}
+{(DialogueLogs.Count > 0 ? string.Join("\n", DialogueLogs.Select(d => $"[{d.GameTime / 100:D2}:{d.GameTime % 100:D2}] [{d.Speaker}]: {d.Text}")) : "（两人安静相伴散步，未进行长篇交流）")}
 
 === 礼物与互动行为 ===
 {(GiftLogs.Count > 0 ? string.Join("\n", GiftLogs.Select(g => $"玩家赠送了礼物【{g.ItemName}】(喜好评级: {g.Taste})")) : "（未赠送额外礼物）")}
@@ -174,9 +128,11 @@ namespace ValleytalkReborn
 
     public enum LatenessLevel
     {
-        OnTime, // 19:00 之前到达
-        SlightlyLate, // 19:00 ~ 21:00
-        VeryLate // 21:00 ~ 22:00
+        TooEarly,    // < 18:00 到达（约会尚未可触发）
+        OnTime,      // 18:00 ~ 19:00 到达
+        SlightlyLate,// 19:00 ~ 21:00 到达
+        VeryLate,    // 21:00 ~ 22:00 到达
+        MissedWindow // >= 22:00 到达（错过约会窗口）
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -206,14 +162,32 @@ namespace ValleytalkReborn
             LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
 
         // ─── 只读派生集合（供外部查询）───────────────────────────────
-        public static readonly Dictionary<string, string> LocationDisplayNames =
-            DateLocationRegistry.Locations.ToDictionary(
-                k => k.Key,
-                v => $"{v.Value.DisplayNameZh} / {v.Value.DisplayNameEn}",
-                StringComparer.OrdinalIgnoreCase);
+        public static Dictionary<string, string> LocationDisplayNames
+        {
+            get
+            {
+                if (DateLocationRegistry.Locations == null)
+                    return new Dictionary<string, string>();
 
-        public static readonly HashSet<string> WhitelistedLocations =
-            new(DateLocationRegistry.Locations.Keys, StringComparer.OrdinalIgnoreCase);
+                return DateLocationRegistry.Locations.ToDictionary(
+                    k => k.Key,
+                    v => $"{v.Value.DisplayNameZh} / {v.Value.DisplayNameEn}",
+                    StringComparer.OrdinalIgnoreCase);
+            }
+        }
+
+        public static HashSet<string> WhitelistedLocations
+        {
+            get
+            {
+                if (DateLocationRegistry.Locations == null)
+                    return new HashSet<string>();
+
+                return new HashSet<string>(
+                    DateLocationRegistry.Locations.Keys,
+                    StringComparer.OrdinalIgnoreCase);
+            }
+        }
 
         // ─── 时间常量 ─────────────────────────────────────────────────
         private const int EarliestDateTriggerTime = 1800;
@@ -242,6 +216,9 @@ namespace ValleytalkReborn
         // 外部系统仍需要的状态（保持 public，供 NpcReceiveGiftPatch 等使用）
         public bool SpouseMorningInvitePending { get; set; } = false;
         public bool HasGivenDateGiftThisSession { get; set; } = false;
+
+        // ─── 待处理邀约队列（T7′ 前置状态）──────────────────────
+        private readonly ConcurrentDictionary<string, DatePendingInvite> _pendingInvites = new(StringComparer.OrdinalIgnoreCase);
 
         // ─── 私有状态 ─────────────────────────────────────────────────
 
@@ -275,6 +252,7 @@ namespace ValleytalkReborn
             helper.Events.GameLoop.DayStarted += OnDayStarted;
             helper.Events.GameLoop.DayEnding += OnDayEnding;
             helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
+            helper.Events.GameLoop.ReturnedToTitle += OnReturnedToTitle;
             helper.Events.Player.Warped += OnPlayerWarped;
             helper.Events.Display.MenuChanged += OnMenuChanged;
         }
@@ -286,6 +264,7 @@ namespace ValleytalkReborn
             helper.Events.GameLoop.DayStarted -= OnDayStarted;
             helper.Events.GameLoop.DayEnding -= OnDayEnding;
             helper.Events.GameLoop.SaveLoaded -= OnSaveLoaded;
+            helper.Events.GameLoop.ReturnedToTitle -= OnReturnedToTitle;
             helper.Events.Player.Warped -= OnPlayerWarped;
             helper.Events.Display.MenuChanged -= OnMenuChanged;
 
@@ -333,11 +312,33 @@ namespace ValleytalkReborn
                     $"[DateManager] Date rejected by rules: festival={world.IsFestivalDay}, " +
                     $"time={world.TimeOfDay}, loc={locationId}, busy={ActiveDateNpcName}.",
                     LogLevel.Debug);
+
+                bool isZh = IsChineseLanguage;
+                string reason;
+
+                if (world.IsFestivalDay)
+                    reason = isZh ? "今天是节日，无法安排约会。" : "Cannot schedule date during festivals.";
+                else if (world.TimeOfDay >= ScheduledDateTriggerCutoff)
+                    reason = isZh ? "太晚了，无法安排今晚的约会。" : "Too late to schedule a date tonight.";
+                else if (!string.IsNullOrEmpty(ActiveDateNpcName) && ActiveDateNpcName != npc.Name)
+                    reason = isZh ? $"你今晚已经和 {ActiveDateNpcName} 有约了。" : $"You already have a date with {ActiveDateNpcName} tonight.";
+                else
+                    reason = isZh ? "当前无法安排约会。" : "Cannot schedule date right now.";
+
+                Game1.showRedMessage(reason);
+                return false;
+            }
+
+            // 使用真实地图名（TargetMap）而非逻辑 ID，确保寻路与约会触发能正确比对 GameLocation.Name
+            if (!DateLocationRegistry.Locations.TryGetValue(locationId, out var locationInfo))
+            {
+                ModEntry.SMonitor?.Log($"[DateManager] Invalid location ID: {locationId}", LogLevel.Error);
+                Game1.showRedMessage(IsChineseLanguage ? "当前无法安排约会。" : "Cannot schedule date right now.");
                 return false;
             }
 
             ActiveDateNpcName = npc.Name;
-            ActiveDateLocation = locationId;
+            ActiveDateLocation = locationInfo.TargetMap;
             CurrentDateMode = DateMode.Scheduled;
             CurrentDateOrigin = origin;
             Phase = DatePhase.Pending;
@@ -349,6 +350,31 @@ namespace ValleytalkReborn
 
             CompanionScheduleManager.Instance?.ClearScheduleForOverride("DateScheduled", npc.Name);
             return true;
+        }
+
+        // ─── 待处理邀约 API（T7′ 前置接口）──────────────────────
+
+        /// <summary>窥视指定 NPC 的待处理邀约（不消费）。</summary>
+        public bool TryPeekPendingInvite(string npcName, out DatePendingInvite inv)
+        {
+            inv = null;
+            if (string.IsNullOrWhiteSpace(npcName)) return false;
+            return _pendingInvites.TryGetValue(npcName, out inv);
+        }
+
+        /// <summary>原子读出并清除指定 NPC 的待处理邀约。</summary>
+        public bool TryTakePendingInvite(string npcName, out DatePendingInvite inv)
+        {
+            inv = null;
+            if (string.IsNullOrWhiteSpace(npcName)) return false;
+            return _pendingInvites.TryRemove(npcName, out inv);
+        }
+
+        /// <summary>回滚写回一条邀约（用于消费失败时恢复）。</summary>
+        public void TrySetPendingInvite(DatePendingInvite inv)
+        {
+            if (inv == null || string.IsNullOrWhiteSpace(inv.NpcName)) return;
+            _pendingInvites[inv.NpcName] = inv;
         }
 
         public bool TryStartFollow(NPC npc)
@@ -536,10 +562,23 @@ namespace ValleytalkReborn
         {
             if (Phase == DatePhase.Active) return;
 
+            LatenessLevel lateness = DateRules.GetLatenessLevel(
+                Game1.timeOfDay, EarliestDateTriggerTime, OnTimeCutoff, SlightlyLateCutoff, HardEndTime);
+
+            // 🔧 拦截异常到达时间：TooEarly（<18:00）/ MissedWindow（>=22:00）均不应开启约会，
+            // 防止时间异常引发约会死锁。弹出红字提示并重置状态。
+            if (lateness == LatenessLevel.TooEarly || lateness == LatenessLevel.MissedWindow)
+            {
+                ModEntry.SMonitor?.Log($"[DateManager] StartScheduledDateWithFade 被拦截：异常到达时间 {Game1.timeOfDay}（{lateness}）。", LogLevel.Warn);
+                Game1.showRedMessage(IsChineseLanguage
+                    ? "现在还不是赴约的时间。"
+                    : "It's not time for the date yet.");
+                ResetDateState();
+                return;
+            }
+
             Phase = DatePhase.Active;
             DynamicEndTime = endTime;
-
-            LatenessLevel lateness = DateRules.GetLatenessLevel(Game1.timeOfDay, OnTimeCutoff, SlightlyLateCutoff);
 
             CurrentSession = new DateSessionData(npc.Name, ActiveDateLocation, Game1.timeOfDay)
             {
@@ -733,10 +772,12 @@ namespace ValleytalkReborn
             // ── Events：约会基本事实 ──
             string latenessNote = session.Lateness switch
             {
-                LatenessLevel.OnTime       => "玩家准时到达约会地点。",
-                LatenessLevel.SlightlyLate => "玩家迟到（19:00-21:00 之间才到）。",
-                LatenessLevel.VeryLate     => "玩家严重迟到（21:00 后才到）。",
-                _                          => ""
+                LatenessLevel.TooEarly      => "玩家过早到达约会地点（早于 18:00）。",
+                LatenessLevel.OnTime         => "玩家准时到达约会地点。",
+                LatenessLevel.SlightlyLate   => "玩家迟到（19:00-21:00 之间才到）。",
+                LatenessLevel.VeryLate       => "玩家严重迟到（21:00 后才到）。",
+                LatenessLevel.MissedWindow   => "玩家错过约会窗口（22:00 后才到）。",
+                _                            => ""
             };
             if (!string.IsNullOrEmpty(latenessNote))
                 item.Events.Add(latenessNote);
@@ -863,6 +904,18 @@ namespace ValleytalkReborn
                 || CurrentDateMode != DateMode.Scheduled
                 || string.IsNullOrEmpty(ActiveDateNpcName))
                 return;
+
+            // ★ 防抢占：Pending 阶段且已进入赴约窗口时，锁定原版日程，
+            // 防止原版 schedule 引擎在 18:00/19:00 等节点把 NPC 拉走。
+            if (Game1.timeOfDay >= EarliestDateTriggerTime)
+            {
+                NPC pendingNpc = Game1.getCharacterFromName(ActiveDateNpcName);
+                if (pendingNpc != null)
+                {
+                    pendingNpc.followSchedule = false;
+                    pendingNpc.controller = null;
+                }
+            }
 
             if (!e.IsMultipleOf(30)) return;
 
@@ -1026,6 +1079,15 @@ namespace ValleytalkReborn
             StoodUpTracker.Instance.Load();
         }
 
+        /// <summary>
+        /// 玩家按 Esc 退回标题界面时，彻底清空当前约会状态，防止带入下一个存档。
+        /// AbortActiveDateSilently 内部已 ReleaseNpc + ResetDateState。
+        /// </summary>
+        private void OnReturnedToTitle(object sender, ReturnedToTitleEventArgs e)
+        {
+            AbortActiveDateSilently();
+        }
+
         // ─────────────────────────────────────────────────────────────
         //  状态重置
         // ─────────────────────────────────────────────────────────────
@@ -1043,6 +1105,9 @@ namespace ValleytalkReborn
             HasGivenDateGiftThisSession = false;
             CurrentSession = null;
             _farewellCloseNpcName = null;
+
+            // 清空待处理邀约队列
+            _pendingInvites.Clear();
 
             // ★ 生命周期回收：清空所有路人的目击冷却记录
             _npcLastWitnessTime.Clear();

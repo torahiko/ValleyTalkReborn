@@ -920,11 +920,33 @@ public static class ContextRouter
                 Keywords.InviteZh,
                 Keywords.InviteEn))
         {
+            var world = new DateWorldSnapshot(
+                TimeOfDay: Game1.timeOfDay,
+                PlayerLocationName: Game1.player?.currentLocation?.Name ?? "",
+                IsFestivalDay: Utility.isFestivalDay(Game1.dayOfMonth, Game1.season),
+                IsWorldReady: StardewModdingAPI.Context.IsWorldReady
+            );
+
+            // 🔧 前置路径校验：节日 / 时间晚于 18:00 / 当前有其他约会 → 从源头抑制邀约按钮。
+            if (!DateRules.CanScheduleDate(
+                    world,
+                    "",
+                    DateState?.ActiveDateNpcName ?? "",
+                    npcName,
+                    DateManager.WhitelistedLocations,
+                    1800))
+            {
+                DebugLog(
+                    debugEnabled,
+                    $"Date invitation ignored by router: time={world.TimeOfDay}, festival={world.IsFestivalDay}, busy={DateState?.ActiveDateNpcName}.");
+                return;
+            }
+
             flags.IsInviteRequested = true;
 
             DebugLog(
                 debugEnabled,
-                "Date intent: invitation detected.");
+                "Date intent: invitation detected and validated.");
         }
 
         // ── 约会系统关闭时，强制清除所有约会衍生状态，防止残留语境泄漏到 LLM ──

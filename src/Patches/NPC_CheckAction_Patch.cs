@@ -97,6 +97,17 @@ namespace ValleytalkReborn
             var fsc = who.friendshipData[__instance.Name];
 
             // ══════════════════════════════════════════════
+            // 配偶晨间当面约会拦截（优先于 TalkedToToday 与原版对白放行）
+            // ══════════════════════════════════════════════
+            if (TryInterceptSpouseInvite(__instance, who, l, fsc))
+            {
+                ModEntry.SHelper?.Input?.Suppress(SButton.MouseRight);
+                ModEntry.SHelper?.Input?.Suppress(SButton.MouseLeft);
+                __result = true;
+                return false;
+            }
+
+            // ══════════════════════════════════════════════
             // ★★★ 第二道防线：将"已交谈"拦截前置 ★★★
             // 在检查原版对话之前，先判断是否已聊过天且未开启无限对话
             // ══════════════════════════════════════════════
@@ -339,6 +350,119 @@ namespace ValleytalkReborn
         private static bool IsInsideOwnShop(NPC npc, string locationName)
         {
             return npc.currentLocation?.Name == locationName;
+        }
+
+        // ─── 表情常量定义 ─────────────────────────────────────
+        private const int HeartEmote = 20;
+        private static readonly int DeclineEmote = -1;
+
+        /// <summary>
+        /// 尝试拦截配偶晨间当面邀约。
+        /// 返回 true 表示成功拦截交互，调用方必须执行 __result = true; return false;
+        /// </summary>
+        private static bool TryInterceptSpouseInvite(
+            NPC __instance,
+            Farmer who,
+            GameLocation loc,
+            Friendship fsc)
+        {
+            // 1. 基础状态守卫
+            if (__instance == null || who == null || fsc == null) return false;
+            if (!ModEntry.Config.EnableMod || !ModEntry.Config.EnableDateSystem) return false;
+            if (fsc.TalkedToToday) return false;
+            if (Game1.eventUp || Game1.isFestival()) return false;
+
+            // 非配偶/室友放行（兼容多配偶 Mod 与 Krobus 同居）
+            if (!CompanionScheduleManager.IsLegalSpouse(__instance.Name)) return false;
+
+            // 2. 并发/特殊行为守卫（跳过但不消费 pending，留给后续点击）
+            if (AsyncBuilder.Instance.AwaitingGeneration || AsyncBuilder.Instance.IsGeneratingDialogue) return false;
+            if (HasVanillaSpecialAction(__instance)) return false;
+
+            // 3. 约会待办检测与类型匹配
+            if (!DateManager.Instance.TryPeekPendingInvite(__instance.Name, out var inv)) return false;
+            if (inv.Channel != DateInviteChannel.Verbal) return false;
+
+            // 4. 原子提取（防竞态）
+            if (!DateManager.Instance.TryTakePendingInvite(__instance.Name, out inv)) return false;
+
+            // 5. 地图有效性检验与回滚
+            var targetLoc = loc ?? who?.currentLocation ?? Game1.currentLocation;
+            if (targetLoc == null)
+            {
+                ModEntry.SMonitor?.Log("[CheckAction] TryInterceptSpouseInvite: targetLoc is null, rolling back invite.", LogLevel.Warn);
+                DateManager.Instance.TrySetPendingInvite(inv);
+                return false;
+            }
+
+            // 6. 文案解析与原生弹窗
+            string locName = inv.LocationId;
+            if (DateLocationRegistry.Locations.TryGetValue(inv.LocationId, out var locInfo))
+            {
+                bool isZh = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+                locName = isZh ? locInfo.DisplayNameZh : locInfo.DisplayNameEn;
+            }
+
+            string question = ModEntry.SHelper.Translation.Get("invite.spouse.question", new { Loc = locName });
+            var responses = new[]
+            {
+                new Response("Yes", ModEntry.SHelper.Translation.Get("invite.spouse.yes")),
+                new Response("No",  ModEntry.SHelper.Translation.Get("invite.spouse.no"))
+            };
+
+            // NPC 停步并面向玩家
+            __instance.Halt();
+            __instance.movementPause = 20;
+            __instance.facePlayer(who);
+
+            targetLoc.createQuestionDialogue(question, responses,
+                (farmer, answer) => OnSpouseInviteAnswered(__instance, farmer, fsc, inv, answer));
+
+            return true;
+        }
+
+        /// <summary>
+        /// createQuestionDialogue 的回调处理方法。
+        /// </summary>
+        private static void OnSpouseInviteAnswered(
+            NPC npc,
+            Farmer who,
+            Friendship fsc,
+            DatePendingInvite inv,
+            string answer)
+        {
+            if (npc == null || who == null) return;
+
+            // 无论选是、选否、还是取消，当天均标记为已聊过
+            fsc.TalkedToToday = true;
+
+            if (answer == "Yes")
+            {
+                bool ok = DateManager.Instance.TryScheduleDate(npc, inv.LocationId, DateManager.DateOrigin.NpcInitiated);
+                if (ok)
+                {
+                    npc.doEmote(HeartEmote);
+                    string line = ModEntry.SHelper.Translation.Get("invite.spouse.accept");
+                    npc.CurrentDialogue.Clear();
+                    npc.CurrentDialogue.Push(new Dialogue(npc, null, line));
+                    Game1.drawDialogue(npc);
+                }
+                else
+                {
+                    Game1.addHUDMessage(new HUDMessage(ModEntry.SHelper.Translation.Get("invite.spouse.failed"), HUDMessage.error_type));
+                }
+            }
+            else
+            {
+                // "No" 或 null（按取消键定性为拒绝）
+                if (DeclineEmote >= 0)
+                    npc.doEmote(DeclineEmote);
+
+                string line = ModEntry.SHelper.Translation.Get("invite.spouse.decline");
+                npc.CurrentDialogue.Clear();
+                npc.CurrentDialogue.Push(new Dialogue(npc, null, line));
+                Game1.drawDialogue(npc);
+            }
         }
     }
 }

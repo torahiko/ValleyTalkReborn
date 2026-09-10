@@ -219,6 +219,7 @@ namespace ValleytalkReborn
         {
             helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
             helper.Events.GameLoop.DayStarted   += OnDayStarted;
+            helper.Events.GameLoop.DayEnding    += OnDayEnding;
             helper.Events.GameLoop.SaveLoaded   += OnSaveLoaded;
         }
 
@@ -227,6 +228,7 @@ namespace ValleytalkReborn
         {
             helper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
             helper.Events.GameLoop.DayStarted   -= OnDayStarted;
+            helper.Events.GameLoop.DayEnding    -= OnDayEnding;
             helper.Events.GameLoop.SaveLoaded   -= OnSaveLoaded;
         }
 
@@ -1434,6 +1436,47 @@ namespace ValleytalkReborn
 
         private void OnDayStarted(object sender, DayStartedEventArgs e) => ResetAllState(silent: true);
         private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)  => ResetAllState(silent: true);
+
+        /// <summary>
+        /// 玩家昏睡倒地（凌晨 2:00 送回家）时的兜底清理：强制解绑仍在跟随的 NPC，
+        /// 将其送回默认地图/坐标并恢复日程，避免次日醒来 NPC 卡在农舍床边。
+        /// </summary>
+        private void OnDayEnding(object sender, DayEndingEventArgs e)
+        {
+            if (!Context.IsWorldReady) return;
+
+            if (HasActiveFollow && _followingNpc != null)
+            {
+                var followingNpc = _followingNpc;
+
+                StopFollowInternal(silent: true);
+
+                try
+                {
+                    if (!string.IsNullOrEmpty(followingNpc.DefaultMap))
+                    {
+                        Game1.warpCharacter(
+                            followingNpc,
+                            followingNpc.DefaultMap,
+                            new Vector2(followingNpc.DefaultPosition.X / 64f, followingNpc.DefaultPosition.Y / 64f));
+                    }
+
+                    TryRestoreSchedule(followingNpc);
+
+                    ModEntry.SMonitor?.Log(
+                        $"[MovementManager] OnDayEnding: force-unbound {followingNpc.Name}, warped home + schedule restored.",
+                        LogLevel.Info);
+                }
+                catch (Exception ex)
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[MovementManager] OnDayEnding cleanup failed for {followingNpc.Name}: {ex.Message}",
+                        LogLevel.Warn);
+                }
+            }
+
+            ResetAllState(silent: true);
+        }
 
         // ═══════════════════════════════════════════════
         //  内部辅助

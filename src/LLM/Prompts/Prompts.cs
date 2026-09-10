@@ -443,6 +443,19 @@ public class Prompts
         var flags = CurrentFlags;
         string npcName = Character?.Name ?? "";
 
+        // 🔧 互斥安全清洗：HasStoodUpPending 与 IsOnDate 不应同时为 true。
+        // 若发生碰撞，以正在约会为优先，重置爽约标记，防止 stood_up 语境污染约会对话。
+        if (flags?.HasStoodUpPending == true && flags?.IsOnDate == true)
+        {
+            ModEntry.SMonitor?.Log(
+                $"[Prompts] Conflict detected for {npcName}: HasStoodUpPending && IsOnDate both true. " +
+                "Prioritizing IsOnDate and clearing stood-up flag.",
+                StardewModdingAPI.LogLevel.Warn);
+
+            flags.HasStoodUpPending = false;
+            flags.StoodUpDate = string.Empty;
+        }
+
         DefaultOrOverride("GameState", GetGameState, prompt);
 
         if (flags?.IncludeMemories == true)
@@ -481,6 +494,9 @@ public class Prompts
                 prompt.AppendLine("\n" + PendingEvolvedTraitsBlock);
             if (!string.IsNullOrEmpty(PendingLocalPerceptionBlock))
                 prompt.AppendLine("\n" + PendingLocalPerceptionBlock);
+
+            // ── 🔧 早返回分支同样需要注入约会协议，否则 LLM 无法输出 [UI:DATE_INVITE] ──
+            AppendDateInvitationProtocol(prompt);
 
             string stoodUpPrompt = prompt.ToString();
             LogTopologyVerification(stoodUpPrompt, "STOOD_UP");
@@ -555,6 +571,9 @@ public class Prompts
             if (!string.IsNullOrEmpty(PendingLocalPerceptionBlock))
                 prompt.AppendLine("\n" + PendingLocalPerceptionBlock);
 
+            // ── 🔧 早返回分支同样需要注入约会协议，否则 LLM 无法输出 [UI:DATE_INVITE] ──
+            AppendDateInvitationProtocol(prompt);
+
             string datePrompt = prompt.ToString();
             LogTopologyVerification(datePrompt, "DATE_CONTEXT");
             return datePrompt;
@@ -603,6 +622,9 @@ public class Prompts
                 flags: flags);
             if (!string.IsNullOrEmpty(simpleProfile))
                 prompt.AppendLine(simpleProfile);
+
+            // ── 🔧 早返回分支同样需要注入约会协议，否则 LLM 无法输出 [UI:DATE_INVITE] ──
+            AppendDateInvitationProtocol(prompt);
 
             string greetingPrompt = prompt.ToString();
             LogRoutingDebug(greetingPrompt, "SIMPLE_GREETING_FAST_PASS");
@@ -665,43 +687,8 @@ public class Prompts
             prompt.AppendLine("</interaction_state>\n");
         }
 
-        // ── date invitation protocol ──
-        if (ModEntry.Config.EnableDateSystem && flags?.IsInviteRequested == true && flags?.IsOnDate != true)
-        {
-            prompt.AppendLine("<date_invitation_protocol>");
-            prompt.AppendLine(isZh ? "农夫正在向你发起今晚的约会邀请。" : "The farmer is inviting you out on a date tonight.");
-            bool isFestivalToday = Utility.isFestivalDay(Game1.dayOfMonth, Game1.season);
-            if (isFestivalToday)
-            {
-                // 修复：删除"自然说明"
-                prompt.AppendLine(isZh
-                    ? "- 节日安排: 今天是节日且今晚有特别安排。依据角色性格通过对白说明改天再约。"
-                    : "- Festival Conflict: Today is a festival with scheduled activities. Suggest meeting another day via dialogue consistent with character personality.");
-            }
-            else
-            {
-                var locationList = string.Join("\n", DateManager.LocationDisplayNames
-                    .Select(kv => $"  - {kv.Value} -> Location ID: {kv.Key}"));
-                prompt.AppendLine(isZh
-                    ? "若同意，约定今晚 20:00 在以下有效地点之一见面："
-                    : "If accepting, agree to meet tonight at 20:00 at one of these locations:");
-                prompt.AppendLine(locationList);
-                if (ModEntry.Config?.UseNativeToolCalling == true)
-                {
-                    // 修复：删除"自然说明"
-                    prompt.AppendLine(isZh
-                        ? "- 接受时: 调用 `schedule_date` 工具（传入 location_id）；委拒时: 以角色口吻说明改天再约。"
-                        : "- ACCEPT: Call `schedule_date` tool with location_id. DECLINE: Reply in character suggesting another time.");
-                }
-                else
-                {
-                    prompt.AppendLine(isZh
-                        ? "- 接受时: 在台词最末尾附带 [ACTION:INVITE:LocationID]；委拒时: 仅输出纯文本口头回应。"
-                        : "- ACCEPT: Append [ACTION:INVITE:LocationID] at the absolute end. DECLINE: Reply with conversational dialogue without tags.");
-                }
-            }
-            prompt.AppendLine("</date_invitation_protocol>\n");
-        }
+        // ── date invitation protocol (Consent Tag + Client UI Dispatch) ──
+        AppendDateInvitationProtocol(prompt);
 
         // ── jealousy trigger: 删除"吃醋情绪" ──
         if (ModEntry.Config.EnableDateSystem && flags?.IsJealousy == true && DateManager.Instance != null)
@@ -793,6 +780,40 @@ public class Prompts
         LogTopologyVerification(finalPrompt, "FULL_CONTEXT_BUILD");
 
         return finalPrompt;
+    }
+
+    /// <summary>
+    /// 统一的约会邀请协议注入器。
+    /// 在完整构建与所有早返回分支中调用，确保 LLM 无论走哪条路由都能看到
+    /// &lt;date_invitation_protocol&gt; 规则，从而正确输出 [UI:DATE_INVITE] 标签。
+    /// </summary>
+    private void AppendDateInvitationProtocol(StringBuilder sb)
+    {
+        if (!ModEntry.Config.EnableDateSystem || CurrentFlags?.IsInviteRequested != true || CurrentFlags?.IsOnDate == true)
+            return;
+
+        bool isZh = IsChineseLanguage;
+        bool isFestivalToday = Utility.isFestivalDay(Game1.dayOfMonth, Game1.season);
+
+        sb.AppendLine("<date_invitation_protocol>");
+        sb.AppendLine(isZh ? "农夫正在向你发起今晚的约会邀请。" : "The farmer is inviting you out on a date tonight.");
+
+        if (isFestivalToday)
+        {
+            sb.AppendLine(isZh
+                ? "- 冲突拒绝: 今天是节日有特殊安排。请在对白中委婉说明改天再约，且绝对不要输出 [UI:DATE_INVITE] 标签。"
+                : "- DECLINE: Festival conflict today. Decline in dialogue and NEVER output [UI:DATE_INVITE].");
+        }
+        else
+        {
+            sb.AppendLine(isZh
+                ? "- 若同意赴约: 依据角色性格与好感度表达欣喜与期待，并在回复台词的最末尾附加内部标签 [UI:DATE_INVITE]。"
+                : "- IF ACCEPTING: Express anticipation consistent with your persona, and append [UI:DATE_INVITE] at the absolute end.");
+            sb.AppendLine(isZh
+                ? "- 若拒绝赴约: 依据角色性格在对白中委婉表达理由，且严禁输出 [UI:DATE_INVITE] 标签。"
+                : "- IF DECLINING: Provide an in-character explanation, and NEVER output [UI:DATE_INVITE].");
+        }
+        sb.AppendLine("</date_invitation_protocol>\n");
     }
 
     /// <summary>

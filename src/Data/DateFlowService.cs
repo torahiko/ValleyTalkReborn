@@ -68,17 +68,21 @@ namespace ValleytalkReborn
             string latenessContext = isZh
                 ? lateness switch
                 {
-                    LatenessLevel.OnTime       => "玩家准时或提前到达。",
-                    LatenessLevel.SlightlyLate => "玩家迟到约 19:00-21:00 之间才到。",
-                    LatenessLevel.VeryLate     => "玩家严重迟到，21:00 后才到。",
-                    _                          => ""
+                    LatenessLevel.TooEarly      => "玩家提前到达（早于 18:00）。",
+                    LatenessLevel.OnTime         => "玩家准时或提前到达。",
+                    LatenessLevel.SlightlyLate   => "玩家迟到约 19:00-21:00 之间才到。",
+                    LatenessLevel.VeryLate       => "玩家严重迟到，21:00 后才到。",
+                    LatenessLevel.MissedWindow   => "玩家很晚才到（22:00 后）。",
+                    _                            => ""
                 }
                 : lateness switch
                 {
-                    LatenessLevel.OnTime       => "The player arrived on time or early.",
-                    LatenessLevel.SlightlyLate => "The player arrived slightly late (between 7pm and 9pm).",
-                    LatenessLevel.VeryLate     => "The player arrived very late (after 9pm).",
-                    _                          => ""
+                    LatenessLevel.TooEarly      => "The player arrived early (before 6pm).",
+                    LatenessLevel.OnTime         => "The player arrived on time or early.",
+                    LatenessLevel.SlightlyLate   => "The player arrived slightly late (between 7pm and 9pm).",
+                    LatenessLevel.VeryLate       => "The player arrived very late (after 9pm).",
+                    LatenessLevel.MissedWindow   => "The player arrived very late (after 10pm).",
+                    _                            => ""
                 };
 
             string sys = isZh
@@ -98,6 +102,9 @@ namespace ValleytalkReborn
             bool isZh = IsChineseLanguage;
             return lateness switch
             {
+                LatenessLevel.TooEarly => isZh
+                    ? "你来这么早呀！离天黑还有一会儿呢，不过我已经开始期待了。"
+                    : "You're here so early! There's still time before dark — but I'm already looking forward to it.",
                 LatenessLevel.OnTime => isZh
                     ? "你来啦！今晚能和你一起度过，我真的很开心。"
                     : "You're here! I'm so glad we can spend tonight together.",
@@ -107,6 +114,9 @@ namespace ValleytalkReborn
                 LatenessLevel.VeryLate => isZh
                     ? "……你来了。我已经等了好久了，差点以为你不来了。"
                     : "...You came. I waited so long, I almost thought you forgot about me.",
+                LatenessLevel.MissedWindow => isZh
+                    ? "……这么晚了，我以为今晚的约会已经取消了。"
+                    : "...It's so late — I thought tonight's call was cancelled.",
                 _ => isZh ? "你来啦！" : "You're here!"
             };
         }

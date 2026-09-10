@@ -94,5 +94,11 @@
   "configEnableBark": "Enable Ambient Overhead Chatter",
   "configEnableBarkTooltip": "NPCs will occasionally mutter thoughts or react to their surroundings with overhead speech bubbles as you pass by. (Consumes a small amount of tokens)",
   "configEnableA2A": "Enable NPC-to-NPC Banter",
-  "configEnableA2ATooltip": "When villagers cross paths, they will stop and have organic, multi-line conversations with each other. (Consumes a small amount of tokens)"
+  "configEnableA2ATooltip": "When villagers cross paths, they will stop and have organic, multi-line conversations with each other. (Consumes a small amount of tokens)",
+  "invite.spouse.question": "Good morning, dear! Are you free tonight? Would you like to go to {Loc} with me?",
+  "invite.spouse.yes": "I'd love to! (Accept date)",
+  "invite.spouse.no": "Sorry, I'm busy today... (Decline)",
+  "invite.spouse.accept": "Wonderful! I'll see you there later tonight~",
+  "invite.spouse.decline": "Ah, that's okay! Take care of the farm first, maybe next time!",
+  "invite.spouse.failed": "Could not schedule the date due to a timing conflict."
 }

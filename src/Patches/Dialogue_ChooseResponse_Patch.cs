@@ -33,6 +33,14 @@ namespace ValleytalkReborn
                 return true;
             }
 
+            // 🌟 意图许可标签（Consent Tag）触发的确定性操作分发
+            // 若响应 Key 对应约会地点选择或确认跟随，交由 DialogueBuilder 处理并拦截默认流程
+            if (DialogueBuilder.HandleSpecialActionResponse(response.responseKey, __instance.speaker))
+            {
+                __result = true;
+                return false;
+            }
+
             // 🌟【精准修复】：记录为明确的行为动作，避免被 DialogueBuilder 当作异常符号过滤，
             // 同时赋予大模型真实的“冷场/沉默”剧情感知
             if (response.responseKey == $"{SldConstants.DialogueKeyPrefix}Silent")

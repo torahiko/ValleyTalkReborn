@@ -94,5 +94,11 @@
   "configEnableBark": "启用 NPC 随性碎碎念 (气泡闲聊)",
   "configEnableBarkTooltip": "NPC 在路过、发呆或跟随你时，头顶会偶尔冒出切合当下场景的心声或碎碎念气泡。（会消耗少许Token）",
   "configEnableA2A": "启用村民自主闲聊 (街头偶遇)",
-  "configEnableA2ATooltip": "当两个或多个 NPC 在路上或室内相遇时，会驻足停步互相攀谈、随性聊起日常。（会消耗少许Token）"
+  "configEnableA2ATooltip": "当两个或多个 NPC 在路上或室内相遇时，会驻足停步互相攀谈、随性聊起日常。（会消耗少许Token）",
+  "invite.spouse.question": "早啊，亲爱的！今晚有空吗？要不要和我一起去 {Loc} 散散心？",
+  "invite.spouse.yes": "好啊，我很期待！（答应约会）",
+  "invite.spouse.no": "今天农场还有不少事……（委婉拒绝）",
+  "invite.spouse.accept": "太棒了！那我们晚些时候不见不散~",
+  "invite.spouse.decline": "这样啊……没关系，农活要紧，改天再去吧！",
+  "invite.spouse.failed": "今天的约会安排发生冲突，未能成功预约。"
 }

@@ -228,6 +228,8 @@ namespace ValleytalkReborn
             }
 
             // 2. 再初始化新状态
+            // 约会地点配置需最先加载（DateManager 的地点白名单校验依赖它）
+            DateLocationRegistry.Initialize(helper);
             DateManager.Instance.Initialize(helper);
             InvitationManager.Instance.Initialize(helper);
             MemoryManager.Instance.Initialize(helper);
@@ -893,6 +895,12 @@ namespace ValleytalkReborn
             {
                 CompanionScheduleManager.Instance.ReloadAssets();
             }
+
+            // ★ CP 热重载时刷新约会地点表
+            if (e.NamesWithoutLocale.Any(an => an.IsEquivalentTo(DateLocationRegistry.ASSET_KEY)))
+            {
+                DateLocationRegistry.ReloadAssets();
+            }
         }
 
         private void OnMenuChanged(object sender, MenuChangedEventArgs e)
@@ -939,6 +947,9 @@ namespace ValleytalkReborn
 
             // ★ 存档加载完成后载入 NPC 关系
             NpcRelationRegistry.Instance.LoadAll(Helper, Monitor);
+
+            // ★ 存档加载后从 CP 管道载入约会地点
+            DateLocationRegistry.LoadAssets();
         }
 
         private void OnDayStarted(object sender, DayStartedEventArgs e)

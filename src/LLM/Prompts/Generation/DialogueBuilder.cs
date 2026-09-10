@@ -234,7 +234,27 @@ namespace ValleytalkReborn
             if (theLine == null)
                 return null;
 
-            string formattedLine = FormatLine(theLine);
+            // ── 意图许可标签（Consent Tag）提取与清洗 ──
+            // LLM 若同意赴约/跟随，会在台词末尾附带 [UI:DATE_INVITE] / [UI:FOLLOW]。
+            // 此处剥除标签用于显示，并记录标记以决定后续是否追加确定性操作按键。
+            bool allowDateUI = false;
+            bool allowFollowUI = false;
+
+            if (theLine[0] != null)
+            {
+                if (theLine[0].Contains("[UI:DATE_INVITE]"))
+                {
+                    allowDateUI = true;
+                    theLine[0] = theLine[0].Replace("[UI:DATE_INVITE]", "").Trim();
+                }
+                if (theLine[0].Contains("[UI:FOLLOW]"))
+                {
+                    allowFollowUI = true;
+                    theLine[0] = theLine[0].Replace("[UI:FOLLOW]", "").Trim();
+                }
+            }
+
+            string formattedLine = FormatLine(theLine, allowDateUI, allowFollowUI);
             return $"{(dontSkipNext ? "" : "skip#")}{formattedLine}";
         }
 
@@ -359,12 +379,23 @@ namespace ValleytalkReborn
             if (context.RoutingFlags.IsPathBlocked) return;
         }
 
-        private string FormatLine(string[] theLine)
+        private string FormatLine(string[] theLine, bool allowDateUI = false, bool allowFollowUI = false)
         {
             if (theLine == null || theLine.Length == 0)
             {
                 return string.Empty;
             }
+
+            // 🔧 防御性全行标签清洗：防止 LLM 偶发在行中输出 [UI:*] 标签污染对话按键。
+            for (int i = 0; i < theLine.Length; i++)
+            {
+                theLine[i] = System.Text.RegularExpressions.Regex.Replace(
+                    theLine[i],
+                    @"\[UI:[^\]]+\]",
+                    "",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
+            }
+
             if (theLine.Length == 1 && ModEntry.Config.TypedResponses != "Always")
             {
                 return theLine[0];
@@ -385,7 +416,54 @@ namespace ValleytalkReborn
             {
                 sb.Append($"#$r -999997 0 {SldConstants.DialogueKeyPrefix}TypedResponse#{Util.GetString("uiTypeYourResponse")}");
             }
+
+            bool isZh = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+
+            // 根据意图许可标记，动态追加确定性操作按键
+            if (allowDateUI && DateManager.Instance.Phase == DatePhase.None)
+            {
+                string dateBtn = isZh ? "【敲定约会地点...】" : "【Choose Date Location...】";
+                sb.Append($"#$r -999994 0 {SldConstants.DialogueKeyPrefix}ActionOpenDateMenu#{dateBtn}");
+            }
+
+            if (allowFollowUI && MovementManager.Instance != null && !MovementManager.Instance.HasActiveFollow)
+            {
+                string followBtn = isZh ? "【好的，跟上我吧】" : "【Come with me then】";
+                sb.Append($"#$r -999995 0 {SldConstants.DialogueKeyPrefix}ActionConfirmFollow#{followBtn}");
+            }
+
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// 拦截特殊操作响应 Key，分发给对应的 UI / 状态流转。
+        /// 由 Dialogue_ChooseResponse_Patch 调用。
+        /// </summary>
+        public static bool HandleSpecialActionResponse(string responseKey, NPC npc)
+        {
+            if (string.IsNullOrEmpty(responseKey) || npc == null) return false;
+
+            if (responseKey.EndsWith("ActionOpenDateMenu", StringComparison.OrdinalIgnoreCase))
+            {
+                Game1.dialogueUp = false;
+                Game1.activeClickableMenu = null;
+                Game1.player.forceCanMove();
+
+                Game1.activeClickableMenu = new DateLocationPickerMenu(npc);
+                return true;
+            }
+
+            if (responseKey.EndsWith("ActionConfirmFollow", StringComparison.OrdinalIgnoreCase))
+            {
+                Game1.dialogueUp = false;
+                Game1.activeClickableMenu = null;
+                Game1.player.forceCanMove();
+
+                DateManager.Instance.TryStartFollow(npc);
+                return true;
+            }
+
+            return false;
         }
 
         private static string CleanHistoryText(string raw)

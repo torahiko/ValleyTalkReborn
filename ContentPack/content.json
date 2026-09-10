@@ -20,6 +20,12 @@
       "FromFile": "assets/npc_relations.json"
     },
     {
+      "LogName": "Load Date Locations",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/DateLocations",
+      "FromFile": "assets/date_locations.json"
+    },
+    {
       "Action": "Include",
       "FromFile": "assets/Prompts.json"
     },
