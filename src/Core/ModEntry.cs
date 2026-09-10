@@ -221,6 +221,9 @@ namespace ValleytalkReborn
             SHelper = helper;
             SMonitor = Monitor;
 
+            // ★ 统一配偶查询服务（多婚/原版配偶判定、住所定位）
+            SpouseQueryService.Instance.Initialize(helper);
+
             // 1. 先清理旧状态（如果已初始化过）
             if (_isInitialized)
             {
@@ -875,6 +878,7 @@ namespace ValleytalkReborn
         private void OnGameLaunched(object sender, GameLaunchedEventArgs e)
         {
             ModConfigMenu.Register(this);
+            SpouseQueryService.Instance.ResolveApis();
             _dialogueCoordinator?.Subscribe();
         }
 
