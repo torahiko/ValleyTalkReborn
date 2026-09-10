@@ -296,6 +296,20 @@ namespace ValleytalkReborn
             }
         }
 
+        /// <summary>
+        /// 当约会系统在设置中被关闭时静默重置约会状态，保留 SMAPI 事件注册以供再次开启。
+        /// 绝不调用 Cleanup()，否则 SMAPI 事件会被注销，再次开启时系统变成僵尸。
+        /// </summary>
+        public void AbortActiveDateSilently()
+        {
+            if (!string.IsNullOrEmpty(ActiveDateNpcName))
+            {
+                ReleaseNpc(ActiveDateNpcName);
+            }
+            ResetDateState();
+            ModEntry.SMonitor?.Log("[DateManager] AbortActiveDateSilently: date state reset (events preserved).", LogLevel.Info);
+        }
+
         // ─────────────────────────────────────────────────────────────
         //  对外 API
         // ─────────────────────────────────────────────────────────────
@@ -305,6 +319,12 @@ namespace ValleytalkReborn
             string locationId,
             DateOrigin origin = DateOrigin.NpcInitiated)
         {
+            if (!ModEntry.Config.EnableDateSystem)
+            {
+                ModEntry.SMonitor?.Log("[DateManager] Schedule date rejected: Date system is disabled.", LogLevel.Debug);
+                return false;
+            }
+
             var world = CaptureWorldSnapshot();
             if (!DateRules.CanScheduleDate(world, locationId, ActiveDateNpcName, npc.Name,
                     WhitelistedLocations, ScheduledDateTriggerCutoff))
@@ -333,6 +353,12 @@ namespace ValleytalkReborn
 
         public bool TryStartFollow(NPC npc)
         {
+            if (!ModEntry.Config.EnableDateSystem)
+            {
+                ModEntry.SMonitor?.Log("[DateManager] Start follow rejected: Date system is disabled.", LogLevel.Debug);
+                return false;
+            }
+
             var world = CaptureWorldSnapshot();
             if (!DateRules.CanStartFollow(world, ActiveDateNpcName, npc.Name, HardEndTime))
             {
@@ -391,7 +417,8 @@ namespace ValleytalkReborn
             ResetDateState();
         }
 
-        public bool IsOnDate(string npcName) => Phase == DatePhase.Active
+        public bool IsOnDate(string npcName) => ModEntry.Config.EnableDateSystem
+                                                && Phase == DatePhase.Active
                                                 && ActiveDateNpcName == npcName
                                                 && Game1.timeOfDay < DynamicEndTime;
 
@@ -829,6 +856,8 @@ namespace ValleytalkReborn
                 }
             }
 
+            if (!ModEntry.Config.EnableDateSystem) return;
+
             // ② 约会触发检测（Pending 阶段，每 30 tick 轮询一次）
             if (Phase != DatePhase.Pending
                 || CurrentDateMode != DateMode.Scheduled
@@ -855,6 +884,9 @@ namespace ValleytalkReborn
 
         private void OnTimeChanged(object sender, TimeChangedEventArgs e)
         {
+            // 允许清理残留约会状态，但阻止新约会推进
+            if (!ModEntry.Config.EnableDateSystem && Phase == DatePhase.None) return;
+
             if (Phase == DatePhase.None) return;
 
             // ── Pending 阶段（等待玩家到达）──────────────────────────

@@ -253,6 +253,7 @@ namespace ValleytalkReborn
         // ──────────────────────────────────────────────────────
         public string GetActivePoiContext(string npcName)
         {
+            if (!ModEntry.Config.EnableSpouseSchedule) return "";
             if (string.IsNullOrWhiteSpace(npcName)) return "";
             if (!_states.TryGetValue(npcName, out var s)) return "";
             return string.IsNullOrWhiteSpace(s.ActivePoiDescription)
@@ -367,6 +368,8 @@ namespace ValleytalkReborn
             LoadAssets();
             ResetAllStates();
 
+            if (!ModEntry.Config.EnableSpouseSchedule) return;
+
             if (!Utility.isFestivalDay(Game1.dayOfMonth, Game1.season)
                 && Game1.timeOfDay >= 700 && Game1.timeOfDay < 2000)
                 DispatchAllSchedules();
@@ -388,6 +391,7 @@ namespace ValleytalkReborn
         private void OnTimeChanged(object sender, TimeChangedEventArgs e)
         {
             if (Utility.isFestivalDay(Game1.dayOfMonth, Game1.season)) return;
+            if (!ModEntry.Config.EnableSpouseSchedule) return;
 
             if (e.NewTime == 700)
             {
@@ -482,6 +486,7 @@ namespace ValleytalkReborn
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
         {
             if (!Context.IsWorldReady) return;
+            if (!ModEntry.Config.EnableSpouseSchedule) return;
             if (Utility.isFestivalDay(Game1.dayOfMonth, Game1.season)) return;
             if (Game1.timeOfDay < 700 || Game1.timeOfDay >= 2000) return;
 
@@ -1674,6 +1679,39 @@ namespace ValleytalkReborn
             _poiAssets?.Clear();
             _npcPreferences?.Clear();
             ResetAllStates();
+        }
+
+        /// <summary>
+        /// 当配偶日程在设置中被关闭时，将当前仍在外部的配偶安全送回农舍，防止被遗弃在外。
+        /// </summary>
+        public void SafeDismissAllSpousesToHome()
+        {
+            foreach (var state in _states.Values.ToArray())
+            {
+                var npc = state.TrackedNpc;
+                if (npc == null) continue;
+
+                // 已在农舍内，仅重置状态
+                if (string.Equals(npc.currentLocation?.Name, "FarmHouse", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                try
+                {
+                    var (homeMap, homeTile) = GetHomeDestinationPublic(npc);
+                    Game1.warpCharacter(npc, homeMap, new Point((int)homeTile.X, (int)homeTile.Y));
+                    npc.Halt();
+                    npc.controller = null;
+                    npc.addedSpeed = 0;
+                }
+                catch (Exception ex)
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[CSM] Failed to safely warp {npc.Name} home on toggle off: {ex.Message}",
+                        LogLevel.Warn);
+                }
+            }
+            ResetAllStates();
+            ModEntry.SMonitor?.Log("[CSM] SafeDismissAllSpousesToHome completed.", LogLevel.Info);
         }
 
         // ──────────────────────────────────────────────────────

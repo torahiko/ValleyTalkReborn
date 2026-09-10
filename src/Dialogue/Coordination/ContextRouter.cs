@@ -926,6 +926,16 @@ public static class ContextRouter
                 debugEnabled,
                 "Date intent: invitation detected.");
         }
+
+        // ── 约会系统关闭时，强制清除所有约会衍生状态，防止残留语境泄漏到 LLM ──
+        if (!ModEntry.Config.EnableDateSystem)
+        {
+            flags.IsInviteRequested = false;
+            flags.IsOnDate = false;
+            flags.IsJealousy = false;
+            flags.HasStoodUpPending = false;
+            flags.StoodUpDate = string.Empty;
+        }
     }
 
     // ─────────────────────────────────────────────────────

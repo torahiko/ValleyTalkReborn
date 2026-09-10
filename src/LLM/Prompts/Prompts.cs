@@ -449,7 +449,7 @@ public class Prompts
             DefaultOrOverride("EventHistory", GetEventHistory, prompt);
 
         // ── stood_up: 纯事实+结构约束，不预设情绪 ──
-        if (flags?.HasStoodUpPending == true)
+        if (flags?.HasStoodUpPending == true && ModEntry.Config.EnableDateSystem)
         {
             prompt.AppendLine("<emotional_conflict type=\"stood_up\">");
             prompt.AppendLine(isZh
@@ -488,7 +488,7 @@ public class Prompts
         }
 
         // ── date context ──
-        if (!string.IsNullOrEmpty(npcName) && DateManager.Instance?.IsOnDate(npcName) == true)
+        if (ModEntry.Config.EnableDateSystem && !string.IsNullOrEmpty(npcName) && DateManager.Instance?.IsOnDate(npcName) == true)
         {
             var dateMode = DateManager.Instance.CurrentDateMode;
             if (dateMode == DateManager.DateMode.Follow)
@@ -666,7 +666,7 @@ public class Prompts
         }
 
         // ── date invitation protocol ──
-        if (flags?.IsInviteRequested == true && flags?.IsOnDate != true)
+        if (ModEntry.Config.EnableDateSystem && flags?.IsInviteRequested == true && flags?.IsOnDate != true)
         {
             prompt.AppendLine("<date_invitation_protocol>");
             prompt.AppendLine(isZh ? "农夫正在向你发起今晚的约会邀请。" : "The farmer is inviting you out on a date tonight.");
@@ -704,7 +704,7 @@ public class Prompts
         }
 
         // ── jealousy trigger: 删除"吃醋情绪" ──
-        if (flags?.IsJealousy == true && DateManager.Instance != null)
+        if (ModEntry.Config.EnableDateSystem && flags?.IsJealousy == true && DateManager.Instance != null)
         {
             prompt.AppendLine("<jealousy_trigger>");
             prompt.AppendLine(isZh

@@ -81,6 +81,18 @@ namespace ValleytalkReborn
         public bool EnableVanillaFirst { get; set; } = true;
         public bool EnableNightlyConsolidation { get; set; } = true;
 
+        /// <summary>
+        /// 启用配偶自由日程与外出活动系统（CompanionScheduleManager）。
+        /// 默认开启 (true)。
+        /// </summary>
+        public bool EnableSpouseSchedule { get; set; } = true;
+
+        /// <summary>
+        /// 启用约会与出游系统（DateManager，包含约会邀请、赴约及阶段交互）。
+        /// 默认关闭 (false，尚在开发中)。
+        /// </summary>
+        public bool EnableDateSystem { get; set; } = false;
+
         // ── 对话系统配置（从 DialogueConfig 合并） ──
         public bool EnableAmbientBarks { get; set; } = true;
         public bool EnableA2A { get; set; } = true;

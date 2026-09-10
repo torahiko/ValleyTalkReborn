@@ -94,6 +94,19 @@ namespace ValleytalkReborn
                     // ★ 即时响应开关关闭：秒杀正在进行的会话与残余台词
                     ModEntry.CleanupOnConfigToggle();
 
+                    // ── 配偶日程开关关闭：安全送回所有在外配偶 ──
+                    if (!ModEntry.Config.EnableSpouseSchedule)
+                    {
+                        CompanionScheduleManager.Instance.SafeDismissAllSpousesToHome();
+                    }
+
+                    // ── 约会系统开关关闭：静默终止进行中约会（不注销 SMAPI 事件）──
+                    if (!ModEntry.Config.EnableDateSystem
+                        && DateManager.Instance.Phase != DatePhase.None)
+                    {
+                        DateManager.Instance.AbortActiveDateSilently();
+                    }
+
                     // 🌟 核心修复：触发后台异步刷新模型缓存，彻底避免 Save 时 UI 假死
                     RefreshModelNamesCacheAsync();
 
@@ -311,6 +324,32 @@ namespace ValleytalkReborn
                 setValue: value => Config.EnableA2A = value
             );
 
+            // ── 伴侣日程与出游系统 ─────────────────────────────────
+            ConfigMenu.AddSectionTitle(
+                mod: ModManifest,
+                text: () => GetUIString("configSectionCompanionFeatures", "Companion & Romance Features")
+            );
+
+            // 1. 配偶日程开关 (Default: true)
+            ConfigMenu.AddBoolOption(
+                mod: ModManifest,
+                name: () => GetUIString("configEnableSpouseSchedule", "Enable Spouse Schedules"),
+                tooltip: () => GetUIString("configEnableSpouseScheduleTooltip",
+                    "Allows married spouses to have dynamic daily schedules, wander the farm, and visit locations around town."),
+                getValue: () => Config.EnableSpouseSchedule,
+                setValue: value => Config.EnableSpouseSchedule = value
+            );
+
+            // 2. 约会系统开关 (Default: false)
+            ConfigMenu.AddBoolOption(
+                mod: ModManifest,
+                name: () => GetUIString("configEnableDateSystem", "Enable Date System (WIP)"),
+                tooltip: () => GetUIString("configEnableDateSystemTooltip",
+                    "Allows scheduling dates and romantic outings with eligible NPCs. Currently experimental and disabled by default."),
+                getValue: () => Config.EnableDateSystem,
+                setValue: value => Config.EnableDateSystem = value
+            );
+
             // ── ★ 快捷键与控制设置 Section ──────────────────────
             ConfigMenu.AddSectionTitle(
                 mod: ModManifest,
@@ -320,7 +359,7 @@ namespace ValleytalkReborn
             // 1. 打字对话按键
             // 🌟 修复：从 AddTextOption 改为 AddKeybind，提供可视化按键绑定体验
             ConfigMenu.AddKeybind(
-                mod: ModManifest,
+                mod: ModManifest, 
                 name: () => GetUIString("configInitiateKey", "Initiate Typed Dialogue Key"),
                 getValue: () => ModEntry.Config.InitiateTypedDialogueKey,
                 setValue: (value) => ModEntry.Config.InitiateTypedDialogueKey = value,

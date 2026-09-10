@@ -29,117 +29,236 @@ internal static class AgentToolDefinitions
         LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
 
     // ─────────────────────────────────────────────────────────────────────
+    //  约会相关工具定义（共享于三种格式）
+    // ─────────────────────────────────────────────────────────────────────
+
+    private static void AddScheduleDateToolOpenAi(JArray tools, bool zh)
+    {
+        tools.Add(new JObject
+        {
+            ["type"] = "function",
+            ["function"] = new JObject
+            {
+                ["name"] = ToolScheduleDate,
+                ["description"] = zh
+                    ? "当真诚接受玩家今晚的约会邀请时调用此工具。"
+                    : "Call this tool when agreeing to go on a date with the player tonight. Only call it when you sincerely accept the invitation.",
+                ["parameters"] = new JObject
+                {
+                    ["type"] = "object",
+                    ["properties"] = new JObject
+                    {
+                        ["location_id"] = new JObject
+                        {
+                            ["type"] = "string",
+                            ["description"] = zh
+                                ? "今晚 20:00 约会举行的地点。"
+                                : "The location where the date will take place tonight at 20:00.",
+                            ["enum"] = new JArray(LocationIds)
+                        }
+                    },
+                    ["required"] = new JArray("location_id")
+                }
+            }
+        });
+    }
+
+    private static void AddEndDateToolOpenAi(JArray tools, bool zh)
+    {
+        tools.Add(new JObject
+        {
+            ["type"] = "function",
+            ["function"] = new JObject
+            {
+                ["name"] = ToolEndDate,
+                ["description"] = zh
+                    ? "优雅地结束当前约会时调用此工具（例如玩家道别或准备睡觉）。"
+                    : "Call this tool to gracefully end the current date (e.g., when the player says goodbye or mentions going to bed).",
+                ["parameters"] = new JObject
+                {
+                    ["type"] = "object",
+                    ["properties"] = new JObject
+                    {
+                        ["reason"] = new JObject
+                        {
+                            ["type"] = "string",
+                            ["description"] = "The reason for ending the date, e.g., 'player_goodbye', 'time_to_sleep', 'date_complete'."
+                        }
+                    },
+                    ["required"] = new JArray("reason")
+                }
+            }
+        });
+    }
+
+    private static void AddScheduleDateToolAnthropic(JArray tools, bool zh)
+    {
+        tools.Add(new JObject
+        {
+            ["name"] = ToolScheduleDate,
+            ["description"] = zh
+                ? "当真诚接受玩家今晚的约会邀请时调用此工具。"
+                : "Call this tool when agreeing to go on a date with the player tonight. Only call it when you sincerely accept the invitation.",
+            ["input_schema"] = new JObject
+            {
+                ["type"] = "object",
+                ["properties"] = new JObject
+                {
+                    ["location_id"] = new JObject
+                    {
+                        ["type"] = "string",
+                        ["description"] = "The location where the date will take place tonight at 20:00.",
+                        ["enum"] = new JArray(LocationIds)
+                    }
+                },
+                ["required"] = new JArray("location_id")
+            }
+        });
+    }
+
+    private static void AddEndDateToolAnthropic(JArray tools, bool zh)
+    {
+        tools.Add(new JObject
+        {
+            ["name"] = ToolEndDate,
+            ["description"] = zh
+                ? "优雅地结束当前约会时调用此工具（例如玩家道别或准备睡觉）。"
+                : "Call this tool to gracefully end the current date (e.g., when the player says goodbye or mentions going to bed).",
+            ["input_schema"] = new JObject
+            {
+                ["type"] = "object",
+                ["properties"] = new JObject
+                {
+                    ["reason"] = new JObject
+                    {
+                        ["type"] = "string",
+                        ["description"] = "The reason for ending the date, e.g., 'player_goodbye', 'time_to_sleep', 'date_complete'."
+                    }
+                },
+                ["required"] = new JArray("reason")
+            }
+        });
+    }
+
+    private static void AddScheduleDateToolGemini(JArray tools, bool zh)
+    {
+        tools.Add(new JObject
+        {
+            ["name"] = ToolScheduleDate,
+            ["description"] = zh
+                ? "当真诚接受玩家今晚的约会邀请时调用此工具。"
+                : "Call this tool when agreeing to go on a date with the player tonight. Only call it when you sincerely accept the invitation.",
+            ["parameters"] = new JObject
+            {
+                ["type"] = "OBJECT",
+                ["properties"] = new JObject
+                {
+                    ["location_id"] = new JObject
+                    {
+                        ["type"] = "STRING",
+                        ["description"] = "The location where the date will take place tonight at 20:00.",
+                        ["enum"] = new JArray(LocationIds)
+                    }
+                },
+                ["required"] = new JArray("location_id")
+            }
+        });
+    }
+
+    private static void AddEndDateToolGemini(JArray tools, bool zh)
+    {
+        tools.Add(new JObject
+        {
+            ["name"] = ToolEndDate,
+            ["description"] = zh
+                ? "优雅地结束当前约会时调用此工具（例如玩家道别或准备睡觉）。"
+                : "Call this tool to gracefully end the current date (e.g., when the player says goodbye or mentions going to bed).",
+            ["parameters"] = new JObject
+            {
+                ["type"] = "OBJECT",
+                ["properties"] = new JObject
+                {
+                    ["reason"] = new JObject
+                    {
+                        ["type"] = "STRING",
+                        ["description"] = "The reason for ending the date, e.g., 'player_goodbye', 'time_to_sleep', 'date_complete'."
+                    }
+                },
+                ["required"] = new JArray("reason")
+            }
+        });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
     //  OpenAI / OAI-Compatible format
     // ─────────────────────────────────────────────────────────────────────
 
     public static JArray GetOpenAiToolsArray()
     {
         bool zh = IsChinese;
-        return new JArray
+        var tools = new JArray();
+
+        // ── 约会工具：仅在约会系统启用时注册 ──
+        if (ModEntry.Config?.EnableDateSystem == true)
         {
-            new JObject
+            AddScheduleDateToolOpenAi(tools, zh);
+            AddEndDateToolOpenAi(tools, zh);
+        }
+
+        // ── 通用工具：始终注册 ──
+        tools.Add(new JObject
+        {
+            ["type"] = "function",
+            ["function"] = new JObject
             {
-                ["type"] = "function",
-                ["function"] = new JObject
+                ["name"] = ToolPhysicalAction,
+                ["description"] = zh
+                    ? "使自己执行物理移动、跟随玩家或调整陪伴状态。"
+                    : "Call this tool to make yourself perform a physical movement, follow the player, or adjust companion state.",
+                ["parameters"] = new JObject
                 {
-                    ["name"] = ToolScheduleDate,
-                    ["description"] = zh
-                        ? "当真诚接受玩家今晚的约会邀请时调用此工具。"
-                        : "Call this tool when agreeing to go on a date with the player tonight. Only call it when you sincerely accept the invitation.",
-                    ["parameters"] = new JObject
+                    ["type"] = "object",
+                    ["properties"] = new JObject
                     {
-                        ["type"] = "object",
-                        ["properties"] = new JObject
+                        ["action_type"] = new JObject
                         {
-                            ["location_id"] = new JObject
-                            {
-                                ["type"] = "string",
-                                ["description"] = zh
-                                    ? "今晚 20:00 约会举行的地点。"
-                                    : "The location where the date will take place tonight at 20:00.",
-                                ["enum"] = new JArray(LocationIds)
-                            }
-                        },
-                        ["required"] = new JArray("location_id")
-                    }
-                }
-            },
-            new JObject
-            {
-                ["type"] = "function",
-                ["function"] = new JObject
-                {
-                    ["name"] = ToolEndDate,
-                    ["description"] = zh
-                        ? "优雅地结束当前约会时调用此工具（例如玩家道别或准备睡觉）。"
-                        : "Call this tool to gracefully end the current date (e.g., when the player says goodbye or mentions going to bed).",
-                    ["parameters"] = new JObject
-                    {
-                        ["type"] = "object",
-                        ["properties"] = new JObject
-                        {
-                            ["reason"] = new JObject
-                            {
-                                ["type"] = "string",
-                                ["description"] = "The reason for ending the date, e.g., 'player_goodbye', 'time_to_sleep', 'date_complete'."
-                            }
-                        },
-                        ["required"] = new JArray("reason")
-                    }
-                }
-            },
-            new JObject
-            {
-                ["type"] = "function",
-                ["function"] = new JObject
-                {
-                    ["name"] = ToolPhysicalAction,
-                    ["description"] = zh
-                        ? "使自己执行物理移动、跟随玩家或调整陪伴状态。"
-                        : "Call this tool to make yourself perform a physical movement, follow the player, or adjust companion state.",
-                    ["parameters"] = new JObject
-                    {
-                        ["type"] = "object",
-                        ["properties"] = new JObject
-                        {
-                            ["action_type"] = new JObject
-                            {
-                                ["type"] = "string",
-                                ["description"] = zh
-                                    ? "要执行的动作类型。STAY_HOME：让配偶今天留在家里不外出。ALL_DAY_FOLLOW：让配偶今天全程陪伴玩家。"
-                                    : "The type of movement or physical action to perform. STAY_HOME: keep the spouse at home all day. ALL_DAY_FOLLOW: have the spouse accompany the player all day.",
-                                ["enum"] = new JArray(ActionTypes)
-                            }
-                        },
-                        ["required"] = new JArray("action_type")
-                    }
-                }
-            },
-            new JObject
-            {
-                ["type"] = "function",
-                ["function"] = new JObject
-                {
-                    ["name"] = ToolSpeakInBubble,
-                    ["description"] = zh
-                        ? $"在头顶显示简短悬浮气泡，不打开对话框。字数限制在 {BubbleMaxChars} 字以内。"
-                        : $"Show a short floating speech bubble above your head WITHOUT opening a dialogue box. Use for brief, non-blocking reactions: casual acknowledgements, movement comments, greetings. Keep text under {BubbleMaxChars} characters. Mutually exclusive with a dialogue-box response — if you call this tool, do NOT output text in your reply.",
-                    ["parameters"] = new JObject
-                    {
-                        ["type"] = "object",
-                        ["properties"] = new JObject
-                        {
-                            ["text"] = new JObject
-                            {
-                                ["type"] = "string",
-                                ["description"] = $"The short text to display in the bubble. Max {BubbleMaxChars} characters."
-                            }
-                        },
-                        ["required"] = new JArray("text")
-                    }
+                            ["type"] = "string",
+                            ["description"] = zh
+                                ? "要执行的动作类型。STAY_HOME：让配偶今天留在家里不外出。ALL_DAY_FOLLOW：让配偶今天全程陪伴玩家。"
+                                : "The type of movement or physical action to perform. STAY_HOME: keep the spouse at home all day. ALL_DAY_FOLLOW: have the spouse accompany the player all day.",
+                            ["enum"] = new JArray(ActionTypes)
+                        }
+                    },
+                    ["required"] = new JArray("action_type")
                 }
             }
-        };
+        });
+        tools.Add(new JObject
+        {
+            ["type"] = "function",
+            ["function"] = new JObject
+            {
+                ["name"] = ToolSpeakInBubble,
+                ["description"] = zh
+                    ? $"在头顶显示简短悬浮气泡，不打开对话框。字数限制在 {BubbleMaxChars} 字以内。"
+                    : $"Show a short floating speech bubble above your head WITHOUT opening a dialogue box. Use for brief, non-blocking reactions: casual acknowledgements, movement comments, greetings. Keep text under {BubbleMaxChars} characters. Mutually exclusive with a dialogue-box response — if you call this tool, do NOT output text in your reply.",
+                ["parameters"] = new JObject
+                {
+                    ["type"] = "object",
+                    ["properties"] = new JObject
+                    {
+                        ["text"] = new JObject
+                        {
+                            ["type"] = "string",
+                            ["description"] = $"The short text to display in the bubble. Max {BubbleMaxChars} characters."
+                        }
+                    },
+                    ["required"] = new JArray("text")
+                }
+            }
+        });
+
+        return tools;
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -149,93 +268,61 @@ internal static class AgentToolDefinitions
     public static JArray GetAnthropicToolsArray()
     {
         bool zh = IsChinese;
-        return new JArray
+        var tools = new JArray();
+
+        // ── 约会工具：仅在约会系统启用时注册 ──
+        if (ModEntry.Config?.EnableDateSystem == true)
         {
-            new JObject
+            AddScheduleDateToolAnthropic(tools, zh);
+            AddEndDateToolAnthropic(tools, zh);
+        }
+
+        // ── 通用工具：始终注册 ──
+        tools.Add(new JObject
+        {
+            ["name"] = ToolPhysicalAction,
+            ["description"] = zh
+                ? "使自己执行物理移动、跟随玩家或调整陪伴状态。"
+                : "Call this tool to make yourself perform a physical movement, follow the player, or adjust companion state.",
+            ["input_schema"] = new JObject
             {
-                ["name"] = ToolScheduleDate,
-                ["description"] = zh
-                    ? "当真诚接受玩家今晚的约会邀请时调用此工具。"
-                    : "Call this tool when agreeing to go on a date with the player tonight. Only call it when you sincerely accept the invitation.",
-                ["input_schema"] = new JObject
+                ["type"] = "object",
+                ["properties"] = new JObject
                 {
-                    ["type"] = "object",
-                    ["properties"] = new JObject
+                    ["action_type"] = new JObject
                     {
-                        ["location_id"] = new JObject
-                        {
-                            ["type"] = "string",
-                            ["description"] = "The location where the date will take place tonight at 20:00.",
-                            ["enum"] = new JArray(LocationIds)
-                        }
-                    },
-                    ["required"] = new JArray("location_id")
-                }
-            },
-            new JObject
-            {
-                ["name"] = ToolEndDate,
-                ["description"] = zh
-                    ? "优雅地结束当前约会时调用此工具（例如玩家道别或准备睡觉）。"
-                    : "Call this tool to gracefully end the current date (e.g., when the player says goodbye or mentions going to bed).",
-                ["input_schema"] = new JObject
-                {
-                    ["type"] = "object",
-                    ["properties"] = new JObject
-                    {
-                        ["reason"] = new JObject
-                        {
-                            ["type"] = "string",
-                            ["description"] = "The reason for ending the date, e.g., 'player_goodbye', 'time_to_sleep', 'date_complete'."
-                        }
-                    },
-                    ["required"] = new JArray("reason")
-                }
-            },
-            new JObject
-            {
-                ["name"] = ToolPhysicalAction,
-                ["description"] = zh
-                    ? "使自己执行物理移动、跟随玩家或调整陪伴状态。"
-                    : "Call this tool to make yourself perform a physical movement, follow the player, or adjust companion state.",
-                ["input_schema"] = new JObject
-                {
-                    ["type"] = "object",
-                    ["properties"] = new JObject
-                    {
-                        ["action_type"] = new JObject
-                        {
-                            ["type"] = "string",
-                            ["description"] = zh
-                                ? "要执行的动作类型。STAY_HOME：让配偶今天留在家里不外出。ALL_DAY_FOLLOW：让配偶今天全程陪伴玩家。"
-                                : "The type of movement or physical action to perform. STAY_HOME: keep the spouse at home all day. ALL_DAY_FOLLOW: have the spouse accompany the player all day.",
-                            ["enum"] = new JArray(ActionTypes)
-                        }
-                    },
-                    ["required"] = new JArray("action_type")
-                }
-            },
-            new JObject
-            {
-                ["name"] = ToolSpeakInBubble,
-                ["description"] = zh
-                    ? $"在头顶显示简短悬浮气泡，不打开对话框。字数限制在 {BubbleMaxChars} 字以内。"
-                    : $"Show a short floating speech bubble above your head WITHOUT opening a dialogue box. Use for brief, non-blocking reactions: casual acknowledgements, movement comments, greetings. Keep text under {BubbleMaxChars} characters. Mutually exclusive with a dialogue-box response — if you call this tool, do NOT output text in your reply.",
-                ["input_schema"] = new JObject
-                {
-                    ["type"] = "object",
-                    ["properties"] = new JObject
-                    {
-                        ["text"] = new JObject
-                        {
-                            ["type"] = "string",
-                            ["description"] = $"The short text to display in the bubble. Max {BubbleMaxChars} characters."
-                        }
-                    },
-                    ["required"] = new JArray("text")
-                }
+                        ["type"] = "string",
+                        ["description"] = zh
+                            ? "要执行的动作类型。STAY_HOME：让配偶今天留在家里不外出。ALL_DAY_FOLLOW：让配偶今天全程陪伴玩家。"
+                            : "The type of movement or physical action to perform. STAY_HOME: keep the spouse at home all day. ALL_DAY_FOLLOW: have the spouse accompany the player all day.",
+                        ["enum"] = new JArray(ActionTypes)
+                    }
+                },
+                ["required"] = new JArray("action_type")
             }
-        };
+        });
+        tools.Add(new JObject
+        {
+            ["name"] = ToolSpeakInBubble,
+            ["description"] = zh
+                ? $"在头顶显示简短悬浮气泡，不打开对话框。字数限制在 {BubbleMaxChars} 字以内。"
+                : $"Show a short floating speech bubble above your head WITHOUT opening a dialogue box. Use for brief, non-blocking reactions: casual acknowledgements, movement comments, greetings. Keep text under {BubbleMaxChars} characters. Mutually exclusive with a dialogue-box response — if you call this tool, do NOT output text in your reply.",
+            ["input_schema"] = new JObject
+            {
+                ["type"] = "object",
+                ["properties"] = new JObject
+                {
+                    ["text"] = new JObject
+                    {
+                        ["type"] = "string",
+                        ["description"] = $"The short text to display in the bubble. Max {BubbleMaxChars} characters."
+                    }
+                },
+                ["required"] = new JArray("text")
+            }
+        });
+
+        return tools;
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -245,92 +332,60 @@ internal static class AgentToolDefinitions
     public static JArray GetGeminiToolsArray()
     {
         bool zh = IsChinese;
-        return new JArray
+        var tools = new JArray();
+
+        // ── 约会工具：仅在约会系统启用时注册 ──
+        if (ModEntry.Config?.EnableDateSystem == true)
         {
-            new JObject
+            AddScheduleDateToolGemini(tools, zh);
+            AddEndDateToolGemini(tools, zh);
+        }
+
+        // ── 通用工具：始终注册 ──
+        tools.Add(new JObject
+        {
+            ["name"] = ToolPhysicalAction,
+            ["description"] = zh
+                ? "使自己执行物理移动、跟随玩家或调整陪伴状态。"
+                : "Call this tool to make yourself perform a physical movement, follow the player, or adjust companion state.",
+            ["parameters"] = new JObject
             {
-                ["name"] = ToolScheduleDate,
-                ["description"] = zh
-                    ? "当真诚接受玩家今晚的约会邀请时调用此工具。"
-                    : "Call this tool when agreeing to go on a date with the player tonight. Only call it when you sincerely accept the invitation.",
-                ["parameters"] = new JObject
+                ["type"] = "OBJECT",
+                ["properties"] = new JObject
                 {
-                    ["type"] = "OBJECT",
-                    ["properties"] = new JObject
+                    ["action_type"] = new JObject
                     {
-                        ["location_id"] = new JObject
-                        {
-                            ["type"] = "STRING",
-                            ["description"] = "The location where the date will take place tonight at 20:00.",
-                            ["enum"] = new JArray(LocationIds)
-                        }
-                    },
-                    ["required"] = new JArray("location_id")
-                }
-            },
-            new JObject
-            {
-                ["name"] = ToolEndDate,
-                ["description"] = zh
-                    ? "优雅地结束当前约会时调用此工具（例如玩家道别或准备睡觉）。"
-                    : "Call this tool to gracefully end the current date (e.g., when the player says goodbye or mentions going to bed).",
-                ["parameters"] = new JObject
-                {
-                    ["type"] = "OBJECT",
-                    ["properties"] = new JObject
-                    {
-                        ["reason"] = new JObject
-                        {
-                            ["type"] = "STRING",
-                            ["description"] = "The reason for ending the date, e.g., 'player_goodbye', 'time_to_sleep', 'date_complete'."
-                        }
-                    },
-                    ["required"] = new JArray("reason")
-                }
-            },
-            new JObject
-            {
-                ["name"] = ToolPhysicalAction,
-                ["description"] = zh
-                    ? "使自己执行物理移动、跟随玩家或调整陪伴状态。"
-                    : "Call this tool to make yourself perform a physical movement, follow the player, or adjust companion state.",
-                ["parameters"] = new JObject
-                {
-                    ["type"] = "OBJECT",
-                    ["properties"] = new JObject
-                    {
-                        ["action_type"] = new JObject
-                        {
-                            ["type"] = "STRING",
-                            ["description"] = zh
-                                ? "要执行的动作类型。STAY_HOME：让配偶今天留在家里不外出。ALL_DAY_FOLLOW：让配偶今天全程陪伴玩家。"
-                                : "The type of movement or physical action to perform. STAY_HOME: keep the spouse at home all day. ALL_DAY_FOLLOW: have the spouse accompany the player all day.",
-                            ["enum"] = new JArray(ActionTypes)
-                        }
-                    },
-                    ["required"] = new JArray("action_type")
-                }
-            },
-            new JObject
-            {
-                ["name"] = ToolSpeakInBubble,
-                ["description"] = zh
-                    ? $"在头顶显示简短悬浮气泡，不打开对话框。字数限制在 {BubbleMaxChars} 字以内。"
-                    : $"Show a short floating speech bubble above your head WITHOUT opening a dialogue box. Use for brief, non-blocking reactions: casual acknowledgements, movement comments, greetings. Keep text under {BubbleMaxChars} characters. Mutually exclusive with a dialogue-box response — if you call this tool, do NOT output text in your reply.",
-                ["parameters"] = new JObject
-                {
-                    ["type"] = "OBJECT",
-                    ["properties"] = new JObject
-                    {
-                        ["text"] = new JObject
-                        {
-                            ["type"] = "STRING",
-                            ["description"] = $"The short text to display in the bubble. Max {BubbleMaxChars} characters."
-                        }
-                    },
-                    ["required"] = new JArray("text")
-                }
+                        ["type"] = "STRING",
+                        ["description"] = zh
+                            ? "要执行的动作类型。STAY_HOME：让配偶今天留在家里不外出。ALL_DAY_FOLLOW：让配偶今天全程陪伴玩家。"
+                            : "The type of movement or physical action to perform. STAY_HOME: keep the spouse at home all day. ALL_DAY_FOLLOW: have the spouse accompany the player all day.",
+                        ["enum"] = new JArray(ActionTypes)
+                    }
+                },
+                ["required"] = new JArray("action_type")
             }
-        };
+        });
+        tools.Add(new JObject
+        {
+            ["name"] = ToolSpeakInBubble,
+            ["description"] = zh
+                ? $"在头顶显示简短悬浮气泡，不打开对话框。字数限制在 {BubbleMaxChars} 字以内。"
+                : $"Show a short floating speech bubble above your head WITHOUT opening a dialogue box. Use for brief, non-blocking reactions: casual acknowledgements, movement comments, greetings. Keep text under {BubbleMaxChars} characters. Mutually exclusive with a dialogue-box response — if you call this tool, do NOT output text in your reply.",
+            ["parameters"] = new JObject
+            {
+                ["type"] = "OBJECT",
+                ["properties"] = new JObject
+                {
+                    ["text"] = new JObject
+                    {
+                        ["type"] = "STRING",
+                        ["description"] = $"The short text to display in the bubble. Max {BubbleMaxChars} characters."
+                    }
+                },
+                ["required"] = new JArray("text")
+            }
+        });
+
+        return tools;
     }
 }
