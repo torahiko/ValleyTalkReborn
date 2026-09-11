@@ -336,6 +336,7 @@ namespace ValleytalkReborn
             {
                 _harmony = new Harmony(ModManifest.UniqueID);
                 _harmony.PatchAll();
+                TextBoxCursorEnhancer.ApplyPatches(_harmony, this.Helper);
                 _hasPatched = true;
                 Log.Debug("[ValleyTalkReborn] Harmony patches applied successfully.");
             }

@@ -19,7 +19,6 @@ namespace ValleytalkReborn
         private static ModEntry _modEntry;
         private static string[] _cachedModelNames = null;
         private static string _cachedProvider = null;
-        private static bool _isInputHookRegistered = false;
         private static string _lastFetchErrorMessage = null;
 
         private static readonly string[] FrequencyValues = { "0", "1", "2", "3", "4" };
@@ -63,7 +62,20 @@ namespace ValleytalkReborn
         private static string GetUIString(string key, string fallback, object tokens = null)
         {
             string result = null;
-            if (_modEntry?.Helper?.Translation != null)
+
+            // 1. 优先调用模组自主的 I18n 管理类（支持 ContentPack 与 zh.json 检索）
+            try
+            {
+                string i18nVal = I18n.Get(key);
+                if (!string.IsNullOrEmpty(i18nVal) && i18nVal != key)
+                {
+                    result = i18nVal;
+                }
+            }
+            catch { }
+
+            // 2. SMAPI 原生 Translation 回退
+            if (string.IsNullOrEmpty(result) && _modEntry?.Helper?.Translation != null)
             {
                 var smapiTranslation = _modEntry.Helper.Translation.Get(key);
                 if (smapiTranslation.HasValue())
@@ -72,6 +84,7 @@ namespace ValleytalkReborn
                 }
             }
 
+            // 3. Util 缓存回退
             if (string.IsNullOrEmpty(result))
             {
                 string cacheResult = Util.GetString(key, returnNull: true);
@@ -104,9 +117,6 @@ namespace ValleytalkReborn
             var Config = ModEntry.Config;
             ModManifest = modEntry.ModManifest;
             ConfigMenu = GetConfigMenu(modEntry);
-
-            // 注册文本框光标导航拦截钩子
-            RegisterGlobalTextBoxNavigationHook(modEntry.Helper);
 
             if (ConfigMenu == null)
             {
@@ -208,8 +218,10 @@ namespace ValleytalkReborn
             // GMCM 机制提示
             ConfigMenu.AddParagraph(
                 mod: ModManifest,
-                text: () => GetUIString("configFetchHintFull",
-                    "[Tip] Enter your API Key (and Server Address if needed), click 'Save', then exit and re-open this menu. The mod will automatically fetch available models. Switching providers also requires saving and reopening.")
+                text: () => string.IsNullOrEmpty(_lastFetchErrorMessage)
+                    ? GetUIString("configFetchHint", "Enter your API Key and click 'Save' to fetch available models.")
+                    : GetUIString("configFetchError", "⚠️ Failed to fetch models: ") + _lastFetchErrorMessage
+                    + " " + GetUIString("configFetchErrorRetry", "(Click 'Save' to retry)")
             );
 
             if (!ModEntry.LlmMap.TryGetValue(Config.Provider, out var llmType))
@@ -285,14 +297,12 @@ namespace ValleytalkReborn
                 }
                 else
                 {
-                    // ★ 修复 2：完整多语言支持，绝不出现硬编码未翻译的英文
-                    string errorHint = string.IsNullOrEmpty(_lastFetchErrorMessage)
-                        ? GetUIString("configFetchHint", "Enter your API Key and click 'Save' to fetch available models.")
-                        : GetUIString("configFetchError", "⚠️ Failed to fetch models: ") + _lastFetchErrorMessage
-                          + " " + GetUIString("configFetchErrorRetry", "(Click 'Save' to retry)");
                     ConfigMenu.AddParagraph(
                         mod: ModManifest,
-                        text: () => errorHint
+                        text: () => string.IsNullOrEmpty(_lastFetchErrorMessage)
+                            ? GetUIString("configFetchHint", "Enter your API Key and click 'Save' to fetch available models.")
+                            : GetUIString("configFetchError", "⚠️ Failed to fetch models: ") + _lastFetchErrorMessage
+                              + " " + GetUIString("configFetchErrorRetry", "(Click 'Save' to retry)")
                     );
                 }
             }
@@ -548,155 +558,6 @@ namespace ValleytalkReborn
             }
 
             return GetUIString("configStatusReady", "✅ Connected / Ready: {{modelName}}", new { modelName });
-        }
-
-        // =========================================================================
-        // ── ★ 修复 3：全局文本框键盘导航与光标拦截实现 ─────────────────────────
-        // =========================================================================
-
-        private static readonly FieldInfo CursorPositionField = typeof(TextBox).GetField("_cursorPosition", BindingFlags.NonPublic | BindingFlags.Instance)
-                                                              ?? typeof(TextBox).GetField("cursorPosition", BindingFlags.NonPublic | BindingFlags.Instance);
-
-        private static void RegisterGlobalTextBoxNavigationHook(IModHelper helper)
-        {
-            if (_isInputHookRegistered || helper == null) return;
-
-            helper.Events.Input.ButtonPressed += OnButtonPressedHandleTextBoxCursor;
-            _isInputHookRegistered = true;
-        }
-
-        private static void OnButtonPressedHandleTextBoxCursor(object sender, ButtonPressedEventArgs e)
-        {
-            // 通过游戏全局键盘调度器直接获取当前处于焦点选中的输入框
-            var subscriber = Game1.keyboardDispatcher?.Subscriber;
-            if (subscriber == null) return;
-
-            // 1. 若使用的是模组自建打字输入框
-            if (subscriber is DialogueTextInputBox customBox && customBox.Selected)
-            {
-                if (IsControlKeyDown()) return;
-
-                if (e.Button == SButton.Left || e.Button == SButton.Right ||
-                    e.Button == SButton.Home || e.Button == SButton.End ||
-                    e.Button == SButton.Delete || e.Button == SButton.Back)
-                {
-                    if (e.Button.TryGetKeyboard(out Keys k))
-                    {
-                        customBox.RecieveSpecialInput(k);
-                        _modEntry?.Helper?.Input.Suppress(e.Button);
-                    }
-                }
-                return;
-            }
-
-            // 2. 原版 TextBox 或 GMCM 内部的文本框
-            if (subscriber is TextBox vanillaTextBox && vanillaTextBox.Selected)
-            {
-                // 支持快捷键导航：左、右、Home、End、Delete
-                if (e.Button == SButton.Left || e.Button == SButton.Right ||
-                    e.Button == SButton.Home || e.Button == SButton.End ||
-                    e.Button == SButton.Delete)
-                {
-                    if (e.Button.TryGetKeyboard(out Keys k))
-                    {
-                        if (HandleVanillaTextBoxNavigation(vanillaTextBox, k))
-                        {
-                            _modEntry?.Helper?.Input.Suppress(e.Button);
-                        }
-                    }
-                }
-            }
-        }
-
-        private static bool HandleVanillaTextBoxNavigation(TextBox textBox, Keys key)
-        {
-            if (textBox == null) return false;
-            string currentText = textBox.Text ?? string.Empty;
-
-            int cursor = currentText.Length;
-            if (CursorPositionField != null)
-            {
-                try
-                {
-                    cursor = (int)CursorPositionField.GetValue(textBox);
-                }
-                catch
-                {
-                    cursor = currentText.Length;
-                }
-            }
-
-            cursor = Math.Clamp(cursor, 0, currentText.Length);
-            bool ctrl = IsControlKeyDown();
-
-            switch (key)
-            {
-                case Keys.Left:
-                    if (ctrl)
-                    {
-                        // Ctrl + 左箭头：按单词左移
-                        int newPos = cursor - 1;
-                        while (newPos > 0 && char.IsWhiteSpace(currentText[newPos])) newPos--;
-                        while (newPos > 0 && !char.IsWhiteSpace(currentText[newPos - 1])) newPos--;
-                        SetTextBoxCursor(textBox, Math.Max(0, newPos));
-                    }
-                    else if (cursor > 0)
-                    {
-                        SetTextBoxCursor(textBox, cursor - 1);
-                    }
-                    return true;
-
-                case Keys.Right:
-                    if (ctrl)
-                    {
-                        // Ctrl + 右箭头：按单词右移
-                        int newPos = cursor;
-                        while (newPos < currentText.Length && !char.IsWhiteSpace(currentText[newPos])) newPos++;
-                        while (newPos < currentText.Length && char.IsWhiteSpace(currentText[newPos])) newPos++;
-                        SetTextBoxCursor(textBox, Math.Min(currentText.Length, newPos));
-                    }
-                    else if (cursor < currentText.Length)
-                    {
-                        SetTextBoxCursor(textBox, cursor + 1);
-                    }
-                    return true;
-
-                case Keys.Home:
-                    SetTextBoxCursor(textBox, 0);
-                    return true;
-
-                case Keys.End:
-                    SetTextBoxCursor(textBox, currentText.Length);
-                    return true;
-
-                case Keys.Delete:
-                    if (cursor < currentText.Length)
-                    {
-                        textBox.Text = currentText.Remove(cursor, 1);
-                        SetTextBoxCursor(textBox, cursor);
-                    }
-                    return true;
-            }
-
-            return false;
-        }
-
-        private static void SetTextBoxCursor(TextBox textBox, int newCursor)
-        {
-            if (CursorPositionField != null && textBox != null)
-            {
-                try
-                {
-                    CursorPositionField.SetValue(textBox, Math.Clamp(newCursor, 0, (textBox.Text ?? string.Empty).Length));
-                }
-                catch { }
-            }
-        }
-
-        private static bool IsControlKeyDown()
-        {
-            var state = Game1.input.GetKeyboardState();
-            return state.IsKeyDown(Keys.LeftControl) || state.IsKeyDown(Keys.RightControl);
         }
 
         private static void RefreshModelNamesCacheAsync()

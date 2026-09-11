@@ -154,6 +154,7 @@ internal static class PerceptionInjector
             if (_mentionedGossipKeys.Count > 10000)
                 _mentionedGossipKeys.Clear();
 
+            // 🔑 阅后即焚：进入单日 Prompt 候选后立即完成单日消费，杜绝重复出现
             _mentionedGossipKeys.Add(targetDedupeKey);
             lines.Add($"- {targetSnapshot.Template}");
         }
@@ -175,7 +176,7 @@ internal static class PerceptionInjector
                 && p.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        // 2. 弱感知：非礼物事件 + 旁观别人收到礼物的目击事件
+        // 2. 弱感知：非自身礼物事件与周边环境动作
         var otherPerceptions = perceptions
             .Where(p => p?.Key != "Gift" || 
                        (p.Key == "Gift" && !string.Equals(p.NpcName, npcName, StringComparison.OrdinalIgnoreCase)))
@@ -248,9 +249,11 @@ internal static class PerceptionInjector
                 }
             }
 
-            // 核心消费：消费真正注入了当前 Prompt 的瞬态动作与需避免同日/同场对话复读的长效装束/状态
+            // 🔑 核心生命周期（阅后即焚）：
+            // 所有注入进当前 Prompt 的弱感知，在本次构建后即认定已进入角色短期认知，
+            // 无论大模型本次是否选择以此为素材展开话题，均即刻完成注意力消费，防止反复抢戏。
             var consumablePerceptions = otherPerceptions
-                .Where(p => ShouldConsumeAfterInjection(p.Key))
+                .Where(p => ShouldConsumeAfterInjection(p?.Key))
                 .ToList();
 
             if (consumablePerceptions.Any())
@@ -264,8 +267,8 @@ internal static class PerceptionInjector
 
     /// <summary>
     /// 判断感知条目是否在注入当前 NPC 的 Prompt 后即完成消费。
-    /// 所有可被 NPC 观察到的状态、动作与信物在注入后均对当前 NPC 标记已阅（阅后即焚），
-    /// 避免在后续对话轮次或连续 Bark 中反复抢占角色注意力。
+    /// 遵循注意力“阅后即焚”原则：所有一旦被选入 Prompt 的感知条目均销毁，
+    /// 哪怕未来扩展了新 Key 也默认立即消费，避免悬空驻留。
     /// </summary>
     internal static bool ShouldConsumeAfterInjection(string key)
     {
@@ -296,11 +299,11 @@ internal static class PerceptionInjector
             "PlayerBagFull"              => true, // 背包满载
             "PlayerActiveItem"           => true, // 手持携带物
 
-            // 3. 信物与关键随身物（提及一次即归于平淡，避免每个路人反复谈及）
+            // 3. 信物与关键随身物
             "PlayerHasPendant"           => true, // 求婚信物（美人鱼吊坠）
             "PlayerHasBouquet"           => true, // 确立关系信物（花束）
 
-            // 4. 生理状态与 Buff 光环（注意力阅后即焚，物理生命周期由 PlayerStateScanner.Evict 负责）
+            // 4. 生理状态与 Buff 光环
             "PlayerExhausted"            => true, // 精疲力竭
             "PlayerTired"                => true, // 疲惫
             "PlayerLowHealth"            => true, // 残血负伤
@@ -311,7 +314,8 @@ internal static class PerceptionInjector
             "PlayerGlowing"              => true, // 戒指光晕
             "PlayerLateNight"            => true, // 深夜独自游荡
 
-            _ => false
+            // 5. 兜底保护：凡是被成功注入 Prompt 的条目，均执行阅后即焚
+            _ => true
         };
     }
 
