@@ -43,6 +43,13 @@ internal sealed class A2ASessionManager
     /// </summary>
     private const int A2A_POST_SESSION_COOLDOWN_TICKS = 900;
 
+    /// <summary>
+    /// 被打断的话尾可被"续接"请求引用的有效窗口（游戏分钟）。
+    /// 超过此窗口或跨天后，话尾按过期处理，不再触发续接注入。
+    /// 120 游戏分钟 = 2 游戏小时。
+    /// </summary>
+    private const int A2A_RESUME_WINDOW_GAME_MINUTES = 120;
+
     private readonly NpcReservationService _reservations;
     private readonly MainThreadOutputQueue _outputQueue;
     private readonly LlmRequestGateway _llmGateway;
@@ -65,6 +72,14 @@ internal sealed class A2ASessionManager
     /// 换天时清空。
     /// </summary>
     private readonly Dictionary<string, string> _a2aPreviousTopics = new Dictionary<string, string>();
+
+    /// <summary>
+    /// 被打断会话的"话尾"暂存：pairKey → (录制日, 录制时刻, 尾句)。
+    /// 仅当会话播放过 ≥2 句后被中断才写入；自然收尾不写。
+    /// 派发时一次性消费（consume-once），跨天/超窗口自动失效。
+    /// 换天与回标题时清空，纯 Memory 作用域，不跨存档。
+    /// </summary>
+    private readonly Dictionary<string, (int Day, int TimeOfDay, string Tail)> _a2aInterruptedTails = new();
 
     private int _a2aSessionGeneration = 0;
 
@@ -179,22 +194,15 @@ internal sealed class A2ASessionManager
                 // ★ 优化：直接调用 Interrupt，不留悬空垃圾
                 // 若回传到达时成员已入睡，立即销毁会话释放资源，
                 // 避免对话期间会话以"占有"状态悬挂在内存中。
-                InterruptA2ASession(session, "LLM结果到达时成员已入睡，会话取消", applyHalfPersonalCooldown: false);
+                InterruptA2ASession(session, "LLM结果到达时成员已入睡，会话取消", applyHalfPersonalCooldown: false, stashInterruptedTail: true);
                 continue;
             }
 
-            if (result.EndReason == DialogueModels.LlmRequestEndReason.Cancelled)
+            if (result.EndReason == DialogueModels.LlmRequestEndReason.Cancelled || result.Cancelled)
             {
-                session.FinishRequest();
-                session.RequestCts = null;
-                continue;
-            }
-
-            if (result.Cancelled)
-            {
-                session.FinishRequest();
-                session.RequestCts = null;
-                continue;
+                ModEntry.SMonitor?.Log(
+                    $"[A2A] 取消态结果到达存活会话，按 fallback 处理：{string.Join(" & ", session.ParticipantNames)}",
+                    LogLevel.Trace);
             }
 
             DialogueModels.A2ALine[] lines = null;
@@ -267,7 +275,7 @@ internal sealed class A2ASessionManager
 
         foreach (var session in sessions)
         {
-            InterruptA2ASession(session, reason, applyHalfPersonalCooldown: true);
+            InterruptA2ASession(session, reason, applyHalfPersonalCooldown: true, stashInterruptedTail: true);
         }
     }
 
@@ -278,7 +286,7 @@ internal sealed class A2ASessionManager
     {
         foreach (var session in _activeA2ASessions.ToList())
         {
-            InterruptA2ASession(session, reason, applyHalfPersonalCooldown: applyCooldown);
+            InterruptA2ASession(session, reason, applyHalfPersonalCooldown: applyCooldown, stashInterruptedTail: true);
         }
     }
 
@@ -304,6 +312,7 @@ internal sealed class A2ASessionManager
         _a2aPersonalCooldowns.Clear();
         _a2aPostSessionCooldowns.Clear();
         _a2aPreviousTopics.Clear();
+        _a2aInterruptedTails.Clear();
 
         // 排空异步回传残留，防止次日处理到前日滞留的过期结果
         while (_pendingA2AResults.TryDequeue(out _)) { }
@@ -322,6 +331,7 @@ internal sealed class A2ASessionManager
         _a2aPersonalCooldowns.Clear();
         _a2aPostSessionCooldowns.Clear();
         _a2aPreviousTopics.Clear();
+        _a2aInterruptedTails.Clear();
 
         while (_pendingA2AResults.TryDequeue(out _)) { }
         A2APromptBuilder.ResetGossipCache();
@@ -394,7 +404,7 @@ internal sealed class A2ASessionManager
 
             if (participants.Count == 0 || participants.Any(n => DialogueUtilities.IsNpcSleeping(n)))
             {
-                InterruptA2ASession(session, "会话成员已入睡，会话取消", applyHalfPersonalCooldown: true);
+                InterruptA2ASession(session, "会话成员已入睡，会话取消", applyHalfPersonalCooldown: true, stashInterruptedTail: true);
                 continue;
             }
 
@@ -410,7 +420,7 @@ internal sealed class A2ASessionManager
 
                 if (!session.AllInStareRange() || session.IdleTicks > A2A_IDLE_TIMEOUT_TICKS)
                 {
-                    InterruptA2ASession(session, "凝视期成员离开或闲置超时，聚集取消", applyHalfPersonalCooldown: false);
+                    InterruptA2ASession(session, "凝视期成员离开或闲置超时，聚集取消", applyHalfPersonalCooldown: false, stashInterruptedTail: true);
                 }
 
                 continue;
@@ -419,7 +429,7 @@ internal sealed class A2ASessionManager
             // ★ 播放/请求期物理破裂判定（移除了 Game1.dialogueUp 销毁触发）
             if (session.ShouldBreakDuringPlayback() || session.AllParticipantsOutOfDisplayRange())
             {
-                InterruptA2ASession(session, "会话成员走散或离开视野，会话中断", applyHalfPersonalCooldown: true);
+                InterruptA2ASession(session, "会话成员走散或离开视野，会话中断", applyHalfPersonalCooldown: true, stashInterruptedTail: true);
                 continue;
             }
 
@@ -468,7 +478,7 @@ internal sealed class A2ASessionManager
                     _a2aPreviousTopics[pairKeyForTopic] = session.RecentSpokenLines.Last().Item2;
                 }
 
-                InterruptA2ASession(session, "会话结束", applyHalfPersonalCooldown: false);
+                InterruptA2ASession(session, "会话结束", applyHalfPersonalCooldown: false, stashInterruptedTail: false);
                 continue;
             }
 
@@ -477,8 +487,15 @@ internal sealed class A2ASessionManager
                 if (session.TryStartRequest())
                 {
                     string pairKeyForPrev = DialogueUtilities.MakePairKey(session.ParticipantNames);
-                    _a2aPreviousTopics.TryGetValue(pairKeyForPrev, out string prevTopic);
-                    var request = _promptBuilder.Build(session, prevTopic);
+
+                    // 续接优先：存在未过期的被打断话尾时，注入续接行并跳过防复读；
+                    // 否则走既有跨轮防复读路径（读 _a2aPreviousTopics）。
+                    string resumeTail = TryConsumeInterruptedTail(pairKeyForPrev);
+                    string prevTopic = null;
+                    if (resumeTail == null)
+                        _a2aPreviousTopics.TryGetValue(pairKeyForPrev, out prevTopic);
+
+                    var request = _promptBuilder.Build(session, prevTopic, resumeTail);
 
                     if (request == null)
                     {
@@ -774,13 +791,14 @@ internal sealed class A2ASessionManager
         string reason,
         bool applyHalfPersonalCooldown)
     {
-        InterruptA2ASession(session, reason, applyHalfPersonalCooldown);
+        InterruptA2ASession(session, reason, applyHalfPersonalCooldown, stashInterruptedTail: true);
     }
 
     private void InterruptA2ASession(
         DialogueModels.A2ASession session,
         string reason,
-        bool applyHalfPersonalCooldown)
+        bool applyHalfPersonalCooldown,
+        bool stashInterruptedTail)
     {
         if (session == null) return;
 
@@ -801,6 +819,21 @@ internal sealed class A2ASessionManager
         }
 
         session.RequestCts = null;
+
+        // ★ 被打断话尾暂存：仅当会话播放过 ≥2 句后被中断才记录，
+        // 供后续同 pair 在窗口期内重聚时续接注入。自然收尾不写。
+        if (stashInterruptedTail && session.RecentSpokenLines.Count >= 2)
+        {
+            string pairKey = DialogueUtilities.MakePairKey(session.ParticipantNames);
+            string tail = session.RecentSpokenLines.Last().Item2;
+            _a2aInterruptedTails[pairKey] = (Game1.Date.TotalDays, Game1.timeOfDay, tail);
+            // 同步既有防复读：后续会话（即使过窗口退化为常规路径）免费覆盖
+            _a2aPreviousTopics[pairKey] = tail;
+
+            ModEntry.SMonitor?.Log(
+                $"[A2A] 已暂存被打断话尾：{pairKey} → {tail}",
+                StardewModdingAPI.LogLevel.Trace);
+        }
 
         if (applyHalfPersonalCooldown)
         {
@@ -829,6 +862,32 @@ internal sealed class A2ASessionManager
 
         string names = string.Join(" & ", session.ParticipantNames);
         ModEntry.SMonitor?.Log($"[A2A] {reason}：{names}", LogLevel.Debug);
+    }
+
+    /// <summary>
+    /// 消费（consume-once）指定 pair 的被打断话尾。
+    /// 无记录 / 跨天 / 超窗口 → 清除并返回 null；否则移除并返回尾句。
+    /// </summary>
+    private string TryConsumeInterruptedTail(string pairKey)
+    {
+        if (!_a2aInterruptedTails.TryGetValue(pairKey, out var entry))
+            return null;
+
+        if (entry.Day != Game1.Date.TotalDays)
+        {
+            _a2aInterruptedTails.Remove(pairKey);
+            return null;
+        }
+
+        int elapsed = Game1.timeOfDay - entry.TimeOfDay;
+        if (elapsed < 0 || elapsed > A2A_RESUME_WINDOW_GAME_MINUTES)
+        {
+            _a2aInterruptedTails.Remove(pairKey);
+            return null;
+        }
+
+        _a2aInterruptedTails.Remove(pairKey);
+        return entry.Tail;
     }
 
     private void ReleaseSessionReservations(DialogueModels.A2ASession session)

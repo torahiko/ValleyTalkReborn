@@ -13,9 +13,15 @@ namespace ValleytalkReborn;
 /// </summary>
 internal sealed class A2APromptBuilder
 {
-    // A2A gossip 去重：同一天内不重复使用同一条 gossip
-    private static string _lastA2AGossipKey = string.Empty;
+    // A2A gossip 去重：同一天内不重复使用同一条八卦
+    private static readonly HashSet<string> _usedA2AGossipKeys = new(StringComparer.Ordinal);
     private static int _lastA2AGossipDay = -1;
+
+    /// <summary>
+    /// 玩家进入参与者 3 格（含）范围内时，A2A 提示里注入一行"农夫就在旁边"的注脚，
+    /// 引导模型让对话自然留意/打趣玩家，而非假装玩家不存在。
+    /// </summary>
+    private const int A2APlayerCloseRangeSq = 9;
 
     /// <summary>
     /// 重置跨存档/跨天的静态八卦去重缓存。在换天、退标题、读档时调用，
@@ -23,7 +29,7 @@ internal sealed class A2APromptBuilder
     /// </summary>
     internal static void ResetGossipCache()
     {
-        _lastA2AGossipKey = string.Empty;
+        _usedA2AGossipKeys.Clear();
         _lastA2AGossipDay = -1;
     }
 
@@ -34,9 +40,12 @@ internal sealed class A2APromptBuilder
     /// <summary>
     /// 构建 A2A 请求。必须在主线程调用。
     /// </summary>
+    /// <param name="previousTopicLine">上轮尾句，用于跨轮防复读注入。</param>
+    /// <param name="interruptedTail">被打断的话尾；非空时注入续接行，并跳过防复读块。</param>
     internal DialogueModels.A2ARequest Build(
         DialogueModels.A2ASession session,
-        string previousTopicLine = null)
+        string previousTopicLine = null,
+        string interruptedTail = null)
     {
         if (session == null) return null;
 
@@ -107,7 +116,7 @@ internal sealed class A2APromptBuilder
             maxItems: 2,
             excludeNames: excludeNames.ToArray());
 
-        string gossip = TryGetRecentGossip();
+        string gossip = TryGetRecentGossip(participants);
         if (!string.IsNullOrWhiteSpace(gossip) && isZh)
             gossip = NpcNameLocalizer.LocalizeNamesInText(gossip);
         // gossip 为空时整行不输出，避免空标签污染模型注意力
@@ -164,19 +173,45 @@ internal sealed class A2APromptBuilder
         }
 
         // ── 2. User Prompt 构建 ──
-        string topicHook = GenerateConversationTopic(participants, isZh);
+        // 话题钩子决选：八卦催化剂 vs 地点基线，加权单槽。
+        // Gossip 命中时其文案已含 gossip 文本，故压制独立 gossip 行防重复。
+        var topicDecision = A2ATopicRouter.Decide(participants, gossip, isZh);
+        string topicHook = topicDecision.InjectedLine;
 
         var userSb = new StringBuilder();
         userSb.AppendLine(sceneBlock);
         if (!string.IsNullOrEmpty(lateNightBlock))
             userSb.AppendLine(lateNightBlock);
+
+        string actionBody = BuildEmbodiedActionLines(participants, isZh);
+        if (actionBody != null)
+            userSb.AppendLine(isZh ? $"【当下举动】{actionBody}。" : $"[CURRENT ACTIONS] {actionBody}.");
+
         userSb.AppendLine();
-        if (!string.IsNullOrWhiteSpace(gossip))
+        // 仅当话题钩子未携带 gossip 文本时，才输出独立的 gossip 行
+        if (!string.IsNullOrWhiteSpace(gossip) && topicDecision.Type != A2ACatalystType.Gossip)
             userSb.AppendLine($"Recent town gossip: {gossip}");
         userSb.AppendLine();
 
-        // 跨轮防复读：如有上轮尾句，轻描淡写带过，促使模型切换新话题切面
-        if (!string.IsNullOrWhiteSpace(previousTopicLine))
+        // 玩家近身注脚：农夫站在参与者身旁时，提示模型自然留意/打趣玩家
+        string proximityNote = BuildPlayerProximityNote(participants, isZh);
+        if (proximityNote != null)
+        {
+            userSb.AppendLine(proximityNote);
+            userSb.AppendLine();
+        }
+
+        // 被打断续接 优先于 跨轮防复读：两块绝不并存。
+        // interruptedTail 非空时注入续接行并跳过防复读；否则走既有防复读路径。
+        if (!string.IsNullOrWhiteSpace(interruptedTail))
+        {
+            string quotedTail = isZh ? "“" + interruptedTail + "”" : "\"" + interruptedTail + "\"";
+            userSb.AppendLine(isZh
+                ? $"（你们刚才聊到{quotedTail}就被打断了，现在接着刚才的话头自然续上，或随口吐槽刚才被打断这件事。）"
+                : $"(Your conversation was cut off right after: {quotedTail}. Pick it back up naturally, or bring up having been interrupted.)");
+            userSb.AppendLine();
+        }
+        else if (!string.IsNullOrWhiteSpace(previousTopicLine))
         {
             string quoted = isZh
                 ? "“" + previousTopicLine + "”"
@@ -202,6 +237,116 @@ internal sealed class A2APromptBuilder
             IsChinese = isZh,
             NamesLog = string.Join(" & ", session.ParticipantNames)
         };
+    }
+
+    /// <summary>
+    /// 构建"当下举动"提示正文：将每位参与者配偶日程的即时 POI 动作收拢为一句列表。
+    /// 任一参与者无可用动作文本时返回 null，调用方据此跳过整段注入。
+    /// POI 文本来源为 GetActivePoiContext，其返回值带 "[你现在：…]" / "[Right now you are: …]"
+    /// 包装层；此处剥壳仅保留动作本体，避免与外层【当下举动】标签形成双包装。
+    /// </summary>
+    private static string BuildEmbodiedActionLines(List<NPC> participants, bool isZh)
+    {
+        if (participants == null || participants.Count == 0)
+            return null;
+
+        var fragments = new List<string>();
+
+        foreach (var npc in participants)
+        {
+            if (npc == null)
+                continue;
+
+            string poi = CompanionScheduleManager.Instance?.GetActivePoiContext(npc.Name);
+            if (string.IsNullOrWhiteSpace(poi))
+                continue;
+
+            string first = poi.Split(new[] { '。', '.' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .FirstOrDefault(s => s.Length > 0);
+
+            if (first == null)
+                continue;
+
+            // 剥壳：GetActivePoiContext 返回值整体为 "[你现在：动作]" / "[Right now you are: 动作]"
+            // 包装层。剥除 bracket 后内部仍残留语言前缀（"你现在：" / "Right now you are:"），
+            // 需一并去除以保留纯净动作本体，避免与外层【当下举动】标签双包装（参见 AC1）。
+            if (first.StartsWith("[") && first.EndsWith("]"))
+                first = first.Substring(1, first.Length - 2).Trim();
+            if (first.StartsWith("你现在："))
+                first = first.Substring("你现在：".Length).Trim();
+            else if (first.StartsWith("Right now you are:"))
+                first = first.Substring("Right now you are:".Length).Trim();
+
+            if (isZh)
+            {
+                if (!ContainsCjkCharacter(first))
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[A2A] POI 动作为非中文文本，跳过注入: {first}",
+                        StardewModdingAPI.LogLevel.Trace);
+                    continue;
+                }
+                first = NpcNameLocalizer.LocalizeNamesInText(first);
+            }
+
+            string dn = isZh ? NpcNameLocalizer.GetZhName(npc.Name) : (npc.displayName ?? npc.Name);
+
+            fragments.Add(isZh
+                ? $"{dn} 此刻：{first}"
+                : $"{dn} right now: {first}");
+        }
+
+        if (fragments.Count == 0)
+            return null;
+
+        return string.Join(isZh ? "；" : "; ", fragments);
+    }
+
+    /// <summary>
+    /// 当玩家站在参与者 3 格（含）范围内时，返回一行"农夫就在旁边"的注脚，
+    /// 引导 A2A 对话自然留意或打趣玩家；距离不满足或玩家为空时返回 null。
+    /// 含配偶参与者的会话使用配偶变体，暗示亲密关系下的自然反应。
+    /// </summary>
+    private static string BuildPlayerProximityNote(List<NPC> participants, bool isZh)
+    {
+        if (Game1.player == null)
+            return null;
+
+        if (participants == null || participants.Count == 0)
+            return null;
+
+        if (!DialogueUtilities.IsInRangeSquared(participants[0], (Farmer)Game1.player, A2APlayerCloseRangeSq))
+            return null;
+
+        bool spouseAny = participants.Any(IsSpouse);
+
+        if (isZh)
+        {
+            return spouseAny
+                ? "（注：农夫就站在你们身边。你们中有人与农夫关系亲密，可自然对农夫打趣一句或有所反应。）"
+                : "（注：农夫此刻就站在你们旁边看着你们交谈，可适度自然留意或打趣，无需刻意回避。）";
+        }
+        else
+        {
+            return spouseAny
+                ? "(Note: The farmer is right beside you. Someone close to the farmer may naturally tease or react to them.)"
+                : "(Note: The farmer is standing right beside you, watching. Feel free to acknowledge them naturally.)";
+        }
+    }
+
+    /// <summary>
+    /// 私有复制 BarkPromptBuilder.ContainsCjkCharacter：判定文本是否包含 CJK 统一表意文字（主平面 一-鿿）。
+    /// 用于 zh 客户端守卫：POI 动作若不含中文语料则跳过注入，避免英文描述污染中文 A2A 提示。
+    /// </summary>
+    private static bool ContainsCjkCharacter(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return false;
+        foreach (char c in text)
+        {
+            if (c >= '一' && c <= '鿿') return true;
+        }
+        return false;
     }
 
     private static string BuildA2ASystemPrompt(bool isZh, string allNames)
@@ -371,7 +516,7 @@ internal sealed class A2APromptBuilder
     /// <summary>
     /// 根据时间、地点与季节，提供氛围层面的引导，避免提供具体事件导致模型产生锚定效应。
     /// </summary>
-   private static string GenerateConversationTopic(List<NPC> participants, bool isChinese)
+    internal static string GenerateConversationTopic(List<NPC> participants, bool isChinese)
 {
     int time = Game1.timeOfDay;
     // 使用参与者自身位置，而非玩家位置
@@ -634,18 +779,14 @@ internal sealed class A2APromptBuilder
     private static string GetInterNpcRelationships(List<NPC> participants, bool isChinese)
         => NpcRelationRegistry.Instance?.GetRelationships(participants, isChinese);
 
-    private static string TryGetRecentGossip()
+    /// <summary>
+    /// 取一条尚未使用、且不涉及在场参与者的最新八卦模板；无可用则返回 null。
+    /// 遍历顺序自末位（最新）向首位，命中即停，并将该条记入当日已用集合。
+    /// </summary>
+    private static string TryGetRecentGossip(List<NPC> participants)
     {
         try
         {
-            var snapshots = PerceptionManager.Instance?.GetGossipSnapshots();
-
-            if (snapshots == null || snapshots.Count == 0) return null;
-
-            var last = snapshots[snapshots.Count - 1];
-
-            if (last == null || string.IsNullOrWhiteSpace(last.Template)) return null;
-
             int day;
 
             try
@@ -657,19 +798,78 @@ internal sealed class A2APromptBuilder
                 day = -1;
             }
 
-            string key = $"{last.Key ?? ""}:{last.Template}";
+            // 防御性跨日兜底：即便 GetGossipSnapshots 内部已清理，换天也必须重置已用集合
+            if (day != _lastA2AGossipDay)
+            {
+                _usedA2AGossipKeys.Clear();
+                _lastA2AGossipDay = day;
+            }
 
-            if (_lastA2AGossipDay == day && _lastA2AGossipKey == key)
-                return null;
+            // 构造在场参与者的匹配名集合（Name / displayName / 中文名），过滤空值，OrdinalIgnoreCase
+            var participantNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (participants != null)
+            {
+                foreach (var n in participants)
+                {
+                    if (n == null) continue;
+                    if (!string.IsNullOrEmpty(n.Name)) participantNames.Add(n.Name);
+                    if (!string.IsNullOrEmpty(n.displayName)) participantNames.Add(n.displayName);
+                    string zh = NpcNameLocalizer.GetZhName(n.Name);
+                    if (!string.IsNullOrEmpty(zh)) participantNames.Add(zh);
+                }
+            }
 
-            _lastA2AGossipDay = day;
-            _lastA2AGossipKey = key;
+            var snapshots = PerceptionManager.Instance?.GetGossipSnapshots();
 
-            return last.Template;
+            if (snapshots == null || snapshots.Count == 0) return null;
+
+            // 自末位（最新）向首位遍历，取第一条既未使用又不涉及在场参与者的八卦
+            for (int i = snapshots.Count - 1; i >= 0; i--)
+            {
+                var entry = snapshots[i];
+
+                if (entry == null || string.IsNullOrWhiteSpace(entry.Template))
+                    continue;
+
+                string key = $"{entry.Key ?? ""}:{entry.Template}";
+
+                if (_usedA2AGossipKeys.Contains(key))
+                    continue;
+
+                // 涉及性检查：模板命中任一在场参与者的名字 → 跳过，避免"背后议论本人"
+                if (InvolvesParticipant(entry.Template, participantNames))
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[A2A] 八卦涉及在场参与者，跳过：{key}",
+                        StardewModdingAPI.LogLevel.Trace);
+                    continue;
+                }
+
+                _usedA2AGossipKeys.Add(key);
+                return entry.Template;
+            }
+
+            return null;
         }
         catch
         {
             return null;
         }
+    }
+
+    /// <summary>
+    /// 判定 gossip 模板是否以 OrdinalIgnoreCase 包含任一在场参与者的匹配名。
+    /// </summary>
+    private static bool InvolvesParticipant(string template, HashSet<string> participantNames)
+    {
+        if (participantNames.Count == 0) return false;
+
+        foreach (var name in participantNames)
+        {
+            if (template.Contains(name, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
     }
 }
