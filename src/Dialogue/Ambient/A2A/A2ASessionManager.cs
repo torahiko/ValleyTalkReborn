@@ -914,7 +914,7 @@ internal sealed class A2ASessionManager
                 LogLevel.Debug);
 
             var response = await _llmGateway.ExecuteAsync(
-                "A2A",
+                LlmContextTypes.A2A,
                 request.SystemPrompt,
                 request.UserPrompt,
                 ct);

@@ -808,7 +808,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
                 LogLevel.Debug);
 
             var response = await _llmGateway.ExecuteAsync(
-                "Bark",
+                LlmContextTypes.Bark,
                 request.SystemPrompt,
                 request.UserPrompt,
                 ct);

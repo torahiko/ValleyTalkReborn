@@ -20,6 +20,7 @@ namespace ValleytalkReborn
         private static string[] _cachedModelNames = null;
         private static string _cachedProvider = null;
         private static bool _isInputHookRegistered = false;
+        private static string _lastFetchErrorMessage = null;
 
         private static readonly string[] FrequencyValues = { "0", "1", "2", "3", "4" };
 
@@ -34,6 +35,15 @@ namespace ValleytalkReborn
                 "4" => "Always (100%)",
                 _ => val
             });
+        }
+
+        /// <summary>
+        /// 将内部 Provider 类名格式化为友好的本地化显示名称。
+        /// </summary>
+        private static string FormatProvider(string providerClassName)
+        {
+            string i18nKey = $"configProvider_{providerClassName}";
+            return GetUIString(i18nKey, providerClassName); // 回退到类名本身
         }
 
         private static string GetUIString(string key, string fallback, object tokens = null)
@@ -168,14 +178,22 @@ namespace ValleytalkReborn
                 setValue: value =>
                 {
                     if (value == Config.Provider) return;
-                    Config.ApiKey = "";
+                    // ★ 移除清空 Key 的破坏性逻辑，改由 ModConfig 的计算属性自动切换档案
                     Config.Provider = value;
                     _cachedModelNames = null;
                     // 🌟 切换服务商时也使用异步刷新
                     RefreshModelNamesCacheAsync();
                 },
                 allowedValues: llmTypes,
+                formatAllowedValue: FormatProvider,  // ★ 新增格式化回调
                 fieldId: "Provider"
+            );
+
+            // ── 新手引导：GMCM 机制提示 ──
+            ConfigMenu.AddParagraph(
+                mod: ModManifest,
+                text: () => GetUIString("configFetchHintFull",
+                    "[Tip] Enter your API Key (and Server Address if needed), click 'Save', then exit and re-open this menu. The mod will automatically fetch available models. Switching providers also requires saving and reopening.")
             );
 
             var llmType = ModEntry.LlmMap[Config.Provider];
@@ -192,6 +210,12 @@ namespace ValleytalkReborn
                     fieldId: "ApiKey"
                 );
             }
+
+            // ── 连接状态指示器（只读段落） ──
+            ConfigMenu.AddParagraph(
+                mod: ModManifest,
+                text: () => GetConnectionStatusText()
+            );
 
             if (constructorParameters.Contains("modelName", StringComparer.OrdinalIgnoreCase))
             {
@@ -231,10 +255,14 @@ namespace ValleytalkReborn
                 }
                 else
                 {
+                    // 模型拉取失败时显示错误提示
+                    string errorHint = string.IsNullOrEmpty(_lastFetchErrorMessage)
+                        ? GetUIString("configFetchHint", "Enter API Key and click 'Save' to fetch available models.")
+                        : GetUIString("configFetchError", "⚠️ Failed to fetch models: ") + _lastFetchErrorMessage
+                          + " " + GetUIString("configFetchErrorRetry", "(Click 'Save' to retry)");
                     ConfigMenu.AddParagraph(
                         mod: ModManifest,
-                        text: () => GetUIString("configFetchHint",
-                            "Enter API Key and click 'Save' to fetch available models.")
+                        text: () => errorHint
                     );
                 }
             }
@@ -251,6 +279,20 @@ namespace ValleytalkReborn
                     fieldId: "ServerAddress"
                 );
             }
+
+            // ── 高级模型参数页面入口 ──
+            ConfigMenu.AddPage(
+                mod: ModManifest,
+                pageId: "advanced",
+                pageTitle: () => GetUIString("configAdvancedTitle", "⚙️ Advanced Model Parameters")
+            );
+            ConfigMenu.AddPageLink(
+                mod: ModManifest,
+                pageId: "advanced",
+                text: () => GetUIString("configAdvancedTitle", "⚙️ Advanced Model Parameters") + " →",
+                tooltip: () => GetUIString("configAdvancedWarning",
+                    "⚠️ Warning: If you are unsure what these settings do, please leave them at default!")
+            );
 
             // ── 对话与输出选项 ──────────────────────────────────
             ConfigMenu.AddBoolOption(
@@ -279,9 +321,9 @@ namespace ValleytalkReborn
 
             ConfigMenu.AddTextOption(
                 mod: ModManifest,
-                name: () => GetUIString("configFrequencyGift", "Frequency of gift responses"),
-                tooltip: () =>
-                    GetUIString("configFrequencyGiftTooltip", "How often should the mod generate gift responses."),
+                name: () => GetUIString("configFrequencyGift", "Frequency of gift lines"),
+                tooltip: () => GetUIString("configFrequencyGiftTooltip",
+                    "How often should the mod generate gift lines."),
                 getValue: () => Config.GiftFrequency.ToString(),
                 setValue: (value) =>
                 {
@@ -374,171 +416,248 @@ namespace ValleytalkReborn
                 text: () => GetUIString("configSectionKeybinds", "Keybinds & Controls")
             );
 
-            // 1. 打字对话按键
             ConfigMenu.AddKeybind(
-                mod: ModManifest, 
-                name: () => GetUIString("configInitiateKey", "Initiate Typed Dialogue Key"),
-                getValue: () => ModEntry.Config.InitiateTypedDialogueKey,
-                setValue: (value) => ModEntry.Config.InitiateTypedDialogueKey = value,
-                tooltip: () => GetUIString("configInitiateKeyTooltip",
-                    "Key to hold while clicking on an NPC to initiate typed dialogue.")
+                mod: ModManifest,
+                name: () => GetUIString("configInitiateKey", "Initiate Conversation Key"),
+                tooltip: () => GetUIString("configInitiateKeyTooltip", "Hold this key and click an NPC to open the custom chat box."),
+                getValue: () => Config.InitiateTypedDialogueKey,
+                setValue: value => Config.InitiateTypedDialogueKey = value
             );
 
-            // 2. 追问快捷键
             ConfigMenu.AddKeybind(
                 mod: ModManifest,
                 name: () => GetUIString("configQuickReplyKey", "Quick Reply Key"),
-                getValue: () => ModEntry.Config.QuickReplyKey,
-                setValue: (value) => ModEntry.Config.QuickReplyKey = value,
-                tooltip: () => GetUIString("configQuickReplyKeyTooltip",
-                    "Key to quickly reply to the last spoken NPC within 5 seconds.")
+                tooltip: () => GetUIString("configQuickReplyKeyTooltip", "Press this key within 5 seconds after an NPC speaks to send a quick follow-up reply."),
+                getValue: () => Config.QuickReplyKey,
+                setValue: value => Config.QuickReplyKey = value
             );
 
-            // 3. 取消跟随快捷键
             ConfigMenu.AddKeybind(
                 mod: ModManifest,
                 name: () => GetUIString("configDismissFollowerKey", "Dismiss Follower Key"),
-                getValue: () => ModEntry.Config.DismissFollowerKey,
-                setValue: (value) => ModEntry.Config.DismissFollowerKey = value,
-                tooltip: () => GetUIString("configDismissFollowerKeyTooltip",
-                    "Key to dismiss the currently following NPC (regular or date).")
+                tooltip: () => GetUIString("configDismissFollowerKeyTooltip", "Key to dismiss the currently following NPC (regular or date)."),
+                getValue: () => Config.DismissFollowerKey,
+                setValue: value => Config.DismissFollowerKey = value
             );
+
+            // ── 高级参数子页面内容 ──
+            ConfigMenu.AddParagraph(
+                mod: ModManifest,
+                text: () => GetUIString("configAdvancedWarning",
+                    "⚠️ Warning: If you are unsure what these settings do, please leave them at default! Incorrect values can cause API errors or distorted NPC dialogue.")
+            );
+
+            ConfigMenu.AddNumberOption(
+                mod: ModManifest,
+                name: () => GetUIString("configTemperature", "Temperature (Creativity)"),
+                tooltip: () => GetUIString("configTemperatureTooltip",
+                    "Controls randomness and creativity. Range: 0.0 ~ 2.0, default 0.9."),
+                getValue: () => Config.Temperature,
+                setValue: value => Config.Temperature = value,
+                min: 0.0f,
+                max: 2.0f,
+                interval: 0.1f
+            );
+
+            ConfigMenu.AddNumberOption(
+                mod: ModManifest,
+                name: () => GetUIString("configTopP", "Top_P (Nucleus Sampling)"),
+                tooltip: () => GetUIString("configTopPTooltip",
+                    "Nucleus sampling threshold for output diversity. Range: 0.0 ~ 1.0, default 0.9."),
+                getValue: () => Config.TopP,
+                setValue: value => Config.TopP = value,
+                min: 0.0f,
+                max: 1.0f,
+                interval: 0.1f
+            );
+
+            ConfigMenu.AddNumberOption(
+                mod: ModManifest,
+                name: () => GetUIString("configMaxTokens", "Max Tokens (Max Length)"),
+                tooltip: () => GetUIString("configMaxTokensTooltip",
+                    "Maximum number of tokens per generation. Range: 100 ~ 8192, default 1024."),
+                getValue: () => Config.MaxTokens,
+                setValue: value => Config.MaxTokens = value,
+                min: 100,
+                max: 8192,
+                interval: 1
+            );
+
+            ConfigMenu.AddTextOption(
+                mod: ModManifest,
+                name: () => GetUIString("configCustomBodyJson", "Custom Body JSON (Geek Mode)"),
+                tooltip: () => GetUIString("configCustomBodyJsonTooltip",
+                    "For advanced users: Enter valid JSON object to deep-merge into the request payload."),
+                getValue: () => Config.CustomBodyJson,
+                setValue: value => Config.CustomBodyJson = value
+            );
+
+            // 返回主页面
+            ConfigMenu.AddPage(mod: ModManifest, pageId: "", pageTitle: () => "");
         }
 
         /// <summary>
-        /// 注册全局按键拦截，适配 GMCM 中文本输入框的左右方向键、Home/End、Delete 移动光标功能
+        /// 获取当前 LLM 连接状态的显示文本（动态读取后台状态，不发起网络请求）。
+        /// </summary>
+        private static string GetConnectionStatusText()
+        {
+            // 优先检查是否有 API Key
+            if (string.IsNullOrWhiteSpace(ModEntry.Config.ApiKey))
+            {
+                return GetUIString("configStatusNotConfigured", "⚪ Not Configured: Enter API Key and save");
+            }
+
+            // 检查 DialogueBuilder 的 LlmDisabled 状态（后台连接测试结果）
+            bool llmDisabled = DialogueBuilder.Instance?.LlmDisabled ?? true;
+
+            if (llmDisabled)
+            {
+                return GetUIString("configStatusFailed", "❌ Connection Failed: Check API Key, network, or console logs");
+            }
+
+            // 连接正常，显示当前模型名称
+            string modelName = ModEntry.Config.ModelName;
+            if (string.IsNullOrWhiteSpace(modelName))
+            {
+                modelName = GetUIString("configStatusNoModel", "(No model selected)");
+            }
+
+            return GetUIString("configStatusReady", "✅ Connected / Ready: {{modelName}}", new { modelName });
+        }
+
+        /// <summary>
+        /// 注册全局文本框导航钩子（左右键及光标移动）
         /// </summary>
         private static void RegisterGlobalTextBoxNavigationHook(IModHelper helper)
         {
-            if (_isInputHookRegistered || helper == null) return;
-
-            helper.Events.Input.ButtonPressed += OnButtonPressedHandleTextBoxCursor;
+            if (_isInputHookRegistered) return;
             _isInputHookRegistered = true;
+
+            helper.Events.Input.ButtonPressed += (sender, e) =>
+            {
+                if (Game1.activeClickableMenu == null) return;
+
+                // 仅在 GMCM 上下文中处理
+                if (!Game1.activeClickableMenu.GetType().FullName.Contains("GenericModConfigMenu"))
+                    return;
+
+                OnButtonPressedHandleTextBoxCursor(e);
+            };
         }
 
-        /// <summary>
-        /// 监听全局按键：若当前玩家正在 GMCM 等界面的文本框中编辑，拦截并接管左右导航与特殊编辑按键
-        /// </summary>
-        private static void OnButtonPressedHandleTextBoxCursor(object sender, ButtonPressedEventArgs e)
+        private static void OnButtonPressedHandleTextBoxCursor(ButtonPressedEventArgs e)
         {
-            var subscriber = Game1.keyboardDispatcher?.Subscriber;
-            if (subscriber == null) return;
+            if (Game1.activeClickableMenu == null) return;
 
-            // 1. 如果使用了模组自建的 DialogueTextInputBox，直接转发 RecieveSpecialInput
-            if (subscriber is DialogueTextInputBox customBox && customBox.Selected)
+            var textBox = FindActiveTextBox();
+            if (textBox == null) return;
+
+            if (e.Button == SButton.Left)
             {
-                if (IsControlKeyDown()) return; // 避免与系统的复制/粘贴冲突
-
-                if (e.Button == SButton.Left || e.Button == SButton.Right ||
-                    e.Button == SButton.Home || e.Button == SButton.End ||
-                    e.Button == SButton.Delete || e.Button == SButton.Back)
+                if (IsControlKeyDown())
                 {
-                    if (e.Button.TryGetKeyboard(out Keys k))
-                    {
-                        customBox.RecieveSpecialInput(k);
-                        _modEntry?.Helper?.Input.Suppress(e.Button);
-                    }
+                    MoveCursorToPrevWord(textBox);
                 }
-                return;
+                else
+                {
+                    MoveCursor(textBox, -1);
+                }
+                _modEntry?.Helper.Input.Suppress(e.Button);
             }
-
-            // 2. 如果是 GMCM 或原版的 TextBox/TextBoxEventSubscriber
-            if (subscriber is TextBox vanillaTextBox && vanillaTextBox.Selected)
+            else if (e.Button == SButton.Right)
             {
-                if (IsControlKeyDown()) return;
-
-                if (e.Button == SButton.Left || e.Button == SButton.Right ||
-                    e.Button == SButton.Home || e.Button == SButton.End ||
-                    e.Button == SButton.Delete)
+                if (IsControlKeyDown())
                 {
-                    if (e.Button.TryGetKeyboard(out Keys k))
-                    {
-                        if (HandleVanillaTextBoxNavigation(vanillaTextBox, k))
-                        {
-                            _modEntry?.Helper?.Input.Suppress(e.Button);
-                        }
-                    }
+                    MoveCursorToNextWord(textBox);
                 }
+                else
+                {
+                    MoveCursor(textBox, 1);
+                }
+                _modEntry?.Helper.Input.Suppress(e.Button);
             }
         }
 
-        private static readonly FieldInfo CursorPositionField = typeof(TextBox).GetField("_cursorPosition", BindingFlags.NonPublic | BindingFlags.Instance)
-                                                              ?? typeof(TextBox).GetField("cursorPosition", BindingFlags.NonPublic | BindingFlags.Instance);
-
-        /// <summary>
-        /// 针对原版或 GMCM 内部 TextBox 的光标控制逻辑
-        /// </summary>
-        private static bool HandleVanillaTextBoxNavigation(TextBox textBox, Keys key)
+        private static TextBox FindActiveTextBox()
         {
-            if (textBox == null) return false;
-            string currentText = textBox.Text ?? string.Empty;
+            if (Game1.activeClickableMenu == null) return null;
 
-            // 获取当前光标位置（通过反射读取内部 _cursorPosition，读取失败则降级以末尾计）
-            int cursor = currentText.Length;
+            // 遍历 GMCM 的元素查找当前聚焦的文本框
+            var menu = Game1.activeClickableMenu;
+            var fields = menu.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
+            foreach (var field in fields)
+            {
+                if (field.FieldType == typeof(TextBox))
+                {
+                    var textBox = (TextBox)field.GetValue(menu);
+                    if (textBox != null && textBox.Selected)
+                    {
+                        return textBox;
+                    }
+                }
+            }
+            return null;
+        }
+
+        private static FieldInfo CursorPositionField = typeof(TextBox).GetField("_cursorPosition",
+            BindingFlags.NonPublic | BindingFlags.Instance);
+
+        private static void MoveCursor(TextBox textBox, int delta)
+        {
+            if (textBox == null) return;
+            int current = (int)(CursorPositionField?.GetValue(textBox) ?? 0);
+            var newCursor = Math.Clamp(current + delta, 0, (textBox.Text ?? string.Empty).Length);
             if (CursorPositionField != null)
             {
                 try
                 {
-                    cursor = (int)CursorPositionField.GetValue(textBox);
+                    CursorPositionField.SetValue(textBox, newCursor);
                 }
-                catch
-                {
-                    cursor = currentText.Length;
-                }
+                catch { }
             }
-
-            cursor = Math.Clamp(cursor, 0, currentText.Length);
-
-            switch (key)
-            {
-                case Keys.Left:
-                    if (cursor > 0)
-                    {
-                        cursor--;
-                        SetTextBoxCursor(textBox, cursor);
-                        return true;
-                    }
-                    break;
-
-                case Keys.Right:
-                    if (cursor < currentText.Length)
-                    {
-                        cursor++;
-                        SetTextBoxCursor(textBox, cursor);
-                        return true;
-                    }
-                    break;
-
-                case Keys.Home:
-                    cursor = 0;
-                    SetTextBoxCursor(textBox, cursor);
-                    return true;
-
-                case Keys.End:
-                    cursor = currentText.Length;
-                    SetTextBoxCursor(textBox, cursor);
-                    return true;
-
-                case Keys.Delete:
-                    if (cursor < currentText.Length)
-                    {
-                        textBox.Text = currentText.Remove(cursor, 1);
-                        SetTextBoxCursor(textBox, cursor);
-                        return true;
-                    }
-                    break;
-            }
-
-            return false;
         }
 
-        private static void SetTextBoxCursor(TextBox textBox, int newCursor)
+        private static void MoveCursorToPrevWord(TextBox textBox)
         {
+            if (textBox == null) return;
+            var text = textBox.Text ?? string.Empty;
+            int pos = (int)(CursorPositionField?.GetValue(textBox) ?? 0);
+            if (pos <= 0) return;
+
+            int newPos = pos - 1;
+            while (newPos > 0 && char.IsWhiteSpace(text[newPos]))
+                newPos--;
+            while (newPos > 0 && !char.IsWhiteSpace(text[newPos - 1]))
+                newPos--;
+
             if (CursorPositionField != null)
             {
                 try
                 {
-                    CursorPositionField.SetValue(textBox, Math.Clamp(newCursor, 0, (textBox.Text ?? string.Empty).Length));
+                    CursorPositionField.SetValue(textBox, newPos);
+                }
+                catch { }
+            }
+        }
+
+        private static void MoveCursorToNextWord(TextBox textBox)
+        {
+            if (textBox == null) return;
+            var text = textBox.Text ?? string.Empty;
+            int pos = (int)(CursorPositionField?.GetValue(textBox) ?? 0);
+            if (pos >= text.Length) return;
+
+            int newPos = pos;
+            while (newPos < text.Length && !char.IsWhiteSpace(text[newPos]))
+                newPos++;
+            while (newPos < text.Length && char.IsWhiteSpace(text[newPos]))
+                newPos++;
+
+            if (CursorPositionField != null)
+            {
+                try
+                {
+                    CursorPositionField.SetValue(textBox, Math.Clamp(newPos, 0, (textBox.Text ?? string.Empty).Length));
                 }
                 catch { }
             }
@@ -569,6 +688,7 @@ namespace ValleytalkReborn
         /// </summary>
         private static void RefreshModelNamesCacheAsync()
         {
+            _lastFetchErrorMessage = null;
             _cachedProvider = ModEntry.Config.Provider;
 
             Task.Run(async () =>
@@ -581,6 +701,7 @@ namespace ValleytalkReborn
                         var namesList = fetchedNames.ToList();
                         namesList.Sort();
                         _cachedModelNames = namesList.ToArray();
+                        _lastFetchErrorMessage = null;
 
                         // 🌟 刷新成功后，通过 SMAPI 事件切回主线程重新注册 GMCM
                         if (_modEntry != null)
@@ -593,6 +714,7 @@ namespace ValleytalkReborn
                 {
                     _modEntry?.Monitor.Log($"Error fetching model names: {ex.Message}", LogLevel.Warn);
                     _cachedModelNames = Array.Empty<string>();
+                    _lastFetchErrorMessage = ex.Message;
                 }
             });
         }

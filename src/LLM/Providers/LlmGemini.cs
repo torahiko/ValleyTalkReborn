@@ -92,9 +92,12 @@ internal class LlmGemini : Llm, IGetModelNames
 
         bool isGemmaModel = !string.IsNullOrEmpty(modelName) && modelName.IndexOf("gemma", StringComparison.OrdinalIgnoreCase) >= 0;
 
+        // ★ 从单一数据源解析参数（自动完成 Bark/A2A 豁免）
+        var genParams = ResolveParameters(cacheContext);
+
         object generationConfig = isGemmaModel
-            ? (object)new { maxOutputTokens = n_predict, temperature = 0.9, topP = 0.9 }
-            : new { maxOutputTokens = n_predict, temperature = 0.9, topP = 0.9, thinkingConfig = new { thinkingBudget } };
+            ? (object)new { maxOutputTokens = genParams.MaxTokens, temperature = genParams.Temperature, topP = genParams.TopP }
+            : new { maxOutputTokens = genParams.MaxTokens, temperature = genParams.Temperature, topP = genParams.TopP, thinkingConfig = new { thinkingBudget } };
 
         // 🌟 修复：精细化对齐 Gemini 官方 REST 接口标准（contents 设为数组结构）
         var jsonData = JsonConvert.SerializeObject(new
@@ -227,9 +230,12 @@ internal class LlmGemini : Llm, IGetModelNames
 
         bool isGemmaModel = !string.IsNullOrEmpty(modelName) && modelName.IndexOf("gemma", StringComparison.OrdinalIgnoreCase) >= 0;
 
+        // ★ 从单一数据源解析参数（自动完成 Bark/A2A 豁免）
+        var genParams = ResolveParameters(cacheContext);
+
         object generationConfig = isGemmaModel
-            ? (object)new { maxOutputTokens = n_predict, temperature = 0.9, topP = 0.9 }
-            : new { maxOutputTokens = n_predict, temperature = 0.9, topP = 0.9, thinkingConfig = new { thinkingBudget = 0 } };
+            ? (object)new { maxOutputTokens = genParams.MaxTokens, temperature = genParams.Temperature, topP = genParams.TopP }
+            : new { maxOutputTokens = genParams.MaxTokens, temperature = genParams.Temperature, topP = genParams.TopP, thinkingConfig = new { thinkingBudget = 0 } };
 
         var jsonData = JsonConvert.SerializeObject(new
         {

@@ -260,8 +260,12 @@ namespace ValleytalkReborn
             }
         }
 
-        private void StripThinkingParameters(Dictionary<string, object> requestBody, int nPredict)
+        private void StripThinkingParameters(
+            Dictionary<string, object> requestBody,
+            int nPredict,
+            string cacheContext = "")
         {
+            var genParams = ResolveParameters(cacheContext);
             requestBody.Remove("thinking");
             requestBody.Remove("thinking_config");
             requestBody.Remove("thinking_budget");
@@ -272,9 +276,52 @@ namespace ValleytalkReborn
             requestBody.Remove("include_reasoning");
             requestBody.Remove("max_completion_tokens");
 
-            requestBody["max_tokens"] = nPredict;
-            requestBody["temperature"] = 0.9;
-            requestBody["top_p"] = 0.9;
+            requestBody["max_tokens"] = genParams.MaxTokens;
+            requestBody["temperature"] = genParams.Temperature;
+            requestBody["top_p"] = genParams.TopP;
+        }
+
+        /// <summary>
+        /// 安全地将请求体序列化为 JSON，支持 Custom Body JSON 深合并（仅对允许的上下文生效）。
+        /// 若 CustomBodyJson 格式畸形或合并失败，静默降级为标准序列化，不影响游戏运行。
+        /// </summary>
+        private static string SerializePayloadWithCustomBody(
+            Dictionary<string, object> requestBody,
+            bool allowCustomBody)
+        {
+            if (!allowCustomBody)
+            {
+                return JsonConvert.SerializeObject(requestBody);
+            }
+
+            string customJson = ModEntry.Config?.CustomBodyJson;
+            if (string.IsNullOrWhiteSpace(customJson))
+            {
+                return JsonConvert.SerializeObject(requestBody);
+            }
+
+            try
+            {
+                var baseObj = JObject.FromObject(requestBody);
+                var customObj = JObject.Parse(customJson);
+                baseObj.Merge(customObj, new JsonMergeSettings
+                {
+                    MergeArrayHandling = MergeArrayHandling.Replace,
+                    MergeNullValueHandling = MergeNullValueHandling.Merge
+                });
+                ModEntry.SMonitor.Log("[LlmOpenAiBase] Custom Body JSON merged successfully.", StardewModdingAPI.LogLevel.Debug);
+                return baseObj.ToString(Formatting.None);
+            }
+            catch (Newtonsoft.Json.JsonReaderException)
+            {
+                ModEntry.SMonitor.Log("[LlmOpenAiBase] Failed to parse CustomBodyJson, using standard payload.", StardewModdingAPI.LogLevel.Warn);
+                return JsonConvert.SerializeObject(requestBody);
+            }
+            catch (Exception ex)
+            {
+                ModEntry.SMonitor.Log($"[LlmOpenAiBase] Custom Body JSON merge failed: {ex.Message}, using standard payload.", StardewModdingAPI.LogLevel.Warn);
+                return JsonConvert.SerializeObject(requestBody);
+            }
         }
 
         private bool LooksLikeUnknownParameterError(string response)
@@ -397,8 +444,11 @@ namespace ValleytalkReborn
             List<object> messages,
             int nPredict,
             bool stream = false,
-            bool includeTools = true)
+            bool includeTools = true,
+            string cacheContext = "")
         {
+            var genParams = ResolveParameters(cacheContext);
+
             var requestBody = new Dictionary<string, object>
             {
                 { "model", modelName },
@@ -410,14 +460,14 @@ namespace ValleytalkReborn
 
             if (reasoningModel)
             {
-                requestBody["max_completion_tokens"] = nPredict;
+                requestBody["max_completion_tokens"] = genParams.MaxTokens;
                 requestBody["reasoning_effort"] = "none";
             }
             else
             {
-                requestBody["max_tokens"] = nPredict;
-                requestBody["temperature"] = 0.9;
-                requestBody["top_p"] = 0.9;
+                requestBody["max_tokens"] = genParams.MaxTokens;
+                requestBody["temperature"] = genParams.Temperature;
+                requestBody["top_p"] = genParams.TopP;
             }
 
             // 推理模型（deepseek-r1 非蒸馏版、早期 o1-preview 等）官方明确不支持 tools
@@ -426,6 +476,40 @@ namespace ValleytalkReborn
             if (includeTools && !reasoningModel && ModEntry.Config.UseNativeToolCalling)
             {
                 requestBody["tools"] = AgentToolDefinitions.GetOpenAiToolsArray();
+            }
+
+            // ── Custom Body JSON 深合并（极客模式） ──
+            // 仅对当前 Provider 为 LlmOAICompatible 时生效，避免其他服务商误用
+            if (ModEntry.Config.Provider == "LlmOAICompatible" 
+                && !string.IsNullOrWhiteSpace(ModEntry.Config.CustomBodyJson))
+            {
+                try
+                {
+                    var baseJson = JObject.FromObject(requestBody);
+                    var customJson = JObject.Parse(ModEntry.Config.CustomBodyJson);
+                    
+                    // 深度合并：customJson 覆盖 baseJson 中的同名字段
+                    baseJson.Merge(customJson, new JsonMergeSettings
+                    {
+                        MergeArrayHandling = MergeArrayHandling.Union,
+                        MergeNullValueHandling = MergeNullValueHandling.Ignore
+                    });
+                    
+                    // 将合并后的 JSON 转回 Dictionary
+                    requestBody = baseJson.ToObject<Dictionary<string, object>>();
+                    
+                    Log.Debug($"[LlmOpenAiBase] Custom Body JSON merged successfully. Final payload keys: {string.Join(", ", requestBody.Keys)}");
+                }
+                catch (JsonReaderException ex)
+                {
+                    // JSON 解析失败，安全降级：记录警告并忽略自定义参数
+                    Log.Warning($"[LlmOpenAiBase] Failed to parse CustomBodyJson, ignoring: {ex.Message}");
+                }
+                catch (Exception ex)
+                {
+                    // 其他异常（如类型转换失败），同样安全降级
+                    Log.Warning($"[LlmOpenAiBase] Error merging CustomBodyJson, ignoring: {ex.Message}");
+                }
             }
 
             return requestBody;
@@ -483,7 +567,7 @@ namespace ValleytalkReborn
 
             messages.Add(new { role = "user", content = promptString });
 
-            Dictionary<string, object> requestBody = BuildRequestBody(messages, n_predict, stream: false, includeTools);
+            Dictionary<string, object> requestBody = BuildRequestBody(messages, n_predict, stream: false, includeTools, cacheContext);
             ThinkingModeStrategy strategy = DetectThinkingModeStrategy();
             ApplyThinkingModeParameters(requestBody, strategy);
 
@@ -498,7 +582,8 @@ namespace ValleytalkReborn
             {
                 try
                 {
-                    string jsonData = JsonConvert.SerializeObject(requestBody);
+                    var genParams = ResolveParameters(cacheContext);
+                    string jsonData = SerializePayloadWithCustomBody(requestBody, genParams.AllowCustomBody);
 
                     if (AndroidHelper.IsAndroid && NetworkHelper.IsNetworkAvailable())
                     {
@@ -537,7 +622,7 @@ namespace ValleytalkReborn
                     {
                         Log.Debug("[LlmOpenAiBase] Server rejected thinking parameters. Retrying with pure standard payload.");
 
-                        StripThinkingParameters(requestBody, n_predict);
+                        StripThinkingParameters(requestBody, n_predict, cacheContext);
                         strategy = ThinkingModeStrategy.None;
                         strippedThinkingParameters = true;
 
@@ -709,12 +794,13 @@ namespace ValleytalkReborn
             messages.Add(new { role = "user", content = promptString });
 
             bool includeTools = cacheContext != "NO_TOOLS";
-            Dictionary<string, object> requestBody = BuildRequestBody(messages, n_predict, stream: true, includeTools);
+            Dictionary<string, object> requestBody = BuildRequestBody(messages, n_predict, stream: true, includeTools, cacheContext);
             ThinkingModeStrategy strategy = DetectThinkingModeStrategy();
             ApplyThinkingModeParameters(requestBody, strategy);
 
             string endpointUrl = BuildEndpoint("chat/completions");
-            string jsonData = JsonConvert.SerializeObject(requestBody);
+            var genParams = ResolveParameters(cacheContext);
+            string jsonData = SerializePayloadWithCustomBody(requestBody, genParams.AllowCustomBody);
 
             using (var request = new HttpRequestMessage(HttpMethod.Post, endpointUrl))
             {

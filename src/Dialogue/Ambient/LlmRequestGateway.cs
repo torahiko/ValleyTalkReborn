@@ -63,7 +63,7 @@ internal sealed class LlmRequestGateway
                     "",
                     userPrompt,
                     "",
-                    cacheContext: "NO_TOOLS")
+                    cacheContext: source)
                 .WaitAsync(timeoutCts.Token);
 
             if (response == null)

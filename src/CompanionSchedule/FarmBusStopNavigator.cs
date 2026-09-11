@@ -80,13 +80,6 @@ namespace ValleytalkReborn
         private static Warp FindBusStopToTownWarp(GameLocation busStop)
             => FindWarpTo(busStop, "Town");
 
-        /// <summary>在 Farm 上找通往 FarmHouse 的 warp（农舍门口）。</summary>
-        private static Warp FindFarmToFarmHouseWarp()
-        {
-            var farm = Game1.getFarm();
-            return FindWarpTo(farm, "FarmHouse");
-        }
-
         // ────────────────────────────────────────────────
         //  出发：农舍 → 农场 → (可能经巴士站) → 目的地
         // ────────────────────────────────────────────────
@@ -524,30 +517,121 @@ namespace ValleytalkReborn
             WalkFarmToFarmHouse(npc, onArrivedHome, onFail);
         }
 
-        /// <summary>假设 NPC 已在 Farm，寻路走到农舍门口 warp，瞬移进 FarmHouse。</summary>
+        /// <summary>
+        /// 解析 FarmHouse 室内落脚点（warp 进 FarmHouse 后 NPC 出现的格）。
+        /// 候选顺序（确定性）：
+        ///   a. FarmHouse 的 exitWarp（TargetName=="Farm"）正上方一格 (X, Y-1)，若可行走即采用；
+        ///   b. 否则以 FindSafeWarpTile 在 exitWarp 坐标（缺省 (9,11)）附近搜索；
+        ///   c. 全部失败返回 false（landing = Point.Zero）。
+        /// </summary>
+        private static bool TryResolveFarmHouseInteriorLanding(NPC npc, out Point landing)
+        {
+            landing = Point.Zero;
+
+            var farmHouse = Game1.getLocationFromName("FarmHouse");
+            if (farmHouse == null)
+                return false;
+
+            var exitWarp = FindWarpTo(farmHouse, "Farm");
+
+            // 候选 a：exitWarp 正上方一格 (X, Y-1)。
+            if (exitWarp != null)
+            {
+                var candidate = new Vector2(exitWarp.X, exitWarp.Y - 1);
+                if (MovementPathfinding.IsTileWalkable(farmHouse, candidate, npc))
+                {
+                    landing = new Point((int)candidate.X, (int)candidate.Y);
+                    return true;
+                }
+            }
+
+            // 候选 b：FindSafeWarpTile 在 exitWarp 坐标附近搜索（无 exitWarp 时以 (9,11) 为中心）。
+            var near = exitWarp != null
+                ? new Vector2(exitWarp.X, exitWarp.Y)
+                : new Vector2(9f, 11f);
+            var safe = MovementPathfinding.FindSafeWarpTile(farmHouse, near, npc);
+            if (safe.HasValue)
+            {
+                landing = new Point((int)safe.Value.X, (int)safe.Value.Y);
+                return true;
+            }
+
+            // 候选 c：全部失败。
+            return false;
+        }
+
+        /// <summary>
+        /// 解析 Farm 图上农舍门口前方格（NPC 寻路终点）。
+        /// 主路径：FarmHouse exitWarp 的 TargetX/TargetY（即"出农舍后在 Farm 上的落点格"，随房子搬动由游戏维护）。
+        /// 兜底：无 exitWarp → GetMainFarmHouseEntry() + (0,+1)，并置 usedEntryFallback=true。
+        /// </summary>
+        private static Vector2 ResolveFarmHouseDoorFrontOnFarm(out bool usedEntryFallback)
+        {
+            var farmHouse = Game1.getLocationFromName("FarmHouse");
+            var exitWarp = farmHouse != null ? FindWarpTo(farmHouse, "Farm") : null;
+
+            if (exitWarp != null)
+            {
+                usedEntryFallback = false;
+                return new Vector2(exitWarp.TargetX, exitWarp.TargetY);
+            }
+
+            usedEntryFallback = true;
+            var entry = Game1.getFarm().GetMainFarmHouseEntry();
+            return new Vector2(entry.X, entry.Y + 1);
+        }
+
+        /// <summary>
+        /// 假设 NPC 已在 Farm，寻路走到农舍门口，瞬移进 FarmHouse。
+        /// 室内落脚点在发起移动前解析；寻路重试耗尽同样强传进室内（回调 onArrivedHome，不是 onFail）；
+        /// 仅 Farm 不可用或室内落脚点无法解析时走 onFail（NPC 保持原位、未 warp）。
+        /// </summary>
         private static void WalkFarmToFarmHouse(NPC npc, Action onArrivedHome, Action onFail)
         {
-            var farmHouseWarp = FindFarmToFarmHouseWarp();
-
-            if (farmHouseWarp == null)
+            // 1. farm 必须可用。
+            var farm = Game1.getFarm();
+            if (farm == null)
             {
                 ModEntry.SMonitor?.Log(
-                    "[FarmBusStopNav] Farm has no warp to FarmHouse — using GetMainFarmHouseEntry fallback.",
-                    LogLevel.Warn);
-                var entry = Game1.getFarm().GetMainFarmHouseEntry();
-                Game1.warpCharacter(npc, "FarmHouse", new Point(entry.X, entry.Y));
-                onArrivedHome?.Invoke();
+                    $"[FarmBusStopNav] Farm unavailable — cannot return {npc.Name} home.",
+                    LogLevel.Error);
+                onFail?.Invoke();
                 return;
             }
 
-            var farm = Game1.getFarm();
-            var doorTile = MovementPathfinding.FindWalkableTileNearWarp(
-                farm, new Vector2(farmHouseWarp.X, farmHouseWarp.Y), npc);
+            // 2. 室内落脚点提前解析（发起移动前）。
+            if (!TryResolveFarmHouseInteriorLanding(npc, out var landing))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[FarmBusStopNav] {npc.Name}: cannot resolve FarmHouse interior landing — aborting return.",
+                    LogLevel.Error);
+                onFail?.Invoke();
+                return;
+            }
 
-            MoveWithRetry(npc, doorTile, retries: 2,
+            // 3. 农舍门口前方格（寻路终点）。
+            var doorFront = ResolveFarmHouseDoorFrontOnFarm(out bool usedEntryFallback);
+            if (usedEntryFallback)
+            {
+                ModEntry.SMonitor?.Log(
+                    "[FarmBusStopNav] FarmHouse exit warp missing — using GetMainFarmHouseEntry fallback for door front.",
+                    LogLevel.Warn);
+            }
+            else
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[FarmBusStopNav] {npc.Name} FarmHouse door front resolved to ({(int)doorFront.X},{(int)doorFront.Y}) via FarmHouse exit warp.",
+                    LogLevel.Debug);
+            }
+
+            // 4. 门口附近最近可行走格。
+            var targetTile = MovementPathfinding.FindNearestWalkableTile(farm, doorFront, npc, radius: 3);
+
+            // 5. 带重试寻路；重试耗尽同样强传进室内（onArrivedHome，不是 onFail）。
+            MoveWithRetry(npc, targetTile, retries: 2,
                 onSuccess: () =>
                 {
-                    Game1.warpCharacter(npc, "FarmHouse", new Point(farmHouseWarp.TargetX, farmHouseWarp.TargetY));
+                    Game1.warpCharacter(npc, "FarmHouse", landing);
                     onArrivedHome?.Invoke();
                 },
                 onFinalFail: () =>
@@ -555,8 +639,8 @@ namespace ValleytalkReborn
                     ModEntry.SMonitor?.Log(
                         $"[FarmBusStopNav] {npc.Name} could not path to FarmHouse door after retries — warping directly inside.",
                         LogLevel.Warn);
-                    Game1.warpCharacter(npc, "FarmHouse", new Point(farmHouseWarp.TargetX, farmHouseWarp.TargetY));
-                    onFail?.Invoke();
+                    Game1.warpCharacter(npc, "FarmHouse", landing);
+                    onArrivedHome?.Invoke();
                 });
         }
     }

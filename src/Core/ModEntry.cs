@@ -272,6 +272,41 @@ namespace ValleytalkReborn
 
             Config = Helper.ReadConfig<ModConfig>();
 
+            // ── 老版本配置自动迁移（一次性执行） ──
+            if (Config.ProviderProfiles == null || Config.ProviderProfiles.Count == 0)
+            {
+                Monitor.Log("[ModEntry] 检测到老版本配置，正在迁移到 ProviderProfile 架构...", LogLevel.Info);
+
+                Config.ProviderProfiles = new System.Collections.Generic.Dictionary<string, ProviderProfile>();
+
+                // 从私有备份字段读取旧值（通过反射）
+                var configType = typeof(ModConfig);
+                var legacyApiKey = configType.GetField("_legacyApiKey",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(Config) as string;
+                var legacyServerAddress = configType.GetField("_legacyServerAddress",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(Config) as string;
+                var legacyModelName = configType.GetField("_legacyModelName",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(Config) as string;
+
+                var currentProfile = new ProviderProfile
+                {
+                    ApiKey = legacyApiKey ?? string.Empty,
+                    ServerAddress = legacyServerAddress ?? (Config.Provider == "LlmOAICompatible"
+                        ? "https://openrouter.ai/api/v1"
+                        : string.Empty),
+                    ModelName = legacyModelName ?? string.Empty,
+                    CustomBodyJson = string.Empty
+                };
+
+                Config.ProviderProfiles[Config.Provider] = currentProfile;
+                Helper.WriteConfig(Config);
+
+                Monitor.Log($"[ModEntry] 已迁移 Provider={Config.Provider} 的配置（ApiKey={!string.IsNullOrEmpty(currentProfile.ApiKey)}, ModelName={currentProfile.ModelName}）", LogLevel.Info);
+            }
+
+            // ── 高级参数边界校验（每次启动都执行） ──
+            Config.ValidateDialogueConfig(Monitor);
+
             // Load cancel button plugin
             _cancelButtonPlugin = new CancelButtonPlugin(helper, Monitor);
 

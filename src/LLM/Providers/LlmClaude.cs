@@ -90,13 +90,16 @@ internal class LlmClaude : Llm, IGetModelNames
             ? (object)AgentToolDefinitions.GetAnthropicToolsArray()
             : null;
 
+        // ★ 从单一数据源解析参数（自动完成 Bark/A2A 豁免）
+        var genParams = ResolveParameters(cacheContext);
+
         var inputString = JsonConvert.SerializeObject(new
         {
             thinking = new { type = "disabled" },
             model = this.modelName,
-            max_tokens = n_predict,
-            temperature = 0.9,
-            top_p = 0.9,
+            max_tokens = genParams.MaxTokens,
+            temperature = genParams.Temperature,
+            top_p = genParams.TopP,
             system = BuildSystemBlocks(systemPromptString, gameCacheString, npcCacheString),
             messages = string.IsNullOrWhiteSpace(responseStart)
                 ? new[] { new { role = "user", content = promptString } }
@@ -212,13 +215,16 @@ internal class LlmClaude : Llm, IGetModelNames
             ? (object)AgentToolDefinitions.GetAnthropicToolsArray()
             : null;
 
+        // ★ 从单一数据源解析参数（自动完成 Bark/A2A 豁免）
+        var genParams = ResolveParameters(cacheContext);
+
         var inputString = JsonConvert.SerializeObject(new
         {
             thinking = new { type = "disabled" },
             model = modelName,
-            max_tokens = n_predict,
-            temperature = 0.9,
-            top_p = 0.9,
+            max_tokens = genParams.MaxTokens,
+            temperature = genParams.Temperature,
+            top_p = genParams.TopP,
             stream = true,
             system = BuildSystemBlocks(systemPromptString, gameCacheString, npcCacheString),
             messages = string.IsNullOrWhiteSpace(responseStart)

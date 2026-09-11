@@ -7,18 +7,97 @@ namespace ValleytalkReborn
 {
     public enum SafetyModeLevel { Off, Loose, Moderate, Strict }
 
+    public class ProviderProfile
+    {
+        public string ApiKey { get; set; } = string.Empty;
+        public string ServerAddress { get; set; } = string.Empty;
+        public string ModelName { get; set; } = string.Empty;
+        public string CustomBodyJson { get; set; } = string.Empty;
+    }
+
     public class ModConfig
     {
+        // ── 老版本配置迁移备份字段（仅用于迁移，不对外暴露） ──
+        #pragma warning disable CS0414 // 字段经反射读取，非真正未使用
+        [Obsolete("Legacy field for migration from pre-1.7 versions. Will be removed in v1.8.0.")]
+        [Newtonsoft.Json.JsonProperty("_legacyApiKey")]
+        private string _legacyApiKey = null;
+
+        [Obsolete("Legacy field for migration from pre-1.7 versions. Will be removed in v1.8.0.")]
+        [Newtonsoft.Json.JsonProperty("_legacyServerAddress")]
+        private string _legacyServerAddress = null;
+
+        [Obsolete("Legacy field for migration from pre-1.7 versions. Will be removed in v1.8.0.")]
+        [Newtonsoft.Json.JsonProperty("_legacyModelName")]
+        private string _legacyModelName = null;
+        #pragma warning restore CS0414
+
         private string disableCharacters = string.Empty;
 
         public bool EnableMod { get; set; } = true;
         public bool Debug { get; set; } = false;
-        public string Provider { get; set; } = "Mistral";
-        public string ModelName { get; set; } = "";
-        public string ServerAddress { get; set; } = "https://openrouter.ai/api";
-        public string PromptFormat { get; set; } = "[INST] {system}\n{prompt}[/INST]\n{response_start}";
+        public string Provider { get; set; } = "LlmOAICompatible";
+
+        /// <summary>
+        /// 服务商独立配置档案库（按 Provider 类名索引）。
+        /// 每个 Provider 拥有独立的 ApiKey、ServerAddress、ModelName、CustomBodyJson。
+        /// </summary>
+        public Dictionary<string, ProviderProfile> ProviderProfiles { get; set; } = new Dictionary<string, ProviderProfile>();
+
+        /// <summary>
+        /// 当前活动 Provider 的 API Key（计算属性，透明代理到 ProviderProfiles）。
+        /// </summary>
+        public string ApiKey
+        {
+            get => GetActiveProfile().ApiKey;
+            set => GetActiveProfile().ApiKey = value;
+        }
+
+        /// <summary>
+        /// 当前活动 Provider 的服务器地址（计算属性）。
+        /// </summary>
+        public string ServerAddress
+        {
+            get => GetActiveProfile().ServerAddress;
+            set => GetActiveProfile().ServerAddress = value;
+        }
+
+        /// <summary>
+        /// 当前活动 Provider 的模型名称（计算属性）。
+        /// </summary>
+        public string ModelName
+        {
+            get => GetActiveProfile().ModelName;
+            set => GetActiveProfile().ModelName = value;
+        }
+
+        /// <summary>
+        /// 当前活动 Provider 的自定义 Body JSON（计算属性）。
+        /// 仅 LlmOAICompatible 使用，其他服务商留空。
+        /// </summary>
+        public string CustomBodyJson
+        {
+            get => GetActiveProfile().CustomBodyJson;
+            set => GetActiveProfile().CustomBodyJson = value;
+        }
+
+        /// <summary>
+        /// 高级模型参数：Temperature（全局共享，不按 Provider 区分）。
+        /// </summary>
+        public float Temperature { get; set; } = 0.9f;
+
+        /// <summary>
+        /// 高级模型参数：Top_P（全局共享）。
+        /// </summary>
+        public float TopP { get; set; } = 0.9f;
+
+        /// <summary>
+        /// 高级模型参数：Max Tokens（全局共享）。
+        /// </summary>
+        public int MaxTokens { get; set; } = 1024;
+
+        public string PromptFormat { get; set; } = "[INST] {system}\\n{prompt}[/INST]\\n{response_start}";
         public int QueryTimeout { get; set; } = 60;
-        public string ApiKey { get; set; } = string.Empty;
         public bool ApplyTranslation { get; set; } = false;
         public int GeneralFrequency { get; set; } = 4;
         public int MarriageFrequency { get; set; } = 4;
@@ -115,6 +194,32 @@ namespace ValleytalkReborn
         public int BarkDwellScans { get; set; } = 2;
 
         /// <summary>
+        /// 获取当前 Provider 的配置档案（不存在时自动初始化）。
+        /// </summary>
+        private ProviderProfile GetActiveProfile()
+        {
+            if (ProviderProfiles == null)
+            {
+                ProviderProfiles = new Dictionary<string, ProviderProfile>();
+            }
+
+            if (!ProviderProfiles.ContainsKey(Provider))
+            {
+                var profile = new ProviderProfile();
+
+                // 为 LlmOAICompatible 预填充默认 OpenRouter 地址
+                if (Provider == "LlmOAICompatible")
+                {
+                    profile.ServerAddress = "https://openrouter.ai/api/v1";
+                }
+
+                ProviderProfiles[Provider] = profile;
+            }
+
+            return ProviderProfiles[Provider];
+        }
+
+        /// <summary>
         /// 校验并修正对话相关配置值到合法范围。
         /// </summary>
         public void ValidateDialogueConfig(IMonitor monitor)
@@ -125,7 +230,26 @@ namespace ValleytalkReborn
             A2AMaxParticipants = Clamp(A2AMaxParticipants, 2, 4);
             BarkDwellScans = Clamp(BarkDwellScans, 1, 10);
 
-            monitor?.Log("[ModConfig] 对话配置已校验。", LogLevel.Debug);
+            // ── 高级模型参数边界校验 ──
+            Temperature = Math.Clamp(Temperature, 0.0f, 2.0f);
+            TopP = Math.Clamp(TopP, 0.0f, 1.0f);
+            MaxTokens = Math.Clamp(MaxTokens, 100, 8192);
+
+            // ── CustomBodyJson JSON 校验 ──
+            if (!string.IsNullOrWhiteSpace(CustomBodyJson))
+            {
+                try
+                {
+                    Newtonsoft.Json.Linq.JToken.Parse(CustomBodyJson);
+                }
+                catch (Newtonsoft.Json.JsonReaderException)
+                {
+                    monitor?.Log("[ModConfig] 畸形 CustomBodyJson detected, clearing to prevent runtime errors.", LogLevel.Warn);
+                    CustomBodyJson = string.Empty;
+                }
+            }
+
+            monitor?.Log("[ModConfig] 高级参数已校验。", LogLevel.Debug);
         }
 
         private static int Clamp(int value, int min, int max)
