@@ -1,9 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using GenericModConfigMenu;
+using Microsoft.Xna.Framework.Input;
 using StardewModdingAPI;
+using StardewModdingAPI.Events;
+using StardewValley;
+using StardewValley.Menus;
 
 namespace ValleytalkReborn
 {
@@ -14,6 +19,7 @@ namespace ValleytalkReborn
         private static ModEntry _modEntry;
         private static string[] _cachedModelNames = null;
         private static string _cachedProvider = null;
+        private static bool _isInputHookRegistered = false;
 
         private static readonly string[] FrequencyValues = { "0", "1", "2", "3", "4" };
 
@@ -75,6 +81,9 @@ namespace ValleytalkReborn
             ModManifest = modEntry.ModManifest;
             ConfigMenu = GetConfigMenu(modEntry);
 
+            // 注册文本框左右键及光标移动拦截器
+            RegisterGlobalTextBoxNavigationHook(modEntry.Helper);
+
             if (ConfigMenu == null)
             {
                 modEntry.Monitor.Log(GetUIString("configGmcmNotInstalled", "Generic Mod Config Menu not installed."),
@@ -130,6 +139,15 @@ namespace ValleytalkReborn
                 setValue: value => Config.EnableMod = value
             );
 
+            // 🌟 尊重第三方作者 AI 授权选项
+            ConfigMenu.AddBoolOption(
+                mod: ModManifest,
+                name: () => GetUIString("configRespectAuthorConsent", "Respect Modder AI Consent"),
+                tooltip: () => GetUIString("configRespectAuthorConsentTooltip",
+                    "Enabled by default. Respects third-party mod authors' permitAiUse declarations. When disabled, AI dialogue is enabled for all custom NPCs."),
+                getValue: () => Config.RespectAuthorAiConsent,
+                setValue: value => Config.RespectAuthorAiConsent = value
+            );
 #if DEBUG
             ConfigMenu.AddBoolOption(
                 mod: ModManifest,
@@ -357,7 +375,6 @@ namespace ValleytalkReborn
             );
 
             // 1. 打字对话按键
-            // 🌟 修复：从 AddTextOption 改为 AddKeybind，提供可视化按键绑定体验
             ConfigMenu.AddKeybind(
                 mod: ModManifest, 
                 name: () => GetUIString("configInitiateKey", "Initiate Typed Dialogue Key"),
@@ -386,6 +403,151 @@ namespace ValleytalkReborn
                 tooltip: () => GetUIString("configDismissFollowerKeyTooltip",
                     "Key to dismiss the currently following NPC (regular or date).")
             );
+        }
+
+        /// <summary>
+        /// 注册全局按键拦截，适配 GMCM 中文本输入框的左右方向键、Home/End、Delete 移动光标功能
+        /// </summary>
+        private static void RegisterGlobalTextBoxNavigationHook(IModHelper helper)
+        {
+            if (_isInputHookRegistered || helper == null) return;
+
+            helper.Events.Input.ButtonPressed += OnButtonPressedHandleTextBoxCursor;
+            _isInputHookRegistered = true;
+        }
+
+        /// <summary>
+        /// 监听全局按键：若当前玩家正在 GMCM 等界面的文本框中编辑，拦截并接管左右导航与特殊编辑按键
+        /// </summary>
+        private static void OnButtonPressedHandleTextBoxCursor(object sender, ButtonPressedEventArgs e)
+        {
+            var subscriber = Game1.keyboardDispatcher?.Subscriber;
+            if (subscriber == null) return;
+
+            // 1. 如果使用了模组自建的 DialogueTextInputBox，直接转发 RecieveSpecialInput
+            if (subscriber is DialogueTextInputBox customBox && customBox.Selected)
+            {
+                if (IsControlKeyDown()) return; // 避免与系统的复制/粘贴冲突
+
+                if (e.Button == SButton.Left || e.Button == SButton.Right ||
+                    e.Button == SButton.Home || e.Button == SButton.End ||
+                    e.Button == SButton.Delete || e.Button == SButton.Back)
+                {
+                    if (e.Button.TryGetKeyboard(out Keys k))
+                    {
+                        customBox.RecieveSpecialInput(k);
+                        _modEntry?.Helper?.Input.Suppress(e.Button);
+                    }
+                }
+                return;
+            }
+
+            // 2. 如果是 GMCM 或原版的 TextBox/TextBoxEventSubscriber
+            if (subscriber is TextBox vanillaTextBox && vanillaTextBox.Selected)
+            {
+                if (IsControlKeyDown()) return;
+
+                if (e.Button == SButton.Left || e.Button == SButton.Right ||
+                    e.Button == SButton.Home || e.Button == SButton.End ||
+                    e.Button == SButton.Delete)
+                {
+                    if (e.Button.TryGetKeyboard(out Keys k))
+                    {
+                        if (HandleVanillaTextBoxNavigation(vanillaTextBox, k))
+                        {
+                            _modEntry?.Helper?.Input.Suppress(e.Button);
+                        }
+                    }
+                }
+            }
+        }
+
+        private static readonly FieldInfo CursorPositionField = typeof(TextBox).GetField("_cursorPosition", BindingFlags.NonPublic | BindingFlags.Instance)
+                                                              ?? typeof(TextBox).GetField("cursorPosition", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        /// <summary>
+        /// 针对原版或 GMCM 内部 TextBox 的光标控制逻辑
+        /// </summary>
+        private static bool HandleVanillaTextBoxNavigation(TextBox textBox, Keys key)
+        {
+            if (textBox == null) return false;
+            string currentText = textBox.Text ?? string.Empty;
+
+            // 获取当前光标位置（通过反射读取内部 _cursorPosition，读取失败则降级以末尾计）
+            int cursor = currentText.Length;
+            if (CursorPositionField != null)
+            {
+                try
+                {
+                    cursor = (int)CursorPositionField.GetValue(textBox);
+                }
+                catch
+                {
+                    cursor = currentText.Length;
+                }
+            }
+
+            cursor = Math.Clamp(cursor, 0, currentText.Length);
+
+            switch (key)
+            {
+                case Keys.Left:
+                    if (cursor > 0)
+                    {
+                        cursor--;
+                        SetTextBoxCursor(textBox, cursor);
+                        return true;
+                    }
+                    break;
+
+                case Keys.Right:
+                    if (cursor < currentText.Length)
+                    {
+                        cursor++;
+                        SetTextBoxCursor(textBox, cursor);
+                        return true;
+                    }
+                    break;
+
+                case Keys.Home:
+                    cursor = 0;
+                    SetTextBoxCursor(textBox, cursor);
+                    return true;
+
+                case Keys.End:
+                    cursor = currentText.Length;
+                    SetTextBoxCursor(textBox, cursor);
+                    return true;
+
+                case Keys.Delete:
+                    if (cursor < currentText.Length)
+                    {
+                        textBox.Text = currentText.Remove(cursor, 1);
+                        SetTextBoxCursor(textBox, cursor);
+                        return true;
+                    }
+                    break;
+            }
+
+            return false;
+        }
+
+        private static void SetTextBoxCursor(TextBox textBox, int newCursor)
+        {
+            if (CursorPositionField != null)
+            {
+                try
+                {
+                    CursorPositionField.SetValue(textBox, Math.Clamp(newCursor, 0, (textBox.Text ?? string.Empty).Length));
+                }
+                catch { }
+            }
+        }
+
+        private static bool IsControlKeyDown()
+        {
+            var state = Game1.input.GetKeyboardState();
+            return state.IsKeyDown(Keys.LeftControl) || state.IsKeyDown(Keys.RightControl);
         }
 
         /// <summary>
@@ -493,7 +655,7 @@ namespace ValleytalkReborn
         {
             return modEntry.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
         }
-
+ 
         private static void SetLlm()
         {
             if (!ModEntry.LlmMap.TryGetValue(ModEntry.Config.Provider, out var llmType))

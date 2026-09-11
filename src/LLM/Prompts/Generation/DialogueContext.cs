@@ -54,6 +54,13 @@ public class DialogueContext
     /// </summary>
     public string DialogueSessionId { get; set; }
 
+    // ── 【新增】本地短路派发的动作名（仅内存，不序列化，不进克隆构造函数） ──
+    /// <summary>
+    /// The physical action name that was locally short-circuit dispatched this turn.
+    /// Memory-only, not serialized, excluded from clone constructor.
+    /// </summary>
+    public string LocallyExecutedAction { get; set; }
+
     // 【新增】用于接收和传递 ContextRouter 动态计算出的路由标志位
     public ContextFlags RoutingFlags { get; set; } = new ContextFlags 
     { 
@@ -514,7 +521,9 @@ public class DialogueContext
         return specialContexts.Contains(chatID);
     }
 
-    // Override the equals method to compare the value of the context
+    // Override the equals method to compare the value of the context.
+    // ⚠️ LocallyExecutedAction 故意不纳入 Equals/GetHashCode——它是每轮瞬态执行状态，不是上下文身份。
+    // 若将其加入，同一 NPC 在执行动作前后会被判为不同上下文，破坏台词匹配（SelectExactDialogue）。
     public override bool Equals(object obj)
     {
         if (obj is DialogueContext other)

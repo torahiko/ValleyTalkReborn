@@ -100,5 +100,16 @@
   "invite.spouse.no": "今天农场还有不少事……（委婉拒绝）",
   "invite.spouse.accept": "太棒了！那我们晚些时候不见不散~",
   "invite.spouse.decline": "这样啊……没关系，农活要紧，改天再去吧！",
-  "invite.spouse.failed": "今天的约会安排发生冲突，未能成功预约。"
+  "invite.spouse.failed": "今天的约会安排发生冲突，未能成功预约。",
+  "configRespectAuthorConsent": "尊重模组作者的 AI 授权",
+  "configRespectAuthorConsentTooltip": "默认开启。严格遵循第三方模组作者的 permitAiUse 授权声明。关闭后由玩家自主决定对所有自定义 NPC 启用 AI 对话。",
+  "logPermitAiUseBypassed": "[PermitAiUse] 用户已在设置中关闭 permitAiUse 限制，允许对所有自定义 NPC 启用 AI 对话。",
+  "logPermitAiUseBlocked": "[PermitAiUse] 检测到 {{count}} 个未声明 permitAiUse 的内容包。出于对作者意愿的尊重，其对应 NPC 将保留原生对话。",
+  "logPermitAiUseList": "[PermitAiUse] 未授权内容包列表: {{list}}",
+  "logPermitAiUseHint": "[PermitAiUse] 提示：您可随时在通用模组设置 (GMCM) 中调整【尊重模组作者的 AI 授权】选项。",
+  "configSectionCompanionFeatures": "伴侣与约会系统",
+  "configEnableSpouseSchedule": "启用配偶出游日程",
+  "configEnableSpouseScheduleTooltip": "允许结婚后的配偶拥有动态的每日日程，在农场闲逛以及前往鹈鹕镇各处。",
+  "configEnableDateSystem": "启用约会系统 (开发中)",
+  "configEnableDateSystemTooltip": "允许与可交往NPC约定并开启浪漫约会。目前属于实验性功能，默认关闭。"
 }

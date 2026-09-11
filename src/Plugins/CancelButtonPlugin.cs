@@ -34,9 +34,19 @@ namespace ValleytalkReborn.Plugins
 
         private void OnButtonPressed(object sender, ButtonPressedEventArgs e)
         {
-            if (!Context.IsWorldReady ||
-                !AsyncBuilder.Instance.IsGeneratingDialogue ||
-                Game1.activeClickableMenu is not DialogueBox)
+            if (!Context.IsWorldReady || Game1.activeClickableMenu is not DialogueBox)
+                return;
+
+            // 🌟【Panic Mode 应急逃生键】：按下 F8 强制关闭屏幕上残留的任何卡顿对话框
+            if (e.Button == SButton.F8)
+            {
+                ForceEmergencyClose();
+                _helper.Input.Suppress(e.Button);
+                return;
+            }
+
+            // 正在生成中的原有取消逻辑（保持原样）
+            if (!AsyncBuilder.Instance.IsGeneratingDialogue)
                 return;
 
             // Esc 或手柄 B → 取消并吃掉
@@ -245,6 +255,26 @@ namespace ValleytalkReborn.Plugins
             catch (Exception ex)
             {
                 _monitor.Log($"[CancelButtonPlugin] Error during cancel: {ex.Message}", LogLevel.Warn);
+            }
+        }
+
+        /// <summary>
+        /// 极端异常下的安全逃生：强制关闭任何卡死的对话菜单并解锁农夫
+        /// </summary>
+        private void ForceEmergencyClose()
+        {
+            try
+            {
+                _monitor.Log("[CancelButtonPlugin] Panic key triggered: forcing dialogue box closure.", LogLevel.Warn);
+                AsyncBuilder.Instance.Cleanup();
+                Game1.dialogueUp = false;
+                Game1.activeClickableMenu = null;
+                Game1.player?.forceCanMove();
+                Game1.playSound("bigDeSelect");
+            }
+            catch (Exception ex)
+            {
+                _monitor.Log($"[CancelButtonPlugin] Error during emergency close: {ex.Message}", LogLevel.Error);
             }
         }
 

@@ -135,7 +135,17 @@ namespace ValleytalkReborn
             }
         }
 
-        public static bool BlockModdedContent { get; private set; } = false;
+        /// <summary>
+        /// 存储未声明 permitAiUse 的第三方内容包 ID 集合。
+        /// </summary>
+        public static HashSet<string> DisallowedContentPackIds { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// 向后兼容属性，始终返回 false。已由 DisallowedContentPackIds + RespectAuthorAiConsent 替代。
+        /// Character.cs 中的历史调用将正常走 StardewNpc.Dialogue 分支。
+        /// </summary>
+        [Obsolete("Use DisallowedContentPackIds and RespectAuthorAiConsent instead.")]
+        public static bool BlockModdedContent => false;
         private static CultureInfo _locale;
 
         public static string Language
@@ -806,7 +816,7 @@ namespace ValleytalkReborn
                     _locale = null;
                     _localeCache = string.Empty;
                     _localeCacheFixPunctuation = string.Empty;
-                    BlockModdedContent = false;
+                    DisallowedContentPackIds.Clear();
                 }
                 catch (Exception ex)
                 {
@@ -851,27 +861,42 @@ namespace ValleytalkReborn
 
         private static void CheckContentPacks()
         {
+            DisallowedContentPackIds.Clear();
+
+            // 若玩家在 GMCM 中选择自主接管本地控制权，跳过扫描与限制
+            if (!Config.RespectAuthorAiConsent)
+            {
+                SMonitor.Log(Util.GetString("logPermitAiUseBypassed"), LogLevel.Info);
+                return;
+            }
+
             var contentPacks = SHelper.ModRegistry.GetAll().Where(p => p.IsContentPack).ToList();
             var blockedContentPacks = contentPacks
                 .Where(p => !SldConstants.PermitListContentPacks.Contains(p.Manifest.UniqueID))
                 .Where(p =>
-                    !p.Manifest.ExtraFields.ContainsKey("PermitAiUse") ||
-                    !(p.Manifest.ExtraFields["PermitAiUse"] as bool? ?? false)
-                );
+                    p.Manifest.ExtraFields == null ||
+                    !p.Manifest.ExtraFields.TryGetValue("PermitAiUse", out var val) ||
+                    !(val as bool? ?? false)
+                )
+                .ToList();
+
             if (blockedContentPacks.Any())
             {
-                SMonitor.Log("Note: Content packs have been found that don't have mod author approval for use with AI.",
-                    LogLevel.Warn);
+                foreach (var pack in blockedContentPacks)
+                {
+                    DisallowedContentPackIds.Add(pack.Manifest.UniqueID);
+                }
+
                 SMonitor.Log(
-                    "While content from content packs will be displayed in-game, it will not be use for AI dialogue generation.",
-                    LogLevel.Warn);
+                    Util.GetString("logPermitAiUseBlocked", new { count = blockedContentPacks.Count }),
+                    LogLevel.Info
+                );
+                string packNames = string.Join(", ", blockedContentPacks.Select(p => p.Manifest.Name));
                 SMonitor.Log(
-                    $"Content packs without author approval: {string.Join(", ", blockedContentPacks.Select(p => p.Manifest.Name))}",
-                    LogLevel.Info);
-                SMonitor.Log(
-                    "Mod authors can permit their content to be used in dialogue generation by adding \"permitAiUse\":true to their mod's manifest.",
-                    LogLevel.Warn);
-                BlockModdedContent = true;
+                    Util.GetString("logPermitAiUseList", new { list = packNames }),
+                    LogLevel.Trace
+                );
+                SMonitor.Log(Util.GetString("logPermitAiUseHint"), LogLevel.Info);
             }
         }
 

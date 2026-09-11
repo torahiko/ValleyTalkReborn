@@ -1,4 +1,4 @@
-﻿// AsyncBuilder.cs
+// AsyncBuilder.cs
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -275,9 +275,29 @@ public class AsyncBuilder
                     {
                         npc.Halt();
                         npc.facePlayer(Game1.player);
+                        _aiDialogueNpcNames.Add(npc.Name);
                     }
 
-                    _aiDialogueNpcNames.Add(npc.Name);
+                    // 🌟【终极防线】：强制保证 DialogueBox 总页数绝不超过 4 页
+                    const int maxAllowedPages = 4;
+                    if (newDialogue.dialogues.Count > maxAllowedPages)
+                    {
+                        var lastPage = newDialogue.dialogues.Last();
+                        bool hasQuestionPage = lastPage.Text == Util.GetString("outputRespond");
+                        if (hasQuestionPage)
+                        {
+                            // 如果最后一页带交互选项，保留前 (maxAllowedPages - 1) 页并接上选项页
+                            var preservedPages = newDialogue.dialogues.Take(maxAllowedPages - 1).ToList();
+                            preservedPages.Add(lastPage);
+                            newDialogue.dialogues.Clear();
+                            newDialogue.dialogues.AddRange(preservedPages);
+                        }
+                        else
+                        {
+                            newDialogue.dialogues.RemoveRange(maxAllowedPages, newDialogue.dialogues.Count - maxAllowedPages);
+                        }
+                    }
+
                     Game1.DrawDialogue(newDialogue);
 
                     // 🌟【核心修复】：清洗星露谷原版内部标记、选项占位符以及肖像指令，防止 ${ 回应: } 泄露至历史库
@@ -315,6 +335,8 @@ public class AsyncBuilder
                         {
                             if (nearbyNpc == null || nearbyNpc == npc || nearbyNpc.Name.Equals(npc.Name, StringComparison.OrdinalIgnoreCase))
                                 continue;
+
+                            if (!nearbyNpc.IsVillager) continue;   // 过滤马、宠物、怪物等非村民实体
 
                             float dx = nearbyNpc.Position.X - Game1.player.Position.X;
                             float dy = nearbyNpc.Position.Y - Game1.player.Position.Y;

@@ -100,5 +100,16 @@
   "invite.spouse.no": "Sorry, I'm busy today... (Decline)",
   "invite.spouse.accept": "Wonderful! I'll see you there later tonight~",
   "invite.spouse.decline": "Ah, that's okay! Take care of the farm first, maybe next time!",
-  "invite.spouse.failed": "Could not schedule the date due to a timing conflict."
+  "invite.spouse.failed": "Could not schedule the date due to a timing conflict.",
+  "configRespectAuthorConsent": "Respect Modder AI Consent",
+  "configRespectAuthorConsentTooltip": "Enabled by default. Respects third-party mod authors' permitAiUse declarations. When disabled, AI dialogue is enabled for all custom NPCs.",
+  "logPermitAiUseBypassed": "[PermitAiUse] User configuration has disabled permitAiUse restrictions. AI dialogue is enabled for all NPCs.",
+  "logPermitAiUseBlocked": "[PermitAiUse] Detected {{count}} content pack(s) without author AI approval. Respecting author preferences; corresponding NPCs will keep vanilla dialogue.",
+  "logPermitAiUseList": "[PermitAiUse] Unapproved packs: {{list}}",
+  "logPermitAiUseHint": "[PermitAiUse] You can change [Respect Modder AI Consent] at any time in the Generic Mod Config Menu (GMCM).",
+  "configSectionCompanionFeatures": "Companion & Romance Features",
+  "configEnableSpouseSchedule": "Enable Spouse Schedules",
+  "configEnableSpouseScheduleTooltip": "Allows married spouses to have dynamic daily schedules, wander the farm, and visit locations around town.",
+  "configEnableDateSystem": "Enable Date System (WIP)",
+  "configEnableDateSystemTooltip": "Allows scheduling dates and romantic outings with eligible NPCs. Currently experimental and disabled by default."
 }

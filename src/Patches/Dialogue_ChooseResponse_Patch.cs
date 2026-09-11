@@ -48,6 +48,11 @@ namespace ValleytalkReborn
                 bool isZh = LocalizedContentManager.CurrentLanguageCode.ToString().StartsWith("zh", StringComparison.OrdinalIgnoreCase);
                 string silentText = isZh ? "*保持沉默，什么也没说*" : "*remains silent*";
                 DialogueHistoryManager.Instance.RecordPlayerDialogue(__instance.speaker.Name, silentText);
+
+                // 🌟【精准修复 1】：显式清理对话菜单并恢复玩家行动，防止悬挂导致用户再次点击空栈崩溃
+                Game1.dialogueUp = false;
+                Game1.activeClickableMenu = null;
+                Game1.player?.forceCanMove();
                 __result = true;
                 return false;
             }
@@ -62,7 +67,15 @@ namespace ValleytalkReborn
                 var lastLine = dialogueStrings.LastOrDefault();
                 if (lastLine != null && lastLine.Text == respondString)
                 {
-                    dialogueStrings.RemoveAt(dialogueStrings.Count - 1);
+                    // 🌟【精准修复 2】：Count == 1 时改设为占位符，绝不删空列表触发 DialogueBox.Pop() 空栈崩溃
+                    if (dialogueStrings.Count == 1)
+                    {
+                        dialogueStrings[0].Text = "...";
+                    }
+                    else
+                    {
+                        dialogueStrings.RemoveAt(dialogueStrings.Count - 1);
+                    }
                 }
             }
 

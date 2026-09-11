@@ -93,6 +93,13 @@ namespace ValleytalkReborn
         /// </summary>
         public bool EnableDateSystem { get; set; } = false;
 
+        /// <summary>
+        /// 是否严格遵循第三方模组作者的 permitAiUse 声明。
+        /// 默认开启 (true)：未声明允许 AI 的第三方 NPC 将保持游戏原生对话，不接入大模型。
+        /// 关闭 (false)：玩家在本地自愿决定对所有自定义 NPC 启用 AI 对话。
+        /// </summary>
+        public bool RespectAuthorAiConsent { get; set; } = true;
+
         // ── 对话系统配置（从 DialogueConfig 合并） ──
         public bool EnableAmbientBarks { get; set; } = true;
         public bool EnableA2A { get; set; } = true;

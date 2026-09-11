@@ -220,17 +220,14 @@ namespace ValleytalkReborn
 
         private void TryStartNextWaiting()
         {
-            var mm = MovementManager.Instance;
-
             if (_currentJourney != null && !_currentJourney.IsFinished)
-                return;
-
-            if (mm.HasActiveFollow || mm.IsMoving || mm.IsStepActive)
                 return;
 
             while (_waitingQueue.Count > 0)
             {
                 var next = _waitingQueue.Dequeue();
+                var mm = MovementManager.Instance;
+
                 if (next == null || next.IsFinished) continue;
                 if (next.Npc == null || string.IsNullOrWhiteSpace(next.Npc.Name)) continue;
 
@@ -247,6 +244,16 @@ namespace ValleytalkReborn
                     continue;
                 }
 
+                // 实体专属守卫：NPC 正在被 mm 移动或游荡占用 → 旋转到队尾，本 tick 终止
+                if (mm.IsNpcMoving(next.Npc) || next.Npc.controller != null)
+                {
+                    _waitingQueue.Enqueue(next);
+                    ModEntry.SMonitor?.Log(
+                        $"[MultiMapNavigator] {next.Npc.Name} busy (moving/controller), rotated to queue back. Queue: {_waitingQueue.Count}.",
+                        LogLevel.Trace);
+                    break;
+                }
+
                 StartJourney(next);
                 return;
             }
@@ -256,20 +263,16 @@ namespace ValleytalkReborn
         {
             if (journey == null || journey.IsFinished || journey.Npc == null) return;
 
-            var mm = MovementManager.Instance;
             bool busy =
                 (_currentJourney != null && !_currentJourney.IsFinished) ||
                 _waitingQueue.Count > 0;
-
-            if (!busy && (mm.HasActiveFollow || mm.IsMoving || mm.IsStepActive))
-                busy = true;
 
             if (busy)
             {
                 _waitingQueue.Enqueue(journey);
                 ModEntry.SMonitor?.Log(
                     $"[MultiMapNavigator] {journey.Npc.Name} queued. Queue size: {_waitingQueue.Count}.",
-                    LogLevel.Debug);
+                    LogLevel.Trace);
             }
             else
             {
@@ -394,13 +397,9 @@ namespace ValleytalkReborn
 
             if (_currentJourney != journey) return;
 
-            var mm = MovementManager.Instance;
-
-            if (mm.HasActiveFollow || mm.IsMoving || mm.IsStepActive)
-            {
-                journey.SegmentDispatched = false;
+            // 实体专属守卫：此 NPC 正在被 mm 移动 → 延迟到下一 tick
+            if (MovementManager.Instance.IsNpcMoving(npc))
                 return;
-            }
 
             var seg = journey.Segments.Peek();
             journey.SegmentDispatched = true;

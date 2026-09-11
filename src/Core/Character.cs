@@ -115,59 +115,12 @@ public class Character : IDisposable
 
     private void LoadDialogue()
     {
-        Dictionary<string, string> canonDialogue = new();
+        // 🌟 浅拷贝 NPC 对话数据，避免后续合并 Bio.Dialogue 时污染游戏运行时的原生字典
+        Dictionary<string, string> canonDialogue = StardewNpc.Dialogue != null
+            ? new Dictionary<string, string>(StardewNpc.Dialogue)
+            : new Dictionary<string, string>();
 
-        if (ModEntry.BlockModdedContent && !Bio.UsePatchedDialogue)
-        {
-            using var manager = new ContentManager(Game1.content.ServiceProvider, Game1.content.RootDirectory);
-            try
-            {
-                string assetName = $"Characters\\Dialogue\\{Name}";
-                foreach (var langSuffix in ModEntry.LanguageFileSuffixes)
-                {
-                    var path = $"{assetName}{langSuffix}";
-                    var unmarriedDialogue = manager.Load<Dictionary<string, string>>(path);
-                    if (unmarriedDialogue != null)
-                    {
-                        canonDialogue = unmarriedDialogue;
-                        break;
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                // If it fails, just continue
-            }
-
-            try
-            {
-                string assetName = $"Characters\\Dialogue\\MarriageDialogue{Name}";
-                foreach (var langSuffix in ModEntry.LanguageFileSuffixes)
-                {
-                    var path = $"{assetName}{langSuffix}";
-                    var marriedDialogue = manager.Load<Dictionary<string, string>>(path);
-                    if (marriedDialogue != null)
-                    {
-                        foreach (var dialogue in marriedDialogue)
-                        {
-                            // 🌟 #4: Add → 索引器赋值，防止重复 key 抛 ArgumentException
-                            canonDialogue[$"M_{dialogue.Key}"] = dialogue.Value;
-                        }
-                        break;
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                // If it fails, just continue
-            }
-        }
-        else
-        {
-            // 🌟 #5: StardewNpc.Dialogue 可能为 null（无对话数据的 NPC）
-            canonDialogue = StardewNpc.Dialogue ?? new Dictionary<string, string>();
-        }
-
+        // 合并 Bio 自定义注入对白
         if (Bio.Dialogue != null)
         {
             foreach (var dialogue in Bio.Dialogue)
@@ -181,7 +134,6 @@ public class Character : IDisposable
         {
             var context = DialogueContext.SafeParse(dialogue.Key);
             var value = new DialogueValue(dialogue.Value);
-            // 🌟 #6: 删除死代码 if (value is DialogueValue)，直接 Add
             DialogueData.Add("Base", context, value);
         }
     }

@@ -97,6 +97,10 @@ public class Prompts
         InitializeInstanceFields(context, character);
     }
 
+    // ── 【新增】收集本轮注入的私有思绪（Memory 作用域，不序列化） ──
+    private readonly List<string> _injectedPrivateThoughts = new List<string>();
+    public IReadOnlyList<string> InjectedPrivateThoughts => _injectedPrivateThoughts;
+
     private bool IsChineseLanguage =>
         LocalizedContentManager.CurrentLanguageCode.ToString().StartsWith("zh", StringComparison.OrdinalIgnoreCase);
 
@@ -672,7 +676,7 @@ public class Prompts
         DefaultOrOverride("Gift", GetGift, prompt);
         DefaultOrOverride("SpouseAction", GetSpouseAction, prompt);
 
-        bool hasNoPlayerInput = !(Context?.ChatHistory?.Any(x => x.IsPlayerLine) ?? false);
+        bool hasNoPlayerInput = Context == null || (!Context.IsActiveTurn && Context.Accept == null);
         if (!hasNoPlayerInput && flags?.IncludeShortTermContext == true)
         {
             prompt.AppendLine("<interaction_state>");
@@ -964,10 +968,11 @@ public class Prompts
         }
 
         bool isZh = IsChineseLanguage;
+        _injectedPrivateThoughts.Add(preoccupation);
         prompt.AppendLine(Util.GetString(Character, "preoccupation", new { Name = Name, preoccupation = preoccupation }));
         prompt.AppendLine(isZh
-            ? "（此思绪仅为背景上下文。是否提及及提及方式由角色性格与好感度决定。）"
-            : "(This thought is background context only. Whether and how to reference it is determined by character personality and heart level.)");
+            ? "（此思绪是你的内心背景，农夫并不知情。若要提及，必须由你自己在台词中自然说出；严禁据此生成农夫的发言选项。）"
+            : "(This thought is your PRIVATE inner context; the farmer knows nothing about it. If you reference it, voice it yourself in dialogue. NEVER use it to generate farmer response options.)");
     }
 
     private void GetCurrentConversation(StringBuilder prompt)
@@ -1007,14 +1012,15 @@ public class Prompts
             .Replace("%farm", farmName);
 
         bool isZh = IsChineseLanguage;
+        _injectedPrivateThoughts.Add(pending);
         prompt.AppendLine("<pending_thought>");
         prompt.AppendLine(isZh
             ? "在本次对话开启前，你心中念念不忘的事情："
             : "Before this exchange began, this key thought was lingering in your mind:");
         prompt.AppendLine(pending);
         prompt.AppendLine(isZh
-            ? "若相关可提及该话题。表达方式由角色性格与好感度决定。"
-            : "Reference this topic if relevant. Expression style is determined by character personality and heart level.");
+            ? "此事农夫并不知晓。若要提及，必须由你自己在台词中说出；严禁据此生成农夫的发言选项。表达方式由角色性格与好感度决定。"
+            : "The farmer knows nothing about this. If you mention it, voice it in your own dialogue; NEVER base a farmer response option on it. Expression style is determined by character personality and heart level.");
         prompt.AppendLine("</pending_thought>\n");
     }
 
@@ -1646,6 +1652,9 @@ public class Prompts
         instructions.AppendLine(isZh
             ? "- 若本次对话结束后你的情绪明显转变（如变得好奇/生气/高兴），在台词最末尾附加 [MOOD:curious] / [MOOD:annoyed] / [MOOD:happy] 等标签。"
             : "- If your emotional tone has clearly shifted after this exchange (e.g. curious/annoyed/happy), append [MOOD:curious] / [MOOD:annoyed] / [MOOD:happy] at the absolute end.");
+        instructions.AppendLine(isZh
+            ? "- 【选项铁律】% 发言选项是农夫现在说得出口的话。农夫不知道你的内心思绪（preoccupation / pending_thought）与你偷听到的内容，除非你已在台词中亲口说出。严禁基于这些私有信息生成 % 选项。"
+            : "- [OPTION GROUNDING] % options are things the farmer could actually say right now. The farmer does NOT know your inner thoughts (preoccupation / pending_thought) or what you overheard, unless you already voiced it in dialogue. NEVER base a % option on such private context.");
 
         if (!Character.Bio.ExtraPortraits.ContainsKey("!"))
         {

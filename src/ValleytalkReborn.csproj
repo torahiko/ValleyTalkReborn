@@ -11,12 +11,18 @@
     <Authors>srkgou/dandm1</Authors>
     <PackageId>ValleytalkReborn</PackageId>
     <Product>ValleytalkReborn</Product>
+    <Deterministic>true</Deterministic>
+    <PathMap>$(MSBuildProjectDirectory)=/_</PathMap>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="newtonsoft.json" Version="13.0.5-beta1" />
     <PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.4.0" />
     <PackageReference Include="TextCopy" Version="6.2.1" />
   </ItemGroup>
+
   <ItemGroup>
     <None Update="manifest.json">
       <Link>%(Filename)%(Extension)</Link> 
@@ -30,7 +36,10 @@
       <Link>assets/%(RecursiveDir)%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Remove="Actions\Movement\MovementManager.cs.new" />
+    <None Remove="Actions\Movement\MovementManager.cs.bak" />
   </ItemGroup>
+
   <ItemGroup>
     <ContentPacks Include="../ContentPack" FolderName="[CP] ValleyTalkReborn Base" Version="$(Version)" />
   </ItemGroup>

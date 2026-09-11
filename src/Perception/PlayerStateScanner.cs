@@ -27,7 +27,7 @@ internal static class PlayerStateScanner
     /// <summary>
     /// 扫描入口：记录所有当前可被 NPC 观察到的玩家状态。
     /// </summary>
-    public static void Scan()
+    public static void Scan(string targetNpcName = null)
     {
         try
         {
@@ -35,6 +35,9 @@ internal static class PlayerStateScanner
             if (player == null || !Context.IsWorldReady) return;
 
             bool isZh = IsZh;
+
+            // 解析目标 NPC 名称：优先使用显式传入，否则从当前对话框取
+            string npcName = string.IsNullOrWhiteSpace(targetNpcName) ? Game1.currentSpeaker?.Name : targetNpcName;
 
             // 生理与体力状态
             ScanExhaustion(player, isZh);
@@ -58,7 +61,7 @@ internal static class PlayerStateScanner
             ScanOutfit(player, isZh);
 
             // 携带物感知流水线（单向抢占：求婚信物 > 表白花束 > 背包满载 > 手边物品 > 深度感官感知保底）
-            ScanPlayerCarriedItemsPipeline(player, isZh);
+            ScanPlayerCarriedItemsPipeline(player, isZh, npcName);
         }
         catch (Exception ex)
         {
@@ -70,7 +73,7 @@ internal static class PlayerStateScanner
     //  子扫描器：携带物链式感知流水线（严格分级互斥）
     // ─────────────────────────────────────────────
 
-    private static void ScanPlayerCarriedItemsPipeline(Farmer player, bool isZh)
+    private static void ScanPlayerCarriedItemsPipeline(Farmer player, bool isZh, string targetNpcName)
     {
         const string BouquetId = "(O)458";
         const string MermaidPendantId = "(O)460";
@@ -155,15 +158,35 @@ internal static class PlayerStateScanner
                 !name.StartsWith("错误物品", StringComparison.Ordinal) &&
                 !name.StartsWith("Error", StringComparison.OrdinalIgnoreCase))
             {
-                string itemTemplate = BuildHandheldItemTemplate(handItem, name, isZh);
+                // 门控判定：普通农具与建材在户外或与陌生 NPC 对话时脱敏
+                bool isMundaneLabor = IsBasicFarmTool(handItem) || IsMundaneBuildingMaterial(handItem);
+                bool isOutdoors = player.currentLocation?.IsOutdoors == true;
+                bool isStranger = IsStrangerAcquaintance(player, targetNpcName);
 
-                PerceptionManager.Instance.Record(
-                    key: "PlayerActiveItem",
-                    template: itemTemplate,
-                    lifetimeHours: 1,
-                    isLandmark: false,
-                    itemId: handItem.QualifiedItemId);
-                return;
+                bool suppressHandheld = handItem != null && isMundaneLabor
+                    && (isOutdoors || isStranger);
+
+                if (suppressHandheld)
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[PlayerStateScanner] Suppressed mundane handheld [{name}] (outdoor={isOutdoors}, stranger={isStranger})",
+                        LogLevel.Trace);
+
+                    PerceptionManager.Instance.Evict("PlayerActiveItem");
+                    // 不 return，继续落入第 5 步深度感知保底
+                }
+                else
+                {
+                    string itemTemplate = BuildHandheldItemTemplate(handItem, name, isZh);
+
+                    PerceptionManager.Instance.Record(
+                        key: "PlayerActiveItem",
+                        template: itemTemplate,
+                        lifetimeHours: 1,
+                        isLandmark: false,
+                        itemId: handItem.QualifiedItemId);
+                    return;
+                }
             }
         }
 
@@ -191,6 +214,59 @@ internal static class PlayerStateScanner
     //  手持物语境解析（手持展示状态）
     // ─────────────────────────────────────────────
 
+    /// <summary>
+    /// 判定是否为陌生初识关系（用于脱敏门控）。
+    /// 判定顺序：① targetNpcName 为空 → false；② 历史为空 → true；③ friendshipData 无条目 → true；④ Points &lt; 250 → true；⑤ 否则 false。
+    /// 整体 try-catch：任何异常 → return false（保守不脱敏）。
+    /// </summary>
+    private static bool IsStrangerAcquaintance(Farmer player, string targetNpcName)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(targetNpcName))
+                return false;
+
+            var history = DialogueHistoryManager.Instance?.GetRecentHistory(targetNpcName, 1);
+            if (history == null || history.Count == 0)
+                return true;
+
+            if (!player.friendshipData.TryGetValue(targetNpcName, out Friendship fs))
+                return true;
+
+            return fs.Points < 250;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 判定是否为普通农场工具（斧头、十字镐、锄头、水壶、剪刀、挤奶桶）。
+    /// 正向枚举：排除钓竿、武器与弹弓，其余按类型逐一匹配。
+    /// </summary>
+    private static bool IsBasicFarmTool(Item item)
+    {
+        if (item is not Tool tool)
+            return false;
+
+        if (tool is FishingRod or MeleeWeapon or Slingshot)
+            return false;
+
+        return tool is Axe or Pickaxe or Hoe or WateringCan or Shears or MilkPail;
+    }
+
+    /// <summary>
+    /// 判定是否为普通建材或杂物（开荒劳作物资）。
+    /// 迁移自 BuildHandheldItemTemplate 分支 4 的既有表达式。
+    /// </summary>
+    private static bool IsMundaneBuildingMaterial(Item item)
+    {
+        string qId = item.QualifiedItemId;
+        return item.Category == BuildingResourcesCategory
+            || qId is "(O)770" or "(O)771" or "(O)388" or "(O)390" or "(O)92" or "(O)330";
+    }
+
     private static string BuildHandheldItemTemplate(Item handItem, string name, bool isZh)
     {
         string qId = handItem.QualifiedItemId;
@@ -212,9 +288,10 @@ internal static class PlayerStateScanner
                     ? $"[随身细节] 玩家随手提着一把钓鱼竿【{name}】。"
                     : $"[Item detail] The player is holding a fishing rod [{name}].";
             }
+            // 非钓竿农具 → 弱化模板（常态装束，不强调"正拎着"）
             return isZh
-                ? $"[随身细节] 玩家手里正拎着农具【{name}】。"
-                : $"[Item detail] The player is carrying a farm tool [{name}].";
+                ? $"[常态装束] 玩家腰带上别着一件日常农用工具【{name}】（普通农夫的劳作行头）。"
+                : $"[Everyday gear] The player has an everyday farm tool [{name}] strapped at their belt (ordinary farmer's work attire).";
         }
 
         // 3. 恶作剧与禁忌/违和物品（垃圾、Joja可乐、怪异泥偶、海沟废品）
@@ -238,8 +315,7 @@ internal static class PlayerStateScanner
         }
 
         // 4. 基础建材/杂物（开荒劳作侧影）
-        bool isMundaneMaterial = handItem.Category == BuildingResourcesCategory
-                              || qId is "(O)770" or "(O)771" or "(O)388" or "(O)390" or "(O)92" or "(O)330";
+        bool isMundaneMaterial = IsMundaneBuildingMaterial(handItem);
 
         if (isMundaneMaterial)
         {

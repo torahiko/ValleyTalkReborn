@@ -314,3 +314,4 @@ public sealed class DialogueContextJsonConverter : JsonConverter<DialogueContext
         writer.WriteValue(value.Value);
     }
 }
+

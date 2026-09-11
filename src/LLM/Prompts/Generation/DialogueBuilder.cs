@@ -111,15 +111,17 @@ namespace ValleytalkReborn
 
             var fullHistory = context.ChatHistory.ToList();
 
-            var existingKeys = new HashSet<string>(
-                fullHistory.Select(e => DialogueHistoryManager.SanitizeForStorage(e.Text)),
-                StringComparer.OrdinalIgnoreCase);
-
             foreach (var elem in conversation)
             {
                 string cleanedText = CleanHistoryText(elem.Text);
                 string dedupKey = DialogueHistoryManager.SanitizeForStorage(cleanedText);
-                if (!string.IsNullOrWhiteSpace(dedupKey) && existingKeys.Add(dedupKey))
+                if (string.IsNullOrWhiteSpace(dedupKey)) continue;
+                if (fullHistory.Count > 0
+                    && fullHistory.Last().IsPlayerLine == elem.IsPlayerLine
+                    && string.Equals(DialogueHistoryManager.SanitizeForStorage(fullHistory.Last().Text), dedupKey,
+                         StringComparison.OrdinalIgnoreCase))
+                { continue; }
+                else
                 {
                     fullHistory.Add(new ConversationElement(cleanedText, elem.IsPlayerLine));
                 }
@@ -148,16 +150,23 @@ namespace ValleytalkReborn
             DynamicBarkManager.CancelBackgroundTasks(instance.Name);
 
 
+            // 重置上轮短路状态，防止复用 context 时 IsDuplicate 误判
+            context.LocallyExecutedAction = null;
+
             // ── 本地明确指令短路执行 (Local Short-circuit) ──
+            bool shortCircuitExecuted = false;
             if (context.RoutingFlags.IsActionRequested && context.RoutingFlags.RequestedAction != ActionTag.None)
             {
                 string actionType = context.RoutingFlags.RequestedAction.ToTagString();
                 if (!string.IsNullOrWhiteSpace(actionType))
                 {
                     string jsonArgs = Newtonsoft.Json.JsonConvert.SerializeObject(new { action_type = actionType });
-                    bool accepted = AgentToolDispatcher.DispatchToolCall(instance, AgentToolDefinitions.ToolPhysicalAction, jsonArgs);
+                    // 注意：返回值是 usedBubble 语义，不是 accepted；不得据此做任何门控
+                    AgentToolDispatcher.DispatchToolCall(instance, AgentToolDefinitions.ToolPhysicalAction, jsonArgs);
+                    shortCircuitExecuted = true;
+                    context.LocallyExecutedAction = actionType;
                     ModEntry.SMonitor?.Log(
-                        $"[DialogueBuilder] Local action short-circuit: {instance.Name} -> {actionType} (Accepted: {accepted})",
+                        $"[DialogueBuilder] Local action short-circuit: {instance.Name} -> {actionType}",
                         StardewModdingAPI.LogLevel.Debug);
                 }
             }
@@ -200,7 +209,7 @@ namespace ValleytalkReborn
             ApplyEmbodiedActions(instance, context, theLine);
 
             // speak_in_bubble sentinel: 气泡模式下跳过对白肢体解析
-            if (theLine != null)
+            if (theLine != null && !shortCircuitExecuted)
             {
                 if (context.RoutingFlags.IsActionRequested
                     || context.RoutingFlags.IsMovementRequested
@@ -383,7 +392,7 @@ namespace ValleytalkReborn
         {
             if (theLine == null || theLine.Length == 0)
             {
-                return string.Empty;
+                return "...";
             }
 
             // 🔧 防御性全行标签清洗：防止 LLM 偶发在行中输出 [UI:*] 标签污染对话按键。
@@ -396,7 +405,31 @@ namespace ValleytalkReborn
                     System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
             }
 
-            if (theLine.Length == 1 && ModEntry.Config.TypedResponses != "Always")
+            // 🌟【强力防抽风 1】：NPC 台词分页与超长字符限制
+            string npcSpeech = theLine[0];
+            if (string.IsNullOrWhiteSpace(npcSpeech))
+            {
+                npcSpeech = "...";
+            }
+            else
+            {
+                // 1. 限制通过 '#' 分割的显式翻页数量（最多允许 3 个 '#' 即最多 4 页台词）
+                var pages = npcSpeech.Split(new[] { '#' }, StringSplitOptions.RemoveEmptyEntries);
+                const int maxPages = 4;
+                if (pages.Length > maxPages)
+                {
+                    npcSpeech = string.Join("#", pages.Take(maxPages)) + "...";
+                }
+                // 2. 限制单段文字的总字符上限（防止单段成千上万字撑死渲染）
+                const int maxTotalChars = 600;
+                if (npcSpeech.Length > maxTotalChars)
+                {
+                    npcSpeech = npcSpeech.Substring(0, maxTotalChars).TrimEnd() + "...";
+                }
+            }
+            theLine[0] = npcSpeech;
+
+            if (theLine.Length == 1 && ModEntry.Config.TypedResponses != "Always" && !allowDateUI && !allowFollowUI)
             {
                 return theLine[0];
             }
@@ -407,8 +440,11 @@ namespace ValleytalkReborn
             sb.Append($"#$q {index} {SldConstants.DialogueKeyPrefix}Default#{Util.GetString("outputRespond")}");
             sb.Append($"#$r -999999 0 {SldConstants.DialogueKeyPrefix}Silent#{Util.GetString("outputStaySilent")}");
 
-            for (int i = 1; i < theLine.Length; i++)
+            // 🌟【强力防抽风 2】：限制快捷建议选项数量，最多只展示前 3 个，避免选项填满甚至超出屏幕
+            int maxSuggestions = Math.Min(theLine.Length, 4); // 取 1 到 3
+            for (int i = 1; i < maxSuggestions; i++)
             {
+                if (string.IsNullOrWhiteSpace(theLine[i])) continue;
                 sb.Append($"#$r -999998 0 {SldConstants.DialogueKeyPrefix}Next#");
                 sb.Append(theLine[i]);
             }
@@ -624,17 +660,10 @@ namespace ValleytalkReborn
             {
                 return false;
             }
-            if (ModEntry.BlockModdedContent)
+            // 🌟【核心重构】：仅针对明确属于未授权内容包的自定义 NPC 进行独立拦截
+            if (ModEntry.Config.RespectAuthorAiConsent && IsNpcFromBlockedPack(n))
             {
-                if (_characters.Count == 0)
-                {
-                    PopulateCharacters();
-                }
-                var character = GetCharacter(n);
-                if (string.IsNullOrWhiteSpace(character?.Bio?.Biography ?? ""))
-                {
-                    return false;
-                }
+                return false;
             }
             if (probability < 4)
             {
@@ -703,6 +732,58 @@ namespace ValleytalkReborn
             {
                 ModEntry.SMonitor?.Log($"[DialogueBuilder] Error during cleanup: {ex.Message}", LogLevel.Warn);
             }
+        }
+
+        /// <summary>
+        /// 判定指定 NPC 是否归属于未声明 permitAiUse 的第三方内容包。
+        /// </summary>
+        private bool IsNpcFromBlockedPack(NPC n)
+        {
+            if (ModEntry.DisallowedContentPackIds == null || ModEntry.DisallowedContentPackIds.Count == 0)
+            {
+                return false;
+            }
+
+            if (_characters.Count == 0)
+            {
+                PopulateCharacters();
+            }
+
+            var character = GetCharacter(n);
+            // 拥有有效本地设定/传记（原版角色、已内置适配角色）绝对放行
+            if (character?.Bio != null && !character.Bio.Missing && !string.IsNullOrWhiteSpace(character.Bio.Biography))
+            {
+                return false;
+            }
+
+            // 针对无内置设定的纯第三方自定义 NPC：通过星露谷 1.6 的 characterData 匹配其资产归属
+            var data = n.GetData();
+            if (data != null)
+            {
+                string textureName = data.TextureName ?? string.Empty;
+
+                foreach (var packId in ModEntry.DisallowedContentPackIds)
+                {
+                    if (!string.IsNullOrEmpty(textureName) && textureName.Contains(packId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            // 检查 NPC 自身的 modData 键名是否包含未授权的包名
+            if (n.modData != null && n.modData.Keys.Any())
+            {
+                foreach (var packId in ModEntry.DisallowedContentPackIds)
+                {
+                    if (n.modData.Keys.Any(k => k.Contains(packId, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
     }
 }

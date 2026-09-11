@@ -247,14 +247,10 @@ namespace ValleytalkReborn
                     TryExecuteNextEntry(state, e.NewTime);
             }
 
-            if (e.NewTime == 2000)
-                MultiMapNavigator.Instance.CancelAll();
-
-            // 分批回家调度：18:00~21:00 每小时随机召回一名配偶；22:00 全部召回。
-            // 错峰触发是为了绕开 MovementManager._goto 单槽竞争（详见 RecallAllRemainingSpouses）。
-            if (e.NewTime is 1800 or 1900 or 2000 or 2100)
+            // 18:00 全员并发召回（MMR-07）：带实体互斥守卫，跳过游荡/移动/导航中的配偶。
+            if (e.NewTime == 1800)
             {
-                TryRecallOneSpouse(e.NewTime);
+                RecallAllSpousesConcurrent(e.NewTime);
             }
             else if (e.NewTime == 2200)
             {
@@ -569,18 +565,33 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
-        /// 从当前仍在外面的配偶中随机选一名触发回家。
+        /// 18:00 并发召回所有外出配偶，带四重实体互斥守卫。
+        /// 被跳过的配偶由 22:00 兜底 RecallAllRemainingSpouses 收口。
         /// </summary>
-        private void TryRecallOneSpouse(int currentTime)
+        private void RecallAllSpousesConcurrent(int currentTime)
         {
-            var eligible = _states.Values
-                .Where(s => !s.IsStayHome && !s.IsReturningHome)
-                .ToList();
+            int dispatchedCount = 0;
+            int totalCount = 0;
 
-            if (eligible.Count == 0) return;
+            foreach (var state in _states.Values.ToArray())
+            {
+                var npc = state.TrackedNpc;
+                if (npc == null) continue;
+                if (state.IsStayHome || state.IsReturningHome) continue;
 
-            var target = eligible[Game1.random.Next(eligible.Count)];
-            RecallSpouseNow(target, currentTime);
+                totalCount++;
+
+                if (MovementManager.Instance.IsFollowing(npc)) continue;
+                if (MovementManager.Instance.IsNpcMoving(npc)) continue;
+                if (npc.controller != null) continue;
+                if (MultiMapNavigator.Instance.IsNavigating(npc)) continue;
+
+                try { RecallSpouseNow(state, currentTime); dispatchedCount++; }
+                catch (Exception ex) { ModEntry.SMonitor?.Log($"[CSM] Recall dispatch failed for {npc.Name}: {ex.Message}", LogLevel.Error); }
+            }
+
+            ModEntry.SMonitor?.Log(
+                $"[CSM] evening return: dispatched {dispatchedCount}/{totalCount} spouses.", LogLevel.Info);
         }
 
         /// <summary>

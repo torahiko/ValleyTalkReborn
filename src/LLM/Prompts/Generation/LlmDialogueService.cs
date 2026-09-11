@@ -27,9 +27,27 @@ public class LlmDialogueService
     private volatile bool _isRequestInProgress = false;
     public bool IsRequestInProgress => _isRequestInProgress;
 
-    private const int MAX_RETRY_ATTEMPTS = 4;
+    private const int MAX_RETRY_ATTEMPTS = 1;   // 对话场景最多重试 1 次（共 2 次请求）
     private const int MAX_TIMEOUT_SECONDS = 120;
     private const int RETRY_DELAY_SECONDS = 5;
+
+    /// <summary>
+    /// 判断工具调用是否与本地已短路执行的物理动作重复（防止二次派发）
+    /// </summary>
+    private static bool IsDuplicateOfLocallyExecutedAction(string functionName, string jsonArguments, DialogueContext context)
+    {
+        if (context?.LocallyExecutedAction == null) return false;
+        if (!string.Equals(functionName, AgentToolDefinitions.ToolPhysicalAction, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        try
+        {
+            var args = Newtonsoft.Json.Linq.JObject.Parse(jsonArguments ?? "{}");
+            string actionType = (string)args["action_type"];
+            return string.Equals(actionType, context.LocallyExecutedAction, StringComparison.OrdinalIgnoreCase);
+        }
+        catch { return false; }
+    }
 
     private LlmDialogueService() { }  
 
@@ -52,7 +70,7 @@ public class LlmDialogueService
             Prompts prompts = null;
             try
             {
-                PlayerStateScanner.Scan();
+                PlayerStateScanner.Scan(character.Name);
                 prompts = new Prompts(context, character);
 
                 // ── SystemPrompt 注入顺序：静态在前，动态在后，最大化 cache 命中率 ──
@@ -199,6 +217,11 @@ public class LlmDialogueService
                     var npc = character.StardewNpc;
                     foreach (var tool in streamToolCalls)
                     {
+                        if (IsDuplicateOfLocallyExecutedAction(tool.FunctionName, tool.JsonArguments, context))
+                        {
+                            ModEntry.SMonitor?.Log($"[LlmDialogueService] Skipped duplicate physical tool call for {character.Name}.", LogLevel.Trace);
+                            continue;
+                        }
                         bool usedBubble = AgentToolDispatcher.DispatchToolCall(npc, tool.FunctionName, tool.JsonArguments);
                         if (usedBubble) streamResult.UsedBubble = true;
                     }
@@ -229,7 +252,7 @@ public class LlmDialogueService
                         LogLevel.Debug);
                 }
 
-                var processed = ProcessLines(streamDialogueText, character).ToArray();
+                var processed = ProcessLines(streamDialogueText, character, false, prompts.InjectedPrivateThoughts).ToArray();
 
                 if (!string.IsNullOrWhiteSpace(prompts.GiveGift) && processed.Length > 0)
                     processed[0] += $"[{prompts.GiveGift}]";
@@ -302,6 +325,11 @@ public class LlmDialogueService
                             var npc = character.StardewNpc;
                             foreach (var tool in toolCalls)
                             {
+                                if (IsDuplicateOfLocallyExecutedAction(tool.FunctionName, tool.JsonArguments, context))
+                                {
+                                    ModEntry.SMonitor?.Log($"[LlmDialogueService] Skipped duplicate physical tool call for {character.Name}.", LogLevel.Trace);
+                                    continue;
+                                }
                                 bool usedBubble = AgentToolDispatcher.DispatchToolCall(npc, tool.FunctionName, tool.JsonArguments);
                                 if (usedBubble) result.UsedBubble = true;
                             }
@@ -330,7 +358,7 @@ public class LlmDialogueService
                                 LogLevel.Debug);
                         }
 
-                        resultsInternal = ProcessLines(dialogueText, character, attempt > 2).ToArray();
+                        resultsInternal = ProcessLines(dialogueText, character, attempt > 2, prompts.InjectedPrivateThoughts).ToArray();
                     }
                 }
                 catch (OperationCanceledException)
@@ -460,7 +488,7 @@ public class LlmDialogueService
     /// <param name="resultString">Raw LLM output.</param>
     /// <param name="character">Target character (used for portrait validation).</param>
     /// <param name="relaxedValidation">When true, allows non‑standard dialogue formats (used for retry scenarios).</param>
-    private IEnumerable<string> ProcessLines(string resultString, Character character, bool relaxedValidation = false)
+    private IEnumerable<string> ProcessLines(string resultString, Character character, bool relaxedValidation = false, IReadOnlyList<string> privateThoughts = null)
     {
         try
         {
@@ -529,10 +557,25 @@ public class LlmDialogueService
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .ToList();
 
+            // 私有思绪防泄漏：选项不得引用玩家不可知的内心上下文；台词已亲口说出则视为共享信息
+            if (privateThoughts != null)
+            {
+                foreach (var thought in privateThoughts)
+                {
+                    if (string.IsNullOrWhiteSpace(thought)) continue;
+                    string t = thought.Trim();
+                    if (string.IsNullOrEmpty(t) || cleaned.Contains(t)) continue;
+                    responseLines.RemoveAll(opt => opt != null && opt.Contains(t, StringComparison.OrdinalIgnoreCase));
+                }
+            }
+
             // 这里检查的是经过清理、过滤空白字符串后的最终 List 数量
             // 如果玩家选项少于 2 个（如只有1个"再见"），不具备选择意义，则直接清空
             if (responseLines.Count < 2)
                 responseLines.Clear();
+            // 🌟【新增防护】：如果选项超过 3 个，截取前 3 个，防止模型抽风输出十几行选项
+            else if (responseLines.Count > 3)
+                responseLines = responseLines.Take(3).ToList();
 
             var finalResult = new List<string> { cleaned };
             finalResult.AddRange(responseLines);
