@@ -33,16 +33,37 @@ namespace ValleytalkReborn
         #pragma warning restore CS0414
 
         private string disableCharacters = string.Empty;
+        private string _provider = "OpenAiCompatible";
 
         public bool EnableMod { get; set; } = true;
         public bool Debug { get; set; } = false;
-        public string Provider { get; set; } = "LlmOAICompatible";
 
         /// <summary>
-        /// 服务商独立配置档案库（按 Provider 类名索引）。
+        /// 当前活动 Provider。自动对齐 LlmMap 键名（自动容错 LlmOAICompatible <-> OpenAiCompatible）。
+        /// </summary>
+        public string Provider
+        {
+            get => _provider;
+            set
+            {
+                if (string.Equals(value, "LlmOAICompatible", StringComparison.OrdinalIgnoreCase))
+                    _provider = "OpenAiCompatible";
+                else if (string.Equals(value, "LlmGemini", StringComparison.OrdinalIgnoreCase))
+                    _provider = "Google";
+                else if (string.Equals(value, "LlmClaude", StringComparison.OrdinalIgnoreCase))
+                    _provider = "Anthropic";
+                else if (string.Equals(value, "LlmOpenAi", StringComparison.OrdinalIgnoreCase))
+                    _provider = "OpenAI";
+                else
+                    _provider = value ?? "OpenAiCompatible";
+            }
+        }
+
+        /// <summary>
+        /// 服务商独立配置档案库（按 Provider 类名/标识索引）。
         /// 每个 Provider 拥有独立的 ApiKey、ServerAddress、ModelName、CustomBodyJson。
         /// </summary>
-        public Dictionary<string, ProviderProfile> ProviderProfiles { get; set; } = new Dictionary<string, ProviderProfile>();
+        public Dictionary<string, ProviderProfile> ProviderProfiles { get; set; } = new Dictionary<string, ProviderProfile>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// 当前活动 Provider 的 API Key（计算属性，透明代理到 ProviderProfiles）。
@@ -50,7 +71,7 @@ namespace ValleytalkReborn
         public string ApiKey
         {
             get => GetActiveProfile().ApiKey;
-            set => GetActiveProfile().ApiKey = value;
+            set => GetActiveProfile().ApiKey = value ?? string.Empty;
         }
 
         /// <summary>
@@ -59,7 +80,7 @@ namespace ValleytalkReborn
         public string ServerAddress
         {
             get => GetActiveProfile().ServerAddress;
-            set => GetActiveProfile().ServerAddress = value;
+            set => GetActiveProfile().ServerAddress = value ?? string.Empty;
         }
 
         /// <summary>
@@ -68,17 +89,17 @@ namespace ValleytalkReborn
         public string ModelName
         {
             get => GetActiveProfile().ModelName;
-            set => GetActiveProfile().ModelName = value;
+            set => GetActiveProfile().ModelName = value ?? string.Empty;
         }
 
         /// <summary>
         /// 当前活动 Provider 的自定义 Body JSON（计算属性）。
-        /// 仅 LlmOAICompatible 使用，其他服务商留空。
+        /// 仅 OpenAiCompatible 使用，其他服务商留空。
         /// </summary>
         public string CustomBodyJson
         {
             get => GetActiveProfile().CustomBodyJson;
-            set => GetActiveProfile().CustomBodyJson = value;
+            set => GetActiveProfile().CustomBodyJson = value ?? string.Empty;
         }
 
         /// <summary>
@@ -196,27 +217,30 @@ namespace ValleytalkReborn
         /// <summary>
         /// 获取当前 Provider 的配置档案（不存在时自动初始化）。
         /// </summary>
-        private ProviderProfile GetActiveProfile()
+        public ProviderProfile GetActiveProfile()
         {
             if (ProviderProfiles == null)
             {
-                ProviderProfiles = new Dictionary<string, ProviderProfile>();
+                ProviderProfiles = new Dictionary<string, ProviderProfile>(StringComparer.OrdinalIgnoreCase);
             }
 
-            if (!ProviderProfiles.ContainsKey(Provider))
+            string currentProvider = Provider;
+
+            if (!ProviderProfiles.ContainsKey(currentProvider))
             {
                 var profile = new ProviderProfile();
 
-                // 为 LlmOAICompatible 预填充默认 OpenRouter 地址
-                if (Provider == "LlmOAICompatible")
+                // 为兼容模式预填充默认 OpenRouter 地址
+                if (string.Equals(currentProvider, "OpenAiCompatible", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(currentProvider, "LlmOAICompatible", StringComparison.OrdinalIgnoreCase))
                 {
                     profile.ServerAddress = "https://openrouter.ai/api/v1";
                 }
 
-                ProviderProfiles[Provider] = profile;
+                ProviderProfiles[currentProvider] = profile;
             }
 
-            return ProviderProfiles[Provider];
+            return ProviderProfiles[currentProvider];
         }
 
         /// <summary>
@@ -249,7 +273,7 @@ namespace ValleytalkReborn
                 }
             }
 
-            monitor?.Log("[ModConfig] 高级参数已校验。", LogLevel.Debug);
+            monitor?.Log("[ModConfig] 对话与高级参数已校验。", LogLevel.Debug);
         }
 
         private static int Clamp(int value, int min, int max)

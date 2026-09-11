@@ -38,18 +38,32 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
-        /// 将内部 Provider 类名格式化为友好的本地化显示名称。
+        /// 双向兼容映射：优先读取 configProvider_Key，若未命中自动尝试别名
         /// </summary>
-        private static string FormatProvider(string providerClassName)
+        private static string FormatProvider(string providerName)
         {
-            string i18nKey = $"configProvider_{providerClassName}";
-            return GetUIString(i18nKey, providerClassName); // 回退到类名本身
+            string directKey = $"configProvider_{providerName}";
+            string text = GetUIString(directKey, null);
+            if (text != null) return text;
+
+            string fallbackKey = providerName switch
+            {
+                "OpenAiCompatible" => "configProvider_LlmOAICompatible",
+                "Google" => "configProvider_LlmGemini",
+                "Anthropic" => "configProvider_LlmClaude",
+                "OpenAI" => "configProvider_LlmOpenAi",
+                "DeepSeek" => "configProvider_LlmDeepSeek",
+                "Grok" => "configProvider_LlmGrok",
+                _ => directKey
+            };
+
+            return GetUIString(fallbackKey, providerName);
         }
 
         private static string GetUIString(string key, string fallback, object tokens = null)
         {
             string result = null;
-            if (_modEntry != null && _modEntry.Helper != null && _modEntry.Helper.Translation != null)
+            if (_modEntry?.Helper?.Translation != null)
             {
                 var smapiTranslation = _modEntry.Helper.Translation.Get(key);
                 if (smapiTranslation.HasValue())
@@ -91,7 +105,7 @@ namespace ValleytalkReborn
             ModManifest = modEntry.ModManifest;
             ConfigMenu = GetConfigMenu(modEntry);
 
-            // 注册文本框左右键及光标移动拦截器
+            // 注册文本框光标导航拦截钩子
             RegisterGlobalTextBoxNavigationHook(modEntry.Helper);
 
             if (ConfigMenu == null)
@@ -101,7 +115,13 @@ namespace ValleytalkReborn
                 return;
             }
 
-            // 重新注册前先取消注册，实现 UI 动态刷新
+            if (!ModEntry.LlmMap.ContainsKey(Config.Provider))
+            {
+                Config.Provider = "OpenAiCompatible";
+            }
+
+            string editingProvider = Config.Provider;
+
             ConfigMenu.Unregister(ModManifest);
             ConfigMenu.Register(
                 mod: ModManifest,
@@ -110,37 +130,33 @@ namespace ValleytalkReborn
                 {
                     modEntry.Helper.WriteConfig(ModEntry.Config);
 
-                    // ★ 即时响应开关关闭：秒杀正在进行的会话与残余台词
                     ModEntry.CleanupOnConfigToggle();
 
-                    // ── 配偶日程开关关闭：安全送回所有在外配偶 ──
                     if (!ModEntry.Config.EnableSpouseSchedule)
                     {
                         CompanionScheduleManager.Instance.SafeDismissAllSpousesToHome();
                     }
 
-                    // ── 约会系统开关关闭：静默终止进行中约会（不注销 SMAPI 事件）──
-                    if (!ModEntry.Config.EnableDateSystem
-                        && DateManager.Instance.Phase != DatePhase.None)
+                    if (!ModEntry.Config.EnableDateSystem && DateManager.Instance.Phase != DatePhase.None)
                     {
                         DateManager.Instance.AbortActiveDateSilently();
                     }
 
-                    // 🌟 核心修复：触发后台异步刷新模型缓存，彻底避免 Save 时 UI 假死
                     RefreshModelNamesCacheAsync();
 
-                    // 如果模型名已经选择/填写，再进行 Llm 的实例化与网络连接校验
                     if (!string.IsNullOrWhiteSpace(ModEntry.Config.ModelName))
                     {
                         SetLlm();
                     }
 
-                    // 重新注册界面，展示更新后的下拉菜单
                     Register(modEntry);
                 }
             );
 
-            // ── 基础功能开关 ──────────────────────────────────────
+            // =========================================================================
+            // ── 主页面（默认页面） ──────────────────────────────────────────────────
+            // =========================================================================
+
             ConfigMenu.AddBoolOption(
                 mod: ModManifest,
                 name: () => GetUIString("configEnable", "Enable Mod"),
@@ -149,7 +165,6 @@ namespace ValleytalkReborn
                 setValue: value => Config.EnableMod = value
             );
 
-            // 🌟 尊重第三方作者 AI 授权选项
             ConfigMenu.AddBoolOption(
                 mod: ModManifest,
                 name: () => GetUIString("configRespectAuthorConsent", "Respect Modder AI Consent"),
@@ -158,45 +173,50 @@ namespace ValleytalkReborn
                 getValue: () => Config.RespectAuthorAiConsent,
                 setValue: value => Config.RespectAuthorAiConsent = value
             );
+
 #if DEBUG
             ConfigMenu.AddBoolOption(
                 mod: ModManifest,
                 name: () => GetUIString("configLogging", "Enable Logging"),
-                tooltip: () =>
-                    GetUIString("configLoggingTooltip", "Enable or disable logging of prompts and responses."),
+                tooltip: () => GetUIString("configLoggingTooltip", "Enable or disable logging of prompts and responses."),
                 getValue: () => Config.Debug,
                 setValue: value => Config.Debug = value
             );
 #endif
 
-            // ── AI 模型与服务商设置 ──────────────────────────────
-            var llmTypes = ModEntry.LlmMap.Keys.ToArray();
+            // ★ 修复 1：下拉选项列表去重，剔除别名冗余（排除带 Llm 前缀的别名，防止出现 2 个自定义）
+            var distinctLlmTypes = ModEntry.LlmMap.Keys
+                .Where(k => !k.StartsWith("Llm", StringComparison.OrdinalIgnoreCase) || k.Equals("LlamaCpp", StringComparison.OrdinalIgnoreCase))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
             ConfigMenu.AddTextOption(
                 mod: ModManifest,
                 name: () => GetUIString("configProvider", "AI Model Provider"),
                 getValue: () => Config.Provider,
                 setValue: value =>
                 {
-                    if (value == Config.Provider) return;
-                    // ★ 移除清空 Key 的破坏性逻辑，改由 ModConfig 的计算属性自动切换档案
                     Config.Provider = value;
                     _cachedModelNames = null;
-                    // 🌟 切换服务商时也使用异步刷新
                     RefreshModelNamesCacheAsync();
                 },
-                allowedValues: llmTypes,
-                formatAllowedValue: FormatProvider,  // ★ 新增格式化回调
+                allowedValues: distinctLlmTypes,
+                formatAllowedValue: FormatProvider,
                 fieldId: "Provider"
             );
 
-            // ── 新手引导：GMCM 机制提示 ──
+            // GMCM 机制提示
             ConfigMenu.AddParagraph(
                 mod: ModManifest,
                 text: () => GetUIString("configFetchHintFull",
                     "[Tip] Enter your API Key (and Server Address if needed), click 'Save', then exit and re-open this menu. The mod will automatically fetch available models. Switching providers also requires saving and reopening.")
             );
 
-            var llmType = ModEntry.LlmMap[Config.Provider];
+            if (!ModEntry.LlmMap.TryGetValue(Config.Provider, out var llmType))
+            {
+                llmType = typeof(LlmOAICompatible);
+            }
+
             var constructorParameters = llmType.GetConstructors().First().GetParameters().Select(x => x.Name).ToArray();
 
             if (constructorParameters.Contains("apiKey", StringComparer.OrdinalIgnoreCase))
@@ -206,12 +226,18 @@ namespace ValleytalkReborn
                     name: () => GetUIString("configApiKey", "API Key"),
                     tooltip: () => GetUIString("configApiKeyTooltip", "API Key for the AI model provider."),
                     getValue: () => Config.ApiKey,
-                    setValue: (value) => Config.ApiKey = value,
+                    setValue: value =>
+                    {
+                        if (Config.Provider == editingProvider)
+                        {
+                            Config.ApiKey = value;
+                        }
+                    },
                     fieldId: "ApiKey"
                 );
             }
 
-            // ── 连接状态指示器（只读段落） ──
+            // 状态指示灯
             ConfigMenu.AddParagraph(
                 mod: ModManifest,
                 text: () => GetConnectionStatusText()
@@ -219,17 +245,21 @@ namespace ValleytalkReborn
 
             if (constructorParameters.Contains("modelName", StringComparer.OrdinalIgnoreCase))
             {
-                // 手动输入框
                 ConfigMenu.AddTextOption(
                     mod: ModManifest,
                     name: () => GetUIString("configModelName", "Model Name"),
                     tooltip: () => GetUIString("configModelNameTooltip", "Name of the AI model to use."),
                     getValue: () => Config.ModelName,
-                    setValue: (value) => Config.ModelName = value,
+                    setValue: value =>
+                    {
+                        if (Config.Provider == editingProvider)
+                        {
+                            Config.ModelName = value;
+                        }
+                    },
                     fieldId: "ModelName"
                 );
 
-                // 快捷下拉框选择
                 if (_cachedModelNames != null && _cachedModelNames.Length > 0)
                 {
                     string placeholder = GetUIString("configQuickSelectPlaceholder", "--- Select to auto-fill ---");
@@ -242,9 +272,9 @@ namespace ValleytalkReborn
                         tooltip: () => GetUIString("configQuickSelectTooltip",
                             "Select a model and click Save to fill into Model Name."),
                         getValue: () => placeholder,
-                        setValue: (value) =>
+                        setValue: value =>
                         {
-                            if (value != placeholder)
+                            if (value != placeholder && Config.Provider == editingProvider)
                             {
                                 Config.ModelName = value;
                             }
@@ -255,9 +285,9 @@ namespace ValleytalkReborn
                 }
                 else
                 {
-                    // 模型拉取失败时显示错误提示
+                    // ★ 修复 2：完整多语言支持，绝不出现硬编码未翻译的英文
                     string errorHint = string.IsNullOrEmpty(_lastFetchErrorMessage)
-                        ? GetUIString("configFetchHint", "Enter API Key and click 'Save' to fetch available models.")
+                        ? GetUIString("configFetchHint", "Enter your API Key and click 'Save' to fetch available models.")
                         : GetUIString("configFetchError", "⚠️ Failed to fetch models: ") + _lastFetchErrorMessage
                           + " " + GetUIString("configFetchErrorRetry", "(Click 'Save' to retry)");
                     ConfigMenu.AddParagraph(
@@ -275,17 +305,17 @@ namespace ValleytalkReborn
                     tooltip: () => GetUIString("configServerAddressTooltip",
                         "URL of the server for local and Open AI compatible models."),
                     getValue: () => Config.ServerAddress,
-                    setValue: (value) => Config.ServerAddress = value,
+                    setValue: value =>
+                    {
+                        if (Config.Provider == editingProvider)
+                        {
+                            Config.ServerAddress = value;
+                        }
+                    },
                     fieldId: "ServerAddress"
                 );
             }
 
-            // ── 高级模型参数页面入口 ──
-            ConfigMenu.AddPage(
-                mod: ModManifest,
-                pageId: "advanced",
-                pageTitle: () => GetUIString("configAdvancedTitle", "⚙️ Advanced Model Parameters")
-            );
             ConfigMenu.AddPageLink(
                 mod: ModManifest,
                 pageId: "advanced",
@@ -294,14 +324,14 @@ namespace ValleytalkReborn
                     "⚠️ Warning: If you are unsure what these settings do, please leave them at default!")
             );
 
-            // ── 对话与输出选项 ──────────────────────────────────
+            // ── 对话与输出选项（主页面） ──
             ConfigMenu.AddBoolOption(
                 mod: ModManifest,
                 name: () => GetUIString("configTranslation", "Translate Outputs"),
                 tooltip: () => GetUIString("configTranslationTooltip",
                     "Translate the AI model outputs to the game language (without i18n pack)."),
                 getValue: () => Config.ApplyTranslation,
-                setValue: (value) => { Config.ApplyTranslation = value; }
+                setValue: value => Config.ApplyTranslation = value
             );
 
             ConfigMenu.AddTextOption(
@@ -310,7 +340,7 @@ namespace ValleytalkReborn
                 tooltip: () => GetUIString("configFrequencyGeneralTooltip",
                     "How often should the mod generate general lines."),
                 getValue: () => Config.GeneralFrequency.ToString(),
-                setValue: (value) =>
+                setValue: value =>
                 {
                     if (int.TryParse(value, out int val))
                         Config.GeneralFrequency = Math.Clamp(val, 0, 4);
@@ -325,7 +355,7 @@ namespace ValleytalkReborn
                 tooltip: () => GetUIString("configFrequencyGiftTooltip",
                     "How often should the mod generate gift lines."),
                 getValue: () => Config.GiftFrequency.ToString(),
-                setValue: (value) =>
+                setValue: value =>
                 {
                     if (int.TryParse(value, out int val))
                         Config.GiftFrequency = Math.Clamp(val, 0, 4);
@@ -340,7 +370,7 @@ namespace ValleytalkReborn
                 tooltip: () => GetUIString("configFrequencyMarriageTooltip",
                     "How often should the mod generate marriage lines."),
                 getValue: () => Config.MarriageFrequency.ToString(),
-                setValue: (value) =>
+                setValue: value =>
                 {
                     if (int.TryParse(value, out int val))
                         Config.MarriageFrequency = Math.Clamp(val, 0, 4);
@@ -355,16 +385,15 @@ namespace ValleytalkReborn
                 tooltip: () => GetUIString("configDisableForCharactersTooltip", GetUIString("configDiableForCharactersTooltip",
                     "Comma-separated list of villagers to disable the mod for, e.g. (\"Abigail,Leah,Sam\")")),
                 getValue: () => Config.DisableCharacters,
-                setValue: (value) => { Config.DisableCharacters = value; }
+                setValue: value => Config.DisableCharacters = value
             );
 
-            // ── ★ 环境气泡与 NPC 互动 (Bark & A2A) ─────────────────
+            // ── 环境气泡与 NPC 互动 (Bark & A2A) ──
             ConfigMenu.AddSectionTitle(
                 mod: ModManifest,
                 text: () => GetUIString("configSectionAmbientDialogue", "Ambient & NPC Interactions")
             );
 
-            // 1. Bark 随地气泡开关
             ConfigMenu.AddBoolOption(
                 mod: ModManifest,
                 name: () => GetUIString("configEnableBark", "Enable NPC Self-Talk (Barks)"),
@@ -374,7 +403,6 @@ namespace ValleytalkReborn
                 setValue: value => Config.EnableAmbientBarks = value
             );
 
-            // 2. A2A NPC间对话开关
             ConfigMenu.AddBoolOption(
                 mod: ModManifest,
                 name: () => GetUIString("configEnableA2A", "Enable NPC-to-NPC Conversations (A2A)"),
@@ -384,13 +412,12 @@ namespace ValleytalkReborn
                 setValue: value => Config.EnableA2A = value
             );
 
-            // ── 伴侣日程与出游系统 ─────────────────────────────────
+            // ── 伴侣日程与出游系统 ──
             ConfigMenu.AddSectionTitle(
                 mod: ModManifest,
                 text: () => GetUIString("configSectionCompanionFeatures", "Companion & Romance Features")
             );
 
-            // 1. 配偶日程开关 (Default: true)
             ConfigMenu.AddBoolOption(
                 mod: ModManifest,
                 name: () => GetUIString("configEnableSpouseSchedule", "Enable Spouse Schedules"),
@@ -400,7 +427,6 @@ namespace ValleytalkReborn
                 setValue: value => Config.EnableSpouseSchedule = value
             );
 
-            // 2. 约会系统开关 (Default: false)
             ConfigMenu.AddBoolOption(
                 mod: ModManifest,
                 name: () => GetUIString("configEnableDateSystem", "Enable Date System (WIP)"),
@@ -410,7 +436,7 @@ namespace ValleytalkReborn
                 setValue: value => Config.EnableDateSystem = value
             );
 
-            // ── ★ 快捷键与控制设置 Section ──────────────────────
+            // ── 快捷键设置 ──
             ConfigMenu.AddSectionTitle(
                 mod: ModManifest,
                 text: () => GetUIString("configSectionKeybinds", "Keybinds & Controls")
@@ -440,7 +466,15 @@ namespace ValleytalkReborn
                 setValue: value => Config.DismissFollowerKey = value
             );
 
-            // ── 高级参数子页面内容 ──
+            // =========================================================================
+            // ── ★ 二级子页面：高级参数（Page: "advanced"）────────────────────────────
+            // =========================================================================
+            ConfigMenu.AddPage(
+                mod: ModManifest,
+                pageId: "advanced",
+                pageTitle: () => GetUIString("configAdvancedTitle", "⚙️ Advanced Model Parameters")
+            );
+
             ConfigMenu.AddParagraph(
                 mod: ModManifest,
                 text: () => GetUIString("configAdvancedWarning",
@@ -456,7 +490,7 @@ namespace ValleytalkReborn
                 setValue: value => Config.Temperature = value,
                 min: 0.0f,
                 max: 2.0f,
-                interval: 0.1f
+                interval: 0.05f
             );
 
             ConfigMenu.AddNumberOption(
@@ -468,7 +502,7 @@ namespace ValleytalkReborn
                 setValue: value => Config.TopP = value,
                 min: 0.0f,
                 max: 1.0f,
-                interval: 0.1f
+                interval: 0.05f
             );
 
             ConfigMenu.AddNumberOption(
@@ -480,34 +514,26 @@ namespace ValleytalkReborn
                 setValue: value => Config.MaxTokens = value,
                 min: 100,
                 max: 8192,
-                interval: 1
+                interval: 50
             );
 
             ConfigMenu.AddTextOption(
                 mod: ModManifest,
                 name: () => GetUIString("configCustomBodyJson", "Custom Body JSON (Geek Mode)"),
                 tooltip: () => GetUIString("configCustomBodyJsonTooltip",
-                    "For advanced users: Enter valid JSON object to deep-merge into the request payload."),
+                    "For advanced users: Enter valid JSON object to deep-merge into the request payload. Only applies to Main dialogue."),
                 getValue: () => Config.CustomBodyJson,
                 setValue: value => Config.CustomBodyJson = value
             );
-
-            // 返回主页面
-            ConfigMenu.AddPage(mod: ModManifest, pageId: "", pageTitle: () => "");
         }
 
-        /// <summary>
-        /// 获取当前 LLM 连接状态的显示文本（动态读取后台状态，不发起网络请求）。
-        /// </summary>
         private static string GetConnectionStatusText()
         {
-            // 优先检查是否有 API Key
             if (string.IsNullOrWhiteSpace(ModEntry.Config.ApiKey))
             {
                 return GetUIString("configStatusNotConfigured", "⚪ Not Configured: Enter API Key and save");
             }
 
-            // 检查 DialogueBuilder 的 LlmDisabled 状态（后台连接测试结果）
             bool llmDisabled = DialogueBuilder.Instance?.LlmDisabled ?? true;
 
             if (llmDisabled)
@@ -515,7 +541,6 @@ namespace ValleytalkReborn
                 return GetUIString("configStatusFailed", "❌ Connection Failed: Check API Key, network, or console logs");
             }
 
-            // 连接正常，显示当前模型名称
             string modelName = ModEntry.Config.ModelName;
             if (string.IsNullOrWhiteSpace(modelName))
             {
@@ -525,139 +550,144 @@ namespace ValleytalkReborn
             return GetUIString("configStatusReady", "✅ Connected / Ready: {{modelName}}", new { modelName });
         }
 
-        /// <summary>
-        /// 注册全局文本框导航钩子（左右键及光标移动）
-        /// </summary>
+        // =========================================================================
+        // ── ★ 修复 3：全局文本框键盘导航与光标拦截实现 ─────────────────────────
+        // =========================================================================
+
+        private static readonly FieldInfo CursorPositionField = typeof(TextBox).GetField("_cursorPosition", BindingFlags.NonPublic | BindingFlags.Instance)
+                                                              ?? typeof(TextBox).GetField("cursorPosition", BindingFlags.NonPublic | BindingFlags.Instance);
+
         private static void RegisterGlobalTextBoxNavigationHook(IModHelper helper)
         {
-            if (_isInputHookRegistered) return;
+            if (_isInputHookRegistered || helper == null) return;
+
+            helper.Events.Input.ButtonPressed += OnButtonPressedHandleTextBoxCursor;
             _isInputHookRegistered = true;
-
-            helper.Events.Input.ButtonPressed += (sender, e) =>
-            {
-                if (Game1.activeClickableMenu == null) return;
-
-                // 仅在 GMCM 上下文中处理
-                if (!Game1.activeClickableMenu.GetType().FullName.Contains("GenericModConfigMenu"))
-                    return;
-
-                OnButtonPressedHandleTextBoxCursor(e);
-            };
         }
 
-        private static void OnButtonPressedHandleTextBoxCursor(ButtonPressedEventArgs e)
+        private static void OnButtonPressedHandleTextBoxCursor(object sender, ButtonPressedEventArgs e)
         {
-            if (Game1.activeClickableMenu == null) return;
+            // 通过游戏全局键盘调度器直接获取当前处于焦点选中的输入框
+            var subscriber = Game1.keyboardDispatcher?.Subscriber;
+            if (subscriber == null) return;
 
-            var textBox = FindActiveTextBox();
-            if (textBox == null) return;
-
-            if (e.Button == SButton.Left)
+            // 1. 若使用的是模组自建打字输入框
+            if (subscriber is DialogueTextInputBox customBox && customBox.Selected)
             {
-                if (IsControlKeyDown())
-                {
-                    MoveCursorToPrevWord(textBox);
-                }
-                else
-                {
-                    MoveCursor(textBox, -1);
-                }
-                _modEntry?.Helper.Input.Suppress(e.Button);
-            }
-            else if (e.Button == SButton.Right)
-            {
-                if (IsControlKeyDown())
-                {
-                    MoveCursorToNextWord(textBox);
-                }
-                else
-                {
-                    MoveCursor(textBox, 1);
-                }
-                _modEntry?.Helper.Input.Suppress(e.Button);
-            }
-        }
+                if (IsControlKeyDown()) return;
 
-        private static TextBox FindActiveTextBox()
-        {
-            if (Game1.activeClickableMenu == null) return null;
-
-            // 遍历 GMCM 的元素查找当前聚焦的文本框
-            var menu = Game1.activeClickableMenu;
-            var fields = menu.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
-            foreach (var field in fields)
-            {
-                if (field.FieldType == typeof(TextBox))
+                if (e.Button == SButton.Left || e.Button == SButton.Right ||
+                    e.Button == SButton.Home || e.Button == SButton.End ||
+                    e.Button == SButton.Delete || e.Button == SButton.Back)
                 {
-                    var textBox = (TextBox)field.GetValue(menu);
-                    if (textBox != null && textBox.Selected)
+                    if (e.Button.TryGetKeyboard(out Keys k))
                     {
-                        return textBox;
+                        customBox.RecieveSpecialInput(k);
+                        _modEntry?.Helper?.Input.Suppress(e.Button);
+                    }
+                }
+                return;
+            }
+
+            // 2. 原版 TextBox 或 GMCM 内部的文本框
+            if (subscriber is TextBox vanillaTextBox && vanillaTextBox.Selected)
+            {
+                // 支持快捷键导航：左、右、Home、End、Delete
+                if (e.Button == SButton.Left || e.Button == SButton.Right ||
+                    e.Button == SButton.Home || e.Button == SButton.End ||
+                    e.Button == SButton.Delete)
+                {
+                    if (e.Button.TryGetKeyboard(out Keys k))
+                    {
+                        if (HandleVanillaTextBoxNavigation(vanillaTextBox, k))
+                        {
+                            _modEntry?.Helper?.Input.Suppress(e.Button);
+                        }
                     }
                 }
             }
-            return null;
         }
 
-        private static FieldInfo CursorPositionField = typeof(TextBox).GetField("_cursorPosition",
-            BindingFlags.NonPublic | BindingFlags.Instance);
-
-        private static void MoveCursor(TextBox textBox, int delta)
+        private static bool HandleVanillaTextBoxNavigation(TextBox textBox, Keys key)
         {
-            if (textBox == null) return;
-            int current = (int)(CursorPositionField?.GetValue(textBox) ?? 0);
-            var newCursor = Math.Clamp(current + delta, 0, (textBox.Text ?? string.Empty).Length);
+            if (textBox == null) return false;
+            string currentText = textBox.Text ?? string.Empty;
+
+            int cursor = currentText.Length;
             if (CursorPositionField != null)
             {
                 try
                 {
-                    CursorPositionField.SetValue(textBox, newCursor);
+                    cursor = (int)CursorPositionField.GetValue(textBox);
                 }
-                catch { }
-            }
-        }
-
-        private static void MoveCursorToPrevWord(TextBox textBox)
-        {
-            if (textBox == null) return;
-            var text = textBox.Text ?? string.Empty;
-            int pos = (int)(CursorPositionField?.GetValue(textBox) ?? 0);
-            if (pos <= 0) return;
-
-            int newPos = pos - 1;
-            while (newPos > 0 && char.IsWhiteSpace(text[newPos]))
-                newPos--;
-            while (newPos > 0 && !char.IsWhiteSpace(text[newPos - 1]))
-                newPos--;
-
-            if (CursorPositionField != null)
-            {
-                try
+                catch
                 {
-                    CursorPositionField.SetValue(textBox, newPos);
+                    cursor = currentText.Length;
                 }
-                catch { }
             }
+
+            cursor = Math.Clamp(cursor, 0, currentText.Length);
+            bool ctrl = IsControlKeyDown();
+
+            switch (key)
+            {
+                case Keys.Left:
+                    if (ctrl)
+                    {
+                        // Ctrl + 左箭头：按单词左移
+                        int newPos = cursor - 1;
+                        while (newPos > 0 && char.IsWhiteSpace(currentText[newPos])) newPos--;
+                        while (newPos > 0 && !char.IsWhiteSpace(currentText[newPos - 1])) newPos--;
+                        SetTextBoxCursor(textBox, Math.Max(0, newPos));
+                    }
+                    else if (cursor > 0)
+                    {
+                        SetTextBoxCursor(textBox, cursor - 1);
+                    }
+                    return true;
+
+                case Keys.Right:
+                    if (ctrl)
+                    {
+                        // Ctrl + 右箭头：按单词右移
+                        int newPos = cursor;
+                        while (newPos < currentText.Length && !char.IsWhiteSpace(currentText[newPos])) newPos++;
+                        while (newPos < currentText.Length && char.IsWhiteSpace(currentText[newPos])) newPos++;
+                        SetTextBoxCursor(textBox, Math.Min(currentText.Length, newPos));
+                    }
+                    else if (cursor < currentText.Length)
+                    {
+                        SetTextBoxCursor(textBox, cursor + 1);
+                    }
+                    return true;
+
+                case Keys.Home:
+                    SetTextBoxCursor(textBox, 0);
+                    return true;
+
+                case Keys.End:
+                    SetTextBoxCursor(textBox, currentText.Length);
+                    return true;
+
+                case Keys.Delete:
+                    if (cursor < currentText.Length)
+                    {
+                        textBox.Text = currentText.Remove(cursor, 1);
+                        SetTextBoxCursor(textBox, cursor);
+                    }
+                    return true;
+            }
+
+            return false;
         }
 
-        private static void MoveCursorToNextWord(TextBox textBox)
+        private static void SetTextBoxCursor(TextBox textBox, int newCursor)
         {
-            if (textBox == null) return;
-            var text = textBox.Text ?? string.Empty;
-            int pos = (int)(CursorPositionField?.GetValue(textBox) ?? 0);
-            if (pos >= text.Length) return;
-
-            int newPos = pos;
-            while (newPos < text.Length && !char.IsWhiteSpace(text[newPos]))
-                newPos++;
-            while (newPos < text.Length && char.IsWhiteSpace(text[newPos]))
-                newPos++;
-
-            if (CursorPositionField != null)
+            if (CursorPositionField != null && textBox != null)
             {
                 try
                 {
-                    CursorPositionField.SetValue(textBox, Math.Clamp(newPos, 0, (textBox.Text ?? string.Empty).Length));
+                    CursorPositionField.SetValue(textBox, Math.Clamp(newCursor, 0, (textBox.Text ?? string.Empty).Length));
                 }
                 catch { }
             }
@@ -669,23 +699,6 @@ namespace ValleytalkReborn
             return state.IsKeyDown(Keys.LeftControl) || state.IsKeyDown(Keys.RightControl);
         }
 
-        /// <summary>
-        /// 获取缓存的模型名称，若缓存失效则触发后台异步刷新
-        /// </summary>
-        private static string[] GetCachedModelNames()
-        {
-            if (_cachedModelNames == null || _cachedProvider != ModEntry.Config.Provider)
-            {
-                // 🌟 仅触发后台任务，不阻塞当前 UI 线程
-                RefreshModelNamesCacheAsync();
-            }
-
-            return _cachedModelNames ?? Array.Empty<string>();
-        }
-
-        /// <summary>
-        /// 🌟 核心修复：后台异步刷新模型缓存，防止 GMCM 界面卡死
-        /// </summary>
         private static void RefreshModelNamesCacheAsync()
         {
             _lastFetchErrorMessage = null;
@@ -703,7 +716,6 @@ namespace ValleytalkReborn
                         _cachedModelNames = namesList.ToArray();
                         _lastFetchErrorMessage = null;
 
-                        // 🌟 刷新成功后，通过 SMAPI 事件切回主线程重新注册 GMCM
                         if (_modEntry != null)
                         {
                             _modEntry.Helper.Events.GameLoop.UpdateTicked += OnUpdateTickedToRefreshUi;
@@ -719,22 +731,15 @@ namespace ValleytalkReborn
             });
         }
 
-        /// <summary>
-        /// 主线程回调：确保 GMCM UI 操作在正确的线程执行
-        /// </summary>
         private static void OnUpdateTickedToRefreshUi(object sender, StardewModdingAPI.Events.UpdateTickedEventArgs e)
         {
             if (_modEntry != null)
             {
                 Register(_modEntry);
-                // 立即取消订阅，确保只执行一次
                 _modEntry.Helper.Events.GameLoop.UpdateTicked -= OnUpdateTickedToRefreshUi;
             }
         }
 
-        /// <summary>
-        /// 🌟 核心修复：异步获取模型列表，替代原有的同步 GetModelNames
-        /// </summary>
         private static async Task<string[]> GetModelNamesAsync()
         {
             if (string.IsNullOrWhiteSpace(ModEntry.Config.ApiKey))
@@ -760,7 +765,6 @@ namespace ValleytalkReborn
                 try
                 {
                     var instance = Llm.CreateInstance(provider, paramsDict);
-                    // 🌟 调用全新的异步接口方法
                     return await ((IGetModelNames)instance).GetModelNamesAsync();
                 }
                 catch (Exception ex)
@@ -777,7 +781,7 @@ namespace ValleytalkReborn
         {
             return modEntry.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
         }
- 
+
         private static void SetLlm()
         {
             if (!ModEntry.LlmMap.TryGetValue(ModEntry.Config.Provider, out var llmType))

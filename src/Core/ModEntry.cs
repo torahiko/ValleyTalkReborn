@@ -127,14 +127,21 @@ namespace ValleytalkReborn
                         { "Grok", typeof(LlmGrok) },
                         { "DeepSeek", typeof(LlmDeepSeek) },
                         { "VolcEngine", typeof(LlmVolcEngine) },
-                        { "OpenAiCompatible", typeof(LlmOAICompatible) }
+                        { "OpenAiCompatible", typeof(LlmOAICompatible) },
+
+                        // ★ 别名容错映射：防止历史配置或手滑输入引发 KeyNotFoundException 崩溃
+                        { "LlmOAICompatible", typeof(LlmOAICompatible) },
+                        { "LlmGemini", typeof(LlmGemini) },
+                        { "LlmClaude", typeof(LlmClaude) },
+                        { "LlmOpenAi", typeof(LlmOpenAi) },
+                        { "LlmDeepSeek", typeof(LlmDeepSeek) },
+                        { "LlmGrok", typeof(LlmGrok) }
                     };
                 }
 
                 return _llmMap;
             }
         }
-
         /// <summary>
         /// 存储未声明 permitAiUse 的第三方内容包 ID 集合。
         /// </summary>
@@ -270,14 +277,14 @@ namespace ValleytalkReborn
             // ★ 监听 CP 热重载（使用规范的 AssetsInvalidated 事件）
             helper.Events.Content.AssetsInvalidated += OnAssetsInvalidated;
 
-            Config = Helper.ReadConfig<ModConfig>();
+           Config = Helper.ReadConfig<ModConfig>();
 
             // ── 老版本配置自动迁移（一次性执行） ──
             if (Config.ProviderProfiles == null || Config.ProviderProfiles.Count == 0)
             {
                 Monitor.Log("[ModEntry] 检测到老版本配置，正在迁移到 ProviderProfile 架构...", LogLevel.Info);
 
-                Config.ProviderProfiles = new System.Collections.Generic.Dictionary<string, ProviderProfile>();
+                Config.ProviderProfiles = new System.Collections.Generic.Dictionary<string, ProviderProfile>(StringComparer.OrdinalIgnoreCase);
 
                 // 从私有备份字段读取旧值（通过反射）
                 var configType = typeof(ModConfig);
@@ -288,10 +295,14 @@ namespace ValleytalkReborn
                 var legacyModelName = configType.GetField("_legacyModelName",
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(Config) as string;
 
+                // ★ 这里做一次别名判断：不管是 OpenAiCompatible 还是 LlmOAICompatible 都能填上 OpenRouter 默认端点
+                bool isOpenAiCompat = string.Equals(Config.Provider, "OpenAiCompatible", StringComparison.OrdinalIgnoreCase) 
+                                   || string.Equals(Config.Provider, "LlmOAICompatible", StringComparison.OrdinalIgnoreCase);
+
                 var currentProfile = new ProviderProfile
                 {
                     ApiKey = legacyApiKey ?? string.Empty,
-                    ServerAddress = legacyServerAddress ?? (Config.Provider == "LlmOAICompatible"
+                    ServerAddress = legacyServerAddress ?? (isOpenAiCompat
                         ? "https://openrouter.ai/api/v1"
                         : string.Empty),
                     ModelName = legacyModelName ?? string.Empty,
@@ -301,6 +312,7 @@ namespace ValleytalkReborn
                 Config.ProviderProfiles[Config.Provider] = currentProfile;
                 Helper.WriteConfig(Config);
 
+                // ★ 原汁原味的完整 Log，完全保留！
                 Monitor.Log($"[ModEntry] 已迁移 Provider={Config.Provider} 的配置（ApiKey={!string.IsNullOrEmpty(currentProfile.ApiKey)}, ModelName={currentProfile.ModelName}）", LogLevel.Info);
             }
 

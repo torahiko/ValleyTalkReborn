@@ -282,14 +282,14 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
-        /// 安全地将请求体序列化为 JSON，支持 Custom Body JSON 深合并（仅对允许的上下文生效）。
+        /// 安全地将请求体序列化为 JSON，支持 Custom Body JSON 深合并（仅对允许的上下文及 LlmOAICompatible 生效）。
         /// 若 CustomBodyJson 格式畸形或合并失败，静默降级为标准序列化，不影响游戏运行。
         /// </summary>
         private static string SerializePayloadWithCustomBody(
             Dictionary<string, object> requestBody,
             bool allowCustomBody)
         {
-            if (!allowCustomBody)
+            if (!allowCustomBody || ModEntry.Config?.Provider != "LlmOAICompatible")
             {
                 return JsonConvert.SerializeObject(requestBody);
             }
@@ -306,20 +306,20 @@ namespace ValleytalkReborn
                 var customObj = JObject.Parse(customJson);
                 baseObj.Merge(customObj, new JsonMergeSettings
                 {
-                    MergeArrayHandling = MergeArrayHandling.Replace,
-                    MergeNullValueHandling = MergeNullValueHandling.Merge
+                    MergeArrayHandling = MergeArrayHandling.Union,
+                    MergeNullValueHandling = MergeNullValueHandling.Ignore
                 });
-                ModEntry.SMonitor.Log("[LlmOpenAiBase] Custom Body JSON merged successfully.", StardewModdingAPI.LogLevel.Debug);
+                ModEntry.SMonitor?.Log("[LlmOpenAiBase] Custom Body JSON merged successfully.", StardewModdingAPI.LogLevel.Debug);
                 return baseObj.ToString(Formatting.None);
             }
             catch (Newtonsoft.Json.JsonReaderException)
             {
-                ModEntry.SMonitor.Log("[LlmOpenAiBase] Failed to parse CustomBodyJson, using standard payload.", StardewModdingAPI.LogLevel.Warn);
+                ModEntry.SMonitor?.Log("[LlmOpenAiBase] Failed to parse CustomBodyJson, using standard payload.", StardewModdingAPI.LogLevel.Warn);
                 return JsonConvert.SerializeObject(requestBody);
             }
             catch (Exception ex)
             {
-                ModEntry.SMonitor.Log($"[LlmOpenAiBase] Custom Body JSON merge failed: {ex.Message}, using standard payload.", StardewModdingAPI.LogLevel.Warn);
+                ModEntry.SMonitor?.Log($"[LlmOpenAiBase] Custom Body JSON merge failed: {ex.Message}, using standard payload.", StardewModdingAPI.LogLevel.Warn);
                 return JsonConvert.SerializeObject(requestBody);
             }
         }
@@ -365,19 +365,15 @@ namespace ValleytalkReborn
             {
                 string trimmed = line.Trim();
 
-                // 跳过代码导入行
                 if (trimmed.StartsWith("import ") || trimmed.StartsWith("export "))
                     continue;
 
-                // 跳过注释行
                 if (trimmed.StartsWith("//") || trimmed.StartsWith("/*") || trimmed == "*/")
                     continue;
 
-                // 跳过空行（在找到 JSON 开头之前）
                 if (!foundJsonStart && string.IsNullOrWhiteSpace(trimmed))
                     continue;
 
-                // 检测 JSON 数组开头
                 if (trimmed.StartsWith("["))
                 {
                     foundJsonStart = true;
@@ -470,46 +466,10 @@ namespace ValleytalkReborn
                 requestBody["top_p"] = genParams.TopP;
             }
 
-            // 推理模型（deepseek-r1 非蒸馏版、早期 o1-preview 等）官方明确不支持 tools
-            // 参数，塞了会被服务端直接拒绝（常见 400 unrecognized parameter）。
-            // 复用上面已有的 reasoningModel 探测结果做排除，不再额外维护一份模型名单。
+            // 推理模型与后台环境气泡/剧本（Bark / A2A）均不挂载原生 tools
             if (includeTools && !reasoningModel && ModEntry.Config.UseNativeToolCalling)
             {
                 requestBody["tools"] = AgentToolDefinitions.GetOpenAiToolsArray();
-            }
-
-            // ── Custom Body JSON 深合并（极客模式） ──
-            // 仅对当前 Provider 为 LlmOAICompatible 时生效，避免其他服务商误用
-            if (ModEntry.Config.Provider == "LlmOAICompatible" 
-                && !string.IsNullOrWhiteSpace(ModEntry.Config.CustomBodyJson))
-            {
-                try
-                {
-                    var baseJson = JObject.FromObject(requestBody);
-                    var customJson = JObject.Parse(ModEntry.Config.CustomBodyJson);
-                    
-                    // 深度合并：customJson 覆盖 baseJson 中的同名字段
-                    baseJson.Merge(customJson, new JsonMergeSettings
-                    {
-                        MergeArrayHandling = MergeArrayHandling.Union,
-                        MergeNullValueHandling = MergeNullValueHandling.Ignore
-                    });
-                    
-                    // 将合并后的 JSON 转回 Dictionary
-                    requestBody = baseJson.ToObject<Dictionary<string, object>>();
-                    
-                    Log.Debug($"[LlmOpenAiBase] Custom Body JSON merged successfully. Final payload keys: {string.Join(", ", requestBody.Keys)}");
-                }
-                catch (JsonReaderException ex)
-                {
-                    // JSON 解析失败，安全降级：记录警告并忽略自定义参数
-                    Log.Warning($"[LlmOpenAiBase] Failed to parse CustomBodyJson, ignoring: {ex.Message}");
-                }
-                catch (Exception ex)
-                {
-                    // 其他异常（如类型转换失败），同样安全降级
-                    Log.Warning($"[LlmOpenAiBase] Error merging CustomBodyJson, ignoring: {ex.Message}");
-                }
             }
 
             return requestBody;
@@ -529,11 +489,11 @@ namespace ValleytalkReborn
             string cacheContext = "",
             bool allowRetry = true)
         {
-            // 🌟 核心拦截器：为了兼容 CF 强制流式要求
-            // 只要开启了流式设置，即使是不带打字效果的后台生成，也强制走 SSE 流式请求，
-            // 只是将回调设为 null 进行静默缓冲，等全部接收完再一起返回。
-            bool includeTools = cacheContext != "NO_TOOLS";
-            // 保持常开以兼容 CF 强制流式要求（原玩家开关已移除，行为默认启用）。
+            // 排除 Bark 和 A2A 挂载工具调用
+            bool includeTools = cacheContext != LlmContextTypes.NoTools
+                             && cacheContext != LlmContextTypes.Bark
+                             && cacheContext != LlmContextTypes.A2A;
+
             if (!AndroidHelper.IsAndroid)
             {
                 return await RunStreamingInference(
@@ -541,12 +501,13 @@ namespace ValleytalkReborn
                     gameCacheString, 
                     npcCacheString, 
                     promptString, 
-                    onToken: null, // 隐藏回调，静默接收
+                    onToken: null,
                     CancellationToken.None, 
                     responseStart, 
                     n_predict,
                     cacheContext);
             }
+
             promptString =
                 (gameCacheString ?? string.Empty) +
                 (npcCacheString ?? string.Empty) +
@@ -695,7 +656,6 @@ namespace ValleytalkReborn
                         contentString = CleanRawResponse(contentString);
                     }
 
-                    // 🌟 退化重复过滤层：检测到满屏同一片段循环时，接丢弃这次结果并按失败处理.
                     if (LooksLikeDegenerateRepetition(contentString))
                     {
                         Log.Debug("[LlmOpenAiBase] Discarded degenerate/repetitive response (non-streaming).");
@@ -761,10 +721,9 @@ namespace ValleytalkReborn
             int n_predict = 2048,
             string cacheContext = "")
         {
-            // Android 平台由于网络桥接库限制，回退为非流式
             if (AndroidHelper.IsAndroid)
             {
-                var fallback = await RunInference(systemPromptString, gameCacheString, npcCacheString, promptString, responseStart, n_predict);
+                var fallback = await RunInference(systemPromptString, gameCacheString, npcCacheString, promptString, responseStart, n_predict, cacheContext);
                 if (fallback.IsSuccess && !string.IsNullOrWhiteSpace(fallback.Text))
                 {
                     onToken?.Invoke(fallback.Text);
@@ -784,7 +743,6 @@ namespace ValleytalkReborn
                 messages.Add(new { role = "system", content = systemPromptString });
             }
 
-            // 🌟 同上：不再使用 assistant 角色预填充，改为拼进 user 消息末尾。
             if (!string.IsNullOrWhiteSpace(responseStart) &&
                 !responseStart.Trim().Equals("responseStart", StringComparison.OrdinalIgnoreCase))
             {
@@ -793,7 +751,11 @@ namespace ValleytalkReborn
 
             messages.Add(new { role = "user", content = promptString });
 
-            bool includeTools = cacheContext != "NO_TOOLS";
+            // 排除 Bark 和 A2A 挂载工具调用
+            bool includeTools = cacheContext != LlmContextTypes.NoTools
+                             && cacheContext != LlmContextTypes.Bark
+                             && cacheContext != LlmContextTypes.A2A;
+
             Dictionary<string, object> requestBody = BuildRequestBody(messages, n_predict, stream: true, includeTools, cacheContext);
             ThinkingModeStrategy strategy = DetectThinkingModeStrategy();
             ApplyThinkingModeParameters(requestBody, strategy);
@@ -854,7 +816,6 @@ namespace ValleytalkReborn
                                         var delta = choices[0]["delta"];
                                         if (delta == null) continue;
 
-                                        // 处理原生工具调用分片
                                         var toolCalls = delta["tool_calls"] as JArray;
                                         if (toolCalls != null)
                                         {
@@ -885,17 +846,11 @@ namespace ValleytalkReborn
                                             }
                                         }
 
-                                        // 捕获增量正文
                                         string textToken = delta["content"]?.ToString();
                                         if (!string.IsNullOrEmpty(textToken))
                                         {
                                             fullContentBuilder.Append(textToken);
 
-                                            // 🌟 退化重复过滤层（流式）：每收到一个分片就检测一次末尾窗口，
-                                            // 一旦发现进入 "8b8b8b..." 这类无限自我重复，立刻停止把 token
-                                            // 推给 UI（onToken），并中断整个流式读取，避免玩家看到满屏乱码
-                                            // 或对话框卡死。已经推送出去的前半段内容无法撤回，但至少能防止
-                                            // 情况进一步恶化到把整段回复堆满。
                                             if (!degenerateDetected &&
                                                 LooksLikeDegenerateRepetition(fullContentBuilder.ToString()))
                                             {
@@ -917,15 +872,11 @@ namespace ValleytalkReborn
 
                             if (degenerateDetected)
                             {
-                                // 按失败处理返回，不把已收集到的垃圾文本交给上层。
-                                // 调用方（RunInference 的静默流式分支）会把这当作一次失败请求，
-                                // 走既有重试逻辑，而不是把 "8b8b8b..." 显示出来。
                                 return new LlmResponse("Discarded degenerate/repetitive streaming output.", 500);
                             }
 
                             string completeText = fullContentBuilder.ToString();
 
-                            // 如果有工具调用产生，组装并返回
                             if (toolCallsDict.Count > 0)
                             {
                                 var toolResp = new LlmResponse(completeText, true);
@@ -958,22 +909,13 @@ namespace ValleytalkReborn
 
         #endregion
 
-        /// <summary>
-        /// 检测退化重复输出（如满屏 "8b8b8b8b..." 或其他 token 的无限自我重复）。
-        /// 原理：截取字符串结尾一段窗口，看是否由极少数几个短片段反复拼接而成。
-        /// 正常对话文本（含中文、标点、括号动作描写等）不会触发此规则。
-        /// </summary>
         private bool LooksLikeDegenerateRepetition(string text, int minLength = 60)
         {
             if (string.IsNullOrWhiteSpace(text) || text.Length < minLength) return false;
 
-            // 只检查末尾一段窗口即可：退化循环一旦开始，会持续到生成截断为止，
-            // 不需要扫描整个大段文本。
             int windowSize = Math.Min(text.Length, 400);
             string window = text.Substring(text.Length - windowSize);
 
-            // 尝试用长度 1~4 的重复单元去匹配窗口末尾，如果发现一个很短的单元
-            // 反复出现且几乎占满整个窗口，判定为退化重复。
             for (int unitLen = 1; unitLen <= 4; unitLen++)
             {
                 if (window.Length < unitLen * 8) continue;
@@ -989,8 +931,6 @@ namespace ValleytalkReborn
                     pos -= unitLen;
                 }
 
-                // 同一个 1~4 字符的片段，在末尾窗口里连续重复超过 20 次，
-                // 基本可以确定是退化循环而非正常文本（正常台词里不会有这种模式）。
                 if (repeatCount >= 20)
                 {
                     return true;
