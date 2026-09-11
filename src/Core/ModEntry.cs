@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using HarmonyLib;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -248,6 +248,7 @@ namespace ValleytalkReborn
             MemoryManager.Instance.Initialize(helper);
             WorldMemoryManager.Instance.Initialize(helper);
             MovementManager.Instance.Initialize(helper);
+            RelationshipMilestoneManager.Instance.Initialize(Helper, Monitor);
 
             // Subscribe to game lifecycle events（DialogueCoordinator 将订阅 GameLoop 事件）
             helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
@@ -787,6 +788,15 @@ namespace ValleytalkReborn
                 catch (Exception ex)
                 {
                     Log.Error($"[ValleyTalkReborn] Error cleaning CompanionScheduleManager: {ex.Message}");
+                }
+
+                try
+                {
+                    RelationshipMilestoneManager.Instance.Cleanup();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("[ValleyTalkReborn] Error cleaning RelationshipMilestoneManager: " + ex.Message);
                 }
 
                 // ★ 清理 DateManager（取消事件订阅并重置状态）

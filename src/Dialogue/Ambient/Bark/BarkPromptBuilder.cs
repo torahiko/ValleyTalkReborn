@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
+using StardewModdingAPI;
 using StardewValley;
 
 namespace ValleytalkReborn;
@@ -270,14 +271,23 @@ Format example below (random content, unrelated to actual scene, don't copy topi
             {
                 sb.Append(" 陪着玩家走着。");
             }
-            else if (CompanionScheduleManager.Instance?.IsStayHomeActive(npc.Name) == true)
+            else
             {
                 string poiCtx = CompanionScheduleManager.Instance?.GetActivePoiContext(npc.Name);
                 if (!string.IsNullOrEmpty(poiCtx))
                 {
                     string firstSentence = poiCtx.Split(new[]{'。','.'}, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
                     if (!string.IsNullOrEmpty(firstSentence))
-                        sb.Append($" {NpcNameLocalizer.LocalizeNamesInText(firstSentence)}。");
+                    {
+                        if (!ContainsCjkCharacter(firstSentence))
+                        {
+                            ModEntry.SMonitor?.Log($"[BarkPromptBuilder] POI context 为非中文文本，zh 客户端跳过注入: {firstSentence}", LogLevel.Trace);
+                        }
+                        else
+                        {
+                            sb.Append($" {NpcNameLocalizer.LocalizeNamesInText(firstSentence)}。");
+                        }
+                    }
                 }
             }
         }
@@ -296,7 +306,7 @@ Format example below (random content, unrelated to actual scene, don't copy topi
             {
                 sb.Append(" Walking with the player.");
             }
-            else if (CompanionScheduleManager.Instance?.IsStayHomeActive(npc.Name) == true)
+            else
             {
                 string poiCtx = CompanionScheduleManager.Instance?.GetActivePoiContext(npc.Name);
                 if (!string.IsNullOrEmpty(poiCtx))
@@ -309,7 +319,84 @@ Format example below (random content, unrelated to actual scene, don't copy topi
             }
         }
 
+        // 室内底色：常驻天气感知 + 周围物件（不参与 Router 竞争，仅作[此刻]背景）
+        if (isIndoor)
+        {
+            sb.Append(BuildIndoorWeatherSentence(isZh));
+            string objs = BuildNearbyObjectsSentence(npc, isZh);
+            if (objs != null) sb.Append(objs);
+        }
+
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// 构建室内常驻天气句（优先级：雪 > 雷 > 雨 > 风 > 晴）。
+    /// 永远非 null 非空，以句号结尾；仅由 BuildAmbientScene 在室内时消费。
+    /// </summary>
+    private static string BuildIndoorWeatherSentence(bool isZh)
+    {
+        if (Game1.IsSnowingHere())      return isZh ? "屋外正下着雪。"   : "It's snowing outside.";
+        if (Game1.IsLightningHere())    return isZh ? "屋外雷雨大作。"   : "A thunderstorm is raging outside.";
+        if (Game1.IsRainingHere())      return isZh ? "屋外正下着雨。"   : "It's raining outside.";
+        if (Game1.isDebrisWeather)      return isZh ? "屋外正刮着风。"   : "It's windy outside.";
+        return isZh ? "屋外是个大晴天。" : "Clear skies outside.";
+    }
+
+    /// <summary>
+    /// 构建室内周围物件句。无实体时返回 null；否则一句，以句号结尾。
+    /// 玩家名通过 excludeNames 排除，绝不输出。
+    /// </summary>
+    private static string BuildNearbyObjectsSentence(NPC npc, bool isZh)
+    {
+        if (npc?.currentLocation == null) return null;
+
+        var exclude = new List<string>();
+        if (Game1.player != null)
+        {
+            if (!string.IsNullOrEmpty(Game1.player.displayName))
+                exclude.Add(Game1.player.displayName);
+            if (!string.IsNullOrEmpty(Game1.player.Name))
+                exclude.Add(Game1.player.Name);
+        }
+
+        List<string> nearby;
+        try
+        {
+            nearby = SceneContextBuilder.BuildNearbyList(npc, radiusTiles: 4, maxItems: 3, excludeNames: exclude);
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log($"[BarkPromptBuilder] NearbyList 读取失败，跳过周围物件行: {ex.Message}", LogLevel.Trace);
+            return null;
+        }
+
+        if (nearby == null) return null;
+
+        var names = nearby
+            .Where(l => !string.IsNullOrWhiteSpace(l))
+            .Select(l => l.Trim())
+            .Take(3)
+            .ToList();
+
+        if (names.Count == 0) return null;
+
+        string joined = string.Join(isZh ? "、" : ", ", names);
+        return isZh ? $"你周围有：{joined}。" : $"Around you: {joined}.";
+    }
+
+    /// <summary>
+    /// 判定文本是否包含 CJK 统一表意文字（主平面 一-鿿）。
+    /// 用于 zh 客户端守卫：POI 上下文若不含中文语料则跳过注入，避免英文括注污染中文 Bark。
+    /// </summary>
+    private static bool ContainsCjkCharacter(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return false;
+        foreach (char c in text)
+        {
+            if (c >= '一' && c <= '鿿') return true;
+        }
+        return false;
     }
 
     /// <summary>

@@ -38,6 +38,7 @@
     </None>
     <None Remove="Actions\Movement\MovementManager.cs.new" />
     <None Remove="Actions\Movement\MovementManager.cs.bak" />
+    <None Remove="Dialogue\Ambient\Bark\BarkPromptBuilder.cs.bak" />
   </ItemGroup>
 
   <ItemGroup>

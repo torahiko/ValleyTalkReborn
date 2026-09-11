@@ -172,6 +172,12 @@ public class Prompts
     /// </summary>
     public string PendingEchoBlock { get; set; }
 
+    /// <summary>
+    /// 关系里程碑与修罗场冲突块（结婚倒计时、离婚申请日、花舞节修罗场）。
+    /// 在 CorePrompt 求值前由 LlmDialogueService 赋值。
+    /// </summary>
+    public string PendingMilestoneBlock { get; set; }
+
     private string _command;
     public string Command { get => _command ??= GetCommand(); internal set => _command = value; }
 
@@ -493,6 +499,13 @@ public class Prompts
                 prompt.AppendLine();
             }
 
+            // ── 💍 关系里程碑与冲突（结婚倒计时 / 离婚申请日 / 花舞节伴侣与吃醋） ──
+            if (!string.IsNullOrEmpty(PendingMilestoneBlock))
+            {
+                prompt.AppendLine(PendingMilestoneBlock);
+                prompt.AppendLine();
+            }
+
             // ── 🔧 补齐动态注入（与 date context 分支保持一致） ──
             if (!string.IsNullOrEmpty(PendingEvolvedTraitsBlock))
                 prompt.AppendLine("\n" + PendingEvolvedTraitsBlock);
@@ -567,6 +580,13 @@ public class Prompts
                 prompt.AppendLine();
             }
 
+            // ── 💍 关系里程碑与冲突（结婚倒计时 / 离婚申请日 / 花舞节伴侣与吃醋） ──
+            if (!string.IsNullOrEmpty(PendingMilestoneBlock))
+            {
+                prompt.AppendLine(PendingMilestoneBlock);
+                prompt.AppendLine();
+            }
+
             GetCurrentConversation(prompt);
             InjectSessionContinuity(prompt);
             InjectPendingTopic(prompt);
@@ -584,7 +604,7 @@ public class Prompts
         }
 
         // ── simple greeting fast pass ──
-        if (flags?.IsSimpleGreeting == true && flags?.IsMovementRequested != true)
+        if (flags?.IsSimpleGreeting == true && flags?.IsMovementRequested != true && string.IsNullOrEmpty(PendingMilestoneBlock))
         {
             prompt.AppendLine("<greeting_fast_pass>");
             // 修复：删除"随和、自然且简练"
@@ -748,6 +768,13 @@ public class Prompts
             prompt.AppendLine();
         }
 
+        // ── 💍 关系里程碑与冲突（结婚倒计时 / 离婚申请日 / 花舞节伴侣与吃醋） ──
+        if (!string.IsNullOrEmpty(PendingMilestoneBlock))
+        {
+            prompt.AppendLine(PendingMilestoneBlock);
+            prompt.AppendLine();
+        }
+
         // ── 🎯 特质与现场目击是环境背景，必须先于对话历史注入（防注意力劫持） ──
         if (!string.IsNullOrEmpty(PendingEvolvedTraitsBlock))
             prompt.AppendLine(PendingEvolvedTraitsBlock + "\n");
@@ -843,6 +870,7 @@ public class Prompts
             sb.AppendLine($"║   PendingEavesdropBlock: {(!string.IsNullOrEmpty(PendingEavesdropBlock) ? "✓ Injected" : "✗ Empty")}");
             sb.AppendLine($"║   PendingSpouseWaitingBlock: {(!string.IsNullOrEmpty(PendingSpouseWaitingBlock) ? "✓ Injected" : "✗ Empty")}");
             sb.AppendLine($"║   PendingEchoBlock: {(!string.IsNullOrEmpty(PendingEchoBlock) ? "✓ Injected" : "✗ Empty")}");
+            sb.AppendLine($"║   PendingMilestoneBlock: {(!string.IsNullOrEmpty(PendingMilestoneBlock) ? "✓ Injected" : "✗ Empty")}");
 
             // ── 2. 拓扑结构验证 ──
             // 探测关键字兼容 i18n 实际渲染的标题（zh: 对话历史记录 / en: Conversation History）
@@ -1210,7 +1238,7 @@ public class Prompts
             var relationshipWord = RelationshipWord(Context.MaleFarmer, npcIsMale);
             prompt.AppendLine(Util.GetString(Character, "specialRelationshipDating", new { Name = Name, relationshipPublic = relationshipPublic, relationshipWord = relationshipWord }));
         }
-        if (friendship.IsEngaged())
+        if (friendship.IsEngaged() && string.IsNullOrEmpty(PendingMilestoneBlock))
         {
             var daysToWedding = friendship.CountdownToWedding;
             prompt.AppendLine(Util.GetString(Character, "specialRelationshipEngaged", new { Name = Name, daysToWedding = daysToWedding }));

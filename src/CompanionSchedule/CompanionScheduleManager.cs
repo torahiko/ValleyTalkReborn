@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
@@ -107,6 +107,13 @@ namespace ValleytalkReborn
         private readonly Dictionary<string, SpouseScheduleState> _states
             = new(StringComparer.OrdinalIgnoreCase);
 
+
+        /// <summary>
+        /// 当前客户端是否为中文环境。写入时定语言——语言切换必经回标题→读档，
+        /// 而 ResetAllStates 在 SaveLoaded 会清空全部状态，不存在跨语言残留。
+        /// </summary>
+        private static bool IsZhClient =>
+            LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
         private CompanionScheduleManager() { }
 
         // ──────────────────────────────────────────────────────
@@ -134,7 +141,9 @@ namespace ValleytalkReborn
             if (!_states.TryGetValue(npcName, out var s)) return "";
             return string.IsNullOrWhiteSpace(s.ActivePoiDescription)
                 ? ""
-                : $"[Right now you are: {s.ActivePoiDescription}]";
+                : IsZhClient
+                    ? $"[你现在：{s.ActivePoiDescription}]"
+                    : $"[Right now you are: {s.ActivePoiDescription}]";
         }
 
         /// <summary>
@@ -154,27 +163,39 @@ namespace ValleytalkReborn
             state.ActivePoiDescription = newPhase switch
             {
                 ScheduleContextPhase.AllDayStayHome =>
-                    "relaxing at home today, spending a quiet and peaceful day around the farmhouse",
+                    IsZhClient
+                        ? "今天待在家里放松，在农舍周围度过安静平和的一天"
+                        : "relaxing at home today, spending a quiet and peaceful day around the farmhouse",
 
                 ScheduleContextPhase.TravelingToPoi =>
-                    $"on the way to {extraContext.Replace('_', ' ')}, walking through the valley",
+                    IsZhClient
+                        ? $"正在前往{extraContext.Replace('_', ' ')}的路上，穿过山谷"
+                        : $"on the way to {extraContext.Replace('_', ' ')}, walking through the valley",
 
                 ScheduleContextPhase.ActiveAtPoi =>
                     extraContext,
 
                 ScheduleContextPhase.ReturningHome =>
                     string.IsNullOrWhiteSpace(extraContext)
-                        ? "heading back home to the farm"
-                        : $"heading back home to the farm after spending time at {extraContext.Replace('_', ' ')}",
+                        ? (IsZhClient ? "正在回家的路上" : "heading back home to the farm")
+                        : (IsZhClient
+                            ? $"在{extraContext.Replace('_', ' ')}度过时光后正在回家的路上"
+                            : $"heading back home to the farm after spending time at {extraContext.Replace('_', ' ')}"),
 
                 ScheduleContextPhase.ArrivedHomeEarly =>
-                    "back at the farmhouse, unwinding and resting after going out earlier today",
+                    IsZhClient
+                        ? "已经回到农舍，在今天早些时候外出后放松休息"
+                        : "back at the farmhouse, unwinding and resting after going out earlier today",
 
                 ScheduleContextPhase.WaitingForPlayer =>
-                    "spending time with you before continuing with the day's routine",
+                    IsZhClient
+                        ? "在继续今天的日程之前与你共度时光"
+                        : "spending time with you before continuing with the day's routine",
 
                 ScheduleContextPhase.FollowingPlayer =>
-                    "accompanying you and spending time together",
+                    IsZhClient
+                        ? "陪伴着你，一起共度时光"
+                        : "accompanying you and spending time together",
 
                 _ => ""
             };

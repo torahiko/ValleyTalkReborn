@@ -140,6 +140,9 @@ public class LlmDialogueService
                 character.Name,
                 character.StardewNpc?.currentLocation?.Name);
 
+            // S4.7: 关系里程碑与修罗场（结婚倒计时 / 离婚日 / 花舞节伴侣与吃醋）
+            prompts.PendingMilestoneBlock = RelationshipMilestoneManager.Instance.BuildMilestoneBlock(character);
+
             // ── 终局出口去重：优先保留下方 CorePrompt 的即时条目，剔除上方 SystemPrompt 的冗余条目 ──
             PromptDeduplicator.DeduplicatePrompts(prompts);
 
@@ -478,6 +481,10 @@ public class LlmDialogueService
             SpouseWaitingEvent.ConfirmSpouseDialogueConsumed(character.Name);
         if (!string.IsNullOrEmpty(prompts.PendingEchoBlock))
             ImmediateEchoStore.ConsumeEcho(character.Name);
+
+        // 💍 确认本轮已表达过关系里程碑/吃醋，今日后续交谈恢复常态陪伴
+        if (!string.IsNullOrEmpty(prompts.PendingMilestoneBlock))
+            RelationshipMilestoneManager.Instance.ConfirmConsumed(character.Name);
     }
 
     /// <summary>

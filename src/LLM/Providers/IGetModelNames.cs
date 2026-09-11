@@ -5,4 +5,4 @@ namespace ValleytalkReborn;
 internal interface IGetModelNames
 {
     Task<string[]> GetModelNamesAsync();
-} 
+}  

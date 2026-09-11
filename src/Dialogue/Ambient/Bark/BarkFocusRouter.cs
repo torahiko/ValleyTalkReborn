@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using StardewModdingAPI;
 using StardewValley;
 
 namespace ValleytalkReborn;
@@ -27,6 +28,8 @@ internal sealed class BarkFocusDecision
 /// </summary>
 internal static class BarkFocusRouter
 {
+    private const double HeldItemGateProbability = 0.30;
+    private const float  HeldItemPerceptionWeight = 1.0f;
     private static readonly Random _rng = new Random();
 
     /// <summary>
@@ -259,17 +262,27 @@ internal static class BarkFocusRouter
             var entry = perceptions[0];
             if (!string.IsNullOrWhiteSpace(entry?.Template))
             {
-                string cleaned = FormatPerceptionForBark(entry.Template, isZh);
-                if (!string.IsNullOrWhiteSpace(cleaned))
+                bool isHeldItem = string.Equals(entry?.Key, "PlayerActiveItem", StringComparison.Ordinal);
+                if (isHeldItem && _rng.NextDouble() >= HeldItemGateProbability)
                 {
-                    list.Add(new Candidate(2.5f * fatigueMult, new BarkFocusDecision
+                    ModEntry.SMonitor?.Log("[BarkFocusRouter] 手持物品感知未过频率闸门，本轮跳过", LogLevel.Trace);
+                    // 不 return，让代码继续向下执行 2b 和 2c
+                }
+                else
+                {
+                    float weight = isHeldItem ? HeldItemPerceptionWeight : 2.5f;
+                    string cleaned = FormatPerceptionForBark(entry.Template, isZh);
+                    if (!string.IsNullOrWhiteSpace(cleaned))
                     {
-                        FocusType           = BarkFocusType.Interactive,
-                        InjectedContextLine = cleaned,
-                        AllowThinkingLens   = false,
-                        SensoryItemKey      = null,
-                        MatchedPerception   = entry
-                    }));
+                        list.Add(new Candidate(weight * fatigueMult, new BarkFocusDecision
+                        {
+                            FocusType           = BarkFocusType.Interactive,
+                            InjectedContextLine = cleaned,
+                            AllowThinkingLens   = false,
+                            SensoryItemKey      = null,
+                            MatchedPerception   = entry
+                        }));
+                    }
                 }
             }
         }
@@ -431,21 +444,37 @@ internal static class BarkFocusRouter
             items.Add(new SensoryItem("time_night", nightDesc));
         }
 
-        // 室内：最多 1 件突出物件（SceneContextBuilder，截断为 1 件）
+        // 室内：最多 1 件突出物件（直取实体列表，修复原 BuildSceneBlock 解析取到地点行的缺陷）
         if (isIndoor)
         {
-            string sceneBlock = SceneContextBuilder.BuildSceneBlock(npc, radiusTiles: 4, maxItems: 1);
-            if (!string.IsNullOrWhiteSpace(sceneBlock))
+            string item = null;
+
+            var exclude = new List<string>();
+            if (Game1.player != null)
             {
-                var lines = sceneBlock.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                // 跳过标题行，取第一个实际物件行
-                string objectLine = lines.Skip(1).FirstOrDefault(l => !string.IsNullOrWhiteSpace(l));
-                if (!string.IsNullOrEmpty(objectLine))
-                {
-                    string objectKey = "object_" + objectLine.Trim().ToLowerInvariant().Replace(" ", "_");
-                    if (objectKey.Length > 40) objectKey = objectKey.Substring(0, 40);
-                    items.Add(new SensoryItem(objectKey, objectLine.Trim()));
-                }
+                if (!string.IsNullOrEmpty(Game1.player.displayName))
+                    exclude.Add(Game1.player.displayName);
+                if (!string.IsNullOrEmpty(Game1.player.Name))
+                    exclude.Add(Game1.player.Name);
+            }
+
+            try
+            {
+                var names = SceneContextBuilder.BuildNearbyList(npc, radiusTiles: 4, maxItems: 1, excludeNames: exclude);
+                item = names?.FirstOrDefault(l => !string.IsNullOrWhiteSpace(l))?.Trim();
+            }
+            catch (Exception ex)
+            {
+                ModEntry.SMonitor?.Log($"[BarkFocusRouter] NearbyList 读取失败，跳过室内物件触点: {ex.Message}", LogLevel.Trace);
+                item = null;
+            }
+
+            if (!string.IsNullOrEmpty(item))
+            {
+                string objectKey = "object_" + item.ToLowerInvariant().Replace(" ", "_");
+                if (objectKey.Length > 40) objectKey = objectKey.Substring(0, 40);
+                string description = isZh ? $"你的目光落在{item}上。" : $"Your gaze lands on the {item} nearby.";
+                items.Add(new SensoryItem(objectKey, description));
             }
         }
 
