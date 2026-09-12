@@ -60,9 +60,7 @@ namespace ValleytalkReborn
         public bool                    IsStayHome           { get; set; } = false;
         public bool                    IsReturningHome      { get; set; } = false;
         public bool                    WaitingForPlayerToLeave { get; set; } = false;
-        /// <summary>true=等待出发去POI，false=等待回家。由 TickWaitForPlayerLeave 区分行为。</summary>
-        public bool                    WaitingToDepart      { get; set; } = false;
-        /// <summary>明确区分"等待出发"和"等待回家"，替代 WaitingToDepart。</summary>
+        /// <summary>明确区分"等待出发"和"等待回家"。</summary>
         public PlayerLeaveWaitReason   LeaveWaitReason      { get; set; } = PlayerLeaveWaitReason.None;
         public Action                  OnFarmPoiArrived     { get; set; } = null;
         public string                  ActivePoiDescription { get; set; } = "";
@@ -490,7 +488,7 @@ namespace ValleytalkReborn
                     continue;
                 }
 
-                int baseSlot = 800 + slotIndex * 100;
+                int baseSlot = Math.Max(800 + slotIndex * 100, Game1.timeOfDay);
                 slotIndex++;
                 BuildSchedule(npc, state, baseSlot, usedDepartureTimes);
                 state.Dispatched = true;
@@ -535,16 +533,26 @@ namespace ValleytalkReborn
             if (state.IsReturningHome) return;
 
             if (IsBlockedByDate(npc)) return;
+
+            // 修复 A2：跟随期间 CSM 完全放手
+            if (MovementManager.Instance.IsFollowing(npc)) return;
+            // 修复 A1：由 TickWaitForPlayerLeave 收口
+            if (state.WaitingForPlayerToLeave) return;
+            // 现状保留；定位为第三方 journey 防线
+            // （配偶 POI 链路不注册 journey，此守卫对它是 no-op）
             if (MultiMapNavigator.Instance.IsNavigating(npc)) return;
+            // 修复 A3 + 保护 A11：NPC 非空闲时不得下发任何新指令
+            // （执行条目与回家一并保护），防止 GotoTracker.Start
+            // 对旧 goto 的静默丢弃断链。逾期条目/回家判定由
+            // 下一个 TimeChanged 重试，EndTime 抵达时结算设计天然容忍迟到。
+            if (MovementManager.Instance.IsNpcMoving(npc) || npc.controller != null) return;
 
             ScheduledPoiEntry next;
             ScheduledPoiEntry currentActive;
             bool allExecuted;
             lock (state.Queue)
             {
-                next = state.Queue.FirstOrDefault(e => !e.Executed && e.DepartureTime <= currentTime);
-                if (next != null) next.Executed = true;
-
+                next          = state.Queue.FirstOrDefault(e => !e.Executed && e.DepartureTime <= currentTime);
                 // 队列按 DepartureTime 升序排列，"最后一个已执行"就是当前正在进行/刚出发的那一站。
                 currentActive = state.Queue.LastOrDefault(e => e.Executed);
                 allExecuted   = state.Queue.Count > 0 && state.Queue.All(e => e.Executed);
@@ -552,6 +560,17 @@ namespace ValleytalkReborn
 
             if (next != null)
             {
+                // 修复 A5：null Asset 防无限重选、防 EndTime 恒 null 卡死到 2200
+                if (next.Asset == null)
+                {
+                    lock (state.Queue) { next.Executed = true; }
+                    ModEntry.SMonitor?.Log(
+                        $"[CSM] {npc.Name}: entry '{next.PoiId}' has null Asset — skipped.",
+                        LogLevel.Warn);
+                    return;
+                }
+
+                lock (state.Queue) { next.Executed = true; }
                 SpouseDepartureRouter.ExecutePoiEntry(npc, next, state, TransitionScheduleContext);
                 return;
             }
@@ -662,6 +681,7 @@ namespace ValleytalkReborn
 
             // 重置出门标志，防止回家后 TickWander 重新触发出门
             state.IsDepartingToFarm = false;
+            state.OnFarmPoiArrived  = null;
 
             TryReturnHome(npc, state);
         }
@@ -676,7 +696,6 @@ namespace ValleytalkReborn
                 if (!state.WaitingForPlayerToLeave)
                 {
                     state.WaitingForPlayerToLeave = true;
-                    state.WaitingToDepart         = false;
                     state.PlayerLeaveWaitTicks    = 0;
                     state.LeaveWaitReason         = PlayerLeaveWaitReason.ReturnHome;
                     TransitionScheduleContext(state, ScheduleContextPhase.WaitingForPlayer);
@@ -713,9 +732,9 @@ namespace ValleytalkReborn
             if (npc == null || state.IsReturningHome)
                 return;
 
+            state.OnFarmPoiArrived        = null;
             state.IsReturningHome         = true;
             state.WaitingForPlayerToLeave = false;
-            state.WaitingToDepart         = false;
             state.LeaveWaitReason         = PlayerLeaveWaitReason.None;
             TransitionScheduleContext(state, ScheduleContextPhase.ReturningHome, state.PreviousPoiId);
 
@@ -826,7 +845,6 @@ namespace ValleytalkReborn
                     lock (state.Queue) { state.Queue.Clear(); }
                     state.IsReturningHome         = false;
                     state.WaitingForPlayerToLeave = false;
-                    state.WaitingToDepart         = false;
                     state.OnFarmPoiArrived        = null;
                     TransitionScheduleContext(state, ScheduleContextPhase.None);
                     state.IsStayHome              = false;
@@ -842,7 +860,6 @@ namespace ValleytalkReborn
             lock (s.Queue) { s.Queue.Clear(); }
             s.IsReturningHome         = false;
             s.WaitingForPlayerToLeave = false;
-            s.WaitingToDepart         = false;
             s.OnFarmPoiArrived        = null;
             TransitionScheduleContext(s, ScheduleContextPhase.None);
             s.IsStayHome              = false;
@@ -873,7 +890,6 @@ namespace ValleytalkReborn
             state.IsStayHome              = true;
             state.IsReturningHome         = false;
             state.WaitingForPlayerToLeave = false;
-            state.WaitingToDepart         = false;
             state.OnFarmPoiArrived        = null;
             TransitionScheduleContext(state, ScheduleContextPhase.AllDayStayHome);
             state.WanderCooldownTicks     = 60;
@@ -907,7 +923,6 @@ namespace ValleytalkReborn
             state.IsStayHome              = false;
             state.IsReturningHome         = false;
             state.WaitingForPlayerToLeave = false;
-            state.WaitingToDepart         = false;
             state.OnFarmPoiArrived        = null;
             TransitionScheduleContext(state, ScheduleContextPhase.FollowingPlayer);
             state.Dispatched              = true;
@@ -1031,7 +1046,6 @@ namespace ValleytalkReborn
                 state.IsStayHome              = false;
                 state.IsReturningHome         = false;
                 state.WaitingForPlayerToLeave = false;
-                state.WaitingToDepart         = false;
                 state.OnFarmPoiArrived        = null;
                 state.ActivePoiDescription    = "";
 
@@ -1072,7 +1086,6 @@ namespace ValleytalkReborn
                 lock (state.Queue) { state.Queue.Clear(); }
                 state.IsReturningHome         = false;
                 state.WaitingForPlayerToLeave = false;
-                state.WaitingToDepart         = false;
                 state.OnFarmPoiArrived        = null;
 
                 TryReturnHome(npc, state);

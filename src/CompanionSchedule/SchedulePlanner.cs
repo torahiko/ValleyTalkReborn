@@ -80,7 +80,9 @@ namespace ValleytalkReborn
             var recentList = historyQueue?.ToList() ?? new List<string>();
 
             int currentSlot = baseSlot;
-            int pickCount = Math.Min(Game1.random.Next(1, 4), legalPois.Count);
+            int desired    = Game1.random.Next(2, 4);            // 偏好 2–3 个节点
+            int poolFloor  = Math.Min(2, legalPois.Count);       // 池级保底：单 POI 池自动降为 1
+            int pickCount  = Math.Max(poolFloor, Math.Min(desired, legalPois.Count));
             var entries = new List<ScheduledPoiEntry>();
             var remainingPois = new Dictionary<string, PoiAsset>(legalPois, StringComparer.OrdinalIgnoreCase);
 
@@ -155,6 +157,9 @@ namespace ValleytalkReborn
                 currentSlot = MovementPathfinding.SafeAddGameTime(depart, stay + Game1.random.Next(2, 5) * 10);
             }
 
+            ModEntry.SMonitor?.Log(
+                $"[Planner] {npcName}: planned {entries.Count}/{pickCount} entries (pool={legalPois.Count}, baseSlot={currentSlot})",
+                LogLevel.Debug);
             entries.Sort((a, b) => a.DepartureTime.CompareTo(b.DepartureTime));
             return entries;
         }

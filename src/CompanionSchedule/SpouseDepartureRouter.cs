@@ -39,6 +39,7 @@ namespace ValleytalkReborn
             Action<SpouseScheduleState, ScheduleContextPhase, string> transitionContext)
         {
             if (npc == null || entry?.Asset == null) return;
+            state.OnFarmPoiArrived = null;
 
             var asset = entry.Asset;
             var target = new Vector2(asset.TargetTile?.X ?? 0, asset.TargetTile?.Y ?? 0);
