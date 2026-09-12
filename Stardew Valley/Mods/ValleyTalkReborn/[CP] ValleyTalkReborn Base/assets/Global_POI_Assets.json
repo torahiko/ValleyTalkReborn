@@ -2,8 +2,8 @@
   "Farm_Morning": {
     "MapName": "Farm",
     "TargetTile": {
-      "X": 0,
-      "Y": 0
+      "X": 58,
+      "Y": 16
     },
     "Conditions": {
       "AllowedSeasons": [
@@ -31,8 +31,8 @@
   "Farm_Afternoon": {
     "MapName": "Farm",
     "TargetTile": {
-      "X": 0,
-      "Y": 0
+      "X": 60,
+      "Y": 20
     },
     "Conditions": {
       "AllowedSeasons": [
@@ -60,8 +60,8 @@
   "Farm_Evening": {
     "MapName": "Farm",
     "TargetTile": {
-      "X": 0,
-      "Y": 0
+      "X": 65,
+      "Y": 16
     },
     "Conditions": {
       "AllowedSeasons": [
@@ -87,10 +87,10 @@
     "DescriptionForLLM_Zh": "在农舍温暖的门廊边歇着，看暮色慢慢笼罩山谷"
   },
   "Farm_Rainy": {
-    "MapName": "Farm",
+    "MapName": "FarmHouse",
     "TargetTile": {
-      "X": 0,
-      "Y": 0
+      "X": 9,
+      "Y": 11
     },
     "Conditions": {
       "AllowedSeasons": [

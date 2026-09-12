@@ -221,6 +221,23 @@ namespace ValleytalkReborn.Movement
 
         public int ActiveCount => _activeGotos.Count;
 
+        /// <summary>
+        /// 查询是否有其他 NPC 的 goto 目标与给定 tile 争用（距离 ≤1 格）。
+        /// 只读遍历，不触发回调，不修改字典。
+        /// </summary>
+        public bool IsTileTargetedByOther(Vector2 tile, GameLocation loc, string excludeNpcName)
+        {
+            foreach (var ctx in _activeGotos.Values)
+            {
+                if (ctx.Npc != null
+                    && ctx.Npc.Name != excludeNpcName
+                    && ctx.ExpectedLocation == loc
+                    && Vector2.Distance(ctx.Target, tile) <= 1f)
+                    return true;
+            }
+            return false;
+        }
+
         public NPC GetCurrentGotoNpc(string npcName)
             => _activeGotos.TryGetValue(npcName, out var ctx) ? ctx.Npc : null;
 
@@ -284,4 +301,3 @@ namespace ValleytalkReborn.Movement
         }
     }
 }
-

@@ -158,7 +158,7 @@ namespace ValleytalkReborn
             }
 
             ModEntry.SMonitor?.Log(
-                $"[Planner] {npcName}: planned {entries.Count}/{pickCount} entries (pool={legalPois.Count}, baseSlot={currentSlot})",
+                $"[Planner] {npcName}: planned {entries.Count}/{pickCount} entries (pool={legalPois.Count}, cursor={currentSlot})",
                 LogLevel.Debug);
             entries.Sort((a, b) => a.DepartureTime.CompareTo(b.DepartureTime));
             return entries;

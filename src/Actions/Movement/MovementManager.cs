@@ -93,6 +93,9 @@ namespace ValleytalkReborn
 
         public bool IsNpcMoving(NPC npc) => _coordinator.IsNpcMoving(npc);
 
+        public bool IsTileTargetedByOtherNpc(Vector2 tile, GameLocation loc, NPC exclude)
+            => _coordinator.IsTileTargetedByOtherNpc(tile, loc, exclude);
+
         public void QueueMovement(NPC npc, string actionType, bool skipDialogueWait = false)
             => _coordinator.QueueMovement(npc, actionType, skipDialogueWait);
 

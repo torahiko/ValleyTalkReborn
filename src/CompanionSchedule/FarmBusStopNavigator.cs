@@ -126,6 +126,68 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
+        /// 判断目标 tile 是否已被其他 NPC 占据或锁定。
+        /// 依次检查：地图上的其他 NPC、玩家、其他 NPC 的 goto 目标。
+        /// </summary>
+        private static bool IsTileContended(GameLocation loc, Vector2 tile, NPC npc)
+        {
+            if (loc == null) return false;
+
+            // a) 地图上其他 NPC 占据
+            foreach (var c in loc.characters)
+            {
+                if (c != null && c != npc && c.Tile == tile)
+                    return true;
+            }
+
+            // b) 玩家占据
+            if (Game1.player?.currentLocation == loc && Game1.player.Tile == tile)
+                return true;
+
+            // c) 其他 NPC 的 goto 目标锁定
+            if (MovementManager.Instance.IsTileTargetedByOtherNpc(tile, loc, npc))
+                return true;
+
+            return false;
+        }
+
+        /// <summary>
+        /// 在 idealTile 被争用时，向周围搜索无争用的可行走替代格。
+        /// 确定性算法：环 1→2 行优先扫描，永不失败（最差返回 idealTile）。
+        /// </summary>
+        private static Vector2 ResolveApproachTileAvoidingContention(
+            GameLocation loc, Vector2 idealTile, NPC npc)
+        {
+            if (loc == null || npc == null) return idealTile;
+            if (!IsTileContended(loc, idealTile, npc)) return idealTile;
+
+            for (int r = 1; r <= 2; r++)
+            {
+                for (int dx = -r; dx <= r; dx++)
+                {
+                    for (int dy = -r; dy <= r; dy++)
+                    {
+                        if (Math.Abs(dx) != r && Math.Abs(dy) != r) continue; // 仅环外圈
+                        var candidate = new Vector2(idealTile.X + dx, idealTile.Y + dy);
+                        if (candidate == idealTile) continue;
+                        if (!MovementPathfinding.IsTileWalkable(loc, candidate, npc)) continue;
+                        if (IsTileContended(loc, candidate, npc)) continue;
+
+                        ModEntry.SMonitor?.Log(
+                            $"[FarmBusStopNav] {npc.Name}: approach tile ({idealTile.X},{idealTile.Y}) contended → dispersed to ({candidate.X},{candidate.Y}).",
+                            LogLevel.Debug);
+                        return candidate;
+                    }
+                }
+            }
+
+            ModEntry.SMonitor?.Log(
+                $"[FarmBusStopNav] {npc.Name}: approach tile ({idealTile.X},{idealTile.Y}) contended, no alternative — keeping ideal.",
+                LogLevel.Debug);
+            return idealTile;
+        }
+
+        /// <summary>
         /// 解析 warp 附近的可行走接近点，避免将原始 warp 坐标直接作为 MoveToTile 目标。
         /// 成功时 approachTile 保证通过 IsTileWalkable 验证。
         ///
@@ -163,6 +225,7 @@ namespace ValleytalkReborn
             if (firstCandidate != Vector2.Zero && MovementPathfinding.IsTileWalkable(location, firstCandidate, npc))
             {
                 approachTile = firstCandidate;
+                approachTile = ResolveApproachTileAvoidingContention(location, approachTile, npc);
                 ModEntry.SMonitor?.Log(
                     $"[FarmBusStopNav] {npc.Name}: warp ({warp.X},{warp.Y}) in '{location.Name}' → approach tile ({(int)approachTile.X},{(int)approachTile.Y}).",
                     LogLevel.Debug);
@@ -174,6 +237,7 @@ namespace ValleytalkReborn
             if (secondCandidate != Vector2.Zero && MovementPathfinding.IsTileWalkable(location, secondCandidate, npc))
             {
                 approachTile = secondCandidate;
+                approachTile = ResolveApproachTileAvoidingContention(location, approachTile, npc);
                 ModEntry.SMonitor?.Log(
                     $"[FarmBusStopNav] {npc.Name}: warp ({warp.X},{warp.Y}) in '{location.Name}' (TargetName='{warp.TargetName}') → fallback approach tile ({(int)approachTile.X},{(int)approachTile.Y}) after FindNearestWalkableTile.",
                     LogLevel.Debug);

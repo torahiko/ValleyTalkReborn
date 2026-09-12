@@ -131,6 +131,9 @@ namespace ValleytalkReborn.Movement
             return GotoTracker.IsMoving(npc.Name) || StepTracker.IsActive(npc.Name);
         }
 
+        internal bool IsTileTargetedByOtherNpc(Vector2 tile, GameLocation loc, NPC exclude)
+            => GotoTracker.IsTileTargetedByOther(tile, loc, exclude?.Name);
+
         // ─── Queue ───
 
         internal void QueueMovement(NPC npc, string actionType, bool skipDialogueWait = false)

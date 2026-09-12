@@ -231,11 +231,12 @@ namespace ValleytalkReborn
                 if (next == null || next.IsFinished) continue;
                 if (next.Npc == null || string.IsNullOrWhiteSpace(next.Npc.Name)) continue;
 
-                if (mm.CurrentFollowingNpc == next.Npc || mm.CurrentGotoNpc == next.Npc)
+                // 跟随优先：NPC 正在跟随玩家 → 旅程取消（对齐 TickJourney "started following → cancel navigation"）
+                if (mm.CurrentFollowingNpc == next.Npc)
                 {
                     next.IsFinished = true;
                     continue;
-                }
+                } 
 
                 if (next.Npc.currentLocation == null)
                 {
