@@ -19,7 +19,7 @@ internal class LlmLlamaCpp : Llm
 
     public LlmLlamaCpp(string url, string promptFormat)
     {
-        this.url = url;
+        this.url = UrlHelper.EnsureScheme(url);
         PromptFormat = promptFormat;
     }
 

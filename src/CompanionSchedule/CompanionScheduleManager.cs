@@ -71,6 +71,8 @@ namespace ValleytalkReborn
         public bool                    IsDepartingToFarm     { get; set; } = false;
         /// <summary>是否已经走出过 FarmHouse 到 Farm（晴天游荡模式已激活）。</summary>
         public bool                    HasDepartedToFarm     { get; set; } = false;
+        /// <summary>已记录过一次"当前不在 FarmHouse/Farm"的 Debug 日志，避免每 Tick 刷屏。Memory，非持久化。</summary>
+        public bool                    WanderLocationWarningLogged { get; set; } = false;
         /// <summary>当前上下文生命周期阶段。由 TransitionScheduleContext 统一维护。</summary>
         public ScheduleContextPhase    CurrentPhase         { get; set; } = ScheduleContextPhase.None;
         /// <summary>上一个活跃 POI 的 ID，用于回程/提前回家时生成"after spending time at {PoiId}"上下文。</summary>

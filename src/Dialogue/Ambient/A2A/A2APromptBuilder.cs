@@ -188,9 +188,9 @@ internal sealed class A2APromptBuilder
             userSb.AppendLine(isZh ? $"【当下举动】{actionBody}。" : $"[CURRENT ACTIONS] {actionBody}.");
 
         userSb.AppendLine();
-        // 仅当话题钩子未携带 gossip 文本时，才输出独立的 gossip 行
+        // 仅当话题钩子未携带 gossip 文本时，才输出独立的 gossip 行（消除硬编码英文）
         if (!string.IsNullOrWhiteSpace(gossip) && topicDecision.Type != A2ACatalystType.Gossip)
-            userSb.AppendLine($"Recent town gossip: {gossip}");
+            userSb.AppendLine(isZh ? $"最近的小镇传闻：{gossip}" : $"Recent town gossip: {gossip}");
         userSb.AppendLine();
 
         // 玩家近身注脚：农夫站在参与者身旁时，提示模型自然留意/打趣玩家
@@ -241,9 +241,6 @@ internal sealed class A2APromptBuilder
 
     /// <summary>
     /// 构建"当下举动"提示正文：将每位参与者配偶日程的即时 POI 动作收拢为一句列表。
-    /// 任一参与者无可用动作文本时返回 null，调用方据此跳过整段注入。
-    /// POI 文本来源为 GetActivePoiContext，其返回值带 "[你现在：…]" / "[Right now you are: …]"
-    /// 包装层；此处剥壳仅保留动作本体，避免与外层【当下举动】标签形成双包装。
     /// </summary>
     private static string BuildEmbodiedActionLines(List<NPC> participants, bool isZh)
     {
@@ -268,9 +265,7 @@ internal sealed class A2APromptBuilder
             if (first == null)
                 continue;
 
-            // 剥壳：GetActivePoiContext 返回值整体为 "[你现在：动作]" / "[Right now you are: 动作]"
-            // 包装层。剥除 bracket 后内部仍残留语言前缀（"你现在：" / "Right now you are:"），
-            // 需一并去除以保留纯净动作本体，避免与外层【当下举动】标签双包装（参见 AC1）。
+            // 剥壳：剥除 bracket 与语言前缀
             if (first.StartsWith("[") && first.EndsWith("]"))
                 first = first.Substring(1, first.Length - 2).Trim();
             if (first.StartsWith("你现在："))
@@ -304,9 +299,7 @@ internal sealed class A2APromptBuilder
     }
 
     /// <summary>
-    /// 当玩家站在参与者 3 格（含）范围内时，返回一行"农夫就在旁边"的注脚，
-    /// 引导 A2A 对话自然留意或打趣玩家；距离不满足或玩家为空时返回 null。
-    /// 含配偶参与者的会话使用配偶变体，暗示亲密关系下的自然反应。
+    /// 当玩家站在参与者 3 格（含）范围内时，返回一行"农夫就在旁边"的注脚。
     /// </summary>
     private static string BuildPlayerProximityNote(List<NPC> participants, bool isZh)
     {
@@ -336,8 +329,7 @@ internal sealed class A2APromptBuilder
     }
 
     /// <summary>
-    /// 私有复制 BarkPromptBuilder.ContainsCjkCharacter：判定文本是否包含 CJK 统一表意文字（主平面 一-鿿）。
-    /// 用于 zh 客户端守卫：POI 动作若不含中文语料则跳过注入，避免英文描述污染中文 A2A 提示。
+    /// 判定文本是否包含 CJK 统一表意文字（主平面 一-鿿）。
     /// </summary>
     private static bool ContainsCjkCharacter(string text)
     {
@@ -352,6 +344,7 @@ internal sealed class A2APromptBuilder
     private static string BuildA2ASystemPrompt(bool isZh, string allNames)
     {
         var sb = new StringBuilder();
+        bool needLangConstraint = ShouldInjectLanguageConstraint(out string targetLangZh, out string targetLangEn);
 
         if (isZh)
         {
@@ -363,7 +356,12 @@ internal sealed class A2APromptBuilder
             sb.AppendLine("2. 纯口语台词：输出完全由角色脱口而出的自然话语构成，依靠标点和语气传达情绪。展现真实的口语节奏——半句收尾、结论在前、语序倒装以及自然的口语语气词。");
             sb.AppendLine("3. 鲜活口吻：依据各自的人设，依据各自人设的口吻与节奏进行表达。");
             sb.AppendLine("4. 数组起始：首个字符必须是 [，末尾字符必须是 ]。");
-            sb.AppendLine("5. 语言转译：以下人设描述中出现的英文口癖或词组仅为语气机制参考。输出时全篇采用地道自然的目标语言口吻予以呈现。");
+            sb.AppendLine("5. 语气与专名本地化：以下人设描述中的口语习惯与感叹词仅作为角色性格参考。输出时完全转化为地道目标语言的日常口语虚词与生动句式；提及的角色名字、地点与建筑严格采用上下文中已给出的本地化名称。");
+
+            if (needLangConstraint)
+            {
+                sb.AppendLine($"6. 语言一致性：所有输出请严格使用“{targetLangZh}”。");
+            }
         }
         else
         {
@@ -376,10 +374,10 @@ internal sealed class A2APromptBuilder
             sb.AppendLine("3. Authentic Hangout Vibe: Ground the interaction in relaxed familiarity, letting unique personalities shape cadence and flow.");
             sb.AppendLine("4. Bracket Framing: Your output starts precisely with [ and concludes precisely with ].");
 
-            if (LocalizedContentManager.CurrentLanguageCode != LocalizedContentManager.LanguageCode.en)
+            if (needLangConstraint)
             {
-                sb.AppendLine($"Target Output Language: Output all dialogue strictly in {LocalizedContentManager.CurrentLanguageCode}. Fallback to English if not supported.");
-                sb.AppendLine("5. Language Adaptation: Any quoted phrases or fillers in the persona descriptions are mechanical illustrations. Render the dialogue entirely in native, fluid phrasing appropriate to the target language.");
+                sb.AppendLine($"5. Language Requirement: All output must strictly use {targetLangEn}.");
+                sb.AppendLine($"6. Cultural & Name Localization: Any catchphrases, fillers, or speech mannerisms in the persona descriptions are character cues. Naturally transmute them into authentic, native spoken phrasing in {targetLangEn}. Faithfully use the localized character and place names provided in the context.");
             }
         }
 
@@ -450,7 +448,7 @@ internal sealed class A2APromptBuilder
 
             var example = JsonConvert.SerializeObject(new[]
             {
-                new { speaker = displayNames[0], line = "Man... still kind of brisk in here this morning." },
+                new { speaker = displayNames[0], line = "Brr... still kind of brisk in here this morning." },
                 new { speaker = displayNames[1], line = "Aired the place out earlier. Fire's just catching now." },
                 new { speaker = displayNames[0], line = "Frost is pretty thick on the windowsill." },
                 new { speaker = displayNames[0], line = "Definitely bundling up today." },
@@ -465,6 +463,7 @@ internal sealed class A2APromptBuilder
     private static string BuildA2AFinalRules(string lengthDesc, bool isZh)
     {
         var sb = new StringBuilder();
+        bool needLangConstraint = ShouldInjectLanguageConstraint(out string targetLangZh, out string targetLangEn);
 
         sb.AppendLine(isZh ? "规则：" : "Rules:");
         sb.AppendLine(isZh
@@ -473,6 +472,15 @@ internal sealed class A2APromptBuilder
         sb.AppendLine(isZh
             ? $"- 语言风格：自然生活口语，{lengthDesc}。"
             : $"- Style: Natural spoken dialogue, {lengthDesc}.");
+
+        // 临近 Token 生成点的尾部门禁
+        if (needLangConstraint)
+        {
+            sb.AppendLine(isZh
+                ? $"- 语言规范：所有输出请严格使用“{targetLangZh}”，确保语气词、人名与地名自然地道统一。"
+                : $"- Language: All output must strictly use {targetLangEn}, with all fillers, character names, and place names natively adapted.");
+        }
+
         sb.AppendLine(isZh
             ? "- 发言节奏：参与者均有发言，按当下互动自然轮换或连说，总条数 4~6 条。"
             : "- Pacing: All participants must speak; flow organically without rigid turn-taking. Total 4–6 lines.");
@@ -517,160 +525,227 @@ internal sealed class A2APromptBuilder
     /// 根据时间、地点与季节，提供氛围层面的引导，避免提供具体事件导致模型产生锚定效应。
     /// </summary>
     internal static string GenerateConversationTopic(List<NPC> participants, bool isChinese)
-{
-    int time = Game1.timeOfDay;
-    // 使用参与者自身位置，而非玩家位置
-    var loc = participants[0]?.currentLocation ?? Game1.player?.currentLocation;
-    string locName = loc?.Name ?? "";
-    bool isOutdoors = loc?.IsOutdoors ?? false;
-    string season = Game1.currentSeason?.ToLowerInvariant() ?? "spring";
-
-    // 1. 季节与天气感官底色（感官层，完全避免具体道具与粉色大象）
-    string seasonMoodZh = season switch
     {
-        "spring" => Game1.isRaining ? "春雨连绵的潮湿泥泞" : "初春微凉而透着新绿的空气",
-        "summer" => Game1.isRaining ? "沉闷潮湿的夏日暴雨" : "夏日耀眼的阳光与燥热微风",
-        "fall"   => Game1.isRaining ? "秋雨浸透落叶的萧瑟微寒" : "秋高气爽的丰收时节与微凉秋风",
-        "winter" => "冬日凛冽的寒风与屋外积雪",
-        _ => "当季特有的时节气息"
-    };
+        int time = Game1.timeOfDay;
+        var loc = participants[0]?.currentLocation ?? Game1.player?.currentLocation;
+        string locName = loc?.Name ?? "";
+        bool isOutdoors = loc?.IsOutdoors ?? false;
+        string season = Game1.currentSeason?.ToLowerInvariant() ?? "spring";
 
-    string seasonMoodEn = season switch
-    {
-        "spring" => Game1.isRaining ? "damp spring drizzle and wet soil" : "crisp, fresh air of early spring",
-        "summer" => Game1.isRaining ? "muggy, humid summer downpours" : "blazing sunlight and heavy summer warmth",
-        "fall"   => Game1.isRaining ? "chilly autumn drizzle soaking the leaves" : "brisk autumn breeze and harvest season energy",
-        "winter" => "freezing wind and quiet snow outside",
-        _ => "the current seasonal atmosphere"
-    };
-
-    // 精确类型匹配，避免 FarmCave / Greenhouse 等误命中
-    bool isHome = loc is StardewValley.Locations.FarmHouse
-               || loc is StardewValley.Locations.IslandFarmHouse
-               || locName.Contains("Cabin", StringComparison.OrdinalIgnoreCase);
-
-    if (isChinese)
-    {
-        // ── 农舍内部 ──
-        if (isHome)
+        string seasonMoodZh = season switch
         {
-            if (time < 1100)
-                return $"清晨的农舍室内，{seasonMoodZh}，炉火刚生起来。围绕屋里的温度、今天各自的日程或早晨的动静随口搭话。";
-            if (time >= 2100)
-                return $"深夜的农舍，屋外{seasonMoodZh}。围绕今天的收尾、身体状态或明天打算随口搭话。";
-            return $"农舍室内，{seasonMoodZh}。围绕当前的炉火温度、屋里的动静或手头各自的事情随口搭话。";
-        }
+            "spring" => Game1.isRaining ? "春雨连绵的潮湿泥泞" : "初春微凉而透着新绿的空气",
+            "summer" => Game1.isGreenRain 
+                ? "笼罩小镇的诡异绿雨与疯长苔藓" 
+                : (Game1.isRaining ? "沉闷潮湿的夏日暴雨" : "夏日耀眼的阳光与燥热微风"),
+            "fall"   => Game1.isRaining ? "秋雨浸透落叶的萧瑟微寒" : "秋高气爽的丰收时节与微凉秋风",
+            "winter" => "冬日凛冽的寒风与屋外积雪",
+            _ => "当季特有的时节气息"
+        };
 
-        if (locName.Contains("Saloon", StringComparison.OrdinalIgnoreCase))
-            return $"星之果实酒吧内，{seasonMoodZh}，酒吧背景杂音连绵。围绕今天的行程、手里的饮品或镇上的近况随口搭话。";
-
-        if (locName.Contains("Club", StringComparison.OrdinalIgnoreCase) || locName.Contains("CommunityCenter", StringComparison.OrdinalIgnoreCase))
-            return "社区中心宽敞的室内，脚步声回响。围绕这里的宽敞安静或各自的来意随口搭话。";
-
-        if (locName.Contains("SeedShop", StringComparison.OrdinalIgnoreCase) || locName.Contains("GeneralStore", StringComparison.OrdinalIgnoreCase))
-            return "皮埃尔杂货店内，货架与柜台之间。围绕各自要采买的东西或店里的陈设随口搭话。";
-
-        if (locName.Contains("Hospital", StringComparison.OrdinalIgnoreCase) || locName.Contains("Clinic", StringComparison.OrdinalIgnoreCase))
-            return "哈维诊所安静的候诊室，带着淡淡药草气味。围绕近来的身体状态或等候时间随口搭话。";
-
-        if (locName.Contains("ArchaeologyHouse", StringComparison.OrdinalIgnoreCase) || locName.Contains("Library", StringComparison.OrdinalIgnoreCase))
-            return "博物馆兼图书馆内，书架与展柜安静陈列。围绕某个展陈或各自手边的事情轻声搭话。";
-
-        if (locName.Contains("ScienceHouse", StringComparison.OrdinalIgnoreCase) || locName.Contains("Carpenter", StringComparison.OrdinalIgnoreCase))
-            return "罗宾的木匠工坊内，木材气味与加工动静交织。围绕房屋修整事宜或各自近况随口搭话。";
-
-        if (locName.Contains("AnimalShop", StringComparison.OrdinalIgnoreCase) || locName.Contains("Ranch", StringComparison.OrdinalIgnoreCase))
-            return "玛妮的牧场小屋内，传来牲畜动静与饲料气味。围绕牲畜状态或农场打理随口搭话。";
-
-        if (locName.Contains("Blacksmith", StringComparison.OrdinalIgnoreCase))
-            return "克林特的铁匠铺内，炉火正旺，铁砧敲击声阵阵。围绕工具或手头活计随口搭话。";
-
-        if (isOutdoors)
+        string seasonMoodEn = season switch
         {
-            if (locName.Contains("Beach", StringComparison.OrdinalIgnoreCase))
-                return $"海边沙滩，{seasonMoodZh}，浪声连绵。围绕眼前景色或各自的来意随口搭话。";
+            "spring" => Game1.isRaining ? "damp spring drizzle and wet soil" : "crisp, fresh air of early spring",
+            "summer" => Game1.isGreenRain 
+                ? "the eerie green rain and wild moss overgrowth" 
+                : (Game1.isRaining ? "muggy, humid summer downpours" : "blazing sunlight and heavy summer warmth"),
+            "fall"   => Game1.isRaining ? "chilly autumn drizzle soaking the leaves" : "brisk autumn breeze and harvest season energy",
+            "winter" => "freezing wind and quiet snow outside",
+            _ => "the current seasonal atmosphere"
+        };
 
-            if (locName.Contains("Forest", StringComparison.OrdinalIgnoreCase))
-                return $"煤矿森林树影间，{seasonMoodZh}，脚下是落叶与泥土小径。围绕林间动静或行程随口搭话。";
+        bool isHome = loc is StardewValley.Locations.FarmHouse
+                   || loc is StardewValley.Locations.IslandFarmHouse
+                   || locName.Contains("Cabin", StringComparison.OrdinalIgnoreCase);
 
-            if (locName.Contains("Mountain", StringComparison.OrdinalIgnoreCase))
-                return $"山道湖畔，{seasonMoodZh}，山风阵阵。围绕湖景、山路或各自的目的地随口搭话。";
+        if (isChinese)
+        {
+            if (isHome)
+            {
+                if (time < 1100)
+                    return $"清晨的农舍室内，{seasonMoodZh}，炉火刚生起来。围绕屋里的温度、今天各自的日程或早晨的动静随口搭话。";
+                if (time >= 2100)
+                    return $"深夜的农舍，屋外{seasonMoodZh}。围绕今天的收尾、身体状态或明天打算随口搭话。";
+                return $"农舍室内，{seasonMoodZh}。围绕当前的炉火温度、屋里的动静或手头各自的事情随口搭话。";
+            }
 
-            if (locName.Contains("Mine", StringComparison.OrdinalIgnoreCase))
-                return "矿洞入口，岩壁传来阵阵凉气与回响。围绕入洞准备或脚下安全随口搭话。";
+            if (locName.Contains("Saloon", StringComparison.OrdinalIgnoreCase))
+                return $"星之果实酒吧内，{seasonMoodZh}，酒吧背景杂音连绵。围绕今天的行程、手里的饮品或镇上的近况随口搭话。";
 
-            if (locName.Contains("Railroad", StringComparison.OrdinalIgnoreCase))
-                return $"铁轨延伸处，{seasonMoodZh}，穿堂风阵阵。围绕远处景色或各自的来意随口搭话。";
+            if (locName.Contains("Club", StringComparison.OrdinalIgnoreCase) || locName.Contains("CommunityCenter", StringComparison.OrdinalIgnoreCase))
+                return "社区中心宽敞的室内，脚步声回响。围绕这里的宽敞安静或各自的来意随口搭话。";
 
-            return $"镇上街道，{seasonMoodZh}，路过偶遇。围绕今天的行程或路上所见随口搭话。";
+            if (locName.Contains("SeedShop", StringComparison.OrdinalIgnoreCase) || locName.Contains("GeneralStore", StringComparison.OrdinalIgnoreCase))
+                return "皮埃尔杂货店内，货架与柜台之间。围绕各自要采买的东西或店里的陈设随口搭话。";
+
+            if (locName.Contains("Hospital", StringComparison.OrdinalIgnoreCase) || locName.Contains("Clinic", StringComparison.OrdinalIgnoreCase))
+                return "哈维诊所安静的候诊室，带着淡淡药草气味。围绕近来的身体状态或等候时间随口搭话。";
+
+            if (locName.Contains("ArchaeologyHouse", StringComparison.OrdinalIgnoreCase) || locName.Contains("Library", StringComparison.OrdinalIgnoreCase))
+                return "博物馆兼图书馆内，书架与展柜安静陈列。围绕某个展陈或各自手边的事情轻声搭话。";
+
+            if (locName.Contains("ScienceHouse", StringComparison.OrdinalIgnoreCase) || locName.Contains("Carpenter", StringComparison.OrdinalIgnoreCase))
+                return "罗宾的木匠工坊内，木材气味与加工动静交织。围绕房屋修整事宜或各自近况随口搭话。";
+
+            if (locName.Contains("AnimalShop", StringComparison.OrdinalIgnoreCase) || locName.Contains("Ranch", StringComparison.OrdinalIgnoreCase))
+                return "玛妮的牧场小屋内，传来牲畜动静与饲料气味。围绕牲畜状态或农场打理随口搭话。";
+
+            if (locName.Contains("Blacksmith", StringComparison.OrdinalIgnoreCase))
+                return "克林特的铁匠铺内，炉火正旺，铁砧敲击声阵阵。围绕工具或手头活计随口搭话。";
+
+            if (isOutdoors)
+            {
+                if (locName.Contains("Beach", StringComparison.OrdinalIgnoreCase))
+                    return $"海边沙滩，{seasonMoodZh}，浪声连绵。围绕眼前景色或各自的来意随口搭话。";
+
+                if (locName.Contains("Forest", StringComparison.OrdinalIgnoreCase))
+                    return $"煤矿森林树影间，{seasonMoodZh}，脚下是落叶与泥土小径。围绕林间动静或行程随口搭话。";
+
+                if (locName.Contains("Mountain", StringComparison.OrdinalIgnoreCase))
+                    return $"山道湖畔，{seasonMoodZh}，山风阵阵。围绕湖景、山路或各自的目的地随口搭话。";
+
+                if (locName.Contains("Mine", StringComparison.OrdinalIgnoreCase))
+                    return "矿洞入口，岩壁传来阵阵凉气与回响。围绕入洞准备或脚下安全随口搭话。";
+
+                if (locName.Contains("Railroad", StringComparison.OrdinalIgnoreCase))
+                    return $"铁轨延伸处，{seasonMoodZh}，穿堂风阵阵。围绕远处景色或各自的来意随口搭话。";
+
+                return $"镇上街道，{seasonMoodZh}，路过偶遇。围绕今天的行程或路上所见随口搭话。";
+            }
+
+            return "室内偶遇，当前场所的氛围静默。围绕眼前动静或各自手头的事情随口搭话。";
         }
+        else
+        {
+            if (isHome)
+            {
+                if (time < 1100)
+                    return $"Morning in the farmhouse, {seasonMoodEn}, fire just getting started. Offhand remarks about the room temperature, the day's schedule, or the morning's stirrings.";
+                if (time >= 2100)
+                    return $"Late night in the farmhouse, {seasonMoodEn} outside. Offhand remarks about winding down, how the body feels, or tomorrow's plans.";
+                return $"Inside the farmhouse, {seasonMoodEn}. Offhand remarks about the fire's warmth, household goings-on, or whatever each is occupied with.";
+            }
 
-        return "室内偶遇，当前场所的氛围静默。围绕眼前动静或各自手头的事情随口搭话。";
+            if (locName.Contains("Saloon", StringComparison.OrdinalIgnoreCase))
+                return $"Inside the Stardrop Saloon, {seasonMoodEn}, background noise of the bar. Offhand remarks about the day's errands, drinks in hand, or recent town happenings.";
+
+            if (locName.Contains("Club", StringComparison.OrdinalIgnoreCase) || locName.Contains("CommunityCenter", StringComparison.OrdinalIgnoreCase))
+                return "Inside the spacious Community Center, footsteps echoing. Offhand remarks about the quiet openness or why they stopped by.";
+
+            if (locName.Contains("SeedShop", StringComparison.OrdinalIgnoreCase) || locName.Contains("GeneralStore", StringComparison.OrdinalIgnoreCase))
+                return "Inside Pierre's General Store, between shelves and counter. Offhand remarks about what each is shopping for or the shop's displays.";
+
+            if (locName.Contains("Hospital", StringComparison.OrdinalIgnoreCase) || locName.Contains("Clinic", StringComparison.OrdinalIgnoreCase))
+                return "Harvey's quiet waiting room with a faint herbal scent. Offhand remarks about recent health or the wait.";
+
+            if (locName.Contains("ArchaeologyHouse", StringComparison.OrdinalIgnoreCase) || locName.Contains("Library", StringComparison.OrdinalIgnoreCase))
+                return "Inside the library and museum, shelves and display cases quietly arranged. Soft remarks about an exhibit or whatever each has at hand.";
+
+            if (locName.Contains("ScienceHouse", StringComparison.OrdinalIgnoreCase) || locName.Contains("Carpenter", StringComparison.OrdinalIgnoreCase))
+                return "Robin's carpentry shop, wood scent and work sounds filling the space. Offhand remarks about house repairs or catching up.";
+
+            if (locName.Contains("AnimalShop", StringComparison.OrdinalIgnoreCase) || locName.Contains("Ranch", StringComparison.OrdinalIgnoreCase))
+                return "Marnie's ranch parlor, livestock sounds and feed smells drifting in. Offhand remarks about the animals or farm upkeep.";
+
+            if (locName.Contains("Blacksmith", StringComparison.OrdinalIgnoreCase))
+                return "Clint's blacksmith shop, forge blazing, hammer on anvil ringing. Offhand remarks about tools or current work.";
+
+            if (isOutdoors)
+            {
+                if (locName.Contains("Beach", StringComparison.OrdinalIgnoreCase))
+                    return $"Along the beach, {seasonMoodEn}, waves murmuring. Offhand remarks about the scenery or why each came down here.";
+
+                if (locName.Contains("Forest", StringComparison.OrdinalIgnoreCase))
+                    return $"Under the tree canopy of Cindersap Forest, {seasonMoodEn}, dirt paths underfoot. Offhand remarks about the woods or the day's errands.";
+
+                if (locName.Contains("Mountain", StringComparison.OrdinalIgnoreCase))
+                    return $"By the mountain lakeside, {seasonMoodEn}, mountain breezes. Offhand remarks about the lake view, trail, or where each is headed.";
+
+                if (locName.Contains("Mine", StringComparison.OrdinalIgnoreCase))
+                    return "At the mine entrance, cool drafts and echoes from the rock walls. Offhand remarks about gearing up or footing safety.";
+
+                if (locName.Contains("Railroad", StringComparison.OrdinalIgnoreCase))
+                    return $"Along the railroad stretch, {seasonMoodEn}, crosswinds blowing. Offhand remarks about the distant scenery or why each came this way.";
+
+                return $"Crossing paths on a town street, {seasonMoodEn}. Offhand remarks about the day's plans or what each noticed along the way.";
+            }
+
+            return "Crossing paths indoors, the room quiet. Offhand remarks about what's going on around them or whatever each has at hand.";
+        }
     }
-    else
-    {
-        // ── Farmhouse ──
-        if (isHome)
-        {
-            if (time < 1100)
-                return $"Morning in the farmhouse, {seasonMoodEn}, fire just getting started. Offhand remarks about the room temperature, the day's schedule, or the morning's stirrings.";
-            if (time >= 2100)
-                return $"Late night in the farmhouse, {seasonMoodEn} outside. Offhand remarks about winding down, how the body feels, or tomorrow's plans.";
-            return $"Inside the farmhouse, {seasonMoodEn}. Offhand remarks about the fire's warmth, household goings-on, or whatever each is occupied with.";
-        }
-
-        if (locName.Contains("Saloon", StringComparison.OrdinalIgnoreCase))
-            return $"Inside the Stardrop Saloon, {seasonMoodEn}, background noise of the bar. Offhand remarks about the day's errands, drinks in hand, or recent town happenings.";
-
-        if (locName.Contains("Club", StringComparison.OrdinalIgnoreCase) || locName.Contains("CommunityCenter", StringComparison.OrdinalIgnoreCase))
-            return "Inside the spacious Community Center, footsteps echoing. Offhand remarks about the quiet openness or why they stopped by.";
-
-        if (locName.Contains("SeedShop", StringComparison.OrdinalIgnoreCase) || locName.Contains("GeneralStore", StringComparison.OrdinalIgnoreCase))
-            return "Inside Pierre's General Store, between shelves and counter. Offhand remarks about what each is shopping for or the shop's displays.";
-
-        if (locName.Contains("Hospital", StringComparison.OrdinalIgnoreCase) || locName.Contains("Clinic", StringComparison.OrdinalIgnoreCase))
-            return "Harvey's quiet waiting room with a faint herbal scent. Offhand remarks about recent health or the wait.";
-
-        if (locName.Contains("ArchaeologyHouse", StringComparison.OrdinalIgnoreCase) || locName.Contains("Library", StringComparison.OrdinalIgnoreCase))
-            return "Inside the library and museum, shelves and display cases quietly arranged. Soft remarks about an exhibit or whatever each has at hand.";
-
-        if (locName.Contains("ScienceHouse", StringComparison.OrdinalIgnoreCase) || locName.Contains("Carpenter", StringComparison.OrdinalIgnoreCase))
-            return "Robin's carpentry shop, wood scent and work sounds filling the space. Offhand remarks about house repairs or catching up.";
-
-        if (locName.Contains("AnimalShop", StringComparison.OrdinalIgnoreCase) || locName.Contains("Ranch", StringComparison.OrdinalIgnoreCase))
-            return "Marnie's ranch parlor, livestock sounds and feed smells drifting in. Offhand remarks about the animals or farm upkeep.";
-
-        if (locName.Contains("Blacksmith", StringComparison.OrdinalIgnoreCase))
-            return "Clint's blacksmith shop, forge blazing, hammer on anvil ringing. Offhand remarks about tools or current work.";
-
-        if (isOutdoors)
-        {
-            if (locName.Contains("Beach", StringComparison.OrdinalIgnoreCase))
-                return $"Along the beach, {seasonMoodEn}, waves murmuring. Offhand remarks about the scenery or why each came down here.";
-
-            if (locName.Contains("Forest", StringComparison.OrdinalIgnoreCase))
-                return $"Under the tree canopy of Cindersap Forest, {seasonMoodEn}, dirt paths underfoot. Offhand remarks about the woods or the day's errands.";
-
-            if (locName.Contains("Mountain", StringComparison.OrdinalIgnoreCase))
-                return $"By the mountain lakeside, {seasonMoodEn}, mountain breezes. Offhand remarks about the lake view, trail, or where each is headed.";
-
-            if (locName.Contains("Mine", StringComparison.OrdinalIgnoreCase))
-                return "At the mine entrance, cool drafts and echoes from the rock walls. Offhand remarks about gearing up or footing safety.";
-
-            if (locName.Contains("Railroad", StringComparison.OrdinalIgnoreCase))
-                return $"Along the railroad stretch, {seasonMoodEn}, crosswinds blowing. Offhand remarks about the distant scenery or why each came this way.";
-
-            return $"Crossing paths on a town street, {seasonMoodEn}. Offhand remarks about the day's plans or what each noticed along the way.";
-        }
-
-        return "Crossing paths indoors, the room quiet. Offhand remarks about what's going on around them or whatever each has at hand.";
-    }
-}
 
     private static bool IsChineseLanguage =>
         LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
 
-    // 三条配偶判断路径取 OR 并集，供多配偶同住注入使用
+    /// <summary>
+    /// 获取目标语言规范名称（包含原版所有内置语言与 LanguageCode.mod 扩展）。
+    /// </summary>
+    private static string GetTargetLanguageDisplayName(LocalizedContentManager.LanguageCode code, bool inChinese)
+    {
+        switch (code)
+        {
+            case LocalizedContentManager.LanguageCode.zh:
+                return inChinese ? "中文" : "Chinese";
+            case LocalizedContentManager.LanguageCode.ja:
+                return inChinese ? "日语" : "Japanese";
+            case LocalizedContentManager.LanguageCode.ru:
+                return inChinese ? "俄语" : "Russian";
+            case LocalizedContentManager.LanguageCode.pt:
+                return inChinese ? "葡萄牙语" : "Portuguese";
+            case LocalizedContentManager.LanguageCode.es:
+                return inChinese ? "西班牙语" : "Spanish";
+            case LocalizedContentManager.LanguageCode.de:
+                return inChinese ? "德语" : "German";
+            case LocalizedContentManager.LanguageCode.th:
+                return inChinese ? "泰语" : "Thai";
+            case LocalizedContentManager.LanguageCode.fr:
+                return inChinese ? "法语" : "French";
+            case LocalizedContentManager.LanguageCode.ko:
+                return inChinese ? "韩语" : "Korean";
+            case LocalizedContentManager.LanguageCode.it:
+                return inChinese ? "意大利语" : "Italian";
+            case LocalizedContentManager.LanguageCode.tr:
+                return inChinese ? "土耳其语" : "Turkish";
+            case LocalizedContentManager.LanguageCode.hu:
+                return inChinese ? "匈牙利语" : "Hungarian";
+            case LocalizedContentManager.LanguageCode.mod:
+                try
+                {
+                    if (LocalizedContentManager.CurrentModLanguage != null)
+                    {
+                        string modLang = LocalizedContentManager.CurrentModLanguage.LanguageCode
+                                         ?? LocalizedContentManager.CurrentModLanguage.Id;
+                        if (!string.IsNullOrWhiteSpace(modLang))
+                            return modLang;
+                    }
+                }
+                catch
+                {
+                    // 降级容错
+                }
+                return "English";
+            default:
+                return "English";
+        }
+    }
+
+    /// <summary>
+    /// 判断当前是否需要注入语言约束：当目标语言为英语时返回 false（不注入）。
+    /// </summary>
+    private static bool ShouldInjectLanguageConstraint(out string targetLangZh, out string targetLangEn)
+    {
+        var code = LocalizedContentManager.CurrentLanguageCode;
+        targetLangZh = GetTargetLanguageDisplayName(code, inChinese: true);
+        targetLangEn = GetTargetLanguageDisplayName(code, inChinese: false);
+
+        if (code == LocalizedContentManager.LanguageCode.en || string.Equals(targetLangEn, "English", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     private static bool IsSpouse(NPC npc)
     {
         if (npc == null) return false;
@@ -770,7 +845,7 @@ internal sealed class A2APromptBuilder
                 ? (isChinese
                     ? $"- {dn} 与玩家是朋友（{hearts} 颗心）。"
                     : $"- {dn} is a friend of the player ({hearts} hearts).")
-                : null; // Bark 侧 4-7 心原本就返回 null，保持不变
+                : null;
         }
 
         return null;
@@ -779,10 +854,6 @@ internal sealed class A2APromptBuilder
     private static string GetInterNpcRelationships(List<NPC> participants, bool isChinese)
         => NpcRelationRegistry.Instance?.GetRelationships(participants, isChinese);
 
-    /// <summary>
-    /// 取一条尚未使用、且不涉及在场参与者的最新八卦模板；无可用则返回 null。
-    /// 遍历顺序自末位（最新）向首位，命中即停，并将该条记入当日已用集合。
-    /// </summary>
     private static string TryGetRecentGossip(List<NPC> participants)
     {
         try
@@ -798,14 +869,12 @@ internal sealed class A2APromptBuilder
                 day = -1;
             }
 
-            // 防御性跨日兜底：即便 GetGossipSnapshots 内部已清理，换天也必须重置已用集合
             if (day != _lastA2AGossipDay)
             {
                 _usedA2AGossipKeys.Clear();
                 _lastA2AGossipDay = day;
             }
 
-            // 构造在场参与者的匹配名集合（Name / displayName / 中文名），过滤空值，OrdinalIgnoreCase
             var participantNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             if (participants != null)
             {
@@ -823,7 +892,6 @@ internal sealed class A2APromptBuilder
 
             if (snapshots == null || snapshots.Count == 0) return null;
 
-            // 自末位（最新）向首位遍历，取第一条既未使用又不涉及在场参与者的八卦
             for (int i = snapshots.Count - 1; i >= 0; i--)
             {
                 var entry = snapshots[i];
@@ -836,7 +904,6 @@ internal sealed class A2APromptBuilder
                 if (_usedA2AGossipKeys.Contains(key))
                     continue;
 
-                // 涉及性检查：模板命中任一在场参与者的名字 → 跳过，避免"背后议论本人"
                 if (InvolvesParticipant(entry.Template, participantNames))
                 {
                     ModEntry.SMonitor?.Log(
@@ -857,9 +924,6 @@ internal sealed class A2APromptBuilder
         }
     }
 
-    /// <summary>
-    /// 判定 gossip 模板是否以 OrdinalIgnoreCase 包含任一在场参与者的匹配名。
-    /// </summary>
     private static bool InvolvesParticipant(string template, HashSet<string> participantNames)
     {
         if (participantNames.Count == 0) return false;

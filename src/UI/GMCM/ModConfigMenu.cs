@@ -36,9 +36,6 @@ namespace ValleytalkReborn
             });
         }
 
-        /// <summary>
-        /// 双向兼容映射：优先读取 configProvider_Key，若未命中自动尝试别名
-        /// </summary>
         private static string FormatProvider(string providerName)
         {
             string directKey = $"configProvider_{providerName}";
@@ -63,7 +60,6 @@ namespace ValleytalkReborn
         {
             string result = null;
 
-            // 1. 优先调用模组自主的 I18n 管理类（支持 ContentPack 与 zh.json 检索）
             try
             {
                 string i18nVal = I18n.Get(key);
@@ -74,7 +70,6 @@ namespace ValleytalkReborn
             }
             catch { }
 
-            // 2. SMAPI 原生 Translation 回退
             if (string.IsNullOrEmpty(result) && _modEntry?.Helper?.Translation != null)
             {
                 var smapiTranslation = _modEntry.Helper.Translation.Get(key);
@@ -84,7 +79,6 @@ namespace ValleytalkReborn
                 }
             }
 
-            // 3. Util 缓存回退
             if (string.IsNullOrEmpty(result))
             {
                 string cacheResult = Util.GetString(key, returnNull: true);
@@ -129,8 +123,6 @@ namespace ValleytalkReborn
             {
                 Config.Provider = "OpenAiCompatible";
             }
-
-            string editingProvider = Config.Provider;
 
             ConfigMenu.Unregister(ModManifest);
             ConfigMenu.Register(
@@ -194,8 +186,9 @@ namespace ValleytalkReborn
             );
 #endif
 
-            // ★ 修复 1：下拉选项列表去重，剔除别名冗余（排除带 Llm 前缀的别名，防止出现 2 个自定义）
             var distinctLlmTypes = ModEntry.LlmMap.Keys
+                .Where(k => !k.Equals("Dummy", StringComparison.OrdinalIgnoreCase)
+                            && !k.Equals("LlmDummy", StringComparison.OrdinalIgnoreCase))
                 .Where(k => !k.StartsWith("Llm", StringComparison.OrdinalIgnoreCase) || k.Equals("LlamaCpp", StringComparison.OrdinalIgnoreCase))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray();
@@ -215,15 +208,6 @@ namespace ValleytalkReborn
                 fieldId: "Provider"
             );
 
-            // GMCM 机制提示
-            ConfigMenu.AddParagraph(
-                mod: ModManifest,
-                text: () => string.IsNullOrEmpty(_lastFetchErrorMessage)
-                    ? GetUIString("configFetchHint", "Enter your API Key and click 'Save' to fetch available models.")
-                    : GetUIString("configFetchError", "⚠️ Failed to fetch models: ") + _lastFetchErrorMessage
-                    + " " + GetUIString("configFetchErrorRetry", "(Click 'Save' to retry)")
-            );
-
             if (!ModEntry.LlmMap.TryGetValue(Config.Provider, out var llmType))
             {
                 llmType = typeof(LlmOAICompatible);
@@ -238,13 +222,7 @@ namespace ValleytalkReborn
                     name: () => GetUIString("configApiKey", "API Key"),
                     tooltip: () => GetUIString("configApiKeyTooltip", "API Key for the AI model provider."),
                     getValue: () => Config.ApiKey,
-                    setValue: value =>
-                    {
-                        if (Config.Provider == editingProvider)
-                        {
-                            Config.ApiKey = value;
-                        }
-                    },
+                    setValue: value => Config.ApiKey = value?.Trim() ?? string.Empty,
                     fieldId: "ApiKey"
                 );
             }
@@ -262,13 +240,7 @@ namespace ValleytalkReborn
                     name: () => GetUIString("configModelName", "Model Name"),
                     tooltip: () => GetUIString("configModelNameTooltip", "Name of the AI model to use."),
                     getValue: () => Config.ModelName,
-                    setValue: value =>
-                    {
-                        if (Config.Provider == editingProvider)
-                        {
-                            Config.ModelName = value;
-                        }
-                    },
+                    setValue: value => Config.ModelName = value?.Trim() ?? string.Empty,
                     fieldId: "ModelName"
                 );
 
@@ -286,7 +258,7 @@ namespace ValleytalkReborn
                         getValue: () => placeholder,
                         setValue: value =>
                         {
-                            if (value != placeholder && Config.Provider == editingProvider)
+                            if (value != placeholder)
                             {
                                 Config.ModelName = value;
                             }
@@ -301,7 +273,7 @@ namespace ValleytalkReborn
                         mod: ModManifest,
                         text: () => string.IsNullOrEmpty(_lastFetchErrorMessage)
                             ? GetUIString("configFetchHint", "Enter your API Key and click 'Save' to fetch available models.")
-                            : GetUIString("configFetchError", "⚠️ Failed to fetch models: ") + _lastFetchErrorMessage
+                            : GetUIString("configFetchError", "Failed to fetch models: ") + _lastFetchErrorMessage
                               + " " + GetUIString("configFetchErrorRetry", "(Click 'Save' to retry)")
                     );
                 }
@@ -313,15 +285,9 @@ namespace ValleytalkReborn
                     mod: ModManifest,
                     name: () => GetUIString("configServerAddress", "Server Address"),
                     tooltip: () => GetUIString("configServerAddressTooltip",
-                        "URL of the server for local and Open AI compatible models."),
+                        "For Custom (OpenAI-Compatible) / VolcEngine: base URL, e.g. https://api.deepseek.com — missing https:// or /v1, trailing slashes, or pasted /chat/completions endings are auto-corrected. For Local (Llama.cpp/Ollama): the FULL endpoint, e.g. http://localhost:8080/completion or http://localhost:11434/api/generate."),
                     getValue: () => Config.ServerAddress,
-                    setValue: value =>
-                    {
-                        if (Config.Provider == editingProvider)
-                        {
-                            Config.ServerAddress = value;
-                        }
-                    },
+                    setValue: value => Config.ServerAddress = value?.Trim() ?? string.Empty,
                     fieldId: "ServerAddress"
                 );
             }
@@ -329,7 +295,7 @@ namespace ValleytalkReborn
             ConfigMenu.AddPageLink(
                 mod: ModManifest,
                 pageId: "advanced",
-                text: () => GetUIString("configAdvancedTitle", "⚙️ Advanced Model Parameters") + " →",
+                text: () => GetUIString("configAdvancedTitle", "Advanced Model Parameters") + " →",
                 tooltip: () => GetUIString("configAdvancedWarning",
                     "⚠️ Warning: If you are unsure what these settings do, please leave them at default!")
             );
@@ -477,12 +443,12 @@ namespace ValleytalkReborn
             );
 
             // =========================================================================
-            // ── ★ 二级子页面：高级参数（Page: "advanced"）────────────────────────────
+            // ── 二级子页面：高级参数（Page: "advanced"）────────────────────────────
             // =========================================================================
             ConfigMenu.AddPage(
                 mod: ModManifest,
                 pageId: "advanced",
-                pageTitle: () => GetUIString("configAdvancedTitle", "⚙️ Advanced Model Parameters")
+                pageTitle: () => GetUIString("configAdvancedTitle", "Advanced Model Parameters")
             );
 
             ConfigMenu.AddParagraph(
@@ -541,14 +507,14 @@ namespace ValleytalkReborn
         {
             if (string.IsNullOrWhiteSpace(ModEntry.Config.ApiKey))
             {
-                return GetUIString("configStatusNotConfigured", "⚪ Not Configured: Enter API Key and save");
+                return GetUIString("configStatusNotConfigured", "Not Configured: Enter API Key and save");
             }
 
             bool llmDisabled = DialogueBuilder.Instance?.LlmDisabled ?? true;
 
             if (llmDisabled)
             {
-                return GetUIString("configStatusFailed", "❌ Connection Failed: Check API Key, network, or console logs");
+                return GetUIString("configStatusFailed", "Connection Failed: Check API Key, network, or console logs");
             }
 
             string modelName = ModEntry.Config.ModelName;
@@ -557,7 +523,7 @@ namespace ValleytalkReborn
                 modelName = GetUIString("configStatusNoModel", "(No model selected)");
             }
 
-            return GetUIString("configStatusReady", "✅ Connected / Ready: {{modelName}}", new { modelName });
+            return GetUIString("configStatusReady", "Connected / Ready: {{modelName}}", new { modelName });
         }
 
         private static void RefreshModelNamesCacheAsync()
@@ -576,18 +542,25 @@ namespace ValleytalkReborn
                         namesList.Sort();
                         _cachedModelNames = namesList.ToArray();
                         _lastFetchErrorMessage = null;
-
-                        if (_modEntry != null)
-                        {
-                            _modEntry.Helper.Events.GameLoop.UpdateTicked += OnUpdateTickedToRefreshUi;
-                        }
+                    }
+                    else
+                    {
+                        _cachedModelNames = Array.Empty<string>();
+                        _lastFetchErrorMessage = "Server returned empty model list";
                     }
                 }
                 catch (Exception ex)
                 {
-                    _modEntry?.Monitor.Log($"Error fetching model names: {ex.Message}", LogLevel.Warn);
+                    _modEntry?.Monitor.Log($"[ModConfigMenu] Error fetching model names: {ex.Message}", LogLevel.Warn);
                     _cachedModelNames = Array.Empty<string>();
                     _lastFetchErrorMessage = ex.Message;
+                }
+                finally
+                {
+                    if (_modEntry != null)
+                    {
+                        _modEntry.Helper.Events.GameLoop.UpdateTicked += OnUpdateTickedToRefreshUi;
+                    }
                 }
             });
         }
@@ -596,8 +569,8 @@ namespace ValleytalkReborn
         {
             if (_modEntry != null)
             {
-                Register(_modEntry);
                 _modEntry.Helper.Events.GameLoop.UpdateTicked -= OnUpdateTickedToRefreshUi;
+                Register(_modEntry);
             }
         }
 
@@ -630,8 +603,8 @@ namespace ValleytalkReborn
                 }
                 catch (Exception ex)
                 {
-                    _modEntry?.Monitor.Log($"Failed to get model names: {ex.Message}", LogLevel.Trace);
-                    return Array.Empty<string>();
+                    _modEntry?.Monitor.Log($"[ModConfigMenu] Failed to get model names: {ex.Message}", LogLevel.Warn);
+                    throw;
                 }
             }
 

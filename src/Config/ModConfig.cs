@@ -178,7 +178,7 @@ namespace ValleytalkReborn
         /// 设为 false 时回退至 Legacy [ACTION:TAG] 文本解析模式（适合本地 Llama 模型）。
         /// </summary>
         public bool UseNativeToolCalling { get; set; } = true;
-        public bool EnableVanillaFirst { get; set; } = true;
+        public bool EnableVanillaFirst { get; set; } = false;
         public bool EnableNightlyConsolidation { get; set; } = true;
 
         /// <summary>
@@ -273,7 +273,7 @@ namespace ValleytalkReborn
                 }
             }
 
-            monitor?.Log("[ModConfig] 对话与高级参数已校验。", LogLevel.Debug);
+            monitor?.Log("[ModConfig] Dialog and advanced parameters have been verified.", LogLevel.Debug);
         }
 
         private static int Clamp(int value, int min, int max)

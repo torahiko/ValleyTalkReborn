@@ -15,25 +15,35 @@ namespace ValleytalkReborn
     /// <summary>
     /// 思考模式禁用策略枚举
     /// </summary>
-    internal enum ThinkingModeStrategy
+    internal readonly struct ThinkingSuppressionPlan
     {
-        /// <summary>不发送任何思考相关字段（适用于 Gemma、Llama、Mistral、GPT-4o、传统非推理模型）</summary>
-        None,
+        public readonly bool UseThinkingDisabled;
+        public readonly bool UseEnableThinking;
+        public readonly bool UseChatTemplateKwargs;
+        public readonly bool UseIncludeReasoning;
+        public readonly bool UseReasoningEffortLow;
+        public readonly bool UseOpenRouterReasoning;
+        public readonly string Reason;
 
-        /// <summary>DeepSeek 规范：thinking: { type: "disabled" }</summary>
-        DeepSeekOfficial,
+        public bool AnyApiSuppression =>
+            UseThinkingDisabled || UseEnableThinking || UseChatTemplateKwargs ||
+            UseIncludeReasoning || UseReasoningEffortLow || UseOpenRouterReasoning;
 
-        /// <summary>Gemini 系列规范：全方位覆盖 OneAPI/NewAPI/官方原生透传参数</summary>
-        GeminiStyle,
+        public static readonly ThinkingSuppressionPlan Empty = default;
 
-        /// <summary>Anthropic / Claude 规范</summary>
-        AnthropicStyle,
-
-        /// <summary>SiliconFlow (硅基流动) 格式</summary>
-        SiliconFlow,
-
-        /// <summary>OpenRouter 格式：reasoning: { effort: "none" }</summary>
-        OpenRouter
+        public ThinkingSuppressionPlan(
+            bool useThinkingDisabled, bool useEnableThinking, bool useChatTemplateKwargs,
+            bool useIncludeReasoning, bool useReasoningEffortLow, bool useOpenRouterReasoning,
+            string reason)
+        {
+            UseThinkingDisabled = useThinkingDisabled;
+            UseEnableThinking = useEnableThinking;
+            UseChatTemplateKwargs = useChatTemplateKwargs;
+            UseIncludeReasoning = useIncludeReasoning;
+            UseReasoningEffortLow = useReasoningEffortLow;
+            UseOpenRouterReasoning = useOpenRouterReasoning;
+            Reason = reason ?? string.Empty;
+        }
     }
 
     internal abstract class LlmOpenAiBase : Llm
@@ -47,6 +57,9 @@ namespace ValleytalkReborn
         {
             Timeout = TimeSpan.FromMinutes(2)
         };
+
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> StrictHostStage
+            = new System.Collections.Concurrent.ConcurrentDictionary<string, byte>();
 
         #region 模型列表
 
@@ -147,7 +160,7 @@ namespace ValleytalkReborn
             return baseUrl + "/v1/" + path;
         }
 
-        private bool IsPlainTextModel(string model)
+        private static bool IsPlainTextModel(string model)
         {
             if (string.IsNullOrWhiteSpace(model)) return false;
 
@@ -164,7 +177,7 @@ namespace ValleytalkReborn
                    m.Contains("chatgpt");
         }
 
-        private bool IsLikelyReasoningModel(string model)
+        private static bool IsLikelyReasoningModel(string model)
         {
             if (string.IsNullOrWhiteSpace(model)) return false;
 
@@ -184,79 +197,98 @@ namespace ValleytalkReborn
 
         #region 思考模式处理
 
-        protected virtual ThinkingModeStrategy DetectThinkingModeStrategy()
+        /// <summary>
+        /// 按端点类型判定思考抑制方案（纯静态，无副作用）
+        /// </summary>
+        internal static ThinkingSuppressionPlan EvaluateThinkingSuppression(string model, string baseUrl)
         {
-            string model = modelName ?? string.Empty;
-            string m = model.ToLowerInvariant();
-            string endpoint = (url ?? string.Empty).ToLowerInvariant();
+            string m = model ?? string.Empty;
+            string b = baseUrl ?? string.Empty;
 
-            if (IsPlainTextModel(model))
+            if (IsPlainTextModel(m))
+                return ThinkingSuppressionPlan.Empty;
+
+            if (b.Contains("api.openai.com"))
             {
-                return ThinkingModeStrategy.None;
+                if (IsLikelyReasoningModel(m))
+                    return new ThinkingSuppressionPlan(false, false, false, false, true, false, "OfficialOpenAi");
+                return ThinkingSuppressionPlan.Empty;
             }
 
-            if (endpoint.Contains("openrouter.ai"))
-            {
-                return ThinkingModeStrategy.OpenRouter;
-            }
+            if (b.Contains("api.anthropic.com") || b.Contains("generativelanguage.googleapis.com"))
+                return ThinkingSuppressionPlan.Empty;
 
-            if (endpoint.Contains("siliconflow.cn") || endpoint.Contains("siliconflow.com"))
-            {
-                return ThinkingModeStrategy.SiliconFlow;
-            }
+            if (b.Contains("openrouter.ai"))
+                return new ThinkingSuppressionPlan(false, false, false, false, false, true, "OpenRouter");
 
-            if (m.Contains("deepseek"))
-            {
-                return ThinkingModeStrategy.DeepSeekOfficial;
-            }
+            if (IsLikelyReasoningModel(m))
+                return new ThinkingSuppressionPlan(false, false, false, false, true, false, "OpenAiReasoningFamily");
 
-            if (m.Contains("gemini"))
-            {
-                return ThinkingModeStrategy.GeminiStyle;
-            }
-
-            if (m.Contains("claude"))
-            {
-                return ThinkingModeStrategy.AnthropicStyle;
-            }
-
-            return ThinkingModeStrategy.None;
+            return new ThinkingSuppressionPlan(true, true, true, true, false, false, "UniversalBroadcast");
         }
 
-        private void ApplyThinkingModeParameters(
+        /// <summary>
+        /// 将抑制方案写入请求体
+        /// </summary>
+        internal static void ApplyThinkingSuppression(
             Dictionary<string, object> requestBody,
-            ThinkingModeStrategy strategy)
+            ThinkingSuppressionPlan plan)
         {
-            switch (strategy)
+            if (plan.UseThinkingDisabled) requestBody["thinking"] = new { type = "disabled" };
+            if (plan.UseEnableThinking) requestBody["enable_thinking"] = false;
+            if (plan.UseChatTemplateKwargs) requestBody["chat_template_kwargs"] = new { enable_thinking = false };
+            if (plan.UseIncludeReasoning) requestBody["include_reasoning"] = false;
+            if (plan.UseReasoningEffortLow) requestBody["reasoning_effort"] = "low";
+            if (plan.UseOpenRouterReasoning) requestBody["reasoning"] = new { effort = "none" };
+        }
+
+        /// <summary>
+        /// 降级梯子：stage 1 移除部分键，stage 2 完整回退
+        /// </summary>
+        private void ApplyDowngradeStage(
+            Dictionary<string, object> requestBody,
+            int stage, int nPredict, string cacheContext)
+        {
+            if (stage == 1)
             {
-                case ThinkingModeStrategy.DeepSeekOfficial:
-                    requestBody["thinking"] = new { type = "disabled" };
-                    break;
+            string[] keysToRemove = {
+                "thinking", "thinking_config", "thinking_budget", "budget_tokens",
+                "max_thinking_tokens", "disable_thinking", "enable_thinking",
+                "reasoning", "reasoning_effort", "include_reasoning",
+                "max_completion_tokens", "chat_template_kwargs"
+            };
+            foreach (var key in keysToRemove)
+                requestBody.Remove(key);
+            }
+            else if (stage == 2)
+            {
+                StripThinkingParameters(requestBody, nPredict, cacheContext);
+            }
+        }
 
-                case ThinkingModeStrategy.GeminiStyle:
-                    requestBody["thinking"] = new { type = "disabled", budget_tokens = 0 };
-                    requestBody["thinking_config"] = new { thinking_budget = 0 };
-                    requestBody["thinking_budget"] = 0;
-                    requestBody["reasoning_effort"] = "none";
-                    break;
-
-                case ThinkingModeStrategy.AnthropicStyle:
-                    requestBody["thinking"] = new { type = "disabled" };
-                    requestBody["reasoning"] = new { effort = "none" };
-                    break;
-
-                case ThinkingModeStrategy.SiliconFlow:
-                    requestBody["enable_thinking"] = false;
-                    requestBody["include_reasoning"] = false;
-                    break;
-
-                case ThinkingModeStrategy.OpenRouter:
-                    requestBody["reasoning"] = new { effort = "none" };
-                    break;
-
-                case ThinkingModeStrategy.None:
-                default:
-                    break;
+        /// <summary>
+        /// 序列化后记录最终 payload 中的抑制键（仅白名单键，禁止 messages）
+        /// </summary>
+        private static void LogFinalPayloadSuppression(string serializedJson, string endpointUrl)
+        {
+            try
+            {
+                var obj = JObject.Parse(serializedJson);
+                var whitelist = new[] { "model", "stream", "thinking", "enable_thinking",
+                    "chat_template_kwargs", "include_reasoning", "reasoning", "reasoning_effort",
+                    "max_tokens", "max_completion_tokens", "temperature", "top_p" };
+                var sb = new StringBuilder("[LlmOpenAiBase] FINAL PAYLOAD -> ").Append(endpointUrl);
+                foreach (var key in whitelist)
+                {
+                    var token = obj[key];
+                    if (token != null)
+                        sb.Append(" | ").Append(key).Append("=").Append(token.ToString(Formatting.None));
+                }
+                ModEntry.SMonitor?.Log(sb.ToString(), StardewModdingAPI.LogLevel.Debug);
+            }
+            catch
+            {
+                ModEntry.SMonitor?.Log("[LlmOpenAiBase] Final payload log parse skip", StardewModdingAPI.LogLevel.Trace);
             }
         }
 
@@ -275,6 +307,7 @@ namespace ValleytalkReborn
             requestBody.Remove("reasoning_effort");
             requestBody.Remove("include_reasoning");
             requestBody.Remove("max_completion_tokens");
+            requestBody.Remove("chat_template_kwargs");
 
             requestBody["max_tokens"] = genParams.MaxTokens;
             requestBody["temperature"] = genParams.Temperature;
@@ -529,8 +562,8 @@ namespace ValleytalkReborn
             messages.Add(new { role = "user", content = promptString });
 
             Dictionary<string, object> requestBody = BuildRequestBody(messages, n_predict, stream: false, includeTools, cacheContext);
-            ThinkingModeStrategy strategy = DetectThinkingModeStrategy();
-            ApplyThinkingModeParameters(requestBody, strategy);
+            ThinkingSuppressionPlan plan = EvaluateThinkingSuppression(modelName, url);
+            ApplyThinkingSuppression(requestBody, plan);
 
             string endpointUrl = BuildEndpoint("chat/completions");
 
@@ -545,6 +578,7 @@ namespace ValleytalkReborn
                 {
                     var genParams = ResolveParameters(cacheContext);
                     string jsonData = SerializePayloadWithCustomBody(requestBody, genParams.AllowCustomBody);
+                    LogFinalPayloadSuppression(jsonData, endpointUrl);
 
                     if (AndroidHelper.IsAndroid && NetworkHelper.IsNetworkAvailable())
                     {
@@ -579,12 +613,11 @@ namespace ValleytalkReborn
                     bool isClientError = statusCode == 400 || statusCode == 422;
 
                     if (isClientError && !strippedThinkingParameters &&
-                        (strategy != ThinkingModeStrategy.None || LooksLikeUnknownParameterError(responseString)))
+                        (plan.AnyApiSuppression || LooksLikeUnknownParameterError(responseString)))
                     {
                         Log.Debug("[LlmOpenAiBase] Server rejected thinking parameters. Retrying with pure standard payload.");
 
                         StripThinkingParameters(requestBody, n_predict, cacheContext);
-                        strategy = ThinkingModeStrategy.None;
                         strippedThinkingParameters = true;
 
                         retryCount--;
@@ -757,154 +790,244 @@ namespace ValleytalkReborn
                              && cacheContext != LlmContextTypes.A2A;
 
             Dictionary<string, object> requestBody = BuildRequestBody(messages, n_predict, stream: true, includeTools, cacheContext);
-            ThinkingModeStrategy strategy = DetectThinkingModeStrategy();
-            ApplyThinkingModeParameters(requestBody, strategy);
+            ThinkingSuppressionPlan plan = EvaluateThinkingSuppression(modelName, url);
+            ApplyThinkingSuppression(requestBody, plan);
 
             string endpointUrl = BuildEndpoint("chat/completions");
             var genParams = ResolveParameters(cacheContext);
             string jsonData = SerializePayloadWithCustomBody(requestBody, genParams.AllowCustomBody);
+            LogFinalPayloadSuppression(jsonData, endpointUrl);
 
-            using (var request = new HttpRequestMessage(HttpMethod.Post, endpointUrl))
+            // TTFT observation
+            var ttftWatch = new System.Diagnostics.Stopwatch();
+            bool ttftLogged = false;
+
+            // StrictHostStage key
+            string hostModelKey = null;
+            try
             {
-                request.Headers.Add("Authorization", "Bearer " + apiKey);
-                request.Headers.Add("Accept", "text/event-stream");
-                request.Content = new StringContent(jsonData, Encoding.UTF8, "application/json");
+                var uri = new Uri(endpointUrl);
+                hostModelKey = uri.Host.ToLowerInvariant() + "|" + (modelName ?? "").ToLowerInvariant();
+            }
+            catch { /* Uri parse failure → skip blacklist */ }
 
-                using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct))
+            // Check blacklist before first attempt
+            byte rememberedStage = 0;
+            if (hostModelKey != null && StrictHostStage.TryGetValue(hostModelKey, out rememberedStage) && rememberedStage > 0)
+            {
+                ApplyDowngradeStage(requestBody, rememberedStage, n_predict, cacheContext);
+            }
+
+            // Re-serialize after blacklist check
+            jsonData = SerializePayloadWithCustomBody(requestBody, genParams.AllowCustomBody);
+            LogFinalPayloadSuppression(jsonData, endpointUrl);
+
+            // Attempts loop: initial + 2 degradation attempts = 3 total
+            int stage = rememberedStage;
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                ttftWatch.Restart();
+
+                using (var request = new HttpRequestMessage(HttpMethod.Post, endpointUrl))
                 {
-                    linkedCts.CancelAfter(TimeSpan.FromSeconds(ModEntry.Config.QueryTimeout));
+                    request.Headers.Add("Authorization", "Bearer " + apiKey);
+                    request.Headers.Add("Accept", "text/event-stream");
+                    request.Content = new StringContent(jsonData, Encoding.UTF8, "application/json");
 
-                    try
+                    using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct))
                     {
-                        using (var response = await SharedHttpClient.SendAsync(
-                            request,
-                            HttpCompletionOption.ResponseHeadersRead,
-                            linkedCts.Token))
+                        linkedCts.CancelAfter(TimeSpan.FromSeconds(ModEntry.Config.QueryTimeout));
+
+                        try
                         {
-                            if (!response.IsSuccessStatusCode)
+                            using (var response = await SharedHttpClient.SendAsync(
+                                request,
+                                HttpCompletionOption.ResponseHeadersRead,
+                                linkedCts.Token))
                             {
-                                string errContent = await response.Content.ReadAsStringAsync();
-                                Log.Debug($"[LlmOpenAiBase] Streaming failed: {(int)response.StatusCode}, Response: {errContent}");
-                                return new LlmResponse(errContent, (int)response.StatusCode);
-                            }
-
-                            var fullContentBuilder = new StringBuilder();
-                            var toolCallsDict = new Dictionary<int, (string Name, StringBuilder Args)>();
-                            bool degenerateDetected = false;
-
-                            using (var stream = await response.Content.ReadAsStreamAsync())
-                            using (var reader = new StreamReader(stream, Encoding.UTF8))
-                            {
-                                while (!reader.EndOfStream && !linkedCts.Token.IsCancellationRequested)
+                                if (!response.IsSuccessStatusCode)
                                 {
-                                    string line = await reader.ReadLineAsync();
-                                    if (line == null) break;
+                                    string errContent = await response.Content.ReadAsStringAsync();
+                                    int status = (int)response.StatusCode;
+                                    bool isClientError = status == 400 || status == 422;
 
-                                    line = line.Trim();
-                                    if (string.IsNullOrWhiteSpace(line) || !line.StartsWith("data:"))
-                                        continue;
-
-                                    string data = line.Substring(5).Trim();
-                                    if (data == "[DONE]") break;
-
-                                    try
+                                    // Try degradation on 400/422
+                                    if (isClientError && stage < 2 &&
+                                        (plan.AnyApiSuppression || LooksLikeUnknownParameterError(errContent)))
                                     {
-                                        var chunkJson = JObject.Parse(data);
-                                        var choices = chunkJson["choices"] as JArray;
-                                        if (choices == null || choices.Count == 0) continue;
+                                        stage++;
+                                        ModEntry.SMonitor?.Log($"[LlmOpenAiBase] Streaming got {status}, degrading to stage {stage}.", StardewModdingAPI.LogLevel.Debug);
+                                        ApplyDowngradeStage(requestBody, stage, n_predict, cacheContext);
+                                        jsonData = SerializePayloadWithCustomBody(requestBody, genParams.AllowCustomBody);
+                                        LogFinalPayloadSuppression(jsonData, endpointUrl);
+                                        continue;
+                                    }
 
-                                        var delta = choices[0]["delta"];
-                                        if (delta == null) continue;
+                                    // Retry on 429/5xx (same stage)
+                                    if ((status == 429 || status >= 500) && attempt < 2)
+                                    {
+                                        ModEntry.SMonitor?.Log($"[LlmOpenAiBase] Streaming got {status}, retrying (attempt {attempt + 1}/3).", StardewModdingAPI.LogLevel.Debug);
+                                        await Task.Delay(250);
+                                        continue;
+                                    }
 
-                                        var toolCalls = delta["tool_calls"] as JArray;
-                                        if (toolCalls != null)
+                                    Log.Debug($"[LlmOpenAiBase] Streaming failed: {status}, Response: {errContent}");
+                                    return new LlmResponse(errContent, status);
+                                }
+
+                                // Success after degradation → write to blacklist
+                                if (stage > 0 && hostModelKey != null)
+                                {
+                                    StrictHostStage.AddOrUpdate(hostModelKey, (byte)stage, (_, existing) => (byte)Math.Max(existing, stage));
+                                    ModEntry.SMonitor?.Log($"[LlmOpenAiBase] Blacklist updated: {hostModelKey} → stage {stage}", StardewModdingAPI.LogLevel.Debug);
+                                }
+
+                                var fullContentBuilder = new StringBuilder();
+                                var toolCallsDict = new Dictionary<int, (string Name, StringBuilder Args)>();
+                                bool degenerateDetected = false;
+                                bool reasoningSeen = false;
+                                long ttftReasoningMs = -1;
+
+                                using (var stream = await response.Content.ReadAsStreamAsync())
+                                using (var reader = new StreamReader(stream, Encoding.UTF8))
+                                {
+                                    while (!reader.EndOfStream && !linkedCts.Token.IsCancellationRequested)
+                                    {
+                                        string line = await reader.ReadLineAsync();
+                                        if (line == null) break;
+
+                                        line = line.Trim();
+                                        if (string.IsNullOrWhiteSpace(line) || !line.StartsWith("data:"))
+                                            continue;
+
+                                        string data = line.Substring(5).Trim();
+                                        if (data == "[DONE]") break;
+
+                                        try
                                         {
-                                            foreach (var tc in toolCalls)
+                                            var chunkJson = JObject.Parse(data);
+                                            var choices = chunkJson["choices"] as JArray;
+                                            if (choices == null || choices.Count == 0) continue;
+
+                                            var delta = choices[0]["delta"] as JObject;
+                                            if (delta == null) continue;
+
+                                            // Parse reasoning_content (parse-and-ignore)
+                                            string reasoningToken = delta.Value<string>("reasoning_content");
+                                            if (string.IsNullOrEmpty(reasoningToken))
+                                                reasoningToken = delta.Value<string>("reasoning");
+
+                                            if (!string.IsNullOrEmpty(reasoningToken))
                                             {
-                                                int index = tc.Value<int?>("index") ?? 0;
-                                                var fn = tc["function"];
-                                                if (fn != null)
+                                                if (!reasoningSeen)
                                                 {
-                                                    string fnName = fn.Value<string>("name");
-                                                    string fnArgs = fn.Value<string>("arguments");
+                                                    reasoningSeen = true;
+                                                    ttftReasoningMs = ttftWatch.ElapsedMilliseconds;
+                                                    ModEntry.SMonitor?.Log(
+                                                        $"[LlmOpenAiBase] Model emitted reasoning_content — thinking suppression NOT honored by server. model={modelName}. Check FINAL PAYLOAD log.",
+                                                        StardewModdingAPI.LogLevel.Warn);
+                                                }
+                                                continue; // Do NOT append to fullContentBuilder
+                                            }
 
-                                                    if (!toolCallsDict.ContainsKey(index))
+                                            var toolCalls = delta["tool_calls"] as JArray;
+                                            if (toolCalls != null)
+                                            {
+                                                foreach (var tc in toolCalls)
+                                                {
+                                                    int index = tc.Value<int?>("index") ?? 0;
+                                                    var fn = tc["function"];
+                                                    if (fn != null)
                                                     {
-                                                        toolCallsDict[index] = (fnName ?? string.Empty, new StringBuilder());
-                                                    }
+                                                        string fnName = fn.Value<string>("name");
+                                                        string fnArgs = fn.Value<string>("arguments");
 
-                                                    if (!string.IsNullOrEmpty(fnName) && string.IsNullOrEmpty(toolCallsDict[index].Name))
-                                                    {
-                                                        toolCallsDict[index] = (fnName, toolCallsDict[index].Args);
-                                                    }
+                                                        if (!toolCallsDict.ContainsKey(index))
+                                                        {
+                                                            toolCallsDict[index] = (fnName ?? string.Empty, new StringBuilder());
+                                                        }
 
-                                                    if (!string.IsNullOrEmpty(fnArgs))
-                                                    {
-                                                        toolCallsDict[index].Args.Append(fnArgs);
+                                                        if (!string.IsNullOrEmpty(fnName) && string.IsNullOrEmpty(toolCallsDict[index].Name))
+                                                        {
+                                                            toolCallsDict[index] = (fnName, toolCallsDict[index].Args);
+                                                        }
+
+                                                        if (!string.IsNullOrEmpty(fnArgs))
+                                                        {
+                                                            toolCallsDict[index].Args.Append(fnArgs);
+                                                        }
                                                     }
+                                                }
+                                                continue;
+                                            }
+
+                                            string textToken = delta.Value<string>("content");
+                                            if (!string.IsNullOrEmpty(textToken))
+                                            {
+                                                // TTFT: first content token
+                                                if (!ttftLogged)
+                                                {
+                                                    ttftLogged = true;
+                                                    ModEntry.SMonitor?.Log(
+                                                        $"[LlmOpenAiBase] TTFT(content)={ttftWatch.ElapsedMilliseconds}ms | TTFT(reasoning)={(ttftReasoningMs >= 0 ? ttftReasoningMs + "ms" : "n/a")} | endpoint={endpointUrl}",
+                                                        StardewModdingAPI.LogLevel.Debug);
+                                                }
+
+                                                fullContentBuilder.Append(textToken);
+
+                                                if (!degenerateDetected &&
+                                                    LooksLikeDegenerateRepetition(fullContentBuilder.ToString()))
+                                                {
+                                                    degenerateDetected = true;
                                                 }
                                             }
                                         }
-
-                                        string textToken = delta["content"]?.ToString();
-                                        if (!string.IsNullOrEmpty(textToken))
+                                        catch (JsonException parseEx)
                                         {
-                                            fullContentBuilder.Append(textToken);
-
-                                            if (!degenerateDetected &&
-                                                LooksLikeDegenerateRepetition(fullContentBuilder.ToString()))
-                                            {
-                                                degenerateDetected = true;
-                                                Log.Debug("[LlmOpenAiBase] Degenerate/repetitive output detected mid-stream; aborting.");
-                                                linkedCts.Cancel();
-                                                break;
-                                            }
-
-                                            onToken?.Invoke(textToken);
+                                            Log.Debug("[LlmOpenAiBase] Chunk JSON parse skip: " + parseEx.Message);
                                         }
                                     }
-                                    catch (Exception parseEx)
-                                    {
-                                        Log.Debug("[LlmOpenAiBase] Chunk JSON parse skip: " + parseEx.Message);
-                                    }
                                 }
-                            }
 
-                            if (degenerateDetected)
-                            {
-                                return new LlmResponse("Discarded degenerate/repetitive streaming output.", 500);
-                            }
-
-                            string completeText = fullContentBuilder.ToString();
-
-                            if (toolCallsDict.Count > 0)
-                            {
-                                var toolResp = new LlmResponse(completeText, true);
-                                foreach (var kvp in toolCallsDict)
+                                if (degenerateDetected)
                                 {
-                                    toolResp.ToolCalls.Add(new ToolCallData
-                                    {
-                                        FunctionName = kvp.Value.Name,
-                                        JsonArguments = kvp.Value.Args.ToString()
-                                    });
+                                    return new LlmResponse("Discarded degenerate/repetitive streaming output.", 500);
                                 }
-                                return toolResp;
-                            }
 
-                            return new LlmResponse(completeText);
+                                string completeText = fullContentBuilder.ToString();
+
+                                if (toolCallsDict.Count > 0)
+                                {
+                                    var toolResp = new LlmResponse(completeText, true);
+                                    foreach (var kvp in toolCallsDict)
+                                    {
+                                        toolResp.ToolCalls.Add(new ToolCallData
+                                        {
+                                            FunctionName = kvp.Value.Name,
+                                            JsonArguments = kvp.Value.Args.ToString()
+                                        });
+                                    }
+                                    return toolResp;
+                                }
+
+                                return new LlmResponse(completeText);
+                            }
                         }
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        return new LlmResponse("Request timed out or cancelled.", 408);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Debug("[LlmOpenAiBase] Streaming connection error: " + ex.Message);
-                        return new LlmResponse(ex.Message, 500);
+                        catch (OperationCanceledException)
+                        {
+                            return new LlmResponse("Request timed out or cancelled.", 408);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Debug("[LlmOpenAiBase] Streaming connection error: " + ex.Message);
+                            return new LlmResponse(ex.Message, 500);
+                        }
                     }
                 }
             }
+
+            // All attempts exhausted
+            return new LlmResponse("All streaming attempts failed.", 500);
         }
 
         #endregion

@@ -80,6 +80,112 @@ namespace ValleytalkReborn
         private static Warp FindBusStopToTownWarp(GameLocation busStop)
             => FindWarpTo(busStop, "Town");
 
+        /// <summary>
+        /// 兜底 warp 到指定地图的指定 tile，但先验证落点可行走性。
+        /// 原始 tile 不可走时，尝试半径 3 内最近可走点；全部失败时仍以原始 tile warp
+        /// （绝不因此把 NPC 留在原地图）。落点降级时记录 Warn。
+        /// </summary>
+        private static void WarpToValidatedTile(NPC npc, string mapName, Vector2 tile)
+        {
+            var loc = Game1.getLocationFromName(mapName);
+            if (loc == null)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[FarmBusStopNav] {npc.Name}: target map '{mapName}' unavailable — warping to ({tile.X},{tile.Y}) as-is.",
+                    LogLevel.Warn);
+                Game1.warpCharacter(npc, mapName, new Point((int)tile.X, (int)tile.Y));
+                return;
+            }
+
+            var landing = tile;
+            bool degraded = false;
+
+            if (!MovementPathfinding.IsTileWalkable(loc, landing, npc))
+            {
+                degraded = true;
+                var alt = MovementPathfinding.FindNearestWalkableTile(loc, landing, npc, 3);
+                if (MovementPathfinding.IsTileWalkable(loc, alt, npc))
+                {
+                    landing = alt;
+                }
+                else
+                {
+                    // 3 格内也没有可走点：保留原始 tile，交由后续寻路失败链兜底。
+                    landing = tile;
+                }
+            }
+
+            if (degraded)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[FarmBusStopNav] {npc.Name}: warp landing on '{mapName}' adjusted from ({(int)tile.X},{(int)tile.Y}) to ({(int)landing.X},{(int)landing.Y}) (walkable validation).",
+                    LogLevel.Warn);
+            }
+
+            Game1.warpCharacter(npc, mapName, new Point((int)landing.X, (int)landing.Y));
+        }
+
+        /// <summary>
+        /// 解析 warp 附近的可行走接近点，避免将原始 warp 坐标直接作为 MoveToTile 目标。
+        /// 成功时 approachTile 保证通过 IsTileWalkable 验证。
+        ///
+        /// 注意 FindWalkableTileNearWarp 极端情况下会返回原始 warp 坐标，
+        /// 因此不能仅靠 Vector2.Zero 判断成功，必须显式验证可行走性。
+        /// </summary>
+        private static bool TryResolveWarpApproachTile(
+            GameLocation location,
+            Warp warp,
+            NPC npc,
+            out Vector2 approachTile)
+        {
+            approachTile = Vector2.Zero;
+
+            if (location == null || warp == null || npc == null)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[FarmBusStopNav] TryResolveWarpApproachTile: null argument (location={location}, warp={warp}, npc={npc}).",
+                    LogLevel.Warn);
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(warp.TargetName))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[FarmBusStopNav] {npc.Name}: warp at ({warp.X},{warp.Y}) in '{location.Name}' has empty TargetName.",
+                    LogLevel.Warn);
+                return false;
+            }
+
+            var rawWarpTile = new Vector2(warp.X, warp.Y);
+
+            // 第一候选：warp 附近可行走格。
+            var firstCandidate = MovementPathfinding.FindWalkableTileNearWarp(location, rawWarpTile, npc);
+            if (firstCandidate != Vector2.Zero && MovementPathfinding.IsTileWalkable(location, firstCandidate, npc))
+            {
+                approachTile = firstCandidate;
+                ModEntry.SMonitor?.Log(
+                    $"[FarmBusStopNav] {npc.Name}: warp ({warp.X},{warp.Y}) in '{location.Name}' → approach tile ({(int)approachTile.X},{(int)approachTile.Y}).",
+                    LogLevel.Debug);
+                return true;
+            }
+
+            // 第二候选：原始 warp 坐标附近半径 3 内最近可行走格。
+            var secondCandidate = MovementPathfinding.FindNearestWalkableTile(location, rawWarpTile, npc, 3);
+            if (secondCandidate != Vector2.Zero && MovementPathfinding.IsTileWalkable(location, secondCandidate, npc))
+            {
+                approachTile = secondCandidate;
+                ModEntry.SMonitor?.Log(
+                    $"[FarmBusStopNav] {npc.Name}: warp ({warp.X},{warp.Y}) in '{location.Name}' (TargetName='{warp.TargetName}') → fallback approach tile ({(int)approachTile.X},{(int)approachTile.Y}) after FindNearestWalkableTile.",
+                    LogLevel.Debug);
+                return true;
+            }
+
+            ModEntry.SMonitor?.Log(
+                $"[FarmBusStopNav] {npc.Name}: no walkable approach tile for warp ({warp.X},{warp.Y}) in '{location.Name}' (TargetName='{warp.TargetName}').",
+                LogLevel.Warn);
+            return false;
+        }
+
         // ────────────────────────────────────────────────
         //  出发：农舍 → 农场 → (可能经巴士站) → 目的地
         // ────────────────────────────────────────────────
@@ -104,13 +210,24 @@ namespace ValleytalkReborn
                     $"[FarmBusStopNav] {npc.Name}: FarmHouse has no warp to Farm — warping directly.",
                     LogLevel.Warn);
                 var farmEntry = Game1.getFarm().GetMainFarmHouseEntry();
-                Game1.warpCharacter(npc, "Farm", new Point(farmEntry.X, farmEntry.Y + 1));
+                WarpToValidatedTile(npc, "Farm", new Vector2(farmEntry.X, farmEntry.Y + 1));
                 ContinueDepartFromFarm(npc, destMapName, destTile, onArrived, onFail, onPathStarted);
                 return;
             }
 
-            var exitTile = new Vector2(exitWarp.X, exitWarp.Y);
-            MovementManager.Instance.MoveToTile(npc, exitTile,
+            if (!TryResolveWarpApproachTile(farmHouse, exitWarp, npc, out var exitApproachTile))
+            {
+                var farmEntry = Game1.getFarm().GetMainFarmHouseEntry();
+                WarpToValidatedTile(npc, "Farm", new Vector2(farmEntry.X, farmEntry.Y + 1));
+                ContinueDepartFromFarm(npc, destMapName, destTile, onArrived, onFail, onPathStarted);
+                return;
+            }
+
+            ModEntry.SMonitor?.Log(
+                $"[FarmBusStopNav] {npc.Name}: FarmHouse→Farm approach tile resolved to ({(int)exitApproachTile.X},{(int)exitApproachTile.Y}).",
+                LogLevel.Debug);
+
+            MovementManager.Instance.MoveToTile(npc, exitApproachTile,
                 onComplete: () =>
                 {
                     Game1.warpCharacter(npc, exitWarp.TargetName, new Point(exitWarp.TargetX, exitWarp.TargetY));
@@ -119,10 +236,10 @@ namespace ValleytalkReborn
                 onFail: () =>
                 {
                     ModEntry.SMonitor?.Log(
-                        $"[FarmBusStopNav] {npc.Name} could not reach FarmHouse exit — warping directly to Farm.",
+                        $"[FarmBusStopNav] {npc.Name} could not reach FarmHouse exit approach tile — warping directly to Farm.",
                         LogLevel.Warn);
                     var farmEntry = Game1.getFarm().GetMainFarmHouseEntry();
-                    Game1.warpCharacter(npc, "Farm", new Point(farmEntry.X, farmEntry.Y + 1));
+                    WarpToValidatedTile(npc, "Farm", new Vector2(farmEntry.X, farmEntry.Y + 1));
                     ContinueDepartFromFarm(npc, destMapName, destTile, onArrived, onFail, onPathStarted);
                 });
         }
@@ -158,13 +275,26 @@ namespace ValleytalkReborn
                 ModEntry.SMonitor?.Log(
                     $"[FarmBusStopNav] {npc.Name}: Farm has no warp to BusStop — warping directly to destination (skipping bus stop).",
                     LogLevel.Warn);
-                Game1.warpCharacter(npc, destMapName, new Point((int)destTile.X, (int)destTile.Y));
+                WarpToValidatedTile(npc, destMapName, destTile);
                 onArrived?.Invoke(false);
                 return;
             }
 
-            var busStopExitTile = new Vector2(busStopWarp.X, busStopWarp.Y);
-            MovementManager.Instance.MoveToTile(npc, busStopExitTile,
+            if (!TryResolveWarpApproachTile(farm, busStopWarp, npc, out var busStopApproachTile))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[FarmBusStopNav] {npc.Name}: Farm→BusStop approach tile resolution failed — warping directly to destination.",
+                    LogLevel.Warn);
+                WarpToValidatedTile(npc, destMapName, destTile);
+                onArrived?.Invoke(false);
+                return;
+            }
+
+            ModEntry.SMonitor?.Log(
+                $"[FarmBusStopNav] {npc.Name}: Farm→BusStop approach tile resolved to ({(int)busStopApproachTile.X},{(int)busStopApproachTile.Y}).",
+                LogLevel.Debug);
+
+            MovementManager.Instance.MoveToTile(npc, busStopApproachTile,
                 onComplete: () =>
                 {
                     Game1.warpCharacter(npc, "BusStop", new Point(busStopWarp.TargetX, busStopWarp.TargetY));
@@ -173,9 +303,9 @@ namespace ValleytalkReborn
                 onFail: () =>
                 {
                     ModEntry.SMonitor?.Log(
-                        $"[FarmBusStopNav] {npc.Name} could not reach Farm→BusStop warp — warping directly to destination.",
+                        $"[FarmBusStopNav] {npc.Name} could not reach Farm→BusStop approach tile — warping directly to destination.",
                         LogLevel.Warn);
-                    Game1.warpCharacter(npc, destMapName, new Point((int)destTile.X, (int)destTile.Y));
+                    WarpToValidatedTile(npc, destMapName, destTile);
                     onArrived?.Invoke(false);
                 });
         }
@@ -246,13 +376,26 @@ namespace ValleytalkReborn
                 ModEntry.SMonitor?.Log(
                     $"[FarmBusStopNav] {npc.Name}: Farm has no warp to '{destMapName}' — warping directly.",
                     LogLevel.Warn);
-                Game1.warpCharacter(npc, destMapName, new Point((int)destTile.X, (int)destTile.Y));
+                WarpToValidatedTile(npc, destMapName, destTile);
                 onArrived?.Invoke(false);
                 return;
             }
 
-            var exitTile = new Vector2(subMapWarp.X, subMapWarp.Y);
-            MovementManager.Instance.MoveToTile(npc, exitTile,
+            if (!TryResolveWarpApproachTile(farm, subMapWarp, npc, out var subMapApproachTile))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[FarmBusStopNav] {npc.Name}: Farm→{destMapName} approach tile resolution failed — warping directly.",
+                    LogLevel.Warn);
+                WarpToValidatedTile(npc, destMapName, destTile);
+                onArrived?.Invoke(false);
+                return;
+            }
+
+            ModEntry.SMonitor?.Log(
+                $"[FarmBusStopNav] {npc.Name}: Farm→{destMapName} approach tile resolved to ({(int)subMapApproachTile.X},{(int)subMapApproachTile.Y}).",
+                LogLevel.Debug);
+
+            MovementManager.Instance.MoveToTile(npc, subMapApproachTile,
                 onComplete: () =>
                 {
                     Game1.warpCharacter(npc, subMapWarp.TargetName, new Point(subMapWarp.TargetX, subMapWarp.TargetY));
@@ -260,7 +403,10 @@ namespace ValleytalkReborn
                 },
                 onFail: () =>
                 {
-                    Game1.warpCharacter(npc, destMapName, new Point((int)destTile.X, (int)destTile.Y));
+                    ModEntry.SMonitor?.Log(
+                        $"[FarmBusStopNav] {npc.Name} could not reach Farm→{destMapName} approach tile — warping directly.",
+                        LogLevel.Warn);
+                    WarpToValidatedTile(npc, destMapName, destTile);
                     onArrived?.Invoke(false);
                 });
         }
@@ -281,13 +427,26 @@ namespace ValleytalkReborn
                 ModEntry.SMonitor?.Log(
                     $"[FarmBusStopNav] {npc.Name}: BusStop has no warp to Town — warping directly to destination.",
                     LogLevel.Warn);
-                Game1.warpCharacter(npc, destMapName, new Point((int)destTile.X, (int)destTile.Y));
+                WarpToValidatedTile(npc, destMapName, destTile);
                 onArrived?.Invoke(true);
                 return;
             }
 
-            var exitTile = new Vector2(townWarp.X, townWarp.Y);
-            MovementManager.Instance.MoveToTile(npc, exitTile,
+            if (!TryResolveWarpApproachTile(busStop, townWarp, npc, out var townApproachTile))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[FarmBusStopNav] {npc.Name}: BusStop→Town approach tile resolution failed — warping directly to destination.",
+                    LogLevel.Warn);
+                WarpToValidatedTile(npc, destMapName, destTile);
+                onArrived?.Invoke(true);
+                return;
+            }
+
+            ModEntry.SMonitor?.Log(
+                $"[FarmBusStopNav] {npc.Name}: BusStop→Town approach tile resolved to ({(int)townApproachTile.X},{(int)townApproachTile.Y}).",
+                LogLevel.Debug);
+
+            MovementManager.Instance.MoveToTile(npc, townApproachTile,
                 onComplete: () =>
                 {
                     // 如果目的地正好就是 Town，落到 warp 的 landing tile 附近即可；
@@ -300,16 +459,16 @@ namespace ValleytalkReborn
                     }
                     else
                     {
-                        Game1.warpCharacter(npc, destMapName, new Point((int)destTile.X, (int)destTile.Y));
+                        WarpToValidatedTile(npc, destMapName, destTile);
                     }
                     onArrived?.Invoke(true);
                 },
                 onFail: () =>
                 {
                     ModEntry.SMonitor?.Log(
-                        $"[FarmBusStopNav] {npc.Name} could not walk across BusStop — warping directly to destination.",
+                        $"[FarmBusStopNav] {npc.Name} could not reach BusStop→Town approach tile — warping directly to destination.",
                         LogLevel.Warn);
-                    Game1.warpCharacter(npc, destMapName, new Point((int)destTile.X, (int)destTile.Y));
+                    WarpToValidatedTile(npc, destMapName, destTile);
                     onArrived?.Invoke(true);
                 });
         }
@@ -370,8 +529,21 @@ namespace ValleytalkReborn
 
             if (busStopWarp != null)
             {
-                var exitTile = new Vector2(busStopWarp.X, busStopWarp.Y);
-                MovementManager.Instance.MoveToTile(npc, exitTile,
+                if (!TryResolveWarpApproachTile(loc, busStopWarp, npc, out var busStopApproachTile))
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[FarmBusStopNav] {npc.Name}: {currentMap}→BusStop approach tile resolution failed — warping directly to BusStop.",
+                        LogLevel.Warn);
+                    WarpToBusStopRightSide(npc);
+                    WalkBusStopToFarm(npc, onArrivedHome, onFail);
+                    return;
+                }
+
+                ModEntry.SMonitor?.Log(
+                    $"[FarmBusStopNav] {npc.Name}: {currentMap}→BusStop approach tile resolved to ({(int)busStopApproachTile.X},{(int)busStopApproachTile.Y}).",
+                    LogLevel.Debug);
+
+                MovementManager.Instance.MoveToTile(npc, busStopApproachTile,
                     onComplete: () =>
                     {
                         Game1.warpCharacter(npc, "BusStop", new Point(busStopWarp.TargetX, busStopWarp.TargetY));
@@ -380,7 +552,7 @@ namespace ValleytalkReborn
                     onFail: () =>
                     {
                         ModEntry.SMonitor?.Log(
-                            $"[FarmBusStopNav] {npc.Name} could not reach BusStop warp from '{currentMap}' — warping directly to BusStop.",
+                            $"[FarmBusStopNav] {npc.Name} could not reach {currentMap}→BusStop approach tile — warping directly to BusStop.",
                             LogLevel.Warn);
                         WarpToBusStopRightSide(npc);
                         WalkBusStopToFarm(npc, onArrivedHome, onFail);
@@ -404,14 +576,12 @@ namespace ValleytalkReborn
 
             if (townWarp != null)
             {
-                var landing = MovementPathfinding.FindWalkableTileNearWarp(
-                    busStop, new Vector2(townWarp.TargetX, townWarp.TargetY), npc);
-                Game1.warpCharacter(npc, "BusStop", new Point((int)landing.X, (int)landing.Y));
+                WarpToValidatedTile(npc, "BusStop", new Vector2(townWarp.TargetX, townWarp.TargetY));
             }
             else
             {
                 var farmEntry = Game1.getFarm().GetMainFarmHouseEntry();
-                Game1.warpCharacter(npc, "Farm", new Point(farmEntry.X, farmEntry.Y + 1));
+                WarpToValidatedTile(npc, "Farm", new Vector2(farmEntry.X, farmEntry.Y + 1));
             }
         }
 
@@ -427,13 +597,27 @@ namespace ValleytalkReborn
                     $"[FarmBusStopNav] {npc.Name}: BusStop has no warp to Farm — warping directly to Farm.",
                     LogLevel.Warn);
                 var farmEntry = Game1.getFarm().GetMainFarmHouseEntry();
-                Game1.warpCharacter(npc, "Farm", new Point(farmEntry.X, farmEntry.Y + 1));
+                WarpToValidatedTile(npc, "Farm", new Vector2(farmEntry.X, farmEntry.Y + 1));
                 WalkFarmToFarmHouse(npc, onArrivedHome, onFail);
                 return;
             }
 
-            var exitTile = new Vector2(farmWarp.X, farmWarp.Y);
-            MovementManager.Instance.MoveToTile(npc, exitTile,
+            if (!TryResolveWarpApproachTile(busStop, farmWarp, npc, out var farmApproachTile))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[FarmBusStopNav] {npc.Name}: BusStop→Farm approach tile resolution failed — warping directly to Farm.",
+                    LogLevel.Warn);
+                var farmEntry = Game1.getFarm().GetMainFarmHouseEntry();
+                WarpToValidatedTile(npc, "Farm", new Vector2(farmEntry.X, farmEntry.Y + 1));
+                WalkFarmToFarmHouse(npc, onArrivedHome, onFail);
+                return;
+            }
+
+            ModEntry.SMonitor?.Log(
+                $"[FarmBusStopNav] {npc.Name}: BusStop→Farm approach tile resolved to ({(int)farmApproachTile.X},{(int)farmApproachTile.Y}).",
+                LogLevel.Debug);
+
+            MovementManager.Instance.MoveToTile(npc, farmApproachTile,
                 onComplete: () =>
                 {
                     Game1.warpCharacter(npc, "Farm", new Point(farmWarp.TargetX, farmWarp.TargetY));
@@ -442,10 +626,10 @@ namespace ValleytalkReborn
                 onFail: () =>
                 {
                     ModEntry.SMonitor?.Log(
-                        $"[FarmBusStopNav] {npc.Name} could not walk across BusStop to Farm side — warping directly.",
+                        $"[FarmBusStopNav] {npc.Name} could not reach BusStop→Farm approach tile — warping directly.",
                         LogLevel.Warn);
                     var farmEntry = Game1.getFarm().GetMainFarmHouseEntry();
-                    Game1.warpCharacter(npc, "Farm", new Point(farmEntry.X, farmEntry.Y + 1));
+                    WarpToValidatedTile(npc, "Farm", new Vector2(farmEntry.X, farmEntry.Y + 1));
                     WalkFarmToFarmHouse(npc, onArrivedHome, onFail);
                 });
         }
@@ -457,7 +641,7 @@ namespace ValleytalkReborn
             if (loc == null)
             {
                 var farmEntry = Game1.getFarm().GetMainFarmHouseEntry();
-                Game1.warpCharacter(npc, "Farm", new Point(farmEntry.X, farmEntry.Y + 1));
+                WarpToValidatedTile(npc, "Farm", new Vector2(farmEntry.X, farmEntry.Y + 1));
                 WalkFarmToFarmHouse(npc, onArrivedHome, onFail);
                 return;
             }
@@ -467,8 +651,22 @@ namespace ValleytalkReborn
 
             if (farmWarp != null)
             {
-                var exitTile = new Vector2(farmWarp.X, farmWarp.Y);
-                MovementManager.Instance.MoveToTile(npc, exitTile,
+                if (!TryResolveWarpApproachTile(loc, farmWarp, npc, out var farmApproachTile))
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[FarmBusStopNav] {npc.Name}: {loc.Name}→Farm approach tile resolution failed — warping directly to Farm.",
+                        LogLevel.Warn);
+                    var farmEntry = Game1.getFarm().GetMainFarmHouseEntry();
+                    WarpToValidatedTile(npc, "Farm", new Vector2(farmEntry.X, farmEntry.Y + 1));
+                    WalkFarmToFarmHouse(npc, onArrivedHome, onFail);
+                    return;
+                }
+
+                ModEntry.SMonitor?.Log(
+                    $"[FarmBusStopNav] {npc.Name}: {loc.Name}→Farm approach tile resolved to ({(int)farmApproachTile.X},{(int)farmApproachTile.Y}).",
+                    LogLevel.Debug);
+
+                MovementManager.Instance.MoveToTile(npc, farmApproachTile,
                     onComplete: () =>
                     {
                         Game1.warpCharacter(npc, "Farm", new Point(farmWarp.TargetX, farmWarp.TargetY));
@@ -476,8 +674,11 @@ namespace ValleytalkReborn
                     },
                     onFail: () =>
                     {
+                        ModEntry.SMonitor?.Log(
+                            $"[FarmBusStopNav] {npc.Name} could not reach {loc.Name}→Farm approach tile — warping directly.",
+                            LogLevel.Warn);
                         var farmEntry = Game1.getFarm().GetMainFarmHouseEntry();
-                        Game1.warpCharacter(npc, "Farm", new Point(farmEntry.X, farmEntry.Y + 1));
+                        WarpToValidatedTile(npc, "Farm", new Vector2(farmEntry.X, farmEntry.Y + 1));
                         WalkFarmToFarmHouse(npc, onArrivedHome, onFail);
                     });
                 return;
@@ -490,20 +691,37 @@ namespace ValleytalkReborn
 
             if (anyExit != null)
             {
-                var exitTile = new Vector2(anyExit.X, anyExit.Y);
-                MovementManager.Instance.MoveToTile(npc, exitTile,
+                if (!TryResolveWarpApproachTile(loc, anyExit, npc, out var anyExitApproachTile))
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[FarmBusStopNav] {npc.Name}: {loc.Name} exit approach tile resolution failed — warping directly to Farm.",
+                        LogLevel.Warn);
+                    var farmEntry = Game1.getFarm().GetMainFarmHouseEntry();
+                    WarpToValidatedTile(npc, "Farm", new Vector2(farmEntry.X, farmEntry.Y + 1));
+                    WalkFarmToFarmHouse(npc, onArrivedHome, onFail);
+                    return;
+                }
+
+                ModEntry.SMonitor?.Log(
+                    $"[FarmBusStopNav] {npc.Name}: {loc.Name} exit approach tile resolved to ({(int)anyExitApproachTile.X},{(int)anyExitApproachTile.Y}).",
+                    LogLevel.Debug);
+
+                MovementManager.Instance.MoveToTile(npc, anyExitApproachTile,
                     onComplete: () =>
                     {
                         Game1.warpCharacter(npc, anyExit.TargetName, new Point(anyExit.TargetX, anyExit.TargetY));
                         // 走到了中间地图，不在三图体系内继续寻路，直接兜底瞬移回 Farm。
                         var farmEntry = Game1.getFarm().GetMainFarmHouseEntry();
-                        Game1.warpCharacter(npc, "Farm", new Point(farmEntry.X, farmEntry.Y + 1));
+                        WarpToValidatedTile(npc, "Farm", new Vector2(farmEntry.X, farmEntry.Y + 1));
                         WalkFarmToFarmHouse(npc, onArrivedHome, onFail);
                     },
                     onFail: () =>
                     {
+                        ModEntry.SMonitor?.Log(
+                            $"[FarmBusStopNav] {npc.Name} could not reach {loc.Name} exit approach tile — warping directly to Farm.",
+                            LogLevel.Warn);
                         var farmEntry = Game1.getFarm().GetMainFarmHouseEntry();
-                        Game1.warpCharacter(npc, "Farm", new Point(farmEntry.X, farmEntry.Y + 1));
+                        WarpToValidatedTile(npc, "Farm", new Vector2(farmEntry.X, farmEntry.Y + 1));
                         WalkFarmToFarmHouse(npc, onArrivedHome, onFail);
                     });
                 return;
@@ -513,7 +731,7 @@ namespace ValleytalkReborn
                 $"[FarmBusStopNav] {npc.Name}: no usable exit from '{loc.Name}' — warping directly to Farm.",
                 LogLevel.Warn);
             var fallbackEntry = Game1.getFarm().GetMainFarmHouseEntry();
-            Game1.warpCharacter(npc, "Farm", new Point(fallbackEntry.X, fallbackEntry.Y + 1));
+            WarpToValidatedTile(npc, "Farm", new Vector2(fallbackEntry.X, fallbackEntry.Y + 1));
             WalkFarmToFarmHouse(npc, onArrivedHome, onFail);
         }
 

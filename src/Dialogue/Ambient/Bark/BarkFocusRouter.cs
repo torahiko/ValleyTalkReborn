@@ -629,7 +629,7 @@ private static List<PersonCandidate> EvaluateNearbyPresence(NPC npc, bool isZh)
         return result;
     }
 
-    // ── 3.3 降级处理：无特殊关系时的环境反馈 ──
+    // ── 3.3 降级处理：无特殊关系时的环境反馈 ── 
     if (crowdCount >= 4)
     {
         // ★ 高密度人群特异化（酒吧/聚会）：将注意力转向整体环境氛围，权重提升至 0.7f
@@ -668,6 +668,7 @@ private static List<PersonCandidate> EvaluateNearbyPresence(NPC npc, bool isZh)
     /// 剔除中括号标签前缀与"面前的/你刚刚"等面对面交互词汇。
     /// </summary>
     internal static string FormatPerceptionForBark(string template, bool isZh)
+    
     {
         if (string.IsNullOrWhiteSpace(template)) return null;
 
@@ -681,7 +682,7 @@ private static List<PersonCandidate> EvaluateNearbyPresence(NPC npc, bool isZh)
                 s = s.Substring(close + 1).TrimStart();
         }
 
-        // 2. 剔除面对面交互词汇
+        // 2. 剔除面对面交互词汇 
         if (isZh)
         {
             s = s.Replace("面前的玩家", "玩家").Replace("你刚刚收到了", "刚才收到了")

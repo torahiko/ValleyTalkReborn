@@ -803,9 +803,13 @@ internal sealed class AmbientBarkModule : IDialogueModule
             if (request == null)
                 return;
 
-            ModEntry.SMonitor?.Log(
-                $"[AmbientBark] Bark 请求上下文 ({request.NpcName}):\n[SYSTEM]\n{request.SystemPrompt}\n\n[USER]\n{request.UserPrompt}",
-                LogLevel.Debug);
+            // ★ 修复：长文本上下文受 Config.Debug 门控保护，未开启时彻底静默
+            if (Config?.Debug == true)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[AmbientBark] Bark 请求上下文 ({request.NpcName}):\n[SYSTEM]\n{request.SystemPrompt}\n\n[USER]\n{request.UserPrompt}",
+                    LogLevel.Debug);
+            }
 
             var response = await _llmGateway.ExecuteAsync(
                 LlmContextTypes.Bark,

@@ -790,19 +790,6 @@ public class Prompts
         // ══════════════════════════════════════════════════════════════════════
         // ❌ [REMOVAL] 删除重复的 gossipSnapshots 注入（已在 SystemPrompt 中处理）
         // ══════════════════════════════════════════════════════════════════════
-        // 原代码已删除（见上方注释）
-        // 
-        // 业务逻辑说明：
-        // 1. gossip（小镇传闻）已在 LlmDialogueService.cs 中通过 
-        //    PerceptionInjector.BuildGossipBlock 注入到 SystemPrompt
-        // 2. SystemPrompt 中的 gossip 每日轮换一条，带严格去重
-        // 3. 此处重复注入会导致：
-        //    a) 同一条 gossip 在 SystemPrompt 和 CorePrompt 中各出现一次
-        //    b) PromptDeduplicator 暴力去重，改变 SystemPrompt 内容，破坏 KV-Cache
-        //    c) 增加无效 Token 消耗
-        //    d) 破坏"对话历史置底"拓扑原则
-        // 4. 删除后，gossip 统一由 SystemPrompt 管理，作为静态背景设定
-        // ══════════════════════════════════════════════════════════════════════
 
         string finalPrompt = prompt.ToString();
         LogRoutingDebug(finalPrompt, "FULL_CONTEXT_BUILD");
@@ -832,8 +819,8 @@ public class Prompts
         if (isFestivalToday)
         {
             sb.AppendLine(isZh
-                ? "- 冲突拒绝: 今天是节日有特殊安排。请在对白中委婉说明改天再约，且绝对不要输出 [UI:DATE_INVITE] 标签。"
-                : "- DECLINE: Festival conflict today. Decline in dialogue and NEVER output [UI:DATE_INVITE].");
+                ? "- 冲突拒绝: 今天是节日，日程有冲突。依据角色性格在对白中委婉说明改天再约，本次仅输出对白文本。"
+                : "- DECLINE: Festival conflict today. Explain in dialogue that you'll reschedule; output dialogue text only.");
         }
         else
         {
@@ -841,8 +828,8 @@ public class Prompts
                 ? "- 若同意赴约: 依据角色性格与好感度表达欣喜与期待，并在回复台词的最末尾附加内部标签 [UI:DATE_INVITE]。"
                 : "- IF ACCEPTING: Express anticipation consistent with your persona, and append [UI:DATE_INVITE] at the absolute end.");
             sb.AppendLine(isZh
-                ? "- 若拒绝赴约: 依据角色性格在对白中委婉表达理由，且严禁输出 [UI:DATE_INVITE] 标签。"
-                : "- IF DECLINING: Provide an in-character explanation, and NEVER output [UI:DATE_INVITE].");
+                ? "- 若拒绝赴约: 依据角色性格在对白中委婉表达理由，本情况仅输出对白文本。"
+                : "- IF DECLINING: Provide an in-character explanation as dialogue text only.");
         }
         sb.AppendLine("</date_invitation_protocol>\n");
     }
@@ -873,7 +860,6 @@ public class Prompts
             sb.AppendLine($"║   PendingMilestoneBlock: {(!string.IsNullOrEmpty(PendingMilestoneBlock) ? "✓ Injected" : "✗ Empty")}");
 
             // ── 2. 拓扑结构验证 ──
-            // 探测关键字兼容 i18n 实际渲染的标题（zh: 对话历史记录 / en: Conversation History）
             sb.AppendLine("║");
             sb.AppendLine("║ [Topology Structure]");
 
@@ -882,21 +868,15 @@ public class Prompts
                 || finalPrompt.Contains("### Conversation History")
                 || finalPrompt.Contains("### CURRENT");
 
-            // movement_instruction 仅在玩家请求移动/跟随时注入，站立闲聊本就不需要；
-            // 区分"不需要位移"与"期望位移但缺失"，避免正常闲聊被判假警报。
             bool hasMovementInstruction = finalPrompt.Contains("<movement_instruction");
             bool isMovementExpected = CurrentFlags?.IsMovementRequested == true || CurrentFlags?.IsFollowing == true;
 
-            
-            // 兼容 i18n 实际渲染的标题（zh: 格式与排版要求 / en: Formatting & Output Requirements）
-            // 兼容检查：Instructions 作为独立块管理，检查其属性是否已正确生成并包含有效指令
             string instructionsText = Instructions ?? "";
             bool hasInstructions = instructionsText.Contains("## 输出指令")
                                    || instructionsText.Contains("## 格式与排版要求")
                                    || instructionsText.Contains("## OUTPUT INSTRUCTIONS")
                                    || instructionsText.Contains("## Formatting & Output Requirements")
                                    || !string.IsNullOrWhiteSpace(instructionsText);
-            
 
             sb.AppendLine($"║   CurrentConversation: {(hasCurrentConversation ? "✓ Present" : "✗ Missing")}");
             sb.AppendLine($"║   MovementInstruction: {(hasMovementInstruction ? "✓ Present" : (isMovementExpected ? "✗ Missing" : "– Not Required"))}");
@@ -999,8 +979,8 @@ public class Prompts
         _injectedPrivateThoughts.Add(preoccupation);
         prompt.AppendLine(Util.GetString(Character, "preoccupation", new { Name = Name, preoccupation = preoccupation }));
         prompt.AppendLine(isZh
-            ? "（此思绪是你的内心背景，农夫并不知情。若要提及，必须由你自己在台词中自然说出；严禁据此生成农夫的发言选项。）"
-            : "(This thought is your PRIVATE inner context; the farmer knows nothing about it. If you reference it, voice it yourself in dialogue. NEVER use it to generate farmer response options.)");
+            ? "（这是你尚未说出口的内心想法，农夫无从知晓。若要让农夫知道，需由你自己先在台词中说出来；发言选项的内容范围以你已经说出口的台词为准。）"
+            : "(This is your private, unspoken thought — the farmer has no way of knowing it. If you want them to know, voice it yourself in dialogue first; base any farmer response options only on what you have already said aloud.)");
     }
 
     private void GetCurrentConversation(StringBuilder prompt)
@@ -1047,8 +1027,8 @@ public class Prompts
             : "Before this exchange began, this key thought was lingering in your mind:");
         prompt.AppendLine(pending);
         prompt.AppendLine(isZh
-            ? "此事农夫并不知晓。若要提及，必须由你自己在台词中说出；严禁据此生成农夫的发言选项。表达方式由角色性格与好感度决定。"
-            : "The farmer knows nothing about this. If you mention it, voice it in your own dialogue; NEVER base a farmer response option on it. Expression style is determined by character personality and heart level.");
+            ? "此事农夫尚不知情。若要让农夫知道，需由你自己先在台词中说出来；发言选项的内容范围以你已经说出口的台词为准。表达方式由角色性格与好感度决定。"
+            : "The farmer doesn't know about this yet. If you want them to know, voice it yourself in dialogue first; base any farmer response options only on what you have already said aloud. The expression style follows character personality and heart level.");
         prompt.AppendLine("</pending_thought>\n");
     }
 
@@ -1622,16 +1602,44 @@ public class Prompts
         commandPrompt.AppendLine();
 
         commandPrompt.AppendLine(isZh ? "### [系统行为指令：肢体动作与表情]" : "### [SYSTEM TRIGGERS: EMOTES & PHYSICAL ACTIONS]");
-        if (ModEntry.Config.UseNativeToolCalling)
+
+        // 统一且纯粹地映射游戏底层头顶表情资产：只讲格式与对应事实，不给角色预设行为与道德条框
+        if (isZh)
         {
-            commandPrompt.AppendLine(isZh ? "- 表情气泡: 如有需要可使用 [ACTION:EMOTE:ANGRY]、[ACTION:EMOTE:HEART]、[ACTION:EMOTE:BLUSH] 等标签。" : "- Emote bubbles: Use text tags like [ACTION:EMOTE:ANGRY], [ACTION:EMOTE:HEART], [ACTION:EMOTE:BLUSH] if appropriate.");
-            commandPrompt.AppendLine(isZh
-                ? "- 工具与反应分工: `trigger_physical_action` 专用于玩家明确给出的方向位移或跟随指令；面对亲吻、拥抱等亲昵交互，全权通过对白与表情气泡予以回应。"
-                : "- Dispatch Routing: Dedicate `trigger_physical_action` exclusively to explicit directional movement or following requests. Fulfill social and affectionate interactions (kisses, hugs) purely through spoken dialogue and emote bubbles.");
+            commandPrompt.AppendLine("- 表情气泡标签（对应角色头顶动画）：");
+            commandPrompt.AppendLine("  * [ACTION:EMOTE:HAPPY]：开心、微笑");
+            commandPrompt.AppendLine("  * [ACTION:EMOTE:HEART]：爱心");
+            commandPrompt.AppendLine("  * [ACTION:EMOTE:BLUSH]：害羞");
+            commandPrompt.AppendLine("  * [ACTION:EMOTE:SURPRISE]：惊讶");
+            commandPrompt.AppendLine("  * [ACTION:EMOTE:SAD]：难过");
+            commandPrompt.AppendLine("  * [ACTION:EMOTE:ANGRY]：生气");
         }
         else
         {
-            commandPrompt.AppendLine(isZh ? "- 表情气泡标签: [ACTION:EMOTE:ANGRY], [ACTION:EMOTE:SAD], [ACTION:EMOTE:HEART], [ACTION:EMOTE:HAPPY], [ACTION:EMOTE:BLUSH], [ACTION:EMOTE:SURPRISE]" : "- Emote tags: [ACTION:EMOTE:ANGRY], [ACTION:EMOTE:SAD], [ACTION:EMOTE:HEART], [ACTION:EMOTE:HAPPY], [ACTION:EMOTE:BLUSH], [ACTION:EMOTE:SURPRISE]");
+            commandPrompt.AppendLine("- Emote bubble tags (head animation triggers):");
+            commandPrompt.AppendLine("  * [ACTION:EMOTE:HAPPY]: Happy, smile");
+            commandPrompt.AppendLine("  * [ACTION:EMOTE:HEART]: Heart");
+            commandPrompt.AppendLine("  * [ACTION:EMOTE:BLUSH]: Blush");
+            commandPrompt.AppendLine("  * [ACTION:EMOTE:SURPRISE]: Surprise");
+            commandPrompt.AppendLine("  * [ACTION:EMOTE:SAD]: Sad");
+            commandPrompt.AppendLine("  * [ACTION:EMOTE:ANGRY]: Angry");
+        }
+
+        if (ModEntry.Config.UseNativeToolCalling)
+        {
+            commandPrompt.AppendLine();
+            commandPrompt.AppendLine(isZh
+                ? "- 机制分工: `trigger_physical_action` 工具专用于物理位移或跟随；头顶表情气泡使用上述文本标签。"
+                : "- Mechanics: `trigger_physical_action` is dedicated to movement/following; emote bubbles use the text tags above.");
+            commandPrompt.AppendLine();
+            commandPrompt.AppendLine("<dual_output_rule>");
+            commandPrompt.AppendLine(isZh
+                ? "调用工具的同时，在文本响应中同步给出口头台词：每次输出都是【台词 + 工具调用】成对出现。"
+                : "When calling a tool, include spoken dialogue in the same response: every output pairs dialogue with the tool call.");
+            commandPrompt.AppendLine("</dual_output_rule>");
+        }
+        else
+        {
             commandPrompt.AppendLine(isZh ? "- 转向标签: [ACTION:FACE:FARMER] (面向玩家), [ACTION:FACE:UP] / [DOWN] / [LEFT] / [RIGHT]" : "- Turn tags: [ACTION:FACE:FARMER] (look at player), [ACTION:FACE:UP] / [DOWN] / [LEFT] / [RIGHT]");
             commandPrompt.AppendLine(isZh ? "- 位移与跟随标签: [ACTION:STEP:FORWARD], [ACTION:STEP:BACKWARD], [ACTION:STEP:LEFT], [ACTION:STEP:RIGHT], [ACTION:FOLLOW]" : "- Movement tags: [ACTION:STEP:FORWARD], [ACTION:STEP:BACKWARD], [ACTION:STEP:LEFT], [ACTION:STEP:RIGHT], [ACTION:FOLLOW]");
             commandPrompt.AppendLine();
@@ -1639,16 +1647,6 @@ public class Prompts
             commandPrompt.AppendLine("  [Dialogue Text] [ACTION:FOLLOW]");
             commandPrompt.AppendLine("  [Dialogue Text] [ACTION:STEP:BACKWARD]");
             commandPrompt.AppendLine("  [Dialogue Text] [ACTION:EMOTE:HAPPY]");
-        }
-
-        if (ModEntry.Config.UseNativeToolCalling)
-        {
-            commandPrompt.AppendLine();
-            commandPrompt.AppendLine("<dual_output_rule>");
-            commandPrompt.AppendLine(isZh
-                ? "当调用工具时，在文本响应中保持口头台词，始终维持【台词 + 工具调用】的双重同时输出。"
-                : "When invoking any tool, ALWAYS provide spoken dialogue in text response simultaneously.");
-            commandPrompt.AppendLine("</dual_output_rule>");
         }
 
         // Skip language instruction when target is English or InvariantCulture (no meaningful constraint)
@@ -1681,8 +1679,8 @@ public class Prompts
             ? "- 若本次对话结束后你的情绪明显转变（如变得好奇/生气/高兴），在台词最末尾附加 [MOOD:curious] / [MOOD:annoyed] / [MOOD:happy] 等标签。"
             : "- If your emotional tone has clearly shifted after this exchange (e.g. curious/annoyed/happy), append [MOOD:curious] / [MOOD:annoyed] / [MOOD:happy] at the absolute end.");
         instructions.AppendLine(isZh
-            ? "- 【选项铁律】% 发言选项是农夫现在说得出口的话。农夫不知道你的内心思绪（preoccupation / pending_thought）与你偷听到的内容，除非你已在台词中亲口说出。严禁基于这些私有信息生成 % 选项。"
-            : "- [OPTION GROUNDING] % options are things the farmer could actually say right now. The farmer does NOT know your inner thoughts (preoccupation / pending_thought) or what you overheard, unless you already voiced it in dialogue. NEVER base a % option on such private context.");
+            ? "- 【选项范围】% 发言选项，取材范围仅限于你已经在台词中亲口说出的内容——这是农夫能听到、能借此接话的信息。你的内心思绪（preoccupation / pending_thought）与偷听到的内容，要等你自己说出口之后，才算进入这个范围。"
+            : "- [OPTION SCOPE] % options draw only from what you have actually said aloud in dialogue — that's the information the farmer has heard and can respond to. Your inner thoughts (preoccupation / pending_thought) and anything overheard enter that scope only once you've voiced them yourself.");
 
         if (!Character.Bio.ExtraPortraits.ContainsKey("!"))
         {

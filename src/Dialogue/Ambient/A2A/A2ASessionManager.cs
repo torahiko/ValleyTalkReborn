@@ -510,10 +510,17 @@ internal sealed class A2ASessionManager
                         session.RequestCts = new CancellationTokenSource();
                         var token = session.RequestCts.Token;
                         _ = Task.Run(() => FetchA2AScriptAsync(session.SessionId, request, token));
-                        // A2ASessionManager.cs -> FetchA2AScriptAsync
-                        ModEntry.SMonitor?.Log(
-                            $"[A2A] 发送脚本请求：{request.NamesLog}\n--- System Prompt ---\n{request.SystemPrompt}\n--- User Prompt ---\n{request.UserPrompt}",
-                            LogLevel.Debug);
+                        // ★ 修复：长文本上下文受 Config.Debug 门控保护，未开启时降级为简短状态行
+                        if (_config?.Debug == true)
+                        {
+                            ModEntry.SMonitor?.Log(
+                                $"[A2A] 发送脚本请求：{request.NamesLog}\n--- System Prompt ---\n{request.SystemPrompt}\n--- User Prompt ---\n{request.UserPrompt}",
+                                LogLevel.Debug);
+                        }
+                        else
+                        {
+                            ModEntry.SMonitor?.Log($"[A2A] 发送脚本请求：{request.NamesLog}", LogLevel.Trace);
+                        }
                     }
                 }
 
