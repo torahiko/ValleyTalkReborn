@@ -1,0 +1,11 @@
+{
+	"Name": "Northwestcoast Forage",
+	"Author": "MK215",
+	"Description": "Forage and Spawns for the Northwestcoast",
+	"Version": "1.0.0",
+	"UniqueID": "MK215.Northwestcoast_Forage",
+	"UpdateKeys": [ "Nexus:?????" ],
+	"ContentPackFor": {
+		"UniqueID": "Esca.FarmTypeManager"
+	}
+}

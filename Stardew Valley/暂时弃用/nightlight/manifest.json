@@ -1,0 +1,10 @@
+{
+  "Name": "Gentle Night Lighting",
+  "Author": "bluebellfairy",
+  "Version": "2.2.2",
+  "Description": "Replaces subtractive blending with effect shaders.",
+  "UniqueID": "Nightlight",
+  "EntryDll": "nightlight.dll",
+  "MinimumApiVersion": "4.0.0",
+  "UpdateKeys": []
+}

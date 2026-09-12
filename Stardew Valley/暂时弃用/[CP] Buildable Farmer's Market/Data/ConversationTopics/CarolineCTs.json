@@ -1,0 +1,396 @@
+{
+    "Changes": [
+        {
+            "LogName": "Include CT Template - Caroline Mushroom",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "MushroomShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Mushroom}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2,EdibleItem.3, ForageItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Spring Crops",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "SpringCropsShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Crops.Spring}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2,EdibleItem.3, {{SpringSeasonal}}}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Summer Crops",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "SummerCropsShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Crops.Summer}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, {{SummerSeasonal}}}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Fall Crops",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "FallCropsShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Crops.Fall}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, {{FallSeasonal}}}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline All Crops",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "AllCropsShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Crops}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Oil",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "OilShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Oil}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "ArtisanGoodsItem",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Jelly",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "JellyShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Jelly}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, ArtisanGoodsItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Honey",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "HoneyShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Honey}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, ArtisanGoodsItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Juice",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "JuiceShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Juice}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, ArtisanGoodsItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Pickles",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "PickleShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Pickle}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, ArtisanGoodsItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Artisan Goods",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "ArtisanGoodsShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.ArtisanGoods}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "ArtisanGoodsItem",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Forage",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "ForageShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Forage}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, ForageItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Berry",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "BerryShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Berry}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, ForageItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Egg",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "EggShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Egg}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, AnimalItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Milk",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "MilkShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Milk}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, AnimalItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Animal Goods",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "AnimalGoodsShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.AnimalGoods}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "AnimalItem",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Spring Fruit",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "SpringFruitShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Fruit}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, {{SpringSeasonal}}}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Summer Fruit",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "SummerFruitShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Fruit}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, {{SummerSeasonal}}}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Fall Fruit",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "FallFruitShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Fruit}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, {{FallSeasonal}}}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline All Fruit",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "AllFruitShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Fruit}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Flower",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "FlowerShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Flower}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "FlowerItem",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Herb",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "HerbShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Herb}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Bread",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMB",
+                "CTToken": "BreadShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Bread}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Dessert",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMB",
+                "CTToken": "SweetBakeryShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.SweetBakery}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, DessertItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Fish",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMFM",
+                "CTToken": "FishShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Fish}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, FishingItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Crabpot",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMFM",
+                "CTToken": "CrabpotShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Crabpot}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, FishingItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Roe",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMFM",
+                "CTToken": "RoeShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Roe}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, FishingItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Caroline Meat",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMFM",
+                "CTToken": "MeatShop",
+                "CharacterName": "Caroline",
+                "ItemText": "{{i18n: BFM.Meat}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        }
+    ]
+}

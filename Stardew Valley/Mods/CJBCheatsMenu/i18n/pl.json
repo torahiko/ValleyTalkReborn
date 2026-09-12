@@ -1,0 +1,245 @@
+﻿{
+    /*********
+    ** Main translations
+    *********/
+    // mod name shown in the menu
+    "mod-name": "CJB Cheats Menu",
+
+    // tab names
+    "tabs.player-and-tools": "Gracz i Narzędzia",
+    "tabs.farm-and-fishing": "Farma i Wędkarstwo",
+    "tabs.skills": "Umiejętności",
+    "tabs.weather": "Pogoda",
+    "tabs.relationships": "Relacje",
+    "tabs.warp": "Teleportacja",
+    "tabs.time": "Czas",
+    "tabs.advanced": "Zaawansowane",
+    "tabs.controls": "Sterowanie",
+
+
+    /*********
+    ** Player & Tools tab
+    *********/
+    // player
+    "player.title": "Gracz",
+    "player.infinite-stamina": "Nieskończona Energia",
+    "player.infinite-health": "Nieśmiertelność",
+    "player.instant-cooldowns": "Natychmiastowy Czas Odnowienia Broni",
+    "player.inventory-size": "Rozmiar Ekwipunku",
+    "player.movement-speed": "Szybkość Ruchu",
+    "player.movement-speed.default": "normalna",
+    "player.one-hit-kill": "Zabijaj Jednym Ciosem",
+    "player.max-daily-luck": "Maksymalne Dzienne Szczęście",
+
+    // tools
+    "tools.title": "Narzędzia",
+    "tools.infinite-water": "Nieskończona Woda w Konewce",
+    "tools.one-hit-break": "Rozbijaj Jednym Uderzeniem",
+    "tools.harvest-with-scythe": "Zbieraj Plony za Pomocą Kosy",
+
+    // tool enchantments
+    "tool-enchantments.title": "Zaklęcia Narzędzi",
+    "tool-enchantments.select-tool": "Wybierz narzędzie z paska narzędzi, aby edytować zaklęcia.",
+    "tool-enchantments.none-for-tool": "Brak dostępnych zaklęć dla wybranego {{toolName}}.",
+    "tool-enchantments.for-tool": "Dla wybranego {{toolName}}.",
+
+    // money
+    "add.money": "Pieniądze",
+    "add.casino-coins": "Monety z Kasyna",
+    "add.golden-walnuts": "Złote Orzechy",
+    "add.qi-gems": "Kryształy Qi",
+    "add.amount-gold": "Dodaj {{amount}}zł",
+    "add.amount-other": "Dodaj {{amount}}",
+
+
+    /*********
+    ** Farm & Fishing tab
+    *********/
+    // farm
+    "farm.title": "Farma",
+    "farm.auto-water-crops": "Auto-Podlewanie Upraw",
+    "farm.auto-water-pet-bowls": "Auto-Water Pet Bowls", // TODO
+    "farm.durable-fences": "Trwałe Płoty",
+    "farm.instant-build": "Natychmiastowa Budowa",
+    "farm.auto-feed-animals": "Auto-Karmienie Zwierząt",
+    "farm.auto-pet-animals": "Auto-Głaskanie Zwierząt",
+    "farm.auto-pet-pets": "Auto-Głaskanie Zwierzaków Domowych",
+    "farm.infinite-hay": "Nieskończone Siano",
+
+    // fishing
+    "fishing.title": "Wędkarstwo",
+    "fishing.instant-catch": "Natychmiastowe Wyławianie",
+    "fishing.instant-bite": "Natychmiastowe Branie",
+    "fishing.always-throw-max-distance": "Zawsze Rzucaj na Maksymalną Odległość",
+    "fishing.always-treasure": "Nieustanne Skarby",
+    "fishing.durable-tackles": "Trwałe Akcesoria",
+
+    // fast machines
+    "fast-machines.title": "Szybka Produkcja Maszynowa",
+    "fast-machines.fruit-trees": "Drzewa Owocowe",
+    "fast-machines.ready-in-the-morning": "{{machineName}} (gotowe o poranku)",
+
+
+    /*********
+    ** Skills tab
+    *********/
+    // skills
+    "skills.title": "Umiejętności",
+    "skills.increase-skill": "Zwiększ Poziom {{skillName}}: {{currentLevel}}",
+    "skills.increase-mastery": "Increase mastery level: {{currentLevel}}", // TODO
+
+    // professions
+    "professions.title": "Profesje",
+    "professions.profession": "{{skillName}} poz. {{level}} - {{professionName}}",
+
+
+    /*********
+    ** Weather tab
+    *********/
+    "weather.title": "Jutrzejsza Pogoda",
+    "weather.current-value": "Jutrzejsza pogoda jest ustawiona na {{weather}}.",
+    "weather.explanation": "Kliknij przycisk poniżej, aby ustawić pogodę na jutro (tylko na jutro). Ta zakładka nie ma wpływu na pogodę w innych przypadkach.",
+    "weather.cannot-change-weather": "The game forces tomorrow's weather to {{weather}}, so it can't be changed.", // TODO
+    "weather.sunny": "Słoneczna",
+    "weather.raining": "Deszczowa",
+    "weather.lightning": "Burzowa",
+    "weather.snowing": "Śnieżna",
+    "weather.green-rain": "Zielony Deszcz",
+
+
+    /*********
+    ** Relationships tab
+    *********/
+    "relationships.title": "Relacje",
+    "relationships.give-gifts-anytime": "Dawaj Prezenty Kiedykolwiek Chcesz",
+    "relationships.no-decay": "Brak Podupadania Relacji",
+    "relationships.friends": "Przyjaciele",
+
+
+    /*********
+    ** Warps tab
+    *********/
+    "warp.customized-warning": "Te teleportacje zostały zmodyfikowane przez twoje mody. Proszę zgłaszać problemy z teleportacjami do modów, które je dodały, jeśli ma to zastosowanie.",
+
+    // main areas
+    "warp-section.main": "Główne Obszary",
+    "warp.farm": "Farma",
+    "warp.carpenter": "Sklep Stolarski",
+    "warp.desert": "Pustynia",
+    "warp.mines": "Kopalnia",
+    "warp.pierre-shop": "Sklep Pierra",
+
+    // town
+    "warp-section.town": "Miasteczko",
+    "warp.blacksmith": "Kowal",
+    "warp.community-center": "Centrum Społeczności",
+    "warp.jojamart": "JojaMarket",
+    "warp.movie-theater": "Kino",
+    "warp.museum": "Muzeum",
+    "warp.saloon": "Gwiezdna Knajpa",
+    "warp.sewer": "Ścieki",
+
+    // forest
+    "warp-section.forest": "Las",
+    "warp.hats": "Sklep z Czapkami",
+    "warp.mastery-cave": "Jaskinia Mistrzostwa",
+    "warp.ranch": "Ranczo Marnie",
+    "warp.secret-woods": "Tajemniczy Las",
+    "warp.wizard-tower": "Wieża Czarodzieja",
+
+    // mountain
+    "warp-section.mountain": "Góra",
+    "warp.adventurers-guild": "Gildia Poszukiwaczy Przygód",
+    "warp.bathhouse": "Spa",
+    "warp.mutant-bug-lair": "Legowisko Zmutowanych Robaków",
+    "warp.quarry": "Kamieniołom",
+    "warp.witch-swamp": "Bagno Wiedźmy",
+
+    // beach
+    "warp-section.beach": "Plaża",
+    "warp.tide-pools": "Baseny Pływowe",
+    "warp.willy-shop": "Sklep Williego",
+
+    // island
+    "warp-section.island": "Imbirowa Wyspa",
+    "warp.forge": "Kuźnia",
+    "warp.island-farm": "Farma na Wyspie",
+    "warp.dwarf-shop": "Sklep Krasnoluda w Wulkanie",
+    "warp.field-office": "Biuro Polowe",
+    "warp.leo-house": "Dom Leo",
+
+    // desert
+    "warp-section.desert": "Pustynia",
+    "warp.casino": "Kasyno",
+    "warp.sandy-shop": "Sklep Sandy",
+    "warp.skull-cavern": "Kościana Pieczara",
+
+
+    /*********
+    ** Time tab
+    *********/
+    // time
+    "time.title": "Czas",
+    "time.freeze-inside": "Zatrzymaj Czas Wewnątrz",
+    "time.freeze-caves": "Zatrzymaj Czas w Jaskiniach",
+    "time.freeze-everywhere": "Zatrzymaj Czas Wszędzie",
+    "time.fade-time-frozen-message": "Ukryj '{{timeFrozen}}' po kilku sekundach",
+    "time.time": "Czas",
+    "time.time-frozen-message": "Czas Zatrzymany",
+
+    // date
+    "date.title": "Data",
+    "date.warning": "Niektóre rzeczy nie zostaną zaktualizowane, dopóki nie minie noc.",
+    "date.year": "Rok",
+    "date.season": "Sezon",
+    "date.day": "Dzień",
+
+
+    /*********
+    ** Advanced tab
+    *********/
+    "flags.warning": "Korzystaj z tej zakładki na własne ryzyko!\nMoże ona powodować problemy, takie jak pominięte listy, wydarzenia lub zadania.",
+    "flags.quests": "Ukończ Zadania",
+    "flags.wallet": "Przedmioty z Portfela",
+    "flags.unlocked": "Odblokowane Miejsca",
+    "flags.unlocked.guild": "Gildia Poszukiwaczy Przygód",
+    "flags.unlocked.room": "Pokój: {{name}}",
+    "flags.unlocked-content": "Odblokowana Zawartość",
+    "flags.unlocked-content.dyes-and-tailoring": "Barwniki i Krawiectwo",
+    "flags.unlocked-content.junimo-text": "Możliwość czytania tekstu Junimo",
+    "flags.unlocked-content.perfection": "Osiągnięto perfekcję",
+    "flags.community-center": "Centrum Społeczności",
+    "flags.community-center.door-unlocked": "Odblokowane Drzwi",
+    "flags.jojamart.membership": "Członkostwo JojaMarket",
+
+
+    /*********
+    ** Controls tab
+    *********/
+    "controls.title": "Sterowanie",
+    "controls.android-config-note": "Możesz zmienić klawisze w plikach config dla modów CJB Cheats Menu i Virtual Keyboard.",
+    "controls.open-menu": "Otwórz Menu",
+    "controls.freeze-time": "Zatrzymaj Czas",
+    "controls.grow-tree": "Wzrost Drzew",
+    "controls.grow-crops": "Wzrost Upraw",
+    "controls.grow-radius": "Zasięg wzrostu wokół gracza",
+    "controls.reset-controls": "Zresetuj",
+    "controls.press-new-key": "Naciśnij nowy klawisz...",
+
+
+    /*********
+    ** Generic Mod Config Menu UI
+    *********/
+    "config.open-menu.desc": "Skrót klawiszowy, który otwiera menu (gdy żadne inne menu nie jest otwarte).",
+    "config.freeze-time.desc": "Skrót klawiszowy, który zatrzymuje zegar gry.",
+    "config.grow-tree.desc": "Skrót klawiszowy, który powoduje wzrost drzew wokół gracza.",
+    "config.grow-crops.desc": "Skrót klawiszowy, który powoduje wzrost upraw wokół gracza.",
+
+    "controls.reload-config": "Przeładuj ustawienia z pliku",
+    "controls.reload-config.desc": "Skrót klawiszowy, który przeładowuje ustawienia moda z pliku config.json moda. Jeśli menu jest obecnie otwarte, zmiany mogą obowiązywać dopiero po ponownym otwarciu.",
+
+    "config.title.other-options": "Inne opcje",
+    "config.default-tab.name": "Domyślna zakładka",
+    "config.default-tab.desc": "Zakładka domyślnie wyświetlana po otwarciu menu.",
+    "config.other-options": "Aby skonfigurować oszustwa, naciśnij klawisz 'otwórz menu' pokazany powyżej w grze. Upewnij się, że naciśniesz go po załadowaniu zapisu, gdy żadne inne menu lub dialog nie jest otwarty."
+}

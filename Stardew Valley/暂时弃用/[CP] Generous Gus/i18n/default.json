@@ -1,0 +1,125 @@
+{
+    
+"Gus.Introduction": "Well hello there! I'm Gus, chef and owner of the Stardrop Saloon.#$b#Stop in if you need any refreshments. I've always got hot coffee and cold beer at the ready!$h#$b#And by the way... if you're ever feeling stretched or in need of a hot meal, I usually have a little extra put aside. Just in case.",
+
+//After gift
+"Gus.AfterGift.0": "No, no need to thank me.$h",
+"Gus.AfterGift.1": "Now now, no need for thanks. You just pay it forward one of these days and think of old Gus.$h",
+"Gus.AfterGift.2": "Your grandfather always said that farming was hungry work. Watching you run around everywhere, I believe it!",
+"Gus.AfterGift.3": "No no -- free of charge.$h",
+"Gus.AfterGift.4": "I won't let anyone in Pelican Town go hungry.",
+"Gus.AfterGift.5": "No, no. Not another word. It's my pleasure.$h",
+"Gus.AfterGift.6": "Come back again soon, @. I'm always here.$h",
+
+// New player
+"Gus.NewPlayer.0": "Hi there, @! This is on the house for you tonight.",
+"Gus.NewPlayer.1": "Welcome to the Saloon, @. Why don't you tell me what you think of tonight's special?",
+"Gus.NewPlayer.2": "Here, @ -- on the house!$h#$b#Until %farm Farm is up and running, remember that you can always stop in here for a hot meal and some company.",
+"Gus.NewPlayer.3": "Welcome, @. Looks like you've put in another hard day's work on the farm.#$b#Here, you must be famished!",
+"Gus.NewPlayer.4": "Here, @ -- a hot plate to put some meat on those bones.",
+"Gus.NewPlayer.5": "There's our local farmer! I bet your nose led you right to my door -- and to today's special.$h",
+"Gus.NewPlayer.6": "Well, hello @! It's good to see you.#$b#Why don't you kick back and rest your feet while I whip up a plate for you?",
+
+// Poor player
+"Gus.PoorPlayer.0": "C'mon out of the weather, farmer @. Something tells me you could use a nourishing meal.",
+"Gus.PoorPlayer.1": "Hmmmmm. I don't like how skinny you look today farmer @. Here.",
+"Gus.PoorPlayer.2": "Why, hello there @! Are you here for the company, or has %farm Farm hit a bit of a rocky patch?#$b#Here -- we all need a kind word and a helping hand every now and then. That's what my mother always told me, at least.$h",
+
+// Expecting father
+"Gus.ExpectingFather.0": "Ah! I was wondering when I'd see you in here, @. How is the wife doing?#$b#Bet you could use a little pick-me-up, too!$h",
+"Gus.ExpectingFather.1": "How are things at home, @? Is %spouse healthy?#$b#I don't want to see her cooking dinner for you both, so here -- on the house!",
+"Gus.ExpectingFather.2": "@, always a pleasure to see you in here.$h#$b#Here -- I'm guessing you could use this right about now.",
+"Gus.ExpectingFather.3": "I know that look, @. Long night?#$b#Don't worry, %spouse will be fine. And so will you, after you've eaten!",
+"Gus.ExpectingFather.4": "I'm guessing we won't see you around as much in a few weeks, @.#$b#Here, have a plate on the house -- and remember to stop by after the big day to give us an update. We're all keeping you and %spouse in our thoughts.",
+"Gus.ExpectingFather.5": "Oooh, @. You look bone tired. Let me get you a little something.#$b#I know how much you're rushing around, lately, trying to take care of %spouse, but remember to look after yourself, too!",
+"Gus.ExpectingFather.6": "So, when's the big day?$h#$b#I thought you might've been forgetting to feed yourself, so I put a little something aside. Just for you, my friend!",
+
+//Expecting mother
+"Gus.ExpectingMother.0": "Why hello, @! What a pleasure to see you.$h#$b#Here, sit down and rest your feet. I bet you'd appreciate some of today's special.",
+"Gus.ExpectingMother.1": "It's farmer @! Good of you to come in. I hope you're not working yourself too hard.",
+"Gus.ExpectingMother.2": "Now, @, I know that you've got a farm to run, but remember to take it slow for awhile, OK? You can always send %spouse in here when you're both too tired to cook.",
+"Gus.ExpectingMother.3": "Hello @! Bet you're hungry.#$b#My mother would turn over in her grave if I didn't offer you at least a snack. Here!$h",
+"Gus.ExpectingMother.4": "Why @, are you sure you should be running around so much in your condition?#$b#Sit down and rest your feet for awhile while I put together a plate. On the house, of course!",
+"Gus.ExpectingMother.5": "When you're ready @, I hope you bring the little one by to see old Uncle Gus.#$b#I'll bet you and %spouse wouldn't mind me cooking for a change, either!$h",
+"Gus.ExpectingMother.6": "Hello, @, are you feeling alright?#$b#Here, I've been setting aside some quality ingredients because I bet you could use the nourishment. Give this a try, and tell me what you think!$h",
+
+//Adopting couple
+"Gus.Adopting.0": "Why hello, @! Got a case of the butterflies yet?#$b#Don't worry, it'll pass. You and %spouse are going to be great parents.$h#$b#But here -- just in case you needed a pick me up.",
+"Gus.Adopting.1": "How are things going, @? We're all eager to meet your new little one, so you'd better bring them by to see old Uncle Gus when they're ready.#$b#Here -- on the house!$h",
+"Gus.Adopting.2": "I bet you and %spouse have worked yourself into a fine froth, waiting for the adoption to go through.#$b#Here, this'll be good for the nerves.",
+"Gus.Adopting.3": "Do you and %spouse have everything you'll need on the farm, @?#$b#I'll bet you've been forgetting to feed yourselves properly. Let me take care of that right now!$h",
+"Gus.Adopting.4": "You should bring %spouse in one of these days. Take a quiet moment for yourselves become hectic.#$b#Here -- maybe bring a plate home and tell them hi for me, OK?",
+"Gus.Adopting.5": "Bet you're walking around on air, aren't you @? This is a beautiful time for both you and %spouse.",
+"Gus.Adopting.6": "Getting close now, aren't we @? You'd better get a good meal in now while you can afford the time!",
+
+"Gus.Celebrating.0": "You know what? I feel like celebrating, too!$h",
+"Gus.Celebrating.1": "Just remember to bring that little one in to see old Uncle Gus sometime!$h",
+"Gus.Celebrating.2": "This is a beautiful time, @. Enjoy it!$h",
+"Gus.Celebrating.3": "We'll all be raising a glass for you and %spouse tonight.$h",
+"Gus.Celebrating.4": "Here's to Pelican Town's upcoming addition!$h",
+
+// Quest dialogue
+"Gus.Quest.Linus1": "Hey @, I can't get away from the Saloon tonight, but I'm still a little worried about Linus.#$b#Could you please take a plate up to his tent and check in with him? Here's a few coins for the trouble.",
+"Gus.Quest.Linus2": "Brrrrrr. Every time the saloon door opens, I can feel a bite in the air.#$b#I'm worried about Linus up there in that tent of his, though.$s#$b#I know he's probably well-prepared for winter, but would you mind running a plate of hot food up there for him, @? Just in case.",
+"Gus.Quest.Linus3": "Winter again, huh?#$b#I'll bet you don't know what to do with all the time on your hands, now that your farm has gone to sleep for the season. Your grandfather was the same.$h#$b#Here, @, would you run this hot plate up to Linus? It'll make me feel better, knowing he has something warm in him today.",
+
+"Gus.questComplete_Quest_Linus1": "Thanks for helping out with the delivery, @. I hope you took care not to spill any of my special sauce!",
+"Gus.questComplete_Quest_Linus2": "Hello, @, thanks again for making the trek up to the mountains for me.#$b#How's Linus doing up there in the snow?",
+"Gus.questComplete_Quest_Linus3": "Oh, @! Thanks again for your help this year. Did Linus enjoy the Eggplant Parmesan?#$b#My mother always made me a plate when I got cold. Warms you right up!$h",
+
+"Gus.Winter.0": "I love this time of year. I always slip a few extra presents under the Winter Star tree for the kiddos.$h",
+"Gus.Winter.1": "The dark and cold is hard on people with depression.#$b#I wonder if I can convince Shane to try some sparkling cranberry juice tonight...$s",
+"Gus.Winter.2": "Clint comes in most nights, but he hardly talks to anyone.$s%revealtaste:Clint:(O)605#$b#I should whip up a plate of artichoke dip for him. That always puts a smile on his face.$h",
+"Gus.Winter.3": "I’ve been in Pelican Town all my life, @. I’ve seen a lot of people come and go.$s#$b#For some reason, though, winter always reminds me of your grandfather.#$b#Tonight, let’s raise a pint together in his honor!$h",
+
+"Linus.questComplete_Quest_Linus1": "The mountain provides for all of my needs, but it is human nature to care for those around us.#$b#I can't fault Gus for his generous nature, anymore than I could fault the wind for blowing.",
+"Linus.questComplete_Quest_Linus2": "If I'm being honest with you, @, a little extra food goes a long way this time of year.#$b#Oh, I have a good store set by to see me through... but still. This was thoughtful of you both.#$b#Thank you.$h",
+"Linus.questComplete_Quest_Linus3": "How could anyone turn down a plate of Gus' famous Eggplant Parmesan?$h#$b#Thank you for running it all the way up here to me, sprout. It was nice to see you.$h",
+
+"Quest_Linus1.title": "Gus' Concern",
+"Quest_Linus1.text": "Gus is worried that Linus isn't eating right. He asked you to check in on him.",
+"Quest_Linus1.objective": "Bring Linus a plate of Spaghetti.",
+"Quest_Linus1.reaction": "Hello, young one. I'm surprised to see you up here. I don't get many visitors.#$b#Oh, this is from Gus?$s#$b#... I don't need charity, but I can appreciate a kind thought when it comes my way.#$b#Please tell Gus that I enjoyed the food.",
+
+"Quest_Linus2.title": "Winter Warmth",
+"Quest_Linus2.text": "Winter is here, and Gus wants to make sure Linus has something hot to eat. He asked you to deliver some food to him.",
+"Quest_Linus2.objective": "Bring Linus a plate of Pepper Poppers",
+"Quest_Linus2.reaction": "Hello again, young one. All the little creatures have gone to hibernate. Too bad that doesn't work for us big folk!$h#$b#What's this, another plate from Gus?#$b#Well... a breakfast of cold berries and raw fish might be good for the constitution, but I'll admit that it's nice to light a fire in your belly when the weather begins to turn.$h#$b#Please thank Gus for me.",
+
+"Quest_Linus3.title": "Generosity",
+"Quest_Linus3.text": "Winter has returned, and Gus has asked you to check in on Linus again. He gave you some hot food to deliver.",
+"Quest_Linus3.objective": "Bring Linus a plate of Eggplant Parmesan.",
+"Quest_Linus3.reaction": "*breathes in deeply* Ahhhhh... the crisp scent of the pines, rolling off the snowy mountain side. On days like these, one can truly appreciate the harsh beauty of winter.#$b#I see that Gus is as generous as ever. I suppose that I can appreciate that, too!$h#$b#Thank you again, young one. And thank our kind saloon owner the next time you see him.",
+
+// Conversation topics and special flags
+"Gus.CT.Poor": "Hey @, how are you doing now? Back on your feet?",
+"Gus.NewlyWed": "Hey @, just want to say that I'm happy for you and %spouse.$h#$b#I've saved up a little something for you two... Ah, here it is! Some fresh herbs for your new kitchen.[(F)2425]#$b#I hope to see you both in here later for a celebratory pint!$h",
+"Gus.Death": "I heard about your accident. You'd best take it easy for awhile, @.#$b#Here, let me handle the cooking tonight. You just sit back and relax.[218]",
+"Gus.Death.2": "Try to take better care of yourself, alright?",
+"Gus.Trash": "You know, @, if you're hungry you can just ask for food. There's no reason to go digging through the trash for leftovers.$s#$b#Please, help yourself to these and remember that you can always find more at the Saloon.[215]",
+"Gus.Trash.2": "I don't want anyone in Pelican Town to go hungry.",
+
+//Configuration translations
+"config.HelpNewPlayers.name": "Help new players",
+"config.HelpNewPlayers.description": "Gus will give food to farmers who have played less than 14 days on this save file.",
+"config.HelpNewPlayers.values.true": "true",
+"config.HelpNewPlayers.values.false": "false",
+
+"config.HelpPoorPlayers.name": "Help poor players",
+"config.HelpPoorPlayers.description": "Gus will feed players who have less than 200 gold.",
+"config.HelpPoorPlayers.values.true": "true",
+"config.HelpPoorPlayers.values.false": "false",
+
+"config.HelpExpectingPlayers.name": "Help expecting players",
+"config.HelpExpectingPlayers.description": "Gus will give food to expecting mothers, fathers and adopting couples",
+"config.HelpExpectingPlayers.values.true": "true",
+"config.HelpExpectingPlayers.values.false": "false",
+
+//Gifts Lists -- DON'T TRANSLATE THESE!!!
+"Food.gifts": "(O)215 (O)213 (O)214 (O)206 (O)224 (O)240 (O)231 (O)197 (O)202 (O)206",
+
+"Father.gifts": "(O)218 (O)206 (O)224 (O)215 (O)213 (O)346 (O)303",
+
+"Mother.gifts": "(O)205 (O)200 (O)212 (O)230 (O)237 (O)224 (O)207",
+
+}

@@ -1,0 +1,27 @@
+{
+  "Changes": [
+    {
+      "LogName": "JojaPrize",
+      "Action": "EditData",
+      "Target": "Data/Events/Saloon",
+      "Entries": {
+        "{{ModId}}_JojaPrize/t 1200 2400/e 831125/A Shane7Hearts/r 0.3": "Saloon1/11 22/farmer -1000 -1000 0 Shane 12 21 3 Emily 10 20 2 Clint 9 22 1 Gus 14 18 2/skippable/animate Gus false true 400 18 19 20/emote Emily 56/emote Clint 60/pause 500/playSound doorOpen/warp farmer 14 24/pause 500/faceDirection Shane 2/pause 300/speak Shane \"{{i18n:JojaPrize.1_Shane}}\"/pause 500/emote farmer 8/move farmer 0 -1 3/move farmer -3 0 0/pause 500/speak Shane \"{{i18n:JojaPrize.2_Shane}}\"/pause 500/playSound shwip/addItem (o)167 8/pause 500/speak Shane \"{{i18n:JojaPrize.3_Shane}}\"/pause 500/speak Emily \"{{i18n:JojaPrize.4_Emily}}\"/pause 500/speak Clint \"{{i18n:JojaPrize.5_Clint}}\"/pause 500/speak Emily \"{{i18n:JojaPrize.6_Emily}}\"/pause 500/emote Clint 28/textAboveHead Shane \"{{i18n:JojaPrize.7_Shane}}\"/pause 500/speak Shane \"{{i18n:JojaPrize.8_Shane}}\"/emote farmer 56/pause 800/end"
+      },
+      "When": {
+        "JojaPrize": true
+      }
+    },
+    {
+      "LogName": "Chef's Touch",
+      "Action": "EditData",
+      "Target": "Data/Events/Saloon",
+      "Entries": {
+        "{{ModId}}_ChefsTouch/t 1000 1600/f Gus 750/r 0.3": "Saloon1/14 18/farmer -1000 -1000 0 Gus 16 17 0/removeTile 13 20 Buildings/removeTile 7 19 Buildings/addObject 12 15 917 1/skippable/playSound wateringCan/emote Gus 56/pause 500/playSound doorOpen/warp farmer 14 24/pause 500/playSound shwip/faceDirection Gus 2/speak Gus \"{{i18n:ChefsTouch.1}}\"/move farmer 0 -4 0/speak Gus \"{{i18n:ChefsTouch.2}}\"/jump farmer 3/emote farmer 20/pause 500/speak Gus \"{{i18n:ChefsTouch.3}}\"/advancedMove farmer false -7 0 0 -3 5 0/proceedPosition farmer 7 19/faceDirection Gus 3/proceedPosition farmer 9 17/move Gus 1 0 0 false/playSound openBox/pause 300/playSound woodyHit/pause 300/proceedPosition farmer 11 17/stopAdvancedMoves/move Gus -4 0 0 false/pause 500/playSound woodyStep/addObject 13 15 139 1/pause 500/speak Gus \"{{i18n:ChefsTouch.4}}\"/pause 400/textAboveHead Gus \"{{i18n:ChefsTouch.5}}\"/pause 1000/shake Gus 400/playSound axe/pause 500/playSound woodyHit/pause 400/shake Gus 400/playSound thudStep/pause 400/jump farmer 3/shake Gus 400/playSound swordswipe/pause 400/shake Gus 400/playSound swordswipe/pause 400/playSound swordswipe/pause 500/speak Gus \"{{i18n:ChefsTouch.6}}\"/pause 500/move farmer 0 1 2/move farmer 6 0 0 true/pause 800/shake Gus 400/playSound swordswipe/pause 500/shake Gus 400/playSound swordswipe/pause 500/move farmer 0 -1 0/pause 500/playSound openBox/pause 500/playSound coin/removeObject 13 15/move Gus 1 0 0 false/pause 500/playSound woodyStep/addObject 14 15 139 1/move farmer -3 0 0/pause 300/playSound woodyStep/addObject 15 15 250 1/pause 300/playSound woodyStep/addObject 15 15 300 1/pause 500/faceDirection Gus 1/speak Gus \"{{i18n:ChefsTouch.7}}\"/pause 500/move farmer 0 1 2/faceDirection Gus 0/move farmer -3 0 0/move farmer 0 -1 2/pause 300/playSound coin/removeObject 12 15/pause 300/move farmer 1 0 1/pause 300/playSound coin/pause 500/faceDirection Gus 3/speak Gus \"{{i18n:ChefsTouch.8}}\"/emote farmer 32/pause 500/faceDirection Gus 0/pause 500/speak Gus \"{{i18n:ChefsTouch.9}}\"/pause 500/playSound fireball/shake Gus 400/pause 500/playSound slimeHit/pause 500/removeObject 15 15/playSound fireball/pause 500/playSound slimeHit/pause 500/playSound fireball/pause 500/playSound cancel/pause 500/playSound cancel/pause 500/playSound slimeHit/pause 500/playSound slimeHit/removeObject 14 15/pause 500/textAboveHead Gus \"{{i18n:ChefsTouch.10}}\"/pause 500/playSound discoverMineral/pause 500/playSound shwip/faceDirection Gus 2/pause 500/move Gus 0 1 2 true/faceDirection farmer 2/move farmer 0 1 2/pause 500/playSound woodyStep/addObject 14 18 212 1/pause 500/speak Gus \"{{i18n:ChefsTouch.11}}\"/addItem 212 1/pause 1000/farmerEat 212/removeItem 212/pause 1000/speak Gus \"{{i18n:ChefsTouch.12}}\"/pause 500/emote farmer 20/pause 500/globalFade/viewport -1000 -1000/speak Gus \"{{i18n:ChefsTouch.13}}\"/pause 500/end"
+      },
+      "When": {
+        "ChefsTouch": true,
+        "HasMod |contains=Zilch.StardropKitchen": true
+      }
+    }
+  ]
+}

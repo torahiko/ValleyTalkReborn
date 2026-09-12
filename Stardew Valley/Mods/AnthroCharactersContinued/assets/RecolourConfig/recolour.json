@@ -1,0 +1,86 @@
+{
+  "Changes": [
+    {
+      "Action": "EditImage",
+      "Target": "TileSheets/Craftables",
+      "FromFile": "assets/TileSheets/recolour/VPR/Craftables_lewis.png",
+      "PatchMode": "Overlay",
+      "Priority": "Late + 1",
+      "ToArea": {
+        "X": 64,
+        "Y": 640,
+        "Width": 16,
+        "Height": 32
+      },
+      "When": {
+        "Hasmod": "grapeponta.VibrantPastoralRecolor"
+      }
+    },
+    {
+      "Action": "EditImage",
+      "Target": "TileSheets/Craftables",
+      "FromFile": "assets/TileSheets/recolour/VPR/{{season}}_Craftables_lewis.png",
+      "PatchMode": "Overlay",
+      "Priority": "Late + 1",
+      "ToArea": {
+        "X": 64,
+        "Y": 640,
+        "Width": 16,
+        "Height": 32
+      },
+      "When": {
+        "Hasmod": "grapeponta.VibrantPastoralRecolor",
+        "Season |contains=spring": false,
+        "IsOutdoors": true
+      }
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Minigames/Intro",
+      "FromFile": "assets/Minigames/recolour/VPR/intro.png",
+      "PatchMode": "Overlay",
+      "Priority": "Late + 1",
+      "ToArea": {
+        "X": 54,
+        "Y": 28,
+        "Width": 72,
+        "Height": 19
+      },
+      "When": {
+        "HasMod": "grapeponta.VibrantPastoralRecolor"
+      }
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Maps/MovieTheater_TileSheet, Maps/MovieTheaterJoja_TileSheet",
+      "FromFile": "assets/Maps/recolour/VPR/MovieTheater_TileSheet.png",
+      "PatchMode": "Overlay",
+      "Priority": "Late + 1",
+      "ToArea": {
+        "X": 224,
+        "Y": 208,
+        "Width": 32,
+        "Height": 32
+      },
+      "When": {
+        "Hasmod": "grapeponta.VibrantPastoralRecolor"
+      }
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Maps/night_market_tilesheet_objects",
+      "FromFile": "assets/Maps/recolour/VPR/{{TargetWithoutPath}}.png",
+      "PatchMode": "Overlay",
+      "Priority": "Late + 1",
+      "ToArea": {
+        "X": 944,
+        "Y": 48,
+        "Width": 32,
+        "Height": 32
+      },
+      "When": {
+        "Hasmod": "grapeponta.VibrantPastoralRecolor"
+      }
+    }
+  ]
+}

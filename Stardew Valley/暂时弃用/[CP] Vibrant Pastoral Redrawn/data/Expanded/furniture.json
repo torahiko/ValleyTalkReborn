@@ -1,0 +1,113 @@
+{
+	"Changes": [
+		//Furniture
+		{
+			"LogName": "Furniture",
+			"Action": "EditImage",
+			"Target": "Tilesheets/furniture, Maps/VanillaFurniture",
+			"FromFile": "assets/Tilesheets/furniture.png",
+			"PatchMode": "Replace",
+			"Priority": "Early"
+		},
+		{
+			"LogName": "Furniture Loca",
+			"Action": "EditImage",
+			"Target": "Tilesheets/furniture, Maps/VanillaFurniture",
+			"FromFile": "assets/Locale/Tilesheets/furniture.png",
+			"PatchMode": "Replace",
+			"Priority": "Early",
+			"ToArea": { "X": 144, "Y": 807, "Width": 48, "Height": 16 },
+			"When": { "Query: {{Language |contains=en}} OR NOT {{HasFile:assets/Locale/Tilesheets/furniture.{{Language}}.png}}": true }
+		},
+		{
+			"LogName": "Furniture Loca Int",
+			"Action": "EditImage",
+			"Target": "Tilesheets/furniture, Maps/VanillaFurniture",
+			"FromFile": "assets/Locale/Tilesheets/furniture.{{Language}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early",
+			"ToArea": { "X": 144, "Y": 807, "Width": 48, "Height": 16 },
+			"When": {
+				"Language |contains=en": false,
+				"HasFile:{{FromFile}}": true
+			}
+		},
+		//Furniture Front
+		{
+			"LogName": "Furniture Front",
+			"Action": "EditImage",
+			"Target": "Tilesheets/furnitureFront",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early"
+		},
+		//Furniture 2
+		{
+			"LogName": "Furniture 2",
+			"Action": "EditImage",
+			"Target": "Tilesheets/furniture_2",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early"
+		},
+		//Furniture 2 Front
+		{
+			"LogName": "Furniture 2 Front",
+			"Action": "EditImage",
+			"Target": "Tilesheets/furniture_2Front",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early",
+			"ToArea": { "X": 64, "Y": 80, "Width": 16, "Height": 32 }
+		},
+		//Furniture 3
+		{
+			"LogName": "Furniture 3",
+			"Action": "EditImage",
+			"Target": "Tilesheets/furniture_3",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early"
+		},
+		//Furniture 3 Front
+		{
+			"LogName": "Furniture 3 Front",
+			"Action": "EditImage",
+			"Target": "Tilesheets/furniture_3Front",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early"
+		},
+		//Joja Furniture
+		{
+			"LogName": "Joja Furniture Loca",
+			"Action": "EditImage",
+			"Target": "Tilesheets/joja_furniture",
+			"FromFile": "assets/Locale/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early",
+			"When": { "Query: {{Language |contains=en}} OR NOT {{HasFile:assets/Locale/{{Target}}.{{Language}}.png}}": true }
+		},
+		{
+			"LogName": "Joja Furniture Loca Int",
+			"Action": "EditImage",
+			"Target": "Tilesheets/joja_furniture",
+			"FromFile": "assets/Locale/{{Target}}.{{Language}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early",
+			"When": {
+				"Language |contains=en": false,
+				"HasFile:{{FromFile}}": true
+			}
+		},
+		//Joja Furniture Front
+		{
+			"LogName": "Joja Furniture Front",
+			"Action": "EditImage",
+			"Target": "Tilesheets/joja_furnitureFront",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early"
+		}
+	]
+}

@@ -1,0 +1,764 @@
+{
+    "Format": "2.5.0",
+    "ConfigSchema": {
+        /*"CraftableMarketFurniture": {
+            "AllowValues": "True, False",
+            "Default": "True",
+            "Description": "Select whether or not HxW Farmer's Market furniture can be crafted from a custom crafting station. Requires Better Crafting."
+        },*/
+        "TownMarket": {
+            "AllowValues": "True, False",
+            "Default": "True",
+            "Description": "Select whether or not to include a passive festival market day. If set to 'false', only the custom farmer's market shops and dialogue related to it will be enabled."
+        },
+        "MarketProgressionMode": {
+            "AllowValues": "True, False",
+            "Default": "True",
+            "Description": "Select whether or not to include a progression mode for the market festival in which the market will be established and eventually expanded over a year as you sell more items at your market stall. If set to 'false', all market stalls will be enabled immediately."
+        },
+        "FasterProgression": {
+            "AllowValues": "True, False",
+            "Default": "False",
+            "Description": "Select how long to wait between market stages. By default, the market will not progress until a season has passed, but enabling this option will reduce it to two weeks instead."
+        },
+        "ProgressionDifficulty": {
+            "AllowValues": "Easy, Normal, Hard, Extreme",
+            "Default": "Normal",
+            "Description": "Select the difficulty rating for progression mode. At 'Easy', the amount of items needed to be sold for expanding the market will increase by 300 items each level; at 'Normal', they will increase by 500; at 'Hard', they will increase by 800; and at 'Extreme', they will increase by 1500."
+        },
+        "ProgressionDates": {
+            "AllowValues": "7th, 21st, Both, Expand",
+            "Default": "Expand",
+            "Description": "Select which dates the market will be open each season. If '7th' or '21st' is selected, the market will only happen once per season; if 'Both' is selected, it will happen twice per season on the 7th and 21st; if 'Expand' is selected, the market will initially only happen on the 7th but will later take place on the 21st as well once it has expanded enough."
+        },
+        "DialogueTriggerRarity": {
+            "AllowValues": "Common, Uncommon, Rare",
+            "Default": "Uncommon",
+            "Description": "Select how high the chance of triggering dialogue about purchasing from your market should be. If set to 'Common', it will be a 1 in 6 chance per each shop type; if set to 'Uncommon', it will be 1 in 12; if set to 'Rare', it will be 1 in 20."
+        },
+        "DialogueRepeatRarity": {
+            "AllowValues": "Common, Uncommon, Rare",
+            "Default": "Uncommon",
+            "Description": "Select how common repeated dialogue about purchasing from your market should be. If set to 'Common', dialogue triggers will reset every two weeks; if set to 'Uncommon', it resets every month; if set to 'Rare', it resets every two months."
+        },
+        "OnlyDiscussRecentItems": {
+            "AllowValues": "True, False",
+            "Default": "True",
+            "Description": "Select whether to only display dialogue about the item you've most recently sold. Set to 'True' if you like selling a variety of items and find that people are talking about your market too much."
+        },
+    },
+    "DynamicTokens": [
+        // TOWN MARKET TOKENS
+        // PROGRESSION MODE DIFFICULTY
+        {
+            "Name": "ProgressionDifficultyToken",
+            "Value": "300",
+            "When": {
+                "ProgressionDifficulty": "Easy"
+            }
+        },
+        {
+            "Name": "ProgressionDifficultyToken",
+            "Value": "500",
+            "When": {
+                "ProgressionDifficulty": "Normal"
+            }
+        },
+        {
+            "Name": "ProgressionDifficultyToken",
+            "Value": "800",
+            "When": {
+                "ProgressionDifficulty": "Hard"
+            }
+        },
+        {
+            "Name": "ProgressionDifficultyToken",
+            "Value": "1500",
+            "When": {
+                "ProgressionDifficulty": "Extreme"
+            }
+        },
+        // PROGRESSION SPEED
+        {
+            "Name": "ProgressionSpeedToken",
+            "Value": "26",
+        },
+        {
+            "Name": "ProgressionSpeedToken",
+            "Value": "12",
+            "When": {
+                "FasterProgression": "True"
+            }
+        },
+        // PROGRESSION REQUIREMENTS
+        {
+            "Name": "ProgressionRequirementsToken",
+            "Value": "{{ProgressionDifficultyToken}}",
+        },
+        {
+            "Name": "ProgressionRequirementsToken",
+            "Value": "{{Query: {{ProgressionDifficultyToken}} * 2}}",
+            "When": {
+                "HasFlag": "BFM_MarketLevel_1"
+            }
+        },
+        {
+            "Name": "ProgressionRequirementsToken",
+            "Value": "{{Query: {{ProgressionDifficultyToken}} * 3}}",
+            "When": {
+                "HasFlag": "BFM_MarketLevel_2"
+            }
+        },
+        {
+            "Name": "ProgressionRequirementsToken",
+            "Value": "{{Query: {{ProgressionDifficultyToken}} * 4}}",
+            "When": {
+                "HasFlag": "BFM_MarketLevel_3"
+            }
+        },
+        {
+            "Name": "ProgressionRequirementsToken",
+            "Value": "{{Query: {{ProgressionDifficultyToken}} * 5}}",
+            "When": {
+                "HasFlag": "BFM_MarketLevel_4"
+            }
+        },
+        // MARKET NAME
+        {
+            "Name": "MarketNameToken",
+            "Value": "{{i18n:BFM.MarketName.Farmer}}",
+        },
+        {
+            "Name": "MarketNameToken",
+            "Value": "{{i18n:BFM.MarketName.Pelican}}",
+            "When": {
+                "HasFlag": "BFM_MarketName_Pelican"
+            }
+        },
+        {
+            "Name": "MarketNameToken",
+            "Value": "{{i18n:BFM.MarketName.Valley}}",
+            "When": {
+                "HasFlag": "BFM_MarketName_Valley"
+            }
+        },
+        {
+            "Name": "MarketNameToken",
+            "Value": "{{i18n:BFM.MarketName.Ferngill}}",
+            "When": {
+                "HasFlag": "BFM_MarketName_Ferngill"
+            }
+        },
+        // MARKET DATES
+        {
+            "Name": "MarketDate7Token",
+            "Value": "false",
+        },
+        {
+            "Name": "MarketDate7Token",
+            "Value": "true",
+            "When": {
+                "ProgressionDates |contains= 7th, Both, Expand": true,
+            }
+        },
+        {
+            "Name": "MarketDate21Token",
+            "Value": "false",
+        },
+        {
+            "Name": "MarketDate21Token",
+            "Value": "true",
+            "When": {
+                "ProgressionDates |contains= 21st, Both": true
+            }
+        },
+        {
+            "Name": "MarketDate21Token",
+            "Value": "true",
+            "When": {
+                "ProgressionDates |contains= Expand": true,
+                "HasFlag": "BFM_MarketLevel_4"
+            }
+        },
+        // MARKET PROGRESSION
+        {
+            "Name": "MarketProgressionToken",
+            "Value": "NoMarket",
+        },
+        {
+            "Name": "MarketProgressionToken",
+            "Value": "MarketAll",
+            "When": {
+                "MarketProgressionMode": "False"
+            }
+        },
+        {
+            "Name": "MarketProgressionToken",
+            "Value": "MarketLevel1",
+            "When": {
+                "MarketProgressionMode": "True",
+                "HasFlag": "BFM_MarketLevel_1"
+            }
+        },
+        {
+            "Name": "MarketProgressionToken",
+            "Value": "MarketLevel2",
+            "When": {
+                "MarketProgressionMode": "True",
+                "HasFlag": "BFM_MarketLevel_2"
+            }
+        },
+        {
+            "Name": "MarketProgressionToken",
+            "Value": "MarketLevel3",
+            "When": {
+                "MarketProgressionMode": "True",
+                "HasFlag": "BFM_MarketLevel_3"
+            }
+        },
+        {
+            "Name": "MarketProgressionToken",
+            "Value": "MarketAll",
+            "When": {
+                "MarketProgressionMode": "True",
+                "HasFlag": "BFM_MarketLevel_4"
+            }
+        },
+        //  OVERGROWN VALLEY COMPAT
+        {
+            "Name": "OvergrownValleyToken",
+            "Value": ""
+        },
+        {
+            "Name": "OvergrownValleyToken",
+            "Value": "_Lune",
+            "When": {
+                "HasMod": "mushlune.overgrown",
+            }
+        },
+        {
+            "Name": "OvergrownEventToken",
+            "Value": "move farmer -5 0 3"
+        },
+        {
+            "Name": "OvergrownEventToken",
+            "Value": "move farmer -2 0 3/move farmer 0 -1 0/move farmer -3 0 3/move farmer 0 1 2/faceDirection farmer 3",
+            "When": {
+                "HasMod": "mushlune.overgrown",
+            }
+        },
+        // REGULAR TOWNIES MARKET RANDOM
+        {
+            "Name": "RandomMarketTownieToken",
+            "Value": "{{Random: Abigail, Alex, Caroline, Elliott, Emily, Evelyn, Haley, Leah, Maru, SamKids}}"
+        },
+        // MARKET SCHEDULE CO-ORDINATES
+        {
+            "Name": "SebastianMarketScheduleToken",
+            "Value": "Town 35 27 0 square_5_5_1"
+        },
+        {
+            "Name": "SebastianMarketScheduleToken",
+            "Value": "Town 25 33 1",
+            "When": {
+                "RandomMarketTownieToken": "Abigail"
+            }
+        },
+        {
+            "Name": "SamMarketScheduleToken",
+            "Value": "Town 36 26 0 square_5_5_1"
+        },
+        {
+            "Name": "SamMarketScheduleToken",
+            "Value": "Town 24 33 2",
+            "When": {
+                "RandomMarketTownieToken": "Abigail"
+            }
+        },
+        {
+            "Name": "PennyMarketScheduleToken",
+            "Value": "Town 28 33 3"
+        },
+        {
+            "Name": "PennyMarketScheduleToken",
+            "Value": "Town 56 32 0 square_5_5_1",
+            "When": {
+                "RandomMarketTownieToken |contains= Maru, SamKids": false
+            }
+        },
+        {
+            "Name": "ElliottMarketScheduleToken",
+            "Value": "Town 39 36 0 square_3_3_1"
+        },
+        {
+            "Name": "ElliottMarketScheduleToken",
+            "Value": "Town 24 33 1",
+            "When": {
+                "RandomMarketTownieToken": "Leah"
+            }
+        },
+        {
+            "Name": "LeahMarketScheduleToken",
+            "Value": "Town 41 35 0 square_3_3_1"
+        },
+        {
+            "Name": "LeahMarketScheduleToken",
+            "Value": "Town 29 33 3",
+            "When": {
+                "RandomMarketTownieToken": "Elliott"
+            }
+        },
+        {
+            "Name": "JodiMarketScheduleToken",
+            "Value": "Town 41 26 1"
+        },
+        {
+            "Name": "JodiMarketScheduleToken",
+            "Value": "Town 30 33 3",
+            "When": {
+                "RandomMarketTownieToken": "Caroline"
+            }
+        },
+        {
+            "Name": "EmilyMarketScheduleToken",
+            "Value": "Town 52 23 2 square 5_5_2"
+        },
+        {
+            "Name": "EmilyMarketScheduleToken",
+            "Value": "Town 24 33 1",
+            "When": {
+                "RandomMarketTownieToken": "Haley"
+            }
+        },
+        {
+            "Name": "HaleyMarketScheduleToken",
+            "Value": "Town 52 38 2 square 5_5_2"
+        },
+        {
+            "Name": "HaleyMarketScheduleToken",
+            "Value": "Town 24 34 1",
+            "When": {
+                "RandomMarketTownieToken": "Haley"
+            }
+        },
+        // PERSONAL MARKET DIALOGUE TOKENS
+        // DIALOGUE RARITY
+        {
+            "Name": "DialogueTriggerRarityToken",
+            "Value": "1,2,3,4,5,6",
+            "When": {
+                "DialogueTriggerRarity": "Common"
+            }
+        },
+        {
+            "Name": "DialogueTriggerRarityToken",
+            "Value": "1,2,3,4,5,6,7,8,9,10,11,12",
+            "When": {
+                "DialogueTriggerRarity": "Uncommon"
+            }
+        },
+        {
+            "Name": "DialogueTriggerRarityToken",
+            "Value": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20",
+            "When": {
+                "DialogueTriggerRarity": "Rare"
+            }
+        },
+        {
+            "Name": "DialogueRepeatRarityToken",
+            "Value": "DAY_OF_MONTH 14 28",
+            "When": {
+                "DialogueRepeatRarity": "Common"
+            }
+        },
+        {
+            "Name": "DialogueRepeatRarityToken",
+            "Value": "DAY_OF_MONTH 28",
+            "When": {
+                "DialogueRepeatRarity": "Uncommon"
+            }
+        },
+        {
+            "Name": "DialogueRepeatRarityToken",
+            "Value": "SEASON Summer Winter, DAY_OF_MONTH 28",
+            "When": {
+                "DialogueRepeatRarity": "Rare"
+            }
+        },
+        // SEASONAL ITEMS CODE
+        {
+            "Name": "SpringSeasonal",
+            "Value": "NonSeasonalItem",
+        },
+        {
+            "Name": "SpringSeasonal",
+            "Value": "SeasonalItem",
+            "When": {
+                "Season": "Spring"
+            }
+        },
+        {
+            "Name": "SummerSeasonal",
+            "Value": "NonSeasonalItem",
+        },
+        {
+            "Name": "SummerSeasonal",
+            "Value": "SeasonalItem",
+            "When": {
+                "Season": "Summer"
+            }
+        },
+        {
+            "Name": "FallSeasonal",
+            "Value": "NonSeasonalItem",
+        },
+        {
+            "Name": "FallSeasonal",
+            "Value": "SeasonalItem",
+            "When": {
+                "Season": "Fall"
+            }
+        },
+        // LINUS SEASONAL ITEMS
+        {
+            "Name": "LinusSeasonalItems",
+            "Value": "(O)404 (O)18 (O)22 (O)20 (O)257 (O)296 (O)399 (O)16",
+            "When": {
+                "Season": "Spring"
+            }
+        },
+        {
+            "Name": "LinusSeasonalItems",
+            "Value": "(O)404 (O)259 (O)398 (O)420 (O)396 (O)402",
+            "When": {
+                "Season": "Summer"
+            }
+        },
+        {
+            "Name": "LinusSeasonalItems",
+            "Value": "(O)410 (O)281 (O)404 (O)408 (O)422 (O)420 (O)406",
+            "When": {
+                "Season": "Fall"
+            }
+        },
+        {
+            "Name": "LinusSeasonalItems",
+            "Value": "(O)418 (O)414 (O)283 (O)416 (O)412",
+            "When": {
+                "Season": "Winter"
+            }
+        },
+        // GENERAL DIALOGUE TOKENS
+        // CC OR JOJA
+        {
+            "Name": "CCorJojaToken",
+            "Value": "{{i18n:BFM.OldCC}}"
+        },
+        {
+            "Name": "CCorJojaToken",
+            "Value": "{{i18n:BFM.CC}}",
+            "When": {
+                "IsCommunityCenterComplete": "true"
+            }
+        },
+        {
+            "Name": "CCorJojaToken",
+            "Value": "{{i18n:BFM.Joja}}",
+            "When": {
+                "IsJojaMartComplete": "true"
+            }
+        },
+        // DSV COMPAT - ALEX GRANDPARENTS
+        {
+            "Name": "AlexGrandmaToken",
+            "Value": "{{i18n:BFM.AlexGrandma.Default}}"
+        },
+        {
+            "Name": "AlexGrandmaToken",
+            "Value": "{{i18n:BFM.AlexGrandma.Jewish}}",
+            "When": {
+                "HasMod": "DSV.Core",
+                "DSV.Core/ConfigValue:JewishMullners": "true"
+            }
+        },
+        {
+            "Name": "AlexGrandmaToken",
+            "Value": "{{i18n:BFM.AlexGrandma.Mexican}}",
+            "When": {
+                "HasMod": "DSV.Core",
+                "DSV.Core/ConfigValue:EvelynVariant": "Mexican"
+            }
+        },
+        {
+            "Name": "AlexGrandmaToken",
+            "Value": "{{i18n:BFM.AlexGrandma.Samoan}}",
+            "When": {
+                "HasMod": "DSV.Core",
+                "DSV.Core/ConfigValue:EvelynVariant": "Samoan"
+            }
+        },
+        {
+            "Name": "AlexGrandpaToken",
+            "Value": "{{i18n:BFM.AlexGrandpa.Default}}"
+        },
+        {
+            "Name": "AlexGrandpaToken",
+            "Value": "{{i18n:BFM.AlexGrandpa.Jewish}}",
+            "When": {
+                "HasMod": "DSV.Core",
+                "DSV.Core/ConfigValue:JewishMullners": "true"
+            }
+        },
+        {
+            "Name": "AlexGrandpaToken",
+            "Value": "{{i18n:BFM.AlexGrandpa.Mexican}}",
+            "When": {
+                "HasMod": "DSV.Core",
+                "DSV.Core/ConfigValue:GeorgeVariant": "Mexican"
+            }
+        },
+        {
+            "Name": "AlexGrandpaToken",
+            "Value": "{{i18n:BFM.AlexGrandpa.Samoan}}",
+            "When": {
+                "HasMod": "DSV.Core",
+                "DSV.Core/ConfigValue:GeorgeVariant": "Samoan"
+            }
+        },
+    ],
+    "Changes": [
+        // SHOP INCLUDES
+        {
+            "LogName": "Farmer's Market Core Include",
+            "Action": "Include",
+            "FromFile": "Data/Shops/Shops_FarmersMarketCore.json, Data/Furniture/Furniture_FarmersMarketCore.json"
+        },
+        {
+            "LogName": "Farmer's Market Bakery Include",
+            "Action": "Include",
+            "FromFile": "Data/Shops/Shops_FarmersMarketBakery.json, Data/Furniture/Furniture_FarmersMarketBakery.json",
+            "When": {
+                "HasMod": "HXW.FMBakery"
+            }
+        },
+        {
+            "LogName": "Farmer's Market Fishmonger & Butcher Include",
+            "Action": "Include",
+            "FromFile": "Data/Shops/Shops_FarmersMarketFishMeat.json, Data/Furniture/Furniture_FarmersMarketFishMeat.json",
+            "When": {
+                "HasMod": "HXW.FM_FisherButcher"
+            }
+        },
+        {
+            "LogName": "Farmer's Market Wildflour Furniture Include",
+            "Action": "Include",
+            "FromFile": "Data/Furniture/Furniture_FarmersMarketWildflour.json",
+            "When": {
+                "HasMod": "HXW.FM_Wildflour_Pack"
+            }
+        },
+        {
+            "LogName": "Farmer's Market Wildflour Shops Include",
+            "Action": "Include",
+            "FromFile": "Data/Shops/Shops_FarmersMarketWildflour.json",
+            "When": {
+                "HasMod": "HXW.FM_Wildflour_Pack",
+            }
+        },
+        {
+            "LogName": "Greenhouse Furniture Include",
+            "Action": "Include",
+            "FromFile": "Data/Furniture/Furniture_Greenhouse.json",
+            "When": {
+                "HasMod": "HXW.GreenhouseFurniture"
+            }
+        },
+        {
+            "LogName": "Greenhouse Shops Include",
+            "Action": "Include",
+            "FromFile": "Data/Shops/Shops_Greenhouse.json",
+            "When": {
+                "HasMod": "HXW.GreenhouseFurniture",
+                "HasMod |contains= HXW.FMCore, HXW.FM_Wildflour_Pack": false
+            }
+        },
+        {
+            "LogName": "Bakery & Cafe Furniture Include",
+            "Action": "Include",
+            "FromFile": "Data/Furniture/Furniture_BakeryCafe.json",
+            "When": {
+                "HasMod": "HXW.BakeryFurni"
+            }
+        },
+        {
+            "LogName": "Bakery & Cafe Shops Include",
+            "Action": "Include",
+            "FromFile": "Data/Shops/Shops_BakeryCafe.json",
+            "When": {
+                "HasMod": "HXW.BakeryFurni",
+                "HasMod |contains= HXW.FMBakery": false
+            }
+        },
+        {
+            "LogName": "Boutique Bakery Furniture Include",
+            "Action": "Include",
+            "FromFile": "Data/Furniture/Furniture_BoutiqueBakery.json",
+            "When": {
+                "HasMod": "HXW.BoutiqueBakeryFurniture"
+            }
+        },
+        {
+            "LogName": "Boutique Bakery Shops Include",
+            "Action": "Include",
+            "FromFile": "Data/Shops/Shops_BoutiqueBakery.json",
+            "When": {
+                "HasMod": "HXW.BoutiqueBakeryFurniture",
+                "HasMod |contains= HXW.FMBakery, HXW.BakeryFurni": false
+            }
+        },
+        // CRAFTING INCLUDES
+        /*{
+            "LogName": "Farmer's Market Core Crafting Include",
+            "Action": "Include",
+            "FromFile": "Data/Crafting/Shops_FarmersMarketCore.json",
+            "When": {
+                "HasMod |contains= leclair.bettercrafting": true
+            }
+        },
+        {
+            "LogName": "Farmer's Market Bakery Crafting Include",
+            "Action": "Include",
+            "FromFile": "Data/Crafting/Shops_FarmersMarketCore.json",
+            "When": {
+                "HasMod |contains= leclair.bettercrafting": true,
+                "HasMod |contains= HXW.FMBakery": true
+            }
+        },
+        {
+            "LogName": "Farmer's Market Fishmonger & Butchery Crafting Include",
+            "Action": "Include",
+            "FromFile": "Data/Crafting/Shops_FarmersMarketCore.json",
+            "When": {
+                "HasMod |contains= leclair.bettercrafting": true,
+                "HasMod |contains= HXW.FM_FisherButcher": true
+            }
+        },
+        {
+            "LogName": "Farmer's Market Wildflour Crafting Include",
+            "Action": "Include",
+            "FromFile": "Data/Crafting/Shops_FarmersMarketCore.json",
+            "When": {
+                "HasMod |contains= leclair.bettercrafting": true,
+                "HasMod |contains= HXW.FM_Wildflour_Pack": true
+            }
+        },
+        {
+            "LogName": "Greenhouse Furniture Crafting Include",
+            "Action": "Include",
+            "FromFile": "Data/Crafting/Shops_FarmersMarketCore.json",
+            "When": {
+                "HasMod |contains= leclair.bettercrafting": true,
+                "HasMod |contains= HXW.GreenhouseFurniture": true
+            }
+        },
+        {
+            "LogName": "Bakery & Cafe Crafting Include",
+            "Action": "Include",
+            "FromFile": "Data/Crafting/Shops_FarmersMarketCore.json",
+            "When": {
+                "HasMod |contains= leclair.bettercrafting": true,
+                "HasMod |contains= HXW.BakeryFurni": true
+            }
+        },
+        {
+            "LogName": "Boutique Bakery Crafting Include",
+            "Action": "Include",
+            "FromFile": "Data/Crafting/Shops_FarmersMarketCore.json",
+            "When": {
+                "HasMod |contains= leclair.bettercrafting": true,
+                "HasMod |contains= HXW.BoutiqueBakeryFurniture": true
+            }
+        },*/
+        // CHARACTER & CT INCLUDES
+        {
+            "LogName": "Conversation Topics Include",
+            "Action": "Include",
+            "FromFile": "Data/ConversationTopics/AbigailCTs.json, Data/ConversationTopics/AlexCTs.json, Data/ConversationTopics/CarolineCTs.json, Data/ConversationTopics/ClintCTs.json, Data/ConversationTopics/DemetriusCTs.json, Data/ConversationTopics/ElliottCTs.json, Data/ConversationTopics/EmilyCTs.json, Data/ConversationTopics/EvelynCTs.json, Data/ConversationTopics/GeorgeCTs.json, Data/ConversationTopics/GusCTs.json, Data/ConversationTopics/HaleyCTs.json, Data/ConversationTopics/HarveyCTs.json, Data/ConversationTopics/JasCTs.json, Data/ConversationTopics/JodiCTs.json, Data/ConversationTopics/KentCTs.json, Data/ConversationTopics/LeahCTs.json, Data/ConversationTopics/LewisCTs.json, Data/ConversationTopics/LinusCTs.json, Data/ConversationTopics/MarnieCTs.json, Data/ConversationTopics/MaruCTs.json, Data/ConversationTopics/PamCTs.json, Data/ConversationTopics/PennyCTs.json, Data/ConversationTopics/PierreCTs.json, Data/ConversationTopics/RobinCTs.json, Data/ConversationTopics/SamCTs.json, Data/ConversationTopics/SandyCTs.json, Data/ConversationTopics/SebastianCTs.json, Data/ConversationTopics/ShaneCTs.json, Data/ConversationTopics/VincentCTs.json, Data/ConversationTopics/WillyCTs.json, Data/ConversationTopics/WizardCTs.json"
+        },
+        {
+            "LogName": "Conversation Topics Include",
+            "Action": "Include",
+            "FromFile": "Data/ConversationTopics/KrobusCTs.json",
+            "When": {
+                "DayOfWeek |contains= Friday": false
+            }
+        },
+        {
+            "LogName": "Reset Triggers",
+            "Action": "EditData",
+            "Target": "Data/TriggerActions",
+            "Entries": {
+                "{{ModID}}_ResetTriggers": {
+                    "Id": "{{ModID}}_ResetTriggers",
+                    "Trigger": "DayEnding",
+                    "Condition": "{{DialogueRepeatRarityToken}}",
+                    "Actions": [
+                        "MarkActionApplied Current {{ModID}}_FMC_MushroomShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMC_SpringCropsShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMC_SummerCropsShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMC_FallCropsShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMC_AllCropsShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMC_OilShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMC_JellyShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMC_HoneyShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMC_JuiceShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMC_PickleShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMC_ArtisanGoodsShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMC_ForageShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMC_BerryShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMC_EggShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMC_MilkShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMC_AnimalGoodsShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMC_SpringFruitShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMC_SummerFruitShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMC_FallFruitShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMC_AllFruitShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMC_FlowerShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMC_HerbShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMB_BreadShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMB_SweetBakeryShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMFM_FishShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMFM_CrabpotShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMFM_RoeShopCT false",
+                        "MarkActionApplied Current {{ModID}}_FMFM_MeatShopCT false"
+                    ],
+                    "MarkActionApplied": false
+                }
+            }
+        },
+        // MARKET INCLUDES
+        {
+            "LogName": "Market Includes",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/FestivalData.json, Data/MarketData/MarketShops.json, Data/MarketData/MarketSchedules.json",
+            "When": {
+                "TownMarket": "True"
+            }
+        },
+        {
+            "LogName": "Progression Mode Includes",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggers.json, Data/MarketData/ProgressionTriggers.json, Data/MarketData/MarketEventsMail.json, Data/MarketData/ConversationTopics.json",
+            "When": {
+                "TownMarket": "True",
+                "MarketProgressionMode": "True"
+            }
+        },
+		{
+            "LogName": "Market Tilesheet Load",
+			"Action": "Load",
+			"Target": "Maps/MarketStallTilesheets",
+			"FromFile": "Data/MarketStallTilesheets.png"
+		},
+    ]
+}

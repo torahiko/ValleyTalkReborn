@@ -1,0 +1,125 @@
+{
+    
+    "Gus.Introduction": "¡Hola, hola! Soy Gus, el chef y dueño del Salón Fruta Estelar.#$b#Pasa por aquí si necesitas algo para refrescarte. ¡Siempre tengo café caliente y cerveza fría listos!$h#$b#Y, por cierto... si alguna vez te sientes agotado o necesitas una comida caliente, suelo guardar un poco de más. Por si acaso.",
+
+    //After gift
+    "Gus.AfterGift.0": "No, no necesitas agradecerme.$h",
+    "Gus.AfterGift.1": "Vamos, no hace falta dar las gracias. Solo recuerda hacerle un favor a alguien algún día y pensar en el viejo Gus.$h",
+    "Gus.AfterGift.2": "Tu abuelo siempre decía que la granja da hambre. Viéndote correr de un lado a otro, ¡lo creo totalmente!",
+    "Gus.AfterGift.3": "No, no,... es gratis.$h",
+    "Gus.AfterGift.4": "No dejaré que nadie en Pueblo Pelícano pase hambre.",
+    "Gus.AfterGift.5": "No, no digas nada más. Es un placer para mí.$h",
+    "Gus.AfterGift.6": "Vuelve pronto, @. Siempre estaré aquí.$h",
+
+    // New player
+    "Gus.NewPlayer.0": "¡Hola, @! Esto va por cuenta de la casa esta noche.",
+    "Gus.NewPlayer.1": "Bienvenido al Salón, @. ¿Por qué no me dices qué te parece el especial de hoy?^Bienvenida al Salón, @. ¿Por qué no me dices qué te parece el especial de hoy?",
+    "Gus.NewPlayer.2": "Toma, @ -- ¡invitación de la casa!$h#$b#Hasta que la Granja %farm esté en marcha, recuerda que siempre puedes pasar por aquí para una comida caliente y algo de compañía.",
+    "Gus.NewPlayer.3": "Bienvenido, @. Parece que has tenido otro día de trabajo duro en la granja.#$b#Aquí tienes, ¡seguro que tienes hambre!^Bienvenida, @. Parece que has tenido otro día de trabajo duro en la granja.#$b#Aquí tienes, ¡seguro que tienes hambre!",
+    "Gus.NewPlayer.4": "Toma, @ -- un plato caliente para poner algo de carne en esos huesos.",
+    "Gus.NewPlayer.5": "¡Ahí está nuestro granjero local! Apuesto a que tu nariz te trajo directo hasta mi puerta... y hasta el especial del día.$h^¡Ahí está nuestra granjera local! Apuesto a que tu nariz te trajo directo hasta mi puerta... y hasta el especial del día.$h",
+    "Gus.NewPlayer.6": "¡Hola, @! Qué bueno verte.#$b#¿Por qué no te relajas y descansas los pies mientras te preparo un plato?",
+
+    // Poor player
+    "Gus.PoorPlayer.0": "Ven adentro, granjero @. Algo me dice que necesitas una comida nutritiva.^Ven adentro, granjera @. Algo me dice que necesitas una comida nutritiva.",
+    "Gus.PoorPlayer.1": "Hmmm. No me gusta lo delgado que te ves hoy, granjero @. Toma.^Hmmm. No me gusta lo delgada que te ves hoy, granjera @. Toma.",
+    "Gus.PoorPlayer.2": "¡Vaya, hola @! ¿Vienes por la compañía, o la Granja %farm ha pasado por tiempos difíciles?#$b#Toma -- todos necesitamos una palabra amable y una mano amiga de vez en cuando. Al menos, eso es lo que siempre me decía mi madre.$h",
+
+    // Expecting father
+    "Gus.ExpectingFather.0": "¡Ah! Me preguntaba cuándo te vería por aquí, @. ¿Cómo está tu esposa?#$b#¡Apuesto a que tú también necesitas un pequeño impulso!$h",
+    "Gus.ExpectingFather.1": "¿Cómo van las cosas en casa, @? ¿%spouse está bien?#$b#No quiero verla cocinando la cena para los dos, así que toma, ¡esto va por cuenta de la casa!",
+    "Gus.ExpectingFather.2": "@, siempre es un placer verte por aquí.$h#$b#Aquí tienes, imagino que te vendrá bien esto justo ahora.",
+    "Gus.ExpectingFather.3": "Conozco esa mirada, @. ¿Noche difícil?#$b#No te preocupes, %spouse estará bien. ¡Y tú también, después de comer!",
+    "Gus.ExpectingFather.4": "Imagino que no te veremos tan seguido en unas semanas, @.#$b#Toma, un plato por cuenta de la casa. Y no olvides pasar después del gran día para contarnos cómo les va. ¡Todos aquí pensamos en ti y en %spouse!",
+    "Gus.ExpectingFather.5": "Oooh, @. Se te ve agotado. Déjame prepararte algo.#$b#Sé cuánto has estado corriendo de un lado a otro cuidando de %spouse, pero recuerda cuidarte tú también.",
+    "Gus.ExpectingFather.6": "Entonces, ¿cuándo es el gran día?$h#$b#Pensé que podrías estar olvidándote de alimentarte, así que guardé algo especial. ¡Para ti, amigo mío!",
+
+    //Expecting mother
+    "Gus.ExpectingMother.0": "¡Hola, @! Qué placer verte.$h#$b#Siéntate y descansa los pies. Estoy seguro de que apreciarás el especial de hoy.",
+    "Gus.ExpectingMother.1": "¡La granjera @! Qué bueno verte por aquí. Espero que no estés esforzándote demasiado.",
+    "Gus.ExpectingMother.2": "Ahora, @, sé que tienes una granja que atender, pero recuerda tomártelo con calma por un tiempo, ¿de acuerdo? Siempre puedes enviar a %spouse por aquí cuando estén demasiado cansados para cocinar.",
+    "Gus.ExpectingMother.3": "¡Hola, @! Seguro que tienes hambre.#$b#Mi madre se revolvería en su tumba si no te ofreciera al menos un bocadillo. ¡Toma!$h",
+    "Gus.ExpectingMother.4": "Dime, @, ¿segura que deberías estar corriendo tanto en tu estado?#$b#Siéntate y descansa un rato mientras te preparo un plato. ¡Por cuenta de la casa, por supuesto!",
+    "Gus.ExpectingMother.5": "Cuando estés lista, @, espero que traigas al pequeño a conocer al viejo Tío Gus.#$b#¡Apuesto a que tú y %spouse no se quejarían de que yo cocine por un cambio!$h",
+    "Gus.ExpectingMother.6": "Hola, @, ¿te sientes bien?#$b#He estado guardando algunos ingredientes de calidad porque sé que podrías necesitarlos. Prueba esto y dime qué te parece.$h",
+
+    //Adopting couple
+    "Gus.Adopting.0": "¡Hola, @! ¿Tienes los nervios a flor de piel?#$b#No te preocupes, pasará. Tú y %spouse serán unos padres increíbles.$h#$b#Pero aquí tienes, por si necesitas un pequeño empujón.",
+    "Gus.Adopting.1": "¿Cómo va todo, @? Todos estamos ansiosos por conocer al pequeño, así que más te vale traerlo a ver al viejo Tío Gus cuando esté listo.#$b#¡Toma, por cuenta de la casa!$h",
+    "Gus.Adopting.2": "Apuesto a que tú y %spouse están hechos un manojo de nervios esperando que se complete la adopción.#$b#Toma, esto les vendrá bien.",
+    "Gus.Adopting.3": "¿Tienen todo lo que necesitan en la granja, @?#$b#Apuesto a que han olvidado alimentarse bien. Déjenme encargarme de eso ahora mismo.$h",
+    "Gus.Adopting.4": "Deberías traer a %spouse un día de estos. Disfruten un momento de tranquilidad antes de que todo se vuelva un torbellino.#$b#Toma, llévale un plato y dile hola de mi parte, ¿vale?",
+    "Gus.Adopting.5": "Apuesto a que estás flotando en el aire, ¿verdad, @? Este es un momento hermoso para ti y %spouse.",
+    "Gus.Adopting.6": "Cada vez falta menos, ¿verdad, @? Más te vale disfrutar de una buena comida ahora que aún tienes tiempo.",
+
+    "Gus.Celebrating.0": "¿Sabes qué? ¡Yo también quiero celebrar!$h",
+    "Gus.Celebrating.1": "Solo recuerda traer al pequeño a ver al viejo Tío Gus algún día.$h",
+    "Gus.Celebrating.2": "Este es un momento hermoso, @. ¡Disfrútalo!$h",
+    "Gus.Celebrating.3": "Todos levantaremos una copa esta noche por ti y %spouse.$h",
+    "Gus.Celebrating.4": "¡Brindemos por la nueva adición a Pueblo Pelícano!$h",
+
+    // Quest dialogue
+    "Gus.Quest.Linus1": "Hey @, no puedo alejarme del Salón esta noche, pero todavía me preocupa un poco Linus.#$b#¿Podrías llevarle un plato a su tienda y ver cómo está? Aquí tienes unas monedas por la molestia.",
+    "Gus.Quest.Linus2": "Brrrrrr. Cada vez que se abre la puerta del Salón, siento una ráfaga helada en el aire.#$b#Me preocupa Linus allá arriba en su tienda.$s#$b#Sé que probablemente está bien preparado para el invierno, pero ¿te importaría llevarle un plato de comida caliente, @? Por si acaso.",
+    "Gus.Quest.Linus3": "¿Otra vez invierno, eh?#$b#Apuesto a que no sabes qué hacer con todo tu tiempo ahora que tu granja ha entrado en reposo por la temporada. Tu abuelo era igual.$h#$b#Aquí, @, ¿podrías llevarle este plato caliente a Linus? Me hará sentir mejor saber que ha comido algo calentito hoy.",
+
+    "Gus.questComplete_Quest_Linus1": "Gracias por ayudar con la entrega, @. ¡Espero que tuvieras cuidado de no derramar mi salsa especial!",
+    "Gus.questComplete_Quest_Linus2": "Hola, @, gracias de nuevo por hacer el viaje hasta las montañas por mí.#$b#¿Cómo está Linus allá arriba en la nieve?",
+    "Gus.questComplete_Quest_Linus3": "¡Oh, @! Gracias otra vez por tu ayuda este año. ¿Disfrutó Linus la Berenjena a la Parmesana?#$b#Mi madre siempre me preparaba un plato cuando tenía frío. ¡Te calienta de inmediato!$h",
+
+    "Gus.Winter.0": "Me encanta esta época del año. Siempre dejo algunos regalos extra bajo el árbol de la Estrella Invernal para los niños.$h",
+    "Gus.Winter.1": "La oscuridad y el frío son duros para las personas con depresión.#$b#Me pregunto si podré convencer a Shane de probar un poco de jugo espumoso de arándano esta noche...$s",
+    "Gus.Winter.2": "Clint viene casi todas las noches, pero apenas habla con nadie.$s%revealtaste:Clint:(O)605#$b#Debería prepararle un plato de dip de alcachofa. Eso siempre le saca una sonrisa.$h",
+    "Gus.Winter.3": "He vivido en Pueblo Pelícano toda mi vida, @. He visto a muchas personas ir y venir.$s#$b#Por alguna razón, el invierno siempre me recuerda a tu abuelo.#$b#¡Esta noche, brindemos juntos en su honor!$h",
+
+    "Linus.questComplete_Quest_Linus1": "La montaña me provee todo lo que necesito, pero es naturaleza humana cuidar de los demás.#$b#No puedo culpar a Gus por su generosidad, más de lo que podría culpar al viento por soplar.",
+    "Linus.questComplete_Quest_Linus2": "Si soy sincero contigo, @, un poco de comida extra ayuda mucho en esta época del año.#$b#Oh, tengo suficiente almacenado para pasar el invierno... pero aun así. Esto fue un gesto amable de su parte.#$b#Gracias.$h",
+    "Linus.questComplete_Quest_Linus3": "¿Quién podría rechazar un plato de la famosa Berenjena a la Parmesana de Gus?$h#$b#Gracias por traerlo hasta aquí, retoño. Fue agradable verte.$h",
+
+    "Quest_Linus1.title": "La Preocupación de Gus",
+    "Quest_Linus1.text": "A Gus le preocupa que Linus no esté comiendo bien. Te pidió que fueras a verlo.",
+    "Quest_Linus1.objective": "Llévale a Linus un plato de Espaguetis.",
+    "Quest_Linus1.reaction": "Hola, joven. Me sorprende verte por aquí. No recibo muchas visitas.#$b#Oh, ¿esto es de parte de Gus?$s#$b#... No necesito caridad, pero puedo apreciar un gesto amable cuando lo veo.#$b#Por favor, dile a Gus que disfruté la comida.",
+
+    "Quest_Linus2.title": "Calor Invernal",
+    "Quest_Linus2.text": "El invierno ha llegado y Gus quiere asegurarse de que Linus tenga algo caliente para comer. Te pidió que le llevaras comida.",
+    "Quest_Linus2.objective": "Llévale a Linus un plato de Bocaditos de pimiento.",
+    "Quest_Linus2.reaction": "Hola de nuevo, joven. Todas las pequeñas criaturas han ido a hibernar. ¡Lástima que eso no funcione para nosotros los más grandes!$h#$b#¿Qué es esto, otro plato de parte de Gus?#$b#Bueno... un desayuno de bayas frías y pescado crudo puede ser bueno para la salud, pero debo admitir que es agradable sentir un fuego en el estómago cuando el clima empieza a cambiar.$h#$b#Por favor, dale las gracias a Gus de mi parte.",
+
+    "Quest_Linus3.title": "Generosidad",
+    "Quest_Linus3.text": "El invierno ha regresado y Gus te ha pedido que revises a Linus una vez más. Te dio algo de comida caliente para llevarle.",
+    "Quest_Linus3.objective": "Llévale a Linus un plato de Berenjena al Parmesano.",
+    "Quest_Linus3.reaction": "*inhala profundamente* Ahhhhh... el fresco aroma de los pinos, bajando por la nevada ladera de la montaña. En días como estos, uno realmente puede apreciar la dura belleza del invierno.#$b#Veo que Gus sigue siendo tan generoso como siempre. ¡Supongo que también puedo apreciar eso!$h#$b#Gracias de nuevo, joven. Y agradece a nuestro amable tabernero la próxima vez que lo veas.",
+
+    // Conversation topics and special flags
+    "Gus.CT.Poor": "Hey @, ¿cómo te va ahora? ¿Ya estás recuperado?^Hey @, ¿cómo te va ahora? ¿Ya estás recuperada?",
+    "Gus.NewlyWed": "Hey @, solo quiero decir que me alegra mucho por ti y %spouse.$h#$b#He guardado algo especial para ustedes dos... ¡Ah, aquí está! Unas hierbas frescas para su nueva cocina.[(F)2425]#$b#¡Espero verlos por aquí más tarde para un brindis de celebración!$h",
+    "Gus.Death": "Escuché sobre tu accidente. Será mejor que tomes las cosas con calma por un tiempo, @.#$b#Aquí, deja que yo me encargue de la cena esta noche. Solo siéntate y relájate.[218]",
+    "Gus.Death.2": "Trata de cuidarte mejor, ¿de acuerdo?",
+    "Gus.Trash": "Sabes, @, si tienes hambre, solo tienes que pedirme algo de comida. No hay razón para hurgar en la basura buscando sobras.$s#$b#Por favor, toma esto y recuerda que siempre puedes encontrar más en el Salón.[215]",
+    "Gus.Trash.2": "No quiero que nadie en Pueblo Pelícano pase hambre.",
+
+    //Configuration translations
+    "config.HelpNewPlayers.name": "Ayudar a nuevos jugadores",
+    "config.HelpNewPlayers.description": "Gus dará comida a los granjeros que hayan jugado menos de 14 días en este archivo de guardado.",
+    "config.HelpNewPlayers.values.true": "verdadero",
+    "config.HelpNewPlayers.values.false": "falso",
+
+    "config.HelpPoorPlayers.name": "Ayudar a jugadores pobres",
+    "config.HelpPoorPlayers.description": "Gus alimentará a los jugadores que tengan menos de 200 de oro.",
+    "config.HelpPoorPlayers.values.true": "verdadero",
+    "config.HelpPoorPlayers.values.false": "falso",
+
+    "config.HelpExpectingPlayers.name": "Ayudar a jugadores que esperan un hijo",
+    "config.HelpExpectingPlayers.description": "Gus dará comida a madres, padres y parejas adoptivas que estén esperando un hijo.",
+    "config.HelpExpectingPlayers.values.true": "verdadero",
+    "config.HelpExpectingPlayers.values.false": "falso",
+
+    //Gifts Lists -- DON'T TRANSLATE THESE!!!
+    "Food.gifts": "(O)215 (O)213 (O)214 (O)206 (O)224 (O)240 (O)231 (O)197 (O)202 (O)206",
+
+    "Father.gifts": "(O)218 (O)206 (O)224 (O)215 (O)213 (O)346 (O)303",
+
+    "Mother.gifts": "(O)205 (O)200 (O)212 (O)230 (O)237 (O)224 (O)207"
+
+}

@@ -1,0 +1,66 @@
+{
+    "Changes": [
+    {
+      "Action": "EditData",
+      "Target": "Data/Shops", 
+      "TargetField": [ 
+        "Festival_EggFestival_Pierre", 
+        "Items" 
+      ],
+      "Entries": { 
+        "DS_White_Egg": { 
+          "Id": "(O)176", 
+          "ItemId": "(O)176", 
+          "AvailableStock": -1, 
+          "Price": 100
+      },
+        "DS_Large_White_Egg": { 
+          "Id": "(O)174", 
+          "ItemId": "(O)174", 
+          "AvailableStock": -1, 
+          "Price": 190
+      },
+        "DS_Brown_Egg": { 
+          "Id": "(O)180", 
+          "ItemId": "(O)180", 
+          "AvailableStock": -1, 
+          "Price": 100
+      },
+        "DS_Large_Brown_Egg": { 
+          "Id": "(O)182", 
+          "ItemId": "(O)182", 
+          "AvailableStock": -1, 
+          "Price": 190
+      },
+        "DS_Duck_Egg": { 
+          "Id": "(O)442", 
+          "ItemId": "(O)442", 
+          "AvailableStock": -1, 
+          "Price": 200,
+          "Condition":" YEAR 2 "
+      },
+        "DS_Large_Duck_Egg": { 
+          "Id": "(O)Large Duck Egg", 
+          "ItemId": "(O)DS_Large_Duck_Egg", 
+          "AvailableStock": -1, 
+          "Price": 360,
+          "Condition":" YEAR 2 "
+      },
+        "DS_Dinosaur_Egg": { 
+          "Id": "(O)107", 
+          "ItemId": "(O)107", 
+          "AvailableStock": 1, 
+          "Price": 2100,
+          "Condition":" YEAR 2 "
+      },
+        "DS_Ostrich_Egg": { 
+          "Id": "(O)289", 
+          "ItemId": "(O)289", 
+          "AvailableStock": 10, 
+          "Price": 1200,
+          "Condition":" IS_ISLAND_NORTH_BRIDGE_FIXED "
+      }
+    }
+  }
+    ]
+  }

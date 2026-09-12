@@ -1,0 +1,245 @@
+﻿{
+    /*********
+    ** Main translations
+    *********/
+    // mod name shown in the menu
+    "mod-name": "CJB Csalások Menü",
+
+    // tab names
+    "tabs.player-and-tools": "Játékos és Eszközök",
+    "tabs.farm-and-fishing": "Farm & Horgászás",
+    "tabs.skills": "Képességek",
+    "tabs.weather": "Időjárás",
+    "tabs.relationships": "Kapcsolatok",
+    "tabs.warp": "Teleport",
+    "tabs.time": "Idő",
+    "tabs.advanced": "Haladó",
+    "tabs.controls": "Irányítás",
+
+
+    /*********
+    ** Player & Tools tab
+    *********/
+    // player
+    "player.title": "Játékos",
+    "player.infinite-stamina": "Végtelen Energia",
+    "player.infinite-health": "Végtelen Életerő",
+    "player.instant-cooldowns": "Azonnali Képesség Újratöltés",
+    "player.inventory-size": "Eszköztár Méret",
+    "player.movement-speed": "Mozgási Sebesség",
+    "player.movement-speed.default": "normál",
+    "player.one-hit-kill": "Egy Ütéses Gyilkosság",
+    "player.max-daily-luck": "Maximális Napi Szerencse",
+
+    // tools
+    "tools.title": "Eszközök",
+    "tools.infinite-water": "Végtelen Víz az Öntözőkannában",
+    "tools.one-hit-break": "Egy Ütéses Bányászás",
+    "tools.harvest-with-scythe": "Betakarítás Kaszával",
+
+    // tool enchantments
+    "tool-enchantments.title": "Eszköz Elbűvölések",
+    "tool-enchantments.select-tool": "Válassz egy eszközt az eszköztáradról a bűvölések szerkesztéséhez.",
+    "tool-enchantments.none-for-tool": "A kiválasztott {{toolName}} számára nem érhetők el bűvölések.",
+    "tool-enchantments.for-tool": "A kiválasztott {{toolName}} számára.",
+
+    // money
+    "add.money": "Pénz",
+    "add.casino-coins": "Klub Érme",
+    "add.golden-walnuts": "Arany Diót",
+    "add.qi-gems": "Qi Drágaköveknek",
+    "add.amount-gold": "{{amount}} Arany Adása",
+    "add.amount-other": "{{amount}} Adása",
+
+
+    /*********
+    ** Farm & Fishing tab
+    *********/
+    // farm
+    "farm.title": "Farm",
+    "farm.auto-water-crops": "Termények Automata Öntözése",
+    "farm.auto-water-pet-bowls": "Auto-Water Pet Bowls", // TODO
+    "farm.durable-fences": "Tartós Kerítések",
+    "farm.instant-build": "Azonnali Építés",
+    "farm.auto-feed-animals": "Mindig Automata Etetés",
+    "farm.auto-pet-animals": "Automata Állatsimogatás",
+    "farm.auto-pet-pets": "Automata Kisállatsimogatás",
+    "farm.infinite-hay": "Végtelen Széna",
+
+    // fishing
+    "fishing.title": "Horgászás",
+    "fishing.instant-catch": "Azonnali Kifogás",
+    "fishing.instant-bite": "Azonnali Kapás",
+    "fishing.always-throw-max-distance": "Mindig Maximális Távolságra Dobás",
+    "fishing.always-treasure": "Mindig Kincs",
+    "fishing.durable-tackles": "Tartós Horgászcsali",
+
+    // fast machines
+    "fast-machines.title": "Gyors Gépi Feldolgozás",
+    "fast-machines.fruit-trees": "Gyümölcsfák",
+    "fast-machines.ready-in-the-morning": "{{machineName}} (reggelre kész)",
+
+
+    /*********
+    ** Skills tab
+    *********/
+    // skills
+    "skills.title": "Képességek",
+    "skills.increase-skill": "{{skillName}} Szint Növelése: {{currentLevel}}",
+    "skills.increase-mastery": "Increase mastery level: {{currentLevel}}", // TODO
+
+    // professions
+    "professions.title": "Szakmák",
+    "professions.profession": "{{skillName}} {{level}}. szint - {{professionName}}",
+
+
+    /*********
+    ** Weather tab
+    *********/
+    "weather.title": "Holnapi Időjárás",
+    "weather.current-value": "A holnapi időjárás: {{weather}}.",
+    "weather.explanation": "Kattints az alábbi gombok egyikére, hogy beállítsd a holnapi időjárást (csak holnapra). Ez a fül más módon nem befolyásolja az időjárást.",
+    "weather.cannot-change-weather": "The game forces tomorrow's weather to {{weather}}, so it can't be changed.", // TODO
+    "weather.sunny": "Napos",
+    "weather.raining": "Eső",
+    "weather.lightning": "Vihar",
+    "weather.snowing": "Havazás",
+    "weather.green-rain": "Zöld Eső",
+
+
+    /*********
+    ** Relationships tab
+    *********/
+    "relationships.title": "Kapcsolatok",
+    "relationships.give-gifts-anytime": "Bármikor Adható Ajándék",
+    "relationships.no-decay": "Nincs Barátság Csökkenés",
+    "relationships.friends": "Barátok",
+
+
+    /*********
+    ** Warps tab
+    *********/
+    "warp.customized-warning": "Ezeket a teleportokat a modjaid szerkesztették. Ha problémát észlelsz velük, jelezd annak a modnak, amelyik hozzáadta őket.",
+
+    // main areas
+    "warp-section.main": "Fő területek",
+    "warp.farm": "Farm",
+    "warp.carpenter": "Ács Műhely",
+    "warp.desert": "Sivatag",
+    "warp.mines": "Bányák",
+    "warp.pierre-shop": "Pierre Boltja",
+
+    // town
+    "warp-section.town": "Város",
+    "warp.blacksmith": "Kovács",
+    "warp.community-center": "Közösségi Központ",
+    "warp.jojamart": "JojaMart",
+    "warp.movie-theater": "Mozi",
+    "warp.museum": "Múzeum",
+    "warp.saloon": "Szalon",
+    "warp.sewer": "Csatorna",
+
+    // forest
+    "warp-section.forest": "Erdő",
+    "warp.hats": "Romos Ház",
+    "warp.mastery-cave": "Mesterség Barlang",
+    "warp.ranch": "Marnie Tanyája",
+    "warp.secret-woods": "Titkos Erdő",
+    "warp.wizard-tower": "Varázsló Torony",
+
+    // mountain
+    "warp-section.mountain": "Hegység",
+    "warp.adventurers-guild": "Kalandorok Céhe",
+    "warp.bathhouse": "Fürdő",
+    "warp.mutant-bug-lair": "Mutáns Rovar Odú",
+    "warp.quarry": "Kőbánya",
+    "warp.witch-swamp": "Boszorkány mocsár",
+
+    // beach
+    "warp-section.beach": "Strand",
+    "warp.tide-pools": "Árapály Medencék",
+    "warp.willy-shop": "Hal Bolt",
+
+    // island
+    "warp-section.island": "Gyömbér-sziget",
+    "warp.forge": "Kohó",
+    "warp.island-farm": "Szigetbeli Farm",
+    "warp.dwarf-shop": "Vulkán Törpe Bolt",
+    "warp.field-office": "Sziget Iroda",
+    "warp.leo-house": "Leo háza",
+
+    // desert
+    "warp-section.desert": "Sivatag",
+    "warp.casino": "Kaszinó",
+    "warp.sandy-shop": "Sandy Boltja",
+    "warp.skull-cavern": "Koponya Barlang",
+
+
+    /*********
+    ** Time tab
+    *********/
+    // time
+    "time.title": "Idő",
+    "time.freeze-inside": "Idő Megállítása Beltéren",
+    "time.freeze-caves": "Idő Megállítása Barlangokban",
+    "time.freeze-everywhere": "Idő Megállítása Mindenhol",
+    "time.fade-time-frozen-message": "'{{timeFrozen}}' elrejtése Néhány Másodperc Után",
+    "time.time": "Idő",
+    "time.time-frozen-message": "Idő Megállítva",
+
+    // date
+    "date.title": "Dátum",
+    "date.warning": "Bizonyos dolgok csak egy éjszaka eltelte után frissülnek.",
+    "date.year": "Év",
+    "date.season": "Évszak",
+    "date.day": "Nap",
+
+
+    /*********
+    ** Advanced tab
+    *********/
+    "flags.warning": "Ezt a részt csak saját felelősségre használd!\nLevelek, események, küldetések kimaradása és egyéb problémákat előfordulhatnak.",
+    "flags.quests": "Küldetés Teljesítése",
+    "flags.wallet": "Pénztárca Tárgyai",
+    "flags.unlocked": "Feloldott Területek",
+    "flags.unlocked.guild": "Kalandorok Céhe",
+    "flags.unlocked.room": "Szoba: {{name}}",
+    "flags.unlocked-content": "Feloldott Tartalmak",
+    "flags.unlocked-content.dyes-and-tailoring": "Festékek & Szabás",
+    "flags.unlocked-content.junimo-text": "Képes olvasni Junimo szöveget",
+    "flags.unlocked-content.perfection": "Tökéletesség elérve",
+    "flags.community-center": "Közösségi Központ",
+    "flags.community-center.door-unlocked": "Ajtó Kinyitva",
+    "flags.jojamart.membership": "JojaMart Tagság",
+
+
+    /*********
+    ** Controls tab
+    *********/
+    "controls.title": "Irányítás",
+    "controls.android-config-note": "A CJB Cheats Menu és a Virtual Keyboard modok képernyőinek gombjait a konfigurációs fájlokban változtathatod meg.",
+    "controls.open-menu": "Menu Megnyitása",
+    "controls.freeze-time": "Idő Megállítása",
+    "controls.grow-tree": "Fák megnövesztése",
+    "controls.grow-crops": "Termények megnövesztése",
+    "controls.grow-radius": "Növesztési Távolság a Játékos Körül",
+    "controls.reset-controls": "Visszaállítás",
+    "controls.press-new-key": "Nyomj meg egy gombot...",
+
+
+    /*********
+    ** Generic Mod Config Menu UI
+    *********/
+    "config.open-menu.desc": "A billentyű, amely megnyitja a menüt (ha nincs másik menü nyitva).",
+    "config.freeze-time.desc": "A billentyű, amely megállítja a játékidőt.",
+    "config.grow-tree.desc": "A billentyű, amelyet lenyomva tartva fák nőnek a játékos körül.",
+    "config.grow-crops.desc": "A billentyű, amelyet lenyomva tartva termények nőnek a játékos körül.",
+
+    "controls.reload-config": "Beállítások újratöltése",
+    "controls.reload-config.desc": "A billentyű, amely újratölti a mod beállításait a config.json fájlból. Ha a menü éppen nyitva van, a változtatások csak a menü újranyitásakor léphetnek életbe.",
+
+    "config.title.other-options": "Egyéb beállítások",
+    "config.default-tab.name": "Alapértelmezett fül",
+    "config.default-tab.desc": "A fül, amely alapértelmezés szerint nyílik meg a menü megnyitásakor.",
+    "config.other-options": "A csalások konfigurálásához nyomd meg a fenti 'menü megnyitása' gombot a játékban. Győződj meg róla, hogy a mentés betöltése után, amikor nincs másik menü vagy párbeszédablak nyitva, nyomod meg."
+}

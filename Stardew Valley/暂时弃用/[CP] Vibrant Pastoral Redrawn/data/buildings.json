@@ -1,0 +1,398 @@
+{
+	"Changes": [
+	//Buildings:Farm
+		{
+			"LogName": "Barn",
+			"Action": "EditImage",
+			"Target": "Buildings/Barn",
+			"FromFile": "assets/Buildings/{{Season}}_buildings{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 0, "Y": 0, "Width": 112, "Height": 128 },
+			"When": {
+				"Barn": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "BigBarn",
+			"Action": "EditImage",
+			"Target": "Buildings/Big Barn",
+			"FromFile": "assets/Buildings/{{Season}}_buildings{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 112, "Y": 0, "Width": 112, "Height": 128 },
+			"When": {
+				"BigBarn": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "BigCoop",
+			"Action": "EditImage",
+			"Target": "Buildings/Big Coop",
+			"FromFile": "assets/Buildings/{{Season}}_buildings{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 240, "Y": 256, "Width": 96, "Height": 128 },
+			"When": {
+				"BigCoop": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "BigShed",
+			"Action": "EditImage",
+			"Target": "Buildings/Big Shed",
+			"FromFile": "assets/Buildings/{{Season}}_buildings{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 224, "Y": 608, "Width": 112, "Height": 128 },
+			"When": {
+				"BigShed": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "Coop",
+			"Action": "EditImage",
+			"Target": "Buildings/Coop",
+			"FromFile": "assets/Buildings/{{Season}}_buildings{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 240, "Y": 128, "Width": 96, "Height": 128 },
+			"When": {
+				"Coop": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "DeluxeBarn",
+			"Action": "EditImage",
+			"Target": "Buildings/Deluxe Barn",
+			"FromFile": "assets/Buildings/{{Season}}_buildings{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 224, "Y": 0, "Width": 112, "Height": 128 },
+			"When": {
+				"DeluxeBarn": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "DeluxeCoop",
+			"Action": "EditImage",
+			"Target": "Buildings/Deluxe Coop",
+			"FromFile": "assets/Buildings/{{Season}}_buildings{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 0, "Y": 896, "Width": 96, "Height": 128 },
+			"When": {
+				"DeluxeCoop": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "Greenhouse",
+			"Action": "EditImage",
+			"Target": "Buildings/Greenhouse",
+			"FromFile": "assets/Buildings/{{Season}}_buildings{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 0, "Y": 608, "Width": 112, "Height": 286 },
+			"ToArea": { "X": 0, "Y": 34, "Width": 112, "Height": 286 },
+			"When": {
+				"Greenhouse": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "House 1",
+			"Action": "EditImage",
+			"Target": "Buildings/Houses",
+			"FromFile": "assets/Buildings/{{Season}}_buildings{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 0, "Y": 464, "Width": 144, "Height": 144 },
+			"ToArea": { "X": 16, "Y": 0, "Width": 144, "Height": 144 },
+			"When": {
+				"Houses": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "House 2",
+			"Action": "EditImage",
+			"Target": "Buildings/Houses",
+			"FromFile": "assets/Buildings/{{Season}}_buildings{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 144, "Y": 464, "Width": 144, "Height": 144 },
+			"ToArea": { "X": 16, "Y": 144, "Width": 144, "Height": 144 },
+			"When": {
+				"Houses": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "House 3",
+			"Action": "EditImage",
+			"Target": "Buildings/Houses",
+			"FromFile": "assets/Buildings/{{Season}}_buildings{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 176, "Y": 736, "Width": 160, "Height": 144 },
+			"ToArea": { "X": 0, "Y": 288, "Width": 160, "Height": 144 },
+			"When": {
+				"Houses": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "Log Cabin",
+			"Action": "EditImage",
+			"Target": "Buildings/Log Cabin",
+			"FromFile": "assets/Buildings/{{Season}}_buildings{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 0, "Y": 128, "Width": 240, "Height": 112 },
+			"When": {
+				"Log": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "Mill",
+			"Action": "EditImage",
+			"Target": "Buildings/Mill",
+			"FromFile": "assets/Buildings/{{Season}}_mill{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"When": {
+				"Mill": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "Plank Cabin",
+			"Action": "EditImage",
+			"Target": "Buildings/Plank Cabin",
+			"FromFile": "assets/Buildings/{{Season}}_buildings{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 0, "Y": 240, "Width": 240, "Height": 112 },
+			"When": {
+				"Plank": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "Shed",
+			"Action": "EditImage",
+			"Target": "Buildings/Shed",
+			"FromFile": "assets/Buildings/{{Season}}_buildings{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 112, "Y": 608, "Width": 112, "Height": 128 },
+			"When": {
+				"Shed": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "ShippingBin",
+			"Action": "EditImage",
+			"Target": "Buildings/Shipping Bin",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"When": { "ShippingBin": true }
+		},
+		{
+			"LogName": "Silo",
+			"Action": "EditImage",
+			"Target": "Buildings/Silo",
+			"FromFile": "assets/Buildings/{{Season}}_buildings{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 288, "Y": 464, "Width": 48, "Height": 128 },
+			"When": {
+				"Silo": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "SlimeHutch",
+			"Action": "EditImage",
+			"Target": "Buildings/Slime Hutch",
+			"FromFile": "assets/Buildings/{{Season}}_buildings{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 224, "Y": 912, "Width": 112, "Height": 112 },
+			"When": {
+				"SlimeHutch": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "Stable",
+			"Action": "EditImage",
+			"Target": "Buildings/Stable",
+			"FromFile": "assets/Buildings/{{Season}}_buildings{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 112, "Y": 736, "Width": 64, "Height": 96 },
+			"When": {
+				"Stable": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "Stone Cabin",
+			"Action": "EditImage",
+			"Target": "Buildings/Stone Cabin",
+			"FromFile": "assets/Buildings/{{Season}}_buildings{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 0, "Y": 352, "Width": 240, "Height": 112 },
+			"When": {
+				"Stone": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "Well",
+			"Action": "EditImage",
+			"Target": "Buildings/Well",
+			"FromFile": "assets/Buildings/{{Season}}_buildings{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 112, "Y": 832, "Width": 48, "Height": 80 },
+			"When": {
+				"Well": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "Beach Cabin",
+			"Action": "EditImage",
+			"Target": "Buildings/Beach Cabin",
+			"FromFile": "assets/Buildings/{{Season}}_cabins_1_6{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 0, "Y": 0, "Width": 240, "Height": 112 },
+			"When": {
+				"Beach": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "Neighbor Cabin",
+			"Action": "EditImage",
+			"Target": "Buildings/Neighbor Cabin",
+			"FromFile": "assets/Buildings/{{Season}}_cabins_1_6{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 0, "Y": 112, "Width": 240, "Height": 112 },
+			"When": {
+				"Neighbor": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "Rustic Cabin",
+			"Action": "EditImage",
+			"Target": "Buildings/Rustic Cabin",
+			"FromFile": "assets/Buildings/{{Season}}_cabins_1_6{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 0, "Y": 224, "Width": 240, "Height": 112 },
+			"When": {
+				"Rustic": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "Trailer Cabin",
+			"Action": "EditImage",
+			"Target": "Buildings/Trailer Cabin",
+			"FromFile": "assets/Buildings/{{Season}}_cabins_1_6{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 0, "Y": 336, "Width": 240, "Height": 112 },
+			"When": {
+				"Trailer": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "FishPond #1",
+			"Action": "EditImage",
+			"Target": "Buildings/Fish Pond",
+			"FromFile": "assets/Buildings/{{Season}}_fish pond{{SnOverlay}}.png",
+			"PatchMode": "Overlay",
+			"FromArea": { "X": 0, "Y": 0, "Width": 84, "Height": 176 },
+			"ToArea": { "X": 0, "Y": 0, "Width": 84, "Height": 176 },
+			"When": {
+				"FishPond": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "FishPond #2",
+			"Action": "EditImage",
+			"Target": "Buildings/Fish Pond",
+			"FromFile": "assets/Buildings/{{Season}}_fish pond{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 84, "Y": 0, "Width": 76, "Height": 176 },
+			"ToArea": { "X": 84, "Y": 0, "Width": 76, "Height": 176 },
+			"When": {
+				"FishPond": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "GoldClock",
+			"Action": "EditImage",
+			"Target": "Buildings/Gold Clock",
+			"FromFile": "assets/Buildings/{{Season}}_buildings{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 240, "Y": 384, "Width": 48, "Height": 80 },
+			"When": {
+				"GoldClock": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "Desert Obelisk",
+			"Action": "EditImage",
+			"Target": "Buildings/Desert Obelisk",
+			"FromFile": "assets/Buildings/{{Season}}_obelisks{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 0, "Y": 0, "Width": 48, "Height": 128 },
+			"When": {
+				"Obelisks": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "Earth Obelisk",
+			"Action": "EditImage",
+			"Target": "Buildings/Earth Obelisk",
+			"FromFile": "assets/Buildings/{{Season}}_obelisks{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 48, "Y": 0, "Width": 48, "Height": 128 },
+			"When": {
+				"Obelisks": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "Island Obelisk",
+			"Action": "EditImage",
+			"Target": "Buildings/Island Obelisk",
+			"FromFile": "assets/Buildings/{{Season}}_obelisks{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 96, "Y": 0, "Width": 48, "Height": 128 },
+			"When": {
+				"Obelisks": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "Water Obelisk",
+			"Action": "EditImage",
+			"Target": "Buildings/Water Obelisk",
+			"FromFile": "assets/Buildings/{{Season}}_obelisks{{SnOverlay}}.png",
+			"PatchMode": "Replace",
+			"FromArea": { "X": 144, "Y": 0, "Width": 48, "Height": 128 },
+			"When": {
+				"Obelisks": true,
+                "HasFile:{{FromFile}}": true
+			}
+		},
+		{
+			"LogName": "PetBowl",
+			"Action": "EditImage",
+			"Target": "Buildings/Pet Bowl, Buildings/Hay Pet Bowl, Buildings/Stone Pet Bowl",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"When": { "PetBowl": true }
+		}
+	]
+}

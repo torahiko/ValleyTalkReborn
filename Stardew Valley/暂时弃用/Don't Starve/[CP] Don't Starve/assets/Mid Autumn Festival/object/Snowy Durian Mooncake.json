@@ -1,0 +1,41 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "DS_Snowy_Durian_Mooncake": {
+            "Name": "Snowy Durian Mooncake",
+            "DisplayName": "{{i18n:Snowy_Durian_Mooncake.name}}",
+            "Description": "{{i18n:Snowy_Durian_Mooncake.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 415,
+            "Texture": "Mods\\ZG.DS\\Snowy Durian Mooncake",
+            "SpriteIndex": 0,
+            "Edibility": 80,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": true,
+            "ExcludeFromShippingCollection": true,
+            "ExcludeFromRandomSale": true,
+            "Buffs": [
+                {
+                    "BuffId": "DS_Heal_Stamina", 
+                  "Id": "DS_Heal_Stamina",
+                  "Duration": 1440
+                }
+            ]
+          }
+        }
+      },
+      {
+
+        "Action": "EditData", 
+        "Target": "Data/CookingRecipes", 
+        "When":{"Mid_Autumn_Festival": "true"},
+        "Entries": { 
+          "Snowy Durian Mooncake":"246 1 423 3 245 2 247 1 -6 2 DS_Durian 1/25 5/DS_Snowy_Durian_Mooncake 3/s Farming 0/" 
+        }
+      }
+    ]
+  }

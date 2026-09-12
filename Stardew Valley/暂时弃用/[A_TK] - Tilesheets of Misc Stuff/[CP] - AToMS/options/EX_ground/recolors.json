@@ -1,0 +1,338 @@
+{
+    "Changes": [
+
+//	RECOLORS
+
+//	//	Blue Grass
+
+        {
+            "Action": "EditImage",
+            "Target": "Maps/fall_ATK_AToMS_EXground, Maps/spring_ATK_AToMS_EXground, Maps/summer_ATK_AToMS_EXground, Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Blue_Grass/{{TargetWithoutPath}}.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"HasMod": "colling.bluegrass",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Blue_Grass/{{TargetWithoutPath}}_grass.png",
+			"FromArea": { "X": 0, "Y": 0, "Width": 240, "Height": 80 },
+			"ToArea": { "X": 0, "Y": 0, "Width": 240, "Height": 80 },
+			"PatchMode": "Replace",
+			"When": {
+				"HasMod": "colling.bluegrass",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+//
+        {
+            "Action": "EditImage",
+            "Target": "Maps/fall_ATK_AToMS_EXground, Maps/spring_ATK_AToMS_EXground, Maps/summer_ATK_AToMS_EXground, Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Blue_Grass/{{TargetWithoutPath}}.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Blue_Grass": "True",
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Blue_Grass/{{TargetWithoutPath}}_grass.png",
+			"FromArea": { "X": 0, "Y": 0, "Width": 240, "Height": 80 },
+			"ToArea": { "X": 0, "Y": 0, "Width": 240, "Height": 80 },
+			"PatchMode": "Replace",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Blue_Grass": "True",
+			}
+        },
+		
+//	//	Earthy Recolour
+
+        {
+            "Action": "EditImage",
+            "Target": "Maps/fall_ATK_AToMS_EXground, Maps/spring_ATK_AToMS_EXground, Maps/summer_ATK_AToMS_EXground, Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Earthy_Recolour/{{TargetWithoutPath}}.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"HasMod": "DaisyNiko.EarthyRecolour",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Earthy_Recolour/{{TargetWithoutPath}}_grass.png",
+			"FromArea": { "X": 0, "Y": 0, "Width": 240, "Height": 80 },
+			"ToArea": { "X": 0, "Y": 0, "Width": 240, "Height": 80 },
+			"PatchMode": "Replace",
+			"When": {
+				"HasMod": "DaisyNiko.EarthyRecolour",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+//
+        {
+            "Action": "EditImage",
+            "Target": "Maps/fall_ATK_AToMS_EXground, Maps/spring_ATK_AToMS_EXground, Maps/summer_ATK_AToMS_EXground, Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Earthy_Recolour/{{TargetWithoutPath}}.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Earthy_Recolour": "True",
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Earthy_Recolour/{{TargetWithoutPath}}_grass.png",
+			"FromArea": { "X": 0, "Y": 0, "Width": 240, "Height": 80 },
+			"ToArea": { "X": 0, "Y": 0, "Width": 240, "Height": 80 },
+			"PatchMode": "Replace",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Earthy_Recolour": "True",
+			}
+        },		
+
+//	//	Starblue Valley
+
+        {
+            "Action": "EditImage",
+            "Target": "Maps/fall_ATK_AToMS_EXground, Maps/spring_ATK_AToMS_EXground, Maps/summer_ATK_AToMS_EXground, Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Starblue_Valley/{{TargetWithoutPath}}.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"HasMod": "Lita.StarblueValley",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Starblue_Valley/{{TargetWithoutPath}}_grass.png",
+			"FromArea": { "X": 0, "Y": 0, "Width": 240, "Height": 80 },
+			"ToArea": { "X": 0, "Y": 0, "Width": 240, "Height": 80 },
+			"PatchMode": "Replace",
+			"When": {
+				"HasMod": "Lita.StarblueValley",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/spring_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Starblue_Valley/{{TargetWithoutPath}}_blue.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"HasMod": "Lita.StarblueValley",
+				"Allow_Recolors": "True",
+				"Use_Alt_Colors": "True",
+				"Manual_Override": "False"
+			}
+        },
+//
+        {
+            "Action": "EditImage",
+            "Target": "Maps/fall_ATK_AToMS_EXground, Maps/spring_ATK_AToMS_EXground, Maps/summer_ATK_AToMS_EXground, Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Starblue_Valley/{{TargetWithoutPath}}.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Starblue_Valley": "True",
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Starblue_Valley/{{TargetWithoutPath}}_grass.png",
+			"FromArea": { "X": 0, "Y": 0, "Width": 240, "Height": 80 },
+			"ToArea": { "X": 0, "Y": 0, "Width": 240, "Height": 80 },
+			"PatchMode": "Replace",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Starblue_Valley": "True",
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/spring_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Starblue_Valley/{{TargetWithoutPath}}_blue.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Use_Alt_Colors": "True",
+				"Starblue_Valley": "True",
+			}
+        },
+
+//	//	Vibrant Pastoral
+
+        {
+            "Action": "EditImage",
+            "Target": "Maps/fall_ATK_AToMS_EXground, Maps/spring_ATK_AToMS_EXground, Maps/summer_ATK_AToMS_EXground, Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Vibrant_Pastoral/{{TargetWithoutPath}}.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"HasMod": "grapeponta.VibrantPastoralRecolor",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Vibrant_Pastoral/{{TargetWithoutPath}}_grass.png",
+			"FromArea": { "X": 0, "Y": 0, "Width": 240, "Height": 80 },
+			"ToArea": { "X": 0, "Y": 0, "Width": 240, "Height": 80 },
+			"PatchMode": "Replace",
+			"When": {
+				"HasMod": "grapeponta.VibrantPastoralRecolor",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/fall_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Vibrant_Pastoral/{{TargetWithoutPath}}_red.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"HasMod": "grapeponta.VibrantPastoralRecolor",
+				"Allow_Recolors": "True",
+				"Use_Alt_Colors": "True",
+				"Manual_Override": "False"
+			}
+        },
+//
+        {
+            "Action": "EditImage",
+            "Target": "Maps/fall_ATK_AToMS_EXground, Maps/spring_ATK_AToMS_EXground, Maps/summer_ATK_AToMS_EXground, Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Vibrant_Pastoral/{{TargetWithoutPath}}.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Vibrant_Pastoral": "True",
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Vibrant_Pastoral/{{TargetWithoutPath}}_grass.png",
+			"FromArea": { "X": 0, "Y": 0, "Width": 240, "Height": 80 },
+			"ToArea": { "X": 0, "Y": 0, "Width": 240, "Height": 80 },
+			"PatchMode": "Replace",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Vibrant_Pastoral": "True",
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/fall_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Vibrant_Pastoral/{{TargetWithoutPath}}_red.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"Allow_Recolors": "True",
+				"Use_Alt_Colors": "True",
+				"Manual_Override": "True",
+				"Vibrant_Pastoral": "True",
+			}
+        },
+
+//	//	Wittily Named
+
+        {
+            "Action": "EditImage",
+            "Target": "Maps/fall_ATK_AToMS_EXground, Maps/spring_ATK_AToMS_EXground, Maps/summer_ATK_AToMS_EXground, Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Wittily_Named/{{TargetWithoutPath}}.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"HasMod": "Acerbicon.Recolor",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Wittily_Named/{{TargetWithoutPath}}_grass.png",
+			"FromArea": { "X": 0, "Y": 0, "Width": 240, "Height": 80 },
+			"ToArea": { "X": 0, "Y": 0, "Width": 240, "Height": 80 },
+			"PatchMode": "Replace",
+			"When": {
+				"HasMod": "Acerbicon.Recolor",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/fall_ATK_AToMS_EXground, Maps/spring_ATK_AToMS_EXground, Maps/summer_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Wittily_Named/ALL_ATK_AToMS_EXground_light.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"HasMod": "Acerbicon.Recolor",
+				"Allow_Recolors": "True",
+				"Use_Alt_Colors": "True",
+				"Manual_Override": "False"
+			}
+        },
+//
+        {
+            "Action": "EditImage",
+            "Target": "Maps/fall_ATK_AToMS_EXground, Maps/spring_ATK_AToMS_EXground, Maps/summer_ATK_AToMS_EXground, Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Wittily_Named/{{TargetWithoutPath}}.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Wittily_Named": "True",
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Wittily_Named/{{TargetWithoutPath}}_grass.png",
+			"FromArea": { "X": 0, "Y": 0, "Width": 240, "Height": 80 },
+			"ToArea": { "X": 0, "Y": 0, "Width": 240, "Height": 80 },
+			"PatchMode": "Replace",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Wittily_Named": "True",
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/fall_ATK_AToMS_EXground, Maps/spring_ATK_AToMS_EXground, Maps/summer_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Wittily_Named/ALL_ATK_AToMS_EXground_light.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"Allow_Recolors": "True",
+				"Use_Alt_Colors": "True",
+				"Manual_Override": "True",
+				"Wittily_Named": "True",
+			}
+        }
+	]
+}

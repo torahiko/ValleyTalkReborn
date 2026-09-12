@@ -1,0 +1,601 @@
+{
+    "Changes": [
+    // CATALOGUE DATA
+        {
+            "LogName": "Add Farmer's Market Core Calcifer Data",
+            "Action": "EditData",
+            "Target": "sophie.Calcifer/FurnitureActions",
+            "Entries": {
+            // MUSHROOMS
+                "(F)HXW.FMCore_MushroomCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_CommonMushroomCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_MorelCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_RedMushroomCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_ChanterelleCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },  
+                "(F)HXW.FMCore_SmMushroomCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },   
+                "(F)HXW.FMCore_MedFarmTable": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },                
+            // CROPS
+            // Spring
+                "(F)HXW.FMCore_RhubarbCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SpringCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_ParsnipCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SpringCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_CauliflowerCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SpringCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_CarrotCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SpringCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_PotatoCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SpringCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_GarlicCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SpringCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_KaleCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SpringCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_SmCarrotCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SpringCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_SmRhubarbCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SpringCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_ParsnipBarrel": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SpringCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_PotatoBarrel": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SpringCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_PotatoSack": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SpringCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_CarrotSack": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SpringCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_CauliflowerSack": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SpringCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_ParsnipSack": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SpringCropsShop"
+                        }
+                    ]
+                },
+            // Summer
+                "(F)HXW.FMCore_TomatoCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SummerCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_CornCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SummerCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_TaroCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SummerCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_WheatCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SummerCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_SmCornCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SummerCropsShop"
+                        }
+                    ]
+                },
+            // Fall
+                "(F)HXW.FMCore_EggplantCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FallCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_PumpkinCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FallCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_BokChoyCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FallCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_SmEggplantCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FallCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_SmArtichokeCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FallCropsShop"
+                        }
+                    ]
+                },
+            // Mixed
+                "(F)HXW.FMCore_TeaCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_AllCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_SmDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_AllCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_MedDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_AllCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_FreshDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_AllCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_VeggieDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_AllCropsShop"
+                        }
+                    ]
+                },
+            // ARTISAN GOODS
+                "(F)HXW.FMCore_OilCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_OilShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_SmOilCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_OilShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_JellyCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_JellyShop"
+                        }
+                    ]
+                }, 
+                "(F)HXW.FMCore_SmJellyCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_JellyShop"
+                        }
+                    ]
+                }, 
+                "(F)HXW.FMCore_HoneyCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_HoneyShop"
+                        }
+                    ]
+                }, 
+                "(F)HXW.FMCore_JuiceCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_JuiceShop"
+                        }
+                    ]
+                }, 
+                "(F)HXW.FMCore_PickleCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_PickleShop"
+                        }
+                    ]
+                },    
+                "(F)HXW.FMCore_SmPickleCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_PickleShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_ArtisanDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_ArtisanGoodsShop"
+                        }
+                    ]
+                },  
+            // FORAGE
+            // Spring
+                "(F)HXW.FMCore_OnionCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_ForageShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_LeekCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_ForageShop"
+                        }
+                    ]
+                },
+            // Summer
+                "(F)HXW.FMCore_FernCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_ForageShop"
+                        }
+                    ]
+                },     
+                "(F)HXW.FMCore_SmOnionCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_ForageShop"
+                        }
+                    ]
+                },
+            // Mixed 
+                "(F)HXW.FMCore_BerryBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_BerryShop"
+                        }
+                    ]
+                },
+            // ANIMAL GOODS
+                "(F)HXW.FMCore_EggCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_EggShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_BrownEggCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_EggShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_WhiteEggCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_EggShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_DuckEggCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_EggShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_SmEggCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_EggShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_MilkCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MilkShop"
+                        }
+                    ]
+                },   
+                "(F)HXW.FMCore_SmMilkCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MilkShop"
+                        }
+                    ]
+                },   
+                "(F)HXW.FMCore_AnimalDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_AnimalGoodsShop"
+                        }
+                    ]
+                },
+            // FRUIT
+            // Spring
+                "(F)HXW.FMCore_ApricotCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SpringFruitShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_ApricotBarrel": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SpringFruitShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_ApricotSack": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SpringFruitShop"
+                        }
+                    ]
+                },
+            // Summer
+                "(F)HXW.FMCore_PeachCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SummerFruitShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_MelonCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SummerFruitShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_PineappleCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SummerFruitShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_BananaCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SummerFruitShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_StarfruitCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SummerFruitShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_PeachBarrel": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SummerFruitShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_PineappleSack": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SummerFruitShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_PeachSack": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SummerFruitShop"
+                        }
+                    ]
+                },
+            // Fall
+                "(F)HXW.FMCore_AppleCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FallFruitShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_AppleBarrel": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FallFruitShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_AppleSack": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FallFruitShop"
+                        }
+                    ]
+                },
+            // Mixed
+                "(F)HXW.FMCore_FruitDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_AllFruitShop"
+                        }
+                    ]
+                },
+            // FLOWERS
+            // Spring
+                "(F)HXW.FMCore_SmTulipCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FlowerShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_SmJazzCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FlowerShop"
+                        }
+                    ]
+                },
+            // Summer
+                "(F)HXW.FMCore_SmSpangleCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FlowerShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_SmSunflowerCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FlowerShop"
+                        }
+                    ]
+                },
+            // Fall
+                "(F)HXW.FMCore_SmFairyCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FlowerShop"
+                        }
+                    ]
+                },
+            // Mixed
+                "(F)HXW.FMCore_SmBlueFlowerCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FlowerShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMCore_SmPurpleFlowerCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FlowerShop"
+                        }
+                    ]
+                },
+            }
+        }
+    ]
+}

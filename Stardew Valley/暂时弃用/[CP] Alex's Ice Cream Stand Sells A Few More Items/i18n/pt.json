@@ -1,0 +1,12 @@
+{
+	"config.EnableMod.name": "Ativar Mod",
+	"config.EnableMod.description": "Ativar todas as funcionalidades deste mod. (Padrão: true)",
+	"config.YearRoundItems.name": "Itens Disponíveis o Ano Inteiro",
+	"config.YearRoundItems.description": "Ativar itens disponíveis durante o ano todo. (Padrão: true)",
+	"config.SeasonalItems.name": "Itens Sazonais",
+	"config.SeasonalItems.description": "Ativar itens disponíveis apenas em estações específicas. (Padrão: true)",
+	"config.WeekdayDependentItems.name": "Itens Dependentes do Dia da Semana",
+	"config.WeekdayDependentItems.description": "Ativar itens disponíveis apenas em dias específicos da semana. (Padrão: true)",
+	"config.SpecialItems.name": "Itens Especiais",
+	"config.SpecialItems.description": "Ativar itens disponíveis apenas em datas específicas. (Padrão: true)"
+}

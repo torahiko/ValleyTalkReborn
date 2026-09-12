@@ -1,0 +1,59 @@
+{
+    "Changes": [
+
+        //tilesheet
+        {
+            "LogName": "Edit SVE coopTiles",
+            "Action": "EditImage",
+            "PatchMode": "Replace",
+            "Target": "Maps/coopTiles",
+            "FromFile": "assets/recolors/coopTiles_wood_{{Map Recolor}}.png",
+            "Priority": "Late",
+            "When": {
+                "LocationName": "FlashShifter.StardewValleyExpandedCP_PremiumCoop, FlashShifter.StardewValleyExpandedCP_PremiumBarn"
+            },
+            "Update": "OnLocationChange"
+        },
+
+        //maps
+        {
+            "LogName": "Replace Premium Coop and Premium Barn",
+            "Action": "EditMap",
+            "PatchMode": "Replace",
+            "Target": "Maps/SVE_PremiumCoop, Maps/SVE_PremiumBarn",
+            "FromFile": "assets/compat/sve/Green_{{TargetWithoutPath}}.tmx"
+        },
+
+        //map properties
+        {
+            "LogName": "Replace Premium buildings' map properties",
+            "Action": "EditMap",
+            "Target": "Maps/SVE_PremiumCoop, Maps/SVE_PremiumBarn",
+            "MapProperties": {
+                "AmbientLight": "255 255 255",
+                "AmbientNightLight": "180 180 0",
+                "IsGreenhouse": "T",
+                "Light": null,
+                "DayTiles": null,
+                "NightTiles": null
+            }
+        },
+        {
+            "LogName": "Replace Premium Coop's map properties",
+            "Action": "EditMap",
+            "Target": "Maps/SVE_PremiumCoop",
+            "MapProperties": {
+                "ProduceArea": "5 5 16 6"
+            }
+        },
+        {
+            "LogName": "Replace Premium Barn's map properties",
+            "Action": "EditMap",
+            "Target": "Maps/SVE_PremiumBarn",
+            "MapProperties": {
+                "ProduceArea": "6 5 16 11"
+            }
+        }
+
+    ]
+}

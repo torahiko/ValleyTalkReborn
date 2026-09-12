@@ -1,0 +1,283 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "DS_Durian": {
+            "Name": "Durian",
+            "DisplayName": "{{i18n:Durian.name}}",
+            "Description": "{{i18n:Durian.text}}",
+            "Type": "fruits",
+            "Category": -79,
+            "Price": 450,
+            "Texture": "Mods\\ZG.DS\\Durian",
+            "SpriteIndex": 0,
+            "Edibility": 86,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": false,
+            "ExcludeFromShippingCollection": false,
+            "ExcludeFromRandomSale": false,
+            "Buffs": [
+                {
+                  "Duration": 120,
+                  "CustomAttributes": {
+                    "FarmingLevel": 0,
+                    "FishingLevel": 0,
+                    "MiningLevel": 0,
+                    "LuckLevel": -0.5,
+                    "ForagingLevel": 0,
+                    "MaxStamina": 0,
+                    "MagneticRadius": 0,
+                    "Speed": 0,
+                    "Defense": -3,
+                    "Attack": 0
+                  }
+                }
+            ],
+            "ContextTags": [ "color_yellow"]
+          }
+        }
+      },
+          {
+              "Log": "Add Gift Tastes for NPCs",
+              "Action": "EditData",
+              "Target": "Data/NPCGiftTastes",
+              "TextOperations": [
+      { "Operation": "Append",
+                "Target": ["Entries", "Universal_Dislike"],
+                "Value": " DS_Durian",
+                "Delimiter": " "
+              },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Harvey", "3"],
+          "Value": " DS_Durian", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Abigail", "3"],
+          "Value": " DS_Durian", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Haley", "7"],
+          "Value": " DS_Durian", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Leah", "9"],
+          "Value": " DS_Durian", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Demetrius", "1"],
+          "Value": " DS_Durian", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Dwarf", "1"],
+          "Value": " DS_Durian", 
+          "Delimiter": " "
+        },
+        {
+            "Operation": "Append",
+            "Target": ["Fields", "Kent", "7"],
+            "Value": " DS_Durian", 
+            "Delimiter": " "
+          },
+        {
+          "Operation": "Append",
+          "Target":  ["Fields", "Krobus", "1"],
+          "Value": " DS_Durian", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target":  ["Fields", "Leo", "1"],
+          "Value": " DS_Durian", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target":  ["Fields", "Pam", "1"],
+          "Value": " DS_Durian", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target":  ["Fields", "Willy", "9"],
+          "Value": " DS_Durian", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target":  ["Fields", "Wizard", "3"],
+          "Value": " DS_Durian", 
+          "Delimiter": " "
+        }
+      ]
+      },
+      {
+    "Action": "EditData",
+    "Target": "Data/Objects",
+    "Entries": {
+      "DS_Durian_Sapling": {
+      "Name": "Durian Sapling",
+      "DisplayName": "{{i18n:Durian_Sapling.name}}",
+      "Description": "{{i18n:Durian_Sapling.text}}",
+      "Type": "Basic",
+      "Category": -74,
+      "Price": 10000,
+      "Texture": "Mods\\ZG.DS\\Durian Sapling",
+      "SpriteIndex": 0
+      }
+    }
+    },
+      {
+          "Action": "EditData",
+          "Target": "Data/FruitTrees",
+          "Entries":{
+              "DS_Durian_Sapling": {
+              "DisplayName": "{{i18n:Durian_Tree.name}}",
+              "Seasons": [ "spring" ],
+              "Fruit": [{"ItemId": "DS_Durian"}],
+              "Texture": "Mods\\ZG.DS\\Durian Tree",
+              "TextureSpriteRow": 0
+              }
+          }
+      },
+      {
+        "Action": "EditData",
+        "Target": "Data/Shops", 
+        "TargetField": [ 
+          "ShadowShop", 
+          "Items" 
+        ],
+        "Entries": { 
+          "DS_Durian_Sapling": { 
+            "Id": "Durian Sapling", 
+            "ItemId": "DS_Durian_Sapling", 
+            "AvailableStock": 1, 
+            "Price": 45000,
+            "Condition":"SYNCED_RANDOM day DS_Durian_Sapling 0.25"
+        }
+      }
+    },
+    {
+      "Log": "女巫沼泽钓出榴莲树苗",
+      "Action": "EditData",
+      "Target": "Data/Locations", 
+      "TargetField": [ 
+        "WitchSwamp","Fish" 
+      ],
+      "Entries": { 
+        "DS_Durian": 
+          {
+            "Chance": 0.005,
+            "Season": null,
+            "FishAreaId": null,
+            "BobberPosition": null,
+            "PlayerPosition": null,
+            "MinFishingLevel": 0,
+            "MinDistanceFromShore": 0,
+            "MaxDistanceFromShore": -1,
+            "ApplyDailyLuck": true,
+            "CuriosityLureBuff": -1.0,
+            "SpecificBaitBuff": 0.0,
+            "SpecificBaitMultiplier": 1.66,
+            "CatchLimit": -1,
+            "CanUseTrainingRod": null,
+            "IsBossFish": false,
+            "SetFlagOnCatch": null,
+            "RequireMagicBait": false,
+            "Precedence": -15,
+            "IgnoreFishDataRequirements": true,
+            "CanBeInherited": true,
+            "ChanceModifiers": null,
+            "ChanceModifierMode": "Stack",
+            "ChanceBoostPerLuckLevel": 0.0002,
+            "UseFishCaughtSeededRandom": false,
+            "Condition": null,
+            "Id": "Durian_Sapling",
+            "ItemId": "DS_Durian_Sapling",
+            "RandomItemId": null,
+            "MaxItems": null,
+            "MinStack": -1,
+            "MaxStack": -1,
+            "Quality": -1,
+            "ObjectInternalName": null,
+            "ObjectDisplayName": null,
+            "ToolUpgradeLevel": -1,
+            "IsRecipe": false,
+            "StackModifiers": null,
+            "StackModifierMode": "Stack",
+            "QualityModifiers": null,
+            "QualityModifierMode": "Stack",
+            "ModData": null,
+            "PerItemCondition": null
+          }
+        }
+      },
+      {
+        "Log": "下水道钓出榴莲树苗",
+        "Action": "EditData",
+        "Target": "Data/Locations", 
+        "TargetField": [ 
+          "Sewer","Fish" 
+        ],
+        "Entries": { 
+          "DS_Durian": 
+            {
+              "Chance": 0.005,
+              "Season": null,
+              "FishAreaId": null,
+              "BobberPosition": null,
+              "PlayerPosition": null,
+              "MinFishingLevel": 0,
+              "MinDistanceFromShore": 0,
+              "MaxDistanceFromShore": -1,
+              "ApplyDailyLuck": true,
+              "CuriosityLureBuff": -1.0,
+              "SpecificBaitBuff": 0.0,
+              "SpecificBaitMultiplier": 1.66,
+              "CatchLimit": -1,
+              "CanUseTrainingRod": null,
+              "IsBossFish": false,
+              "SetFlagOnCatch": null,
+              "RequireMagicBait": false,
+              "Precedence": -15,
+              "IgnoreFishDataRequirements": true,
+              "CanBeInherited": true,
+              "ChanceModifiers": null,
+              "ChanceModifierMode": "Stack",
+              "ChanceBoostPerLuckLevel": 0.0001,
+              "UseFishCaughtSeededRandom": false,
+              "Condition": null,
+              "Id": "Durian_Sapling",
+              "ItemId": "DS_Durian_Sapling",
+              "RandomItemId": null,
+              "MaxItems": null,
+              "MinStack": -1,
+              "MaxStack": -1,
+              "Quality": -1,
+              "ObjectInternalName": null,
+              "ObjectDisplayName": null,
+              "ToolUpgradeLevel": -1,
+              "IsRecipe": false,
+              "StackModifiers": null,
+              "StackModifierMode": "Stack",
+              "QualityModifiers": null,
+              "QualityModifierMode": "Stack",
+              "ModData": null,
+              "PerItemCondition": null
+            }
+          }
+        }
+    ]
+  }

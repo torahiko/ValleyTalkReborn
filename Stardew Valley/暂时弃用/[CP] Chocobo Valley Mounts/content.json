@@ -1,0 +1,94 @@
+{
+    "Format": "2.0.0",
+	//chocobo texture
+	"ConfigSchema": {
+		"Chocobo": {
+			"AllowValues": "EorzeanHoney, EorzeanBlood, EorzeanCeleste, EorzeanClassic, EorzeanDeepwood, EorzeanIshgard, EorzeanLavender, EorzeanRose, EorzeanSugar",
+			"Default": "EorzeanHoney"
+		},
+		"ChocoboWhistle": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Description": "Enabling will replace the horse flute item texture, name, and description into a chocobo flute."
+		},
+		"ChocoboBook": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Description": "Enabling will change the horse book texture into a chocobo book."
+		},
+	},
+    "Changes": [ 
+		{
+            "Action": "Load",
+            "Target": "Animals/Horse",
+			"FromFile":"Assets/{{Chocobo}}.png"
+        },
+		{
+			"Action": "EditImage",
+			"Target": "LooseSprites/Cursors",
+			"FromFile": "Assets/{{Chocobo}}.png",
+			"FromArea": {
+				"X": 208, 
+				"Y": 112, 
+				"Width": 16, 
+				"Height": 16
+			},
+			"ToArea": {
+				"X": 192, 
+				"Y": 192, 
+				"Width": 16, 
+				"Height": 16
+			}
+		},
+		//horse flute to chocobo whistle
+		{
+			"Action": "EditImage",
+			"Target": "Maps/springobjects",
+			"FromFile": "Assets/ChocoboWhistle.png",
+			"FromArea": {
+				"X": 0, 
+				"Y": 0, 
+				"Width": 16, 
+				"Height": 16
+			}, 
+			"ToArea": {
+				"X": 368, 
+				"Y": 592, 
+				"Width": 16, 
+				"Height": 16
+			},
+			"When": {"ChocoboWhistle": "true"},
+		},
+		{
+			"Action": "EditData",
+			"Target": "Data/Objects",
+			"Fields": {
+				"911": {
+					"Name": "Horse Flute",
+					"DisplayName": "{{i18n: Chocobovalley_ChocoboWhistle_Name}}",
+					"Description": "{{i18n: Chocobovalley_ChocoboWhistle_Description}}"
+				}
+			},
+			"When": {"ChocoboWhistle": "true"},
+		},
+		//horse book to chocobo book
+		{
+			"Action": "EditImage",
+			"Target": "TileSheets/Objects_2",
+			"FromFile": "Assets/ChocoboBook.png",
+			"FromArea": {
+				"X": 0, 
+				"Y": 0, 
+				"Width": 16, 
+				"Height": 16
+			}, 
+			"ToArea": {
+				"X": 80, 
+				"Y": 272, 
+				"Width": 16, 
+				"Height": 16
+			},
+			"When": {"ChocoboBook": "true"},
+		}
+    ]
+}

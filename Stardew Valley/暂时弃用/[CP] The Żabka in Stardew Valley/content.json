@@ -1,0 +1,13 @@
+{
+    "Format": "1.18",
+    "Changes": [
+        {
+            "Action": "EditImage",
+            "PatchMode": "Replace",
+            "Target": "Maps/{{season}}_town",
+            "FromFile": "assets/{{season}}_zabka.png",
+            "FromArea": { "X": 0, "Y": 0, "Width": 512, "Height": 156 },
+            "ToArea": { "X": 0, "Y": 836, "Width": 512, "Height": 156 },
+        }
+     ] 
+}

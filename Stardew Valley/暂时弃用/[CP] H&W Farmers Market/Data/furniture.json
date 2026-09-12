@@ -1,0 +1,137 @@
+{
+  "Changes": [
+
+    {
+      "Action": "EditData",
+      "Target": "Data/Furniture",
+      "Entries": {
+        "HXW.FMCore_MushroomCrate": "HXW_MushroomCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_MushroomCrate}}/0/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_CommonMushroomCrate": "HXW_CommonMushroomCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_CommonMushroomCrate}}/1/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_MorelCrate": "HXW_Morel Crate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_MorelCrate}}/2/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_RedMushroomCrate": "HXW_RedMushroomCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_RedMushroomCrate}}/3/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_ChanterelleCrate": "HXW_ChanterelleCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_ChanterelleCrate}}/4/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+    
+        "HXW.FMCore_RhubarbCrate": "HXW_RhubarbCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_RhubarbCrate}}/5/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_ParsnipCrate": "HXW_ParsnipCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_ParsnipCrate}}/6/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_TomatoCrate": "HXW_TomatoCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_TomatoCrate}}/7/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_CornCrate": "HXW_CornCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_CornCrate}}/8/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_EggplantCrate": "HXW_EggplantCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_EggplantCrate}}/9/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_CauliflowerCrate": "HXW_CauliflowerCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_CauliflowerCrate}}/10/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_PumpkinCrate": "HXW_PumpkinCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_PumpkinCrate}}/11/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+       
+        "HXW.FMCore_OilCrate": "HXW_OilCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_OilCrate}}/12/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_JellyCrate": "HXW_JellyCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_JellyCrate}}/13/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_HoneyCrate": "HXW_HoneyCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_HoneyCrate}}/14/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_JuiceCrate": "HXW_JuiceCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_JuiceCrate}}/15/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_PickleCrate": "HXW_PickleCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_PickleCrate}}/64/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+       
+        "HXW.FMCore_OnionCrate": "HXW_OnionCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_OnionCrate}}/32/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_LeekCrate": "HXW_LeekCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_LeekCrate}}/33/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_CarrotCrate": "HXW_CarrotCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_CarrotCrate}}/34/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_TaroCrate": "HXW_TaroCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_TaroCrate}}/35/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_PotatoCrate": "HXW_PotatoCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_PotatoCrate}}/36/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_GarlicCrate": "HXW_GarlicCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_GarlicCrate}}/37/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+      
+        "HXW.FMCore_TeaCrate": "HXW_TeaCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_TeaCrate}}/45/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_BokChoyCrate": "HXW_BokChoyCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_BokChoyCrate}}/46/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_KaleCrate": "HXW_KaleCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_KaleCrate}}/47/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_FernCrate": "HXW_FernCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_FernCrate}}/96/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_WheatCrate": "HXW_WheatCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_WheatCrate}}/97/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+
+        "HXW.FMCore_EggCrate": "HXW_EggCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_EggCrate}}/64/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_BrownEggCrate": "HXW_BrowEggCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_BrownEggCrate}}/66/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_WhiteEggCrate": "HXW_WhiteEggCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_WhiteEggCrate}}/67/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_DuckEggCrate": "HXW_DuckEggCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_DuckEggCrate}}/68/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_MilkCrate": "HXW_MilkCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_MilkCrate}}/69/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+       
+        "HXW.FMCore_PeachCrate": "HXW_PeachCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_PeachCrate}}/38/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_ApricotCrate": "HXW_ApricotCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_ApricotCrate}}/39/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_MelonCrate": "HXW_MelonCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_MelonCrate}}/40/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_PineappleCrate": "HXW_PineappleCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_PineappleCrate}}/41/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_BananaCrate": "HXW_BananaCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_BananaCrate}}/42/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_StarfruitCrate": "HXW_StarfruitCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_StarfruitCrate}}/43/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_AppleCrate": "HXW_AppleCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_AppleCrate}}/44/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+      
+        "HXW.FMCore_FiberBasket": "HXW_FiberBasket/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_FiberBasket}}/98/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        
+        "HXW.FMCore_SmCarrotCrate": "HXW_SmCarrotCrate/Decor/1 2/1 1/1/500/2/{{i18n:FMCore_SmCarrotCrate}}/70/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_SmCornCrate": "HXW_SmCornCrate/Decor/1 2/1 1/1/500/2/{{i18n:FMCore_SmCornCrate}}/71/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_SmOnionCrate": "HXW_SmOnionCrate/Decor/1 2/1 1/1/500/2/{{i18n:FMCore_SmOnionCrate}}/72/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_SmRhubarbCrate": "HXW_SmRhubarbCrate/Decor/1 2/1 1/1/500/2/{{i18n:FMCore_SmRhubarbCrate}}/73/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_SmEggplantCrate": "HXW_SmEggplantCrate/Decor/1 2/1 1/1/500/2/{{i18n:FMCore_SmEggplantCrate}}/74/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_SmArtichokeCrate": "HXW_SmArtichokeCrate/Decor/1 2/1 1/1/500/2/{{i18n:FMCore_SmArtichokeCrate}}/75/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_SmMushroomCrate": "HXW_SmMushroomCrate/Decor/1 2/1 1/1/500/2/{{i18n:FMCore_SmMushroomCrate}}/76/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        
+        "HXW.FMCore_SmTulipCrate": "HXW_SmTulipCrate/Decor/1 2/1 1/1/500/2/{{i18n:FMCore_SmTulipCrate}}/77/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_SmSpangleCrate": "HXW_SmSpangleCrate/Decor/1 2/1 1/1/500/2/{{i18n:FMCore_SmSpangleCrate}}/78/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_SmFairyCrate": "HXW_SmFairyCrate/Decor/1 2/1 1/1/500/2/{{i18n:FMCore_SmFairyCrate}}/79/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_SmJazzCrate": "HXW_SmJazzCrate/Decor/1 2/1 1/1/500/2/{{i18n:FMCore_SmJazzCrate}}/100/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_SmSunflowerCrate": "HXW_SmSunflowerCrate/Decor/1 2/1 1/1/500/2/{{i18n:FMCore_SmSunflowerCrate}}/101/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_SmBlueFlowerCrate": "HXW_SmBlueFlowerCrate/Decor/1 2/1 1/1/500/2/{{i18n:FMCore_SmBlueFlowerCrate}}/102/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_SmPurpleFlowerCrate": "HXW_SmPurpleFlowerCrate/Decor/1 2/1 1/1/500/2/{{i18n:FMCore_SmPurpleFlowerCrate}}/103/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+  
+        "HXW.FMCore_SmPickleCrate": "HXW_SmPickleCrate/Decor/1 2/1 1/1/500/2/{{i18n:FMCore_SmPickleCrate}}/104/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_SmJellyCrate": "HXW_SmJellyCrate/Decor/1 2/1 1/1/500/2/{{i18n:FMCore_SmJellyCrate}}/105/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_SmEggCrate": "HXW_SmEggCrate/Decor/1 2/1 1/1/500/2/{{i18n:FMCore_SmEggCrate}}/106/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_SmMilkCrate": "HXW_SmMilkCrate/Decor/1 2/1 1/1/500/2/{{i18n:FMCore_SmMilkCrate}}/107/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_SmOilCrate": "HXW_SmOilCrate/Decor/1 2/1 1/1/500/2/{{i18n:FMCore_SmOilCrate}}/108/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        
+        "HXW.FMCore_BerryBasket": "HXW_BerryBasket/Decor/1 2/1 1/1/500/2/{{i18n:FMCore_BerryBasket}}/109/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        
+        "HXW.FMCore_AppleBarrel": "HXW_AppleBarrel/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_AppleBarrel}}/128/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_PeachBarrel": "HXW_PeachBarrel/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_PeachBarrel}}/129/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_ApricotBarrel": "HXW_ApricotBarrel/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_ApricotBarrel}}/130/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_ParsnipBarrel": "HXW_ParsnipBarrel/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_ParsnipBarrel}}/131/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_PotatoBarrel": "HXW_PotatoBarrel/Decor/1 2/1 1/1/1000/2/{{i18n:FMCore_PotatoBarrel}}/132/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        
+        "HXW.FMCore_PineappleSack": "HXW_PineappleSack/Decor/1 2/1 1/1/750/2/{{i18n:FMCore_PineappleSack}}/133/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_AppleSack": "AppleSack/Decor/1 2/1 1/2/750/2/{{i18n:FMCore_AppleSack}}/135/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_ApricotSack": "ApricotSack/Decor/1 2/1 1/1/750/2/{{i18n:FMCore_ApricotSack}}/138/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_PeachSack": "PeachSack/Decor/1 2/1 1/1/750/2/{{i18n:FMCore_PeachSack}}/139/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+
+        "HXW.FMCore_PotatoSack": "PotatoSack/Decor/1 2/1 1/2/750/2/{{i18n:FMCore_PotatoSack}}/141/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_CarrotSack": "CarrotSack/Decor/1 2/1 1/1/750/2/{{i18n:FMCore_CarrotSack}}/134/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_CauliflowerSack": "CauliflowerSack/Decor/1 2/1 1/1/750/2/{{i18n:FMCore_CauliflowerSack}}/137/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_ParsnipSack": "ParsnipSack/Decor/1 2/1 1/1/750/2/{{i18n:FMCore_ParsnipSack}}/140/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+
+        "HXW.FMCore_EmptyCrate1": "HXW_EmptyCrate1/Decor/1 2/1 1/1/100/2/{{i18n:FMCore_EmptyCrate1}}/110/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_EmptyCrate2": "HXW_EmptyCrate2/Decor/1 2/1 1/1/100/2/{{i18n:FMCore_EmptyCrate2}}/111/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_EmptyBasket": "HXW_EmptyBasket/Decor/1 2/1 1/1/100/2/{{i18n:FMCore_EmptyBasket}}/161/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_EmptyBasketDuo": "HXW_EmptyBasketDuo/Decor/1 2/1 1/1/100/2/{{i18n:FMCore_EmptyBasketDuo}}/160/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_EmptyBasketTrio": "HXW_EmptyBasketTrio/Decor/1 2/1 1/1/100/2/{{i18n:FMCore_EmptyBasketTrio}}/143/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        
+        "HXW.FMCore_DIYDisplayA_EndTable": "HXW_DIYDisplayA_EndTable/table/1 2/1 1/2/500/2/{{i18n:FMCore_DIYDisplayA}}/162/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_DIYDisplayB_EndTable": "HXW_DIYDisplayB_EndTable/table/1 2/1 1/2/500/2/{{i18n:FMCore_DIYDisplayB}}/164/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_DIYDisplayC_EndTable": "HXW_DIYDisplayC_EndTable/table/1 2/1 1/2/500/2/{{i18n:FMCore_DIYDisplayC}}/166/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_DIYDisplayD_EndTable": "HXW_DIYDisplayD_EndTable/table/1 2/1 1/2/500/2/{{i18n:FMCore_DIYDisplayD}}/168/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_DIYDisplayE": "HXW_DIYDisplayE_EndTable/table/1 2/1 1/1/500/2/{{i18n:FMCore_DIYDisplayE}}/170/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_DIYDisplayRegister": "HXW_DIYDisplayRegister/Decor/1 2/1 1/1/500/2/{{i18n:FMCore_DIYDisplayRegister}}/171/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_DIYDisplayDivider": "HXW_DIYDisplayDivider/Decor/1 3/1 2/2/500/2/{{i18n:FMCore_DIYDisplayDivider}}/172/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+
+        "HXW.FMCore_SmDisplay": "HXW_SmDisplay/Decor/2 3/2 2/2/500/2/{{i18n:FMCore_SmDisplay}}/192/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_MedFarmTable": "HXW_FarmTable/Decor/3 3/3 2/1/1000/2/{{i18n:FMCore_MedFarmTable}}/196/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_MedDisplay": "HXW_MediumDisplay/Decor/3 3/3 2/1/1500/2/{{i18n:FMCore_MedDisplay}}/199/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_ArtisanDisplay": "HXW_ArtisanDisplay/Decor/4 3/4 2/1/2000/2/{{i18n:FMCore_ArtisanDisplay}}/240/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_FruitDisplay": "HXW_FruitDisplay/Decor/4 3/4 2/1/2000/2/{{i18n:FMCore_FruitDisplay}}/244/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_FreshDisplay": "HXW_FreshDisplay/Decor/4 3/4 2/1/2000/2/{{i18n:FMCore_FreshDisplay}}/248/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_AnimalDisplay": "HXW_AnimalDisplay/Decor/4 3/4 2/1/2000/2/{{i18n:FMCore_AnimalDisplay}}/252/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMCore_VeggieDisplay": "HXW_VeggieDisplay/Decor/4 3/4 2/1/2000/2/{{i18n:FMCore_VeggieDisplay}}/288/Mods\\HXW.FMCore\\Furniture/true/collection_hwfarmersmarket"
+
+      }
+    },
+
+    {
+      "LogName": "H&W Farmers Market Furniture Offsets",
+      "Action": "EditData",
+      "Target": "sophie.Calcifer/FurnitureOffsets",
+      "Entries": {
+          "(F)HXW.FMCore_DIYDisplayA_EndTable": "0, -22",
+          "(F)HXW.FMCore_DIYDisplayB_EndTable": "0, -22",
+          "(F)HXW.FMCore_DIYDisplayC_EndTable": "0, -22",
+          "(F)HXW.FMCore_DIYDisplayD_EndTable": "0, -22",
+          "(F)HXW.FMCore_DIYDisplayE": "0, -22",
+      }
+  }
+    
+  ]
+}

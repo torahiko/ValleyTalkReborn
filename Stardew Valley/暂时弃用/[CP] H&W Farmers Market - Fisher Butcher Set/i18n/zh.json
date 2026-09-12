@@ -1,0 +1,121 @@
+{
+
+  "FM_FisherButcher_HalibutBasket": "大比目鱼编织篮",
+  
+  "FM_FisherButcher_ShrimpBasket": "虾编织篮",
+
+  "FM_FisherButcher_HerringBasket": "鲱鱼编织篮",
+
+  "FM_FisherButcher_SalmonBasket": "鲑鱼编织篮",
+
+  "FM_FisherButcher_PikeBasket": "狗鱼编织篮",
+
+  "FM_FisherButcher_EelBasket": "鳗鱼编织篮",
+
+  "FM_FisherButcher_ChubBasket": "鲢鱼编织篮",
+
+  "FM_FisherButcher_OctopusBasket": "章鱼编织篮",
+
+  "FM_FisherButcher_SturgeonBasket": "蟳鱼编织篮",
+
+  "FM_FisherButcher_MixFishBasket": "综合鱼类编织篮",
+
+  "FM_FisherButcher_LobsterBasket": "龙虾编织篮",
+
+  "FM_FisherButcher_SmPeriwinkleBasket": "小型玉黍螺编织篮",
+
+  "FM_FisherButcher_SmMusselBasket": "小型蚌编织篮",
+
+  "FM_FisherButcher_SmAlgaeBasket": "小型藻类编织篮",
+
+  "FM_FisherButcher_SmRoeBasket": "小型鱼籽编织篮",
+
+  "FM_FisherButcher_SmClamBasket": "小型蛤编织篮",
+
+  "FM_FisherButcher_SmOysterBasket": "小型牡蛎编织篮",
+
+  "FM_FisherButcher_SmOysterBasket2": "小型牡蛎编织篮",
+
+  "FM_FisherButcher_SmSeaweedBasket": "小型海藻编织篮",
+
+  "FM_FisherButcher_SmAnchovyBasket": "小型鳀鱼编织篮",
+
+  "FM_FisherButcher_SmSardineBasket": "小型沙丁鱼编织篮",
+
+  "FM_FisherButcher_SmBassBasket": "小型鲈鱼编织篮",
+
+  "FM_FisherButcher_SmSnapperBasket": "小型鲷鱼编织篮",
+
+  "FM_FisherButcher_SmShrimpBasket": "小型虾编织篮",
+
+  "FM_FisherButcher_SmSquidBasket": "小型鱿鱼编织篮",
+
+  "FM_FisherButcher_SmFlounderBasket": "小型比目鱼编织篮",
+
+  "FM_FisherButcher_SmUrchinBasket": "小型海胆编织篮",
+
+  "FM_FisherButcher_SmCrabBasket": "小型螃蟹编织篮",
+
+  "FM_FisherButcher_ChickenBasket": "鸡肉编织篮",
+
+  "FM_FisherButcher_ChickenLegBasket": "鸡腿编织篮",
+
+  "FM_FisherButcher_SteakBasket": "牛排编织篮",
+
+  "FM_FisherButcher_MeatBasket": "肉类编织篮",
+
+  "FM_FisherButcher_RibsBasket": "肋排编织篮",
+
+  "FM_FisherButcher_PorkBasket": "猪肉编织篮",
+
+  "FM_FisherButcher_PorkLoinBasket": "猪里脊编织篮",
+
+  "FM_FisherButcher_SmChickenBasket": "小型鸡肉编织篮",
+
+  "FM_FisherButcher_SmMeatBasket": "小型肉类编织篮",
+
+  "FM_FisherButcher_SmBaconBasket": "小型培根编织篮",
+
+  "FM_FisherButcher_SmHamBasket": "小型火腿编织篮",
+
+  "FM_FisherButcher_SquidBarrel": "鱿鱼木桶",
+
+  "FM_FisherButcher_FishBarrel": "鱼类木桶",
+
+  "FM_FisherButcher_PeriwinkleBarrel": "玉黍螺木桶",
+
+  "FM_FisherButcher_ClamBarrel": "蛤木桶",
+
+  "FM_FisherButcher_SmDeliDisplay": "小型熟食展示桌",
+
+  "FM_FisherButcher_MedDeliDisplay": "中型熟食展示桌",
+
+  "FM_FisherButcher_MedFishDisplay": "中型鱼类展示桌",
+
+  "FM_FisherButcher_MedRoeDisplay": "中型鱼籽展示桌",
+
+
+  "FM_FisherButcher_LgFreshDisplay": "大型鲜食展示桌",
+ 
+  "FM_FisherButcher_LgFishDisplay": "大型鱼类展示桌",
+ 
+  "FM_FisherButcher_LgPoultryDisplay": "大型家禽展示桌",
+ 
+  "FM_FisherButcher_LgMeatDisplay": "大型肉铺展示桌",
+ 
+
+//CRATES
+
+	"FM_FisherButcher_fish_crate": "板条箱",
+	"FM_FisherButcher_fish_crate.description": "里面装满了。",
+
+//BASKETS
+
+	"FM_FisherButcher_fish_basket": "编织篮：",
+	"FM_FisherButcher_fish_basket.description": "里面装满了新鲜。",
+
+
+
+
+}
+  

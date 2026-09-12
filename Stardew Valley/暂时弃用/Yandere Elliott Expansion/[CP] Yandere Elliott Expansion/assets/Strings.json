@@ -1,0 +1,72 @@
+{
+"Changes": [
+
+{
+    "Action": "EditData",
+    "Target": "Strings/StringsFromCSFiles",
+    "Entries": {
+        "Event.cs.1257": "{{i18n:Strings.Event.cs.1257}}",
+        "Event.cs.1258": "{{i18n:Strings.Event.cs.1258}}",
+        "Event.cs.1259": "{{i18n:Strings.Event.cs.1259}}",
+        "Event.cs.1260": "{{i18n:Strings.Event.cs.1260}}",
+	}
+},  
+
+{
+    "Action": "EditData",
+    "Target": "Strings/StringsFromMaps",
+    "Entries": {
+        "ElliottHouse.1": "{{i18n:Strings.ElliottHouse.1}}",
+        "ElliottHouse.2": "{{i18n:Strings.ElliottHouse.2.Known}}",
+        "ElliottHouse.3": "{{i18n:Strings.ElliottHouse.3}}",
+	}
+},  
+
+{
+    "Action": "EditData",
+    "Target": "Strings/StringsFromMaps",
+    "When": { "Relationship:Elliott": "Dating", },
+    "Entries": {
+        "ElliottHouse.2": "{{i18n:Strings.ElliottHouse.2.Dating}}",
+	}
+}, 
+
+{
+    "Action": "EditData",
+    "Target": "Strings/StringsFromMaps",
+    "When": { "Relationship:Elliott": "Married", },
+    "Entries": {
+        "ElliottHouse.2": "{{i18n:Strings.ElliottHouse.2.Married}}",
+	}
+}, 
+
+{
+    "Action": "EditData",
+    "Target": "Strings/StringsFromMaps",
+    "When": { "Relationship:Elliott": "Divorced", },
+    "Entries": {
+        "ElliottHouse.2": "{{i18n:Strings.ElliottHouse.2.Divorced}}",
+        "ElliottHouse.4": "{{i18n:Strings.ElliottHouse.4}}",
+		"ElliottHouse.6": "{{i18n:Strings.ElliottHouse.4}}",
+	}
+},  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+],
+}

@@ -1,0 +1,147 @@
+{
+    "Changes": [
+        {
+            "LogName": "Add Farmer's Market Fishmonger & Butcher Shops",
+            "Action": "EditData",
+            "Target": "Data/Shops",
+            "Entries": {
+                "{{ModID}}_FMFM_FishShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMFM_FishShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_fish !fish_crab_pot !fish_legendary"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "category_fish, !fish_crab_pot"
+                    ]
+                },
+                "{{ModID}}_FMFM_CrabpotShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMFM_CrabpotShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_fish fish_crab_pot"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "category_fish, fish_crab_pot"
+                    ]
+                },
+                "{{ModID}}_FMFM_RoeShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMFM_RoeShop1",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target id_(O)812"
+                        },
+                        {
+                            "Id": "{{ModID}}_FMFM_RoeShop2",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target id_(O)445"
+                        },
+                        {
+                            "Id": "{{ModID}}_FMFM_RoeShop3",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target id_(O)447"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "id_(O)812",
+                        "id_(O)445",
+                        "id_(O)447"
+                    ]
+                },
+                "{{ModID}}_FMFM_AllFishShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMFM_AllFishShop1",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target id_(O)812"
+                        },
+                        {
+                            "Id": "{{ModID}}_FMFM_AllFishShop2",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target id_(O)445"
+                        },
+                        {
+                            "Id": "{{ModID}}_FMFM_AllFishShop3",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target id_(O)447"
+                        },
+                        {
+                            "Id": "{{ModID}}_FMFM_AllFishShop4",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_fish !fish_legendary",
+                            "AvoidRepeat": true
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "category_fish",
+                        "id_(O)812",
+                        "id_(O)445",
+                        "id_(O)447"
+                    ]
+                },
+                "{{ModID}}_FMFM_MeatShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMFM_MeatShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target meat_item",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMFM_MeatShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_meat",
+                            "AvoidRepeat": true
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "meat_item",
+                        "category_meat"
+                    ]
+                }
+            }
+        }
+    ]
+}

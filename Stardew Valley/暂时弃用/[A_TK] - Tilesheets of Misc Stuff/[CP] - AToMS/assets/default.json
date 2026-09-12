@@ -1,0 +1,49 @@
+{
+    "Changes": [
+
+        {
+            "Action": "Load",
+            "Target": "Maps/fall_ATK_AToMS_foliage, Maps/spring_ATK_AToMS_foliage, Maps/summer_ATK_AToMS_foliage, Maps/winter_ATK_AToMS_foliage",
+            "FromFile": "assets/ALL_foliage/{{TargetWithoutPath}}.png",
+        },
+//
+		{
+            "Action": "Load",
+            "Target": "Maps/fall_ATK_AToMS_EXaqua, Maps/spring_ATK_AToMS_EXaqua, Maps/summer_ATK_AToMS_EXaqua, Maps/winter_ATK_AToMS_EXaqua",
+            "FromFile": "assets/EX_aqua/{{TargetWithoutPath}}.png",
+        },
+//
+        {
+            "Action": "Load",
+            "Target": "Maps/fall_ATK_AToMS_EXground, Maps/spring_ATK_AToMS_EXground, Maps/summer_ATK_AToMS_EXground, Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "assets/EX_ground/{{TargetWithoutPath}}.png",
+        },
+//
+        {
+            "Action": "Load",
+            "Target": "Maps/fall_ATK_AToMS_EXmisc, Maps/spring_ATK_AToMS_EXmisc, Maps/summer_ATK_AToMS_EXmisc, Maps/winter_ATK_AToMS_EXmisc",
+            "FromFile": "assets/EX_misc/{{TargetWithoutPath}}.png",
+        },
+//
+        {
+            "Action": "Load",
+            "Target": "Maps/ATK_AToMS_INcave",
+            "FromFile": "assets/IN_misc/{{TargetWithoutPath}}.png",
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/ATK_AToMS_INcave",
+            "FromFile": "assets/IN_misc/ATK_AToMS_INcave_{{INgrass_Season}}.png",
+			"FromArea": { "X": 0, "Y": 0, "Width": 384, "Height": 320 },
+			"ToArea": { "X": 0, "Y": 16, "Width": 384, "Height": 320 },
+			"PatchMode": "Replace",
+			"When": { "season": "{{INgrass_Season}}" }
+        },
+//
+        {
+            "Action": "Load",
+            "Target": "Maps/ATK_AToMS_INextra",
+            "FromFile": "assets/IN_misc/{{TargetWithoutPath}}.png",
+        }
+	]
+}

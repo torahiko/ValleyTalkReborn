@@ -1,0 +1,826 @@
+{
+	"Changes": [
+		// REGULAR SHOPKEEPERS
+		{
+			"LogName": "Pierre Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Pierre",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "a900 Town 44 23 2/1600 SeedShop 11 20 0/1900 SeedShop 37 5 0/2100 SeedShop 20 5 0/2300 SeedShop 24 4 1 pierre_sleep",
+				"{{ModId}}_MarketSpring21": "a900 Town 44 23 2/1600 SeedShop 11 20 0/1900 SeedShop 37 5 0/2100 SeedShop 20 5 0/2300 SeedShop 24 4 1 pierre_sleep",
+				"{{ModId}}_MarketSummer7": "a900 Town 44 23 2/1600 SeedShop 11 20 0/1900 SeedShop 37 5 0/2100 SeedShop 20 5 0/2300 SeedShop 24 4 1 pierre_sleep",
+				"{{ModId}}_MarketSummer21": "a900 Town 44 23 2/1600 SeedShop 11 20 0/1900 SeedShop 37 5 0/2100 SeedShop 20 5 0/2300 SeedShop 24 4 1 pierre_sleep",
+				"{{ModId}}_MarketFall7": "a900 Town 44 23 2/1600 SeedShop 11 20 0/1900 SeedShop 37 5 0/2100 SeedShop 20 5 0/2300 SeedShop 24 4 1 pierre_sleep",
+				"{{ModId}}_MarketFall21": "a900 Town 44 23 2/1600 SeedShop 11 20 0/1900 SeedShop 37 5 0/2100 SeedShop 20 5 0/2300 SeedShop 24 4 1 pierre_sleep",
+				"{{ModId}}_MarketWinter7": "a900 Town 44 23 2/1600 SeedShop 11 20 0/1900 SeedShop 37 5 0/2100 SeedShop 20 5 0/2300 SeedShop 24 4 1 pierre_sleep",
+				"{{ModId}}_MarketWinter21": "a900 Town 44 23 2/1600 SeedShop 11 20 0/1900 SeedShop 37 5 0/2100 SeedShop 20 5 0/2300 SeedShop 24 4 1 pierre_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= NoMarket": false
+			}
+		},
+		{
+			"LogName": "Robin Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Robin",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "a900 Town 59 23 2/1600 Mountain 29 36 2/1930 ScienceHouse 16 5 0/2100 ScienceHouse 21 4 1 robin_sleep",
+				"{{ModId}}_MarketSpring21": "a900 Town 59 23 2/1600 Mountain 29 36 2/1930 ScienceHouse 16 5 0/2100 ScienceHouse 21 4 1 robin_sleep",
+				"{{ModId}}_MarketSummer7": "a900 Town 59 23 2/1600 Mountain 29 36 2/1930 ScienceHouse 16 5 0/2100 ScienceHouse 21 4 1 robin_sleep",
+				"{{ModId}}_MarketSummer21": "a900 Town 59 23 2/1600 Mountain 29 36 2/1930 ScienceHouse 16 5 0/2100 ScienceHouse 21 4 1 robin_sleep",
+				"{{ModId}}_MarketFall7": "a900 Town 59 23 2/1600 Mountain 29 36 2/1930 ScienceHouse 16 5 0/2100 ScienceHouse 21 4 1 robin_sleep",
+				"{{ModId}}_MarketFall21": "a900 Town 59 23 2/1600 Mountain 29 36 2/1930 ScienceHouse 16 5 0/2100 ScienceHouse 21 4 1 robin_sleep",
+				"{{ModId}}_MarketWinter7": "a900 Town 59 23 2/1600 Mountain 29 36 2/1930 ScienceHouse 16 5 0/2100 ScienceHouse 21 4 1 robin_sleep",
+				"{{ModId}}_MarketWinter21": "a900 Town 59 23 2/1600 Mountain 29 36 2/1930 ScienceHouse 16 5 0/2100 ScienceHouse 21 4 1 robin_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= NoMarket": false
+			}
+		},
+		{
+			"LogName": "Clint Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Clint",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "a900 Town 70 26 3/1600 Blacksmith 8 12 1 clint_hammer/1900 Saloon 19 23 3/2400 Blacksmith 10 4 1 clint_sleep",
+				"{{ModId}}_MarketSpring21": "a900 Town 70 26 3/1600 Blacksmith 8 12 1 clint_hammer/1900 Saloon 19 23 3/2400 Blacksmith 10 4 1 clint_sleep",
+				"{{ModId}}_MarketSummer7": "a900 Town 70 26 3/1600 Blacksmith 8 12 1 clint_hammer/1900 Saloon 19 23 3/2400 Blacksmith 10 4 1 clint_sleep",
+				"{{ModId}}_MarketSummer21": "a900 Town 70 26 3/1600 Blacksmith 8 12 1 clint_hammer/1900 Saloon 19 23 3/2400 Blacksmith 10 4 1 clint_sleep",
+				"{{ModId}}_MarketFall7": "a900 Town 70 26 3/1600 Blacksmith 8 12 1 clint_hammer/1900 Saloon 19 23 3/2400 Blacksmith 10 4 1 clint_sleep",
+				"{{ModId}}_MarketFall21": "a900 Town 70 26 3/1600 Blacksmith 8 12 1 clint_hammer/1900 Saloon 19 23 3/2400 Blacksmith 10 4 1 clint_sleep",
+				"{{ModId}}_MarketWinter7": "a900 Town 70 26 3/1600 Blacksmith 8 12 1 clint_hammer/1900 Saloon 19 23 3/2400 Blacksmith 10 4 1 clint_sleep",
+				"{{ModId}}_MarketWinter21": "a900 Town 70 26 3/1600 Blacksmith 8 12 1 clint_hammer/1900 Saloon 19 23 3/2400 Blacksmith 10 4 1 clint_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= NoMarket, MarketLevel1": false
+			}
+		},
+		{
+			"LogName": "Marnie Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Marnie",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "a900 Town 61 33 2/1600 Saloon 9 22 1 marnie_drink/2300 AnimalShop 12 5 3 marnie_sleep",
+				"{{ModId}}_MarketSpring21": "a900 Town 61 33 2/1600 Saloon 9 22 1 marnie_drink/2300 AnimalShop 12 5 3 marnie_sleep",
+				"{{ModId}}_MarketSummer7": "a900 Town 61 33 2/1600 Saloon 9 22 1 marnie_drink/2300 AnimalShop 12 5 3 marnie_sleep",
+				"{{ModId}}_MarketSummer21": "a900 Town 61 33 2/1600 Saloon 9 22 1 marnie_drink/2300 AnimalShop 12 5 3 marnie_sleep",
+				"{{ModId}}_MarketFall7": "a900 Town 61 33 2/1600 Saloon 9 22 1 marnie_drink/2300 AnimalShop 12 5 3 marnie_sleep",
+				"{{ModId}}_MarketFall21": "a900 Town 61 33 2/1600 Saloon 9 22 1 marnie_drink/2300 AnimalShop 12 5 3 marnie_sleep",
+				"{{ModId}}_MarketWinter7": "a900 Town 61 33 2/1600 Saloon 9 22 1 marnie_drink/2300 AnimalShop 12 5 3 marnie_sleep",
+				"{{ModId}}_MarketWinter21": "a900 Town 61 33 2/1600 Saloon 9 22 1 marnie_drink/2300 AnimalShop 12 5 3 marnie_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= NoMarket, MarketLevel1": false
+			}
+		},
+		{
+			"LogName": "Willy Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Willy",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "a900 Town 37 32 2/1600 Beach 25 36 2 dick_fish/2200 FishShop 5 4 2",
+				"{{ModId}}_MarketSpring21": "a900 Town 37 32 2/1600 Beach 25 36 2 dick_fish/2200 FishShop 5 4 2",
+				"{{ModId}}_MarketSummer7": "a900 Town 37 32 2/1600 Beach 25 36 2 dick_fish/2200 FishShop 5 4 2",
+				"{{ModId}}_MarketSummer21": "a900 Town 37 32 2/1600 Beach 25 36 2 dick_fish/2200 FishShop 5 4 2",
+				"{{ModId}}_MarketFall7": "a900 Town 37 32 2/1600 Beach 25 36 2 dick_fish/2200 FishShop 5 4 2",
+				"{{ModId}}_MarketFall21": "a900 Town 37 32 2/1600 Beach 25 36 2 dick_fish/2200 FishShop 5 4 2",
+				"{{ModId}}_MarketWinter7": "a900 Town 37 32 2/1600 Beach 25 36 2 dick_fish/2200 FishShop 5 4 2",
+				"{{ModId}}_MarketWinter21": "a900 Town 37 32 2/1600 Beach 25 36 2 dick_fish/2200 FishShop 5 4 2"
+			},
+			"When": {
+                "MarketProgressionToken |contains= MarketLevel3, MarketAll": true
+			}
+		},
+		{
+			"LogName": "Gus Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Gus",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "a900 Town 35 22 2/1600 Saloon 14 18 2 gus_clean/1830 Saloon 12 18 0/1850 Saloon 10 18 2/1940 Saloon 12 18 0/1950 Saloon 10 18 2/2030 Saloon 12 18 0/2040 Saloon 10 18 2/2400 Saloon 23 4 1 gus_sleep",
+				"{{ModId}}_MarketSpring21": "a900 Town 35 22 2/1600 Saloon 14 18 2 gus_clean/1830 Saloon 12 18 0/1850 Saloon 10 18 2/1940 Saloon 12 18 0/1950 Saloon 10 18 2/2030 Saloon 12 18 0/2040 Saloon 10 18 2/2400 Saloon 23 4 1 gus_sleep",
+				"{{ModId}}_MarketSummer7": "a900 Town 35 22 2/1600 Saloon 14 18 2 gus_clean/1830 Saloon 12 18 0/1850 Saloon 10 18 2/1940 Saloon 12 18 0/1950 Saloon 10 18 2/2030 Saloon 12 18 0/2040 Saloon 10 18 2/2400 Saloon 23 4 1 gus_sleep",
+				"{{ModId}}_MarketSummer21": "a900 Town 35 22 2/1600 Saloon 14 18 2 gus_clean/1830 Saloon 12 18 0/1850 Saloon 10 18 2/1940 Saloon 12 18 0/1950 Saloon 10 18 2/2030 Saloon 12 18 0/2040 Saloon 10 18 2/2400 Saloon 23 4 1 gus_sleep",
+				"{{ModId}}_MarketFall7": "a900 Town 35 22 2/1600 Saloon 14 18 2 gus_clean/1830 Saloon 12 18 0/1850 Saloon 10 18 2/1940 Saloon 12 18 0/1950 Saloon 10 18 2/2030 Saloon 12 18 0/2040 Saloon 10 18 2/2400 Saloon 23 4 1 gus_sleep",
+				"{{ModId}}_MarketFall21": "a900 Town 35 22 2/1600 Saloon 14 18 2 gus_clean/1830 Saloon 12 18 0/1850 Saloon 10 18 2/1940 Saloon 12 18 0/1950 Saloon 10 18 2/2030 Saloon 12 18 0/2040 Saloon 10 18 2/2400 Saloon 23 4 1 gus_sleep",
+				"{{ModId}}_MarketWinter7": "a900 Town 35 22 2/1600 Saloon 14 18 2 gus_clean/1830 Saloon 12 18 0/1850 Saloon 10 18 2/1940 Saloon 12 18 0/1950 Saloon 10 18 2/2030 Saloon 12 18 0/2040 Saloon 10 18 2/2400 Saloon 23 4 1 gus_sleep",
+				"{{ModId}}_MarketWinter21": "a900 Town 35 22 2/1600 Saloon 14 18 2 gus_clean/1830 Saloon 12 18 0/1850 Saloon 10 18 2/1940 Saloon 12 18 0/1950 Saloon 10 18 2/2030 Saloon 12 18 0/2040 Saloon 10 18 2/2400 Saloon 23 4 1 gus_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= MarketLevel3, MarketAll": true
+			}
+		},
+		// TOWNIE SHOPKEEPERS
+		{
+			"LogName": "Abigail Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Abigail",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "a900 Town 26 31 2/1600 Forest 14 40 2/2000 SeedShop 1 9 3 abigail_sleep",
+				"{{ModId}}_MarketSpring21": "a900 Town 26 31 2/1600 Forest 14 40 2/2000 SeedShop 1 9 3 abigail_sleep",
+				"{{ModId}}_MarketSummer7": "a900 Town 26 31 2/1600 Forest 14 40 2/2000 SeedShop 1 9 3 abigail_sleep",
+				"{{ModId}}_MarketSummer21": "a900 Town 26 31 2/1600 Forest 14 40 2/2000 SeedShop 1 9 3 abigail_sleep",
+				"{{ModId}}_MarketFall7": "a900 Town 26 31 2/1600 Forest 14 40 2/2000 SeedShop 1 9 3 abigail_sleep",
+				"{{ModId}}_MarketFall21": "a900 Town 26 31 2/1600 Forest 14 40 2/2000 SeedShop 1 9 3 abigail_sleep",
+				"{{ModId}}_MarketWinter7": "a900 Town 26 31 2/1600 Forest 14 40 2/2000 SeedShop 1 9 3 abigail_sleep",
+				"{{ModId}}_MarketWinter21": "a900 Town 26 31 2/1600 Forest 14 40 2/2000 SeedShop 1 9 3 abigail_sleep",
+				"marriage_{{ModId}}_MarketSpring7": "a900 Town 26 31 2/1600 Forest 14 40 2/2200 bed",
+				"marriage_{{ModId}}_MarketSpring21": "a900 Town 26 31 2/1600 Forest 14 40 2/2200 bed",
+				"marriage_{{ModId}}_MarketSummer7": "a900 Town 26 31 2/1600 Forest 14 40 2/2200 bed",
+				"marriage_{{ModId}}_MarketSummer21": "a900 Town 26 31 2/1600 Forest 14 40 2/2200 bed",
+				"marriage_{{ModId}}_MarketFall7": "a900 Town 26 31 2/1600 Forest 14 40 2/2200 bed",
+				"marriage_{{ModId}}_MarketFall21": "a900 Town 26 31 2/1600 Forest 14 40 2/2200 bed",
+				"marriage_{{ModId}}_MarketWinter7": "a900 Town 26 31 2/1600 Forest 14 40 2/2200 bed",
+				"marriage_{{ModId}}_MarketWinter21": "a900 Town 26 31 2/1600 Forest 14 40 2/2200 bed"
+			},
+			"When": {
+                "MarketProgressionToken |contains= MarketAll": true,
+				"RandomMarketTownieToken": "Abigail"
+			}
+		},
+		{
+			"LogName": "Alex Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Alex",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "a900 Town 26 31 2/1600 JoshHouse 14 5 2 alex_lift_weights/1900 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 JoshHouse 21 4 1 alex_sleep",
+				"{{ModId}}_MarketSpring21": "a900 Town 26 31 2/1600 JoshHouse 14 5 2 alex_lift_weights/1900 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 JoshHouse 21 4 1 alex_sleep",
+				"{{ModId}}_MarketSummer7": "a900 Town 26 31 2/1600 JoshHouse 14 5 2 alex_lift_weights/1900 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 JoshHouse 21 4 1 alex_sleep",
+				"{{ModId}}_MarketSummer21": "a900 Town 26 31 2/1600 JoshHouse 14 5 2 alex_lift_weights/1900 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 JoshHouse 21 4 1 alex_sleep",
+				"{{ModId}}_MarketFall7": "a900 Town 26 31 2/1600 JoshHouse 14 5 2 alex_lift_weights/1900 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 JoshHouse 21 4 1 alex_sleep",
+				"{{ModId}}_MarketFall21": "a900 Town 26 31 2/1600 JoshHouse 14 5 2 alex_lift_weights/1900 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 JoshHouse 21 4 1 alex_sleep",
+				"{{ModId}}_MarketWinter7": "a900 Town 26 31 2/1600 JoshHouse 14 5 2 alex_lift_weights/1900 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 JoshHouse 21 4 1 alex_sleep",
+				"{{ModId}}_MarketWinter21": "a900 Town 26 31 2/1600 JoshHouse 14 5 2 alex_lift_weights/1900 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 JoshHouse 21 4 1 alex_sleep",
+				"marriage_{{ModId}}_MarketSpring7": "a900 Town 26 31 2/1600 JoshHouse 14 5 2 alex_lift_weights/1900 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 bed",
+				"marriage_{{ModId}}_MarketSpring21": "a900 Town 26 31 2/1600 JoshHouse 14 5 2 alex_lift_weights/1900 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 bed",
+				"marriage_{{ModId}}_MarketSummer7": "a900 Town 26 31 2/1600 JoshHouse 14 5 2 alex_lift_weights/1900 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 bed",
+				"marriage_{{ModId}}_MarketSummer21": "a900 Town 26 31 2/1600 JoshHouse 14 5 2 alex_lift_weights/1900 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 bed",
+				"marriage_{{ModId}}_MarketFall7": "a900 Town 26 31 2/1600 JoshHouse 14 5 2 alex_lift_weights/1900 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 bed",
+				"marriage_{{ModId}}_MarketFall21": "a900 Town 26 31 2/1600 JoshHouse 14 5 2 alex_lift_weights/1900 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 bed",
+				"marriage_{{ModId}}_MarketWinter7": "a900 Town 26 31 2/1600 JoshHouse 14 5 2 alex_lift_weights/1900 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 bed",
+				"marriage_{{ModId}}_MarketWinter21": "a900 Town 26 31 2/1600 JoshHouse 14 5 2 alex_lift_weights/1900 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 bed"
+			},
+			"When": {
+                "MarketProgressionToken |contains= MarketAll": true,
+				"RandomMarketTownieToken": "Alex"
+			}
+		},
+		{
+			"LogName": "Caroline Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Caroline",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "a900 Town 26 31 2/1600 SeedShop 25 18 2 square_9_9/2100 SeedShop 25 4 1 caroline_sleep",
+				"{{ModId}}_MarketSpring21": "a900 Town 26 31 2/1600 SeedShop 25 18 2 square_9_9/2100 SeedShop 25 4 1 caroline_sleep",
+				"{{ModId}}_MarketSummer7": "a900 Town 26 31 2/1600 SeedShop 25 18 2 square_9_9/2100 SeedShop 25 4 1 caroline_sleep",
+				"{{ModId}}_MarketSummer21": "a900 Town 26 31 2/1600 SeedShop 25 18 2 square_9_9/2100 SeedShop 25 4 1 caroline_sleep",
+				"{{ModId}}_MarketFall7": "a900 Town 26 31 2/1600 SeedShop 25 18 2 square_9_9/2100 SeedShop 25 4 1 caroline_sleep",
+				"{{ModId}}_MarketFall21": "a900 Town 26 31 2/1600 SeedShop 25 18 2 square_9_9/2100 SeedShop 25 4 1 caroline_sleep",
+				"{{ModId}}_MarketWinter7": "a900 Town 26 31 2/1600 SeedShop 25 18 2 square_9_9/2100 SeedShop 25 4 1 caroline_sleep",
+				"{{ModId}}_MarketWinter21": "a900 Town 26 31 2/1600 SeedShop 25 18 2 square_9_9/2100 SeedShop 25 4 1 caroline_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= MarketAll": true,
+				"RandomMarketTownieToken": "Caroline"
+			}
+		},
+		{
+			"LogName": "Elliott Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Elliott",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "a900 Town 26 31 2/1600 Saloon 4 19 2 elliott_drink/2340 ElliottHouse 13 4 1 elliott_sleep",
+				"{{ModId}}_MarketSpring21": "a900 Town 26 31 2/1600 Saloon 4 19 2 elliott_drink/2340 ElliottHouse 13 4 1 elliott_sleep",
+				"{{ModId}}_MarketSummer7": "a900 Town 26 31 2/1600 Saloon 4 19 2 elliott_drink/2340 ElliottHouse 13 4 1 elliott_sleep",
+				"{{ModId}}_MarketSummer21": "a900 Town 26 31 2/1600 Saloon 4 19 2 elliott_drink/2340 ElliottHouse 13 4 1 elliott_sleep",
+				"{{ModId}}_MarketFall7": "a900 Town 26 31 2/1600 Saloon 4 19 2 elliott_drink/2340 ElliottHouse 13 4 1 elliott_sleep",
+				"{{ModId}}_MarketFall21": "a900 Town 26 31 2/1600 Saloon 4 19 2 elliott_drink/2340 ElliottHouse 13 4 1 elliott_sleep",
+				"{{ModId}}_MarketWinter7": "a900 Town 26 31 2/1600 Saloon 4 19 2 elliott_drink/2340 ElliottHouse 13 4 1 elliott_sleep",
+				"{{ModId}}_MarketWinter21": "a900 Town 26 31 2/1600 Saloon 4 19 2 elliott_drink/2340 ElliottHouse 13 4 1 elliott_sleep",
+				"marriage_{{ModId}}_MarketSpring7": "a900 Town 26 31 2/1600 Saloon 4 19 2 elliott_drink/2200 bed",
+				"marriage_{{ModId}}_MarketSpring21": "a900 Town 26 31 2/1600 Saloon 4 19 2 elliott_drink/2200 bed",
+				"marriage_{{ModId}}_MarketSummer7": "a900 Town 26 31 2/1600 Saloon 4 19 2 elliott_drink/2200 bed",
+				"marriage_{{ModId}}_MarketSummer21": "a900 Town 26 31 2/1600 Saloon 4 19 2 elliott_drink/2200 bed",
+				"marriage_{{ModId}}_MarketFall7": "a900 Town 26 31 2/1600 Saloon 4 19 2 elliott_drink/2200 bed",
+				"marriage_{{ModId}}_MarketFall21": "a900 Town 26 31 2/1600 Saloon 4 19 2 elliott_drink/2200 bed",
+				"marriage_{{ModId}}_MarketWinter7": "a900 Town 26 31 2/1600 Saloon 4 19 2 elliott_drink/2200 bed",
+				"marriage_{{ModId}}_MarketWinter21": "a900 Town 26 31 2/1600 Saloon 4 19 2 elliott_drink/2200 bed"
+			},
+			"When": {
+                "MarketProgressionToken |contains= MarketAll": true,
+				"RandomMarketTownieToken": "Elliott"
+			}
+		},
+		{
+			"LogName": "Emily Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Emily",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "a900 Town 26 31 2/1600 Saloon 15 17 0 square_5_1_0/2430 HaleyHouse 21 4 1 emily_sleep",
+				"{{ModId}}_MarketSpring21": "a900 Town 26 31 2/1600 Saloon 15 17 0 square_5_1_0/2430 HaleyHouse 21 4 1 emily_sleep",
+				"{{ModId}}_MarketSummer7": "a900 Town 26 31 2/1600 Saloon 15 17 0 square_5_1_0/2430 HaleyHouse 21 4 1 emily_sleep",
+				"{{ModId}}_MarketSummer21": "a900 Town 26 31 2/1600 Saloon 15 17 0 square_5_1_0/2430 HaleyHouse 21 4 1 emily_sleep",
+				"{{ModId}}_MarketFall7": "a900 Town 26 31 2/1600 Saloon 15 17 0 square_5_1_0/2430 HaleyHouse 21 4 1 emily_sleep",
+				"{{ModId}}_MarketFall21": "a900 Town 26 31 2/1600 Saloon 15 17 0 square_5_1_0/2430 HaleyHouse 21 4 1 emily_sleep",
+				"{{ModId}}_MarketWinter7": "a900 Town 26 31 2/1600 Saloon 15 17 0 square_5_1_0/2430 HaleyHouse 21 4 1 emily_sleep",
+				"{{ModId}}_MarketWinter21": "a900 Town 26 31 2/1600 Saloon 15 17 0 square_5_1_0/2430 HaleyHouse 21 4 1 emily_sleep",
+				"marriage_{{ModId}}_MarketSpring7": "a900 Town 26 31 2/1600 Saloon 15 17 0 square_5_1_0/2200 bed",
+				"marriage_{{ModId}}_MarketSpring21": "a900 Town 26 31 2/1600 Saloon 15 17 0 square_5_1_0/2200 bed",
+				"marriage_{{ModId}}_MarketSummer7": "a900 Town 26 31 2/1600 Saloon 15 17 0 square_5_1_0/2200 bed",
+				"marriage_{{ModId}}_MarketSummer21": "a900 Town 26 31 2/1600 Saloon 15 17 0 square_5_1_0/2200 bed",
+				"marriage_{{ModId}}_MarketFall7": "a900 Town 26 31 2/1600 Saloon 15 17 0 square_5_1_0/2200 bed",
+				"marriage_{{ModId}}_MarketFall21": "a900 Town 26 31 2/1600 Saloon 15 17 0 square_5_1_0/2200 bed",
+				"marriage_{{ModId}}_MarketWinter7": "a900 Town 26 31 2/1600 Saloon 15 17 0 square_5_1_0/2200 bed",
+				"marriage_{{ModId}}_MarketWinter21": "a900 Town 26 31 2/1600 Saloon 15 17 0 square_5_1_0/2200 bed"
+			},
+			"When": {
+                "MarketProgressionToken |contains= MarketAll": true,
+				"RandomMarketTownieToken": "Emily"
+			}
+		},
+		{
+			"LogName": "Evelyn Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Evelyn",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "a900 Town 26 31 2/1600 JoshHouse 4 17 0 square_3_1_0/1900 JoshHouse 17 17 0/2130 JoshHouse 2 5 1",
+				"{{ModId}}_MarketSpring21": "a900 Town 26 31 2/1600 JoshHouse 4 17 0 square_3_1_0/1900 JoshHouse 17 17 0/2130 JoshHouse 2 5 1",
+				"{{ModId}}_MarketSummer7": "a900 Town 26 31 2/1600 JoshHouse 4 17 0 square_3_1_0/1900 JoshHouse 17 17 0/2130 JoshHouse 2 5 1",
+				"{{ModId}}_MarketSummer21": "a900 Town 26 31 2/1600 JoshHouse 4 17 0 square_3_1_0/1900 JoshHouse 17 17 0/2130 JoshHouse 2 5 1",
+				"{{ModId}}_MarketFall7": "a900 Town 26 31 2/1600 JoshHouse 4 17 0 square_3_1_0/1900 JoshHouse 17 17 0/2130 JoshHouse 2 5 1",
+				"{{ModId}}_MarketFall21": "a900 Town 26 31 2/1600 JoshHouse 4 17 0 square_3_1_0/1900 JoshHouse 17 17 0/2130 JoshHouse 2 5 1",
+				"{{ModId}}_MarketWinter7": "a900 Town 26 31 2/1600 JoshHouse 4 17 0 square_3_1_0/1900 JoshHouse 17 17 0/2130 JoshHouse 2 5 1",
+				"{{ModId}}_MarketWinter21": "a900 Town 26 31 2/1600 JoshHouse 4 17 0 square_3_1_0/1900 JoshHouse 17 17 0/2130 JoshHouse 2 5 1"
+			},
+			"When": {
+                "MarketProgressionToken |contains= MarketAll": true,
+				"RandomMarketTownieToken": "Evelyn"
+			}
+		},
+		{
+			"LogName": "Haley Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Haley",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "a900 Town 26 31 2/1600 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2230 HaleyHouse 1 5 3 haley_sleep",
+				"{{ModId}}_MarketSpring21": "a900 Town 26 31 2/1600 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2230 HaleyHouse 1 5 3 haley_sleep",
+				"{{ModId}}_MarketSummer7": "a900 Town 26 31 2/1600 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2230 HaleyHouse 1 5 3 haley_sleep",
+				"{{ModId}}_MarketSummer21": "a900 Town 26 31 2/1600 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2230 HaleyHouse 1 5 3 haley_sleep",
+				"{{ModId}}_MarketFall7": "a900 Town 26 31 2/1600 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2230 HaleyHouse 1 5 3 haley_sleep",
+				"{{ModId}}_MarketFall21": "a900 Town 26 31 2/1600 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2230 HaleyHouse 1 5 3 haley_sleep",
+				"{{ModId}}_MarketWinter7": "a900 Town 26 31 2/1600 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2230 HaleyHouse 1 5 3 haley_sleep",
+				"{{ModId}}_MarketWinter21": "a900 Town 26 31 2/1600 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2230 HaleyHouse 1 5 3 haley_sleep",
+				"marriage_{{ModId}}_MarketSpring7": "a900 Town 26 31 2/1600 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2200 bed",
+				"marriage_{{ModId}}_MarketSpring21": "a900 Town 26 31 2/1600 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2200 bed",
+				"marriage_{{ModId}}_MarketSummer7": "a900 Town 26 31 2/1600 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2200 bed",
+				"marriage_{{ModId}}_MarketSummer21": "a900 Town 26 31 2/1600 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2200 bed",
+				"marriage_{{ModId}}_MarketFall7": "a900 Town 26 31 2/1600 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2200 bed",
+				"marriage_{{ModId}}_MarketFall21": "a900 Town 26 31 2/1600 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2200 bed",
+				"marriage_{{ModId}}_MarketWinter7": "a900 Town 26 31 2/1600 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2200 bed",
+				"marriage_{{ModId}}_MarketWinter21": "a900 Town 26 31 2/1600 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2200 bed"
+			},
+			"When": {
+                "MarketProgressionToken |contains= MarketAll": true,
+				"RandomMarketTownieToken": "Haley"
+			}
+		},
+		{
+			"LogName": "Leah Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Leah",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "a900 Town 26 31 2/1600 Town 86 66 3 square_1_5_3/1900 LeahHouse 8 5 0/2200 LeahHouse 13 10 2/2400 LeahHouse 2 4 3 leah_sleep",
+				"{{ModId}}_MarketSpring21": "a900 Town 26 31 2/1600 Town 86 66 3 square_1_5_3/1900 LeahHouse 8 5 0/2200 LeahHouse 13 10 2/2400 LeahHouse 2 4 3 leah_sleep",
+				"{{ModId}}_MarketSummer7": "a900 Town 26 31 2/1600 Town 86 66 3 square_1_5_3/1900 LeahHouse 8 5 0/2200 LeahHouse 13 10 2/2400 LeahHouse 2 4 3 leah_sleep",
+				"{{ModId}}_MarketSummer21": "a900 Town 26 31 2/1600 Town 86 66 3 square_1_5_3/1900 LeahHouse 8 5 0/2200 LeahHouse 13 10 2/2400 LeahHouse 2 4 3 leah_sleep",
+				"{{ModId}}_MarketFall7": "a900 Town 26 31 2/1600 Town 86 66 3 square_1_5_3/1900 LeahHouse 8 5 0/2200 LeahHouse 13 10 2/2400 LeahHouse 2 4 3 leah_sleep",
+				"{{ModId}}_MarketFall21": "a900 Town 26 31 2/1600 Town 86 66 3 square_1_5_3/1900 LeahHouse 8 5 0/2200 LeahHouse 13 10 2/2400 LeahHouse 2 4 3 leah_sleep",
+				"{{ModId}}_MarketWinter7": "a900 Town 26 31 2/1600 Town 86 66 3 square_1_5_3/1900 LeahHouse 8 5 0/2200 LeahHouse 13 10 2/2400 LeahHouse 2 4 3 leah_sleep",
+				"{{ModId}}_MarketWinter21": "a900 Town 26 31 2/1600 Town 86 66 3 square_1_5_3/1900 LeahHouse 8 5 0/2200 LeahHouse 13 10 2/2400 LeahHouse 2 4 3 leah_sleep",
+				"marriage_{{ModId}}_MarketSpring7": "a900 Town 26 31 2/1600 Town 86 66 3 square_1_5_3/1900 LeahHouse 8 5 0/2200 bed",
+				"marriage_{{ModId}}_MarketSpring21": "a900 Town 26 31 2/1600 Town 86 66 3 square_1_5_3/1900 LeahHouse 8 5 0/2200 bed",
+				"marriage_{{ModId}}_MarketSummer7": "a900 Town 26 31 2/1600 Town 86 66 3 square_1_5_3/1900 LeahHouse 8 5 0/2200 bed",
+				"marriage_{{ModId}}_MarketSummer21": "a900 Town 26 31 2/1600 Town 86 66 3 square_1_5_3/1900 LeahHouse 8 5 0/2200 bed",
+				"marriage_{{ModId}}_MarketFall7": "a900 Town 26 31 2/1600 Town 86 66 3 square_1_5_3/1900 LeahHouse 8 5 0/2200 bed",
+				"marriage_{{ModId}}_MarketFall21": "a900 Town 26 31 2/1600 Town 86 66 3 square_1_5_3/1900 LeahHouse 8 5 0/2200 bed",
+				"marriage_{{ModId}}_MarketWinter7": "a900 Town 26 31 2/1600 Town 86 66 3 square_1_5_3/1900 LeahHouse 8 5 0/2200 bed",
+				"marriage_{{ModId}}_MarketWinter21": "a900 Town 26 31 2/1600 Town 86 66 3 square_1_5_3/1900 LeahHouse 8 5 0/2200 bed"
+			},
+			"When": {
+                "MarketProgressionToken |contains= MarketAll": true,
+				"RandomMarketTownieToken": "Leah"
+			}
+		},
+		{
+			"LogName": "Maru Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Maru",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "a900 Town 26 31 2/1600 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2300 ScienceHouse 2 4 3 maru_sleep",
+				"{{ModId}}_MarketSpring21": "a900 Town 26 31 2/1600 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2300 ScienceHouse 2 4 3 maru_sleep",
+				"{{ModId}}_MarketSummer7": "a900 Town 26 31 2/1600 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2300 ScienceHouse 2 4 3 maru_sleep",
+				"{{ModId}}_MarketSummer21": "a900 Town 26 31 2/1600 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2300 ScienceHouse 2 4 3 maru_sleep",
+				"{{ModId}}_MarketFall7": "a900 Town 26 31 2/1600 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2300 ScienceHouse 2 4 3 maru_sleep",
+				"{{ModId}}_MarketFall21": "a900 Town 26 31 2/1600 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2300 ScienceHouse 2 4 3 maru_sleep",
+				"{{ModId}}_MarketWinter7": "a900 Town 26 31 2/1600 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2300 ScienceHouse 2 4 3 maru_sleep",
+				"{{ModId}}_MarketWinter21": "a900 Town 26 31 2/1600 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2300 ScienceHouse 2 4 3 maru_sleep",
+				"marriage_{{ModId}}_MarketSpring7": "a900 Town 26 31 2/1600 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2200 bed",
+				"marriage_{{ModId}}_MarketSpring21": "a900 Town 26 31 2/1600 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2200 bed",
+				"marriage_{{ModId}}_MarketSummer7": "a900 Town 26 31 2/1600 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2200 bed",
+				"marriage_{{ModId}}_MarketSummer21": "a900 Town 26 31 2/1600 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2200 bed",
+				"marriage_{{ModId}}_MarketFall7": "a900 Town 26 31 2/1600 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2200 bed",
+				"marriage_{{ModId}}_MarketFall21": "a900 Town 26 31 2/1600 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2200 bed",
+				"marriage_{{ModId}}_MarketWinter7": "a900 Town 26 31 2/1600 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2200 bed",
+				"marriage_{{ModId}}_MarketWinter21": "a900 Town 26 31 2/1600 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2200 bed"
+			},
+			"When": {
+                "MarketProgressionToken |contains= MarketAll": true,
+				"RandomMarketTownieToken": "Maru"
+			}
+		},
+		{
+			"LogName": "Sam Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Sam",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "a900 Town 23 32 2/1600 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep",
+				"{{ModId}}_MarketSpring21": "a900 Town 23 32 2/1600 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep",
+				"{{ModId}}_MarketSummer7": "a900 Town 23 32 2/1600 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep",
+				"{{ModId}}_MarketSummer21": "a900 Town 23 32 2/1600 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep",
+				"{{ModId}}_MarketFall7": "a900 Town 23 32 2/1600 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep",
+				"{{ModId}}_MarketFall21": "a900 Town 23 32 2/1600 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep",
+				"{{ModId}}_MarketWinter7": "a900 Town 23 32 2/1600 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep",
+				"{{ModId}}_MarketWinter21": "a900 Town 23 32 2/1600 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep",
+				"marriage_{{ModId}}_MarketSpring7": "a900 Town 23 32 2/1600 Town 71 99 2/1830 SamHouse 22 16 1/2200 bed",
+				"marriage_{{ModId}}_MarketSpring21": "a900 Town 23 32 2/1600 Town 71 99 2/1830 SamHouse 22 16 1/2200 bed",
+				"marriage_{{ModId}}_MarketSummer7": "a900 Town 23 32 2/1600 Town 71 99 2/1830 SamHouse 22 16 1/2200 bed",
+				"marriage_{{ModId}}_MarketSummer21": "a900 Town 23 32 2/1600 Town 71 99 2/1830 SamHouse 22 16 1/2200 bed",
+				"marriage_{{ModId}}_MarketFall7": "a900 Town 23 32 2/1600 Town 71 99 2/1830 SamHouse 22 16 1/2200 bed",
+				"marriage_{{ModId}}_MarketFall21": "a900 Town 23 32 2/1600 Town 71 99 2/1830 SamHouse 22 16 1/2200 bed",
+				"marriage_{{ModId}}_MarketWinter7": "a900 Town 23 32 2/1600 Town 71 99 2/1830 SamHouse 22 16 1/2200 bed",
+				"marriage_{{ModId}}_MarketWinter21": "a900 Town 23 32 2/1600 Town 71 99 2/1830 SamHouse 22 16 1/2200 bed"
+			},
+			"When": {
+                "MarketProgressionToken |contains= MarketAll": true,
+				"RandomMarketTownieToken": "SamKids"
+			}
+		},
+		{
+			"LogName": "Vincent Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Vincent",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "a900 Town 25 31 2/1600 SamHouse 5 7 3/1900 SamHouse 11 22 2 vincent_play/2000 SamHouse 8 22 3 vincent_sleep",
+				"{{ModId}}_MarketSpring21": "a900 Town 25 31 2/1600 SamHouse 5 7 3/1900 SamHouse 11 22 2 vincent_play/2000 SamHouse 8 22 3 vincent_sleep",
+				"{{ModId}}_MarketSummer7": "a900 Town 25 31 2/1600 SamHouse 5 7 3/1900 SamHouse 11 22 2 vincent_play/2000 SamHouse 8 22 3 vincent_sleep",
+				"{{ModId}}_MarketSummer21": "a900 Town 25 31 2/1600 SamHouse 5 7 3/1900 SamHouse 11 22 2 vincent_play/2000 SamHouse 8 22 3 vincent_sleep",
+				"{{ModId}}_MarketFall7": "a900 Town 25 31 2/1600 SamHouse 5 7 3/1900 SamHouse 11 22 2 vincent_play/2000 SamHouse 8 22 3 vincent_sleep",
+				"{{ModId}}_MarketFall21": "a900 Town 25 31 2/1600 SamHouse 5 7 3/1900 SamHouse 11 22 2 vincent_play/2000 SamHouse 8 22 3 vincent_sleep",
+				"{{ModId}}_MarketWinter7": "a900 Town 25 31 2/1600 SamHouse 5 7 3/1900 SamHouse 11 22 2 vincent_play/2000 SamHouse 8 22 3 vincent_sleep",
+				"{{ModId}}_MarketWinter21": "a900 Town 25 31 2/1600 SamHouse 5 7 3/1900 SamHouse 11 22 2 vincent_play/2000 SamHouse 8 22 3 vincent_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= MarketAll": true,
+				"RandomMarketTownieToken": "SamKids"
+			}
+		},
+		{
+			"LogName": "Jas Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Jas",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "a900 Town 27 31 2/1600 AnimalShop 17 15 3 jas_read/1900 AnimalShop 4 7 2/2100 AnimalShop 1 7 3 jas_sleep",
+				"{{ModId}}_MarketSpring21": "a900 Town 27 31 2/1600 AnimalShop 17 15 3 jas_read/1900 AnimalShop 4 7 2/2100 AnimalShop 1 7 3 jas_sleep",
+				"{{ModId}}_MarketSummer7": "a900 Town 27 31 2/1600 AnimalShop 17 15 3 jas_read/1900 AnimalShop 4 7 2/2100 AnimalShop 1 7 3 jas_sleep",
+				"{{ModId}}_MarketSummer21": "a900 Town 27 31 2/1600 AnimalShop 17 15 3 jas_read/1900 AnimalShop 4 7 2/2100 AnimalShop 1 7 3 jas_sleep",
+				"{{ModId}}_MarketFall7": "a900 Town 27 31 2/1600 AnimalShop 17 15 3 jas_read/1900 AnimalShop 4 7 2/2100 AnimalShop 1 7 3 jas_sleep",
+				"{{ModId}}_MarketFall21": "a900 Town 27 31 2/1600 AnimalShop 17 15 3 jas_read/1900 AnimalShop 4 7 2/2100 AnimalShop 1 7 3 jas_sleep",
+				"{{ModId}}_MarketWinter7": "a900 Town 27 31 2/1600 AnimalShop 17 15 3 jas_read/1900 AnimalShop 4 7 2/2100 AnimalShop 1 7 3 jas_sleep",
+				"{{ModId}}_MarketWinter21": "a900 Town 27 31 2/1600 AnimalShop 17 15 3 jas_read/1900 AnimalShop 4 7 2/2100 AnimalShop 1 7 3 jas_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= MarketAll": true,
+				"RandomMarketTownieToken": "SamKids"
+			}
+		},
+		// MARKET VISIT
+		{
+			"LogName": "Alex Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Alex",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "800 Town 64 64 2 alex_football/1300 Town 66 27 0 square_3_3_2/1600 Town 50 68 1/1830 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 JoshHouse 21 4 1 alex_sleep",
+				"{{ModId}}_MarketSpring21": "800 Town 64 64 2 alex_football/1300 Town 66 27 0 square_3_3_2/1600 Town 50 68 1/1830 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 JoshHouse 21 4 1 alex_sleep",
+				"{{ModId}}_MarketSummer7": "800 Town 64 64 2 alex_football/1300 Town 66 27 0 square_3_3_2/1600 Town 50 68 1/1830 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 JoshHouse 21 4 1 alex_sleep",
+				"{{ModId}}_MarketSummer21": "800 Town 64 64 2 alex_football/1300 Town 66 27 0 square_3_3_2/1600 Town 50 68 1/1830 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 JoshHouse 21 4 1 alex_sleep",
+				"{{ModId}}_MarketFall7": "800 Town 64 64 2 alex_football/1300 Town 66 27 0 square_3_3_2/1600 Town 50 68 1/1830 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 JoshHouse 21 4 1 alex_sleep",
+				"{{ModId}}_MarketFall21": "800 Town 64 64 2 alex_football/1300 Town 66 27 0 square_3_3_2/1600 Town 50 68 1/1830 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 JoshHouse 21 4 1 alex_sleep",
+				"{{ModId}}_MarketWinter7": "800 Town 64 64 2 alex_football/1300 Town 66 27 0 square_3_3_2/1600 Town 50 68 1/1830 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 JoshHouse 21 4 1 alex_sleep",
+				"{{ModId}}_MarketWinter21": "800 Town 64 64 2 alex_football/1300 Town 66 27 0 square_3_3_2/1600 Town 50 68 1/1830 JoshHouse 8 19 2/2000 JoshHouse 17 5 0/2200 JoshHouse 21 4 1 alex_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= MarketAll": true,
+				"RandomMarketTownieToken |contains= Alex": false,
+				"Query: {{Random: {{Range: 1,3}}}} = 1": true
+			}
+		},
+		{
+			"LogName": "Demetrius Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Demetrius",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "750 ScienceHouse 29 9 0/1100 Town 61 26 3/1600 Mountain 30 36 2/1900 ScienceHouse 27 9 0/2040 ScienceHouse 28 9 0/2100 ScienceHouse 15 4 0/2230 ScienceHouse 19 4 11 demetrius_sleep",
+				"{{ModId}}_MarketSpring21": "750 ScienceHouse 29 9 0/1100 Town 61 26 3/1600 Mountain 30 36 2/1900 ScienceHouse 27 9 0/2040 ScienceHouse 28 9 0/2100 ScienceHouse 15 4 0/2230 ScienceHouse 19 4 11 demetrius_sleep",
+				"{{ModId}}_MarketSummer7": "750 ScienceHouse 29 9 0/1100 Town 61 26 3/1600 Mountain 30 36 2/1900 ScienceHouse 27 9 0/2040 ScienceHouse 28 9 0/2100 ScienceHouse 15 4 0/2230 ScienceHouse 19 4 11 demetrius_sleep",
+				"{{ModId}}_MarketSummer21": "750 ScienceHouse 29 9 0/1100 Town 61 26 3/1600 Mountain 30 36 2/1900 ScienceHouse 27 9 0/2040 ScienceHouse 28 9 0/2100 ScienceHouse 15 4 0/2230 ScienceHouse 19 4 11 demetrius_sleep",
+				"{{ModId}}_MarketFall7": "750 ScienceHouse 29 9 0/1100 Town 61 26 3/1600 Mountain 30 36 2/1900 ScienceHouse 27 9 0/2040 ScienceHouse 28 9 0/2100 ScienceHouse 15 4 0/2230 ScienceHouse 19 4 11 demetrius_sleep",
+				"{{ModId}}_MarketFall21": "750 ScienceHouse 29 9 0/1100 Town 61 26 3/1600 Mountain 30 36 2/1900 ScienceHouse 27 9 0/2040 ScienceHouse 28 9 0/2100 ScienceHouse 15 4 0/2230 ScienceHouse 19 4 11 demetrius_sleep",
+				"{{ModId}}_MarketWinter7": "750 ScienceHouse 29 9 0/1100 Town 61 26 3/1600 Mountain 30 36 2/1900 ScienceHouse 27 9 0/2040 ScienceHouse 28 9 0/2100 ScienceHouse 15 4 0/2230 ScienceHouse 19 4 11 demetrius_sleep",
+				"{{ModId}}_MarketWinter21": "750 ScienceHouse 29 9 0/1100 Town 61 26 3/1600 Mountain 30 36 2/1900 ScienceHouse 27 9 0/2040 ScienceHouse 28 9 0/2100 ScienceHouse 15 4 0/2230 ScienceHouse 19 4 11 demetrius_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= NoMarket": false,
+				"Query: {{Random: {{Range: 1,2}}}} = 1": true
+			}
+		},
+		{
+			"LogName": "Harvey Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Harvey",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "700 HarveyRoom 21 7 0/830 Hospital 6 15 2/1200 Town 68 30 3 square_5_5_2/1630 Hospital 9 15 3/1840 HarveyRoom 11 5 3 harvey_read/2200 HarveyRoom 13 4 1 harvey_sleep",
+				"{{ModId}}_MarketSpring21": "700 HarveyRoom 21 7 0/830 Hospital 6 15 2/1200 Town 68 30 3 square_5_5_2/1630 Hospital 9 15 3/1840 HarveyRoom 11 5 3 harvey_read/2200 HarveyRoom 13 4 1 harvey_sleep",
+				"{{ModId}}_MarketSummer7": "700 HarveyRoom 21 7 0/830 Hospital 6 15 2/1200 Town 68 30 3 square_5_5_2/1630 Hospital 9 15 3/1840 HarveyRoom 11 5 3 harvey_read/2200 HarveyRoom 13 4 1 harvey_sleep",
+				"{{ModId}}_MarketSummer21": "700 HarveyRoom 21 7 0/830 Hospital 6 15 2/1200 Town 68 30 3 square_5_5_2/1630 Hospital 9 15 3/1840 HarveyRoom 11 5 3 harvey_read/2200 HarveyRoom 13 4 1 harvey_sleep",
+				"{{ModId}}_MarketFall7": "700 HarveyRoom 21 7 0/830 Hospital 6 15 2/1200 Town 68 30 3 square_5_5_2/1630 Hospital 9 15 3/1840 HarveyRoom 11 5 3 harvey_read/2200 HarveyRoom 13 4 1 harvey_sleep",
+				"{{ModId}}_MarketFall21": "700 HarveyRoom 21 7 0/830 Hospital 6 15 2/1200 Town 68 30 3 square_5_5_2/1630 Hospital 9 15 3/1840 HarveyRoom 11 5 3 harvey_read/2200 HarveyRoom 13 4 1 harvey_sleep",
+				"{{ModId}}_MarketWinter7": "700 HarveyRoom 21 7 0/830 Hospital 6 15 2/1200 Town 68 30 3 square_5_5_2/1630 Hospital 9 15 3/1840 HarveyRoom 11 5 3 harvey_read/2200 HarveyRoom 13 4 1 harvey_sleep",
+				"{{ModId}}_MarketWinter21": "700 HarveyRoom 21 7 0/830 Hospital 6 15 2/1200 Town 68 30 3 square_5_5_2/1630 Hospital 9 15 3/1840 HarveyRoom 11 5 3 harvey_read/2200 HarveyRoom 13 4 1 harvey_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= NoMarket, MarketLevel1": false,
+				"Query: {{Random: {{Range: 1,2}}}} = 1": true
+			}
+		},
+		{
+			"LogName": "Shane Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Shane",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "700 AnimalShop 24 15 0/1100 AnimalShop 24 5 0/1230 Town 59 28 1/1800 Saloon 21 17 2 shane_drink/2400 AnimalShop 27 4 1 shane_sleep",
+				"{{ModId}}_MarketSpring21": "700 AnimalShop 24 15 0/1100 AnimalShop 24 5 0/1230 Town 59 28 1/1800 Saloon 21 17 2 shane_drink/2400 AnimalShop 27 4 1 shane_sleep",
+				"{{ModId}}_MarketSummer7": "700 AnimalShop 24 15 0/1100 AnimalShop 24 5 0/1230 Town 59 28 1/1800 Saloon 21 17 2 shane_drink/2400 AnimalShop 27 4 1 shane_sleep",
+				"{{ModId}}_MarketSummer21": "700 AnimalShop 24 15 0/1100 AnimalShop 24 5 0/1230 Town 59 28 1/1800 Saloon 21 17 2 shane_drink/2400 AnimalShop 27 4 1 shane_sleep",
+				"{{ModId}}_MarketFall7": "700 AnimalShop 24 15 0/1100 AnimalShop 24 5 0/1230 Town 59 28 1/1800 Saloon 21 17 2 shane_drink/2400 AnimalShop 27 4 1 shane_sleep",
+				"{{ModId}}_MarketFall21": "700 AnimalShop 24 15 0/1100 AnimalShop 24 5 0/1230 Town 59 28 1/1800 Saloon 21 17 2 shane_drink/2400 AnimalShop 27 4 1 shane_sleep",
+				"{{ModId}}_MarketWinter7": "700 AnimalShop 24 15 0/1100 AnimalShop 24 5 0/1230 Town 59 28 1/1800 Saloon 21 17 2 shane_drink/2400 AnimalShop 27 4 1 shane_sleep",
+				"{{ModId}}_MarketWinter21": "700 AnimalShop 24 15 0/1100 AnimalShop 24 5 0/1230 Town 59 28 1/1800 Saloon 21 17 2 shane_drink/2400 AnimalShop 27 4 1 shane_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= NoMarket, MarketLevel1": false,
+				"Query: {{Random: {{Range: 1,4}}}} = 1": true
+			}
+		},
+		{
+			"LogName": "Caroline No Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Caroline",
+			"Entries": {
+				"Sun": "900 SeedShop 22 5 2/1040 SeedShop 21 5 3 \"Strings\\schedules\\Caroline:Sun.000\"/1330 SeedShop 15 23 0/1440 Town 21 26 1/1830 SeedShop 27 7 1/2100 SeedShop 25 4 1 caroline_sleep"
+			}
+		},
+		{
+			"LogName": "Caroline Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Caroline",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "800 SeedShop 37 6 3/1000 Sunroom 5 7 1/1200 Town 43 25 2/1600 SeedShop 25 18 2 square_9_9/2100 SeedShop 25 4 1 caroline_sleep",
+				"{{ModId}}_MarketSpring21": "800 SeedShop 37 6 3/1000 Sunroom 5 7 1/1200 Town 43 25 2/1600 SeedShop 25 18 2 square_9_9/2100 SeedShop 25 4 1 caroline_sleep",
+				"{{ModId}}_MarketSummer7": "800 SeedShop 37 6 3/1000 Sunroom 5 7 1/1200 Town 43 25 2/1600 SeedShop 25 18 2 square_9_9/2100 SeedShop 25 4 1 caroline_sleep",
+				"{{ModId}}_MarketSummer21": "800 SeedShop 37 6 3/1000 Sunroom 5 7 1/1200 Town 43 25 2/1600 SeedShop 25 18 2 square_9_9/2100 SeedShop 25 4 1 caroline_sleep",
+				"{{ModId}}_MarketFall7": "800 SeedShop 37 6 3/1000 Sunroom 5 7 1/1200 Town 43 25 2/1600 SeedShop 25 18 2 square_9_9/2100 SeedShop 25 4 1 caroline_sleep",
+				"{{ModId}}_MarketFall21": "800 SeedShop 37 6 3/1000 Sunroom 5 7 1/1200 Town 43 25 2/1600 SeedShop 25 18 2 square_9_9/2100 SeedShop 25 4 1 caroline_sleep",
+				"{{ModId}}_MarketWinter7": "800 SeedShop 37 6 3/1000 Sunroom 5 7 1/1200 Town 43 25 2/1600 SeedShop 25 18 2 square_9_9/2100 SeedShop 25 4 1 caroline_sleep",
+				"{{ModId}}_MarketWinter21": "800 SeedShop 37 6 3/1000 Sunroom 5 7 1/1200 Town 43 25 2/1600 SeedShop 25 18 2 square_9_9/2100 SeedShop 25 4 1 caroline_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= NoMarket": false,
+				"RandomMarketTownieToken |contains= Caroline": false,
+				"Query: {{Random: {{Range: 1,3}} |key=CarolineJodi}} = 1": true
+			}
+		},
+		{
+			"LogName": "Jodi Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Jodi",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "800 SamHouse 6 5 0 jodi_dishes/900 SamHouse 5 5 0/1000 SeedShop 38 20 0/1200 {{JodiMarketScheduleToken}}/1600 SamHouse 4 12 2 jodi_sit_down/1900 SamHouse 2 17 3/2100 SamHouse 10 22 3/2200 SamHouse 22 5 1 jodi_sleep",
+				"{{ModId}}_MarketSpring21": "800 SamHouse 6 5 0 jodi_dishes/900 SamHouse 5 5 0/1000 SeedShop 38 20 0/1200 {{JodiMarketScheduleToken}}/1600 SamHouse 4 12 2 jodi_sit_down/1900 SamHouse 2 17 3/2100 SamHouse 10 22 3/2200 SamHouse 22 5 1 jodi_sleep",
+				"{{ModId}}_MarketSummer7": "800 SamHouse 6 5 0 jodi_dishes/900 SamHouse 5 5 0/1000 SeedShop 38 20 0/1200 {{JodiMarketScheduleToken}}/1600 SamHouse 4 12 2 jodi_sit_down/1900 SamHouse 2 17 3/2100 SamHouse 10 22 3/2200 SamHouse 22 5 1 jodi_sleep",
+				"{{ModId}}_MarketSummer21": "800 SamHouse 6 5 0 jodi_dishes/900 SamHouse 5 5 0/1000 SeedShop 38 20 0/1200 {{JodiMarketScheduleToken}}/1600 SamHouse 4 12 2 jodi_sit_down/1900 SamHouse 2 17 3/2100 SamHouse 10 22 3/2200 SamHouse 22 5 1 jodi_sleep",
+				"{{ModId}}_MarketFall7": "800 SamHouse 6 5 0 jodi_dishes/900 SamHouse 5 5 0/1000 SeedShop 38 20 0/1200 {{JodiMarketScheduleToken}}/1600 SamHouse 4 12 2 jodi_sit_down/1900 SamHouse 2 17 3/2100 SamHouse 10 22 3/2200 SamHouse 22 5 1 jodi_sleep",
+				"{{ModId}}_MarketFall21": "800 SamHouse 6 5 0 jodi_dishes/900 SamHouse 5 5 0/1000 SeedShop 38 20 0/1200 {{JodiMarketScheduleToken}}/1600 SamHouse 4 12 2 jodi_sit_down/1900 SamHouse 2 17 3/2100 SamHouse 10 22 3/2200 SamHouse 22 5 1 jodi_sleep",
+				"{{ModId}}_MarketWinter7": "800 SamHouse 6 5 0 jodi_dishes/900 SamHouse 5 5 0/1000 SeedShop 38 20 0/1200 {{JodiMarketScheduleToken}}/1600 SamHouse 4 12 2 jodi_sit_down/1900 SamHouse 2 17 3/2100 SamHouse 10 22 3/2200 SamHouse 22 5 1 jodi_sleep",
+				"{{ModId}}_MarketWinter21": "800 SamHouse 6 5 0 jodi_dishes/900 SamHouse 5 5 0/1000 SeedShop 38 20 0/1200 {{JodiMarketScheduleToken}}/1600 SamHouse 4 12 2 jodi_sit_down/1900 SamHouse 2 17 3/2100 SamHouse 10 22 3/2200 SamHouse 22 5 1 jodi_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= NoMarket": false,
+				"Query: {{Random: {{Range: 1,3}} |key=CarolineJodi}} = 1": true
+			}
+		},
+		{
+			"LogName": "Kent Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Kent",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "800 SamHouse 8 5 3/1010 SeedShop 36 20 0/1200 Town 46 26 3/1600 SamHouse 2 21 0/1900 SamHouse 8 5 3/2100 Town 6 89 2/2300 SamHouse 21 5 3 kent_sleep",
+				"{{ModId}}_MarketSpring21": "800 SamHouse 8 5 3/1010 SeedShop 36 20 0/1200 Town 46 26 3/1600 SamHouse 2 21 0/1900 SamHouse 8 5 3/2100 Town 6 89 2/2300 SamHouse 21 5 3 kent_sleep",
+				"{{ModId}}_MarketSummer7": "800 SamHouse 8 5 3/1010 SeedShop 36 20 0/1200 Town 46 26 3/1600 SamHouse 2 21 0/1900 SamHouse 8 5 3/2100 Town 6 89 2/2300 SamHouse 21 5 3 kent_sleep",
+				"{{ModId}}_MarketSummer21": "800 SamHouse 8 5 3/1010 SeedShop 36 20 0/1200 Town 46 26 3/1600 SamHouse 2 21 0/1900 SamHouse 8 5 3/2100 Town 6 89 2/2300 SamHouse 21 5 3 kent_sleep",
+				"{{ModId}}_MarketFall7": "800 SamHouse 8 5 3/1010 SeedShop 36 20 0/1200 Town 46 26 3/1600 SamHouse 2 21 0/1900 SamHouse 8 5 3/2100 Town 6 89 2/2300 SamHouse 21 5 3 kent_sleep",
+				"{{ModId}}_MarketFall21": "800 SamHouse 8 5 3/1010 SeedShop 36 20 0/1200 Town 46 26 3/1600 SamHouse 2 21 0/1900 SamHouse 8 5 3/2100 Town 6 89 2/2300 SamHouse 21 5 3 kent_sleep",
+				"{{ModId}}_MarketWinter7": "800 SamHouse 8 5 3/1010 SeedShop 36 20 0/1200 Town 46 26 3/1600 SamHouse 2 21 0/1900 SamHouse 8 5 3/2100 Town 6 89 2/2300 SamHouse 21 5 3 kent_sleep",
+				"{{ModId}}_MarketWinter21": "800 SamHouse 8 5 3/1010 SeedShop 36 20 0/1200 Town 46 26 3/1600 SamHouse 2 21 0/1900 SamHouse 8 5 3/2100 Town 6 89 2/2300 SamHouse 21 5 3 kent_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= NoMarket": false,
+				"Query: {{Random: {{Range: 1,3}}}} = 1": true
+			}
+		},
+		{
+			"LogName": "Emily Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Emily",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "900 HaleyHouse 16 5 2/1030 {{EmilyMarketScheduleToken}}/1530 Saloon 15 17 0 square_5_1_0/2430 HaleyHouse 21 4 1 emily_sleep",
+				"{{ModId}}_MarketSpring21": "900 HaleyHouse 16 5 2/1030 {{EmilyMarketScheduleToken}}/1530 Saloon 15 17 0 square_5_1_0/2430 HaleyHouse 21 4 1 emily_sleep",
+				"{{ModId}}_MarketSummer7": "900 HaleyHouse 16 5 2/1030 {{EmilyMarketScheduleToken}}/1530 Saloon 15 17 0 square_5_1_0/2430 HaleyHouse 21 4 1 emily_sleep",
+				"{{ModId}}_MarketSummer21": "900 HaleyHouse 16 5 2/1030 {{EmilyMarketScheduleToken}}/1530 Saloon 15 17 0 square_5_1_0/2430 HaleyHouse 21 4 1 emily_sleep",
+				"{{ModId}}_MarketFall7": "900 HaleyHouse 16 5 2/1030 {{EmilyMarketScheduleToken}}/1530 Saloon 15 17 0 square_5_1_0/2430 HaleyHouse 21 4 1 emily_sleep",
+				"{{ModId}}_MarketFall21": "900 HaleyHouse 16 5 2/1030 {{EmilyMarketScheduleToken}}/1530 Saloon 15 17 0 square_5_1_0/2430 HaleyHouse 21 4 1 emily_sleep",
+				"{{ModId}}_MarketWinter7": "900 HaleyHouse 16 5 2/1030 {{EmilyMarketScheduleToken}}/1530 Saloon 15 17 0 square_5_1_0/2430 HaleyHouse 21 4 1 emily_sleep",
+				"{{ModId}}_MarketWinter21": "900 HaleyHouse 16 5 2/1030 {{EmilyMarketScheduleToken}}/1530 Saloon 15 17 0 square_5_1_0/2430 HaleyHouse 21 4 1 emily_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= MarketAll": true,
+				"RandomMarketTownieToken |contains= Emily": false,
+				"Query: {{Random: {{Range: 1,2}}}} = 1": true
+			}
+		},
+		{
+			"LogName": "Haley Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Haley",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "900 HaleyHouse 6 5 0/950 HaleyHouse 8 7 1/1100 Town 23 22 2/1300 {{HaleyMarketScheduleToken}}/1530 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2230 HaleyHouse 1 5 3 haley_sleep",
+				"{{ModId}}_MarketSpring21": "900 HaleyHouse 6 5 0/950 HaleyHouse 8 7 1/1100 Town 23 22 2/1300 {{HaleyMarketScheduleToken}}/1530 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2230 HaleyHouse 1 5 3 haley_sleep",
+				"{{ModId}}_MarketSummer7": "900 HaleyHouse 6 5 0/950 HaleyHouse 8 7 1/1100 Town 23 22 2/1300 {{HaleyMarketScheduleToken}}/1530 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2230 HaleyHouse 1 5 3 haley_sleep",
+				"{{ModId}}_MarketSummer21": "900 HaleyHouse 6 5 0/950 HaleyHouse 8 7 1/1100 Town 23 22 2/1300 {{HaleyMarketScheduleToken}}/1530 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2230 HaleyHouse 1 5 3 haley_sleep",
+				"{{ModId}}_MarketFall7": "900 HaleyHouse 6 5 0/950 HaleyHouse 8 7 1/1100 Town 23 22 2/1300 {{HaleyMarketScheduleToken}}/1530 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2230 HaleyHouse 1 5 3 haley_sleep",
+				"{{ModId}}_MarketFall21": "900 HaleyHouse 6 5 0/950 HaleyHouse 8 7 1/1100 Town 23 22 2/1300 {{HaleyMarketScheduleToken}}/1530 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2230 HaleyHouse 1 5 3 haley_sleep",
+				"{{ModId}}_MarketWinter7": "900 HaleyHouse 6 5 0/950 HaleyHouse 8 7 1/1100 Town 23 22 2/1300 {{HaleyMarketScheduleToken}}/1530 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2230 HaleyHouse 1 5 3 haley_sleep",
+				"{{ModId}}_MarketWinter21": "900 HaleyHouse 6 5 0/950 HaleyHouse 8 7 1/1100 Town 23 22 2/1300 {{HaleyMarketScheduleToken}}/1530 HaleyHouse 19 16 0 square_5_1_0/2000 HaleyHouse 5 7 0 square_5_5/2230 HaleyHouse 1 5 3 haley_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= MarketAll": true,
+				"RandomMarketTownieToken |contains= Haley": false,
+				"Query: {{Random: {{Range: 1,2}}}} = 1": true
+			}
+		},
+		{
+			"LogName": "Elliott Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Elliott",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "800 ElliottHouse 1 5 0/1000 {{ElliottMarketScheduleToken}}/1530 Town 55 104 1/1800 ElliottHouse 7 7 2/2000 ElliottHouse 1 5 0/2400 ElliottHouse 13 4 1 elliott_sleep",
+				"{{ModId}}_MarketSpring21": "800 ElliottHouse 1 5 0/1000 {{ElliottMarketScheduleToken}}/1530 Town 55 104 1/1800 ElliottHouse 7 7 2/2000 ElliottHouse 1 5 0/2400 ElliottHouse 13 4 1 elliott_sleep",
+				"{{ModId}}_MarketSummer7": "800 ElliottHouse 1 5 0/1000 {{ElliottMarketScheduleToken}}/1530 Town 55 104 1/1800 ElliottHouse 7 7 2/2000 ElliottHouse 1 5 0/2400 ElliottHouse 13 4 1 elliott_sleep",
+				"{{ModId}}_MarketSummer21": "800 ElliottHouse 1 5 0/1000 {{ElliottMarketScheduleToken}}/1530 Town 55 104 1/1800 ElliottHouse 7 7 2/2000 ElliottHouse 1 5 0/2400 ElliottHouse 13 4 1 elliott_sleep",
+				"{{ModId}}_MarketFall7": "800 ElliottHouse 1 5 0/1000 {{ElliottMarketScheduleToken}}/1530 Town 55 104 1/1800 ElliottHouse 7 7 2/2000 ElliottHouse 1 5 0/2400 ElliottHouse 13 4 1 elliott_sleep",
+				"{{ModId}}_MarketFall21": "800 ElliottHouse 1 5 0/1000 {{ElliottMarketScheduleToken}}/1530 Town 55 104 1/1800 ElliottHouse 7 7 2/2000 ElliottHouse 1 5 0/2400 ElliottHouse 13 4 1 elliott_sleep",
+				"{{ModId}}_MarketWinter7": "800 ElliottHouse 1 5 0/1000 {{ElliottMarketScheduleToken}}/1530 Town 55 104 1/1800 ElliottHouse 7 7 2/2000 ElliottHouse 1 5 0/2400 ElliottHouse 13 4 1 elliott_sleep",
+				"{{ModId}}_MarketWinter21": "800 ElliottHouse 1 5 0/1000 {{ElliottMarketScheduleToken}}/1530 Town 55 104 1/1800 ElliottHouse 7 7 2/2000 ElliottHouse 1 5 0/2400 ElliottHouse 13 4 1 elliott_sleep"
+			}, 
+			"When": {
+                "MarketProgressionToken |contains= MarketLevel3, MarketAll": true,
+				"RandomMarketTownieToken |contains= Elliott": false,
+				"Query: {{Random: {{Range: 1,3}} |key=ElliottLeah}} = 1": true
+			}
+		},
+		{
+			"LogName": "Leah Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Leah",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "900 LeahHouse 3 7 3 leah_sculpt/1000 {{LeahMarketScheduleToken}}/1530 Forest 33 25 2 leah_draw/1830 Forest 21 29 1/1930 LeahHouse 8 5 0/2200 LeahHouse 13 10 2/2400 LeahHouse 2 4 3 leah_sleep",
+				"{{ModId}}_MarketSpring21": "900 LeahHouse 3 7 3 leah_sculpt/1000 {{LeahMarketScheduleToken}}/1530 Forest 33 25 2 leah_draw/1830 Forest 21 29 1/1930 LeahHouse 8 5 0/2200 LeahHouse 13 10 2/2400 LeahHouse 2 4 3 leah_sleep",
+				"{{ModId}}_MarketSummer7": "900 LeahHouse 3 7 3 leah_sculpt/1000 {{LeahMarketScheduleToken}}/1530 Forest 33 25 2 leah_draw/1830 Forest 21 29 1/1930 LeahHouse 8 5 0/2200 LeahHouse 13 10 2/2400 LeahHouse 2 4 3 leah_sleep",
+				"{{ModId}}_MarketSummer21": "900 LeahHouse 3 7 3 leah_sculpt/1000 {{LeahMarketScheduleToken}}/1530 Forest 33 25 2 leah_draw/1830 Forest 21 29 1/1930 LeahHouse 8 5 0/2200 LeahHouse 13 10 2/2400 LeahHouse 2 4 3 leah_sleep",
+				"{{ModId}}_MarketFall7": "900 LeahHouse 3 7 3 leah_sculpt/1000 {{LeahMarketScheduleToken}}/1530 Forest 33 25 2 leah_draw/1830 Forest 21 29 1/1930 LeahHouse 8 5 0/2200 LeahHouse 13 10 2/2400 LeahHouse 2 4 3 leah_sleep",
+				"{{ModId}}_MarketFall21": "900 LeahHouse 3 7 3 leah_sculpt/1000 {{LeahMarketScheduleToken}}/1530 Forest 33 25 2 leah_draw/1830 Forest 21 29 1/1930 LeahHouse 8 5 0/2200 LeahHouse 13 10 2/2400 LeahHouse 2 4 3 leah_sleep",
+				"{{ModId}}_MarketWinter7": "900 LeahHouse 3 7 3 leah_sculpt/1000 {{LeahMarketScheduleToken}}/1530 Forest 33 25 2 leah_draw/1830 Forest 21 29 1/1930 LeahHouse 8 5 0/2200 LeahHouse 13 10 2/2400 LeahHouse 2 4 3 leah_sleep",
+				"{{ModId}}_MarketWinter21": "900 LeahHouse 3 7 3 leah_sculpt/1000 {{LeahMarketScheduleToken}}/1530 Forest 33 25 2 leah_draw/1830 Forest 21 29 1/1930 LeahHouse 8 5 0/2200 LeahHouse 13 10 2/2400 LeahHouse 2 4 3 leah_sleep"
+			}, 
+			"When": {
+                "MarketProgressionToken |contains= MarketLevel3, MarketAll": true,
+				"RandomMarketTownieToken |contains= Leah": false,
+				"Query: {{Random: {{Range: 1,3}} |key=ElliottLeah}} = 1": true
+			}
+		},
+		{
+			"LogName": "Maru Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Maru",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "800 ScienceHouse 5 6 1 maru_tinker/930 Town 55 26 2/1330 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2300 ScienceHouse 2 4 3 maru_sleep",
+				"{{ModId}}_MarketSpring21": "800 ScienceHouse 5 6 1 maru_tinker/930 Town 55 26 2/1330 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2300 ScienceHouse 2 4 3 maru_sleep",
+				"{{ModId}}_MarketSummer7": "800 ScienceHouse 5 6 1 maru_tinker/930 Town 55 26 2/1330 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2300 ScienceHouse 2 4 3 maru_sleep",
+				"{{ModId}}_MarketSummer21": "800 ScienceHouse 5 6 1 maru_tinker/930 Town 55 26 2/1330 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2300 ScienceHouse 2 4 3 maru_sleep",
+				"{{ModId}}_MarketFall7": "800 ScienceHouse 5 6 1 maru_tinker/930 Town 55 26 2/1330 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2300 ScienceHouse 2 4 3 maru_sleep",
+				"{{ModId}}_MarketFall21": "800 ScienceHouse 5 6 1 maru_tinker/930 Town 55 26 2/1330 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2300 ScienceHouse 2 4 3 maru_sleep",
+				"{{ModId}}_MarketWinter7": "800 ScienceHouse 5 6 1 maru_tinker/930 Town 55 26 2/1330 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2300 ScienceHouse 2 4 3 maru_sleep",
+				"{{ModId}}_MarketWinter21": "800 ScienceHouse 5 6 1 maru_tinker/930 Town 55 26 2/1330 Town 43 77 2 maru_sit_down/1830 ScienceHouse 5 6 1 maru_tinker/2300 ScienceHouse 2 4 3 maru_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= NoMarket": false,
+				"RandomMarketTownieToken |contains= Maru": false,
+				"Query: {{Random: {{Range: 1,3}}}} = 1": true
+			}
+		},
+		{
+			"LogName": "Penny Market Schedule - Maru & Kids",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Penny",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "1000 Town 28 33 3/1400 Town 44 77 2 penny_sit_down/1840 Trailer 4 9 1 penny_sleep",
+				"{{ModId}}_MarketSpring21": "1000 Town 28 33 3/1400 Town 44 77 2 penny_sit_down/1840 Trailer 4 9 1 penny_sleep",
+				"{{ModId}}_MarketSummer7": "1000 Town 28 33 3/1400 Town 44 77 2 penny_sit_down/1840 Trailer 4 9 1 penny_sleep",
+				"{{ModId}}_MarketSummer21": "1000 Town 28 33 3/1400 Town 44 77 2 penny_sit_down/1840 Trailer 4 9 1 penny_sleep",
+				"{{ModId}}_MarketFall7": "1000 Town 28 33 3/1400 Town 44 77 2 penny_sit_down/1840 Trailer 4 9 1 penny_sleep",
+				"{{ModId}}_MarketFall21": "1000 Town 28 33 3/1400 Town 44 77 2 penny_sit_down/1840 Trailer 4 9 1 penny_sleep",
+				"{{ModId}}_MarketWinter7": "1000 Town 28 33 3/1400 Town 44 77 2 penny_sit_down/1840 Trailer 4 9 1 penny_sleep",
+				"{{ModId}}_MarketWinter21": "1000 Town 28 33 3/1400 Town 44 77 2 penny_sit_down/1840 Trailer 4 9 1 penny_sleep",
+				"marriage_{{ModId}}_MarketSpring7": "830 Town 28 33 3/1400 Town 44 77 2 penny_sit_down/1840 bed",
+				"marriage_{{ModId}}_MarketSpring21": "830 Town 28 33 3/1400 Town 44 77 2 penny_sit_down/1840 bed",
+				"marriage_{{ModId}}_MarketSummer7": "830 Town 28 33 3/1400 Town 44 77 2 penny_sit_down/1840 bed",
+				"marriage_{{ModId}}_MarketSummer21": "830 Town 28 33 3/1400 Town 44 77 2 penny_sit_down/1840 bed",
+				"marriage_{{ModId}}_MarketFall7": "830 Town 28 33 3/1400 Town 44 77 2 penny_sit_down/1840 bed",
+				"marriage_{{ModId}}_MarketFall21": "830 Town 28 33 3/1400 Town 44 77 2 penny_sit_down/1840 bed",
+				"marriage_{{ModId}}_MarketWinter7": "830 Town 28 33 3/1400 Town 44 77 2 penny_sit_down/1840 bed",
+				"marriage_{{ModId}}_MarketWinter21": "830 Town 28 33 3/1400 Town 44 77 2 penny_sit_down/1840 bed"
+			},
+			"When": {
+                "MarketProgressionToken |contains= MarketAll": true,
+				"RandomMarketTownieToken |contains= Maru, SamKids": true,
+				"Query: {{Random: {{Range: 1,3}}}} = 1": true
+			}
+		},
+		{
+			"LogName": "Penny Market Schedule - Sam & Kids",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Penny",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "1000 Town 56 32 0 square_5_5_1/1400 Town 44 77 2 penny_sit_down/1840 Trailer 4 9 1 penny_sleep",
+				"{{ModId}}_MarketSpring21": "1000 Town 56 32 0 square_5_5_1/1400 Town 44 77 2 penny_sit_down/1840 Trailer 4 9 1 penny_sleep",
+				"{{ModId}}_MarketSummer7": "1000 Town 56 32 0 square_5_5_1/1400 Town 44 77 2 penny_sit_down/1840 Trailer 4 9 1 penny_sleep",
+				"{{ModId}}_MarketSummer21": "1000 Town 56 32 0 square_5_5_1/1400 Town 44 77 2 penny_sit_down/1840 Trailer 4 9 1 penny_sleep",
+				"{{ModId}}_MarketFall7": "1000 Town 56 32 0 square_5_5_1/1400 Town 44 77 2 penny_sit_down/1840 Trailer 4 9 1 penny_sleep",
+				"{{ModId}}_MarketFall21": "1000 Town 56 32 0 square_5_5_1/1400 Town 44 77 2 penny_sit_down/1840 Trailer 4 9 1 penny_sleep",
+				"{{ModId}}_MarketWinter7": "1000 Town 56 32 0 square_5_5_1/1400 Town 44 77 2 penny_sit_down/1840 Trailer 4 9 1 penny_sleep",
+				"{{ModId}}_MarketWinter21": "1000 Town 56 32 0 square_5_5_1/1400 Town 44 77 2 penny_sit_down/1840 Trailer 4 9 1 penny_sleep",
+				"marriage_{{ModId}}_MarketSpring7": "830 Town 56 32 0 square_5_5_1/1400 Town 44 77 2 penny_sit_down/1840 bed",
+				"marriage_{{ModId}}_MarketSpring21": "830 Town 56 32 0 square_5_5_1/1400 Town 44 77 2 penny_sit_down/1840 bed",
+				"marriage_{{ModId}}_MarketSummer7": "830 Town 56 32 0 square_5_5_1/1400 Town 44 77 2 penny_sit_down/1840 bed",
+				"marriage_{{ModId}}_MarketSummer21": "830 Town 56 32 0 square_5_5_1/1400 Town 44 77 2 penny_sit_down/1840 bed",
+				"marriage_{{ModId}}_MarketFall7": "830 Town 56 32 0 square_5_5_1/1400 Town 44 77 2 penny_sit_down/1840 bed",
+				"marriage_{{ModId}}_MarketFall21": "830 Town 56 32 0 square_5_5_1/1400 Town 44 77 2 penny_sit_down/1840 bed",
+				"marriage_{{ModId}}_MarketWinter7": "830 Town 56 32 0 square_5_5_1/1400 Town 44 77 2 penny_sit_down/1840 bed",
+				"marriage_{{ModId}}_MarketWinter21": "830 Town 56 32 0 square_5_5_1/1400 Town 44 77 2 penny_sit_down/1840 bed"
+			},
+			"When": {
+                "MarketProgressionToken |contains= NoMarket, MarketLevel1": false,
+				"RandomMarketTownieToken |contains= SamKids": false,
+				"Query: {{Random: {{Range: 1,3}} |key=SamPennyKids}} = 1": true
+			}
+		},
+		{
+			"LogName": "Jas Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Jas",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "800 AnimalShop 7 5 0/900 Town 55 33 0 square_5_5_1/1400 AnimalShop 17 15 3 jas_read/1900 AnimalShop 4 7 2/2100 AnimalShop 1 7 3 jas_sleep",
+				"{{ModId}}_MarketSpring21": "800 AnimalShop 7 5 0/900 Town 55 33 0 square_5_5_1/1400 AnimalShop 17 15 3 jas_read/1900 AnimalShop 4 7 2/2100 AnimalShop 1 7 3 jas_sleep",
+				"{{ModId}}_MarketSummer7": "800 AnimalShop 7 5 0/900 Town 55 33 0 square_5_5_1/1400 AnimalShop 17 15 3 jas_read/1900 AnimalShop 4 7 2/2100 AnimalShop 1 7 3 jas_sleep",
+				"{{ModId}}_MarketSummer21": "800 AnimalShop 7 5 0/900 Town 55 33 0 square_5_5_1/1400 AnimalShop 17 15 3 jas_read/1900 AnimalShop 4 7 2/2100 AnimalShop 1 7 3 jas_sleep",
+				"{{ModId}}_MarketFall7": "800 AnimalShop 7 5 0/900 Town 55 33 0 square_5_5_1/1400 AnimalShop 17 15 3 jas_read/1900 AnimalShop 4 7 2/2100 AnimalShop 1 7 3 jas_sleep",
+				"{{ModId}}_MarketFall21": "800 AnimalShop 7 5 0/900 Town 55 33 0 square_5_5_1/1400 AnimalShop 17 15 3 jas_read/1900 AnimalShop 4 7 2/2100 AnimalShop 1 7 3 jas_sleep",
+				"{{ModId}}_MarketWinter7": "800 AnimalShop 7 5 0/900 Town 55 33 0 square_5_5_1/1400 AnimalShop 17 15 3 jas_read/1900 AnimalShop 4 7 2/2100 AnimalShop 1 7 3 jas_sleep",
+				"{{ModId}}_MarketWinter21": "800 AnimalShop 7 5 0/900 Town 55 33 0 square_5_5_1/1400 AnimalShop 17 15 3 jas_read/1900 AnimalShop 4 7 2/2100 AnimalShop 1 7 3 jas_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= NoMarket, MarketLevel1": false,
+				"RandomMarketTownieToken |contains= SamKids": false,
+				"Query: {{Random: {{Range: 1,3}} |key=SamPennyKids}} = 1": true
+			}
+		},
+		{
+			"LogName": "Vincent Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Vincent",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "800 SamHouse 4 8 0/930 Town 57 32 0 square_5_5_1/1400 Town 12 72 2 square_5_3/1700 SamHouse 5 7 3/1900 SamHouse 11 22 2 vincent_play/2000 SamHouse 8 22 3 vincent_sleep",
+				"{{ModId}}_MarketSpring21": "800 SamHouse 4 8 0/930 Town 57 32 0 square_5_5_1/1400 Town 12 72 2 square_5_3/1700 SamHouse 5 7 3/1900 SamHouse 11 22 2 vincent_play/2000 SamHouse 8 22 3 vincent_sleep",
+				"{{ModId}}_MarketSummer7": "800 SamHouse 4 8 0/930 Town 57 32 0 square_5_5_1/1400 Town 12 72 2 square_5_3/1700 SamHouse 5 7 3/1900 SamHouse 11 22 2 vincent_play/2000 SamHouse 8 22 3 vincent_sleep",
+				"{{ModId}}_MarketSummer21": "800 SamHouse 4 8 0/930 Town 57 32 0 square_5_5_1/1400 Town 12 72 2 square_5_3/1700 SamHouse 5 7 3/1900 SamHouse 11 22 2 vincent_play/2000 SamHouse 8 22 3 vincent_sleep",
+				"{{ModId}}_MarketFall7": "800 SamHouse 4 8 0/930 Town 57 32 0 square_5_5_1/1400 Town 12 72 2 square_5_3/1700 SamHouse 5 7 3/1900 SamHouse 11 22 2 vincent_play/2000 SamHouse 8 22 3 vincent_sleep",
+				"{{ModId}}_MarketFall21": "800 SamHouse 4 8 0/930 Town 57 32 0 square_5_5_1/1400 Town 12 72 2 square_5_3/1700 SamHouse 5 7 3/1900 SamHouse 11 22 2 vincent_play/2000 SamHouse 8 22 3 vincent_sleep",
+				"{{ModId}}_MarketWinter7": "800 SamHouse 4 8 0/930 Town 57 32 0 square_5_5_1/1400 Town 12 72 2 square_5_3/1700 SamHouse 5 7 3/1900 SamHouse 11 22 2 vincent_play/2000 SamHouse 8 22 3 vincent_sleep",
+				"{{ModId}}_MarketWinter21": "800 SamHouse 4 8 0/930 Town 57 32 0 square_5_5_1/1400 Town 12 72 2 square_5_3/1700 SamHouse 5 7 3/1900 SamHouse 11 22 2 vincent_play/2000 SamHouse 8 22 3 vincent_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= NoMarket, MarketLevel1": false,
+				"RandomMarketTownieToken |contains= SamKids": false,
+				"Query: {{Random: {{Range: 1,3}} |key=SamPennyKids}} = 1": true
+			}
+		},
+		{
+			"LogName": "Sam Market Schedule - Penny & Kids",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Sam",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "800 SamHouse 15 13 0/1030 56 31 0 square_5_5_1/1400 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep",
+				"{{ModId}}_MarketSpring21": "800 SamHouse 15 13 0/1030 56 31 0 square_5_5_1/1400 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep",
+				"{{ModId}}_MarketSummer7": "800 SamHouse 15 13 0/1030 56 31 0 square_5_5_1/1400 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep",
+				"{{ModId}}_MarketSummer21": "800 SamHouse 15 13 0/1030 56 31 0 square_5_5_1/1400 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep",
+				"{{ModId}}_MarketFall7": "800 SamHouse 15 13 0/1030 56 31 0 square_5_5_1/1400 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep",
+				"{{ModId}}_MarketFall21": "800 SamHouse 15 13 0/1030 56 31 0 square_5_5_1/1400 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep",
+				"{{ModId}}_MarketWinter7": "800 SamHouse 15 13 0/1030 56 31 0 square_5_5_1/1400 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep",
+				"{{ModId}}_MarketWinter21": "800 SamHouse 15 13 0/1030 56 31 0 square_5_5_1/1400 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= NoMarket, MarketLevel1": false,
+				"RandomMarketTownieToken |contains= Abigail, SamKids": false,
+				"Query: {{Random: {{Range: 1,3}} |key=SamPennyKids}} = 1": true
+			}
+		},
+		{
+			"LogName": "Sam Market Schedule - Abby & Seb",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Sam",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "800 SamHouse 15 13 0/1030 {{SamMarketScheduleToken}}/1400 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep",
+				"{{ModId}}_MarketSpring21": "800 SamHouse 15 13 0/1030 {{SamMarketScheduleToken}}/1400 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep",
+				"{{ModId}}_MarketSummer7": "800 SamHouse 15 13 0/1030 {{SamMarketScheduleToken}}/1400 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep",
+				"{{ModId}}_MarketSummer21": "800 SamHouse 15 13 0/1030 {{SamMarketScheduleToken}}/1400 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep",
+				"{{ModId}}_MarketFall7": "800 SamHouse 15 13 0/1030 {{SamMarketScheduleToken}}/1400 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep",
+				"{{ModId}}_MarketFall21": "800 SamHouse 15 13 0/1030 {{SamMarketScheduleToken}}/1400 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep",
+				"{{ModId}}_MarketWinter7": "800 SamHouse 15 13 0/1030 {{SamMarketScheduleToken}}/1400 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep",
+				"{{ModId}}_MarketWinter21": "800 SamHouse 15 13 0/1030 {{SamMarketScheduleToken}}/1400 Town 71 99 2/1830 SamHouse 22 16 1/2100 SamHouse 22 13 1 sam_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= MarketLevel3, MarketAll": true,
+				"RandomMarketTownieToken |contains= Abigail, SamKids": false,
+				"Query: {{Random: {{Range: 1,4}} |key=AbbySamSeb}} = 1": true
+			}
+		},
+		{
+			"LogName": "Abigail Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Abigail",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "800 SeedShop 4 5 0/900 Town 35 26 0 square_5_5_1/1400 Forest 14 40 2/2000 SeedShop 1 9 3 abigail_sleep",
+				"{{ModId}}_MarketSpring21": "800 SeedShop 4 5 0/900 Town 35 26 0 square_5_5_1/1400 Forest 14 40 2/2000 SeedShop 1 9 3 abigail_sleep",
+				"{{ModId}}_MarketSummer7": "800 SeedShop 4 5 0/900 Town 35 26 0 square_5_5_1/1400 Forest 14 40 2/2000 SeedShop 1 9 3 abigail_sleep",
+				"{{ModId}}_MarketSummer21": "800 SeedShop 4 5 0/900 Town 35 26 0 square_5_5_1/1400 Forest 14 40 2/2000 SeedShop 1 9 3 abigail_sleep",
+				"{{ModId}}_MarketFall7": "800 SeedShop 4 5 0/900 Town 35 26 0 square_5_5_1/1400 Forest 14 40 2/2000 SeedShop 1 9 3 abigail_sleep",
+				"{{ModId}}_MarketFall21": "800 SeedShop 4 5 0/900 Town 35 26 0 square_5_5_1/1400 Forest 14 40 2/2000 SeedShop 1 9 3 abigail_sleep",
+				"{{ModId}}_MarketWinter7": "800 SeedShop 4 5 0/900 Town 35 26 0 square_5_5_1/1400 Forest 14 40 2/2000 SeedShop 1 9 3 abigail_sleep",
+				"{{ModId}}_MarketWinter21": "800 SeedShop 4 5 0/900 Town 35 26 0 square_5_5_1/1400 Forest 14 40 2/2000 SeedShop 1 9 3 abigail_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= MarketLevel3, MarketAll": true,
+				"RandomMarketTownieToken |contains= Abigail": false,
+				"Query: {{Random: {{Range: 1,4}} |key=AbbySamSeb}} = 1": true
+			}
+		},
+		{
+			"LogName": "Sebastian Market Schedule",
+			"Action": "EditData",
+			"Target": "Characters/schedules/Sebastian",
+			"Entries": {
+				"{{ModId}}_MarketSpring7": "800 SebastianRoom 9 4 3 sebastian_computer/1030 {{SebastianMarketScheduleToken}}/1400 SebastianRoom 9 4 3 sebastian_computer/1830 Mountain 58 35 1 sebastian_smoking/2130 SebastianRoom 11 9 1 sebastian_sleep",
+				"{{ModId}}_MarketSpring21": "800 SebastianRoom 9 4 3 sebastian_computer/1030 {{SebastianMarketScheduleToken}}/1400 SebastianRoom 9 4 3 sebastian_computer/1830 Mountain 58 35 1 sebastian_smoking/2130 SebastianRoom 11 9 1 sebastian_sleep",
+				"{{ModId}}_MarketSummer7": "800 SebastianRoom 9 4 3 sebastian_computer/1030 {{SebastianMarketScheduleToken}}/1400 SebastianRoom 9 4 3 sebastian_computer/1830 Mountain 58 35 1 sebastian_smoking/2130 SebastianRoom 11 9 1 sebastian_sleep",
+				"{{ModId}}_MarketSummer21": "800 SebastianRoom 9 4 3 sebastian_computer/1030 {{SebastianMarketScheduleToken}}/1400 SebastianRoom 9 4 3 sebastian_computer/1830 Mountain 58 35 1 sebastian_smoking/2130 SebastianRoom 11 9 1 sebastian_sleep",
+				"{{ModId}}_MarketFall7": "800 SebastianRoom 9 4 3 sebastian_computer/1030 {{SebastianMarketScheduleToken}}/1400 SebastianRoom 9 4 3 sebastian_computer/1830 Mountain 58 35 1 sebastian_smoking/2130 SebastianRoom 11 9 1 sebastian_sleep",
+				"{{ModId}}_MarketFall21": "800 SebastianRoom 9 4 3 sebastian_computer/1030 {{SebastianMarketScheduleToken}}/1400 SebastianRoom 9 4 3 sebastian_computer/1830 Mountain 58 35 1 sebastian_smoking/2130 SebastianRoom 11 9 1 sebastian_sleep",
+				"{{ModId}}_MarketWinter7": "800 SebastianRoom 9 4 3 sebastian_computer/1030 {{SebastianMarketScheduleToken}}/1400 SebastianRoom 9 4 3 sebastian_computer/1830 Mountain 58 35 1 sebastian_smoking/2130 SebastianRoom 11 9 1 sebastian_sleep",
+				"{{ModId}}_MarketWinter21": "800 SebastianRoom 9 4 3 sebastian_computer/1030 {{SebastianMarketScheduleToken}}/1400 SebastianRoom 9 4 3 sebastian_computer/1830 Mountain 58 35 1 sebastian_smoking/2130 SebastianRoom 11 9 1 sebastian_sleep"
+			},
+			"When": {
+                "MarketProgressionToken |contains= MarketLevel3, MarketAll": true,
+				"RandomMarketTownieToken |contains= Abigail": false,
+				"Query: {{Random: {{Range: 1,4}} |key=AbbySamSeb}} = 1": true
+			}
+		},
+	]
+}

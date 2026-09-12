@@ -1,0 +1,67 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "DS_Jellybeans": {
+            "Name": "Jellybeans",
+            "DisplayName": "{{i18n:Jellybeans.name}}",
+            "Description": "{{i18n:Jellybeans.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 300,
+            "Texture": "Mods\\ZG.DS\\Jellybeans",
+            "SpriteIndex": 0,
+            "Edibility": 0,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": false,
+            "ExcludeFromShippingCollection": false,
+            "ExcludeFromRandomSale": false,
+            "Buffs": [
+              {
+                "BuffId": "DS_Jellybeans_Buff", 
+                  "Id": "DS_Jellybeans_Buff"
+              },
+			        {
+				        "BuffId": "DS_Heal_Health", 
+			          "Id": "DS_Heal_Health"
+			        }
+            ]
+          }
+        }
+      },
+      {
+        "Action": "EditData", 
+        "Target": "Data/CookingRecipes", 
+      
+        "Entries": { 
+          "Jellybeans":"DS_Royal_Jelly 1/25 5/DS_Jellybeans 3/s Combat 4/" 
+        }
+      },
+          {
+              "Log": "Add Gift Tastes for NPCs",
+              "Action": "EditData",
+              "Target": "Data/NPCGiftTastes",
+              "TextOperations": [
+      { "Operation": "Append",
+                "Target": ["Entries", "Universal_love"],
+                "Value": " DS_Jellybeans",
+                "Delimiter": " "
+              },
+              {
+                "Operation": "Append",
+                "Target": ["Fields", "Maru", "5"],
+                "Value": " DS_Royal_Jelly", 
+                "Delimiter": " "
+              },
+              {
+                  "Operation": "Append",
+                  "Target": ["Fields", "Sebastian", "9"],
+                  "Value": " DS_Royal_Jelly", 
+                  "Delimiter": " "
+                }
+      ]
+      }
+    ]
+  }

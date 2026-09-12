@@ -1,0 +1,12 @@
+{
+   "Name": "[CP] Make Marlon Real",
+   "Author": "WerewolfMaster",
+   "Version": "1.4.0",
+   "Description": "",
+   "UniqueID": "Wolf.Marlon",
+   "MinimumApiVersion": "2.5",
+   "UpdateKeys": [ "Nexus:7018" ],
+   "ContentPackFor": {
+      "UniqueID": "Pathoschild.ContentPatcher"
+   }
+}

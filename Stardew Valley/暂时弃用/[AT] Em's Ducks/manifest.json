@@ -1,0 +1,12 @@
+{
+	"Name": "Em's Ducks",
+	"Author": "RivalRabbit",
+	"Version": "1.5",
+	"Description": "Twelve duck color options",
+	"UniqueID": "RivalRabbit.EmsDucksAT",
+		"UpdateKeys": [ "Nexus:00000" ],
+	"ContentPackFor": {
+		"UniqueID": "PeacefulEnd.AlternativeTextures",
+		"MinimumVersion": "8.0.0"
+	}
+}

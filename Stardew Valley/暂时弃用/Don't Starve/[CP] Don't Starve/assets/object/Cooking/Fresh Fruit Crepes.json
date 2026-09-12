@@ -1,0 +1,72 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "DS_Fresh_Fruit_Crepes": {
+            "Name": "Fresh Fruit Crepes",
+            "DisplayName": "{{i18n:Fresh_Fruit_Crepes.name}}",
+            "Description": "{{i18n:Fresh_Fruit_Crepes.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 666,
+            "Texture": "Mods\\ZG.DS\\Fresh Fruit Crepes",
+            "SpriteIndex": 0,
+            "Edibility": 264,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": true,
+            "ExcludeFromShippingCollection": true,
+            "ExcludeFromRandomSale": true,
+            "Buffs": [
+              {
+                "Duration": 666,
+                "CustomAttributes": {
+                  "FarmingLevel": 1,
+                  "FishingLevel": 1,
+                  "MiningLevel": 1,
+                  "LuckLevel": 0.6,
+                  "ForagingLevel": 1,
+                  "MaxStamina": 66,
+                  "MagneticRadius": 66,
+                  "Speed": 0.6,
+                  "Defense": 1,
+                  "Attack": 1
+                }
+              }
+            ]
+          }
+        }
+      },
+          {
+              "Log": "Add Gift Tastes for NPCs",
+              "Action": "EditData",
+              "Target": "Data/NPCGiftTastes",
+              "TextOperations": [
+      { "Operation": "Append",
+                "Target": ["Entries", "Universal_like"],
+                "Value": " DS_Fresh_Fruit_Crepes",
+                "Delimiter": " "
+              },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Leo", "5"],
+          "Value": " DS_Fresh_Fruit_Crepes", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Krobus", "5"],
+          "Value": " DS_Fresh_Fruit_Crepes", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Willy", "5"],
+          "Value": " DS_Fresh_Fruit_Crepes", 
+          "Delimiter": " "
+        }
+      ]
+      }
+    ]
+  }

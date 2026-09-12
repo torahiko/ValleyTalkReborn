@@ -1,0 +1,41 @@
+{
+  "Format": "1.4.0",
+  "Changes": [
+      
+       // Portraits
+      
+
+       {
+          "Action": "Load",
+          "Target": "Portraits/Krobus",
+          "FromFile": "assets/Portraits/FurryKrobus.png"
+       },
+
+       {
+          "Action": "Load",
+          "Target": "Portraits/Krobus_Trenchcoat",
+          "FromFile": "assets/Portraits/FurryKrobus_Trenchcoat.png"
+       },
+
+     // Characters
+      
+       {
+          "Action": "Load",
+          "Target": "Characters/Krobus",
+          "FromFile": "assets/Characters/FurryKrobus.png"
+       },
+
+       {
+          "Action": "Load",
+          "Target": "Characters/Krobus_Trenchcoat",
+          "FromFile": "assets/Characters/FurryKrobus_Trenchcoat.png"
+       },
+
+       {
+          "Action": "Load",
+          "Target": "Characters/KrobusRaven",
+          "FromFile": "assets/Characters/FurryKrobusRaven.png"
+       },
+
+    ]
+}

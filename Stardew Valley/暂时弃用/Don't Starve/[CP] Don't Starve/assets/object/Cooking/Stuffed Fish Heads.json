@@ -1,0 +1,86 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "DS_Stuffed_Fish_Heads": {
+            "Name": "Stuffed Fish Heads",
+            "DisplayName": "{{i18n:Stuffed_Fish_Heads.name}}",
+            "Description": "{{i18n:Stuffed_Fish_Heads.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 85,
+            "Texture": "Mods\\ZG.DS\\Stuffed Fish Heads",
+            "SpriteIndex": 0,
+            "Edibility": 38,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": false,
+            "ExcludeFromShippingCollection": false,
+            "ExcludeFromRandomSale": false,
+            "Buffs": [
+              {
+                "Duration": 0,
+                "CustomAttributes": {
+                  "FarmingLevel": 0,
+                  "FishingLevel": 0,
+                  "MiningLevel": 0,
+                  "LuckLevel": 0,
+                  "ForagingLevel": 0,
+                  "MaxStamina": 0,
+                  "MagneticRadius": 0,
+                  "Speed": 0,
+                  "Defense": 0,
+                  "Attack": 0
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "Action": "EditData", 
+        "Target": "Data/CookingRecipes", 
+      
+        "Entries": { 
+          "Stuffed Fish Heads":"DS_Barnacles 1 -4 1/25 5/DS_Stuffed_Fish_Heads/s Fishing 3/" 
+        }
+      },
+          {
+              "Log": "Add Gift Tastes for NPCs",
+              "Action": "EditData",
+              "Target": "Data/NPCGiftTastes",
+              "TextOperations": [
+      { "Operation": "Append",
+                "Target": ["Entries", "Universal_Dislike"],
+                "Value": " DS_Stuffed_Fish_Heads",
+                "Delimiter": " "
+              },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Alex", "9"],
+          "Value": " DS_Stuffed_Fish_Heads", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Emily", "7"],
+          "Value": " DS_Stuffed_Fish_Heads", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Evelyn", "7"],
+          "Value": " DS_Stuffed_Fish_Heads", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Kent", "7"],
+          "Value": " DS_Stuffed_Fish_Heads", 
+          "Delimiter": " "
+        }
+      ]
+      }
+    ]
+  }

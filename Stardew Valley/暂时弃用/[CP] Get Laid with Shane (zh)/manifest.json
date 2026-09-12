@@ -1,0 +1,11 @@
+{
+    "Name": "Get Laid with Shane",
+    "Author": "elffunction",
+    "Version": "2.1.1",
+    "Description": "[NSFW] Brings changes to Shane's 10-Heart and 14-heart events, adds new letters and dialogues.",
+    "UniqueID": "elffunction.GetLaidwithShane",
+    "UpdateKeys": [ "Nexus:17464" ],
+    "ContentPackFor": {
+        "UniqueID": "Pathoschild.ContentPatcher"
+    }
+}

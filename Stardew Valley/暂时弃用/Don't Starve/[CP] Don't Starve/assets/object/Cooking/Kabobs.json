@@ -1,0 +1,116 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "DS_Kabobs": {
+            "Name": "Kabobs",
+            "DisplayName": "{{i18n:Kabobs.name}}",
+            "Description": "{{i18n:Kabobs.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 55,
+            "Texture": "Mods\\ZG.DS\\Kabobs",
+            "SpriteIndex": 0,
+            "Edibility": 30,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": false,
+            "ExcludeFromShippingCollection": false,
+            "ExcludeFromRandomSale": false,
+            "Buffs": [
+              {
+                "Duration": 0,
+                "CustomAttributes": {
+                  "FarmingLevel": 0,
+                  "FishingLevel": 0,
+                  "MiningLevel": 0,
+                  "LuckLevel": 0,
+                  "ForagingLevel": 0,
+                  "MaxStamina": 0,
+                  "MagneticRadius": 0,
+                  "Speed": 0,
+                  "Defense": 0,
+                  "Attack": 0
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "Action": "EditData", 
+        "Target": "Data/CookingRecipes", 
+      
+        "Entries": { 
+          "Kabobs":"DS_Morsel 1 388 3/25 5/DS_Kabobs/" 
+        }
+      },
+          {
+              "Log": "Add Gift Tastes for NPCs",
+              "Action": "EditData",
+              "Target": "Data/NPCGiftTastes",
+              "TextOperations": [
+      { "Operation": "Append",
+                "Target": ["Entries", "Universal_like"],
+                "Value": " DS_Kabobs",
+                "Delimiter": " "
+              },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Alex", "1"],
+          "Value": " DS_Kabobs", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Shane", "1"],
+          "Value": " DS_Kabobs", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target":  ["Fields", "Linus", "1"],
+          "Value": " DS_Kabobs", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Leo", "5"],
+          "Value": " DS_Kabobs", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Krobus", "5"],
+          "Value": " DS_Kabobs", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Willy", "5"],
+          "Value": " DS_Kabobs", 
+          "Delimiter": " "
+        }
+      ]
+      },
+      {
+        "Action": "EditData", 
+        "Target": "Data/Mail", 
+        "Entries": { 
+          "DS_Kabobs_recipe": "[letterbg 0] {{i18n:Linus_Kabobsrecipe.text}} %item cookingRecipe Kabobs %%[#]{{i18n:Linus_Kabobsrecipe.name}}" 
+        }
+      },
+      {
+          "Action": "EditData",
+          "Target": "Data/TriggerActions",
+          "Entries": {
+              "DS_KabobsMail":{
+                  "Id": "DS_KabobsMail",
+                  "Trigger": "DayEnding",
+                  "Condition": "PLAYER_HEARTS Current Linus 1",
+                  "Action": "AddMail Current DS_Kabobs_recipe tomorrow"}
+              }
+            }
+    ]
+  }

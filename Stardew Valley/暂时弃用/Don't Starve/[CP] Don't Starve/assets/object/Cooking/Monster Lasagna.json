@@ -1,0 +1,63 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "DS_Monster_Lasagna": {
+            "Name": "Monster Lasagna",
+            "DisplayName": "{{i18n:Monster_Lasagna.name}}",
+            "Description": "{{i18n:Monster_Lasagna.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 150,
+            "Texture": "Mods\\ZG.DS\\Monster Lasagna",
+            "SpriteIndex": 0,
+            "Edibility": -24,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": false,
+            "ExcludeFromShippingCollection": false,
+            "ExcludeFromRandomSale": false,
+            "Buffs": [
+              {
+                "BuffId": "24", 
+              "Id": "24",
+              "Duration": 120
+            },
+            {
+              "BuffId": "25", 
+            "Id": "25",
+            "Duration": 120
+          }
+            ]
+          }
+        }
+      },
+      {
+        "Action": "EditData", 
+        "Target": "Data/CookingRecipes", 
+      
+        "Entries": { 
+          "Monster Lasagna":"DS_Monster_Meat 2/25 5/DS_Monster_Lasagna/s Combat 1/" 
+        }
+      },
+          {
+              "Log": "Add Gift Tastes for NPCs",
+              "Action": "EditData",
+              "Target": "Data/NPCGiftTastes",
+              "TextOperations": [
+      { "Operation": "Append",
+                "Target": ["Entries", "Universal_Hate"],
+                "Value": " DS_Monster_Lasagna",
+                "Delimiter": " "
+              },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Krobus", "1"],
+          "Value": " DS_Monster_Lasagna", 
+          "Delimiter": " "
+        }
+      ]
+      }
+    ]
+  }

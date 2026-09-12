@@ -1,0 +1,399 @@
+{
+    "Changes": [
+        {
+            "LogName": "Include CT Template - Jodi Mushroom",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "MushroomShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Mushroom}}",
+                "Determiner": "{{i18n: BFM.ThoseUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2,EdibleItem.3, ForageItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Spring Crops",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "SpringCropsShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Crops.Spring}}",
+                "Determiner": "{{i18n: BFM.ThoseUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2,EdibleItem.3, {{SpringSeasonal}}}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Summer Crops",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "SummerCropsShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Crops.Summer}}",
+                "Determiner": "{{i18n: BFM.ThoseUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, {{SummerSeasonal}}}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Fall Crops",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "FallCropsShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Crops.Fall}}",
+                "Determiner": "{{i18n: BFM.ThoseUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, {{FallSeasonal}}}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi All Crops",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "AllCropsShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Crops}}",
+                "Determiner": "{{i18n: BFM.ThoseUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Oil",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "OilShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Oil}}",
+                "Determiner": "{{i18n: BFM.ThatUppercase}}",
+                "FollowupText": "ArtisanGoodsItem",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Jelly",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "JellyShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Jelly}}",
+                "Determiner": "{{i18n: BFM.ThatUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, ArtisanGoodsItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Honey",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "HoneyShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Honey}}",
+                "Determiner": "{{i18n: BFM.ThatUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, ArtisanGoodsItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Juice",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "JuiceShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Juice}}",
+                "Determiner": "{{i18n: BFM.ThatUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, ArtisanGoodsItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Pickles",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "PickleShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Pickle}}",
+                "Determiner": "{{i18n: BFM.ThoseUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, ArtisanGoodsItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Artisan Goods",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "ArtisanGoodsShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.ArtisanGoods}}",
+                "Determiner": "{{i18n: BFM.ThoseUppercase}}",
+                "FollowupText": "ArtisanGoodsItem",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Forage",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "ForageShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Forage}}",
+                "Determiner": "{{i18n: BFM.ThoseUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, ForageItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Berry",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "BerryShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Berry}}",
+                "Determiner": "{{i18n: BFM.ThoseUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, ForageItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Egg",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "EggShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Egg}}",
+                "Determiner": "{{i18n: BFM.ThoseUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, AnimalItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Milk",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "MilkShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Milk}}",
+                "Determiner": "{{i18n: BFM.ThatUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, AnimalItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Animal Goods",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "AnimalGoodsShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.AnimalGoods}}",
+                "Determiner": "{{i18n: BFM.ThoseUppercase}}",
+                "FollowupText": "AnimalItem",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Spring Fruit",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "SpringFruitShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Fruit}}",
+                "Determiner": "{{i18n: BFM.ThatUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, {{SpringSeasonal}}}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Summer Fruit",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "SummerFruitShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Fruit}}",
+                "Determiner": "{{i18n: BFM.ThatUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, {{SummerSeasonal}}}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Fall Fruit",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "FallFruitShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Fruit}}",
+                "Determiner": "{{i18n: BFM.ThatUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, {{FallSeasonal}}}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi All Fruit",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "AllFruitShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Fruit}}",
+                "Determiner": "{{i18n: BFM.ThatUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Flower",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "FlowerShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Flower}}",
+                "Determiner": "{{i18n: BFM.ThoseUppercase}}",
+                "FollowupText": "FlowerItem",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Herb",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "HerbShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Herb}}",
+                "Determiner": "{{i18n: BFM.ThoseUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Bread",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMB",
+                "CTToken": "BreadShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Bread}}",
+                "Determiner": "{{i18n: BFM.ThatUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Dessert",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMB",
+                "CTToken": "SweetBakeryShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.SweetBakery}}",
+                "Determiner": "{{i18n: BFM.ThoseUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, DessertItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Fish",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMFM",
+                "CTToken": "FishShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Fish}}",
+                "Determiner": "{{i18n: BFM.ThatUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, FishingItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Crabpot",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMFM",
+                "CTToken": "CrabpotShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Crabpot}}",
+                "Determiner": "{{i18n: BFM.ThatUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, FishingItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Roe",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMFM",
+                "CTToken": "RoeShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Roe}}",
+                "Determiner": "{{i18n: BFM.ThatUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, FishingItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Jodi Meat",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMFM",
+                "CTToken": "MeatShop",
+                "CharacterName": "Jodi",
+                "ItemText": "{{i18n: BFM.Meat}}",
+                "Determiner": "{{i18n: BFM.ThatUppercase}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            },
+            "When": {
+                "Query: '{{HasMod |contains= DSV.Core}}' = 'true' AND ('{{DSV.Core/ConfigValue:JodiVariant}}' = 'Modded' OR '{{DSV.Core/ConfigValue:KentVariant |contains= Omani, OmaniDisabled}}' = 'true') AND '{{DSV.Core/ConfigValue:GiftTastesChange}}' = 'true'": false
+            }
+        }
+    ]
+}

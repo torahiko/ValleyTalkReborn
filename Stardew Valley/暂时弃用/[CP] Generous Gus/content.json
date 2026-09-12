@@ -1,0 +1,88 @@
+{
+"Format": "2.5.3",
+"ConfigSchema": {
+    
+    "HelpNewPlayers": {
+        "AllowValues": "True, False",
+        "Default": "True",
+        },
+    "HelpPoorPlayers": {
+        "AllowValues": "True, False",
+        "Default": "True",
+       },
+    "HelpExpectingPlayers": {
+        "AllowValues": "True, False",
+        "Default": "True",
+       },
+},
+    
+"DynamicTokens": [
+    
+//Abbreviated day of week
+{
+    "Name": "DayShort",
+    "Value": "Mon",
+    "When": { "DayOfWeek": "Monday" }
+},
+{
+    "Name": "DayShort",
+    "Value": "Tue",
+    "When": { "DayOfWeek": "Tuesday" }
+},
+{
+    "Name": "DayShort",
+    "Value": "Wed",
+    "When": { "DayOfWeek": "Wednesday" }
+},
+{
+    "Name": "DayShort",
+    "Value": "Thu",
+    "When": { "DayOfWeek": "Thursday" }
+},
+{
+    "Name": "DayShort",
+    "Value": "Fri",
+    "When": { "DayOfWeek": "Friday" }
+},
+{
+    "Name": "DayShort",
+    "Value": "Sat",
+    "When": { "DayOfWeek": "Saturday" }
+},
+{
+    "Name": "DayShort",
+    "Value": "Sun",
+    "When": { "DayOfWeek": "Sunday" }
+},
+
+],
+
+"Changes": [
+
+// LOCALIZATION
+{
+  "Action": "Load",
+  "Target": "{{ModId}}/i18n",
+  "FromFile": "i18n/default.json"
+},
+
+// DIALOGUE
+{
+    "Action": "Include",
+    "FromFile": "data/Dialogue.json",
+},
+
+// Quests
+{
+    "Action": "Include",
+    "FromFile": "data/Quests.json",
+},
+
+// TRIGGER ACTIONS
+{
+    "Action": "Include",
+    "FromFile": "data/TriggerActions.json",
+},
+
+]
+}

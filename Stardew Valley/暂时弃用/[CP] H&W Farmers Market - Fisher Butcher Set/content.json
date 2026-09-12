@@ -1,0 +1,50 @@
+{
+    "Format": "2.3.0",
+
+   
+    "ConfigSchema": {
+          "Recolor": {
+            "Description": "If you want to use a recolor, choose Light or Dark. Defaults to Classic.",
+            "AllowValues": "Light, Dark, Classic",
+            "Default": "Classic",
+            "AllowBlank": false,
+            "AllowMultiple": false
+          }
+    },
+
+    
+    "Changes": [
+
+        //Include Furniture
+
+        {
+        "LogName": "HXW Fisher Butcher Furniture",
+        "Action": "Include",
+        "FromFile": "Data/furniture.json"
+        },
+
+        //Include Crafting Items
+
+/*        {
+        "LogName": "HXW Fisher Butcher Crafting Items",
+        "Action": "Include",
+        "FromFile": "Data/objects.json",
+        "When": {"EnableCraftingItems": true}
+        },
+
+        {
+        "LogName": "HXW Fisher Butcher Machine Rules",
+        "Action": "Include",
+        "FromFile": "Data/machines.json",
+        "When": {"EnableCraftingItems": true}
+        },
+ */       
+        //Include Textures
+
+        {
+        "LogName": "HXW Fisher Butcher Furniture Textures",
+        "Action": "Include",
+        "FromFile": "Data/textures.json"
+        }
+    ]
+}

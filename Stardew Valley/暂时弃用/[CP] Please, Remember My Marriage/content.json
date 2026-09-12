@@ -1,0 +1,3663 @@
+{
+"Format": "2.0.0",
+"Changes": [
+         
+    //      A   B   I   G   A   I   L
+    
+        //Alex
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Alex",
+"Entries": {
+    //New
+            "summer_Tue8_inlaw_Abigail":"哦，嘿。$0#$e#婚姻生活怎么样?$1",
+            "winter_Mon10_inlaw_Abigail":"哦，嘿。$0#$e#婚姻生活怎么样?$1",
+           }
+       },
+    
+        //Elliott
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Elliott",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Abigail": "啊... @...$0#$b#昨天我看到你和阿尔伯特了。$0#$e#这让我想起了这首诗...$0#$e#'愿你们携手并肩，怀揣所有的希望和梦想$0#$b#愿你们成为彼此的太阳和月亮，见证命运的展开$0#$b#若你们失去彼此的踪影，开始渐行渐远$0#$b#愿你们循着心的指南，重新相聚'$0",
+            "fall_Fri8_inlaw_Abigail": "啊... @...$0#$b#昨天我看到你和阿尔伯特了。$0#$e#这让我想起了这首诗...$0#$e#'愿你们携手并肩，怀揣所有的希望和梦想$0#$b#愿你们成为彼此的太阳和月亮，见证命运的展开$0#$b#若你们失去彼此的踪影，开始渐行渐远$0#$b#愿你们循着心的指南，重新相聚'$0",
+           }
+       },
+    
+        //Harvey
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Harvey",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Abigail": "最好的爱是让你成为更好的人，而不改变你本来的样子。$0#$e#我觉得你和阿尔伯特是绝配。$1",
+            "summer_Mon8_inlaw_Abigail": "健康婚姻的关键是沟通，要分享彼此的想法和感受。$0#$b#但我觉得你和阿尔伯特在这方面不会有任何问题。$1",
+            "fall_Fri8_inlaw_Abigail": "最好的爱是让你成为更好的人，而不改变你本来的样子。$0#$e#我觉得你和阿尔伯特是绝配。$1",
+            "winter_Thu8_inlaw_Abigail": "健康婚姻的关键是沟通，要分享彼此的想法和感受。$0#$b#我觉得你和阿尔伯特是绝配。$1",
+           }
+       },
+    
+        //Sam
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Sam",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Abigail":"我第一次见到你时就知道你会和阿尔伯特结婚。$0#$b#你们真是天生一对。$1",
+            "summer_Mon8_inlaw_Abigail":"嘿, @.$0#$b#虽然我不太喜欢情歌，但在你们婚礼上唱歌一定很酷。$1",
+            "fall_Sat8_inlaw_Abigail":"嘿, @.$0#$b#虽然我不太喜欢情歌，但在你们婚礼上唱歌一定很酷。$1",
+            "winter_Wed8_inlaw_Abigail":"我第一次见到你时就知道你会和阿尔伯特结婚。$0#$b#你们真是天生一对。$1",
+           }
+       },
+    
+        //Sebastian
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Sebastian",
+"Entries": {
+    //New
+            "spring_Sat8_inlaw_Abigail":"你和阿比怎么样?$0#$e#哦，那真是太好了!$1",
+            "summer_Thu8_inlaw_Abigail":"那么... 阿尔伯特怎么样?$0",
+            "fall_Wed8_inlaw_Abigail":"你和阿比怎么样?$0#$e#哦，那真是太好了!$1",
+            "winter_Sun8_inlaw_Abigail":"那么... 阿尔伯特怎么样?$0",
+           }
+       },
+    
+        //Shane
+
+    
+        //Emily
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Emily",
+"Entries": {
+    //New
+            "spring_Thu8_inlaw_Abigail":"阿尔伯特有一种非常独特的能量，你们在一起真是太棒了。$1",
+            "summer_Wed8_inlaw_Abigail":"我很清楚你和阿尔伯特是天作之合。$1",
+            "fall_Mon8_inlaw_Abigail":"阿尔伯特有一种非常独特的能量，你们在一起真是太棒了。$1",
+            "winter_Fri8_inlaw_Abigail":"我很清楚你和阿尔伯特是天作之合。$1",
+           }
+       },
+    
+        //Haley
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Haley",
+"Entries": {
+    //New
+            "summer_Sat8_inlaw_Abigail":"我真为你和阿尔伯特感到高兴。$0#$b#你们是最甜蜜的一对。$1",
+            "winter_Mon8_inlaw_Abigail":"我真为你和阿尔伯特感到高兴。$0#$b#你们是最甜蜜的一对。$1",
+           }
+       },
+    
+        //Leah
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Leah",
+"Entries": {
+    //New
+            "summer_Thu8_inlaw_Abigail":"也许我可以为你和阿尔伯特画点什么。$1",
+            "fall_Sat8_inlaw_Abigail":"也许我可以为你和阿尔伯特画点什么。$1",
+           }
+       },
+    
+        //Maru
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Maru",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Abigail":"我很高兴你和阿尔伯特的事情顺利解决了!$1",
+            "fall_Wed8_inlaw_Abigail":"我很高兴你和阿尔伯特的事情顺利解决了!$1",
+           }
+       },
+    
+        //Penny
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Penny",
+"Entries": {
+    //New
+            "spring_Mon8_inlaw_Abigail":"你好, @.$0#$e#你和阿尔伯特真是般配的一对。$1",
+            "fall_Wed8_inlaw_Abigail":"你好, @.$0#$e#你和阿尔伯特真是般配的一对。$1",
+           }
+       },
+    
+        //Caroline
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Caroline",
+"Entries": {
+    //Original
+            "Mon_inlaw_Abigail": "你好, @.$0#$e#你喜欢婚后的生活吗?$0#$b#我希望阿尔伯特和你很幸福!$1",
+            "Sat_inlaw_Abigail": "自从阿尔伯特搬出去后，晚餐时变得安静了很多...#$e#不，不是因为他以前总是张着嘴嚼东西!$1",
+            "summer_Sat_inlaw_Abigail": "阿尔伯特的健康怎么样?$0#$b#他一直是个很苍白的女孩。$0#$b#希望农场生活能让他的脸颊多些颜色。$1",
+            "fall_Mon_inlaw_Abigail": "阿比在这里上网课，但我觉得他的心思并不在这里...#$e#他是个自由的灵魂，就像我遇到皮埃尔之前一样。他在你的农场上可能过得很开心。",
+    //New
+            "spring_Mon10_inlaw_Abigail": "阿尔伯特的健康怎么样?$0#$b#他一直是个很苍白的女孩。$0#$b#希望农场生活能让他的脸颊多些颜色。$1",
+            "spring_Tue_inlaw_Abigail": "我希望你没有想过要带着阿尔伯特搬走。$3",
+            "spring_Sat10_inlaw_Abigail": "阿尔伯特什么时候长这么大了?$0#$e#感觉昨天我还带他去游乐场。$0#$b#我有点怀念那些日子。$0#$e#至少现在他嫁给了一个了不起的农夫。$1",
+            "summer_Mon10_inlaw_Abigail": "你好, @.$0#$e#记住你永远是我们家的欢迎客人。$0#$b#你现在是我们家庭的一员了。$1",
+            "summer_Thu_inlaw_Abigail": "我的小女孩现在已经长大了。$0#$b#我从没想到阿尔伯特会结婚搬走。$0",
+            "summer_Fri10_inlaw_Abigail": "阿尔伯特什么时候长这么大了?$0#$e#感觉昨天我还带他去游乐场。$0#$b#我有点怀念那些日子。$0#$e#至少现在他嫁给了一个了不起的农夫。$1",
+            "fall_Tue10_inlaw_Abigail": "你好, @.$0#$e#记住你永远是我们家的欢迎客人。$0#$b#你现在是我们家庭的一员了。$1",
+            "fall_Wed10_inlaw_Abigail": "你一直是阿尔伯特心中特别的人。$0#$b#我很高兴你们将共度余生。$1",
+            "fall_Sun_inlaw_Abigail": "我没想到阿尔伯特会这么快结婚。$0#$e#也许我应该在他还在身边的时候多花些时间陪他...$2",
+            "winter_Wed_inlaw_Abigail": "我希望你没有想过要带着阿尔伯特搬走。$3",
+            "winter_Thu10_inlaw_Abigail": "我的小女孩现在已经长大了。$0#$b#我从没想到阿尔伯特会结婚搬走。$0",
+            "winter_Sat10_inlaw_Abigail": "我没想到阿尔伯特会这么快结婚。$0#$e#也许我应该在他还在身边的时候多花些时间陪他...$2",
+           }
+       },
+    
+        //Clint
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Clint",
+"Entries": {
+    //New
+            "summer_Wed10_inlaw_Abigail":"阿尔伯特不是喜欢紫水晶吗?$0#$b#如果你想给他准备一份好礼物，我可以做一个紫水晶项链。$1",
+            "winter_Thu10_inlaw_Abigail":"阿尔伯特不是喜欢紫水晶吗?$0#$b#如果你想给他准备一份好礼物，我可以做一个紫水晶项链。$1",
+           }
+       },
+    
+        //Demetrius
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Demetrius",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Abigail":"我们都在努力在生活中找到某种平衡，一种复杂性的平衡。$0#$e#看起来娶了阿尔伯特正是你找到这种平衡所需要的。$1",
+            "fall_Fri10_inlaw_Abigail":"我们都在努力在生活中找到某种平衡，一种复杂性的平衡。$0#$e#看起来娶了阿尔伯特正是你找到这种平衡所需要的。$1",
+           }
+       },
+    
+        //Evelyn
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Evelyn",
+"Entries": {
+    //New
+            "spring_Wed10_inlaw_Abigail":"你好，亲爱的。$0#$e#婚姻并不总是容易的，你和阿尔伯特必须一起克服许多困难。$0#$b#愿你们一起成为更好的人。$1",
+            "summer_Tue10_inlaw_Abigail":"成功的婚姻需要多次坠入爱河，总是和同一个人。$0#$b#我希望你和阿尔伯特能一起过上长久幸福的生活。$1",
+            "fall_Thu10_inlaw_Abigail":"你好，亲爱的。$0#$e#婚姻并不总是容易的，你和阿尔伯特必须一起克服许多困难。$0#$b#愿你们一起成为更好的人。$1",
+            "winter_Sun10_inlaw_Abigail":"成功的婚姻需要多次坠入爱河，总是和同一个人。$0#$b#我希望你和阿尔伯特能一起过上长久幸福的生活。$1",
+           }
+       },
+    
+        //George
+
+    
+        //Gus
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Gus",
+"Entries": {
+    //New
+            "spring_Fri10_inlaw_Abigail":"如果你和阿尔伯特想在酒馆共进烛光晚餐，只管告诉我，我会准备好一切的。$1",
+            "summer_Sun_inlaw_Abigail":"如果你和阿尔伯特想在酒馆共进烛光晚餐，只管告诉我，我会准备好一切的。$1",
+            "fall_Fri10_inlaw_Abigail":"如果你和阿尔伯特想在酒馆共进烛光晚餐，只管告诉我，我会准备好一切的。$1",
+            "winter_Wed10_inlaw_Abigail":"如果你和阿尔伯特想在酒馆共进烛光晚餐，只管告诉我，我会准备好一切的。$1",
+           }
+       },
+
+    
+        //Jas
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Jas",
+"Entries": {
+    //New
+            "spring_Thu10_inlaw_Abigail":" @先生!^ @小姐!$1#$e#等我长大了，我也想办一场和你们一样的婚礼。$1",
+            "summer_Mon10_inlaw_Abigail":"你和阿尔伯特小姐是不是...超级相爱?$0#$e#嘻嘻嘻!$1",
+            "fall_Sun10_inlaw_Abigail":"你好，先生。$0^你好，小姐。$0#$b#为什么你们不能每周都办一次婚礼?$0#$b#我想吃粉红蛋糕!$1",
+            "winter_Sat10_inlaw_Abigail":" @先生!^ @小姐!$1#$e#等我长大了，我也想办一场和你们一样的婚礼。$1",
+           }
+       },
+    
+        //Jodi
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Jodi",
+"Entries": {
+    //New
+            "spring_Mon10_inlaw_Abigail":"你和阿尔伯特怎么样?$0#$b#卡洛琳告诉我他非常开心。$1",
+            "summer_Wed10_inlaw_Abigail":"你好, @.$0#$e#你知道吗，婚礼上卡洛琳比阿尔伯特还紧张?$1",
+            "fall_Sun10_inlaw_Abigail":"你和阿尔伯特怎么样?$0#$b#卡洛琳告诉我他非常开心。$1",
+            "winter_Fri10_inlaw_Abigail":"你好, @.$0#$e#你知道吗，婚礼上卡洛琳比阿尔伯特还紧张?$1",
+           }
+       },
+    
+        //Kent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Kent",
+"Entries": {
+    //New
+            "summer_Tue10_inlaw_Abigail":"我对阿尔伯特不是很了解，但我为你感到高兴。$1",
+            "fall_Fri10_inlaw_Abigail":"我对阿尔伯特不是很了解，但我为你感到高兴。$1",
+           }
+       },
+    
+        //Lewis
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Lewis",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Abigail":"鹈鹕镇里像你和阿尔伯特这样的年轻夫妇不多。$0#$e#看到年轻人相爱总是让人感到欣慰。$1",
+            "summer_Sun10_inlaw_Abigail":"鹈鹕镇里像你和阿尔伯特这样的年轻夫妇不多。$0#$e#看到年轻人相爱总是让人感到欣慰。$1",
+            "fall_Sat10_inlaw_Abigail":"希望我能很快再主持一次婚礼，距离你们的婚礼已经有一段时间了。$0#$b#我们甚至可以举行一个小宴会。$1",
+            "winter_Mon10_inlaw_Abigail":"希望我能很快再主持一次婚礼，距离你们的婚礼已经有一段时间了。$0#$b#我们甚至可以举行一个小宴会。$1",
+           }
+       },
+        
+        //Linus
+
+
+        //Marnie
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Marnie",
+"Entries": {
+    //New
+            "spring_Thu10_inlaw_Abigail":"你好, @.$0#$e#我希望你和阿尔伯特拥有一生的爱与幸福。$1",
+            "summer_Tue10_inlaw_Abigail":"愿尤巴赐予你和阿尔伯特一个充满祝福和快乐的婚姻。$1",
+            "fall_Sun10_inlaw_Abigail":"你好, @.$0#$e#我希望你和阿尔伯特拥有一生的爱与幸福。$1",
+            "winter_Fri10_inlaw_Abigail":"愿尤巴赐予你和阿尔伯特一个充满祝福和快乐的婚姻。$1",
+           }
+       },
+    
+        //Pam
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pam",
+"Entries": {
+    //New
+            "summer_Fri10_inlaw_Abigail":"嘿，孩子。$0#$e#看起来你找到了一个漂亮的年轻女士，是吧?$1",
+            "winter_Wed10_inlaw_Abigail":"嘿，孩子。$0#$e#看起来你找到了一个漂亮的年轻女士，是吧?$1",
+           }
+       },
+    
+        //Pierre
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pierre",
+"Entries": {
+    //Original
+            "fall_Mon_inlaw_Abigail":"你好，呃... 我的儿子?$2^你好，呃... 女儿?$2",
+            "fall_Mon4_inlaw_Abigail":"嗨, @. 阿尔伯特怎么样了?$0#$b#告诉他我们一直很想念他。$0",
+            "winter_Mon_inlaw_Abigail":"你好，呃... 我的儿子?$2^你好，呃... 女儿?$2",
+            "winter_Mon4_inlaw_Abigail":"我曾经担心阿尔伯特的未来，但我看到他已经找到了他需要去的地方。$0#$e#你们现在要互相照顾，好吗?$1",
+    //New
+            "spring_Tue10_inlaw_Abigail":"希望阿尔伯特和你能尽快来我们家吃饭。$0#$b#卡洛琳和我一直期待着展示我们的特别南瓜汤。$1",
+            "spring_Thu10_inlaw_Abigail":"嗨, @. 阿尔伯特怎么样了?$0#$b#告诉他我们一直很想念他。$0",
+            "summer_Mon10_inlaw_Abigail":"我曾经担心阿尔伯特。$0#$b#做父母真的很难...$2#$e#但现在我知道他和你在一起很好。$1",
+            "summer_Fri10_inlaw_Abigail":"我没想到阿尔伯特会这么快结婚。$0#$e#许我应该在有机会的时候多花点时间和他在一起...$2",
+            "fall_Wed10_inlaw_Abigail":"我的小女孩现在已经长大了。$0#$b#我甚至没想到阿尔伯特会结婚并搬走。$0",
+            "fall_Sat10_inlaw_Abigail":"有时我觉得塞巴斯蒂安更适合阿尔伯特。$0#$e#...开玩笑的。$1",
+            "winter_Tue10_inlaw_Abigail":"你好, @.$0#$e#记住你永远欢迎来到我们家。$0#$b#你现在是我们家的一员了。$1",
+            "winter_Sun10_inlaw_Abigail":"我曾经担心阿尔伯特的未来，但我看到他已经找到了他需要去的地方。$0#$e#你们现在要互相照顾，好吗?$1",
+           }
+       },
+    
+        //Robin
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Robin",
+"Entries": {
+    //New
+            "spring_Sat10_inlaw_Abigail":"你和阿尔伯特让我想起了我和德米特里厄斯刚开始约会的时候...$0#$e#那时候我们还很年轻。$0",
+            "fall_Fri10_inlaw_Abigail":"你和阿尔伯特让我想起了我和德米特里厄斯刚开始约会的时候...$0#$e#那时候我们还很年轻。$0",
+           }
+       },
+    
+        //Vincent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Vincent",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Abigail":"你喜欢手镯吗?$3#$e#我想为你和阿尔伯特小姐做一份礼物。$1",
+            "summer_Wed10_inlaw_Abigail":"我能告诉你一个秘密吗?$3#$e#我在你们的婚礼上玩得很开心。$0#$b#但妈妈告诉我你们不会再举办一次了，为什么?$2",
+            "fall_Mon10_inlaw_Abigail":"你喜欢手镯吗?$3#$e#我想为你和阿尔伯特小姐做一份礼物。$1",
+            "winter_Sun10_inlaw_Abigail":"你和阿尔伯特小姐结婚真是太酷了。$1#$e#我从来没想到这会发生!$0",
+           }
+       },
+    
+        //Willy
+
+    
+    
+    //      A   L   E   X  
+    
+        //Abigail
+
+        //Elliott
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Elliott",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Alex": "啊... @...$0#$b#昨天看到你和亚历克斯在一起。$0#$e#这让我想起了这首诗...$0#$e#'愿你们带着所有的希望和梦想一起面对世界$0#$b#愿你们成为彼此的太阳和月亮，随着命运展开$0#$b#若你们失去了彼此的方向，开始漂离$0#$b#愿你们循着心的罗盘再度相聚'$0",
+            "fall_Fri8_inlaw_Alex": "啊... @...$0#$b#昨天看到你和亚历克斯在一起。$0#$e#这让我想起了这首诗...$0#$e#'愿你们带着所有的希望和梦想一起面对世界$0#$b#愿你们成为彼此的太阳和月亮，随着命运展开$0#$b#若你们失去了彼此的方向，开始漂离$0#$b#愿你们循着心的罗盘再度相聚'$0",
+           }
+       },
+    
+        //Harvey
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Harvey",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Alex": "最好的爱是让你成为更好的人，而不是把你变成另一个人。$0#$e#我觉得你和亚历克斯是很好的一对。$1",
+            "summer_Mon8_inlaw_Alex": "健康婚姻的关键是沟通，分享彼此的想法和感受。$0#$b#但我觉得你和亚历克斯不会有任何问题。$1",
+            "fall_Fri8_inlaw_Alex": "最好的爱是让你成为更好的人，而不是把你变成另一个人。$0#$e#我觉得你和亚历克斯是很好的一对。$1",
+            "winter_Thu8_inlaw_Alex": "健康婚姻的关键是沟通，分享彼此的想法和感受。$0#$b#但我觉得你和亚历克斯不会有任何问题。$1",
+           }
+       },
+    
+        //Sam
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Sam",
+"Entries": {
+    //New
+            "summer_Mon8_inlaw_Alex":"嘿, @.$0#$b#我不太喜欢民谣，但能在你的婚礼上唱歌一定很酷。$1",
+            "fall_Sat8_inlaw_Alex":"嘿, @.$0#$b#我不太喜欢民谣，但能在你的婚礼上唱歌一定很酷。$1",
+           }
+       },
+    
+        //Sebastian
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Sebastian",
+"Entries": {
+    //New
+            "spring_Sat8_inlaw_Alex":"你和亚历克斯怎么样?$0#$e#哦，那太好了!$1",
+            "fall_Wed8_inlaw_Alex":"你和亚历克斯怎么样?$0#$e#哦，那太好了!$1",
+           }
+       },
+    
+        //Shane
+
+    
+        //Emily
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Emily",
+"Entries": {
+    //New
+            "spring_Thu8_inlaw_Alex":"亚历克斯有一种非常独特的能量，你们俩在一起真是太好了。$1",
+            "summer_Wed8_inlaw_Alex":"我清楚地看到你和亚历克斯是注定在一起的。$1",
+            "fall_Mon8_inlaw_Alex":"亚历克斯有一种非常独特的能量，你们俩在一起真是太好了。$1",
+            "winter_Fri8_inlaw_Alex":"我清楚地看到你和亚历克斯是注定在一起的。$1",
+           }
+       },
+    
+        //Haley
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Haley",
+"Entries": {
+    //New
+            "spring_Wed8_inlaw_Alex":"亚历克斯是个非常贴心的家伙，我真的为你们俩感到高兴。$1",
+            "summer_Sat8_inlaw_Alex":"我为你和亚历克斯感到非常高兴。$0#$b#你们是最甜蜜的一对。$1",
+            "fall_Sun8_inlaw_Alex":"亚历克斯是个非常贴心的家伙，我真的为你们俩感到高兴。$1",
+            "winter_Mon8_inlaw_Alex":"我为你和亚历克斯感到非常高兴。$0#$b#你们是最甜蜜的一对。$1",
+           }
+       },
+    
+        //Leah
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Leah",
+"Entries": {
+    //New
+            "summer_Thu8_inlaw_Alex":"也许我可以为你和亚历克斯画点什么。$1",
+            "fall_Sat8_inlaw_Alex":"也许我可以为你和亚历克斯画点什么。$1",
+           }
+       },
+    
+        //Maru
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Maru",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Alex":"我很高兴你和亚历克斯的事情进展顺利!$1",
+            "fall_Wed8_inlaw_Alex":"我很高兴你和亚历克斯的事情进展顺利!$1",
+           }
+       },
+    
+        //Penny
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Penny",
+"Entries": {
+    //New
+            "spring_Mon8_inlaw_Alex":"你好, @.$0#$e#你和亚历克斯真是对可爱的情侣。$1",
+            "fall_Wed8_inlaw_Alex":"你好, @.$0#$e#你和亚历克斯真是对可爱的情侣。$1",
+           }
+       },
+    
+        //Caroline
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Caroline",
+"Entries": {
+    //New
+            "spring_Wed10_inlaw_Alex":"你好, @.$0#$e#婚姻并不总是容易的，你和亚历克斯将不得不一起克服许多困难。$0#$b#但这会是值得的。$1",
+            "fall_Sun10_inlaw_Alex":"你好, @.$0#$e#婚姻并不总是容易的，你和亚历克斯将不得不一起克服许多困难。$0#$b#但这会是值得的。$1",
+           }
+       },
+    
+        //Clint
+
+    
+        //Demetrius
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Demetrius",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Alex":"我们都在努力达到生活中的某种平衡，一个复杂的平衡点。$0#$e#看起来与亚历克斯结婚正是你找到这种平衡所需要的。$1",
+            "fall_Fri10_inlaw_Alex":"我们都在努力达到生活中的某种平衡，一个复杂的平衡点。$0#$e#看起来与亚历克斯结婚正是你找到这种平衡所需要的。$1",
+           }
+       },
+
+        //Evelyn
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Evelyn",
+"Entries": {
+    //New
+            "spring_Mon10_inlaw_Alex": "你好，亲爱的。$0#$e#你和亚历克斯什么时候过来吃晚饭?$0#$b#我会准备我特制的米布丁。$1",
+            "spring_Sat10_inlaw_Alex": "你好，亲爱的。$1#$e#我的小亚历克斯童年很艰难...$2#$b#我很高兴他找到了你。$1",
+            "spring_Sun_inlaw_Alex": "自从亚历克斯搬出去后，晚餐时间安静了很多...$2",
+            "summer_Tue10_inlaw_Alex": "我很高兴亚历克斯找到了你。$0#$b#你们真是天生一对。$1",
+            "summer_Fri_inlaw_Alex": "你好, @.$0#$e#记住我们家永远欢迎你。$0#$b#你现在是家人了。$1",
+            "summer_Sun10_inlaw_Alex": "乔治虽然不常表现出来，但他和我一样高兴亚历克斯和你结婚了。$1",
+            "fall_Wed_inlaw_Alex": "你一直是亚历克斯非常特别的人。$0#$b#我很高兴你们将共度余生。$1",
+            "fall_Thu10_inlaw_Alex": "你好，亲爱的。$0#$e#你和亚历克斯什么时候过来吃晚饭?$0#$b#我会准备我特制的米布丁。$1",
+            "fall_Fri10_inlaw_Alex": "你好，亲爱的。$1#$e#我的小亚历克斯童年很艰难...$2#$b#我很高兴他找到了你。$1",
+            "winter_Tue10_inlaw_Alex": "我希望你和亚历克斯每天都能和我们一起吃晚饭，你们让家里变得如此热闹。$1",
+            "winter_Wed10_inlaw_Alex": "乔治虽然不常表现出来，但他和我一样高兴亚历克斯和你结婚了。$1",
+            "winter_Fri_inlaw_Alex": "我希望你和亚历克斯能快点过来和我们一起吃晚饭。$1",
+           }
+       },
+    
+        //George
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/George",
+"Entries": {
+    //New
+            "spring_Mon10_inlaw_Alex": "现在亚历克斯搬走了，伊芙琳烤饼干的次数更多了，他找了个借口来看你们。$0",
+            "spring_Tue_inlaw_Alex": "自从亚历克斯搬出去后，晚餐时间安静了很多...$0",
+            "spring_Fri10_inlaw_Alex": "我的女儿几年前去世了...$2#$b#我们都很难过，但亚历克斯受到了最大的影响...$2#$e#我每天都感谢尤巴，他现在能处理得很好。$0#$b#你也帮了他很多。$1",
+            "summer_Wed10_inlaw_Alex": "我曾经担心亚历克斯的未来，但现在我看到他正处在他应该在的地方。$0#$e#你们现在要好好对待彼此，好吗?$1",
+            "summer_Thu_inlaw_Alex": "我确实认为你和亚历克斯会相处得很好。$0#$b#看到你们两个在一起真的让我很开心。$1",
+            "summer_Sat10_inlaw_Alex": "亚历克斯让我想起了克拉拉...$0#$e#他会很高兴看到他和你在一起。$0#$b#你们都是好孩子。$1",
+            "fall_Wed10_inlaw_Alex": "我的女儿几年前去世了...$2#$b#我们都很难过，但亚历克斯受到了最大的影响...$2#$e#我每天都感谢尤巴，他现在能处理得很好。$0#$b#你也帮了他很多。$1",
+            "fall_Fri10_inlaw_Alex": "现在亚历克斯搬走了，伊芙琳烤饼干的次数更多了，他找了个借口来看你们。$0",
+            "fall_Sun_inlaw_Alex": "自从亚历克斯搬出去后，晚餐时间安静了很多...$0",
+            "winter_Tue10_inlaw_Alex": "亚历克斯让我想起了克拉拉...$0#$e#他会很高兴看到他和你在一起。$0#$b#你们都是好孩子。$1",
+            "winter_Thu10_inlaw_Alex": "我曾经担心亚历克斯的未来，但现在我看到他正处在他应该在的地方。$0#$e#你们现在要好好对待彼此，好吗?$1",
+            "winter_Sun_inlaw_Alex": "我确实认为你和亚历克斯会相处得很好。$0#$b#看到你们两个在一起真的让我很开心。$1",
+           }
+       },
+        //Gus
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Gus",
+"Entries": {
+    //New
+            "spring_Fri10_inlaw_Alex":"如果你和亚历克斯想在酒馆里共进烛光晚餐，只需告诉我一声，我会准备好一切的。$1",
+            "summer_Sun_inlaw_Alex":"如果你和亚历克斯想在酒馆里共进烛光晚餐，只需告诉我一声，我会准备好一切的。$1",
+            "fall_Fri10_inlaw_Alex":"如果你和亚历克斯想在酒馆里共进烛光晚餐，只需告诉我一声，我会准备好一切的。$1",
+            "winter_Wed10_inlaw_Alex":"如果你和亚历克斯想在酒馆里共进烛光晚餐，只需告诉我一声，我会准备好一切的。$1",
+           }
+       },
+    
+        //Jas
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Jas",
+"Entries": {
+    //New
+            "spring_Thu10_inlaw_Alex":" @ 先生!^ @ 小姐!$1#$e#长大后我也想举办一个像你们一样的婚礼。$1",
+            "summer_Mon10_inlaw_Alex":"所以你和亚历克斯先生真的超级相爱吗?$0#$e#嘻嘻嘻!$1",
+            "fall_Sun10_inlaw_Alex":"你好, 先生.$0^你好, 小姐.$0#$b#为什么你们不能每周都举办婚礼?$0#$b#我想吃粉红蛋糕!$1",
+            "winter_Sat10_inlaw_Alex":"@ 先生!^ @ 小姐!$1#$e#长大后我也想举办一个像你们一样的婚礼。$1",
+           }
+       },
+    
+        //Jodi
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Jodi",
+"Entries": {
+    //New
+            "spring_Mon10_inlaw_Alex":"你和亚历克斯怎么样?$0#$b#伊芙琳告诉我他很开心。$1",
+            "fall_Sun10_inlaw_Alex":"你和亚历克斯怎么样?$0#$b#伊芙琳告诉我他很开心。$1",
+           }
+       },
+    
+        //Kent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Kent",
+"Entries": {
+    //New
+            "summer_Tue10_inlaw_Alex":"我不太了解亚历克斯，但我为你感到高兴。$1",
+            "fall_Fri10_inlaw_Alex":"我不太了解亚历克斯，但我为你感到高兴。$1",
+           }
+       },
+    
+        //Lewis
+{
+"Action": "EditData", 
+"Target": "Characters/Dialogue/Lewis",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Alex":"在鹈鹕镇，没有多少像你和亚历克斯这样的年轻夫妇。$0#$e#看到年轻人相爱总是很愉快的。$1",
+            "summer_Sun10_inlaw_Alex":"在鹈鹕镇，没有多少像你和亚历克斯这样的年轻夫妇。$0#$e#看到年轻人相爱总是很愉快的。$1",
+            "fall_Sat10_inlaw_Alex":"希望我能很快主持另一场婚礼，自从你们的婚礼以来已经有一段时间了。$0#$b#我们甚至可以举办一个小宴会。$1",
+            "winter_Mon10_inlaw_Alex":"希望我能很快主持另一场婚礼，自从你们的婚礼以来已经有一段时间了。$0#$b#我们甚至可以举办一个小宴会。$1",
+           }
+       },
+        
+        //Linus
+
+
+        //Marnie
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Marnie",
+"Entries": {
+    //New
+            "spring_Thu10_inlaw_Alex":"你好, @.$0#$e#我祝愿你和亚历克斯一生充满爱与幸福。$1",
+            "summer_Tue10_inlaw_Alex":"愿尤巴赐予你和亚历克斯一个充满祝福和喜悦的婚姻。$1",
+            "fall_Sun10_inlaw_Alex":"你好, @.$0#$e#我祝愿你和亚历克斯一生充满爱与幸福。$1",
+            "winter_Fri10_inlaw_Alex":"愿尤巴赐予你和亚历克斯一个充满祝福和喜悦的婚姻。$1",
+           }
+       },
+    
+        //Pam
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pam",
+"Entries": {
+    //New
+            "summer_Fri10_inlaw_Alex":"嘿，孩子。$0#$e#看起来你找到了一个不错的年轻人，是吧?$1",
+            "winter_Wed10_inlaw_Alex":"嘿，孩子。$0#$e#看起来你找到了一个不错的年轻人，是吧?$1",
+           }
+       },
+    
+        //Pierre
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pierre",
+"Entries": {
+    //New
+            "summer_Mon10_inlaw_Alex":"你好, @.$0#$e#如果你想给亚历克斯买些好东西, 你知道该找谁。$1",
+            "winter_Thu10_inlaw_Alex":"你好, @.$0#$e#如果你想给亚历克斯买些好东西, 你知道该找谁。$1",
+           }
+       },
+    
+        //Robin
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Robin",
+"Entries": {
+    //New
+            "spring_Sat10_inlaw_Alex":"你和亚历克斯让我想起了我和德米特里厄斯刚开始约会的时候...$0#$e#那时候我们还很年轻。$0",
+            "fall_Fri10_inlaw_Alex":"你和亚历克斯让我想起了我和德米特里厄斯刚开始约会的时候...$0#$e#那时候我们还很年轻。$0",
+           }
+       },
+    
+        //Vincent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Vincent",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Alex":"你喜欢手链吗?$3#$e#我想给你和亚历克斯先生做一个礼物。$1",
+            "summer_Wed10_inlaw_Alex":"我能告诉你一个秘密吗?$3#$e#我在你们的婚礼上玩得很开心。$0#$b#但是妈妈告诉我你不会再庆祝一次了，为什么?$2",
+            "fall_Mon10_inlaw_Alex":"你喜欢手链吗?$3#$e#我想给你和亚历克斯先生做一个礼物。$1",
+            "winter_Sun10_inlaw_Alex":"你和亚历克斯先生结婚真是太酷了。$1#$e#我从未想过这会发生!$0",
+           }
+       },
+    
+        //Willy
+
+    //      E   L   L   I   O   T   T
+    
+        //Abigail
+    
+    
+        //Alex
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Alex",
+"Entries": {
+    //New
+            "summer_Tue8_inlaw_Elliott":"哦，嘿。$0#$e#婚后生活怎么样?$1",
+            "winter_Mon10_inlaw_Elliott":"哦，嘿。$0#$e#婚后生活怎么样?$1",
+           }
+       },
+    
+        //Harvey
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Harvey",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Elliott": "最好的爱情是让你成为更好的人，而不是把你变成别人。$0#$e#我觉得你和艾利欧特会是很好的夫妻。$1",
+            "summer_Mon8_inlaw_Elliott": "健康婚姻的关键是沟通，分享彼此的想法和感受。$0#$b#但我认为你和艾利欧特不会有任何问题。$1",
+            "fall_Fri8_inlaw_Elliott": "最好的爱情是让你成为更好的人，而不是把你变成别人。$0#$e#我觉得你和艾利欧特会是很好的夫妻。$1",
+            "winter_Thu8_inlaw_Elliott": "健康婚姻的关键是沟通，分享彼此的想法和感受。$0#$b#但我认为你和艾利欧特不会有任何问题。$1",
+           }
+       },
+    
+        //Sam
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Sam",
+"Entries": {
+    //New
+            "summer_Mon8_inlaw_Elliott":"嘿, @.$0#$b#我对情歌不太感兴趣，但如果能在你的婚礼上唱歌，那就太酷了。$1",
+            "fall_Sat8_inlaw_Elliott":"嘿, @.$0#$b#我对情歌不太感兴趣，但如果能在你的婚礼上唱歌，那就太酷了。$1",
+           }
+       },
+    
+        //Sebastian
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Sebastian",
+"Entries": {
+    //New
+            "spring_Sat8_inlaw_Elliott":"你和艾利欧特怎么样?$0#$e#噢，那真是太好了!$1",
+            "fall_Wed8_inlaw_Elliott":"你和艾利欧特怎么样?$0#$e#噢，那真是太好了!$1",
+           }
+       },
+    
+        //Shane
+
+    
+        //Emily
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Emily",
+"Entries": {
+    //New
+            "spring_Thu8_inlaw_Elliott":"艾利欧特有一种非常独特的能量，你们在一起真的很棒。$1",
+            "summer_Wed8_inlaw_Elliott":"我清楚地看到你和艾利欧特注定要在一起。$1",
+            "fall_Mon8_inlaw_Elliott":"艾利欧特有一种非常独特的能量，你们在一起真的很棒。$1",
+            "winter_Fri8_inlaw_Elliott":"我清楚地看到你和艾利欧特注定要在一起。$1",
+           }
+       },
+    
+        //Haley
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Haley",
+"Entries": {
+    //New
+            "summer_Sat8_inlaw_Elliott":"我为你和艾利欧特感到非常高兴。$0#$b#你们是最甜的一对。$1",
+            "winter_Mon8_inlaw_Elliott":"我为你和艾利欧特感到非常高兴。$0#$b#你们是最甜的一对。$1",
+           }
+       },
+    
+        //Leah
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Leah",
+"Entries": {
+    //New
+            "sping_Wed8_inlaw_Elliott":"艾利欧特是我到这里时的第一个朋友。$0#$b#我很高兴看到他结婚了。$1",
+            "summer_Thu8_inlaw_Elliott":"也许我可以为你和艾利欧特画点东西。$1",
+            "fall_Sat8_inlaw_Elliott":"也许我可以为你和艾利欧特画点东西。$1",
+            "winter_Mon8_inlaw_Elliott":"艾利欧特是我到这里时的第一个朋友。$0#$b#我很高兴看到他结婚了。$1",
+           }
+       },
+    
+        //Maru
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Maru",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Elliott":"我很高兴你和艾利欧特的事情有了圆满的结果!$1",
+            "fall_Wed8_inlaw_Elliott":"我很高兴你和艾利欧特的事情有了圆满的结果!$1",
+           }
+       },
+    
+        //Penny
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Penny",
+"Entries": {
+    //New
+            "spring_Mon8_inlaw_Elliott":"你好, @.$0#$e#你和艾利欧特真是对可爱的夫妻。$1",
+            "fall_Wed8_inlaw_Elliott":"你好, @.$0#$e#你和艾利欧特真是对可爱的夫妻。$1",
+           }
+       },
+    
+        //Caroline
+    
+    
+        //Clint
+
+    
+        //Demetrius
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Demetrius",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Elliott":"我们都在努力在生活中找到某种平衡，一种复杂的均衡。$0#$e#看来和艾利欧特结婚正是你需要找到这种平衡的方式。$1",
+            "fall_Fri10_inlaw_Elliott":"我们都在努力在生活中找到某种平衡，一种复杂的均衡。$0#$e#看来和艾利欧特结婚正是你需要找到这种平衡的方式。$1",
+           }
+       },
+    
+        //Evelyn
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Evelyn",
+"Entries": {
+    //New
+            "spring_Wed10_inlaw_Elliott":"你好，亲爱的。$0#$e#婚姻并不总是容易的，你和艾利欧特将不得不共同克服许多困难。$0#$b#愿你们一起成为更好的人。$1",
+            "summer_Tue10_inlaw_Elliott":"成功的婚姻需要多次坠入爱河，每次都和同一个人。$0#$b#我希望你和艾利欧特一起过上幸福长久的生活。$1",
+            "fall_Thu10_inlaw_Elliott":"你好，亲爱的。$0#$e#婚姻并不总是容易的，你和艾利欧特将不得不共同克服许多困难。$0#$b#愿你们一起成为更好的人。$1",
+            "winter_Sun10_inlaw_Elliott":"成功的婚姻需要多次坠入爱河，每次都和同一个人。$0#$b#我希望你和艾利欧特一起过上幸福长久的生活。$1",
+           }
+       },
+    
+        //George
+
+    
+        //Gus
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Gus",
+"Entries": {
+    //New
+            "spring_Fri10_inlaw_Elliott":"如果你和艾利欧特想在酒馆享受烛光晚餐，只需告诉我，我会准备好一切的。$1",
+            "summer_Sun_inlaw_Elliott":"如果你和艾利欧特想在酒馆享受烛光晚餐，只需告诉我，我会准备好一切的。$1",
+            "fall_Fri10_inlaw_Elliott":"如果你和艾利欧特想在酒馆享受烛光晚餐，只需告诉我，我会准备好一切的。$1",
+            "winter_Wed10_inlaw_Elliott":"如果你和艾利欧特想在酒馆享受烛光晚餐，只需告诉我，我会准备好一切的。$1",
+           }
+       },
+    
+        //Jas
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Jas",
+"Entries": {
+    //New
+            "spring_Thu10_inlaw_Elliott":" @ 先生!^ @ 小姐!$1#$e#等我长大了，我也想有一个像你们一样的婚礼。$1",
+            "summer_Mon10_inlaw_Elliott":"你和艾利欧特先生真的... 超级相爱吗?$0#$e#嘻嘻嘻!$1",
+            "fall_Sun10_inlaw_Elliott":"你好, 先生.$0^你好, 小姐.$0#$b#为什么你们不能每周都庆祝一次婚礼呢?$0#$b#我想吃粉红蛋糕!$1",
+            "winter_Sat10_inlaw_Elliott":" @ 先生!^ @ 小姐!$1#$e#等我长大了，我也想有一个像你们一样的婚礼。$1",
+           }
+       },
+    
+        //Jodi
+
+    
+        //Kent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Kent",
+"Entries": {
+    //New
+            "summer_Tue10_inlaw_Elliott":"我不太了解艾利欧特，但我为你感到高兴。$1",
+            "fall_Fri10_inlaw_Elliott":"我不太了解艾利欧特，但我为你感到高兴。$1",
+           }
+       },
+    
+        //Lewis
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Lewis",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Elliott":"在鹈鹕镇像你和艾利欧特这样的年轻夫妇不多。$0#$e#看到年轻人相爱总是令人欣慰。$1",
+            "summer_Sun10_inlaw_Elliott":"在鹈鹕镇像你和艾利欧特这样的年轻夫妇不多。$0#$e#看到年轻人相爱总是令人欣慰。$1",
+            "fall_Sat10_inlaw_Elliott":"希望我能很快再主持一场婚礼，自从你们的婚礼后已经有段时间了。$0#$b#我们甚至可以办一个小宴会。$1",
+            "winter_Mon10_inlaw_Elliott":"希望我能很快再主持一场婚礼，自从你们的婚礼后已经有段时间了。$0#$b#我们甚至可以办一个小宴会。$1",
+           }
+       },
+        
+        //Linus
+
+
+        //Marnie
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Marnie",
+"Entries": {
+    //New
+            "spring_Thu10_inlaw_Elliott":"你好, @.$0#$e#祝你和艾利欧特一生幸福。$1",
+            "summer_Tue10_inlaw_Elliott":"愿尤巴赐予你和艾利欧特幸福和快乐的婚姻。$1",
+            "fall_Sun10_inlaw_Elliott":"你好, @.$0#$e#祝你和艾利欧特一生幸福。$1",
+            "winter_Fri10_inlaw_Elliott":"愿尤巴赐予你和艾利欧特幸福和快乐的婚姻。$1",
+           }
+       },
+    
+        //Pam
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pam",
+"Entries": {
+    //New
+            "summer_Fri10_inlaw_Elliott":"嘿，孩子。$0#$e#看来你找到一个很帅的小伙子了，是吧?$1",
+            "winter_Wed10_inlaw_Elliott":"嘿，孩子。$0#$e#看来你找到一个很帅的小伙子了，是吧?$1",
+           }
+       },
+    
+        //Pierre
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pierre",
+"Entries": {
+    //New
+            "summer_Mon10_inlaw_Elliott":"你好, @.$0#$e#如果你想给艾利欧特买点好东西，你知道该找谁。$1",
+            "winter_Thu10_inlaw_Elliott":"你好, @.$0#$e#如果你想给艾利欧特买点好东西，你知道该找谁。$1",
+           }
+       },    
+        //Robin
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Robin",
+"Entries": {
+    //New
+            "spring_Sat10_inlaw_Elliott":"你和艾利欧特让我想起了我和德米特里厄斯刚开始约会的时候...$0#$e#那时候我们还很年轻。$0",
+            "fall_Fri10_inlaw_Elliott":"你和艾利欧特让我想起了我和德米特里厄斯刚开始约会的时候...$0#$e#那时候我们还很年轻。$0",
+           }
+       },
+    
+        //Vincent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Vincent",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Elliott":"你喜欢手镯吗?$3#$e#我想为你和艾利欧特先生做一个礼物。$1",
+            "summer_Wed10_inlaw_Elliott":"我可以告诉你一件事吗?$3#$e#我在你的婚礼上玩得很开心。$0#$b#但妈妈告诉我你们不会再庆祝一次了，为什么?$2",
+            "fall_Mon10_inlaw_Elliott":"你喜欢手镯吗?$3#$e#我想为你和艾利欧特先生做一个礼物。$1",
+            "winter_Sun10_inlaw_Elliott":"你和艾利欧特先生结婚真是太酷了。$1#$e#我从没想过会发生这种事!$0",
+           }
+       },
+    
+        //Willy
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Willy",
+"Entries": {
+    //New
+            "spring_Thu10_inlaw_Elliott":"很高兴看到我的老朋友艾利欧特结婚并且幸福。$1",
+            "fall_Sun10_inlaw_Elliott":"很高兴看到我的老朋友艾利欧特结婚并且幸福。",
+           }
+       },
+    
+    
+    //      E   M   I   L   Y
+    
+        //Abigail
+    
+    
+        //Alex
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Alex",
+"Entries": {
+    //New
+            "summer_Tue8_inlaw_Emily":"哦，嘿。$0#$e#婚后生活怎么样?$1",
+            "winter_Mon10_inlaw_Emily":"哦，嘿。$0#$e#婚后生活怎么样?$1",
+           }
+       },
+    
+        //Elliott
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Elliott",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Emily": "啊... @...$0#$b#昨天我看见你和埃米尔在一起。$0#$e#这让我想起了这首诗...$0#$e#'愿你们携手面对世界，实现所有的希望和梦想$0#$b#愿你们成为彼此的太阳和月亮，让命运展开$0#$b#若你们迷失彼此，渐行渐远$0#$b#愿你们沿着心灵的罗盘，再度相遇'$0",
+            "fall_Fri8_inlaw_Emily": "啊... @...$0#$b#昨天我看见你和埃米尔在一起。$0#$e#这让我想起了这首诗...$0#$e#'愿你们携手面对世界，实现所有的希望和梦想$0#$b#愿你们成为彼此的太阳和月亮，让命运展开$0#$b#若你们迷失彼此，渐行渐远$0#$b#愿你们沿着心灵的罗盘，再度相遇'$0",
+           }
+       },
+    
+        //Harvey
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Harvey",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Emily": "最好的爱情是让你成为更好的人，而不是改变你成为别人。$0#$e#我觉得你和埃米尔很般配。$1",
+            "summer_Mon8_inlaw_Emily": "健康婚姻的关键是沟通，分享彼此的想法和感受。$0#$b#但我觉得你和埃米尔不会有任何问题。$1",
+            "fall_Fri8_inlaw_Emily": "最好的爱情是让你成为更好的人，而不是改变你成为别人。$0#$e#我觉得你和埃米尔很般配。$1",
+            "winter_Thu8_inlaw_Emily": "健康婚姻的关键是沟通，分享彼此的想法和感受。$0#$b#但我觉得你和埃米尔不会有任何问题。$1",
+           }
+       },
+    
+        //Sam
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Sam",
+"Entries": {
+    //New
+            "summer_Mon8_inlaw_Emily":"嘿, @.$0#$b#我不太喜欢情歌，但在你的婚礼上唱一定会很酷。$1",
+            "fall_Sat8_inlaw_Emily":"Hey, @.$0#$b#我不太喜欢情歌，但在你的婚礼上唱一定会很酷。$1",
+           }
+       },
+    
+        //Sebastian
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Sebastian",
+"Entries": {
+    //New
+            "spring_Sat8_inlaw_Emily":"你和埃米尔怎么样?$0#$e#噢, 这真是太好了!$1",
+            "fall_Wed8_inlaw_Emily":"你和埃米尔怎么样?$0#$e#噢, 这真是太好了!$1",
+           }
+       },
+    
+        //Shane
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Shane",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Emily":"埃米尔是个不错的人，我很高兴他和你在一起。$0",
+            "fall_Fri8_inlaw_Emily":"埃米尔是个不错的人，我很高兴他和你在一起。$0",
+           }
+       },
+    
+        //Haley
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Haley",
+"Entries": {
+    //Original
+            "Sun4_inlaw_Emily":"没有埃米尔在的时候房子里变得又空又静。$2",
+            "Sun8_inlaw_Emily":"没有埃米尔在的时候房子里变得又空又静。$2#$e#我真没想到我会这么想念他。$2#$b#你们俩还好吗?$0",
+            "Sun10_inlaw_Emily":"没有埃米尔在的时候房子里变得又空又静。我感到很孤单。$2#$e#要不你们搬过来住吧？$1",
+            "summer_Sun6_inlaw_Emily":"首先是我父母离开了，现在又轮到埃米尔。我只是...$2#$e#这真的太多了，你知道吗?$2#$e#对不起，我知道这很自私。$2",
+            "summer_Sun8_inlaw_Emily":"嘿。我姐姐怎么样?$0#$e#我过得还好。只是需要点时间适应。$0",
+            "summer_Sun10_inlaw_Emily":"没有埃米尔在的时候房子里变得又空又静。我感到很孤单。$2#$e#要不你们搬过来住吧?$1",
+            "fall_Sun_inlaw_Emily":"噢... 嘿.$0",
+            "fall_Sun4_inlaw_Emily":"所以... 我姐姐最近怎么样?$0",
+            "fall_Sun6_inlaw_Emily":"首先是我父母离开了，现在又轮到埃米尔。我只是...$2#$e#这真的太多了，你知道吗?$2#$e#对不起，我知道这很自私。$2",
+            "fall_Sun8_inlaw_Emily":"为了保持房子的整洁，我不得不改变很多习惯。$0#$e#我是不是做得很糟糕?$1",
+            "fall_Sun10_inlaw_Emily":"没有埃米尔在的时候房子里变得又空又静。我感到很孤单。$2#$e#要不你们搬过来住吧?$1",
+            "winter_Sun_inlaw_Emily":"噢... 嘿。$0",
+            "winter_Sun4_inlaw_Emily":"我想我要直说了。$0#$e#我真的很想念埃米尔。$2#$b#我没想到我会这么想念他，但我真的很想念。$2",
+            "winter_Sun6_inlaw_Emily":"这些天我应该怎么办呢?$2",
+            "winter_Sun8_inlaw_Emily":"我开始更多地考虑我的未来。$0#$e#我总是以为我会有一个人来我把接走，但看来埃米尔在我们俩中间是幸运的那一个。$2",
+            "winter_Sun10_inlaw_Emily":"没有埃米尔在的时候房子里变得又空又静。我感到很孤单。$2#$e#为什么不一起搬过来住呢?$1",
+    //New
+    
+           }
+       },
+    
+        //Leah
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Leah",
+"Entries": {
+    //New
+            "summer_Thu8_inlaw_Emily":"也许我可以为你和埃米尔画点什么。$1",
+            "fall_Sat8_inlaw_Emily":"也许我可以为你和埃米尔画点什么。$1",
+           }
+       },
+    
+        //Maru
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Maru",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Emily":"我很高兴你和埃米尔的事情顺利解决了!$1",
+            "fall_Wed8_inlaw_Emily":"我很高兴你和埃米尔的事情顺利解决了!$1",
+           }
+       },
+    
+        //Penny
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Penny",
+"Entries": {
+    //New
+            "spring_Mon8_inlaw_Emily":"你好, @.$0#$e#你和埃米尔真是般配的一对。$1",
+            "fall_Wed8_inlaw_Emily":"你好, @.$0#$e#你和埃米尔真是般配的一对。$1",
+           }
+       },
+    
+        //Caroline
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Caroline",
+"Entries": {
+    //New
+            "summer_Mon8_inlaw_Emily":"你好, @.$0#$e#你和艾米莉怎么样? 他看上去很开心。$0",
+            "winter_Sat8_inlaw_Emily":"你好, @.$0#$e#你和艾米莉怎么样? 他看上去很开心。$0",
+           }
+       },
+        
+        //Clint
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Clint",
+"Entries": {
+    //Original
+            "Mon_inlaw_Emily":"那个，呃... 你... 和埃米尔怎么样了?$2",
+            "summer_Thu_inlaw_Emily":"...$2#$e#...什么? 哦...$2#$e#...我想你知道的$2#$e#你需要什么吗?$3",
+            "fall_Mon_inlaw_Emily":"你和埃米尔怎么样?$0#$e#哦，那太好了!$1#$e#我为你们两个感到高兴。我是说真的。$0",
+            "winter_Sun_inlaw_Emily":"我今天不想聊天。$2#$e#快滚开!$3#$e#对不起，我.. 那个...$2#$b#对不起。你需要什么?$2",
+    //New
+           }
+       },
+    
+        //Demetrius
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Demetrius",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Emily":"我们都在努力追求生活中的某种平衡，一种复杂的平衡状态。$0#$e#看来和埃米尔结婚正是你找到这种平衡所需要的。$1",
+            "fall_Fri10_inlaw_Emily":"我们都在努力追求生活中的某种平衡，一种复杂的平衡状态。$0#$e#看来和埃米尔结婚正是你找到这种平衡所需要的。$1",
+           }
+       },
+    
+        //Evelyn
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Evelyn",
+"Entries": {
+    //New
+            "spring_Wed10_inlaw_Emily":"你好，亲爱的。$0#$e#婚姻并不总是容易的，你和埃米尔将要一起克服许多困难。$0#$b#愿你们一起变得更好。$1",
+            "summer_Tue10_inlaw_Emily":"一段成功的婚姻需要多次坠入爱河，而且永远都是对同一个人。$0#$b#我希望你和埃米尔能够共度美好的一生。$1",
+            "fall_Thu10_inlaw_Emily":"你好，亲爱的。$0#$e#婚姻并不总是容易的，你和埃米尔将要一起克服许多困难。$0#$b#愿你们一起变得更好。$1",
+            "winter_Sun10_inlaw_Emily":"一段成功的婚姻需要多次坠入爱河，而且永远都是对同一个人。$0#$b#我希望你和埃米尔能够共度美好的一生。$1",
+           }
+       },
+    
+        //George
+
+    
+        //Gus
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Gus",
+"Entries": {
+    //New
+            "spring_Fri10_inlaw_Emily":"如果你和埃米尔想在酒馆共进烛光晚餐，告诉我，我会准备好一切的。$1",
+            "summer_Sun_inlaw_Emily":"如果你和埃米尔想在酒馆共进烛光晚餐，告诉我，我会准备好一切的。$1",
+            "fall_Fri10_inlaw_Emily":"如果你和埃米尔想在酒馆共进烛光晚餐，告诉我，我会准备好一切的。$1",
+            "winter_Wed10_inlaw_Emily":"如果你和埃米尔想在酒馆共进烛光晚餐，告诉我，我会准备好一切的。$1",
+           }
+       },
+    
+        //Jas
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Jas",
+"Entries": {
+    //New
+            "spring_Thu10_inlaw_Emily":" @ 先生!^ @ 小姐!$1#$e#长大后，我也想要有和你们一样的婚礼。$1",
+            "summer_Mon10_inlaw_Emily":"你和埃米尔小姐是真的... 很相爱吗?$0#$e#嘻嘻嘻!$1",
+            "fall_Sun10_inlaw_Emily":"你好, 先生。$0^你好, 小姐。$0#$b#为什么你们不能每周都庆祝婚礼呢?$0#$b#我想吃粉红蛋糕!$1",
+            "winter_Sat10_inlaw_Emily":"@ 先生!^ @ 小姐!$1#$e#长大后，我也想要有和你们一样的婚礼。$1",
+           }
+       },
+    
+        //Jodi
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Jodi",
+"Entries": {
+    //New
+            "spring_Mon10_inlaw_Emily":"你和埃米尔好吗?$0#$b#你们俩是最甜蜜的一对。$1",
+            "fall_Sun10_inlaw_Emily":"你和埃米尔好吗?$0#$b#你们俩是最甜蜜的一对。$1",
+           }
+       },
+    
+        //Kent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Kent",
+"Entries": {
+    //New
+            "summer_Tue10_inlaw_Emily":"我不太了解埃米尔，但我为你感到高兴。$1",
+            "fall_Fri10_inlaw_Emily":"我不太了解埃米尔，但我为你感到高兴。$1",
+           }
+       },
+    
+        //Lewis
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Lewis",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Emily":"在鹈鹕镇没有多少像你和埃米尔这样的年轻夫妇。$0#$e#看到年轻人恋爱总是很高兴。$1",
+            "summer_Sun10_inlaw_Emily":"在鹈鹕镇没有多少像你和埃米尔这样的年轻夫妇。$0#$e#看到年轻人恋爱总是很高兴。$1",
+            "fall_Sat10_inlaw_Emily":"希望我能很快主持另一场婚礼，自从你们的婚礼已经有一段时间了。$0#$b#我们甚至可以办一个小宴会。$1",
+            "winter_Mon10_inlaw_Emily":"希望我能很快主持另一场婚礼，自从你们的婚礼已经有一段时间了。$0#$b#我们甚至可以办一个小宴会。$1",
+           }
+       },
+        
+        //Linus
+
+
+        //Marnie
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Marnie",
+"Entries": {
+    //New
+            "spring_Thu10_inlaw_Emily":"你好, @.$0#$e#希望你和埃米尔一生幸福美满。$1",
+            "summer_Tue10_inlaw_Emily":"愿尤巴赐予你和埃米尔幸福美满的婚姻。$1",
+            "fall_Sun10_inlaw_Emily":"你好, @.$0#$e#希望你和埃米尔一生幸福美满。$1",
+            "winter_Fri10_inlaw_Emily":"愿尤巴赐予你和埃米尔幸福美满的婚姻。$1",
+           }
+       },
+    
+        //Pam
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pam",
+"Entries": {
+    //New
+            "summer_Fri10_inlaw_Emily":"嘿，孩子。$0#$e#看起来你找到了一个年轻漂亮的姑娘，是吧?$1",
+            "winter_Wed10_inlaw_Emily":"嘿，孩子。$0#$e#看起来你找到了一个年轻漂亮的姑娘，是吧?$1",
+           }
+       },
+    
+        //Pierre
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pierre",
+"Entries": {
+    //New
+            "summer_Mon10_inlaw_Emily":"你好, @.$0#$e#如果你想为埃米尔买点好东西，你知道该找谁。$1",
+            "winter_Thu10_inlaw_Emily":"你好, @.$0#$e#如果你想为埃米尔买点好东西，你知道该找谁。$1",
+           }
+       },    
+        //Robin
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Robin",
+"Entries": {
+    //New
+            "spring_Sat10_inlaw_Emily":"你和埃米尔让我想起了我和德米特里厄斯刚开始约会的时候...$0#$e#那时候我们还很年轻。$0",
+            "fall_Fri10_inlaw_Emily":"你和埃米尔让我想起了我和德米特里厄斯刚开始约会的时候...$0#$e#那时候我们还很年轻。$0",
+           }
+       },
+    
+        //Vincent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Vincent",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Emily":"你喜欢手镯吗?$3#$e#我想为你和埃米尔小姐做一个礼物。$1",
+            "summer_Wed10_inlaw_Emily":"我能告诉你一件事吗?$3#$e#我在你的婚礼上玩得很开心。$0#$b#但是妈妈告诉我你们不会再庆祝一次了，为什么?$2",
+            "fall_Mon10_inlaw_Emily":"你喜欢手镯吗?$3#$e#我想为你和埃米尔小姐做一个礼物。$1",
+            "winter_Sun10_inlaw_Emily":"你和埃米尔小姐结婚真是太酷了。$1#$e#我从来没想到会发生这样的事!$0",
+           }
+       },
+    
+        //Willy
+
+    
+    
+    //      H   A   L   E   Y
+    
+        //Abigail
+    
+        
+        //Alex
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Alex",
+"Entries": {
+    //Original
+            "Sun_inlaw_Haley":"哦，嗨。$0#$b#婚后生活过得怎么样? 海登告诉我他非常开心。$1",
+            "Sun6_inlaw_Haley":"我得承认... 当你和海登结婚时我有点嫉妒。$9#$b#但是，嘿... 这是个重新了解我自己的机会。$0",
+    //New
+            "spring_Tue8_inlaw_Haley":"我第一次见到你时就知道你会和海登结婚。$0#$b#你们真是绝配。$1",
+            "spring_Sun8_inlaw_Haley":"嗨, @.$0#$e#你享受婚后生活吗?$0#$b#希望你和海登幸福快乐!$1",
+            "summer_Mon8_inlaw_Haley":"我第一次见到你时就知道你会和海登结婚。$0#$b#你们真是绝配。$1",
+            "summer_Fri8_inlaw_Haley":"所以... 海登最近怎么样?$0",
+            "fall_Mon8_inlaw_Haley":"我很高兴你和我最好的朋友在一起。$0#$b#我一直觉得你和海登很般配。$1",
+            "fall_Thu8_inlaw_Haley":"嗨, @.$0#$e#你享受婚后生活吗?$0#$b#希望你和海登幸福快乐!$1",
+            "winter_Wed8_inlaw_Haley":"我很高兴你和我最好的朋友在一起。$0#$b#我一直觉得你和海登很般配。$1",
+            "winter_Sat8_inlaw_Haley":"所以... 海登怎么样?$0",
+           }
+       },
+
+        //Elliott
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Elliott",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Haley": "啊... @...$0#$b#昨天看到你和海登在一起。$0#$e#这让我想起了一首诗...$0#$e#'愿你们共同迎接世界的希望和梦想$0#$b#愿你们成为彼此的太阳和月亮，见证命运的展开$0#$b#如果你们迷失了方向，彼此渐行渐远$0#$b#愿你们追随心灵的指南针重新回到彼此身边'$0",
+            "fall_Fri8_inlaw_Haley": "啊... @...$0#$b#昨天看到你和海登在一起。$0#$e#这让我想起了一首诗...$0#$e#'愿你们共同迎接世界的希望和梦想$0#$b#愿你们成为彼此的太阳和月亮，见证命运的展开$0#$b#如果你们迷失了方向，彼此渐行渐远$0#$b#愿你们追随心灵的指南针重新回到彼此身边'$0",
+           }
+       },
+    
+        //Harvey
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Harvey",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Haley": "最好的爱情是让你变得更好，而不是改变你成为别人的爱情。$0#$e#我觉得你和海登是个很棒的一对。$1",
+            "summer_Mon8_inlaw_Haley": "健康婚姻的关键是沟通，分享彼此的思想和感情。$0#$b#但我觉得你和海登不会有这方面的问题。$1",
+            "fall_Fri8_inlaw_Haley": "最好的爱情是让你变得更好，而不是改变你成为别人的爱情。$0#$e#我觉得你和海登是个很棒的一对。$1",
+            "winter_Thu8_inlaw_Haley": "健康婚姻的关键是沟通，分享彼此的思想和感情。$0#$b#但我觉得你和海登不会有这方面的问题。$1",
+           }
+       },
+    
+        //Sam
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Sam",
+"Entries": {
+    //New
+            "summer_Mon8_inlaw_Haley":"嘿, @.$0#$b#我不太擅长唱情歌，但在你的婚礼上唱歌一定很酷。$1",
+            "fall_Sat8_inlaw_Haley":"嘿, @.$0#$b#我不太擅长唱情歌，但在你的婚礼上唱歌一定很酷。$1",
+           }
+       },
+    
+        //Sebastian
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Sebastian",
+"Entries": {
+    //New
+            "summer_Thu8_inlaw_Haley":"祝你们好运，以后要和海登相处一辈子...$0#$e#嗯，其实多亏了你，他现在对人也友善多了。$0",
+            "winter_Sun8_inlaw_Haley":"祝你们好运，以后要和海登相处一辈子...$0#$e#嗯，其实多亏了你，他现在对人也友善多了。$0",
+           }
+       },
+    
+        //Shane
+
+    
+        //Emily
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Emily",
+"Entries": {
+    //Original
+            "winter_Wed_inlaw_Haley":"我很高兴海登找到了你。$0#$b#看来宇宙果然为他安排了好事!$1",
+            "winter_Sun8_inlaw_Haley":"替我跟姐姐问好!$1#$e#还有提醒他明天来看我。$0",
+    //New
+            "spring_Wed8_inlaw_Haley":"海登以前总是挑剔别人。$2#$b#有时候真的挺难以应付他的...$2#$b#但自从他遇到你后，他变得更加理解体谅了。$0#$e#别告诉他，但我为他感到骄傲。$1",
+            "spring_Thu8_inlaw_Haley":"我真心希望你和海登能幸福快乐。$0#$b#他在你身边笑得最灿烂了。$1",
+            "spring_Sun_inlaw_Haley":"我很高兴海登有了你。$0#$b#看来宇宙为你们两个人都安排了美好的未来。$1",
+            "summer_Tue8_inlaw_Haley":"我确实觉得你和海登会相处得很好。$0#$b#看到你们在一起真是让我感到开心。$1",
+            "summer_Wed_inlaw_Haley":"我清楚地看到你和海登是天生一对。$0",
+            "summer_Sat8_inlaw_Haley":"海登和我看问题的角度不总是一样，但自从他搬到农场后，我真的很想念他。$2#$b#这是不可避免的，不是吗?$0#$e#不过我知道你们在一起很幸福。$0",
+            "fall_Mon8_inlaw_Haley":"我从未想过我会看到海登这么在乎别人。$0#$b#你对他真的很重要。$0",
+            "fall_Wed8_inlaw_Haley":"海登不在身边，房子显得那么空旷静寂。$2#$e#我从未想过我会这么想念他。$2#$b#你们俩还好吗?$0",
+            "fall_Fri_inlaw_Haley":"嘿。也许我们该在酒馆里碰面聊聊。$0#$b#我想这就是嫂子该做的事，对吧?$1",
+            "winter_Tue_inlaw_Haley":"海登嫁给你，我感到非常高兴, @.$1#$b#你们俩简直是天造地设的一对。$0",
+            "winter_Thu8_inlaw_Haley":"海登变化很大，他看起来完全不同了$0#$e#起初我以为这是你们爱情蓬勃发展的暂时影响，但事实并非如此。$0",
+            "winter_Sat8_inlaw_Haley":"你一直对海登来说是一个非常特别的人。$0#$b#我很高兴你们能共度余生。$1",
+           }
+       },
+    
+        //Leah
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Leah",
+"Entries": {
+    //New
+            "summer_Thu8_inlaw_Haley":"也许我可以为你和海登画点什么。$1",
+            "fall_Sat8_inlaw_Haley":"也许我可以为你和海登画点什么。$1",
+           }
+       },
+    
+        //Maru
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Maru",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Haley":"很高兴你和海登的事情进展顺利!$1",
+            "fall_Wed8_inlaw_Haley":"很高兴你和海登的事情进展顺利!$1",
+           }
+       },
+    
+        //Penny
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Penny",
+"Entries": {
+    //New
+            "spring_Mon8_inlaw_Haley":"你好, @.$0#$e#你和海登真是一对可爱的夫妇。$1",
+            "fall_Wed8_inlaw_Haley":"你好, @.$0#$e#你和海登真是一对可爱的夫妇。$1",
+           }
+       },
+    
+        //Caroline
+
+    
+        //Clint
+
+    
+        //Demetrius
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Demetrius",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Haley":"我们都在努力追求生活的某种平衡，一种复杂中的均衡。$0#$e#看起来娶了海登正是你需要找到这种平衡的关键。$1",
+            "fall_Fri10_inlaw_Haley":"我们都在努力追求生活的某种平衡，一种复杂中的均衡。$0#$e#看起来娶了海登正是你需要找到这种平衡的关键。$1",
+           }
+       },
+    
+        //Evelyn
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Evelyn",
+"Entries": {
+    //New
+            "spring_Wed10_inlaw_Haley":"你好，亲爱的。$0#$e#婚姻并不总是容易的，你和海登将必须一起克服许多困难。$0#$b#愿你们一起成为更伟大的人。$1",
+            "summer_Tue10_inlaw_Haley":"成功的婚姻需要多次坠入爱河，总是和同一个人。$0#$b#希望你和海登能够过上幸福美满的生活。$1",
+            "fall_Thu10_inlaw_Haley":"你好，亲爱的。$0#$e#婚姻并不总是容易的，你和海登将必须一起克服许多困难。$0#$b#愿你们一起成为更伟大的人。$1",
+            "winter_Sun10_inlaw_Haley":"成功的婚姻需要多次坠入爱河，总是和同一个人。$0#$b#希望你和海登能够过上幸福美满的生活。$1",
+           }
+       },
+    
+        //George
+
+    
+        //Gus
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Gus",
+"Entries": {
+    //New
+            "spring_Fri10_inlaw_Haley":"如果你和海登想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "summer_Sun_inlaw_Haley":"如果你和海登想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "fall_Fri10_inlaw_Haley":"如果你和海登想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "winter_Wed10_inlaw_Haley":"如果你和海登想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+           }
+       },
+    
+        //Jas
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Jas",
+"Entries": {
+    //New
+            "spring_Thu10_inlaw_Haley":" @ 先生!^ @ 小姐!$1#$e#长大后我也想办一场像你们一样的婚礼。$1",
+            "summer_Mon10_inlaw_Haley":"那么你和海登小姐是不是... 真的超级相爱?$0#$e#嘻嘻嘻?$0#$e#嘻嘻嘻!$1",
+            "fall_Sun10_inlaw_Haley":"你好, 先生。$0^你好, 小姐$0#$b#为什么你们不能每周都庆祝一次婚礼呢?$0#$b#我想吃粉红蛋糕!$1",
+            "winter_Sat10_inlaw_Haley":"@ 先生!^ @ 小姐!$1#$e#长大后我也想办一场像你们一样的婚礼。$1",
+           }
+       },
+    
+        //Jodi
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Jodi",
+"Entries": {
+    //New
+            "spring_Mon10_inlaw_Haley":"你和海登怎么样啊?$0#$b#艾米莉告诉我他很开心呢。$1",
+            "fall_Sun10_inlaw_Haley":"你和海登怎么样啊?$0#$b#艾米莉告诉我他很开心呢。$1",
+           }
+       },
+    
+        //Kent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Kent",
+"Entries": {
+    //New
+            "summer_Tue10_inlaw_Haley":"我不太了解海登，但我为你感到高兴。$1",
+            "fall_Fri10_inlaw_Haley":"我不太了解海登，但我为你感到高兴。$1",
+           }
+       },
+    
+        //Lewis
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Lewis",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Haley":"在鹈鹕镇这里，像你和海登这样的年轻夫妇并不多见。$0#$e#看到年轻人坠入爱河，总是令人愉悦的。$1",
+            "summer_Sun10_inlaw_Haley":"在鹈鹕镇这里，像你和海登这样的年轻夫妇并不多见。$0#$e#看到年轻人坠入爱河，总是令人愉悦的。$1",
+            "fall_Sat10_inlaw_Haley":"我希望能尽快主持另一场婚礼，自从你们的婚礼以来已经有一段时间了。$0#$b#我们甚至可以搭建一个小宴会。$1",
+            "winter_Mon10_inlaw_Haley":"我希望能尽快主持另一场婚礼，自从你们的婚礼以来已经有一段时间了。$0#$b#我们甚至可以搭建一个小宴会。$1",
+           }
+       },
+        
+        //Linus
+
+
+        //Marnie
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Marnie",
+"Entries": {
+    //New
+            "spring_Thu10_inlaw_Haley":"你好, @.$0#$e#祝愿你和海登拥有一生的爱与幸福。$1",
+            "summer_Tue10_inlaw_Haley":"愿尤巴祝福你和海登的婚姻充满祝福和喜悦。$1",
+            "fall_Sun10_inlaw_Haley":"你好, @.$0#$e#祝愿你和海登拥有一生的爱与幸福。$1",
+            "winter_Fri10_inlaw_Haley":"愿尤巴祝福你和海登的婚姻充满祝福和喜悦。$1",
+           }
+       },
+    
+        //Pam
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pam",
+"Entries": {
+    //New
+            "summer_Fri10_inlaw_Haley":"嘿，孩子。$0#$e#看起来你找到了一个年轻漂亮的女孩，是吗?$1",
+            "winter_Wed10_inlaw_Haley":"嘿，孩子。$0#$e#看起来你找到了一个年轻漂亮的女孩，是吗?$1",
+           }
+       },
+    
+        //Pierre
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pierre",
+"Entries": {
+    //New
+            "summer_Mon10_inlaw_Haley":"你好, @.$0#$e#如果你想为海登买点好东西，你知道该找谁的。$1",
+            "winter_Thu10_inlaw_Haley":"你好, @.$0#$e#如果你想为海登买点好东西，你知道该找谁的。$1",
+           }
+       },    
+         //Vincent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Vincent",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Haley":"你喜欢手链吗?$3#$e#我想给你和海登小姐做个礼物。$1",
+            "summer_Wed10_inlaw_Haley":"我能告诉你一件事吗?$3#$e#我在你们的婚礼上玩得很开心。$0#$b#但妈妈告诉我你们不会再庆祝婚礼，为什么?$2",
+            "fall_Mon10_inlaw_Haley":"你喜欢手链吗?$3#$e#我想给你和海登小姐做个礼物。$1",
+            "winter_Sun10_inlaw_Haley":"看到你和海登小姐结婚真是太酷了。$1#$e#我从来没有想到会发生这种事!$0",
+           }
+       },
+    
+        //Willy
+
+
+    //      H   A   R   V   E   Y
+    
+        //Abigail
+    
+
+        //Alex
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Alex",
+"Entries": {
+    //New
+            "summer_Tue8_inlaw_Harvey":"嘿，你好。$0#$e#新婚生活怎么样了?$1",
+            "winter_Mon10_inlaw_Harvey":"嘿，你好。$0#$e#新婚生活怎么样了?$1",
+           }
+       },
+    
+        //Elliott
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Elliott",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Harvey": "啊... @...$0#$b#昨天我看到你和哈维在一起。$0#$e#这让我想起了这首诗...$0#$e#'愿你们共同承担世界，怀揣所有希望和梦想$0#$b#愿你们彼此成为彼此的太阳和月亮，随着命运的展开$0#$b#如果你们失去彼此，开始漂离$0#$b#愿你们通过心灵的罗盘重新回到一起。'$0",
+            "fall_Fri8_inlaw_Harvey": "啊... @...$0#$b#昨天我看到你和哈维在一起。$0#$e#这让我想起了这首诗...$0#$e#'愿你们共同承担世界，怀揣所有希望和梦想$0#$b#愿你们彼此成为彼此的太阳和月亮，随着命运的展开$0#$b#如果你们失去彼此，开始漂离$0#$b#愿你们通过心灵的罗盘重新回到一起。'$0",
+           }
+       },
+    
+        //Sam
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Sam",
+"Entries": {
+    //New
+            "summer_Mon8_inlaw_Harvey":"嘿, @.$0#$b#我不太喜欢情歌，但能在你们的婚礼上唱歌应该很酷吧。$1",
+            "fall_Sat8_inlaw_Harvey":"嘿, @.$0#$b#我不太喜欢情歌，但能在你们的婚礼上唱歌应该很酷吧。$1",
+           }
+       },
+    
+        //Sebastian
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Sebastian",
+"Entries": {
+    //New
+            "spring_Sat8_inlaw_Harvey":"你和哈维还好吗?$0#$e#哦，那真是太好了!$1",
+            "fall_Wed8_inlaw_Harvey":"你和哈维还好吗?$0#$e#哦，那真是太好了!$1",
+           }
+       },
+    
+        //Shane
+
+    
+        //Emily
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Emily",
+"Entries": {
+    //New
+            "spring_Thu8_inlaw_Harvey":"哈维有一种非常独特的能量，你们两个在一起真的很棒。$1",
+            "summer_Wed8_inlaw_Harvey":"我清楚地看到你和哈维注定要在一起。$1",
+            "fall_Mon8_inlaw_Harvey":"哈维有一种非常独特的能量，你们两个在一起真的很棒。$1",
+            "winter_Fri8_inlaw_Harvey":"我清楚地看到你和哈维注定要在一起。$1",
+           }
+       },
+    
+        //Haley
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Haley",
+"Entries": {
+    //New
+            "summer_Sat8_inlaw_Harvey":"我为你和哈维感到非常高兴。$0#$b#你们是最甜蜜的一对。$1",
+            "winter_Mon8_inlaw_Harvey":"我为你和哈维感到非常高兴。$0#$b#你们是最甜蜜的一对。$1",
+           }
+       },
+    
+        //Leah
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Leah",
+"Entries": {
+    //New
+            "summer_Thu8_inlaw_Harvey":"也许我可以为你和哈维画点什么。$1",
+            "fall_Sat8_inlaw_Harvey":"也许我可以为你和哈维画点什么。$1",
+           }
+       },
+    
+        //Maru
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Maru",
+"Entries": {
+    //New
+            "spring_Sun8_inlaw_Harvey":"我很高兴你和哈维的事情顺利解决了!$1",
+            "summer_Mon8_inlaw_Harvey": "一个健康的婚姻的关键是沟通，彼此分享想法和感受。$0#$b#但我觉得你和哈维不会有任何问题。$1",
+            "fall_Sat8_inlaw_Harvey":"我很高兴你和哈维的事情顺利解决了!$1",
+            "winter_Thu8_inlaw_Harvey": "一个健康的婚姻的关键是沟通，彼此分享想法和感受。$0#$b#但我觉得你和哈维不会有任何问题。$1",
+           }
+       },
+    
+        //Penny
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Penny",
+"Entries": {
+    //New
+            "spring_Mon8_inlaw_Harvey":"你好, @.$0#$e#你和哈维真是一对可爱的夫妇。$1",
+            "fall_Wed8_inlaw_Harvey":"你好, @.$0#$e#你和哈维真是一对可爱的夫妇。$1",
+           }
+       },
+    
+        //Caroline
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Caroline",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Harvey": "最好的爱是那种让你成为更好的人，而不是改变你成为别人的爱情。$0#$e#我觉得你和哈维是一对很好的夫妻。$1",
+            "fall_Fri8_inlaw_Harvey": "最好的爱是那种让你成为更好的人，而不是改变你成为别人的爱情。$0#$e#我觉得你和哈维是一对很好的夫妻。$1",
+
+           }
+       },
+    
+        //Clint
+
+    
+        //Demetrius
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Demetrius",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Harvey":"我们都在努力追求生活的某种平衡，一种复杂中的均衡。$0#$e#看起来娶了哈维正是你需要找到这种平衡的关键。$1",
+            "fall_Fri10_inlaw_Harvey":"我们都在努力追求生活的某种平衡，一种复杂中的均衡。$0#$e#看起来娶了哈维正是你需要找到这种平衡的关键。$1",
+           }
+       },
+    
+        //Evelyn
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Evelyn",
+"Entries": {
+    //New
+            "spring_Wed10_inlaw_Harvey":"你好，亲爱的。$0#$e#婚姻并不总是容易的，你和哈维将必须一起克服许多困难。$0#$b#愿你们一起成为更伟大的人。$1",
+            "summer_Tue10_inlaw_Harvey":"成功的婚姻需要多次坠入爱河，总是和同一个人。$0#$b#我希望你和哈维能一起过上长久幸福的生活。$1",
+            "fall_Thu10_inlaw_Harvey":"你好，亲爱的。$0#$e#婚姻并不总是容易的，你和哈维将必须一起克服许多困难。$0#$b#愿你们一起成为更伟大的人。$1",
+            "winter_Sun10_inlaw_Harvey":"成功的婚姻需要多次坠入爱河，总是和同一个人。$0#$b#我希望你和哈维能一起过上长久幸福的生活。$1",
+           }
+       },
+    
+        //George
+
+    
+        //Gus
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Gus",
+"Entries": {
+    //New
+            "spring_Fri10_inlaw_Harvey":"如果你和哈维想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "summer_Sun_inlaw_Harvey":"如果你和哈维想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "fall_Fri10_inlaw_Harvey":"如果你和哈维想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "winter_Wed10_inlaw_Harvey":"如果你和哈维想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+           }
+       },
+    
+        //Jas
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Jas",
+"Entries": {
+    //New
+            "spring_Thu10_inlaw_Harvey":"@ 先生!^ @ 小姐!$1#$e#长大后我也想办一场像你们一样的婚礼。$1",
+            "summer_Mon10_inlaw_Harvey":"那么你和哈维先生是不是... 真的超级相爱?$0#$e#嘻嘻嘻!$1",
+            "fall_Sun10_inlaw_Harvey":"你好, 先生。$0^你好, 小姐$0#$b#为什么你们不能每周都庆祝一次婚礼呢?$0#$b#我想吃粉红蛋糕!$1",
+            "winter_Sat10_inlaw_Harvey":"@ 先生!^ @ 小姐!$1#$e#长大后我也想办一场像你们一样的婚礼。$1",
+           }
+       },
+    
+        //Jodi
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Jodi",
+"Entries": {
+    //New
+            "spring_Mon10_inlaw_Harvey":"你和哈维怎么样啊?$0#$b#他告诉我他很开心呢。$1",
+            "fall_Sun10_inlaw_Harvey":"你和哈维怎么样啊?$0#$b#他告诉我他很开心呢。$1",
+           }
+       },
+    
+        //Kent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Kent",
+"Entries": {
+    //New
+            "summer_Tue10_inlaw_Harvey":"我不太了解哈维，但我为你感到高兴。$1",
+            "fall_Fri10_inlaw_Harvey":"我不太了解哈维，但我为你感到高兴。$1",
+           }
+       },
+    
+        //Lewis
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Lewis",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Harvey":"在鹈鹕镇这里，像你和哈维这样的年轻夫妇并不多见。$0#$e#看到年轻人坠入爱河，总是令人愉悦的。$1",
+            "summer_Sun10_inlaw_Harvey":"在鹈鹕镇这里，像你和哈维这样的年轻夫妇并不多见。$0#$e#看到年轻人坠入爱河，总是令人愉悦的。$1",
+            "fall_Sat10_inlaw_Harvey":"我希望能尽快主持另一场婚礼，自从你们的婚礼以来已经有一段时间了。$0#$b#我们甚至可以搭建一个小宴会。$1",
+            "winter_Mon10_inlaw_Harvey":"我希望能尽快主持另一场婚礼，自从你们的婚礼以来已经有一段时间了。$0#$b#我们甚至可以搭建一个小宴会。$1",
+           }
+       },
+        
+        //Linus
+
+
+        //Marnie
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Marnie",
+"Entries": {
+    //New
+            "spring_Thu10_inlaw_Harvey":"你好, @.$0#$e#祝愿你和哈维拥有一生的爱与幸福。$1",
+            "summer_Tue10_inlaw_Harvey":"愿尤巴祝福你和海登的婚姻充满祝福和喜悦。$1",
+            "fall_Sun10_inlaw_Harvey":"你好, @.$0#$e#祝愿你和哈维拥有一生的爱与幸福。$1",
+            "winter_Fri10_inlaw_Harvey":"愿尤巴祝福你和海登的婚姻充满祝福和喜悦。$1",
+           }
+       },
+    
+        //Pam
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pam",
+"Entries": {
+    //New
+            "summer_Fri10_inlaw_Harvey":"嘿，孩子。$0#$e#看起来你找到了一个英俊的年轻男士，是吗?$1",
+            "winter_Wed10_inlaw_Harvey":"嘿，孩子。$0#$e#看起来你找到了一个英俊的年轻男士，是吗?$1",
+           }
+       },
+    
+        //Pierre
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pierre",
+"Entries": {
+    //New
+            "summer_Mon10_inlaw_Harvey":"你好, @.$0#$e#如果你想为哈维买点好东西，你知道该找谁的。$1",
+            "winter_Thu10_inlaw_Harvey":"你好, @.$0#$e#如果你想为哈维买点好东西，你知道该找谁的。$1",
+           }
+       },    
+        //Robin
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Robin",
+"Entries": {
+    //New
+            "spring_Sat10_inlaw_Harvey":"你和哈维让我想起了我们德米特里斯和我开始约会的时候...$0#$e#那时候我们都还很年轻。$0",
+            "fall_Fri10_inlaw_Harvey":"你和哈维让我想起了我们德米特里斯和我开始约会的时候...$0#$e#那时候我们都还很年轻。$0",
+           }
+       },
+    
+        //Vincent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Vincent",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Harvey":"你喜欢手链吗?$3#$e#我想给你和哈维先生做个礼物。$1",
+            "summer_Wed10_inlaw_Harvey":"我能告诉你一件事吗?$3#$e#我在你们的婚礼上玩得很开心。$0#$b#但妈妈告诉我你们不会再庆祝婚礼，为什么?$2",
+            "fall_Mon10_inlaw_Harvey":"你喜欢手链吗?$3#$e#我想给你和哈维先生做个礼物。$1",
+            "winter_Sun10_inlaw_Harvey":"看到你和哈维先生结婚真是太酷了。$1#$e#我从来没有想到会发生这种事!$0",
+           }
+       },
+    
+        //Willy
+
+    
+    
+    //      L   E   A   H
+    
+        //Abigail
+    
+    
+        //Alex
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Alex",
+"Entries": {
+    //New
+            "summer_Tue8_inlaw_Leah":"嘿，你好。$0#$e#新婚生活怎么样了?$1",
+            "winter_Mon10_inlaw_Leah":"嘿，你好。$0#$e#新婚生活怎么样了?$1",
+           }
+       },
+    
+        //Elliott
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Elliott",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Leah": "啊... @...$0#$b#昨天我看到你和利亚姆在一起。$0#$e#这让我想起了这首诗...$0#$e#'愿你们共同承担世界，怀揣所有希望和梦想$0#$b#愿你们彼此成为彼此的太阳和月亮，随着命运的展开$0#$b#如果你们失去彼此，开始漂离$0#$b#愿你们通过心灵的罗盘重新回到一起。'$0",
+            "summer_Thu8_inlaw_Leah":"利亚姆是我到这里的交的第一个朋友。$0#$b#我很高兴见证你们的婚姻。$1",
+            "fall_Fri8_inlaw_Leah": "啊... @...$0#$b#昨天我看到你和利亚姆在一起。$0#$e#这让我想起了这首诗...$0#$e#'愿你们共同承担世界，怀揣所有希望和梦想$0#$b#愿你们彼此成为彼此的太阳和月亮，随着命运的展开$0#$b#如果你们失去彼此，开始漂离$0#$b#愿你们通过心灵的罗盘重新回到一起。'$0",
+            "winter_Sun8_inlaw_Leah":"利亚姆是我到这里的交的第一个朋友。$0#$b#我很高兴见证你们的婚姻。$1",
+           }
+       },
+    
+        //Harvey
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Harvey",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Leah": "最好的爱是让你成为更好的人，而不是改变你成为别人。$0#$e#我觉得你和利亚姆是一对很棒的情侣。$1",
+            "summer_Mon8_inlaw_Leah": "健康婚姻的关键是沟通，彼此分享想法和感受。$0#$b#不过我觉得你和利亚姆应该不会有这方面的问题。$1",
+            "fall_Fri8_inlaw_Leah": "最好的爱是让你成为更好的人，而不是改变你成为别人。$0#$e#我觉得你和利亚姆是一对很棒的情侣。$1",
+            "winter_Thu8_inlaw_Leah": "健康婚姻的关键是沟通，彼此分享想法和感受。$0#$b#不过我觉得你和利亚姆应该不会有这方面的问题。$1",
+           }
+       },
+    
+        //Sam
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Sam",
+"Entries": {
+    //New
+            "summer_Mon8_inlaw_Leah":"嘿, @.$0#$b#我不太喜欢情歌，但能在你们的婚礼上唱歌应该很酷吧。$1",
+            "fall_Sat8_inlaw_Leah":"嘿, @.$0#$b#我不太喜欢情歌，但能在你们的婚礼上唱歌应该很酷吧。$1",
+           }
+       },
+    
+        //Sebastian
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Sebastian",
+"Entries": {
+    //New
+            "spring_Sat8_inlaw_Leah":"你和利亚姆还好吗?$0#$e#哦，那真是太好了!$1",
+            "fall_Wed8_inlaw_Leah":"你和利亚姆还好吗?$0#$e#哦，那真是太好了!$1",
+           }
+       },
+    
+        //Shane
+
+    
+        //Emily
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Emily",
+"Entries": {
+    //New
+            "spring_Thu8_inlaw_Leah":"利亚姆有一种独特的能量，你们两个在一起真是太棒了。$1",
+            "summer_Wed8_inlaw_Leah":"我清楚地看到你和利亚姆是天作之合。$1",
+            "fall_Mon8_inlaw_Leah":"利亚姆有一种独特的能量，你们两个在一起真是太棒了。$1",
+            "winter_Fri8_inlaw_Leah":"我清楚地看到你和利亚姆是天作之合。$1",
+           }
+       },
+    
+        //Haley
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Haley",
+"Entries": {
+    //New
+            "summer_Sat8_inlaw_Leah":"我为你和利亚姆感到非常高兴。$0#$b#你们是最甜蜜的一对。$1",
+            "winter_Mon8_inlaw_Leah":"我为你和利亚姆感到非常高兴。$0#$b#你们是最甜蜜的一对。$1",
+           }
+       },
+    
+        //Maru
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Maru",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Leah":"我很高兴你和利亚姆的事情进展顺利!$1",
+            "fall_Wed8_inlaw_Leah":"我很高兴你和利亚姆的事情进展顺利!$1",
+           }
+       },
+    
+        //Penny
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Penny",
+"Entries": {
+    //New
+            "spring_Mon8_inlaw_Leah":"你好, @.$0#$e#你和利亚姆真是一对可爱的夫妇。$1",
+            "fall_Wed8_inlaw_Leah":"你好, @.$0#$e#你和利亚姆真是一对可爱的夫妇。$1",
+           }
+       },
+    
+        //Caroline
+
+    
+        //Clint
+
+    
+        //Demetrius
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Demetrius",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Leah":"我们都在努力追求生活的某种平衡，一种复杂中的均衡。$0#$e#看起来娶了利亚姆正是你需要找到这种平衡的关键。$1",
+            "fall_Fri10_inlaw_Leah":"我们都在努力追求生活的某种平衡，一种复杂中的均衡。$0#$e#看起来娶了利亚姆正是你需要找到这种平衡的关键。$1",
+           }
+       },
+    
+        //Evelyn
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Evelyn",
+"Entries": {
+    //New
+            "spring_Wed10_inlaw_Leah":"你好，亲爱的。$0#$e#婚姻并不总是容易的，你和利亚姆将必须一起克服许多困难。$0#$b#愿你们一起成为更伟大的人。$1",
+            "summer_Tue10_inlaw_Leah":"成功的婚姻需要多次坠入爱河，总是和同一个人。$0#$b#我希望你和利亚姆能一起过上长久幸福的生活。$1",
+            "fall_Thu10_inlaw_Leah":"你好，亲爱的。$0#$e#婚姻并不总是容易的，你和利亚姆将必须一起克服许多困难。$0#$b#愿你们一起成为更伟大的人。$1",
+            "winter_Sun10_inlaw_Leah":"成功的婚姻需要多次坠入爱河，总是和同一个人。$0#$b#我希望你和利亚姆能一起过上长久幸福的生活。$1",
+           }
+       },
+    
+        //George
+
+    
+        //Gus
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Gus",
+"Entries": {
+    //New
+            "spring_Fri10_inlaw_Leah":"如果你和利亚姆想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "summer_Sun_inlaw_Leah":"如果你和利亚姆想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "fall_Fri10_inlaw_Leah":"如果你和利亚姆想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "winter_Wed10_inlaw_Leah":"如果你和利亚姆想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+           }
+       },
+    
+        //Jas
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Jas",
+"Entries": {
+    //New
+            "spring_Thu10_inlaw_Leah":"@ 先生!^ @ 小姐!$1#$e#长大后我也想办一场像你们一样的婚礼。$1",
+            "summer_Mon10_inlaw_Leah":"那么你和利亚姆小姐是不是... 真的超级相爱?$0#$e#嘻嘻嘻!$1",
+            "fall_Sun10_inlaw_Leah":"你好, 先生。$0^你好, 小姐$0#$b#为什么你们不能每周都庆祝一次婚礼呢?$0#$b#我想吃粉红蛋糕!$1",
+            "winter_Sat10_inlaw_Leah":"@ 先生!^ @ 小姐!$1#$e#长大后我也想办一场像你们一样的婚礼。$1",
+           }
+       },
+    
+        //Jodi
+
+    
+        //Kent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Kent",
+"Entries": {
+    //New
+            "summer_Tue10_inlaw_Leah":"我不太了解利亚姆，但我为你感到高兴。$1",
+            "fall_Fri10_inlaw_Leah":"我不太了解利亚姆，但我为你感到高兴。$1",
+           }
+       },
+    
+        //Lewis
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Lewis",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Leah":"在鹈鹕镇这里，像你和利亚姆这样的年轻夫妇并不多见。$0#$e#看到年轻人坠入爱河，总是令人愉悦的。$1",
+            "summer_Sun10_inlaw_Leah":"在鹈鹕镇这里，像你和利亚姆这样的年轻夫妇并不多见。$0#$e#看到年轻人坠入爱河，总是令人愉悦的。$1",
+            "fall_Sat10_inlaw_Leah":"我希望能尽快主持另一场婚礼，自从你们的婚礼以来已经有一段时间了。$0#$b#我们甚至可以搭建一个小宴会。$1",
+            "winter_Mon10_inlaw_Leah":"我希望能尽快主持另一场婚礼，自从你们的婚礼以来已经有一段时间了。$0#$b#我们甚至可以搭建一个小宴会。$1",
+           }
+       },
+        
+        //Linus
+
+
+        //Marnie
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Marnie",
+"Entries": {
+    //New
+            "spring_Thu10_inlaw_Leah":"你好, @.$0#$e#祝愿你和利亚姆拥有一生的爱与幸福。$1",
+            "summer_Tue10_inlaw_Leah":"愿尤巴祝福你和海登的婚姻充满祝福和喜悦。$1",
+            "fall_Sun10_inlaw_Leah":"你好, @.$0#$e#祝愿你和利亚姆拥有一生的爱与幸福。$1",
+            "winter_Fri10_inlaw_Leah":"愿尤巴祝福你和海登的婚姻充满祝福和喜悦。$1",
+           }
+       },
+    
+        //Pam
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pam",
+"Entries": {
+    //New
+            "summer_Fri10_inlaw_Leah":"嘿，孩子。$0#$e#看起来你找到了一个漂亮的年轻女孩，是吗?$1",
+            "winter_Wed10_inlaw_Leah":"嘿，孩子。$0#$e#看起来你找到了一个漂亮的年轻女孩，是吗?$1",
+           }
+       },
+    
+        //Pierre
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pierre",
+"Entries": {
+    //New
+            "summer_Mon10_inlaw_Leah":"你好, @.$0#$e#如果你想为利亚姆买点好东西，你知道该找谁的。$1",
+            "winter_Thu10_inlaw_Leah":"你好, @.$0#$e#如果你想为利亚姆买点好东西，你知道该找谁的。$1",
+           }
+       },    
+        //Robin
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Robin",
+"Entries": {
+    //New
+            "spring_Sat10_inlaw_Leah":"你和利亚姆让我想起我和迪米特里斯刚开始约会的时候...$0#$e#那时候我们都还很年轻。$0",
+            "fall_Fri10_inlaw_Leah":"你和利亚姆让我想起我和迪米特里斯刚开始约会的时候...$0#$e#那时候我们都还很年轻。$0",
+           }
+       },
+    
+        //Vincent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Vincent",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Leah":"你喜欢手链吗?$3#$e#我想给你和利亚姆小姐做个礼物。$1",
+            "summer_Wed10_inlaw_Leah":"我能告诉你一件事吗?$3#$e#我在你们的婚礼上玩得很开心。$0#$b#但妈妈告诉我你们不会再庆祝婚礼，为什么?$2",
+            "fall_Mon10_inlaw_Leah":"你喜欢手链吗?$3#$e#我想给你和利亚姆小姐做个礼物。$1",
+            "winter_Sun10_inlaw_Leah":"看到你和利亚姆小姐结婚真是太酷了。$1#$e#我从来没有想到会发生这种事!$0",
+           }
+       },
+    
+        //Willy
+
+    
+    
+    //      M   A   R   U
+    
+        //Abigail
+    
+    
+        //Alex
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Alex",
+"Entries": {
+    //New
+            "summer_Tue8_inlaw_Maru":"嘿，你好。$0#$e#新婚生活怎么样了?$1",
+            "winter_Mon10_inlaw_Maru":"嘿，你好。$0#$e#新婚生活怎么样了?$1",
+           }
+       },
+    
+        //Elliott
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Elliott",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Maru": "啊... @...$0#$b#昨天我看到你和马库斯在一起。$0#$e#这让我想起了这首诗...$0#$e#'愿你们共同承担世界，怀揣所有希望和梦想$0#$b#愿你们彼此成为彼此的太阳和月亮，随着命运的展开$0#$b#如果你们失去彼此，开始漂离$0#$b#愿你们通过心灵的罗盘重新回到一起。'$0",
+            "fall_Fri8_inlaw_Maru": "啊... @...$0#$b#昨天我看到你和马库斯在一起。$0#$e#这让我想起了这首诗...$0#$e#'愿你们共同承担世界，怀揣所有希望和梦想$0#$b#愿你们彼此成为彼此的太阳和月亮，随着命运的展开$0#$b#如果你们失去彼此，开始漂离$0#$b#愿你们通过心灵的罗盘重新回到一起。'$0",
+           }
+       },
+    
+        //Harvey
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Harvey",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Maru": "最好的爱情是那种让你变得更好而不会改变你本质的爱情。$0#$e#我觉得你和马库斯是很合适的一对。$1",
+            "spring_Thu8_inlaw_Maru": "马库斯过去经常提起你。$0#$b#我很高兴你们最终在一起了。$1",
+            "summer_Mon8_inlaw_Maru": "健康婚姻的关键在于沟通，彼此分享思想和感情。$0#$b#不过我觉得你和马库斯应该不会有任何问题。$1",
+            "fall_Fri8_inlaw_Maru": "最好的爱情是那种让你变得更好而不会改变你本质的爱情。$0#$e#我觉得你和马库斯是很合适的一对。$1",
+            "fall_Sun8_inlaw_Maru": "马库斯过去经常提起你。$0#$b#我很高兴你们最终在一起了。$1",
+            "winter_Thu8_inlaw_Maru": "健康婚姻的关键在于沟通，彼此分享思想和感情。$0#$b#不过我觉得你和马库斯应该不会有任何问题。$1",
+           }
+       },
+    
+        //Sam
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Sam",
+"Entries": {
+    //New
+            "summer_Mon8_inlaw_Maru":"嘿, @.$0#$b#我不太喜欢情歌，但能在你们的婚礼上唱歌应该很酷吧。$1",
+            "fall_Sat8_inlaw_Maru":"嘿, @.$0#$b#我不太喜欢情歌，但能在你们的婚礼上唱歌应该很酷吧。$1",
+           }
+       },
+    
+        //Sebastian
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Sebastian",
+"Entries": {
+    //Original
+            "Thu4_inlaw_Maru":"不再和马库斯住在一起还是轻松了一些。$0#$b#你还好吗?$0",
+            "fall_Mon6_inlaw_Maru":"别误会，你最后能和马库斯在一起我很开心，只是...$0#$b#...这只是再次提醒我，他总是比我出色。$2#$e#一切对他来说似乎总是如此完美。$2",
+            "winter_Sun6_inlaw_Maru":"我简直不敢相信马库斯还会来这里堆雪人。$0#$e#你确定和一个离你农场步行距离内的人结婚是个好主意吗?$0#$e#抱歉，我是说，你觉得怎么舒服就怎么来吧。$2",
+    //New
+            "spring_Mon8_inlaw_Maru":"我想我对你和马库斯能在一起还是感到开心的吧。$0",
+            "spring_Tue8_inlaw_Maru":"不再和马库斯住在一起还是轻松了一些。$0#$b#你还好吗?$0",
+            "summer_Wed8_inlaw_Maru":"你和马库斯怎么样?$0#$e#噢，那真是太好了!$1",
+            "summer_Sun8_inlaw_Maru":"没有马库斯在家，房子感觉有些空荡和安静...$0",
+            "fall_Thu8_inlaw_Maru":"不再和马库斯住在一起还是轻松了一些。$0#$b#你还好吗?$0",
+            "fall_Fri8_inlaw_Maru":"我想我对你和马库斯能在一起还是感到开心的吧。$0",
+            "winter_Tue8_inlaw_Maru":"没有马库斯在家，房子感觉有些空荡和安静...$0",
+            "winter_Sat8_inlaw_Maru":"你和马库斯怎么样?$0#$e#噢，那真是太好了!$1",
+           }
+       },
+    
+        //Shane
+
+    
+        //Emily
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Emily",
+"Entries": {
+    //New
+            "spring_Thu8_inlaw_Maru":"马库斯有一种非常独特的能量，你们两个在一起真的很棒。$1",
+            "summer_Wed8_inlaw_Maru":"我清楚地看到你和马库斯是天生一对。$1",
+            "fall_Mon8_inlaw_Maru":"马库斯有一种非常独特的能量，你们两个在一起真的很棒。$1",
+            "winter_Fri8_inlaw_Maru":"我清楚地看到你和马库斯是天生一对。$1",
+           }
+       },
+    
+        //Haley
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Haley",
+"Entries": {
+    //New
+            "summer_Sat8_inlaw_Maru":"我为你和马库斯感到非常高兴。$0#$b#你们是最甜蜜的一对。$1",
+            "winter_Mon8_inlaw_Maru":"我为你和马库斯感到非常高兴。$0#$b#你们是最甜蜜的一对。$1",
+           }
+       },
+    
+        //Leah
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Leah",
+"Entries": {
+    //New
+            "summer_Thu8_inlaw_Maru":"也许我可以为你和马库斯画点什么。$1",
+            "fall_Sat8_inlaw_Maru":"也许我可以为你和马库斯画点什么。$1",
+           }
+       },
+    
+        //Penny
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Penny",
+"Entries": {
+    //New
+            "spring_Mon8_inlaw_Maru":"你好, @.$0#$e#你和马库斯真是一对可爱的夫妇。$1",
+            "spring_Thu8_inlaw_Maru":"我很高兴你最终和我的好朋友在一起了。$0#$b#我一直觉得你和马库斯很配。$1",
+            "summer_Tue8_inlaw_Maru":"我很高兴你和马库斯事情进展顺利!$1",
+            "fall_Wed8_inlaw_Maru":"你好, @.$0#$e#你和马库斯真是一对可爱的夫妇。$1",
+            "fall_Sat8_inlaw_Maru":"我很高兴你最终和我的好朋友在一起了。$0#$b#我一直觉得你和马库斯很配。$1",
+            "winter_Fri8_inlaw_Maru":"我很高兴你和马库斯事情进展顺利!$1",
+           }
+       },
+    
+        //Caroline
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Caroline",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Maru":"你和马库斯最近怎么样?$0#$b#罗宾告诉我他很开心。$1",
+            "fall_Thu10_inlaw_Maru":"你和马库斯最近怎么样?$0#$b#罗宾告诉我他很开心。$1",
+           }
+       },
+    
+        //Clint
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Clint",
+"Entries": {
+    //New
+            "summer_Wed10_inlaw_Maru":"马库斯不是喜欢钻石吗?$0#$b#马库斯不是喜欢钻石吗。$1",
+            "winter_Thu10_inlaw_Maru":"马库斯不是喜欢钻石吗?$0#$b#马库斯不是喜欢钻石吗。$1",
+           }
+       },
+
+        
+        //Demetrius
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Demetrius",
+"Entries": {
+    //Original
+            "fall_Thu_inlaw_Maru":"我仍然对马库斯的秘密机器人感到吃惊... 这一切难道都是梦吗?$0",
+    //New
+            "spring_Mon10_inlaw_Maru":"我没想到马库斯会这么快结婚...$2#$e#但我很高兴他找到了像你这样的男人。$1^但我很高兴他找到了像你这样的女人。$1",
+            "spring_Thu10_inlaw_Maru":"我们都在努力达到生活的某种平衡，一种复杂的平衡。$0#$e#看起来和马库斯结婚正是你需要找到这种平衡的方法。$1",
+            "spring_Sun_inlaw_Maru":"我希望你不会考虑和马库斯搬走。$3",
+            "summer_Wed10_inlaw_Maru":"我真心希望你和马库斯一切顺利。$0#$b#他在你身边笑得最灿烂。$1",
+            "summer_Fri10_inlaw_Maru":"我的小女孩现在长大了。$0#$b#我甚至没有想到马库斯会结婚并搬走。$0",
+            "summer_Sun_inlaw_Maru":"你好, @.$0#$e#也许我们应该在酒吧见个面聊聊。$0#$b#我想这是一个岳父应该做的，对吧?$1",
+            "fall_Tue10_inlaw_Maru":"我没想到马库斯会这么快结婚...$2#$e#但我很高兴他找到了像你这样的男人。$1^但我很高兴他找到了像你这样的女人。$1",
+            "fall_Thu_inlaw_Maru":"我希望你不会考虑和马库斯搬走。$3",
+            "fall_Fri10_inlaw_Maru":"你好, @.$0#$e#也许我们应该在酒吧见个面聊聊。$0#$b#我想这是一个岳父应该做的，对吧?$1",
+            "winter_Mon10_inlaw_Maru":"嗨， @. 马库斯最近怎么样?$0#$b#告诉他我们这里都在想念他。$0",
+            "winter_Wed_inlaw_Maru":"我希望马库斯和你能快点过来和我们共进晚餐。$1",
+            "winter_Sat10_inlaw_Maru":"我的小女孩现在长大了。$0#$b#我甚至没有想到马库斯会结婚并搬走。$0",
+           }
+       },
+    
+        //Evelyn
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Evelyn",
+"Entries": {
+    //New
+            "spring_Wed10_inlaw_Maru":"你好，亲爱的。$0#$e#婚姻并不总是容易的，你和马库斯将必须一起克服许多困难。$0#$b#愿你们一起成为更伟大的人。$1",
+            "summer_Tue10_inlaw_Maru":"成功的婚姻需要多次坠入爱河，总是和同一个人。$0#$b#我希望你和利亚姆能一起过上长久幸福的生活。$1",
+            "fall_Thu10_inlaw_Maru":"你好，亲爱的。$0#$e#婚姻并不总是容易的，你和马库斯将必须一起克服许多困难。$0#$b#愿你们一起成为更伟大的人。$1",
+            "winter_Sun10_inlaw_Maru":"成功的婚姻需要多次坠入爱河，总是和同一个人。$0#$b#我希望你和利亚姆能一起过上长久幸福的生活。$1",
+           }
+       },
+    
+        //George
+
+    
+        //Gus
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Gus",
+"Entries": {
+    //New
+            "spring_Fri10_inlaw_Maru":"如果你和马库斯想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "summer_Sun_inlaw_Maru":"如果你和马库斯想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "fall_Fri10_inlaw_Maru":"如果你和马库斯想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "winter_Wed10_inlaw_Maru":"如果你和马库斯想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+           }
+       },
+    
+        //Jas
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Jas",
+"Entries": {
+    //New
+            "spring_Thu10_inlaw_Maru":"@ 先生!^ @ 小姐!$1#$e#长大后我也想办一场像你们一样的婚礼。$1",
+            "summer_Mon10_inlaw_Maru":"那么你和马库斯小姐是不是... 真的超级相爱?$0#$e#嘻嘻嘻!$1",
+            "fall_Sun10_inlaw_Maru":"你好, 先生。$0^你好, 小姐$0#$b#为什么你们不能每周都庆祝一次婚礼呢?$0#$b#我想吃粉红蛋糕!$1",
+            "winter_Sat10_inlaw_Maru":"@ 先生!^ @ 小姐!$1#$e#长大后我也想办一场像你们一样的婚礼。$1",
+           }
+       },
+    
+        //Jodi
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Jodi",
+"Entries": {
+    //New
+            "spring_Mon10_inlaw_Maru":"你和马库斯怎么样?$0#$b#罗宾告诉我他很开心。$1",
+            "summer_Wed10_inlaw_Maru":"你好, @.$0#$e#你知道罗宾在你们的婚礼上比马库斯还要紧张吗?$1",
+            "fall_Sun10_inlaw_Maru":"你和马库斯怎么样?$0#$b#罗宾告诉我他很开心。$1",
+            "winter_Fri10_inlaw_Maru":"你好, @.$0#$e#你知道罗宾在你们的婚礼上比马库斯还要紧张吗?$1",
+           }
+       },
+    
+        //Kent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Kent",
+"Entries": {
+    //New
+            "summer_Tue10_inlaw_Maru":"我不太了解马库斯，但我为你感到高兴。1",
+            "fall_Fri10_inlaw_Maru":"我不太了解马库斯，但我为你感到高兴。$1",
+           }
+       },
+    
+        //Lewis
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Lewis",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Maru":"在鹈鹕镇这里，像你和马库斯这样的年轻夫妇并不多见。$0#$e#看到年轻人坠入爱河，总是令人愉悦的。$1",
+            "summer_Sun10_inlaw_Maru":"在鹈鹕镇这里，像你和马库斯这样的年轻夫妇并不多见。$0#$e#看到年轻人坠入爱河，总是令人愉悦的。$1",
+            "fall_Sat10_inlaw_Maru":"我希望能尽快主持另一场婚礼，自从你们的婚礼以来已经有一段时间了。$0#$b#我们甚至可以搭建一个小宴会。$1",
+            "winter_Mon10_inlaw_Maru":"我希望能尽快主持另一场婚礼，自从你们的婚礼以来已经有一段时间了。$0#$b#我们甚至可以搭建一个小宴会。$1",
+           }
+       },
+        
+        //Linus
+
+
+        //Marnie
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Marnie",
+"Entries": {
+    //New
+            "spring_Thu10_inlaw_Maru":"你好, @.$0#$e#祝愿你和马库斯拥有一生的爱与幸福。$1",
+            "summer_Tue10_inlaw_Maru":"愿尤巴祝福你和海登的婚姻充满祝福和喜悦。$1",
+            "fall_Sun10_inlaw_Maru":"你好, @.$0#$e#祝愿你和马库斯拥有一生的爱与幸福。$1",
+            "winter_Fri10_inlaw_Maru":"愿尤巴祝福你和海登的婚姻充满祝福和喜悦。$1",
+           }
+       },
+    
+        //Pam
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pam",
+"Entries": {
+    //New
+            "summer_Fri10_inlaw_Maru":"嘿，孩子。$0#$e#看起来你找到了一个漂亮的年轻女孩，是吗?$1",
+            "winter_Wed10_inlaw_Maru":"嘿，孩子。$0#$e#看起来你找到了一个漂亮的年轻女孩，是吗?$1",
+           }
+       },
+    
+        //Pierre
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pierre",
+"Entries": {
+    //New
+            "summer_Mon10_inlaw_Maru":"你好, @.$0#$e#如果你想为马库斯买点好东西，你知道该找谁的。$1",
+            "winter_Thu10_inlaw_Maru":"你好, @.$0#$e#如果你想为马库斯买点好东西，你知道该找谁的。$1",
+           }
+       },    
+
+    
+        //Robin
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Robin",
+"Entries": {
+    //Original
+            "Fri_inlaw_Maru":"我确实认为你和马库斯会相处得很好。$0#$b#看到你们在一起我真的很开心。$1",
+            "summer_Fri_inlaw_Maru":"马库斯最近有没有在鼓捣什么有趣的东西?$0#$e#确保你们两个好好照顾彼此!$1",
+            "winter_Fri_inlaw_Maru":"马库斯在你家里住得暖和吗?$0#$e#一定要告诉他快点来拜访我们!$1",
+    //New
+            "spring_Tue10_inlaw_Maru":"一定要告诉他快点来拜访我们...$0#$e#我在健身课后和乔迪聊天，我们都不敢相信我们的孩子们长这么大了。$0#$b#但我知道马库斯和你在一起很好。$1",
+            "spring_Thu10_inlaw_Maru":"马库斯在你家里住得暖和吗?$0#$e#一定要告诉他快点来拜访我们!$1",
+            "spring_Sun_inlaw_Maru":"马库斯最近有没有在鼓捣什么有趣的东西?$0#$e#确保你们两个好好照顾彼此!$1",
+            "summer_Tue_inlaw_Maru":"我很高兴你和马库斯在一起。$0#$b#我就知道你们会成为一对好情侣。$1",
+            "summer_Fri10_inlaw_Maru":"你和马库斯开始约会对我来说并不意外。$0#$e#事实上，我一直在期待呢!$1",
+            "summer_Sun10_inlaw_Maru":"时间过得真快...$0#$e#我在健身课后和乔迪聊天，我们都不敢相信我们的孩子们长这么大了。$0#$b#但我知道马库斯和你在一起很好。$1",
+            "fall_Wed_inlaw_Maru":"你和马库斯让我想起了我和德米特里厄斯刚开始约会的时候...$0#$e#我们当时真年轻。$0",
+            "fall_Thu10_inlaw_Maru":"马库斯最近有没有在鼓捣什么有趣的东西?$0#$e#确保你们两个好好照顾彼此!$1",
+            "fall_Fri10_inlaw_Maru":"马库斯在你家里住得暖和吗?$0#$e#一定要告诉他快点来拜访我们!$1",
+            "winter_Mon10_inlaw_Maru":"我很高兴有你这样一个好女婿, @.$1^我很高兴有你这样一个好儿媳, @.$1",
+            "winter_Wed10_inlaw_Maru":"你和马库斯开始约会对我来说并不意外。$0#$e#事实上，我一直在期待呢!$1",
+            "winter_Fri10_inlaw_Maru":"事实上，我一直在期待呢$0#$b#他当时高兴得快要流泪了。$1",
+           }
+       },
+    
+        //Vincent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Vincent",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Maru":"你喜欢手链吗?$3#$e#我想给你和马库斯小姐做个礼物。$1",
+            "summer_Wed10_inlaw_Maru":"我能告诉你一件事吗?$3#$e#我在你们的婚礼上玩得很开心。$0#$b#但妈妈告诉我你们不会再庆祝婚礼，为什么?$2",
+            "fall_Mon10_inlaw_Maru":"你喜欢手链吗?$3#$e#我想给你和马库斯小姐做个礼物。$1",
+            "winter_Sun10_inlaw_Maru":"看到你和马库斯小姐结婚真是太酷了。$1#$e#我从来没有想到会发生这种事!$0",
+           }
+       },
+    
+        //Willy
+
+    
+    
+    //      P   E   N   N   Y
+    
+        //Abigail
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Abigail",
+"Entries": {
+    //New
+            "spring_Mon8_inlaw_Penny":"嘿, @.$0#$e#你和佩里真是一对可爱的情侣。$1",
+            "fall_Wed8_inlaw_Penny":"嘿, @.$0#$e#你和佩里真是一对可爱的情侣。$1",
+           }
+       },
+    
+        //Alex
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Alex",
+"Entries": {
+    //New
+            "summer_Tue8_inlaw_Penny":"嘿，你好。$0#$e#新婚生活怎么样了?$1",
+            "winter_Mon10_inlaw_Penny":"嘿，你好。$0#$e#新婚生活怎么样了?$1",
+           }
+       },
+    
+        //Elliott
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Elliott",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Penny": "啊... @...$0#$b#昨天我看到你和佩里在一起。$0#$e#这让我想起了这首诗...$0#$e#'愿你们共同承担世界，怀揣所有希望和梦想$0#$b#愿你们彼此成为彼此的太阳和月亮，随着命运的展开$0#$b#如果你们失去彼此，开始漂离$0#$b#愿你们通过心灵的罗盘重新回到一起。'$0",
+            "fall_Fri8_inlaw_Penny": "啊... @...$0#$b#昨天我看到你和佩里在一起。$0#$e#这让我想起了这首诗...$0#$e#'愿你们共同承担世界，怀揣所有希望和梦想$0#$b#愿你们彼此成为彼此的太阳和月亮，随着命运的展开$0#$b#如果你们失去彼此，开始漂离$0#$b#愿你们通过心灵的罗盘重新回到一起。'$0",
+           }
+       },
+    
+        //Harvey
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Harvey",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Penny": "最好的爱情是让你成为更好的人，而不是让你变成另一个人。$0#$e#我觉得你和佩里是绝配。$1",
+            "summer_Mon8_inlaw_Penny": "健康婚姻的关键是沟通，分享彼此的想法和感受。$0#$b#但我觉得你和佩里不会有任何问题。$1",
+            "fall_Fri8_inlaw_Penny": "最好的爱情是让你成为更好的人，而不是让你变成另一个人。$0#$e#我觉得你和佩里是绝配。$1",
+            "winter_Thu8_inlaw_Penny": "健康婚姻的关键是沟通，分享彼此的想法和感受。$0#$b#但我觉得你和佩里不会有任何问题。$1",
+           }
+       },
+    
+        //Sam
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Sam",
+"Entries": {
+    //New
+            "spring_Fri8_inlaw_Penny":"我很高兴你和佩里能走到一起!$1#$b#其实我一直都有在关注他。$0",
+            "summer_Mon8_inlaw_Penny":"嘿, @.$0#$b#我不太喜欢情歌，但能在你们的婚礼上唱歌应该很酷吧。$1",
+            "fall_Sat8_inlaw_Penny":"嘿, @.$0#$b#我不太喜欢情歌，但能在你们的婚礼上唱歌应该很酷吧。$1",
+            "winter_Tue8_inlaw_Penny":"我很高兴你和佩里能走到一起!$1#$b#其实我一直都有在关注他。$0",
+           }
+       },
+    
+        //Sebastian
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Sebastian",
+"Entries": {
+    //New
+            "spring_Sat8_inlaw_Penny":"你和佩里怎么样?$0#$e#噢，那真是太好了!$1",
+            "fall_Wed8_inlaw_Penny":"你和佩里怎么样?$0#$e#噢，那真是太好了!$1",
+           }
+       },
+    
+        //Shane
+
+    
+        //Emily
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Emily",
+"Entries": {
+    //New
+            "spring_Thu8_inlaw_Penny":"佩里有一种独特的能量，你们俩真的很配。$1",
+            "summer_Wed8_inlaw_Penny":"我很清楚你和佩里是天生一对。$1",
+            "fall_Mon8_inlaw_Penny":"佩里有一种独特的能量，你们俩真的很配。$1",
+            "winter_Fri8_inlaw_Penny":"我很清楚你和佩里是天生一对。$1",
+           }
+       },
+    
+        //Haley
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Haley",
+"Entries": {
+    //New
+            "summer_Sat8_inlaw_Penny":"我为你和佩里感到非常高兴。$0#$b#你们是最甜蜜的一对。$1",
+            "winter_Mon8_inlaw_Penny":"我为你和佩里感到非常高兴。$0#$b#你们是最甜蜜的一对。$1",
+           }
+       },
+    
+        //Leah
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Leah",
+"Entries": {
+    //New
+            "summer_Thu8_inlaw_Penny":"也许我可以为你和佩里画点什么。$1",
+            "fall_Sat8_inlaw_Penny":"也许我可以为你和佩里画点什么。$1",
+           }
+       },
+    
+        //Maru
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Maru",
+"Entries": {
+    //Original
+            "Tue6_inlaw_Penny":"佩里过去总是谈论你。$0#$b#最终，我说, \"嘿! 如果他不先问你，你最好问那个男孩!\"$1^最终，我说, \"嘿! 如果他不先问你，你最好问那个女孩!\"$1",
+            "winter_Wed6_inlaw_Penny":"我很高兴你最终和我最好的朋友在一起。$0#$b#我一直觉得你和佩里有戏。$1",
+    //New
+            "spring_Tue8_inlaw_Penny":"我很高兴你最终和我最好的朋友在一起。$0#$b#我一直觉得你和佩里有戏。$1",
+            "spring_Fri8_inlaw_Penny":"我很高兴你和佩里在一起了!$1",
+            "summer_Thu8_inlaw_Penny":"佩里过去总是谈论你。$0#$b#最终，我说, \"嘿! 如果他不先问你，你最好问那个男孩!\"$1^最终，我说, \"嘿! 如果他不先问你，你最好问那个女孩!\"$1",
+            "summer_Sun8_inlaw_Penny":"你和佩里怎么样?$0#$e#哦，那太好了!$1#$e#我真的为你们两个感到高兴。 我是说真的。$0",
+            "fall_Wed8_inlaw_Penny":"我很高兴你最终和我最好的朋友在一起。$0#$b#我一直觉得你和佩里有戏。$1",
+            "fall_Thu8_inlaw_Penny":"我很高兴你和佩里在一起了!$1",
+            "winter_Mon8_inlaw_Penny":"我很高兴你和佩里在一起了?$0#$e#哦，那太好了!$1#$e#我真的为你们两个感到高兴。$0",
+            "winter_Sat8_inlaw_Penny":"佩里过去总是谈论你。$0#$b#最终，我说, \"嘿! 如果他不先问你，你最好问那个男孩!\"$1^最终，我说, \"嘿! 如果他不先问你，你最好问那个女孩!\"$1",
+           }
+       },
+    
+        //Caroline
+    
+    
+        //Clint
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Clint",
+"Entries": {
+    //New
+            "summer_Wed10_inlaw_Penny":"佩里不是喜欢翡翠吗?$0#$b#如果你想给他一个漂亮的礼物，我可以做一条项链。$1",
+            "winter_Thu10_inlaw_Penny":"佩里不是喜欢翡翠吗?$0#$b#如果你想给他一个漂亮的礼物，我可以做一条项链。$1",
+           }
+       },
+    
+        //Demetrius
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Demetrius",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Penny":"我们都在努力追求生活的某种平衡，一种复杂中的均衡。$0#$e#看起来娶了佩里正是你需要找到这种平衡的关键。$1",
+            "fall_Fri10_inlaw_Penny":"我们都在努力追求生活的某种平衡，一种复杂中的均衡。$0#$e#看起来娶了佩里正是你需要找到这种平衡的关键。$1",
+           }
+       },
+    
+        //Evelyn
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Evelyn",
+"Entries": {
+    //New
+            "spring_Wed10_inlaw_Penny":"你好，亲爱的。$0#$e#婚姻并不总是容易的，你和佩里将必须一起克服许多困难。$0#$b#愿你们一起成为更伟大的人。$1",
+            "summer_Tue10_inlaw_Penny":"成功的婚姻需要多次坠入爱河，总是和同一个人。$0#$b#我希望你和佩里能一起过上长久幸福的生活。$1",
+            "fall_Thu10_inlaw_Penny":"你好，亲爱的。$0#$e#婚姻并不总是容易的，你和佩里将必须一起克服许多困难。$0#$b#愿你们一起成为更伟大的人。$1",
+            "winter_Sun10_inlaw_Penny":"成功的婚姻需要多次坠入爱河，总是和同一个人。$0#$b#我希望你和佩里能一起过上长久幸福的生活。$1",
+           }
+       },
+    
+        //George
+
+    
+        //Gus
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Gus",
+"Entries": {
+    //New
+            "spring_Fri10_inlaw_Penny":"如果你和佩里想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "summer_Sun_inlaw_Penny":"如果你和佩里想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "fall_Fri10_inlaw_Penny":"如果你和佩里想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "winter_Wed10_inlaw_Penny":"如果你和佩里想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+           }
+       },
+    
+        //Jas
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Jas",
+"Entries": {
+    //New
+            "spring_Thu10_inlaw_Penny":"@ 先生!^ @ 小姐!$1#$e#长大后我也想办一场像你们一样的婚礼。$1",
+            "summer_Mon10_inlaw_Penny":"那么你和佩里小姐是不是... 真的超级相爱?$0#$e#嘻嘻嘻!$1",
+            "fall_Sun10_inlaw_Penny":"你好, 先生。$0^你好, 小姐$0#$b#为什么你们不能每周都庆祝一次婚礼呢?$0#$b#我想吃粉红蛋糕!$1",
+            "winter_Sat10_inlaw_Penny":"@ 先生!^ @ 小姐!$1#$e#长大后我也想办一场像你们一样的婚礼。$1",
+           }
+       },
+    
+        //Jodi
+
+    
+        //Kent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Kent",
+"Entries": {
+    //New
+            "summer_Tue10_inlaw_Penny":"我不太了解佩里，但我为你感到高兴。$1",
+            "fall_Fri10_inlaw_Penny":"我不太了解佩里，但我为你感到高兴。$1",
+           }
+       },
+    
+        //Lewis
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Lewis",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Penny":"在鹈鹕镇这里，像你和佩里这样的年轻夫妇并不多见。$0#$e#看到年轻人坠入爱河，总是令人愉悦的。$1",
+            "summer_Sun10_inlaw_Penny":"在鹈鹕镇这里，像你和佩里这样的年轻夫妇并不多见。$0#$e#看到年轻人坠入爱河，总是令人愉悦的。$1",
+            "fall_Sat10_inlaw_Penny":"我希望能尽快主持另一场婚礼，自从你们的婚礼以来已经有一段时间了。$0#$b#我们甚至可以搭建一个小宴会。$1",
+            "winter_Mon10_inlaw_Penny":"我希望能尽快主持另一场婚礼，自从你们的婚礼以来已经有一段时间了。$0#$b#我们甚至可以搭建一个小宴会。$1",
+           }
+       },
+        
+        //Linus
+
+
+        //Marnie
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Marnie",
+"Entries": {
+    //New
+            "spring_Thu10_inlaw_Penny":"你好, @.$0#$e#祝愿你和佩里拥有一生的爱与幸福。$1",
+            "summer_Tue10_inlaw_Penny":"愿尤巴祝福你和海登的婚姻充满祝福和喜悦。$1",
+            "fall_Sun10_inlaw_Penny":"你好, @.$0#$e#祝愿你和佩里拥有一生的爱与幸福。$1",
+            "winter_Fri10_inlaw_Penny":"愿尤巴祝福你和海登的婚姻充满祝福和喜悦。$1",
+           }
+       },
+    
+        //Pam
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pam",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Penny":"嘿，孩子。$0#$e#我希望你对我女儿好点。$4#$b#... 否则你要跟我过不去。$4",
+            "spring_Wed10_inlaw_Penny":"我以前很担心佩里。$0#$b#单亲父母真的很难..$2#$e#v$1",
+            "spring_Fri10_inlaw_Penny":"你最好对佩里好点，不要像我那前夫一样。$4",
+            "spring_Sun_inlaw_Penny":"自从佩里搬出去后，晚餐安静了很多...$0",
+            "summer_Mon10_inlaw_Penny":"没有佩里在，房子又空又静$2#$e#为什么你们不常来看看我?$1",
+            "summer_Wed10_inlaw_Penny":"这些天在家好孤单...$2#$b#好吧，至少我女儿似乎享受着婚后生活。$0",
+            "summer_Fri_inlaw_Penny":"希望你没有打算带我女儿离开这个山谷。$0",
+            "summer_Sat10_inlaw_Penny":"你知道吗，佩里的父亲在他小的时候抛弃了我们。$2#$e#我很高兴他长大后找到了像你这样的好男人。$0^我很高兴他长大后找到了像你这样的好女人。$0",
+            "fall_Mon10_inlaw_Penny":"你最好对佩里好点，不要像我那前夫一样。$4",
+            "fall_Thu_inlaw_Penny":"嘿，孩子。$0#$e#我希望你对我女儿好点。$4#$b#... 否则你要跟我过不去。$4",
+            "fall_Fri10_inlaw_Penny":"我女儿的身体好吗?$0#$b#他一直都是个苍白的女孩。$0#$b#希望农场的生活能让他脸色好点。$1",
+            "fall_Sat10_inlaw_Penny":"我没想到佩里这么快就结婚了...$2#$e#但我很高兴他找到了像你这样的男人。$1^但我很高兴他找到了像你这样的女人。$1",
+            "winter_Tue10_inlaw_Penny":"你知道吗，佩里的父亲在他小的时候抛弃了我们。$2#$e#我很高兴他长大后找到了像你这样的好男人。$0^我很高兴他长大后找到了像你这样的好女人。$0",
+            "winter_Thu_inlaw_Penny":"希望你没有打算带我女儿离开这个山谷。$0",
+            "winter_Fri10_inlaw_Penny":"嘿，孩子。$0#$e#我们应该在酒馆见面聊聊。$0#$b#我想这就是岳母应该做的，对吧?$1",
+            "winter_Sun10_inlaw_Penny":"我没想到佩里这么快就结婚了。$0#$e#也许我应该在他还在身边的时候多花点时间陪他...$2",
+           }
+       },
+    
+        //Pierre
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pierre",
+"Entries": {
+    //New
+            "summer_Mon10_inlaw_Penny":"你好, @.$0#$e#如果你想为佩里买点好东西，你知道该找谁的。$1",
+            "winter_Thu10_inlaw_Penny":"你好, @.$0#$e#如果你想为佩里买点好东西，你知道该找谁的。$1",
+           }
+       },    
+        //Robin
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Robin",
+"Entries": {
+    //New
+            "spring_Sat10_inlaw_Penny":"你和佩里让我想起了我和德米特里厄斯刚开始约会的时候...$0#$e#那时我们还很年轻。$0",
+            "fall_Fri10_inlaw_Penny":"你和佩里让我想起了我和德米特里厄斯刚开始约会的时候...$0#$e#那时我们还很年轻。...$0#$e你好, @.$0#$e#如果你想为佩里买些好东西，我可以帮你。$0",
+           }
+       },
+    
+        //Vincent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Vincent",
+"Entries": {
+    //Original
+            "Tue8_inlaw_Penny":"你和我的老师结婚真是太酷了。$1#$e#我从没想过这会发生!$0",
+    //New
+            "spring_Tue10_inlaw_Penny":"我前几天问了佩里老师关于你的事情。$3#$e#他的脸像西红柿一样红!$1",
+            "summer_Mon10_inlaw_Penny":"你喜欢手镯吗?$3#$e#我想为佩里老师和你做一份礼物。$0",
+            "summer_Fri10_inlaw_Penny":"你和佩里老师结婚真是太酷了。$1#$e#我从没想过这会发生!$0",
+            "fall_Wed10_inlaw_Penny":"我可以告诉你一件事吗?$3#$e#我在你们的婚礼上玩得很开心。$0#$b#但是妈妈告诉我你们不会再庆祝一次，为什么?$2",
+            "fall_Sat10_inlaw_Penny":"我前几天问了佩里老师关于你的事情。$3#$e#他的脸像西红柿一样红!$1",
+            "winter_Thu10_inlaw_Penny":"你和佩里老师结婚真是太酷了。$1#$e#我从没想过这会发生!$0",
+            "winter_Sun10_inlaw_Penny":"你喜欢手镯吗?$3#$e#我想为佩里老师和你做一份礼物。$0",
+           }
+       },
+    
+        //Willy
+    
+    
+    
+    //      S   A   M  
+    
+        //Abigail
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Abigail",
+"Entries": {
+    //New
+            "spring_Thu8_inlaw_Sam":"说实话，我从没想过能看到山姆结婚。$0",
+            "summer_Wed8_inlaw_Sam":"我和塞巴斯蒂安打赌，看你和山姆什么时候结婚。$0#$b#是我赢了!$1",
+            "fall_Mon8_inlaw_Sam":"说实话，我从没想过能看到山姆结婚。$0",
+            "winter_Thu8_inlaw_Sam":"我和塞巴斯蒂安打赌，看你和山姆什么时候结婚。$0#$b#是我赢了!$1",
+           }
+       },
+    
+        //Alex
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Alex",
+"Entries": {
+    //New
+            "summer_Tue8_inlaw_Sam":"嘿，你好。$0#$e#新婚生活怎么样了?$1",
+            "winter_Mon10_inlaw_Sam":"嘿，你好。$0#$e#新婚生活怎么样了?$1",
+           }
+       },
+    
+        //Elliott
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Elliott",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Sam": "啊... @...$0#$b#昨天我看到你和山姆在一起。$0#$e#这让我想起了这首诗...$0#$e#'愿你们共同承担世界，怀揣所有希望和梦想$0#$b#愿你们彼此成为彼此的太阳和月亮，随着命运的展开$0#$b#如果你们失去彼此，开始漂离$0#$b#愿你们通过心灵的罗盘重新回到一起。'$0",
+            "fall_Fri8_inlaw_Sam": "啊... @...$0#$b#昨天我看到你和山姆在一起。$0#$e#这让我想起了这首诗...$0#$e#'愿你们共同承担世界，怀揣所有希望和梦想$0#$b#愿你们彼此成为彼此的太阳和月亮，随着命运的展开$0#$b#如果你们失去彼此，开始漂离$0#$b#愿你们通过心灵的罗盘重新回到一起。'$0",
+           }
+       },
+    
+        //Harvey
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Harvey",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Sam": "最好的爱情是让你变得更好，而不是改变你自己。$0#$e#我觉得你和山姆是绝配。$1",
+            "summer_Mon8_inlaw_Sam": "婚姻幸福的关键是沟通，分享彼此的想法和感受。$0#$b#不过我觉得你和山姆不会有任何问题。$1",
+            "fall_Fri8_inlaw_Sam": "最好的爱情是让你变得更好，而不是改变你自己。$0#$e#我觉得你和山姆是绝配。$1",
+            "winter_Thu8_inlaw_Sam": "婚姻幸福的关键是沟通，分享彼此的想法和感受。$0#$b#不过我觉得你和山姆不会有任何问题。$1",
+           }
+       },
+    
+        //Sebastian
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Sebastian",
+"Entries": {
+    //New
+            "spring_Sat8_inlaw_Sam":"你和山姆怎么样?$0#$e#噢，那真是太好了!$1",
+            "summer_Thu8_inlaw_Sam":"那么... 山姆最近怎么样?$0",
+            "summer_Fri8_inlaw_Sam":"我为山姆感到高兴，但希望他不要忘了我。$0",
+            "fall_Wed8_inlaw_Sam":"你和山姆怎么样?$0#$e#噢，那真是太好了!$1",
+            "winter_Wed8_inlaw_Sam":"S那么... 山姆最近怎么样?$0",
+            "winter_Sun8_inlaw_Sam":"我为山姆感到高兴，但希望他不要忘了我。$0",
+           }
+       },
+    
+        //Shane
+
+    
+        //Emily
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Emily",
+"Entries": {
+    //New
+            "spring_Thu8_inlaw_Sam":"山姆有一种独特的能量，你们两个在一起真是绝配。$1",
+            "summer_Wed8_inlaw_Sam":"我清楚地看到你和山姆是天生一对。$1",
+            "fall_Mon8_inlaw_Sam":"山姆有一种独特的能量，你们两个在一起真是绝配。$1",
+            "winter_Fri8_inlaw_Sam":"我清楚地看到你和山姆是天生一对。$1",
+           }
+       },
+    
+        //Haley
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Haley",
+"Entries": {
+    //New
+            "summer_Sat8_inlaw_Sam":"我为你和山姆感到非常高兴。$0#$b#你们是最甜蜜的一对。$1",
+            "winter_Mon8_inlaw_Sam":"我为你和山姆感到非常高兴。$0#$b#你们是最甜蜜的一对。$1",
+           }
+       },
+    
+        //Leah
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Leah",
+"Entries": {
+    //New
+            "summer_Thu8_inlaw_Sam":"也许我可以为你和山姆画点什么。$1",
+            "fall_Sat8_inlaw_Sam":"也许我可以为你和山姆画点什么。$1",
+           }
+       },
+    
+        //Maru
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Maru",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Sam":"我很高兴你和山姆的事成了!$1",
+            "fall_Wed8_inlaw_Sam":"我很高兴你和山姆的事成了!$1",
+           }
+       },
+    
+        //Penny
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Penny",
+"Entries": {
+    //New
+            "spring_Mon8_inlaw_Sam":"你好, @.$0#$e#你和山姆真是一对可爱的夫妇。$1",
+            "fall_Wed8_inlaw_Sam":"你好, @.$0#$e#你和山姆真是一对可爱的夫妇。$1",
+           }
+       },
+    
+        //Caroline
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Caroline",
+"Entries": {
+    //New
+            "spring_Mon10_inlaw_Sam":"你和山姆怎么样了?$0#$b#乔迪告诉我他真的很开心。$1",
+            "summer_Wed10_inlaw_Sam":"你好, @.$0#$e#你知道乔迪在你们婚礼上比山姆还紧张吗?$1",
+            "fall_Sun10_inlaw_Sam":"你和山姆怎么样了?$0#$b#乔迪告诉我他真的很开心。$1",
+            "winter_Fri10_inlaw_Sam":"你好, @.$0#$e#你知道乔迪在你们婚礼上比山姆还紧张吗?$1",
+
+           }
+       },
+    
+        //Clint
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Clint",
+"Entries": {
+    //New
+            "summer_Wed10_inlaw_Sam":"山姆不是喜欢虎眼石吗?$0#$b#如果你想给他一份好礼物，我可以做一个项链。$1",
+            "winter_Thu10_inlaw_Sam":"山姆不是喜欢虎眼石吗?$0#$b#如果你想给他一份好礼物，我可以做一个项链。$1",
+           }
+       },
+    
+        //Demetrius
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Demetrius",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Sam":"我们都在努力追求生活的某种平衡，一种复杂中的均衡。$0#$e#看起来娶了山姆正是你需要找到这种平衡的关键。$1",
+            "fall_Fri10_inlaw_Sam":"我们都在努力追求生活的某种平衡，一种复杂中的均衡。$0#$e#看起来娶了山姆正是你需要找到这种平衡的关键。$1",
+           }
+       },
+    
+        //Evelyn
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Evelyn",
+"Entries": {
+    //New
+            "spring_Wed10_inlaw_Sam":"你好，亲爱的。$0#$e#婚姻并不总是容易的，你和山姆将必须一起克服许多困难。$0#$b#愿你们一起成为更伟大的人。$1",
+            "summer_Tue10_inlaw_Sam":"成功的婚姻需要多次坠入爱河，总是和同一个人。$0#$b#我希望你和山姆能一起过上长久幸福的生活。$1",
+            "fall_Thu10_inlaw_Sam":"你好，亲爱的。$0#$e#婚姻并不总是容易的，你和山姆将必须一起克服许多困难。$0#$b#愿你们一起成为更伟大的人。$1",
+            "winter_Sun10_inlaw_Sam":"成功的婚姻需要多次坠入爱河，总是和同一个人。$0#$b#我希望你和山姆能一起过上长久幸福的生活。$1",
+           }
+       },
+    
+        //George
+
+    
+        //Gus
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Gus",
+"Entries": {
+    //New
+            "spring_Fri10_inlaw_Sam":"如果你和山姆想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "summer_Sun_inlaw_Sam":"如果你和山姆想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "fall_Fri10_inlaw_Sam":"如果你和山姆想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "winter_Wed10_inlaw_Sam":"如果你和山姆想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+           }
+       },
+    
+        //Jas
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Jas",
+"Entries": {
+    //New
+            "spring_Thu10_inlaw_Sam":"@ 先生!^ @ 小姐!$1#$e#长大后我也想办一场像你们一样的婚礼。$1",
+            "summer_Mon10_inlaw_Sam":"那么你和山姆先生是不是... 真的超级相爱?$0#$e#嘻嘻嘻!$1",
+            "fall_Sun10_inlaw_Sam":"你好, 先生。$0^你好, 小姐$0#$b#为什么你们不能每周都庆祝一次婚礼呢?$0#$b#我想吃粉红蛋糕!$1",
+            "winter_Sat10_inlaw_Sam":"@ 先生!^ @ 小姐!$1#$e#长大后我也想办一场像你们一样的婚礼。$1",
+           }
+       },
+        
+        //Jodi
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Jodi",
+"Entries": {
+    //Original
+            "spring_Sat2_inlaw_Sam":"山姆有没有告诉过你他的春季过敏症? 一定要确保你们家里没有春天的花。#$e#他可能太想讨好你而不直接告诉你。",
+    //New
+            "spring_Mon10_inlaw_Sam":"感觉仿佛昨天山姆还是个小婴儿。$0#$b#现在他已经结婚了!$1",
+            "spring_Tue10_inlaw_Sam":"你好, @. 山姆怎么样?$0#$b#告诉他我们一直很想念他。$0",
+            "spring_Sat10_inlaw_Sam":"山姆有没有告诉过你他的春季过敏症? 一定要确保你们家里没有春天的花。#$e#他可能太想讨好你而不直接告诉你。",
+            "summer_Tue10_inlaw_Sam":"山姆什么时候长得这么大了?$0#$e#感觉仿佛昨天我还带他去操场玩。$0#$b#我有点怀念那些日子。$0#$e#至少现在他娶了一个很棒的农夫。$1",
+            "summer_Thu10_inlaw_Sam":"我曾经很担心山姆的未来，但现在我看到他正处在他应该在的地方。$0#$e#你们现在要好好对待彼此，好吗?$1",
+            "summer_Sat10_inlaw_Sam":"你一直是山姆生命中特别的人。$0#$b#我很高兴你们能一起度过余生。$1",
+            "fall_Wed10_inlaw_Sam":"山姆有没有告诉过你他的春季过敏症？一定要确保你们家里没有春天的花。#$e#他可能太想讨好你而不直接告诉你。",
+            "fall_Sat10_inlaw_Sam":"你好, @. 山姆怎么样?$0#$b#告诉他我们一直很想念他。$0",
+            "fall_Sun10_inlaw_Sam":"感觉仿佛昨天山姆还是个小婴儿。$0#$b#现在他已经结婚了!$1",
+            "winter_Wed10_inlaw_Sam":"山姆什么时候长得这么大了?$0#$e#感觉仿佛昨天我还带他去操场玩。$0#$b#我有点怀念那些日子。$0#$e#至少现在他娶了一个很棒的农夫。$1",
+            "winter_Thu10_inlaw_Sam":"我曾经很担心山姆的未来，但现在我看到他正处在他应该在的地方。$0#$e#你们现在要好好对待彼此，好吗?$1",
+            "winter_Fri10_inlaw_Sam":"我希望你和山姆能每天和我们一起吃晚餐，你们让家里变得如此热闹。$1",
+           }
+       },
+    
+        //Kent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Kent",
+"Entries": {
+    //Original
+            "Mon_inlaw_Sam":"看到山姆结婚真是个惊喜。$0#$e#欢迎来到家庭。$1",
+            "Mon_inlaw_Sam2":"你和山姆的生活怎么样?$0#$e#你觉得他是个怎样的人?$0",
+            "Mon_inlaw_Sam4":"嘿。我们可以在酒吧里碰头一次。$0#$b#我想这就是岳父应该做的事情，对吧?$1",
+            "Mon_inlaw_Sam6":"有时候询问关于山姆和你的生活感觉就像在问别人的儿子一样。$2#$e#尽管如此，我还是非常爱他。$0#$b#我只是希望我能更接近他。$0",
+            "Mon_inlaw_Sam8":"很高兴有你作为我的好女婿, @. 如果山姆娶了别人，我想我的回归可能不会那么顺利。$1^很高兴有你作为我的好儿媳, @. 如果山姆娶了别人，我想我的回归可能不会那么顺利。$1",
+    //New
+            "spring_Tue_inlaw_Sam":"我离开时，山姆还只是个孩子...$0#$b#...现在他已经结婚了。$0",
+            "spring_Fri10_inlaw_Sam":"有时候很难不把山姆想象成我离开时的小孩子。$0#$b#我从没想过他会这么快结婚。$0",
+            "spring_Sat10_inlaw_Sam":"看到山姆和你约会，对Jodi和我来说起初很惊讶。$0#$b#但现在你也是我们的儿子了。$1^但现在你也是我们的女儿了。$1",
+            "summer_Wed10_inlaw_Sam":"很高兴有你作为我的好女婿, @. 如果山姆娶了别人，我想我的回归可能不会那么顺利。$1^很高兴有你作为我的好儿媳, @. 如果山姆娶了别人，我想我的回归可能不会那么顺利。$1",
+            "summer_Sat_inlaw_Sam":"我希望我能成为你的好岳父。$1",
+            "summer_Sun10_inlaw_Sam":"有时候询问关于山姆和你的生活感觉就像在问别人的儿子一样。$2#$e#尽管如此，我还是非常爱他。$0#$b#我只是希望我能更接近他。$0",
+            "fall_Mon10_inlaw_Sam":"看到山姆和你约会，对Jodi和我来说起初很惊讶。$0#$b#但现在你也是我们的儿子了。$1^但现在你也是我们的女儿了。$1",
+            "fall_Thu10_inlaw_Sam":"嘿。我们可以在酒吧里碰头一次。$0#$b#我想这就是岳父应该做的事情，对吧?$1",
+            "fall_Sun10_inlaw_Sam":"有时候很难不把山姆想象成我离开时的小孩子。$0#$b#我从没想过他会这么快结婚。$0",
+            "winter_Mon10_inlaw_Sam":"很高兴有你作为我的好女婿, @. 如果山姆娶了别人，我想我的回归可能不会那么顺利。$1^很高兴有你作为我的好儿媳, @. 如果山姆娶了别人，我想我的回归可能不会那么顺利。$1",
+            "winter_Tue10_inlaw_Sam":"有时候询问关于山姆和你的生活感觉就像在问别人的儿子一样。$2#$e#尽管如此，我还是非常爱他。$0#$b#我只是希望我能更接近他。$0",
+            "winter_Thu10_inlaw_Sam":"我没想到山姆会这么快结婚。$0#$e#也许我应该在可以的时候多花点时间和他在一起...$2",
+           }
+       },
+    
+        //Lewis
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Lewis",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Sam":"在鹈鹕镇这里，像你和山姆这样的年轻夫妇并不多见。$0#$e#看到年轻人坠入爱河，总是令人愉悦的。$1",
+            "summer_Sun10_inlaw_Sam":"在鹈鹕镇这里，像你和山姆这样的年轻夫妇并不多见。$0#$e#看到年轻人坠入爱河，总是令人愉悦的。$1",
+            "fall_Sat10_inlaw_Sam":"我希望能尽快主持另一场婚礼，自从你们的婚礼以来已经有一段时间了。$0#$b#我们甚至可以搭建一个小宴会。$1",
+            "winter_Mon10_inlaw_Sam":"我希望能尽快主持另一场婚礼，自从你们的婚礼以来已经有一段时间了。$0#$b#我们甚至可以搭建一个小宴会。$1",
+           }
+       },
+        
+        //Linus
+
+
+        //Marnie
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Marnie",
+"Entries": {
+    //New
+            "spring_Thu10_inlaw_Sam":"你好, @.$0#$e#祝愿你和山姆拥有一生的爱与幸福。$1",
+            "summer_Tue10_inlaw_Sam":"愿尤巴祝福你和海登的婚姻充满祝福和喜悦。$1",
+            "fall_Sun10_inlaw_Sam":"你好, @.$0#$e#祝愿你和山姆拥有一生的爱与幸福。$1",
+            "winter_Fri10_inlaw_Sam":"愿尤巴祝福你和海登的婚姻充满祝福和喜悦。$1",
+           }
+       },
+    
+        //Pam
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pam",
+"Entries": {
+    //New
+            "summer_Fri10_inlaw_Sam":"嘿，孩子。$0#$e#看起来你找到了一个英俊的年轻男士，是吗?$1",
+            "winter_Wed10_inlaw_Sam":"嘿，孩子。$0#$e#看起来你找到了一个英俊的年轻男士，是吗?$1",
+           }
+       },
+    
+        //Pierre
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pierre",
+"Entries": {
+    //New
+            "summer_Mon10_inlaw_Sam":"你好, @.$0#$e#如果你想为山姆买点好东西，你知道该找谁的。$1",
+            "winter_Thu10_inlaw_Sam":"你好, @.$0#$e#如果你想为山姆买点好东西，你知道该找谁的。$1",
+           }
+       },   
+    
+        //Robin
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Robin",
+"Entries": {
+    //New
+            "spring_Sat10_inlaw_Sam":"你和山姆让我想起了我和德米特里厄斯刚开始约会的时候...$0#$e#那时我们还很年轻。$0",
+            "fall_Fri10_inlaw_Sam":"你和山姆让我想起了我和德米特里厄斯刚开始约会的时候...$0#$e#那时我们还很年轻。$0",
+           }
+       },
+    
+        //Vincent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Vincent",
+"Entries": {
+    //Original
+            "Wed_inlaw_Sam":"我哥哥怎么样啊?$0#$e#我简直不敢相信我们现在是亲戚了!$1",
+            "fall_Wed_inlaw_Sam":"我哥哥怎么样啊?$0#$e#我猜他现在真的长大了!$1",
+            "winter_Wed_inlaw_Sam":"你和我哥哥是不是... 超级相爱啊?$0#$e#哈哈哈哈!$1",
+    //New
+            "spring_Tue10_inlaw_Sam":"你喜欢手链吗?$3#$e#我想为你和山姆做个礼物.$1",
+            "spring_Thu10_inlaw_Sam":"我哥哥怎么样啊?$0#$e#我简直不敢相信我们现在是亲戚了!$1",
+            "summer_Wed10_inlaw_Sam":"你和我哥哥结婚真是太酷了。$1#$e#我从没想过会发生这样的事情!$0",
+            "summer_Fri10_inlaw_Sam":"我哥哥怎么样啊?$0#$e#我猜他现在真的长大了!$1",
+            "fall_Mon10_inlaw_Sam":"你喜欢手链吗?$3#$e#我想为你和山姆做个礼物.$1",
+            "fall_Fri10_inlaw_Sam":"我哥哥怎么样啊?$0#$e#我简直不敢相信我们现在是亲戚了!$1",
+            "winter_Tue10_inlaw_Sam":"我哥哥怎么样啊?$0#$e#我猜他现在真的长大了!$1",
+            "winter_Sun10_inlaw_Sam":"你和我哥哥结婚真是太酷了。$1#$e#我从没想过会发生这样的事情!$0",
+           }
+       },
+    
+        //Willy
+
+    
+    //      S   E   B   A   S   T   I   A   N
+    
+        //Abigail    
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Abigail",
+"Entries": {
+    //New
+            "spring_Mon8_inlaw_Sebastian":"我跟山姆打赌你和塞巴斯蒂安什么时候会结婚.$0#$b#最后我赢了!$1",
+            "spring_Sat8_inlaw_Sebastian":"你和塞巴斯蒂安怎么样啊?$0#$e#噢, 那真是太好了!$1",
+            "summer_Thu8_inlaw_Sebastian":"所以... 塞巴斯蒂安怎么样?$0",
+            "summer_Fri8_inlaw_Sebastian":"如果我说实话，我从没想过我会看到塞巴斯蒂安结婚.$0",
+            "fall_Wed8_inlaw_Sebastian":"你和塞巴斯蒂安怎么样啊?$0#$e#噢, 那真是太好了!$1",
+            "fall_Thu8_inlaw_Sebastian":"我跟山姆打赌你和塞巴斯蒂安什么时候会结婚.$0#$b#最后我赢了!$1",
+            "winter_Mon8_inlaw_Sebastian":"所以... 塞巴斯蒂安怎么样?$0",
+            "winter_Sun8_inlaw_Sebastian":"如果我说实话，我从没想过我会看到塞巴斯蒂安结婚。$0",
+           }
+       },
+    
+        //Alex
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Alex",
+"Entries": {
+    //New
+            "summer_Tue8_inlaw_Sebastian":"嘿，你好。$0#$e#新婚生活怎么样了?$1",
+            "winter_Mon10_inlaw_Sebastian":"嘿，你好。$0#$e#新婚生活怎么样了?$1",
+           }
+       },
+    
+        //Elliott
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Elliott",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Sebastian": "啊... @...$0#$b#昨天我看到你和塞巴斯蒂安在一起。$0#$e#这让我想起了这首诗...$0#$e#'愿你们共同承担世界，怀揣所有希望和梦想$0#$b#愿你们彼此成为彼此的太阳和月亮，随着命运的展开$0#$b#如果你们失去彼此，开始漂离$0#$b#愿你们通过心灵的罗盘重新回到一起。'$0",
+            "fall_Fri8_inlaw_Sebastian": "啊... @...$0#$b#昨天我看到你和塞巴斯蒂安在一起。$0#$e#这让我想起了这首诗...$0#$e#'愿你们共同承担世界，怀揣所有希望和梦想$0#$b#愿你们彼此成为彼此的太阳和月亮，随着命运的展开$0#$b#如果你们失去彼此，开始漂离$0#$b#愿你们通过心灵的罗盘重新回到一起。'$0",
+           }
+       },
+    
+        //Harvey
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Harvey",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Sebastian": "最好的爱是让你成为更好的人，而不改变你成为别人的那种。$0#$e#我觉得你和塞巴斯蒂安是一对很棒的夫妻。$1",
+            "summer_Mon8_inlaw_Sebastian": "健康婚姻的关键是沟通，彼此分享想法和感情。$0#$b#但我觉得你和塞巴斯蒂安在这方面不会有问题。$1",
+            "fall_Fri8_inlaw_Sebastian": "最好的爱是让你成为更好的人，而不改变你成为别人的那种。$0#$e#我觉得你和塞巴斯蒂安是一对很棒的夫妻。.$1",
+            "winter_Thu8_inlaw_Sebastian": "健康婚姻的关键是沟通，彼此分享想法和感情。$0#$b#但我觉得你和塞巴斯蒂安在这方面不会有问题。$1",
+           }
+       },
+    
+        //Sam
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Sam",
+"Entries": {
+    //New
+            "spring_Fri8_inlaw_Sebastian": "塞巴斯蒂安最近更经常来我家弹钢琴了。$0#$b#也许他在想要给你留下印象什么的。$1",
+            "spring_Sat8_inlaw_Sebastian": "我知道你和塞巴斯蒂安之间有点什么事。$0#$b#看来山姆的直觉从未出错。$1",
+            "summer_Mon8_inlaw_Sebastian":"嘿, @.$0#$b#我不太喜欢情歌，但能在你们的婚礼上唱歌应该很酷吧。$1",
+            "fall_Wed8_inlaw_Sebastian":"嘿, @.$0#$b#我不太喜欢情歌，但能在你们的婚礼上唱歌应该很酷吧。$1",
+            "fall_Sat8_inlaw_Sebastian": "塞巴斯蒂安最近更经常来我家弹钢琴了。$0#$b#也许他在想要给你留下印象什么的。$1",
+            "winter_Sun8_inlaw_Sebastian": "我知道你和塞巴斯蒂安之间有点什么事。$0#$b#看来山姆的直觉从未出错。$1",
+           }
+       },
+    
+        //Shane
+
+    
+        //Emily
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Emily",
+"Entries": {
+    //New
+            "spring_Thu8_inlaw_Sebastian":"塞巴斯蒂安有一种独特的能量，你们两个在一起很棒。$1",
+            "summer_Wed8_inlaw_Sebastian":"我清楚地看到你和塞巴斯蒂安天生一对。$1",
+            "fall_Mon8_inlaw_Sebastian":"塞巴斯蒂安有一种独特的能量，你们两个在一起很棒。$1",
+            "winter_Fri8_inlaw_Sebastian":"我清楚地看到你和塞巴斯蒂安天生一对。$1",
+           }
+       },
+    
+        //Haley
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Haley",
+"Entries": {
+    //New
+            "summer_Sat8_inlaw_Sebastian":"我为你和塞巴斯蒂安感到非常高兴。$0#$b#你们是最甜蜜的一对。$1",
+            "winter_Mon8_inlaw_Sebastian":"我为你和塞巴斯蒂安感到非常高兴。$0#$b#你们是最甜蜜的一对。$1",
+           }
+       },
+    
+        //Leah
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Leah",
+"Entries": {
+    //New
+            "summer_Thu8_inlaw_Sebastian":"也许我可以为你和塞巴斯蒂安画些东西。$1",
+            "fall_Sat8_inlaw_Sebastian":"也许我可以为你和塞巴斯蒂安画些东西。$1",
+           }
+       },
+    
+        //Maru
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Maru",
+"Entries": {
+    //Original
+            "summer_Tue4_inlaw_Sebastian":"嘿, 小舅子!$1^嘿, 弟妹$e#塞巴斯蒂安看起来现在开心多了，不用再住在这里。$0#$b#希望一切都好!$1",
+            "fall_Mon_inlaw_Sebastian":"哦，嘿 @!$0#$b#我弟弟最近怎么样?$0",
+            "winter_Thu4_inlaw_Sebastian":"今天早上我和塞巴斯蒂安语音聊天了。$0#$b#现在他搬出去了，我们相处起来简单多了。$0#$b#这种变化真是有趣，不是吗?$1",
+    //New
+            "spring_Tue8_inlaw_Sebastian":"我很高兴你和塞巴斯蒂安的关系很好!$1",
+            "spring_Thu8_inlaw_Sebastian":"看到塞巴斯蒂安结婚感觉有点奇怪。$0#$b#我还以为他对这种关系不感兴趣。$0",
+            "spring_Sun8_inlaw_Sebastian":"今天早上我和塞巴斯蒂安语音聊天了。$0#$b#现在他搬出去了，我们相处起来简单多了。。$0#$b#这种变化真是有趣，不是吗?$1",
+            "summer_Tue10_inlaw_Sebastian":"嘿, 小舅子!$1^嘿, 弟妹$e#塞巴斯蒂安看起来现在开心多了，不用再住在这里。$0#$b#希望一切都好!$1",
+            "summer_Fri8_inlaw_Sebastian":"哦，嘿 @!$0#$b#我弟弟最近怎么样?$0",
+            "fall_Mon8_inlaw_Sebastian":"我知道我和塞巴斯蒂安不总是合得来，但是我真的为你高兴。$0",
+            "fall_Wed8_inlaw_Sebastian":"今天早上我和塞巴斯蒂安语音聊天了。$0#$b#现在他搬出去了，我们相处起来简单多了。$0#$b#这种变化真是有趣，不是吗?$1",
+            "fall_Fri8_inlaw_Sebastian":"看到塞巴斯蒂安结婚感觉有点奇怪。$0#$b#我还以为他对这种关系不感兴趣。$0",
+            "winter_Wed8_inlaw_Sebastian":"哦，嘿 @!$0#$b#我弟弟最近怎么样?$0",
+            "winter_Sat10_inlaw_Sebastian":"嘿, 小舅子!$1^嘿, 弟妹$e#塞巴斯蒂安看起来现在开心多了，不用再住在这里。$0#$b#希望一切都好!$1",
+           }
+       },
+    
+        //Penny
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Penny",
+"Entries": {
+    //New
+            "spring_Mon8_inlaw_Sebastian":"你好, @.$0#$e#你和塞巴斯蒂安真是一对可爱的夫妇。$1",
+            "fall_Wed8_inlaw_Sebastian":"你好, @.$0#$e#你和塞巴斯蒂安真是一对可爱的夫妇。$1",
+           }
+       },
+    
+        //Caroline
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Caroline",
+"Entries": {
+    //New
+            "spring_Sat10_inlaw_Sebastian":"你和塞巴斯蒂安让我想起了我和皮埃尔开始约会的时候...$0#$e#那时候我们还很年轻。$0",
+            "fall_Fri10_inlaw_Sebastian":"你和塞巴斯蒂安让我想起了我和皮埃尔开始约会的时候...$0#$e#那时候我们还很年轻。$0",
+           }
+       },
+
+    
+        //Clint
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Clint",
+"Entries": {
+    //New
+            "summer_Wed10_inlaw_Sebastian":"塞巴斯蒂安不是喜欢黑曜石吗?$0#$b#如果你想给他一个好的礼物，我可以做一个项链。$1",
+            "winter_Thu10_inlaw_Sebastian":"塞巴斯蒂安不是喜欢黑曜石吗?$0#$b#如果你想给他一个好的礼物，我可以做一个项链。$1",
+           }
+       },
+        
+        //Demetrius
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Demetrius",
+"Entries": {
+    //Original
+            "Sun_inlaw_Sebastian":"真是松了一口气，塞巴斯蒂安终于搬出去了。$0#$b#我一直觉得你们很般配。$1",
+    //New
+            "spting_Mon10_inlaw_Sebastian":"真是松了一口气，塞巴斯蒂安终于搬出去了。$0#$b#我一直觉得你们很般配。$1",
+            "spring_Sun10_inlaw_Sebastian":"我从没想过塞巴斯蒂安这么快就结婚了...$0#$e#...甚至结婚了。$0#$e#但别误会，我真的为你们感到高兴。$1",
+            "summer_Thu10_inlaw_Sebastian":"塞巴斯蒂安搬到农场真是太好了。$0#$b#我从没见过他笑得那么多。$0",
+            "summer_Sun10_inlaw_Sebastian":"我们都在努力寻找生活中的平衡，一种复杂性的平衡。$0#$e#看来和塞巴斯蒂安结婚正是你需要找到的平衡点。$1",
+            "fall_Fri10_inlaw_Sebastian":"真是松了一口气，塞巴斯蒂安终于搬出去了。$0#$b#我一直觉得你们很般配。$1",
+            "fall_Sat10_inlaw_Sebastian":"我从没想过塞巴斯蒂安这么快就结婚了...$0#$e#...甚至结婚了。$0#$e#但别误会，我真的为你们感到高兴。$1",
+            "winter_Mon10_inlaw_Sebastian":"我们都在努力寻找生活中的平衡，一种复杂性的平衡。$0#$e#看来和塞巴斯蒂安结婚正是你需要找到的平衡点。$1",
+            "winter_Tue10_inlaw_Sebastian":"塞巴斯蒂安搬到农场真是太好了。$0#$b#我从没见过他笑得那么多。$0",
+           }
+       },
+    
+        //Evelyn
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Evelyn",
+"Entries": {
+    //New
+            "spring_Wed10_inlaw_Sebastian":"你好，亲爱的。$0#$e#婚姻并不总是容易的，你和塞巴斯蒂安将必须一起克服许多困难。$0#$b#愿你们一起成为更伟大的人。$1",
+            "summer_Tue10_inlaw_Sebastian":"成功的婚姻需要多次坠入爱河，总是和同一个人。$0#$b#我希望你和塞巴斯蒂安能一起过上长久幸福的生活。$1",
+            "fall_Thu10_inlaw_Sebastian":"你好，亲爱的。$0#$e#婚姻并不总是容易的，你和塞巴斯蒂安将必须一起克服许多困难。$0#$b#愿你们一起成为更伟大的人。$1",
+            "winter_Sun10_inlaw_Sebastian":"成功的婚姻需要多次坠入爱河，总是和同一个人。$0#$b#我希望你和塞巴斯蒂安能一起过上长久幸福的生活。$1",
+           }
+       },
+    
+        //George
+
+    
+        //Gus
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Gus",
+"Entries": {
+    //New
+            "spring_Fri10_inlaw_Sebastian":"如果你和塞巴斯蒂安想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "summer_Sun_inlaw_Sebastian":"如果你和塞巴斯蒂安想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "fall_Fri10_inlaw_Sebastian":"如果你和塞巴斯蒂安想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "winter_Wed10_inlaw_Sebastian":"如果你和塞巴斯蒂安想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+           }
+       },
+    
+        //Jas
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Jas",
+"Entries": {
+    //New
+            "spring_Thu10_inlaw_Sebastian":"@ 先生!^ @ 小姐!$1#$e#长大后我也想办一场像你们一样的婚礼。$1",
+            "summer_Mon10_inlaw_Sebastian":"那么你和塞巴斯蒂安先生是不是... 真的超级相爱?$0#$e#嘻嘻嘻!$1",
+            "fall_Sun10_inlaw_Sebastian":"你好, 先生。$0^你好, 小姐$0#$b#为什么你们不能每周都庆祝一次婚礼呢?$0#$b#我想吃粉红蛋糕!$1",
+            "winter_Sat10_inlaw_Sebastian":"@ 先生!^ @ 小姐!$1#$e#长大后我也想办一场像你们一样的婚礼。$1",
+           }
+       },
+    
+        //Jodi
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Jodi",
+"Entries": {
+    //New
+            "spring_Mon10_inlaw_Sebastian":"你和塞巴斯蒂安怎么样?$0#$b#罗宾告诉我他很开心。$1",
+            "summer_Wed10_inlaw_Sebastian":"你好, @.$0#$e#你知道罗宾在你们的婚礼上比塞巴斯蒂安还要紧张吗?$1",
+            "fall_Sun10_inlaw_Sebastian":"你和塞巴斯蒂安怎么样?$0#$b#罗宾告诉我他很开心。$1",
+            "winter_Fri10_inlaw_Sebastian":"你好, @.$0#$e#你知道罗宾在你们的婚礼上比塞巴斯蒂安还要紧张吗?$1",
+           }
+       },
+    
+        //Kent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Kent",
+"Entries": {
+    //New
+            "summer_Tue10_inlaw_Sebastian":"我不太了解塞巴斯蒂安，但我为你感到高兴。$1",
+            "fall_Fri10_inlaw_Sebastian":"我不太了解塞巴斯蒂安，但我为你感到高兴。$1",
+           }
+       },
+    
+        //Lewis
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Lewis",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Sebastian":"在鹈鹕镇这里，像你和塞巴斯蒂安这样的年轻夫妇并不多见。$0#$e#看到年轻人坠入爱河，总是令人愉悦的。$1",
+            "summer_Sun10_inlaw_Sebastian":"在鹈鹕镇这里，像你和塞巴斯蒂安这样的年轻夫妇并不多见。$0#$e#看到年轻人坠入爱河，总是令人愉悦的。$1",
+            "fall_Sat10_inlaw_Sebastian":"我希望能尽快主持另一场婚礼，自从你们的婚礼以来已经有一段时间了。$0#$b#我们甚至可以搭建一个小宴会。$1",
+            "winter_Mon10_inlaw_Sebastian":"我希望能尽快主持另一场婚礼，自从你们的婚礼以来已经有一段时间了。$0#$b#我们甚至可以搭建一个小宴会。$1",
+           }
+       },
+        
+        //Linus
+
+
+        //Marnie
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Marnie",
+"Entries": {
+    //New
+            "spring_Thu10_inlaw_Sebastian":"你好, @.$0#$e#祝愿你和塞巴斯蒂安拥有一生的爱与幸福。$1",
+            "summer_Tue10_inlaw_Sebastian":"愿尤巴祝福你和海登的婚姻充满祝福和喜悦。$1",
+            "fall_Sun10_inlaw_Sebastian":"你好, @.$0#$e#祝愿你和塞巴斯蒂安拥有一生的爱与幸福。$1",
+            "winter_Fri10_inlaw_Sebastian":"愿尤巴祝福你和海登的婚姻充满祝福和喜悦。$1",
+           }
+       },
+    
+        //Pam
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pam",
+"Entries": {
+    //New
+            "summer_Fri10_inlaw_Sebastian":"嘿，孩子。$0#$e#看起来你找到了一个英俊的年轻男士，是吗?$1",
+            "winter_Wed10_inlaw_Sebastian":"嘿，孩子。$0#$e#看起来你找到了一个英俊的年轻男士，是吗?$1",
+           }
+       },
+    
+        //Pierre
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pierre",
+"Entries": {
+    //New
+            "summer_Mon10_inlaw_Sebastian":"你好, @.$0#$e#如果你想为塞巴斯蒂安买点好东西，你知道该找谁的。$1",
+            "winter_Thu10_inlaw_Sebastian":"你好, @.$0#$e#如果你想为塞巴斯蒂安买点好东西，你知道该找谁的。$1",
+           }
+       },    
+    
+        //Robin
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Robin",
+"Entries": {
+    //Original
+            "summer_Fri_inlaw_Sebastian":"塞巴斯蒂安最近经常出去吗？$e#确保你们彼此照顾好对方!$1",
+    //New
+            "spring_Fri10_inlaw_Sebastian": "塞巴斯蒂安什么时候长这么大了?$0#$e#感觉昨天我还在带他去操场玩。$0#$b#我有点怀念那些日子。$0#$e#至少现在他娶了一位很棒的农夫。$1",
+            "spring_Sun10_inlaw_Sebastian": "你一直是塞巴斯蒂安特别重要的人$0#$b#我很高兴你们会一起度过余生。$1",
+            "summer_Wed10_inlaw_Sebastian": "塞巴斯蒂安能和你结婚，我再开心不过了, @.$1#$b#你是他完美的配偶。$0",
+            "summer_Thu10_inlaw_Sebastian": "你好, @.$0#$e#记住你永远欢迎来我们家。$0#$b#你现在是我们家庭的一部分了。$1",
+            "summer_sun10_inlaw_Sebastian": "我以前担心塞巴斯蒂安的未来，但我现在看到他已经找到了他需要的位置。$0#$e#你们现在要好好对待对方，好吗?$1",
+            "fall_Thu10_inlaw_Sebastian": "德米特里厄斯和我很高兴塞巴斯蒂安和你结婚了。$1",
+            "fall_Fri10_inlaw_Sebastian": "@, 你对塞巴斯蒂安有很大的影响。$1#$b#他现在笑容满面，还经常出去活动。$1",
+            "fall_Sat10_inlaw_Sebastian": "你一直是塞巴斯蒂安特别重要的人。$0#$b#我很高兴你们会一起度过余生。$1",
+            "winter_Mon10_inlaw_Sebastian": "你和塞巴斯蒂安开始约会对我来说并不意外。$0#$e#事实上，我一直在希望这样!$1",
+            "winter_Tue10_inlaw_Sebastian": "塞巴斯蒂安的健康状况怎么样?$0#$b#他一直都是个苍白的孩子。$0#$b#希望农场生活能让他的脸色红润起来。$1",
+            "winter_Wed10_inlaw_Sebastian": "我以前担心塞巴斯蒂安的未来，但我现在看到他已经找到了他需要的位置。$0#$e#你们现在要好好对待对方，好吗?$1",
+           }
+       },
+
+        //Vincent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Vincent",
+"Entries": {
+    //New
+            "spring_Fri10_inlaw_Sebastian": "你知道吗，在你们婚礼前塞巴斯蒂安来过我们家?$0#$e#我看到他和我哥哥说话...$3#$b#他对结婚感到如此开心，甚至开始哭了!$3",
+            "summer_Tue10_inlaw_Sebastian":"你喜欢手链吗?$3#$e#我想为你和塞巴斯蒂安哥哥做个礼物。$1",
+            "summer_Thu10_inlaw_Sebastian":"你和塞巴斯蒂安哥哥结婚真的太酷了。$1#$e#我从没想到会发生这种事!$0",
+            "fall_Mon10_inlaw_Sebastian":"你喜欢手链吗?$3#$e#我想为你和塞巴斯蒂安哥哥做个礼物。$1",
+            "fall_Sat10_inlaw_Sebastian": "你知道吗，在你们婚礼前塞巴斯蒂安来过我们家?$0#$e#我看到他和我哥哥说话...$3#$b#他对结婚感到如此开心，甚至开始哭了!$3",
+            "winter_Sun10_inlaw_Sebastian":"你和塞巴斯蒂安哥哥结婚真的太酷了。$1#$e#我从没想到会发生这种事!$0",
+
+           }
+       },
+    
+        //Willy
+    
+    
+    //      S   H   A   N   E
+    
+        //Abigail    
+
+        //Alex
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Alex",
+"Entries": {
+    //New
+            "summer_Tue8_inlaw_Shane":"嘿，你好。$0#$e#新婚生活怎么样了?$1",
+            "winter_Mon10_inlaw_Shane":"嘿，你好。$0#$e#新婚生活怎么样了?$1",
+           }
+       },
+    
+        //Elliott
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Elliott",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Shane": "啊... @...$0#$b#昨天我看到你和谢恩在一起。$0#$e#这让我想起了这首诗...$0#$e#'愿你们共同承担世界，怀揣所有希望和梦想$0#$b#愿你们彼此成为彼此的太阳和月亮，随着命运的展开$0#$b#如果你们失去彼此，开始漂离$0#$b#愿你们通过心灵的罗盘重新回到一起。'$0",
+            "fall_Fri8_inlaw_Shane": "啊... @...$0#$b#昨天我看到你和谢恩在一起。$0#$e#这让我想起了这首诗...$0#$e#'愿你们共同承担世界，怀揣所有希望和梦想$0#$b#愿你们彼此成为彼此的太阳和月亮，随着命运的展开$0#$b#如果你们失去彼此，开始漂离$0#$b#愿你们通过心灵的罗盘重新回到一起。'$0",
+           }
+       },
+    
+        //Harvey
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Harvey",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Shane": "最好的爱是让你成为更好的人，而不改变你本来的样子。$0#$e#我觉得你和谢恩很般配。$1",
+            "summer_Mon8_inlaw_Shane": "幸福婚姻的关键是沟通，分享彼此的想法和感受。$0#$b#但我觉得你和谢恩不会有任何问题。$1",
+            "fall_Fri8_inlaw_Shane": "最好的爱是让你成为更好的人，而不改变你本来的样子。$0#$e#我觉得你和谢恩很般配。$1",
+            "winter_Thu8_inlaw_Shane": "幸福婚姻的关键是沟通，分享彼此的想法和感受。$0#$b#但我觉得你和谢恩不会有任何问题。$1",
+           }
+       },
+    
+        //Sam
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Sam",
+"Entries": {
+    //New
+            "summer_Mon8_inlaw_Shane":"嘿, @.$0#$b#我不太喜欢情歌，但能在你们的婚礼上唱歌应该很酷吧。$1",
+            "fall_Sat8_inlaw_Shane":"嘿, @.$0#$b#我不太喜欢情歌，但能在你们的婚礼上唱歌应该很酷吧。$1",
+           }
+       },
+    
+        //Sebastian
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Sebastian",
+"Entries": {
+    //New
+            "spring_Sat8_inlaw_Shane":"你和谢恩怎么样?$0#$e#哦，那太好了!$1",
+            "fall_Wed8_inlaw_Shane":"你和谢恩怎么样?$0#$e#哦，那太好了!$1",
+           }
+       },
+    
+        //Shane
+
+    
+        //Emily
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Emily",
+"Entries": {
+    //New
+            "spring_Thu8_inlaw_Shane":"谢恩有一种独特的能量，你们俩在一起真是太棒了。$1",
+            "summer_Wed8_inlaw_Shane":"我看得出来，你和谢恩真是天作之合。$1",
+            "fall_Mon8_inlaw_Shane":"谢恩有一种独特的能量，你们俩在一起真是太棒了。$1",
+            "winter_Fri8_inlaw_Shane":"我看得出来，你和谢恩真是天作之合。$1",
+           }
+       },
+    
+        //Haley
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Haley",
+"Entries": {
+    //New
+            "summer_Sat8_inlaw_Shane":"我为你和谢恩感到非常高兴。$0#$b#你们是最甜蜜的一对。$1",
+            "winter_Mon8_inlaw_Shane":"我为你和谢恩感到非常高兴。$0#$b#你们是最甜蜜的一对。$1",
+           }
+       },
+    
+        //Leah
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Leah",
+"Entries": {
+    //New
+            "summer_Thu8_inlaw_Shane":"也许我可以为你和谢恩画点什么。$1",
+            "fall_Sat8_inlaw_Shane":"也许我可以为你和谢恩画点什么。$1",
+           }
+       },
+    
+        //Maru
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Maru",
+"Entries": {
+    //New
+            "spring_Tue8_inlaw_Shane":"我很高兴你和谢恩的事情有了进展!$1",
+            "fall_Wed8_inlaw_Shane":"我很高兴你和谢恩的事情有了进展!$1",
+           }
+       },
+    
+        //Penny
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Penny",
+"Entries": {
+    //New
+            "spring_Mon8_inlaw_Shane":"你好, @.$0#$e#你和谢恩真是一对可爱的夫妇。$1",
+            "fall_Wed8_inlaw_Shane":"你好, @.$0#$e#你和谢恩真是一对可爱的夫妇。$1",
+           }
+       },
+    
+        //Caroline
+
+    
+        //Clint
+
+    
+        //Demetrius
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Demetrius",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Shane":"我们都在努力追求生活的某种平衡，一种复杂中的均衡。$0#$e#看起来娶了谢恩正是你需要找到这种平衡的关键。$1",
+            "fall_Fri10_inlaw_Shane":"我们都在努力追求生活的某种平衡，一种复杂中的均衡。$0#$e#看起来娶了谢恩正是你需要找到这种平衡的关键。$1",
+           }
+       },
+    
+        //Evelyn
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Evelyn",
+"Entries": {
+    //New
+            "spring_Wed10_inlaw_Shane":"你好，亲爱的。$0#$e#婚姻并不总是容易的，你和谢恩将必须一起克服许多困难。$0#$b#愿你们一起成为更伟大的人。$1",
+            "summer_Tue10_inlaw_Shane":"成功的婚姻需要多次坠入爱河，总是和同一个人。$0#$b#我希望你和谢恩能一起过上长久幸福的生活。$1",
+            "fall_Thu10_inlaw_Shane":"你好，亲爱的。$0#$e#婚姻并不总是容易的，你和谢恩将必须一起克服许多困难。$0#$b#愿你们一起成为更伟大的人。$1",
+            "winter_Sun10_inlaw_Shane":"成功的婚姻需要多次坠入爱河，总是和同一个人。$0#$b#我希望你和谢恩能一起过上长久幸福的生活。$1",
+           }
+       },
+    
+        //George
+
+    
+        //Gus
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Gus",
+"Entries": {
+    //New
+            "spring_Fri10_inlaw_Shane":"如果你和谢恩想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "summer_Sun_inlaw_Shane":"如果你和谢恩想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "fall_Fri10_inlaw_Shane":"如果你和谢恩想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+            "winter_Wed10_inlaw_Shane":"如果你和谢恩想在小酒馆享受烛光晚餐，告诉我，我会准备好一切的。$1",
+           }
+       },
+        
+        //Jas
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Jas",
+"Entries": {
+    //Original
+            "Tue_inlaw_Shane":"我画了一幅你和谢恩的画，你要不要把它挂在冰箱上?$2",
+            "Tue4_inlaw_Shane":"Shane always used to look so sad, but then he met you.$0#$e#I love happy endings.$1",
+    //New
+            "spring_Tue10_inlaw_Shane":"I drew a picture of you and Shane, do you want to hang it on your fridge?$1",
+            "spring_Sat10_inlaw_Shane":"叔叔 @!^小姨 @!$1#$e#我长大后也想有一个和你们一样的婚礼。.$1",
+            "summer_Mon10_inlaw_Shane":"你能告诉谢恩回家的时候给我讲个睡前故事吗?$0",
+            "summer_Fri10_inlaw_Shane":"我想谢恩了。$0#$b#他会搬回来吗?$2",
+            "fall_Thu10_inlaw_Shane":"别告诉谢恩但是...$3#$b#...有时候你比他更好玩。$0#$e#但我都喜欢你们俩!$1",
+            "fall_Sat10_inlaw_Shane":"谢恩以前总是看起来很伤心，但是后来他遇到了你。$0#$e#我喜欢有好结局的故事。$1",
+            "winter_Wed10_inlaw_Shane":"那么你和谢恩... 是超级相爱吗?$0",
+            "winter_Sun10_inlaw_Shane":"你好, 叔叔 @.$0^你好, 小姨 @.$0#$b#为什么不能每周都庆祝一次婚礼呢?$0#$b#我想吃粉色蛋糕!$1",
+           }
+       },
+    
+        //Jodi
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Jodi",
+"Entries": {
+    //New
+            "spring_Mon10_inlaw_Shane":"你和谢恩怎么样?$0#$b#玛尼告诉我他很开心。$1",
+            "summer_Wed10_inlaw_Shane":"你好, @.$0#$e#你知道玛尼在你们的婚礼上比谢恩还要紧张吗?$1",
+            "fall_Sun10_inlaw_Shane":"你和谢恩怎么样?$0#$b#玛尼告诉我他很开心。$1",
+            "winter_Fri10_inlaw_Shane":"你好, @.$0#$e#你知道玛尼在你们的婚礼上比谢恩还要紧张吗?$1",
+           }
+       },
+    
+        //Kent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Kent",
+"Entries": {
+    //New
+            "summer_Tue10_inlaw_Shane":"我不太了解谢恩，但我为你感到高兴。$1",
+            "fall_Fri10_inlaw_Shane":"我不太了解谢恩，但我为你感到高兴。$1",
+           }
+       },
+    
+        //Lewis
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Lewis",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Shane":"在鹈鹕镇这里，像你和谢恩这样的年轻夫妇并不多见。$0#$e#看到年轻人坠入爱河，总是令人愉悦的。$1",
+            "summer_Sun10_inlaw_Shane":"在鹈鹕镇这里，像你和谢恩这样的年轻夫妇并不多见。$0#$e#看到年轻人坠入爱河，总是令人愉悦的。$1",
+            "fall_Sat10_inlaw_Shane":"我希望能尽快主持另一场婚礼，自从你们的婚礼以来已经有一段时间了。$0#$b#我们甚至可以搭建一个小宴会。$1",
+            "winter_Mon10_inlaw_Shane":"我希望能尽快主持另一场婚礼，自从你们的婚礼以来已经有一段时间了。$0#$b#我们甚至可以搭建一个小宴会。$1",
+           }
+       },
+        
+        //Linus
+
+
+        //Marnie
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Marnie",
+"Entries": {
+    //Original
+            "Sat8_inlaw_Shane":"有时候我觉得我是唯一能让这个家庭继续下去的人。$2#$e#不过，事实并非如此。你也是家人！你为谢恩做了很多好事。$1",
+            "Tue_inlaw_Shane":"我真高兴谢恩遇到了你。$1#$b#你现在要好好照顾他，知道吗?$0",
+            "Tue8_inlaw_Shane":"我真高兴谢恩遇到了你。$0#$e#他刚搬到镇上的时候，我不知道事情会如何发展，但现在一切都很好!$1",
+    //New
+            "spring_Tue10_inlaw_Shane":"谢恩最近看起来健康多了。$0#$b#我很高兴他决定和你一起住在农场。$$0",
+            "spring_Thu10_inlaw_Shane":"你好, @. 谢恩怎么样了?$0#$b#告诉他我们很想念他。$0",
+            "spring_Sat10_inlaw_Shane":"我真的希望你和谢恩一切都好。$0#$b#当你在他身边时，他笑得最灿烂。$1",
+            "summer_Mon10_inlaw_Shane":"贾斯很喜欢你和谢恩，但自从他搬出去后，他有点孤单。$0",
+            "summer_Wed10_inlaw_Shane":"我以前很担心谢恩的未来，但现在我看到他找到了最合适的归宿。$0#$e#你们一定要好好照顾彼此，好吗?$1",
+            "summer_Fri10_inlaw_Shane":"你一直是谢恩非常特别的人。$0#$b#我很高兴你们会一起度过余生。$1",
+            "fall_Wed_inlaw_Shane":"你好, @.$0#$e#我希望你和谢恩一生充满爱与幸福。$1",
+            "fall_Thu10_inlaw_Shane":"我真的希望你和谢恩一切都好。$0#$b#当你在他身边时，他笑得最灿烂。$1",
+            "fall_Fri10_inlaw_Shane":"谢恩的身体怎么样?$0#$b#希望农场的生活对他有好处。$1",
+            "winter_Tue10_inlaw_Shane":"谢恩最近经常出去吗?$0#$e#确保你们彼此照顾好对方!$1",
+            "winter_Fri_inlaw_Shane":"愿尤巴赐予你和谢恩幸福和喜乐的婚姻。$1",
+            "winter_Sun10_inlaw_Shane":"你一直是谢恩非常特别的人。$0#$b#我很高兴你们会一起度过余生。$1",
+
+           }
+       },
+
+        //Pam
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pam",
+"Entries": {
+    //New
+            "summer_Fri10_inlaw_Shane":"嘿，孩子。$0#$e#看起来你找到了一个英俊的年轻男士，是吗?$1",
+            "winter_Wed10_inlaw_Shane":"嘿，孩子。$0#$e#看起来你找到了一个英俊的年轻男士，是吗?$1",
+           }
+       },
+    
+        //Pierre
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Pierre",
+"Entries": {
+    //New
+            "summer_Mon10_inlaw_Shane":"你好, @.$0#$e#如果你想为谢恩买点好东西，你知道该找谁的。$1",
+            "winter_Thu10_inlaw_Shane":"你好, @.$0#$e#如果你想为谢恩买点好东西，你知道该找谁的。$1",
+           }
+       },    
+        //Robin
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Robin",
+"Entries": {
+    //New
+            "spring_Sat10_inlaw_Shane":"你和谢恩让我想起了德米特里厄斯和我刚开始约会的时候...$0#$e#那时候我们还很年轻。$0",
+            "fall_Fri10_inlaw_Shane":"你和谢恩让我想起了德米特里厄斯和我刚开始约会的时候...$0#$e#那时候我们还很年轻。$0",
+           }
+       },
+    
+        //Vincent
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Vincent",
+"Entries": {
+    //New
+            "spring_Tue10_inlaw_Shane":"你喜欢手链吗?$3#$e#我想给你和谢恩先生做个礼物。$1",
+            "summer_Wed10_inlaw_Shane":"我能告诉你一件事吗?$3#$e#我在你们的婚礼上玩得很开心。$0#$b#但妈妈告诉我你们不会再庆祝婚礼，为什么?$2",
+            "fall_Mon10_inlaw_Shane":"你喜欢手链吗?$3#$e#我想给你和谢恩先生做个礼物。$1",
+            "winter_Sun10_inlaw_Shane":"看到你和谢恩先生结婚真是太酷了。$1#$e#我从来没有想到会发生这种事!$0",
+           }
+       },
+    
+        //Willy
+
+    
+   ]
+}

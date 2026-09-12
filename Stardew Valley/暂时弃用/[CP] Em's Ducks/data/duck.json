@@ -1,0 +1,84 @@
+{
+	"Changes": [
+	{
+		"LogName": "Load assets",
+			"Action": "Load",
+			"Target": "{{ModId}}/MallardMale, {{ModId}}/MallardFemale, {{ModId}}/Wood, {{ModId}}/Apple, {{ModId}}/Muscovy, {{ModId}}/Cayuga, {{ModId}}/Call, {{ModId}}/Swedish, {{ModId}}/Saxony, {{ModId}}/Pintail, {{ModId}}/Mandarin, {{ModId}}/Bluebill, {{ModId}}/MallardMaleBaby, {{ModId}}/MallardFemaleBaby, {{ModId}}/WoodBaby, {{ModId}}/AppleBaby, {{ModId}}/MuscovyBaby, {{ModId}}/CayugaBaby, {{ModId}}/CallBaby, {{ModId}}/SwedishBaby, {{ModId}}/SaxonyBaby, {{ModId}}/PintailBaby, {{ModId}}/MandarinBaby, {{ModId}}/BluebillBaby",
+"FromFile": "assets/{{TargetWithoutPath}}.png"
+		},
+		{
+	"Action": "EditData",
+	"Target": "Data/FarmAnimals",
+	"TargetField": ["Duck"],
+	"Entries": {
+		"Texture": "{{ModId}}/MallardMale",
+		"BabyTexture": "{{ModId}}/MallardMaleBaby",
+		"Skins": [
+		{
+		"Id": "MallardFemale",
+		"Texture": "{{ModId}}/MallardFemale",
+		"BabyTexture": "{{ModId}}/MallardFemaleBaby",
+		"Weight": 1.0
+		},
+		{
+		"Id": "Wood",
+		"Texture": "{{ModId}}/Wood",
+		"BabyTexture": "{{ModId}}/WoodBaby",
+		"Weight": 1.0
+		},
+		{
+		"Id": "Apple",
+		"Texture": "{{ModId}}/Apple",
+		"BabyTexture": "{{ModId}}/AppleBaby",
+		"Weight": 1.0
+		},
+		{
+		"Id": "Muscovy",
+		"Texture": "{{ModId}}/Muscovy",
+		"BabyTexture": "{{ModId}}/MuscovyBaby",
+		"Weight": 1.0
+		},
+		{
+		"Id": "Cayuga",
+		"Texture": "{{ModId}}/Cayuga",
+		"BabyTexture": "{{ModId}}/CayugaBaby",
+		"Weight": 1.0
+		},
+		{
+		"Id": "Call",
+		"Texture": "{{ModId}}/Call",
+		"BabyTexture": "{{ModId}}/CallBaby",
+		"Weight": 1.0
+		},
+		{
+		"Id": "Swedish",
+		"Texture": "{{ModId}}/Swedish",
+		"BabyTexture": "{{ModId}}/SwedishBaby",
+		"Weight": 1.0
+		},
+		{
+		"Id": "Saxony",
+		"Texture": "{{ModId}}/Saxony",
+		"BabyTexture": "{{ModId}}/SaxonyBaby",
+		"Weight": 1.0
+		},
+		{
+		"Id": "Pintail",
+		"Texture": "{{ModId}}/Pintail",
+		"BabyTexture": "{{ModId}}/PintailBaby",
+		"Weight": 1.0
+		},
+		{
+		"Id": "Mandarin",
+		"Texture": "{{ModId}}/Mandarin",
+		"BabyTexture": "{{ModId}}/MandarinBaby",
+		"Weight": 1.0
+		},
+		{
+		"Id": "Bluebill",
+		"Texture": "{{ModId}}/Bluebill",
+		"BabyTexture": "{{ModId}}/BluebillBaby",
+		"Weight": 1.0
+			}
+		]
+	}}]}

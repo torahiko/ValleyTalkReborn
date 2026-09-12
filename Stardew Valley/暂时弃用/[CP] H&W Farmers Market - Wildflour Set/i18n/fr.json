@@ -1,0 +1,139 @@
+{
+
+  "FM_Wildflour_Pack_MilkshroomCrate": "Cageot de champignons laiteux",
+
+  "FM_Wildflour_Pack_MeringueShroomCrate": "Cageot de pleurotes meringue ",
+
+  "FM_Wildflour_Pack_HoneyFungusCrate": "Cageot de champimiels",
+
+  "FM_Wildflour_Pack_ChickenWoodsCrate": "Cageot de poulets-des-bois",
+
+  "FM_Wildflour_Pack_WheatshroomCrate": "Cageot de volvaires du froment",
+
+  "FM_Wildflour_Pack_MagicShroomCrate": "Cageot de champignons magiques",
+
+  "FM_Wildflour_Pack_MagicShroomCrate2": "Cageot de champignons magiques",
+
+  "FM_Wildflour_Pack_LemonCrate": "Cageot de mini-citrons",
+
+  "FM_Wildflour_Pack_LimeCrate": "Cageot de mini-limes",
+
+  "FM_Wildflour_Pack_RaspberryCrate": "Cageot de framboises sauvages",
+
+  "FM_Wildflour_Pack_StrawberryCrate": "Cageot de fraises des bois",
+
+  "FM_Wildflour_Pack_AppleCrate": "Cageot de pommes ambroisie",
+
+  "FM_Wildflour_Pack_LapisCrate": "Cageot de gouttelunes de lapis",
+
+  "FM_Wildflour_Pack_JadeCrate": "Cageot de gouttelunes de jade",
+
+  "FM_Wildflour_Pack_MangoCrate": "Cageot de mangues grand-soleil",
+
+  "FM_Wildflour_Pack_BasilCrate": "Cageot de basilic doux",
+
+  "FM_Wildflour_Pack_MintCrate": "Cageot de menthe Pélican",
+
+  "FM_Wildflour_Pack_ThymeCrate": "Cageot de thym citronné",
+
+  "FM_Wildflour_Pack_RosemaryCrate": "Cageot de romarin",
+
+  "FM_Wildflour_Pack_SageCrate": "Cageot de sauge Sève-cendreuse",
+
+  "FM_Wildflour_Pack_CilantroCrate": "Cageot de coriandre Sève-cendreuse",
+
+  "FM_Wildflour_Pack_MugwortCrate": "Cageot d'armoise",
+
+  "FM_Wildflour_Pack_AlmondCrate": "Cageot d'amandes",
+
+  "FM_Wildflour_Pack_OnionCrate": "Petit cageot d'oignons rouges",
+
+  "FM_Wildflour_Pack_SmFaerieHelmetsCrate": "Petit cageot de casques-de-fées",
+
+  "FM_Wildflour_Pack_SmAmanitaCrate": "Petit cageot d'amanites",
+
+  "FM_Wildflour_Pack_SmChickenWoodsCrate": "Petit cageot de poulets-des-bois",
+
+  "FM_Wildflour_Pack_SmMeringueShroomCrate": "Petit cageot de pleurotes meringue",
+
+  "FM_Wildflour_Pack_SmHoneyFungusCrate": "Petit cageot de champimiels",
+
+  "FM_Wildflour_Pack_SmWheatShroomCrate": "Petit cageot de volvaires du froment",
+
+  "FM_Wildflour_Pack_SmMilkShroomCrate": "Petit cageot de champignons laiteux",
+
+  "FM_Wildflour_Pack_SmMagicShroomCrate": "Petit cageot de champignons magiques",
+
+  "FM_Wildflour_Pack_SmMagicShroomCrate2": "Petit cageot de champignons magiques",
+
+  "FM_Wildflour_Pack_SmjasminCrate": "Petit cageot de jasmin",
+
+  "FM_Wildflour_Pack_SmLavenderCrate": "Petit cageot de lavande",
+
+  "FM_Wildflour_Pack_SmChamomileCrate": "Petit cageot de camomille",
+
+  "FM_Wildflour_Pack_SmYarrowCrate": "Petit cageot d'achillée",
+
+  "FM_Wildflour_Pack_SmValerianCrate": "Petit cageot de valériane",
+
+  "FM_Wildflour_Pack_SmGeraniumCrate": "Petit cageot de géranium",
+
+  "FM_Wildflour_Pack_SmVioletCrate": "Petit cageot de violettes",
+
+  "FM_Wildflour_Pack_SmDaisyCrate": "Petit cageot de pâquerettes",
+
+
+  "FM_Wildflour_Pack_AppleBasket": "Panier de pommes",
+
+  "FM_Wildflour_Pack_LapisBasket": "Panier de gouttelunes de lapis",
+
+  "FM_Wildflour_Pack_BerryBasket": "Panier de fruits des bois",
+
+  "FM_Wildflour_Pack_AmberBasket": "Panier de gouttelunes d'ambre",
+
+  "FM_Wildflour_Pack_ShroomBasket": "Panier de champignons",
+
+  "FM_Wildflour_Pack_JadeBasket": "Panier de gouttelunes de jade",
+
+
+
+  "FM_Wildflour_Pack_AppleBarrel": "Baril de pommes",
+
+  "FM_Wildflour_Pack_LemonBarrel": "Baril de citrons",
+
+  "FM_Wildflour_Pack_AlmondBarrel": "Baril d'amandes",
+
+  "FM_Wildflour_Pack_AmberBarrel": "Baril de gouttelunes d'ambre",
+
+  "FM_Wildflour_Pack_LapisBarrel": "Baril de gouttelunes de lapis",
+
+
+  "FM_Wildflour_Pack_LemonSack": "Sac de mini-citrons",
+
+  "FM_Wildflour_Pack_LimeSack": "Sac de mini-limes",
+
+  "FM_Wildflour_Pack_GrapeSack": "Sac de gouttelunes",
+
+  "FM_Wildflour_Pack_CilantroSack": "Sac de coriandre",
+
+  "FM_Wildflour_Pack_OnionSack": "Sac d'oignons rouges",
+
+  "FM_Wildflour_Pack_AlmondSack": "Sac d'amandes Saint-Cannoli",
+
+  "FM_Wildflour_Pack_RosemarySack": "Sac de romarin",
+
+  "FM_Wildflour_Pack_MugwortSack": "Sac d'armoise",
+
+  "FM_Wildflour_Pack_SmFlowerDisplay": "Petit présentoir de fleurs",
+
+  "FM_Wildflour_Pack_SmFlowerDisplay2": "Petit présentoir de fleurs",
+
+  "FM_Wildflour_Pack_MedShroomDisplay": "Présentoir de champignons",
+
+  "FM_Wildflour_Pack_LgHerbDisplay": "Grand présentoir d'aromates",
+  "FM_Wildflour_Pack_LgFruitDisplay": "Grand présentoir de fruits",
+  "FM_Wildflour_Pack_LgFlowerDisplay": "Grand présentoir de fleurs",
+  "FM_Wildflour_Pack_LgShroomDisplay": "Grand présentoir de champignons"
+
+
+}

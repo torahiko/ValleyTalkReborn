@@ -1,0 +1,16 @@
+﻿{
+  "Name": "Don't Starve",
+  "Author": "Yurin",
+  "Version": "1.0.0",
+  "Description": "Don't Starve in Stardew Valley",
+  "UniqueID": "Yurin.DontStarve",
+  "EntryDll": "DontStarve.dll",
+  "MinimumApiVersion": "4.0.0",
+  "Dependencies": [
+    {
+      "UniqueID": "Yurin.MinuteTimeHelper",
+      "MinimumVersion": "1.0.4"
+    }
+  ],
+  "UpdateKeys": [ "Github:Nyayurin/DontStarve" ]
+}

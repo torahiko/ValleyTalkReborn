@@ -1,0 +1,47 @@
+﻿{
+    /*********
+    ** Sort button
+    *********/
+    "sort.by-name": "Név",
+    "sort.by-price": "Eladási Ár",
+    "sort.by-type": "Kategória",
+    "sort.by-id": "ID",
+
+
+    /*********
+    ** Category dropdown
+    *********/
+    "filter.all": "Minden",
+    "filter.artisan-and-cooking": "Kézműves & főzés",
+    "filter.crafting.products": "Barkácsolás: termékek",
+    "filter.crafting.resources": "Barkácsolás: alapanyagok",
+    "filter.decor.furniture": "Dekoráció: bútorok",
+    "filter.decor.other": "Dekoráció: egyebek",
+    "filter.equipment-boots": "Felszerelés: cipők",
+    "filter.equipment-clothes": "Felszerelés: ruhák",
+    "filter.equipment-hats": "Felszerelés: kalapok",
+    "filter.equipment-rings": "Felszerelés: gyűrűk",
+    "filter.equipment-tools": "Felszerelés: eszközök",
+    "filter.equipment-weapons": "Felszerelés: fegyverek",
+    "filter.farm-animal-drops": "Farm: állati termékek",
+    "filter.farm-crops": "Farm: termések",
+    "filter.farm-seeds": "Farm: magvak",
+    "filter.fish": "Halak",
+    "filter.minerals-and-artifacts": "Ásványok & műtárgyak",
+    "filter.miscellaneous": "Egyéb",
+
+
+    /*********
+    ** Generic Mod Config Menu UI
+    *********/
+    "config.title.controls": "Vezérlés",
+    "config.show-menu-key.name": "Menü megjelenítése",
+    "config.show-menu-key.desc": "A billentyű, ami megnyitja a menüt (amikor nincs másik menü megnyitva).",
+
+    "config.title.options": "Beállítások",
+    "config.apply-trash-can-upgrade.name": "Kuka fejlesztése",
+    "config.apply-trash-can-upgrade.desc": "Hatással legyen-e a menüre a kidobott tárgyak árának egy részének visszatérítése a kuka fejlesztésének után",
+
+    "config.title.hide-categories": "Kategóriák elrejtése",
+    "config.hide-category.desc": "'{{name}}' elrejtése a menüből. Ha el van rejtve, a kategóriába tartozó tárgyak nem lesznek elérhetőek a menüben."
+}

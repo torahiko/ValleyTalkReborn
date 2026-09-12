@@ -1,0 +1,101 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+            "DS_Pig_Skin": {
+                "Name": "Pig Skin",
+                "DisplayName": "{{i18n:Pig_Skin.name}}",
+                "Description": "{{i18n:Pig_Skin.text}}",
+                "Type": "Basic",
+                "Category": -18,
+                "Price": 600,
+                "Texture": "Mods\\ZG.DS\\Pig Skin",
+                "SpriteIndex": 0,
+                "Edibility": -300,
+                "IsDrink": false,
+                "Buffs": null,
+                "GeodeDropsDefaultItems": false,
+                "GeodeDrops": null,
+                "ArtifactSpotChances": null,
+                "CanBeGivenAsGift": true,
+                "CanBeTrashed": true,
+                "ExcludeFromFishingCollection": false,
+                "ExcludeFromShippingCollection": false,
+                "ExcludeFromRandomSale": false,
+                "ContextTags": [
+                  "color_pink","forage_item"
+                ],
+                "CustomFields": null
+              }
+            }
+        },
+		{
+			"Log": "Add Gift Tastes for NPCs",
+			"Action": "EditData",
+			"Target": "Data/NPCGiftTastes",
+			"TextOperations": [
+    { "Operation": "Append",
+			  "Target": ["Entries", "Universal_Dislike"],
+			  "Value": " DS_Pig_Skin",
+			  "Delimiter": " "
+			},
+      {
+        "Operation": "Append",
+        "Target": ["Fields", "Emily", "1"],
+        "Value": " DS_Pig_Skin", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target": ["Fields", "Penny", "7"],
+        "Value": " DS_Meat", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target": ["Fields", "Evelyn", "7"],
+        "Value": " DS_Meat", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target": ["Fields", "Jas", "7"],
+        "Value": " DS_Meat", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target": ["Fields", "Kent", "7"],
+        "Value": " DS_Meat", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target": ["Fields", "Leo", "7"],
+        "Value": " DS_Meat", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target": ["Fields", "Vincent", "7"],
+        "Value": " DS_Meat", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target": ["Fields", "Marnie", "7"],
+        "Value": " DS_Meat", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target":  ["Fields", "Abigail", "3"],
+        "Value": " DS_Meat", 
+        "Delimiter": " "
+      }
+    ]
+    }
+    ]
+}

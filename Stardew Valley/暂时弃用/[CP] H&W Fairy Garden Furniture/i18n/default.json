@@ -1,0 +1,258 @@
+{
+ 
+  //CATALOGUE
+
+  "FairyGardenFurni_Catalogue": "H&W Fairy Garden Furniture Catalogue",
+
+  //GNOMES
+
+  "FairyGardenFurni_GnomeBlushing": "Blushing Gnome",
+
+  "FairyGardenFurni_GnomeButterflies": "Butterfly Gnome",
+
+  "FairyGardenFurni_GnomeDancing": "Dancing Gnomes",
+
+  "FairyGardenFurni_GnomeDelivery": "Delivery Gnome",
+ 
+  "FairyGardenFurni_GnomeFairy": "Fairy Gnome",
+
+  "FairyGardenFurni_GnomeFlorist": "Florist Gnome",
+
+  "FairyGardenFurni_GnomeFlowerBasket": "Flower Basket Gnome",
+
+  "FairyGardenFurni_GnomeFlowerKing": "Flower King Gnome",
+
+  "FairyGardenFurni_GnomeFlowerQueen": "Flower Queen Gnome",
+
+  "FairyGardenFurni_GnomeGroovy": "Groovy Gnome",
+
+  "FairyGardenFurni_GnomeKissGraceful": "Graceful Kissing Gnome",
+
+  "FairyGardenFurni_GnomeKissHandsome": "Handsome Kissing Gnome",
+
+  "FairyGardenFurni_GnomeLeisurely": "Leisurely Gnome",
+ 
+  "FairyGardenFurni_GnomeLoving": "Loving Gnomes",
+
+  "FairyGardenFurni_GnomeMaiden": "Gnome Maiden Gnome",
+
+  "FairyGardenFurni_GnomeMushGirl": "Dainty Mushgirl Gnome",
+
+  "FairyGardenFurni_GnomeMushGirl2": "Shy Mushgirl Gnome",
+ 
+  "FairyGardenFurni_GnomeOnePiece": "One Piece Gnome",
+
+  "FairyGardenFurni_GnomeParasol": "Parasol Gnome",
+
+  "FairyGardenFurni_GnomeTubular": "Tubular Gnome",
+
+  "FairyGardenFurni_GnomeOverworked": "Overworked Gnome",
+
+  "FairyGardenFurni_GnomePancakeLoving": "Pancake Loving Gnome",
+
+  "FairyGardenFurni_GnomePotter": "Potter Gnome",
+
+  "FairyGardenFurni_GnomePrince": "Prince Gnome",
+
+  "FairyGardenFurni_GnomePrincess": "Princess Gnome",
+
+  "FairyGardenFurni_GnomePKnome": "Knome",
+
+  "FairyGardenFurni_GnomeStill": "Still Gnome",
+
+  "FairyGardenFurni_GnomeSturdy": "Sturdy Gnome",
+
+  "FairyGardenFurni_GnomeVigil": "Vigil Gnome",
+
+  "FairyGardenFurni_GnomeWinking": "Winking Gnome",
+
+  "FairyGardenFurni_GnomeWitch": "Witch Gnome",
+
+  "FairyGardenFurni_GnomeParentDependable": "Dependable Parent Gnome",
+
+  "FairyGardenFurni_GnomeParentOutgoing": "Outgoing Parent Gnome",
+
+  "FairyGardenFurni_GnomeParentSturdy": "Sturdy Parent Gnome",
+  
+  "FairyGardenFurni_GnomeParentWhimsical": "Whimsical Parent Gnome",
+
+  "FairyGardenFurni_GnomeParentChild1": "Curious Child Gnome",
+
+  "FairyGardenFurni_GnomeParentChild2": "Creative Child Gnome",
+
+  "FairyGardenFurni_GnomeCat": "Definitely A Gnome",
+
+  "FairyGardenFurni_GnomeFroggy": "Familiar Gnome",
+
+  //GNOME HOUSES
+
+  "FairyGardenFurni_GnomeHouseAesthete": "Aesthete Gnome House",
+
+  "FairyGardenFurni_GnomeHouseAngelTrumpet": "Angel Trumpet Gnome House",
+ 
+  "FairyGardenFurni_GnomeHouseArtsy": "Artsy Gnome House",
+ 
+  "FairyGardenFurni_GnomeHouseBelladonna": "Belladonna Gnome House",
+
+  "FairyGardenFurni_GnomeHouseDainty": "Dainty Gnome House",
+
+  "FairyGardenFurni_GnomeHouseDroopy": "Droopy Gnome House",
+
+  "FairyGardenFurni_GnomeHouseDuplex": "Duplex Gnome House",
+
+  "FairyGardenFurni_GnomeHouseFancy": "Fancy Gnome House",
+
+  "FairyGardenFurni_GnomeHouseFlowering": "Flowering Gnome House",
+
+  "FairyGardenFurni_GnomeHouseLeafy": "Leafy Gnome House",
+
+  "FairyGardenFurni_GnomeHouseLively": "Lively Gnome House",
+
+  "FairyGardenFurni_GnomeHouseMinacious": "Minacious Gnome House",
+
+  "FairyGardenFurni_GnomeHouseOldStump": "Old Stump Gnome House",
+  
+  "FairyGardenFurni_GnomeHouseQuaint": "Quaint Gnome House",
+ 
+  "FairyGardenFurni_GnomeHouseSimple": "Simple Gnome House",
+
+  "FairyGardenFurni_GnomeHouseSweet": "Sweet Gnome House",
+ 
+  "FairyGardenFurni_GnomeHouseTall": "Tall Gnome House",
+
+  "FairyGardenFurni_GnomeHouseWateringCan": "Watering Can Gnome House",
+
+
+  "FairyGardenFurni_GnomeHouseBouncy": "Bouncy Gnome House",
+  "FairyGardenFurni_GnomeHouseFloppy": "Floppy Gnome House",
+  "FairyGardenFurni_GnomeHouseGilly": "Gilly Gnome House",
+  "FairyGardenFurni_GnomeHouseSmallAmanita": "Small Amanita Gnome House",
+  "FairyGardenFurni_GnomeHouseRotund": "Rotund Gnome House",
+  "FairyGardenFurni_GnomeHouseToadstool": "Toadstool Gnome House",
+  "FairyGardenFurni_GnomeHouseTriple": "Triple Gnome House",
+  "FairyGardenFurni_GnomeHouseShiitake": "Shiitake Gnome House",
+  "FairyGardenFurni_GnomeHousePomegranate": "Pomegranate Gnome House",
+  "FairyGardenFurni_GnomeHousePumpkin": "Pumpkin Gnome House",
+  "FairyGardenFurni_GnomeHouseHanging": "Hanging Gnome House",
+  "FairyGardenFurni_GnomeHouseLush": "Lush Gnome House",
+  "FairyGardenFurni_GnomeHouseAcorn": "Acorn Gnome House",
+  "FairyGardenFurni_GnomeHouseModern": "Modern Gnome House",
+  "FairyGardenFurni_GnomeHouseWindmillMini": "Mini Windmill Gnome House",
+  "FairyGardenFurni_GnomeHouseViney": "Viney Gnome House",
+  "FairyGardenFurni_GnomeHouseBlooming": "Blooming Gnome House",
+  "FairyGardenFurni_GnomeHousePear": "Pear Gnome House",
+  "FairyGardenFurni_GnomeHouseLargeWhimsical": "Large Whimsical Gnome House",
+  "FairyGardenFurni_GnomeHouseLargeWindmill": "Large Windmill Gnome House",
+  "FairyGardenFurni_GnomeHouseFlowerPower": "Flower Power Gnome House",
+  "FairyGardenFurni_GnomeHouseCheeryTeapot": "Cheery Teapot Gnome House",
+  "FairyGardenFurni_GnomeHouseMushTeapot": "Mush Teapot Gnome House",
+  "FairyGardenFurni_GnomeHouseFlowerTeapot": "Flowery Teapot Gnome House",
+  "FairyGardenFurni_GnomeHouseDoubleFlower": "Double Petal Gnome House",
+  "FairyGardenFurni_GnomeHouseLargeAmanita": "Large Amanita Gnome House",
+  "FairyGardenFurni_GnomeHouseModestAmanita": "Modest Amanita Gnome House",
+  "FairyGardenFurni_GnomeHouseSunset": "Sunset Gnome House",
+  "FairyGardenFurni_GnomeHouseBlueberry":"Blueberry Gnome House",
+
+
+  //MUSHROOMS
+
+  "FairyGardenFurni_MushroomBrave": "Brave Lil Mushroom",
+ 
+  "FairyGardenFurni_MushroomChantrelle": "Chantrelle Mushroom",
+
+  "FairyGardenFurni_MushroomClassic": "Classic Mushroom",
+
+  "FairyGardenFurni_MushroomDoubleTrouble": "Double Trouble Mushroom",
+
+  "FairyGardenFurni_MushroomDoughty": "Doughty Mushroom",
+
+  "FairyGardenFurni_MushroomElegant": "Elegant Mushroom",
+
+  "FairyGardenFurni_MushroomFull": "Full Mushroom",
+
+  "FairyGardenFurni_MushroomFungi": "Just a fun-gi.",
+
+  "FairyGardenFurni_MushroomPerky1": "Perky Mushroom",
+ 
+  "FairyGardenFurni_MushroomPerky2": "Perkier Mushroom",
+
+  "FairyGardenFurni_MushroomPerky3": "Perkiest Mushroom",
+
+  "FairyGardenFurni_MushroomSturdy": "Sturdy Mushroom",
+
+  "FairyGardenFurni_MushroomTall": "Tall Mushroom",
+ 
+  // LAMPS
+
+  "FairyGardenFurni_AcornLamp": "Acorn Lamp",
+ 
+  "FairyGardenFurni_FairyLamp": "Fairy Lamp",
+
+  // DECOR
+ 
+  "FairyGardenFurni_Arbor": "Fairy Arbor",
+
+  "FairyGardenFurni_AxeStump": "Axe in Stump",
+
+  "FairyGardenFurni_TreeSwing": "Fairy Tree Swing",
+
+  "FairyGardenFurni_BirdhouseAcorn": "Acorn Birdhouse",
+
+  "FairyGardenFurni_BirdhouseElysian": "Elysian Birdhouse",
+
+  "FairyGardenFurni_BirdhouseFrowsy": "Frowsy Birdhouse",
+
+  "FairyGardenFurni_BirdhouseRomantic": "Romantic Birdhouse",
+
+  "FairyGardenFurni_Bridge": "Fairy Bridge",
+
+  "FairyGardenFurni_SmallFountain": "Fairy Fountain",
+
+  "FairyGardenFurni_FairyBasket": "Fairy Basket",
+
+  "FairyGardenFurni_FairyLantern": "Fairy Lantern",
+
+  "FairyGardenFurni_FairyTeaSet": "Fairy Tea Table",
+
+  "FairyGardenFurni_TeaSet": "Fairy Tea Set",
+
+  "FairyGardenFurni_MushroomTable": "Mushroom Table",
+
+  "FairyGardenFurni_StumpTable": "Stump Table",
+
+  "FairyGardenFurni_SmStumpTable": "Small Stump Table",
+
+  "FairyGardenFurni_StumpSeat": "Stump Seat",
+
+  "FairyGardenFurni_StumpStool": "Stump Stool",
+
+  "FairyGardenFurni_FairySign": "Fairy Sign",
+
+  "FairyGardenFurni_FairyBonfire": "Fairy Bonfire",
+
+  "FairyGardenFurni_FairyDaybed": "Fairy Daybed",
+
+  "FairyGardenFurni_PlantDisplay": "Plant Display",
+
+  "FairyGardenFurni_FairyGazebo": "Fairy Gazebo",
+  
+  "FairyGardenFurni_SteppingStone": "Stepping Stone",
+  
+  "FairyGardenFurni_FairySwing": "Fairy Swing",
+
+  "FairyGardenFurni_VerticalPlanter": "Vertical Planter",
+
+  "FairyGardenFurni_WaterPump": "Old Fashioned Water Pump",
+
+  "FairyGardenFurni_Well": "Wishing Well",
+ 
+  "FairyGardenFurni_Windmill1": "Fairy Windmill",
+
+  "FairyGardenFurni_Windmill2": "Pixie Windmill",
+
+  "FairyGardenFurni_MushCircle1":"Fairy Circle",
+
+  "FairyGardenFurni_MushCircle2":"Fairy Circle",
+
+}
+  

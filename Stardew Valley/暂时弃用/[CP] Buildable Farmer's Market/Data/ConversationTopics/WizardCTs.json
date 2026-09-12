@@ -1,0 +1,396 @@
+{
+    "Changes": [
+        {
+            "LogName": "Include CT Template - Wizard Mushroom",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "MushroomShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Mushroom}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2,EdibleItem.3, ForageItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Spring Crops",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "SpringCropsShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Crops.Spring}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2,EdibleItem.3, {{SpringSeasonal}}}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Summer Crops",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "SummerCropsShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Crops.Summer}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, {{SummerSeasonal}}}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Fall Crops",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "FallCropsShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Crops.Fall}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, {{FallSeasonal}}}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard All Crops",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "AllCropsShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Crops}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Oil",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "OilShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Oil}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "ArtisanGoodsItem",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Jelly",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "JellyShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Jelly}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, ArtisanGoodsItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Honey",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "HoneyShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Honey}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, ArtisanGoodsItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Juice",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "JuiceShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Juice}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, ArtisanGoodsItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Pickles",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "PickleShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Pickle}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, ArtisanGoodsItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Artisan Goods",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "ArtisanGoodsShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.ArtisanGoods}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "ArtisanGoodsItem",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Forage",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "ForageShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Forage}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, ForageItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Berry",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "BerryShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Berry}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, ForageItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Egg",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "EggShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Egg}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, AnimalItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Milk",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "MilkShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Milk}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, AnimalItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Animal Goods",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "AnimalGoodsShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.AnimalGoods}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "AnimalItem",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Spring Fruit",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "SpringFruitShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Fruit}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.3, {{SpringSeasonal}}}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Summer Fruit",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "SummerFruitShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Fruit}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.3, {{SummerSeasonal}}}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Fall Fruit",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "FallFruitShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Fruit}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.3, {{FallSeasonal}}}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard All Fruit",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "AllFruitShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Fruit}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.3}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Flower",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "FlowerShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Flower}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "FlowerItem",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Herb",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "CTToken": "HerbShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Herb}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Bread",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMB",
+                "CTToken": "BreadShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Bread}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Dessert",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMB",
+                "CTToken": "SweetBakeryShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.SweetBakery}}",
+                "Determiner": "{{i18n: BFM.Those}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, DessertItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Fish",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMFM",
+                "CTToken": "FishShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Fish}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, FishingItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Crabpot",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMFM",
+                "CTToken": "CrabpotShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Crabpot}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, FishingItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Roe",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMFM",
+                "CTToken": "RoeShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Roe}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3, FishingItem}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        },
+        {
+            "LogName": "Include CT Template - Wizard Meat",
+            "Action": "Include",
+            "FromFile": "Data/CT_Template.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMFM",
+                "CTToken": "MeatShop",
+                "CharacterName": "Wizard",
+                "ItemText": "{{i18n: BFM.Meat}}",
+                "Determiner": "{{i18n: BFM.That}}",
+                "FollowupText": "{{Random: EdibleItem.1, EdibleItem.2, EdibleItem.3}}",
+                "CTRandom": "{{Random: {{DialogueTriggerRarityToken}}}}"
+            }
+        }
+    ]
+}

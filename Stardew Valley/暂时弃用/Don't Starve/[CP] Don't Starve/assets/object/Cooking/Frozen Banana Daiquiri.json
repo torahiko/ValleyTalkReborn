@@ -1,0 +1,124 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "DS_Frozen_Banana_Daiquiri": {
+            "Name": "Frozen Banana Daiquiri",
+            "DisplayName": "{{i18n:Frozen_Banana_Daiquiri.name}}",
+            "Description": "{{i18n:Frozen_Banana_Daiquiri.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 270,
+            "Texture": "Mods\\ZG.DS\\Frozen Banana Daiquiri",
+            "SpriteIndex": 0,
+            "Edibility": 50,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": false,
+            "ExcludeFromShippingCollection": false,
+            "ExcludeFromRandomSale": false,
+            "Buffs": [
+              {
+                "Duration": 188,
+                "CustomAttributes": {
+                  "FarmingLevel": 0,
+                  "FishingLevel": 0,
+                  "MiningLevel": 0,
+                  "LuckLevel": 3,
+                  "ForagingLevel": 0,
+                  "MaxStamina": 0,
+                  "MagneticRadius": 0,
+                  "Speed": 0,
+                  "Defense": 15,
+                  "Attack": 0
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "Action": "EditData", 
+        "Target": "Data/CookingRecipes", 
+      
+        "Entries": { 
+          "Frozen Banana Daiquiri":"91 1 233 1/25 5/DS_Frozen_Banana_Daiquiri/" 
+        }
+      },
+          {
+              "Log": "Add Gift Tastes for NPCs",
+              "Action": "EditData",
+              "Target": "Data/NPCGiftTastes",
+              "TextOperations": [
+      { "Operation": "Append",
+                "Target": ["Entries", "Universal_like"],
+                "Value": " DS_Frozen_Banana_Daiquiri",
+                "Delimiter": " "
+              },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Demetrius", "1"],
+          "Value": " DS_Frozen_Banana_Daiquiri", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Emily", "7"],
+          "Value": " DS_Frozen_Banana_Daiquiri", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Harvey", "9"],
+          "Value": " DS_Frozen_Banana_Daiquiri", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Leah", "9"],
+          "Value": " DS_Frozen_Banana_Daiquiri", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Leo", "5"],
+          "Value": " DS_Frozen_Banana_Daiquiri", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Krobus", "5"],
+          "Value": " DS_Frozen_Banana_Daiquiri", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Willy", "5"],
+          "Value": " DS_Frozen_Banana_Daiquiri", 
+          "Delimiter": " "
+        }
+      ]
+      },
+      {
+        "Action": "EditData",
+        "Target": "Data/Shops", 
+        "TargetField": [ 
+          "IceCreamStand", 
+          "Items" 
+        ],
+        "Entries": { 
+          "DS_Frozen_Banana_DaiquiriRecipe": { 
+            "Id": "Frozen Banana Daiquiri", 
+            "ItemId": "DS_Frozen_Banana_Daiquiri", 
+            "AvailableStock": 1, 
+            "TradeItemId": "(O)91",
+            "TradeItemAmount": 20,
+            "IsRecipe": true,
+            "Price": -1,
+            "Condition":"PLAYER_HAS_ACHIEVEMENT Any 40"
+        }
+      }
+    }
+    ]
+  }

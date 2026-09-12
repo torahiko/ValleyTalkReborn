@@ -251,14 +251,9 @@ namespace ValleytalkReborn
         {
             if (stage == 1)
             {
-            string[] keysToRemove = {
-                "thinking", "thinking_config", "thinking_budget", "budget_tokens",
-                "max_thinking_tokens", "disable_thinking", "enable_thinking",
-                "reasoning", "reasoning_effort", "include_reasoning",
-                "max_completion_tokens", "chat_template_kwargs"
-            };
-            foreach (var key in keysToRemove)
-                requestBody.Remove(key);
+                requestBody.Remove("thinking");
+                requestBody.Remove("chat_template_kwargs");
+                requestBody.Remove("reasoning");
             }
             else if (stage == 2)
             {
@@ -271,6 +266,7 @@ namespace ValleytalkReborn
         /// </summary>
         private static void LogFinalPayloadSuppression(string serializedJson, string endpointUrl)
         {
+            if (ModEntry.Config?.Debug != true) return;
             try
             {
                 var obj = JObject.Parse(serializedJson);
@@ -490,7 +486,6 @@ namespace ValleytalkReborn
             if (reasoningModel)
             {
                 requestBody["max_completion_tokens"] = genParams.MaxTokens;
-                requestBody["reasoning_effort"] = "none";
             }
             else
             {
@@ -822,9 +817,11 @@ namespace ValleytalkReborn
             jsonData = SerializePayloadWithCustomBody(requestBody, genParams.AllowCustomBody);
             LogFinalPayloadSuppression(jsonData, endpointUrl);
 
-            // Attempts loop: initial + 2 degradation attempts = 3 total
+            // Retry loop: degradation (stage 0→1→2) and 429/5xx retries are independent
             int stage = rememberedStage;
-            for (int attempt = 0; attempt < 3; attempt++)
+            int retryAttempt = 0;
+            const int maxRetries = 3;
+            while (retryAttempt < maxRetries)
             {
                 ttftWatch.Restart();
 
@@ -864,9 +861,10 @@ namespace ValleytalkReborn
                                     }
 
                                     // Retry on 429/5xx (same stage)
-                                    if ((status == 429 || status >= 500) && attempt < 2)
+                                    if ((status == 429 || status >= 500) && retryAttempt < maxRetries - 1)
                                     {
-                                        ModEntry.SMonitor?.Log($"[LlmOpenAiBase] Streaming got {status}, retrying (attempt {attempt + 1}/3).", StardewModdingAPI.LogLevel.Debug);
+                                        retryAttempt++;
+                                        ModEntry.SMonitor?.Log($"[LlmOpenAiBase] Streaming got {status}, retrying (attempt {retryAttempt}/{maxRetries}).", StardewModdingAPI.LogLevel.Debug);
                                         await Task.Delay(250);
                                         continue;
                                     }
@@ -979,6 +977,9 @@ namespace ValleytalkReborn
                                                     LooksLikeDegenerateRepetition(fullContentBuilder.ToString()))
                                                 {
                                                     degenerateDetected = true;
+                                                    ModEntry.SMonitor?.Log("[LlmOpenAiBase] Degenerate/repetitive output detected mid-stream; aborting.", StardewModdingAPI.LogLevel.Warn);
+                                                    linkedCts.Cancel();
+                                                    break;
                                                 }
                                             }
                                         }

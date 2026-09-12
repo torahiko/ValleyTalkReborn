@@ -1,0 +1,632 @@
+{
+	//Farming
+    "Profession.Nutritionist.Name": "营养师",
+    "Profession.Nutritionist.Desc": "处理鸡舍动物产品的机器有几率使产出翻倍。",
+    "Profession.Breeder.Name": "饲养员",
+    "Profession.Breeder.Desc": "出售鸡舍动物时价值更高。",
+    "Profession.Musterer.Name": "召集者",
+    "Profession.Musterer.Desc": "处理畜棚动物产品的机器工作速度更快。",
+    "Profession.Caretaker.Name": "看护者",
+    "Profession.Caretaker.Desc": "挤奶器和剪刀不消耗能量，动物吃干草时有几率不消耗干草。",
+
+    "Profession.Machinist.Name": "机械师",
+    "Profession.Machinist.Desc": "处理收获作物的机器工作速度更快。",
+    "Profession.Connoisseur.Name": "鉴赏家",
+    "Profession.Connoisseur.Desc": "小镇居民们将更喜爱工匠制品。",
+    "Profession.Horticulturist.Name": "园艺师",
+    "Profession.Horticulturist.Desc": "温室中种植的树木会产出铱星品质的产物。",
+    "Profession.Agronomist.Name": "农学家",
+    "Profession.Agronomist.Desc": "如果作物在温室外种植，肥料有几率不被消耗。",
+
+	//Fishing
+    "Profession.Oceanologist.Name": "海洋学家",
+    "Profession.Oceanologist.Desc": "在鱼竿上附加鱼饵将防止钓到垃圾。",
+    "Profession.Artificer.Name": "钓鱼仙人",
+    "Profession.Artificer.Desc": "鱼钩在使用时更耐用。",
+    "Profession.Plunderer.Name": "掠夺者",
+    "Profession.Plunderer.Desc": "每次使用鱼竿时，必定钓到宝箱。",
+    "Profession.Buccaneer.Name": "海盗",
+    "Profession.Buccaneer.Desc": "宝箱中包含更稀有和更有价值的物品。",
+	
+    "Profession.Aquaculturalist.Name": "水产养殖专家",
+    "Profession.Aquaculturalist.Desc": "鱼塘有机会产出双倍鱼籽。",
+    "Profession.Trawler.Name": "拖网渔船",
+    "Profession.Trawler.Desc": "在蟹笼中添加鱼饵，保证捕获高品质的物品。",
+    "Profession.Recycler.Name": "可回收垃圾",
+    "Profession.Recycler.Desc": "回收垃圾时有机会产出各种鱼饵。",
+    "Profession.Hydrologist.Name": "水文学家",
+    "Profession.Hydrologist.Desc": "蟹笼有机会产出双倍捕获物。",
+
+	//Foraging
+    "Profession.Arborist.Name": "树木学家",
+    "Profession.Arborist.Desc": "野生树木生长得更快。",
+    "Profession.Shaker.Name": "摇树者",
+    "Profession.Shaker.Desc": "摇动野生树木时有机会掉落物品。",
+    "Profession.Sapper.Name": "大汗淋漓！",
+    "Profession.Sapper.Desc": "树液采集器工作得更快。",
+    "Profession.Orchardist.Name": "果园主",
+    "Profession.Orchardist.Desc": "树液采集器产出双倍收获。",
+	
+    "Profession.Ranger.Name": "游侠",
+    "Profession.Ranger.Desc": "森林觅食价值更高。",
+    "Profession.Adventurer.Name": "冒险家",
+    "Profession.Adventurer.Desc": "非森林觅食价值更高。",
+    "Profession.Gleaner.Name": "拾荒者",
+    "Profession.Gleaner.Desc": "作物种子可以作为觅食找到。",
+    "Profession.Wayfarer.Name": "旅人",
+    "Profession.Wayfarer.Desc": "有机会在非季节时找到觅食。",
+
+	//Mining
+    "Profession.Metallurgist.Name": "冶金师",
+    "Profession.Metallurgist.Desc": "金属锭生产所需材料减少。",
+    "Profession.Ironmonger.Name": "原料出售商",
+    "Profession.Ironmonger.Desc": "矿石价值更高。",
+    "Profession.Ignitor.Name": "火之高兴",
+    "Profession.Ignitor.Desc": "熔炉工作速度更快。",
+    "Profession.Crafter.Name": "工匠",
+    "Profession.Crafter.Desc": "通过采矿技能获得的制作配方所需材料减少。",
+	
+    "Profession.Archaeologist.Name": "考古学家",
+    "Profession.Archaeologist.Desc": "文物可以回收。",
+    "Profession.Mineralogist.Name": "矿物学家",
+    "Profession.Mineralogist.Desc": "所有原版晶洞与万象晶洞包含相同的物品。",
+    "Profession.Appraiser.Name": "鉴晶师",
+    "Profession.Appraiser.Desc": "火山晶石矿脉掉落更多火山晶石。",
+    "Profession.Enchanter.Name": "附魔师",
+    "Profession.Enchanter.Desc": "武器和工具的附魔费用降低。",
+
+	//Combat
+    "Profession.Warrior.Name": "直面战士",
+    "Profession.Warrior.Desc": "无敌的怪物可以被攻击。",
+    "Profession.Berserker.Name": "狂战士",
+    "Profession.Berserker.Desc": "生命值低时造成的伤害增加。",
+    "Profession.Survivalist.Name": "生存专家",
+    "Profession.Survivalist.Desc": "正面增益效果的持续时间延长。",
+    "Profession.Healer.Name": "治疗师",
+    "Profession.Healer.Desc": "负面增益效果的持续时间缩短。",
+	
+    "Profession.Technician.Name": "武器大师",
+    "Profession.Technician.Desc": "在特殊武器冷却期间获得无敌效果。",
+    "Profession.Speedster.Name": "疾风者",
+    "Profession.Speedster.Desc": "武器攻击速度和冷却速度增加。",
+    "Profession.Assassin.Name": "刺客",
+    "Profession.Assassin.Desc": "对高防御怪物必定造成暴击。",
+    "Profession.Assailant.Name": "袭击者",
+    "Profession.Assailant.Desc": "暴击后无冷却时间。",
+
+	//Combo
+    "Profession.Farm-Forage.Name": "组合：觅食",
+    "Profession.Farm-Forage.Desc": "果树和巨型作物可以被敲击。",
+    "Profession.Farm-Mine.Name": "组合：采矿",
+    "Profession.Farm-Mine.Desc": "矿物可以被粉碎成粉尘，可以用作肥料。",
+	
+    "Profession.Mine-Combat.Name": "组合：战斗",
+    "Profession.Mine-Combat.Desc": "每用镐或炸弹破坏100块石头，当天获得战斗增益。",
+    "Profession.Mine-Forage.Name": "组合：觅食",
+    "Profession.Mine-Forage.Desc": "增加蘑菇层生成的可能性。",
+	
+    "Profession.Forage-Fish.Name": "组合：钓鱼",
+    "Profession.Forage-Fish.Desc": "每四天，随机选择的觅食物品可以在水中投掷时召唤钓鱼气泡。",
+    "Profession.Forage-Combat.Name": "组合：战斗",
+    "Profession.Forage-Combat.Desc": "可以追踪屏幕外的怪物。",
+	
+    "Profession.Fish-Farm.Name": "组合：耕种",
+    "Profession.Fish-Farm.Desc": "满的鱼塘会继续提出物品请求。如果完成，本周剩余时间产量翻倍。",
+    "Profession.Fish-Mine.Name": "组合：采矿",
+    "Profession.Fish-Mine.Desc": "宝石可以用作鱼饵。",
+	
+    "Profession.Combat-Farm.Name": "组合：耕种",
+    "Profession.Combat-Farm.Desc": "史莱姆小屋中的史莱姆也会产生有价值的物品。",
+    "Profession.Combat-Fish.Name": "组合：钓鱼",
+    "Profession.Combat-Fish.Desc": "鱼可以用作弹弓弹药。",
+
+	//Talents
+    "Talent.Farming.Title": "耕种天赋",
+    "Talent.Fishing.Title": "钓鱼天赋",
+    "Talent.Foraging.Title": "觅食天赋",
+    "Talent.Mining.Title": "采矿天赋",
+    "Talent.Combat.Title": "战斗天赋",
+    "Talent.Misc.Title": "日常天赋",
+	
+    "Talent.LockedTalent.Name": "已锁定",
+    "Talent.LockedTalent.Desc": "先获得其他天赋！",
+    "Talent.LockedTalent.Numbered": "（购买{0}个天赋后解锁）",
+    "Talent.DisabledTalent": "（已禁用，点击重新启用。）",
+	
+    "Talent.ResetMessages.ItemMissing": "重置所需物品缺失",
+    "Talent.ResetMessages.SettleTreeFirst": "天赋树重置",
+    "Talent.ResetMessages.SettleFullFirst": "所有天赋重置",
+    "Talent.ResetMessages.ResetAll": "重置所有天赋",
+    "Talent.ResetMessages.ResetTree": "重置此天赋树的天赋",
+    "Talent.ResetMessages.Confirm": "确认重置？",
+    "Talent.ResetMessages.BoughtNone": "你还没有购买任何天赋。",
+    "Talent.ResetMessages.AbortReset": "取消重置",
+	
+    "Talent.Resurgence.Name": "复苏",
+    "Talent.Resurgence.Desc": "每90分钟自动部分补充水壶。",
+	
+    "Talent.RefreshingWaters.Name": "清新之水",
+    "Talent.RefreshingWaters.Desc": "每天早上醒来时水壶会自动补充。",
+	
+    "Talent.GoodSoaking.Name": "充分浸泡",
+    "Talent.GoodSoaking.Desc": "雨天后土壤会自动浇水。",
+	
+    "Talent.NourishingRain.Name": "滋养之雨",
+    "Talent.NourishingRain.Desc": "每当下雨天，户外作物的生长时间减少1天。", //Modified in 1.0.9
+	
+    "Talent.WildGrowth.Name": "野生生长",
+    "Talent.WildGrowth.Desc": "动物有机会同时生产高级和普通物品。",
+	
+    "Talent.Overcrowding.Name": "过度拥挤",
+    "Talent.Overcrowding.Desc": "鸡舍和畜棚可以容纳更多动物。",
+	
+    "Talent.Bio-Engineering.Name": "生物工程",
+    "Talent.Bio-Engineering.Desc": "大型动物产品将使工匠产品翻倍。",
+	
+    "Talent.Pastoralism.Name": "田园生活",
+    "Talent.Pastoralism.Desc": "高质量的动物产品将产生高质量的工匠产品。",
+	
+    "Talent.BreedLikeRabbits.Name": "兔子数列",
+    "Talent.BreedLikeRabbits.Desc": "兔子能够进行繁殖。",
+	
+    "Talent.BrimmingWithLife.Name": "又到了春天",
+    "Talent.BrimmingWithLife.Desc": "动物怀孕的几率翻倍。",
+	
+    "Talent.CycleOfLife.Name": "生命循环",
+    "Talent.CycleOfLife.Desc": "收获不可再生作物时，有50%的几率获得一颗种子。",
+	
+    "Talent.Effloresence.Name": "繁花似锦",
+    "Talent.Effloresence.Desc": "减少花朵生长所需的时间。",
+	
+    "Talent.HarmoniousBlooming.Name": "和谐绽放",
+    "Talent.HarmoniousBlooming.Desc": "根据蜂箱周围的花朵数量获得额外的蜂蜜（蜂蜜类型随机来自一种花）",
+	
+    "Talent.Abundance.Name": "丰饶",
+    "Talent.Abundance.Desc": "蜂蜜每天未被收获时，有几率提升品质",
+	
+    "Talent.FairysKiss.Name": "仙女之吻",
+    "Talent.FairysKiss.Desc": "每株成熟的玫瑰仙子都会增加作物仙女出现的几率。",
+	
+    "Talent.FaeBlessings.Name": "仙灵祝福",
+    "Talent.FaeBlessings.Desc": "如果有可能生长出巨型作物，仙女会立即使其生长。",
+	
+    "Talent.FineGrind.Name": "精细研磨",
+    "Talent.FineGrind.Desc": "研磨的米/面粉/糖与原料品质相匹配。",
+	
+    "Talent.DriftFencing.Name": "一分为二",
+    "Talent.DriftFencing.Desc": "制作围栏时产出双倍物品。",
+	
+    "Talent.StormSurge.Name": "风暴潮",
+    "Talent.StormSurge.Desc": "避雷针即使在生产时也能保护更多的作物和果树。",
+	
+    "Talent.ColdPress.Name": "冷压榨",
+    "Talent.ColdPress.Desc": "榨油机可以生产更多种类的油。",
+	
+    "Talent.Upcycling.Name": "升级循环",
+    "Talent.Upcycling.Desc": "更高级的洒水器会获得另一个需要低级的洒水器作为材料的制作图纸。", //Modified in 1.0.8
+	
+    "Talent.Fertigation.Name": "灌溉施肥",
+    "Talent.Fertigation.Desc": "压力喷嘴和肥料器都可以添加到洒水器上。",
+	
+    "Talent.Trickster.Name": "戏弄者",
+    "Talent.Trickster.Desc": "乌鸦不会再吃掉成熟的作物。",
+	
+    "Talent.TropicalBliss.Name": "热带极乐",
+    "Talent.TropicalBliss.Desc": "夏季和多季作物在姜岛生长得更快。",
+	
+    "Talent.HarvestSeason.Name": "收获季节",
+    "Talent.HarvestSeason.Desc": "祝尼魔收获得更快。",
+	
+    "Talent.DownInTheDepths.Name": "深渊之下",
+    "Talent.DownInTheDepths.Desc": "如果没有生成梯子，打破8块石头后必定会找到梯子。",
+	
+    "Talent.ShadowBuddies.Name": "影之伙伴",
+    "Talent.ShadowBuddies.Desc": "如果与科罗布斯成为朋友，他每周会通过邮件赠送你1-3个晶球。",
+	
+    "Talent.DwarvenBuddies.Name": "矮人伙伴",
+    "Talent.DwarvenBuddies.Desc": "如果与矮人成为朋友，他每周会通过邮件赠送你1-3个金属锭。",
+	
+    "Talent.EssenceInfusion.Name": "精华灌注",
+    "Talent.EssenceInfusion.Desc": "每天，船标标志会产生太阳精华，邪恶雕像会产生虚空精华。",
+	
+    "Talent.ElderScrolls.Name": "上古卷轴",
+    "Talent.ElderScrolls.Desc": "如果获得了矮人语（锻莫）翻译指南，阅读矮人卷轴可以获得采矿经验。",
+	
+    "Talent.SpeedOfDarkness.Name": "黑暗之速",
+    "Talent.SpeedOfDarkness.Desc": "在午夜12点后获得速度提升。",
+	
+    "Talent.AncestralWeaponry.Name": "先祖武器",
+    "Talent.AncestralWeaponry.Desc": "如果解锁了姜岛，矮人会出售矮人武器。",
+	
+    "Talent.SharedFocus.Name": "共享专注",
+    "Talent.SharedFocus.Desc": "在任何矿井中时间流逝得更慢。",
+	
+    "Talent.MuseumPiece.Name": "博物馆藏品",
+    "Talent.MuseumPiece.Desc": "从晶球和古物宝藏中获得未捐赠的古物或矿物的几率翻倍。",
+	
+    "Talent.ExplosivePersonality.Name": "爆炸人格",
+    "Talent.ExplosivePersonality.Desc": "被炸弹摧毁的石头有更高的几率掉落额外的晶球。",
+	
+    "Talent.Synthesis.Name": "合成",
+    "Talent.Synthesis.Desc": "宝石复制机可以复制晶球。",
+	
+    "Talent.Upheaval.Name": "剧变",
+    "Talent.Upheaval.Desc": "低概率将矿层中的所有石头替换为晶球节点。",
+	
+    "Talent.Matryoshka.Name": "俄罗斯套娃",
+    "Talent.Matryoshka.Desc": "晶球有几率包含另一个晶球。",
+	
+    "Talent.X-ray.Name": "X光",
+    "Talent.X-ray.Desc": "查看下一个晶球包含的物品。",
+	
+    "Talent.Geometry.Name": "几何",
+    "Talent.Geometry.Desc": "宝石复制机工作速度加快。",
+	
+    "Talent.Dazzle.Name": "炫目",
+    "Talent.Dazzle.Desc": "宝石复制机有几率将物品质量提升一级。",
+	
+    "Talent.StraightRun.Name": "直通",
+    "Talent.StraightRun.Desc": "罗宾以每个2000金的价格出售楼梯。",
+	
+    "Talent.DetonationDampener.Name": "爆炸缓冲器",
+    "Talent.DetonationDampener.Desc": "炸弹不会摧毁采集物、机械或古物点。",
+	
+    "Talent.Volatility.Name": "爆率真高！",
+    "Talent.Volatility.Desc": "矿石节点有几率掉落更高等级的矿石。",
+	
+    "Talent.AlchemicReversal.Name": "炼金逆转",
+    "Talent.AlchemicReversal.Desc": "可以将更高等级的金属锭转化为更低等级的。",
+	
+    "Talent.RoomAndPillar.Name": "房柱采矿法",
+    "Talent.RoomAndPillar.Desc": "所有矿石节点都可以在采石场矿洞中生成。",
+	
+    "Talent.Fallout.Name": "辐射",
+    "Talent.Fallout.Desc": "放射性矿石节点会在非危险矿洞和骷髅洞穴中生成。",
+	
+    "Talent.EveryonesBestFriend.Name": "大家最好的朋友",
+    "Talent.EveryonesBestFriend.Desc": "钻石、虎眼石、猫眼石、赤红猫眼石、碧玉和五彩碎片将成为普遍喜爱的礼物。",
+	
+    "Talent.CrystalCavern.Name": "水晶洞穴",
+    "Talent.CrystalCavern.Desc": "低概率使矿洞楼层中的所有石头被宝石节点取代。",
+	
+    "Talent.OverTheRainbow.Name": "彩虹之上",
+    "Talent.OverTheRainbow.Desc": "添加五彩碎片的制作配方。",
+
+	//Foraging
+
+    "Talent.NatureSecrets.Name": "自然的秘密",
+    "Talent.NatureSecrets.Desc": "砍伐树桩时有几率掉落觅食物品。",
+	
+    "Talent.PrimrosePath.Name": "樱草小径",
+    "Talent.PrimrosePath.Desc": "赠送花朵时增加更多友谊值。",
+	
+    "Talent.Berry-mania.Name": "浆果狂热",
+    "Talent.Berry-mania.Desc": "浆果季将持续一周。",
+	
+    "Talent.DiamondOfTheKitchen.Name": "厨房之钻",
+    "Talent.DiamondOfTheKitchen.Desc": "松露会在森林中生成。",
+	
+    "Talent.LocalKnowledge.Name": "本地知识",
+    "Talent.LocalKnowledge.Desc": "采集物每天都会刷新。",
+	
+    "Talent.SeaChange.Name": "海之变迁",
+    "Talent.SeaChange.Desc": "每周一次，海滩上的采集物会翻倍。",
+	
+    "Talent.Starfall.Name": "星陨",
+    "Talent.Starfall.Desc": "在傍晚时分，有几率生成星之碎片作为采集物，持续1-7天。",
+	
+    "Talent.DesertBloom.Name": "沙漠花开",
+    "Talent.DesertBloom.Desc": "在鹈鹕镇下雨天时，卡利科沙漠有几率生成花朵。",
+	
+    "Talent.BountifulBoletes.Name": "云南之旅",
+    "Talent.BountifulBoletes.Desc": "在雨天后，蘑菇生成的几率很高。",
+	
+    "Talent.RenewingMist.Name": "复苏之雾",
+    "Talent.RenewingMist.Desc": "在雨后的第一个晴天，采集物的生成数量翻倍。",
+	
+    "Talent.Reforestation.Name": "重新造林",
+    "Talent.Reforestation.Desc": "手工种植的野生树种子会产出双倍收获。",
+	
+    "Talent.SapSipper.Name": "树液享受者",
+    "Talent.SapSipper.Desc": "树液可以食用并恢复生命值。",
+	
+    "Talent.SpringThaw.Name": "春融",
+    "Talent.SpringThaw.Desc": "可以从树液收集器中收获大型树液产物。",
+	
+    "Talent.Accumulation.Name": "积累",
+    "Talent.Accumulation.Desc": "如果树液采集器中的产品未在一夜之间收集，则有几率提升品质。",
+	
+    "Talent.ExoticTapping.Name": "异域采集",
+    "Talent.ExoticTapping.Desc": "棕榈树可以采集出油，桃花心木树可以采集出糖。",
+	
+    "Talent.GroveTending.Name": "丛林照料",
+    "Talent.GroveTending.Desc": "树肥效果翻倍。",
+	
+    "Talent.SurgeProtection.Name": "雷电防护",
+    "Talent.SurgeProtection.Desc": "野生树木被雷击中后会变成煤炭树。",
+	
+    "Talent.WelcomeToTheJungle.Name": "欢迎来到丛林",
+    "Talent.WelcomeToTheJungle.Desc": "椰子可以种植成棕榈树，金椰子可以在任何地方掉落。",
+	
+    "Talent.ClearAsMud.Name": "泥中寻宝",
+    "Talent.ClearAsMud.Desc": "耕地时有较高几率发现黏土。",
+	
+    "Talent.SleepUnderTheStars.Name": "星空下的睡梦",
+    "Talent.SleepUnderTheStars.Desc": "如果在海滩、山脉或森林中睡到凌晨2点，不会有惩罚。",
+	
+    "Talent.CampSpirit.Name": "露营精神",
+    "Talent.CampSpirit.Desc": "用野炊工具制作的食物比厨房制作的食物恢复更多的能量和健康。",
+	
+    "Talent.SurvivalCooking.Name": "生存烹饪",
+    "Talent.SurvivalCooking.Desc": "为野炊工具添加独特的食谱。",
+	
+    "Talent.Pyrolysis.Name": "热解",
+    "Talent.Pyrolysis.Desc": "木炭窑将更加高效。",
+	
+    "Talent.StaticCharge.Name": "静电充能",
+    "Talent.StaticCharge.Desc": "避雷针可以同时储存两次电荷。太阳能电池板生产电池所需时间减少2天。",
+	
+    "Talent.EyeSpy.Name": "眼尖",
+    "Talent.EyeSpy.Desc": "增加找到活帽子和类似物品的几率。",
+
+	//Fishing
+
+    "Talent.FisheryGrant.Name": "渔业补助",
+    "Talent.FisheryGrant.Desc": "建造鱼塘的成本降低。",
+	
+    "Talent.InTheWeeds.Name": "杂草丛生",
+    "Talent.InTheWeeds.Desc": "海草和绿藻可以添加到鱼塘中。",
+	
+    "Talent.Roe-mance.Name": "鱼籽之恋",
+    "Talent.Roe-mance.Desc": "鱼籽、陈年鱼籽和鱼籽酱的价值更高。",
+	
+    "Talent.BigFishSmallPond.Name": "传奇品种",
+    "Talent.BigFishSmallPond.Desc": "允许传奇鱼产出除鱼籽外的其他产品。",
+	
+    "Talent.SpawningSeason.Name": "产卵季节",
+    "Talent.SpawningSeason.Desc": "鱼塘产出鱼子的几率增加。",
+	
+    "Talent.Ex-squid-site.Name": "鱿鱼特供",
+    "Talent.Ex-squid-site.Desc": "如果鱼子未被收集过夜，有几率提升品质。鱼子品质将适用于陈年鱼籽、鱼籽酱和鱿鱼墨。",
+	
+    "Talent.DoubleHook.Name": "双钩",
+    "Talent.DoubleHook.Desc": "鱼饵箱每天会产出两次。",
+	
+    "Talent.Clickbait.Name": "蠕虫香薰",
+    "Talent.Clickbait.Desc": "蠕虫箱有50%的几率产出野生鱼饵而不是普通鱼饵。",
+	
+    "Talent.CanIt.Name": "回收秘籍",
+    "Talent.CanIt.Desc": "回收机现在可以生产更多种类的物品。",
+	
+    "Talent.Smokehouse.Name": "熏制仙人",
+    "Talent.Smokehouse.Desc": "鱼可以多次熏制以提高品质。",
+	
+    "Talent.FitForACzar.Name": "鱼籽女皇",
+    "Talent.FitForACzar.Desc": "鱼籽酱可以在木桶中陈酿以提高品质。",
+	
+    "Talent.TakeItSlow.Name": "慢慢来",
+    "Talent.TakeItSlow.Desc": "如果你装备了蜗牛钓具，钓鱼时的抛竿条会移动得更慢。",
+	
+    "Talent.A-fish-ionado.Name": "钓鱼爱好者",
+    "Talent.A-fish-ionado.Desc": "每周通过邮件收到一个随机钓具。",
+	
+    "Talent.ItWasThisBig.Name": "它有那么大",
+    "Talent.ItWasThisBig.Desc": "如果捕获的鱼打破了尺寸记录，品质会提高。",
+	
+    "Talent.DeadMansChest.Name": "死人的箱子",
+    "Talent.DeadMansChest.Desc": "蟹笼有几率产出古物宝藏。",
+	
+    "Talent.Diversification.Name": "多样化",
+    "Talent.Diversification.Desc": "野生鱼饵现在会使蟹笼的产出翻倍。",
+	
+    "Talent.FishTrap.Name": "鱼陷阱",
+    "Talent.FishTrap.Desc": "蟹笼有时会捕获普通鱼类。",
+	
+    "Talent.BaitAndSwitch.Name": "诱饵与替换",
+    "Talent.BaitAndSwitch.Desc": "如果蟹笼中的鱼隔夜未收集，有几率提高品质。",
+	
+    "Talent.CrabRave.Name": "螃蟹狂欢",
+    "Talent.CrabRave.Desc": "佩戴螃蟹戒指时，找到螃蟹、小龙虾和龙虾的几率增加。",
+	
+    "Talent.FishsWishes.Name": "鱼儿的愿望",
+    "Talent.FishsWishes.Desc": "允许在蟹笼中使用魔法鱼饵。如果你有诱饵大师技能，基础鱼饵将像魔法鱼饵一样生效。",
+	
+    "Talent.HereFishyFishy.Name": "鱼儿鱼儿快上钩",
+    "Talent.HereFishyFishy.Desc": "连续3次未能钓到鱼会大幅增加下一次钓鱼的浮标条高度。",
+	
+    "Talent.VastDomain.Name": "广阔领域",
+    "Talent.VastDomain.Desc": "传奇鱼可以在更大的范围内被捕获。",
+	
+    "Talent.OneFishTwoFish.Name": "好多鱼",
+    "Talent.OneFishTwoFish.Desc": "挑战鱼饵可以用来一次捕获四条鱼。",
+	
+    "Talent.TakeABreak.Name": "休息一下",
+    "Talent.TakeABreak.Desc": "在钓到宝箱时，鱼不会逃跑。",
+	
+    "Talent.BubbleTrouble.Name": "泡泡烦恼",
+    "Talent.BubbleTrouble.Desc": "泡泡将始终在离陆地4格范围内出现。",
+
+	//Combat
+    "Talent.Slimeshot.Name": "史莱姆射击",
+    "Talent.Slimeshot.Desc": "史莱姆可以用作弹弓弹药。如果史莱姆击中怪物，怪物会被减速。",
+	
+    "Talent.TripleShot.Name": "三重射击",
+    "Talent.TripleShot.Desc": "赋予弹弓一种特殊攻击，可以一次发射三个弹丸。",
+	
+    "Talent.Bullseye.Name": "靶心",
+    "Talent.Bullseye.Desc": "弹弓可以造成暴击伤害。",
+	
+    "Talent.DazzlingStrike.Name": "炫目打击",
+    "Talent.DazzlingStrike.Desc": "宝石可以用作弹弓弹药，宝石弹药有很高的几率不会被摧毁。",
+	
+    "Talent.Enchanting.Name": "附魔",
+    "Talent.Enchanting.Desc": "弹弓有自定义附魔，包括自动射击、快速、蝙蝠杀手和节俭。",
+	
+    "Talent.Accessorise.Name": "饰品",
+    "Talent.Accessorise.Desc": "饰品可以转化为戒指。",
+	
+    "Talent.Consolidation.Name": "合并同类项",
+    "Talent.Consolidation.Desc": "同类型的戒指可以锻造在一起。",
+	
+    "Talent.HiddenBenefits.Name": "隐藏好处",
+    "Talent.HiddenBenefits.Desc": "所有原版饰品都会获得第二个用途。",
+	
+    "Talent.RendingStrike.Name": "撕裂打击",
+    "Talent.RendingStrike.Desc": "对怪物连续攻击4次会减少该怪物造成的伤害。",
+	
+    "Talent.DebiliatingStab.Name": "虚弱刺击",
+    "Talent.DebiliatingStab.Desc": "用匕首伤害怪物会降低它们的速度。",
+	
+    "Talent.SeveringSwipe.Name": "斩击",
+    "Talent.SeveringSwipe.Desc": "用剑伤害怪物会降低它们的攻击力。",
+	
+    "Talent.ConcussiveImpact.Name": "震荡冲击",
+    "Talent.ConcussiveImpact.Desc": "用棍棒伤害怪物会使它们在击中后的3秒内受到额外伤害。",
+	
+    "Talent.Aftershock.Name": "余震",
+    "Talent.Aftershock.Desc": "棍棒攻击会第二次击中。第二次攻击造成的伤害减少。",
+	
+    "Talent.Champion.Name": "冠军",
+    "Talent.Champion.Desc": "用剑击中敌人后，获得+2防御，持续6秒。",
+	
+    "Talent.Flurry.Name": "连击",
+    "Talent.Flurry.Desc": "对同一目标的连续匕首攻击造成额外一半的伤害，最多叠加5次。",
+	
+    "Talent.Ferocity.Name": "凶猛",
+    "Talent.Ferocity.Desc": "暴击后获得短暂的10%暴击伤害加成。",
+	
+    "Talent.Starburst.Name": "星爆",
+    "Talent.Starburst.Desc": "添加一个名为“星爆”的近战武器附魔，挥动时会发射投射物。",
+	
+    "Talent.Grit.Name": "屹立不倒",
+    "Talent.Grit.Desc": "增加受到伤害后的无敌时间。",
+	
+    "Talent.Sidestep.Name": "闪避",
+    "Talent.Sidestep.Desc": "有一定几率躲避敌人的攻击。",
+	
+    "Talent.Slippery.Name": "滑溜",
+    "Talent.Slippery.Desc": "将“粘液”减益效果改为+1速度增益。",
+	
+    "Talent.Fortified.Name": "强化",
+    "Talent.Fortified.Desc": "当前区域每有一只怪物，获得+1防御，最多+8。",
+	
+    "Talent.FullKnowledge.Name": "全知",
+    "Talent.FullKnowledge.Desc": "在农场击杀怪物时获得全额经验。",
+	
+    "Talent.MonsterSpecialist.Name": "怪物专家",
+    "Talent.MonsterSpecialist.Desc": "从四种预定义的怪物组中选择一种，并对它们造成额外伤害。",
+    "Talent.Branch.Ground.Name": "地面",
+    "Talent.Branch.Ground.Desc": "对史莱姆、蛆、灰尘精灵、掘地虫、熔岩潜伏怪和蜘蛛造成更多伤害",
+    "Talent.Branch.Humanoid.Name": "人形生物",
+    "Talent.Branch.Humanoid.Desc": "对石魔、骷髅、木乃伊和影子造成更多伤害",
+    "Talent.Branch.Flying.Name": "飞行生物",
+    "Talent.Branch.Flying.Desc": "对蝙蝠、幽灵、飞蛇、熔岩精灵、蓝鱿鱼、鱿鱼娃和苍蝇造成更多伤害",
+    "Talent.Branch.Armoured.Name": "装甲生物",
+    "Talent.Branch.Armoured.Desc": "对矮人哨兵、熔岩大头、金属大头和岩石蟹造成更多伤害",
+	
+    "Talent.SugarRush.Name": "糖分冲刺",
+    "Talent.SugarRush.Desc": "用糖烹饪的食物将消除恶心负面效果。如果你有生存烹饪技能，其食谱也将消除恶心负面效果。",
+	
+    "Talent.Meditation.Name": "冥想",
+    "Talent.Meditation.Desc": "站立不动时被动恢复生命值。",
+	
+    "Talent.LostAndFound.Name": "失物招领",
+    "Talent.LostAndFound.Desc": "在图书馆阅读遗失的书籍会获得增益效果。",
+	
+    "Talent.BookclubBargains.Name": "拼好书",
+    "Talent.BookclubBargains.Desc": "降低书商的价格。",
+	
+    "Talent.CycleOfKnowledge.Name": "知识循环",
+    "Talent.CycleOfKnowledge.Desc": "额外的书籍可以回收利用。",
+	
+    "Talent.NarrowEscape.Name": "险中求生",
+    "Talent.NarrowEscape.Desc": "减少死亡时丢失的金币数量。",
+	
+    "Talent.TrashedTreasure.Name": "垃圾宝藏",
+    "Talent.TrashedTreasure.Desc": "可以在垃圾桶里找到更有价值的物品。",
+	
+    "Talent.ButterflyEffect.Name": "蝴蝶效应",
+    "Talent.ButterflyEffect.Desc": "在运气不好的日子里，一只虚空蝴蝶会在远处的地点（下水道、沼泽、秘密森林等）生成，找到后会获得+10运气的增益。",
+	
+    "Talent.Admiration.Name": "仰慕",
+    "Talent.Admiration.Desc": "友谊衰减减半。",
+	
+    "Talent.InsiderInfo.Name": "内部消息",
+    "Talent.InsiderInfo.Desc": "与镇民友谊的的上升会增加特定物品的出售价格。",
+	
+    "Talent.GiftOfFriendship.Name": "友谊的礼物",
+    "Talent.GiftOfFriendship.Desc": "当与镇民的友谊达到8心或更高时，镇民有机会赠送喜爱的礼物。",
+	
+    "Talent.MatesRates.Name": "帮我砍一刀",
+    "Talent.MatesRates.Desc": "与店主的友谊会降低商品价格。",
+	
+    "Talent.MonumentalDiscount.Name": "纪念碑折扣",
+    "Talent.MonumentalDiscount.Desc": "购买方尖碑的价格更便宜。",
+	
+    "Talent.CraftSupplies.Name": "制作材料",
+    "Talent.CraftSupplies.Desc": "通过技能升级获得的新制作配方在解锁后会在商店出售。",
+	
+    "Talent.HauteCuisine.Name": "高级料理",
+    "Talent.HauteCuisine.Desc": "提高烹饪食物的出售价格。",
+	
+    "Talent.MiniFridgeBigSpace.Name": "小冰箱，大空间",
+    "Talent.MiniFridgeBigSpace.Desc": "增加小冰箱的存储空间。",
+	
+    "Talent.GoodEats.Name": "美味佳肴",
+    "Talent.GoodEats.Desc": "允许食物和饮料的增益效果叠加，前提是它们提供不同类型的增益。",
+	
+    "Talent.GiftOfTheTalented.Name": "天赋的礼物",
+    "Talent.GiftOfTheTalented.Desc": "赠送一颗星之果实。",
+
+	//Messages
+    "Message.FairyBreak": "给仙女一个休息的机会吧！",
+    "Message.AlreadyFertilized": "作物已经施肥了。",
+    "Message.Fertilized": "作物已被施肥。",
+    "Message.TalentPoint": "恭喜，你获得了新的天赋点数可以分配！",
+    "Message.ReadDwarfScroll": "你从古老的矮人卷轴中学到了一些关于采矿的知识。",
+    "Message.ForageBubbleReset": "气泡生成的采集物已被重置。",
+    "Message.RabbitBirth": "一只新的小兔子出生了！",
+    "Message.StoneBroken": "你今天打破了{{Stones}}块石头，你的攻击和防御增加了{{Buff}}。",
+    "Message.MasteryCave": "只有达到五种技能全部达到 {{Level}} 级的大师才能进入。（{0}/5）",
+    "Message.ParrotPerch": "这只能放置在动物建筑上！",
+    "Message.MossyFertilizer": "这棵树已经有苔藓肥料了！",
+    "Message.TotemFailed": "野生图腾没有找到适合采集物生成的地方。",
+
+	//Buffs
+    "Buff.Slippery.Name": "滑溜",
+    "Buff.Slippery.Desc": "你皮肤上的黏液感觉恶心...但滑行起来也很容易。",
+    "Buff.Ferocity.Name": "凶猛",
+    "Buff.Ferocity.Desc": "你的野蛮攻击造成更高的暴击伤害！",
+    "Buff.Fortified.Name": "强化",
+    "Buff.Fortified.Desc": "你在这里对怪物保持警惕。",
+    "Buff.Champion.Name": "冠军",
+    "Buff.Champion.Desc": "你准备好反击了。",
+    "Buff.SpeedOfDarkness.Name": "黑暗之速",
+    "Buff.SpeedOfDarkness.Desc": "快跑！跑到你的床上去！",
+
+	//Config
+    "GMCM.ColorBlindnessChanges.Name": "色盲模式调整",
+    "GMCM.ColorBlindnessChanges.Desc": "将VPP和原版技能栏图标重新纹理为条纹版本。",
+    "GMCM.MasteryCaveChanges.Name": "精通洞穴调整",
+    "GMCM.MasteryCaveChanges.Desc": "将精通洞穴的解锁条件从10级改为20级或15级。", //Modified in 1.0.8
+    "GMCM.StaminaCostAdjustments.Name": "体力消耗调整",
+    "GMCM.StaminaCostAdjustments.Desc": "调整斧头、镐子、水壶和锄头的体力消耗，使其略微增加。此选项旨在防止任何原版技能达到20级后体力消耗为零，适用于不喜欢这种情况的玩家。",
+    "GMCM.ProfessionsOnly.Name": "仅限职业",
+    "GMCM.ProfessionsOnly.Desc": "将VPP的修改仅应用于职业系统，禁用所有与天赋系统相关的内容。更改需要重启游戏才能生效。",
+    "GMCM.TalentHintLevel.Name": "天赋提示等级",
+    "GMCM.TalentHintLevel.Desc": "配置天赋菜单中关于未获得天赋的提示数量。\n“隐藏”：隐藏所有未购买和解锁的天赋；\n“部分”：仅隐藏未解锁前置天赋的天赋；\n“全部”：显示所有天赋。",
+
+	//Items
+    "GMCM.TalentHintLevel.Options.Hidden": "隐藏",
+    "GMCM.TalentHintLevel.Options.Partial": "部分",
+    "GMCM.TalentHintLevel.Options.Full": "全部",
+    "GMCM.DeveloperOrTestingMode.Name": "开发者或测试模式",
+    "GMCM.DeveloperOrTestingMode.Desc": "大多数用户应保持此选项关闭。仅在您知道此选项作用时启用。",
+    "Item.Xray.GeodeDrop": "(X射线晶洞掉落：{{dropName}})",
+    "Item.Syrup.ProduceNameFormat": "{0}水果糖浆",
+    "Item.Dust.ProduceNameFormat": "{0}宝石粉尘",
+
+	//Extra Info
+    "ExtraInfo.MinecartRepository": "你现在可以在罗宾的商店建造矿车仓库了。",
+    "ExtraInfo.MineralCavern": "你可以在罗宾的商店建造矿物洞穴。"
+}

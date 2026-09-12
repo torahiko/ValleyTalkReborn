@@ -1,0 +1,11 @@
+{
+    "Name": "Don't starve",
+    "Author": "Joegosama",
+    "Version": "1.4.0",
+    "Description": "Define adventure by death.",
+    "UniqueID": "ZG.DS",
+    "UpdateKeys": ["Nexus:27440"],
+    "ContentPackFor": {
+        "UniqueID": "Pathoschild.ContentPatcher"
+    }
+}

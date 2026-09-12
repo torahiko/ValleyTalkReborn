@@ -1,0 +1,12 @@
+{
+	"config.EnableMod.name": "Modを有効にする",
+	"config.EnableMod.description": "このModのすべての機能を有効にする。 (デフォルト: true)",
+	"config.YearRoundItems.name": "通年商品",
+	"config.YearRoundItems.description": "通年販売商品を有効にする。 (デフォルト: true)",
+	"config.SeasonalItems.name": "季節商品",
+	"config.SeasonalItems.description": "季節限定商品を有効にする。 (デフォルト: true)",
+	"config.WeekdayDependentItems.name": "曜日限定商品",
+	"config.WeekdayDependentItems.description": "曜日限定商品を有効にする。 (デフォルト: true)",
+	"config.SpecialItems.name": "スペシャル商品",
+	"config.SpecialItems.description": "特定の日にのみ購入可能な商品を有効にする。 (デフォルト: true)"
+}

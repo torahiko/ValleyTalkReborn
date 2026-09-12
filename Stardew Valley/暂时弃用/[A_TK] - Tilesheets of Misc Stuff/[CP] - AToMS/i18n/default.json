@@ -1,0 +1,116 @@
+{
+	"config.section.Selection_Step_01.name": "Recolors support :",
+
+	"config.Allow_Recolors.name": "Activate recolors support",
+	"config.Allow_Recolors.description": "Allow for the tilesheets to change color to fit a specific recolor. If disabled will only use the game standard colors, no matter if you are using the automatic selection or the manual override.",
+	
+	"config.Use_Alt_Colors.name": "Use optional colors",
+	"config.Use_Alt_Colors.description": "Some recolors (like Starblue or Vibrant Pastoral) offer optional foliage and grass colors during some seasons. Activating this option will use these alternative colors on the tilesheets.",
+
+	"config.section.Selection_Step_02.name": "Optionally, disable automatic selection :",
+
+	"config.Manual_Override.name": "Manual override",
+	"config.Manual_Override.description": "Deactivates the automatic detection of recolors, will instead require to manually select one recolor from the following list.",
+
+	"config.section.Selection_Step_03.name": "Then select one recolor manually :",
+	
+	"config.Blue_Grass.name": "Blue Grass",
+	"config.Blue_Grass.description": "Will force the usage of Blue Grass compatible colors.",
+	
+	"config.Earthy_Recolour.name": "Earthy Recolour",
+	"config.Earthy_Recolour.description": "Will force the usage of Earthy Recolour compatible colors.",
+
+	"config.Starblue_Valley.name": "Starblue Valley",
+	"config.Starblue_Valley.description": "Will force the usage of Starblue Valley compatible colors.",
+
+	"config.Vibrant_Pastoral.name": "Vibrant Pastoral",
+	"config.Vibrant_Pastoral.description": "Will force the usage of Vibrant Pastoral compatible colors.",
+	
+	"config.Wittily_Named.name": "Wittily Named Recolor",
+	"config.Wittily_Named.description": "Will force the usage of Wittily Named Recolor compatible colors.",
+	
+	"config.section.Selection_Step_04.name": "Or tinker with more complex recolors :",
+	
+	"config.Cotton_Candy.name": "--- Cotton Candy Recolor ---",
+	"config.Cotton_Candy.description": "Will force the usage of Cotton Candy Recolor compatible colors.",
+	
+	"config.CC_Grass_Spring.name": "Cotton Candy Spring Grass",
+	"config.CC_Grass_Spring.description": "Select grass color during spring.",
+	"config.CC_Grass_Spring.values.none": "No recolor.",
+	"config.CC_Grass_Spring.values.mint": "Mint colored grass.",
+	"config.CC_Grass_Spring.values.pink": "Pink grass.",
+	"config.CC_Grass_Spring.values.peach": "Peachy grass.",
+	"config.CC_Grass_Spring.values.purple": "Purple grass.",
+	
+	"config.CC_Grass_Summer.name": "Cotton Candy Summer Grass",
+	"config.CC_Grass_Summer.description": "Select grass color during summer.",
+	"config.CC_Grass_Summer.values.none": "No recolor.",
+	"config.CC_Grass_Summer.values.mint": "Mint colored grass.",
+	"config.CC_Grass_Summer.values.pink": "Pink grass.",
+	"config.CC_Grass_Summer.values.peach": "Peachy grass.",
+	"config.CC_Grass_Summer.values.purple": "Purple grass.",
+	
+	"config.CC_Grass_Fall.name": "Cotton Candy Fall Grass",
+	"config.CC_Grass_Fall.description": "Select grass color during fall.",
+	"config.CC_Grass_Fall.values.none": "No recolor.",
+	"config.CC_Grass_Fall.values.mint": "Mint colored grass.",
+	"config.CC_Grass_Fall.values.pink": "Pink grass.",
+	"config.CC_Grass_Fall.values.peach": "Peachy grass.",
+	"config.CC_Grass_Fall.values.purple": "Purple grass.",
+	
+	"config.CC_Dirt_Spring.name": "Cotton Candy Spring Dirt",
+	"config.CC_Dirt_Spring.description": "Select dirt color during spring.",
+	"config.CC_Dirt_Spring.values.none": "No recolor.",
+	"config.CC_Dirt_Spring.values.light": "Light dirt.",
+	"config.CC_Dirt_Spring.values.medium": "Slightly darker dirt.",
+	"config.CC_Dirt_Spring.values.dark": "Dark dirt.",
+	
+	"config.CC_Dirt_Summer.name": "Cotton Candy Summer Dirt",
+	"config.CC_Dirt_Summer.description": "Select dirt color during summer.",
+	"config.CC_Dirt_Summer.values.none": "No recolor.",
+	"config.CC_Dirt_Summer.values.light": "Light dirt.",
+	"config.CC_Dirt_Summer.values.medium": "Slightly darker dirt.",
+	"config.CC_Dirt_Summer.values.dark": "Dark dirt.",
+	
+	"config.CC_Dirt_Fall.name": "Cotton Candy Fall Dirt",
+	"config.CC_Dirt_Fall.description": "Select dirt color during fall.",
+	"config.CC_Dirt_Fall.values.none": "No recolor.",
+	"config.CC_Dirt_Fall.values.light": "Light dirt.",
+	"config.CC_Dirt_Fall.values.medium": "Slightly darker dirt.",
+	"config.CC_Dirt_Fall.values.dark": "Dark dirt.",
+	
+	"config.CC_Snow_Color.name": "Cotton Candy Snow Color",
+	"config.CC_Snow_Color.description": "Select snow color during winter.",
+	"config.CC_Snow_Color.values.none": "No recolor.",
+	"config.CC_Snow_Color.values.blue": "Blueish snow.",
+	"config.CC_Snow_Color.values.purple": "Purplish snow.",
+
+	"config.Universal_Recolors.name": "--- Universal Recolors ---",
+	"config.Universal_Recolors.description": "Will force the usage of Universal Recolors compatible colors.",
+	
+	"config.UR_Desaturation.name": "Universal Recolors Desaturation",
+	"config.UR_Desaturation.description": "Select how desaturated colors will be.",
+	"config.UR_Desaturation.values.D0": "None (currently unavailable)",
+	"config.UR_Desaturation.values.D30": "30% (currently unavailable)",
+	"config.UR_Desaturation.values.D40": "40%",
+	"config.UR_Desaturation.values.D50": "50% (currently unavailable)",
+	
+	"config.UR_Hue.name": "Universal Recolors Hue",
+	"config.UR_Hue.description": "Select the level of intensity of the hue shift.",
+	"config.UR_Hue.values.H0": "None (currently unavailable)",
+	"config.UR_Hue.values.H1": "Slight",
+	"config.UR_Hue.values.H2": "Significant (currently unavailable)",
+	
+	"config.section.Selection_Step_05.name": "Additional options :",
+	
+	"config.Mild_Winter.name": "Mild Winter",
+	"config.Mild_Winter.description": "Will force the usage of Mild Winter compatible tiles during winter. This will TAKE PRECEDENCE over any previously selected recolor during the winter season, no matter if you are using the automatic selection or the manual override.",
+
+	"config.Cave_Fol_Color.name": "Cave Foliage Color",
+	"config.Cave_Fol_Color.description": "Will turn all non-frozen cave foliage green and make the vines brighter.",
+	"config.Cave_Fol_Color.values.Default": "Default foliage",
+	"config.Cave_Fol_Color.values.Green": "Green foliage",
+	
+	"config.Alt_In_Grass.name": "Custom Cave Grass",
+	"config.Alt_In_Grass.description": "Ensure that for compatible mods (like Waterfall Forest Farms), the grass growing inside of caves will use a custom color."
+}

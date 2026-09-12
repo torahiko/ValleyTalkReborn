@@ -1,0 +1,84 @@
+{
+  "Format": "2.0.0",
+  "ConfigSchema": {
+    "Enabled": {
+      "AllowValues": "girl, boy, baby",
+      "AllowMultiple": true,
+      "Default": "girl, boy, baby"
+    },
+    "Female Toddler Hairstyle": {
+      "AllowValues": "FemaleHairOne, FemaleHairTwo",
+      "Default": "FemaleHairOne"
+    },
+    "Male Toddler Hairstyle": {
+      "AllowValues": "MaleHairOne, MaleHairTwo",
+      "Default": "MaleHairOne"
+    },
+    "Sebastian Ginger Babies": {
+      "AllowValues": "No, Yes",
+      "Default": "No"
+    }
+  },
+  "Changes": [
+    {
+      "Action": "Load",
+      "Target": "Characters/Baby, Characters/Baby_dark",
+      "FromFile": "assets/Baby/{{spouse}}Baby.png",
+      "When": {
+        "Enabled": "Baby",
+        "HasFile:assets/Baby/{{spouse}}Baby.png": "true"
+      }
+    },
+    {
+      "Action": "Load",
+      "Target": "Characters/Toddler_girl, Characters/Toddler_girl_dark",
+      "FromFile": "assets/Female/{{spouse}}{{Female Toddler Hairstyle}}.png",
+      "When": {
+        "Enabled": "Girl",
+        "HasFile:assets/Female/{{spouse}}{{Female Toddler Hairstyle}}.png": "true"
+      }
+    },
+    {
+      "Action": "Load",
+      "Target": "Characters/Toddler, Characters/Toddler_dark",
+      "FromFile": "assets/Male/{{spouse}}{{Male Toddler Hairstyle}}.png",
+      "When": {
+        "Enabled": "Boy",
+        "HasFile:assets/Male/{{spouse}}{{Male Toddler Hairstyle}}.png": "true"
+      }
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Characters/Baby, Characters/Baby_dark",
+      "FromFile": "assets/Baby/{{spouse}}GingerBaby.png",
+      "When": {
+        "Enabled": "Baby",
+        "Relationship:Sebastian": "Married",
+        "Sebastian Ginger Babies": "Yes",
+        "HasFile:assets/Baby/{{spouse}}GingerBaby.png": "true"
+      }
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Characters/Toddler_girl, Characters/Toddler_girl_dark",
+      "FromFile": "assets/Female/{{spouse}}Ginger{{Female Toddler Hairstyle}}.png",
+      "When": {
+        "Enabled": "Girl",
+        "Relationship:Sebastian": "Married",
+        "Sebastian Ginger Babies": "Yes",
+        "HasFile:assets/Female/{{spouse}}Ginger{{Female Toddler Hairstyle}}.png": "true"
+      }
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Characters/Toddler, Characters/Toddler_dark",
+      "FromFile": "assets/Male/{{spouse}}Ginger{{Male Toddler Hairstyle}}.png",
+      "When": {
+        "Enabled": "Boy",
+        "Relationship:Sebastian": "Married",
+        "Sebastian Ginger Babies": "Yes",
+        "HasFile:assets/Male/{{spouse}}Ginger{{Male Toddler Hairstyle}}.png": "true"
+      }
+    }
+  ]
+}

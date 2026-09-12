@@ -1,0 +1,20 @@
+{
+    "Changes": [
+        {
+            "Action": "Include",
+            "FromFile": "assets/Hallowed Nights/image/imageload HN.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/Hallowed Nights/object/Halloween Candies.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/Hallowed Nights/object/Halloween Candy Machine.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/Hallowed Nights/object/Halloween Decorations.json"
+        }
+    ]
+}

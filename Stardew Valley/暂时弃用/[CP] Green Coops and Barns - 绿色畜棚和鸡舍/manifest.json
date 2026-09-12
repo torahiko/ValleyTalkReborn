@@ -1,0 +1,33 @@
+{
+    "Name": "Green Coops and Barns",
+    "Author": "vikich3rry",
+    "Version": "1.0.4",
+    "Description": "Turns coops and barns into green spaces that stay in a permanent spring!",
+    "UniqueID": "vikich3rry.GreenCoopsBarns",
+    "UpdateKeys": [
+        "Nexus:28530"
+    ],
+    "MinimumApiVersion": "4.0.0",
+    "ContentPackFor": {
+        "UniqueID": "Pathoschild.ContentPatcher",
+        "MinimumVersion": "2.0.0"
+    },
+    "Dependencies": [
+        {
+            "UniqueID": "KediDili.VanillaPlusProfessions",
+            "IsRequired": false
+        },
+        {
+            "UniqueID": "FlashShifter.StardewValleyExpandedCP",
+            "IsRequired": false
+        },
+        {
+            "UniqueID": "jenf1.megacoopbarn",
+            "IsRequired": false
+        },
+        {
+            "UniqueID": "UncleArya.ResourceChickens",
+            "IsRequired": false
+        }
+    ]
+}

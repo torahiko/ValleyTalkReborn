@@ -1,0 +1,16 @@
+{"Format": "2.0.0",
+"Changes": [
+
+{
+"LogName": "OB7 Furniture Catalogue",
+"Action": "Include",
+"FromFile": "Data/shops.json"
+},
+
+{
+"Action": "Load",
+"Target": "Tilesheets/OB7Furni_Catalogue",
+"FromFile": "assets/OB7Furni_Catalogue.png"
+}
+
+]}

@@ -1,0 +1,142 @@
+{
+"Changes": [
+//TOWNSFOLK RELATIONSHIP REACTIONS
+{
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Caroline",
+	"Entries": {
+		"dating_Sam": "{{i18n: caroline.reaction.dating_Sam.{{AbbyPronouns}}}}",
+		"married_Sam": "{{i18n: caroline.reaction.married_Sam}}",
+		}
+    },
+{
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Clint",
+	"Entries": {
+		"dating_Sam": "{{i18n: clint.reaction.dating_Sam}}",
+		"married_Sam": "{{i18n: clint.reaction.married_Sam}}",
+		}
+    },
+{
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Elliott",
+	"Entries": {
+		"married_Sam": "{{i18n: elliott.reaction.married_Sam}}",
+		"maggbandstand": "{{i18n: elliott.topic.maggbandstand}}",
+		}
+    },
+{
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Emily",
+	"Entries": {
+		"dating_Sam": "{{i18n: emily.reaction.dating_Sam}}",
+		"maggbandstand": "{{i18n: emily.topic.maggbandstand}}",
+		}
+    },
+{
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Evelyn",
+	"Entries": {
+		"dating_Sam": "{{i18n: evelyn.reaction.dating_Sam}}",
+		"married_Sam": "{{i18n: evelyn.reaction.married_Sam}}",
+		}
+    },
+{
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/George",
+	"Entries": {
+		"dating_Sam": "{{i18n: george.reaction.dating_Sam}}",
+		"married_Sam": "{{i18n: george.reaction.married_Sam}}",
+		"MaggSamBaby": "{{i18n: george.reaction.MaggSamBaby}}",
+		}
+    },
+{
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Gus",
+	"Entries": {
+		"dating_Sam": "{{i18n: gus.reaction.dating_Sam}}",
+		"married_Sam": "{{i18n: gus.reaction.married_Sam}}",
+		}
+    },
+{
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Haley",
+	"Entries": {
+		"dating_Sam": "{{i18n: haley.reaction.dating_Sam}}",
+		"married_Sam": "{{i18n: haley.reaction.married_Sam}}",
+		}
+    },
+{
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Harvey",
+	"Entries": {
+		"eventSeen_magginyourcorner08082024": "{{i18n: harvey.event.magginyourcorner08082024}}",
+		"dating_Sam": "{{i18n: harvey.reaction.dating_Sam}}",
+		"married_Sam": "{{i18n: harvey.reaction.married_Sam}}",
+		}
+    },
+{
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Lewis",
+	"Entries": {
+		"dating_Sam": "{{i18n: lewis.reaction.dating_Sam}}",
+		"married_Sam": "{{i18n: lewis.reaction.married_Sam}}",
+		"maggbandstand": "{{i18n: lewis.topic.maggbandstand}}",
+		}
+    },
+{
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Marnie",
+	"Entries": {
+		"dating_Sam": "{{i18n: marnie.reaction.dating_Sam}}",
+		"married_Sam": "{{i18n: marnie.reaction.married_Sam}}",
+		"maggchickenwar": "{{i18n: marnie.topic.maggchickenwar}}",
+		}
+    },
+{
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Pierre",
+	"Entries": {
+		"dating_Sam": "{{i18n: pierre.reaction.dating_Sam}}",
+		"married_Sam": "{{i18n: pierre.reaction.married_Sam}}",
+		}
+    },
+{
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Sophia",
+	"Entries": {
+		"dating_Sam": "{{i18n: sophia.reaction.dating_Sam}}",
+		"married_Sam": "{{i18n: sophia.reaction.married_Sam}}",
+		}
+    },
+{
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Victor",
+	"Entries": {
+		"dating_Sam": "{{i18n: victor.reaction.dating_Sam.{{AbbyPronouns}}}}",
+		"married_Sam": "{{i18n: victor.reaction.married_Sam}}",
+		}
+    },
+{
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Willy",
+	"Entries": {
+		"dating_Sam": "{{i18n: willy.reaction.dating_Sam.{{FarmerGender}}}}",
+		"married_Sam": "{{i18n: willy.reaction.married_Sam{{DSVMuslimSam}}}}",
+		}
+    },
+{
+//DSV COMPATIBILITY
+	"LogName": "DSV Turkish Gus",
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Gus",
+	"Entries": {
+		"married_Sam": "{{i18n: gus.reaction.married_Sam.DSV}}",
+				},
+	"When": {
+		"HasMod": "DSV.Core",
+		"DSV.Core/ConfigValue:GusVariant |contains= Modded": true
+		}
+	},
+]
+}

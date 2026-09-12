@@ -1,0 +1,74 @@
+{
+"Changes": [
+//VINCENT DIALOGUE
+{
+	"LogName":"before picnic event",
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Vincent",
+	"Entries": {
+        "Thu6": "{{i18n: vincent.daily.Thu6}}",
+        "Sun8": "{{i18n: vincent.daily.Sun8}}",
+				},
+	"When": {
+			"HasSeenEvent |contains=maggreallife08202024": false,
+		}
+    },
+{
+	"LogName":"after picnic event",
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Vincent",
+	"Entries": {
+        "Thu6": "{{i18n: vincent.daily.Thu6.{{VinceName}}}}",
+        "Sun8": "{{i18n: vincent.daily.Sun8.{{VinceName}}}}",
+				},
+	"When": {
+			"HasSeenEvent |contains=maggreallife08202024": true,
+		}
+    },
+{
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Vincent",
+	"Entries": {
+        "Introduction": "{{i18n: vincent.Introduction}}",
+        "dating_Sam": "{{i18n: vincent.reaction.dating_Sam}}",
+        "married_Sam": "{{i18n: vincent.reaction.married_Sam}}",
+        "GreenRain": "{{i18n: vincent.reaction.GreenRain}}",
+        "GreenRain_2": "{{i18n: vincent.reaction.GreenRain_2.{{FarmerGender}}}}",
+        "Resort_Entering": "{{i18n: vincent.schedule.Resort_Entering}}",
+        "Resort_Leaving": "{{i18n: vincent.schedule.Resort_Leaving}}",
+        "Resort_Shore": "{{i18n: vincent.schedule.Resort_Shore}}",
+        "Resort": "{{i18n: vincent.schedule.Resort}}",
+        "Mon": "{{i18n: vincent.daily.Mon}}",
+        "Mon4": "$d kent#{{i18n: vincent.daily.Mon4.1}}|{{i18n: vincent.daily.Mon4.2}}",
+        "Tue": "{{i18n: vincent.daily.Tue}}",
+        "Tue6": "{{i18n: vincent.daily.Tue6.{{PennyPronouns}}}}",
+        "Tue8": "{{i18n: vincent.daily.Tue8.{{SebPronouns}}}}",
+        "Wed": "{{i18n: vincent.daily.Wed}}",
+        "Wed4": "{{i18n: vincent.daily.Wed4}}",
+        "Wed6": "{{i18n: vincent.daily.Wed6}}",
+        "Thu": "{{i18n: vincent.daily.Thu}}",
+        "Thu2": "{{i18n: vincent.daily.Thu2.{{SebPronouns}}}}",
+        "Thu4": "{{i18n: vincent.daily.Thu4}}",
+        "Thu8": "{{i18n: vincent.daily.Thu8}}",
+        "Fri": "{{i18n: vincent.daily.Fri}}",
+        "Fri4": "{{i18n: vincent.daily.Fri4}}",
+        "Fri6": "{{i18n: vincent.daily.Fri6}}",
+        "Fri8": "{{i18n: vincent.daily.Fri8.{{SamRelationship}}}}",
+        "Sat_1": "{{i18n: vincent.daily.Sat_1{{DSVNoMoreWarKent}}}}",
+        "Sat": "{{i18n: vincent.daily.Sat.{{PennyPronouns}}}}",
+        "Sat6": "$d kent#{{i18n: vincent.daily.Sat6.1}}|{{i18n: vincent.daily.Sat6.2}}",
+        "Sun": "{{i18n: vincent.daily.Sun}}",
+        "Sun6": "{{i18n: vincent.daily.Sun6}}",
+        "magglivingmusical": "{{i18n: vincent.topic.magglivingmusical{{Solstice}}}}",
+        "maggsamsebbeards2": "{{i18n: vincent.topic.maggsamsebbeards2}}",
+        "maggshots": "{{i18n: vincent.topic.maggshots}}",
+        "magghopelessopus": "{{i18n: vincent.topic.magghopelessopus}}",
+        "magginyourcorner": "{{i18n: vincent.topic.magginyourcorner}}",
+        "eventSeen_maggreallife08202024": "{{i18n: vincent.event.maggreallife08202024.{{VinceName}}}}",
+        "maggwalkingwire": "{{i18n: vincent.topic.maggwalkingwire.{{FarmerGender}}}}",
+        "eventSeen_maggbeliever09082024": "{{i18n: vincent.event.maggbeliever09082024}}",
+        "maggchickenwar": "{{i18n: vincent.topic.maggchickenwar}}",
+		}
+    },
+]
+}

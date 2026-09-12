@@ -1,0 +1,430 @@
+{
+  "Changes": [	
+  
+  
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Abigail",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "黄金南……！？所以你通关了万灵节迷宫！$7#$b#快告诉我那前面都有些什么！如果不是蜘蛛，我早就通关了……$1#$b#噢，你要保密？怎么这样神神秘秘的……真没劲。$3#$b#嗯，好吧，算了！我要拿刀雕这个南瓜……就算它是黄金做的，也只不过是个南瓜！$1",
+	  
+     }
+    },
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Alex",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "嗯？黄金南瓜？所以你通关了万灵节迷宫对吧……好厉害！#$b#而且还把奖品送我……你真是个好人，谢啦！$1#$b#我那天找了好久都找不到秘密通道……我大概明年会再挑战。我肯定我会找到的！",
+	  
+     }
+    },
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Elliott",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "嗯，@？这是黄金南瓜吗？#$b#哦，我知道，大家都在谈论着迷宫尽头就是黄金南瓜呢。原来最后是你通关了，真了不起。#$b#你要把这送我？噢……太感谢你了！$1#$b#我不是因为黄金而高兴。而是我知道你有很多朋友，还选择把这珍贵的礼物送给我这件事而高兴。我会记住你这份善意的！$1",
+	  
+     }
+    },
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Harvey",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "啊……黄金南瓜？你要把这送我吗？#$b#谢谢你！大家都说迷宫的尽头是黄金南瓜……我当时还感觉自己一辈子都看不到实物了。$1#$b#你在万灵节那天有找到我吗？请不要说出去……这是我俩的秘密！$1",
+	  
+     }
+    },
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Sam",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "咦？黄金南瓜……所以你通关了万灵节的迷宫？#$b#太厉害了吧！我走到尽头就没路了……$1#$b#噢，慢着，我不会问前面有什么的。明年我要自己看。$3#$b#总之谢啦！我真高兴啊，你居然选择把这送给我。我敢说没多少人能收到这个。$1",
+	  
+     }
+    },
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Sebastian",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "黄金南瓜？我知道，他们说万灵节迷宫的尽头就放着这东西。#$b#送我？这是很珍贵的东西吧……我感觉很多人都会喜欢。你真的确定要送我？$2#$b#……嗯，行，我知道了。我会收下的，谢谢。$1",
+	  
+     }
+    },
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Shane",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "……这是什么？噢，万灵节迷宫。我每年都忙着干别的，完全没空理那什么蠢迷宫。#$b#所以这么难弄到手的东西你要送我？$3#$b#……好吧，或许世上就是有你这种好人。我会收下的，谢了。$1",
+	  
+     }
+    },
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Emily",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "啊……黄金色的南瓜！所以你通关了万灵节的迷宫？#$b#真厉害，小镇上没多少人能办得到呢！#$b#我对迷宫没太大的兴趣，我不喜欢这些故意吓唬人的东西……$2#$b#但是很高兴你把奖品送给我！谢谢你与我分享通关迷宫的喜悦。$1",
+	  
+     }
+    },
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Haley",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "嗯？这什么金光闪闪的。#$b#啊……万灵节迷宫的奖品？#$b#天，你通关了？太厉害了吧！你不觉得那些东西很吓人嘛？我完全不想走进去。$1#$b#噢，还把奖品送给我……谢谢。你真亲切！$1",
+	  
+     }
+    },
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Leah",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "咦？这金光闪闪的南瓜……噢，我有听说！是万灵节的奖品对吧？#$b#你好厉害啊，我都还没去迷宫里看过呢，那天格斯准备的大餐实在是太好吃了。#$b#嗯……所以这个南瓜我们该怎么处理呢？拿雕塑刀雕看看吧！$1",
+	  
+     }
+    },
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Penny",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "啊……是黄金南瓜？好厉害……你通关了迷宫呢！#$b#要把奖品送我吗？谢谢你！我真高兴。$1#$b#我每年都在同样的地方被绊倒，还以为我一辈子都不会拿到奖品了……$1",
+	  
+     }
+    },
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Maru",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "黄金南瓜？！哇……你通关了迷宫对吧？#$b#好厉害！我每年都刚进入口没多久就迷路了……那里特别吓人。$1#$b#谢谢你把奖品送给我！现在我感觉自己好像通关了一样呢！$1",
+	  
+     }
+    },
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Caroline",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "黄金南瓜…？噢，谢谢！#$b#我完全没胆量进入那个迷宫。阿比盖尔每年都第一个冲进去，然后好几小时不出来……我想那肯定很恐怖。$2#$b#你肯定经历了大冒险吧？要不要坐下来告诉我？$1",
+	  
+     }
+    },
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Clint",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "黄金南瓜？送给我？#$b#噢，你通关了迷宫是吧。我听镇上的人都说那迷宫很恐怖……你肯定很勇敢，跟我不一样。#$b#不过这真是上好的黄金……谢谢你！$1",
+	  
+     }
+    },
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Robin",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "嗯？黄金南瓜？哎，我居然能看到实物！#$b#大家都说迷宫尽头是黄金南瓜，可是我从来没看到过有人挑战成功。你很厉害嘛，@！$1#$b#而且把这送给我吗？谢谢！我得放到安全的地方好好收藏了……离德米特里厄斯的实验室远一点。$1",
+	  
+     }
+    },
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Jodi",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "黄金南瓜……？真厉害，我搬来镇上这么久，还没见过有人通关那个迷宫。山姆说他每次都找不到路。#$b#这就是迷宫的奖品……还真的是黄金呢！$1#$b#送给我？谢谢！我想把这个拿给文森特看……他肯定不会再嚷嚷着要进闹鬼迷宫了！$1",
+	  
+     }
+    },
+	
+	
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Pierre",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "好大的黄金！！#$b#哦，不，该说是黄金南瓜？你真厉害。我每年都在摆摊，完全没踏进过那迷宫一步。#$b#你要送我吗？谢谢。我感觉它可以卖出很好的价……$1#$b#哦不不！我不会拿去卖的！$1",
+	  
+     }
+    },
+	
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Demetrius",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "嗯……黄金南瓜？我知道这代表什么，每年玛鲁都在挑战那迷宫。#$b#原来如此……看来传言是真的。谢谢你跟我分享你的奖品。$1",
+	  
+     }
+    },
+	
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Kent",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "黄金做的南瓜？噢……我想起来了，万灵节的迷宫。#$b#谢谢你拿来给我。我感觉我一辈子都不会有心情享受这种玩乐了……但能分享奖品还是不错的。$1",
+	  
+     }
+    },
+	
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Vincent",
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "黄金南瓜？哇！！！#$b#我听说了，迷宫的尽头就放着这个！！#$b#这太棒了……明年我一定要求妈妈让我进迷宫探险！$1",
+	  
+     }
+    },
+	
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/George",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "这什么？万灵节的奖品？#$b#我那晚甚至没出门……我在你们吵闹之前就先上床睡觉了。#$b#不过，嗯……拿到这个肯定不容易。#$b#你应该有很多人可以分享这种喜悦吧？你居然选择我这老头子……我很惊喜。$1",
+	  
+     }
+    },
+	
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Evelyn",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "黄金南瓜？哎呀……你通关了闹鬼迷宫？！#$b#这太棒了！那晚上我和乔治甚至没出门，实在是太冷了。#$b#谢谢你分享给我，亲爱的。我看着这就感觉自己通关了迷宫。$1",
+	  
+     }
+    },
+	
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Marnie",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "哇！黄金南瓜？你真的通关了那迷宫？#$b#太厉害了……我光是听说是住我家西边那怪人设置的，就不想靠近了。贾思总是求着我让她进去……我怎么可能答应。$2#$b#噢，你要把这送给我？谢谢！它看起来好珍贵，我会珍惜的。$1",
+	  
+     }
+    },
+	
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Jas",
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "金色的南瓜！好棒，所以你通关了那个迷宫？#$b#我敢说那里面一定不恐怖。我只希望明年玛妮阿姨会让我进去……然后我就可以亲手拿到它了！$1",
+	  
+     }
+    },
+	
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Lewis",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "啊……金色南瓜？厉害，我做了这么多年镇长，你恐怕是唯一一个通关的人。#$b#嗯……非常上好的黄金。这可以用在我的秘——$1#$b#哦，我什么也没说，好吗？**咳咳**$3",
+	  
+     }
+    },
+	
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Pam",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "什么？万灵节上的黄金南瓜？在我吃东西时你干了这么刺激的事吗，孩子？#$b#不错！看起来是纯金……我敢说它肯定值很多钱。$1#$b#居然把这东西送给我……你真慷慨啊！谢谢你！$1",
+	  
+     }
+    },
+	
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Gus",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "好大的南……噢，黄金南瓜？那代表你把万灵节的闹鬼迷宫……真厉害，@！#$b#我在想这东西能不能做成菜式……**敲敲**$3#$b#看来好像不行，这是纯金。我有点失望……$2#$b#哈，开玩笑！黄金有谁不喜欢？我就很喜欢，谢谢。$1",
+	  
+     }
+    },
+	
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Willy",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "啊……黄金南瓜？嘿，不错嘛！$1#$b#我那晚根本没有去万灵节的聚会……我在准备冬天出海。#$b#但是收到这个真不错！我想你在那晚上肯定好好享受了一番。$3",
+	  
+     }
+    },
+	
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Linus",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "啊……这是我朋友放到迷宫尽头的东西？#$b#谢谢你与我分享，@。那晚上我也在镇里……迷宫里的所有事我都看到了。你做得很好！$1",
+	  
+     }
+    },
+	
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Leo",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "这是什么？山谷的节日奖品……？$3#$b#噢……听起来好像很珍贵，谢谢你。$2#$b#虽然我不觉得我有机会到山谷里……你不用管我。$2",
+	  
+     }
+    },
+	
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/LeoMainland",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "这是万灵节的奖品对吧？我听文森特他们说过！#$b#谢谢你……我不觉得我能通关那个迷宫，但是能去参加就很开心了！$1",
+	  
+     }
+    },
+	
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Dwarf",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "啊，金光闪闪的。这是啥？#$b#不管了，它看起来不错。谢谢！",
+	  
+     }
+    },
+	
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Krobus",
+            "When": {
+			"DayOfWeek |contains=Friday":"false",
+            },	  
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "噢……？这个南瓜跟普通的南瓜长得不一样。#$b#什么，万灵节迷宫的奖品……？听起来好像很珍贵，看起来也很值钱……你确定要送给我？#$b#确定？噢……好的，谢谢你！它看起来很漂亮！$1#$b#我在万灵节前后都不敢外出……我知道他们在找些＂怪物＂放进笼子里，我有点怕。$2",
+	  
+     }
+    },
+	
+	
+		{
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Wizard",
+
+
+      "Entries": {
+	  
+		  "AcceptGift_(O)373": "黄金南瓜？我亲手把它放进迷宫尽头的宝箱，你又把这个送回来，是想要实现某种无限的轮回吗？#$b#嗯，单纯的礼物？好吧，我想你在明年的万灵节又会看到它的……不过在那之前我会先把它研究一番。",
+     }
+    },
+	
+  
+  ]
+}

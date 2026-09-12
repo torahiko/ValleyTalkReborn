@@ -1,0 +1,236 @@
+// patch reload MK215.Northwestcoast
+// debug warp Northwestcoast
+// patch summary MK215.Northwestcoast full
+
+{
+  "$schema": "https://smapi.io/schemas/content-patcher.json",
+  "Format": "2.4.0",
+  "ConfigSchema": {
+    "Enable this mod": {
+      "AllowValues": "true,false",
+      "Default": "true"
+    }
+  },
+  "CustomLocations": [
+    {
+      "Name": "Custom_Northwestcoast",
+      "FromMapFile": "assets/Northwestcoast.tmx"
+    }
+  ],
+  "Changes": [
+    //Ersetzt einen Teil der Backwoods Karte mit dem Durchgang
+    {
+      "Action": "EditMap",
+      "Target": "Maps/Backwoods",
+      "FromFile": "assets/Backwoods_NWC.tmx",
+      "FromArea": {
+        "X": 3,
+        "Y": 32,
+        "Width": 11,
+        "Height": 8
+      },
+      "ToArea": {
+        "X": 3,
+        "Y": 32,
+        "Width": 11,
+        "Height": 8
+      },
+      "When": {
+        "Enable this mod": "true"
+      }
+    },
+    // Fisch start -->
+    {
+      "Action": "EditData",
+      "Target": "Data/Locations",
+      "Entries": {
+        "Custom_Northwestcoast": {
+
+          "DisplayName": "Northwest Coast",
+          "DefaultArrivalTile": {
+            "X": 54,
+            "Y": 7,
+          },
+
+          "CreateOnLoad": {
+            "AlwaysActive": true,
+            //falsche angabe: "MapPath": "assets\\Custom_Northwestcoast"
+            "MapPath": "Maps\\Custom_Northwestcoast"
+          },
+          "CanPlantHere": true,
+          "FishAreas": {
+            "Ocean": {
+              "DisplayName": null,
+              "Position": {
+                "X": 1,
+                "Y": 1,
+                "Width": 58,
+                "Height": 38,
+              },
+              "CrabPotFishTypes": [
+                "ocean"
+              ]
+            },
+          },
+          "Fish": [
+            {
+              "Id": "MK215.Northwestcoast_128", //Pufferfish
+              "ItemId": "(O)128",
+              "FishAreaID": "Ocean",
+              "Condition": "LOCATION_Season Here Summer"
+            },
+            {
+              "Id": "MK215.Northwestcoast_130", //Tuna
+              "ItemId": "(O)130",
+              "FishAreaID": "Ocean",
+              "Condition": "LOCATION_Season Here Summer Winter"
+            },
+            {
+              "Id": "MK215.Northwestcoast_148", //Eel
+              "ItemId": "(O)148",
+              "FishAreaID": "Ocean",
+              "Condition": "LOCATION_Season Here Spring Fall"
+            },
+            {
+              "Id": "MK215.Northwestcoast_149", //Octopus
+              "ItemId": "(O)149",
+              "FishAreaID": "Ocean",
+              "Condition": "LOCATION_Season Here Summer"
+            },
+            {
+              "Id": "MK215.Northwestcoast_151", //Squid
+              "ItemId": "(O)151",
+              "FishAreaID": "Ocean",
+              "Condition": "LOCATION_Season Here Winter"
+            },
+            {
+              "Id": "MK215.Northwestcoast_152", //Seaweed
+              "ItemId": "(O)152",
+              "FishAreaID": "Ocean",
+            },
+            {
+              "Id": "MK215.Northwestcoast_154", //Sea Cucumber
+              "ItemId": "(O)154",
+              "FishAreaID": "Ocean",
+              "Condition": "LOCATION_Season Here Summer Fall"
+            },
+            {
+              "Id": "MK215.Northwestcoast_155", //Super Cucumber
+              "ItemId": "(O)155",
+              "FishAreaID": "Ocean",
+              "Condition": "LOCATION_Season Here Summer Fall"
+            },
+            {
+              "Id": "MK215.Northwestcoast_161", //Ice Pip
+              "ItemId": "(O)161",
+              "FishAreaID": "Ocean",
+              "Condition": "LOCATION_Season Here Winter"
+            },
+            {
+              "Id": "MK215.Northwestcoast_705", //Weißer Tunfisch
+              "ItemId": "(O)705",
+              "FishAreaID": "Ocean",
+              "Condition": "LOCATION_Season Here Winter"
+            },
+            {
+              "Id": "MK215.Northwestcoast_267", //Flounder
+              "ItemId": "(O)267",
+              "FishAreaID": "Ocean",
+              "Condition": "LOCATION_Season Here Spring Summer"
+            },
+            {
+              "Id": "MK215.Northwestcoast_701", //Tilapia
+              "ItemId": "(O)701",
+              "FishAreaID": "Ocean",
+              "Condition": "LOCATION_Season Here Summer Fall"
+            },
+            {
+              "Id": "MK215.Northwestcoast_708", //Halibut
+              "ItemId": "(O)708",
+              "FishAreaID": "Ocean",
+              "Condition": "LOCATION_Season Here Spring Summer Winter"
+            },
+            {
+              "Id": "MK215.Northwestcoast_798", //Midnight Squid
+              "ItemId": "(O)798",
+              "FishAreaID": "Ocean",
+              "Condition": "LOCATION_Season Here Winter"
+            },
+            {
+              "Id": "MK215.Northwestcoast_SeaJelly", //SeaJelly
+              "ItemId": "(O)SeaJelly",
+              "FishAreaID": "Ocean",
+              "Chance": 0.06
+            },
+            {
+              "Id": "MK215.Northwestcoast_129", //Anchovy
+              "ItemId": "(O)129",
+              "FishAreaID": "Ocean",
+              "Condition": "LOCATION_Season Here Spring Fall"
+            },
+            {
+              "Id": "MK215.Northwestcoast_131", //Sardine
+              "ItemId": "(O)131",
+              "FishAreaID": "Ocean",
+              "Condition": "LOCATION_Season Here Spring"
+            },
+            {
+              "Id": "MK215.Northwestcoast_147", //Hering
+              "ItemId": "(O)147",
+              "FishAreaID": "Ocean",
+              "Condition": "LOCATION_Season Here Spring Winter"
+            },
+            {
+              "Id": "MK215.Northwestcoast_146", //Red Mullet
+              "ItemId": "(O)147",
+              "FishAreaID": "Ocean",
+              "Condition": "LOCATION_Season Here Summer Winter"
+            },
+            {
+              "Id": "MK215.Northwestcoast_150", //Red Snapper
+              "ItemId": "(O)150",
+              "FishAreaID": "Ocean",
+              "Condition": "LOCATION_Season Here Summer Fall Winter"
+            },
+
+            //EXPANDED
+            /*{
+              "Id": "MK215.Northwestcoast_Starfish",
+              "ItemId": "(O)FlashShifter.StardewValleyExpandedCP_Starfish",
+              "FishAreaID": "Ocean",
+              "Condition": "LOCATION_Season Here Spring Summer Fall"
+            },
+            {
+              "Id": "MK215.Northwestcoast_DulseSeaweed",
+              "ItemId": "(O)FlashShifter.StardewValleyExpandedCP_Dulse_Seaweed",
+              "FishAreaID": "Ocean",
+            }, */
+          ]
+        }
+      }
+    },
+    // <-- Fisch ende
+    // Konsole: debug warp Northwestcoast
+    //Warp zur neuen Map
+   
+    {
+      "Action": "EditMap",
+      "Target": "Maps/Backwoods",
+      "AddWarps": [
+         "10 36 Custom_Northwestcoast 54 8"
+      ]
+    },
+    
+    // Warp zurück in die Backwoods
+    /*  der ist glaube ich nicht nötig...
+    {
+      "Action": "EditMap",
+      "Target": "Maps/Northwestcoast",
+      "AddWarps": [
+        "54 7 Backwoods 10 37"
+      ],
+    },
+*/
+
+  ]
+}

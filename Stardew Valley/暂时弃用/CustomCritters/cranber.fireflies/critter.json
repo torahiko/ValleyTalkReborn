@@ -1,0 +1,107 @@
+{
+  "Id": "cranber.fireflies",
+  "SpriteData": {
+    "Variations": 6,
+    "FrameWidth": 10,
+    "FrameHeight": 9,
+    "Scale": 4
+  },
+  "Animations": {
+    "default": {
+      "Frames": [
+        {
+          "Frame": 0,
+          "Duration": 25
+        },
+        {
+          "Frame": 1,
+          "Duration": 25
+        },
+        {
+          "Frame": 2,
+          "Duration": 25
+        },
+        {
+          "Frame": 3,
+          "Duration": 25
+        },
+        {
+          "Frame": 2,
+          "Duration": 25
+        },
+        {
+          "Frame": 1,
+          "Duration": 25
+        }
+      ]
+    }
+  },
+  "SpawnConditions": [
+    {
+      "Not": false,
+      "Seasons": [ "spring", "summer", "fall" ],
+      "Locations": [ "Farm" ],
+      "MinTimeOfDay": 1750,
+      "MaxTimeOfDay": 2600,
+      "ChancePerTile": 1,
+      "RequireDarkOut": true,
+      "AllowRain": false,
+      "ChildrenCombine": "and",
+      "Children": []
+    }  
+  ],
+  "SpawnLocations": [
+    {
+      "LocationType": "random",
+      "Conditions": [
+        {
+          "Not": false,
+          "Chance": 10,
+          "Variable": "ParentSheetIndex",
+          "RequireNotNull": false,
+          "Is": null,
+          "ValueEquals": "0",
+          "ChildrenCombine": "and",
+          "Children": []
+        }
+      ]
+    }
+  ],
+  "SpawnAttempts": 90,
+  "Behavior": {
+     "Type": "random",
+    "Speed": 0.50,
+    "PatrolPoints": [
+      {
+        "Type": "random"
+      },
+      {
+        "Type": "startoffset",
+        "X": 10,
+        "Y": 10
+      },
+      {
+        "Type": "startoffset",
+        "X": -8,
+        "Y": 6
+      },
+      {
+        "Type": "startoffset",
+        "X": 3,
+        "Y": -1
+      },
+      {
+        "Type": "startoffset",
+        "X": -3,
+        "Y": -2
+      }
+    ],
+    "PatrolPointDelay": 0,
+    "PatrolPointDelayAddRandom": 0
+  },
+  "Light": {
+    "VanillaLightId": 3,
+    "Radius": 0.5,
+    "Color": { "R": 255, "G": 255, "B": 255 }
+  }
+}

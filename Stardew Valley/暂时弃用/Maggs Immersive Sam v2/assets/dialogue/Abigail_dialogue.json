@@ -1,0 +1,93 @@
+{
+"Changes": [
+//ABIGAIL DIALOGUE
+{
+	"LogName": "Regular Dialogue demons event",
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Abigail",
+	"Entries": {
+		"eventSeen_maggdemons08082024": "{{i18n: abigail.event.maggdemons08082024}}",
+				},
+	"When": {
+			"HasConversationTopic |contains= maggdemons": true,
+		}
+	},
+{
+	"LogName": "Regular Dialogue wedding event",
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Abigail",
+	"Entries": {
+		"eventSeen_maggweddinglewis009022024": "{{i18n: abigail.event.maggweddinglewis009022024.{{SpiceLevel}}}}",
+				},
+	"When": {
+			"HasConversationTopic |contains= maggsamwedding": true,
+		}
+	},
+{
+	"LogName": "Regular Dialogue wedding event",
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Abigail",
+	"Entries": {
+		"eventSeen_maggweddinglewis009022024": "{{i18n: abigail.event.maggweddinglewis009022024.extraspicy.DSV}}",
+				},
+	"When": {
+			"SpiceLevel": "extraspicy",
+			"HasConversationTopic |contains= maggsamwedding": true,
+			"HasMod": "DSV.Core",
+			"DSV.Core/ConfigValue:SamVariant |contains=Off": false
+		}
+	},
+{
+	"LogName": "Abigail Extra Dialogue",
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Abigail",
+	"Entries": {
+		"spring_5": "{{i18n: abigail.daily.spring_5}}",
+		"spring_12": "{{i18n: abigail.daily.spring_12}}",
+		"spring_17": "{{i18n: abigail.daily.spring_17}}",
+		"spring_23": "{{i18n: abigail.daily.spring_23}}",
+		"spring_26": "{{i18n: abigail.daily.spring_26}}",
+		"summer_4": "{{i18n: abigail.daily.summer_4.{{SebPronouns}}}}",
+		"summer_13": "{{i18n: abigail.daily.summer_13.{{SamRelationship}}}}",
+		"summer_19": "{{i18n: abigail.daily.summer_19.{{AbbyPronouns}}}}",
+		"summer_24": "{{i18n: abigail.daily.summer_24}}",
+		"summer_28": "{{i18n: abigail.daily.summer_28}}",
+		"fall_1": "{{i18n: abigail.daily.fall_1}}",
+		"fall_7": "{{i18n: abigail.daily.fall_7.{{SamRelationship}}}}",
+		"fall_13": "{{i18n: abigail.daily.fall_13}}",
+		"fall_16": "{{i18n: abigail.daily.fall_16}}",
+		"fall_20": "{{i18n: abigail.daily.fall_20}}",
+		"fall_27": "{{i18n: abigail.daily.fall_27}}",
+		"winter_7": "{{i18n: abigail.daily.winter_7}}",
+		"winter_12": "{{i18n: abigail.daily.winter_12}}",
+		"winter_19": "{{i18n: abigail.daily.winter_19.{{SamRelationship}}}}",
+		"winter_21": "{{i18n: abigail.daily.winter_21}}",
+		"winter_24": "{{i18n: abigail.daily.winter_24{{Solstice}}}}",
+		"winter_26": "{{i18n: abigail.daily.winter_26{{Solstice}}}}",
+		"dating_Sam": "{{i18n: abigail.reaction.dating_Sam}}",
+		"dating_Sam_memory_oneday": "{{i18n: abigail.reaction.dating_Sam_memory_oneday}}",
+		"married_Sam": "{{i18n: abigail.reaction.married_Sam}}",
+		"Sat_inlaw_Sam": "{{i18n: abigail.daily.Sat_inlaw_Sam}}",
+		"Sat8_inlaw_Sam": "{{i18n: abigail.daily.Sat8_inlaw_Sam}}",
+		"Fri4_inlaw_Sam": "{{i18n: abigail.daily.Fri4_inlaw_Sam}}",
+		"maggsamsebbeards": "{{i18n: abigail.topic.maggsamsebbeards}}",
+		"magglivingmusical": "{{i18n: abigail.topic.magglivingmusical}}",
+		"maggshots": "{{i18n: abigail.topic.maggshots}}",
+		"magghopelessopus": "{{i18n: abigail.topic.magghopelessopus}}",
+		"eventSeen_magginyourcorner08082024": "{{i18n: abigail.event.magginyourcorner08082024}}",
+		"eventSeen_maggwalkingwire08082024": "{{i18n: abigail.event.maggwalkingwire08082024}}",
+		"eventSeen_maggnexttome08092024": "{{i18n: abigail.event.maggnexttome08092024.{{SebPronouns}}}}",
+		"magghearme": "{{i18n: abigail.topic.magghearme}}",
+		"eventSeen_maggnatural08082024": "{{i18n: abigail.event.maggnatural08082024}}",
+		"maggdancenight": "{{i18n: abigail.topic.maggdancenight}}",
+		"eventSeen_maggitstime08082024": "{{i18n: abigail.event.maggitstime08082024}}",
+		"eventSeen_maggweddingreception09022024": "{{i18n: abigail.event.maggweddingreception09022024.{{AlexPronouns}}}}",
+		"eventSeen_maggbeliever09082024": "{{i18n: abigail.event.maggbeliever09082024.{{AlexPronouns}}}}",
+		"maggchickenwar": "{{i18n: abigail.topic.maggchickenwar}}",
+		"maggbandstand": "{{i18n: abigail.topic.maggbandstand}}",
+		"maggsebsgame": "{{i18n: abigail.topic.maggsebsgame}}",
+		"MaggSamBaby": "{{i18n: abigail.topic.MaggSamBaby}}",
+		}
+    },
+]
+}

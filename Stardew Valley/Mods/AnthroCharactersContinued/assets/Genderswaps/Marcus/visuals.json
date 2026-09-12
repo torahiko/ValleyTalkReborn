@@ -1,0 +1,80 @@
+{
+  "Changes": [
+    {
+      "Action": "EditImage",
+      "Target": "TileSheets/junimo_furniture",
+      "FromFile": "assets/TileSheets/junimo_furniture_portraits.png",
+      "Priority": "Late + 1",
+      "FromArea": {
+        "X": 103,
+        "Y": 71,
+        "Width": 18,
+        "Height": 18
+      },
+      "ToArea": {
+        "X": 103,
+        "Y": 279,
+        "Width": 18,
+        "Height": 18
+      }
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Characters/Maru",
+      "FromFile": "assets/Characters/Marcus.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Characters/Maru_Beach",
+      "FromFile": "assets/Characters/Marcus_Beach.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Characters/Maru_Winter",
+      "FromFile": "assets/Characters/Marcus_Winter.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Characters/Maru_Hospital",
+      "FromFile": "assets/Characters/Marcus_Hospital.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Portraits/Maru",
+      "FromFile": "assets/Portraits/Marcus.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Portraits/Maru_Beach",
+      "FromFile": "assets/Portraits/Marcus_Beach.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Portraits/Maru_Hospital",
+      "FromFile": "assets/Portraits/Marcus_Hospital.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Portraits/Maru_Winter",
+      "FromFile": "assets/Portraits/Marcus_Winter.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "LooseSprites/emojis",
+      "FromFile": "assets/LooseSprites/emojis_characters.png",
+      "Priority": "Late + 1",
+      "FromArea": {
+        "X": 18,
+        "Y": 27,
+        "Width": 9,
+        "Height": 9
+      },
+      "ToArea": {
+        "X": 18,
+        "Y": 99,
+        "Width": 9,
+        "Height": 9
+      }
+    }
+  ]
+}

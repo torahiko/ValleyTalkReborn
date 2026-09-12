@@ -1,0 +1,1551 @@
+{
+//IF YOU CHOOSE TO EDIT THE DIALOGUE - You may edit your personal copy only. You do not have permission to make edits and re-post or share this mod. The dialogue is my own writing and I worked very hard on this. Contact MaggPlays directly if you have any questions or if you think your edits should be a variant.
+
+"Format": "2.8.0",
+"ConfigSchema": {
+	"MatureContent": {
+		"AllowValues": "yes, no",
+		"Default": "no",
+		"Description": "Adds more sexual content and description to Spicy. All content is positive, romantic, and light, NO violent/dark or crass content.",
+		},
+	"SleepoverRepeat": {
+		"AllowValues": "friday, threedays, daily, none",
+		"Default": "daily",
+		"Description": "Enables a sleepover mini event in the morning and evening with randomized dialogue. Certain conditions must be met to enable the event.",
+		},
+	"PillowtalkRepeat": {
+		"AllowValues": "friday, threedays, daily, none",
+		"Default": "daily",
+		"Description": "Enables a pillowtalk mini event in the evening with randomized dialogue. Includes custom map.",
+		},
+	},
+"DynamicTokens": [
+{
+	"Name": "Narration",
+	"Value": "first",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,Narration |contains=first": true
+		}
+	},
+{
+	"Name": "Narration",
+	"Value": "third",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,Narration |contains=third": true
+		}
+	},
+{
+	"Name": "PlayerPronouns",
+	"Value": "female",
+	"When": {
+		"PlayerGender": "female",
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,FarmerPronouns |contains=no": true
+		}
+	},
+{
+	"Name": "PlayerPronouns",
+	"Value": "male",
+	"When": {
+		"PlayerGender": "male",
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,FarmerPronouns |contains=no": true
+		}
+	},
+{
+	"Name": "PlayerPronouns",
+	"Value": "neutral",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,FarmerPronouns |contains=yes": true
+		}
+	},
+{
+	"Name": "FarmerGender",
+	"Value": "female",
+	"When": {
+		"PlayerGender": "female",
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,FarmerPronouns |contains=no": true
+		}
+	},
+{
+	"Name": "FarmerGender",
+	"Value": "male",
+	"When": {
+		"Query: '{{PlayerGender}}' = 'male' OR '{{Spiderbuttons.CMCT/Config: maggplays.immersivesam,FarmerPronouns |contains=yes}}' = 'true'": true,
+		}
+	},
+{
+	"Name": "MatureSam",
+	"Value": "mature",
+	},
+{
+	"Name": "MatureSam",
+	"Value": "spicy",
+	"When": {
+		"Query: '{{MatureContent |contains=no}}' = 'true' OR ('{{HasMod |contains=DSV.Core}}' = 'true' AND '{{DSV.Core/ConfigValue:SamVariant |contains=Off}}' = 'false')": true
+        }
+    },
+{
+	"Name": "SamHearts",
+	"Value": "nohearts",
+	},
+{
+	"Name": "SamHearts",
+	"Value": "lowhearts",
+	"When": {
+		"Hearts:Sam": "3, 4"
+		},
+	},
+{
+	"Name": "SamHearts",
+	"Value": "medhearts",
+	"When": {
+		"Hearts:Sam": "5, 6"
+		},
+	},
+{
+	"Name": "SamHearts",
+	"Value": "highhearts",
+	"When": {
+		"Hearts:Sam": "7, 8, 9, 10"
+		},
+	},
+{
+	"Name": "SamRelationship",
+	"Value": "single",
+	"When": {
+		"Relationship:Sam |contains=Dating, Married": false,
+   		}
+	},
+{
+	"Name": "SamRelationship",
+	"Value": "dating",
+	"When": {
+		"Relationship:Sam |contains=Dating, Married": true,
+   		}
+	},
+//Portraits Sam
+	//generic for marriage randomized dialogue
+{
+	"Name": "SamPortraits",
+	"Value": "NoPortrait",
+	"When": {
+		"HasMod |contains=maggplays.samsprites": false
+		}
+	},
+{
+	"Name": "SamPortraits",
+	"Value": "Portrait",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+	//wet hair
+{
+	"Name": "SamWet",
+	"Value": "$l",
+	"When": {
+		"HasMod |contains=maggplays.samsprites": false
+		}
+	},
+{
+	"Name": "SamWet",
+	"Value": "$12",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+	//leaves
+{
+	"Name": "SamLeaves",
+	"Value": "$l",
+	"When": {
+		"HasMod |contains=maggplays.samsprites": false
+		}
+	},
+{
+	"Name": "SamLeaves",
+	"Value": "$13",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+	//crying
+{
+	"Name": "SamCry",
+	"Value": "$s",
+	"When": {
+		"HasMod |contains=maggplays.samsprites": false
+		}
+	},
+{
+	"Name": "SamCry",
+	"Value": "$14",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+	//sick
+{
+	"Name": "SamSick",
+	"Value": "$s",
+	"When": {
+		"HasMod |contains=maggplays.samsprites": false
+		}
+	},
+{
+	"Name": "SamSick",
+	"Value": "$15",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+	//ghost stories
+{
+	"Name": "SamStory",
+	"Value": "$7",
+	"When": {
+		"HasMod |contains=maggplays.samsprites": false
+		}
+	},
+{
+	"Name": "SamStory",
+	"Value": "$16",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+	//concerned
+{
+	"Name": "SamWorry",
+	"Value": "$7",
+	"When": {
+		"HasMod |contains=maggplays.samsprites": false
+		}
+	},
+{
+	"Name": "SamWorry",
+	"Value": "$17",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+	//shirtless grin
+{
+	"Name": "SamShirtlessGrin",
+	"Value": "$h",
+	"When": {
+		"HasMod |contains=maggplays.samsprites": false
+		}
+	},
+{
+	"Name": "SamShirtlessGrin",
+	"Value": "$18",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+	//shirtless blush
+{
+	"Name": "SamShirtlessBlush",
+	"Value": "$l",
+	"When": {
+		"HasMod |contains=maggplays.samsprites": false
+		}
+	},
+{
+	"Name": "SamShirtlessBlush",
+	"Value": "$19",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+	//shirtless surprised
+{
+	"Name": "SamShirtlessShock",
+	"Value": "$l",
+	"When": {
+		"HasMod |contains=maggplays.samsprites": false
+		}
+	},
+{
+	"Name": "SamShirtlessShock",
+	"Value": "$20",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+	//cowboy hat
+{
+	"Name": "SamCowboyGrin",
+	"Value": "$h",
+	"When": {
+		"HasMod |contains=maggplays.samsprites": false
+		}
+	},
+{
+	"Name": "SamCowboyGrin",
+	"Value": "$21",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+{
+	"Name": "SamCowboyBlush",
+	"Value": "$l",
+	"When": {
+		"HasMod |contains=maggplays.samsprites": false
+		}
+	},
+{
+	"Name": "SamCowboyBlush",
+	"Value": "$22",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+{
+	"Name": "SamCowboySmile",
+	"Value": "$3",
+	"When": {
+		"HasMod |contains=maggplays.samsprites": false
+		}
+	},
+{
+	"Name": "SamCowboySmile",
+	"Value": "$23",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+//Portraits Sebastian
+	//suspicious
+{
+	"Name": "SebSus",
+	"Value": "$a",
+	"When": {
+		"HasMod |contains=maggplays.sebastiansprites, AhCuteArt.Maggs_Seasonal_Seb": false,
+		}
+	},
+{
+	"Name": "SebSus",
+	"Value": "$10",
+	"When": {
+		"HasMod |contains=maggplays.sebastiansprites, AhCuteArt.Maggs_Seasonal_Seb": true,
+		},
+	},
+	//smirk
+{
+	"Name": "SebSmirk",
+	"Value": "$7",
+	"When": {
+		"HasMod |contains=maggplays.sebastiansprites, AhCuteArt.Maggs_Seasonal_Seb": false,
+		}
+	},
+{
+	"Name": "SebSmirk",
+	"Value": "$11",
+	"When": {
+		"HasMod |contains=maggplays.sebastiansprites, AhCuteArt.Maggs_Seasonal_Seb": true,
+		},
+	},
+	//sad sneer
+{
+	"Name": "SebSneer",
+	"Value": "$s",
+	"When": {
+		"HasMod |contains=maggplays.sebastiansprites, AhCuteArt.Maggs_Seasonal_Seb": false,
+		}
+    },
+{
+	"Name": "SebSneer",
+	"Value": "$12",
+	"When": {
+		"HasMod |contains=maggplays.sebastiansprites, AhCuteArt.Maggs_Seasonal_Seb": true,
+        }
+	},
+	//surprise
+{
+	"Name": "SebShock",
+	"Value": "$a",
+	"When": {
+		"HasMod |contains=maggplays.sebastiansprites, AhCuteArt.Maggs_Seasonal_Seb": false,
+		}
+    },
+{
+	"Name": "SebShock",
+	"Value": "$13",
+	"When": {
+		"HasMod |contains=maggplays.sebastiansprites, AhCuteArt.Maggs_Seasonal_Seb": true,
+        }
+	},
+//Kent Home
+{
+	"Name": "KentHome",
+	"Value": "NoKent",
+	"When": {
+		"HasSeenEvent |contains=63": false,
+		}
+	},
+{
+	"Name": "KentHome",
+	"Value": "Kent",
+	"When": {
+		"HasSeenEvent |contains=63": true,
+		}
+	},
+//EVENTS
+//StoryPacing
+{
+	"Name": "Pacing1",
+	"Value": "1",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,StoryPacing |contains=slow": true
+		}
+	},
+{
+	"Name": "Pacing1",
+	"Value": "0",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,StoryPacing |contains=fast": true
+		}
+	},
+{
+	"Name": "Pacing2",
+	"Value": "2",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,StoryPacing |contains=slow": true
+		}
+	},
+{
+	"Name": "Pacing2",
+	"Value": "0",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,StoryPacing |contains=fast": true
+		}
+	},
+{
+	"Name": "Pacing3",
+	"Value": "3",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,StoryPacing |contains=slow": true
+		}
+	},
+{
+	"Name": "Pacing3",
+	"Value": "0",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,StoryPacing |contains=fast": true
+		}
+	},
+{
+	"Name": "Pacing4",
+	"Value": "4",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,StoryPacing |contains=slow": true
+		}
+	},
+{
+	"Name": "Pacing4",
+	"Value": "0",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,StoryPacing |contains=fast": true
+		}
+	},
+{
+	"Name": "Pacing5",
+	"Value": "5",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,StoryPacing |contains=slow": true
+		}
+	},
+{
+	"Name": "Pacing5",
+	"Value": "0",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,StoryPacing |contains=fast": true
+		}
+	},
+{
+	"Name": "Pacing6",
+	"Value": "6",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,StoryPacing |contains=slow": true
+		}
+	},
+{
+	"Name": "Pacing6",
+	"Value": "0",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,StoryPacing |contains=fast": true
+		}
+	},
+//Marriage
+{
+	"Name": "FarmerCheater",
+	"Value": "no",
+	"When": {
+		"HasMod |contains=aedenthorn.FreeLove, ApryllForever.PolyamorySweetLove, EnderTedi.Polyamory": false,
+		}
+	},
+{
+	"Name": "FarmerCheater",
+	"Value": "yes",
+	"When": {
+		"HasMod |contains=aedenthorn.FreeLove, ApryllForever.PolyamorySweetLove, EnderTedi.Polyamory": true,
+		}
+	},
+{
+	"Name": "MarriageYear",
+	"Value": "ongoing",
+	},
+{
+	"Name": "MarriageYear",
+	"Value": "year1",
+	"When": {
+		"TheMightyAmondee.CustomTokens/YearsMarried": "0"
+		}
+	},
+{
+	"Name": "MarriageYear",
+	"Value": "year2",
+	"When": {
+		"TheMightyAmondee.CustomTokens/YearsMarried": "1"
+		}
+	},
+{
+	"Name": "MarriageYear",
+	"Value": "year3",
+	"When": {
+		"TheMightyAmondee.CustomTokens/YearsMarried": "2"
+		}
+	},
+//Children pronouns
+{
+	"Name": "Kid1Pronoun1",
+	"Value": "he",
+	"When": {
+		"ChildGenders |valueAt=1": "Male"
+		},
+	},
+{
+	"Name": "Kid1Pronoun1",
+	"Value": "she",
+	"When": {
+		"ChildGenders |valueAt=1": "Female"
+		},
+	},
+{
+	"Name": "Kid1Pronoun2",
+	"Value": "his",
+	"When": {
+		"ChildGenders |valueAt=1": "Male"
+		},
+	},
+{
+	"Name": "Kid1Pronoun2",
+	"Value": "her",
+	"When": {
+		"ChildGenders |valueAt=1": "Female"
+		},
+	},
+{
+	"Name": "Kid2Pronoun1",
+	"Value": "he",
+	"When": {
+		"ChildGenders |valueAt=2": "Male"
+		},
+	},
+{
+	"Name": "Kid2Pronoun1",
+	"Value": "she",
+	"When": {
+		"ChildGenders |valueAt=2": "Female"
+		},
+	},
+{
+	"Name": "Kid2Pronoun2",
+	"Value": "his",
+	"When": {
+		"ChildGenders |valueAt=2": "Male"
+		},
+	},
+{
+	"Name": "Kid2Pronoun2",
+	"Value": "her",
+	"When": {
+		"ChildGenders |valueAt=2": "Female"
+		},
+	},
+//Luca
+{
+	"Name": "Luca",
+	"Value": "maggplays.immersivesam_Luca"
+	},
+//Killian
+{
+	"Name": "Killian",
+	"Value": "maggplays.immersivesam_Killian"
+	},
+//Choice Flags
+{
+	"Name": "SexySam",
+	"Value": "NoLover",
+	},
+{
+	"Name": "SexySam",
+	"Value": "Lover",
+	"When": {
+		"HasFlag": "MaggLoverSam",
+		}
+	},
+{
+	"Name": "MaggWipeoutChoice",
+	"Value": "handup",
+	"When": {
+		"HasFlag": "MaggHandUp",
+		}
+	},
+{
+	"Name": "MaggWipeoutChoice",
+	"Value": "kiss",
+	"When": {
+		"HasFlag": "MaggLeafKiss",
+		}
+	},
+{
+	"Name": "MaggForgiveChoice",
+	"Value": "forgive",
+	"When": {
+		"HasFlag": "MaggForgiveSam",
+		},
+	},
+{
+	"Name": "MaggForgiveChoice",
+	"Value": "think",
+	"When": {
+		"HasFlag": "MaggSamThink",
+		},
+	},
+//Farmer Disposition
+	//after Sidestep
+{
+	"Name": "FarmerFlirt1",
+	"Value": "shy",
+	},
+{
+	"Name": "FarmerFlirt1",
+	"Value": "flirt",
+	"When": {
+		"HasFlag": "MaggSamKissBack",
+		}
+	},
+	//after Narrow Escape
+{
+	"Name": "FarmerFlirt2",
+	"Value": "shy",
+	},
+{
+	"Name": "FarmerFlirt2",
+	"Value": "flirt",
+	"When": {
+		"HasFlag": "MaggSamKissBack, MaggSamTakeArm",
+		}
+	},
+	//after Moving Forward
+{
+	"Name": "FarmerFlirt3",
+	"Value": "shy",
+	},
+{
+	"Name": "FarmerFlirt3",
+	"Value": "flirt",
+	"When": {
+		"HasFlag": "MaggSamKissBack, MaggSamTakeArm, MaggSamHugTight",
+		}
+	},
+{
+	"Name": "FarmerFlirt3",
+	"Value": "sassy",
+	"When": {
+		"Query: ('{{HasFlag |contains=MaggSamKissBack}}' = 'true' AND '{{HasFlag |contains=MaggSamTakeArm}}' = 'true') OR ('{{HasFlag |contains=MaggSamKissBack}}' = 'true' AND '{{HasFlag |contains=MaggSamHugTight}}' = 'true') OR ('{{HasFlag |contains=MaggSamTakeArm}}' = 'true' AND '{{HasFlag |contains=MaggSamHugTight}}' = 'true')": true
+		}
+	},
+	//after Music Man
+{
+	"Name": "FarmerFlirt4",
+	"Value": "shy",
+	},
+{
+	"Name": "FarmerFlirt4",
+	"Value": "flirt",
+	"When": {
+		"HasFlag": "MaggSamKissBack, MaggSamTakeArm, MaggSamHugTight",
+		"HasFlag |contains=MaggSamNoCommit, MaggSamUnsure": false,
+		}
+	},
+{
+	"Name": "FarmerFlirt4",
+	"Value": "sassy",
+	"When": {
+		"HasFlag": "MaggSamKissBack",
+		"HasFlag": "MaggSamTakeArm",
+		"HasFlag": "MaggSamHugTight",
+		"HasFlag |contains=MaggSamNoCommit, MaggSamUnsure": false,
+		}
+	},
+	//after Wipeout
+{
+	"Name": "FarmerFlirt5",
+	"Value": "shy",
+	},
+{
+	"Name": "FarmerFlirt5",
+	"Value": "flirt",
+	"When": {
+		"HasFlag": "MaggSamKissBack, MaggSamTakeArm, MaggSamHugTight, MaggLeafKiss",
+		"HasFlag |contains=MaggSamNoCommit, MaggSamUnsure": false,
+		}
+	},
+{
+	"Name": "FarmerFlirt5",
+	"Value": "sassy",
+	"When": {
+		"HasFlag": "MaggSamKissBack, MaggSamTakeArm",
+		"HasFlag": "MaggSamHugTight, MaggLeafKiss",
+		"HasFlag |contains=MaggSamNoCommit, MaggSamUnsure": false,
+		}
+	},
+{
+	"Name": "FarmerFlirt5",
+	"Value": "forward",
+	"When": {
+		"HasFlag": "MaggSamKissBack, MaggSamTakeArm",
+		"HasFlag": "MaggSamHugTight",
+		"HasFlag": "MaggLeafKiss",
+		"HasFlag |contains=MaggSamNoCommit, MaggSamUnsure": false,
+		}
+	},
+{
+	"Name": "FarmerFlirt5",
+	"Value": "shameless",
+	"When": {
+		"HasFlag": "MaggSamKissBack",
+		"HasFlag": "MaggSamTakeArm",
+		"HasFlag": "MaggSamHugTight",
+		"HasFlag": "MaggLeafKiss",
+		"HasFlag |contains=MaggSamNoCommit, MaggSamUnsure": false,
+		}
+	},
+	//Dating
+{
+	"Name": "FarmerFlirt6",
+	"Value": "sassy",
+	},
+{
+	"Name": "FarmerFlirt6",
+	"Value": "shameless",
+	"When": {
+		"HasFlag": "MaggSamKissBack",
+		"HasFlag": "MaggSamTakeArm",
+		"HasFlag": "MaggSamHugTight",
+		"HasFlag": "MaggLeafKiss",
+		"HasFlag |contains=MaggSamNoCommit, MaggSamUnsure": false,
+		}
+	},
+//i18n Token Calls
+{
+	"Name": "CallPlayerName",
+	"Value": " |farmerName={{PlayerName}}",
+	},
+{
+	"Name": "CallEndearment",
+	"Value": " |endearment={{Spiderbuttons.CMCT/Config: maggplays.immersivesam,SamEndearment}}",
+	},
+{
+	"Name": "CallVinceName",
+	"Value": " |VinceName={{Spiderbuttons.CMCT/Config: maggplays.immersivesam,VinceName}}",
+	},
+//Birthday and Anniversary
+{
+	"Name": "FarmerBDay",
+	"Value": false,
+	},
+{
+	"Name": "FarmerBDay",
+	"Value": true,
+	"When": {
+		"Season": "{{Spiderbuttons.CMCT/Config: maggplays.immersivesam,BirthSeason}}",
+		"Day": "{{Spiderbuttons.CMCT/Config: maggplays.immersivesam,BirthDay}}",
+		"Relationship:Sam": "Dating, Engaged, Married",
+		"HasMod |contains=aedenthorn.FreeLove, ApryllForever.PolyamorySweetLove, EnderTedi.Polyamory": false,
+		}
+	},
+{
+	"Name": "SamAnniversary",
+	"Value": false,
+	},
+{
+	"Name": "SamAnniversary",
+	"Value": true,
+	"When": {
+		"Day": "{{TheMightyAmondee.CustomTokens/AnniversaryDay}}",
+		"Season": "{{TheMightyAmondee.CustomTokens/AnniversarySeason}}",
+		"Spouse": "Sam",
+		"HasMod |contains=aedenthorn.FreeLove, ApryllForever.PolyamorySweetLove, EnderTedi.Polyamory": false,
+		}
+	},
+{
+	"Name": "SamBirthday",
+	"Value": false,
+	},
+{
+	"Name": "SamBirthday",
+	"Value": true,
+	"When": {
+		"Day": "17",
+		"Season": "Summer",
+		}
+	},
+//Repeatable events
+{
+	"Name": "MorningSprite",
+	"Value": "changePortrait Sam Beach",
+	},
+{
+	"Name": "MorningSprite",
+	"Value": "changeSprite Sam Shirtless/changePortrait Sam Beach",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+{
+	"Name": "ChatRelationship",
+	"Value": "married",
+	"When": {
+		"Relationship:Sam |contains=Married": true,
+		}
+	},
+{
+	"Name": "ChatRelationship",
+	"Value": "dating",
+	"When": {
+		"Relationship:Sam |contains=Dating,Engaged": true,
+		}
+	},
+{
+	"Name": "PillowtalkConditions",
+	"Value": "f Sam 2500/O Sam/t 2100 2400",
+	"When": {
+		"PillowtalkRepeat": "daily",
+		"Relationship:Sam |contains=Married": true,
+		}
+	},
+{
+	"Name": "PillowtalkConditions",
+	"Value": "f Sam 2000/D Sam/e MaggSamFirstMorning/A MaggSamSleepoverRepeat/t 2100 2400",
+	"When": {
+		"SleepoverRepeat": "daily",
+		"Relationship:Sam |contains=Dating,Engaged": true,
+		}
+	},
+{
+	"Name": "PillowtalkConditions",
+	"Value": "f Sam 2500/O Sam/d Tue Thu Fri Sun/t 2100 2400",
+	"When": {
+		"PillowtalkRepeat": "threedays",
+		"Relationship:Sam |contains=Married": true,
+		}
+	},
+{
+	"Name": "PillowtalkConditions",
+	"Value": "f Sam 2000/D Sam/e MaggSamFirstMorning/A MaggSamSleepoverRepeat/d Mon Wed Thu Sat/t 2100 2400",
+	"When": {
+		"SleepoverRepeat": "threedays",
+		"Relationship:Sam |contains=Dating,Engaged": true,
+		}
+	},
+{
+	"Name": "PillowtalkConditions",
+	"Value": "f Sam 2500/O Sam/DayOfWeek Fri/t 2100 2400",
+	"When": {
+		"PillowtalkRepeat": "friday",
+		"Relationship:Sam |contains=Married": true,
+		}
+	},
+{
+	"Name": "PillowtalkConditions",
+	"Value": "f Sam 2000/D Sam/e MaggSamFirstMorning/A MaggSamSleepoverRepeat/DayOfWeek Fri/t 2100 2400",
+	"When": {
+		"SleepoverRepeat": "friday",
+		"Relationship:Sam |contains=Dating,Engaged": true,
+		}
+	},
+{
+	"Name": "MorningConditions",
+	"Value": "f Sam 2500/O Sam/t 600 800",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,MorningRepeat |contains=daily": true,
+		"Relationship:Sam |contains=Married": true,
+		}
+	},
+{
+	"Name": "MorningConditions",
+	"Value": "f Sam 2000/D Sam/e MaggSamFirstMorning/A MaggSamSleepoverRepeat/!A MaggMorningEvent/t 600 800",
+	"When": {
+		"SleepoverRepeat": "daily",
+		"Relationship:Sam |contains=Dating,Engaged": true,
+		}
+	},
+{
+	"Name": "MorningConditions",
+	"Value": "f Sam 2500/O Sam/d Mon Wed Fri Sat/t 600 800",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,MorningRepeat |contains=threedays": true,
+		"Relationship:Sam |contains=Married": true,
+		}
+	},
+{
+	"Name": "MorningConditions",
+	"Value": "f Sam 2000/D Sam/e MaggSamFirstMorning/A MaggSamSleepoverRepeat/!A MaggMorningEvent/d Mon Wed Fri Sat/t 600 800",
+	"When": {
+		"SleepoverRepeat": "threedays",
+		"Relationship:Sam |contains=Dating,Engaged": true,
+		}
+	},
+{
+	"Name": "MorningConditions",
+	"Value": "f Sam 2500/O Sam/DayOfWeek Sat/t 600 800",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,MorningRepeat |contains=saturday": true,
+		"Relationship:Sam |contains=Married": true,
+		}
+	},
+{
+	"Name": "MorningConditions",
+	"Value": "f Sam 2000/D Sam/e MaggSamFirstMorning/A MaggSamSleepoverRepeat/!A MaggMorningEvent/DayOfWeek Sat/t 600 800",
+	"When": {
+		"SleepoverRepeat": "friday",
+		"Relationship:Sam |contains=Dating,Engaged": true,
+		}
+	},
+{
+	"Name": "SleepoverPosition",
+	"Value": "makeInvisible 23 24/warp Sam 23 24/faceDirection Sam 3/warp farmer 22 24/faceDirection farmer 1/positionOffset farmer 0 15/viewport 23 25 true",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,KitchenMap |contains=no": true,
+		"FarmhouseUpgrade |contains=0, 1": false,
+		}
+	},
+{
+	"Name": "SleepoverPosition",
+	"Value": "makeInvisible 5 5/warp Sam 5 5/faceDirection Sam 3/warp farmer 4 5/faceDirection farmer 1/positionOffset farmer 0 15/viewport 5 6 true",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,KitchenMap |contains=no": true,
+		"FarmhouseUpgrade": "1",
+		}
+	},
+{
+	"Name": "SleepoverPosition",
+	"Value": "changeToTemporaryMap Magg_Sam_Kitchen false/warp Sam 22 13/faceDirection Sam 3/warp farmer 21 13/faceDirection farmer 1/positionOffset farmer 0 15/viewport 22 14 true",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,KitchenMap |contains=yes": true,
+		}
+	},
+{
+	"Name": "MorningPosition",
+	"Value": "makeInvisible 23 24/warp Sam 23 24/faceDirection Sam 3/warp farmer 22 24/faceDirection farmer 1/positionOffset farmer 0 15/viewport 23 25 true",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,KitchenMap |contains=no": true,
+		"FarmhouseUpgrade |contains=0, 1": false,
+		}
+	},
+{
+	"Name": "MorningPosition",
+	"Value": "makeInvisible 5 5/warp Sam 5 5/faceDirection Sam 3/warp farmer 4 5/faceDirection farmer 1/positionOffset farmer 0 15/viewport 5 6 true",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,KitchenMap |contains=no": true,
+		"FarmhouseUpgrade": "1",
+		}
+	},
+{
+	"Name": "MorningPosition",
+	"Value": "changeToTemporaryMap Magg_Sam_Kitchen false/warp Sam 22 13/faceDirection Sam 3/warp farmer 21 13/faceDirection farmer 1/positionOffset farmer 0 15/viewport 22 14 true",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,KitchenMap |contains=yes": true,
+		}
+	},
+{
+	"Name": "MorningDialogue",
+	"Value": "speak Sam \"{{i18n: sam.event.morning.{{season}}.{{ChatRelationship}}.{{Random: 31, 32, 33, 34, 35, 36, 37, 38, 39, 40}}}}\"",
+	"When": {
+		"Relationship:Sam |contains=Married": true,
+		}
+	},
+{
+	"Name": "MorningDialogue",
+	"Value": "speak Sam \"{{i18n: sam.event.morning.{{ChatRelationship}}.{{Random: 31, 32, 33, 34, 35, 36, 37, 38, 39, 40}}}}\"",
+	"When": {
+		"Relationship:Sam |contains=Dating,Engaged": true,
+		}
+	},
+{
+	"Name": "SleepoverHeart",
+	"Value": "specificTemporarySprite heart 23 23",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,KitchenMap |contains=no": true,
+		"FarmhouseUpgrade |contains=0, 1": false,
+		}
+	},
+{
+	"Name": "SleepoverHeart",
+	"Value": "specificTemporarySprite heart 5 4",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,KitchenMap |contains=no": true,
+		"FarmhouseUpgrade": "1",
+		}
+	},
+{
+	"Name": "SleepoverHeart",
+	"Value": "specificTemporarySprite heart 22 12",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,KitchenMap |contains=yes": true,
+		}
+	},
+{
+	"Name": "EndDay",
+	"Value": "end",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,EndDayOption |contains=no": true,
+		}
+	},
+{
+	"Name": "EndDay",
+	"Value": "end newDay",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,EndDayOption |contains=yes": true,
+		}
+	},
+//Band Song
+{
+	"Name": "MaggBandName",
+	"Value": "{{i18n: sam.event.BigBreak.7}}",
+	},
+{
+	"Name": "MaggBandName",
+	"Value": "{{i18n: sam.event.BigBreak.22}}",
+	"When": {
+		"HasFlag": "MaggRock"
+		}
+	},
+{
+	"Name": "MaggBandName",
+	"Value": "{{i18n: sam.event.BigBreak.23}}",
+	"When": {
+		"HasFlag": "MaggElec"
+		}
+	},
+{
+	"Name": "MaggBandName",
+	"Value": "{{i18n: sam.event.BigBreak.24}}",
+	"When": {
+		"HasFlag": "MaggWest"
+		}
+	},
+{
+	"Name": "MaggBandSongTopic",
+	"Value": "{{i18n: sam.event.BigBreak.8}}",
+	},
+{
+	"Name": "MaggBandSongTopic",
+	"Value": "{{i18n: sam.event.BigBreak.9}}",
+	"When": {
+		"HasFlag": "MaggCitySea"
+		}
+	},
+{
+	"Name": "MaggBandSongTopic",
+	"Value": "{{i18n: sam.event.BigBreak.10}}",
+	"When": {
+		"HasFlag": "MaggTrains"
+		}
+	},
+{
+	"Name": "MaggBandMusic",
+	"Value": "playMusic maggplays.immersivesam.PopSong",
+	},
+{
+	"Name": "MaggBandMusic",
+	"Value": "playMusic maggplays.immersivesam.ExpRock",
+	"When": {
+		"HasFlag": "MaggRock"
+		}
+	},
+{
+	"Name": "MaggBandMusic",
+	"Value": "playMusic maggplays.immersivesam.Techno",
+	"When": {
+		"HasFlag": "MaggElec"
+		}
+	},
+{
+	"Name": "MaggBandMusic",
+	"Value": "playMusic maggplays.immersivesam.CountryRock",
+	"When": {
+		"HasFlag": "MaggWest"
+		}
+	},
+{
+	"Name": "MaggBandLeah",
+	"Value": "{{i18n: sam.event.BigBreak.15}}",
+	},
+{
+	"Name": "MaggBandLeah",
+	"Value": "{{i18n: sam.event.BigBreak.14}}",
+	"When": {
+		"HasFlag": "MaggWest"
+		}
+	},
+{
+	"Name": "MaggBandEmily",
+	"Value": "{{i18n: sam.event.BigBreak.13}}",
+	},
+{
+	"Name": "MaggBandEmily",
+	"Value": "{{i18n: sam.event.BigBreak.12}}",
+	"When": {
+		"HasFlag": "MaggElec"
+		}
+	},
+{
+	"Name": "MaggBandShane",
+	"Value": "{{i18n: sam.event.BigBreak.17}}",
+	},
+{
+	"Name": "MaggBandShane",
+	"Value": "{{i18n: sam.event.BigBreak.16}}",
+	"When": {
+		"HasFlag": "MaggRock"
+		}
+	},
+//DSV compatibility
+{
+	"Name": "DSVMuslimSam",
+	"Value": "NoDSV",
+	},
+{
+	"Name": "DSVMuslimSam",
+	"Value": "DSVMuslim",
+	"When": {
+		"HasMod": "DSV.Core",
+		"Query: '{{DSV.Core/ConfigValue:SamVariant |contains=ModdedDarker}}' = 'true' OR '{{DSV.Core/ConfigValue:JodiVariant |contains=Modded}}' = 'true' OR '{{DSV.Core/ConfigValue:KentVariant |contains=Omani,OmaniDisabled}}' = 'true'": true
+		},
+	},
+{
+	"Name": "DSVTransSam",
+	"Value": "NoDSV",
+	},
+{
+	"Name": "DSVTransSam",
+	"Value": "DSVTrans",
+	"When": {
+		"HasMod": "DSV.Core",
+		"DSV.Core/ConfigValue:SamVariant |contains=Off": false
+		},
+	},
+{
+	"Name": "DSVNoMoreWarKent",
+	"Value": "NoDSV",
+	},
+{
+	"Name": "DSVNoMoreWarKent",
+	"Value": "DSVKent",
+	"When": {
+		"HasMod": "DSV.Core",
+		"Query: ('{{DSV.Core/ConfigValue:JodiVariant |contains=Modded}}' = 'true' AND '{{DSV.Core/ConfigValue:NoMoreWarDialogueEdits}}' = 'true') OR '{{DSV.Core/ConfigValue:KentVariant |contains=Omani,OmaniDisabled}}' = 'true'": true
+		},
+	},
+//Disable other events during dumbass Sam arc
+{
+	"Name": "DumbassSam",
+	"Value": "allgood",
+	"When": {
+		"Query: '{{HasSeenEvent |contains=MaggSamHearNoEvil}}' = 'false' OR '{{HasSeenEvent |contains=MaggSamHomemade}}' = 'true'": true,
+		}
+	},
+{
+	"Name": "DumbassSam",
+	"Value": "timeout",
+	"When": {
+		"HasSeenEvent |contains=MaggSamHearNoEvil": true,
+		"HasSeenEvent |contains=MaggSamHomemade": false,
+		},
+	},
+//Custom sprite compatibility tokens
+{
+	"Name": "SamSprites",
+	"Value": "no",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,SamCustomSprites |contains=no": true
+		}
+	},
+{
+	"Name": "SamSprites",
+	"Value": "yes",
+	"When": {
+		"Query: '{{HasMod |contains=maggplays.samsprites, maggplays.SOspritespatchSeb, DSV.Core}}' = 'true' OR '{{Spiderbuttons.CMCT/Config: maggplays.immersivesam,SamCustomSprites |contains=yes}}' = 'true'": true,
+		}
+	},
+{
+	"Name": "IntroSprite1",
+	"Value": "warp Sam 54 87/showFrame Sam 25",
+	"When": {
+		"Query: '{{HasMod |contains=DSV.Core}}' = 'true' OR '{{SamCustomSprites}}' = 'no'": true,
+		}
+	},
+{
+	"Name": "IntroSprite1",
+	"Value": "addTemporaryActor Magg_Sam_Skate 16 32 54 87 1 true character/addTemporaryActor Magg_Sam_SkateJump 16 32 -100 -100 1 true character",
+	"When": {
+		"Query: '{{HasMod |contains=maggplays.samsprites, maggplays.SOspritespatchSeb, Poltergeister.SeasonalCuteCharacters}}' = 'true' OR '{{Spiderbuttons.CMCT/Config: maggplays.immersivesam,SamCustomSprites |contains=yes}}' = 'true'": true,
+		}
+	},
+{
+	"Name": "IntroSprite2",
+	"Value": "viewport -1000 -1000 false/pause 300/speak Sam \"{{i18n: sam.event.introduction.3}}\"",
+	"When": {
+		"Query: '{{HasMod |contains=DSV.Core}}' = 'true' OR '{{SamCustomSprites}}' = 'no'": true,
+		}
+	},
+{
+	"Name": "IntroSprite2",
+	"Value": "speed Magg_Sam_Skate 6/move Magg_Sam_Skate 5 0 1/warp Magg_Sam_Skate -100 -100/warp Magg_Sam_SkateJump 59 87/speed Magg_Sam_SkateJump 6/move Magg_Sam_SkateJump 3 0 1 true/pause 500/stopAdvancedMoves/jump farmer/showFrame Magg_Sam_SkateJump 16/speak Sam \"{{i18n: sam.event.introduction.3}}\"/viewport -1000 -1000 false/warp Magg_Sam_SkateJump -100 -100",
+	"When": {
+		"Query: '{{HasMod |contains=maggplays.samsprites, maggplays.SOspritespatchSeb, Poltergeister.SeasonalCuteCharacters}}' = 'true' OR '{{Spiderbuttons.CMCT/Config: maggplays.immersivesam,SamCustomSprites |contains=yes}}' = 'true'": true,
+		}
+	},
+{
+	"Name": "WishSprite",
+	"Value": "showFrame Sam 0/jump Sam/playSound leafrustle/faceDirection farmer 1/faceDirection Sam 3/faceDirection farmer 2/animate farmer false true 100 102 103/pause 1000/stopAnimation farmer/faceDirection farmer 1/faceDirection Sam 2/emote Sam 28/pause 500/faceDirection Sam 3",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,SamCustomSprites |contains=no": true,
+		}
+	},
+{
+	"Name": "WishSprite",
+	"Value": "showFrame Sam 72/jump Sam/playSound leafrustle/faceDirection farmer 1/showFrame Sam 90/faceDirection farmer 2/animate farmer false true 100 102 103/pause 1000/stopAnimation farmer/faceDirection farmer 1/showFrame Sam 72/emote Sam 28/pause 500/showFrame Sam 90",
+	"When": {
+		"Query: '{{HasMod |contains=maggplays.samsprites, maggplays.SOspritespatchSeb, DSV.Core}}' = 'true' OR '{{Spiderbuttons.CMCT/Config: maggplays.immersivesam,SamCustomSprites |contains=yes}}' = 'true'": true,
+		}
+	},
+{
+	"Name": "WipeoutSeason",
+	"Value": "/",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,StoryPacing |contains=fast": true
+		}
+	},
+{
+	"Name": "WipeoutSeason",
+	"Value": "Season fall/",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,StoryPacing |contains=slow": true
+		}
+	},
+{
+	"Name": "WalkingWireSprite",
+	"Value": "showFrame Sam 52/positionOffset Sam -10 0/animate Sam false true 500 52 53/playMusic moonlightJellies/move farmer 1 0 3/positionOffset farmer 40 0/animate farmer true true 100 117/pause 5000/emote farmer 20/pause 500/emote Sam 20/pause 50000/stopMusic/stopAnimation Sam 52",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,SamCustomSprites |contains=no": true,
+		}
+	},
+{
+	"Name": "WalkingWireSprite",
+	"Value": "showFrame Sam 56/animate Sam false true 500 56 57/playMusic moonlightJellies/move farmer 1 0 3/positionOffset farmer 40 0/animate farmer true true 100 117/pause 5000/emote farmer 20/pause 500/emote Sam 20/pause 50000/stopMusic/stopAnimation Sam 56",
+	"When": {
+		"Query: '{{HasMod |contains=maggplays.samsprites, maggplays.SOspritespatchSeb, DSV.Core}}' = 'true' OR '{{Spiderbuttons.CMCT/Config: maggplays.immersivesam,SamCustomSprites |contains=yes}}' = 'true'": true,
+		}
+	},
+{
+	"Name": "BigBreakSprite",
+	"Value": "/",
+	"When": {
+		"HasMod |contains=maggplays.samsprites": false
+		}
+	},
+{
+	"Name": "BigBreakSprite",
+	"Value": "/addTemporaryActor Magg_Sam_guitar_jam 16 48 -100 -100 2 true character/",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+{
+	"Name": "BigBreakSprite2",
+	"Value": "animate Sam false true 236 20 21",
+	"When": {
+		"HasMod |contains=maggplays.samsprites": false
+		}
+	},
+{
+	"Name": "BigBreakSprite2",
+	"Value": "warp Sam -100 -100/warp Magg_Sam_guitar_jam 18 14/animate Magg_Sam_guitar_jam false true 150 0 1 2 3 4 5 0 1 2 3 4 5 0 1 2 3 4 5 0 1 2 3 4 5 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 10 11 12 13 14 15 16 17 18 19 10 11 12 13 14 15 16 17 18 19 47 48 49 50 51 47 48 49 50 51 47 48 49 50 51 47 48 49 50 51 52 53 54 55 56",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+{
+	"Name": "BigBreakSprite3",
+	"Value": "jump Sam/pause 400/animate Sam false true 236 22 23/pause 15000/animate Sam false true 236 20 21/pause 25000",
+	"When": {
+		"HasMod |contains=maggplays.samsprites": false
+		}
+	},
+{
+	"Name": "BigBreakSprite3",
+	"Value": "animate Magg_Sam_guitar_jam false false 45 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45/pause 1000/emote farmer 32 true/animate Magg_Sam_guitar_jam false true 150 46 47 48 49 50 51 47 48 49 50 51 47 48 49 50 51 47 48 49 50 51 52 53 54 55 56 0 1 2 3 4 5 0 1 2 3 4 5 0 1 2 3 4 5 0 1 2 3 4 5 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 10 11 12 13 14 15 16 17 18 19 10 11 12 13 14 15 16 17 18 19/pause 40000",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+{
+	"Name": "BigBreakSprite4",
+	"Value": "stopAnimation Sam 20",
+	"When": {
+		"HasMod |contains=maggplays.samsprites": false
+		}
+	},
+{
+	"Name": "BigBreakSprite4",
+	"Value": "stopAnimation Magg_Sam_guitar_jam 0",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+{
+	"Name": "BigBreakSprite5",
+	"Value": "pause 100",
+	"When": {
+		"HasMod |contains=maggplays.samsprites": false
+		}
+	},
+{
+	"Name": "BigBreakSprite5",
+	"Value": "warp Magg_Sam_guitar_jam -100 -100/warp Sam 18 14/showFrame Sam 22",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+{
+	"Name": "StrikeChordPortrait",
+	"Value": "/",
+	"When": {
+		"HasMod |contains=maggplays.samsprites": false,
+		}
+	},
+{
+	"Name": "StrikeChordPortrait",
+	"Value": "/changePortrait Sam RedTee/",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+{
+	"Name": "StrikeChordSprite",
+	"Value": "warp Magg_RedGuitar 30 5/warp Sam 18 13/positionOffset Magg_RedGuitar 0 30/viewport 18 14 true/globalFadeToClear/move farmer 8 0 0/pause 500/doAction 12 14/move farmer 0 -2 1/move farmer 4 0 1/faceDirection Sam 3/emote Sam 32/speak Sam \"{{i18n: sam.event.StrikeChord.1}}\"/pause 300/move farmer 1 0 1/move farmer 0 1 1/move farmer 1 0 0/faceDirection Sam 2/speak Sam \"{{i18n: sam.event.StrikeChord.2.1}}\"/move farmer 0 -1 2/positionOffset farmer 10/positionOffset Magg_RedGuitar 0 10/positionOffset Sam 10 -10",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,SamCustomSprites |contains=no": true,
+		}
+	},
+{
+	"Name": "StrikeChordSprite",
+	"Value": "positionOffset Magg_RedGuitar 40 30/showFrame Sam 71/positionOffset Sam 30 5/viewport 19 14 true/globalFadeToClear/move farmer 8 0 0/pause 500/doAction 12 14/move farmer 0 -2 1/move farmer 4 0 1/showFrame Sam 94/emote Sam 32/speak Sam \"{{i18n: sam.event.StrikeChord.1}}\"/pause 300/move farmer 0 1 1/move farmer 3 0 0/showFrame Sam 71/speak Sam \"{{i18n: sam.event.StrikeChord.2}}\"/move farmer 0 -1 2/showFrame farmer 68/positionOffset farmer 40 10/positionOffset Magg_RedGuitar 0 10/positionOffset Sam 10 -10",
+	"When": {
+		"Query: '{{HasMod |contains=maggplays.samsprites, maggplays.SOspritespatchSeb, DSV.Core}}' = 'true' OR '{{Spiderbuttons.CMCT/Config: maggplays.immersivesam,SamCustomSprites |contains=yes}}' = 'true'": true,
+		}
+	},
+{
+	"Name": "FollowSprite1",
+	"Value": "changeSprite Sam Beach/faceDirection Sam 3",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,SamCustomSprites |contains=no": true,
+		}
+	},
+{
+	"Name": "FollowSprite1",
+	"Value": "showFrame Sam 69",
+	"When": {
+		"Query: '{{HasMod |contains=maggplays.samsprites, maggplays.SOspritespatchSeb, DSV.Core}}' = 'true' OR '{{Spiderbuttons.CMCT/Config: maggplays.immersivesam,SamCustomSprites |contains=yes}}' = 'true'": true,
+		}
+	},
+{
+	"Name": "FollowSprite2",
+	"Value": "pause 10",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,SamCustomSprites |contains=no": true,
+		}
+	},
+{
+	"Name": "FollowSprite2",
+	"Value": "animate Sam false true 80 67 68/pause 1000",
+	"When": {
+		"Query: '{{HasMod |contains=maggplays.samsprites, maggplays.SOspritespatchSeb, DSV.Core}}' = 'true' OR '{{Spiderbuttons.CMCT/Config: maggplays.immersivesam,SamCustomSprites |contains=yes}}' = 'true'": true,
+		}
+	},
+{
+	"Name": "FollowSprite3",
+	"Value": "animate Sam true true 100 38",
+	"When": {
+		"Spiderbuttons.CMCT/Config: maggplays.immersivesam,SamCustomSprites |contains=no": true,
+		}
+	},
+{
+	"Name": "FollowSprite3",
+	"Value": "animate Sam true true 100 89",
+	"When": {
+		"Query: '{{HasMod |contains=maggplays.samsprites, maggplays.SOspritespatchSeb, DSV.Core}}' = 'true' OR '{{Spiderbuttons.CMCT/Config: maggplays.immersivesam,SamCustomSprites |contains=yes}}' = 'true'": true,
+		}
+	},
+{
+	"Name": "ItsTimeActor",
+	"Value": "/",
+	"When": {
+		"HasMod |contains=maggplays.samsprites": false
+		}
+	},
+{
+	"Name": "ItsTimeActor",
+	"Value": "/addTemporaryActor Magg_Sam_guitar_jam 16 48 -100 -100 2 true character/",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+{
+	"Name": "ItsTimeSprite",
+	"Value": "animate Sam false true 316 20 21",
+	"When": {
+		"HasMod |contains=maggplays.samsprites": false
+		}
+	},
+{
+	"Name": "ItsTimeSprite",
+	"Value": "warp Sam -100 -100/warp Magg_Sam_guitar_jam 67 12/animate Magg_Sam_guitar_jam false true 150 0 1 2 3 4 5 0 1 2 3 4 5 0 1 2 3 4 5 0 1 2 3 4 5 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 10 11 12 13 14 15 16 17 18 19 10 11 12 13 14 15 16 17 18 19 47 48 49 50 51 47 48 49 50 51 47 48 49 50 51 47 48 49 50 51 52 53 54 55 56 55 56 55 56",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+{
+	"Name": "ItsTimeSprite2",
+	"Value": "stopAnimation Sam 22/pause 1000/showFrame Sam 0",
+	"When": {
+		"HasMod |contains=maggplays.samsprites": false
+		}
+	},
+{
+	"Name": "ItsTimeSprite2",
+	"Value": "stopAnimation Magg_Sam_guitar_jam 0/pause 1000/warp Magg_Sam_guitar_jam -100 -100/warp Sam 67 12/showFrame Sam 0",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+{
+	"Name": "TakeItEasyPortrait",
+	"Value": "/",
+	"When": {
+		"HasMod |contains=maggplays.samsprites": false,
+		}
+	},
+{
+	"Name": "TakeItEasyPortrait",
+	"Value": "/changePortrait Sam BlueShirt/",
+	"When": {
+		"HasMod": "maggplays.samsprites",
+		}
+	},
+//SOLSTICE WINTER STAR COMPATIBILITY
+{
+	"Name": "Solstice",
+	"Value": "star",
+	"When": {
+		"HasMod |contains=Airyn.CPSolsticeWinterStar": false,
+		},
+	},
+{
+	"Name": "Solstice",
+	"Value": "solstice",
+	"When": {
+		"HasMod |contains=Airyn.CPSolsticeWinterStar": true,
+		},
+	},
+],
+"Changes": [
+//TEMPORARY ACTORS
+{
+	"Action": "Load",
+	"Target": "Characters/Magg_CowboySamSpicy",
+	"FromFile": "assets/sprites/Magg_CowboySamSpicy.png",
+	"When": {
+		"SamSprites": "yes",
+		"DSVTransSam": "NoDSV",
+		},
+    },
+//LOADS
+{
+	"LogName": "Data loads",
+	"Action": "Include",
+	"FromFile": "code/dialogue/Sam_spicy_dialogue.json, code/dialogue/Other_dialogue.json, code/events/Sam_spicy_events.json"
+	},
+//Repeating Event Clears
+{
+	"Action": "EditData",
+	"Target": "Data/TriggerActions",
+	"Entries": {
+		"{{ModId}}_MorningRepeat": {
+			"Id": "{{ModId}}_MorningRepeat",
+			"Trigger": "DayEnding",
+			"Condition": "PLAYER_HAS_SEEN_EVENT Current MaggSamGoodMorning",
+			"Actions": [
+				"MarkEventSeen Current MaggSamGoodMorning false",
+				"MarkActionApplied Current {{ModId}}_MorningEventClear false",
+				]
+			},
+		"{{ModId}}_MorningEventClear": {
+			"Id": "{{ModId}}_MorningEventClear",
+			"Trigger": "DayEnding",
+			"Actions": [
+				"MarkActionApplied Current {{ModId}}_MorningRepeat false",
+				]
+			},
+		"{{ModId}}_PillowtalkRepeat": {
+			"Id": "{{ModId}}_PillowtalkRepeat",
+			"Trigger": "DayEnding",
+			"Condition": "PLAYER_HAS_SEEN_EVENT Current MaggSamPillowtalk",
+			"Actions": [
+				"MarkEventSeen Current MaggSamPillowtalk false",
+				"MarkActionApplied Current {{ModId}}_PillowtalkEventClear false",
+				]
+			},
+		"{{ModId}}_PillowtalkEventClear": {
+			"Id": "{{ModId}}_PillowtalkEventClear",
+			"Trigger": "DayEnding",
+			"Actions": [
+				"MarkActionApplied Current {{ModId}}_PillowtalkRepeat false",
+				]
+			},
+		}
+	},
+//MAIL
+{
+	"Action": "EditData",
+	"Target": "Data/TriggerActions",
+	"Entries": {
+		"{{ModId}}_LoverSam": {
+			"Id": "{{ModId}}_LoverSam",
+			"Trigger": "DayEnding",
+			"Condition": "PLAYER_HAS_MAIL Current MaggLoverSam, !PLAYER_NPC_RELATIONSHIP Current Sam Married",
+			"Actions": [
+				"AddMail Current MaggSleepoverKickoff tomorrow"
+                    ]
+                },
+            }
+        }
+]
+}

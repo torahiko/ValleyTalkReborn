@@ -1,0 +1,47 @@
+{
+    "Changes": [
+    // CATALOGUE DATA
+        {
+            "LogName": "Add Greenhouse Calcifer Data",
+            "Action": "EditData",
+            "Target": "sophie.Calcifer/FurnitureActions",
+            "Entries": {
+                "(F)HXW.GreenhouseFurniture_CratePoppies": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FlowerShop"
+                        }
+                    ]
+                },
+                "(F)HXW.GreenhouseFurniture_CrateForage": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_ForageShop"
+                        }
+                    ]
+                },
+                "(F)HXW.GreenhouseFurniture_CrateGreens": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_AllCropsShop"
+                        }
+                    ]
+                },
+                "(F)HXW.GreenhouseFurniture_CrateFruit": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_AllFruitShop"
+                        }
+                    ]
+                },
+                "(F)HXW.GreenhouseFurniture_CrateVeg": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_AllCropsShop"
+                        }
+                    ]
+                },
+            }
+        }
+    ]
+}

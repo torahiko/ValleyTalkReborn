@@ -1,0 +1,50 @@
+{
+"Changes": [
+
+{
+    "Action": "EditData",
+    "Target": "Characters/schedules/Elliott",
+    "Entries": {
+        "rain": "800 ElliottHouse 1 5 0/1000 ElliottHouse 6 4 0/1100 ElliottHouse 1 5 0/1330 ArchaeologyHouse 21 11 2 elliott_read \"Strings\\schedules\\Elliott:RainyRead\"/1800 ElliottHouse 7 7 2/2000 ElliottHouse 1 5 0/2400 ElliottHouse 13 4 1 elliott_sleep",
+        "winter": "GOTO fall",
+        "fall": "800 ElliottHouse 1 5 0/1000 Mountain 62 10 2 \"Strings\\schedules\\Elliott:Mountain\"/2100 ElliottHouse 1 5 0/2400 ElliottHouse 13 4 1 elliott_sleep",
+        "Thu": "800 ElliottHouse 1 5 0/1000 ElliottHouse 6 4 0/1100 SeedShop 10 20 0/1330 BusStop 20 22 3 \"Strings\\schedules\\Elliott:Stalker\"/1730 ElliottHouse 7 7 2/2100 ElliottHouse 1 5 0/2400 ElliottHouse 13 4 1 elliott_sleep",
+        "Sun": "GOTO Fri",
+        "Fri": "800 ElliottHouse 1 5 0/1100 Beach 24 32 3 square_1_5_3/1700 Saloon 4 19 2 elliott_drink \"Strings\\schedules\\Elliott:Saloon\"/2340 ElliottHouse 13 4 1 elliott_sleep",
+        "summer": "800 ElliottHouse 1 5 0/1000 ElliottHouse 6 4 0/1100 ElliottHouse 1 5 0/1130 BusStop 20 22 3 \"Strings\\schedules\\Elliott:Stalker\"/1800 ElliottHouse 7 7 2/2200 ElliottHouse 1 5 0/2400 ElliottHouse 13 4 1 elliott_sleep",
+	}
+},  
+
+{
+    "Action": "EditData",
+    "Target": "Characters/schedules/Elliott",
+	"When": { "HasMod: |contains=FlashShifter.StardewValleyExpandedCP": true, },
+    "Entries": {
+        "winter": "GOTO fall",
+        "fall": "800 ElliottHouse 1 5 0/1000 Mountain 76 5 2 \"Strings\\schedules\\Elliott:Mountain\"/2100 ElliottHouse 1 5 0/2400 ElliottHouse 13 4 1 elliott_sleep",
+	}
+},  
+
+{
+    "Action": "EditData",
+    "Target": "Characters/schedules/Elliott",
+    "When": { "Relationship:Leah": "Married", },
+    "Entries": {
+        "Fri": "800 ElliottHouse 1 5 0/1000 ElliottHouse 6 4 0/1100 SeedShop 10 20 0/1330 BusStop 20 22 3 \"Strings\\schedules\\Elliott:Stalker\"/1730 ElliottHouse 7 7 2/2100 ElliottHouse 1 5 0/2400 ElliottHouse 13 4 1 elliott_sleep",
+	}
+},
+
+{
+		"Action": "EditData",
+		"Target": "Strings/schedules/Elliott",
+		"Entries": {
+			"RainyRead": "{{i18n:Strings.Elliott.RainyRead}}",
+			"Stalker": "{{i18n:Strings.Elliott.Stalker}}",
+			"Saloon": "{{i18n:Strings.Elliott.Saloon}}",
+			"Mountain": "{{i18n:Strings.Elliott.Mountain}}",
+		},
+	},
+
+
+],
+}

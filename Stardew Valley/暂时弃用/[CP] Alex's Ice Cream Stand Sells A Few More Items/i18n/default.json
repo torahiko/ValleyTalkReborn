@@ -1,0 +1,12 @@
+{
+	"config.EnableMod.name": "Enable Mod",
+	"config.EnableMod.description": "Enable all features of this mod. (Default: true)",
+	"config.YearRoundItems.name": "Year-Round Items",
+	"config.YearRoundItems.description": "Enable items available year-round. (Default: true)",
+	"config.SeasonalItems.name": "Seasonal Items",
+	"config.SeasonalItems.description": "Enable items only available in specific seasons. (Default: true)",
+	"config.WeekdayDependentItems.name": "Weekday-Dependent Items",
+	"config.WeekdayDependentItems.description": "Enable items only available on specific days of the week. (Default: true)",
+	"config.SpecialItems.name": "Special Items",
+	"config.SpecialItems.description": "Enable items only available on specific dates. (Default: true)"
+}

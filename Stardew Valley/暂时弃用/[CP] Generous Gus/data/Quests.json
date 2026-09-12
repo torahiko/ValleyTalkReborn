@@ -1,0 +1,31 @@
+{
+"Changes": [
+    
+    //1st quest, after Linus is found digging through the trash
+    {
+        "Action": "EditData",
+        "Target": "Data/Quests",
+        "Entries": {
+            "{{ModId}}_Quest_Linus1": "ItemDelivery/{{i18n:Quest_Linus1.title}}/{{i18n:Quest_Linus1.text}}/{{i18n:Quest_Linus1.objective}}/Linus (O)224/-1/0/-1/true/{{i18n:Quest_Linus1.reaction}}",
+        },
+    },
+    
+    //1st Winter Quest
+    {
+        "Action": "EditData",
+        "Target": "Data/Quests",
+        "Entries": {
+            "{{ModId}}_Quest_Linus2": "ItemDelivery/{{i18n:Quest_Linus2.title}}/{{i18n:Quest_Linus2.text}}/{{i18n:Quest_Linus2.objective}}/Linus (O)215/-1/0/-1/true/{{i18n:Quest_Linus2.reaction}}",
+        },
+    },
+    
+    //2nd Winter Quest (repeatable)
+    {
+        "Action": "EditData",
+        "Target": "Data/Quests",
+        "Entries": {
+            "{{ModId}}_Quest_Linus3": "ItemDelivery/{{i18n:Quest_Linus3.title}}/{{i18n:Quest_Linus3.text}}/{{i18n:Quest_Linus3.objective}}/Linus (O)231/-1/0/-1/true/{{i18n:Quest_Linus3.reaction}}",
+        },
+    },
+]
+}

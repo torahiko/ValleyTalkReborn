@@ -1,0 +1,17 @@
+{
+    "Name": "[CP] H&W Fairy Garden Furniture",
+    "Author": "HimeTarts and Wildflourmods",
+    "Version": "3.0.2",
+    "Description": "CP Version of H&W Fairy Garden Furniture Set",
+    "UniqueID": "HXW.FairyGardenFurniture",
+    "UpdateKeys": ["Nexus:16874"], 
+    "Dependencies": [
+        {
+            "UniqueID": "sophie.Calcifer",
+            "IsRequired": true
+        }
+    ], 
+    "ContentPackFor": {
+        "UniqueID": "Pathoschild.ContentPatcher"
+    }
+}

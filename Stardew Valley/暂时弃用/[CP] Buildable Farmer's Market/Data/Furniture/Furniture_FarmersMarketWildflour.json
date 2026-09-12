@@ -1,0 +1,484 @@
+{
+    "Changes": [
+    // CATALOGUE DATA
+        {
+            "LogName": "Add Farmer's Market Core Calcifer Data",
+            "Action": "EditData",
+            "Target": "sophie.Calcifer/FurnitureActions",
+            "Entries": {
+            // MUSHROOMS
+                "(F)HXW.FM_Wildflour_Pack_MilkshroomCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_MeringueShroomCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_HoneyFungusCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_ChickenWoodsCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_WheatshroomCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },  
+                "(F)HXW.FM_Wildflour_Pack_MagicShroomCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },   
+                "(F)HXW.FM_Wildflour_Pack_MagicShroomCrate2": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                }, 
+                "(F)HXW.FM_Wildflour_Pack_MixShroomCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_SmFaerieHelmetsCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_SmAmanitaCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_SmChickenWoodsCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },  
+                "(F)HXW.FM_Wildflour_Pack_SmMeringueShroomCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },   
+                "(F)HXW.FM_Wildflour_Pack_SmHoneyFungusCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_SmWheatShroomCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_SmMilkShroomCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_SmMagicShroomCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_SmMagicShroomCrate2": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },  
+                "(F)HXW.FM_Wildflour_Pack_MedShroomDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },   
+                "(F)HXW.FM_Wildflour_Pack_LgShroomDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_MushroomShop"
+                        }
+                    ]
+                },
+            // FORAGE
+                "(F)HXW.FM_Wildflour_Pack_AlmondCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_ForageShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_OnionCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_ForageShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_OnionSack": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_ForageShop"
+                        }
+                    ]
+                },     
+                "(F)HXW.FM_Wildflour_Pack_AlmondSack": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_ForageShop"
+                        }
+                    ]
+                },
+            // Berry 
+                "(F)HXW.FM_Wildflour_Pack_RaspberryCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_BerryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_StrawberryCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_BerryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_LapisCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_BerryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_JadeCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_BerryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_AmberCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_BerryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_LapisBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_BerryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_BerryBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_BerryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_AmberBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_BerryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_JadeBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_BerryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_AmberBarrel": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_BerryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_LapisBarrel": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_BerryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_GrapeSack": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_BerryShop"
+                        }
+                    ]
+                },
+            // FRUIT
+            // Spring
+                "(F)HXW.FM_Wildflour_Pack_LemonCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SpringFruitShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_LimeCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SpringFruitShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_LemonBarrel": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SpringFruitShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_LemonSack": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SpringFruitShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_LimeSack": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SpringFruitShop"
+                        }
+                    ]
+                },
+            // Summer
+                "(F)HXW.FM_Wildflour_Pack_MangoCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_SummerFruitShop"
+                        }
+                    ]
+                },
+            // Fall
+                "(F)HXW.FM_Wildflour_Pack_AppleCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FallFruitShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_AppleBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FallFruitShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_AppleBarrel": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FallFruitShop"
+                        }
+                    ]
+                },
+            // Mixed
+                "(F)HXW.FM_Wildflour_Pack_LgFruitDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_AllFruitShop"
+                        }
+                    ]
+                },
+            // FLOWERS
+                "(F)HXW.FM_Wildflour_Pack_SmJasmineCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FlowerShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_SmLavenderCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FlowerShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_SmChamomileCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FlowerShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_SmYarrowCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FlowerShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_SmValerianCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FlowerShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_SmGeraniumCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FlowerShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_SmVioletCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FlowerShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_SmDaisyCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FlowerShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_SmFlowerDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FlowerShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_SmFlowerDisplay2": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FlowerShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_LgFlowerDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_FlowerShop"
+                        }
+                    ]
+                },
+            // HERBS
+                "(F)HXW.FM_Wildflour_Pack_BasilCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_HerbShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_MintCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_HerbShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_ThymeCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_HerbShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_RosemaryCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_HerbShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_SageCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_HerbShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_CilantroCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_HerbShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_MugwortCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_HerbShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_RosemarySack": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_HerbShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_MugwortSack": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_HerbShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_Wildflour_Pack_LgHerbDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMC_HerbShop"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

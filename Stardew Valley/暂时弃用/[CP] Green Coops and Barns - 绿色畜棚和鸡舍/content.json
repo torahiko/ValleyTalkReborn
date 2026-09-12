@@ -1,0 +1,116 @@
+{
+    "Format": "2.4.0",
+    "ConfigSchema": {
+
+        "Map Recolor": {
+            "AllowValues": "Vanilla, VPR, Earthy, Elegant, Rustic, RusticAlt",
+            "Default": "Vanilla",
+            "Description": "Choose the recolor you're using. 'Rustic' is the original yellow feeding trough from RCTI, 'RusticAlt' changes it to a desaturated brown.",
+			"Section": "Recolors"
+        },
+        "SVE's Premium Buildings": {
+            "AllowValues": "true, false",
+            "Default": "true",
+            "Description": "Enable to change the Premium Coop and Premium Barn's maps to match. If disabled, this mod won't touch them at all.",
+			"Section": "Compatibility"
+        },
+        "Jen's Mega Buildings": {
+            "AllowValues": "true, false",
+            "Default": "true",
+            "Description": "Enable to change the Mega Coop and Mega Barn's maps to match. If disabled, this mod won't touch them at all.",
+			"Section": "Compatibility"
+        },
+        "Resource Chickens' Giant Coop": {
+            "AllowValues": "true, false",
+            "Default": "true",
+            "Description": "Enable to change the Giant Coop's map to match. If disabled, this mod won't touch it at all.",
+			"Section": "Compatibility"
+        }
+
+    },
+
+    "Changes": [
+
+        //maps
+        {
+            "LogName": "Load Green Coops and Barns",
+            "Action": "Load",
+            "Target": "Maps/Coop, Maps/Coop2, Maps/Coop3, Maps/Barn, Maps/Barn2, Maps/Barn3",
+            "FromFile": "assets/Green_{{TargetWithoutPath}}.tmx"
+        },
+
+        //tilesheet
+        {
+            "LogName": "Edit coopTiles",
+            "Action": "EditImage",
+            "PatchMode": "Replace",
+            "Target": "Maps/coopTiles",
+            "FromFile": "assets/recolors/coopTiles_wood_{{Map Recolor}}.png",
+            "Priority": "Late",
+            "When": {
+                "LocationName": "Coop, Big Coop, Deluxe Coop, Barn, Big Barn, Deluxe Barn"
+            },
+            "Update": "OnLocationChange"
+        },
+
+        //window
+        {
+            "LogName": "Load window tilesheet",
+            "Action": "Load",
+            "Target": "Maps/vikiwindow",
+            "FromFile": "assets/recolors/vikiwindow.png"
+        },
+        {
+            "LogName": "Recolor window tilesheet",
+            "Action": "EditImage",
+            "PatchMode": "Replace",
+            "Target": "Maps/vikiwindow",
+            "FromFile": "assets/recolors/vikiwindow_{{Map Recolor}}.png"
+        },
+
+        //COMPAT PATCHES//
+        //includes
+        {
+            "LogName": "Include SVE compat",
+            "Action": "Include",
+            "FromFile": "data/sve.json",
+            "When": {
+                "SVE's Premium Buildings": true,
+                "HasMod": "FlashShifter.StardewValleyExpandedCP"
+            }
+        },
+        {
+            "LogName": "Include JenMega compat",
+            "Action": "Include",
+            "FromFile": "data/jen_mega.json",
+            "When": {
+                "Jen's Mega Buildings": true,
+                "HasMod": "jenf1.megacoopbarn"
+            }
+        },
+        {
+            "LogName": "Include ResourceChickens compat",
+            "Action": "Include",
+            "FromFile": "data/resource_chickens.json",
+            "When": {
+                "Resource Chickens' Giant Coop": true,
+                "HasMod": "UncleArya.ResourceChickens"
+            }
+        },
+        //vpp compat
+        {
+            "LogName": "Replace VPP's coops and barns",
+            "Action": "EditMap",
+            "PatchMode": "Replace",
+            "Target": "Maps/Coop, Maps/Coop2, Maps/Coop3, Maps/Barn, Maps/Barn2, Maps/Barn3",
+            "FromFile": "assets/compat/vpp/Green_{{TargetWithoutPath}}_Expanded.tmx",
+            "Priority": "Late",
+            "When": {
+                "HasMod": "KediDili.VanillaPlusProfessions",
+                "HasFlag: CurrentPlayer|contains= Farming_Overcrowding": "true"
+            },
+            "Update": "OnLocationChange"
+        }
+
+    ]
+}

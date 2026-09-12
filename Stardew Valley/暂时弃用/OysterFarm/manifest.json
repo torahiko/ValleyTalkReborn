@@ -1,0 +1,12 @@
+{
+  "Name": "Oyster Farm Starter",
+  "Author": "vincott",
+  "Version": "1.0.2",
+  "Description": "Adds an Oyster Farm Starter to the game.",
+  "UniqueID": "vincott.OysterFarm",
+  "UpdateKeys": [ "27964" ],
+  "ContentPackFor": {
+    "UniqueID": "Pathoschild.ContentPatcher",
+    "MinimumVersion": "1.28.0"
+  }
+}

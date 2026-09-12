@@ -1,0 +1,248 @@
+﻿{
+    /*********
+    ** Main translations
+    *********/
+    // mod name shown in the menu
+    "mod-name": "CJB Cheats Menu",
+
+    // tab names
+    "tabs.player-and-tools": "Гравець та Інструменти",
+    "tabs.farm-and-fishing": "Ферма та Рибальство",
+    "tabs.skills": "Навички",
+    "tabs.weather": "Погода",
+    "tabs.relationships": "Стосунки",
+    "tabs.warp": "Телепортація",
+    "tabs.time": "Час",
+    "tabs.advanced": "Інше",
+    "tabs.controls": "Елементи керування",
+
+
+    /*********
+    ** Player & Tools tab
+    *********/
+    // player
+    "player.title": "Гравець",
+    "player.infinite-stamina": "Нескінченна енергія",
+    "player.infinite-health": "Нескінченне здоров'я",
+    "player.instant-cooldowns": "Без затримки при використанні зброї",
+    "player.inventory-size": "Розмір інвентарю",
+    "player.movement-speed": "Швидкість ходи",
+    "player.movement-speed.default": "нормальна",
+    "player.one-hit-kill": "Вбивство з одного удару",
+    "player.max-daily-luck": "Максимальна удача",
+
+    // tools
+    "tools.title": "Інструменти",
+    "tools.infinite-water": "Нескінченна вода у лійці",
+    "tools.one-hit-break": "Знищення з одного удару",
+    "tools.harvest-with-scythe": "Збір культур косою",
+
+    // tool enchantments
+    // TODO
+    "tool-enchantments.title": "Tool Enchantments",
+    "tool-enchantments.select-tool": "Select a tool on your toolbar to edit enchantments.",
+    "tool-enchantments.none-for-tool": "No enchantments available for selected {{toolName}}.",
+    "tool-enchantments.for-tool": "For the selected {{toolName}}.",
+
+    // money
+    "add.money": "Гроші",
+    "add.casino-coins": "Монети Кі",
+    "add.golden-walnuts": "Золоті горіхи",
+    "add.qi-gems": "Кристали Кі",
+    "add.amount-gold": "Додати {{amount}} з",
+    "add.amount-other": "Додати {{amount}}",
+
+
+    /*********
+    ** Farm & Fishing tab
+    *********/
+    // farm
+    "farm.title": "Ферма",
+    "farm.auto-water-crops": "Автоматичний полив культур",
+    "farm.auto-water-pet-bowls": "Auto-Water Pet Bowls", // TODO
+    "farm.durable-fences": "Міцні огорожі",
+    "farm.instant-build": "Миттєва побудова",
+    "farm.auto-feed-animals": "Авто-годування тварин",
+    "farm.auto-pet-animals": "Авто-пестення тварин",
+    "farm.auto-pet-pets": "Авто-пестення улюбленців",
+    "farm.infinite-hay": "Нескінченне сіно",
+
+    // fishing
+    "fishing.title": "Рибальство",
+    "fishing.instant-catch": "Миттєве виловлення риби",
+    "fishing.instant-bite": "Миттєве клювання риби",
+    "fishing.always-throw-max-distance": "Завжди закидувати на макс. дистанцію",
+    "fishing.always-treasure": "Завжди трапляються скарби",
+    "fishing.durable-tackles": "Міцне додаткове спорядження",
+
+    // fast machines
+    "fast-machines.title": "Пришвидшення роботи машин",
+    "fast-machines.fruit-trees": "Фруктові дерева",
+    "fast-machines.ready-in-the-morning": "{{machineName}}(буде готово вранці)",
+
+
+    /*********
+    ** Skills tab
+    *********/
+    // skills
+    "skills.title": "Навички",
+    "skills.increase-skill": "Підвищити рів. {{skillName}}: {{currentLevel}}",
+    "skills.increase-mastery": "Increase mastery level: {{currentLevel}}", // TODO
+
+    // professions
+    "professions.title": "Професії",
+    "professions.profession": "{{skillName}} рів. {{level}} - {{professionName}}",
+
+
+    /*********
+    ** Weather tab
+    *********/
+    "weather.title": "Погода завтра",
+    "weather.current-value": "Tomorrow's weather is set to {{weather}}.", // TODO
+    "weather.explanation": "Click a button below to set the weather for tomorrow (and only tomorrow). This tab has zero effect on weather otherwise.", // TODO
+    "weather.cannot-change-weather": "The game forces tomorrow's weather to {{weather}}, so it can't be changed.", // TODO
+    "weather.sunny": "Сонячно",
+    "weather.raining": "Дощ",
+    "weather.lightning": "Гроза",
+    "weather.snowing": "Снігопад",
+    "weather.green-rain": "Green Raining", // TODO
+
+
+    /*********
+    ** Relationships tab
+    *********/
+    "relationships.title": "Стосунки",
+    "relationships.give-gifts-anytime": "Подарунки можна дарувати досхочу",
+    "relationships.no-decay": "Рівень дружби не знижується",
+    "relationships.friends": "Друзі",
+
+
+    /*********
+    ** Warps tab
+    *********/
+    "warp.customized-warning": "These warps were edited by your mods. Please report warp issues to the mods which added them if applicable.", // TODO
+
+    // main areas
+    "warp-section.main": "Головні локації",
+    "warp.farm": "Ферма",
+    "warp.carpenter": "Столярська крамниця",
+    "warp.desert": "Пустеля",
+    "warp.mines": "Шахта",
+    "warp.pierre-shop": "Крамниця У П'єра",
+
+    // town
+    "warp-section.town": "Місто",
+    "warp.blacksmith": "Коваль",
+    "warp.community-center": "Громадський Клуб",
+    "warp.jojamart": "JojaМаркет",
+    "warp.movie-theater": "Кінотеатр",
+    "warp.museum": "Музей",
+    "warp.saloon": "Салун",
+    "warp.sewer": "Каналізація",
+
+    // forest
+    "warp-section.forest": "Ліс",
+    "warp.hats": "Кепкі",
+    "warp.mastery-cave": "Mastery Cave", // TODO
+    "warp.ranch": "Ранчо Марні",
+    "warp.secret-woods": "Таємний ліс",
+    "warp.wizard-tower": "Вежа Чарівника",
+
+    // mountain
+    "warp-section.mountain": "Гори",
+    "warp.adventurers-guild": "Гільдія Шукачів Пригод",
+    "warp.bathhouse": "Сауна",
+    "warp.mutant-bug-lair": "Лігво жуків-мутантів",
+    "warp.quarry": "Кар'єр",
+    "warp.witch-swamp": "Болото відьми",
+
+    // beach
+    "warp-section.beach": "Пляж",
+    "warp.tide-pools": "Приливні басейни",
+    "warp.willy-shop": "Рибацька крамниця",
+
+    // island
+    "warp-section.island": "Імбирний острів",
+    "warp.forge": "Кузня",
+    "warp.island-farm": "Острівна ферма",
+    "warp.dwarf-shop": "Дварфівська крамниця",
+    "warp.field-office": "Польовий офіс",
+    "warp.leo-house": "Хатинка Лео",
+
+    // desert
+    "warp-section.desert": "Пустеля",
+    "warp.casino": "Казино",
+    "warp.sandy-shop": "Крамниця Сенді",
+    "warp.skull-cavern": "Печера Черепа",
+
+
+    /*********
+    ** Time tab
+    *********/
+    // time
+    "time.title": "Час",
+    "time.freeze-inside": "Зупинити час у приміщеннях",
+    "time.freeze-caves": "Зупинити час у печерах",
+    "time.freeze-everywhere": "Зупинити час усюди",
+    "time.fade-time-frozen-message": "Hide '{{timeFrozen}}' After a Few Seconds", // TODO
+    "time.time": "Поточний час",
+    "time.time-frozen-message": "Час зупинено",
+
+    // date
+    "date.title": "Дата",
+    "date.warning": "Деякі зміни не спрацюють, поки не пройде ніч.",
+    "date.year": "Рік",
+    "date.season": "Пора року",
+    "date.day": "День",
+
+
+    /*********
+    ** Advanced tab
+    *********/
+    "flags.warning": "Використовуйте цей розділ на свій ризик!\nМожуть виникнути проблеми такі як пропущені листи, події та завдання.",
+    "flags.quests": "Завершити завдання",
+    "flags.wallet": "Гаманець",
+    "flags.unlocked": "Розблоковані локації",
+    "flags.unlocked.guild": "Гільдія Шукачів Пригод",
+    "flags.unlocked.room": "Кімната: {{name}}",
+    "flags.unlocked-content": "Розблокувати контент",
+    "flags.unlocked-content.dyes-and-tailoring": "Фарбування та шиття",
+    "flags.unlocked-content.junimo-text": "Ви вмієте читати текcт Джунімо",
+    "flags.unlocked-content.perfection": "Perfection achieved", // TODO
+    "flags.community-center": "Громадський Клуб",
+    "flags.community-center.door-unlocked": "Двері відчинено",
+    "flags.jojamart.membership": "Членство у Корпорації JojaМаркет",
+
+
+    /*********
+    ** Controls tab
+    *********/
+    "controls.title": "Керування",
+    "controls.android-config-note": "Ви можете змінити налаштування екранних кнопок у config файлах для CJB Cheats Menu та різних модів віртуальної клавіатури.",
+    "controls.open-menu": "Відкрити меню",
+    "controls.freeze-time": "Зупинити час",
+    "controls.grow-tree": "Виростити дерева",
+    "controls.grow-crops": "Виростити культури",
+    "controls.grow-radius": "Радіус прор. флори від гравця",
+    "controls.reset-controls": "Скинути налаштування",
+    "controls.press-new-key": "Натисніть нову клавішу...",
+
+
+    /*********
+    ** Generic Mod Config Menu UI
+    *********/
+    // TODO
+    "config.open-menu.desc": "The keybind which opens the menu (when no other menu is open).",
+    "config.freeze-time.desc": "The keybind which freezes the game clock.",
+    "config.grow-tree.desc": "The keybind held to grow trees around the player.",
+    "config.grow-crops.desc": "The keybind held to grow crops around the player.",
+
+    // TODO
+    "controls.reload-config": "Reload settings from file",
+    "controls.reload-config.desc": "The keybind which reloads the mod settings from the mod's config.json file. If the menu is currently open, changes may only take effect when it's reopened.",
+
+    "config.title.other-options": "Other options",
+    "config.default-tab.name": "Default tab",
+    "config.default-tab.desc": "The tab shown by default when you open the menu.",
+    "config.other-options": "To configure cheats, press the 'open menu' key shown above in-game. Make sure you press it after loading the save, when no other menu or dialogue is open."
+}

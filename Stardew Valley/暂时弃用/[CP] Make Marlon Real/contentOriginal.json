@@ -1,0 +1,1203 @@
+{
+	"Changes": [
+ //S P R I T E S
+    {
+      "LogName": "Marlon's Sprites",
+      "Action": "EditImage",
+      "Target": "Characters/Marlon",
+      "FromFile": "assets/Sprites/Marlon.png",
+      "Priority": "Late"
+    },
+		
+// P O R T R A I T
+    {
+      "Action": "EditImage",
+      "Target": "Portraits/Marlon",
+      "FromFile": "assets/Portraits/Marlon.png",
+      "When": { "Portrait": "vanilla" },
+      "Priority": "Late"
+    },
+
+    {
+      "Action": "EditImage",
+      "Target": "Portraits/Marlon",
+      "FromFile": "assets/Portraits/Marlon_alt.png",
+      "When": { "Portrait": "alternate" },
+      "Priority": "Late"
+    },
+		
+// N P C    D I S P O S I T I O N S
+		{
+        "Action": "EditData",
+        "Target": "Data/Characters",
+        "Entries": {
+        	"Marlon": {
+                "DisplayName": "马龙", 
+                "BirthSeason": "Spring",
+                "BirthDay": 22,
+                "HomeRegion": "Other",
+                "Gender": "Male",
+                "Age": "Adult",
+                "Manner": "Rude",
+                "SocialAnxiety": "Neutral",
+                "Optimism": "Negative",
+                "CanCommentOnPurchasedShopItems": false,
+                "ItemDeliveryQuests": false,
+                "SpouseRoom": {
+                	"MapAsset": "spouseRoomMarlon",
+                    "MapSourceRect": {
+                        	"X": 0,
+                        	"Y": 0,
+                        	"Width": 6,
+                        	"Height": 9
+                    	}
+                	},
+                "SpousePatio":{
+                	"MapAsset":"spousePatioMarlon",
+                	"SpriteAnimationFrames": [
+    						[24, 500], 
+    						[25, 250], 
+							]
+                		},
+                "CanBeRomanced": true,
+                "Home": [{
+                            "Id": "Default",
+                            "Location": "AdventureGuild",
+                            "Tile": { "X": 6, "Y": 5 },
+                            "Direction": "Down"
+                        }],
+                }
+            }
+        },
+        
+// SPOUSE ROOM
+  {
+    "Action": "Load",
+    "FromFile": "assets/Maps/spouseRoomMarlon.tmx",
+    "Target": "Maps/spouseRoomMarlon"
+  },
+  
+//SPOUSE PATIO
+  {
+    "Action": "Load",
+    "FromFile": "assets/Maps/spousePatioMarlon.tmx",
+    "Target": "Maps/spousePatioMarlon"
+  },
+
+// G I F T    T A S T E S
+		{
+		"Action": "EditData",
+		"Target": "Data/NPCGiftTastes",
+		"Entries": {
+			"Marlon": "该死的。这是好东西。谢谢你！/205 244 773 337 349/嘿，这还不错{{kid_or_nothing}}。谢谢你。/351 441 286 287 288 336 335 386/嗯。我想我可以把它喂给史莱姆。/346 459 303 348/你要给我这个?你想让我恨你吗?/402 418 421 591 593 595/嗯。谢谢，我想。//",
+			},
+		},
+		
+// D I A L O G U E
+		{
+		"Action": "Load",
+		"Target": "Characters/Dialogue/Marlon",
+		"FromFile": "assets/dialogue_Marlon.json" 
+		},
+		
+		{
+		"Action": "EditData",
+		"Target": "Characters/Dialogue/Marlon",
+		"Entries": {
+			"Mon":"你想从我这里得到什么吗{{kid_or_nothing}}? 我跟你没什么好说的。$a",
+			"Fri":"你挡着我了{{kid_or_nothing}}。$a",
+			"Sun":"你是在找麻烦吗{{kid_or_nothing}}?#$b#因为你马上就会找到它。$a",
+			"Thu2":"...嗯?#$e#走开{{kid_or_nothing}}。 我很忙。$a",
+			"Sat2":"不行。$a#$e#保持鼻子干净{{kid_or_nothing}}。",
+			"Sun2":"在我的家乡，人们都很保守，我们为此真的很感谢他们。$a#$e#你一点也不尊重我{{kid_or_nothing}}。$a",
+			"Thu4":"一个好的探险家知道什么时候该返回{{kid_or_nothing}}。 记住这一点。#$b#你以为你擅长用刀，就变得自大，忘了提防自己。相信我，会有别的东西看着你的。#$e#了解自己的极限。这就是我要说的。",
+			"Fri4":"为这项工作选择合适的工具是最重要的。为了耕种和战斗。#$e#你想要速度吗?拿把匕首，近距离接触那些坏蛋。#$b#如果你力量大于技巧，就拿一根棍子。这样的挥杆很难打偏。#$b#剑需要技巧和技巧，但你应该可以两全其美。#$e#相信我的话{{kid_or_nothing}}。如果你要去矿井里，就拿把剑磨得锋利些。",
+			"Sat4":"吉尔打盹时别去打扰他。#$e#我吃了苦头才明白这一点。",
+			"Sun4":"见过幽灵吗{{kid_or_nothing}}?#$b#他们会在洞穴里跟踪你的脚步。在你最意想不到的时候偷偷接近你。#$e#小心点{{kid_or_nothing}}。",
+			
+			"Town_42_86":"你在这里干什么?$a#$b#走开{{kid_or_nothing}}。 这是私人场所。$a",
+			"Event_Mine_3":"我的职责就是不让你这样的笨蛋在下面送命。所以收起你的愚蠢，转身离开吧{{kid_or_nothing}}。$a",
+		},
+		},
+		
+		{
+        "Action": "Load",
+        "Target": "Characters/Dialogue/MarriageDialogueMarlon",
+        "FromFile": "assets/MarriageDialogueMarlon.json"
+        },
+		
+		{
+        "Action": "EditData",
+		"Target": "Characters/Dialogue/Marlon",
+        	"Entries": {
+				"Town_42_86":"我带了些花。#$b#他真的很喜欢那些蓝色的毛茸茸的花。^她真的很喜欢那些蓝色的毛茸茸的花#$b#*叹气*",
+				},
+		"When":{"HasSeenEvent": "7018004"},
+        },
+		
+		{
+		"Action": "EditData",
+		"Target": "Data/EngagementDialogue",
+		"Entries": {
+			"Marlon0": "说实话，我还是有点目瞪口呆。你确定要这么做吗?",
+			"Marlon1": "嗯...见鬼。我从没想过我会和一个农夫结婚。我也从没想过我会和谁结婚。",
+			},
+		},
+		
+		{
+        "Action": "EditData",
+        "Target": "Characters/Dialogue/MarriageDialogueMarlon",
+        "Entries": {
+			"funLeave_Marlon": "{{Random: 早上好，亲爱的。你今天有很多事要做吗?#$e#我自己也很快要出去了。#$b#要去那些地方。去杀死怪物。和往常一样。\\ 我想如果我出去一整天，我应该记得带点吃的。#$b#吉尔在公会里没有可吃的东西。尤巴才知道他是怎么活下来的。#$e#那些还有剩下的吗? \\ 每次我去公会的时候，我都有点为吉尔感到难过。$s#$b#我们曾经一起做过那么多的事情。而现在他被困在那个破旧的大厅里，里面有那么多回忆。#$e#然后我就想起来他是个讨厌鬼。\\ 前往公会让我更加感激我们在这里所拥有的一切。#$b#我怎么能在那生活这么久的?#$e#我猜你都不能将那称之为生活。 |inputSeparator=\\}}",
+			},
+        },
+	
+
+//I T E M    R E C O V E R Y
+		{
+        "Action": "EditData",
+        "Target": "Strings/StringsFromCSFiles",
+        "Entries": {
+			"ItemRecovery_Description": "丢了一些东西，是吗?我警告过你在下面要小心。*叹气* 想我可以为你拿回他们中的一个。",
+			"ItemRecovery_Engaged": "好的，我今晚会找到你丢失的{0}，明天早上会把它放在你的邮箱里。下次给我小心点!",
+			"ItemRecovery_Engaged_Stack": "好的，我今晚可以会找到你丢失的{0}，明天早上会把它们放在你的邮箱里。下次给我小心点!",
+			"Stats.cs.5129": "怪物杀手的目标完成!在冒险者公会中查看木桶以获得奖励。",
+			}
+		},
+	
+//S P E E C H   B U B B L E S
+		{
+        "Action": "EditData",
+        "Target": "Strings/SpeechBubbles",
+        "Entries": {
+			"AdventureGuild_Marlon_Greeting2": "你好。",
+			"AdventureGuild_Marlon_Greeting4": "又回来了吗?",
+			}
+		},
+		
+// G E N E R I C   D I A L O G U E
+		//Marriage
+		{
+        "Action": "EditData",
+        "Target": "Strings/StringsFromCSFiles",
+        "Entries": {
+			"Game1.cs.2782": "一场精彩的派对。#$e#...#$b#我们还需要一段时间才能接受我们已经结婚的事实。",
+			},
+        "When": {"Override Generic Dialogue": "true",},
+        	},
+
+		
+// S C H E D U L E
+		{
+		"Action": "Load",
+		"Target": "Characters/schedules/Marlon",
+		"FromFile": "assets/schedule_Marlon.json"
+		},
+		
+		{
+		"LogName":"Marlon's Post-8-Heart-Schedule",
+		"Action": "EditData",
+		"Target": "Characters/schedules/Marlon",
+		"Entries":{
+			"Sun":"610 Town 42 86 0/1300 AdventureGuild 5 11 2/2200 AdventureGuild 6 5 2",  
+			},
+		"When": {"HasSeenEvent |contains=7018013":true},
+		"Update": "OnLocationChange"
+		},
+		
+		{
+      	"Action": "Load",
+      	"Target": "Strings/schedules/Marlon",
+      	"FromFile": "assets/schedule_strings_Marlon.json"
+    	},
+		
+
+// S T R I N G S   F R O M   M A P S
+		{
+        "Action": "EditData",
+        "Target": "Strings/StringsFromMaps",
+        "Entries": {
+			"MarlonRoom.000": "这是他最喜欢的剑。刀刃上有许多碎片和划痕。",
+			"MarlonRoom.001": "这个角落里有一股淡淡的臭鸡蛋味。",
+			"MarlonRoom.002": "他认为农场的干草会短缺吗?",
+			"MarlonRoom.003": "这些桶里装的是什么?你可能永远不会知道。",
+			},
+		},
+		
+		{
+        "Action": "EditData",
+        "Target": "Strings/StringsFromMaps",
+        "Entries": {
+			"Town.3": "Beloved Finley. Gone too soon.",
+			},
+		},
+
+// E V E N T S
+		//Marlon Intro Event and 2-Heart Event
+		{
+		"LogName": "Mine Events",
+		"Action": "EditData",
+		"Target": "Data/Events/Mine",
+		"Entries": {
+			"100162/t 600 2600": "MarlonsTheme/21 9/farmer -100 -100 0 Marlon 23 6 2/addQuest 14/skippable/pause 1000/move Marlon 0 2 2/pause 1500/speak Marlon \"嗯... \"/pause 500/warp farmer 18 13/playSound stoneStep/move farmer 0 -3 1/move farmer 5 0 0/pause 1000/speak Marlon \"$q 1 null#...你在这里还有事要做吗{{kid_or_nothing}}?#$r 1 0 Event_Mine_1#我只是随便看看。#$r 1 0 Event_Mine_2#我听说下面有宝藏。#$r 1 0 Event_Mine_3#也许吧。这跟你有什么关系吗?\"/pause 1000/speak Marlon \"哎...\"/pause 1000/speak Marlon \"但你不会听我的，对吧?#$b#你脑子里有一些愚蠢的冒险想法，不管我说什么，你都要进去，不是吗?\"/pause 500/speak Marlon \"拿着这个。你会需要的。\"/pause 500/playSound dwop/faceDirection farmer 1 true/pause 50/faceDirection farmer 2/itemAboveHead sword/pause 3300/awardFestivalPrize sword/pause 300/faceDirection farmer 1 true/pause 100/faceDirection farmer 0/pause 500/speak Marlon \"我叫马龙，所以你知道当你头脑不清的时候知道该喊什么的。#$b#如果我足够慷慨的话，我甚至可以来找你的。\"/pause 500/end",
+			"7018002/f Marlon 500/t 600 2400": "MarlonsTheme/21 9/farmer 18 13 0 Marlon 18 7 2/skippable/pause 1000/speak Marlon \"Thought I might find you here.\"/move farmer 0 -2 0/speak Marlon \"你就像个该死的地鼠，你知道吗?我想摆脱你，你却越陷越深。\"/pause 700/speak Marlon \"听着{{kid_or_nothing}}。#$b#@。#$b#你不能一直这样在矿井里翻找。至少我不知道你在做什么。\"/pause 500/speak Marlon \"不,我不是担心你!我只是不想让我的良心受到谴责。#$b#如果你死了，也不是我的错。\"/pause 500/emote Marlon 40/pause 500/speak Marlon \"给你。\"/pause 100/move Marlon 0 3 2/speak Marlon \"你拿着这把剑。抓住刀柄，别抓刀刃。#$b#现在我要教你如何挥剑，适当些。不会让你每次看到有东西在黑暗中爬行时都疯狂地挥舞着它。#$b#你那样会死的。#$b#但首先你要学会阻挡。因为这样总有一天能救你一命。\"/globalFade/viewport -1000 -1000/speak Marlon \"举高!把你那该死的剑拿直!\"/pause 500/playSound swordswipe/pause 200/playSound throwDownITem/pause 500/speak Marlon \"我说的是挡，不是丢掉!这不是一场消防演习{{kid_or_nothing}}。\"/pause 500/playSound swordswipe/pause 100/playSound clank/speak Marlon \"好了!别动。我要看你的小胳膊颤抖了!\"/pause 500/speak Marlon \"还不错。我见过更糟糕的。#$b#但如果你想在矿井底部保住你的头和脖子，你就得移动得更快些。#$b#现在让我们看看你是怎么挥舞那把剑的。\"/pause 500/speak Marlon \"攻击我吧。 \"/pause 200/playSound swordswipe/pause 200/speak Marlon \"如果你害怕伤害别人，就永远不会有任何进展。攻击我!\"/pause 200/playSound swordswipe/pause 100/playSound clank/pause 200/speak Marlon \"哈!力气太小了。再做一遍，用力一点!我可能老了，但我会把一只手绑在背后把你带走。 \"/pause 200/playSound swordswipe/pause 100/playSound crit/pause 200/speak Marlon \"就是这样!再来!别对我发脾气{{kid_or_nothing}}, 我们还有很长的路要走。\"/pause 200/playSound swordswipe/pause 100/playSound crit/pause 200/warp Marlon 18 9/faceDirection Marlon 1/warp farmer 20 9/faceDirection farmer 3/viewport 21 9/speak Marlon \"你做的不错 {{kid_or_name}}。 没我想的那么糟。学习能力很强。那会救你的命的。\"/pause 500/speak Marlon \"现在离开这里。记得收好你的手肘，绷紧你的肚子。\"/pause 100/move Marlon 0 5 2/pause 500/speak Marlon \"该死。$s#$b#让我想起了...$s\"/pause 500/move Marlon 0 1 2/warp Marlon 1000 1000/pause 500/globalFade/viewport -1000 -1000/friendship Marlon 50/{{Gil75}}end",
+			},
+		},
+		
+		//Marlon 4-Heart Event
+		{
+		"Action": "EditData",
+		"Target": "Data/Events/AdventureGuild",
+      "Entries": {
+        "7018008/f Marlon 1000/k 7118004": "MarlonsTheme/-1000 -1000/farmer -1000 -1000 0 Marlon 6 12 1 Gil 1001 1001 3/skippable/changeLocation Mountain/warp farmer 76 9/viewport 76 8/pause 1000/speak Marlon \"我不感兴趣!$a\"/pause 1000/emote farmer 8/pause 500/speak Marlon \"我只是不想再害死任何人了!$a\"/pause 2000/speak Marlon \"我见过太多愚蠢的小孩被杀了。还有一些。#$b#别假装你跟这事没什么关系。你也不想再犯错误了。\"/pause 2000/globalFade .01/viewport -1000 -1000/changeLocation AdventureGuild/viewport 6 12/pause 2000/speak Marlon \"别跟我胡扯!你这个毛茸茸的混蛋。假装你在这个世界上什么责任都没有。\"/pause 500/speak Gil \"我不是。$u#$b#当全世界都对你不理不睬时，你只有一个办法继续前进。$u\"/pause 500/speak Marlon \"你肯定不会继续前进了!如果你认为你所做的一切能帮助你继续前进，那你就大错特错了。$a#$b#你什么都不做。#$b#整天就坐在那该死的椅子上。#$b#你说你根本不在乎这个世界，但那只是为了让自己对这个丢下你的世界感觉好些。\"/pause 1000/speak Marlon \" 我不会坐视不管的。看着这一切在我身边发生。\"/pause 500/speak Gil \"你真是个老顽固。$u\"/pause 500/speak Marlon \"这不是重点!重点是，我因为什么都不做而犯了足够多的错误。也许你不介意这个。但我不是。\"/pause 500/speak Gil \"所以你对他很感兴趣。^所以你对她很感兴趣。\"/pause 500/speak Marlon \"该死的!$a#$b#好啊!我就是对@很感兴趣。$a#$b#你高兴了吗?$a\"/pause 500/speak Gil \"你真的吗?\"/speak Marlon \"当然没有!$a\"/speed Marlon 4/move Marlon 0 7 2/warp Marlon 1000 1000/globalFade .02/viewport -1000 -1000/changeLocation Mountain/viewport 76 14/pause 500/playSound woodyStep/pause 200/emote farmer 16/pause 200/move farmer -1 0 2/warp Marlon 76 9/playSound doorClose/showFrame 94/jump farmer/speed Marlon 4/move Marlon 0 5 2/pause 3000/showFrame farmer 0/pause 1000/emote farmer 28/pause 1000/faceDirection Marlon 3/pause 1000/faceDirection Marlon 2/pause 1000/speak Marlon \"你没必要在门口偷听{{kid_or_name}}。#$b#偷听两个老家伙的争吵是没有用的。\"/pause 2000/speak Marlon \"我们继续说吧。你快走开。\"/pause 200/jump farmer/pause 200/speed farmer 5/move farmer 0 2 2/move farmer -15 0 3/warp farmer 1000 1000/pause 2000/speak Marlon \"*叹气*...$s\"/pause 2000/globalFade/viewport -1000 -1000/changeLocation AdventureGuild/{{Gil125}}end warpOut"
+      },
+		},
+		
+		//Marlon 6-Heart and 8-Heart Events
+		{
+		"Action": "EditData",
+		"Target": "Data/Events/Town",
+      "Entries": {
+        "7018003/f Marlon 1500/t 1000 4000/w sunny/a 81 0": "MarlonsTheme/79 10/Marlon 80 18 0 farmer -100 -100 2 Gil 1001 1001 0/skippable/speed Marlon 1/move Marlon 0 -4 0/pause 500/speak Marlon \"由巴在上，这个混——\"/pause 500/speed Marlon 1/move Marlon 0 -1 0/pause 200/speed Marlon 1/move Marlon 0 -1 0/pause 200/speed Marlon 1/move Marlon 0 -1 0/pause 200/speed Marlon 1/move Marlon 0 -1 0/pause 500/speak Marlon \"这该死的膝盖总是会突然发作。就不能等五分钟吗，你这该死的魔鬼?\"/warp farmer 81 0/move farmer 0 5 2/emote farmer 16/speed farmer 5/move farmer 0 5 3/pause 100/emote farmer 8/faceDirection Marlon 1/pause 100/speak Marlon \"该死。我就知道你会在不该来的时候出现。你什么事都要管，不是吗?$a\"/pause 300/emote Marlon 12/pause 100/faceDirection Marlon 0/pause 700/faceDirection Marlon 1/pause 200/speak Marlon \"你到底帮不帮我?我的膝盖已经僵硬了，都走不了路了。$a\"/pause 300/emote Marlon 12/pause 100/faceDirection Marlon 0/faceDirection farmer 0/speed farmer 1/speed Marlon 2/move Marlon 0 -7 0 true/move farmer 0 -7 0 true/pause 3700/warp Marlon 1000 1000/warp farmer -100 -100/globalFade/viewport -1000 -1000/changeLocation AdventureGuild/viewport 6 15/warp Marlon 6 19/move Marlon 0 -1 0 false/warp farmer 6 19/playSound doorClose/move Marlon 0 -3 0/speed farmer 1/move farmer 0 -2 0 false/pause 500/faceDirection Marlon 2/pause 500/emote Marlon 40/pause 500/speak Marlon \"别以为我是个老顽固。你的身体也已经受到过打击了,这些东西迟早会来找你的。#$b#如果你继续像现在这样在地底探险，你的账单就会越来越多。希望你准备好支付他们了。\"/pause 200/emote farmer 28/pause 500/speak Gil \"他的意思是“谢谢”。\"/pause 500/emote Marlon 28/pause 500/speak Marlon \"...谢谢你,@。#$b#现在好了。你快走。\"/pause 300/move farmer 0 2 2/warp farmer 1000 1000/playSound doorClose/globalFade/viewport -1000 -1000/changeLocation Town/viewport -1000 -1000/warp farmer 81 0 2/{{Gil250}}end dialogue Marlon \"关于之前的事我很抱歉，@。我不象以前那么年轻了。一想起这件事我就有点暴躁。\"",
+        "7018004/f Marlon 2000/t 600 2400": "sadpiano/42 86/Marlon 42 86 0 farmer 51 91 0/skippable/pause 2000/speak Marlon \"嘿。#$b#好久不见了。要知道这一点。#$b#我总是让你等很久，直到最后一次...\"/pause 500/speak Marlon \"我一直很忙。#$b#最近有一个人搬到了镇上...这让我想起了你。\"/move farmer -7 0 0/speak Marlon \"闪亮。 有点自大。 我都没办法压住他。^闪亮。 有点自大。 我都没办法压住她。#$b#我知道，因为我尽力了。几次了。#$b#也没办法让他摆脱麻烦。^也没办法让她摆脱麻烦。#$b#我只是想让他活着。^我只是想让她活着。\"/pause 500/speak Marlon \"我不会再失败了。\"/pause 500/speak Marlon \"但这次不是。\"/pause 500/faceDirection Marlon 2/showFrame Marlon 21/pause 1000/showFrame Marlon 0/speak Marlon \"@!$6#$b#该死的!不能这样偷偷接近一个人!\"/pause 200/move farmer 0 -5 3/faceDirection Marlon 1/pause 500/emote Marlon 40/speak Marlon \"$q 7774 null#你从头到尾都在听吗?#$r 7774 50 Event_Listening_1#是的...#$r 7774 -50 Event_Listening_2#没有。一个字也没听进去。\"pause 500/speak Marlon \"*叹气* 我想我欠你一个故事，对吧?\"/pause 500/playMusic desolate/pause 500/speak Marlon \"那是很久以前的事了。那是一个全新的人生，当我还是个充满自我的年轻人的时候。#$b#那时候我们有三个人。我，吉尔，还有一个叫芬利的小伙子。^那时候我们有三个人。我和吉尔还有一个叫芬利的姑娘。#$b#芬...他是我们当中最好的。^芬...她是我们当中最好的。#$b#你知道，我们建立了那个公会。从头到尾，只有我们三个人。#$b#这是一个白日梦，但当大门打开时，我们以为面对的一切都是冒险和荣耀。#$b#也许有一段时间是这样，但现在一切都褪色了。\"/pause 500/speak Marlon \"你看，我们将矿洞挖掘得很深。我们对这里的一切都了如指掌。这附近的人都知道。曾经依靠我们来保护这个山谷的安全。因此，当听到从沙漠里爬出来的大野兽的隆隆声时，他们就知道该向谁求助了。\"/pause 500/speak Marlon \"只是...我前一天晚上睡得很晚。你看，是在庆祝。那天是公会的周年纪念日。#$b#我喝多了...宿醉了，身体不太舒服...\"/pause 500/speak Marlon \"*叹气* 我就不细说了。尤巴知道我在自己的脑子里已经把它们折腾得够呛了。#$b#我们抓到那个混蛋了。但在那之前，它就在我面前把芬抓走了。^我们抓到那个混蛋了。但在那之前，它就在我面前把芬抓走了。#$b#而我，那时候又醉又蠢，追了上去。把我的胳膊塞进它嘴里，想把他拖出来。^而我，那时候又醉又蠢，追了上去。把我的胳膊塞进它嘴里，想把她拖出来。#$b#如果我能及时赶到，这笔交易也算值了。但我把他们都弄丢了。#$b#芬被摔成了两半。我的胳膊成了蜥蜴的诱饵。\"/pause 1000/speak Marlon \"吉尔趁我还在尖叫的时候把那该死的东西拿下来了。#$b#我甚至感觉不到我的手臂不见了。我只看到芬躺在那里，浑身是血。\"/pause 1000/speak Marlon \"*叹气* 对不起。他说我不会说我的。\"/pause 1000/speak Marlon \"我们把他带回来埋在了家里。^我们把她带回来埋在了家里。$b#从那天起我就没碰过一滴酒。#$b#这就是公会的结局。在那之后，就只有两个残破的老家伙住在一间破旧的棚屋里，假装我们还有值得活下去的东西。\"/pause 1000/speak Marlon \"总之，就是这样。现在你知道了。\"/pause 500/speak Marlon \"你知道为什么每次我赶走你的时候我都不能忍受你那张自大的脸回到矿井里。我都不想看你一眼，但该死的，你来了我就在想，尤巴是不是在给我第二次机会。#$b#这次我不会搞砸了，@。\"/pause 1000/speak Marlon \"这次不会了。\"/pause 1000/speak Marlon \"我们离开这里吧，@。\"/pause 200/faceDirection Marlon 0/pause 1300/speak Marlon \"回头见，芬。\"/pause 500/move Marlon 1 0 1/move Marlon 0 5 2 true/move farmer 0 5 2 true/pause 1200/{{Gil250}}end dialogue Marlon \"我以为我会讨厌你插手这样的私事，但我没有。我很高兴你知道了这些，@。我们之间没有秘密了。\""
+      },
+		},
+		
+		//Marlon 10-Heart Event Letter
+		{
+		"Action": "EditData",
+		"Target": "Data/Events/Farm",
+        "Entries": {
+               	"7018005/f Marlon 2500/x beachInvite": "null",
+            	}
+        	},
+		
+		//Marlon 10-Heart Event
+		{
+		"Action": "EditData",
+		"Target": "Data/Events/Beach",
+        "Entries": {
+               	"7018006/n beachInvite/t 1700 1900" : "ocean/12 38/farmer 12 29 2 Marlon -1000 -1000 2/skippable/move farmer 0 7 2/pause 500/faceDirection farmer 3/pause 500/faceDirection farmer 1/pause 500/faceDirection farmer 3/pause 500/faceDirection farmer 2/move farmer 0 3 2/pause 3000/faceDirection farmer 3/pause 500/faceDirection farmer 1/pause 500/faceDirection farmer 3/pause 500/faceDirection farmer 2/pause 1000/emote farmer 40/pause 3000/warp Marlon 12 29/move Marlon 0 7 2/faceDirection farmer 0/speak Marlon \"抱歉让你久等了。我该死的腿已经大不如前了。\"/move Marlon 0 2 2/move Marlon 1 0 2/move Marlon 0 1 3/positionOffset Marlon 0 2/pause 10/positionOffset Marlon 0 2/pause 10/positionOffset Marlon 0 2/pause 10/positionOffset Marlon 0 2/pause 10/positionOffset Marlon 0 2/pause 10/positionOffset Marlon 0 2/pause 10/faceDirection farmer 1/pause 200/faceDirection farmer 2/faceDirection Marlon 2/pause 2000/speak Marlon \"真是美丽的风景...\"/pause 5000/speak Marlon \"你有什么想说的吗?\"/question null \"#我吗?什么?没有。我以为你有。#不是你叫我来的吗?#嗯。没什么特别的...你呢?\"/pause 2000/faceDirection Marlon 3/pause 500/faceDirection Marlon 2/pause 2000/speak Marlon \"你没邀请我来吗?\"/question null \"#没有。#嗯。也许我做了，然后忘记了?\" pause 2000/speak Marlon \"那个混蛋 - \"/pause 200/faceDirection farmer 1/pause 300/emote farmer 8/pause 500/speak Marlon \"吉尔!他告诉我你要见我。他肯定也是这么跟你说的吧?#$b#那个爱管闲事的混蛋。我要拧断他毛茸茸的脖子。\"/pause 200/move Marlon 0 -2 0/faceDirection farmer 0/pause 500/faceDirection Marlon 2/pause 2000/speak Marlon \"不过，我们可以等一等...他不值得我再回去一下。\"/pause 500/move Marlon 0 2 2/positionOffset Marlon 0 2/pause 10/positionOffset Marlon 0 2/pause 10/positionOffset Marlon 0 2/pause 10/positionOffset Marlon 0 2/pause 10/positionOffset Marlon 0 2/pause 10/positionOffset Marlon 0 2/pause 10/faceDirection farmer 2/pause 2000/faceDirection Marlon 3/pause 200/faceDirection Marlon 2/pause 200/faceDirection farmer 1/pause 200/faceDirection farmer 2/pause 1000/faceDirection Marlon 3/pause 200/faceDirection Marlon 2/speak Marlon \"听着,@。我有件事想跟你谈谈...\"/pause 3000/speak Marlon \"我最近想了很多。我是说关于我们。#$b#关于你的事。#$b#问题是，@...我是一个老家伙了。你没必要和我在一起，城里有一大堆帅哥等着你给他们点甜头呢。\"/pause 2000/speak Marlon \"如果我是个好人，我会把你送走。你花点时间和别的男人在一起，就会发现我不值得你浪费时间...\"/pause 3000/speak Marlon \"但我不是那样的人。\"/pause 500/faceDirection Marlon 2/faceDirection farmer 1/faceDirection Marlon 3/pause 500/speak Marlon \"你是一个不可思议的人,@。^你是一个不可思议的人,@。#$b#我不知道没有你我该怎么办。\"/speak Marlon \"$q 77751 null#我应该做什么?#$r 770 0 Event_Beach1#(亲吻他)#$r 771 0 Event_Beach2#(什么也不说)\"/fork 771 BeachKiss/playMusic musicboxsong/pause 2000/animate farmer false true 100 101/positionOffset farmer 2 0/pause 10/positionOffset farmer 2 0/pause 10/positionOffset farmer 2 0/pause 10/positionOffset farmer 2 0/pause 10/positionOffset farmer 2 0/pause 10/showFrame Marlon 21/pause 800/showFrame Marlon 0/pause 800/showFrame Marlon 42/pause 3000/stopAnimation farmer/showFrame Marlon 12/positionOffset Marlon 2 0/pause 50/positionOffset Marlon 2 0/pause 50/positionOffset Marlon 2 0/pause 3000/speak Marlon \"好。$l#$b#真是见鬼。$l\"/pause 2000/speak Marlon \"尤巴啊。$l\"/pause 3000/showFrame Marlon 42/positionOffset Marlon -2 0/pause 10/positionOffset Marlon -2 0/pause 10/positionOffset Marlon -2 0/animate farmer false true 100 101/pause 1000/specificTemporarySprite heart 13 38/pause 3000/globalFade/viewport -1000 -1000/{{Gil500}}end warpOut",
+				"BeachKiss" : "pause 1000/speak Marlon \"$q 77752 null#我想说的是，我觉得这个老家伙已经爱上你了，@。#$r 773 0 Event_Beach3#我对你也有同样的感觉。#$r 774 -500 Event_Beach4#哦。呃...好。这真的很尴尬。\"/fork 774 NoKiss/pause 500/emote Marlon 12/pause 500/faceDirection Marlon 2/pause 1000/faceDirection Marlon 3/pause 500/speak Marlon \"该死的，别那样看我。\"/pause 500/faceDirection Marlon 2/pause 200/faceDirection Marlon 3/pause 200/speak Marlon \"该死的。\"/pause 100/playMusic musicboxsong/pause 2000/showFrame Marlon 42/positionOffset Marlon -2 0/pause 10/positionOffset Marlon -2 0/pause 10/positionOffset Marlon -2 0/pause 10/positionOffset Marlon -2 0/pause 10/positionOffset Marlon -2 0/pause 10/animate farmer false true 100 101/pause 1000/pause 2000/stopAnimation farmer/showFrame Marlon 12/positionOffset Marlon 2 0/pause 50/positionOffset Marlon 2 0/pause 50/positionOffset Marlon 2 0/pause 500/emote farmer 20/pause 500/speak Marlon \"现在你只能和我在一起了。这只能怪你自己。\"/pause 1000/showFrame Marlon 42/positionOffset Marlon -2 0/pause 10/positionOffset Marlon -2 0/pause 10/positionOffset Marlon -2 0/pause 10/animate farmer false true 100 101/pause 1000/specificTemporarySprite heart 13 38/pause 3000/globalFade/viewport -1000 -1000/{{Gil500}}end warpOut",
+				"NoKiss" : "pause 1000/speak Marlon \"这就是吉尔干涉我的事的后果。\"/pause 1000/speak Marlon \"出于某种原因，我在想...\"/pause 1000/speak Marlon \"没关系。\"/pause 1000/faceDirection Marlon 0/pause 200/speak Marlon \"再见，@。\"/move Marlon 0 -1 0/move Marlon -1 0 3/faceDirection farmer 0/move Marlon 0 -9 0/globalFade/viewport -1000 -1000/{{Gil-500}}end warpOut",
+
+            	}
+        },
+
+		//Marlon 14-Heart Event
+		{
+		"Action": "EditData",
+		"Target": "Data/Events/FarmHouse",
+		"Entries": {
+		"7018007/f Marlon 3500/O Marlon/t 2200 2600/L" : "nightTime/27 26/farmer -100 -100 0 Marlon 23 26 3/skippable/makeInvisible 23 26 7 1/pause 500/speed Marlon 4/move Marlon 7 0 1/pause 200/speed Marlon 4/move Marlon -7 0 1/pause 200/speed Marlon 4/move Marlon 7 0 1/pause 200/speed Marlon 4/move Marlon -7 0 1/pause 200/speed Marlon 4/move Marlon 7 0 1/pause 200/playSound doorClose/warp farmer 27 30/faceDirection Marlon 2/pause 50/jump Marlon/pause 50/speak Marlon \"@!$6\"/move Marlon -2 0 3/move farmer 0 -4 1/pause 500/faceDirection Marlon 2/positionOffset farmer 2 0/pause 50/positionOffset farmer 2 0/pause 50/positionOffset farmer 2 0/pause 50/positionOffset farmer 2 0/pause 500/emote farmer 8/pause 500/playMusic desolate/faceDirection Marlon 3/pause 2000/speak Marlon \"@...\"/pause 2000/speak Marlon \"哦尤巴, @...$s\"/pause 200/shake Marlon 5000/pause 500/emote farmer 60/pause 500/positionOffset farmer 2 0/pause 50/positionOffset farmer 2 0/pause 50/positionOffset farmer 2 0/pause 50/positionOffset farmer 2 0/pause 50/positionOffset Marlon -2 0/pause 50/positionOffset Marlon -2 0/pause 50/positionOffset Marlon -2 0/pause 50/positionOffset Marlon -2 0/pause 2000/speak Marlon \"它再次发生了。$s#$b#只不过是发生在你身上，而不是芬。$s\"/pause 1000/emote farmer 60/pause 1000/speak Marlon \"这不是第一次了。$s#$b#我总是梦到它。$s\"/pause 1000/speak Marlon \"梦见你没有从矿井里回来。$s#$b#我深入梦境追寻，却发现你的身体已经破碎，没有人能将你重新组合。$s#$b#梦见我就站在旁边，却不能动弹，什么也不能做。$s#$b#梦见我要看着你在我面前被撕成碎片，因为我无法转移视线。$s\"/pause 200/shake Marlon 4000/positionOffset farmer 2 0/pause 50/positionOffset farmer 2 0/pause 50/positionOffset farmer 2 0/pause 50/positionOffset farmer 2 0/pause 350/emote farmer 60/pause 1500/speak Marlon \"可恶...\"/positionOffset Marlon 2 0/pause 50/positionOffset Marlon 2 0/pause 50/positionOffset Marlon 2 0/pause 50/positionOffset Marlon 2 0/pause 50/positionOffset Marlon 2 0/pause 50/positionOffset Marlon 2 0/pause 50/positionOffset Marlon 2 0/faceDirection Marlon 3/pause 500/speak Marlon \"对不起。我没想对你发火。\"/pause 500/emote farmer 20/pause 200/faceDirection Marlon 1/pause 500/speak Marlon  \"看。@。我知道当我每隔一天就对你崩溃的时候，你可能不以为然。但你为这位老家伙创造了奇迹。$l#$b#我都不知道如果没有你我将何去何从。$l#$b#我知道有时候我醒来的时候，只需要听到你的声音告诉我一切都只是在我的脑海里。$s#$b#有时我无法忍受你离开我的视线。因为一想到要失去你，我的心就碎了。$s#$b#但那都是因为你让我觉得过去的生活有了意义。在你来镇上之前，是没有这个的。$l#$b#我知道你不会让我失望的。我知道你永远不会离开我。但我无法控制我的大脑。$l\"/pause 500/speak Marlon  \"我还是无法理解你给我的爱。$l#$b#所以请耐心听我说。$l\"/pause 100/emote farmer 20/animate farmer false true 100 101/pause 50/showFrame Marlon 42/pause 3000/stopAnimation farmer/showFrame Marlon 12/pause 3000/speak Marlon \"嗯。$l#$b#你要睡觉了吗？$l\"/pause 500/emote farmer 32/pause 500/speak Marlon  \"好。没有你在我睡不好。$l\"/pause 500/emote farmer 20/pause 1000/globalFade/viewport -1000 -1000/end",
+			},
+		},
+		
+// E V E N T S   X N B   L O A D S
+		{
+	 	"Action": "Load",
+	 	"Target": "Data/Events/AdventureGuild",
+		"FromFile": "assets/AdventureGuild.json"
+		},
+
+
+// M A I L
+		{
+		"Action": "EditData",
+		"Target":"Data/Mail",
+		"Entries":{
+			"guildQuest": "看来我是对的。你就是不能让自己远离麻烦，对吧?如果你想有所成就，那就去杀十个史莱姆。然后我们再谈。^^   -马龙%item quest 15 true %%[#]任务：杀死史莱姆",
+			"beachInvite":  "在海滩见我。日落的时候。 %item object 595 1 %%[#]一个神秘的邀请",
+			"passedOut4": "@, ^^我凌晨三点打扫的时候发现你脸朝下倒在泥里。^^你真他妈幸运。下次别人会找到你的。所以别再有下一次了。^^     -马龙[#]马龙的便条",
+			"MarlonRecovery": "亲爱的愚蠢鲁莽的农夫,^我又找到你的东西了。^^如果你不能保持清醒，你就不该在矿井里瞎折腾。我之前警告过你。你会害死自己的。^   -马龙%item itemRecovery %%[#]马龙找到了你的物品",
+			}
+		},
+		
+// F E S T I V A L    D I A L O G U E
+	// EGG FESTIVAL
+		{
+        "Action": "EditData",
+        "Target": "Data/Festivals/spring13",
+        "When": {
+        	"Hearts:Marlon": "2, 3"
+			},
+        "Entries": {
+        	"Marlon": "看看是谁来了。是来给孩子们找彩蛋的吗?",
+        	"Marlon_y2": "看看是谁来了。是来给孩子们找蛋的吗?"
+          	}
+       	},
+       	
+		{
+        "Action": "EditData",
+        "Target": "Data/Festivals/spring13",
+        "When": {
+        	"Hearts:Marlon": "4, 5"
+			},
+        "Entries": {
+        	"Marlon": "鸡蛋是蛋白质的良好来源。#$b#给你的身体补充充足的燃料，你就再也不用担心它会耗尽你的能量了。记住，@。#$e#除非有个该死的骷髅悄悄靠近你然后把你的腿砍下来。#$b#但那是另一个故事了。",
+        	"Marlon_y2": "鸡蛋是很好的蛋白质来源。#$b#让你的身体充满能量，你永远不用担心它会耗尽你。记住，@。#$e#除非有个该死的骷髅悄悄靠近你把你的腿从你身下砍下来。#$b#但那是另一个故事了。"
+          	}
+       	},
+       	
+		{
+        "Action": "EditData",
+        "Target": "Data/Festivals/spring13",
+        "When": {
+        	"Hearts:Marlon": "6, 7, 8"
+			},
+        "Entries": {
+        	"Marlon": "狩猎开始了。如果我还年轻，我会告诉你们这些孩子该怎么做。",
+        	"Marlon_y2": "狩猎开始了。如果我是年轻人，我会给你们示范怎么做。"
+          	}
+       	},
+       	
+		{
+        "Action": "EditData",
+        "Target": "Data/Festivals/spring13",
+        "When": {
+        	"Relationship:Marlon": "Dating"
+			},
+        "Entries": {
+        	"Marlon": "@。#$b#你穿着春天的衣服，看起来很可爱。青春的就像画一样。$l",
+        	"Marlon_y2": "@。#$b#你穿着春天的衣服，看起来很可爱。青春的就像画一样。$l"
+          	}
+       	},
+       	
+		{
+        "Action": "EditData",
+        "Target": "Data/Festivals/spring13",
+        "When": {
+        	"Relationship:Marlon": "Married"
+			},
+        "Entries": {
+        	"Marlon": "当我还是个孩子的时候，这曾经是我最喜欢的节日。现在我已经老了，再也不能跑来跑去找鸡蛋了。#$e#你为我我赢个奖吧，亲爱的。",
+        	"Marlon_y2": "当我还是个孩子的时候，这是我最喜欢的节日。现在我已经老了，再也不能跑来跑去找鸡蛋了。#$e#给我一个奖品吧，亲爱的。"
+          	}
+       	},
+       	
+		{
+        "Action": "EditData",
+        "Target": "Data/Festivals/spring13",
+        "When": {
+        	"Relationship:Marlon": "Divorced"
+			},
+        "Entries": {
+        	"Marlon": "我跟你没什么好说的。$a",
+        	"Marlon_y2": "我跟你没什么可说的。$a"
+          	}
+       	},
+
+	// FLOWER FESTIVAL
+		{
+        "Action": "EditData",
+        "Target": "Data/Festivals/spring24",
+        "When": {
+        	"Hearts:Marlon": "2, 3"
+			},
+        "Entries": {
+        	"Marlon": "过去跳舞是有意义的。但这都是无稽之谈，没有什么真实的依据。",
+        	"Marlon_y2": "过去跳舞是有意义的。但这都是无稽之谈，没有什么真实的依据。"
+          	}
+       	},
+       	
+		{
+        "Action": "EditData",
+        "Target": "Data/Festivals/spring24",
+        "When": {
+        	"Hearts:Marlon": "4, 5"
+			},
+        "Entries": {
+        	"Marlon": "是的，我知道舞步。很久以前就学会了，那时你爷爷还没来这一带呢。#$b#但这并不意味着我喜欢它。我的膝盖现在疼得要命。",
+        	"Marlon_y2": "是的，我知道舞步。很久以前就学会了，那时你爷爷还没来这一带呢。#$b#但这并不意味着我喜欢它。我的膝盖现在疼得要命。"
+          	}
+       	},
+       	
+		{
+        "Action": "EditData",
+        "Target": "Data/Festivals/spring24",
+        "When": {
+        	"Hearts:Marlon": "6, 7, 8"
+			},
+        "Entries": {
+        	"Marlon": "我更喜欢华尔兹。不仅仅是因为上下摆动会对我的坏腿造成伤害。#$b#男人总得有点尊严。",
+        	"Marlon_y2": "我更喜欢华尔兹。不仅仅是因为上下摆动会对我的坏腿造成伤害。#$b#男人总得有点尊严。"
+          	}
+       	},
+       	
+		{
+        "Action": "EditData",
+        "Target": "Data/Festivals/spring24",
+        "When": {
+        	"Relationship:Marlon": "Dating"
+			},
+        "Entries": {
+        	"Marlon": "春天让我感觉更年轻了。蜜蜂在嗡嗡叫，花儿在盛开，蛋在孵化。让一个老家伙觉得自己又年轻了。#$b#或者也许只是因为你的原因。$l",
+        	"Marlon_y2": "春天让我感觉更年轻了。蜜蜂在嗡嗡叫，花儿在盛开，蛋在孵化。让一个老家伙觉得自己又年轻了。#$b#或者也许只是因为你的原因。$l"
+          	}
+       	},
+       	
+		{
+        "Action": "EditData",
+        "Target": "Data/Festivals/spring24",
+        "When": {
+        	"Relationship:Marlon": "Married"
+			},
+        "Entries": {
+        	"Marlon": "我摘了这朵花给你。它戴在你的头发上看起来会很甜美。#$b#我们跳支舞吧，亲爱的?$l",
+        	"Marlon_y2": "我摘了这朵花给你。它戴在你的头发上看起来会很甜美。#$b#我们跳支舞吧，亲爱的?$l"
+        	}
+       	},
+		
+		{
+        "Action": "EditData",
+        "Target": "Data/Festivals/spring24",
+      	"When": {
+        	"Relationship:Marlon": "Divorced"
+			},
+        "Entries": {
+        	"Marlon": "想都别想邀请我跳舞。$a",
+        	"Marlon_y2": "想都别想邀请我跳舞。$a"
+          	}
+       	},
+
+	// SUMMER LUAU
+		{
+        "Action": "EditData",
+        "Target": "Data/Festivals/summer11",
+        "When": {
+        	"Hearts:Marlon": "2, 3"
+			},
+        "Entries": {
+        	"Marlon": "你知道那汤里放了什么吗?#$b#我也不知道。但如果我是你，我会离得远远的。",
+        	"Marlon_y2": "你知道那汤里放了什么吗?#$b#我也不知道。但如果我是你，我会离得远远的。"
+          	}
+       	},
+		
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/summer11",
+          	"When": {
+           		 "Hearts:Marlon": "4, 5"
+			},
+          	"Entries": {
+             		"Marlon": "即使是在海滩上，夏天的太阳也是炙热的。这周的任何一天，我都愿意去矿山。#$b#更不用说这些人了。啊。$a",
+        	"Marlon_y2": "即使是在海滩上，夏天的太阳也是炙热的。这周的任何一天，我都愿意去矿山。#$b#更不用说这些人了。啊。$a"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/summer11",
+          	"When": {
+           		 "Hearts:Marlon": "6, 7, 8"
+			},
+          	"Entries": {
+             		"Marlon": "@。在这乱糟糟的地方跟一个老家伙做伴?#$b#没有必要。你去玩吧。我会在这里，这里凉快一点，还很安静。",
+        	"Marlon_y2": "@。在这乱糟糟的地方跟一个老家伙做伴?#$b#没有必要。你去玩吧。我会在这里，这里凉快一点，还很安静。"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/summer11",
+          	"When": {
+           		 "Relationship:Marlon": "Dating"
+			},
+          	"Entries": {
+             		"Marlon": "@。#$b#你在夏日的阳光下看起来很可爱。别人出汗的时候，你却在发光。$l",
+        	"Marlon_y2": "@。#$b#你在夏日的阳光下看起来很可爱。别人出汗的时候，你却在发光。$l"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/summer11",
+          	"When": {
+           		 "Relationship:Marlon": "Married"
+			},
+          	"Entries": {
+             		"Marlon": "也许等这一切都过去了，我们可以一起去海里泡个澡。冷却一下。#$e#或者去享受一下。$l",
+        	"Marlon_y2": "也许等这一切都过去了，我们可以一起去海里泡个澡。冷却一下。#$e#或者去享受一下。$l"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/summer11",
+          	"When": {
+           		 "Relationship:Marlon": "Divorced"
+			},
+          	"Entries": {
+             	"Marlon": "把你的脸从我视野里挪开。$a",
+        		"Marlon_y2": "把你的脸从我视野里挪开。$a"
+          		}
+       		},
+
+	// MOONLIGHT JELLIES
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/summer28",
+          	"Entries": {
+             	"Marlon": "睁大眼睛{{kid_or_nothing}}.",
+        		"Marlon_y2": "睁大眼睛{{kid_or_nothing}}."
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/summer28",
+          	"When": {
+           		 "Hearts:Marlon": "2, 3"
+			},
+          	"Entries": {
+             	"Marlon": "我见过在黑暗中发光的怪物。这可不是什么好兆头，但我宁愿选他们，也不选那些每天都不吃的。",
+        		"Marlon_y2": "我见过在黑暗中发光的怪物。这可不是什么好兆头，但我宁愿选他们，也不选那些每天都不吃的。"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/summer28",
+          	"When": {
+           		 "Hearts:Marlon": "4, 5"
+			},
+          	"Entries": {
+             	"Marlon": "拉斯莫迪斯能告诉你的比所有村民加起来还多。#$b#如果你开明一点的话，他值得谈一谈。",
+        		"Marlon_y2": "拉斯莫迪斯能告诉你的比所有村民加起来还多。#$b#如果你开明一点的话，他值得谈一谈。"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/summer28",
+          	"When": {
+           		 "Hearts:Marlon": "6, 7, 8"
+			},
+          	"Entries": {
+             	"Marlon": "我见过太多黑暗的东西从深处爬出来，所以不能靠近。如果你不介意的话，我会一直待这儿。#$e#我建议你也这么做。",
+        		"Marlon_y2": "我见过太多黑暗的东西从深处爬出来，所以不能靠近。如果你不介意的话，我会一直待这儿。#$e#我建议你也这么做。"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/summer28",
+          	"When": {
+           		 "Relationship:Marlon": "Dating"
+			},
+          	"Entries": {
+             	"Marlon": "我曾经以为这是一种可怕的景象，所有的东西都被海水的蓝色照亮了。#$b#但是你被照到蓝色的时候看起来很迷人。$l",
+        		"Marlon_y2": "我曾经以为这是一种可怕的景象，所有的东西都被海水的蓝色照亮了。#$b#但是你被照到蓝色的时候看起来很迷人。$l"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/summer28",
+          	"When": {
+           		 "Relationship:Marlon": "Married"
+			},
+          	"Entries": {
+             	"Marlon": "站近点，@。空气中有一股寒意。#$b#我会给你保暖的。$l#$e#但回来时我需要你的肩膀。天气使我的膝盖疼痛了。",
+        		"Marlon_y2": "站近点，@。空气中有一股寒意。#$b#我会给你保暖的。$l#$e#但回来时我需要你的肩膀。天气使我的膝盖疼痛了。"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/summer28",
+          	"When": {
+           		 "Relationship:Marlon": "Divorced"
+			},
+          	"Entries": {
+             	"Marlon": "嗯。$a",
+        		"Marlon_y2": "嗯。$a"
+          		}
+       		},
+
+	// STARDEW VALLEY FAIR
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/fall16",
+          	"When": {
+           		 "Hearts:Marlon": "2, 3"
+			},
+          	"Entries": {
+             	"Marlon": "我看上了克林特收藏的一把好刀。#$b#要花一整年的时间才能还清。",
+        		"Marlon_y2": "我看上了克林特收藏的一把好刀。#$b#要花一整年的时间才能还清。"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/fall16",
+          	"When": {
+           		 "Hearts:Marlon": "4, 5"
+			},
+          	"Entries": {
+             	"Marlon": "你的显示屏都设置好了吗，@?#$b#很好。来看看这把刀。也许你能说服克林特从价签上减点钱。",
+        		"Marlon_y2": "你的显示屏都设置好了吗，@?#$b#很好。来看看这把刀。也许你能说服克林特从价签上减点钱。"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/fall16",
+          	"When": {
+           		 "Hearts:Marlon": "6, 7, 8"
+			},
+          	"Entries": {
+             	"Marlon": "人太多了。#$b#如果我对镇上的人大吼大叫，他们通常就不会打扰我。不过，这些该死的游客还没有足够的判断力。$a",
+        		"Marlon_y2": "人太多了。#$b#如果我对镇上的人大吼大叫，他们通常就不会打扰我。不过，这些该死的游客还没有足够的判断力。$a"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/fall16",
+          	"When": {
+           		 "Relationship:Marlon": "Dating"
+			},
+          	"Entries": {
+             	"Marlon": "@。看起来很可爱，像往常一样。$l#$e#今年准备好展示了吗?你肯定能把这些村民打得落花有花。",
+        		"Marlon_y2": "@。看起来很可爱，像往常一样。$l#$e#今年准备好展示了吗?你肯定能把这些村民打得落花有花。"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/fall16",
+          	"When": {
+           		 "Relationship:Marlon": "Married"
+			},
+          	"Entries": {
+             	"Marlon": "@。我只是在找你。#$b#嗯。#$b#我们可以在预算里放一把新剑，对吧?#$e#你说我永远不会用上是什么意思?人是有梦想的，不是吗?",
+        		"Marlon_y2": "@。我只是在找你。#$b#嗯。#$b#我们可以在预算里放一把新剑，对吧?#$e#你说我永远不会用上是什么意思?人是有梦想的，不是吗?"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/fall16",
+          	"When": {
+           		 "Relationship:Marlon": "Divorced"
+			},
+          	"Entries": {
+             	"Marlon": "你想对我说什么吗?$a",
+        		"Marlon_y2": "你想对我说什么吗?$a"
+          		}
+       		},
+
+	// SPIRIT'S EVE
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/fall27",
+          	"When": {
+           		 "Hearts:Marlon": "2, 3"
+			},
+          	"Entries": {
+             	"Marlon": "你以前亲眼见过这种东西吗，{{kid_or_nothing}}?#$b#只要你在矿井里挖得够深，你就会找到它们。记住我的话。",
+        		"Marlon_y2": "你以前亲眼见过这种东西吗，{{kid_or_nothing}}?#$b#只要你在矿井里挖得够深，你就会找到它们。记住我的话。"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/fall27",
+          	"When": {
+           		 "Hearts:Marlon": "4, 5"
+			},
+          	"Entries": {
+             	"Marlon": "今年的骷髅是充满活力的。我不担心你，但你得看好那些镇上的孩子。#$b#我可不想有手指被咬掉了。",
+        		"Marlon_y2": "今年的骷髅是充满活力的。我不担心你，但你得看好那些镇上的孩子。#$b#我可不想有手指被咬掉了。"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/fall27",
+          	"When": {
+           		 "Hearts:Marlon": "6, 7, 8"
+			},
+          	"Entries": {
+             	"Marlon": "该死的傻孩子以为这只是个恶作剧。“他们是怎么移动的?”，哦。$a#$b#早就告诉过你了。他们根本不知道自己脚下有什么。$a",
+        		"Marlon_y2": "该死的傻孩子以为这只是个恶作剧。“他们是怎么移动的?”，哦。$a#$b#早就告诉过你了。他们根本不知道自己脚下有什么。$a"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/fall27",
+          	"When": {
+           		 "Relationship:Marlon": "Dating"
+			},
+          	"Entries": {
+             	"Marlon": "对未知的恐惧会让你所有的感官都紧张不安。每年的这个时候，空气都很冷。#$b#这和让我们潜入矿井寻找冒险的感觉是一样的。危险。黑暗。兴奋。#$e#和我看着你的感觉没有什么不同。$l",
+        		"Marlon_y2": "对未知的恐惧会让你所有的感官都紧张不安。每年的这个时候，空气都很冷。#$b#这和让我们潜入矿井寻找冒险的感觉是一样的。危险。黑暗。兴奋。#$e#和我看着你的感觉没有什么不同。$l"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/fall27",
+          	"When": {
+           		 "Relationship:Marlon": "Married"
+			},
+          	"Entries": {
+             	"Marlon": "这个节日充满了未知的兴奋。#$b#也许这就是你在我身边时我的感觉。$l",
+        		"Marlon_y2": "这个节日充满了未知的兴奋。#$b#也许这就是你在我身边时我的感觉。$l"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/fall27",
+          	"When": {
+           		 "Relationship:Marlon": "Divorced"
+			},
+          	"Entries": {
+             	"Marlon": "你想看一些漂亮的东西吗?把你的头放在栅栏中间。$a",
+        		"Marlon_y2": "你想看一些漂亮的东西吗?把你的头放在栅栏中间。$a"
+          		}
+       		},
+
+	// ICE FESTIVAL
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/winter8",
+          	"Entries": {
+             	"Marlon": "外面太冷了。你应该向吉尔学习，待在火炉边。",
+        		"Marlon_y2": "外面太冷了。你应该向吉尔学习，待在火炉边。"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/winter8",
+          	"When": {
+           		 "Hearts:Marlon": "2, 3"
+			},
+          	"Entries": {
+             	"Marlon": "鱼。呸呸呸。留意那片森林{{kid_or_nothing}}. 你永远不知道会有什么东西跑出来。",
+        		"Marlon_y2": "鱼。呸呸呸。留意那片森林{{kid_or_nothing}}. 你永远不知道会有什么东西跑出来。"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/winter8",
+          	"When": {
+           		 "Hearts:Marlon": "4, 5"
+			},
+          	"Entries": {
+             	"Marlon": "我有一次掉进了结冰的湖里，差点失去了双脚。#$b#如果你不介意的话，我就呆在这里了。",
+        		"Marlon_y2": "我有一次掉进了结冰的湖里，差点失去了双脚。#$b#如果你不介意的话，我就呆在这里了。"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/winter8",
+          	"When": {
+           		 "Hearts:Marlon": "6, 7, 8"
+			},
+          	"Entries": {
+             	"Marlon": "今天去钓鱼吗，@?#$b#很好。等你赢了，一切很快就会结束，我就可以回到温暖的地方。",
+        		"Marlon_y2": "今天去钓鱼吗，@?#$b#很好。等你赢了，一切很快就会结束，我就可以回到温暖的地方。"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/winter8",
+          	"When": {
+           		 "Relationship:Marlon": "Dating"
+			},
+          	"Entries": {
+             	"Marlon": "外面这么冷，你是怎么看起来这么可爱的?$l#$b#你让一切看起来都很自然，亲爱的。$l^你让一切看起来都很自然，亲爱的。$l",
+        		"Marlon_y2": "外面这么冷，你是怎么看起来这么可爱的?$l#$b#你让一切看起来都很自然，亲爱的。$l^你让一切看起来都很自然，亲爱的。$l"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/winter8",
+          	"When": {
+           		 "Relationship:Marlon": "Married"
+			},
+          	"Entries": {
+             	"Marlon": "啊。我不应该在这么冷的地方。我的膝盖每次弯曲都感觉要断了。#$e#我不会怀疑你在钓鱼比赛中打败那些镇民的，对吧?$a",
+        		"Marlon_y2": "啊。我不应该在这么冷的地方。我的膝盖每次弯曲都感觉要断了。#$e#我不会怀疑你在钓鱼比赛中打败那些镇民的，对吧?$a"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/winter8",
+          	"When": {
+           		 "Relationship:Marlon": "Divorced"
+			},
+          	"Entries": {
+             	"Marlon": "不要站得离河太近。你可能会掉进去的。",
+        		"Marlon_y2": "不要站得离河太近。你可能会掉进去的。"
+          		}
+       		},
+
+	// FEAST OF THE WINTER STAR
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/winter25",
+          	"Entries": {
+             	"Marlon": "冈瑟会喋喋不休地跟你说节日历史的，如果你让他说的话。#$b#学学吉尔，假装睡着了。",
+        		"Marlon_y2": "冈瑟会喋喋不休地跟你说节日历史的，如果你让他说的话。#$b#学学吉尔，假装睡着了。"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/winter25",
+          	"When": {
+           		 "Hearts:Marlon": "2, 3"
+			},
+          	"Entries": {
+             	"Marlon": "我曾经打开过一个装有炸弹的盒子。差点失去一只手。#$b#打开礼物的时候注意手指，这就是我要说的。#$e#特别是如果它们来自吉尔的话。",
+        		"Marlon_y2": "我曾经打开过一个装有炸弹的盒子。差点失去一只手。#$b#打开礼物的时候注意手指，这就是我要说的。#$e#特别是如果它们来自吉尔的话。"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/winter25",
+          	"When": {
+           		 "Hearts:Marlon": "4, 5"
+			},
+          	"Entries": {
+             	"Marlon": "每个人都总是给我羊毛袜子和针织帽。#$b#我看起来像病人吗?我只想再要一把该死的剑。$a",
+        		"Marlon_y2": "每个人都总是给我羊毛袜子和针织帽。#$b#我看起来像病人吗?我只想再要一把该死的剑。$a"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/winter25",
+          	"When": {
+           		 "Hearts:Marlon": "6, 7, 8"
+			},
+          	"Entries": {
+             	"Marlon": "吉尔给我买了一套很好的磨刀石和一些油。#$b#我现在对我藏在他床底下的蛋感到有点内疚了。#$e#但只有一点点。",
+        		"Marlon_y2": "吉尔给我买了一套很好的磨刀石和一些油。#$b#我现在对我藏在他床底下的蛋感到有点内疚了。#$e#但只有一点点。"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/winter25",
+          	"When": {
+           		 "Relationship:Marlon": "Dating"
+			},
+          	"Entries": {
+             	"Marlon": "站近一点，@。#$b#这场感冒让我所有的旧伤疤都痛了起来，但只要你在身边，疼痛就会消失。$l",
+        		"Marlon_y2": "站近一点，@。#$b#这场感冒让我所有的旧伤疤都痛了起来，但只要你在身边，疼痛就会消失。$l"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/winter25",
+          	"When": {
+           		 "Relationship:Marlon": "Married"
+			},
+          	"Entries": {
+             	"Marlon": "我想我们应该感恩什么的。#$b#我每天都在感谢你在这个老家伙身上发现了值得爱的东西。$l",
+        		"Marlon_y2": "我想我们应该感恩什么的。#$b#我每天都在感谢你在这个老家伙身上发现了值得爱的东西。$l"
+          		}
+       		},
+		{
+          	"Action": "EditData",
+          	"Target": "Data/Festivals/winter25",
+          	"When": {
+           		 "Relationship:Marlon": "Divorced"
+			},
+          	"Entries": {
+             	"Marlon": "呸呸呸。骗子。$a",
+        		"Marlon_y2": "呸呸呸。骗子。$a"
+          		}
+       		},
+
+// A N I M A T I O N S
+
+		{
+      	"Action": "EditData",
+      	"Target": "Data/animationDescriptions",
+      	"Entries": {
+			"marlon_spar": "12/24 24 24 24 24 24 25 25 25/12",
+			"marlon_sleep": "23/23/23",
+			}
+		},
+	 
+// F E S T I V A L   L O C A T I O N S
+
+	// Egg Festival
+	{
+    "Action": "EditData",
+    "Target": "Data/Festivals/spring13",
+    "When": {"IsEvenYear": false},
+    "TextOperations": [
+		{    
+		"Operation": "Append",
+		"Target": ["Entries", "Set-Up_additionalCharacters"],
+		"Value": "Marlon 41 57 down",
+		"Delimiter": "/"
+		},
+		{
+		"Operation": "Append",
+		"Target": ["Entries", "MainEvent_additionalCharacters"],
+		"Value": "Marlon 35 62 down",
+		"Delimiter": "/"
+		},
+	]
+	},
+	
+	{
+    "Action": "EditData",
+    "Target": "Data/Festivals/spring13",
+    "When": {"IsEvenYear": true},
+    "TextOperations": [
+		{    
+		"Operation": "Append",
+		"Target": ["Entries", "Set-Up_additionalCharacters"],
+		"Value": "Marlon 17 73 down",
+		"Delimiter": "/"
+		},
+		{
+		"Operation": "Append",
+		"Target": ["Entries", "MainEvent_additionalCharacters"],
+		"Value": "Marlon 23 61 down",
+		"Delimiter": "/"
+		},
+	]
+	},
+	
+	// Flower Festival
+	{
+    "Action": "EditData",
+    "Target": "Data/Festivals/spring24",
+    "When": {"IsEvenYear": false},
+    "TextOperations": [
+		{    
+		"Operation": "Append",
+		"Target": ["Entries", "Set-Up_additionalCharacters"],
+		"Value": "Marlon 22 21 down",
+		"Delimiter": "/"
+		},
+		{
+		"Operation": "Append",
+		"Target": ["Entries", "MainEvent_additionalCharacters"],
+		"Value": "Marlon 21 21 down",
+		"Delimiter": "/"
+		},
+	]
+	},
+	
+	{
+    "Action": "EditData",
+    "Target": "Data/Festivals/spring24",
+    "When": {"IsEvenYear": true},
+    "TextOperations": [
+		{    
+		"Operation": "Append",
+		"Target": ["Entries", "Set-Up_additionalCharacters"],
+		"Value": "Marlon 2 41 down",
+		"Delimiter": "/"
+		},
+		{
+		"Operation": "Append",
+		"Target": ["Entries", "MainEvent_additionalCharacters"],
+		"Value": "Marlon 22 20 down",
+		"Delimiter": "/"
+		},
+	]
+	},
+	
+	// Luau
+	{
+    "Action": "EditData",
+    "Target": "Data/Festivals/summer11",
+    "When": {"IsEvenYear": false},
+    "TextOperations": [
+		{    
+		"Operation": "Append",
+		"Target": ["Entries", "Set-Up_additionalCharacters"],
+		"Value": "Marlon 54 7 down",
+		"Delimiter": "/"
+		},
+		{
+		"Operation": "Append",
+		"Target": ["Entries", "MainEvent_additionalCharacters"],
+		"Value": "Marlon 54 7 down",
+		"Delimiter": "/"
+		},
+	]
+	},
+	
+	{
+    "Action": "EditData",
+    "Target": "Data/Festivals/summer11",
+    "When": {"IsEvenYear": true},
+    "TextOperations": [
+		{    
+		"Operation": "Append",
+		"Target": ["Entries", "Set-Up_additionalCharacters"],
+		"Value": "Marlon 53 7 down",
+		"Delimiter": "/"
+		},
+		{
+		"Operation": "Append",
+		"Target": ["Entries", "MainEvent_additionalCharacters"],
+		"Value": "Marlon 20 4 down",
+		"Delimiter": "/"
+		},
+	]
+	},
+
+	//Moonlight Jellies
+	{ 
+    "Action": "EditData",
+    "Target": "Data/Festivals/summer28",
+    "When": {"IsEvenYear": false},
+    "TextOperations": [
+		{    
+		"Operation": "Append",
+		"Target": ["Entries", "Set-Up_additionalCharacters"],
+		"Value": "Marlon 90 4 down",
+		"Delimiter": "/"
+		},
+		{
+		"Operation": "Append",
+		"Target": ["Entries", "MainEvent_additionalCharacters"],
+		"Value": "Marlon 90 4 down",
+		"Delimiter": "/"
+		},
+	]
+	},
+	
+	{ 
+    "Action": "EditData",
+    "Target": "Data/Festivals/summer28",
+    "When": {"IsEvenYear": true},
+    "TextOperations": [
+		{    
+		"Operation": "Append",
+		"Target": ["Entries", "Set-Up_additionalCharacters"],
+		"Value": "Marlon 70 5 down",
+		"Delimiter": "/"
+		},
+		{
+		"Operation": "Append",
+		"Target": ["Entries", "MainEvent_additionalCharacters"],
+		"Value": "Marlon 70 5 down",
+		"Delimiter": "/"
+		},
+	]
+	},
+	
+	//Stardew Valley Fair
+	{ 
+    "Action": "EditData",
+    "Target": "Data/Festivals/fall16",
+    "When": {"IsEvenYear": false},
+    "TextOperations": [
+		{    
+		"Operation": "Append",
+		"Target": ["Entries", "Set-Up_additionalCharacters"],
+		"Value": "Marlon 35 77 down",
+		"Delimiter": "/"
+		},
+	]
+	},
+	
+	{ 
+    "Action": "EditData",
+    "Target": "Data/Festivals/fall16",
+    "When": {"IsEvenYear": true},
+    "TextOperations": [
+		{    
+		"Operation": "Append",
+		"Target": ["Entries", "Set-Up_additionalCharacters"],
+		"Value": "Marlon 20 77 down",
+		"Delimiter": "/"
+		},
+	]
+	},
+	
+	//Spirit's Eve
+	{ 
+    "Action": "EditData",
+    "Target": "Data/Festivals/fall27",
+    "When": {"IsEvenYear": false},
+    "TextOperations": [
+		{    
+		"Operation": "Append",
+		"Target": ["Entries", "Set-Up_additionalCharacters"],
+		"Value": "Marlon 28 57 down",
+		"Delimiter": "/"
+		},
+	]
+	},
+	
+	{ 
+    "Action": "EditData",
+    "Target": "Data/Festivals/fall27",
+    "When": {"IsEvenYear": true},
+    "TextOperations": [
+		{    
+		"Operation": "Append",
+		"Target": ["Entries", "Set-Up_additionalCharacters"],
+		"Value": "Marlon 22 62 down",
+		"Delimiter": "/"
+		},
+	]
+	},
+	
+	//Ice Festival
+	{
+    "Action": "EditData",
+    "Target": "Data/Festivals/winter8",
+    "When": {"IsEvenYear": false},
+    "TextOperations": [
+		{    
+		"Operation": "Append",
+		"Target": ["Entries", "Set-Up_additionalCharacters"],
+		"Value": "Marlon 57 53 down",
+		"Delimiter": "/"
+		},
+		{
+		"Operation": "Append",
+		"Target": ["Entries", "MainEvent_additionalCharacters"],
+		"Value": "Marlon 70 42 up",
+		"Delimiter": "/"
+		},
+	]
+	},
+	
+	{
+    "Action": "EditData",
+    "Target": "Data/Festivals/winter8",
+    "When": {"IsEvenYear": true},
+    "TextOperations": [
+		{    
+		"Operation": "Append",
+		"Target": ["Entries", "Set-Up_additionalCharacters"],
+		"Value": "Marlon 44 15 down",
+		"Delimiter": "/"
+		},
+		{
+		"Operation": "Append",
+		"Target": ["Entries", "MainEvent_additionalCharacters"],
+		"Value": "Marlon 75 50 up",
+		"Delimiter": "/"
+		},
+	]
+	},
+	
+	//Feast of the Winter Star
+	{
+    "Action": "EditData",
+    "Target": "Data/Festivals/winter25",
+    "When": {"IsEvenYear": false},
+    "TextOperations": [
+		{    
+		"Operation": "Append",
+		"Target": ["Entries", "Set-Up_additionalCharacters"],
+		"Value": "Marlon 37 56 down",
+		"Delimiter": "/"
+		},
+	]
+	},
+	
+	{
+    "Action": "EditData",
+    "Target": "Data/Festivals/winter25",
+    "When": {"IsEvenYear": true},
+    "TextOperations": [
+		{    
+		"Operation": "Append",
+		"Target": ["Entries", "Set-Up_additionalCharacters"],
+		"Value": "Marlon 34 56 down",
+		"Delimiter": "/"
+		},
+	]
+	},
+
+
+]
+}

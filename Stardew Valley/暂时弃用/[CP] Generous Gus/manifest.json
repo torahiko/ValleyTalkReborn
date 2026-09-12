@@ -1,0 +1,11 @@
+{
+    "Name": "Generous Gus",
+    "Author": "Kantrip",
+    "Version": "1.0.3",
+    "Description": "Gus will pick you up when you're feeling down.",
+    "UniqueID": "Kantrip.GenerousGus",
+    "ContentPackFor": {
+        "UniqueID": "Pathoschild.ContentPatcher"
+    },
+    "UpdateKeys": ["Nexus:32443"],
+}

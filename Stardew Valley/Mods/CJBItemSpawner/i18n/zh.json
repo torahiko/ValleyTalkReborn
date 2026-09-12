@@ -1,0 +1,47 @@
+﻿{
+    /*********
+    ** Sort button
+    *********/
+    "sort.by-name": "按名称排序",
+    "sort.by-price": "出售价格",
+    "sort.by-type": "按类型排序",
+    "sort.by-id": "按ID排序",
+
+
+    /*********
+    ** Category dropdown
+    *********/
+    "filter.all": "全部",
+    "filter.artisan-and-cooking": "工匠物品与菜肴",
+    "filter.crafting.products": "制造：各种制品",
+    "filter.crafting.resources": "制造：原材料",
+    "filter.decor.furniture": "装饰：家具",
+    "filter.decor.other": "装饰：其他",
+    "filter.equipment-boots": "服饰：鞋",
+    "filter.equipment-clothes": "服饰：衣物",
+    "filter.equipment-hats": "服饰：帽子",
+    "filter.equipment-rings": "装备：戒指",
+    "filter.equipment-tools": "装备：工具",
+    "filter.equipment-weapons": "装备：武器",
+    "filter.farm-animal-drops": "农场：动物掉落物",
+    "filter.farm-crops": "农场：作物",
+    "filter.farm-seeds": "农场：种子",
+    "filter.fish": "鱼类",
+    "filter.minerals-and-artifacts": "矿石与古物",
+    "filter.miscellaneous": "杂项",
+
+
+    /*********
+    ** Generic Mod Config Menu UI
+    *********/
+    "config.title.controls": "控制",
+    "config.show-menu-key.name": "打开菜单",
+    "config.show-menu-key.desc": "开启菜单的按键（请确保当前没有其他打开的菜单）。",
+
+    "config.title.options": "选项",
+    "config.apply-trash-can-upgrade.name": "应用垃圾桶升级",
+    "config.apply-trash-can-upgrade.desc": "当您升级垃圾桶以返还一部分被丢弃物品的价值时，该升级是否也适用于物品生成器菜单。",
+
+    "config.title.hide-categories": "隐藏类别",
+    "config.hide-category.desc": "是否在菜单界面中隐藏 “{{name}}” 类别。如果隐藏，则无法通过生成菜单访问该类别中的项目。"
+}

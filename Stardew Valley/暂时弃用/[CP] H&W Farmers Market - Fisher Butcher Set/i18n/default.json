@@ -1,0 +1,121 @@
+{
+  "FM_FisherButcher_FlounderBasket": "Flounder Basket",
+
+  "FM_FisherButcher_HalibutBasket": "Crate of Basket",
+  
+  "FM_FisherButcher_ShrimpBasket": "Shrimp Basket",
+
+  "FM_FisherButcher_HerringBasket": "Herring Basket",
+
+  "FM_FisherButcher_SalmonBasket": "Salmon Basket",
+
+  "FM_FisherButcher_PikeBasket": "Pike Basket",
+
+  "FM_FisherButcher_EelBasket": "Eel Basket",
+
+  "FM_FisherButcher_ChubBasket": "Chub Basket",
+
+  "FM_FisherButcher_OctopusBasket": "Octopus Basket",
+
+  "FM_FisherButcher_SturgeonBasket": "Sturgeon Basket",
+
+  "FM_FisherButcher_MixFishBasket": "Mixed Fish Basket",
+
+  "FM_FisherButcher_LobsterBasket": "Lobster Basket",
+
+  "FM_FisherButcher_SmPeriwinkleBasket": "Small Periwinkle Basket",
+
+  "FM_FisherButcher_SmMusselBasket": "Small Mussel Basket",
+
+  "FM_FisherButcher_SmAlgaeBasket": "Small Algae Basket",
+
+  "FM_FisherButcher_SmRoeBasket": "Small Roe Basket",
+
+  "FM_FisherButcher_SmClamBasket": "Small Clam Basket",
+
+  "FM_FisherButcher_SmOysterBasket": "Small Oyster Basket",
+
+  "FM_FisherButcher_SmOysterBasket2": "Small Oyster Basket",
+
+  "FM_FisherButcher_SmSeaweedBasket": "Small Seaweed Basket",
+
+  "FM_FisherButcher_SmAnchovyBasket": "Small Anchovy Basket",
+
+  "FM_FisherButcher_SmSardineBasket": "Small Sardine Basket",
+
+  "FM_FisherButcher_SmBassBasket": "Small Bass Basket",
+
+  "FM_FisherButcher_SmSnapperBasket": "Small Snapper Basket",
+
+  "FM_FisherButcher_SmShrimpBasket": "Small Shrimp Basket",
+
+  "FM_FisherButcher_SmSquidBasket": "Small Squid Basket",
+
+  "FM_FisherButcher_SmFlounderBasket": "Small Flounder Basket",
+
+  "FM_FisherButcher_SmUrchinBasket": "Small Urchin Basket",
+
+  "FM_FisherButcher_SmCrabBasket": "Small Crab Basket",
+
+  "FM_FisherButcher_ChickenBasket": "Chicken Basket",
+
+  "FM_FisherButcher_ChickenLegBasket": "ChickenLeg Basket",
+
+  "FM_FisherButcher_SteakBasket": "Steak Basket",
+
+  "FM_FisherButcher_MeatBasket": "Meat Basket",
+
+  "FM_FisherButcher_RibsBasket": "Ribs Basket",
+
+  "FM_FisherButcher_PorkBasket": "Pork Basket",
+
+  "FM_FisherButcher_PorkLoinBasket": "Pork Loin Basket",
+
+  "FM_FisherButcher_SmChickenBasket": "Small Chicken Basket",
+
+  "FM_FisherButcher_SmMeatBasket": "Small Meat Basket",
+
+  "FM_FisherButcher_SmBaconBasket": "Small Bacon Basket",
+
+  "FM_FisherButcher_SmHamBasket": "Small Ham Basket",
+
+  "FM_FisherButcher_SquidBarrel": "Squid Barrel",
+
+  "FM_FisherButcher_FishBarrel": "Fish Barrel",
+
+  "FM_FisherButcher_PeriwinkleBarrel": "Periwinkle Barrel",
+
+  "FM_FisherButcher_ClamBarrel": "Clam Barrel",
+
+  "FM_FisherButcher_SmDeliDisplay": "Small Deli Display",
+
+  "FM_FisherButcher_MedDeliDisplay": "Medium Deli Display",
+
+  "FM_FisherButcher_MedFishDisplay": "Medium Fish Display",
+
+  "FM_FisherButcher_MedRoeDisplay": "Medium Roe Display",
+
+
+  "FM_FisherButcher_LgFreshDisplay": "Large Fresh Display",
+ 
+  "FM_FisherButcher_LgFishDisplay": "Large Fish Display",
+ 
+  "FM_FisherButcher_LgPoultryDisplay": "Large Poultry Display",
+ 
+  "FM_FisherButcher_LgMeatDisplay": "Large Butcher Display",
+ 
+
+//CRATES
+
+	"FM_FisherButcher_fish_crate": " Crate",
+	"FM_FisherButcher_fish_crate.description": "A farmer's crate full of .",
+
+//BASKETS
+
+	"FM_FisherButcher_fish_basket": "Basket of ",
+	"FM_FisherButcher_fish_basket.description": "A woven basket full of freshly .",
+
+
+
+}
+  

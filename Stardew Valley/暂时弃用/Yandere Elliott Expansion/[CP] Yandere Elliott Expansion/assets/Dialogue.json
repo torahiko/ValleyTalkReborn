@@ -1,0 +1,365 @@
+{
+"Changes": [
+
+//Special Dialogue
+{
+    "Action": "EditData",
+    "Target": "Characters/Dialogue/Elliott",
+    "Entries": {
+        "Introduction": "{{i18n:Elliott.Introduction}}",
+		"AcceptBirthdayGift_Negative": "{{i18n:Elliott.AcceptBirthdayGift.Negative}}",
+		"AcceptGift_forage_item_beach": "{{i18n:Elliott.AcceptGift.Beach}}",
+		"dating_Elliott": "{{i18n:Elliott.dating.Elliott}}",
+		"married_Elliott": "{{i18n:Elliott.married.Elliott}}",
+        "FlowerDance_Decline": "{{i18n:Elliott.FlowerDance.Decline}}",
+        "breakUp": "{{i18n:Elliott.breakUp}}",
+        "divorced": "{{i18n:Elliott.divorced}}",  
+        "dumped_Guys": "{{i18n:Elliott.dumpedGuys}}",
+        "secondChance_Guys": "{{i18n:Elliott.secondChanceGuys}}",
+	},
+},
+
+//Unique Courtship Dialogue
+{
+    "Action": "EditData",
+    "Target": "Characters/Dialogue/Elliott",
+    "Entries": {
+        "give_flowersA": "{{i18n:Elliott.giveflowersA}}",
+        "give_flowersB": "{{i18n:Elliott.giveflowersB}}",
+        "give_pendant": "{{i18n:Elliott.givependant}}",
+        "stardrop_gift": "{{i18n:Elliott.stardropgift}}",
+		"rejectNPCA": "{{i18n:Elliott.rejectNPC}}",
+		"rejectNPCB": "{{i18n:Elliott.rejectNPC}}",
+        "reject_two_heartA": "{{i18n:Elliott.rejecttwoheart}}",
+		"reject_two_heartB": "{{i18n:Elliott.rejecttwoheart}}",
+		"reject_four_heartA": "{{i18n:Elliott.rejectfourheart}}",
+		"reject_four_heartB": "{{i18n:Elliott.rejectfourheart}}",
+		"refusal_knownA": "{{i18n:Elliott.refusalknown}}",
+		"refusal_knownB": "{{i18n:Elliott.refusalknown}}",
+		"engageA": "{{i18n:Elliott.refusalengage}}",
+		"engageB": "{{i18n:Elliott.refusalengage}}",
+		"marriedA": "{{i18n:Elliott.refusalmarried}}",
+		"marriedB": "{{i18n:Elliott.refusalmarried}}",
+		"refusal_botherA": "{{i18n:Elliott.refusalbother}}",
+		"refusal_botherB": "{{i18n:Elliott.refusalbother}}",
+		"giftquestion_yes": "{{i18n:Elliott.giftquestion.yes}}",
+		"giftquestion_lie": "{{i18n:Elliott.giftquestion.lie}}",
+	},
+    "When": {
+        "HasMod: |contains=misscoriel.UCRFix": true,
+    },
+},
+
+
+//Daily Dialogue
+{
+"Action": "EditData",
+"Target": "Characters/Dialogue/Elliott",
+"Entries": {
+
+        "Mon": "{{i18n:Elliott.Spring.Mon}}",
+        "Mon2": "{{i18n:Elliott.Spring.Mon2}}",
+        "Mon4": "{{i18n:Elliott.Spring.Mon4}}",
+        "Mon6": "{{i18n:Elliott.Spring.Mon6}}",
+        "Mon8": "{{i18n:Elliott.Spring.Mon8}}",
+        "Mon10": "{{i18n:Elliott.Spring.Mon10}}",
+
+        "Tue": "{{i18n:Elliott.Spring.Tue}}",
+        "Tue2": "{{i18n:Elliott.Spring.Tue2}}",
+        "Tue4": "{{i18n:Elliott.Spring.Tue4}}",
+        "Tue6": "{{i18n:Elliott.Spring.Tue6}}",
+        "Tue8": "{{i18n:Elliott.Spring.Tue8}}",
+        "Tue10": "{{i18n:Elliott.Spring.Tue10}}",
+
+        "Wed": "{{i18n:Elliott.Spring.Wed}}",
+        "Wed2":"{{i18n:Elliott.Spring.Wed2}}",
+        "Wed4": "{{i18n:Elliott.Spring.Wed4}}",
+        "Wed6": "{{i18n:Elliott.Spring.Wed6}}",
+        "Wed8": "{{i18n:Elliott.Spring.Wed8}}",
+        "Wed10": "{{i18n:Elliott.Spring.Wed10}}",
+
+        "Thu": "{{i18n:Elliott.Spring.Thu}}",
+        "Thu2": "{{i18n:Elliott.Spring.Thu2}}",
+        "Thu4": "{{i18n:Elliott.Spring.Thu4}}",
+        "Thu6": "{{i18n:Elliott.Spring.Thu6}}",
+        "Thu8": "{{i18n:Elliott.Spring.Thu8}}",
+        "Thu10": "{{i18n:Elliott.Spring.Thu10}}",
+
+        "Fri": "{{i18n:Elliott.Spring.Fri}}",
+		"Fri2": "{{i18n:Elliott.Spring.Fri2}}",
+        "Fri4": "{{i18n:Elliott.Spring.Fri4}}",
+        "Fri6": "{{i18n:Elliott.Spring.Fri6}}",
+        "Fri8": "{{i18n:Elliott.Spring.Fri8}}",
+        "Fri10": "{{i18n:Elliott.Spring.Fri10}}",
+
+        "Sat": "{{i18n:Elliott.Spring.Sat}}",
+        "Sat2": "{{i18n:Elliott.Spring.Sat2}}",
+        "Sat4":"{{i18n:Elliott.Spring.Sat4}}",
+        "Sat6": "{{i18n:Elliott.Spring.Sat6}}",
+        "Sat8": "{{i18n:Elliott.Spring.Sat8}}",
+        "Sat10": "{{i18n:Elliott.Spring.Sat10}}",
+
+        "Sun": "{{i18n:Elliott.Spring.Sun}}",
+        "Sun2": "{{i18n:Elliott.Spring.Sun2}}",
+        "Sun4": "{{i18n:Elliott.Spring.Sun4}}",
+        "Sun6": "{{i18n:Elliott.Spring.Sun6}}",
+        "Sun8": "{{i18n:Elliott.Spring.Sun8}}",
+        "Sun10": "{{i18n:Elliott.Spring.Sun10}}",
+
+        "summer_Mon": "{{i18n:Elliott.Summer.Mon}}",
+        "summer_Mon2": "{{i18n:Elliott.Summer.Mon2}}",
+        "summer_Mon4": "{{i18n:Elliott.Summer.Mon4}}",
+        "summer_Mon6": "{{i18n:Elliott.Summer.Mon6}}",
+        "summer_Mon8": "{{i18n:Elliott.Summer.Mon8}}",
+        "summer_Mon10": "{{i18n:Elliott.Summer.Mon10}}",
+
+        "summer_Tue": "{{i18n:Elliott.Summer.Tue}}",
+        "summer_Tue2": "{{i18n:Elliott.Summer.Tue2}}",
+        "summer_Tue4": "{{i18n:Elliott.Summer.Tue4}}",
+        "summer_Tue6": "{{i18n:Elliott.Summer.Tue6}}",
+        "summer_Tue8": "{{i18n:Elliott.Summer.Tue8}}",
+        "summer_Tue10": "{{i18n:Elliott.Summer.Tue10}}",
+
+        "summer_Wed": "{{i18n:Elliott.Summer.Wed}}",
+        "summer_Wed2":"{{i18n:Elliott.Summer.Wed2}}",
+        "summer_Wed4": "{{i18n:Elliott.Summer.Wed4}}",
+        "summer_Wed6": "{{i18n:Elliott.Summer.Wed6}}",
+		"summer_Wed8": "{{i18n:Elliott.Summer.Wed8}}",
+		"summer_Wed10": "{{i18n:Elliott.Summer.Wed10}}",
+
+        "summer_Thu": "{{i18n:Elliott.Summer.Thu}}",
+        "summer_Thu2": "{{i18n:Elliott.Summer.Thu2}}",
+        "summer_Thu4": "{{i18n:Elliott.Summer.Thu4}}",
+        "summer_Thu6": "{{i18n:Elliott.Summer.Thu6}}",
+		"summer_Thu8": "{{i18n:Elliott.Summer.Thu8}}",
+		"summer_Thu10": "{{i18n:Elliott.Summer.Thu10}}",
+
+        "summer_Fri": "{{i18n:Elliott.Summer.Fri}}",
+		"summer_Fri2": "{{i18n:Elliott.Summer.Fri2}}",
+        "summer_Fri4": "{{i18n:Elliott.Summer.Fri4}}",
+        "summer_Fri6": "{{i18n:Elliott.Summer.Fri6}}",
+        "summer_Fri8": "{{i18n:Elliott.Summer.Fri8}}",
+		"summer_Fri10": "{{i18n:Elliott.Summer.Fri10}}",
+
+        "summer_Sat":"{{i18n:Elliott.Summer.Sat}}",
+        "summer_Sat2":"{{i18n:Elliott.Summer.Sat2}}",
+        "summer_Sat4": "{{i18n:Elliott.Summer.Sat4}}",
+        "summer_Sat6": "{{i18n:Elliott.Summer.Sat6}}",
+		"summer_Sat8": "{{i18n:Elliott.Summer.Sat8}}",
+		"summer_Sat10": "{{i18n:Elliott.Summer.Sat10}}",
+
+        "summer_Sun": "{{i18n:Elliott.Summer.Sun}}",
+        "summer_Sun2": "{{i18n:Elliott.Summer.Sun2}}",
+		"summer_Sun4": "{{i18n:Elliott.Summer.Sun4}}",
+		"summer_Sun6": "{{i18n:Elliott.Summer.Sun6}}",
+		"summer_Sun8": "{{i18n:Elliott.Summer.Sun8}}",
+        "summer_Sun10": "{{i18n:Elliott.Summer.Sun10}}",
+
+        "fall_Mon": "{{i18n:Elliott.Fall.Mon}}",
+        "fall_Mon2": "{{i18n:Elliott.Fall.Mon2}}",
+        "fall_Mon4": "{{i18n:Elliott.Fall.Mon4}}",
+		"fall_Mon6": "{{i18n:Elliott.Fall.Mon6}}",
+		"fall_Mon8": "{{i18n:Elliott.Fall.Mon8}}",
+		"fall_Mon10": "{{i18n:Elliott.Fall.Mon10}}",
+
+        "fall_Tue": "{{i18n:Elliott.Fall.Tue}}",
+        "fall_Tue2": "{{i18n:Elliott.Fall.Tue2}}",
+		"fall_Tue4": "{{i18n:Elliott.Fall.Tue4}}",
+		"fall_Tue6": "{{i18n:Elliott.Fall.Tue6}}",
+		"fall_Tue8": "{{i18n:Elliott.Fall.Tue8}}",
+		"fall_Tue10": "{{i18n:Elliott.Fall.Tue10}}",
+
+        "fall_Wed": "{{i18n:Elliott.Fall.Wed}}",
+		"fall_Wed2": "{{i18n:Elliott.Fall.Wed2}}",
+        "fall_Wed4": "{{i18n:Elliott.Fall.Wed4}}",
+        "fall_Wed6": "{{i18n:Elliott.Fall.Wed6}}",
+		"fall_Wed8": "{{i18n:Elliott.Fall.Wed8}}",
+		"fall_Wed10": "{{i18n:Elliott.Fall.Wed10}}",
+
+        "fall_Thu": "{{i18n:Elliott.Fall.Thu}}",
+        "fall_Thu2": "{{i18n:Elliott.Fall.Thu2}}",
+        "fall_Thu4": "{{i18n:Elliott.Fall.Thu4}}",
+		"fall_Thu6": "{{i18n:Elliott.Fall.Thu6}}",
+		"fall_Thu8": "{{i18n:Elliott.Fall.Thu8}}",
+		"fall_Thu10": "{{i18n:Elliott.Fall.Thu10}}",
+
+        "fall_Fri": "{{i18n:Elliott.Fall.Fri}}",
+        "fall_Fri2": "{{i18n:Elliott.Fall.Fri2}}",
+        "fall_Fri4": "{{i18n:Elliott.Fall.Fri4}}",
+        "fall_Fri6": "{{i18n:Elliott.Fall.Fri6}}",
+            "fall_Fri6_01_old": "{{i18n:Elliott.Fall.Fri6.00}}",
+            "fall_Fri6_01_01": "{{i18n:Elliott.Fall.Fri6.01}}",
+            "fall_Fri6_01_02": "{{i18n:Elliott.Fall.Fri6.02}}",
+			"fall_Fri6_01_03": "{{i18n:Elliott.Fall.Fri6.03}}",
+		"fall_Fri8": "{{i18n:Elliott.Fall.Fri8}}",
+		"fall_Fri10": "{{i18n:Elliott.Fall.Fri10}}",
+
+        "fall_Sat": "{{i18n:Elliott.Fall.Sat}}",
+        "fall_Sat2": "{{i18n:Elliott.Fall.Sat2}}",
+        "fall_Sat4": "{{i18n:Elliott.Fall.Sat4}}",
+		"fall_Sat6": "{{i18n:Elliott.Fall.Sat6}}",
+		"fall_Sat8": "{{i18n:Elliott.Fall.Sat8}}",
+		"fall_Sat10": "{{i18n:Elliott.Fall.Sat10}}",
+
+        "fall_Sun": "{{i18n:Elliott.Fall.Sun}}",
+        "fall_Sun2": "{{i18n:Elliott.Fall.Sun2}}",
+		"fall_Sun4": "{{i18n:Elliott.Fall.Sun4}}",
+		"fall_Sun6": "{{i18n:Elliott.Fall.Sun6}}",
+		"fall_Sun8": "{{i18n:Elliott.Fall.Sun8}}",
+		"fall_Sun10": "{{i18n:Elliott.Fall.Sun10}}",
+
+        "winter_Mon": "{{i18n:Elliott.Winter.Mon}}",
+        "winter_Mon2": "{{i18n:Elliott.Winter.Mon2}}",
+		"winter_Mon4": "{{i18n:Elliott.Winter.Mon4}}",
+		"winter_Mon6": "{{i18n:Elliott.Winter.Mon6}}",
+		"winter_Mon8": "{{i18n:Elliott.Winter.Mon8}}",
+		"winter_Mon10": "{{i18n:Elliott.Winter.Mon10}}",
+
+        "winter_Tue": "{{i18n:Elliott.Winter.Tue}}",
+		"winter_Tue2": "{{i18n:Elliott.Winter.Tue2}}",
+		"winter_Tue4": "{{i18n:Elliott.Winter.Tue4}}",
+        "winter_Tue6": "{{i18n:Elliott.Winter.Tue6}}",
+		"winter_Tue8": "{{i18n:Elliott.Winter.Tue8}}",
+		"winter_Tue10": "{{i18n:Elliott.Winter.Tue10}}",
+
+        "winter_Wed": "{{i18n:Elliott.Winter.Wed}}",
+        "winter_Wed2": "{{i18n:Elliott.Winter.Wed2}}",
+		"winter_Wed4": "{{i18n:Elliott.Winter.Wed4}}",
+		"winter_Wed6": "{{i18n:Elliott.Winter.Wed6}}",
+		"winter_Wed8": "{{i18n:Elliott.Winter.Wed8}}",
+		"winter_Wed10": "{{i18n:Elliott.Winter.Wed10}}",
+
+        "winter_Thu": "{{i18n:Elliott.Winter.Thu}}",
+		"winter_Thu2": "{{i18n:Elliott.Winter.Thu2}}",
+		"winter_Thu4": "{{i18n:Elliott.Winter.Thu4}}",
+		"winter_Thu6": "{{i18n:Elliott.Winter.Thu6}}",
+		"winter_Thu8": "{{i18n:Elliott.Winter.Thu8}}",
+        "winter_Thu10": "{{i18n:Elliott.Winter.Thu10}}",
+		
+        "winter_Fri": "{{i18n:Elliott.Winter.Fri}}",
+        "winter_Fri2": "{{i18n:Elliott.Winter.Fri2}}",
+		"winter_Fri4": "{{i18n:Elliott.Winter.Fri4}}",
+		"winter_Fri6": "{{i18n:Elliott.Winter.Fri6}}",
+		"winter_Fri8": "{{i18n:Elliott.Winter.Fri8}}",
+		"winter_Fri10": "{{i18n:Elliott.Winter.Fri10}}",
+
+        "winter_Sat": "{{i18n:Elliott.Winter.Sat}}",
+        "winter_Sat2": "{{i18n:Elliott.Winter.Sat2}}",
+        "winter_Sat4": "{{i18n:Elliott.Winter.Sat4}}",
+		"winter_Sat6": "{{i18n:Elliott.Winter.Sat6}}",
+		"winter_Sat8": "{{i18n:Elliott.Winter.Sat8}}",
+		"winter_Sat10": "{{i18n:Elliott.Winter.Sat10}}",
+		
+        "winter_Sun":"{{i18n:Elliott.Winter.Sun}}",
+        "winter_Sun2":"{{i18n:Elliott.Winter.Sun2}}",
+        "winter_Sun4":  "{{i18n:Elliott.Winter.Sun4}}",
+		"winter_Sun6": "{{i18n:Elliott.Winter.Sun6}}",
+		"winter_Sun8": "{{i18n:Elliott.Winter.Sun8}}",
+		"winter_Sun10": "{{i18n:Elliott.Winter.Sun10}}",
+
+        "fall_5": "{{i18n:Elliott.Fall.5}}",
+        "fall10_5_2": "{{i18n:Elliott.Fall10.5.2}}",
+        "winter_28": "{{i18n:Elliott.Winter.28}}",
+	}
+},
+
+
+//Villager's Dialogue
+{
+    "Action": "EditData",
+    "Target": "Characters/Dialogue/Abigail",
+    "When": { "Relationship:Abigail": "Dating", },
+    "Entries": {
+        "summer_16": "{{i18n:Abigail.Summer.16}}",
+        "fall_16": "{{i18n:Abigail.Fall.16}}",
+        "winter_4": "{{i18n:Abigail.Winter.14}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Characters/Dialogue/Alex",
+    "When": { "Relationship:Alex": "Dating", },
+    "Entries": {
+        "summer_5": "{{i18n:Alex.Summer.5}}",
+        "summer_23": "{{i18n:Alex.Summer.24}}",
+        "summer_27": "{{i18n:Alex.Summer.27}}",
+        "fall_8": "{{i18n:Alex.Fall.8}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Characters/Dialogue/Haley",
+    "When": { "Hearts:Haley": "0, 1, 2, 3, 4", },
+    "Entries": {
+        "summer_6": "{{i18n:Haley.Summer.6}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Characters/Dialogue/Leah",
+    "When": { "Hearts:Leah": "0, 1, 2, 3, 4, 5, 6, 7", },
+    "Entries": {
+        "spring_15": "{{i18n:Leah.Spring.15}}",
+        "spring_23": "{{i18n:Leah.Spring.23}}",
+        "summer_7": "{{i18n:Leah.Summer.7}}",
+        "fall_15": "{{i18n:Leah.Fall.15}}",
+            "fall_15_01_old": "{{i18n:Leah.Fall.15.00}}",
+            "fall_15_01_01": "{{i18n:Leah.Fall.15.01}}",
+            "fall_15_01_02": "{{i18n:Leah.Fall.15.02}}",
+		"winter_10": "{{i18n:Leah.Winter.10}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Characters/Dialogue/Leah",
+    "When": { "Relationship:Leah": "Dating", },
+    "Entries": {
+        "fall_4": "{{i18n:LeahDating.Fall.4}}",
+        "summer_20": "{{i18n:LeahDating.Summer.20}}",
+        "winter_13": "{{i18n:LeahDating.Winter.13}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Characters/Dialogue/Sam",
+    "When": { "Relationship:Sam": "Dating", },
+    "Entries": {
+        "fall_14": "{{i18n:Sam.Fall.14}}",
+            "fall_14_01_old": "{{i18n:Sam.Fall.14.00}}",
+            "fall_14_01_01": "{{i18n:Sam.Fall.14.01}}",
+            "fall_14_01_02": "{{i18n:Sam.Fall.14.02}}",
+            "fall_14_01_03": "{{i18n:Sam.Fall.14.03}}",
+        "winter_21": "{{i18n:Sam.Winter.21}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Characters/Dialogue/Sebastian",
+    "When": { "Relationship:Sebastian": "Dating", },
+    "Entries": {
+        "summer_16":"{{i18n:Sebastian.Summer.16}}",
+        "fall_22":"{{i18n:Sebastian.Fall.22}}",
+        "winter_10": "{{i18n:Sebastian.Winter.10}}",
+            "winter_10_01_old": "{{i18n:Sebastian.Winter.10.00}}",
+            "winter_10_01_01": "{{i18n:Sebastian.Winter.10.01}}",
+            "winter_10_01_02": "{{i18n:Sebastian.Winter.10.02}}",
+            "winter_10_01_03": "{{i18n:Sebastian.Winter.10.03}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Characters/Dialogue/Shane",
+    "When": { "Relationship:Shane": "Dating", },
+    "Entries": {
+        "summer_5":"{{i18n:Shane.Summer.5}}",
+        "fall_13":"{{i18n:Shane.Fall.13}}",
+            "fall_13_01_old": "{{i18n:Shane.Fall.13.00}}",
+            "fall_13_01_01": "{{i18n:Shane.Fall.13.01}}",
+            "fall_13_01_02": "{{i18n:Shane.Fall.13.02}}",
+            "fall_13_01_03": "{{i18n:Shane.Fall.13.03}}",
+        "winter_15":"{{i18n:Shane.Winter.15}}",
+	}
+},
+
+]
+}

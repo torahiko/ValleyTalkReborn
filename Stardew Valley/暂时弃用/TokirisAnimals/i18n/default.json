@@ -1,0 +1,17 @@
+{
+"RedFox.DisplayName": "Red Fox",
+"RedFox.ShopDisplayName": "Red Fox",
+"RedFox.ShopDescription": "These foxes love to dig! They'll leave things they find for you.",
+
+"RedPanda.DisplayName": "Red Panda",
+"RedPanda.ShopDisplayName": "Red Panda",
+"RedPanda.ShopDescription": "These mischevious critters will dig up 'treasures' for you.",
+
+"Wolf.DisplayName": "Wolf",
+"Wolf.ShopDisplayName": "Wolf",
+"Wolf.ShopDescription": "These wolves will dig up treasure for you.",
+
+"Hippogriff.DisplayName": "Hippogriff",
+"Hippogriff.ShopDisplayName": "Hippogriff",
+"Hippogriff.ShopDescription": "A majestic half-lion, half-eagle."
+}

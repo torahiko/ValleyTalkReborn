@@ -1,0 +1,42 @@
+{
+	"Changes": [
+        {
+            "LogName": "Grass",
+            "Action": "EditImage",
+            "Target": "TerrainFeatures/grass",
+            "FromFile": "assets/{{Target}}/{{TargetWithoutPath}}{{GrassHeight}}.png",
+            "PatchMode": "Replace"
+        },
+        {
+            "LogName": "Grass Flower",
+            "Action": "EditImage",
+            "Target": "TerrainFeatures/grass",
+            "FromFile": "assets/{{Target}}/{{TargetWithoutPath}}{{GrassHeight}}{{GrassFlower}}.png",
+            "PatchMode": "Replace",
+            "ToArea": { "X": 0, "Y": 0, "Width": 66, "Height": 60 },
+            "When": { "Grass": "flowering" }
+        },
+        {
+            "LogName": "Grass Greener Blue",
+            "Action": "EditImage",
+            "Target": "TerrainFeatures/grass",
+            "FromFile": "assets/{{Target}}/{{TargetWithoutPath}}{{GrassHeight}}{{GrassBlue}}.png",
+            "PatchMode": "Replace",
+            "ToArea": { "X": 0, "Y": 160, "Width": 66, "Height": 80 },
+            "When": { "Grass": "greenerblue" }
+        },
+        //Green Fall
+            {
+                "LogName": "Grass Green",
+                "Action": "EditImage",
+                "Target": "TerrainFeatures/grass",
+                "FromFile": "assets/{{Target}}/{{TargetWithoutPath}}{{GrassHeight}}{{GrassFlower}}_green.png",
+                "PatchMode": "Replace",
+                "ToArea": { "X": 0, "Y": 40, "Width": 66, "Height": 20 },
+				"When": {
+					"Season": "fall",
+					"VibrantPastoral.C/GreenFall": true
+				}
+            }
+	]
+}

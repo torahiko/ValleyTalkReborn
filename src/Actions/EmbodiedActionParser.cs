@@ -31,10 +31,10 @@ namespace ValleytalkReborn
         {
             if (npc == null || lines == null || lines.Length == 0) return;
 
-            if (MovementManager.Instance.IsMoving)
+            if (MovementManager.Instance.IsNpcMoving(npc))
             {
                 StripMoveTags(lines);
-                ModEntry.SMonitor?.Log("[EmbodiedActionParser] Action mutex active — all action tags stripped.", LogLevel.Debug);
+                ModEntry.SMonitor?.Log($"[EmbodiedActionParser] {npc.Name} busy (goto/step active) — action tags stripped.", LogLevel.Debug);
                 return;
             }
 

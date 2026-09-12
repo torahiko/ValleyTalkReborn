@@ -1,0 +1,16 @@
+﻿{
+  "Name": "[CP] Buildable Shane's Coop",
+  "Author": "Sexynes",
+  "Version": "1.1.0",
+  "Description": "Adds a buildable Shane's coop.",
+  "UniqueID": "Sexynes.CP.BuildableShanesCoop",
+  "MinimumApiVersion": "4.0.0",
+  "MinimumGameVersion": "1.6.0",
+  "UpdateKeys": [
+    "Nexus:28915"
+  ],
+  "ContentPackFor": {
+    "UniqueID": "Pathoschild.ContentPatcher",
+    "MinimumVersion": "2.0.0"
+  }
+}

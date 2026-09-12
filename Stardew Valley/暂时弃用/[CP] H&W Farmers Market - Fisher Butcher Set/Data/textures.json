@@ -1,0 +1,46 @@
+ {
+
+   "Changes": [
+ 
+    {
+        "LogName": "Load Textures",
+        "Action": "Load",
+        "Target": "Mods/HXW.FM_FisherButcher/Furniture",
+        "FromFile": "assets/{{TargetWithoutPath}}.png"
+    },
+
+ 
+/////////////////////
+// recolor options //
+/////////////////////
+
+{
+    "LogName": "Light Recolor - Furniture",
+    "Action": "EditImage",
+    "Target": "Mods/HXW.FM_FisherButcher/Furniture",
+    "FromFile": "assets/Furniture_Light.png",
+    "PatchMode":"Replace",
+    "When": {"Recolor": "Light"}
+},
+
+
+{
+    "LogName": "Dark Recolor - Furniture",
+    "Action": "EditImage",
+    "Target": "Mods/HXW.FM_FisherButcher/Furniture",
+    "FromFile": "assets/Furniture_Dark.png",
+    "PatchMode":"Replace",
+    "When": {"Recolor": "Dark"}
+},
+
+
+ /*   {
+        "LogName": "Load Textures",
+        "Action": "Load",
+        "Target": "Mods/HXW.FM_FisherButcher/Machines, Mods/HXW.FM_FisherButcher/Objects",
+        "FromFile": "assets/{{TargetWithoutPath}}.png",
+        "When":{"EnableCraftingItems":true}
+    }
+*/
+    ]
+}

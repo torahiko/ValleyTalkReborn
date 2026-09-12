@@ -1,0 +1,76 @@
+{
+	"Changes": [
+        {
+            "LogName": "Non-Recent CT Trigger Removal",
+            "Action": "EditData",
+            "Target": "Data/TriggerActions",
+            "Entries": {
+                "{{ModID}}_RemoveRecentCTs": {
+                    "Id": "{{ModID}}_RemoveRecentCTs",
+					"Trigger": "Spiderbuttons.BETAS_ItemSold",
+					"Condition": "Spiderbuttons.BETAS_ITEM_MOD_DATA Target BETAS/ItemSold/ShopId {{ModId}}_{{ShopAcronym}}_{{CTToken}}",
+                    "Actions": [
+                        "RemoveConversationTopic BFM_MushroomShop",
+                        "RemoveConversationTopic BFM_SpringCropsShop",
+                        "RemoveConversationTopic BFM_SummerCropsShop",
+                        "RemoveConversationTopic BFM_FallCropsShop",
+                        "RemoveConversationTopic BFM_AllCropsShop",
+                        "RemoveConversationTopic BFM_OilShop",
+                        "RemoveConversationTopic BFM_JellyShop",
+                        "RemoveConversationTopic BFM_HoneyShop",
+                        "RemoveConversationTopic BFM_JuiceShop",
+                        "RemoveConversationTopic BFM_PickleShop",
+                        "RemoveConversationTopic BFM_ArtisanGoodsShop",
+                        "RemoveConversationTopic BFM_ForageShop",
+                        "RemoveConversationTopic BFM_BerryShop",
+                        "RemoveConversationTopic BFM_EggShop",
+                        "RemoveConversationTopic BFM_MilkShop",
+                        "RemoveConversationTopic BFM_AnimalGoodsShop",
+                        "RemoveConversationTopic BFM_SpringFruitShop",
+                        "RemoveConversationTopic BFM_SummerFruitShop",
+                        "RemoveConversationTopic BFM_FallFruitShop",
+                        "RemoveConversationTopic BFM_AllFruitShop",
+                        "RemoveConversationTopic BFM_FlowerShop",
+                        "RemoveConversationTopic BFM_HerbShop",
+                        "RemoveConversationTopic BFM_BreadShop",
+                        "RemoveConversationTopic BFM_SweetBakeryShop",
+                        "RemoveConversationTopic BFM_FishShop",
+                        "RemoveConversationTopic BFM_CrabpotShop",
+                        "RemoveConversationTopic BFM_RoeShop",
+                        "RemoveConversationTopic BFM_MeatShop"
+                    ],
+                    "MarkActionApplied": false
+                }
+            },
+            "When": {
+                "OnlyDiscussRecentItems": "True"
+            }
+        },
+		{
+			"Action": "EditData",
+			"Target": "Data/TriggerActions",
+			"Entries": {
+				"{{ModId}}_{{ShopAcronym}}_{{CTToken}}CT": {
+					"Id": "{{ModId}}_{{ShopAcronym}}_{{CTToken}}CT",
+					"Trigger": "Spiderbuttons.BETAS_ItemSold",
+					"Condition": "Spiderbuttons.BETAS_ITEM_MOD_DATA Target BETAS/ItemSold/ShopId {{ModId}}_{{ShopAcronym}}_{{CTToken}}",
+					"Actions": [
+						"AddConversationTopic BFM_{{CTToken}}Spacer 0",
+						"AddConversationTopic BFM_{{CTToken}} 4"
+					]
+				}
+			}
+		},
+		{
+			"Action": "EditData",
+			"Target": "Characters/Dialogue/{{CharacterName}}",
+			"Entries": {
+				"BFM_{{CTToken}}": "{{i18n: BFM.BoughtItem.{{CharacterName}} |BFMItemToken={{ItemText}} |BFMDeterminer={{Determiner}} |AlexGrandma={{AlexGrandmaToken}} |AlexGrandpa={{AlexGrandpaToken}}}} {{i18n: BFM.ItemGood.{{Random:1,2,3}}.{{CharacterName}} |LinusItem={{LinusSeasonalItems}} |AlexGrandma={{AlexGrandmaToken}} |AlexGrandpa={{AlexGrandpaToken}}}}#$b#{{i18n: BFM.{{FollowupText}}.{{CharacterName}}}}#$action AddFriendshipPoints {{CharacterName}} 10"
+			},
+			"When": {
+				"HasConversationTopic |contains=BFM_{{CTToken}}Spacer": false,
+				"Query: {{CTRandom}} = 1": true
+			}
+		}
+	]
+}

@@ -1,0 +1,31 @@
+{
+    "Changes": [
+
+        {
+            "LogName":"Add FM Craftable Objects",
+            "Action": "EditData",
+            "Target": "Data/Objects",
+            "Entries": {
+                "HXW.FM_FisherButcher_ChickenBasket": {
+                    "Name": "HXW.FM_FisherButcher_ChickenBasket",
+                    "DisplayName": "{{i18n:FM_FisherButcher_ChickenBasket.name}}",
+                    "Description": "{{i18n:FM_FisherButcher_ChickenBasket.description}}",
+                    "Type": "ArtisanGoods",          
+                    "Category": -26,
+                    "Edibility": 0,
+                    "Price": 100,
+
+                    "ContextTags":
+                    ["hxw_market_item",
+                    "artisan_item",
+                    "color_red"],
+
+                    "Texture": "Mods/HXW.FM_FisherButcher_ChickenBasket/Objects",
+                    "SpriteIndex": 0
+            },
+
+        }
+        }
+
+    ]
+}

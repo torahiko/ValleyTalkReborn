@@ -1,0 +1,11 @@
+{
+	"Name": "[CP] Chocobo Valley Mounts",
+    "Author": "Kitsutsune",
+    "Version": "1.0.1",
+    "Description": "Want to be a chocobo rider?",
+    "UniqueID": "Kitsutsune.Chocobovalleymounts",
+    "UpdateKeys": ["Nexus:22166"],
+    "ContentPackFor": {
+        "UniqueID": "Pathoschild.ContentPatcher"
+    }
+}

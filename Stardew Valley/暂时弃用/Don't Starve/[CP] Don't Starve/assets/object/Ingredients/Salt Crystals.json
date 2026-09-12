@@ -1,0 +1,45 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "DS_Salt_Crystals": {
+            "Name": "Salt Crystals",
+            "DisplayName": "{{i18n:Salt_Crystals.name}}",
+            "Description": "{{i18n:Salt_Crystals.text}}",
+            "Type": "minerals",
+            "Category": -12,
+            "Price": 200,
+            "Texture": "Mods\\ZG.DS\\Salt Crystals",
+            "SpriteIndex": 0,
+            "Edibility": -300,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": false,
+            "ExcludeFromShippingCollection": false,
+            "ExcludeFromRandomSale": false,
+            "Buffs": [
+            ]
+          }
+        }
+      },
+          {
+              "Log": "Add Gift Tastes for NPCs",
+              "Action": "EditData",
+              "Target": "Data/NPCGiftTastes",
+              "TextOperations": [
+      { "Operation": "Append",
+                "Target": ["Entries", "Universal_Dislikes"],
+                "Value": " DS_Salt_Crystals",
+                "Delimiter": " "
+              },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Gus", "5"],
+          "Value": " DS_Salt_Crystals", 
+          "Delimiter": " "
+        }
+      ]
+      }
+    ]
+  }

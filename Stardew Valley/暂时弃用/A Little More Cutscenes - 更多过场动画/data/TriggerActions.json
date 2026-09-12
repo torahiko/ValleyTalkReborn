@@ -1,0 +1,28 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/TriggerActions",
+        "Entries": {
+          "{{ModId}}_PinkCakeMailTA": {
+            "Id": "{{ModId}}_PinkCakeMailTA",
+            "Trigger": "DayStarted",
+            "Condition": "DATE_RANGE Summer 21 2",
+            "Actions": ["AddMail Current {{ModId}}_PinkCakeMail tomorrow"]
+          }
+        }
+      },
+      {
+        "Action": "EditData",
+        "Target": "Data/TriggerActions",
+        "Entries": {
+          "{{ModId}}_Shane7HeartsTA": {
+            "Id": "{{ModId}}_Shane7HeartsTA",
+            "Trigger": "DayStarted",
+            "Condition": "PLAYER_HAS_SEEN_EVENT Any 831125",
+            "Actions": ["AddConversationTopic Shane7Hearts 10"]
+          }
+        }
+      },
+    ]
+}

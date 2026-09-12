@@ -1,0 +1,49 @@
+{
+    "Changes": [
+		{
+			"LogName": "GLS Dialogue Added",
+			"Action": "Include",
+			"FromFile": "assets/Dialogue/Shane.json"
+		},
+		{
+			"LogName": "GLS Marnie",
+			"Action": "Include",
+			"FromFile": "assets/Dialogue/NPCs.json"
+		},
+		{
+			"LogName": "GLS Jas",
+			"Action": "Include",
+			"FromFile": "assets/Dialogue/NPCs.json"
+		},
+		{
+			"LogName": "GLS Gus",
+			"Action": "Include",
+			"FromFile": "assets/Dialogue/NPCs.json"
+		},
+		{
+			"LogName": "Farm Events",
+			"Action": "Include",
+			"FromFile": "assets/Events/10HEC.json"
+		},
+		{
+			"LogName": "10-Heart Event Changes",
+			"Action": "Include",
+			"FromFile": "assets/Events/10HEC.json"
+		},
+		{
+			"LogName": "10-Heart Letter",
+			"Action": "Include",
+			"FromFile": "assets/Events/10HEC.json"
+		},
+		{
+			"LogName": "14-Heart Event Changes",
+			"Action": "Include",
+			"FromFile": "assets/Events/14HEC.json"
+		},
+		{
+			"LogName": "14-Heart Forks",
+			"Action": "Include",
+			"FromFile": "assets/Events/14HEC.json"
+		}
+    ]
+}

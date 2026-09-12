@@ -1,0 +1,12 @@
+{
+	"config.EnableMod.name": "모드 활성화",
+	"config.EnableMod.description": "이 모드의 모든 기능을 활성화합니다. (기본값: true)",
+	"config.YearRoundItems.name": "연중 사용 가능한 아이템",
+	"config.YearRoundItems.description": "연중 내내 사용 가능한 아이템을 활성화합니다. (기본값: true)",
+	"config.SeasonalItems.name": "계절별 아이템",
+	"config.SeasonalItems.description": "특정 시즌에만 사용 가능한 아이템을 활성화합니다. (기본값: true)",
+	"config.WeekdayDependentItems.name": "요일별 아이템",
+	"config.WeekdayDependentItems.description": "특정 요일에만 사용 가능한 아이템을 활성화합니다. (기본값: true)",
+	"config.SpecialItems.name": "특별 아이템",
+	"config.SpecialItems.description": "특정 날짜에만 사용 가능한 아이템을 활성화합니다. (기본값: true)"
+}

@@ -1,0 +1,38 @@
+{
+    "Changes": [
+        {
+            "LogName": "Add Bakery & Cafe Core Shops",
+            "Action": "EditData",
+            "Target": "Data/Shops",
+            "Entries": {
+                "{{ModID}}_FMB_SweetBakeryShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMB_SweetBakeryShop1",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target food_bakery food_sweet",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMB_SweetBakeryShop2",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target food_cake",
+                            "AvoidRepeat": true
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "food_cake",
+                        "food_bakery, food_sweet"
+                    ]
+                }
+            }
+        }
+    ]
+}

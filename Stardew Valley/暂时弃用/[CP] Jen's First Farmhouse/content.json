@@ -1,0 +1,397 @@
+{
+  "Format": "2.0.0",
+  "ConfigSchema": {
+    "Enable": {
+      "AllowValues": "true, false",
+      "Default": "true"
+    },
+    "Remove Kitchen": {
+      "AllowValues": "true, false",
+      "Default": "false",
+      "Description": "Empty out your fridge before selecting this option or else you will lose everything in it!",
+    }
+  },
+  "Changes": [
+// Load Maps
+    {
+      "Action": "Load",
+      "Target": "Maps/FarmHouse2, Maps/FarmHouse2_marriage",
+      "FromFile": "assets/{{TargetWithoutPath}}.tmx",
+      "When": {
+        "Enable": true,
+ 	"Remove Kitchen": false
+      }
+    },
+    {
+      "Action": "Load",
+      "Target": "Maps/FarmHouse2, Maps/FarmHouse2_marriage",
+      "FromFile": "assets/{{TargetWithoutPath}}_NoKitchen.tmx",
+      "When": {
+        "Enable": true,
+ 	"Remove Kitchen": true
+      }
+    },
+// Load Renovations
+    {
+      "Action": "Load",
+      "Target": "Maps/FarmHouse_Crib_0, Maps/FarmHouse_Crib_1, Maps/FarmHouse_CornerRoom_Add, Maps/FarmHouse_CornerRoom_Remove, Maps/FarmHouse_DiningRoom_Add, Maps/FarmHouse_FarUpperRoom_Add, Maps/FarmHouse_FarUpperRoom_Remove, Maps/FarmHouse_DiningRoomWall_Add, Maps/FarmHouse_DiningRoomWall_Remove, Maps/FarmHouse_Bedroom_Normal, Maps/FarmHouse_Bedroom_Open, Maps/FarmHouse_Cubby_Add, Maps/FarmHouse_Cubby_Remove, Maps/FarmHouse_ExtendedCornerRoom_Add, Maps/FarmHouse_ExtendedCornerRoom_Remove, Maps/FarmHouse_SouthernRoom_Add, Maps/FarmHouse_SouthernRoom_Remove",
+      "FromFile": "assets/{{TargetWithoutPath}}.tmx",
+      "When": {
+        "Enable": true
+      }
+    },
+    {
+      "Action": "Load",
+      "Target": "Maps/FarmHouse_DiningRoom_Remove",
+      "FromFile": "assets/{{TargetWithoutPath}}.tmx",
+      "When": {
+        "Enable": true,
+	"Remove Kitchen": false
+      }
+    },
+    {
+      "Action": "Load",
+      "Target": "Maps/FarmHouse_DiningRoom_Remove",
+      "FromFile": "assets/{{TargetWithoutPath}}_NoKitchen.tmx",
+      "When": {
+        "Enable": true,
+	"Remove Kitchen": true
+      }
+    },
+// Screenshot Region
+    {
+      "Action": "EditMap",
+      "Target": "Maps/FarmHouse2, Maps/FarmHouse2_marriage",
+      "MapProperties": {
+        "ScreenshotRegion": "9 1 56 40"
+      },
+      "When": {
+        "Enable": true
+      }
+    },
+// Cellar Fix
+    {
+      "Action": "Load",
+      "Target": "Maps/FarmHouse_Cellar",
+      "FromFile": "assets/Cellar_Fix.tmx",
+      "When": {
+        "Enable": true
+      }
+    },
+// Cellar Warp Fix
+    {
+      "Action": "EditMap",
+      "Target": "Maps/Cellar",
+      "MapProperties": {
+        "Warp": "3 1 FarmHouse 21 29 4 1 FarmHouse 22 29"
+      },
+      "When": {
+        "Enable": true
+      }
+    },
+// Greenhouse Property
+    {
+      "Action": "EditMap",
+      "Target": "Maps/FarmHouse2, Maps/FarmHouse2_marriage",
+      "MapProperties": {
+        "IsGreenhouse": true
+      },
+      "When": {
+        "Enable": true
+      }
+    },
+// Renovation Strings
+    {
+      "Action": "EditData",
+      "Target": "Strings/Locations",
+      "Entries": {
+        "ScienceHouse_Renovation_AddSouthernRoom": "{{i18n:Jen.FirstFarmhouse_AddHallway}}",
+        "ScienceHouse_Renovation_RemoveSouthernRoom": "{{i18n:Jen.FirstFarmhouse_RemoveHallway}}"
+      },
+      "When": {
+        "Enable": true
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Strings/1_6_Strings",
+      "Entries": {
+        "Renovation_AddExtendedCornerRoom": "{{i18n:Jen.FirstFarmhouse_AddGreenhouse}}",
+        "Renovation_RemoveExtendedCornerRoom": "{{i18n:Jen.FirstFarmhouse_RemoveGreenhouse}}"
+      },
+      "When": {
+        "Enable": true
+      }
+    },
+// Renovations Fix
+    {
+      "Action": "EditData",
+      "Target": "Data/HomeRenovations",
+      "When": {
+        "Enable": true
+      },
+      "Fields": {
+        "add_corner_room": {
+          "RectGroups": [
+            {
+              "Rects": [
+                {
+                  "X": 43,
+                  "Y": 10,
+                  "Width": 11,
+                  "Height": 9
+                },
+                {
+                  "X": 47,
+                  "Y": 19,
+                  "Width": 2,
+                  "Height": 4
+                }
+              ]
+            }
+          ]
+        },
+        "remove_corner_room": {
+          "RectGroups": [
+            {
+              "Rects": [
+                {
+                  "X": 43,
+                  "Y": 10,
+                  "Width": 11,
+                  "Height": 9
+                },
+                {
+                  "X": 47,
+                  "Y": 19,
+                  "Width": 2,
+                  "Height": 4
+                }
+              ]
+            }
+          ]
+        },
+        "add_dining_room": {
+          "Price": 60000,
+          "RectGroups": [
+            {
+              "Rects": [
+                {
+                  "X": 9,
+                  "Y": 19,
+                  "Width": 8,
+                  "Height": 10
+                }
+              ]
+            }
+          ]
+        },
+        "remove_dining_room": {
+          "Price": -60000,
+          "RectGroups": [
+            {
+              "Rects": [
+                {
+                  "X": 9,
+                  "Y": 19,
+                  "Width": 8,
+                  "Height": 10
+                }
+              ]
+            }
+          ]
+        },
+        "add_farupperroom": {
+          "Price": 30000,
+          "RectGroups": [
+            {
+              "Rects": [
+                {
+                  "X": 22,
+                  "Y": 1,
+                  "Width": 14,
+                  "Height": 9
+                },
+                {
+                  "X": 27,
+                  "Y": 10,
+                  "Width": 3,
+                  "Height": 4
+                }
+              ]
+            }
+          ]
+        },
+        "remove_farupperroom": {
+          "Price": -30000,
+          "RectGroups": [
+            {
+              "Rects": [
+                {
+                  "X": 22,
+                  "Y": 1,
+                  "Width": 14,
+                  "Height": 9
+                },
+                {
+                  "X": 27,
+                  "Y": 10,
+                  "Width": 3,
+                  "Height": 4
+                }
+              ]
+            }
+          ]
+        },
+        "add_diningroomwall": {
+          "AnimationType": "build",
+          "RectGroups": [
+            {
+              "Rects": [
+                {
+                  "X": 16,
+                  "Y": 19,
+                  "Width": 4,
+                  "Height": 10
+                }
+              ]
+            }
+          ]
+        },
+        "remove_diningroomwall": {
+          "AnimationType": "destroy",
+          "RectGroups": [
+            {
+              "Rects": [
+                {
+                  "X": 16,
+                  "Y": 19,
+                  "Width": 4,
+                  "Height": 10
+                }
+              ]
+            }
+          ]
+        },
+        "open_bedroom": {
+          "RectGroups": [
+            {
+              "Rects": [
+                {
+                  "X": 39,
+                  "Y": 19,
+                  "Width": 3,
+                  "Height": 9
+                }
+              ]
+            }
+          ]
+        },
+        "close_bedroom": {
+          "RectGroups": [
+            {
+              "Rects": [
+                {
+                  "X": 39,
+                  "Y": 19,
+                  "Width": 3,
+                  "Height": 9
+                }
+              ]
+            }
+          ]
+        },
+        "add_cubby": {
+          "RectGroups": [
+            {
+              "Rects": [
+                {
+                  "X": 35,
+                  "Y": 37,
+                  "Width": 7,
+                  "Height": 4
+                }
+              ]
+            }
+          ]
+        },
+        "remove_cubby": {
+          "RectGroups": [
+            {
+              "Rects": [
+                {
+                  "X": 35,
+                  "Y": 37,
+                  "Width": 7,
+                  "Height": 4
+                }
+              ]
+            }
+          ]
+        },
+        "add_extendedcorner": {
+          "Price": 30000,
+          "RectGroups": [
+            {
+              "Rects": [
+                {
+                  "X": 43,
+                  "Y": 7,
+                  "Width": 11,
+                  "Height": 9
+                }
+              ]
+            }
+          ]
+        },
+        "remove_extendedcorner": {
+          "Price": -30000,
+          "RectGroups": [
+            {
+              "Rects": [
+                {
+                  "X": 43,
+                  "Y": 7,
+                  "Width": 11,
+                  "Height": 9
+                }
+              ]
+            }
+          ]
+        },
+        "add_southern_room": {
+          "AnimationType": "destroy",
+          "Price": 10000,
+          "RectGroups": [
+            {
+              "Rects": [
+                {
+                  "X": 46,
+                  "Y": 27,
+                  "Width": 2,
+                  "Height": 6
+                }
+              ]
+            }
+          ]
+        },
+        "remove_southern_room": {
+          "AnimationType": "build",
+          "Price": -10000,
+          "RectGroups": [
+            {
+              "Rects": [
+                {
+                  "X": 46,
+                  "Y": 27,
+                  "Width": 2,
+                  "Height": 6
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

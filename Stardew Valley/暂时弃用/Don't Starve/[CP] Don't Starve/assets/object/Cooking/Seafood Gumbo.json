@@ -1,0 +1,86 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "DS_Seafood_Gumbo": {
+            "Name": "Seafood Gumbo",
+            "DisplayName": "{{i18n:Seafood_Gumbo.name}}",
+            "Description": "{{i18n:Seafood_Gumbo.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 725,
+            "Texture": "Mods\\ZG.DS\\Seafood Gumbo",
+            "SpriteIndex": 0,
+            "Edibility": 100,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": false,
+            "ExcludeFromShippingCollection": false,
+            "ExcludeFromRandomSale": false,
+            "Buffs": [
+              {
+                "Duration": 375,
+                "CustomAttributes": {
+                  "FarmingLevel": 0,
+                  "FishingLevel": 5,
+                  "MiningLevel": 0,
+                  "LuckLevel": 2,
+                  "ForagingLevel": 0,
+                  "MaxStamina": 0,
+                  "MagneticRadius": 0,
+                  "Speed": 0,
+                  "Defense": 0,
+                  "Attack": 0
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "Action": "EditData", 
+        "Target": "Data/CookingRecipes", 
+      
+        "Entries": { 
+          "Seafood Gumbo":"161 1 -4 3/25 5/DS_Seafood_Gumbo/s Fishing 8/" 
+        }
+      },
+          {
+              "Log": "Add Gift Tastes for NPCs",
+              "Action": "EditData",
+              "Target": "Data/NPCGiftTastes",
+              "TextOperations": [
+      { "Operation": "Append",
+                "Target": ["Entries", "Universal_like"],
+                "Value": " DS_Seafood_Gumbo",
+                "Delimiter": " "
+              },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Evelyn", "7"],
+          "Value": " DS_Seafood_Gumbo", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Leo", "5"],
+          "Value": " DS_Seafood_Gumbo", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Krobus", "5"],
+          "Value": " DS_Seafood_Gumbo", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Willy", "1"],
+          "Value": " DS_Seafood_Gumbo", 
+          "Delimiter": " "
+        }
+      ]
+      }
+    ]
+  }

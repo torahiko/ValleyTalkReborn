@@ -1,0 +1,80 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "DS_Frog_Legs": {
+            "Name": "Frog Legs",
+            "DisplayName": "{{i18n:Frog_Legs.name}}",
+            "Description": "{{i18n:Frog_Legs.text}}",
+            "Type": "meat",
+            "Category": -14,
+            "Price": 110,
+            "Texture": "Mods\\ZG.DS\\Frog Legs",
+            "SpriteIndex": 0,
+            "Edibility": 21,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": false,
+            "ExcludeFromShippingCollection": false,
+            "ExcludeFromRandomSale": false,
+            "Buffs": [
+              {
+                "Duration": 10,
+                "CustomAttributes": {
+                  "FarmingLevel": 0,
+                  "FishingLevel": 0,
+                  "MiningLevel": 0,
+                  "LuckLevel": 0,
+                  "ForagingLevel": 0,
+                  "MaxStamina": 0,
+                  "MagneticRadius": 0,
+                  "Speed": 1,
+                  "Defense": 0,
+                  "Attack": 0
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "Action": "EditData", 
+        "Target": "Data/Fish", 
+      
+        "Entries": { 
+          "DS_Frog_Legs": "Frog/trap/.05/681 .35/freshwater/1/26/false"
+        }
+      },
+      {
+        "Log": "Add Gift Tastes for NPCs",
+        "Action": "EditData",
+        "Target": "Data/NPCGiftTastes",
+        "TextOperations": [
+      { "Operation": "Append",
+          "Target": ["Entries", "Universal_Hate"],
+          "Value": " DS_Frog_Legs",
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Maru", "9"],
+          "Value": " DS_Frog_Legs", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Krobus", "5"],
+          "Value": " DS_Frog_Legs", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Abigail", "9"],
+          "Value": " DS_Frog_Legs", 
+          "Delimiter": " "
+        }
+      ]
+      }
+      ]
+    }

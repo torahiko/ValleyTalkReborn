@@ -1,0 +1,33 @@
+{
+  "Format": "2.0.0",
+  "Changes": [
+    {
+      "LogName": "[CP] Love Festival Sprites Load (Objects)",
+      "Action": "Load",
+      "Target": "Mods/{{ModId}}/Objects",
+      "FromFile": "assets/{{TargetWithoutPath}}.png"
+
+    },
+    {
+      "LogName": "[CP] Love Festival Sprites Load (BigCraftables)",
+      "Action": "Load",
+      "Target": "Mods/{{ModId}}/BigCraftables",
+      "FromFile": "assets/{{TargetWithoutPath}}.png"
+    },
+    {
+      "LogName": "Add Love Letter Item",
+      "Action": "Include",
+      "FromFile": "items/box_of_chocolates.json"
+    },
+    {
+      "LogName": "Add Love Rose Pot Item",
+      "Action": "Include",
+      "FromFile": "big_craftables/rose_pot.json"
+    },
+    {
+      "LogName": "Add Love Festival Shop",
+      "Action": "Include",
+      "FromFile": "shops/LoveFestivalShop.json"
+    }
+  ]
+}

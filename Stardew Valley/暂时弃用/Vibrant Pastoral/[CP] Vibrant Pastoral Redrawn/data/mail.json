@@ -1,0 +1,47 @@
+{
+	"Changes": [
+		//Mail
+		{
+			"Action": "EditData",
+			"Target": "Data/mail",
+			"Entries": {
+				"VibrantPastoral.EdNygma_1_1": "{{i18n:mail.EdNygma_1_1.content}}[letterbg Mods/{{ModID}}/letterBGextra 0][textcolor green][#]{{i18n:mail.EdNygma_1_1.name}}",
+				"VibrantPastoral.EdNygma_1_2": "{{i18n:mail.EdNygma_1_2.content}}[letterbg Mods/{{ModID}}/letterBGextra 0][textcolor green][#]{{i18n:mail.EdNygma_1_2.name}}"
+			}
+		},
+		//Letter BG Extra
+		{
+			"Action": "Load",
+			"Target": "Mods/{{ModID}}/letterBGextra",
+			"FromFile": "assets/LooseSprites/letterBGextra.png",
+			"Priority": "Low"
+		},
+		//Mail Event
+		{
+			"Action": "EditData",
+			"Target": "Data/TriggerActions",
+			"Entries": {
+				"{{ModID}}_EdNygma_1_1": {
+					"Id": "{{ModID}}_EdNygma_1_1",
+					"Trigger": "DayEnding",
+					"Condition": "IS_COMMUNITY_CENTER_COMPLETE, !SEASON Winter",
+					"HostOnly": false,
+					"Action": "AddMail Current VibrantPastoral.EdNygma_1_1"
+				}
+			}
+		},
+		{
+			"Action": "EditData",
+			"Target": "Data/TriggerActions",
+			"Entries": {
+				"{{ModID}}_EdNygma_1_2": {
+					"Id": "{{ModID}}_EdNygma_1_2",
+					"Trigger": "DayEnding",
+					"Condition": "SEASON Winter, PLAYER_HAS_MAIL Current VibrantPastoral.EdNygma_1_1, !SEASON_DAY Winter 28",
+					"HostOnly": false,
+					"Action": "AddMail Current VibrantPastoral.EdNygma_1_2"
+				}
+			}
+		}
+	]
+}

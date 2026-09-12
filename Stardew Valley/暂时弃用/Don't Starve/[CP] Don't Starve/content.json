@@ -1,0 +1,473 @@
+{
+    "Format": "2.3.0",
+    "ConfigSchema": {
+		"Texture_version":{
+		   "AllowValues": "Old,New",
+		   "Default": "New",
+		   "Description": "{{i18n:config.Texture_version.Description}}"
+		},
+        "Mid_Autumn_Festival":{
+            "AllowValues": "true,false",
+            "Default": "false",
+            "Description": "{{i18n:config.Mid_Autumn_Festival.Description}}"
+         },
+         "Hallowed_Nights":{
+             "AllowValues": "true,false",
+             "Default": "false",
+             "Description": "{{i18n:config.Hallowed_Nights.Description}}"
+          },
+          "Winter_Feast":{
+            "AllowValues": "true,false",
+            "Default": "false",
+            "Description": "{{i18n:config.Winter_Feast.Description}}"
+         }
+	},
+    "Changes": [
+        {
+            "Action": "Include",
+            "FromFile": "assets/image/imageload old.json",
+            "When":{"Texture_version": "Old"}
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/image/imageload 1.json",
+            "When":{"Texture_version": "New"}
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/Mid Autumn Festival/Mid Autumn Festival.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/Hallowed Nights/Hallowed Nights.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/Winter Feast/Winter Feast.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Changes/Monster Drops.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Changes/Audio.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Changes/Animal.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Changes/Cookout Kit.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Changes/Machines.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Changes/Mail.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Changes/Buffs.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Changes/Shops.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Items/Bunny Puff.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Items/Scales.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Items/Pig Skin.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Items/Golden Belt.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Items/Volt Goat Horn.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Morsel.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Monster Meat.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Meat.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Drum Stick.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Fly Wings.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Dragon Fruit.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Frog Legs.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Mandrake.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Butter.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Watermelon.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Stone Fruit.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Royal Jelly.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Asparagus.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Onion.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Salt Crystals.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Barnacles.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Leafy Meat.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Durian.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Fig.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Koalefant Trunk.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Large Duck Egg.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Blue Egg.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Large Void Egg.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Large Golden Egg.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Ostrich Mayonnaise.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Ingredients/Electric Milk.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Bacon and Eggs.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Butter Muffin.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Dragonpie.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Fish Tacos.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Fishsticks.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Fist Full of Jam.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Froggle Bunwich.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Fruit Medley.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Honey Ham.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Honey Nuggets.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Kabobs.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Mandrake Soup.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Meatballs.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Meaty Stew.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Monster Lasagna.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Pierogi.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Powdercake.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Pumpkin Cookies.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Ratatouille.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Stuffed Eggplant.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Taffy.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Turkey Dinner.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Unagi.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Waffles.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Melonsicle.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Trail Mix.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/DS Ice Cream.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Guacamole.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Flower Salad.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Spicy Chili.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Seafood Gumbo.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Ceviche.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/California Roll.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Banana Pop.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Surf and Turf.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Monster Tartare.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Fresh Fruit Crepes.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Jellybeans.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Asparagus Soup.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Stuffed Pepper Poppers.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Salsa Fresca.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Creamy Potato Puree.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Fancy Spiralled Tubers.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Vegetable Stinger.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Lobster Dinner.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/DS Lobster Bisque.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Stuffed Fish Heads.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Barnacle Pita.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Barnacle Linguine.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Barnacle Nigiri.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Leafy Meatloaf.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Beefy Greens.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Veggie Burger.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Jelly Salad.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Mushy Cake.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Soothing Tea.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Figkabab.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Figgy Frogwich.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Figatoni.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Fig Stuffed Trunk.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Frozen Banana Daiquiri.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Bunny Stew.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Banana Shake.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Plain Omelette.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Breakfast Skillet.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Tall Scotch Eggs.json"
+        },
+        {
+            "Action": "Include",
+            "FromFile": "assets/object/Cooking/Stuffed Night Cap.json"
+        }
+    ]
+}

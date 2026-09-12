@@ -1,0 +1,164 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "DS_Fishsticks": {
+            "Name": "Fishsticks",
+            "DisplayName": "{{i18n:Fishsticks.name}}",
+            "Description": "{{i18n:Fishsticks.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 80,
+            "Texture": "Mods\\ZG.DS\\Fishsticks",
+            "SpriteIndex": 0,
+            "Edibility": 16,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": false,
+            "ExcludeFromShippingCollection": false,
+            "ExcludeFromRandomSale": false,
+            "Buffs": [
+              {
+                "Duration": 500,
+                "CustomAttributes": {
+                  "FarmingLevel": 0,
+                  "FishingLevel": 2,
+                  "MiningLevel": 0,
+                  "LuckLevel": 0,
+                  "ForagingLevel": 0,
+                  "MaxStamina": 0,
+                  "MagneticRadius": 0,
+                  "Speed": 0,
+                  "Defense": 0,
+                  "Attack": 0
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "Action": "EditData", 
+        "Target": "Data/CookingRecipes", 
+      
+        "Entries": { 
+          "Fishsticks":"-4 1 169 1/25 5/DS_Fishsticks/s Fishing 1/" 
+        }
+      },
+          {
+              "Log": "Add Gift Tastes for NPCs",
+              "Action": "EditData",
+              "Target": "Data/NPCGiftTastes",
+              "TextOperations": [
+      { "Operation": "Append",
+                "Target": ["Entries", "Universal_Dislikes"],
+                "Value": " DS_Fishsticks",
+                "Delimiter": " "
+              },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Elliott", "3"],
+          "Value": " DS_Fishsticks", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Sebastian", "9"],
+          "Value": " DS_Fishsticks", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Shane", "1"],
+          "Value": " DS_Fishsticks", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Abigail", "3"],
+          "Value": " DS_Fishsticks", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Emily", "7"],
+          "Value": " DS_Fishsticks", 
+          "Delimiter": " "
+        },
+        {
+            "Operation": "Append",
+            "Target": ["Fields", "Haley", "7"],
+            "Value": " DS_Fishsticks", 
+            "Delimiter": " "
+          },
+        {
+          "Operation": "Append",
+          "Target":  ["Fields", "Leah", "7"],
+          "Value": " DS_Fishsticks", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target":  ["Fields", "Evelyn", "7"],
+          "Value": " DS_Fishsticks", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target":  ["Fields", "George", "3"],
+          "Value": " DS_Fishsticks", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target":  ["Fields", "Gus", "1"],
+          "Value": " DS_Fishsticks", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target":  ["Fields", "Jodi", "1"],
+          "Value": " DS_Fishsticks", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target":  ["Fields", "Linus", "3"],
+          "Value": " DS_Fishsticks", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target":  ["Fields", "Pierre", "1"],
+          "Value": " DS_Fishsticks", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target":  ["Fields", "Vincent", "3"],
+          "Value": " DS_Fishsticks", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Leo", "5"],
+          "Value": " DS_Fishsticks", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Krobus", "5"],
+          "Value": " DS_Fishsticks", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Willy", "9"],
+          "Value": " DS_Fishsticks", 
+          "Delimiter": " "
+        }
+      ]
+      }
+    ]
+  }

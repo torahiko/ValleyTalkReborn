@@ -1,0 +1,162 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "DS_Barnacles": {
+            "Name": "Barnacles",
+            "DisplayName": "{{i18n:Barnacles.name}}",
+            "Description": "{{i18n:Barnacles.text}}",
+            "Type": "fish",
+            "Category": -4,
+            "Price": 10,
+            "Texture": "Mods\\ZG.DS\\Barnacles",
+            "SpriteIndex": 0,
+            "Edibility": 4,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": false,
+            "ExcludeFromShippingCollection": false,
+            "ExcludeFromRandomSale": false,
+            "Buffs": [
+              {
+                "Duration": 0,
+                "CustomAttributes": {
+                  "FarmingLevel": 0,
+                  "FishingLevel": 0,
+                  "MiningLevel": 0,
+                  "LuckLevel": 0,
+                  "ForagingLevel": 0,
+                  "MaxStamina": 0,
+                  "MagneticRadius": 0,
+                  "Speed": 0,
+                  "Defense": 0,
+                  "Attack": 0
+                }
+              }
+            ],
+            "ContextTags": [
+              "beach_item",
+              "color_Gray",
+              "fish_crab_pot",
+              "fish_ocean",
+              "fish_upright",
+              "forage_item",
+              "forage_item_beach"
+            ]
+          }
+        }
+      },
+      {
+        "Action": "EditData", 
+        "Target": "Data/Fish", 
+      
+        "Entries": { 
+          "DS_Barnacles": "Barnacles/trap/.5/681 .35/ocean/1/2/false"
+        }
+      },
+          {
+              "Log": "Add Gift Tastes for NPCs",
+              "Action": "EditData",
+              "Target": "Data/NPCGiftTastes",
+              "TextOperations": [
+      { "Operation": "Append",
+                "Target": ["Entries", "Universal_Dislike"],
+                "Value": " DS_Barnacles",
+                "Delimiter": " "
+              },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Evelyn", "3"],
+          "Value": " DS_Barnacles", 
+          "Delimiter": " "
+        },
+        {
+            "Operation": "Append",
+            "Target": ["Fields", "Demetrius", "9"],
+            "Value": " DS_Barnacles", 
+            "Delimiter": " "
+        },
+        {
+            "Operation": "Append",
+            "Target": ["Fields", "Elliott", "9"],
+            "Value": " DS_Barnacles", 
+            "Delimiter": " "
+        },
+        {
+            "Operation": "Append",
+            "Target": ["Fields", "Leo", "9"],
+            "Value": " DS_Barnacles", 
+            "Delimiter": " "
+        },
+        {
+            "Operation": "Append",
+            "Target": ["Fields", "Linus", "9"],
+            "Value": " DS_Barnacles", 
+            "Delimiter": " "
+        },
+        {
+            "Operation": "Append",
+            "Target": ["Fields", "Pam", "9"],
+            "Value": " DS_Barnacles", 
+            "Delimiter": " "
+        },
+        {
+            "Operation": "Append",
+            "Target": ["Fields", "Sebastian", "9"],
+            "Value": " DS_Barnacles", 
+            "Delimiter": " "
+        },
+        {
+            "Operation": "Append",
+            "Target": ["Fields", "Willy", "7"],
+            "Value": " DS_Barnacles", 
+            "Delimiter": " "
+        },
+        {
+            "Operation": "Append",
+            "Target": ["Fields", "Haley", "7"],
+            "Value": " DS_Barnacles", 
+            "Delimiter": " "
+        },
+        {
+            "Operation": "Append",
+            "Target": ["Fields", "Pierre", "7"],
+            "Value": " DS_Barnacles", 
+            "Delimiter": " "
+        }
+      ]
+      },{
+        "Log": "沙滩刷新藤壶",
+        "Action": "EditData",
+        "Target": "Data/Locations", 
+        "TargetField": [ 
+          "Beach","Forage" 
+        ],
+        "Entries": { 
+          "DS_Barnacles":{
+              "Chance": 0.5,
+              "Season": null,
+              "Condition": null,
+              "Id": "(O)Barnacles",
+              "ItemId": "(O)DS_Barnacles",
+              "RandomItemId": null,
+              "MaxItems": null,
+              "MinStack": -1,
+              "MaxStack": -1,
+              "Quality": -1,
+              "ObjectInternalName": null,
+              "ObjectDisplayName": null,
+              "ToolUpgradeLevel": -1,
+              "IsRecipe": false,
+              "StackModifiers": null,
+              "StackModifierMode": "Stack",
+              "QualityModifiers": null,
+              "QualityModifierMode": "Stack",
+              "ModData": null,
+              "PerItemCondition": null
+          }
+          }
+        }
+    ]
+  }

@@ -1,0 +1,873 @@
+{
+    "Changes": [
+        {
+            "LogName": "Farmers Market NPC Shops",
+            "Action": "EditData",
+            "Target": "Data/Shops",
+            "Entries": {
+                "{{ModId}}_SamKidsMarket": {
+                    "ID": "{{ModId}}_SamKidsMarket",
+                    "Owners": [
+                        {
+                            "Name": "{{Random: Sam, Jas, Vincent |key=SamKidsMarket}}",
+                            "Id": "SamKidsMarket",
+                            "Dialogues": [
+                                {
+                                    "Id": "SamKidsMarket",
+                                    "Dialogue": "{{i18n:BFM.MarketDialogue.{{Random: Sam, Jas, Vincent |key=SamKidsMarket}}}}"
+                                }
+                            ]    
+                        }
+                    ],
+                    "PriceModifiers": null,
+                    "Items": [
+                        {
+                            "Id": "{{ModId}}_SamKidsMarketItems1",
+                            "RandomItemId": [ "(O)399", "(O)770", "(O)223", "(O)721", "(O)771", "(O)420", "(O)330", "(O)80", "(O)18", "(O)22", "(O)110", "(O)126", "(O)152", "(O)372", "(O)169", "(O)167" ],
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3,4,5]
+                                }
+                            ],
+                            "PriceModifiers": [
+                                { 
+                                    "Modification": "Multiply",
+                                    "RandomAmount": [0.6, 0.8, 1.0, 1.2]
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_SamKidsMarketItems2",
+                            "RandomItemId": [ "(O)399", "(O)770", "(O)223", "(O)721", "(O)771", "(O)420", "(O)330", "(O)80", "(O)18", "(O)22", "(O)110", "(O)126", "(O)152", "(O)372", "(O)169", "(O)167" ],
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3,4,5]
+                                }
+                            ],
+                            "PriceModifiers": [
+                                { 
+                                    "Modification": "Multiply",
+                                    "RandomAmount": [0.6, 0.8, 1.0, 1.2]
+                                }
+                            ],
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModId}}_SamKidsMarketItems3",
+                            "RandomItemId": [ "(O)399", "(O)770", "(O)223", "(O)721", "(O)771", "(O)420", "(O)330", "(O)80", "(O)18", "(O)22", "(O)110", "(O)126", "(O)152", "(O)372", "(O)169", "(O)167" ],
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3,4,5]
+                                }
+                            ],
+                            "PriceModifiers": [
+                                { 
+                                    "Modification": "Multiply",
+                                    "RandomAmount": [0.6, 0.8, 1.0, 1.2]
+                                }
+                            ],
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModId}}_SamKidsMarketItems4",
+                            "RandomItemId": [ "(O)399", "(O)770", "(O)223", "(O)721", "(O)771", "(O)420", "(O)330", "(O)80", "(O)18", "(O)22", "(O)110", "(O)126", "(O)152", "(O)372", "(O)169", "(O)167" ],
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3,4,5]
+                                }
+                            ],
+                            "PriceModifiers": [
+                                { 
+                                    "Modification": "Multiply",
+                                    "RandomAmount": [0.6, 0.8, 1.0, 1.2]
+                                }
+                            ],
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModId}}_SamKidsMarketItems5",
+                            "RandomItemId": [ "(O)399", "(O)770", "(O)223", "(O)721", "(O)771", "(O)420", "(O)330", "(O)80", "(O)18", "(O)22", "(O)110", "(O)126", "(O)152", "(O)372", "(O)169", "(O)167" ],
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3,4,5]
+                                }
+                            ],
+                            "PriceModifiers": [
+                                { 
+                                    "Modification": "Multiply",
+                                    "RandomAmount": [0.6, 0.8, 1.0, 1.2]
+                                }
+                            ],
+                            "AvoidRepeat": true
+                        }
+                    ]
+                },
+                "{{ModId}}_HaleyMarket": {
+                    "ID": "{{ModId}}_HaleyMarket",
+                    "Owners": [
+                        {
+                            "Name": "Haley",
+                            "Id": "HaleyMarket",
+                            "Dialogues": [
+                                {
+                                    "Id": "HaleyMarket",
+                                    "Dialogue": "{{i18n:BFM.MarketDialogue.Haley}}"
+                                }
+                            ]    
+                        }
+                    ],
+                    "PriceModifiers": [
+                        {
+                            "Modification": "Multiply",
+                            "Amount": 0.9
+                        }
+                    ],
+                    "Items": [
+                        {
+                            "Id": "{{ModId}}_HaleyMarket1",
+                            "ItemId": "RANDOM_ITEMS (S)",
+                            "MaxItems": 1,
+                            "AvailableStock": 1
+                        },
+                        {
+                            "Id": "{{ModId}}_HaleyMarket2",
+                            "ItemId": "RANDOM_ITEMS (S)",
+                            "MaxItems": 1,
+                            "AvailableStock": 1,
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModId}}_HaleyMarket3",
+                            "ItemId": "RANDOM_ITEMS (S)",
+                            "MaxItems": 1,
+                            "AvailableStock": 1,
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModId}}_HaleyMarket4",
+                            "ItemId": "RANDOM_ITEMS (P)",
+                            "MaxItems": 1,
+                            "AvailableStock": 1
+                        },
+                        {
+                            "Id": "{{ModId}}_HaleyMarket5",
+                            "ItemId": "RANDOM_ITEMS (P)",
+                            "MaxItems": 1,
+                            "AvailableStock": 1,
+                            "AvoidRepeat": true
+                        }
+                    ]
+                },
+                "{{ModId}}_EmilyMarket": {
+                    "ID": "{{ModId}}_EmilyMarket",
+                    "Owners": [
+                        {
+                            "Name": "Emily",
+                            "Id": "EmilyMarket",
+                            "Dialogues": [
+                                {
+                                    "Id": "EmilyMarket",
+                                    "Dialogue": "{{i18n:BFM.MarketDialogue.Emily}}"
+                                }
+                            ]    
+                        }
+                    ],
+                    "PriceModifiers": [
+                        {
+                            "Modification": "Multiply",
+                            "Amount": 0.9
+                        }
+                    ],
+                    "Items": [
+                        {
+                            "Id": "{{ModId}}_EmilyMarket1",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_gem !item_prismatic_shard",
+                            "MaxItems": 1,
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3]
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_EmilyMarket2",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_gem !item_prismatic_shard",
+                            "MaxItems": 1,
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3]
+                                }
+                            ],
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModId}}_EmilyMarket3",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_gem !item_prismatic_shard",
+                            "MaxItems": 1,
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3]
+                                }
+                            ],
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModId}}_EmilyMarket4",
+                            "ItemId": "RANDOM_ITEMS (S)",
+                            "MaxItems": 1,
+                            "AvailableStock": 1
+                        },
+                        {
+                            "Id": "{{ModId}}_EmilyMarket5",
+                            "ItemId": "RANDOM_ITEMS (P)",
+                            "MaxItems": 1,
+                            "AvailableStock": 1
+                        }
+                    ]
+                },
+                "{{ModId}}_ElliottMarket": {
+                    "ID": "{{ModId}}_ElliottMarket",
+                    "Owners": [
+                        {
+                            "Name": "Elliott",
+                            "Id": "ElliottMarket",
+                            "Dialogues": [
+                                {
+                                    "Id": "ElliottMarket",
+                                    "Dialogue": "{{i18n:BFM.MarketDialogue.Elliott}}"
+                                }
+                            ]    
+                        }
+                    ],
+                    "PriceModifiers": [
+                        {
+                            "Modification": "Multiply",
+                            "Amount": 0.9
+                        }
+                    ],
+                    "Items": [
+                        {
+                            "Id": "{{ModId}}_ElliottMarket1",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CATEGORY Target -102",
+                            "MaxItems": 1,
+                            "AvailableStock": 1,
+                            "PriceModifiers": [
+                                { 
+                                    "Modification": "Multiply",
+                                    "Amount": 10.0
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_ElliottMarket2",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CATEGORY Target -103",
+                            "MaxItems": 1,
+                            "AvailableStock": 1,
+                            "AvoidRepeat": true,
+                            "PriceModifiers": [
+                                { 
+                                    "Modification": "Multiply",
+                                    "Amount": 8.0
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_ElliottMarket3",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target fish_ocean !fish_legendary",
+                            "MaxItems": 1,
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3]
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_ElliottMarket4",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target forage_item_beach",
+                            "MaxItems": 1,
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3]
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_ElliottMarket5",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target forage_item_beach",
+                            "MaxItems": 1,
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3]
+                                }
+                            ],
+                            "AvoidRepeat": true
+                        }
+                    ]
+                },
+                "{{ModId}}_AbigailMarket": {
+                    "ID": "{{ModId}}_AbigailMarket",
+                    "Owners": [
+                        {
+                            "Name": "Abigail",
+                            "Id": "AbigailMarket",
+                            "Dialogues": [
+                                {
+                                    "Id": "AbigailMarket",
+                                    "Dialogue": "{{i18n:BFM.MarketDialogue.Abigail}}"
+                                }
+                            ]    
+                        }
+                    ],
+                    "PriceModifiers": [
+                        {
+                            "Modification": "Multiply",
+                            "Amount": 0.9
+                        }
+                    ],
+                    "Items": [
+                        {
+                            "Id": "{{ModId}}_AbigailMarket1",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CATEGORY Target -28",
+                            "MaxItems": 1,
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3]
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_AbigailMarket2",
+                            "RandomItemId": [ "(O)78", "(O)93", "(O)94", "(O)403", "(O)516", "(O)518", "(O)286", "(O)518", "(O)109" ],
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3]
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_AbigailMarket3",
+                            "ItemId": "RANDOM_ITEMS (W)",
+                            "PerItemCondition": "ITEM_PRICE Target 1 700, !ITEM_NUMERIC_ID Target 35 42",
+                            "MaxItems": 1,
+                            "AvailableStock": 1,
+                            "PriceModifiers": [
+                                { 
+                                    "Modification": "Multiply",
+                                    "Amount": 6.0
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_AbigailMarket4",
+                            "RandomItemId": [ "(O)80", "(O)82", "(O)84", "(O)86", "(O)66", "(O)535" ],
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3]
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_AbigailMarket5",
+                            "RandomItemId": [ "(O)80", "(O)82", "(O)84", "(O)86", "(O)66", "(O)535" ],
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3]
+                                }
+                            ],
+                            "AvoidRepeat": true
+                        }
+                    ]
+                },
+                "{{ModId}}_MaruMarket": {
+                    "ID": "{{ModId}}_MaruMarket",
+                    "Owners": [
+                        {
+                            "Name": "Maru",
+                            "Id": "MaruMarket",
+                            "Dialogues": [
+                                {
+                                    "Id": "MaruMarket",
+                                    "Dialogue": "{{i18n:BFM.MarketDialogue.Maru}}"
+                                }
+                            ]    
+                        }
+                    ],
+                    "PriceModifiers": [
+                        {
+                            "Modification": "Multiply",
+                            "Amount": 0.9
+                        }
+                    ],
+                    "Items": [
+                        {
+                            "Id": "{{ModId}}_MaruMarket1",
+                            "ItemId": "(O)787",
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [2,3,4,5]
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_MaruMarket2",
+                            "RandomItemId": [ "(O)334", "(O)334", "(O)334", "(O)334", "(O)335", "(O)335", "(O)335", "(O)336", "(O)336", "(O)338", "(O)338", "(O)337" ],
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3]
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_MaruMarket3",
+                            "RandomItemId": [ "(O)334", "(O)334", "(O)334", "(O)334", "(O)335", "(O)335", "(O)335", "(O)336", "(O)336", "(O)338", "(O)338", "(O)337" ],
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3]
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_MaruMarket4",
+                            "RandomItemId": [ "(O)112", "(O)108", "(O)122", "(O)725", "(O)726", "(O)576", "(O)569", "(O)573" ],
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3]
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_MaruMarket5",
+                            "RandomItemId": [ "(O)112", "(O)108", "(O)122", "(O)725", "(O)726", "(O)576", "(O)569", "(O)573" ],
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3]
+                                }
+                            ],
+                            "AvoidRepeat": true
+                        }
+                    ]
+                },
+                "{{ModId}}_LeahMarket": {
+                    "ID": "{{ModId}}_LeahMarket",
+                    "Owners": [
+                        {
+                            "Name": "Leah",
+                            "Id": "LeahMarket",
+                            "Dialogues": [
+                                {
+                                    "Id": "LeahMarket",
+                                    "Dialogue": "{{i18n:BFM.MarketDialogue.Leah}}"
+                                }
+                            ]    
+                        }
+                    ],
+                    "PriceModifiers": [
+                        {
+                            "Modification": "Multiply",
+                            "Amount": 0.9
+                        }
+                    ],
+                    "Items": [
+                        {
+                            "Id": "{{ModId}}_LeahMarket1",
+                            "RandomItemId": [ "(F)1539", "(F)1541", "(F)1543", "(F)1545", "(F)1547", "(F)1550", "(F)1552", "(F)1554", "(F)1557", "(F)1561", "(F)1563", "(F)1565", "(F)1567", "(F)1600", "(F)1601", "(F)1602", "(F)1603", "(F)1604", "(F)1606", "(F)1607", "(F)1612", "(F)1684", "(F)2419", "(F)2421", "(F)2423", "(F)2584", "(F)2730", "(F)2732", "(F)PigPainting", "(F)SunDunes", "(F)WizardTower", "(F)VoidSwirls", "(F)Groovy", "(F)Abstract", "(F)Starship", "(F)Binary", "(F)Checkers", "(F)UFO" ],
+                            "AvailableStock": 1
+                        },
+                        {
+                            "Id": "{{ModId}}_LeahMarket2",
+                            "RandomItemId": [ "(F)1539", "(F)1541", "(F)1543", "(F)1545", "(F)1547", "(F)1550", "(F)1552", "(F)1554", "(F)1557", "(F)1561", "(F)1563", "(F)1565", "(F)1567", "(F)1600", "(F)1601", "(F)1602", "(F)1603", "(F)1604", "(F)1606", "(F)1607", "(F)1612", "(F)1684", "(F)2419", "(F)2421", "(F)2423", "(F)2584", "(F)2730", "(F)2732", "(F)PigPainting", "(F)SunDunes", "(F)WizardTower", "(F)VoidSwirls", "(F)Groovy", "(F)Abstract", "(F)Starship", "(F)Binary", "(F)Checkers", "(F)UFO" ],
+                            "AvailableStock": 1,
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModId}}_LeahMarket3",
+                            "RandomItemId": [ "(F)88", "(F)1305", "(F)CatStatue", "(F)2814", "(F)2627", "(F)2628", "(F)2629", "(F)2630" ],
+                            "AvailableStock": 1
+                        },
+                        {
+                            "Id": "{{ModId}}_LeahMarket4_Spring",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target forage_item season_spring !forage_item_beach",
+                            "MaxItems": 1,
+                            "Condition": "SEASON Spring",
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [3,4,5]
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_LeahMarket4_Summer",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target forage_item season_summer !forage_item_beach",
+                            "MaxItems": 1,
+                            "Condition": "SEASON Summer",
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [3,4,5]
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_LeahMarket4_Fall",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target forage_item season_fall !forage_item_beach",
+                            "MaxItems": 1,
+                            "Condition": "SEASON Fall",
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [3,4,5]
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_LeahMarket4_Winter",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target forage_item season_winter !forage_item_beach",
+                            "MaxItems": 1,
+                            "Condition": "SEASON Winter",
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [3,4,5]
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_LeahMarket5_Spring",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target forage_item season_spring !forage_item_beach",
+                            "MaxItems": 1,
+                            "Condition": "SEASON Spring",
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [3,4,5]
+                                }
+                            ],
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModId}}_LeahMarket5_Summer",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target forage_item season_summer !forage_item_beach",
+                            "MaxItems": 1,
+                            "Condition": "SEASON Summer",
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [3,4,5]
+                                }
+                            ],
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModId}}_LeahMarket5_Fall",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target forage_item season_fall !forage_item_beach",
+                            "MaxItems": 1,
+                            "Condition": "SEASON Fall",
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [3,4,5]
+                                }
+                            ],
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModId}}_LeahMarket5_Winter",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target forage_item season_winter !forage_item_beach",
+                            "MaxItems": 1,
+                            "Condition": "SEASON Winter",
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [3,4,5]
+                                }
+                            ],
+                            "AvoidRepeat": true
+                        }
+                    ]
+                },
+                "{{ModId}}_EvelynMarket": {
+                    "ID": "{{ModId}}_EvelynMarket",
+                    "Owners": [
+                        {
+                            "Name": "Evelyn",
+                            "Id": "EvelynMarket",
+                            "Dialogues": [
+                                {
+                                    "Id": "EvelynMarket",
+                                    "Dialogue": "{{i18n:BFM.MarketDialogue.Evelyn}}"
+                                }
+                            ]    
+                        }
+                    ],
+                    "PriceModifiers": [
+                        {
+                            "Modification": "Multiply",
+                            "Amount": 0.9
+                        }
+                    ],
+                    "Items": [
+                        {
+                            "Id": "{{ModId}}_EvelynMarket1",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target food_bakery food_sweet",
+                            "MaxItems": 1,
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [3,4,5]
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_EvelynMarket2",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target food_bakery food_sweet",
+                            "MaxItems": 1,
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [3,4,5]
+                                }
+                            ],
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModId}}_EvelynMarket3",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target food_bakery food_sweet",
+                            "MaxItems": 1,
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [3,4,5]
+                                }
+                            ],
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModId}}_EvelynMarket4",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target food_bakery food_sweet",
+                            "MaxItems": 1,
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [3,4,5]
+                                }
+                            ],
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModId}}_EvelynMarket5",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target food_bakery food_sweet",
+                            "MaxItems": 1,
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [3,4,5]
+                                }
+                            ],
+                            "AvoidRepeat": true
+                        }
+                    ]
+                },
+                "{{ModId}}_CarolineMarket": {
+                    "ID": "{{ModId}}_CarolineMarket",
+                    "Owners": [
+                        {
+                            "Name": "Caroline",
+                            "Id": "CarolineMarket",
+                            "Dialogues": [
+                                {
+                                    "Id": "CarolineMarket",
+                                    "Dialogue": "{{i18n:BFM.MarketDialogue.Caroline}}"
+                                }
+                            ]    
+                        }
+                    ],
+                    "PriceModifiers": [
+                        {
+                            "Modification": "Multiply",
+                            "Amount": 0.9
+                        }
+                    ],
+                    "Items": [
+                        {
+                            "Id": "{{ModId}}_CarolineMarket1",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ANY \"ITEM_CONTEXT_TAG Target item_green_tea\" \"ITEM_CONTEXT_TAG Target wildflour_tea_item !tea_sachet_item\"",
+                            "MaxItems": 1,
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [3,4,5]
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_CarolineMarket2",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ANY \"ITEM_CONTEXT_TAG Target item_tea_leaves\" \"ITEM_CONTEXT_TAG Target tea_sachet_item\"",
+                            "MaxItems": 1,
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [3,4,5]
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_CarolineMarket3",
+                            "RandomItemId": [ "(F)1362", "(F)1363", "(F)1376", "(F)1377", "(F)1378", "(F)1379", "(F)1380", "(F)1381", "(F)1382", "(F)1383", "(F)1384", "(F)1385", "(F)1386", "(F)1387", "(F)1388", "(F)1389", "(F)1390", "(F)1748", "(F)TallHousePlant", "(F)CornPlant", "(F)JunimoPlant", "(F)RetroFlower", "(F)RetroPlant", "(F)2425", "(BC)184", "(BC)188", "(BC)192", "(BC)196", "(BC)200", "(BC)204", "(F)FancyHousePlant1", "(F)FancyHousePlant2", "(F)FancyHousePlant3", "(F)FancyHousePlant5" ],
+                            "AvailableStock": 1
+                        },
+                        {
+                            "Id": "{{ModId}}_CarolineMarket4",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CATEGORY Target -80",
+                            "MaxItems": 1,
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3]
+                                }
+                            ],
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModId}}_CarolineMarket5",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ITEM_CATEGORY Target -80",
+                            "MaxItems": 1,
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3]
+                                }
+                            ],
+                            "AvoidRepeat": true
+                        }
+                    ]
+                },
+                "{{ModId}}_AlexMarket": {
+                    "ID": "{{ModId}}_AlexMarket",
+                    "Owners": [
+                        {
+                            "Name": "Alex",
+                            "Id": "AlexMarket",
+                            "Dialogues": [
+                                {
+                                    "Id": "AlexMarket",
+                                    "Dialogue": "{{i18n:BFM.MarketDialogue.Alex}}"
+                                }
+                            ]    
+                        }
+                    ],
+                    "PriceModifiers": [
+                        {
+                            "Modification": "Multiply",
+                            "Amount": 0.9
+                        }
+                    ],
+                    "Items": [
+                        {
+                            "Id": "{{ModId}}_AlexMarket1",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ANY \"ITEM_CONTEXT_TAG Target item_ice_cream\" \"ITEM_CONTEXT_TAG Target ice_cream_item\"",
+                            "MaxItems": 1,
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [3,4,5]
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_AlexMarket2",
+                            "ItemId": "RANDOM_ITEMS (O)",
+                            "PerItemCondition": "ANY \"ITEM_CONTEXT_TAG Target item_ice_cream\" \"ITEM_CONTEXT_TAG Target popsicle_item\"",
+                            "MaxItems": 1,
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [3,4,5]
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_AlexMarket3",
+                            "ItemId": "(O)351",
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3]
+                                }
+                            ]
+                        },
+                        {
+                            "Id": "{{ModId}}_AlexMarket4",
+                            "ItemId": "(O)349",
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3]
+                                }
+                            ],
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModId}}_AlexMarket5",
+                            "ItemId": "(O)223",
+                            "AvailableStockModifiers": [
+                                { 
+                                    "Modification": "Set",
+                                    "RandomAmount": [1,2,3]
+                                }
+                            ],
+                            "AvoidRepeat": true
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

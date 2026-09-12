@@ -1,0 +1,12 @@
+{
+	"config.EnableMod.name": "Включить мод",
+	"config.EnableMod.description": "Включить все функции этого мода. (По умолчанию: true)",
+	"config.YearRoundItems.name": "Товары, доступные круглый год",
+	"config.YearRoundItems.description": "Включить товары, доступные в течение всего года. (По умолчанию: true)",
+	"config.SeasonalItems.name": "Сезонные товары",
+	"config.SeasonalItems.description": "Включить товары, доступные только в определенные сезоны. (По умолчанию: true)",
+	"config.WeekdayDependentItems.name": "Товары, зависящие от дня недели",
+	"config.WeekdayDependentItems.description": "Включить товары, доступные только в определенные дни недели. (По умолчанию: true)",
+	"config.SpecialItems.name": "Специальные товары",
+	"config.SpecialItems.description": "Включить товары, доступные только в определенные даты. (По умолчанию: true)"
+}

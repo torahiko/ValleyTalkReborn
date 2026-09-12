@@ -1,0 +1,100 @@
+{
+    "Changes": [
+        {
+            "LogName": "Add Lureplant to BigCraftables",
+            "Action": "EditData",
+            "Target": "Data/BigCraftables",
+            "Entries": {
+                "DS_Lureplant": {
+                    "Name": "Lureplant",
+                    "DisplayName": "{{i18n:Lureplant.name}}",
+                    "Description": "{{i18n:Lureplant.Description}}",
+                    "Price": 500,
+                    "Fragility": 0,
+                    "CanBePlacedOutdoors": true,
+                    "CanBePlacedIndoors": true,
+                    "IsLamp": false,
+                    "Texture": "Mods\\ZG.DS\\Lureplant",
+                    "SpriteIndex": 0,
+                    "CustomFields": {}
+                  }
+            }
+       },
+       {
+        "LogName": "Add Lureplant Rules",
+        "Action": "EditData",
+        "Target": "Data/Machines",
+        "Entries": {
+            "(BC)DS_Lureplant": {
+                "OutputRules": [
+                    {
+                      "Id": "Default",
+                      "Triggers": [
+                        {
+                          "Id": "OutputCollected, MachinePutDown, DayUpdate",
+                          "Trigger": "OutputCollected, MachinePutDown, DayUpdate",
+                          "RequiredItemId": null,
+                          "RequiredTags": null,
+                          "RequiredCount": 1,
+                          "Condition": "!LOCATION_SEASON Target Winter"
+                        }
+                        ],
+                        "OutputItem": [
+                            {
+                                "Id": "Leafy Meat",
+                                "ItemId": "(O)DS_Leafy_Meat",
+                                "Quality": -1
+                            },
+                            {
+                                "Id": "Leafy Meat",
+                                "ItemId": "(O)DS_Leafy_Meat",
+                                "Quality": 1,
+                                "Condition": "RANDOM 0.3"
+                            },
+                            {
+                                "Id": "Leafy Meat",
+                                "ItemId": "(O)DS_Leafy_Meat",
+                                "Quality": 2,
+                                "Condition": "RANDOM 0.15"
+                            },
+                            {
+                                "Id": "Leafy Meat",
+                                "ItemId": "(O)DS_Leafy_Meat",
+                                "Quality": 4,
+                                "Condition": "RANDOM 0.05"
+                            }
+                        ],
+                        "MinutesUntilReady": -1,
+                        "DaysUntilReady": 2
+                    }
+                ],
+                "AdditionalConsumedItems": null,
+                "PreventTimePass": [
+                  "Winter"
+                ],
+                "ReadyTimeModifiers": null,
+                "ReadyTimeModifierMode": "Stack",
+                "InvalidItemMessage": null,
+                "InvalidItemMessageCondition": null,
+                "InvalidCountMessage": null,
+                "LoadEffects": null,
+                "WorkingEffects": null,
+                "WorkingEffectChance": 0.33,
+                "AllowLoadWhenFull": false,
+                "WobbleWhileWorking": false,
+                "LightWhileWorking": null,
+                "ShowNextIndexWhileWorking": false,
+                "ShowNextIndexWhenReady": true,
+                "AllowFairyDust": false,
+                "IsIncubator": false,
+                "OnlyCompleteOvernight": false,
+                "ClearContentsOvernightCondition": "LOCATION_SEASON Target Winter",
+                "StatsToIncrementWhenLoaded": null,
+                "StatsToIncrementWhenHarvested": null,
+                "ExperienceGainOnHarvest": "Foraging 5",
+                "CustomFields": null
+            }
+        }
+        }
+    ]
+}

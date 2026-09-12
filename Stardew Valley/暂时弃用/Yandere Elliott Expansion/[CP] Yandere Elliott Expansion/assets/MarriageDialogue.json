@@ -1,0 +1,129 @@
+{
+"Changes": [
+
+{
+  "Action": "EditData",
+  "Target": "Characters/Dialogue/EngagementDialogue",
+  "Entries": {
+    "Elliott0": "{{i18n:Elliott.Engage.01}}",
+    "Elliott1": "{{i18n:Elliott.Engage.02}}",
+	}
+},
+
+{
+  "Action": "EditData",
+  "Target": "Characters/Dialogue/MarriageDialogueElliott",
+  "Entries": {
+    "Rainy_Day_0": "{{i18n:Elliott.MarriedDaily.01}}",
+    "Rainy_Day_1": "{{i18n:Elliott.MarriedDaily.02}}",
+    "Rainy_Day_2": "{{i18n:Elliott.MarriedDaily.03}}",
+    "Rainy_Day_3": "{{i18n:Elliott.MarriedDaily.04}}",
+    "Rainy_Day_4": "{{i18n:Elliott.MarriedDaily.05}}",
+    "Rainy_Day_5": "{{i18n:Elliott.MarriedDaily.06}}",
+	
+    "Rainy_Night_0": "{{i18n:Elliott.MarriedDaily.07}}",
+    "Rainy_Night_1": "{{i18n:Elliott.MarriedDaily.08}}",
+    "Rainy_Night_2": "{{i18n:Elliott.MarriedDaily.09}}",
+    "Rainy_Night_3": "{{i18n:Elliott.MarriedDaily.10}}",
+    "Rainy_Night_4": "{{i18n:Elliott.MarriedDaily.11}}",
+    "Rainy_Night_5": "{{i18n:Elliott.MarriedDaily.12}}",
+	
+    "Indoor_Day_0": "{{i18n:Elliott.MarriedDaily.13}}",
+    "Indoor_Day_1": "{{i18n:Elliott.MarriedDaily.14}}",
+    "Indoor_Day_2": "{{i18n:Elliott.MarriedDaily.15}}",
+    "Indoor_Day_3": "{{i18n:Elliott.MarriedDaily.16}}",
+    "Indoor_Day_4": "{{i18n:Elliott.MarriedDaily.17}}",
+    "Indoor_Day_5": "{{i18n:Elliott.MarriedDaily.18}}",
+    "Indoor_Day_6": "{{i18n:Elliott.MarriedDaily.19}}",
+	
+    "Indoor_Night_0": "{{i18n:Elliott.MarriedDaily.20}}",
+    "Indoor_Night_1": "{{i18n:Elliott.MarriedDaily.21}}",
+    "Indoor_Night_2": "{{i18n:Elliott.MarriedDaily.22}}",
+    "Indoor_Night_3": "{{i18n:Elliott.MarriedDaily.23}}",
+    "Indoor_Night_4": "{{i18n:Elliott.MarriedDaily.24}}",
+    "Indoor_Night_5": "{{i18n:Elliott.MarriedDaily.25}}",
+    "Indoor_Night_6": "{{i18n:Elliott.MarriedDaily.26}}",
+	
+    "Outdoor_0": "{{i18n:Elliott.MarriedDaily.27}}",
+    "Outdoor_1": "{{i18n:Elliott.MarriedDaily.28}}",
+    "Outdoor_2": "{{i18n:Elliott.MarriedDaily.29}}",
+    "Outdoor_3": "{{i18n:Elliott.MarriedDaily.30}}",
+    "Outdoor_4": "{{i18n:Elliott.MarriedDaily.31}}",
+    "Outdoor_5": "{{i18n:Elliott.MarriedDaily.32}}",
+	
+    "Good_0": "{{i18n:Elliott.MarriedGood.01}}",
+    "Good_1": "{{i18n:Elliott.MarriedGood.02}}",
+    "Good_2": "{{i18n:Elliott.MarriedGood.03}}",
+    "Good_3": "{{i18n:Elliott.MarriedGood.04}}",
+    "Good_4": "{{i18n:Elliott.MarriedGood.05}}",
+    "Good_5": "{{i18n:Elliott.MarriedGood.06}}",
+    "Good_6": "{{i18n:Elliott.MarriedGood.07}}",
+    "Good_7": "{{i18n:Elliott.MarriedGood.08}}",
+    "Good_8": "{{i18n:Elliott.MarriedGood.09}}",
+    "Good_9": "{{i18n:Elliott.MarriedGood.10}}",
+	
+    "Neutral_0": "{{i18n:Elliott.MarriedNeutral.01}}",
+    "Neutral_1": "{{i18n:Elliott.MarriedNeutral.02}}",
+    "Neutral_2": "{{i18n:Elliott.MarriedNeutral.03}}",
+    "Neutral_3": "{{i18n:Elliott.MarriedNeutral.04}}",
+    "Neutral_4": "{{i18n:Elliott.MarriedNeutral.05}}",
+    "Neutral_5": "{{i18n:Elliott.MarriedNeutral.06}}",
+    "Neutral_6": "{{i18n:Elliott.MarriedNeutral.07}}",
+    "Neutral_7": "{{i18n:Elliott.MarriedNeutral.08}}",
+    "Neutral_8": "{{i18n:Elliott.MarriedNeutral.09}}",
+    "Neutral_9": "{{i18n:Elliott.MarriedNeutral.10}}",
+	
+    "Bad_0": "{{i18n:Elliott.MarriedBad.01}}",
+    "Bad_1": "{{i18n:Elliott.MarriedBad.02}}",
+    "Bad_2": "{{i18n:Elliott.MarriedBad.03}}",
+    "Bad_3": "{{i18n:Elliott.MarriedBad.04}}",
+    "Bad_4": "{{i18n:Elliott.MarriedBad.05}}",
+    "Bad_5": "{{i18n:Elliott.MarriedBad.06}}",
+    "Bad_6": "{{i18n:Elliott.MarriedBad.07}}",
+    "Bad_7": "{{i18n:Elliott.MarriedBad.08}}",
+    "Bad_8": "{{i18n:Elliott.MarriedBad.09}}",
+    "Bad_9": "{{i18n:Elliott.MarriedBad.10}}",
+	
+    "funLeave_Elliott": "{{i18n:Elliott.Married.FunLeave}}",
+    "funReturn_Elliott": "{{i18n:Elliott.Married.FunReturn}}",
+	
+    "spring_1": "{{i18n:Elliott.Married.Spring1}}",
+    "spring_12": "{{i18n:Elliott.Married.Spring12}}",
+    "spring_23": "{{i18n:Elliott.Married.Spring23}}",
+    "summer_1": "{{i18n:Elliott.Married.Summer1}}",
+    "summer_10": "{{i18n:Elliott.Married.Summer10}}",
+    "summer_27": "{{i18n:Elliott.Married.Summer27}}",
+    "fall_1": "{{i18n:Elliott.Married.Fall1}}",
+    "fall_15": "{{i18n:Elliott.Married.Fall15}}",
+    "fall_26": "{{i18n:Elliott.Married.Fall26}}",
+    "winter_1": "{{i18n:Elliott.Married.Winter1}}",
+    "winter_7": "{{i18n:Elliott.Married.Winter7}}",
+    "winter_28": "{{i18n:Elliott.Married.Winter28}}",
+	}
+},
+
+{
+"Action": "EditData",
+"Target": "Data/ExtraDialogue",
+"When": { "Relationship:Elliott": "Married", },
+"Entries": {
+    "Spouse_KitchenBlocked": "{{i18n:Elliott.Married.Strings1}}",
+    "Mines_PlayerKilled_Spouse_PlayerMale": "{{i18n:Elliott.Married.Strings2}}",
+    "Mines_PlayerKilled_Spouse_PlayerFemale": "{{i18n:Elliott.Married.Strings2}}",
+    "SummitEvent_Dialogue3_Elliott": "{{i18n:Elliott.Married.Strings3}}",
+	}
+},
+
+{
+"Action": "EditData",
+"Target": "Strings/StringsFromCSFiles",
+"When": { "Relationship:Elliott": "Married", },
+"Entries": {
+    "NPC.cs.3985": "{{i18n:Elliott.Married.Strings4}}",
+    "NPC.cs.4500": "{{i18n:Elliott.Married.Strings5}}",
+    "PathFindController.cs.4579": "{{i18n:Elliott.Married.Strings6}}",
+	}
+},
+
+]
+}

@@ -1,0 +1,521 @@
+{
+    "$schema": "https://smapi.io/schemas/content-patcher.json",
+    "Format": "2.3.0",
+    "ConfigSchema": {
+        // Tulip
+        "Tulip Colors": {
+            "AllowValues": "Single Color, Custom Colors, Earthy Palette, Egg Festival Palette, Off",
+            "Default": "Single Color",
+            "Section": "Tulip"
+        },
+        "Single Tulip Color": {
+            "Default": "#FF4040",
+            "Section": "Tulip"
+        },
+        "Custom Tulip 1": {
+            "Default": "#FF4040",
+            "Section": "Tulip"
+        },
+        "Custom Tulip 2": {
+            "Default": "#FF4040",
+            "Section": "Tulip"
+        },
+        "Custom Tulip 3": {
+            "Default": "#FF4040",
+            "Section": "Tulip"
+        },
+        "Custom Tulip 4": {
+            "Default": "#FF4040",
+            "Section": "Tulip"
+        },
+        "Custom Tulip 5": {
+            "Default": "#FF4040",
+            "Section": "Tulip"
+        },
+        "Custom Tulip 6": {
+            "Default": "#FF4040",
+            "Section": "Tulip"
+        },
+        // Blue Jazz
+        "Blue Jazz Colors": {
+            "AllowValues": "Single Color, Custom Colors, Earthy Palette, Egg Festival Palette, Off",
+            "Default": "Single Color",
+            "Section": "Blue Jazz"
+        },
+        "Single Blue Jazz Color": {
+            "Default": "#6495ED",
+            "Section": "Blue Jazz"
+        },
+        "Custom Blue Jazz 1": {
+            "Default": "#6495ED",
+            "Section": "Blue Jazz"
+        },
+        "Custom Blue Jazz 2": {
+            "Default": "#6495ED",
+            "Section": "Blue Jazz"
+        },
+        "Custom Blue Jazz 3": {
+            "Default": "#6495ED",
+            "Section": "Blue Jazz"
+        },
+        "Custom Blue Jazz 4": {
+            "Default": "#6495ED",
+            "Section": "Blue Jazz"
+        },
+        "Custom Blue Jazz 5": {
+            "Default": "#6495ED",
+            "Section": "Blue Jazz"
+        },
+        "Custom Blue Jazz 6": {
+            "Default": "#6495ED",
+            "Section": "Blue Jazz"
+        },
+        // Poppy
+        "Poppy Colors": {
+            "AllowValues": "Single Color, Custom Colors, Earthy Palette, Off",
+            "Default": "Single Color",
+            "Section": "Poppy"
+        },
+        "Single Poppy Color": {
+            "Default": "#DC143C",
+            "Section": "Poppy"
+        },
+        "Custom Poppy 1": {
+            "Default": "#DC143C",
+            "Section": "Poppy"
+        },
+        "Custom Poppy 2": {
+            "Default": "#DC143C",
+            "Section": "Poppy"
+        },
+        "Custom Poppy 3": {
+            "Default": "#DC143C",
+            "Section": "Poppy"
+        },
+        "Custom Poppy 4": {
+            "Default": "#DC143C",
+            "Section": "Poppy"
+        },
+        "Custom Poppy 5": {
+            "Default": "#DC143C",
+            "Section": "Poppy"
+        },
+        "Custom Poppy 6": {
+            "Default": "#DC143C",
+            "Section": "Poppy"
+        },
+        // Summer Spangle
+        "Summer Spangle Colors": {
+            "AllowValues": "Single Color, Custom Colors, Earthy Palette, Off",
+            "Default": "Single Color",
+            "Section": "Summer Spangle"
+        },
+        "Single Summer Spangle Color": {
+            "Default": "#FF69B4",
+            "Section": "Summer Spangle"
+        },
+        "Custom Summer Spangle 1": {
+            "Default": "#FF69B4",
+            "Section": "Summer Spangle"
+        },
+        "Custom Summer Spangle 2": {
+            "Default": "#FF69B4",
+            "Section": "Summer Spangle"
+        },
+        "Custom Summer Spangle 3": {
+            "Default": "#FF69B4",
+            "Section": "Summer Spangle"
+        },
+        "Custom Summer Spangle 4": {
+            "Default": "#FF69B4",
+            "Section": "Summer Spangle"
+        },
+        "Custom Summer Spangle 5": {
+            "Default": "#FF69B4",
+            "Section": "Summer Spangle"
+        },
+        "Custom Summer Spangle 6": {
+            "Default": "#FF69B4",
+            "Section": "Summer Spangle"
+        },
+        // Fairy Rose
+        "Fairy Rose Colors": {
+            "AllowValues": "Single Color, Custom Colors, Earthy Palette, Vibrant Palette, Off",
+            "Default": "Single Color",
+            "Section": "Fairy Rose"
+        },
+        "Single Fairy Rose Color": {
+            "Default": "#9370DB",
+            "Section": "Fairy Rose"
+        },
+        "Custom Fairy Rose 1": {
+            "Default": "#9370DB",
+            "Section": "Fairy Rose"
+        },
+        "Custom Fairy Rose 2": {
+            "Default": "#9370DB",
+            "Section": "Fairy Rose"
+        },
+        "Custom Fairy Rose 3": {
+            "Default": "#9370DB",
+            "Section": "Fairy Rose"
+        },
+        "Custom Fairy Rose 4": {
+            "Default": "#9370DB",
+            "Section": "Fairy Rose"
+        },
+        "Custom Fairy Rose 5": {
+            "Default": "#9370DB",
+            "Section": "Fairy Rose"
+        },
+        "Custom Fairy Rose 6": {
+            "Default": "#9370DB",
+            "Section": "Fairy Rose"
+        }
+    },
+    "Changes": [
+        // TULIP
+        {
+            "Action": "EditData",
+            "Target": "Data/Crops",
+            "TargetField": [
+                "427",
+                "TintColors"
+            ],
+            "Entries": {
+                "#0": "{{Single Tulip Color}}",
+                "#1": "{{Single Tulip Color}}",
+                "#2": "{{Single Tulip Color}}",
+                "#3": "{{Single Tulip Color}}",
+                "#4": "{{Single Tulip Color}}"
+            },
+            "When": {
+                "Tulip Colors": "Single Color"
+            }
+        },
+        {
+            "Action": "EditData",
+            "Target": "Data/Crops",
+            "TargetField": [
+                "427",
+                "TintColors"
+            ],
+            "Entries": {
+                "#0": "{{Custom Tulip 1}}",
+                "#1": "{{Custom Tulip 2}}",
+                "#2": "{{Custom Tulip 3}}",
+                "#3": "{{Custom Tulip 4}}",
+                "#4": "{{Custom Tulip 5}}",
+                "#5": "{{Custom Tulip 6}}"
+            },
+            "When": {
+                "Tulip Colors": "Custom Colors"
+            }
+        },
+        {
+            "Action": "EditData",
+            "Target": "Data/Crops",
+            "TargetField": [
+                "427",
+                "TintColors"
+            ],
+            "Entries": {
+                "#0": "#CC0033", // Vivid Crimson
+                "#1": "#E32636", // Alizarin Crimson
+                "#2": "#FF4040", // Coral Red
+                "#3": "#F88379", // Coral Pink
+                "#4": "#F56991", // Light Crimson
+                "#5": "#DE3163" // Cerise
+            },
+            "When": {
+                "Tulip Colors": "Earthy Palette"
+            }
+        },
+        {
+            "Action": "EditData",
+            "Target": "Data/Crops",
+            "TargetField": [
+                "427",
+                "TintColors"
+            ],
+            "Entries": {
+                "#0": "#FFA6C9", // Carnation Pink
+                "#1": "#F88379", // Coral Pink
+                "#2": "#FFF44F", // Lemon Yellow
+                "#3": "#AFEEEE", // Pale Turquoise
+                "#4": "#87CEFA", // Light Sky Blue
+                "#5": "#BF94E4" // Bright Lavender
+            },
+            "When": {
+                "Tulip Colors": "Egg Festival Palette"
+            }
+        },
+        // BLUE JAZZ
+        {
+            "Action": "EditData",
+            "Target": "Data/Crops",
+            "TargetField": [
+                "429",
+                "TintColors"
+            ],
+            "Entries": {
+                "#0": "{{Single Blue Jazz Color}}",
+                "#1": "{{Single Blue Jazz Color}}",
+                "#2": "{{Single Blue Jazz Color}}",
+                "#3": "{{Single Blue Jazz Color}}",
+                "#4": "{{Single Blue Jazz Color}}",
+                "#5": "{{Single Blue Jazz Color}}"
+            },
+            "When": {
+                "Blue Jazz Colors": "Single Color"
+            }
+        },
+        {
+            "Action": "EditData",
+            "Target": "Data/Crops",
+            "TargetField": [
+                "429",
+                "TintColors"
+            ],
+            "Entries": {
+                "#0": "{{Custom Blue Jazz 1}}",
+                "#1": "{{Custom Blue Jazz 2}}",
+                "#2": "{{Custom Blue Jazz 3}}",
+                "#3": "{{Custom Blue Jazz 4}}",
+                "#4": "{{Custom Blue Jazz 5}}",
+                "#5": "{{Custom Blue Jazz 6}}"
+            },
+            "When": {
+                "Blue Jazz Colors": "Custom Colors"
+            }
+        },
+        {
+            "Action": "EditData",
+            "Target": "Data/Crops",
+            "TargetField": [
+                "429",
+                "TintColors"
+            ],
+            "Entries": {
+                "#0": "#4997D0", // Celestial Blue
+                "#1": "#6495ED", // Cornflower Blue
+                "#2": "#73C2FB", // Maya Blue
+                "#3": "#B57EDC", // Lavender Floral
+                "#4": "#9370DB", // Medium Purple
+                "#5": "#6050DC" // Majorelle Blue
+            },
+            "When": {
+                "Blue Jazz Colors": "Earthy Palette"
+            }
+        },
+        {
+            "Action": "EditData",
+            "Target": "Data/Crops",
+            "TargetField": [
+                "429",
+                "TintColors"
+            ],
+            "Entries": {
+                "#0": "#FC8EAC", // Flamingo Pink
+                "#1": "#DA70D6", // Orchid
+                "#2": "#40E0D0", // Turquoise
+                "#3": "#00BFFF", // Deep Sky Blue
+                "#4": "#87CEFA", // Light Sky Blue
+                "#5": "#BF94E4" // Bright Lavender
+            },
+            "When": {
+                "Blue Jazz Colors": "Egg Festival Palette"
+            }
+        },
+        // POPPY
+        {
+            "Action": "EditData",
+            "Target": "Data/Crops",
+            "TargetField": [
+                "453",
+                "TintColors"
+            ],
+            "Entries": {
+                "#0": "{{Single Poppy Color}}",
+                "#1": "{{Single Poppy Color}}",
+                "#2": "{{Single Poppy Color}}"
+            },
+            "When": {
+                "Poppy Colors": "Single Color"
+            }
+        },
+        {
+            "Action": "EditData",
+            "Target": "Data/Crops",
+            "TargetField": [
+                "453",
+                "TintColors"
+            ],
+            "Entries": {
+                "#0": "{{Custom Poppy 1}}",
+                "#1": "{{Custom Poppy 2}}",
+                "#2": "{{Custom Poppy 3}}",
+                "#3": "{{Custom Poppy 4}}",
+                "#4": "{{Custom Poppy 5}}",
+                "#5": "{{Custom Poppy 6}}"
+            },
+            "When": {
+                "Poppy Colors": "Custom Colors"
+            }
+        },
+        {
+            "Action": "EditData",
+            "Target": "Data/Crops",
+            "TargetField": [
+                "453",
+                "TintColors"
+            ],
+            "Entries": {
+                "#0": "#B31B1B", // Carnelian Red
+                "#1": "#E62020", // Lust Red
+                "#2": "#CB410B", // Sinopia Orange
+                "#3": "#E48400", // Fulvous Orange
+                "#4": "#FCC200", // Golden Poppy
+                "#5": "#FFFAF0" // Floral White
+            },
+            "When": {
+                "Poppy Colors": "Earthy Palette"
+            }
+        },
+        // SUMMER SPANGLE
+        {
+            "Action": "EditData",
+            "Target": "Data/Crops",
+            "TargetField": [
+                "455",
+                "TintColors"
+            ],
+            "Entries": {
+                "#0": "{{Single Summer Spangle Color}}",
+                "#1": "{{Single Summer Spangle Color}}",
+                "#2": "{{Single Summer Spangle Color}}",
+                "#3": "{{Single Summer Spangle Color}}",
+                "#4": "{{Single Summer Spangle Color}}",
+                "#5": "{{Single Summer Spangle Color}}"
+            },
+            "When": {
+                "Summer Spangle Colors": "Single Color"
+            }
+        },
+        {
+            "Action": "EditData",
+            "Target": "Data/Crops",
+            "TargetField": [
+                "455",
+                "TintColors"
+            ],
+            "Entries": {
+                "#0": "{{Custom Summer Spangle 1}}",
+                "#1": "{{Custom Summer Spangle 2}}",
+                "#2": "{{Custom Summer Spangle 3}}",
+                "#3": "{{Custom Summer Spangle 4}}",
+                "#4": "{{Custom Summer Spangle 5}}",
+                "#5": "{{Custom Summer Spangle 6}}"
+            },
+            "When": {
+                "Summer Spangle Colors": "Custom Colors"
+            }
+        },
+        {
+            "Action": "EditData",
+            "Target": "Data/Crops",
+            "TargetField": [
+                "455",
+                "TintColors"
+            ],
+            "Entries": {
+                "#0": "#DC143C", // Crimson
+                "#1": "#F56991", // Light Crimson
+                "#2": "#F88379", // Coral Pink
+                "#3": "#48D1CC", // Medium Turquoise
+                "#4": "#BA55D3", // Medium Orchid
+                "#5": "#9457EB" // Lavender Indigo
+            },
+            "When": {
+                "Summer Spangle Colors": "Earthy Palette"
+            }
+        },
+        // FAIRY ROSE
+        {
+            "Action": "EditData",
+            "Target": "Data/Crops",
+            "TargetField": [
+                "425",
+                "TintColors"
+            ],
+            "Entries": {
+                "#0": "{{Single Fairy Rose Color}}",
+                "#1": "{{Single Fairy Rose Color}}",
+                "#2": "{{Single Fairy Rose Color}}",
+                "#3": "{{Single Fairy Rose Color}}",
+                "#4": "{{Single Fairy Rose Color}}",
+                "#5": "{{Single Fairy Rose Color}}"
+            },
+            "When": {
+                "Fairy Rose Colors": "Single Color"
+            }
+        },
+        {
+            "Action": "EditData",
+            "Target": "Data/Crops",
+            "TargetField": [
+                "425",
+                "TintColors"
+            ],
+            "Entries": {
+                "#0": "{{Custom Fairy Rose 1}}",
+                "#1": "{{Custom Fairy Rose 2}}",
+                "#2": "{{Custom Fairy Rose 3}}",
+                "#3": "{{Custom Fairy Rose 4}}",
+                "#4": "{{Custom Fairy Rose 5}}",
+                "#5": "{{Custom Fairy Rose 6}}"
+            },
+            "When": {
+                "Fairy Rose Colors": "Custom Colors"
+            }
+        },
+        {
+            "Action": "EditData",
+            "Target": "Data/Crops",
+            "TargetField": [
+                "425",
+                "TintColors"
+            ],
+            "Entries": {
+                "#0": "#CC4E5C", // Dark Terra Cotta
+                "#1": "#873260", // Boysenberry
+                "#2": "#C54B8C", // Mulberry
+                "#3": "#7851A9", // Royal Purple
+                "#4": "#7B68EE", // Medium Slate Blue
+                "#5": "#9999FF" // Light Pastel Purple
+            },
+            "When": {
+                "Fairy Rose Colors": "Earthy Palette"
+            }
+        },
+        {
+            "Action": "EditData",
+            "Target": "Data/Crops",
+            "TargetField": [
+                "425",
+                "TintColors"
+            ],
+            "Entries": {
+                "#0": "#F08080", // Light Coral
+                "#1": "#40E0D0", // Turquoise
+                "#2": "#6495ED", // Cornflower Blue
+                "#3": "#E0B0FF", // Mauve
+                "#4": "#9370DB", // Medium Purple
+                "#5": "#9932CC" // Dark Orchid
+            },
+            "When": {
+                "Fairy Rose Colors": "Vibrant Palette"
+            }
+        }
+    ]
+}

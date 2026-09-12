@@ -1,0 +1,60 @@
+{
+    "Format": "2.2.0",
+    "Changes" : [
+      {
+        //Seed Object
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "OysterFarmStarter": {
+            "Name": "OysterFarmStarter",
+            "Displayname": "Oyster Farm Starter",
+            "Description": "O Oysters, come and walk with us!",
+            "Type": "Seeds",
+            "Category": -74,
+            "Texture": "Mods/OysterFarm/Oysterseeds",
+            "Price": 1
+          }
+        }
+      },
+      {
+        //Crops
+        "Action": "EditData",
+        "Target": "Data/Crops",
+        "Entries": {
+          "OysterFarmStarter": {
+            "Seasons": [ "spring", "summer", "fall", "winter" ],
+            "DaysInPhase": [5, 5, 5, 5, 5],
+            "Category": -2,
+            "IsPaddyCrop": "true",
+            "RegrowDays": 28,
+            "HarvestItemId": 797,
+            "Texture": "Mods/OysterFarm/Oyster",
+            "HarvestMethod": "Grab",
+            "HarvestMinStack": 1,
+            "HarvestMaxStack": 1,
+            "HarvestMaxIncreasePerFarmingLevel": 1
+          },
+        }
+      },
+      {
+        //Add item to the shop
+        "Action": "EditData",
+        "Target": "Data/Shops",
+        "TargetField": [ "FishShop", "Items" ],
+        "Entries": {
+          "OysterFarmStarter": {
+            "Id": "OysterFarmStarter",
+            "ItemId": "OysterFarmStarter",
+            "Price": 1000000
+          }
+        }
+      },
+        {
+        "Action": "Load",
+        "Target": "Mods/OysterFarm/Oysterseeds, Mods/OysterFarm/Oyster",
+        "FromFile": "assets/{{TargetWithoutPath}}.png"
+      }
+    ]
+     
+  }

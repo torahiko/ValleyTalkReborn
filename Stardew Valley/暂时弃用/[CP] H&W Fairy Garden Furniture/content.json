@@ -1,0 +1,96 @@
+{
+    "Format": "2.3.0",
+
+    "ConfigSchema": {
+        "Decor": 
+            {
+                "Description": "If you want to enable the base decor furniture. True by default",
+                "AllowValues": "true, false",
+                "Default": "true",
+                "AllowBlank": false
+            },
+        "Mushrooms": 
+            {
+                "Description": "If you want to enable the mushroom furniture. True by default",
+                "AllowValues": "true, false",
+                "Default": "true",
+                "AllowBlank": false
+            },
+        "Gnomes": 
+            {
+                "Description": "If you want to enable the garden gnome furniture. True by default",
+                "AllowValues": "true, false",
+                "Default": "true",
+                "AllowBlank": false
+            },
+        "FairyHouses": 
+            {
+                "Description": "If you want to enable the fairy houses furniture. True by default",
+                "AllowValues": "true, false",
+                "Default": "true",
+                "AllowBlank": false
+            },
+        "Recolor":
+            {
+                "Description": "If you want to use a recolor, choose from Light or Dark. Classic by default",
+                "AllowValues": "Classic, Light, Dark",
+                "Default": "Classic",
+                "AllowBlank": false
+            }
+    },
+    
+    "Changes": [
+
+        //Include Base Set Furniture
+
+        {
+        "LogName": "HXW Fairy Garden Furniture",
+        "Action": "Include",
+        "FromFile": "Data/furniture.json",
+        "When": {"Decor": true}
+        },
+
+        //Include Mushroom Furniture
+
+        {
+        "LogName": "HXW Mushroom Furniture",
+        "Action": "Include",
+        "FromFile": "Data/furniture_mushrooms.json",
+        "When": {"Mushrooms": true}
+        },
+        
+        //Include Gnome Furniture
+
+        {
+        "LogName": "HXW Gnome Furniture",
+        "Action": "Include",
+        "FromFile": "Data/furniture_gnomes.json",
+        "When": {"Gnomes": true}
+        },
+         
+        //Include Fairy Houses Furniture
+
+        {
+        "LogName": "HXW Fairy Houses Furniture",
+        "Action": "Include",
+        "FromFile": "Data/furniture_houses.json",
+        "When": {"FairyHouses": true}
+        },
+
+        //Include Furniture Catalogue
+
+        {
+            "LogName": "HXW Fairy Garden Furniture Catalogue",
+            "Action": "Include",
+            "FromFile": "Data/shops.json"
+        },
+
+        //Include Textures
+
+        {
+        "LogName": "HXW Fairy Garden Furniture Textures",
+        "Action": "Include",
+        "FromFile": "Data/textures.json"
+        }
+    ]
+}

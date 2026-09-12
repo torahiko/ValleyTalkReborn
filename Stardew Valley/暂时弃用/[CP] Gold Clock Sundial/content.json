@@ -1,0 +1,30 @@
+{
+    "Format": "1.9",
+
+    "Changes": [
+            {
+                "Action": "EditImage",
+                "Target": "Buildings/Gold Clock",
+                "FromFile": "assets/Gold_Clock_{{season}}.png"
+            },
+            {
+                "Action": "EditImage",
+                "Target": "loosesprites/cursors",
+                "FromFile": "assets/cursors.png",
+                "ToArea":
+                {
+                    "X": 363,
+                    "Y": 395,
+                    "Width": 16,
+                    "Height": 13
+                },
+                "FromArea":
+                {
+                    "X": 363,
+                    "Y": 395,
+                    "Width": 16,
+                    "Height": 13
+                },
+            }
+        ]
+}

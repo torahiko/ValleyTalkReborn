@@ -1,0 +1,15 @@
+{
+  "Changes": [
+    {
+      "LogName": "PinkCakeObsession",
+      "Action": "EditData",
+      "Target": "Data/Events/HaleyHouse",
+      "Entries": {
+        "{{ModId}}_PinkCakeObsession/n {{ModId}}_PinkCakeMail/t 600 1800": "jaunty/17 19/farmer 9 20 1 Haley 19 16 0/skippable/pause 500/move Haley 1 0 1/move Haley 0 1 2/move farmer 7 0 1 true/pause 300/playSound woodyStep/addObject 20 18 221 1/emote Haley 20 true/pause 1000/faceDirection Haley 3/jump Haley 3/emote Haley 16/pause 500/speak Haley \"{{i18n:PinkCakeObsession.1}}\"/move Haley -4 0 3/faceDirection Haley 2/faceDirection farmer 0/pause 500/speak Haley \"{{i18n:PinkCakeObsession.2}}\"/pause 500/speak Haley \"{{i18n:PinkCakeObsession.3}}\"/pause 500/pause 500/emote Haley 56 true/faceDirection Haley 2 true/pause 90/faceDirection Haley 1 true/pause 90/faceDirection Haley 0 true/pause 90/faceDirection Haley 3 true/pause 90/faceDirection Haley 2/pause 500/speak Haley \"{{i18n:PinkCakeObsession.4}}\"/pause 500/move Haley 0 2 2/speak Haley \"{{i18n:PinkCakeObsession.5}}\"/emote farmer 32/pause 500/speak Haley \"{{i18n:PinkCakeObsession.6}}\"/emote Haley 32/pause 800/end"
+      },
+      "When": {
+        "PinkCakeObsession": true
+      }
+    }
+  ]
+}

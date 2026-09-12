@@ -1,0 +1,345 @@
+{
+	"Format": "2.4.0",
+	"Changes": [
+		{
+			"LogName": "Love of Cooking - Mail [EN]",
+			"Action": "EditData",
+			"Target": "Data/mail",
+			"Entries": {
+				"blueberry.LoveOfCooking.cookbook_unlocked": "嗨 @,^  我在清理阁楼的时候发现了适合你的东西——老家的食谱！ ^   虽然少了几页，但我相信你能做好的。 我把我们家备用的煎锅也放进去了，帮你入门。^^ 亲爱的，保重，记得吃好！ ^  爱你的妈妈%item id blueberry.LoveOfCooking_cookbook 1 %%[#]妈妈的烹饪书",
+				"blueberry.LoveOfCooking.seasoning_1": "嗨亲爱的,^我在一本生活杂志上看到了这个食谱！^它可以让任何东西变得更美味。^^记住要均衡膳食！^  爱你的妈妈%item craftingRecipe blueberry.LoveOfCooking_seasoning_1 %%",
+				"blueberry.LoveOfCooking.seasoning_2": "嗨甜心！^电视上正在播一档精彩的烹饪节目，展示了给食物调味的全新方法！^那我必须得把食谱写下来给你啊。^继续练习烹饪吧！^  爱你的妈妈%item craftingRecipe blueberry.LoveOfCooking_seasoning_2 %%",
+				"blueberry.LoveOfCooking.migrate_refund_1_6": "致所有者^^我们审查了年度农业补贴，发现上次系统迁移时有些出入。^是的，看来是有人做了手脚。随信附上对损失农产品的赔偿。^^感谢您一直以来的惠顾，^  蓝莓种植与供应%item money {0} %%"
+			}
+		},
+		{
+			"LogName": "Love of Cooking - Translations [EN]",
+			"Action": "EditData",
+			"Target": "Mods/blueberry.LoveOfCooking.Assets/Strings",
+			"Entries": {
+				// Mod info
+				"mod.name": "烹饪之爱",
+
+				// Config options
+				"config.page.info": "信息",
+				"config.page.options": "选项",
+
+				"config.option.cookingmenu_name": "烹饪菜单",
+				"config.option.cookingmenu_description": "用新的烹饪菜单取代手工制作界面！\n食谱保存在您的食谱簿中，可进行搜索、排序、筛选和收藏。\n烹饪时手动添加配料。",
+				"config.option.cookingskill_name": "烹饪技巧和食谱",
+				"config.option.cookingskill_description": "为等级增加一个新的烹饪技能！\n技能等级可解锁新的烹饪食谱和职业。\n通过烹饪获得经验，新食谱和高级食谱可获得奖励。",
+				"config.option.cookingtool_name": "烹饪工具和升级",
+				"config.option.cookingtool_description": "添加新的烹饪工具，以便升级！\n烹饪时可使用的食材数量减至 1，随工具等级提高而增加。\n您可以从铁匠那里购买升级物品，以烹制高级食谱。\n\n需要新的烹饪菜单。",
+				"config.option.seasonings_name": "更多调味料",
+				"config.option.seasonings_description": "为您的烹饪增添新口味！\n引入低价值项目，提高熟食质量。\n烹饪时自动消耗。",
+				"config.option.foodbuffsstarthidden_name": "食物Buff开始隐藏",
+				"config.option.foodbuffsstarthidden_description": "在您食用之前，食物上不会显示 Buff 值！\n如果禁用，食物和食谱将始终显示其 BUFF 属性。",
+				"config.option.foodhealingtakestime_name": "随时间推移的食物治愈",
+				"config.option.foodhealingtakestime_description": "食物会随着时间的推移逐渐恢复你的健康！\n当你精力充沛时能更好地利用buff食品、\n但在遇到危险时，您无法立即恢复健康。",
+				"config.option.foodcanburn_name": "食物会烧焦",
+				"config.option.foodcanburn_description": "在烹饪时，你有机会毁掉你的食物！\n除非你喜欢失败，否则不推荐使用。",
+				"config.option.townkitchens_name": "城镇厨房",
+				"config.option.townkitchens_description": "允许你与镇上的任何厨房互动！\n你需要与住在那里的人成为朋友。",
+				"config.option.menuanimation_name": "菜单动画",
+				"config.option.menuanimation_description": "是否在打开烹饪菜单时播放快速过场。\n\n需要新的烹饪菜单。",
+				"config.option.cookinganimation_name": "烹饪动画",
+				"config.option.cookinganimation_description": "在厨房做饭时，是否可以播放少许动画。\n\n需要新的烹饪菜单。",
+				"config.option.foodregenbar_name": "显示食物治疗再生条",
+				"config.option.foodregenbar_description": "启用【随时间推移的食物治愈】后，可以隐藏食物再生条。\n健康条和能量条旁边会显示剩余的食物再生能力。",
+				"config.option.fixcraftingpagerecipesorting_name": "修复默认配方排序",
+				"config.option.fixcraftingpagerecipesorting_description": "禁用新的烹饪菜单后，食谱将按照原版排序，自定义排序在后。\n该选项会更新排序方法，将所有食谱混合在一起。\n\n需要使用默认烹饪菜单。",
+				"config.option.remembersearchfilter_name": "记住搜索过滤器",
+				"config.option.remembersearchfilter_description": "启用新的烹饪菜单后，您可以使用筛选器搜索食谱。\n菜单已经保存了您上次使用的搜索过滤器、\n但下次游戏时会重置。\n您可以在此处禁用此选项，以便始终使用默认过滤器启动。",
+				"config.option.defaultsearchfilter_name": "默认搜索过滤器（Filter）",
+				"config.option.defaultsearchfilter_description": "启用新的烹饪菜单后，您可以使用筛选器搜索食谱。\n菜单已经保存了您上次使用的搜索过滤器、\n但下次游戏时会重置。\n您可以在此为所有游戏会话设置默认过滤器。",
+				"config.option.defaultsearchsorter_name": "默认搜索分类器（Sorter）",
+				"config.option.defaultsearchsorter_description": "启用新的烹饪菜单后，您可以使用筛选器搜索食谱。\n菜单已经保存了您上次使用的搜索过滤器、\n但下次游戏时会重置。\n您可以在此为所有游戏会话设置默认过滤器。（英文原文就和Filter那段一样）",
+				"config.option.resizekoreanfonts_name": "调整韩文字体大小",
+				"config.option.resizekoreanfonts_description": "如果使用默认字体播放韩文，请保持启用。\n如果使用 FixFontOption 或其他工具来调整字体大小，可能需要禁用此功能。",
+
+				"config.info.controllermap.title": "游戏手柄控制",
+				"config.info.controllermap.button.a": "   选择",
+				"config.info.controllermap.button.b": "   取消",
+				"config.info.controllermap.button.x": "   自动添加成分",
+				"config.info.controllermap.button.y": "   取消",
+				"config.info.controllermap.button.select": "   搜索",
+				"config.info.controllermap.button.start": "   取消",
+				"config.info.controllermap.shoulders": "LB/RB   更改区域",
+				"config.info.controllermap.triggers": "LT/RT   更改食谱",
+
+				"config.info.cookingmenu.text.1": "用新的烹饪菜单取代原有的制作界面。\n收到邮寄的 {0} 后，像往常一样与厨房互动，打开厨房。\n搜索、排序、筛选和收藏食谱，烹饪您喜爱的食物。\n\n不使用库存插槽： 可发现于 = Special Items tab.\n\n可用于农舍和木屋厨房，也可用于 {1}。\n如果在 “选项”页面中启用，则可在城镇厨房中使用。",
+				"config.info.cookingmenu.subheading.1": "烹饪书配送",
+
+				"config.info.cookingskill.text.1": "技能等级会教给你新的食谱，提高你的厨艺，并解锁新的职业。\n\n每天烹饪可以获得更多经验，而大量烹饪则会减少经验。\n通过烹饪新的高难度食谱获得额外经验。",
+				"config.info.cookingskill.text.2": "烹饪技能职业的解锁方式与其他技能相同。\n在烹饪和食用食物时，职业点可提高效果。",
+				"config.info.cookingskill.subheading.1": "技能进步",
+				"config.info.cookingskill.subheading.2": "{0} 经验",
+				"config.info.cookingskill.subheading.3": "{0}/{1} 经验",
+				"config.info.cookingskill.subheading.4": "烹饪食谱",
+				"config.info.cookingskill.subheading.5": "技能职业",
+
+				"config.info.cookingtool.text.1": "您的 {0} 决定了烹饪时可以使用的食材数量。\n在铁匠处升级烹饪工具可以解锁额外的插槽。\n\n不使用库存插槽： 可发现于 = Special Items tab.\n\n您可以在这里、角色页面或烹饪菜单中查看自己的{0}等级。\n如果在“选项”页面禁用，您的{0}将始终被视为最大级别。",
+				"config.info.cookingtool.subheading.1": "工具升级",
+
+				"config.info.townkitchens.text.1": "只要你是房主的朋友，就可以在镇上的任何一家厨房烹饪食物。\n您需要一本 烹饪书 和烹饪食谱！",
+				"config.info.townkitchens.subheading.1": "可用厨房",
+				"config.info.townkitchens.subheading.2": "需要友谊",
+
+				"config.info.seasonings.text.1": "添加新的调味品，提高烹饪食物的质量。\n\n达到烹饪里程碑可解锁调味料。\n烹饪时自动消耗。",
+				"config.info.seasonings.subheading.1": "调味品",
+
+				"config.info.foodhealingtakestime.text": "食物的治疗不是一蹴而就的，而是随着时间的推移逐渐进行的。\n\n能量不足时，健康和能量恢复得更快。\n当健康和精力充沛时，治疗效果大多会得到保留。\n多吃几种食物会让一天的恢复能力叠加。\n随着技能等级的提高，治疗速度也会提高。\n{0}和{1}总是可以立即愈合。",
+				"config.info.foodbuffsstarthidden.text": "所有食物在你吃下之前，都会隐藏对人体的影响。\n之后，所有同类物品上都会显示 Buff（或无 Buff）。\n健康和能量的恢复依然可见。",
+				"config.info.foodcanburn.text": "在烹饪任何食谱时，都可能会毁掉一些食物。\n烧焦的食物会变成无用的垃圾。 您的食材将被浪费。\n即使食物被烧焦，也会获得技能经验。",
+				"config.info.foodcanburn.subheading": "烧毁几率: {0} ~ {1}%",
+
+				"config.info.disabled": "> 可在选项页面启用。",
+				"config.info.disabled_bad": "> 可在选项页面启用。\n警告：这一点都不好玩。",
+				"config.info.features_blocked": "保存时无法更改功能。\n\n准备就绪后，返回标题页面更改首选项。",
+
+				"config.features_label": "特点",
+				"config.changes_label": "变化",
+				"config.others_label": "其他",
+
+				"config.format.level": "等级 {0}",
+				"config.format.profession": "{0} - {1}",
+				"config.format.unknown": "???",
+
+				// General strings
+
+				// Cooking tool
+				"menu.cooking_tool.name.basic": "煎锅",
+				"menu.cooking_tool.name.copper": "铜煎锅",
+				"menu.cooking_tool.name.steel": "钢制煎锅",
+				"menu.cooking_tool.name.gold": "金煎锅",
+				"menu.cooking_tool.name.iridium": "铱煎锅",
+				"menu.cooking_tool.description.basic": "只用一种食材就能烹饪出菜谱。",
+				"menu.cooking_tool.description.copper": "只需 1 或 2 种配料就能烹饪食谱。",
+				"menu.cooking_tool.description.steel": "最多可烹饪 3 种配料的菜谱。",
+				"menu.cooking_tool.description.gold": "最多可烹饪 4 种配料的食谱。",
+				"menu.cooking_tool.description.iridium": "能用任意数量的食材烹饪食谱！",
+
+				// Cooking menu
+				"menu.cooking_station.no_cookbook": "你没有烹饪书",
+				"menu.cooking_station.no_friendship": "你和{0}不是好朋友，不能使用这个厨房。",
+
+				"menu.cooking_recipe.title_unknown": "???",
+				"menu.cooking_recipe.notes_unknown": "你还没吃呢",
+				"menu.cooking_recipe.ingredients_label": "配料:",
+				"menu.cooking_recipe.notes_label": "说明:",
+				"menu.cooking_recipe.time_label": "烹饪时长:",
+				"menu.cooking_recipe.time_value": "{0} 分钟",
+				"menu.cooking_recipe.search_label": "搜索",
+				"menu.cooking_recipe.favourite_label": "最爱",
+				"menu.cooking_recipe.quantity_label": "制作",
+				"menu.cooking_recipe.which_label": "你想做哪种？",
+				"menu.cooking_recipe.autofill_label": "自动添加成分",
+
+				"menu.cooking_recipe.buff.0": "农业",
+				"menu.cooking_recipe.buff.1": "钓鱼",
+				"menu.cooking_recipe.buff.2": "采矿",
+				"menu.cooking_recipe.buff.3": "挖掘",
+				"menu.cooking_recipe.buff.4": "运气",
+				"menu.cooking_recipe.buff.5": "觅食",
+				"menu.cooking_recipe.buff.6": "工艺",
+				"menu.cooking_recipe.buff.7": "能量",
+				"menu.cooking_recipe.buff.8": "磁性",
+				"menu.cooking_recipe.buff.9": "速度",
+				"menu.cooking_recipe.buff.10": "防御",
+				"menu.cooking_recipe.buff.11": "攻击",
+				"menu.cooking_recipe.buff.12": "烹饪",
+				"menu.cooking_recipe.buff.daily": "全天",
+				"menu.cooking_recipe.buff.unknown": "???",
+
+				"menu.cooking_search.view_label": "查看:",
+				"menu.cooking_search.filter_label": "过滤器:",
+				"menu.cooking_search.sorter_label": "排序(分类)方式:",
+				"menu.cooking_search.view.list": "列表",
+				"menu.cooking_search.view.grid": "图标",
+				"menu.cooking_search.filter.0": "全部食谱",
+				"menu.cooking_search.filter.1": "准备烹饪",
+				"menu.cooking_search.filter.2": "最爱",
+				"menu.cooking_search.filter.3": "新食谱",
+				"menu.cooking_search.filter.4": "Buff食谱",
+				"menu.cooking_search.sorter.0": "名称",
+				"menu.cooking_search.sorter.1": "治疗",
+				"menu.cooking_search.sorter.2": "价格",
+				"menu.cooking_search.sorter.3": "最喜欢的食谱",
+				"menu.cooking_search.none_label": "未找到食谱。",
+
+				"menu.inventory.backpack": "背包",
+				"menu.inventory.fridge": "冰箱",
+				"menu.inventory.minifridge": "迷你冰箱",
+
+				"menu.config.enabled": "打开 mod 配置菜单",
+				"menu.config.disabled": "需要 Generic Mod Config Menu.",
+
+				// Mail
+				"mail.cookbook_unlocked.after.1": "妈妈的烹饪书和煎锅已被添加到您的 = Special Items.",
+				"mail.cookbook_unlocked.after.2": "您学到的食谱将保存在烹饪书中，以便在农舍做饭时使用。",
+				"mail.cookbook_unlocked.after.2_alt": "您学到的食谱将保存在烹饪书中，以便在城镇厨房做饭时使用。",
+
+				// Special items
+				"menu.special_items.cookbook.name": "妈妈的烹饪书",
+				"menu.special_items.cookbook.description": "存放您的烹饪食谱。",
+
+				// Seasonings
+				"seasoning.seasoning_1.empty": "你已经用完了所有的{0}。",
+				"seasoning.seasoning_2.empty": "你已经用完了所有的{0}。",
+				"seasoning.seasoning_4.empty": "你已经用完了所有的{0}。",
+
+				// Buffs
+				"buff.curry.name": "咖喱之息",
+				"buff.curry.description": "热、辣、热、辣、热、辣！",
+				"buff.kebab.name": "醉酒斗士",
+				"buff.kebab.description": "微醺时，越喝越有劲。",
+				"buff.lasagna.name": "完美光环",
+				"buff.lasagna.description": "附近的敌人会走得更慢。",
+				"buff.paella.name": "橘色贮藏",
+				"buff.paella.description": "杀死怪物时，金币会散落一地。",
+				"buff.profiteroles.name": "增殖炮弹",
+				"buff.profiteroles.description": "所有弹弓射出的弹丸都以三枚为单位发射。",
+				"buff.leeks.name": "韭让我一个人吧！",
+				"buff.leeks.description": "增加武器击退效果。",
+
+				// Cooking skill
+				"menu.cooking_skill.name": "烹饪",
+				"menu.cooking_skill.levelup_burn": "食物烧焦的频率降低{0}%",
+
+				// Tier 1:
+				// Path 1: Cooking
+				"menu.cooking_skill.tier1_path1.name": "副厨师长",
+				"menu.cooking_skill.tier1_path1.description": "调味可进一步提高食谱的质量。",
+				// Path 2: Eating (CONFIG: Food restores over time)
+				"menu.cooking_skill.tier1_path2.name": "快速食客",
+				"menu.cooking_skill.tier1_path2.description": "食物能更快地恢复体力。",
+				// Path 2: Eating (CONFIG: Food restores instantly)
+				"menu.cooking_skill.tier1_path2_alt.name": "大胃王",
+				"menu.cooking_skill.tier1_path2_alt.description": "熟食可多恢复{0}%。",
+
+				// Tier 2: Path 1
+				// Choice A: Gifting
+				"menu.cooking_skill.tier2_path1a.name": "厨师长",
+				"menu.cooking_skill.tier2_path1a.description": "作为礼物赠送的熟食结交得更快。",
+				// Choice B: Selling
+				"menu.cooking_skill.tier2_path1b.name": "五星级厨师",
+				"menu.cooking_skill.tier2_path1b.description": "熟食价值增加{0}%。",
+
+				// Tier 2: Path B
+				// Choice A: Crafting
+				"menu.cooking_skill.tier2_path2a.name": "美食家",
+				"menu.cooking_skill.tier2_path2a.description": "烹饪时有几率多制作一份。",
+				// Choice B: Healing
+				"menu.cooking_skill.tier2_path2b.name": "饕餮",
+				"menu.cooking_skill.tier2_path2b.description": "能量充足时，食物和饮料的 Buff 持续时间增加。",
+
+				// Object categories
+				"item.fruit.label": "水果（任意）",
+				"item.flower.label": "花（任意）",
+				"item.vegetable.label": "蔬菜（任意）",
+				"item.meat.label": "肉类（任意）",
+				"item.forage.label": "采集 (任意)",
+				"item.cooking.label": "烹饪 (任意)",
+				"item.mineral.label": "矿物 (任意)",
+				"item.seed.label": "种子 (任意)",
+				"item.metal.label": "金属 (任意)",
+				"item.gem.label": "宝石 (任意)",
+
+				// Object names
+				// recipes
+				"item.admiralpie.name": "海军上将派",
+				"item.applepie.name": "苹果派",
+				"item.arancini.name": "意式炸饭球",
+				"item.bakedpotato.name": "烤土豆",
+				"item.breakfast.name": "快手早餐",
+				"item.burger.name": "甜菜汉堡",
+				"item.burrito.name": "墨西哥手卷饼",
+				"item.carrotcake.name": "胡萝卜蛋糕",
+				"item.cherrypie.name": "樱桃派",
+				"item.chocoflan.name": "榛子贝克韦挞",
+				"item.cocococktail.name": "椰子鸡尾酒",
+				"item.craymornay.name": "蛋奶起司小龙虾",
+				"item.crepes.name": "橙香火焰可丽饼",
+				"item.curry.name": "咖喱破坏神",
+				"item.eggsando.name": "鸡蛋三明治",
+				"item.eggsando_half.name": "半个鸡蛋三明治",
+				"item.fruity.name": "雪利奶油葡萄酒",
+				"item.hotcocoa.name": "热可可",
+				"item.hunters.name": "猎人餐点",
+				"item.kebab.name": "阿拉伯烤肉",
+				"item.lasagna.name": "乳清干酪千层面",
+				"item.leeks.name": "煨韭葱",
+				"item.lobster.name": "烤龙虾",
+				"item.nigiri.name": "鱼籽卷",
+				"item.oceanplatter.name": "海洋拼盘",
+				"item.paella.name": "西班牙海鲜饭",
+				"item.parfait.name": "梅子冻糕",
+				"item.pilaf.name": "蘑菇抓饭",
+				"item.profiteroles.name": "泡芙",
+				"item.quiche.name": "普罗旺斯法式咸派",
+				"item.roast.name": "热锅烤肉",
+				"item.skewers.name": "菠萝串",
+				"item.saladsando.name": "沙拉三明治",
+				"item.saladsando_half.name": "半个沙拉三明治",
+				"item.seafoodsando.name": "海鲜三明治",
+				"item.seafoodsando_half.name": "半个海鲜三明治",
+				"item.summersalad.name": "夏日沙拉",
+				"item.unagi.name": "鳗鱼寿司",
+				"item.waffles.name": "浆果华夫饼",
+				// objects
+				"item.burntfood.name": "烧焦的食物",
+				"item.chocolate.name": "烹饪用巧克力",
+				"item.cookbook.name": "妈妈的烹饪书",
+				"item.seasoning_1.name": "简单调味料",
+				"item.seasoning_2.name": "超级调味料",
+
+				// Object descriptions
+				// recipes
+				"item.admiralpie.description": "将整条鱼塞进香喷喷的馅饼里。小心鱼刺！",
+				"item.applepie.description": "闻起来有新鲜苹果和肉桂香料的味道。",
+				"item.arancini.description": "塞满美味，油炸而成。",
+				"item.bakedpotato.description": "一个不起眼的土豆，里面塞满了土豆泥和奶酪。",
+				"item.breakfast.description": "保证让你从床上爬起来！",
+				"item.burger.description": "它混合了苦味和甜味，粉红色的外观让人眼前一亮。",
+				"item.burrito.description": "包罗万象。",
+				"item.carrotcake.description": "奶油糖霜和胡萝卜碎屑，美味极了！",
+				"item.cherrypie.description": "看起来很美味，闻起来很香。",
+				"item.chocoflan.description": "浓郁的酥皮挞，配以香甜的巧克力。",
+				"item.cocococktail.description": "薄荷叶和椰奶的混合饮料，令人神清气爽。",
+				"item.craymornay.description": "淡水龙虾蘸上浓郁的奶油酱。",
+				"item.crepes.description": "薄薄的煎饼在浓郁的橙子白兰地糖浆中畅游。",
+				"item.curry.description": "它会让你的呼吸着火！\n\n被吃掉时会让你暂时喷火。",
+				"item.eggsando.description": "松软的白面包里夹着鸡蛋和蛋黄酱。调味完美。",
+				"item.eggsando_half.description": "再来点，再来点！",
+				"item.fruity.description": "一种含有雪利酒、樱桃和浆果的甜酒，淋上鲜奶油。",
+				"item.hotcocoa.description": "让你暖和起来。上面还有一个大棉花糖！",
+				"item.hunters.description": "一盘热腾腾的经典蔬菜。",
+				"item.kebab.description": "再来一杯。再来。再来。\n\n在微醺时暂时增强战斗力。",
+				"item.lasagna.description": "层层叠叠的芝士和菠菜配上焦糖酱。\n\n使附近的敌人暂时减速。",
+				"item.leeks.description": "可作为清淡的开胃菜。\n\n暂时增加武器的击退效果。",
+				"item.lobster.description": "岛民的经典食谱。",
+				"item.nigiri.description": "鱼卵卷在米饭里。咸咸的！",
+				"item.oceanplatter.description": "新鲜海鲜，冷热俱全，应有尽有。",
+				"item.paella.description": "里面有什么？什么都有！\n\n暂时使被杀死怪物散落金币。",
+				"item.parfait.description": "冻糕完美搭配李子泥，适合漫长而炎热的夏日。",
+				"item.pilaf.description": "清淡而热气腾腾，配以上等的森林蘑菇。",
+				"item.profiteroles.description": "小巧甜蜜，易于食用！\n\n暂时将弹弓输出变为三倍。",
+				"item.quiche.description": "有奶酪的生活更美好。",
+				"item.roast.description": "丰盛的炖菜和各种配料。",
+				"item.saladsando.description": "有莴苣、芝麻菜、蒲公英、菠菜、羊蹄叶......",
+				"item.saladsando_half.description": "……嘿，这半边有番茄！",
+				"item.seafoodsando.description": "新鲜制作的三明治，内有蟹肉和青菜。",
+				"item.seafoodsando_half.description": "吃了一半，但还不错！",
+				"item.summersalad.description": "清爽的水果沙拉，带着浓浓的香味。",
+				"item.unagi.description": "对海藻来说，这个更滑。",
+				"item.waffles.description": "全麦华夫饼淋上夏日浆果汁。",
+				// objects
+				"item.burntfood.description": "可以出售。结果不太好...",
+				"item.chocolate.description": "嗯......巧克力",
+				"item.cookbook.description": "调试项目.\n\n妈妈的食谱和煎锅在消耗后将添加到您的特殊物品中。",
+				"item.seasoning_1.description": "少许香料能略微提高菜肴的品质。烹饪时自动使用。",
+				"item.seasoning_2.description": "多种调味料的强效混合，可丰富任何菜肴的口味。烹饪时自动使用。"
+			}
+		}
+	]
+}

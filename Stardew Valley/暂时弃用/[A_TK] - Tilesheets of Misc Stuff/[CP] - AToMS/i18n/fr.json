@@ -1,0 +1,116 @@
+{
+	"config.section.Selection_Step_01.name": "Recoloration :",
+
+	"config.Allow_Recolors.name": "Activater la recoloration",
+	"config.Allow_Recolors.description": "Permet à la couleur des textures de changer pour s'adapter à une recoloration spécifique. En cas de désactivation seules les couleurs de base du jeu seront utilisées, et ce que la recoloration automatique ou manuelle soit activée.",
+	
+	"config.Use_Alt_Colors.name": "Couleurs optionnelles",
+	"config.Use_Alt_Colors.description": "Certains recolorations (comme Starblue ou Vibrant Pastoral) offrent des couleurs de feuillage ou d'herbes alternatives lors de certaines saisons. Activer cette option forcera l'utilisation de ces couleurs.",
+
+	"config.section.Selection_Step_02.name": "Optionnellement, désactivez la sélection automatique :",
+
+	"config.Manual_Override.name": "Contrôle manuel",
+	"config.Manual_Override.description": "Désactive la reconnaissance automatique des modules mais nécessite de choisir manuellement une recoloration dans la liste suivante.",
+
+	"config.section.Selection_Step_03.name": "Puis sélectionnez une couleur manuellement :",
+	
+	"config.Blue_Grass.name": "Blue Grass",
+	"config.Blue_Grass.description": "Forcera l'utilisation de couleurs compatibles avec Blue Grass.",
+	
+	"config.Earthy_Recolour.name": "Earthy Recolour",
+	"config.Earthy_Recolour.description": "Forcera l'utilisation de couleurs compatibles avec Earthy Recolour.",
+
+	"config.Starblue_Valley.name": "Starblue Valley",
+	"config.Starblue_Valley.description": "Forcera l'utilisation de couleurs compatibles avec Valley.",
+
+	"config.Vibrant_Pastoral.name": "Vibrant Pastoral",
+	"config.Vibrant_Pastoral.description": "Forcera l'utilisation de couleurs compatibles avec Vibrant Pastoral.",
+	
+	"config.Wittily_Named.name": "Wittily Named Recolor",
+	"config.Wittily_Named.description": "Forcera l'utilisation de couleurs compatibles avec Wittily Named Recolor.",
+	
+	"config.section.Selection_Step_04.name": "Ou travaillez sur des couleurs plus complexes :",
+	
+	"config.Cotton_Candy.name": "--- Cotton Candy Recolor ---",
+	"config.Cotton_Candy.description": "Forcera l'utilisation de couleurs compatibles avec Cotton Candy Recolor.",
+	
+	"config.CC_Grass_Spring.name": "Herbe au printemps",
+	"config.CC_Grass_Spring.description": "Selectionne la couleur de l'herbe au printemps.",
+	"config.CC_Grass_Spring.values.none": "Pas de recolorisation.",
+	"config.CC_Grass_Spring.values.mint": "Couleur menthe.",
+	"config.CC_Grass_Spring.values.pink": "Couleur rose.",
+	"config.CC_Grass_Spring.values.peach": "Couleur pêche.",
+	"config.CC_Grass_Spring.values.purple": "Couleur lavande.",
+	
+	"config.CC_Grass_Summer.name": "Herbe en été",
+	"config.CC_Grass_Summer.description": "Selectionne la couleur de l'herbe en été.",
+	"config.CC_Grass_Summer.values.none": "Pas de recolorisation.",
+	"config.CC_Grass_Summer.values.mint": "Couleur menthe.",
+	"config.CC_Grass_Summer.values.pink": "Couleur rose.",
+	"config.CC_Grass_Summer.values.peach": "Couleur pêche.",
+	"config.CC_Grass_Summer.values.purple": "Couleur lavande.",
+	
+	"config.CC_Grass_Fall.name": "Herbe en automne",
+	"config.CC_Grass_Fall.description": "Selectionne la couleur de l'herbe en automne.",
+	"config.CC_Grass_Fall.values.none": "Pas de recolorisation.",
+	"config.CC_Grass_Fall.values.mint": "Couleur menthe.",
+	"config.CC_Grass_Fall.values.pink": "Couleur rose.",
+	"config.CC_Grass_Fall.values.peach": "Couleur pêche.",
+	"config.CC_Grass_Fall.values.purple": "Couleur lavande.",
+	
+	"config.CC_Dirt_Spring.name": "Terre au printemps",
+	"config.CC_Dirt_Spring.description": "Selectionne la couleur de la terre au printemps.",
+	"config.CC_Dirt_Spring.values.none": "Pas de recolorisation.",
+	"config.CC_Dirt_Spring.values.light": "Terre claire.",
+	"config.CC_Dirt_Spring.values.medium": "Terre mixte.",
+	"config.CC_Dirt_Spring.values.dark": "Terre sombre.",
+	
+	"config.CC_Dirt_Summer.name": "Terre en été",
+	"config.CC_Dirt_Summer.description": "Selectionne la couleur de la terre en été.",
+	"config.CC_Dirt_Summer.values.none": "Pas de recolorisation.",
+	"config.CC_Dirt_Summer.values.light": "Terre claire.",
+	"config.CC_Dirt_Summer.values.medium": "Terre mixte.",
+	"config.CC_Dirt_Summer.values.dark": "Terre sombre.",
+	
+	"config.CC_Dirt_Fall.name": "Terre en automne",
+	"config.CC_Dirt_Fall.description": "Selectionne la couleur de la terre en automne.",
+	"config.CC_Dirt_Fall.values.none": "Pas de recolorisation.",
+	"config.CC_Dirt_Fall.values.light": "Terre claire.",
+	"config.CC_Dirt_Fall.values.medium": "Terre mixte.",
+	"config.CC_Dirt_Fall.values.dark": "Terre sombre.",
+	
+	"config.CC_Snow_Color.name": "Teinte de la neige",
+	"config.CC_Snow_Color.description": "Selectionne la teinte de la neige en hivers.",
+	"config.CC_Snow_Color.values.none": "Pas de recolorisation.",
+	"config.CC_Snow_Color.values.blue": "Neige bleutée.",
+	"config.CC_Snow_Color.values.purple": "Neige violacée.",
+
+	"config.Universal_Recolors.name": "--- Universal Recolors ---",
+	"config.Universal_Recolors.description": "Forcera l'utilisation de couleurs compatibles avec Universal Recolors.",
+	
+	"config.UR_Desaturation.name": "Niveau de désaturation",
+	"config.UR_Desaturation.description": "Selectionne le niveau de désaturation des couleurs.",
+	"config.UR_Desaturation.values.D0": "Aucune (indisponible)",
+	"config.UR_Desaturation.values.D30": "30% (indisponible)",
+	"config.UR_Desaturation.values.D40": "40%",
+	"config.UR_Desaturation.values.D50": "50% (indisponible)",
+	
+	"config.UR_Hue.name": "Changement de teinte",
+	"config.UR_Hue.description": "Selectionne l'intensité du changement de teinte vers le rouge.",
+	"config.UR_Hue.values.H0": "Aucun (indisponible)",
+	"config.UR_Hue.values.H1": "Léger",
+	"config.UR_Hue.values.H2": "Intense (indisponible)",
+	
+	"config.section.Selection_Step_05.name": "Autres options :",
+	
+	"config.Mild_Winter.name": "Mild Winter",
+	"config.Mild_Winter.description": "Forcera l'utilisation de couleurs compatibles avec Mild Winter durant l'hivers. Prend l'ascendant sur toutes les autres recolorisations automatiques ou manuelles.",
+
+	"config.Cave_Fol_Color.name": "Feuillage souterrain",
+	"config.Cave_Fol_Color.description": "Changes tous les feuillages souterrains qui ne sont pas gelés pour les rendre verts, rend aussi les lianes souterraines plus claires.",
+	"config.Cave_Fol_Color.values.Default": "Couleurs non modifiées",
+	"config.Cave_Fol_Color.values.Green": "Feuillage vert",
+	
+	"config.Alt_In_Grass.name": "Herbe souterraine custom",
+	"config.Alt_In_Grass.description": "Assure que pour les mods compatibles (comme Waterfall Forest Farms), l'herbe qui pousse à l'intérieur des cavernes utilise une couleur customisée."
+}

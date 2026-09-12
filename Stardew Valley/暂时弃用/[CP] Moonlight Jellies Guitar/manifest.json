@@ -1,0 +1,11 @@
+{
+    "Name": "Moonlight Jellies Theme Replacer",
+    "Author": "plasmoasis and venajiro",
+    "Version": "1.0.0",
+    "Description": "Replaces the Moonlight Jellies theme with ConcernedApe's acoustic cover",
+    "UniqueID": "Plasmoasis.jellies",
+    "UpdateKeys": [],
+    "ContentPackFor": {
+        "UniqueID": "Pathoschild.ContentPatcher"
+    }
+}

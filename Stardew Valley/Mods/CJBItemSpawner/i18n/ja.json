@@ -1,0 +1,47 @@
+﻿{
+    /*********
+    ** Sort button
+    *********/
+    "sort.by-name": "名前",
+    "sort.by-price": "売価",
+    "sort.by-type": "種類",
+    "sort.by-id": "ID",
+
+
+    /*********
+    ** Category dropdown
+    *********/
+    "filter.all": "All",
+    "filter.artisan-and-cooking": "加工品と料理",
+    "filter.crafting.products": "クラフト：完成品",
+    "filter.crafting.resources": "クラフト：素材",
+    "filter.decor.furniture": "装飾：家具",
+    "filter.decor.other": "装飾：床材や壁紙",
+    "filter.equipment-boots": "装備：はき物",
+    "filter.equipment-clothes": "装備：服",
+    "filter.equipment-hats": "装備：帽子",
+    "filter.equipment-rings": "装備：指輪",
+    "filter.equipment-tools": "装備：どうぐ",
+    "filter.equipment-weapons": "装備：武器",
+    "filter.farm-animal-drops": "農業：動物生産品",
+    "filter.farm-crops": "農業：作物",
+    "filter.farm-seeds": "農業：タネ",
+    "filter.fish": "魚",
+    "filter.minerals-and-artifacts": "鉱物と発掘品",
+    "filter.miscellaneous": "その他",
+
+
+    /*********
+    ** Generic Mod Config Menu UI
+    *********/
+    "config.title.controls": "操作",
+    "config.show-menu-key.name": "メニューを表示",
+    "config.show-menu-key.desc": "メニューを開くキーを設定する（他のメニューが開かれていない時有効）",
+
+    "config.title.options": "オプション",
+    "config.apply-trash-can-upgrade.name": "ゴミ箱のアップグレードを適用",
+    "config.apply-trash-can-upgrade.desc": "ゴミ箱をアップグレード後のゴールドの還元を、CJB Item Spawnerのメニューでも適用するかどうか。",
+
+    "config.title.hide-categories": "カテゴリの非表示",
+    "config.hide-category.desc": "UIで「{{name}}」のカテゴリを非表示にするかどうか。非表示にすると、そのカテゴリーのアイテムはメニューからアクセスできなくなる。"
+}

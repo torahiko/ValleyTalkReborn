@@ -1,0 +1,34 @@
+{
+"Changes": [
+//PENNY DIALOGUE
+{
+	"LogName": "Regular Dialogue demons event",
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Penny",
+	"Entries": {
+		"eventSeen_maggdemons08082024": "{{i18n: penny.event.maggdemons08082024}}",
+				},
+	"When": {
+			"HasConversationTopic |contains= maggdemons": true,
+		}
+	},
+{
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Penny",
+	"Entries": {
+		"dating_Sam": "{{i18n: penny.reaction.dating_Sam}}",
+		"married_Sam": "{{i18n: penny.reaction.married_Sam.{{AlexPronouns}}}}",
+		"penny.topic.maggsamsebbeards": "{{i18n: penny.topic.maggsamsebbeards}}",
+		"penny.topic.magglivingmusical": "{{i18n: penny.topic.magglivingmusical}}",
+		"eventSeen_magghopelessopus08082024": "{{i18n: penny.event.magghopelessopus08082024}}",
+		"maggwalkingwire": "{{i18n: penny.topic.maggwalkingwire}}",
+		"maggdontknowwhy": "{{i18n: penny.topic.maggdontknowwhy}}",
+		"magghearme": "{{i18n: penny.topic.magghearme}}",
+		"maggnatural": "{{i18n: penny.topic.maggnatural}}",
+		"eventSeen_maggbeliever09082024": "{{i18n: penny.event.maggbeliever09082024}}",
+		"maggchickenwar": "{{i18n: penny.topic.maggchickenwar}}",
+		"maggbandstand": "{{i18n: penny.topic.maggbandstand}}",
+		}
+    },
+]
+}

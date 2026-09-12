@@ -1,0 +1,19 @@
+{
+  "SpiceLevel": "spicy",
+  "VinceName": "uncle",
+  "SamCustomSprites": "no",
+  "DanceSprites": "no",
+  "SamWeddingSuit": "no",
+  "FlowerSuit": "no",
+  "BabySprite": "dark",
+  "BabySpriteEdit": "no",
+  "MorningRepeat": "saturday",
+  "RepeatableEvents": "yes",
+  "AdoptChild": "yes",
+  "SebFriend": "yes",
+  "FarmerPronouns": "yes",
+  "SebNeutral": "false",
+  "AbbyNeutral": "true",
+  "AlexNeutral": "false",
+  "PennyNeutral": "true"
+}

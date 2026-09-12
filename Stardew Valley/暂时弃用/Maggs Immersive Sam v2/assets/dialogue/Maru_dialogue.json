@@ -1,0 +1,39 @@
+{
+"Changes": [
+//MARU DIALOGUE
+{
+	"LogName": "Maru Extra Dialogue",
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Maru",
+	"Entries": {
+		"spring_4": "{{i18n: maru.daily.spring_4.{{SebPronouns}}}}",
+		"spring_7": "{{i18n: maru.daily.spring_7.{{SebPronouns}}}}",
+		"spring_Fri2": "{{i18n: maru.daily.spring_Fri2}}",
+		"spring_14": "{{i18n: maru.daily.spring_14}}",
+		"spring_20": "{{i18n: maru.daily.spring_20.{{SebPronouns}}}}",
+		"spring_3_2": "{{i18n: maru.daily.spring_3_2}}",
+		"summer_1": "{{i18n: maru.daily.summer_1}}",
+		"summer_3": "{{i18n: maru.daily.summer_3.{{SebPronouns}}}}",
+		"summer_10": "{{i18n: maru.daily.summer_10.{{SebPronouns}}}}",
+		"summer_Mon4": "{{i18n: maru.daily.summer_Mon4}}",
+		"summer_Thu4": "{{i18n: maru.daily.summer_Thu4}}",
+		"Wed6": "{{i18n: maru.daily.Wed6.{{SebPronouns}}}}",
+		"fall_6": "{{i18n: maru.daily.fall_6.{{SebPronouns}}}}",
+		"summer_Tue4": "{{i18n: maru.daily.summer_Tue4.{{SebPronouns}}}}",
+		"winter_14": "{{i18n: maru.daily.winter_14.{{SebPronouns}}}}",
+		"winter_Thu4": "{{i18n: maru.daily.winter_Thu4}}",
+		"winter_Thu6": "{{i18n: maru.daily.winter_Thu6}}",
+		"winter_Thu8": "{{i18n: maru.daily.winter_Thu8}}",
+		"winter_18": "{{i18n: maru.daily.winter_18}}",
+		"dating_Sam": "{{i18n: maru.reaction.dating_Sam}}",
+		"married_Sam": "{{i18n: maru.reaction.married_Sam.{{SebPronouns}}}}",
+		"Wed4_inlaw_Sam": "{{i18n: maru.daily.Wed4_inlaw_Sam}}",
+		"Sun_inlaw_Sam": "{{i18n: maru.daily.Sun_inlaw_Sam}}",
+		"eventSeen_maggbeliever09082024": "{{i18n: maru.event.maggbeliever09082024.{{SebPronouns}}}}",
+		"maggchickenwar": "{{i18n: maru.topic.maggchickenwar.{{SebPronouns}}}}",
+		"maggbandstand": "{{i18n: maru.topic.maggbandstand}}",
+		"maggsebsgame": "{{i18n: maru.topic.maggsebsgame}}",
+		}
+    },
+]
+}

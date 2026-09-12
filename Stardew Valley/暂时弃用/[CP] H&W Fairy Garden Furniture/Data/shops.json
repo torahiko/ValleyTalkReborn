@@ -1,0 +1,87 @@
+{
+  "Changes": [
+
+    {
+        "LogName": "Add Fairy Garden Catalogue Shop",
+        "Action": "EditData",
+        "Target": "Data/Shops",
+        "Entries": {
+            "HXW.FGFurniSet": {
+            "PriceModifiers": null,
+            "PriceModifierMode": "Stack",
+            "Items": [
+                {
+                "Price": 0,
+                "AvailableStockLimit": "Global",
+                "AvoidRepeat": false,
+                "UseObjectDataPrice": false,
+                "IgnoreShopPriceModifiers": false,
+                "PriceModifiers": null,
+                "PriceModifierMode": "Stack",
+                "AvailableStockModifiers": null,
+                "AvailableStockModifierMode": "Stack",
+                "Condition": null,
+                "Id": "Default",
+                "ItemId": "ALL_ITEMS (F)",
+                "MinStack": -1,
+                "MaxStack": -1,
+                "Quality": -1,
+                "PerItemCondition": "ITEM_CONTEXT_TAG Target collection_hwfairygardenfurni"
+                }
+            ],
+            "CustomFields":{
+                "HappyHomeDesigner/Catalogue":"true"
+            }
+            }
+        }
+    },
+
+    {
+        "LogName": "Add Fairy Garden Catalogue Item",
+        "Action": "EditData",
+        "Target": "Data/Furniture",
+        "Entries": {    
+            "HXW.FairyGardenFurni_Catalogue": "HXW.FairyGardenFurni_Catalogue/other/1 2/1 1/1/20000/2/{{i18n:FairyGardenFurni_Catalogue}}/215/Mods\\HXW.FairyGardenFurniture\\Furniture/true"
+        }
+    },
+  
+    {
+        "LogName": "Add Fairy Garden Catalogue Tile Actions",
+        "Action": "EditData",
+        "Target": "sophie.Calcifer/FurnitureActions",
+        "Entries": {
+            "(F)HXW.FairyGardenFurni_Catalogue": {
+                "TileActions": [
+                    {
+                        "TileAction": "OpenShop HXW.FGFurniSet"
+                    }
+                ]
+            }
+        }
+    },
+
+    {
+        "LogName": "Add Fairy Garden Catalogue to Robin's Shop",
+        "Action": "EditData",
+        "Target": "Data/Shops",
+        "TargetField": [ "Carpenter", "Items" ],
+        "Entries": {
+            "HXW.FairyGardenFurni_Catalogue": {
+                "Id": "HXW.FairyGardenFurni_Catalogue",
+                "ItemId": "(F)HXW.FairyGardenFurni_Catalogue",
+                "Price": 100000
+            }
+        }
+    }
+   
+  ]
+}
+  
+  
+  
+  
+  
+  
+  
+  
+  

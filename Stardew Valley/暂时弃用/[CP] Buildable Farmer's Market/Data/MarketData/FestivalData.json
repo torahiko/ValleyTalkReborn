@@ -1,0 +1,314 @@
+{
+    "Changes": [
+        {
+            "LogName": "Market Passive Festival Day 7",
+            "Action": "EditData",
+            "Target": "Data/PassiveFestivals",
+            "Entries": {
+                "{{ModId}}_MarketSpring7": {
+                    "DisplayName": "{{MarketNameToken}}",
+                    "Season": "Spring",
+                    "StartDay": "7",
+                    "EndDay": "7",
+                    "StartTime": "0900",
+                    "StartMessage": "{{i18n:BFM.MarketStart |MarketName={{MarketNameToken}}}}"
+                },
+                "{{ModId}}_MarketSummer7": {
+                    "DisplayName": "{{MarketNameToken}}",
+                    "Season": "Summer",
+                    "StartDay": "7",
+                    "EndDay": "7",
+                    "StartTime": "0900",
+                    "StartMessage": "{{i18n:BFM.MarketStart |MarketName={{MarketNameToken}}}}"
+                },
+                "{{ModId}}_MarketFall7": {
+                    "DisplayName": "{{MarketNameToken}}",
+                    "Season": "Fall",
+                    "StartDay": "7",
+                    "EndDay": "7",
+                    "StartTime": "0900",
+                    "StartMessage": "{{i18n:BFM.MarketStart |MarketName={{MarketNameToken}}}}"
+                },
+                "{{ModId}}_MarketWinter7": {
+                    "DisplayName": "{{MarketNameToken}}",
+                    "Season": "Winter",
+                    "StartDay": "7",
+                    "EndDay": "7",
+                    "StartTime": "0900",
+                    "StartMessage": "{{i18n:BFM.MarketStart |MarketName={{MarketNameToken}}}}"
+                }
+            },
+			"When": {
+				"MarketDate7Token": "True",
+                "MarketProgressionToken |contains= NoMarket": false
+			}
+        },
+        {
+            "LogName": "Market Passive Festival Day 21",
+            "Action": "EditData",
+            "Target": "Data/PassiveFestivals",
+            "Entries": {
+                "{{ModId}}_MarketSpring21": {
+                    "DisplayName": "{{MarketNameToken}}",
+                    "Season": "Spring",
+                    "StartDay": "21",
+                    "EndDay": "21",
+                    "StartTime": "0900",
+                    "StartMessage": "{{i18n:BFM.MarketStart |MarketName={{MarketNameToken}}}}"
+                },
+                "{{ModId}}_MarketSummer21": {
+                    "DisplayName": "{{MarketNameToken}}",
+                    "Season": "Summer",
+                    "StartDay": "21",
+                    "EndDay": "21",
+                    "StartTime": "0900",
+                    "StartMessage": "{{i18n:BFM.MarketStart |MarketName={{MarketNameToken}}}}"
+                },
+                "{{ModId}}_MarketFall21": {
+                    "DisplayName": "{{MarketNameToken}}",
+                    "Season": "Fall",
+                    "StartDay": "21",
+                    "EndDay": "21",
+                    "StartTime": "0900",
+                    "StartMessage": "{{i18n:BFM.MarketStart |MarketName={{MarketNameToken}}}}"
+                },
+                "{{ModId}}_MarketWinter21": {
+                    "DisplayName": "{{MarketNameToken}}",
+                    "Season": "Winter",
+                    "StartDay": "21",
+                    "EndDay": "21",
+                    "StartTime": "0900",
+                    "StartMessage": "{{i18n:BFM.MarketStart |MarketName={{MarketNameToken}}}}"
+                }
+            },
+			"When": {
+				"MarketDate21Token": "True",
+                "MarketProgressionToken |contains= NoMarket": false
+			}
+        },
+		{
+            "LogName": "Clear Bushes from Map",
+			"Action": "EditData",
+			"Target": "Data/TriggerActions",
+			"Entries": {
+				"{{ModId}}_FestivalBushClear": {
+					"Id": "{{ModId}}_FestivalBushClear",
+					"Trigger": "DayStarted",
+					"Condition": "ANY \"IS_PASSIVE_FESTIVAL_TODAY {{ModId}}_MarketSpring7\" \"IS_PASSIVE_FESTIVAL_TODAY {{ModId}}_MarketSpring21\" \"IS_PASSIVE_FESTIVAL_TODAY {{ModId}}_MarketSummer7\" \"IS_PASSIVE_FESTIVAL_TODAY {{ModId}}_MarketSummer21\" \"IS_PASSIVE_FESTIVAL_TODAY {{ModId}}_MarketFall7\" \"IS_PASSIVE_FESTIVAL_TODAY {{ModId}}_MarketFall21\" \"IS_PASSIVE_FESTIVAL_TODAY {{ModId}}_MarketWinter7\" \"IS_PASSIVE_FESTIVAL_TODAY {{ModId}}_MarketWinter21\"",
+					"Action": "Spiderbuttons.BETAS_ClearTerrainFeatures Town Bush 30 19 78 36",
+                    "MarkActionApplied": false
+				}
+			}
+		},
+		{
+            "LogName": "Clear Bushes from Random Townies",
+			"Action": "EditData",
+			"Target": "Data/TriggerActions",
+			"Entries": {
+				"{{ModId}}_FestivalBushClearTownies": {
+					"Id": "{{ModId}}_FestivalBushClearTownies",
+					"Trigger": "DayStarted",
+					"Condition": "ANY \"IS_PASSIVE_FESTIVAL_TODAY {{ModId}}_MarketSpring7\" \"IS_PASSIVE_FESTIVAL_TODAY {{ModId}}_MarketSpring21\" \"IS_PASSIVE_FESTIVAL_TODAY {{ModId}}_MarketSummer7\" \"IS_PASSIVE_FESTIVAL_TODAY {{ModId}}_MarketSummer21\" \"IS_PASSIVE_FESTIVAL_TODAY {{ModId}}_MarketFall7\" \"IS_PASSIVE_FESTIVAL_TODAY {{ModId}}_MarketFall21\" \"IS_PASSIVE_FESTIVAL_TODAY {{ModId}}_MarketWinter7\" \"IS_PASSIVE_FESTIVAL_TODAY {{ModId}}_MarketWinter21\"",
+					"Action": "Spiderbuttons.BETAS_ClearTerrainFeatures Town Bush 22 28 31 34",
+                    "MarkActionApplied": false
+				}
+			},
+            "When": {
+                "MarketProgressionToken |contains= MarketAll": true
+            }
+		},
+		{
+            "LogName": "7th Good Weather",
+			"Action": "EditData",
+			"Target": "Data/TriggerActions",
+			"Entries": {
+				"{{ModId}}_Festival7thGoodWeather": {
+					"Id": "{{ModId}}_Festival7thGoodWeather",
+					"Trigger": "DayStarted",
+					"Condition": "DAY_OF_MONTH 6, !{{MarketProgressionToken |contains= NoMarket}}",
+					"Action": "Spiderbuttons.BETAS_WeatherForTomorrow Default Sun",
+                    "MarkActionApplied": false
+				}
+			},
+			"When": {
+				"MarketDate7Token": "True"
+			}
+		},
+		{
+            "LogName": "21st Good Weather",
+			"Action": "EditData",
+			"Target": "Data/TriggerActions",
+			"Entries": {
+				"{{ModId}}_Festival21stGoodWeather": {
+					"Id": "{{ModId}}_Festival21stGoodWeather",
+					"Trigger": "DayStarted",
+					"Condition": "DAY_OF_MONTH 20, !{{MarketProgressionToken |contains= NoMarket}}",
+					"Action": "Spiderbuttons.BETAS_WeatherForTomorrow Default Sun",
+                    "MarkActionApplied": false
+				}
+			},
+			"When": {
+				"MarketDate21Token": "True"
+			}
+		},
+		{
+            "LogName": "Lune Grass Map Patch",
+            "Action": "EditMap",
+            "Target": "Maps/Town",
+			"FromFile": "Data/MarketMaps/LuneGrassPatch.tmx",
+            "ToArea": {
+                "X": 19,
+                "Y": 30,
+                "Width": 9,
+                "Height": 9
+            },
+            "When": {
+                "HasMod": "mushlune.overgrown"
+            }
+		},
+		{
+            "LogName": "Lune Tree Map Patch",
+            "Action": "EditMap",
+            "Target": "Maps/Town",
+			"FromFile": "Data/MarketMaps/LuneTreePatch.tmx",
+            "ToArea": {
+                "X": 14,
+                "Y": 25,
+                "Width": 6,
+                "Height": 8
+            },
+            "When": {
+                "HasMod": "mushlune.overgrown"
+            }
+		},
+		{
+            "LogName": "Pierre Market Map Patch",
+            "Action": "EditMap",
+            "Target": "Maps/Town",
+			"FromFile": "Data/MarketMaps/PierreMarket{{OvergrownValleyToken}}.tmx",
+            "ToArea": {
+                "X": 41,
+                "Y": 20,
+                "Width": 9,
+                "Height": 6
+            },
+            "When": {
+                "MarketProgressionToken |contains= NoMarket": false,
+                "Query: ({{Day}} = 7 AND '{{MarketDate7Token}}' = 'true') OR ({{Day}} = 21 AND '{{MarketDate21Token}}' = 'true')": true
+            }
+		},
+		{
+            "LogName": "Robin Market Map Patch",
+            "Action": "EditMap",
+            "Target": "Maps/Town",
+			"FromFile": "Data/MarketMaps/RobinMarket.tmx",
+            "ToArea": {
+                "X": 54,
+                "Y": 20,
+                "Width": 10,
+                "Height": 6
+            },
+            "When": {
+                "MarketProgressionToken |contains= NoMarket": false,
+                "Query: ({{Day}} = 7 AND '{{MarketDate7Token}}' = 'true') OR ({{Day}} = 21 AND '{{MarketDate21Token}}' = 'true')": true
+            }
+		},
+		{
+            "LogName": "Clint Market Map Patch",
+            "Action": "EditMap",
+            "Target": "Maps/Town",
+			"FromFile": "Data/MarketMaps/ClintMarket.tmx",
+            "ToArea": {
+                "X": 68,
+                "Y": 24,
+                "Width": 9,
+                "Height": 5
+            },
+            "When": {
+                "MarketProgressionToken |contains= NoMarket, MarketLevel1": false,
+                "Query: ({{Day}} = 7 AND '{{MarketDate7Token}}' = 'true') OR ({{Day}} = 21 AND '{{MarketDate21Token}}' = 'true')": true
+            }
+		},
+		{
+            "LogName": "Marnie Market Map Patch",
+            "Action": "EditMap",
+            "Target": "Maps/Town",
+			"FromFile": "Data/MarketMaps/MarnieMarket.tmx",
+            "ToArea": {
+                "X": 59,
+                "Y": 28,
+                "Width": 7,
+                "Height": 8
+            },
+            "When": {
+                "MarketProgressionToken |contains= NoMarket, MarketLevel1": false,
+                "Query: ({{Day}} = 7 AND '{{MarketDate7Token}}' = 'true') OR ({{Day}} = 21 AND '{{MarketDate21Token}}' = 'true')": true
+            }
+		},
+		{
+            "LogName": "Willy Market Map Patch",
+            "Action": "EditMap",
+            "Target": "Maps/Town",
+			"FromFile": "Data/MarketMaps/WillyMarket.tmx",
+            "ToArea": {
+                "X": 33,
+                "Y": 29,
+                "Width": 9,
+                "Height": 6
+            },
+            "When": {
+                "MarketProgressionToken |contains= MarketLevel3, MarketAll": true,
+                "Query: ({{Day}} = 7 AND '{{MarketDate7Token}}' = 'true') OR ({{Day}} = 21 AND '{{MarketDate21Token}}' = 'true')": true
+            }
+		},
+		{
+            "LogName": "Gus Market Map Patch",
+            "Action": "EditMap",
+            "Target": "Maps/Town",
+			"FromFile": "Data/MarketMaps/GusMarket{{OvergrownValleyToken}}.tmx",
+            "ToArea": {
+                "X": 32,
+                "Y": 20,
+                "Width": 8,
+                "Height": 8
+            },
+            "When": {
+                "MarketProgressionToken |contains= MarketLevel3, MarketAll": true,
+                "Query: ({{Day}} = 7 AND '{{MarketDate7Token}}' = 'true') OR ({{Day}} = 21 AND '{{MarketDate21Token}}' = 'true')": true
+            }
+		},
+		{
+            "LogName": "Random Townie Market Map Patch",
+            "Action": "EditMap",
+            "Target": "Maps/Town",
+			"FromFile": "Data/MarketMaps/{{RandomMarketTownieToken}}Market{{OvergrownValleyToken}}.tmx",
+            "ToArea": {
+                "X": 23,
+                "Y": 28,
+                "Width": 8,
+                "Height": 6
+            },
+            "When": {
+                "MarketProgressionToken |contains= MarketAll": true,
+                "Query: ({{Day}} = 7 AND '{{MarketDate7Token}}' = 'true') OR ({{Day}} = 21 AND '{{MarketDate21Token}}' = 'true')": true
+            }
+		},
+		{
+            "LogName": "Alex No Ice Cream Map Patch",
+            "Action": "EditMap",
+            "Target": "Maps/Town",
+			"FromFile": "Data/MarketMaps/AlexIceCreamPatch.tmx",
+            "ToArea": {
+                "X": 86,
+                "Y": 90,
+                "Width": 4,
+                "Height": 3
+            },
+            "When": {
+                "MarketProgressionToken |contains= MarketAll": true,
+                "Query: ({{Day}} = 7 AND '{{MarketDate7Token}}' = 'true') OR ({{Day}} = 21 AND '{{MarketDate21Token}}' = 'true')": true,
+                "RandomMarketTownieToken": "Alex"
+            }
+		}
+    ]
+}

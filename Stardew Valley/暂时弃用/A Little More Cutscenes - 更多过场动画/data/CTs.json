@@ -1,0 +1,85 @@
+{
+  "Changes": [
+    {
+      "LogName": "ConversationTopics - Pierre",
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Pierre",
+      "Entries": {
+        "JojaCoupons": "{{i18n:JojaCouponsCTs.Pierre}}"
+      }
+    },
+    {
+      "LogName": "ConversationTopics - Jodi",
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Jodi",
+      "Entries": {
+        "JojaCoupons": "{{i18n:JojaCouponsCTs.Jodi}}",
+        "FamilyReunited": "{{i18n:FamilyReunitedCTs.Jodi}}"
+      }
+    },
+    {
+      "LogName": "ConversationTopics - Gus",
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Gus",
+      "Entries": {
+        "JojaCoupons": "{{i18n:JojaCouponsCTs.Gus}}"
+      }
+    },
+    {
+      "LogName": "ConversationTopics - Pam",
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Pam",
+      "Entries": {
+        "JojaCoupons": "{{i18n:JojaCouponsCTs.Pam}}"
+      }
+    },
+    {
+      "LogName": "ConversationTopics - Lewis",
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Lewis",
+      "Entries": {
+        "EvilMorris": "{{i18n:EvilMorrisCTs.Lewis}}"
+      }
+    },
+    {
+      "LogName": "ConversationTopics - Vincent",
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Vincent",
+      "Entries": {
+        "FamilyReunited": "{{i18n:FamilyReunitedCTs.Vincent}}"
+      }
+    },
+    {
+      "LogName": "ConversationTopics - Sam",
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Sam",
+      "Entries": {
+        "FamilyReunited": "{{i18n:FamilyReunitedCTs.Sam}}"
+      }
+    },
+    {
+      "LogName": "ConversationTopics - Kent",
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Kent",
+      "Entries": {
+        "FamilyReunited": "{{i18n:FamilyReunitedCTs.Kent}}"
+      }
+    },
+    {
+      "LogName": "ConversationTopics - Sebastian",
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Sebastian",
+      "Entries": {
+        "FamilyReunited": "{{i18n:FamilyReunitedCTs.Sebastian}}"
+      }
+    },
+    {
+      "LogName": "ConversationTopics - Wizard",
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Wizard",
+      "Entries": {
+        "ShaneBlueChickenTale": "{{i18n:ShaneBlueChickenTaleCT.Wizard}}"
+      }
+    }
+  ]
+}

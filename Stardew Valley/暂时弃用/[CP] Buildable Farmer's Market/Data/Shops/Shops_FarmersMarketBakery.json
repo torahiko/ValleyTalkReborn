@@ -1,0 +1,297 @@
+{
+    "Changes": [
+        {
+            "LogName": "Add Farmer's Market Core Shops",
+            "Action": "EditData",
+            "Target": "Data/Shops",
+            "Entries": {
+                "{{ModID}}_FMB_BreadShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMB_BreadShop1",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target food_bakery !food_sweet",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMB_BreadShop2",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target bread_item",
+                            "AvoidRepeat": true
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "bread_item",
+                        "food_bakery, !food_sweet"
+                    ]
+                },
+                "{{ModID}}_FMB_SweetBakeryShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMB_SweetBakeryShop1",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target food_bakery food_sweet",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMB_SweetBakeryShop2",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target food_cake",
+                            "AvoidRepeat": true
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "food_cake",
+                        "food_bakery, food_sweet"
+                    ]
+                },
+                "{{ModID}}_FMB_WineCheeseBreadShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMB_WineCheeseBreadShop1",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target id_(O)348"
+                        },
+                        {
+                            "Id": "{{ModID}}_FMB_WineCheeseBreadShop2",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target item_cheese",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMB_WineCheeseBreadShop3",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target item_goat_cheese",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMB_WineCheeseBreadShop4",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target cheese_item",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMB_WineCheeseBreadShop5",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target food_bakery !food_sweet",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMB_WineCheeseBreadShop6",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target bread_item",
+                            "AvoidRepeat": true
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "id_(O)348",
+                        "cheese_item",
+                        "item_cheese",
+                        "item_goat_cheese",
+                        "food_bakery, !food_sweet",
+                        "bread_item"
+                    ]
+                },
+                "{{ModID}}_FMB_BreadCheeseShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMB_BreadCheeseShop1",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target bread_item"
+                        },
+                        {
+                            "Id": "{{ModID}}_FMB_BreadCheeseShop2",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target food_bakery !food_sweet",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMB_BreadCheeseShop3",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target item_cheese",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMB_BreadCheeseShop4",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target item_goat_cheese",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMB_BreadCheeseShop5",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target cheese_item",
+                            "AvoidRepeat": true
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "bread_item",
+                        "food_bakery, !food_sweet",
+                        "cheese_item",
+                        "item_cheese",
+                        "item_goat_cheese"
+                    ]
+                },
+                "{{ModID}}_FMB_WineBreadJamShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMB_WineBreadJamShop1",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target id_(O)348",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMB_WineBreadJamShop2",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target bread_item",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMB_WineBreadJamShop3",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target food_bakery !food_sweet",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMB_WineBreadJamShop4",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target jelly_item",
+                            "AvoidRepeat": true
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "id_(O)348",
+                        "bread_item",
+                        "food_bakery, !food_sweet",
+                        "jelly_item"
+                    ]
+                },
+                "{{ModID}}_FMB_BreadJamShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMB_BreadJamShop1",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target bread_item",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMB_BreadJamShop2",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target food_bakery !food_sweet",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMB_BreadJamShop3",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target jelly_item",
+                            "AvoidRepeat": true
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "bread_item",
+                        "food_bakery, !food_sweet",
+                        "jelly_item"
+                    ]
+                },
+                "{{ModID}}_FMB_AllBakeryShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMB_AllBakeryShop1",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target food_bakery",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMB_AllBakeryShop2",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target bread_item",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMB_AllBakeryShop3",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target food_cake",
+                            "AvoidRepeat": true
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "bread_item",
+                        "food_cake",
+                        "food_bakery"
+                    ]
+                }
+            }
+        }
+    ]
+}

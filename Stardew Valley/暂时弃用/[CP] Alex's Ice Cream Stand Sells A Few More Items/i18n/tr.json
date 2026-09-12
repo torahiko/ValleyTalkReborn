@@ -1,0 +1,12 @@
+{
+	"config.EnableMod.name": "Modu Etkinleştir",
+	"config.EnableMod.description": "Bu modun tüm özelliklerini etkinleştir. (Varsayılan: true)",
+	"config.YearRoundItems.name": "Yıl Boyunca Mevcut Ürünler",
+	"config.YearRoundItems.description": "Yıl boyunca mevcut olan ürünleri etkinleştir. (Varsayılan: true)",
+	"config.SeasonalItems.name": "Mevsimlik Ürünler",
+	"config.SeasonalItems.description": "Sadece belirli mevsimlerde mevcut olan ürünleri etkinleştir. (Varsayılan: true)",
+	"config.WeekdayDependentItems.name": "Haftanın Gününe Bağlı Ürünler",
+	"config.WeekdayDependentItems.description": "Sadece belirli haftanın günlerinde mevcut olan ürünleri etkinleştir. (Varsayılan: true)",
+	"config.SpecialItems.name": "Özel Ürünler",
+	"config.SpecialItems.description": "Sadece belirli tarihlerde mevcut olan ürünleri etkinleştir. (Varsayılan: true)"
+}

@@ -1,0 +1,16 @@
+{
+  "Changes": [
+    {
+      "Action": "Load",
+      "Target": "{{ModId}}_HaleyLetterBG",
+      "FromFile": "assets/HaleyLetterBG.png"
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/Mail",
+      "Entries": {
+        "{{ModId}}_PinkCakeMail": "{{i18n:PinkCakeObsession.mail_content}}%item object 221 1 %%[letterbg {{ModId}}_HaleyLetterBG 0][#]{{i18n:PinkCakeObsession.mail_title}}"
+      }
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+"Changes": [
+//DEMETRIUS DIALOGUE
+{
+	"LogName": "Demetrius Extra Dialogue",
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Demetrius",
+	"Entries": {
+		"Introduction": "{{i18n: demetrius.special.Introduction.{{SebPronouns}}}}",
+		"Fri": "{{i18n: demetrius.daily.Fri.{{SebPronouns}}}}",
+		"Fri4": "{{i18n: demetrius.daily.Fri4}}",
+		"summer_Tue2": "{{i18n: demetrius.daily.summer_Tue2}}",
+		"summer_Thu4": "{{i18n: demetrius.daily.summer_Thu4}}",
+		"summer_Wed": "{{i18n: demetrius.daily.summer_Wed}}",
+		"fall_Thu4": "{{i18n: demetrius.daily.fall_Thu4.{{SebPronouns}}}}",
+		"fall_Sun": "{{i18n: demetrius.daily.fall_Sun.{{SebPronouns}}}}",
+		"winter_Mon4": "{{i18n: demetrius.daily.winter_Mon4}}",
+		"winter_Thu4": "{{i18n: demetrius.daily.winter_Thu4.{{SebPronouns}}}}",
+		}
+    },
+]
+}

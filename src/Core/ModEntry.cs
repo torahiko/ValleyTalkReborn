@@ -456,7 +456,7 @@ namespace ValleytalkReborn
                 Log.Error($"[ValleyTalkReborn] Error initializing Action Awareness System: {ex.Message}");
             }
 
-            Log.Debug("[ValleyTalkReborn] The module has been enabled, and the LLM and module configurations have been updated.");
+            Log.Debug("[ValleyTalkReborn] Module enabled; LLM and module configurations updated.");
         }
 
         /// <summary>

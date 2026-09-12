@@ -1,0 +1,212 @@
+{
+    "Changes": [
+
+//	RECOLORS
+		
+//	//	Cotton Candy
+
+       {
+            "Action": "EditImage",
+            "Target": "Maps/spring_ATK_AToMS_foliage",
+            "FromFile": "options/ALL_foliage/Cotton_Candy/ATK_AToMS_foliage_purple.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"HasMod": "PinkStations.CottonCandyRecolor",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/summer_ATK_AToMS_foliage",
+            "FromFile": "options/ALL_foliage/Cotton_Candy/ATK_AToMS_foliage_pink.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"HasMod": "PinkStations.CottonCandyRecolor",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/fall_ATK_AToMS_foliage",
+            "FromFile": "options/ALL_foliage/Cotton_Candy/ATK_AToMS_foliage_peach.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"HasMod": "PinkStations.CottonCandyRecolor",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_foliage",
+            "FromFile": "options/ALL_foliage/Cotton_Candy/snow_ATK_AToMS_foliage_blue.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"HasMod": "PinkStations.CottonCandyRecolor",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+//
+        {
+            "Action": "EditImage",
+            "Target": "Maps/fall_ATK_AToMS_foliage, Maps/spring_ATK_AToMS_foliage, Maps/summer_ATK_AToMS_foliage",
+            "FromFile": "options/ALL_foliage/Cotton_Candy/ATK_AToMS_foliage_{{CC_Grass_Color}}.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Cotton_Candy": "True"
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_foliage",
+            "FromFile": "options/ALL_foliage/Cotton_Candy/snow_ATK_AToMS_foliage_blue.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Cotton_Candy": "True",
+				"CC_Snow_Color": "blue"
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_foliage",
+            "FromFile": "options/ALL_foliage/Cotton_Candy/snow_ATK_AToMS_foliage_purple.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Cotton_Candy": "True",
+				"CC_Snow_Color": "purple"
+			}
+        },
+		
+//	//	Universal Recolor
+
+        {
+            "Action": "EditImage",
+            "Target": "Maps/fall_ATK_AToMS_foliage, Maps/spring_ATK_AToMS_foliage, Maps/summer_ATK_AToMS_foliage, Maps/winter_ATK_AToMS_foliage",
+            "FromFile": "options/ALL_foliage/Universal_Recolors/D40_H1/spring_ATK_AToMS_foliage.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"HasMod": "herbivoor.UniversalRecolors",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/fall_ATK_AToMS_foliage, Maps/summer_ATK_AToMS_foliage, Maps/winter_ATK_AToMS_foliage",
+            "FromFile": "options/ALL_foliage/Universal_Recolors/D40_H1/{{TargetWithoutPath}}.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"HasMod": "herbivoor.UniversalRecolors",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+//
+        {
+            "Action": "EditImage",
+            "Target": "Maps/fall_ATK_AToMS_foliage, Maps/spring_ATK_AToMS_foliage, Maps/summer_ATK_AToMS_foliage, Maps/winter_ATK_AToMS_foliage",
+            "FromFile": "options/ALL_foliage/Universal_Recolors/D40_H1/spring_ATK_AToMS_foliage.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Universal_Recolors": "True",
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/fall_ATK_AToMS_foliage, Maps/summer_ATK_AToMS_foliage, Maps/winter_ATK_AToMS_foliage",
+            "FromFile": "options/ALL_foliage/Universal_Recolors/D40_H1/{{TargetWithoutPath}}.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Universal_Recolors": "True",
+			}
+        },
+//
+        {
+            "Action": "EditImage",
+            "Target": "Maps/fall_ATK_AToMS_foliage, Maps/spring_ATK_AToMS_foliage, Maps/summer_ATK_AToMS_foliage, Maps/winter_ATK_AToMS_foliage",
+            "FromFile": "options/ALL_foliage/Universal_Recolors/D40_H1/cave_ATK_AToMS_foliage_green.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"HasMod": "herbivoor.UniversalRecolors",		
+				"Allow_Recolors": "True",
+				"Cave_Fol_Color": "Green",
+				"Manual_Override": "False"				
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/fall_ATK_AToMS_foliage, Maps/spring_ATK_AToMS_foliage, Maps/summer_ATK_AToMS_foliage, Maps/winter_ATK_AToMS_foliage",
+            "FromFile": "options/ALL_foliage/Universal_Recolors/D40_H1/cave_ATK_AToMS_foliage_green.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"Allow_Recolors": "True",
+				"Cave_Fol_Color": "Green",
+				"Manual_Override": "True",
+				"Universal_Recolors": "True",				
+			}
+        },
+
+//	ADDITIONAL OPTIONS		
+		
+//	//	Mild Winter
+
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_foliage",
+            "FromFile": "assets/ALL_foliage/fall_ATK_AToMS_foliage.png",
+			"PatchMode": "Replace",
+			"When": {
+				"HasMod": "katrie.MWR",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_foliage",
+            "FromFile": "options/ALL_foliage/Mild_Winter/winter_ATK_AToMS_foliage.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"HasMod": "katrie.MWR",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+//
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_foliage",
+            "FromFile": "assets/ALL_foliage/fall_ATK_AToMS_foliage.png",
+			"PatchMode": "Replace",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Mild_Winter": "True",
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_foliage",
+            "FromFile": "options/ALL_foliage/Mild_Winter/winter_ATK_AToMS_foliage.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Mild_Winter": "True",				
+			}
+        }
+	]
+}

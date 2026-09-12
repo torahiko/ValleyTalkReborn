@@ -1,0 +1,59 @@
+{
+    "Changes": [
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Gingerbread Cookie",
+        "FromFile": "assets/Winter Feast/image/Gingerbread Cookie.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Sugar Cookie",
+        "FromFile": "assets/Winter Feast/image/Sugar Cookie.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Candy Cane",
+        "FromFile": "assets/Winter Feast/image/Candy Cane.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Eternal Fruitcake",
+        "FromFile": "assets/Winter Feast/image/Eternal Fruitcake.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Chocolate Log Cake",
+        "FromFile": "assets/Winter Feast/image/Chocolate Log Cake.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/DS Plum Pudding",
+        "FromFile": "assets/Winter Feast/image/DS Plum Pudding.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Apple Cider",
+        "FromFile": "assets/Winter Feast/image/Apple Cider.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Hot Cocoa",
+        "FromFile": "assets/Winter Feast/image/Hot Cocoa.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Heavenly Eggnog",
+        "FromFile": "assets/Winter Feast/image/Heavenly Eggnog.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Cookie Crumbles",
+        "FromFile": "assets/Winter Feast/image/Cookie Crumbles.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Holiday Cheer",
+        "FromFile": "assets/Winter Feast/image/Holiday Cheer.png"
+      }
+    ]
+}

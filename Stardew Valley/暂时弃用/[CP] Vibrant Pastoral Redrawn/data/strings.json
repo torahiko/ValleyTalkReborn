@@ -1,0 +1,22 @@
+{
+	"Changes": [
+        //1_6_Strings
+        {
+            "Action": "EditData",
+            "Target": "Strings/1_6_Strings",
+            "TargetLocale": "de-DE",
+            "Entries": {
+                "JojaCatalogueDescriptionTerms": "Nutzungsbedingungen:^^Durch die Aktivierung dieses Gegenstandes erklärt sich der Nutzer damit einverstanden, Joja Co. nicht für Schäden an Leben oder Eigentum verantwortlich zu machen, die aus der Verwendung von Joja ENTFALTUNGS Möbeln resultieren.^^Dem Nutzer ist bewusst, dass in einem oder mehreren ENTFALTUNGS-Möbeln ungeprüfte Kunststoffe enthalten sein können, und er verzichtet auf das Recht, Joja Co. für gesundheitliche Schäden, die auf den Kontakt mit diesen Kunststoffen zurückzuführen sind, haftbar zu machen. ^^Der Nutzer verzichtet hiermit auf jedes Recht, Joja Co. für sogenannte \"schlampige Verarbeitung\" haftbar zu machen, und erklärt sich damit einverstanden, dass alle körperlichen Schäden, die durch Bruch, Risse, Pulverisierung, Verbiegen, Klemmen, Einklemmen, Aufspießen oder andere unbeabsichtigte Auswirkungen der Verwendung von Joja ENTFALTUNGS-Möbeln entstehen, ausschließlich das Ergebnis freiwilligen Handelns des Nutzers sind.^^ --Tritt bei. Gedeih'."
+            }
+        },
+        //Locations
+        {
+            "Action": "EditData",
+            "Target": "Strings/Locations",
+            "TargetLocale": "es-ES",
+            "Entries": {
+                "CommunityCenter_AreaName_AbandonedJojaMart": "MercaJoja abandonado"
+            }
+        }
+	]
+}

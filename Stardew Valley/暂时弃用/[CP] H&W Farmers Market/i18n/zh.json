@@ -1,0 +1,279 @@
+{
+
+  "FMCore_MushroomCrate": "蘑菇板条箱",
+  "FMCore_CommonMushroomCrate": "蘑菇板条箱",
+  "FMCore_MorelCrate": "羊肚菌板条箱",
+  "FMCore_RedMushroomCrate": "红蘑菇板条箱",
+  "FMCore_ChanterelleCrate": "鸡油菌板条箱",
+
+  "FMCore_RhubarbCrate": "大黄板条箱",
+  "FMCore_ParsnipCrate": "防风草板条箱",
+  "FMCore_TomatoCrate": "西红柿板条箱",
+  "FMCore_CornCrate": "玉米板条箱",
+  "FMCore_EggplantCrate": "茄子板条箱",
+  "FMCore_CauliflowerCrate": "花椰菜板条箱",
+  "FMCore_PumpkinCrate": "南瓜板条箱",
+
+  "FMCore_OilCrate": "油板条箱",
+  "FMCore_JellyCrate": "果酱板条箱",
+  "FMCore_HoneyCrate": "蜂蜜板条箱",
+  "FMCore_JuiceCrate": "果汁板条箱",
+  "FMCore_PickleCrate": "腌菜板条箱",
+
+  "FMCore_EggCrate": "蛋板条箱",
+  "FMCore_BrownEggCrate": "棕色鸡蛋板条箱",
+  "FMCore_WhiteEggCrate": "白色鸡蛋板条箱",
+  "FMCore_DuckEggCrate": "鸭蛋板条箱",
+  "FMCore_MilkCrate": "奶类板条箱",
+
+  "FMCore_CarrotCrate": "胡萝卜板条箱",
+  "FMCore_OnionCrate": "洋葱板条箱",
+  "FMCore_BokChoyCrate": "白菜板条箱",
+  "FMCore_KaleCrate": "甘蓝板条箱",
+  "FMCore_FernCrate": "蕨菜板条箱",
+  "FMCore_WheatCrate": "小麦板条箱",
+  "FMCore_GarlicCrate": "大蒜板条箱",
+  "FMCore_LeekCrate": "韭葱板条箱",
+  "FMCore_PotatoCrate": "土豆板条箱",
+  "FMCore_TaroCrate": "芋头板条箱",
+  "FMCore_TeaCrate": "茶叶板条箱",
+
+  "FMCore_PeachCrate": "桃子板条箱",
+  "FMCore_ApricotCrate": "杏子板条箱",
+  "FMCore_MelonCrate": "甜瓜板条箱",
+  "FMCore_PineappleCrate": "菠萝板条箱",
+  "FMCore_StarfruitCrate": "杨桃板条箱",
+  "FMCore_AppleCrate": "苹果板条箱",
+  "FMCore_BananaCrate": "香蕉板条箱",
+
+  "FMCore_FiberBasket": "纤维编织篮",
+
+  "FMCore_SmCarrotCrate": "小型胡萝卜板条箱",
+  "FMCore_SmCornCrate": "小型玉米板条箱",
+  "FMCore_SmOnionCrate": "小型洋葱板条箱",
+  "FMCore_SmRhubarbCrate": "小型大黄板条箱",
+  "FMCore_SmEggplantCrate": "小型茄子板条箱",
+  "FMCore_SmArtichokeCrate": "小型洋蓟板条箱",
+  "FMCore_SmMushroomCrate": "小型蘑菇板条箱",
+
+  "FMCore_SmTulipCrate": "小型郁金香板条箱",
+  "FMCore_SmSpangleCrate": "小型亮片板条箱",
+  "FMCore_SmFairyCrate": "小型仙女板条箱",
+  "FMCore_SmBlueFlowerCrate": "小型蓝花板条箱",
+  "FMCore_SmPurpleFlowerCrate": "小型紫花板条箱",
+  "FMCore_SmSunflowerCrate": "小型向日葵板条箱",
+  "FMCore_SmJazzCrate": "小型爵士板条箱",
+
+  "FMCore_SmPickleCrate": "小型腌菜板条箱",
+  "FMCore_SmJellyCrate": "小型果酱板条箱",
+  "FMCore_SmEggCrate": "小型蛋板条箱",
+  "FMCore_SmMilkCrate": "小型奶类板条箱",
+  "FMCore_SmOilCrate": "小型油板条箱",
+
+  "FMCore_BerryBasket": "莓果编织篮",
+ 
+  "FMCore_AppleBarrel": "苹果木桶",
+  "FMCore_PeachBarrel": "桃子木桶",
+  "FMCore_ApricotBarrel": "杏子木桶",
+  "FMCore_ParsnipBarrel": "防风草木桶",
+  "FMCore_PotatoBarrel": "土豆木桶",
+
+  "FMCore_PineappleSack": "菠萝麻袋",
+  "FMCore_AppleSack": "苹果麻袋",
+  "FMCore_ApricotSack": "杏子麻袋",
+  "FMCore_PeachSack": "桃子麻袋",
+
+  "FMCore_PotatoSack": "土豆麻袋",
+  "FMCore_CarrotSack": "胡萝卜麻袋",
+  "FMCore_CauliflowerSack": "花椰菜麻袋",
+  "FMCore_ParsnipSack": "防风草麻袋",
+
+  "FMCore_EmptyCrate1": "空的板条箱",
+  "FMCore_EmptyCrate2": "空的板条箱",
+  "FMCore_EmptyBasket": "空的编织篮",
+  "FMCore_EmptyBasketDuo": "空的编织篮",
+  "FMCore_EmptyBasketTrio": "空的编织篮",
+
+  "FMCore_DIYDisplayA": "DIY 农场展示桌 A",
+  "FMCore_DIYDisplayB": "DIY 农场展示桌 B",
+  "FMCore_DIYDisplayC": "DIY 农场展示桌 C",
+  "FMCore_DIYDisplayD": "DIY 农场展示桌 D",
+  "FMCore_DIYDisplayE": "DIY 农场展示桌 E",
+
+  "FMCore_DIYDisplayDivider": "DIY 农场展示隔板",
+  "FMCore_DIYDisplayRegister": "DIY 农场展示屏幕",
+
+  "FMCore_SmDisplay": "小型农场展示桌",
+  "FMCore_MedFarmTable": "中型农场桌",
+  "FMCore_MedDisplay": "中型农场展示桌",
+
+  "FMCore_ArtisanDisplay": "农场手工艺品展示架",
+  "FMCore_FruitDisplay": "农场水果展示架",
+  "FMCore_FreshDisplay": "农场鲜食展示架",
+  "FMCore_AnimalDisplay": "农场动物制品展示架",
+  "FMCore_VeggieDisplay": "农场蔬菜展示架",
+  
+//MACHINES
+
+	"FMCore_ProducePacker.name": "产品打包机",
+	"FMCore_ProducePacker.description": "用于包装杂货以方便在在地农贸市集贩卖的机器。",
+
+	"FMCore_ProducePacker_InvalidCount.message":"需要 5 个木材",
+    "FMCore_ProducePacker_InvalidItem.message":"无法制作",
+
+//CRATES
+
+	"FMCore_apple_crate.name": "苹果板条箱",
+	"FMCore_apple_crate.description": "装满新鲜苹果的农夫板条箱。",
+
+	"FMCore_apricot_crate.name": "杏子板条箱",
+	"FMCore_apricot_crate.description": "装满新鲜杏子的农夫板条箱。",
+
+	"FMCore_artichoke_crate.name": "洋蓟板条箱",
+	"FMCore_artichoke_crate.description": "装满新鲜洋蓟的农夫板条箱。",
+
+	"FMCore_banana_crate.name": "香蕉板条箱",
+	"FMCore_banana_crate.description": "装满新鲜香蕉的农夫板条箱。",
+
+	"FMCore_bok_choy_crate.name": "白菜板条箱",
+	"FMCore_bok_choy_crate.description": "装满新鲜白菜的农夫板条箱。",
+
+	"FMCore_brown_egg_crate.name": "棕色鸡蛋板条箱",
+	"FMCore_brown_egg_crate.description": "装满新鲜棕色鸡蛋的农夫板条箱。",
+
+	"FMCore_cauliflower_crate.name": "花椰菜板条箱",
+	"FMCore_cauliflower_crate.description": "装满新鲜花椰菜的农夫板条箱。",
+
+	"FMCore_corn_crate.name": "玉米板条箱",
+	"FMCore_corn_crate.description": "装满新鲜玉米的农夫板条箱。",
+
+	"FMCore_duck_egg_crate.name": "鸭蛋板条箱",
+	"FMCore_duck_egg_crate.description": "装满新鲜鸭蛋的农夫板条箱。",
+
+	"FMCore_eggplant_crate.name": "茄子板条箱",
+	"FMCore_eggplant_crate.description": "装满现采茄子的农夫板条箱。",
+
+	"FMCore_fern_crate.name": "蕨菜板条箱",
+	"FMCore_fern_crate.description": "装满现摘蕨菜的农夫板条箱。",
+
+	"FMCore_garlic_crate.name": "大蒜板条箱",
+	"FMCore_garlic_crate.description": "装满现采蒜头的农夫板条箱。",
+
+	"FMCore_honey_crate.name": "蜂蜜板条箱",
+	"FMCore_honey_crate.description": "装满蜂蜜罐的农夫板条箱。",
+
+	"FMCore_jam_crate.name": "果酱板条箱",
+	"FMCore_jam_crate.description": "装满果酱罐的农夫板条箱。",
+
+	"FMCore_juice_crate.name": "果汁板条箱",
+	"FMCore_juice_crate.description": "装满果汁瓶的农夫板条箱。",
+
+	"FMCore_kale_crate.name": "甘蓝板条箱",
+	"FMCore_kale_crate.description": "装满现采甘蓝的农夫板条箱。",
+
+	"FMCore_leek_crate.name": "韭葱板条箱",
+	"FMCore_leek_crate.description": "装满现摘韭葱的农夫板条箱。",
+
+	"FMCore_melon_crate.name": "甜瓜板条箱",
+	"FMCore_melon_crate.description": "装满现采甜瓜的农夫板条箱。",
+
+	"FMCore_milk_crate.name": "奶类板条箱",
+	"FMCore_milk_crate.description": "装满奶类瓶的农夫板条箱。",
+
+	"FMCore_parsnip_crate.name": "防风草板条箱",
+	"FMCore_parsnip_crate.description": "装满现采防风草的农夫板条箱。",
+
+	"FMCore_peach_crate.name": "桃子板条箱",
+	"FMCore_peach_crate.description": "装满现采桃子的农夫板条箱。",
+
+	"FMCore_pepper_crate.name": "辣椒板条箱",
+	"FMCore_pepper_crate.description": "装满现采辣椒的农夫板条箱。",
+
+	"FMCore_pickle_crate.name": "腌菜板条箱",
+	"FMCore_pickle_crate.description": "装满腌菜罐的农夫板条箱。",
+
+	"FMCore_pineapple_crate.name": "菠萝板条箱",
+	"FMCore_pineapple_crate.description": "装满现采菠萝的农夫板条箱。",
+
+	"FMCore_potato_crate.name": "土豆板条箱",
+	"FMCore_potato_crate.description": "装满现采土豆的农夫板条箱。",
+
+	"FMCore_pumpkin_crate.name": "南瓜板条箱",
+	"FMCore_pumpkin_crate.description": "装满现采南瓜的农夫板条箱。",
+
+	"FMCore_rhubarb_crate.name": "大黄板条箱",
+	"FMCore_rhubarb_crate.description": "装满现采大黄茎的农夫板条箱。",
+
+	"FMCore_taro_crate.name": "芋头板条箱",
+	"FMCore_taro_crate.description": "装满现采芋头根茎的农夫板条箱。",
+
+	"FMCore_tea_crate.name": "茶叶板条箱",
+	"FMCore_tea_crate.description": "装满现采茶叶的农夫板条箱。",
+
+	"FMCore_tomato_crate.name": "西红柿板条箱",
+	"FMCore_tomato_crate.description": "装满现采西红柿的农夫板条箱。",
+
+	"FMCore_void_egg_crate.name": "虚空蛋板条箱",
+	"FMCore_void_egg_crate.description": "装满新鲜虚空蛋的农夫板条箱。",
+
+	"FMCore_wheat_crate.name": "小麦板条箱",
+	"FMCore_wheat_crate.description": "装满现采小麦的农夫板条箱。",
+
+	"FMCore_white_egg_crate.name": "白色鸡蛋板条箱",
+	"FMCore_white_egg_crate.description": "装满新鲜白色鸡蛋的农夫板条箱。",
+
+	"FMCore_wine_crate.name": "酒板条箱",
+	"FMCore_wine_crate.description": "装满酒瓶的农夫板条箱。",
+
+//BASKETS
+
+	"FMCore_brown_mushroom_basket.name": "蘑菇编织篮",
+	"FMCore_brown_mushroom_basket.description": "装满现摘蘑菇的编织篮。",
+
+	"FMCore_mixed_mushroom_basket.name": "综合蘑菇编织篮",
+	"FMCore_mixed_mushroom_basket.description": "装满现摘综合蘑菇的编织篮。",
+
+	"FMCore_morel_basket.name": "羊肚菌编织篮",
+	"FMCore_morel_basket.description": "装满现摘羊肚菌的编织篮。",
+
+	"FMCore_plum_basket.name": "野梅编织篮",
+	"FMCore_plum_basket.description": "装满现摘野梅的编织篮。",
+
+	"FMCore_red_mushroom_basket.name": "红蘑菇编织篮",
+	"FMCore_red_mushroom_basket.description": "装满现摘红蘑菇的编织篮。",
+
+	"FMCore_blackberry_basket.name": "黑莓编织篮",
+	"FMCore_blackberry_basket.description": "装满现摘黑莓的编织篮。",
+
+	"FMCore_blueberry_basket.name": "蓝莓编织篮",
+	"FMCore_blueberry_basket.description": "装满现摘蓝莓的编织篮。",
+
+	"FMCore_cranberry_basket.name": "蔓越莓编织篮",
+	"FMCore_cranberry_basket.description": "装满现摘蔓越莓的编织篮。",
+
+	"FMCore_crocus_basket.name": "番红花编织篮",
+	"FMCore_crocus_basket.description": "装满现摘番红花的编织篮。",
+
+	"FMCore_fairy_basket.name": "玫瑰仙子编织篮",
+	"FMCore_fairy_basket.description": "装满现摘玫瑰仙子的编织篮。",
+
+	"FMCore_poppy_basket.name": "虞美人编织篮",
+	"FMCore_poppy_basket.description": "装满现摘虞美人的编织篮。",
+
+	"FMCore_salmonberry_basket.name": "美洲大树莓编织篮",
+	"FMCore_salmonberry_basket.description": "装满现摘美洲大树莓的编织篮。",
+
+	"FMCore_spangle_basket.name": "夏季亮片编织篮",
+	"FMCore_spangle_basket.description": "装满现摘夏季亮片的编织篮。",
+
+	"FMCore_strawberry_basket.name": "草莓编织篮",
+	"FMCore_strawberry_basket.description": "装满现摘草莓的编织篮。",
+
+	"FMCore_sunflower_basket.name": "向日葵编织篮",
+	"FMCore_sunflower_basket.description": "装满现摘向日葵的编织篮。",
+
+	"FMCore_tulip_basket.name": "郁金香编织篮",
+	"FMCore_tulip_basket.description": "装满现摘郁金香的编织篮。"
+
+}
+  

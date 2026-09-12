@@ -1,0 +1,22 @@
+{
+"config.FallColor.name": "Fall Color",
+"config.FallColor.description": "changes the orange fall to green",
+"config.RecolorMode.name": "Recolor Mode",
+"config.RecolorMode.Description": "changes the saturation, vibrant is more compatible with other mods, rustic is darker than both",
+"config.DarkerPaths.name": "Darker Paths",
+"config.DarkerPaths.Description": "changes the white town path color to be darker",
+"config.StaticFoliage.name": "Static Foliage",
+"config.StaticFoliage.Description": "replaces vanilla static trees and bushes",
+"config.TreesandBushes.name": "Trees and Bushes",
+"config.TreesandBushes.Description": "replaces vanilla trees and bushes",
+"config.Grass.name": "Grass",
+"config.Grass.Description": "replaces vanilla grass",
+"config.Desert.name": "Desert",
+"config.Desert.Description": "replaces the desert terrain and foliage",
+"config.Beach.name": "Beach",
+"config.Beach.Description": "replaces beach tiles",
+"config.BeanstalkWildTree/FlowerTree.name": "BeanstalkWildTree/FlowerTree",
+"config.BeanstalkWildTree/FlowerTree.Description": "replaces the wildtree with beanstalk or flower tree",
+"config.DancingFlowers/Mushrooms.name": "Dancing Flowers and Mushrooms",
+"config.DancingFlowers/Mushrooms.Description": "replaces some tilesheet animations with mushroom and flower"
+}

@@ -1,0 +1,58 @@
+{
+    "Changes": [
+		{
+			"Action": "EditData",
+			"Target": "Data/TriggerActions",
+			"Entries": {
+				"{{ModId}}_MarketLevel1": {
+					"Id": "{{ModId}}_MarketLevel1",
+					"Trigger": "DayStarted",
+					"Condition": "PLAYER_HAS_SEEN_EVENT Host {{ModId}}_MarketStart",
+					"Actions": [
+                        "AddMail Host BFM_MarketLevel_1 Received",
+                        "AddConversationTopic BFM_MarketLevel_1_Spacer {{ProgressionSpeedToken}}",
+                        "AddMail Host {{ModId}}_MarketLevel1Mail now"
+                    ]
+				},
+				"{{ModId}}_MarketLevel2": {
+					"Id": "{{ModId}}_MarketLevel2",
+					"Trigger": "DayStarted",
+					"Condition": "PLAYER_HAS_MAIL Host BFM_MarketLevel_1 Received, !PLAYER_HAS_CONVERSATION_TOPIC Host BFM_MarketLevel_1_Spacer, PLAYER_STAT Host MarketItemsSold {{ProgressionRequirementsToken}}",
+					"Actions": [
+                        "AddMail Host BFM_MarketLevel_2 Received",
+                        "AddConversationTopic BFM_MarketLevel_2_Spacer {{ProgressionSpeedToken}}",
+                        "AddMail Host {{ModId}}_MarketLevel2Mail now"
+                    ]
+				},
+				"{{ModId}}_MarketLevel3": {
+					"Id": "{{ModId}}_MarketLevel3",
+					"Trigger": "DayStarted",
+					"Condition": "PLAYER_HAS_MAIL Host BFM_MarketLevel_2 Received, !PLAYER_HAS_CONVERSATION_TOPIC Host BFM_MarketLevel_2_Spacer, PLAYER_STAT Host MarketItemsSold {{ProgressionRequirementsToken}}",
+					"Actions": [
+                        "AddMail Host BFM_MarketLevel_3 Received",
+                        "AddConversationTopic BFM_MarketLevel_3_Spacer {{ProgressionSpeedToken}}",
+                        "AddMail Host {{ModId}}_MarketLevel3Mail now"
+                    ]
+				},
+				"{{ModId}}_MarketLevel4": {
+					"Id": "{{ModId}}_MarketLevel4",
+					"Trigger": "DayStarted",
+					"Condition": "PLAYER_HAS_MAIL Host BFM_MarketLevel_3 Received, !PLAYER_HAS_CONVERSATION_TOPIC Host BFM_MarketLevel_3_Spacer, PLAYER_STAT Host MarketItemsSold {{ProgressionRequirementsToken}}",
+					"Actions": [
+                        "AddMail Host BFM_MarketLevel_4 Received",
+                        "AddConversationTopic BFM_MarketLevel_4_Spacer {{ProgressionSpeedToken}}",
+                        "AddMail Host {{ModId}}_MarketLevel4Mail now"
+                    ]
+				},
+				"{{ModId}}_MarketLevel5": {
+					"Id": "{{ModId}}_MarketLevel5",
+					"Trigger": "DayStarted",
+					"Condition": "PLAYER_HAS_MAIL Host BFM_MarketLevel_4 Received, !PLAYER_HAS_CONVERSATION_TOPIC Host BFM_MarketLevel_4_Spacer, PLAYER_STAT Host MarketItemsSold {{ProgressionRequirementsToken}}",
+					"Actions": [
+                        "AddMail Host BFM_MarketLevel_5 Received"
+                    ]
+				}
+			}
+		}
+    ]
+}

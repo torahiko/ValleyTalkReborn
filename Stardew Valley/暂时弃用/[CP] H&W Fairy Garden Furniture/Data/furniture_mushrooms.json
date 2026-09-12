@@ -1,0 +1,30 @@
+{
+  "Changes": [
+  
+    {
+      "LogName":"Add Mushroom Furniture",
+      "Action": "EditData",
+      "Target": "Data/Furniture",
+      "Entries": {
+        "HXW.FairyGardenFurni_MushCircle1": "HXW_MushCircle1/Rug/4 4/4 4/1/1000/2/{{i18n: FairyGardenFurni_MushCircle1}}/0/Mods\\HXW.FairyGardenFurniture\\Furniture_Mushrooms/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_MushCircle2": "HXW_MushCircle2/Rug/4 4/4 4/1/1000/2/{{i18n: FairyGardenFurni_MushCircle2}}/4/Mods\\HXW.FairyGardenFurniture\\Furniture_Mushrooms/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_MushroomBrave": "HXW_MushroomBrave/Decor/1 1/1 1/1/100/2/{{i18n: FairyGardenFurni_MushroomBrave}}/8/Mods\\HXW.FairyGardenFurniture\\Furniture_Mushrooms/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_MushroomChantrelle": "HXW_MushroomChantrelle/Decor/1 1/1 1/2/100/2/{{i18n: FairyGardenFurni_MushroomChantrelle}}/9/Mods\\HXW.FairyGardenFurniture\\Furniture_Mushrooms/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_MushroomClassic": "HXW_MushroomClassic/Decor/1 1/1 1/1/100/2/{{i18n: FairyGardenFurni_MushroomClassic}}/11/Mods\\HXW.FairyGardenFurniture\\Furniture_Mushrooms/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_MushroomDoubleTrouble": "HXW_MushroomDoubleTrouble/Decor/1 2/1 1/2/100/2/{{i18n: FairyGardenFurni_MushroomDoubleTrouble}}/40/Mods\\HXW.FairyGardenFurniture\\Furniture_Mushrooms/true/collection_hwfairygardenfurni",
+      
+        "HXW.FairyGardenFurni_MushroomDoughty": "HXW_MushroomDoughty/Decor/1 2/1 1/1/100/2/{{i18n: FairyGardenFurni_MushroomDoughty}}/12/Mods\\HXW.FairyGardenFurniture\\Furniture_Mushrooms/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_MushroomElegant": "HXW_MushroomElegant/Decor/1 1/1 1/1/100/2/{{i18n: FairyGardenFurni_MushroomElegant}}/24/Mods\\HXW.FairyGardenFurniture\\Furniture_Mushrooms/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_MushroomFull": "HXW_MushroomFull/Decor/1 1/1 1/1/100/2/{{i18n: FairyGardenFurni_MushroomFull}}/25/Mods\\HXW.FairyGardenFurniture\\Furniture_Mushrooms/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_MushroomFungi": "HXW_MushroomFungi/Decor/1 2/1 1/2/100/2/{{i18n: FairyGardenFurni_MushroomFungi}}/13/Mods\\HXW.FairyGardenFurniture\\Furniture_Mushrooms/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_MushroomPerky1": "HXW_MushroomPerky1/Decor/1 1/1 1/1/100/2/{{i18n: FairyGardenFurni_MushroomPerky1}}/26/Mods\\HXW.FairyGardenFurniture\\Furniture_Mushrooms/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_MushroomPerky2": "HXW_MushroomPerky2/Decor/1 2/1 1/1/100/2/{{i18n: FairyGardenFurni_MushroomPerky2}}/42/Mods\\HXW.FairyGardenFurniture\\Furniture_Mushrooms/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_MushroomPerky3": "HXW_MushroomPerky3/Decor/1 2/1 1/1/100/2/{{i18n: FairyGardenFurni_MushroomPerky3}}/43/Mods\\HXW.FairyGardenFurniture\\Furniture_Mushrooms/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_MushroomSturdy": "HXW_MushroomSturdy/Decor/1 1/1 1/1/100/2/{{i18n: FairyGardenFurni_MushroomSturdy}}/60/Mods\\HXW.FairyGardenFurniture\\Furniture_Mushrooms/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_MushroomTall": "HXW_MushroomTall/Decor/1 2/1 1/1/100/2/{{i18n: FairyGardenFurni_MushroomTall}}/45/Mods\\HXW.FairyGardenFurniture\\Furniture_Mushrooms/true/collection_hwfairygardenfurni"
+
+      }
+    }
+
+  ]
+}

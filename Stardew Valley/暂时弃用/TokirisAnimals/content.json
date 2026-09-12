@@ -1,0 +1,393 @@
+{
+    "Format": "2.8.0",
+    "Changes": [
+        {
+            "LogName": "Load data for Red Fox (Red Fox)",
+            "Action": "EditData",
+            "Target": "Data/FarmAnimals",
+            "Entries": {
+                "Red Fox": {
+                    "DisplayName": "{{i18n:RedFox.DisplayName}}",
+                    "House": "Barn",
+                    "Gender": "MaleOrFemale",
+                    "PurchasePrice": 4000,
+                    "ShopTexture": "Animals/tokiri.animals-Red Fox Icon",
+                    "ShopSourceRect": {
+                        "X": 0,
+                        "Y": 0,
+                        "Width": 32,
+                        "Height": 16
+                    },
+                    "RequiredBuilding": "Barn",
+                    "ShopDisplayName": "{{i18n:RedFox.ShopDisplayName}}",
+                    "ShopDescription": "{{i18n:RedFox.ShopDescription}}",
+                    "DaysToMature": "0",
+                    "ProduceItemIds": [
+                        {
+                            "Id": "Default",
+                            "Condition": null,
+                            "MinimumFriendship": 0,
+                            "ItemId": "770"
+                        }
+                    ],
+                    "DeluxeProduceItemIds": [
+                        {
+                            "Id": "Default",
+                            "Condition": null,
+                            "MinimumFriendship": 0,
+                            "ItemId": "535"
+                        }
+                    ],
+                    "DaysToProduce": "1",
+                    "HarvestType": "DigUp",
+                    "HarvestTool": null,
+					"ProduceOnMature": false,
+					"FriendshipForFasterProduce": -1,
+					"DeluxeProduceMinimumFriendship": 200,
+					"DeluxeProduceCareDivisor": 1200.0,
+					"DeluxeProduceLuckMultiplier": 0.0,
+					"CanEatGoldenCrackers": true,
+					"ProfessionForHappinessBoost": 3,
+					"ProfessionForQualityBoost": 3,
+					"ProfessionForFasterProduce": -1,
+                    "Sound": "fox",
+                    "BabySound": "fox",
+                    "Texture": "Animals/tokiri.animals-Red Fox",
+                    "HarvestedTexture": "Animals/tokiri.animals-Red Fox",
+					"UseFlippedRightForLeft": true,
+                    "SpriteWidth": "32",
+                    "SpriteHeight": "32",
+					"SellPrice": 1500,
+					"Skins": null,
+					"ShadowWhenBabySwims": null,
+					"ShadowWhenBaby": null,
+					"ShadowWhenAdultSwims": null,
+					"ShadowWhenAdult": null,
+					"Shadow": null,
+					"CanSwim": false,
+					"BabiesFollowAdults": false,
+					"GrassEatAmount": 2,
+					"HappinessDrain": 5,
+					"UpDownPetHitboxTileSize": "1, 1",
+					"LeftRightPetHitboxTileSize": "1, 1",
+					"BabyUpDownPetHitboxTileSize": "1, 1",
+					"BabyLeftRightPetHitboxTileSize": "1, 1",
+                    "ShowInSummitCredits": true
+                }
+            }
+        },
+        {
+            "LogName": "Load data for Red Panda (Red Panda)",
+            "Action": "EditData",
+            "Target": "Data/FarmAnimals",
+            "Entries": {
+                "Red Panda": {
+                    "DisplayName": "{{i18n:RedPanda.DisplayName}}",
+                    "House": "Barn",
+                    "Gender": "MaleOrFemale",
+                    "PurchasePrice": 4000,
+                    "ShopTexture": "Animals/tokiri.animals-Red Panda Icon",
+                    "ShopSourceRect": {
+                        "X": 0,
+                        "Y": 0,
+                        "Width": 32,
+                        "Height": 16
+                    },
+                    "RequiredBuilding": "Barn",
+                    "ShopDisplayName": "{{i18n:RedPanda.ShopDisplayName}}",
+                    "ShopDescription": "{{i18n:RedPanda.ShopDescription}}",
+                    "DaysToMature": "0",
+                    "ProduceItemIds": [
+                        {
+                            "Id": "Default",
+                            "Condition": null,
+                            "MinimumFriendship": 0,
+                            "ItemId": "770"
+                        }
+                    ],
+                    "DeluxeProduceItemIds": [
+                        {
+                            "Id": "Default",
+                            "Condition": null,
+                            "MinimumFriendship": 0,
+                            "ItemId": "815"
+                        }
+                    ],
+                    "DaysToProduce": "1",
+                    "HarvestType": "DigUp",
+                    "HarvestTool": null,
+					"ProduceOnMature": false,
+					"FriendshipForFasterProduce": -1,
+					"DeluxeProduceMinimumFriendship": 200,
+					"DeluxeProduceCareDivisor": 1200.0,
+					"DeluxeProduceLuckMultiplier": 0.0,
+					"CanEatGoldenCrackers": true,
+					"ProfessionForHappinessBoost": 3,
+					"ProfessionForQualityBoost": 3,
+					"ProfessionForFasterProduce": -1,
+                    "Sound": "redpanda",
+                    "BabySound": "redpanda",
+                    "Texture": "Animals/tokiri.animals-Red Panda",
+                    "HarvestedTexture": "Animals/tokiri.animals-Red Panda",
+					"UseFlippedRightForLeft": true,
+                    "SpriteWidth": "32",
+                    "SpriteHeight": "32",
+					"SellPrice": 1500,
+					"Skins": null,
+					"ShadowWhenBabySwims": null,
+					"ShadowWhenBaby": null,
+					"ShadowWhenAdultSwims": null,
+					"ShadowWhenAdult": null,
+					"Shadow": null,
+					"CanSwim": false,
+					"BabiesFollowAdults": false,
+					"GrassEatAmount": 2,
+					"HappinessDrain": 5,
+					"UpDownPetHitboxTileSize": "1, 1",
+					"LeftRightPetHitboxTileSize": "1, 1",
+					"BabyUpDownPetHitboxTileSize": "1, 1",
+					"BabyLeftRightPetHitboxTileSize": "1, 1",
+                    "ShowInSummitCredits": true
+                }
+            }
+        },
+        {
+            "LogName": "Load data for Wolf (Wolf)",
+            "Action": "EditData",
+            "Target": "Data/FarmAnimals",
+            "Entries": {
+                "Wolf": {
+                    "DisplayName": "{{i18n:Wolf.DisplayName}}",
+                    "House": "Barn",
+                    "Gender": "MaleOrFemale",
+                    "PurchasePrice": 4000,
+                    "ShopTexture": "Animals/tokiri.animals-Wolf Icon",
+                    "ShopSourceRect": {
+                        "X": 0,
+                        "Y": 0,
+                        "Width": 32,
+                        "Height": 16
+                    },
+                    "RequiredBuilding": "Barn",
+                    "ShopDisplayName": "{{i18n:Wolf.ShopDisplayName}}",
+                    "ShopDescription": "{{i18n:Wolf.ShopDescription}}",
+                    "DaysToMature": "0",
+                    "ProduceItemIds": [
+                        {
+                            "Id": "Default",
+                            "Condition": null,
+                            "MinimumFriendship": 300,
+                            "ItemId": "275"
+                        }
+                    ],
+                    "DaysToProduce": "1",
+                    "HarvestType": "DigUp",
+                    "HarvestTool": null,
+					"ProduceOnMature": false,
+					"FriendshipForFasterProduce": -1,
+					"DeluxeProduceMinimumFriendship": 200,
+					"DeluxeProduceCareDivisor": 1200.0,
+					"DeluxeProduceLuckMultiplier": 0.0,
+					"CanEatGoldenCrackers": true,
+					"ProfessionForHappinessBoost": 3,
+					"ProfessionForQualityBoost": 3,
+					"ProfessionForFasterProduce": -1,
+                    "Sound": "wolf",
+                    "BabySound": "wolf",
+                    "Texture": "Animals/tokiri.animals-Wolf",
+                    "HarvestedTexture": "Animals/tokiri.animals-Wolf",
+					"UseFlippedRightForLeft": true,
+                    "SpriteWidth": "32",
+                    "SpriteHeight": "32",
+					"SellPrice": 1500,
+					"Skins": null,
+					"ShadowWhenBabySwims": null,
+					"ShadowWhenBaby": null,
+					"ShadowWhenAdultSwims": null,
+					"ShadowWhenAdult": null,
+					"Shadow": null,
+					"CanSwim": false,
+					"BabiesFollowAdults": false,
+					"GrassEatAmount": 2,
+					"HappinessDrain": 5,
+					"UpDownPetHitboxTileSize": "1, 1",
+					"LeftRightPetHitboxTileSize": "1, 1",
+					"BabyUpDownPetHitboxTileSize": "1, 1",
+					"BabyLeftRightPetHitboxTileSize": "1, 1",
+                    "ShowInSummitCredits": true
+                }
+            }
+        },
+        {
+            "LogName": "Load data for Hippogriff (Hippogriff)",
+            "Action": "EditData",
+            "Target": "Data/FarmAnimals",
+            "Entries": {
+                "Hippogriff": {
+                    "DisplayName": "{{i18n:Hippogriff.DisplayName}}",
+                    "House": "Barn",
+                    "Gender": "MaleOrFemale",
+                    "PurchasePrice": 4000,
+                    "ShopTexture": "Animals/tokiri.animals-Hippogriff Icon",
+                    "ShopSourceRect": {
+                        "X": 0,
+                        "Y": 0,
+                        "Width": 32,
+                        "Height": 16
+                    },
+                    "RequiredBuilding": "Barn",
+                    "ShopDisplayName": "{{i18n:Hippogriff.ShopDisplayName}}",
+                    "ShopDescription": "{{i18n:Hippogriff.ShopDescription}}",
+                    "DaysToMature": "0",
+                    "ProduceItemIds": [
+                        {
+                            "Id": "Default",
+                            "Condition": null,
+                            "MinimumFriendship": 0,
+                            "ItemId": "330"
+                        }
+                    ],
+                    "DeluxeProduceItemIds": [
+                        {
+                            "Id": "Default",
+                            "Condition": null,
+                            "MinimumFriendship": 0,
+                            "ItemId": "259"
+                        }
+                    ],
+                    "DaysToProduce": "1",
+                    "HarvestType": "DigUp",
+                    "HarvestTool": null,
+					"ProduceOnMature": false,
+					"FriendshipForFasterProduce": -1,
+					"DeluxeProduceMinimumFriendship": 200,
+					"DeluxeProduceCareDivisor": 1200.0,
+					"DeluxeProduceLuckMultiplier": 0.0,
+					"CanEatGoldenCrackers": true,
+					"ProfessionForHappinessBoost": 3,
+					"ProfessionForQualityBoost": 3,
+					"ProfessionForFasterProduce": -1,
+                    "Sound": "hippogriff",
+                    "BabySound": "hippogriff",
+                    "Texture": "Animals/tokiri.animals-Hippogriff",
+                    "HarvestedTexture": "Animals/tokiri.animals-Hippogriff",
+					"UseFlippedRightForLeft": true,
+                    "SpriteWidth": "32",
+                    "SpriteHeight": "32",
+					"SellPrice": 1500,
+					"Skins": null,
+					"ShadowWhenBabySwims": null,
+					"ShadowWhenBaby": null,
+					"ShadowWhenAdultSwims": null,
+					"ShadowWhenAdult": null,
+					"Shadow": null,
+					"CanSwim": false,
+					"BabiesFollowAdults": false,
+					"GrassEatAmount": 2,
+					"HappinessDrain": 5,
+					"UpDownPetHitboxTileSize": "1, 1",
+					"LeftRightPetHitboxTileSize": "1, 1",
+					"BabyUpDownPetHitboxTileSize": "1, 1",
+					"BabyLeftRightPetHitboxTileSize": "1, 1",
+                    "ShowInSummitCredits": true
+                }
+            }
+        },
+        {
+            "LogName": "Load shopIcon for Red Fox",
+            "Action": "Load",
+            "Target": "Animals/tokiri.animals-Red Fox Icon",
+            "FromFile": "assets\\animal_shop_fox.png"
+        },
+        {
+            "LogName": "Load shopIcon for Red Panda",
+            "Action": "Load",
+            "Target": "Animals/tokiri.animals-Red Panda Icon",
+            "FromFile": "assets\\animal_shop_redpanda.png"
+        },
+        {
+            "LogName": "Load shopIcon for Wolf",
+            "Action": "Load",
+            "Target": "Animals/tokiri.animals-Wolf Icon",
+            "FromFile": "assets\\animal_shop_wolf.png"
+        },
+        {
+            "LogName": "Load shopIcon for Hippogriff",
+            "Action": "Load",
+            "Target": "Animals/tokiri.animals-Hippogriff Icon",
+            "FromFile": "assets\\animal_shop_hippogriff.png"
+        },
+        {
+            "LogName": "Load adultSprite for Red Fox",
+            "Action": "Load",
+            "Target": "Animals/tokiri.animals-Red Fox",
+            "FromFile": "assets/fox.png"
+        },
+        {
+            "LogName": "Load adultSprite for Red Panda",
+            "Action": "Load",
+            "Target": "Animals/tokiri.animals-Red Panda",
+            "FromFile": "assets/redpanda.png"
+        },
+        {
+            "LogName": "Load adultSprite for Wolf",
+            "Action": "Load",
+            "Target": "Animals/tokiri.animals-Wolf",
+            "FromFile": "assets/wolf.png"
+        },
+        {
+            "LogName": "Load adultSprite for Hippogriff",
+            "Action": "Load",
+            "Target": "Animals/tokiri.animals-Hippogriff",
+            "FromFile": "assets/hippogriff.png"
+        },
+		{
+            "Action": "EditData",
+            "Target": "Data/AudioChanges",
+            "Entries": {
+                "fox": {
+                    "ID": "fox",
+                    "Category": "Sound",
+                    "FilePaths": [ "{{AbsoluteFilePath: assets/fox.wav}}" ],
+                    "StreamedVorbis": false
+                }
+            }
+        },
+		{
+            "Action": "EditData",
+            "Target": "Data/AudioChanges",
+            "Entries": {
+                "redpanda": {
+                    "ID": "redpanda",
+                    "Category": "Sound",
+                    "FilePaths": [ "{{AbsoluteFilePath: assets/redpanda.wav}}" ],
+                    "StreamedVorbis": false
+                }
+            }
+        },
+		{
+            "Action": "EditData",
+            "Target": "Data/AudioChanges",
+            "Entries": {
+                "wolf": {
+                    "ID": "wolf",
+                    "Category": "Sound",
+                    "FilePaths": [ "{{AbsoluteFilePath: assets/wolf.wav}}" ],
+                    "StreamedVorbis": false
+                }
+            }
+        },
+		{
+            "Action": "EditData",
+            "Target": "Data/AudioChanges",
+            "Entries": {
+                "hippogriff": {
+                    "ID": "hippogriff",
+                    "Category": "Sound",
+                    "FilePaths": [ "{{AbsoluteFilePath: assets/hippogriff.wav}}" ],
+                    "StreamedVorbis": false
+                }
+            }
+        }
+    ]
+}

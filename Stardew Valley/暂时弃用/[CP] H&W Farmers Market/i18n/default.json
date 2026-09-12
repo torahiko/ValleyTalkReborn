@@ -1,0 +1,119 @@
+{
+
+
+  "FMCore_Catalogue": "H&W Farmers Market Catalogue",
+  "FMCore_MushroomCrate": "Crate of Mushrooms",
+  "FMCore_CommonMushroomCrate": "Common Mushroom Crate",
+  "FMCore_MorelCrate": "Morel Crate",
+  "FMCore_RedMushroomCrate": "Red Mushroom Crate",
+  "FMCore_ChanterelleCrate": "Chantrelle Crate",
+
+  "FMCore_RhubarbCrate": "Rhubarb Crate",
+  "FMCore_ParsnipCrate": "Parsnip Crate",
+  "FMCore_TomatoCrate": "Tomato Crate",
+  "FMCore_CornCrate": "Corn Crate",
+  "FMCore_EggplantCrate": "Eggplant Crate",
+  "FMCore_CauliflowerCrate": "Cauliflower Crate",
+  "FMCore_PumpkinCrate": "Pumpkin Crate",
+
+  "FMCore_OilCrate": "Oil Crate",
+  "FMCore_JellyCrate": "Jelly Crate",
+  "FMCore_HoneyCrate": "Honey Crate",
+  "FMCore_JuiceCrate": "Juice Crate",
+  "FMCore_PickleCrate": "Pickle Crate",
+
+  "FMCore_EggCrate": "Egg Crate",
+  "FMCore_BrownEggCrate": "Brown Egg Crate",
+  "FMCore_WhiteEggCrate": "White Egg Crate",
+  "FMCore_DuckEggCrate": "Duck Egg Crate",
+  "FMCore_MilkCrate": "Milk Crate",
+
+  "FMCore_CarrotCrate": "Carrot Crate",
+  "FMCore_OnionCrate": "Onion Crate",
+  "FMCore_BokChoyCrate": "Bok Choy Crate",
+  "FMCore_KaleCrate": "Kale Crate",
+  "FMCore_FernCrate": "Fern Crate",
+  "FMCore_WheatCrate": "Wheat Crate",
+  "FMCore_GarlicCrate": "Garlic Crate",
+  "FMCore_LeekCrate": "Leek Crate",
+  "FMCore_PotatoCrate": "Potato Crate",
+  "FMCore_TaroCrate": "Taro Crate",
+  "FMCore_TeaCrate": "Tea Leaves Crate",
+
+  "FMCore_PeachCrate": "Peach Crate",
+  "FMCore_ApricotCrate": "Apricot Crate",
+  "FMCore_MelonCrate": "Melon Crate",
+  "FMCore_PineappleCrate": "Pineapple Crate",
+  "FMCore_StarfruitCrate": "Starfruit Crate",
+  "FMCore_AppleCrate": "Apple Crate",
+  "FMCore_BananaCrate": "Banana Crate",
+
+  "FMCore_FiberBasket": "Fiber Basket",
+
+  "FMCore_SmCarrotCrate": "Small Carrot Crate",
+  "FMCore_SmCornCrate": "Small Corn Crate",
+  "FMCore_SmOnionCrate": "Small Onion Crate",
+  "FMCore_SmRhubarbCrate": "Small Rhubarb Crate",
+  "FMCore_SmEggplantCrate": "Small Eggplant Crate",
+  "FMCore_SmArtichokeCrate": "Small Artichoke Crate",
+  "FMCore_SmMushroomCrate": "Small Mushroom Crate",
+
+  "FMCore_SmTulipCrate": "Small Tulip Crate",
+  "FMCore_SmSpangleCrate": "Small Spangle Crate",
+  "FMCore_SmFairyCrate": "Small Fairy Crate",
+  "FMCore_SmBlueFlowerCrate": "Small Blue Flower Crate",
+  "FMCore_SmPurpleFlowerCrate": "Small Purple Flower Crate",
+  "FMCore_SmSunflowerCrate": "Small Sunflower Crate",
+  "FMCore_SmJazzCrate": "Small Jazz Crate",
+
+  "FMCore_SmPickleCrate": "Small Pickle Crate",
+  "FMCore_SmJellyCrate": "Small Jelly Crate",
+  "FMCore_SmEggCrate": "Small Egg Crate",
+  "FMCore_SmMilkCrate": "Small Milk Crate",
+  "FMCore_SmOilCrate": "Small Oil Crate",
+
+  "FMCore_BerryBasket": "Berry Basket",
+ 
+  "FMCore_AppleBarrel": "Apple Barrel",
+  "FMCore_PeachBarrel": "Peach Barrel",
+  "FMCore_ApricotBarrel": "Apricot Barrel",
+  "FMCore_ParsnipBarrel": "Parsnip Barrel",
+  "FMCore_PotatoBarrel": "Potato Barrel",
+
+  "FMCore_PineappleSack": "Pineapple Sack",
+  "FMCore_AppleSack": "Apple Sack",
+  "FMCore_ApricotSack": "Apricot Sack",
+  "FMCore_PeachSack": "Peach Sack",
+
+  "FMCore_PotatoSack": "Potato Sack",
+  "FMCore_CarrotSack": "Carrot Sack",
+  "FMCore_CauliflowerSack": "Cauliflower Sack",
+  "FMCore_ParsnipSack": "Parsnip Sack",
+
+  "FMCore_EmptyCrate1": "Empty Crate",
+  "FMCore_EmptyCrate2": "Empty Crate",
+  "FMCore_EmptyBasket": "Empty Basket",
+  "FMCore_EmptyBasketDuo": "Empty Baskets",
+  "FMCore_EmptyBasketTrio": "Empty Baskets",
+
+  "FMCore_DIYDisplayA": "DIY Farm Display A",
+  "FMCore_DIYDisplayB": "DIY Farm Display B",
+  "FMCore_DIYDisplayC": "DIY Farm Display C",
+  "FMCore_DIYDisplayD": "DIY Farm Display D",
+  "FMCore_DIYDisplayE": "DIY Farm Display E",
+
+  "FMCore_DIYDisplayDivider": "DIY Farm Display Divider",
+  "FMCore_DIYDisplayRegister": "DIY Farm Display Register",
+
+  "FMCore_SmDisplay": "Small Farm Display",
+  "FMCore_MedFarmTable": "Medium Farm Table",
+  "FMCore_MedDisplay": "Medium Farm Display",
+
+  "FMCore_ArtisanDisplay": "Artisan Farm Display",
+  "FMCore_FruitDisplay": "Fruit Farm Display",
+  "FMCore_FreshDisplay": "Fresh Farm Display",
+  "FMCore_AnimalDisplay": "Animal Farm Display",
+  "FMCore_VeggieDisplay": "Veggie Farm Display",
+  
+}
+  

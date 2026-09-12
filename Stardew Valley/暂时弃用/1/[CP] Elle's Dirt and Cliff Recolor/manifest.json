@@ -1,0 +1,11 @@
+{
+   "Name": "Elle's Dirt and Cliff Recolor",
+   "Author": "Elle/Junimods",
+   "Version": "1.2.9",
+   "Description": "Recolors the yellow dirt and the cliffs to match!",
+   "UniqueID": "Elle.DirtCliffRecolor",
+   "UpdateKeys": [ "Nexus:1966" ],
+   "ContentPackFor": {
+      "UniqueID": "Pathoschild.ContentPatcher"
+   },
+}

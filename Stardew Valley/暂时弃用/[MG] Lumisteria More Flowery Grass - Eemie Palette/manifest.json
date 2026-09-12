@@ -1,0 +1,12 @@
+{
+    "Name": "[MG] Lumisteria More Flowery Grass - Eemie Palette",
+    "Author": "Lumisteria",
+    "Version": "1.0.0",
+    "Description": "description",
+    "UniqueID": "lumisteria.moreflowerygrasseemiepalette",
+    "MinimumApiVersion": "3.0.0",
+	"UpdateKeys": ["Nexus:5434"],
+    "ContentPackFor": {
+        "UniqueID": "EpicBellyFlop45.MoreGrass"
+    }
+}

@@ -1,0 +1,12 @@
+{
+	"config.EnableMod.name": "启用模组",
+	"config.EnableMod.description": "启用此模组的所有功能。 (默认: true)",
+	"config.YearRoundItems.name": "全年可用商品",
+	"config.YearRoundItems.description": "启用全年可用的商品。 (默认: true)",
+	"config.SeasonalItems.name": "季节性商品",
+	"config.SeasonalItems.description": "启用仅在特定季节可用的商品。 (默认: true)",
+	"config.WeekdayDependentItems.name": "星期几依赖商品",
+	"config.WeekdayDependentItems.description": "启用仅在特定星期几可用的商品。 (默认: true)",
+	"config.SpecialItems.name": "特殊商品",
+	"config.SpecialItems.description": "启用仅在特定日期可用的商品。 (默认: true)"
+}

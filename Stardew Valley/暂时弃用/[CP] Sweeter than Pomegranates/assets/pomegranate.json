@@ -1,0 +1,163 @@
+{
+  
+  "Changes": [
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogueElliott",
+      "Entries": {
+        //general dialogue//
+        "Rainy_Day_0": "{{i18n:STP.Rainy_Day_{{Random:{{Range:0,5}}}}}}",
+        "Rainy_Day_1": "{{i18n:STP.Rainy_Day_{{Random:{{Range:0,5}}}}}}",
+        "Rainy_Day_2": "{{i18n:STP.Rainy_Day_{{Random:{{Range:0,5}}}}}}",
+        "Rainy_Day_3": "{{i18n:STP.Rainy_Day_{{Random:{{Range:0,5}}}}}}",
+        "Rainy_Day_4": "{{i18n:STP.Rainy_Day_{{Random:{{Range:0,5}}}}}}",
+        "Rainy_Day_5": "{{i18n:STP.Rainy_Day_{{Random:{{Range:0,5}}}}}}",
+        "Rainy_Day_Elliott": "{{i18n:STP.Rainy_Day_{{Random:{{Range:0, 5}}}}}}",
+
+        "patio_Elliott": "{{i18n:STP.patio_Elliott}}",
+
+        "Rainy_Night_0": "{{i18n:STP.Rainy_Night_{{Random:{{Range:0,5}}}}}}",
+        "Rainy_Night_1": "{{i18n:STP.Rainy_Night_{{Random:{{Range:0,5}}}}}}",
+        "Rainy_Night_2": "{{i18n:STP.Rainy_Night_{{Random:{{Range:0,5}}}}}}",
+        "Rainy_Night_3": "{{i18n:STP.Rainy_Night_{{Random:{{Range:0,5}}}}}}",
+        "Rainy_Night_4": "{{i18n:STP.Rainy_Night_{{Random:{{Range:0,5}}}}}}",
+        "Rainy_Night_5": "{{i18n:STP.Rainy_Night_{{Random:{{Range:0,5}}}}}}",
+        "Rainy_Night_Elliott": "{{i18n:STP.Rainy_Night_{{Random:{{Range:0, 5}}}}}}",
+
+        "Indoor_Day_0": "{{i18n:STP.Indoor_Day_{{Random:{{Range:0,7}}}}}}",
+        "Indoor_Day_1": "{{i18n:STP.Indoor_Day_{{Random:{{Range:0,7}}}}}}",
+        "Indoor_Day_2": "{{i18n:STP.Indoor_Day_{{Random:{{Range:0,7}}}}}}",
+        "Indoor_Day_3": "{{i18n:STP.Indoor_Day_{{Random:{{Range:0,7}}}}}}",
+        "Indoor_Day_4": "{{i18n:STP.Indoor_Day_{{Random:{{Range:0,7}}}}}}",
+        "Indoor_Day_5": "{{i18n:STP.Indoor_Day_{{Random:{{Range:0,7}}}}}}",
+        "Indoor_Day_6": "{{i18n:STP.Indoor_Day_{{Random:{{Range:0,7}}}}}}",
+        "Indoor_Day_7": "{{i18n:STP.Indoor_Day_{{Random:{{Range:0,7}}}}}}",
+        "Indoor_Day_Elliott": "{{i18n:STP.Indoor_Day_{{Random:{{Range:0, 7}}}}}}",
+
+        "Indoor_Night_0": "{{i18n:STP.Indoor_Night_{{Random:{{Range:0,6}}}}}}",
+        "Indoor_Night_1": "{{i18n:STP.Indoor_Night_{{Random:{{Range:0,6}}}}}}",
+        "Indoor_Night_2": "{{i18n:STP.Indoor_Night_{{Random:{{Range:0,6}}}}}}",
+        "Indoor_Night_3": "{{i18n:STP.Indoor_Night_{{Random:{{Range:0,6}}}}}}",
+        "Indoor_Night_4": "{{i18n:STP.Indoor_Night_{{Random:{{Range:0,6}}}}}}",
+        "Indoor_Night_5": "{{i18n:STP.Indoor_Night_{{Random:{{Range:0,6}}}}}}",
+        "Indoor_Night_6": "{{i18n:STP.Indoor_Night_{{Random:{{Range:0,6}}}}}}",
+        "Indoor_Night_Elliott": "{{i18n:STP.Indoor_Night_{{Random:{{Range:0, 6}}}}}}",
+
+        "Outdoor_0": "{{i18n:STP.Outdoor_{{Random:{{Range:0,7}}}}}}",
+        "Outdoor_1": "{{i18n:STP.Outdoor_{{Random:{{Range:0,7}}}}}}",
+        "Outdoor_2": "{{i18n:STP.Outdoor_{{Random:{{Range:0,7}}}}}}",
+        "Outdoor_3": "{{i18n:STP.Outdoor_{{Random:{{Range:0,7}}}}}}",
+        "Outdoor_4": "{{i18n:STP.Outdoor_{{Random:{{Range:0,7}}}}}}",
+        "Outdoor_5": "{{i18n:STP.Outdoor_{{Random:{{Range:0,7}}}}}}",
+        "Outdoor_6": "{{i18n:STP.Outdoor_{{Random:{{Range:0,7}}}}}}",
+        "Outdoor_7": "{{i18n:STP.Outdoor_{{Random:{{Range:0,7}}}}}}",
+        "Outdoor_Elliott": "{{i18n:STP.Outdoor_{{Random:{{Range:0,7}}}}}}",
+
+        "OneKid_0": "{{i18n:STP.OneKid_{{Random:{{Range:0,6}}}}}}",
+        "OneKid_1": "{{i18n:STP.OneKid_{{Random:{{Range:0,6}}}}}}",
+        "OneKid_2": "{{i18n:STP.OneKid_{{Random:{{Range:0,6}}}}}}",
+        "OneKid_3": "{{i18n:STP.OneKid_{{Random:{{Range:0,6}}}}}}",
+        "OneKid_4": "{{i18n:STP.OneKid_{{Random:{{Range:0,6}}}}}}",
+        "OneKid_5": "{{i18n:STP.OneKid_{{Random:{{Range:0,6}}}}}}",
+        "OneKid_6": "{{i18n:STP.OneKid_{{Random:{{Range:0,6}}}}}}",
+        
+        "TwoKids_0": "{{i18n:STP.TwoKids_{{Random:{{Range:0,7}}}}}}",
+        "TwoKids_1": "{{i18n:STP.TwoKids_{{Random:{{Range:0,7}}}}}}",
+        "TwoKids_2": "{{i18n:STP.TwoKids_{{Random:{{Range:0,7}}}}}}",
+        "TwoKids_3": "{{i18n:STP.TwoKids_{{Random:{{Range:0,7}}}}}}",
+        "TwoKids_4": "{{i18n:STP.TwoKids_{{Random:{{Range:0,7}}}}}}",
+        "TwoKids_5": "{{i18n:STP.TwoKids_{{Random:{{Range:0,7}}}}}}",
+        "TwoKids_6": "{{i18n:STP.TwoKids_{{Random:{{Range:0,7}}}}}}",
+        "TwoKids_7": "{{i18n:STP.TwoKids_{{Random:{{Range:0,7}}}}}}",
+        
+        "Good_0": "{{i18n:STP.Good_{{Random:{{Range:0,8}}}}}}",
+        "Good_1": "{{i18n:STP.Good_{{Random:{{Range:0,8}}}}}}",
+        "Good_2": "{{i18n:STP.Good_{{Random:{{Range:0,8}}}}}}",
+        "Good_3": "{{i18n:STP.Good_{{Random:{{Range:0,8}}}}}}",
+        "Good_4": "{{i18n:STP.Good_{{Random:{{Range:0,8}}}}}}",
+        "Good_5": "{{i18n:STP.Good_{{Random:{{Range:0,8}}}}}}",
+        "Good_6": "{{i18n:STP.Good_{{Random:{{Range:0,8}}}}}}",
+        "Good_7": "{{i18n:STP.Good_{{Random:{{Range:0,8}}}}}}",
+        "Good_8": "{{i18n:STP.Good_{{Random:{{Range:0,8}}}}}}",
+        
+        "Neutral_0": "{{i18n:STP.Neutral_{{Random:{{Range:0,4}}}}}}",
+        "Neutral_1": "{{i18n:STP.Neutral_{{Random:{{Range:0,4}}}}}}",
+        "Neutral_2": "{{i18n:STP.Neutral_{{Random:{{Range:0,4}}}}}}",
+        "Neutral_3": "{{i18n:STP.Neutral_{{Random:{{Range:0,4}}}}}}",
+        "Neutral_4": "{{i18n:STP.Neutral_{{Random:{{Range:0,4}}}}}}",
+        
+        "Bad_0": "{{i18n:STP.Bad_{{Random:{{Range:0,4}}}}}}",
+        "Bad_1": "{{i18n:STP.Bad_{{Random:{{Range:0,4}}}}}}",
+        "Bad_2": "{{i18n:STP.Bad_{{Random:{{Range:0,4}}}}}}",
+        "Bad_3": "{{i18n:STP.Bad_{{Random:{{Range:0,4}}}}}}",
+        "Bad_4": "{{i18n:STP.Bad_{{Random:{{Range:0,4}}}}}}",
+        "Bad_5": "{{i18n:STP.Bad_{{Random:{{Range:0,4}}}}}}",
+        "Bad_6": "{{i18n:STP.Bad_{{Random:{{Range:0,4}}}}}}",
+        "Bad_7": "{{i18n:STP.Bad_{{Random:{{Range:0,4}}}}}}",
+        "Bad_8": "{{i18n:STP.Bad_{{Random:{{Range:0,4}}}}}}",
+        "Bad_9": "{{i18n:STP.Bad_{{Random:{{Range:0,4}}}}}}",
+        
+        "funLeave_Elliott": "{{i18n:STP.funLeave_Elliott}}",
+        "funReturn_Elliott": "{{i18n:STP.funReturn_Elliott}}",
+        //seasonal dialogue//
+        
+        "spring_1": "{{i18n:STP.spring_1}}",
+        "spring_2": "{{i18n:STP.spring_2}}",
+        "spring_4": "{{i18n:STP.spring_4}}",
+        "spring_9": "{{i18n:STP.spring_9}}",
+        "spring_12": "{{i18n:STP.spring_12}}",
+        "spring_15": "{{i18n:STP.spring_15}}",
+        "spring_16": "{{i18n:STP.spring_16}}",
+        "spring_20": "{{i18n:STP.spring_20}}",
+        "spring_23": "{{i18n:STP.spring_23}}",
+        "spring_28": "{{i18n:STP.spring_28}}",
+        
+        "summer_1": "{{i18n:STP.summer_1}}",
+        "summer_6": "{{i18n:STP.summer_6}}",
+        "summer_10": "{{i18n:STP.summer_10}}",
+        "summer_11": "{{i18n:STP.summer_11}}",
+        "summer_15": "{{i18n:STP.summer_15}}",
+        "summer_24": "{{i18n:STP.summer_24}}",
+        "summer_27": "{{i18n:STP.summer_27}}",
+        "summer_28": "{{i18n:STP.summer_28}}",
+        
+        "fall_1": "{{i18n:STP.fall_1}}",
+        "fall_4": "{{i18n:STP.fall_4}}",
+        "fall_5": "{{i18n:STP.fall_5}}",
+        "fall_9": "{{i18n:STP.fall_9}}",
+        "fall_10": "{{i18n:STP.fall_10}}",
+        "fall_15": "{{i18n:STP.fall_15}}",
+        "fall_20": "{{i18n:STP.fall_20}}",
+        "fall_21": "{{i18n:STP.fall_21}}",
+        "fall_23": "{{i18n:STP.fall_23}}",
+        "fall_26": "{{i18n:STP.fall_26}}",
+        "fall_27": "{{i18n:STP.fall_27}}",
+        
+        "winter_1": "{{i18n:STP.winter_1}}",
+        "winter_5": "{{i18n:STP.winter_5}}",
+        "winter_7": "{{i18n:STP.winter_7_{{Random:{{Range:0,3}}}}}}",
+        "winter_13": "{{i18n:STP.winter_13}}",
+        "winter_23": "{{i18n:STP.winter_23}}",
+        "winter_24": "{{i18n:STP.winter_24}}",
+        "winter_25": "{{i18n:STP.winter_25}}",
+        "winter_27": "{{i18n:STP.winter_27}}",
+        "winter_28": "{{i18n:STP.winter_28}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogueElliott",
+      "When": {
+        "HasMod": "tiakall.writerelliott"
+      },
+      "Entries": {
+        //RWE dialogue//
+        "married_Elliott": "{{i18n:STP.RWE.married_Elliott}}",
+        "spouseRoom_Elliott": "{{i18n:STP.RWE.spouseRoom_Elliott_{{Random:{{Range:0,4}}}}}}", 
+        "Good_9": "{{i18n:STP.Good_{{Random:{{Range:0,8}}}}}}, {{i18n:STP.RWE.Good_9}}",
+        "Indoor_Day_8": "{{i18n:STP.Indoor_Day_{{Random:{{Range:0,7}}}}}}, {{i18n:STP.RWE.Indoor_Day_8}}",
+        "Outdoor_8": "{{i18n:STP.Outdoor_{{Random:{{Range:0,7}}}}}}, {{i18n:STP.RWE.Outdoor_8}}"
+      }
+    }
+  ]
+}

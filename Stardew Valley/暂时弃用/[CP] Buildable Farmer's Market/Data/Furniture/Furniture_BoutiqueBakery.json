@@ -1,0 +1,160 @@
+{
+    "Changes": [
+    // CATALOGUE DATA
+        {
+            "LogName": "Add Boutique Bakery Calcifer Data",
+            "Action": "EditData",
+            "Target": "sophie.Calcifer/FurnitureActions",
+            "Entries": {
+            // SWEET BAKED GOODS
+                "(F)HXW.BoutiqueBakeryFurniture_FilledBakeryCounter": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BoutiqueBakeryFurniture_BakeryCounterOpenBottom": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BoutiqueBakeryFurniture_BakeryDisplayTeapot": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BoutiqueBakeryFurniture_BakeryDisplayTieredStand": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BoutiqueBakeryFurniture_BakeryTable3x2": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BoutiqueBakeryFurniture_BakeryDisplayMiniCakes3x3": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BoutiqueBakeryFurniture_CupcakeShelves": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BoutiqueBakeryFurniture_CupcakeShelvesMulticolor": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BoutiqueBakeryFurniture_DessertShelves": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BoutiqueBakeryFurniture_NarrowDessertShelves": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BoutiqueBakeryFurniture_NarrowDessertShelves2": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BoutiqueBakeryFurniture_CakeShelves": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BoutiqueBakeryFurniture_ShelveswithCakeStands": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BoutiqueBakeryFurniture_NarrowDessertShelves3": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BoutiqueBakeryFurniture_NarrowDessertShelves4": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BoutiqueBakeryFurniture_NarrowDessertShelves5": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BoutiqueBakeryFurniture_2x2CakeDisplayOpen1": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BoutiqueBakeryFurniture_2x2CakeDisplayOpen2": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BoutiqueBakeryFurniture_2x2CakeDisplayOpen3": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BoutiqueBakeryFurniture_2x2CakeDisplayCovered1": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BoutiqueBakeryFurniture_2x2CakeDisplayCovered2": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

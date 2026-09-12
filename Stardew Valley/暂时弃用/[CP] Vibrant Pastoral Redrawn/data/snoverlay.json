@@ -1,0 +1,110 @@
+{
+	"Changes": [
+    //SnOverlay
+		//Maps
+		{
+			"LogName": "Snow Outdoors Tilesheet",
+			"Action": "EditImage",
+			"Target": "Maps/winter_outdoorsTileSheet",
+			"FromFile": "assets/Maps/outdoors_snow.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"FromArea": { "X": 128, "Y": 224, "Width": 64, "Height": 64 },
+			"ToArea": { "X": 128, "Y": 224, "Width": 64, "Height": 64 }
+		},
+		{
+			"LogName": "Snow Outdoors Bushes",
+			"Action": "EditImage",
+			"Target": "Maps/winter_outdoorsTileSheet",
+			"FromFile": "assets/Maps/outdoors_snow.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"FromArea": { "X": 208, "Y": 0, "Width": 48, "Height": 80 },
+			"ToArea": { "X": 208, "Y": 0, "Width": 48, "Height": 80 },
+			"When": {
+				"VibrantPastoral.C/Vegetation": true,
+				"HasMod |contains=Az.Foliage": false
+			}
+		},
+		{
+			"LogName": "Snow Outdoors Tilesheet Buildings",
+			"Action": "EditImage",
+			"Target": "Maps/winter_outdoorsTileSheet",
+			"FromFile": "assets/Maps/outdoorsTileSheet_snow.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"When": { "Buildings |contains=outskirts": true }
+		},
+		{
+			"LogName": "Snow Town Buildings",
+			"Action": "EditImage",
+			"Target": "Maps/winter_town",
+			"FromFile": "assets/Maps/town_snow.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"When": { "Buildings |contains=town": true }
+        },
+		{
+			"LogName": "Snow Spring Objects",
+			"Action": "EditImage",
+			"Target": "Maps/springobjects",
+			"FromFile": "assets/Maps/springobjects_snow.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"When": { "HasMod |contains=Az.Resources": false }
+		},
+		{
+			"LogName": "Snow Spring Objects Expanded",
+			"Action": "EditImage",
+			"Target": "Maps/VanillaSpringObjects",
+			"FromFile": "assets/Maps/springobjects_snow.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"When": {
+				"HasMod": "VibrantPastoral.Expanded",
+				"HasMod |contains=Az.Resources": false
+			}
+		},
+		{
+			"LogName": "???",
+			"Action": "EditImage",
+			"Target": "Maps/winter_town",
+			"FromFile": "assets/Maps/town_snow.png",
+			"PatchMode": "Overlay",
+			"Priority": "Late + 1",
+			"FromArea": { "X": 192, "Y": 640, "Width": 192, "Height": 160 },
+			"ToArea": { "X": 192, "Y": 640, "Width": 192, "Height": 160 },
+			"When": {
+				"VibrantPastoral.C/EdNygma": true,
+				"HasReadLetter": "VibrantPastoral.EdNygma_1_2"
+			}
+		},
+		{
+			"LogName": "???",
+			"Action": "EditImage",
+			"Target": "Maps/winter_town",
+			"FromFile": "assets/Maps/winter_VibrantPastoral.png",
+			"PatchMode": "Replace",
+			"Priority": "Late + 1",
+			"FromArea": { "X": 32, "Y": 37, "Width": 27, "Height": 40 },
+			"ToArea": { "X": 206, "Y": 661, "Width": 27, "Height": 40 },
+			"When": {
+				"VibrantPastoral.C/EdNygma": true,
+				"HasReadLetter": "VibrantPastoral.EdNygma_1_2"
+			}
+		},
+		//TileSheets
+		{
+			"LogName": "Snow Bushes",
+			"Action": "EditImage",
+			"Target": "TileSheets/bushes",
+			"FromFile": "assets/{{Target}}_snow.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"When": {
+				"VibrantPastoral.C/Vegetation": true,
+				"HasMod |contains=Az.Foliage": false
+			}
+		}
+    ]
+}

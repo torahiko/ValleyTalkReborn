@@ -1,0 +1,36 @@
+{
+  "Changes": [
+    {
+      "LogName": "BusRepair",
+      "Action": "EditData",
+      "Target": "Data/Events/BusStop",
+      "Entries": {
+        "{{ModId}}_BusRepair/Hn ccVault": "spring_day_ambient/-1000 -1000/farmer 23 23 0 Pam 22 8 2 Lewis 23 8 2 Penny 21 15 0/skippable/playSound busDoorOpen/pause 5000/viewport 23 10 clamp true/jump Penny/move Penny 0 -3 0 true/pause 500/warp Pam 22 9/pause 300/speak Pam \"{{i18n:BusRepair.1_Pam}}\"/move Pam 0 2 2/move Pam 2 0 1/faceDirection Pam 0/jump Pam/speak Pam \"{{i18n:BusRepair.2_Pam}}\"/warp Lewis 22 9/pause 300/showFrame Lewis 27/shake Lewis 3000/textAboveHead Lewis \"{{i18n:BusRepair.3_Lewis}}\"/emote Pam 56 true/pause 300/speak Lewis \"{{i18n:BusRepair.4_Lewis}}\"/move Lewis 0 2 2/move farmer 0 -8 0 true/faceDirection Penny 2/emote Penny 16/speak Penny \"{{i18n:BusRepair.5_Penny}}\"/faceDirection Pam 2 true/textAboveHead Lewis \"{{i18n:BusRepair.6_Lewis}}\"/pause 300/emote farmer 8/speak Penny \"{{i18n:BusRepair.7_Penny}}\"/speak Lewis \"{{i18n:BusRepair.8_Lewis}}\"/speak Pam \"{{i18n:BusRepair.9_Pam}}\"/emote Pam 56/speak Lewis \"{{i18n:BusRepair.10_Lewis}}\"/emote Pam 12/emote Penny 60/speak Pam \"{{i18n:BusRepair.11_Pam}}\"/pause 300/speak Lewis \"{{i18n:BusRepair.12_Lewis}}\"/speak Penny \"{{i18n:BusRepair.13_Penny}}\"/speak Pam \"{{i18n:BusRepair.14_Pam}}\"/emote farmer 32/speak Pam \"{{i18n:BusRepair.15_Pam}}\"/pause 300/speak Pam \"{{i18n:BusRepair.16_Pam}}\"/advancedMove Pam false 0 10 2 5000/showFrame Penny 27/jump Lewis/textAboveHead Penny \"{{i18n:BusRepair.17_Penny}}\"/textAboveHead Lewis \"{{i18n:BusRepair.18_Lewis}}\"/emote farmer 28/end"
+      },
+      "When": {
+        "Hasflag |contains=jojaMember": false,
+        "BusRepair": true
+      }
+    },
+    {
+      "LogName": "Remove vanilla Kent's Introduction",
+      "Action": "EditData",
+      "Target": "Data/Events/Farm",
+      "Entries": { "63/y 2/t 600 1800/H": null },
+      "When": {
+        "FamilyReunited": true
+      }
+    },
+    {
+      "LogName": "FamilyReunited",
+      "Action": "EditData",
+      "Target": "Data/Events/BusStop",
+      "Entries": {
+        "{{ModId}}_FamilyReunited/y 2/t 600 1800/H": "spring_day_ambient/24 23/farmer 15 23 0 Jodi 24 16 2 Sam 20 20 0 Vincent 29 18 2 Kent 1000 1000 0/addTemporaryActor SebOnBike 48 32 1000 1002 0/AddConversationTopic FamilyReunited 3/skippable/changeSprite Kent Back/showFrame Kent 9/animate Vincent false true 500 22 23/advancedMove Jodi true 1 0 1 1500 -1 0 3 1500/move farmer 9 0 0/pause 500/emote farmer 8/viewport move 0 -1 8000/emote Jodi 40/pause 400/emote Sam 40 true/emote Vincent 40/pause 500/playSound {{ModId}}_Motorcycle/emote Sam 16 true/emote Jodi 16 true/emote Vincent 16/stopAdvancedMoves/showFrame Jodi 8/stopAnimation Vincent 8/pause 300/move Vincent -3 0 0/pause 500/warp SebOnBike 39 10/speed SebOnBike 8/move SebOnBike -18 0 0/pause 1500/showFrame SebOnBike 1/warp Kent 24 11/pause 200/showFrame Kent 8/pause 500/playSound shwip/faceDirection Kent 2/pause 500/emote Jodi 40/pause 500/move Jodi 0 -1 0/speak Jodi \"{{i18n:FamilyReunited.1_Jodi}}\"/pause 500/speak Kent \"{{i18n:FamilyReunited.2_Kent}}\"/pause 300/move Kent 0 1 2/move Jodi 0 -1 0/move Kent 0 1 2/playSound shwip/warp Jodi 1000 1000/showFrame Kent 20/playSound musicboxsong/pause 500/speak Jodi \"{{i18n:FamilyReunited.3_Jodi}}\"/pause 500/move Vincent -2 0 0/move Sam 0 -7 1 true/pause 200/speak Kent \"{{i18n:FamilyReunited.4_Kent}}\"/pause 500/emote Kent 20/pause 500/speak Vincent \"{{i18n:FamilyReunited.5_Vincent}}\"/pause 500/showFrame Kent 0/warp Jodi 24 14/pause 500/move Jodi 1 0 3/speak Kent \"{{i18n:FamilyReunited.6_Kent}}\"/pause 500/shake Vincent 500/pause 600/shake Vincent 500/pause 600/shake Vincent 500/pause 600/textAboveHead Vincent \"{{i18n:FamilyReunited.7_Vincent}}\"/speed Vincent 5/move Vincent 0 -4 0/jump Vincent/pause 300/warp Vincent 1000 1000/showFrame Kent 21/showFrame Vincent 8/pause 300/move Sam 2 0 1/pause 500/speak Sam \"{{i18n:FamilyReunited.8_Sam}}\"/pause 500/showFrame Kent 0/warp Vincent 24 14/pause 500/faceDirection Kent 3/pause 300/emote Kent 32/move Sam 1 0 1/pause 300/move Vincent -2 0 1/positionOffset Sam 3 0/pause 10/positionOffset Sam 3 0/pause 10/positionOffset Sam 3 0/pause 10/positionOffset Sam 3 0/pause 10/positionOffset Sam 3 0/pause 10/positionOffset Sam 3 0/pause 10/positionOffset Sam 3 0/pause 10/positionOffset Sam 3 0/pause 10/positionOffset Sam 3 0/pause 10/positionOffset Sam 3 0/pause 10/positionOffset Sam 3 0/pause 10/positionOffset Sam 3 0/pause 10/positionOffset Sam 3 0/pause 10/showFrame Sam 36/showFrame Kent 22/pause 500/speak Kent \"{{i18n:FamilyReunited.9_Kent}}\"/pause 500/emote Sam 60/pause 1000/positionOffset Sam -2 0/pause 10/positionOffset Sam -2 0/pause 10/positionOffset Sam -2 0/pause 10/positionOffset Sam -2 0/pause 10/positionOffset Sam -2 0/pause 10/positionOffset Sam -2 0/pause 10/positionOffset Sam -2 0/pause 10/positionOffset Sam -2 0/pause 10/positionOffset Sam -2 0/pause 10/positionOffset Sam -2 0/pause 10/positionOffset Sam -2 0/pause 10/positionOffset Sam -2 0/pause 10/positionOffset Sam -2 0/pause 10/positionOffset Sam -2 0/pause 10/positionOffset Sam -2 0/pause 10/showFrame Sam 4/showFrame Kent 12/pause 500/speak Sam \"{{i18n:FamilyReunited.10_Sam}}\"/pause 500/emote Jodi 20/move farmer 0 -4 0/faceDirection Jodi 2/pause 500/speak Jodi \"{{i18n:FamilyReunited.11_Jodi}}\"/pause 300/faceDirection Jodi 3/speak Jodi \"{{i18n:FamilyReunited.12_Jodi}}\"/pause 500/playSound shwip/faceDirection Kent 2/faceDirection Jodi 2/pause 300/move Kent 0 1 2/pause 500/speak Kent \"{{i18n:FamilyReunited.13_Kent}}\"/pause 500/emote farmer 32/pause 500/faceDirection Sam 0/pause 300/speak Sam \"{{i18n:FamilyReunited.14_Sam}}\"/pause 500/speak Sebastian \"{{i18n:FamilyReunited.15_Sebastian}}\"/pause 300/jump Sam/emote Sam 16/speak Sam \"{{i18n:FamilyReunited.16_Sam}}\"/pause 500/showFrame SebOnBike 1/emote Vincent 16/speak Vincent \"{{i18n:FamilyReunited.17_Vincent}}\"/pause 500/faceDirection Sam 3/speak Sam \"{{i18n:FamilyReunited.18_Sam}}\"/pause 500/emote Vincent 56/showFrame SebOnBike 2/speak Sebastian \"{{i18n:FamilyReunited.19_Sebastian}}\"/pause 500/faceDirection Kent 0/faceDirection Jodi 0/textAboveHead Kent \"{{i18n:FamilyReunited.20_Kent}}\"/pause 1500/faceDirection Sam 0/textAboveHead Sam \"{{i18n:FamilyReunited.21_Sam}}\"/pause 1500/emote SebOnBike 56 true/pause 500/emote Sam 12/pause 500/globalFade/viewport -1000 -1000/pause 1000/speak Jodi \"{{i18n:FamilyReunited.22_Jodi}}\"/pause 500/speak Sam \"{{i18n:FamilyReunited.23_Sam}}\"/pause 500/speak Vincent \"{{i18n:FamilyReunited.24_Vincent}}\"/pause 500/speak Kent \"{{i18n:FamilyReunited.25_Kent}}\"/pause 500/speak Jodi \"{{i18n:FamilyReunited.26_Jodi}}\"/pause 2000/end"
+      },
+      "When": {
+        "FamilyReunited": true
+      }
+    }
+  ]
+}

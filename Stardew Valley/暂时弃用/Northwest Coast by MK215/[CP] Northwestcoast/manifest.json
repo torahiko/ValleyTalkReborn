@@ -1,0 +1,11 @@
+{
+  "Name": "Northwestcoast",
+  "Author": "MK215",
+  "Version": "1.0.0",
+  "Description": "A lovely coast behind the Backwoods",
+  "UniqueID": "MK215.Northwestcoast",
+  "UpdateKeys": [ "Nexus:29376" ],
+  "ContentPackFor": {
+    "UniqueID": "Pathoschild.ContentPatcher"
+  }
+}

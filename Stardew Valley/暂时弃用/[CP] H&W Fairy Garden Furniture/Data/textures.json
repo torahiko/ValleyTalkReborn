@@ -1,0 +1,72 @@
+ {
+
+   "Changes": [
+ 
+    {
+        "LogName": "Load Furniture Textures",
+        "Action": "Load",
+        "Target": "Mods/HXW.FairyGardenFurniture/Furniture, Mods/HXW.FairyGardenFurniture/Furniture_GnomeHouses, Mods/HXW.FairyGardenFurniture/Furniture_Gnomes, Mods/HXW.FairyGardenFurniture/Furniture_Mushrooms",
+        "FromFile": "assets/{{TargetWithoutPath}}.png"
+    },
+
+/////////////////////
+// recolor options //
+/////////////////////
+
+{
+    "LogName": "Dark Recolor - Furniture",
+    "Action": "EditImage",
+    "Target": "Mods/HXW.FairyGardenFurniture/Furniture",
+    "FromFile": "assets/Furniture_Dark.png",
+    "PatchMode":"Replace",
+    "When": {"Decor": true, "Recolor": "Dark"}
+},
+
+{
+    "LogName": "Dark Recolor - Gnome Houses",
+    "Action": "EditImage",
+    "Target": "Mods/HXW.FairyGardenFurniture/Furniture_GnomeHouses",
+    "FromFile": "assets/Furniture_GnomeHouses_Dark.png",
+    "PatchMode":"Replace",
+    "When": {"FairyHouses": true, "Recolor": "Dark"}
+},
+
+{
+    "LogName": "Dark Recolor - Mushrooms",
+    "Action": "EditImage",
+    "Target": "Mods/HXW.FairyGardenFurniture/Furniture_Mushrooms",
+    "FromFile": "assets/Furniture_Mushrooms_Dark.png",
+    "PatchMode":"Replace",
+    "When": {"Mushrooms": true, "Recolor": "Dark"}
+},
+
+
+{
+    "LogName": "Light Recolor - Furniture",
+    "Action": "EditImage",
+    "Target": "Mods/HXW.FairyGardenFurniture/Furniture",
+    "FromFile": "assets/Furniture_Light.png",
+    "PatchMode":"Replace",
+    "When": {"Decor": true, "Recolor": "Light"}
+},
+
+{
+    "LogName": "Light Recolor - Gnome Houses",
+    "Action": "EditImage",
+    "Target": "Mods/HXW.FairyGardenFurniture/Furniture_GnomeHouses",
+    "FromFile": "assets/Furniture_GnomeHouses_Light.png",
+    "PatchMode":"Replace",
+    "When": {"FairyHouses": true, "Recolor": "Light"}
+},
+
+{
+    "LogName": "Light Recolor - Mushrooms",
+    "Action": "EditImage",
+    "Target": "Mods/HXW.FairyGardenFurniture/Furniture_Mushrooms",
+    "FromFile": "assets/Furniture_Mushrooms_Light.png",
+    "PatchMode":"Replace",
+    "When": {"Mushrooms": true, "Recolor": "Light"}
+}
+
+    ]
+}

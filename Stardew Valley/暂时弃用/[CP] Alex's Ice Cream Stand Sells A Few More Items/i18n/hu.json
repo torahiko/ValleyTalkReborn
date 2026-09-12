@@ -1,0 +1,12 @@
+{
+	"config.EnableMod.name": "Mod engedélyezése",
+	"config.EnableMod.description": "A mod összes funkciójának engedélyezése. (Alapértelmezett: true)",
+	"config.YearRoundItems.name": "Egész éven át elérhető termékek",
+	"config.YearRoundItems.description": "A egész éven át elérhető termékek engedélyezése. (Alapértelmezett: true)",
+	"config.SeasonalItems.name": "Szezonális termékek",
+	"config.SeasonalItems.description": "Csak bizonyos évszakokban elérhető termékek engedélyezése. (Alapértelmezett: true)",
+	"config.WeekdayDependentItems.name": "Hétköznapoktól függő termékek",
+	"config.WeekdayDependentItems.description": "Csak meghatározott hét napjain elérhető termékek engedélyezése. (Alapértelmezett: true)",
+	"config.SpecialItems.name": "Különleges termékek",
+	"config.SpecialItems.description": "Csak meghatározott dátumokon elérhető termékek engedélyezése. (Alapértelmezett: true)"
+}

@@ -1,0 +1,7 @@
+{
+  "EnableMod": "true",
+  "YearRoundItems": "true",
+  "SeasonalItems": "true",
+  "WeekdayDependentItems": "true",
+  "SpecialItems": "true"
+}

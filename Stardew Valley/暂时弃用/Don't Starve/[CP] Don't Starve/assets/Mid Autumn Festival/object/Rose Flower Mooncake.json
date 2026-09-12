@@ -1,0 +1,51 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "DS_Rose_Flower_Mooncake": {
+            "Name": "Rose Flower Mooncake",
+            "DisplayName": "{{i18n:Rose_Flower_Mooncake.name}}",
+            "Description": "{{i18n:Rose_Flower_Mooncake.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 520,
+            "Texture": "Mods\\ZG.DS\\Rose Flower Mooncake",
+            "SpriteIndex": 0,
+            "Edibility": 104,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": true,
+            "ExcludeFromShippingCollection": true,
+            "ExcludeFromRandomSale": true,
+            "Buffs": [
+                {
+                    "Duration": 1440,
+                    "CustomAttributes": {
+                      "FarmingLevel": 0,
+                      "FishingLevel": 0,
+                      "MiningLevel": 0,
+                      "LuckLevel": 5,
+                      "ForagingLevel": 0,
+                      "MaxStamina": 0,
+                      "MagneticRadius": 0,
+                      "Speed": 0,
+                      "Defense": 0,
+                      "Attack": 0
+                    }
+                  }
+            ]
+          }
+        }
+      },
+      {
+
+        "Action": "EditData", 
+        "Target": "Data/CookingRecipes", 
+        "When":{"Mid_Autumn_Festival": "true"},
+        "Entries": { 
+          "Rose Flower Mooncake":"246 3 245 4 247 1 595 3 344 1/25 5/DS_Rose_Flower_Mooncake 3/s Farming 0/" 
+        }
+      }
+    ]
+  }

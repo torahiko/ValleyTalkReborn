@@ -1,0 +1,16 @@
+{
+  "Changes": [
+    {
+      "LogName": "SandyHouse",
+      "Action": "EditData",
+      "Target": "Data/Events/SandyHouse",
+      "Entries": {
+        "{{ModId}}_SilentAssistant/t 600 1800/r 0.3": "ragtime/8 4/farmer 1000 1000 0 Sandy 5 5 3 Bouncer 17 3 0/skippable/addTemporaryActor Boxes_1 16 32 4 5 0 false/addTemporaryActor Boxes_2 16 32 3 5 1 false/addTemporaryActor Boxes_3 16 32 4 6 1 false/addTemporaryActor Boxes_4 16 32 2 7 0 false/addTemporaryActor Boxes_5 16 32 8 7 1 false/addTemporaryActor Boxes_6 16 32 8 8 0 false/addTemporaryActor Boxes_7 16 32 3 8 0 false/move Sandy 2 0 1/faceDirection Sandy 0/jump Sandy 2 true/playSound pickUpItem/pause 100/textAboveHead Sandy \"{{i18n:SilentAssistant.1_Sandy}}\"/pause 200/speak Sandy \"{{i18n:SilentAssistant.2_Sandy}}\"/pause 300/move Sandy -2 0 3 true/speak Sandy \"{{i18n:SilentAssistant.3_Sandy}}\"/pause 500/playSound clubhit/shake Sandy 300/pause 500/playSound clubhit/shake Sandy 300/textAboveHead Sandy \"{{i18n:SilentAssistant.4_Sandy}}\"/pause 500/speak Sandy \"{{i18n:SilentAssistant.5_Sandy}}\"/pause 500/speak Sandy \"{{i18n:SilentAssistant.6_Sandy}}\"/pause 800/textAboveHead Sandy \"{{i18n:SilentAssistant.7_Sandy}}\"/pause 2000/playSound newRecord/emote Sandy 16 true/jump Sandy 5/pause 1500/move Sandy 4 0 1/emote Sandy 56 true/move Sandy 0 -1 0/move Sandy 3 0 1/jump Sandy 5 true/speak Sandy \"{{i18n:SilentAssistant.8_Sandy}}\"/pause 500/emote Bouncer 40/globalFade/viewport -1000 1000/pause 200/speak Sandy \"{{i18n:SilentAssistant.9_Sandy}}\"/pause 500/speak Bouncer \"{{i18n:SilentAssistant.10_Bouncer}}\"/playSound pickUpItem/pause 500/playSound pickUpItem/pause 300/playSound harvest/playSound money/playSound throw/pause 400/speak Sandy \"{{i18n:SilentAssistant.11_Sandy}}\"/pause 500/speak Bouncer \"{{i18n:SilentAssistant.12_Bouncer}}\"/playSound pickUpItem/playSound money/pause 500/playSound money/playSound pickUpItem/pause 1500/playSound pickUpItem/pause 1200/playSound pickUpItem/warp Bouncer 8 4/warp Sandy 8 5/warp Boxes_1 1000 1000/warp Boxes_2 1000 1001/warp Boxes_3 1000 1002/warp Boxes_4 1000 1003/warp Boxes_5 1000 1004/warp Boxes_6 1000 1005/warp Boxes_7 1000 1006/faceDirection Sandy 0/pause 500/globalfadetoclear .007 true/viewport 8 4/emote Sandy 32/speak Sandy \"{{i18n:SilentAssistant.13_Sandy}}\"/pause 500/emote Bouncer 40/speak Sandy \"{{i18n:SilentAssistant.14_Sandy}}\"/pause 500/emote Bouncer 40/pause 500/playSound doorOpen/warp farmer 4 9/pause 300/emote Sandy 16/speed Sandy 5/move Sandy -4 0 3/faceDirection Sandy 2/jump Sandy 5/speak Sandy \"{{i18n:SilentAssistant.15_Sandy}}\"/pause 900/emote Bouncer 60/end"
+      },
+      "When": {
+        "SilentAssistant": true,
+        "HasWalletItem |contains=ClubCard": false
+      }
+    }
+  ]
+}

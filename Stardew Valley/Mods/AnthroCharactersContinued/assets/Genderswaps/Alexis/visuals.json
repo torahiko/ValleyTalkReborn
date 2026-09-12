@@ -1,0 +1,70 @@
+{
+  "Changes": [
+    {
+      "Action": "EditImage",
+      "Target": "Characters/Alex",
+      "FromFile": "assets/Characters/Alexis.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Characters/Alex_Beach",
+      "FromFile": "assets/Characters/Alexis_Beach.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Characters/Alex_Winter",
+      "FromFile": "assets/Characters/Alexis_Winter.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Portraits/Alex",
+      "FromFile": "assets/Portraits/Alexis.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Portraits/Alex_Beach",
+      "FromFile": "assets/Portraits/Alexis_Beach.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Portraits/Alex_Winter",
+      "FromFile": "assets/Portraits/Alexis_Winter.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "TileSheets/junimo_furniture",
+      "FromFile": "assets/TileSheets/junimo_furniture_alexis.png",
+      "Priority": "Late + 1",
+      "FromArea": {
+        "X": 7,
+        "Y": 7,
+        "Width": 18,
+        "Height": 18
+      },
+      "ToArea": {
+        "X": 39,
+        "Y": 311,
+        "Width": 18,
+        "Height": 18
+      }
+    },
+    {
+      "Action": "EditImage",
+      "Target": "LooseSprites/emojis",
+      "FromFile": "assets/LooseSprites/emojis_characters.png",
+      "Priority": "Late + 1",
+      "FromArea": {
+        "X": 54,
+        "Y": 27,
+        "Width": 9,
+        "Height": 9
+      },
+      "ToArea": {
+        "X": 54,
+        "Y": 99,
+        "Width": 9,
+        "Height": 9
+      }
+    }
+  ]
+}

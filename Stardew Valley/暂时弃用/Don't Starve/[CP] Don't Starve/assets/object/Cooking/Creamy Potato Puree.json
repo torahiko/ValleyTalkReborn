@@ -1,0 +1,104 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "DS_Creamy_Potato_Puree": {
+            "Name": "Creamy Potato Puree",
+            "DisplayName": "{{i18n:Creamy_Potato_Puree.name}}",
+            "Description": "{{i18n:Creamy_Potato_Puree.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 220,
+            "Texture": "Mods\\ZG.DS\\Creamy Potato Puree",
+            "SpriteIndex": 0,
+            "Edibility": 28,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": false,
+            "ExcludeFromShippingCollection": false,
+            "ExcludeFromRandomSale": false,
+            "Buffs": [
+              {
+                "Duration": 720,
+                "CustomAttributes": {
+                  "FarmingLevel": 2,
+                  "FishingLevel": 0,
+                  "MiningLevel": 0,
+                  "LuckLevel": 0.3,
+                  "ForagingLevel": 0,
+                  "MaxStamina": 0,
+                  "MagneticRadius": 0,
+                  "Speed": 0,
+                  "Defense": 3,
+                  "Attack": 0
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "Action": "EditData", 
+        "Target": "Data/CookingRecipes", 
+      
+        "Entries": { 
+          "Creamy Potato Puree":"192 2 248 1/25 5/DS_Creamy_Potato_Puree/" 
+        }
+      },
+          {
+              "Log": "Add Gift Tastes for NPCs",
+              "Action": "EditData",
+              "Target": "Data/NPCGiftTastes",
+              "TextOperations": [
+      { "Operation": "Append",
+                "Target": ["Entries", "Universal_like"],
+                "Value": " DS_Creamy_Potato_Puree",
+                "Delimiter": " "
+              },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Gus", "1"],
+          "Value": " DS_Creamy_Potato_Puree", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Leo", "5"],
+          "Value": " DS_Creamy_Potato_Puree", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Krobus", "5"],
+          "Value": " DS_Creamy_Potato_Puree", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Willy", "5"],
+          "Value": " DS_Creamy_Potato_Puree", 
+          "Delimiter": " "
+        }
+      ]
+      },
+      {
+        "Action": "EditData", 
+        "Target": "Data/Mail", 
+        "Entries": { 
+          "DS_Creamy_Potato_Puree_recipe": "[letterbg 0] {{i18n:Gus_Creamy_Potato_Pureerecipe.text}} %item cookingRecipe Creamy Potato Puree %%[#]{{i18n:Gus_Creamy_Potato_Pureerecipe.name}}" 
+        }
+      },
+      {
+          "Action": "EditData",
+          "Target": "Data/TriggerActions",
+          "Entries": {
+              "DS_Creamy_Potato_PureeMail":{
+                  "Id": "DS_Creamy_Potato_PureeMail",
+                  "Trigger": "DayEnding",
+                  "Condition": "PLAYER_HEARTS Current Gus 8",
+                  "Action": "AddMail Current DS_Creamy_Potato_Puree_recipe tomorrow"}
+              }
+            }
+    ]
+  }

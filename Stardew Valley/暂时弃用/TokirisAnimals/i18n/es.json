@@ -1,0 +1,17 @@
+{
+"RedFox.DisplayName": "Zorro Rojo",
+"RedFox.ShopDisplayName": "Zorro Rojo",
+"RedFox.ShopDescription": "A estos zorros les encanta cavar. Te dejarán las cosas que encuentren.",
+
+"RedPanda.DisplayName": "Panda Rojo",
+"RedPanda.ShopDisplayName": "Panda Rojo",
+"RedPanda.ShopDescription": "Estos traviesos seres desenterrarán 'tesoros' para ti.",
+
+"Wolf.DisplayName": "Lobo",
+"Wolf.ShopDisplayName": "Lobo",
+"Wolf.ShopDescription": "Estos lobos desenterrarán tesoros para ti.",
+
+"Hippogriff.DisplayName": "Hipogrifo",
+"Hippogriff.ShopDisplayName": "Hipogrifo",
+"Hippogriff.ShopDescription": "Un majestuosa criatura mitad león, mitad águila."
+}

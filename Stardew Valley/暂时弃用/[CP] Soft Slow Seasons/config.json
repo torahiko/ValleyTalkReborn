@@ -1,0 +1,12 @@
+{
+  "FallColor": "Orange",
+  "RecolorMode": "Pastel",
+  "DarkerPaths": "false",
+  "StaticFoliage": "true",
+  "TreesandBushes": "true",
+  "Grass": "true",
+  "Desert": "true",
+  "Beach": "true",
+  "BeanstalkWildtree/FlowerTree": "Beanstalk",
+  "DancingFlowers/Mushrooms": "true"
+}

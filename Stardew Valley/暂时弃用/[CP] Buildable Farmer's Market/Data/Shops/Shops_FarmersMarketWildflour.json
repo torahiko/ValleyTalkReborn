@@ -1,0 +1,28 @@
+{
+    "Changes": [
+        {
+            "LogName": "Add Farmer's Market Core Shops",
+            "Action": "EditData",
+            "Target": "Data/Shops",
+            "Entries": {
+                "{{ModID}}_FMC_HerbShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_HerbShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target herb_item"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "herb_item"
+                    ]
+                }
+            }
+        }
+    ]
+}

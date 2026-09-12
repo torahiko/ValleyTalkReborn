@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" compressionlevel="0" width="10" height="11" tilewidth="16" tileheight="16" infinite="0" nextlayerid="7" nextobjectid="2">
+ <properties>
+  <property name="AmbientLight" value="110 110 110"/>
+  <property name="AmbientNightLight" value="130 130 100"/>
+  <property name="ProduceArea" value="2 4 8 4"/>
+  <property name="Warp" value="2 10 Farm 21 11"/>
+ </properties>
+ <tileset firstgid="1" name="Coop" tilewidth="16" tileheight="16" tilecount="84" columns="4">
+  <image source="coopTiles" width="64" height="336"/>
+  <tile id="12">
+   <properties>
+    <property name="Type" value="Wood"/>
+   </properties>
+  </tile>
+  <tile id="33">
+   <properties>
+    <property name="Passable" type="int" value="0"/>
+    <property name="Trough" value="T"/>
+   </properties>
+  </tile>
+  <tile id="53">
+   <properties>
+    <property name="Type" value="Wood"/>
+   </properties>
+  </tile>
+  <tile id="54">
+   <properties>
+    <property name="Type" value="Wood"/>
+   </properties>
+  </tile>
+ </tileset>
+ <tileset firstgid="85" name="indoortiles" tilewidth="16" tileheight="16" tilecount="2176" columns="32">
+  <image source="townInterior.png" width="512" height="1088"/>
+ </tileset>
+ <tileset firstgid="2261" name="MaggSpriteTiles" tilewidth="16" tileheight="16" tilecount="612" columns="18">
+  <image source="MaggsSpriteTiles.png" width="300" height="544"/>
+ </tileset>
+ <layer id="1" name="Back" width="10" height="11">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,
+0,0,0,255,13,13,2,255,255,0,
+0,0,0,255,255,255,255,255,255,0,
+0,0,0,255,255,255,255,255,255,0,
+0,0,0,689,689,689,689,689,689,0,
+0,0,0,721,720,720,720,720,720,0,
+0,0,0,720,720,721,720,720,720,0,
+0,0,688,720,720,721,721,720,720,0,
+0,0,688,720,720,720,720,720,720,0,
+0,0,0,720,720,720,720,720,720,0,
+0,0,720,720,720,720,720,720,720,720
+</data>
+ </layer>
+ <layer id="2" name="Buildings" width="10" height="11">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,
+0,0,0,255,255,255,255,255,255,0,
+0,0,0,662,663,0,0,0,0,0,
+255,255,255,694,695,223,223,223,223,0,
+255,255,255,726,727,0,526,462,463,0,
+689,689,689,0,0,0,0,0,452,0,
+720,720,720,2432,2433,2434,0,0,497,0,
+720,720,1365,2450,2451,2452,0,493,529,0,
+720,720,1397,1398,0,516,0,525,561,0,
+720,720,720,0,0,0,760,734,419,0,
+720,720,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <layer id="3" name="Front" width="10" height="11">
+  <data encoding="csv">
+85,85,94,95,95,95,95,95,95,96,
+85,85,149,426,0,1307,427,0,429,153,
+87,87,279,0,0,1339,0,393,461,153,
+0,0,0,0,0,0,494,430,431,153,
+0,0,0,0,0,0,0,0,0,153,
+0,0,0,0,0,0,0,0,0,153,
+0,0,0,0,0,0,0,0,0,153,
+0,0,0,1366,0,0,0,0,0,153,
+0,0,2269,0,0,0,0,0,0,153,
+0,0,0,0,0,0,0,0,0,153,
+2469,2469,2469,2469,2469,2469,2469,2469,2469,2470
+</data>
+ </layer>
+ <objectgroup id="4" name="Back">
+  <object id="1" name="TileData" x="80" y="144" width="16" height="16">
+   <properties>
+    <property name="NPCBarrier" type="bool" value="true"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup id="5" name="Buildings"/>
+ <objectgroup id="6" name="Front"/>
+</map>

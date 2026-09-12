@@ -1,0 +1,34 @@
+{
+   "Name": "[CP] Yandere Elliott Expansion", 
+   "Author": "RedBalloon",
+   "Version": "1.3.4",
+   "Description": "An Elliott yandere mod.",
+   "UniqueID": "Casual.Yandere.Elliott.Expansion",
+   "ContentPackFor": {
+      "UniqueID": "Pathoschild.ContentPatcher",
+   },
+   "UpdateKeys": [ "Nexus:12393" ],
+   "Dependencies": [
+   {
+      "UniqueID": "misscoriel.eventrepeater",
+      "IsRequired": true,
+   },
+   {
+      "UniqueID": "DIGUS.MailFrameworkMod",
+      "IsRequired": true,
+   },
+   {
+      "UniqueID": "Esca.CustomNPCExclusions",
+      "IsRequired": false,
+   },
+   {
+      "UniqueID": "misscoriel.UCRFix",
+      "IsRequired": false,
+   },
+   {
+      "UniqueID": "FlashShifter.StardewValleyExpandedCP",
+      "IsRequired": false,
+   },
+   
+  ]
+}

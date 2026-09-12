@@ -1,0 +1,16 @@
+{
+    "Name": "[CP] HXW Farmers Market Fisher Butcher Set",
+    "Author": "HimeTarts and wildflourmods",
+    "Version": "1.0.3",
+    "Description": "HXW Farmers Market Fisher Butcher Set for Content Patcher",
+    "UniqueID": "HXW.FM_FisherButcher",
+    "Dependencies":[
+        { 
+         "UniqueID":"sophie.Calcifer",
+         "IsRequired": true}
+     ],
+    "UpdateKeys": ["Nexus:9994"], 
+    "ContentPackFor": {
+        "UniqueID": "Pathoschild.ContentPatcher"
+    }
+}

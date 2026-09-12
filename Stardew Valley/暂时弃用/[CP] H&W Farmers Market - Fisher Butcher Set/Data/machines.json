@@ -1,0 +1,45 @@
+{
+    "Changes": [
+
+//Machine Rules for Output
+
+{
+    "LogName": "HXW Fisher Butcher Machine Edits",
+    "Action": "EditData",
+    "Target": "Data/Machines",
+    "TargetField": ["(BC)HXW.FMCore_ProducePacker", "OutputRules"],
+    "Entries": {
+        "HXW.FM_FisherButcher_ProducePacker_fish_crate": {
+            "Id": "HXW.FM_FisherButcher_ProducePacker_fish_crate",
+            "Triggers": [
+                {
+                    "Trigger": "ItemPlacedInMachine",
+                    "RequiredItemId": "(O)",
+                    "RequiredCount": 5
+                }
+            ],
+            "OutputItem": [
+                {
+                    "Id": "HXW.FM_FisherButcher_fish_crate",
+                    "ItemId": "(O)HXW.FM_FisherButcher_fish_crate",
+                    "CopyPrice": true,
+                            "PriceModifiers": 
+                            [
+                                {
+                                    "Modification": "Multiply",
+                                    "Amount": 2.0
+                                }
+                            ] 
+                }
+            ],
+            
+            "MinutesUntilReady": 200
+        },
+
+
+
+    }
+},
+
+]
+}

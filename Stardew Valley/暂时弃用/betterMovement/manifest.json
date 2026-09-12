@@ -1,0 +1,9 @@
+{
+    "Name": "Better Movement",
+    "Author": "GeorgeTR",
+    "Version": "1.0.0",
+    "Description": "Makes the movement better",
+    "UniqueID": "GeorgeTR.betterMovement",
+    "EntryDll": "betterMovement.dll",
+    "UpdateKeys": [ "Nexus:34342" ]
+}

@@ -1,0 +1,58 @@
+{
+    "Format": "2.2.0",
+    "Changes" : [
+      {
+        //Seed Object
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "GoldenPumpkin_PumpkinSeeds": {
+            "Name": "GoldenPumpkin_PumpkinSeeds",
+            "Displayname": "黄金南瓜种子",
+            "Description": "那是灰姑娘在里面吗？",
+            "Type": "Seeds",
+            "Category": -74,
+            "Texture": "Mods/GoldenPumpkin_Crops/Pumpkinseeds",
+            "Price": 1
+          }
+        }
+      },
+      {
+        //Crops
+        "Action": "EditData",
+        "Target": "Data/Crops",
+        "Entries": {
+          "GoldenPumpkin_PumpkinSeeds": {
+            "Seasons": [ "fall" ],
+            "DaysInPhase": [5, 5, 5, 5, 5],
+            "Category": -75,
+            "HarvestItemId": 373,
+            "Texture": "Mods/GoldenPumpkin_Crops/GoldenPumpkin",
+            "HarvestMethod": "Grab",
+            "HarvestMinStack": 1,
+            "HarvestMaxStack": 3,
+            "HarvestMaxIncreasePerFarmingLevel": 1
+          },
+        }
+      },
+      {
+        //Add item to the shop
+        "Action": "EditData",
+        "Target": "Data/Shops",
+        "TargetField": [ "Festival_SpiritsEve_Pierre", "Items" ],
+        "Entries": {
+          "GoldenPumpkin_PumpkinSeeds": {
+            "Id": "GoldenPumpkin_PumpkinSeeds",
+            "ItemId": "GoldenPumpkin_PumpkinSeeds",
+            "Price": 1000000
+          }
+        }
+      },
+        {
+        "Action": "Load",
+        "Target": "Mods/GoldenPumpkin_Crops/Pumpkinseeds, Mods/GoldenPumpkin_Crops/GoldenPumpkin",
+        "FromFile": "assets/{{TargetWithoutPath}}.png"
+      }
+    ]
+     
+  }

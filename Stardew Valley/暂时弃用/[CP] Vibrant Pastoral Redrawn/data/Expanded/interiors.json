@@ -1,0 +1,202 @@
+{
+	"Changes": [
+		//Bathhouse Tiles
+		{
+			"LogName": "Bathhouse Tiles",
+			"Action": "EditImage",
+			"Target": "Maps/bathhouse_tiles",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		{
+			"LogName": "Bathhouse Tiles Loca",
+			"Action": "EditImage",
+			"Target": "Maps/bathhouse_tiles",
+			"FromFile": "assets/Locale/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"ToArea": { "X": 144, "Y": 208, "Width": 32, "Height": 32 },
+			"When": { "Query: {{Language |contains=en}} OR NOT {{HasFile:assets/Locale/{{Target}}.{{Language}}.png}}": true }
+		},
+		{
+			"LogName": "Bathhouse Tiles Loca Int",
+			"Action": "EditImage",
+			"Target": "Maps/bathhouse_tiles",
+			"FromFile": "assets/Locale/{{Target}}.{{Language}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"ToArea": { "X": 144, "Y": 208, "Width": 32, "Height": 32 },
+			"When": {
+				"Language |contains=en": false,
+				"HasFile:{{FromFile}}": true
+			}
+		},
+		//Caroline Greenhouse Tiles
+		{
+			"LogName": "Caroline Greenhouse Tiles",
+			"Action": "EditImage",
+			"Target": "Maps/CarolineGreenhouseTiles, Maps/CarolineGreenhouseTiles_rainy",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//ChairTiles
+		{
+			"LogName": "ChairTiles",
+			"Action": "EditImage",
+			"Target": "TileSheets/ChairTiles",
+			"FromFile": "assets/{{Target}}_Interior.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Elliott House Tiles
+		{
+			"LogName": "Elliott House Tiles",
+			"Action": "EditImage",
+			"Target": "Maps/ElliottHouseTiles",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Emily Dreamscape Tiles
+		{
+			"LogName": "Emily Dreamscape Tiles",
+			"Action": "EditImage",
+			"Target": "Maps/EmilyDreamscapeTiles",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Farmhouse Tiles
+		{
+			"LogName": "Farmhouse Tiles",
+			"Action": "EditImage",
+			"Target": "Maps/farmhouse_tiles",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Floors 2
+		{
+			"LogName": "Floors 2",
+			"Action": "EditImage",
+			"Target": "Maps/floors_2",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//MovieTheater TileSheet
+		{
+			"LogName": "MovieTheater TileSheet",
+			"Action": "EditImage",
+			"Target": "Maps/MovieTheater_TileSheet, Maps/MovieTheaterJoja_TileSheet",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		{
+			"LogName": "MovieTheater TileSheet Loca",
+			"Action": "EditImage",
+			"Target": "Maps/MovieTheaterJoja_TileSheet",
+			"FromFile": "assets/Locale/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"When": { "Query: {{Language |contains=en}} OR NOT {{HasFile:assets/Locale/{{Target}}.{{Language}}.png}}": true }
+		},
+		{
+			"LogName": "MovieTheater TileSheet",
+			"Action": "EditImage",
+			"Target": "Maps/MovieTheaterJoja_TileSheet",
+			"FromFile": "assets/Locale/{{Target}}.{{Language}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"When": {
+				"Language |contains=en": false,
+				"HasFile:{{FromFile}}": true
+			}
+		},
+		//SewerTiles
+		{
+			"LogName": "Sewer Tiles",
+			"Action": "EditImage",
+			"Target": "Maps/SewerTiles",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//TownInterior
+		{
+			"LogName": "Town Interior",
+			"Action": "EditImage",
+			"Target": "Maps/townInterior",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early"
+		},
+		{
+			"LogName": "Town Interior Loca",
+			"Action": "EditImage",
+			"Target": "Maps/townInterior",
+			"FromFile": "assets/Locale/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"ToArea": { "X": 0, "Y": 432, "Width": 512, "Height": 656 },
+			"When": { "Query: {{Language |contains=en}} OR NOT {{HasFile:assets/Locale/{{Target}}.{{Language}}.png}}": true }
+		},
+		{
+			"LogName": "Town Interior Loca Int",
+			"Action": "EditImage",
+			"Target": "Maps/townInterior",
+			"FromFile": "assets/Locale/{{Target}}.{{Language}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"ToArea": { "X": 0, "Y": 432, "Width": 512, "Height": 656 },
+			"When": {
+				"Language |contains=en": false,
+				"HasFile:{{FromFile}}": true
+			}
+		},
+		//TownInterior 2
+		{
+			"LogName": "Town Interior 2",
+			"Action": "EditImage",
+			"Target": "Maps/towninterior_2",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Wallpapers 2
+		{
+			"LogName": "Wallpapers 2",
+			"Action": "EditImage",
+			"Target": "Maps/wallpapers_2",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"FromArea": { "X": 0, "Y": 0, "Width": 256, "Height": 96 }
+		},
+		//Walls And Floors
+		{
+			"LogName": "Walls And Floors",
+			"Action": "EditImage",
+			"Target": "Maps/walls_and_floors, Maps/VanillaWallsAndFloors",
+			"FromFile": "assets/Maps/walls_and_floors.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		{
+			"LogName": "Walls And Floors Loca Int",
+			"Action": "EditImage",
+			"Target": "Maps/walls_and_floors, Maps/VanillaWallsAndFloors",
+			"FromFile": "assets/Locale/Maps/walls_and_floors.{{Language}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"ToArea": { "X": 80, "Y": 48, "Width": 16, "Height": 48 },
+			"When": {
+				"Language |contains=en": false,
+				"HasFile:{{FromFile}}": true
+			}
+		}
+	]
+}

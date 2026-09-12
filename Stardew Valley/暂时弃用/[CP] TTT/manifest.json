@@ -1,0 +1,11 @@
+{
+   "Name": "Tiny Text Tweaks",
+   "Author": "Siwuxie",
+   "Version": "0.2",
+   "Description": "Make fine tweaks on some in game text.",
+   "UniqueID": "Siwuxie.TinyTextTweaks",
+   "UpdateKeys": [],
+   "ContentPackFor": {
+      "UniqueID": "Pathoschild.ContentPatcher"
+   }
+}

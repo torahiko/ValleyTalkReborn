@@ -1,0 +1,12 @@
+{
+  "Name": "Golden Coconut Tree",
+  "Author": "vincott",
+  "Version": "1.0.1",
+  "Description": "Adds a Golden Coconut Tree to the game.",
+  "UniqueID": "vincott.GoldenCoconut",
+  "UpdateKeys": [ "27959" ],
+  "ContentPackFor": {
+    "UniqueID": "Pathoschild.ContentPatcher",
+    "MinimumVersion": "1.28.0"
+  }
+}

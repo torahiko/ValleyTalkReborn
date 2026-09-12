@@ -1,0 +1,57 @@
+{
+
+///////////////
+// FURNITURE //
+///////////////
+
+  "FMBakery_SmBunBasket": "Small Bun Basket",
+  "FMBakery_SmWheatBreadBasket":"Wheat Bread Basket",
+  "FMBakery_PepperBreadBasket":"Peppercorn Bread Basket",
+  "FMBakery_SmMixBunBasket":"Mixed Buns Basket",
+  "FMBakery_SmGoldBreadBasket":"Golden Wheat Bread Basket",
+  "FMBakery_SmSourdoughBreadBasket":"Sourdough Loaf Basket",
+  "FMBakery_SmBaguetteBasket":"Mini Baguette Basket",
+  "FMBakery_SmSpeckleBreadBasket":"Olive Bread Basket",
+  "FMBakery_SmCiabattaBasket":"Ciabatta Bread Basket",
+  "FMBakery_SmIcedBunBasket":"Iced Buns Basket",
+  "FMBakery_SmOliveFocacciaBasket":"Olive Focaccia Basket",
+  "FMBakery_SmTomatoFocacciaBasket":"Tomato Focaccia Basket",
+  "FMBakery_SmCroissantBasket":"Croissant Basket",
+  "FMBakery_SmDoughnutBasket":"Doughnut Basket",
+  "FMBakery_SmFlouryBreadBasket":"Floury Bread Basket",
+  "FMBakery_SmChocolateBunBasket":"Chocolate Chip Bun Basket",
+
+  "FMBakery_CinnamonRolls":"Cinnamon Rolls",
+  "FMBakery_HalfDozenDoughnuts":"Half Dozen Doughnuts",
+  "FMBakery_SconesPlatter":"Scone Platter",
+  "FMBakery_BunsPlatter":"Buns Platter",
+  "FMBakery_ChocolateSconesPlatter":"Chocolate Drizzle Scones Platter",
+  "FMBakery_PetitFourPlatter":"Petit Four Platter",
+  "FMBakery_DemiBaguetteBasket":"Large Demi Baguette Basket",
+  "FMBakery_CiabattaBasket":"Large Ciabatta Basket",
+  "FMBakery_BaguetteBasket":"Large Baguette Basket",
+
+  "FMBakery_LgSconeBasket":"Large Scones Basket",
+  "FMBakery_LgBreadBasket":"Large Bread Basket",
+  "FMBakery_LgBaguetteBasket":"Large Baguette Basket",
+  "FMBakery_LgSourdoughBasket":"Large Sourdough Basket",
+  "FMBakery_LgIcedBunBasket":"Large Iced Buns Basket",
+  "FMBakery_LgCroissantBasket":"Large Croissant Basket",
+
+  "FMBakery_WineCheeseCrate":"Red Wine Cheese Crate",
+  "FMBakery_WineCheeseCrate2":"Bread and Cheese Crate",
+  "FMBakery_WineCheeseCrate3":"Wine Cheese and Bread Crate",
+
+  "FMBakery_BreadCheeseCrate":"Large Bread Cheese Crate",
+  "FMBakery_MedWineBreadJamCrate":"Large Wine and Bread Crate",
+  "FMBakery_BreadJamCrate1":"Large Bread and Jam Crate",
+  "FMBakery_BreadJamCrate2":"Large Bread and Jelly Crate",
+
+  "FMBakery_PastriesDisplay":"Large Pastries Display",
+  "FMBakery_BreadShelvesCashierStand":"Bread Display Checkout Counter",
+  "FMBakery_3x3BreadBasketDisplay":"Square Bread Basket Display",
+  "FMBakery_LgBreadDisplay":"Large Assorted Bread Display",
+  "FMBakery_LgBreadDisplayMenu":"Large Bread Display with Menu"
+
+}
+  

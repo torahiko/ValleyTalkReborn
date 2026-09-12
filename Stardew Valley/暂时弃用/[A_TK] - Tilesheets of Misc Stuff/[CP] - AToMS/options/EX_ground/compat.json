@@ -1,0 +1,251 @@
+{
+    "Changes": [
+
+//	RECOLORS
+
+//	//	Blue Grass
+
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Blue_Grass/{{TargetWithoutPath}}_grass.png",
+			"FromArea": { "X": 80, "Y": 0, "Width": 80, "Height": 80 },
+			"ToArea": { "X": 240, "Y": 736, "Width": 80, "Height": 80 },
+			"PatchMode": "Replace",
+			"When": {
+				"HasMod": "colling.bluegrass",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+//
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Blue_Grass/{{TargetWithoutPath}}_grass.png",
+			"FromArea": { "X": 80, "Y": 0, "Width": 80, "Height": 80 },
+			"ToArea": { "X": 240, "Y": 736, "Width": 80, "Height": 80 },
+			"PatchMode": "Replace",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Blue_Grass": "True",
+			}
+        },
+
+//	//	Cotton Candy
+
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Cotton_Candy/snow_ATK_AToMS_EXground_blue.png",
+			"FromArea": { "X": 80, "Y": 0, "Width": 80, "Height": 80 },
+			"ToArea": { "X": 240, "Y": 736, "Width": 80, "Height": 80 },
+			"PatchMode": "Replace",
+			"When": {
+				"HasMod": "PinkStations.CottonCandyRecolor",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+//
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Cotton_Candy/snow_ATK_AToMS_EXground_blue.png",
+			"FromArea": { "X": 80, "Y": 0, "Width": 80, "Height": 80 },
+			"ToArea": { "X": 240, "Y": 736, "Width": 80, "Height": 80 },
+			"PatchMode": "Replace",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Cotton_Candy": "True",
+				"CC_Snow_Color": "blue"
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Cotton_Candy/snow_ATK_AToMS_EXground_purple.png",
+			"FromArea": { "X": 80, "Y": 0, "Width": 80, "Height": 80 },
+			"ToArea": { "X": 240, "Y": 736, "Width": 80, "Height": 80 },
+			"PatchMode": "Replace",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Cotton_Candy": "True",
+				"CC_Snow_Color": "purple"
+			}
+        },
+		
+//	//	Earthy Recolour
+
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Earthy_Recolour/{{TargetWithoutPath}}_grass.png",
+			"FromArea": { "X": 80, "Y": 0, "Width": 80, "Height": 80 },
+			"ToArea": { "X": 240, "Y": 736, "Width": 80, "Height": 80 },
+			"PatchMode": "Replace",
+			"When": {
+				"HasMod": "DaisyNiko.EarthyRecolour",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+//
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Earthy_Recolour/{{TargetWithoutPath}}_grass.png",
+			"FromArea": { "X": 80, "Y": 0, "Width": 80, "Height": 80 },
+			"ToArea": { "X": 240, "Y": 736, "Width": 80, "Height": 80 },
+			"PatchMode": "Replace",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Earthy_Recolour": "True",
+			}
+        },		
+
+//	//	Starblue Valley
+
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Starblue_Valley/{{TargetWithoutPath}}_grass.png",
+			"FromArea": { "X": 80, "Y": 0, "Width": 80, "Height": 80 },
+			"ToArea": { "X": 240, "Y": 736, "Width": 80, "Height": 80 },
+			"PatchMode": "Replace",
+			"When": {
+				"HasMod": "Lita.StarblueValley",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+//
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Starblue_Valley/{{TargetWithoutPath}}_grass.png",
+			"FromArea": { "X": 80, "Y": 0, "Width": 80, "Height": 80 },
+			"ToArea": { "X": 240, "Y": 736, "Width": 80, "Height": 80 },
+			"PatchMode": "Replace",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Starblue_Valley": "True",
+			}
+        },
+		
+//	//	Vibrant Pastoral
+
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Vibrant_Pastoral/{{TargetWithoutPath}}_grass.png",
+			"FromArea": { "X": 80, "Y": 0, "Width": 80, "Height": 80 },
+			"ToArea": { "X": 240, "Y": 736, "Width": 80, "Height": 80 },
+			"PatchMode": "Replace",
+			"When": {
+				"HasMod": "grapeponta.VibrantPastoralRecolor",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+//
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Vibrant_Pastoral/{{TargetWithoutPath}}_grass.png",
+			"FromArea": { "X": 80, "Y": 0, "Width": 80, "Height": 80 },
+			"ToArea": { "X": 240, "Y": 736, "Width": 80, "Height": 80 },
+			"PatchMode": "Replace",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Vibrant_Pastoral": "True",
+			}
+        },
+		
+//	//	Wittily Named
+
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Wittily_Named/{{TargetWithoutPath}}_grass.png",
+			"FromArea": { "X": 80, "Y": 0, "Width": 80, "Height": 80 },
+			"ToArea": { "X": 240, "Y": 736, "Width": 80, "Height": 80 },
+			"PatchMode": "Replace",
+			"When": {
+				"HasMod": "Acerbicon.Recolor",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+//
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Wittily_Named/{{TargetWithoutPath}}_grass.png",
+			"FromArea": { "X": 80, "Y": 0, "Width": 80, "Height": 80 },
+			"ToArea": { "X": 240, "Y": 736, "Width": 80, "Height": 80 },
+			"PatchMode": "Replace",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Wittily_Named": "True",
+			}
+        },
+
+//	ADDITIONAL OPTIONS
+
+//	//	Mild Winter
+
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "assets/EX_ground/fall_ATK_AToMS_EXground.png",
+			"PatchMode": "Replace",
+			"When": {
+				"HasMod": "katrie.MWR",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Mild_Winter/{{TargetWithoutPath}}.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"HasMod": "katrie.MWR",
+				"Allow_Recolors": "True",
+				"Manual_Override": "False"
+			}
+        },
+//
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "assets/EX_ground/fall_ATK_AToMS_EXground.png",
+			"PatchMode": "Replace",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Mild_Winter": "True",
+			}
+        },
+        {
+            "Action": "EditImage",
+            "Target": "Maps/winter_ATK_AToMS_EXground",
+            "FromFile": "options/EX_ground/Mild_Winter/{{TargetWithoutPath}}.png",
+			"PatchMode": "Overlay",
+			"When": {
+				"Allow_Recolors": "True",
+				"Manual_Override": "True",
+				"Mild_Winter": "True",
+			}
+        }
+	]
+}

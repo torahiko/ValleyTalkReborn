@@ -1,0 +1,19 @@
+{
+	"Changes": [
+		{
+			"Action": "EditData",
+			"Target": "Data/TriggerActions",
+			"Entries": {
+				"{{ModId}}_{{ShopAcronym}}_{{ShopType}}_Increment": {
+					"Id": "{{ModId}}_{{ShopAcronym}}_{{ShopType}}_Increment",
+					"Trigger": "Spiderbuttons.BETAS_ItemSold",
+					"Condition": "Spiderbuttons.BETAS_ITEM_MOD_DATA Target BETAS/ItemSold/ShopId {{ModId}}_{{ShopAcronym}}_{{ShopType}}",
+					"Actions": [
+						"IncrementStat MarketItemsSold 1"
+					],
+					"MarkActionApplied": false
+				}
+			}
+		}
+	]
+}

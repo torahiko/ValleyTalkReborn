@@ -1,0 +1,64 @@
+{
+  "Changes": [
+
+    {
+      "Action": "EditData",
+      "Target": "Data/Furniture",
+      "Entries": {
+        "HXW.FMBakery_SmBunBasket": "SmBunBasket/Decor/1 1/1 1/1/1000/2/{{i18n:FMBakery_SmBunBasket}}/0/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_SmWheatBreadBasket": "SmWheatBreadBasket/Decor/1 1/1 1/1/1000/2/{{i18n:FMBakery_SmWheatBreadBasket}}/1/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_SmMixBunBasket": "SmMixBunBasket/Decor/1 1/1 1/1/1000/2/{{i18n:FMBakery_SmMixBunBasket}}/2/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_SmGoldBreadBasket": "SmGoldBreadBasket/Decor/1 1/1 1/1/1000/2/{{i18n:FMBakery_SmGoldBreadBasket}}/3/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_SmSourdoughBreadBasket": "SmSourdoughBreadBasket/Decor/1 1/1 1/1/1000/2/{{i18n:FMBakery_SmSourdoughBreadBasket}}/4/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_SmBaguetteBasket": "SmBaguetteBasket/Decor/1 1/1 1/1/1000/2/{{i18n:FMBakery_SmBaguetteBasket}}/5/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_SmSpeckleBreadBasket": "SmSpeckleBreadBasket/Decor/1 1/1 1/1/1000/2/{{i18n:FMBakery_SmSpeckleBreadBasket}}/16/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_SmCiabattaBasket": "SmCiabattaBasket/Decor/1 1/1 1/1/1000/2/{{i18n:FMBakery_SmCiabattaBasket}}/17/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_SmIcedBunBasket": "SmIcedBunBasket/Decor/1 1/1 1/1/1000/2/{{i18n:FMBakery_SmIcedBunBasket}}/18/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_SmOliveFocacciaBasket": "SmOliveFocacciaBasket/Decor/1 1/1 1/1/1000/2/{{i18n:FMBakery_SmOliveFocacciaBasket}}/19/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_SmTomatoFocacciaBasket": "SmTomatoFocacciaBasket/Decor/1 1/1 1/1/1000/2/{{i18n:FMBakery_SmTomatoFocacciaBasket}}/20/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_SmCroissantBasket": "SmCroissantBasket/Decor/1 1/1 1/1/1000/2/{{i18n:FMBakery_SmCroissantBasket}}/21/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_SmDoughnutBasket": "SmDoughnutBasket/Decor/1 1/1 1/1/1000/2/{{i18n:FMBakery_SmDoughnutBasket}}/32/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_SmFlouryBreadBasket": "SmFlouryBreadBasket/Decor/1 1/1 1/1/1000/2/{{i18n:FMBakery_SmFlouryBreadBasket}}/33/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_SmChocolateBunBasket": "SmChocolateBunBasket/Decor/1 1/1 1/1/1000/2/{{i18n:FMBakery_SmChocolateBunBasket}}/34/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        
+        "HXW.FMBakery_CinnamonRolls": "CinnamonRolls/Decor/1 1/1 1/1/1000/2/{{i18n:FMBakery_CinnamonRolls}}/35/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_HalfDozenDoughnuts": "HalfDozenDoughnuts/Decor/1 1/1 1/1/1000/2/{{i18n:FMBakery_HalfDozenDoughnuts}}/36/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_SconesPlatter": "SconesPlatter/Decor/1 1/1 1/1/1000/2/{{i18n:FMBakery_SconesPlatter}}/37/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_BunsPlatter": "BunsPlatter/Decor/1 1/1 1/1/1000/2/{{i18n:FMBakery_BunsPlatter}}/38/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_ChocolateSconesPlatter": "ChocolateSconesPlatter/Decor/1 1/1 1/1/1000/2/{{i18n:FMBakery_ChocolateSconesPlatter}}/39/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_PetitFourPlatter": "PetitFourPlatter/Decor/1 1/1 1/1/1000/2/{{i18n:FMBakery_PetitFourPlatter}}/40/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+       
+        "HXW.FMBakery_DemiBaguetteBasket": "DemiBaguetteBasket/Decor/1 2/1 1/1/1000/2/{{i18n:FMBakery_DemiBaguetteBasket}}/6/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_PepperBreadBasket": "PepperBreadBasket/Decor/1 2/1 1/1/1000/2/{{i18n:FMBakery_PepperBreadBasket}}/7/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_CiabattaBasket": "CiabattaBasket/Decor/1 2/1 1/1/1000/2/{{i18n:FMBakery_CiabattaBasket}}/8/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_BaguetteBasket": "BaguetteBasket/Decor/1 2/1 1/1/1000/2/{{i18n:FMBakery_BaguetteBasket}}/9/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+       
+        "HXW.FMBakery_LgSconeBasket": "LgSconeBasket/Decor/1 2/1 1/1/1000/2/{{i18n:FMBakery_LgSconeBasket}}/10/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_LgBreadBasket": "LgBreadBasket/Decor/1 2/1 1/1/1000/2/{{i18n:FMBakery_LgBreadBasket}}/11/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_LgBaguetteBasket": "LgBaguetteBasket/Decor/1 2/1 1/1/1000/2/{{i18n:FMBakery_LgBaguetteBasket}}/12/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_LgSourdoughBasket": "LgSourdoughBasket/Decor/1 2/1 1/1/1000/2/{{i18n:FMBakery_LgSourdoughBasket}}/13/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_LgIcedBunBasket": "LgIcedBunBasket/Decor/1 2/1 1/1/1000/2/{{i18n:FMBakery_LgIcedBunBasket}}/14/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_LgCroissantBasket": "LgCroissantBasket/Decor/1 2/1 1/1/1000/2/{{i18n:FMBakery_LgCroissantBasket}}/15/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+       
+        "HXW.FMBakery_WineCheeseCrate1": "WineCheeseCrate/Decor/1 2/1 1/1/1000/2/{{i18n:FMBakery_WineCheeseCrate}}/41/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_WineCheeseCrate2": "WineCheeseCrate2/Decor/1 2/1 1/1/1000/2/{{i18n:FMBakery_WineCheeseCrate2}}/42/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_WineCheeseCrate3": "WineCheeseCrate3/Decor/1 2/1 1/1/1000/2/{{i18n:FMBakery_WineCheeseCrate3}}/43/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+
+        "HXW.FMBakery_BreadCheeseCrate": "BreadCheeseCrate/Decor/2 2/2 1/1/1000/2/{{i18n:FMBakery_BreadCheeseCrate}}/44/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_WineBreadJamCrate": "MedWineBreadJamCrate/Decor/2 2/2 1/1/1000/2/{{i18n:FMBakery_MedWineBreadJamCrate}}/46/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_BreadJamCrate1": "BreadJamCrate1/Decor/2 2/2 1/1/1000/2/{{i18n:FMBakery_BreadJamCrate1}}/75/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_BreadJamCrate2": "BreadJamCrate2/Decor/2 2/2 1/1/1000/2/{{i18n:FMBakery_BreadJamCrate2}}/77/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+
+        "HXW.FMBakery_PastriesDisplay": "PastriesDisplay/Decor/4 3/4 1/1/1000/2/{{i18n:FMBakery_PastriesDisplay}}/48/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_BreadShelvesCashierStand": "BreadShelvesCashierStand/Decor/4 3/4 1/1/1000/2/{{i18n:FMBakery_BreadShelvesCashierStand}}/52/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_3x3BreadBasketDisplay": "3x3BreadBasketDisplay/Decor/3 3/3 1/1/1000/2/{{i18n:FMBakery_3x3BreadBasketDisplay}}/72/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+        "HXW.FMBakery_LgBreadDisplay": "LgBreadDisplay/Decor/4 3/4 1/1/1000/2/{{i18n:FMBakery_LgBreadDisplay}}/96/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket",
+
+        "HXW.FMBakery_LgBreadDisplayMenu": "LgBreadDisplayMenu/Decor/4 3/4 1/1/1000/2/{{i18n:FMBakery_LgBreadDisplayMenu}}/100/Mods\\HXW.FMBakery\\Furniture/true/collection_hwfarmersmarket"
+
+       
+      }
+    }
+    
+  ]
+}

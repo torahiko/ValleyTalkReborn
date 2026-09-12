@@ -1,0 +1,213 @@
+{
+  // Schedule Editor Menu
+  "schedule-editor.title": "日程编辑器",
+  "schedule-editor.title-with-npc": "{{npc}} 的日程编辑器",
+  "schedule-editor.action-details": "{{time}} 时间条件: {{when}} - 地图: {{location}} {{x}},{{y}} \n朝向: {{facing}} - 动画: {{animation}}",
+  "schedule-editor.entry-not-found": "未找到日程条目！",
+  "schedule-editor.entry-deleted": "{{npc}} 在 {{time}} 的日程已删除！",
+  "schedule-editor.no-entries": "无日程条目",
+  "schedule-editor.filter": "筛选：",
+  "schedule-editor.filter-help": "按季节、星期或“today”（今天）筛选……",
+
+  // Common buttons
+  "common.add-button": "添加",
+  "common.edit-button": "编辑",
+  "common.delete-button": "x",
+  "common.close-button": "关闭",
+  "common.save-button": "保存",
+  "common.cancel-button": "取消",
+  "common.ok-button": ">",
+
+  // Debug messages
+  "debug.found-spouses": "为 {{player}} 找到 {{count}} 位配偶：{{spouses}}",
+  "debug.error-getting-spouses": "获取已婚配偶时出错：{{error}}",
+  "debug.name-converted": "NPC 名称已转换：'{{original}}' → '{{converted}}'",
+  "debug.error-converting-name": "提取 '{{name}}' 的友好名称时出错：{{error}}",
+
+  // Add Schedule Menu
+  "add-schedule.title-add": "为 {{npc}} 添加日程",
+  "add-schedule.title-edit": "编辑 {{npc}} 在 {{time}} 的日程",
+  "add-schedule.time-label": "时间 (HHMM)：",
+  "add-schedule.x-label": "X 坐标：",
+  "add-schedule.y-label": "Y 坐标：",
+  "add-schedule.facing-label": "朝向：",
+  "add-schedule.animation-label": "动画：",
+  "add-schedule.sprite-label": "精灵图（可选）：",
+  "add-schedule.dialogue-label": "对话（可选）：",
+  "add-schedule.loop-label": "循环动画",
+  "add-schedule.error-invalid-time": "时间格式无效！请使用四位数字格式（HHMM）。",
+  "add-schedule.error-invalid-x": "X 坐标无效！请输入一个数字。",
+  "add-schedule.error-invalid-y": "Y 坐标无效！请输入一个数字。",
+  "add-schedule.error-invalid-facing": "朝向无效！请输入 0、1、2 或 3。",
+  "add-schedule.error-empty-animation": "动画字段不能为空！",
+  "add-schedule.success-added": "已为 {{npc}} 添加 {{time}} 的日程！",
+  "add-schedule.success-updated": "已更新 {{npc}} 在 {{time}} 的日程！",
+  "addschedule.whenlabel": "时间条件：",
+  "addschedule.getpositionbutton": "使用玩家当前位置作为参考。",
+  "facing.up": "上",
+  "facing.right": "右",
+  "facing.down": "下",
+  "facing.left": "左",
+  "add-schedule.locationlabel": "地图：",
+  "add-schedule.whenhelptext": "支持的格式如下：\n• 留空 → 始终生效\n• sunny → 晴天（无雨、雪、雷暴、碎片天气或绿雨）\n• rain → 下雨时\n• lightning → 雷暴期间\n• snow → 下雪时\n• windy → 碎片天气期间\n• greenrain → 绿雨期间\n• spring, summer, fall, winter → 按季节\n• mon, tue, wed, thu, fri, sat, sun → 按星期\n• 15 → 某月特定日期（例如 15 日）\n• spring_15 → 季节 + 日期\n• spring_mon → 季节 + 星期\n• spring_sunny, summer_rain 等 → 季节 + 天气组合\n\n可使用逗号分隔多个条件，例如：\n\"spring_mon, rain, 15, sat_sunny\"\n只要满足任意一个条件即生效。",
+  "addSchedule.dialogInTalk.label": "在对话框中显示对话",
+  "addSchedule.dialogInTalk.hint": "勾选后，对话将显示在常规对话框中，而非浮动气泡中",
+
+  // GMCM - Generic Mod Config Menu
+  "gmcm.not-available": "通用模组配置菜单不可用 — 配置菜单已禁用",
+  "gmcm.reset-blocked": "为保护所有设置和日程，已阻止重置配置",
+  "gmcm.reset-blocked-message": "为保护你的自定义日程，设置重置功能已被禁用",
+  "gmcm.config-saved": "所有配置已成功保存",
+  "gmcm.registered": "GMCM 配置菜单注册成功",
+  "gmcm.setup-error": "设置 GMCM 时出错：{{error}}",
+  "gmcm.setup-complete": "GMCM 配置菜单设置完成",
+
+  // GMCM Sections
+  "gmcm.sections.main-settings": "主要设置",
+  "gmcm.sections.hotkey-settings": "快捷键设置",
+  "gmcm.sections.behavior-settings": "行为设置",
+  "gmcm.sections.animation-settings": "动画设置",
+  "gmcm.sections.debug-settings": "调试与日志",
+  "gmcm.sections.instructions": "使用说明",
+  "gmcm.sections.mod-status": "模组状态",
+
+  // GMCM Options
+  "gmcm.options.use-manual-schedules.name": "使用手动日程",
+  "gmcm.options.use-manual-schedules.tooltip": "启用通过编辑器创建自定义日程\n启用后，将使用手动日程而非默认日程",
+  "gmcm.options.use-manual-schedules.changed": "手动日程已{{enabled}}",
+
+  "gmcm.options.override-content-patcher.name": "禁用原版日程",
+  "gmcm.options.override-content-patcher.tooltip": "手动日程将覆盖原版日程\n当你使用其他修改配偶日程的模组时很有用",
+  "gmcm.options.override-content-patcher.changed": "原版日程覆盖已{{enabled}}",
+
+  "gmcm.options.disable-wandering.name": "禁用随机游荡",
+  "gmcm.options.disable-wandering.tooltip": "防止配偶在农舍内随机走动",
+  "gmcm.options.disable-wandering.changed": "随机游荡已{{enabled}}",
+
+  "gmcm.options.open-editor-keybind.name": "打开日程编辑器",
+  "gmcm.options.open-editor-keybind.tooltip": "按下任意键、鼠标按钮或手柄按键即可打开日程编辑器\n示例：F2、MouseMiddle、LeftStick、RightTrigger",
+  "gmcm.options.open-editor-keybind.changed": "编辑器快捷键已更新为：{{key}}",
+
+  // Bed Assignment Keybind
+  "gmcm.options.open-bed-assignment-keybind.name": "打开床位分配",
+  "gmcm.options.open-bed-assignment-keybind.tooltip": "按下任意键、鼠标按钮或手柄按键即可打开床位分配界面\n示例：B、MouseMiddle、LeftStick、RightTrigger",
+  "gmcm.options.open-bed-assignment-keybind.changed": "床位分配快捷键已更新为：{{key}}",
+
+  "gmcm.options.movement-timeout.name": "移动超时（秒）",
+  "gmcm.options.movement-timeout.tooltip": "NPC 到达目的地的最大等待时间（秒）\n如果 NPC 经常因超时而卡住，请增加此值",
+  "gmcm.options.movement-timeout.changed": "移动超时设为 {{timeout}} 秒",
+
+  "gmcm.options.enable-logging.name": "启用详细日志",
+  "gmcm.options.enable-logging.tooltip": "在 SMAPI 控制台中启用详细调试日志\n有助于排查问题",
+  "gmcm.options.enable-logging.changed": "详细日志已{{enabled}}",
+
+  "gmcm.options.log-pathfinding.name": "记录寻路详情",
+  "gmcm.options.log-pathfinding.tooltip": "记录详细的寻路信息\n可能产生大量日志条目",
+  "gmcm.options.log-pathfinding.changed": "寻路日志已{{enabled}}",
+
+  "gmcm.options.show-position-debug.name": "显示位置调试信息",
+  "gmcm.options.show-position-debug.tooltip": "在调试日志中显示 NPC 位置\n有助于排查坐标问题",
+  "gmcm.options.show-position-debug.changed": "位置调试已{{enabled}}",
+
+  // GMCM Texts
+  "gmcm.texts.hotkey-info": "当前快捷键：\n• 日程编辑器：{{currentKey}}\n• 床位分配：{{currentBedKey}}\n\n提示：\n• 键盘：F2-F12、B 等\n• 鼠标：MouseMiddle、MouseX1、MouseX2\n• 手柄：LeftStick、RightTrigger 等",
+  "gmcm.texts.instructions": "使用方法：\n\n1. 在上方设置你喜欢的快捷键\n2. 游戏中按下快捷键打开编辑器\n3. 选择 NPC 标签页，点击“添加”创建日程\n4. 使用四位时间格式（0600、1430、2200）\n5. 常见动画：idle、emote:4、emote:8 等\n\n   提示：导出 Data/animationDescriptions 补丁\n   可查看可用动画列表。\n\n🛠️ 需要帮助？\n• 启用调试日志以排查问题\n• 查看 SMAPI 控制台中的错误信息\n• 若 NPC 卡住，可尝试降低移动超时时间",
+  "gmcm.texts.status-info": "当前状态：\n• 已婚配偶：{{spouses}}\n• 使用手动日程的 NPC：{{manualSchedules}}\n• 日程条目总数：{{totalEntries}}\n• 编辑器快捷键：{{hotkey}}\n",
+
+  // GMCM Hotkey Management
+  "gmcm.hotkey.parsed": "快捷键解析成功：{{key}}",
+  "gmcm.hotkey.parse-failed": "解析快捷键 '{{key}}' 失败，回退为 F2",
+  "gmcm.hotkey.loaded": "快捷键已加载：{{key}}",
+  "gmcm.hotkey.load-error": "加载快捷键时出错，回退为 F2：{{error}}",
+
+  // Bed Hotkey Management
+  "gmcm.hotkey.bed-parsed": "床位分配快捷键解析成功：{{key}}",
+  "gmcm.hotkey.bed-parse-failed": "解析床位分配快捷键 '{{key}}' 失败，回退为 B",
+  "gmcm.hotkey.both-loaded": "快捷键已加载 — 编辑器：{{editorKey}}，床位分配：{{bedKey}}",
+  "gmcm.hotkey.both-load-error": "加载快捷键时出错，使用默认值：{{error}}",
+
+  // Errors
+  "errors.editor-not-in-game": "日程编辑器只能在游戏内打开。",
+  "errors.editor-open": "打开日程编辑器时出错：{{error}}",
+  "errors.editor-open-message": "打开日程编辑器时出错：{{error}}",
+
+  // Bed Assignment Errors
+  "errors.bed-assignment-not-in-game": "床位分配只能在游戏内打开。",
+  "errors.bed-assignment-open": "打开床位分配时出错：{{error}}",
+  "errors.bed-assignment-open-message": "打开床位分配时出错：{{error}}",
+
+  // Debug
+  "debug.editor-opened": "通过快捷键 {{key}} 打开了日程编辑器",
+
+  // Bed Assignment Debug
+  "debug.bed-assignment-opened": "通过快捷键 {{key}} 打开了床位分配",
+
+  // Bed Assignment System
+  "bed-assignment.title": "分配自定义床位位置",
+  "bed-assignment.select-spouse": "选择配偶：",
+  "bed-assignment.bed-coordinates": "床位坐标：",
+  "bed-assignment.x-label": "X：",
+  "bed-assignment.y-label": "Y：",
+  "bed-assignment.assign-button": "分配",
+  "bed-assignment.cancel-button": "取消",
+  "bed-assignment.tip": "提示：使用坐标将配偶定位到特定枕头位置",
+  "bed-assignment.instructions": "选择配偶并输入 X,Y 坐标",
+  "bed-assignment.selected-spouse": "已选择：{{spouse}} - 请输入坐标",
+  "bed-assignment.assignment-confirmation": "将 {{spouse}} 分配到床位 ({{x}},{{y}})",
+  "bed-assignment.counter": "{{start}}-{{end}} / {{total}}",
+
+  // Bed Assignment Messages
+  "bed-assignment.success": "已为 {{spouse}} 分配床位",
+  "bed-assignment.error": "为 {{spouse}} 分配床位失败",
+  "bed-assignment.removed": "已移除 {{spouse}} 的床位分配",
+  "bed-assignment.loaded-existing": "已加载现有分配：({{x}}, {{y}})",
+  "bed-assignment.no-existing": "未找到现有分配",
+
+  // Bed Assignment UI States
+  "bed-assignment.ready-to-assign": "准备分配",
+  "bed-assignment.select-spouse-first": "请先选择一位配偶",
+  "bed-assignment.enter-coordinates": "请输入坐标",
+  "bed-assignment.invalid-coordinates": "坐标无效",
+  "bed-assignment.delete-button": "删除",
+  "bed-assignment.enabled": "已启用",
+  "bed-assignment.disabled": "已禁用",
+  "bed-assignment.deleted": "{{spouse}} 的床位分配已删除",
+  "bed-assignment.enabled-message": "已为 {{spouse}} 启用床位分配",
+  "bed-assignment.disabled-message": "已为 {{spouse}} 禁用床位分配",
+
+  //Warp UI
+  "warp-list.title": "自定义传送点注册表",
+  "warp-list.addbutton": "添加新传送点",
+
+  //Warp Editor
+  "warp-editor.titleAdd": "添加新传送点",
+  "warp-editor.titleEdit": "编辑传送点",
+  "warp-editor.warpname": "传送点名称：",
+  "warp-editor.insidelocation": "室内位置：",
+  "warp-editor.insideposition": "室内坐标 (X,Y)：",
+  "warp-editor.outsidelocation": "室外位置：",
+  "warp-editor.outsideposition": "室外坐标 (X,Y)：",
+  "warp-editor.outsidebutton": "将当前位置设为室内坐标",
+  "warp-editor.insidebutton": "将当前位置设为室外坐标",
+
+  //Main Menu
+  "main-menu.title": "配偶日程配置",
+  "main-menu.bedassigment": "床位\n分配",
+  "main-menu.spouseSchedules": "日程\n配置",
+  "main-menu.warpconfig": "传送\n配置",
+  "main-menu.bedassigment_hover": "为配偶分配床位",
+  "main-menu.spouseSchedules_hover": "为配偶设置日程",
+  "main-menu.warpconfig_hover": "配置传送点与路径",
+
+
+  "schedule-editor.import-vanilla": "导入原版日程",
+  "schedule-editor.import-vanilla-question": "是否导入 {{npc}} 的原版日程？",
+  "schedule-editor.import-today-only": "仅今天",
+  "schedule-editor.import-all-days": "全部日期（实验性）",
+  "schedule-editor.import-successful": "原版日程导入成功！",
+  "schedule-editor.import-failed": "导入原版日程失败。",
+  "schedule-editor.spouse-not-found": "游戏中未找到该配偶。",
+  "schedule-editor.no-vanilla-schedule": "此配偶无原版日程。",
+  "schedule-editor.no-schedule-for-today": "今天没有原版日程。",
+  "schedule-editor.no-vanilla-schedule-data": "无法加载原版日程数据。"
+}

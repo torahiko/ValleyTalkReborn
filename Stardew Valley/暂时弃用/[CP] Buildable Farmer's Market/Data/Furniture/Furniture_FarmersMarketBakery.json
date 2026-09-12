@@ -1,0 +1,309 @@
+{
+    "Changes": [
+    // CATALOGUE DATA
+        {
+            "LogName": "Add Farmer's Market Bakery Calcifer Data",
+            "Action": "EditData",
+            "Target": "sophie.Calcifer/FurnitureActions",
+            "Entries": {
+            // BREAD
+                "(F)HXW.FMBakery_SmBunBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_SmWheatBreadBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_SmMixBunBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_SmGoldBreadBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_SmSourdoughBreadBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_SmBaguetteBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_SmSpeckleBreadBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_SmCiabattaBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_SmOliveFocacciaBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_SmTomatoFocacciaBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_SmCroissantBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_SmFlouryBreadBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_DemiBaguetteBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_PepperBreadBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_CiabattaBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_BaguetteBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_LgBreadBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_LgBaguetteBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_LgSourdoughBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_LgCroissantBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+            // SWEET BAKED GOODS
+                "(F)HXW.FMBakery_SmIcedBunBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_SmDoughnutBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_SmChocolateBunBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_CinnamonRolls": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_HalfDozenDoughnuts": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_SconesPlatter": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_ChocolateSconesPlatter": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_PetitFourPlatter": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_LgSconeBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_LgIcedBunBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_PastriesDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+            // MIXED BAKERY
+                "(F)HXW.FMBakery_WineCheeseCrate1": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_WineCheeseBreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_WineCheeseCrate2": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_WineCheeseBreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_WineCheeseCrate3": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_WineCheeseBreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_BreadCheeseCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadCheeseShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_WineBreadJamCrate": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_WineBreadJamShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_BreadJamCrate1": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadJamShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_BreadJamCrate2": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadJamShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_BreadShelvesCashierStand": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_AllBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_3x3BreadBasketDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_AllBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_LgBreadDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_AllBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FMBakery_LgBreadDisplayMenu": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_AllBakeryShop"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

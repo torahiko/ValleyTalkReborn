@@ -1,0 +1,116 @@
+{
+	"config.section.Selection_Step_01.name": "支持重新着色:",
+
+	"config.Allow_Recolors.name": "激活颜色重置支持",
+	"config.Allow_Recolors.description": "允许图块改变颜色以适应特定的颜色.如果禁用,则无论使用自动选择还是手动覆盖,都将只使用游戏标准颜色.",
+
+	"config.Use_Alt_Colors.name": "使用可选颜色",
+	"config.Use_Alt_Colors.description": "在某些季节,某些调色模组(例如Starblue或者Vibrant Pastoral)会提供可选的树叶和草地颜色.激活该选项将在图块上使用这些可选颜色.",
+
+	"config.section.Selection_Step_02.name": "可选择禁用自动选择:",
+
+	"config.Manual_Override.name": "手动覆盖",
+	"config.Manual_Override.description": "停用自动选择颜色,需要从以下列表中手动选择一种颜色覆盖.",
+
+	"config.section.Selection_Step_03.name": "然后手动选择一种颜色:",
+
+	"config.Blue_Grass.name": "Blue Grass",
+	"config.Blue_Grass.description": "将强制使用与'Blue Grass'模组兼容的颜色.",	
+
+	"config.Earthy_Recolour.name": "Earthy Recolour模组",
+	"config.Earthy_Recolour.description": "将强制使用与'Earthy Recolour'模组兼容的颜色.",
+
+	"config.Starblue_Valley.name": "Starblue Valley模组",
+	"config.Starblue_Valley.description": "将强制使用与'Starblue Valley'模组兼容的颜色.",
+
+	"config.Vibrant_Pastoral.name": "Vibrant Pastoral模组",
+	"config.Vibrant_Pastoral.description": "将强制使用与'Vibrant Pastoral'模组兼容的颜色.",
+
+	"config.Wittily_Named.name": "Wittily Named Recolor模组",
+	"config.Wittily_Named.description": "将强制使用与'Wittily Named Recolor'模组兼容的颜色.",
+
+	"config.section.Selection_Step_04.name": "或替换更复杂的重新着色:",
+
+	"config.Cotton_Candy.name": "Cotton Candy Recolor模组",
+	"config.Cotton_Candy.description": "将强制使用与'Cotton Candy Recolor'模组兼容的颜色.",
+
+	"config.CC_Grass_Spring.name": "春季棉花糖颜色草地",
+	"config.CC_Grass_Spring.description": "春季选择棉花糖草地颜色.",
+	"config.CC_Grass_Spring.values.none": "无重新着色.",
+	"config.CC_Grass_Spring.values.mint": "薄荷色草地.",
+	"config.CC_Grass_Spring.values.pink": "粉色草地.",
+	"config.CC_Grass_Spring.values.peach": "桃红色草地.",
+	"config.CC_Grass_Spring.values.purple": "紫色草地.",
+
+	"config.CC_Grass_Summer.name": "夏季棉花糖颜色草地",
+	"config.CC_Grass_Summer.description": "夏季选择棉花糖草地颜色.",
+	"config.CC_Grass_Summer.values.none": "无重新着色.",
+	"config.CC_Grass_Summer.values.mint": "薄荷色草地.",
+	"config.CC_Grass_Summer.values.pink": "粉色草地.",
+	"config.CC_Grass_Summer.values.peach": "桃红色草地.",
+	"config.CC_Grass_Summer.values.purple": "紫色草地.",
+
+	"config.CC_Grass_Fall.name": "秋季棉花糖颜色草地",
+	"config.CC_Grass_Fall.description": "秋季选择棉花糖草地颜色.",
+	"config.CC_Grass_Fall.values.none": "无重新着色.",
+	"config.CC_Grass_Fall.values.mint": "薄荷色草地.",
+	"config.CC_Grass_Fall.values.pink": "粉色草地.",
+	"config.CC_Grass_Fall.values.peach": "桃红色草地.",
+	"config.CC_Grass_Fall.values.purple": "紫色草地.",
+
+	"config.CC_Dirt_Spring.name": "春季棉花糖颜色泥土",
+	"config.CC_Dirt_Spring.description": "春季选择棉花糖泥土颜色.",
+	"config.CC_Dirt_Spring.values.none": "无重新着色.",
+	"config.CC_Dirt_Spring.values.light": "轻微污垢.",
+	"config.CC_Dirt_Spring.values.medium": "颜色略深的污垢.",
+	"config.CC_Dirt_Spring.values.dark": "黑色泥土.",
+
+	"config.CC_Dirt_Summer.name": "夏季棉花糖颜色泥土",
+	"config.CC_Dirt_Summer.description": "夏季选择棉花糖泥土颜色.",
+	"config.CC_Dirt_Summer.values.none": "无重新着色.",
+	"config.CC_Dirt_Summer.values.light": "轻微污垢.",
+	"config.CC_Dirt_Summer.values.medium": "颜色略深的污垢.",
+	"config.CC_Dirt_Summer.values.dark": "黑色泥土.",
+
+	"config.CC_Dirt_Fall.name": "秋季棉花糖颜色泥土",
+	"config.CC_Dirt_Fall.description": "秋季选择棉花糖泥土颜色.",
+	"config.CC_Dirt_Fall.values.none": "无重新着色.",
+	"config.CC_Dirt_Fall.values.light": "轻微污垢.",
+	"config.CC_Dirt_Fall.values.medium": "颜色略深的污垢.",
+	"config.CC_Dirt_Fall.values.dark": "黑色泥土.",
+
+	"config.CC_Snow_Color.name": "冬季棉花糖雪色",
+	"config.CC_Snow_Color.description": "冬季选择棉花糖雪色.",
+	"config.CC_Snow_Color.values.none": "无重新着色.",
+	"config.CC_Snow_Color.values.blue": "蓝色的雪.",
+	"config.CC_Snow_Color.values.purple": "紫色的雪.",
+
+	"config.Universal_Recolors.name": "Universal Recolors模组",
+	"config.Universal_Recolors.description": "将强制使用与'Universal Recolors'模组兼容的颜色.",
+
+	"config.UR_Desaturation.name": "Universal Recolors去饱和度",
+	"config.UR_Desaturation.description": "选择色彩的不饱和程度.",
+	"config.UR_Desaturation.values.D0": "无 (暂缺)",
+	"config.UR_Desaturation.values.D30": "30% (暂缺)",
+	"config.UR_Desaturation.values.D40": "40%",
+	"config.UR_Desaturation.values.D50": "50% (暂缺)",
+
+	"config.UR_Hue.name": "Universal Recolors色相",
+	"config.UR_Hue.description": "选择色相的强度.",
+	"config.UR_Hue.values.H0": "无 (暂缺)",
+	"config.UR_Hue.values.H1": "轻微",
+	"config.UR_Hue.values.H2": "显著 (暂缺)",
+
+	"config.section.Selection_Step_05.name": "附加选项:",
+
+	"config.Mild_Winter.name": "Mild Winter模组",
+	"config.Mild_Winter.description": "将在冬季强制使用与'Mild Winter'模组兼容的图块.在冬季,无论玩家是使用自动选择还是手动覆盖,此模组都将优先于之前选择的任何颜色.",
+
+	"config.Cave_Fol_Color.name": "Cave Foliage Color模组",
+	"config.Cave_Fol_Color.description": "将'cave foliage color'模组的非锁定洞穴叶子变绿,与洞穴藤蔓的颜色相似并且更亮.",
+	"config.Cave_Fol_Color.values.Default": "默认的树叶",
+	"config.Cave_Fol_Color.values.Green": "绿色的树叶",
+
+	"config.Alt_In_Grass.name": "Custom Cave Grass",
+	"config.Alt_In_Grass.description": "Ensure that for compatible mods (like Waterfall Forest Farms), the grass growing inside of caves will use a custom color."
+}

@@ -1,0 +1,26 @@
+{
+	"Changes": [
+		{
+			"LogName": "Progression Mode CTs",
+			"Action": "EditData",
+			"Target": "Data/Events/Town",
+			"Entries": {
+				"{{ModId}}_MarketStart/GameStateQuery PLAYER_STAT Host MarketItemsSold {{ProgressionDifficultyToken}}/!FestivalDay/Time 600 1400/Weather sunny": "distantBanjo/-1000 -1000/farmer 34 23 3 Lewis 27 23 0/showFrame Lewis 18/viewport 29 26/skippable/emote Lewis 40/{{OvergrownEventToken}}/pause 500/emote Lewis 40/pause 1000/emote Lewis 16 true/jump Lewis 6/faceDirection Lewis 1/pause 500/speak Lewis \"{{i18n:BFM.MarketStart.1}}\"/pause 500/emote farmer 8/pause 500/faceDirection Lewis 2/pause 200/textAboveHead Lewis \"{{i18n:BFM.MarketStart.2}}\"/pause 500/speak Lewis \"{{i18n:BFM.MarketStart.3}}\"/pause 500/quickQuestion #{{i18n:BFM.MarketStart.3.1}}#{{i18n:BFM.MarketStart.3.2}}(break)faceDirection Lewis 1\\pause 500\\speak Lewis \"{{i18n:BFM.MarketStart.4}}\"(break)faceDirection Lewis 1\\pause 500\\speak Lewis \"{{i18n:BFM.MarketStart.5}}\"/pause 200/emote Lewis 40/pause 200/speak Lewis \"{{i18n:BFM.MarketStart.6}}\"/pause 500/emote farmer 32/pause 500/emote Lewis 20/pause 200/speak Lewis \"{{i18n:BFM.MarketStart.7}}\"/quickQuestion {{i18n:BFM.MarketStart.7.1}}#{{i18n:BFM.MarketStart.7.2}}#{{i18n:BFM.MarketStart.7.3}}#{{i18n:BFM.MarketStart.7.4}}#{{i18n:BFM.MarketStart.7.5}}(break)pause 500\\speak Lewis \"{{i18n:BFM.MarketStart.8}}\"(break)pause 500\\addMailReceived BFM_MarketName_Pelican\\speak Lewis \"{{i18n:BFM.MarketStart.9}}\"(break)pause 500\\addMailReceived BFM_MarketName_Valley\\speak Lewis \"{{i18n:BFM.MarketStart.10}}\"(break)pause 300\\addMailReceived BFM_MarketName_Ferngill\\emote Lewis 28\\pause 200\\speak Lewis \"{{i18n:BFM.MarketStart.11}}\"/pause 500/speak Lewis \"{{i18n:BFM.MarketStart.12}}\"/pause 500/emote farmer 32/pause 1000/end",
+
+				"{{ModId}}_MarketComplete/HostMail BFM_MarketLevel_5/DayOfWeek Sun/Time 900 1530": "starshoot/-1000 -1000/farmer 53 22 2 Lewis 52 23 2 Pierre 44 23 2 Robin 59 23 2 Marnie 61 33 3 Clint 70 26 3 Willy 37 32 2 Gus 35 22 2 Demetrius 60 26 0 Maru 63 25 2 Caroline 43 25 1 Jodi 41 27 1 Kent? 43 27 3 Sam 35 25 2 Abigail 37 26 3 Sebastian 36 27 0 Shane 58 35 3 Jas 61 27 2 Vincent 63 27 2 Leah 41 35 3 Elliott 39 36 1 Harvey 34 35 1 Haley 26 36 0 Alex 29 35 3 Emily 32 30 1 Penny 66 29 3/makeInvisible 51 21 4 8/broadcastEvent/viewport 52 25/skippable/pause 500/emote Leah 40/pause 100/emote Caroline 32/pause 100/emote Elliott 32 true/emote Vincent 16/pause 100/emote Jas 20 true/emote Abigail 56/emote Sebastian 24/pause 500/speed Lewis 1/viewport move 0 2 2000/move Lewis 0 5 2 true/pause 300/faceDirection Pierre 1/textAboveHead Pierre \"{{i18n:BFM.MarketComplete.1|PlayerName={{PlayerName}}}}\"/pause 300/faceDirection Robin 3/textAboveHead Robin \"{{i18n:BFM.MarketComplete.2|PlayerName={{PlayerName}}}}\"/pause 100/advancedMove farmer false 0 3 2 1000/pause 500/textAboveHead Marnie \"{{i18n:BFM.MarketComplete.3|PlayerName={{PlayerName}}}}\"/waitForAllStationary/pause 1000/faceDirection Lewis 3/pause 200/faceDirection Lewis 1/pause 200/faceDirection Lewis 2/pause 200/speak Lewis \"{{i18n:BFM.MarketComplete.4}}\"/pause 500/emote farmer 32/pause 500/faceDirection Lewis 0/pause 500/speak Lewis \"{{i18n:BFM.MarketComplete.5}}\"/pause 500/emote Pierre 32 true/emote Marnie 32/pause 300/emote Robin 32/pause 100/emote Gus 32/pause 200/emote Clint 32 true/emote Willy 32/pause 1000/end"
+
+			}
+		},
+		{
+			"LogName": "Market Mail",
+			"Action": "EditData",
+			"Target": "Data/Mail",
+			"Entries": {
+				"{{ModId}}_MarketLevel1Mail": "{{i18n:BFM.MarketLevel1Mail.1 |MarketName={{MarketNameToken}}}}^^{{i18n:BFM.MarketLevel1Mail.2.{{ProgressionDates}}|CCorJoja={{CCorJojaToken}}}} {{i18n: BFM.MarketLevel1Mail.3}}[#]{{i18n: BFM.MarketLevel1Mail.Title}}",
+				"{{ModId}}_MarketLevel2Mail": "{{i18n:BFM.MarketLevel2Mail.Body |MarketName={{MarketNameToken}}}}[#]{{i18n:BFM.MarketLevel2Mail.Title}}",
+				"{{ModId}}_MarketLevel3Mail": "{{i18n:BFM.MarketLevel3Mail.Body}}[#]{{i18n:BFM.MarketLevel3Mail.Title}}",
+				"{{ModId}}_MarketLevel4Mail": "{{i18n:BFM.MarketLevel4Mail.Body |MarketName={{MarketNameToken}}}}[#]{{i18n:BFM.MarketLevel4Mail.Title}}"
+			}
+		}
+	]
+}

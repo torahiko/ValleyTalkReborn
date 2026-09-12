@@ -1,0 +1,52 @@
+{
+    "Changes": [
+    {
+    "Action": "EditData",
+    "Target": "Data/AudioChanges",
+    "Entries": {
+        "Volt_Goat": {
+            "Id": "Volt_Goat",
+            "Category": "Sound",
+            "FilePaths": [
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_bleet_1.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_bleet_2.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_bleet_3.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_bleet_4.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_bleet_5.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_bleet_6.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_bleet_7.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_bleet_8.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_bleet_9.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_jacobshorn_1.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_jacobshorn_2.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_jacobshorn_3.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_jacobshorn_4.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_jacobshorn_5.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_shockedelec_1.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_shockedelec_2.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_shockedelec_3.wav}}"
+            ],
+			 "StreamedVorbis": false,
+			 "Looped": false 
+        },
+        "Volt_Goat_Baby": {
+            "Id": "Volt_Goat_Baby",
+            "Category": "Sound",
+            "FilePaths": [
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_bleet_1.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_bleet_2.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_bleet_3.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_bleet_4.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_bleet_5.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_bleet_6.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_bleet_7.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_bleet_8.wav}}",
+                "{{AbsoluteFilePath: assets/Audio/Volt Goat/lightninggoat_bleet_9.wav}}"
+            ],
+			 "StreamedVorbis": false,
+			 "Looped": false 
+        }
+    }
+}
+    ]
+}

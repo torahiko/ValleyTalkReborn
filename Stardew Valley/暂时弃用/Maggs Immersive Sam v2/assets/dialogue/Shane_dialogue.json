@@ -1,0 +1,16 @@
+{
+"Changes": [
+//SHANE DIALOGUE
+{
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Shane",
+	"Entries": {
+		"dating_Sam": "{{i18n: shane.reaction.dating_Sam}}",
+		"married_Sam": "{{i18n: shane.reaction.married_Sam}}",
+		"maggdancenight": "{{i18n: shane.topic.maggdancenight}}",
+		"eventSeen_magginyourcorner08082024": "{{i18n: shane.event.magginyourcorner08082024}}",
+		"maggchickenwar": "{{i18n: shane.topic.maggchickenwar}}",
+		}
+    },
+]
+}

@@ -1,0 +1,17 @@
+{
+    "Name": "[CP] H&W Farmers Market Core Set",
+    "Author": "HimeTarts and wildflourmods",
+    "Version": "2.2",
+    "Description": "CP Version of HXW Farmers Market Core Set",
+    "UniqueID": "HXW.FMCore",
+    "UpdateKeys": ["Nexus:18814"], 
+    "Dependencies":[
+        { 
+         "UniqueID":"sophie.Calcifer",
+         "IsRequired": true}
+     ],
+    "MinimumApiVersion": "4.0.0-alpha",
+    "ContentPackFor": {
+        "UniqueID": "Pathoschild.ContentPatcher"
+    }
+}

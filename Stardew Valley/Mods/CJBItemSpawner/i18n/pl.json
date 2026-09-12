@@ -1,0 +1,47 @@
+﻿{
+    /*********
+    ** Sort button
+    *********/
+    "sort.by-name": "Nazwa",
+    "sort.by-price": "Cena",
+    "sort.by-type": "Rodzaj",
+    "sort.by-id": "ID",
+
+
+    /*********
+    ** Category dropdown
+    *********/
+    "filter.all": "Wszystko",
+    "filter.artisan-and-cooking": "Wyroby i gotowanie",
+    "filter.crafting.products": "Wytwarzanie: przedmioty",
+    "filter.crafting.resources": "Wytwarzanie: zasoby",
+    "filter.decor.furniture": "Dekoracje: meble",
+    "filter.decor.other": "Dekoracje: pozostałe",
+    "filter.equipment-boots": "Ekwipunek: obuwie",
+    "filter.equipment-clothes": "Ekwipunek: ubrania",
+    "filter.equipment-hats": "Ekwipunek: czapki",
+    "filter.equipment-rings": "Ekwipunek: pierścienie",
+    "filter.equipment-tools": "Ekwipunek: narzędzia",
+    "filter.equipment-weapons": "Ekwipunek: bronie",
+    "filter.farm-animal-drops": "Farma: zwierzęta i potwory",
+    "filter.farm-crops": "Farma: uprawy",
+    "filter.farm-seeds": "Farma: nasiona",
+    "filter.fish": "Ryby",
+    "filter.minerals-and-artifacts": "Minerały i artefakty",
+    "filter.miscellaneous": "Różne",
+
+
+    /*********
+    ** Generic Mod Config Menu UI
+    *********/
+    "config.title.controls": "Sterowanie",
+    "config.show-menu-key.name": "Klawisz otwierający menu",
+    "config.show-menu-key.desc": "Skrót klawiszowy, który otwiera menu (gdy żadne inne menu nie jest otwarte).",
+
+    "config.title.options": "Opcje",
+    "config.apply-trash-can-upgrade.name": "Zastosuj ulepszenie kosza na śmieci",
+    "config.apply-trash-can-upgrade.desc": "Gdy ulepszysz kosz na śmieci, aby odzyskać część ceny wyrzuconych przedmiotów, czy to ulepszenie ma również zastosowanie w menu spawnera przedmiotów.",
+
+    "config.title.hide-categories": "Ukryj kategorie",
+    "config.hide-category.desc": "Czy ukryć kategorię '{{name}}' w interfejsie użytkownika. Jeśli jest ukryta, przedmioty z tej kategorii nie będą dostępne przez menu spawnera."
+}

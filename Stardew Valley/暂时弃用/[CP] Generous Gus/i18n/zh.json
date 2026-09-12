@@ -1,0 +1,125 @@
+{
+    
+"Gus.Introduction": "你好啊！我是格斯，星露酒馆的厨师兼老板。#$b#如果你需要吃点喝点，随时来找我。我这里总有热咖啡和冰啤酒！$h#$b#对了……如果你觉得压力大或想来顿热饭，我通常会留点东西以防万一。",
+
+//After gift
+"Gus.AfterGift.0": "不用谢我啦。$h",
+"Gus.AfterGift.1": "哎呀，不用谢。有机会你帮帮别人，顺便想起老格斯就行。$h",
+"Gus.AfterGift.2": "你爷爷常说，种地是个辛苦活儿。看你整天跑来跑去，我算是信了！",
+"Gus.AfterGift.3": "不用，不用——这顿我请的。$h",
+"Gus.AfterGift.4": "我不会让鹈鹕镇的人饿肚子的。",
+"Gus.AfterGift.5": "别再说啦，这是我应该做的。$h",
+"Gus.AfterGift.6": "记得常来坐坐，@。我一直在这儿呢。$h",
+
+// New player
+"Gus.NewPlayer.0": "哟，@，你来啦！今晚这顿我请，别客气。",
+"Gus.NewPlayer.1": "欢迎来到酒馆，@。来告诉我，你觉得今晚的特色菜怎么样？",
+"Gus.NewPlayer.2": "来，@——这份请你吃！$h#$b#在 %farm 农场还没正式运转起来之前，记得随时来这里吃顿热饭、歇歇脚。",
+"Gus.NewPlayer.3": "欢迎欢迎，@。看来你今天又在农场干了不少活啊。#$b#来，赶紧吃点东西垫垫肚子！",
+"Gus.NewPlayer.4": "来，@——给你一盘热腾腾的，好好补补，长点肉。",
+"Gus.NewPlayer.5": "这不是我们本地的农夫嘛！我就知道你一定是闻着今天的特色菜来的～$h",
+"Gus.NewPlayer.6": "哎呀，是 @ 啊！见到你真开心。#$b#来来来，歇歇脚，我来给你做一盘好吃的。",
+
+// Poor player
+"Gus.PoorPlayer.0": "快进来避避风吧，@，你这模样看起来真该吃顿营养点的。",
+"Gus.PoorPlayer.1": "唔……@，你今天看起来瘦得让我有点担心。来，吃点东西吧。",
+"Gus.PoorPlayer.2": "哟，@，今天来是想找人说说话，还是 %farm 农场最近遇到点麻烦啦？#$b#来吧——每个人都会有需要别人拉一把的时候。这是我妈妈从小教我的。$h",
+
+// Expecting father
+"Gus.ExpectingFather.0": "啊哈！我就知道你早晚会来一趟，@。老婆还好吗？#$b#你啊，看起来也该补补元气了！$h",
+"Gus.ExpectingFather.1": "最近家里怎么样，@？%spouse 身体还健康吧？#$b#我可不想看她还得下厨做饭，来，这顿我请了！",
+"Gus.ExpectingFather.2": "@，每次见到你都让我开心。$h#$b#来吧，我猜你现在正好需要这么一口热的。",
+"Gus.ExpectingFather.3": "我一看你这表情就知道，昨晚没睡好吧？#$b#别担心，%spouse 会没事的。你吃完这顿也能缓过劲来！",
+"Gus.ExpectingFather.4": "我猜再过几周就很少见到你来啦，@。#$b#来，吃一盘免费的——等宝宝出生后别忘了回来报个喜，我们大家都惦记着你和 %spouse 呢。",
+"Gus.ExpectingFather.5": "哎呀，@，你看起来像是累趴了。我来给你整点吃的。#$b#最近你为了照顾 %spouse 忙成这样，也别忘了自己也得吃好点啊！",
+"Gus.ExpectingFather.6": "什么时候预产期啊？$h#$b#我猜你最近都顾不上自己了，所以给你留了点吃的。专门为你准备的，老朋友！",
+
+//Expecting mother
+"Gus.ExpectingMother.0": "哎呀，@，见到你真高兴啊！$h#$b#快，坐下歇歇，我猜你一定想尝尝今天的特色菜吧。",
+"Gus.ExpectingMother.1": "是我们的 @ 啊！能抽空过来真不容易。可别太辛苦自己啦。",
+"Gus.ExpectingMother.2": "@，我知道你要打理农场，但最近还是悠着点比较好，好吗？要是你们太累了，就让 %spouse 来我这儿打包点吃的也行。",
+"Gus.ExpectingMother.3": "你好啊，@！我猜你现在肯定饿了吧。#$b#要是我不请你吃点东西，我妈在天之灵都要念叨我。来，拿去！$h",
+"Gus.ExpectingMother.4": "@，你现在这种情况还四处跑，真的合适吗？#$b#来，坐下歇会儿，我来给你准备一盘热乎饭。免费的，放心！",
+"Gus.ExpectingMother.5": "等你准备好了，@，一定要带小宝宝来见见格斯叔叔哦。#$b#我猜你和 %spouse 应该也不会介意我来做顿饭换换口味吧？$h",
+"Gus.ExpectingMother.6": "你好啊，@，最近身体还好吗？#$b#我特地存了点好材料，想着你最近正需要补补。来，尝尝这个，告诉我味道怎么样！$h",
+
+//Adopting couple
+"Gus.Adopting.0": "哎呀，@，你来了！是不是有点紧张啊？#$b#别担心，很快就会适应的。你和 %spouse 一定会是很棒的父母。$h#$b#来，先吃点东西提提神。",
+"Gus.Adopting.1": "最近进展如何，@？我们大家都很期待见到你们家的小宝贝，到时候一定要带来见见格斯叔叔哦。#$b#来，这顿我请！$h",
+"Gus.Adopting.2": "我猜你和 %spouse 这段时间一直忙着等收养的手续吧？#$b#来，吃点这个，缓缓神儿。",
+"Gus.Adopting.3": "你和 %spouse 在农场上的准备都差不多了吗，@？#$b#我敢打赌你们最近都顾不上好好吃饭了。让我来照顾一下你们的胃吧！$h",
+"Gus.Adopting.4": "找个时间带 %spouse 一起来吧。忙碌之中也该给彼此留点安静时光。#$b#来——带一盘回家，替我带去问候，好吗？",
+"Gus.Adopting.5": "我猜你现在高兴得像在天上飘吧，@？这是你和 %spouse 的一段美好时光。",
+"Gus.Adopting.6": "孩子差不多快到了吧，@？趁现在还有空，好好吃顿饭补补身子！",
+
+"Gus.Celebrating.0": "你知道吗？我现在也忍不住想庆祝一番！$h",
+"Gus.Celebrating.1": "记得哪天带小家伙来见见格斯叔叔哦！$h",
+"Gus.Celebrating.2": "这是人生中最美好的时光之一，@。好好享受吧！$h",
+"Gus.Celebrating.3": "今晚我们都会为你和 %spouse 举杯庆祝的。$h",
+"Gus.Celebrating.4": "为鹈鹕镇的新成员干杯！$h",
+
+// Quest dialogue
+"Gus.Quest.Linus1": "嘿，@，今晚我实在走不开，但还是有点担心莱纳斯。#$b#你能不能帮我把这盘饭送到他帐篷那儿，顺便看看他怎么样？这点零钱就当是辛苦费啦。",
+"Gus.Quest.Linus2": "呼……每次酒馆门一开，冷风都钻进来。#$b#不过我更担心的是莱纳斯那顶帐篷里的日子。$s#$b#我知道他大概早就做好了过冬准备，但你愿意顺路帮我把这盘热饭送过去吗，@？就当图个安心。",
+"Gus.Quest.Linus3": "又到冬天了啊？#$b#你农场现在也休耕了，估计突然多出很多空闲时间吧？你爷爷当年也是这样。$h#$b#来，@，麻烦你把这盘热腾腾的饭送去给莱纳斯。想到他今天能吃口热的，我就安心多了。",
+
+"Gus.questComplete_Quest_Linus1": "谢谢你帮忙送饭，@。希望你没把我那独门酱料洒出来！",
+"Gus.questComplete_Quest_Linus2": "你好，@，再次谢谢你特地跑一趟山上。#$b#莱纳斯在山上还好吗？",
+"Gus.questComplete_Quest_Linus3": "哎呀，@！今年又麻烦你帮忙了，谢谢你。莱纳斯还喜欢那道帕尔玛奶酪茄子吗？#$b#我妈以前一到天冷就给我做这个，吃完整个人都暖和了。$h",
+
+"Gus.Winter.0": "我很喜欢冬天这个季节。每年我都会偷偷在冬星树下多放几份小朋友的礼物。$h",
+"Gus.Winter.1": "天冷天黑，对有抑郁症的人来说真的很难熬。#$b#我在想今晚能不能劝劝谢恩试试气泡蔓越莓汁……$s",
+"Gus.Winter.2": "克林特几乎每天晚上都会来，但总是不怎么跟人说话。$s%revealtaste:Clint:(O)605#$b#我该给他做一盘洋蓟蘸酱了，那总能让他露出一点笑容。$h",
+"Gus.Winter.3": "我这辈子都住在鹈鹕镇，@，见过太多人来来去去。$s#$b#不过不知怎么的，冬天总会让我想起你爷爷。#$b#今晚，我们一起为他举杯吧！$h",
+
+"Linus.questComplete_Quest_Linus1": "这座山能满足我生活所需，但关心身边的人，是人之常情。#$b#我不会责怪格斯的慷慨，就像我不会责怪风会吹一样。",
+"Linus.questComplete_Quest_Linus2": "说实话，@，在这个季节里，一点点额外的食物也能起到大作用。#$b#我确实备好了过冬的储粮……但你们的这份心意，真的让我很感动。#$b#谢谢你。$h",
+"Linus.questComplete_Quest_Linus3": "谁能拒绝一盘格斯那道有名的帕尔玛奶酪茄子呢？$h#$b#谢谢你亲自把它送上山来，小家伙。能见到你，我很高兴。$h",
+
+"Quest_Linus1.title": "格斯的担忧",
+"Quest_Linus1.text": "格斯担心莱纳斯没有好好吃饭。他想让你去看看他。",
+"Quest_Linus1.objective": "给莱纳斯送去一盘意大利面。",
+"Quest_Linus1.reaction": "你好啊，小家伙。没想到你会上山来看我。我平时很少有访客。#$b#哦，这是格斯给我的？$s#$b#……我不需要施舍，但我能体会这份善意。#$b#请告诉格斯，我很喜欢这道菜。",
+
+"Quest_Linus2.title": "冬日温暖",
+"Quest_Linus2.text": "冬天来了，格斯想确保莱纳斯能吃到热饭。他让你送些食物给他。",
+"Quest_Linus2.objective": "给莱纳斯送去一盘辣味爆米花。",
+"Quest_Linus2.reaction": "又见面了，小家伙。小动物们都冬眠去了。可惜我们这些大人不能那么做！$h#$b#这是什么，又是格斯送来的饭菜？#$b#唔……虽然我信奉简朴自然，但说实话……天气冷的时候，肚子里有点热乎的也不错。$h#$b#请替我谢谢格斯。",
+
+"Quest_Linus3.title": "慷慨之心",
+"Quest_Linus3.text": "冬天又来了，格斯希望你再去看看莱纳斯。他给你准备了一份热食让你送去。",
+"Quest_Linus3.objective": "把一盘帕尔玛奶酪茄子送给莱纳斯。",
+"Quest_Linus3.reaction": "*深吸一口气* 啊……松树的清香顺着雪山飘下来。在这样的日子里，人会更能体会冬日的严酷之美。#$b#我看得出来，格斯依旧那么慷慨。我想……我也该学着欣赏这份心意了。$h#$b#再次谢谢你，小家伙。下次见到那位热心的酒馆老板，替我向他道声谢吧。",
+
+// Conversation topics and special flags
+"Gus.CT.Poor": "嘿，@，最近怎么样？生活还顺利吗？有没有重新振作起来？",
+"Gus.NewlyWed": "嘿，@，我真替你和 %spouse 高兴啊！$h#$b#我攒了一点小礼物给你们俩……啊，在这儿呢！一些新鲜香草，正好用来给你们的新厨房增添点味道。[(F)2425]#$b#希望你们哪天一起来酒馆，喝杯庆祝酒！$h",
+"Gus.Death": "我听说你出了点意外，@。这段时间可得好好休息啊。#$b#今晚就让我来做饭吧，你就安心歇着。[218]",
+"Gus.Death.2": "以后可得多注意身体啊，知道吗？",
+"Gus.Trash": "你知道的，@，要是饿了可以直接来找我说一声。真没必要去翻垃圾找吃的。$s#$b#来，拿着这些吃点东西吧。记住，酒馆随时欢迎你。[215]",
+"Gus.Trash.2": "我不想看到鹈鹕镇有人饿着肚子。",
+
+//Configuration translations
+"config.HelpNewPlayers.name": "帮助新玩家",
+"config.HelpNewPlayers.description": "如果此存档的农民游戏时间少于14天，格斯会赠送食物。",
+"config.HelpNewPlayers.values.true": "true",
+"config.HelpNewPlayers.values.false": "false",
+
+"config.HelpPoorPlayers.name": "帮助贫困玩家",
+"config.HelpPoorPlayers.description": "如果玩家金币少于200，格斯会赠送食物。",
+"config.HelpPoorPlayers.values.true": "true",
+"config.HelpPoorPlayers.values.false": "false",
+
+"config.HelpExpectingPlayers.name": "帮助预期父母",
+"config.HelpExpectingPlayers.description": "格斯会为怀孕、即将为人父母或收养孩子的玩家赠送食物。",
+"config.HelpExpectingPlayers.values.true": "true",
+"config.HelpExpectingPlayers.values.false": "false",
+
+//Gifts Lists -- DON'T TRANSLATE THESE!!!
+"Food.gifts": "(O)215 (O)213 (O)214 (O)206 (O)224 (O)240 (O)231 (O)197 (O)202 (O)206",
+
+"Father.gifts": "(O)218 (O)206 (O)224 (O)215 (O)213 (O)346 (O)303",
+
+"Mother.gifts": "(O)205 (O)200 (O)212 (O)230 (O)237 (O)224 (O)207",
+
+}

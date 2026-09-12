@@ -1,0 +1,87 @@
+{
+  "Changes": [
+
+    {
+        "LogName": "Add Farmers Market Catalogue Shop",
+        "Action": "EditData",
+        "Target": "Data/Shops",
+        "Entries": {
+            "HXW.FarmMarketFurniSet": {
+            "PriceModifiers": null,
+            "PriceModifierMode": "Stack",
+            "Items": [
+                {
+                "Price": 0,
+                "AvailableStockLimit": "Global",
+                "AvoidRepeat": false,
+                "UseObjectDataPrice": false,
+                "IgnoreShopPriceModifiers": false,
+                "PriceModifiers": null,
+                "PriceModifierMode": "Stack",
+                "AvailableStockModifiers": null,
+                "AvailableStockModifierMode": "Stack",
+                "Condition": null,
+                "Id": "Default",
+                "ItemId": "ALL_ITEMS (F)",
+                "MinStack": -1,
+                "MaxStack": -1,
+                "Quality": -1,
+                "PerItemCondition": "ITEM_CONTEXT_TAG Target collection_hwfarmersmarket"
+                }
+            ],
+            "CustomFields":{
+                "HappyHomeDesigner/Catalogue":"true"
+            }
+            }
+        }
+    },
+
+    {
+        "LogName": "Add Farmers Market Catalogue Item",
+        "Action": "EditData",
+        "Target": "Data/Furniture",
+        "Entries": {    
+            "HXW.FMCore_Catalogue": "HXW.FMCore_Catalogue/other/1 2/1 1/1/20000/2/{{i18n:FMCore_Catalogue}}/174/Mods\\HXW.FMCore\\Furniture/true"
+        }
+    },
+  
+    {
+        "LogName": "Add Farmers Market Catalogue Tile Actions",
+        "Action": "EditData",
+        "Target": "sophie.Calcifer/FurnitureActions",
+        "Entries": {
+            "(F)HXW.FMCore_Catalogue": {
+                "TileActions": [
+                    {
+                        "TileAction": "OpenShop HXW.FarmMarketFurniSet"
+                    }
+                ]
+            }
+        }
+    },
+
+    {
+        "LogName": "Add Farmers Market Catalogue to Robin's Shop",
+        "Action": "EditData",
+        "Target": "Data/Shops",
+        "TargetField": [ "Carpenter", "Items" ],
+        "Entries": {
+            "HXW.FMCore_Catalogue": {
+                "Id": "HXW.FMCore_Catalogue",
+                "ItemId": "(F)HXW.FMCore_Catalogue",
+                "Price": 35000
+            }
+        }
+    }
+   
+  ]
+}
+  
+  
+  
+  
+  
+  
+  
+  
+  

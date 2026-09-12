@@ -1,0 +1,256 @@
+{
+    "Changes": [
+        {
+            "LogName": "Include Shop Trigger Template - Mushroom",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "ShopType": "MushroomShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Spring Crops",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "ShopType": "SpringCropsShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Summer Crops",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "ShopType": "SummerCropsShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Fall Crops",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "ShopType": "FallCropsShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - All Crops",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "ShopType": "AllCropsShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Oil",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "ShopType": "OilShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Jelly",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "ShopType": "JellyShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Honey",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "ShopType": "HoneyShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Juice",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "ShopType": "JuiceShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Pickles",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "ShopType": "PickleShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Artisan Goods",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "ShopType": "ArtisanGoodsShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Forage",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "ShopType": "ForageShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Berry",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "ShopType": "BerryShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Egg",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "ShopType": "EggShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Milk",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "ShopType": "MilkShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Animal Goods",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "ShopType": "AnimalGoodsShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Spring Fruit",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "ShopType": "SpringFruitShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Summer Fruit",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "ShopType": "SummerFruitShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Fall Fruit",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "ShopType": "FallFruitShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - All Fruit",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "ShopType": "AllFruitShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Flower",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "ShopType": "FlowerShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Herb",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMC",
+                "ShopType": "HerbShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Bread",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMB",
+                "ShopType": "BreadShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Dessert",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMB",
+                "ShopType": "SweetBakeryShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Fish",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMFM",
+                "ShopType": "FishShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Crabpot",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMFM",
+                "ShopType": "CrabpotShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Roe",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMFM",
+                "ShopType": "RoeShop"
+            }
+        },
+        {
+            "LogName": "Include Shop Trigger Template - Meat",
+            "Action": "Include",
+            "FromFile": "Data/MarketData/ShopTriggerTemplate.json",
+            "LocalTokens": {
+                "ShopAcronym": "FMFM",
+                "ShopType": "MeatShop"
+            }
+        }
+    ]
+}

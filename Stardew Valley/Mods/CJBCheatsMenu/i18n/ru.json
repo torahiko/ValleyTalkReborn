@@ -1,0 +1,245 @@
+﻿{
+    /*********
+    ** Main translations
+    *********/
+    // mod name shown in the menu
+    "mod-name": "CJB Cheats Menu",
+
+    // tab names
+    "tabs.player-and-tools": "Игрок и инструменты",
+    "tabs.farm-and-fishing": "Ферма и рыбалка",
+    "tabs.skills": "Навыки",
+    "tabs.weather": "Погода",
+    "tabs.relationships": "Отношения",
+    "tabs.warp": "Телепортация",
+    "tabs.time": "Время",
+    "tabs.advanced": "Прочее",
+    "tabs.controls": "Управление",
+
+
+    /*********
+    ** Player & Tools tab
+    *********/
+    // player
+    "player.title": "Игрок",
+    "player.infinite-stamina": "Бесконечная выносливость",
+    "player.infinite-health": "Бесконечное здоровье",
+    "player.instant-cooldowns": "Убрать задержку при использовании оружия",
+    "player.inventory-size": "Объём инвентаря",
+    "player.movement-speed": "Скорость перемещения",
+    "player.movement-speed.default": "обычная",
+    "player.one-hit-kill": "Убийство с одного удара",
+    "player.max-daily-luck": "Максимальная удача",
+
+    // tools
+    "tools.title": "Инструменты",
+    "tools.infinite-water": "Бесконечная вода в лейке",
+    "tools.one-hit-break": "Разрушение с одного удара",
+    "tools.harvest-with-scythe": "Сбор культур серпом",
+
+    // tool enchantments
+    "tool-enchantments.title": "Чары для инструментов",
+    "tool-enchantments.select-tool": "Выберите инструмент на панели быстрого доступа, чтобы редактировать чары.",
+    "tool-enchantments.none-for-tool": "Для {{toolName}} чары недоступны.",
+    "tool-enchantments.for-tool": "Для {{toolName}}.",
+
+    // money
+    "add.money": "Деньги",
+    "add.casino-coins": "Клубные монеты",
+    "add.golden-walnuts": "Золотых грецких",
+    "add.qi-gems": "Самоцветы Ки",
+    "add.amount-gold": "Добавить {{amount}}",
+    "add.amount-other": "Добавить {{amount}}",
+
+
+    /*********
+    ** Farm & Fishing tab
+    *********/
+    // farm
+    "farm.title": "Ферма",
+    "farm.auto-water-crops": "Автополиваемые культуры",
+    "farm.auto-water-pet-bowls": "Auto-Water Pet Bowls", // TODO
+    "farm.durable-fences": "Прочные ограждения",
+    "farm.instant-build": "Мгновенное строительство",
+    "farm.auto-feed-animals": "Автоматическая подкормка животных",
+    "farm.auto-pet-animals": "Автоматическое приласкивание животных",
+    "farm.auto-pet-pets": "Автоматическое приласкивание домашних животных",
+    "farm.infinite-hay": "Бесконечное сено",
+
+    // fishing
+    "fishing.title": "Рыбалка",
+    "fishing.instant-catch": "Мгновенный вылов рыбы",
+    "fishing.instant-bite": "Мгновенный поклёв рыбы",
+    "fishing.always-throw-max-distance": "Закидывать на максимальное расстояние",
+    "fishing.always-treasure": "Всегда попадается сокровище",
+    "fishing.durable-tackles": "Прочные снасти",
+
+    // fast machines
+    "fast-machines.title": "Ускорение работы машин",
+    "fast-machines.fruit-trees": "Фруктовые деревья",
+    "fast-machines.ready-in-the-morning": "{{machineName}} (будет готово утром)",
+
+
+    /*********
+    ** Skills tab
+    *********/
+    // skills
+    "skills.title": "Навыки",
+    "skills.increase-skill": "Увеличить ур. {{skillName}}: {{currentLevel}}",
+    "skills.increase-mastery": "Increase mastery level: {{currentLevel}}", // TODO
+
+    // professions
+    "professions.title": "Профессии",
+    "professions.profession": "{{skillName}} ур. {{level}} - {{professionName}}",
+
+
+    /*********
+    ** Weather tab
+    *********/
+    "weather.title": "Погода",
+    "weather.current-value": "Погода на завтра установлена на {{weather}}.",
+    "weather.explanation": "Нажмите кнопку ниже, чтобы установить погоду на завтра (только на завтра). Эта вкладка не влияет на погоду в другое время.",
+    "weather.cannot-change-weather": "The game forces tomorrow's weather to {{weather}}, so it can't be changed.", // TODO
+    "weather.sunny": "Солнечно",
+    "weather.raining": "Дождь",
+    "weather.lightning": "Гроза",
+    "weather.snowing": "Снегопад",
+    "weather.green-rain": "Зелёный дождь",
+
+
+    /*********
+    ** Relationships tab
+    *********/
+    "relationships.title": "Отношения",
+    "relationships.give-gifts-anytime": "Подарки можно преподносить без ограничений",
+    "relationships.no-decay": "Уровень дружбы не снижается",
+    "relationships.friends": "Друзья",
+
+
+    /*********
+    ** Warps tab
+    *********/
+    "warp.customized-warning": "Эти телепорты были изменены вашими модами. Пожалуйста, сообщайте о проблемах с телепортами модам, которые их добавили, если это возможно.",
+
+    // main areas
+    "warp-section.main": "Главные локации",
+    "warp.farm": "Ферма",
+    "warp.carpenter": "Столярная мастерская",
+    "warp.desert": "Пустыня",
+    "warp.mines": "Шахта",
+    "warp.pierre-shop": "Магазин Пьера",
+
+    // town
+    "warp-section.town": "Город",
+    "warp.blacksmith": "Кузнец",
+    "warp.community-center": "Клуб",
+    "warp.jojamart": "ДжоджаМарт",
+    "warp.movie-theater": "Кинотеатр",
+    "warp.museum": "Музей",
+    "warp.saloon": "Салун \"Звёздная капля\"",
+    "warp.sewer": "Канализация",
+
+    // forest
+    "warp-section.forest": "Лес",
+    "warp.hats": "Разрушенный дом",
+    "warp.mastery-cave": "Пещера Мастерства",
+    "warp.ranch": "Ранчо Марни",
+    "warp.secret-woods": "Тайный лес",
+    "warp.wizard-tower": "Башня волшебника",
+
+    // mountain
+    "warp-section.mountain": "Горы",
+    "warp.adventurers-guild": "Гильдия искателей приключений",
+    "warp.bathhouse": "Баня",
+    "warp.mutant-bug-lair": "Логово жуков-мутантов",
+    "warp.quarry": "Карьер",
+    "warp.witch-swamp": "Болото ведьмы",
+
+    // beach
+    "warp-section.beach": "Пляж",
+    "warp.tide-pools": "Приливные бассейны",
+    "warp.willy-shop": "Странствующий торговец",
+
+    // island
+    "warp-section.island": "Имбирный остров",
+    "warp.forge": "Кузница",
+    "warp.island-farm": "Ферма на острове",
+    "warp.dwarf-shop": "Магазин в вулкане",
+    "warp.field-office": "Полевой офис",
+    "warp.leo-house": "Хижина Лео",
+
+    // desert
+    "warp-section.desert": "Пустыня",
+    "warp.casino": "Казино",
+    "warp.sandy-shop": "Оазис",
+    "warp.skull-cavern": "Пещера Черепа",
+
+
+    /*********
+    ** Time tab
+    *********/
+    // time
+    "time.title": "Время",
+    "time.freeze-inside": "Остановить время в помещениях",
+    "time.freeze-caves": "Остановить время в пещерах",
+    "time.freeze-everywhere": "Остановить время в любых местах",
+    "time.fade-time-frozen-message": "Скрывать '{{timeFrozen}}' через несколько секунд",
+    "time.time": "Текущее время",
+    "time.time-frozen-message": "Время остановлено",
+
+    // date
+    "date.title": "Дата",
+    "date.warning": "Некоторые изменения не сработают пока не пройдет ночь.",
+    "date.year": "Год",
+    "date.season": "Время года",
+    "date.day": "День",
+
+
+    /*********
+    ** Advanced tab
+    *********/
+    "flags.warning": "Используйте данный раздел на свой страх и риск!\nМогут возникнуть проблемы по типу пропущенных писем, событий и заданий.",
+    "flags.quests": "Завершить задание",
+    "flags.wallet": "Бумажник",
+    "flags.unlocked": "Открыть помещение",
+    "flags.unlocked.guild": "Гильдия искателей приключений",
+    "flags.unlocked.room": "Комната: {{name}}",
+    "flags.unlocked-content": "Разблокировать контент",
+    "flags.unlocked-content.dyes-and-tailoring": "Перекраска и шитьё",
+    "flags.unlocked-content.junimo-text": "Изучен язык Джунимо",
+    "flags.unlocked-content.perfection": "Совершенство достигнуто",
+    "flags.community-center": "Клуб",
+    "flags.community-center.door-unlocked": "Открыть дверь",
+    "flags.jojamart.membership": "Членство в корпорации \"ДжоджаМарт\"",
+
+
+    /*********
+    ** Controls tab
+    *********/
+    "controls.title": "Управление",
+    "controls.android-config-note": "Вы можете изменить настройки экранных кнопок в конфигурационных файлах для использования CJB Cheats Menu и различных модов виртуальной клавиатуры.",
+    "controls.open-menu": "Открыть меню",
+    "controls.freeze-time": "Остановить время",
+    "controls.grow-tree": "Вырастить деревья",
+    "controls.grow-crops": "Вырастить посевные культуры",
+    "controls.grow-radius": "Радиус произрастания флоры от игрока",
+    "controls.reset-controls": "Сбросить настройки управления данной модификации",
+    "controls.press-new-key": "Нажмите новую клавишу...",
+
+
+    /*********
+    ** Generic Mod Config Menu UI
+    *********/
+    "config.open-menu.desc": "Кнопка открытия меню (когда нет других открытых меню).",
+    "config.freeze-time.desc": "Кнопка остановки времени.",
+    "config.grow-tree.desc": "Кнопка, которую нужно удерживать, чтобы вырастить деревья вокруг игрока",
+    "config.grow-crops.desc": "Кнопка, которую нужно удерживать, чтобы вырастить посевные культуры вокруг игрока.",
+
+    "controls.reload-config": "Перезагрузить настройки из файла",
+    "controls.reload-config.desc": "Кнопка, которая перезагружает настройки мода из файла config.json мода. Если меню открыто в данный момент, изменения вступят в силу только после повторного его открытия.",
+
+    "config.title.other-options": "Другое",
+    "config.default-tab.name": "Вкладка по умолчанию",
+    "config.default-tab.desc": "Вкладка, показываемая по умолчанию",
+    "config.other-options": "Чтобы настроить читы, нажмите кнопку 'Открыть меню', указанную выше в игре. Убедитесь, что вы нажимаете её после загрузки сохранения, когда никакое другое меню или диалог не открыт."
+}

@@ -1,0 +1,246 @@
+﻿{
+    /*********
+    ** Main translations
+    *********/
+    // mod name shown in the menu
+    "mod-name": "Menú de Trucos CJB",
+
+    // tab names
+    "tabs.player-and-tools": "Jugador & Herramientas",
+    "tabs.farm-and-fishing": "Granja & Pesca",
+    "tabs.skills": "Habilidades",
+    "tabs.weather": "Clima",
+    "tabs.relationships": "Relaciones",
+    "tabs.warp": "Puntos de Teletransporte",
+    "tabs.time": "Tiempo",
+    "tabs.advanced": "Opciones Avanzadas",
+    "tabs.controls": "Controles",
+
+
+    /*********
+    ** Player & Tools tab
+    *********/
+    // player
+    "player.title": "Jugador",
+    "player.infinite-stamina": "Energía Infinita",
+    "player.infinite-health": "Salud Infinita",
+    "player.instant-cooldowns": "Reutilización Instantánea de Armas",
+    "player.inventory-size": "Tamaño de Inventario",
+    "player.movement-speed": "Velocidad de Movimiento",
+    "player.movement-speed.default": "normal",
+    "player.one-hit-kill": "Matar de Un Golpe",
+    "player.max-daily-luck": "Máxima Suerte Diaria",
+
+    // tools
+    "tools.title": "Herramientas",
+    "tools.infinite-water": "Agua Infinita en la Regadera",
+    "tools.one-hit-break": "Romper de Un Golpe",
+    "tools.harvest-with-scythe": "Cosechar con Guadaña",
+
+    // tool enchantments
+    // TODO
+    "tool-enchantments.title": "Tool Enchantments",
+    "tool-enchantments.select-tool": "Select a tool on your toolbar to edit enchantments.",
+    "tool-enchantments.none-for-tool": "No enchantments available for selected {{toolName}}.",
+    "tool-enchantments.for-tool": "For the selected {{toolName}}.",
+
+    // money
+    "add.money": "Dinero",
+    "add.casino-coins": "Monedas Del Casino",
+    "add.golden-walnuts": "Nueces De Oro",
+    "add.qi-gems": "Gemas Qi",
+    "add.amount-gold": "Añadir {{amount}}o",
+    "add.amount-other": "Añadir {{amount}}",
+
+
+    /*********
+    ** Farm & Fishing tab
+    *********/
+    // farm
+    "farm.title": "Granja",
+    "farm.auto-water-crops": "Regar Cultivos Automáticamente",
+    "farm.auto-water-pet-bowls": "Auto-Water Pet Bowls", // TODO
+    "farm.durable-fences": "Vallas Duraderas",
+    "farm.instant-build": "Construcciones Instantáneas",
+    "farm.auto-feed-animals": "Alimentar Animales Automáticamente",
+    "farm.auto-pet-animals": "Acariciar Animales Automáticamente",
+    "farm.auto-pet-pets": "Acariciar Mascotas Automáticamente",
+    "farm.infinite-hay": "Heno Infinito",
+
+    // fishing
+    "fishing.title": "Pesca",
+    "fishing.instant-catch": "Captura Instantánea",
+    "fishing.instant-bite": "Mordida Instantánea",
+    "fishing.always-throw-max-distance": "Siempre Lanzar Distancia Máxima",
+    "fishing.always-treasure": "Siempre Tesoros",
+    "fishing.durable-tackles": "Aparejos Duraderos",
+
+    // fast machines
+    "fast-machines.title": "Procesamiento Rápido de Máquinas",
+    "fast-machines.fruit-trees": "Árboles Frutales",
+    "fast-machines.ready-in-the-morning": "{{machineName}} (lista por la mañana)",
+
+
+    /*********
+    ** Skills tab
+    *********/
+    // skills
+    "skills.title": "Habilidades",
+    "skills.increase-skill": "{{skillName}} Lvl +1: {{currentLevel}}",
+    "skills.increase-mastery": "Increase mastery level: {{currentLevel}}", // TODO
+
+    // professions
+    "professions.title": "Profesiones",
+    "professions.profession": "{{skillName}} lvl {{level}} - {{professionName}}",
+
+
+    /*********
+    ** Weather tab
+    *********/
+    "weather.title": "Clima para Mañana",
+    "weather.current-value": "Tomorrow's weather is set to {{weather}}.", // TODO
+    "weather.explanation": "Haz clic en un botón para establecer el clima para mañana (y sólo para MAÑANA). Esto no tiene ningún efecto sobre el clima de hoy.",
+    "weather.cannot-change-weather": "The game forces tomorrow's weather to {{weather}}, so it can't be changed.", // TODO
+    "weather.sunny": "Sol",
+    "weather.raining": "Lluvia",
+    "weather.lightning": "Tormenta",
+    "weather.snowing": "Nieve",
+    "weather.green-rain": "Green Raining", // TODO
+
+
+    /*********
+    ** Relationships tab
+    *********/
+    "relationships.title": "Relaciones",
+    "relationships.give-gifts-anytime": "Dar regalos en cualquier momento",
+    "relationships.no-decay": "Ninguna Amistad Disminuye",
+    "relationships.friends": "Amigos",
+
+
+    /*********
+    ** Warps tab
+    *********/
+    "warp.customized-warning": "Estos teletransportes han sido añadidos por tus Mods. Debes informar de los problemas al creador del Mod que los añadieron, sólo si procede.",
+
+    // main areas
+    "warp-section.main": "Áreas Principales",
+    "warp.farm": "Granja",
+    "warp.carpenter": "Carpintería",
+    "warp.desert": "Desierto de Calico",
+    "warp.mines": "Minas",
+    "warp.pierre-shop": "Tienda de Pierre",
+
+    // town
+    "warp-section.town": "Pueblo",
+    "warp.blacksmith": "Herrería",
+    "warp.community-center": "Centro Cívico",
+    "warp.jojamart": "MercaJoja",
+    "warp.movie-theater": "El Cine",
+    "warp.museum": "Museo y Biblioteca",
+    "warp.saloon": "Salón",
+    "warp.sewer": "Alcantarillas",
+
+    // forest
+    "warp-section.forest": "Bosque",
+    "warp.hats": "Sombreros",
+    "warp.mastery-cave": "Cueva de la Maestría",
+    "warp.ranch": "Rancho de Marnie",
+    "warp.secret-woods": "Bosque Secreto",
+    "warp.wizard-tower": "Torre del Mago",
+
+    // mountain
+    "warp-section.mountain": "Montaña",
+    "warp.adventurers-guild": "Gremio de Aventureros",
+    "warp.bathhouse": "Spa",
+    "warp.mutant-bug-lair": "Madriguera de Bichos Mutantes",
+    "warp.quarry": "Cantera",
+    "warp.witch-swamp": "Pantano de la Bruja",
+
+    // beach
+    "warp-section.beach": "Playa",
+    "warp.tide-pools": "Pozas de marea",
+    "warp.willy-shop": "Tienda de Pesca",
+
+    // island
+    "warp-section.island": "Isla Jengibre",
+    "warp.forge": "Forja",
+    "warp.island-farm": "Granja de la Isla",
+    "warp.dwarf-shop": "Tienda del Enano del Volcán",
+    "warp.field-office": "Oficina de Campo",
+    "warp.leo-house": "Casa de Leo",
+
+    // desert
+    "warp-section.desert": "Desierto",
+    "warp.casino": "Casino",
+    "warp.sandy-shop": "Tienda de Sandy",
+    "warp.skull-cavern": "Caverna Calavera",
+
+
+    /*********
+    ** Time tab
+    *********/
+    // time
+    "time.title": "Tiempo",
+    "time.freeze-inside": "Detener Tiempo en Interiores",
+    "time.freeze-caves": "Detener Tiempo en Cuevas & Minas",
+    "time.freeze-everywhere": "Detener Tiempo en Todas Partes",
+    "time.fade-time-frozen-message": "Hide '{{timeFrozen}}' After a Few Seconds", // TODO
+    "time.time": "Hora",
+    "time.time-frozen-message": "Tiempo Detenido",
+
+    // date
+    "date.title": "Fecha",
+    "date.warning": "Algunas cosas no se actualizarán hasta que duermas.",
+    "date.year": "Año",
+    "date.season": "Estación",
+    "date.day": "Día",
+
+
+    /*********
+    ** Advanced tab
+    *********/
+    "flags.warning": "¡Utiliza esta sección bajo tu propio riesgo!\nUsar estas opciones puede causar ciertos problemas como correo, eventos o misiones omitidos.",
+    "flags.quests": "Completar Misiones",
+    "flags.wallet": "Objetos del Monedero",
+    "flags.unlocked": "Desbloquear Áreas",
+    "flags.unlocked.guild": "Gremio de Aventureros",
+    "flags.unlocked.room": "Habitación de: {{name}}",
+    "flags.unlocked-content": "Contenido Desbloqueado",
+    "flags.unlocked-content.dyes-and-tailoring": "Tintes y sastrería",
+    "flags.unlocked-content.junimo-text": "Leer Texto Junimo",
+    "flags.unlocked-content.perfection": "Perfection achieved", // TODO
+    "flags.community-center": "Centro Cívico",
+    "flags.community-center.door-unlocked": "Puerta Abierta",
+    "flags.jojamart.membership": "Membresía de MercaJoja",
+
+
+    /*********
+    ** Controls tab
+    *********/
+    "controls.title": "Controles",
+    "controls.android-config-note": "Puedes cambiar los botones en pantalla en los archivos de configuración de los mods CJB Cheats Menu y Virtual Keyboard.",
+    "controls.open-menu": "Abrir Menú",
+    "controls.freeze-time": "Detener Tiempo",
+    "controls.grow-tree": "Crecer Árboles",
+    "controls.grow-crops": "Crecer Cultivos",
+    "controls.grow-radius": "Área Efectiva de Crecimiento",
+    "controls.reset-controls": "Restablecer",
+    "controls.press-new-key": "Presione Nueva Tecla...",
+
+
+    /*********
+    ** Generic Mod Config Menu UI
+    *********/
+    "config.open-menu.desc": "La tecla que abre el menú (cuando no hay ningún otro menú abierto).",
+    "config.freeze-time.desc": "La tecla que detiene el reloj del juego.",
+    "config.grow-tree.desc": "La tecla que hace crecer los árboles alrededor del jugador.",
+    "config.grow-crops.desc": "La tecla que hace crecer los cultivos alrededor del jugador.",
+
+    "controls.reload-config": "Recargar Configuración desde Archivo",
+    "controls.reload-config.desc": "La tecla que recarga la configuración del mod desde el archivo config.json. Si el menú está abierto, los cambios podrían aplicarse solo al volver a abrirlo.",
+
+    "config.title.other-options": "Otras Opciones",
+    "config.default-tab.name": "Pestaña predeterminada",
+    "config.default-tab.desc": "La pestaña que se muestra por defecto al abrir el menú.",
+    "config.other-options": "Para configurar trampas, presiona la tecla 'abrir menú' indicada arriba en el juego. Asegúrate de hacerlo después de cargar la partida, cuando no haya otro menú o diálogo abierto."
+}

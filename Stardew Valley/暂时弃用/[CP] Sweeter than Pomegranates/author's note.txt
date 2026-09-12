@@ -1,0 +1,11 @@
+Hi! ( ◜ 〰 ◝ )
+
+I'd like to extend a massive thank you to everyone from the Stardew Valley modding community (including Stardew Valley Making-Mods-Gen and SMC) for helping me (and hyping me up) improve Sweeter than Pomegranates 2.0! 
+
+A special shoutout to my friends Aviroen (for helping me, among many other things, reformat this code), Airyn, Tiakall, Abagaianye and Rokugin (for helping me with my i18n struggles), Koda (WitchWeed), and Rei for lending their hands in improving SweeterPom.
+
+A massive shoutout to my good friend Lina (Teaiscoldagain) who helped me with debugging SweeterPom and for being an absolute gem in helping the mod push to 2.0 on an earlier date.
+
+All of you make the modding community thrive.
+
+- Claire (ClairesStoryofSeasons)

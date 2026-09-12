@@ -1,0 +1,11 @@
+{
+  "Name": "[CP] Please, Remember My Marriage",
+  "Author": "nraittanna",
+  "Version": "1.1.0",
+  "Description": "A mod that adds dialogue lines after the farmer gets married.",
+  "UniqueID": "nraittanna.RememberMyMarriage",
+  "UpdateKeys": [ "Nexus:9065" ],
+  "ContentPackFor": {
+    "UniqueID": "Pathoschild.ContentPatcher",
+  }
+}

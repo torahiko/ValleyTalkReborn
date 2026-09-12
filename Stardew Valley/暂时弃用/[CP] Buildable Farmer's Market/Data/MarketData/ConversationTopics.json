@@ -1,0 +1,179 @@
+{
+	"Changes": [
+		// BFM_MarketLevel_1_Spacer - first level, Pierre & Robin
+		// BFM_MarketLevel_2_Spacer - second level, Marnie & Clint
+		// BFM_MarketLevel_3_Spacer - third level, Gus & Willy
+		// BFM_MarketLevel_4_Spacer - final level, townies
+		{
+			"LogName": "Progression Mode CTs",
+			"Action": "EditData",
+			"Target": "Characters/Dialogue/Lewis",
+			"Entries": {
+				"BFM_MarketLevel_1_Spacer": "{{i18n: BFM.CTDialogue.Lewis.Level1|MarketName={{MarketNameToken}}}}",
+				"BFM_MarketLevel_2_Spacer": "{{i18n: BFM.CTDialogue.Lewis.Level2|MarketName={{MarketNameToken}}}}",
+				"BFM_MarketLevel_3_Spacer": "{{i18n: BFM.CTDialogue.Lewis.Level3|MarketName={{MarketNameToken}}}}",
+				"BFM_MarketLevel_4_Spacer": "{{i18n: BFM.CTDialogue.Lewis.Level4|MarketName={{MarketNameToken}}}}" 
+			}
+		},
+		{
+			"LogName": "Progression Mode CTs",
+			"Action": "EditData",
+			"Target": "Characters/Dialogue/Pierre",
+			"Entries": {
+				"BFM_MarketLevel_1_Spacer": "{{i18n: BFM.CTDialogue.Pierre.Level1|MarketName={{MarketNameToken}}}}",
+				"BFM_MarketLevel_4_Spacer": "{{i18n: BFM.CTDialogue.Pierre.Level4}}"
+			}
+		},
+		{
+			"LogName": "Progression Mode CTs",
+			"Action": "EditData",
+			"Target": "Characters/Dialogue/Robin",
+			"Entries": {
+				"BFM_MarketLevel_1_Spacer": "{{i18n: BFM.CTDialogue.Robin.Level1}}",
+				"BFM_MarketLevel_2_Spacer": "{{i18n: BFM.CTDialogue.Robin.Level2|MarketName={{MarketNameToken}}}}"
+			}
+		},
+		{
+			"LogName": "Progression Mode CTs",
+			"Action": "EditData",
+			"Target": "Characters/Dialogue/Marnie",
+			"Entries": {
+				"BFM_MarketLevel_1_Spacer": "{{i18n: BFM.CTDialogue.Marnie.Level1}}",
+				"BFM_MarketLevel_2_Spacer": "{{i18n: BFM.CTDialogue.Marnie.Level2}}",
+				"BFM_MarketLevel_4_Spacer": "{{i18n: BFM.CTDialogue.Marnie.Level4}}"
+			}
+		},
+		{
+			"LogName": "Progression Mode CTs",
+			"Action": "EditData",
+			"Target": "Characters/Dialogue/Clint",
+			"Entries": {
+				"BFM_MarketLevel_1_Spacer": "{{i18n: BFM.CTDialogue.Clint.Level1|MarketName={{MarketNameToken}}}}",
+				"BFM_MarketLevel_2_Spacer": "{{i18n: BFM.CTDialogue.Clint.Level2}}"
+			}
+		},
+		{
+			"LogName": "Progression Mode CTs",
+			"Action": "EditData",
+			"Target": "Characters/Dialogue/Willy",
+			"Entries": {
+				"BFM_MarketLevel_1_Spacer": "{{i18n: BFM.CTDialogue.Willy.Level1}}",
+				"BFM_MarketLevel_3_Spacer": "{{i18n: BFM.CTDialogue.Willy.Level3}}"
+			}
+		},
+		{
+			"LogName": "Progression Mode CTs",
+			"Action": "EditData",
+			"Target": "Characters/Dialogue/Gus",
+			"Entries": {
+				"BFM_MarketLevel_1_Spacer": "{{i18n: BFM.CTDialogue.Gus.Level1}}",
+				"BFM_MarketLevel_3_Spacer": "{{i18n: BFM.CTDialogue.Gus.Level3}}"
+			}
+		},
+		{
+			"LogName": "Progression Mode CTs",
+			"Action": "EditData",
+			"Target": "Characters/Dialogue/Caroline",
+			"Entries": {
+				"BFM_MarketLevel_1_Spacer": "{{i18n: BFM.CTDialogue.Caroline.Level1}}",
+				"BFM_MarketLevel_4_Spacer": "{{i18n: BFM.CTDialogue.Caroline.Level4}}"
+			}
+		},
+		{
+			"LogName": "Progression Mode CTs",
+			"Action": "EditData",
+			"Target": "Characters/Dialogue/Jas",
+			"Entries": {
+				"BFM_MarketLevel_4_Spacer": "{{i18n: BFM.CTDialogue.Jas.Level4}}"
+			}
+		},
+		{
+			"LogName": "Progression Mode CTs",
+			"Action": "EditData",
+			"Target": "Characters/Dialogue/Vincent",
+			"Entries": {
+				"BFM_MarketLevel_4_Spacer": "{{i18n: BFM.CTDialogue.Vincent.Level4}}"
+			}
+		},
+		{
+			"LogName": "Progression Mode CTs",
+			"Action": "EditData",
+			"Target": "Characters/Dialogue/Jodi",
+			"Entries": {
+				"BFM_MarketLevel_4_Spacer": "{{i18n: BFM.CTDialogue.Jodi.Level4|MarketName={{MarketNameToken}}}}"
+			}
+		},
+		{
+			"LogName": "Progression Mode CTs",
+			"Action": "EditData",
+			"Target": "Characters/Dialogue/Kent",
+			"Entries": {
+				"BFM_MarketLevel_4_Spacer": "{{i18n: BFM.CTDialogue.Kent.Level4}}"
+			}
+		},
+		{
+			"LogName": "Progression Mode CTs",
+			"Action": "EditData",
+			"Target": "Characters/Dialogue/Emily",
+			"Entries": {
+				"BFM_MarketLevel_4_Spacer": "{{i18n: BFM.CTDialogue.Emily.Level4}}"
+			}
+		},
+		{
+			"LogName": "Progression Mode CTs",
+			"Action": "EditData",
+			"Target": "Characters/Dialogue/Haley",
+			"Entries": {
+				"BFM_MarketLevel_4_Spacer": "{{i18n: BFM.CTDialogue.Haley.Level4}}"
+			}
+		},
+		{
+			"LogName": "Progression Mode CTs",
+			"Action": "EditData",
+			"Target": "Characters/Dialogue/Alex",
+			"Entries": {
+				"BFM_MarketLevel_4_Spacer": "{{i18n: BFM.CTDialogue.Alex.Level4}}"
+			}
+		},
+		{
+			"LogName": "Progression Mode CTs",
+			"Action": "EditData",
+			"Target": "Characters/Dialogue/Abigail",
+			"Entries": {
+				"BFM_MarketLevel_4_Spacer": "{{i18n: BFM.CTDialogue.Abigail.Level4}}"
+			}
+		},
+		{
+			"LogName": "Progression Mode CTs",
+			"Action": "EditData",
+			"Target": "Characters/Dialogue/Elliott",
+			"Entries": {
+				"BFM_MarketLevel_4_Spacer": "{{i18n: BFM.CTDialogue.Elliott.Level4}}"
+			}
+		},
+		{
+			"LogName": "Progression Mode CTs",
+			"Action": "EditData",
+			"Target": "Characters/Dialogue/Leah",
+			"Entries": {
+				"BFM_MarketLevel_4_Spacer": "{{i18n: BFM.CTDialogue.Leah.Level4}}"
+			}
+		},
+		{
+			"LogName": "Progression Mode CTs",
+			"Action": "EditData",
+			"Target": "Characters/Dialogue/Demetrius",
+			"Entries": {
+				"BFM_MarketLevel_2_Spacer": "{{i18n: BFM.CTDialogue.Demetrius.Level2}}"
+			}
+		},
+		{
+			"LogName": "Progression Mode CTs",
+			"Action": "EditData",
+			"Target": "Characters/Dialogue/Penny",
+			"Entries": {
+				"BFM_MarketLevel_4_Spacer": "{{i18n: BFM.CTDialogue.Penny.Level4}}"
+			}
+		}
+	]
+}

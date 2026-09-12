@@ -1,0 +1,11 @@
+{
+  "config.Enable.name": "Enable",
+
+  "config.Remove Kitchen.name": "Remove Kitchen",
+  "config.Remove Kitchen.description": "Empty out your fridge before selecting this option or else you will lose everything in it!",
+
+  "Jen.FirstFarmhouse_AddHallway": "Add South Hallway/Adds a small hallway between the Living Room and the Bedroom./Select an area for the renovation.",
+  "Jen.FirstFarmhouse_RemoveHallway": "Remove South Hallway/Removes the small hallway between the Living Room and the Bedroom./Select an area for the renovation.",
+  "Jen.FirstFarmhouse_AddGreenhouse": "Add Greenhouse/Adds a small Greenhouse to the corner room of your house./Select an area for the renovation.",
+  "Jen.FirstFarmhouse_RemoveGreenhouse": "Remove Greenhouse/Removes the small Greenhouse in the corner room of your house./Select an area for the renovation."
+}

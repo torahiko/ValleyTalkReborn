@@ -1,0 +1,11 @@
+{
+	"Name": "Em's Ducks",
+	"Author": "RivalRabbit",
+	"Version": "1.5",
+	"Description": "Retexture of the duck",
+	"UniqueID": "RivalRabbit.EmsDucksCP",
+		"UpdateKeys": [ "Nexus:33766" ],
+	"ContentPackFor": {
+		"UniqueID": "Pathoschild.ContentPatcher"
+	}
+}

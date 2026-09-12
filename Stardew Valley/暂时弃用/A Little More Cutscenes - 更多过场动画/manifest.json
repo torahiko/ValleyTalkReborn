@@ -1,0 +1,11 @@
+{
+  "Name": "A Little More Cutscenes",
+  "Author": "Zilch",
+  "Description": "Adds a variety of new events, short stories, and character interactions in various situations.",
+  "Version": "1.4.0",
+  "UniqueID": "Zilch.ALittleMoreCutscenes",
+  "ContentPackFor": {
+    "UniqueID": "Pathoschild.ContentPatcher"
+  },
+  "UpdateKeys": ["Nexus:30369"]
+}

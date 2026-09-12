@@ -1,0 +1,25 @@
+{
+  "Changes": [
+    {
+      "Action": "EditData",
+      "Target": "Data/TriggerActions",
+      "Entries": {
+        "{{ModId}}_AviroenWasHere": {
+          "Id": "{{ModId}}_AviroenWasHere",
+          "Trigger": "DayEnding",
+          "Condition": "ANY \"PLAYER_HAS_MAIL any Aviroen.LanceExpanded_4Heart Received\" \"PLAYER_HAS_MAIL any Aviroen.LSSE_4Heart Received\"",
+          "Actions": [
+            "AddMail Current {{ModId}}_Aviroen tomorrow"
+          ]
+        }
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/Mail",
+      "Entries": {
+        "{{ModId}}_Aviroen": "{{i18n:AviroenWasHere}} %item id (O)FlashShifter.StardewValleyExpandedCP_Butterfish 1 %%[#]{{i18n:AviroenWasHereTitle}}"
+      }
+    }
+  ]
+}

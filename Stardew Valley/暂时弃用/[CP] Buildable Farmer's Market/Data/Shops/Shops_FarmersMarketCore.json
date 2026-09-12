@@ -1,0 +1,504 @@
+{
+    "Changes": [
+        {
+            "LogName": "Add Farmer's Market Core Shops",
+            "Action": "EditData",
+            "Target": "Data/Shops",
+            "Entries": {
+                "{{ModID}}_FMC_MushroomShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_MushroomShop1",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target item_red_mushroom",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMC_MushroomShop2",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target mushroom_item",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMC_MushroomShop3",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target edible_mushroom",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMC_MushroomShop4",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target id_(o)driedmushrooms",
+                            "AvoidRepeat": true
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "mushroom_item",
+                        "edible_mushroom",
+                        "item_red_mushroom",
+                        "id_(o)driedmushrooms"
+                    ]
+                },
+                "{{ModID}}_FMC_SpringCropsShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_SpringCropsShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_vegetable season_spring"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "category_vegetable, season_spring"
+                    ]
+                },
+                "{{ModID}}_FMC_SummerCropsShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_SummerCropsShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_vegetable season_summer !item_fiddlehead_fern"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "category_vegetable, season_summer, !item_fiddlehead_fern"
+                    ]
+                },
+                "{{ModID}}_FMC_FallCropsShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_FallCropsShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_vegetable season_fall"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "category_vegetable, season_fall"
+                    ]
+                },
+                "{{ModID}}_FMC_AllCropsShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_AllCropsShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_vegetable"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "category_vegetable"
+                    ]
+                },
+                "{{ModID}}_FMC_OilShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_OilShop2",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target item_oil"
+                        },
+                        {
+                            "Id": "{{ModID}}_FMC_OilShop3",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target item_truffle_oil"
+                        },
+                        {
+                            "Id": "{{ModID}}_FMC_OilShop1",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target oil_item",
+                            "AvoidRepeat": true
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "oil_item",
+                        "item_oil",
+                        "item_truffle_oil"
+                    ]
+                },
+                "{{ModID}}_FMC_JellyShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_JellyShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target jelly_item"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "jelly_item"
+                    ]
+                },
+                "{{ModID}}_FMC_HoneyShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_HoneyShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target honey_item"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "honey_item"
+                    ]
+                },
+                "{{ModID}}_FMC_JuiceShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_JuiceShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target juice_item"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "juice_item"
+                    ]
+                },
+                "{{ModID}}_FMC_PickleShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_PickleShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target pickle_item"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "pickle_item"
+                    ]
+                },
+                "{{ModID}}_FMC_ArtisanGoodsShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_ArtisanGoodsShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_artisan_goods"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "category_artisan_goods"
+                    ]
+                },
+                "{{ModID}}_FMC_ForageShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_ForageShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target forage_item !mushroom_item !edible_mushroom !forage_item_beach"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "forage_item, !mushroom_item, !edible_mushroom, !forage_item_beach"
+                    ]
+                },
+                "{{ModID}}_FMC_BerryShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_BerryShop1",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target item_salmonberry"
+                        },
+                        {
+                            "Id": "{{ModID}}_FMC_BerryShop2",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target item_spice_berry"
+                        },
+                        {
+                            "Id": "{{ModID}}_FMC_BerryShop3",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target item_strawberry"
+                        },
+                        {
+                            "Id": "{{ModID}}_FMC_BerryShop4",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target item_blueberry"
+                        },
+                        {
+                            "Id": "{{ModID}}_FMC_BerryShop5",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target item_blackberry"
+                        },
+                        {
+                            "Id": "{{ModID}}_FMC_BerryShop6",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target item_sweet_gem_berry"
+                        },
+                        {
+                            "Id": "{{ModID}}_FMC_BerryShop7",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target item_cranberries"
+                        },
+                        {
+                            "Id": "{{ModID}}_FMC_BerryShop8",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target berry_item",
+                            "AvoidRepeat": true
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "berry_item",
+                        "item_salmonberry",
+                        "item_spice_berry",
+                        "item_cranberries",
+                        "item_strawberry",
+                        "item_blueberry",
+                        "item_blackberry",
+                        "item_sweet_gem_berry"
+                    ]
+                },
+                "{{ModID}}_FMC_EggShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_EggShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_egg"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "category_egg"
+                    ]
+                },
+                "{{ModID}}_FMC_MilkShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_MilkShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_milk"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "category_milk"
+                    ]
+                },
+                "{{ModID}}_FMC_AnimalGoodsShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_AnimalGoodsShop1",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_egg"
+                        },
+                        {
+                            "Id": "{{ModID}}_FMC_AnimalGoodsShop2",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_milk"
+                        },
+                        {
+                            "Id": "{{ModID}}_FMC_AnimalGoodsShop3",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_sell_at_pierres_and_marnies",
+                            "AvoidRepeat": true
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "category_egg",                        
+                        "category_milk",
+                        "category_sell_at_pierres_and_marnies"
+                    ]
+                },
+                "{{ModID}}_FMC_SpringFruitShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_SpringFruitShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_fruits season_spring"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "category_fruits, season_spring"
+                    ]
+                },
+                "{{ModID}}_FMC_SummerFruitShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_SummerFruitShop1",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target item_mango"
+                        },
+                        {
+                            "Id": "{{ModID}}_FMC_SummerFruitShop2",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target item_pineapple"
+                        },
+                        {
+                            "Id": "{{ModID}}_FMC_SummerFruitShop3",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_fruits season_summer",
+                            "AvoidRepeat": true
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "category_fruits, season_summer, !item_fiddlehead_fern",
+                        "item_mango",
+                        "item_pineapple"
+                    ]
+                },
+                "{{ModID}}_FMC_FallFruitShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_FallFruitShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_fruits season_fall"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "category_fruits, season_fall"
+                    ]
+                },
+                "{{ModID}}_FMC_AllFruitShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_AllFruitShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_fruits !id_(o)889"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "category_fruits, !id_(o)889"
+                    ]
+                },
+                "{{ModID}}_FMC_FlowerShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_FlowerShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_flowers"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "category_flowers"
+                    ]
+                }
+            }
+        }
+    ]
+}

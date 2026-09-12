@@ -1,0 +1,397 @@
+{
+	"Format": "2.3.0",
+//設定
+	"ConfigSchema": 
+	{
+		"EnableMod": 
+		{
+		"AllowValues": "true, false",
+		"Default": "true",
+		"Description": "Enable all features of this mod. (Default: true)"
+		},
+		"YearRoundItems": 
+		{
+		"AllowValues": "true, false",
+		"Default": "true",
+		"Description": "Enable items available year-round. (Default: true)"
+		},
+		"SeasonalItems": 
+		{
+		"AllowValues": "true, false",
+		"Default": "true",
+		"Description": "Enable items only available in specific seasons. (Default: true)"
+		},
+		"WeekdayDependentItems": 
+		{
+		"AllowValues": "true, false",
+		"Default": "true",
+		"Description": "Enable items only available on specific days of the week. (Default: true)"
+		},
+		"SpecialItems": 
+		{
+		"AllowValues": "true, false",
+		"Default": "true",
+		"Description": "Enable items only available on specific dates. (Default: true)"
+		}	
+	},
+//ここからMod本体
+	"Changes": 
+	[
+//アイスクリーム価格変更 (EnableMod)
+	{
+		"Action": "EditData",
+		"Target": "Data/Shops",
+		"TargetField": [ "IceCreamStand", "Items" ],
+		"When": { "EnableMod": "true" },
+		"Fields": 
+		{
+			"(O)233": 
+			{
+				"Price": 180
+			}
+		}
+	},
+//通年商品 (YearRoundItems)
+	{
+		"Action": "EditData",
+		"Target": "Data/Shops",
+		"TargetField": [ "IceCreamStand", "Items" ],
+		"When": { "EnableMod": "true", "YearRoundItems": "true" },
+		"Entries": 
+		{
+			"AICSSAFMI_Cookies": 
+			{
+				"Price": 210,
+				"Id": "AICSSAFMI_Cookies",
+				"ItemId": "(O)223"
+			},
+			"AICSSAFMI_FieldSnack": 
+			{
+				"Price": 30,
+				"Id": "AICSSAFMI_FieldSnack",
+				"ItemId": "(O)403"
+			},
+			"AICSSAFMI_GingerAle": 
+			{
+				"Price": 300,
+				"Id": "AICSSAFMI_GingerAle",
+				"ItemId": "(O)903"
+			},
+			"AICSSAFMI_Egg": 
+			{
+				"Price": 75,
+				"Id": "AICSSAFMI_Egg",
+				"ItemId": "(O)176"
+			},
+			"AICSSAFMI_Mayonnaise": 
+			{
+				"Price": 285,
+				"Id": "AICSSAFMI_Mayonnaise",
+				"ItemId": "(O)306"
+			}
+		}
+	},
+//季節商品 (SeasonalItems)
+	{
+		"Action": "EditData",
+		"Target": "Data/Shops",
+		"TargetField": [ "IceCreamStand", "Items" ],
+		"When": { "EnableMod": "true", "SeasonalItems": "true" },
+		"Entries": 
+		{
+			"AICSSAFMI_Tulip": 
+			{
+				"AvailableStock": 1,
+				"Condition": "SEASON spring",
+				"Id": "AICSSAFMI_Tulip",
+				"ItemId": "(O)591"
+			},
+			"AICSSAFMI_Leek": 
+			{
+				"AvailableStock": 1,
+				"Condition": "SEASON spring",
+				"Id": "AICSSAFMI_Leek",
+				"ItemId": "(O)20"
+			},
+			"AICSSAFMI_SummerSpangle": 
+			{
+				"AvailableStock": 1,
+				"Condition": "SEASON summer",
+				"Id": "AICSSAFMI_SummerSpangle",
+				"ItemId": "(O)593"
+			},
+			"AICSSAFMI_Raisins": 
+			{
+				"AvailableStock": 1,
+				"Condition": "SEASON summer fall",
+				"Id": "AICSSAFMI_Raisins",
+				"ItemId": "(O)Raisins"
+			},
+			"AICSSAFMI_FairyRose": 
+			{
+				"AvailableStock": 1,
+				"Condition": "SEASON fall",
+				"Id": "AICSSAFMI_FairyRose",
+				"ItemId": "(O)595"
+			},
+			"AICSSAFMI_Parsnip": 
+			{
+				"AvailableStock": 1,
+				"Condition": "SEASON winter, !YEAR 2",
+				"Id": "AICSSAFMI_Parsnip",
+				"ItemId": "(O)24",
+				"Quality": 2
+			},
+			"AICSSAFMI_Melon": 
+			{
+				"AvailableStock": 1,
+				"Condition": "SEASON winter, !YEAR 2",
+				"Id": "AICSSAFMI_Melon",
+				"ItemId": "(O)254",
+				"Quality": 2
+			},
+			"AICSSAFMI_Pumpkin": 
+			{
+				"AvailableStock": 1,
+				"Condition": "SEASON winter, !YEAR 2",
+				"Id": "AICSSAFMI_Pumpkin",
+				"ItemId": "(O)276",
+				"Quality": 2
+			},
+			"AICSSAFMI_Corn": 
+			{
+				"AvailableStock": 1,
+				"Condition": "SEASON winter, !YEAR 2",
+				"Id": "AICSSAFMI_Corn",
+				"ItemId": "(O)270",
+				"Quality": 2
+			},
+			"AICSSAFMI_Pineapple": 
+			{
+				"AvailableStock": 1,
+				"Condition": "SEASON winter, YEAR 2",
+				"Id": "AICSSAFMI_Pineapple",
+				"ItemId": "(O)832"
+			},
+			"AICSSAFMI_Mango": 
+			{
+				"AvailableStock": 1,
+				"Condition": "SEASON winter, YEAR 2",
+				"Id": "AICSSAFMI_Mango",
+				"ItemId": "(O)834"
+			}
+		}
+	},
+//週替商品 (Weekday-DependentItems)
+	{
+		"Action": "EditData",
+		"Target": "Data/Shops",
+		"TargetField": [ "IceCreamStand", "Items" ],
+		"When": { "EnableMod": "true", "WeekdayDependentItems": "true" },
+		"Entries": 
+		{
+			"AICSSAFMI_Hashbrowns": 
+			{
+				"AvailableStock": 3,
+				"Condition": "DAY_OF_WEEK Monday",
+				"Id": "AICSSAFMI_Hashbrowns",
+				"ItemId": "(O)210"
+			},
+			"AICSSAFMI_SurvivalBurger": 
+			{
+				"AvailableStock": 1,
+				"Condition": "DAY_OF_WEEK Monday",
+				"Id": "AICSSAFMI_SurvivalBurger",
+				"ItemId": "(O)241"
+			},
+			"AICSSAFMI_FishTaco": 
+			{
+				"AvailableStock": 3,
+				"Condition": "DAY_OF_WEEK Tuesday",
+				"Id": "AICSSAFMI_FishTaco",
+				"ItemId": "(O)213"
+			},
+			"AICSSAFMI_MapleBar": 
+			{
+				"AvailableStock": 1,
+				"Condition": "DAY_OF_WEEK Tuesday",
+				"Id": "AICSSAFMI_MapleBar",
+				"ItemId": "(O)731"
+			},
+			"AICSSAFMI_PinaColada": 
+			{
+				"AvailableStock": 3,
+				"Condition": "DAY_OF_WEEK Wednesday",
+				"Id": "AICSSAFMI_PinaColada",
+				"ItemId": "(O)873"
+			},
+			"AICSSAFMI_FruitSalad": 
+			{
+				"AvailableStock": 1,
+				"Condition": "DAY_OF_WEEK Wednesday",
+				"Id": "AICSSAFMI_FruitSalad",
+				"ItemId": "(O)610"
+			},
+			"AICSSAFMI_SpicyEel": 
+			{
+				"AvailableStock": 3,
+				"Condition": "DAY_OF_WEEK Thursday",
+				"Id": "AICSSAFMI_SpicyEel",
+				"ItemId": "(O)226"
+			},
+			"AICSSAFMI_CranberryCandy": 
+			{
+				"AvailableStock": 1,
+				"Condition": "DAY_OF_WEEK Thursday",
+				"Id": "AICSSAFMI_CranberryCandy",
+				"ItemId": "(O)612"
+			},
+			"AICSSAFMI_RicePudding": 
+			{
+				"AvailableStock": 3,
+				"Condition": "DAY_OF_WEEK Friday",
+				"Id": "AICSSAFMI_RicePudding",
+				"ItemId": "(O)232"
+			},
+			"AICSSAFMI_BananaPudding": 
+			{
+				"AvailableStock": 1,
+				"Condition": "DAY_OF_WEEK Friday",
+				"Id": "AICSSAFMI_BananaPudding",
+				"ItemId": "(O)904"
+			},
+			"AICSSAFMI_RhubarbPie": 
+			{
+				"AvailableStock": 3,
+				"Condition": "DAY_OF_WEEK Saturday",
+				"Id": "AICSSAFMI_RhubarbPie",
+				"ItemId": "(O)222"
+			},
+			"AICSSAFMI_PumpkinPie": 
+			{
+				"AvailableStock": 1,
+				"Condition": "DAY_OF_WEEK Saturday",
+				"Id": "AICSSAFMI_PumpkinPie",
+				"ItemId": "(O)608"
+			},
+
+			"AICSSAFMI_BlueberryTart": 
+			{
+				"AvailableStock": 3,
+				"Condition": "DAY_OF_WEEK Sunday",
+				"Id": "AICSSAFMI_BlueberryTart",
+				"ItemId": "(O)234"
+			},
+
+			"AICSSAFMI_BlackberryCobbler": 
+			{
+				"AvailableStock": 1,
+				"Condition": "DAY_OF_WEEK Sunday",
+				"Id": "AICSSAFMI_BlackberryCobbler",
+				"ItemId": "(O)611"
+			}
+		}
+	},
+//スペシャル商品 (SpecialItems)
+	{
+		"Action": "EditData",
+		"Target": "Data/Shops",
+		"TargetField": [ "IceCreamStand", "Items" ],
+		"When": { "EnableMod": "true", "SpecialItems": "true" },
+		"Entries": 
+		{
+			"AICSSAFMI_CompleteBreakfast": 
+			{
+				"AvailableStock": 1,
+				"Condition": "SEASON_DAY Summer 13",
+				"Id": "AICSSAFMI_CompleteBreakfast",
+				"ItemId": "(O)201"
+			},
+			"AICSSAFMI_SalmonDinner": 
+			{
+				"AvailableStock": 1,
+				"Condition": "SEASON_DAY Summer 13",
+				"Id": "AICSSAFMI_SalmonDinner",
+				"ItemId": "(O)212"
+			},
+			"AICSSAFMI_MagicRockCandy": 
+			{
+				"AvailableStock": 1,
+				"Condition": "SEASON_DAY Summer 28",
+				"Id": "AICSSAFMI_MagicRockCandy",
+				"ItemId": "(O)279"
+			},
+			"AICSSAFMI_FriedMushroom": 
+			{
+				"AvailableStock": 1,
+				"Condition": "SEASON_DAY Fall 24",
+				"Id": "AICSSAFMI_FriedMushroom",
+				"ItemId": "(O)205"
+			},
+			"AICSSAFMI_ChocolateCake": 
+			{
+				"AvailableStock": 1,
+				"Condition": "SEASON_DAY Winter 20",
+				"Id": "AICSSAFMI_ChocolateCake",
+				"ItemId": "(O)220"
+			},
+			"AICSSAFMI_PlumPudding": 
+			{
+				"AvailableStock": 1,
+				"Condition": "SEASON_DAY Winter 21 Winter 22 Winter 23 Winter 24 Winter 25 Winter 26 Winter 27 Winter 28",
+				"Id": "AICSSAFMI_PlumPudding",
+				"ItemId": "(O)604"
+			}
+		}
+	},
+//商品並替
+	{
+		"Action": "EditData",
+		"Target": "Data/Shops",
+		"TargetField": [ "IceCreamStand", "Items" ],
+		"MoveEntries": 
+		[
+			{ "Id": "AICSSAFMI_FieldSnack", "AfterId": "(O)233" },
+			{ "Id": "AICSSAFMI_GingerAle", "AfterId": "AICSSAFMI_FieldSnack" },
+			{ "Id": "AICSSAFMI_Egg", "AfterId": "AICSSAFMI_GingerAle" },
+			{ "Id": "AICSSAFMI_Mayonnaise", "AfterId": "AICSSAFMI_Egg" },
+//商品並替 季節商品 (SeasonalItems)
+			{ "Id": "AICSSAFMI_Tulip", "AfterId": "(O)233" },
+			{ "Id": "AICSSAFMI_Leek", "AfterId": "AICSSAFMI_Tulip" },
+			{ "Id": "AICSSAFMI_Raisins", "AfterId": "(O)233" },
+			{ "Id": "AICSSAFMI_SummerSpangle", "AfterId": "AICSSAFMI_Raisins" },
+			{ "Id": "AICSSAFMI_FairyRose", "AfterId": "AICSSAFMI_Raisins" },
+			{ "Id": "AICSSAFMI_Parsnip", "AfterId": "(O)233" },
+			{ "Id": "AICSSAFMI_Melon", "AfterId": "AICSSAFMI_Parsnip" },
+			{ "Id": "AICSSAFMI_Pumpkin", "AfterId": "AICSSAFMI_Melon" },
+			{ "Id": "AICSSAFMI_Corn", "AfterId": "AICSSAFMI_Pumpkin" },
+			{ "Id": "AICSSAFMI_Pineapple", "AfterId": "(O)233" },
+			{ "Id": "AICSSAFMI_Mango", "AfterId": "AICSSAFMI_Pineapple" },
+//商品並替 週替商品 (Weekday-DependentItems)
+			{ "Id": "AICSSAFMI_Hashbrowns", "AfterId": "(O)233" },
+			{ "Id": "AICSSAFMI_SurvivalBurger", "AfterId": "AICSSAFMI_Hashbrowns" },
+			{ "Id": "AICSSAFMI_FishTaco", "AfterId": "(O)233" },
+			{ "Id": "AICSSAFMI_MapleBar", "AfterId": "AICSSAFMI_FishTaco" },
+			{ "Id": "AICSSAFMI_PinaColada", "AfterId": "(O)233" },
+			{ "Id": "AICSSAFMI_FruitSalad", "AfterId": "AICSSAFMI_PinaColada" },
+			{ "Id": "AICSSAFMI_SpicyEel", "AfterId": "(O)233" },
+			{ "Id": "AICSSAFMI_CranberryCandy", "AfterId": "AICSSAFMI_SpicyEel" },
+			{ "Id": "AICSSAFMI_RicePudding", "AfterId": "(O)233" },
+			{ "Id": "AICSSAFMI_BananaPudding", "AfterId": "AICSSAFMI_RicePudding" },
+			{ "Id": "AICSSAFMI_RhubarbPie", "AfterId": "(O)233" },
+			{ "Id": "AICSSAFMI_PumpkinPie", "AfterId": "AICSSAFMI_RhubarbPie" },
+			{ "Id": "AICSSAFMI_BlueberryTart", "AfterId": "(O)233" },
+			{ "Id": "AICSSAFMI_BlackberryCobbler", "AfterId": "AICSSAFMI_BlueberryTart" },
+//商品並替 スペシャル商品 (SpecialItems)
+			{ "Id": "AICSSAFMI_CompleteBreakfast", "AfterId": "(O)233" },
+			{ "Id": "AICSSAFMI_SalmonDinner", "AfterId": "AICSSAFMI_CompleteBreakfast" },
+			{ "Id": "AICSSAFMI_MagicRockCandy", "AfterId": "(O)233" },
+			{ "Id": "AICSSAFMI_FriedMushroom", "AfterId": "(O)233" },
+			{ "Id": "AICSSAFMI_ChocolateCake", "AfterId": "(O)233" },
+			{ "Id": "AICSSAFMI_PlumPudding", "AfterId": "(O)233" },
+//商品並替 通年商品 (YearRoundItems)
+			{ "Id": "AICSSAFMI_Cookies", "AfterId": "(O)233" }
+		]
+	}
+	]
+}

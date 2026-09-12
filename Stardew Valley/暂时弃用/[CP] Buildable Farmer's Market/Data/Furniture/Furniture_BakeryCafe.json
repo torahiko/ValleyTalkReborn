@@ -1,0 +1,162 @@
+{
+    "Changes": [
+    // CATALOGUE DATA
+        {
+            "LogName": "Add Bakery & Cafe Calcifer Data",
+            "Action": "EditData",
+            "Target": "sophie.Calcifer/FurnitureActions",
+            "Entries": {
+            // BREAD
+                "(F)HXW.BakeryFurni_BaggedBakeryShelf1": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BakeryFurni_LgBakeryShelf1": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BakeryFurni_LgBakeryShelf2": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BakeryFurni_LgBakeryShelf3": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BakeryFurni_BreadCounter": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BakeryFurni_MedBakeryDisplayCounter": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadShop"
+                        }
+                    ]
+                },
+            // SWEET BAKED GOODS
+                "(F)HXW.BakeryFurni_MediumBakeryCabinet": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BakeryFurni_BaggedBakeryShelf2": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BakeryFurni_BakeryCounterwithMenu": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BakeryFurni_GlassBakeryDisplayCounter": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BakeryFurni_GlassBakeryDisplaywithJars": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BakeryFurni_GlassBakeryDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BakeryFurni_TwoTierDessertStand": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BakeryFurni_ThreeTierDessertStand": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BakeryFurni_EclairTray": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BakeryFurni_CupcakeTray": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BakeryFurni_SmBakeryDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BakeryFurni_MedBakeryDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BakeryFurni_SmCakeDisplayCounter": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+                "(F)HXW.BakeryFurni_SmCakeDisplayCounter2": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_SweetBakeryShop"
+                        }
+                    ]
+                },
+            // MIXED BAKERY
+                "(F)HXW.BakeryFurni_SmBreadJamDisplayCounter": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMB_BreadJamShop"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

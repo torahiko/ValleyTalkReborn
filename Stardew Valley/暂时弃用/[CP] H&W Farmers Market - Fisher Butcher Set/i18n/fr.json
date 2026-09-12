@@ -1,0 +1,120 @@
+{
+
+  "FM_FisherButcher_HalibutBasket": "Panier de flétans",
+  
+  "FM_FisherButcher_ShrimpBasket": "Panier de crevettes",
+
+  "FM_FisherButcher_HerringBasket": "Panier de harengs",
+
+  "FM_FisherButcher_SalmonBasket": "Panier de saumons",
+
+  "FM_FisherButcher_PikeBasket": "Panier de brochets",
+
+  "FM_FisherButcher_EelBasket": "Panier d'anguilles",
+
+  "FM_FisherButcher_ChubBasket": "Panier de chevesnes",
+
+  "FM_FisherButcher_OctopusBasket": "Panier de poulpes",
+
+  "FM_FisherButcher_SturgeonBasket": "Panier d'esturgeons",
+
+  "FM_FisherButcher_MixFishBasket": "Panier de poissons divers",
+
+  "FM_FisherButcher_LobsterBasket": "Panier de homards",
+
+  "FM_FisherButcher_SmPeriwinkleBasket": "Petit panier de bigorneaux",
+
+  "FM_FisherButcher_SmMusselBasket": "Petit panier de moules",
+
+  "FM_FisherButcher_SmAlgaeBasket": "Petit panier d'algue verte",
+
+  "FM_FisherButcher_SmRoeBasket": "Petit panier d'œufs de poisson",
+
+  "FM_FisherButcher_SmClamBasket": "Petit panier de palourdes",
+
+  "FM_FisherButcher_SmOysterBasket": "Petit panier d'huîtres",
+
+  "FM_FisherButcher_SmOysterBasket2": "Petit panier d'huîtres",
+
+  "FM_FisherButcher_SmSeaweedBasket": "Petit panier d'algue",
+
+  "FM_FisherButcher_SmAnchovyBasket": "Petit panier d'anchois",
+
+  "FM_FisherButcher_SmSardineBasket": "Petit panier de sardines",
+
+  "FM_FisherButcher_SmBassBasket": "Petit panier d'achigans",
+
+  "FM_FisherButcher_SmSnapperBasket": "Petit panier de vivaneaux",
+
+  "FM_FisherButcher_SmShrimpBasket": "Petit panier de crevettes",
+
+  "FM_FisherButcher_SmSquidBasket": "Petit panier de calmars",
+
+  "FM_FisherButcher_SmFlounderBasket": "Petit panier de flets",
+
+  "FM_FisherButcher_SmUrchinBasket": "Petit panier d'oursins",
+
+  "FM_FisherButcher_SmCrabBasket": "Petit panier de crabes",
+
+  "FM_FisherButcher_ChickenBasket": "Panier de viande de poulet",
+
+  "FM_FisherButcher_ChickenLegBasket": "Panier de cuisses de poulet",
+
+  "FM_FisherButcher_SteakBasket": "Panier de steaks",
+
+  "FM_FisherButcher_MeatBasket": "Panier de viande rouge",
+
+  "FM_FisherButcher_RibsBasket": "Panier de travers de porc",
+
+  "FM_FisherButcher_PorkBasket": "Panier de viande de porc",
+
+  "FM_FisherButcher_PorkLoinBasket": "Panier de filet de porc",
+
+  "FM_FisherButcher_SmChickenBasket": "Petit panier de viande de poulet",
+
+  "FM_FisherButcher_SmMeatBasket": "Petit panier de viande rouge",
+
+  "FM_FisherButcher_SmBaconBasket": "Petit panier de bacon",
+
+  "FM_FisherButcher_SmHamBasket": "Petit panier de jambon",
+
+  "FM_FisherButcher_SquidBarrel": "Baril de calmars",
+
+  "FM_FisherButcher_FishBarrel": "Baril de poissons",
+
+  "FM_FisherButcher_PeriwinkleBarrel": "Baril de bigorneaux",
+
+  "FM_FisherButcher_ClamBarrel": "Baril de palourdes",
+
+  "FM_FisherButcher_SmDeliDisplay": "Petit présentoir de charcuterie",
+
+  "FM_FisherButcher_MedDeliDisplay": "Présentoir de charcuterie",
+
+  "FM_FisherButcher_MedFishDisplay": "Présentoir de poissonnerie",
+
+  "FM_FisherButcher_MedRoeDisplay": "Présentoir d'œufs de poisson",
+
+
+  "FM_FisherButcher_LgFreshDisplay": "Grand présentoir Fresh!",
+ 
+  "FM_FisherButcher_LgFishDisplay": "Grand présentoir de poissonnerie",
+ 
+  "FM_FisherButcher_LgPoultryDisplay": "Grand présentoir de volaillerie",
+ 
+  "FM_FisherButcher_LgMeatDisplay": "Grand présentoir de boucherie",
+ 
+
+//CRATES
+
+	"FM_FisherButcher_fish_crate": " en cageot",
+	"FM_FisherButcher_fish_crate.description": "Un cageot en bois rempli de .",
+
+//BASKETS
+
+	"FM_FisherButcher_fish_basket": "Panier de ",
+	"FM_FisherButcher_fish_basket.description": "Une corbeille tressée remplie de .",
+
+
+
+}
+  

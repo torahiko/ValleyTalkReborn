@@ -1,0 +1,124 @@
+{
+  "Format": "2.5.1",
+  "ConfigSchema": 
+  {
+    "Alex_Portrait": 
+    {
+      "AllowValues": "true, false",
+      "Default": true
+    },
+    "Clint_Portrait": 
+    {
+      "AllowValues": "true, false",
+      "Default": true
+    },
+    "Gus_Portrait": 
+    {
+      "AllowValues": "true, false",
+      "Default": true
+    },
+    "Shane_Portrait": 
+    {
+      "AllowValues": "true, false",
+      "Default": true
+    },
+  },
+  "Changes": [
+    {
+      "When": {
+        "Alex_Portrait": true
+      },
+      "Action": "EditImage",
+      "Target": "Portraits/Alex",
+      "FromFile": "assets/Portraits/Alex.png"
+    },
+    {
+      "When": {
+        "Alex_Portrait": true
+      },
+      "Action": "EditImage",
+      "Target": "Portraits/Alex_Beach",
+      "FromFile": "assets/Portraits/Alex_Beach.png"
+    },
+    {
+      "When": {
+        "Alex_Portrait": true
+      },
+      "Action": "EditImage",
+      "Target": "Portraits/Alex_Winter",
+      "FromFile": "assets/Portraits/Alex_Winter.png"
+    },
+    {
+      "When": {
+        "Clint_Portrait": true
+      },
+      "Action": "EditImage",
+      "Target": "Portraits/Clint",
+      "FromFile": "assets/Portraits/Clint.png"
+    },
+    {
+      "When": {
+        "Clint_Portrait": true
+      },
+      "Action": "EditImage",
+      "Target": "Portraits/Clint_Beach",
+      "FromFile": "assets/Portraits/Clint_Beach.png"
+    },
+    {
+      "When": {
+        "Clint_Portrait": true
+      },
+      "Action": "EditImage",
+      "Target": "Portraits/Clint_Winter",
+      "FromFile": "assets/Portraits/Clint_Winter.png"
+    },
+    {
+      "When": {
+        "Gus_Portrait": true
+      },
+      "Action": "EditImage",
+      "Target": "Portraits/Gus",
+      "FromFile": "assets/Portraits/Gus.png"
+    },
+    {
+      "When": {
+        "Gus_Portrait": true
+      },
+      "Action": "EditImage",
+      "Target": "Portraits/Gus_Winter",
+      "FromFile": "assets/Portraits/Gus_Winter.png"
+    },
+    {
+      "When": {
+        "Shane_Portrait": true
+      },
+      "Action": "EditImage",
+      "Target": "Portraits/Shane",
+      "FromFile": "assets/Portraits/Shane.png"
+    },
+    {
+      "When": {
+        "Shane_Portrait": true
+      },
+      "Action": "EditImage",
+      "Target": "Portraits/Shane_Beach",
+      "FromFile": "assets/Portraits/Shane_Beach.png"
+    },
+    {
+      "When": {
+        "Shane_Portrait": true
+      },
+      "Action": "EditImage",
+      "Target": "Portraits/Shane_JojaMart",
+      "FromFile": "assets/Portraits/Shane_JojaMart.png"
+    },
+    {
+      "When": {
+        "Shane_Portrait": true
+      },
+      "Action": "EditImage",
+      "Target": "Portraits/Shane_Winter",
+      "FromFile": "assets/Portraits/Shane_Winter.png"
+    }
+  ]
+}

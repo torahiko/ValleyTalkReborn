@@ -1,0 +1,70 @@
+{
+  "Changes": [
+    {
+      "Action": "EditImage",
+      "Target": "TileSheets/junimo_furniture",
+      "FromFile": "assets/TileSheets/junimo_furniture_portraits.png",
+      "Priority": "Late + 1",
+      "FromArea": {
+        "X": 23,
+        "Y": 103,
+        "Width": 18,
+        "Height": 18
+      },
+      "ToArea": {
+        "X": 55,
+        "Y": 375,
+        "Width": 18,
+        "Height": 18
+      }
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Characters/Leah",
+      "FromFile": "assets/Characters/Liam.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Characters/Leah_Beach",
+      "FromFile": "assets/Characters/Liam_Beach.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Characters/Leah_Winter",
+      "FromFile": "assets/Characters/Liam_Winter.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Portraits/Leah",
+      "FromFile": "assets/Portraits/Liam.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Portraits/Leah_Beach",
+      "FromFile": "assets/Portraits/Liam_Beach.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Portraits/Leah_Winter",
+      "FromFile": "assets/Portraits/Liam_Winter.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "LooseSprites/emojis",
+      "FromFile": "assets/LooseSprites/emojis_characters.png",
+      "Priority": "Late + 1",
+      "FromArea": {
+        "X": 27,
+        "Y": 27,
+        "Width": 9,
+        "Height": 9
+      },
+      "ToArea": {
+        "X": 27,
+        "Y": 99,
+        "Width": 9,
+        "Height": 9
+      }
+    }
+  ]
+}

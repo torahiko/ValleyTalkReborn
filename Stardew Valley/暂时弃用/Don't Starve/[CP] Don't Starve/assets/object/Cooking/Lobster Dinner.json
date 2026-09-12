@@ -1,0 +1,98 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "DS_Lobster_Dinner": {
+            "Name": "Lobster Dinner",
+            "DisplayName": "{{i18n:Lobster_Dinner.name}}",
+            "Description": "{{i18n:Lobster_Dinner.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 720,
+            "Texture": "Mods\\ZG.DS\\Lobster Dinner",
+            "SpriteIndex": 0,
+            "Edibility": 150,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": false,
+            "ExcludeFromShippingCollection": false,
+            "ExcludeFromRandomSale": false,
+            "Buffs": [
+              {
+                "Duration": 900,
+                "CustomAttributes": {
+                  "FarmingLevel": 0,
+                  "FishingLevel": 3,
+                  "MiningLevel": 0,
+                  "LuckLevel": 2,
+                  "ForagingLevel": 0,
+                  "MaxStamina": 0,
+                  "MagneticRadius": 0,
+                  "Speed": 1,
+                  "Defense": 5,
+                  "Attack": 0
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "Action": "EditData", 
+        "Target": "Data/CookingRecipes", 
+      
+        "Entries": { 
+          "Lobster Dinner":"715 1 DS_Butter 1/25 5/DS_Lobster_Dinner/" 
+        }
+      },
+          {
+              "Log": "Add Gift Tastes for NPCs",
+              "Action": "EditData",
+              "Target": "Data/NPCGiftTastes",
+              "TextOperations": [
+      { "Operation": "Append",
+                "Target": ["Entries", "Universal_like"],
+                "Value": " DS_Lobster_Dinner",
+                "Delimiter": " "
+              },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Linus", "5"],
+          "Value": " DS_Lobster_Dinner", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Leo", "5"],
+          "Value": " DS_Lobster_Dinner", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Krobus", "5"],
+          "Value": " DS_Lobster_Dinner", 
+          "Delimiter": " "
+        }
+      ]
+      },
+      {
+        "Action": "EditData", 
+        "Target": "Data/Mail", 
+        "Entries": { 
+          "DS_Lobster_Dinner_recipe": "[letterbg 4] {{i18n:Joja_Lobster_Dinnerrecipe.text}} %item cookingRecipe Lobster Dinner %%[#]{{i18n:Joja_Lobster_Dinnerrecipe.name}}" 
+        }
+      },
+      {
+          "Action": "EditData",
+          "Target": "Data/TriggerActions",
+          "Entries": {
+              "DS_Lobster_DinnerMail":{
+                  "Id": "DS_Lobster_DinnerMail",
+                  "Trigger": "DayEnding",
+                  "Condition": "PLAYER_MONEY_EARNED Any 100000",
+                  "Action": "AddMail Current DS_Lobster_Dinner_recipe tomorrow"}
+              }
+            }
+    ]
+  }

@@ -1,0 +1,23 @@
+{
+  "Changes": [
+    /*{
+      "LogName": "Forest",
+      "Action": "EditData",
+      "Target": "Data/Events/Forest",
+      "Entries": {
+        "{{ModId}}_PierreMerchants/d Mon Tue Wed Thu Sat/y 1/t 600 1600/w sunny/r 0.3": "continue/34 14/farmer 44 14 3 Pierre 28 15 1/makeInvisible 29 15/skippable/move farmer -7 0 3 true/move Pierre 7 0 1 false/pause 500/speak Pierre \"{{i18n:PierreMerchants.1}}\"/faceDirection farmer 2/emote farmer 8/textAboveHead Pierre \"{{i18n:PierreMerchants.2}}\"/pause 500/speak Pierre \"{{i18n:PierreMerchants.3}}\"/pause 500/emote Pierre 40/pause 500/playSound shwip/faceDirection Pierre 3/pause 300/playSound shwip/move Pierre 1 0 1/speak Pierre \"{{i18n:PierreMerchants.4}}\"/emote Pierre 12/pause 300/emote farmer 28/pause 500/emote Pierre 16 true/speak Pierre \"{{i18n:PierreMerchants.5}}\"/pause 500/jump Pierre 3/speak Pierre \"{{i18n:PierreMerchants.6}}\"/emote farmer 32/move Pierre 3 0 1/end"
+      }
+    },*/
+    {
+      "LogName": "Forest",
+      "Action": "EditData",
+      "Target": "Data/Events/Forest",
+      "Entries": {
+        "{{ModId}}_ExoticMerchant/d Mon Tue Wed Thu Sat/y 1/t 600 1600/w sunny/e 112": "spring_day_ambient/34 16/farmer 39 14 3 Wizard 32 15 1/makeInvisible 29 15/skippable/showFrame Wizard 18/pause 500/move farmer -4 0 3 true/pause 800/showFrame Wizard 0/pause 500/speak Wizard \"{{i18n:ExoticMerchant.1_Wizard}}\"/pause 500/emote farmer 8/pause 500/move Wizard 2 0 1/move Wizard 0 2 2 true/faceDirection farmer 2/pause 500/viewport move -2 -1 1000 true/speak Wizard \"{{i18n:ExoticMerchant.2_Wizard}}\"/pause 500/speak Wizard \"{{i18n:ExoticMerchant.3_Wizard}}\"/pause 500/playSound shwip/faceDirection Wizard 0/pause 500/speak Wizard \"{{i18n:ExoticMerchant.4_Wizard}}\"/pause 500/emote Wizard 40/playSound shwip/faceDirection Wizard 2/showFrame Wizard 18/pause 500/speak Wizard \"{{i18n:ExoticMerchant.5_Wizard}}\"/pause 500/emote Wizard 40/pause 500/speak Wizard \"{{i18n:ExoticMerchant.6_Wizard}}\"/pause 500/showFrame Wizard 0/speak Wizard \"{{i18n:ExoticMerchant.7_Wizard}}\"/pause 500/showFrame Wizard 16/pause 500/changeSprite Wizard Warp/animate Wizard false false 1400 0 1 2 3/playSound wand/warp Wizard -1000 -1000/pause 1200/faceDirection farmer 3/emote farmer 40/pause 800/end"
+      },
+      "When": {
+        "ExoticMerchant": true
+      }
+    }
+  ]
+}

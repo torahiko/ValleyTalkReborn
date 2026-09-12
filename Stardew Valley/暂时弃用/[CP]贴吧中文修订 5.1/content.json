@@ -1,0 +1,182 @@
+{
+  "Format": "2.4.0",
+
+  "ConfigSchema": {
+    //  默认项皆为投票结果
+    "鸡舍": {
+      "AllowValues": "禽舍, 鸡舍",
+      "Default": "禽舍",
+      "Description": "默认项皆为投票结果",
+      "Section": "译文选择"
+    },
+    "伐木秘事": {
+      "AllowValues": "伐木秘事, 樵夫秘事, 伍迪密传, 森林秘事",
+      "Default": "伐木秘事",
+      "Description": "默认项皆为投票结果",
+      "Section": "译文选择"
+    },
+    "复活节": {
+      "AllowValues": "彩蛋节, 复活节",
+      "Default": "彩蛋节",
+      "Description": "默认项皆为投票结果",
+      "Section": "译文选择"
+    },
+    "珍奇乌鸦": {
+      "AllowValues": "珍奇稻草人, 珍奇乌鸦",
+      "Default": "珍奇稻草人",
+      "Description": "默认项皆为投票结果",
+      "Section": "译文选择"
+    },
+    "老师傅香炸奶酪卷": {
+      "AllowValues": "老克诺比大师, 老啃烙饼大师",
+      "Default": "老克诺比大师",
+      "Description": "默认项皆为投票结果",
+      "Section": "译文选择"
+    },
+    "启用特殊爱称彩蛋": {
+      "AllowValues": "true, false",
+      "Default": "false",
+      "Description": "婚后对话概率出现：小可爱、小太阳、黏人精、黏人虫、老公、老婆、宝贝、帅哥、甜心。\n关闭则只有“亲爱的”",
+      "Section": "译文选择"
+    },
+    "复选框样式修改": {
+      "AllowValues": "对勾, 方块, 默认×形",
+      "Default": "对勾",
+      "Description":"默认对勾，进游戏后生效",
+      "Section": "杂项"
+    }
+},
+
+  "Changes": [
+    //  加载全文精校翻译文件
+    {
+      "Action": "Include",
+      "FromFile": "assets/full_chr.json",
+      "SetProperties": {
+        "CurrentTime": "{{Time}}"
+      },
+      "Update": "OnTimeChange, OnLocationChange",
+      "When": {
+        "Language": "zh"
+      },
+      "Priority": "Early-1000"
+    },
+
+    //  图片修改部分
+    //  修改“草原大王”的图片为“草原之王”
+    {
+      "Action": "EditImage",
+      "Target": "LooseSprites/Cursors",
+      "Priority": "Early-1000",
+      "TargetLocale": "zh-CN",
+      "FromFile": "assets/草原之王.png",
+      "FromArea": { "X": 0, "Y": 1, "Width": 93, "Height": 34 },
+      "ToArea": { "X": 130, "Y": 1752, "Width": 93, "Height": 34 }
+    },
+
+    //  修改“星露谷集市”的图片为“星露谷展览会”
+    {
+      "Action": "EditImage",
+      "Target": "Maps/Festivals",
+      "Priority": "Early-1000",
+      "When": {"Language": "zh"},
+      "TargetLocale": "zh-CN",
+      "FromFile": "assets/星露谷展览会.png",
+      "PatchMode": "Overlay",
+      "FromArea": { "X": 0, "Y": 0, "Width": 116, "Height": 25 },
+      "ToArea": { "X": 358, "Y": 181, "Width": 116, "Height": 25 }
+    },
+
+    //  修改“复选框”的图片样式为“复选框-√”
+    {
+      "Action": "EditImage",
+      "Target": "LooseSprites/Cursors",
+      "SetProperties": {
+        "CurrentTime": "{{Time}}"
+      },
+      "Update": "OnTimeChange, OnLocationChange",
+      "Priority": "Early-1000",
+      "When": {
+        "复选框样式修改": "对勾"
+      },
+      "TargetLocale": "zh-CN",
+      "FromFile": "assets/复选框-对勾.png",
+      "FromArea": { "X": 9, "Y": 0, "Width": 9, "Height": 9 },
+      "ToArea": { "X": 236, "Y": 425, "Width": 9, "Height": 9 }
+    },
+
+    //  修改“复选框”的图片样式为“复选框-方块”
+    {
+      "Action": "EditImage",
+      "Target": "LooseSprites/Cursors",
+      "SetProperties": {
+        "CurrentTime": "{{Time}}"
+      },
+      "Update": "OnTimeChange, OnLocationChange",
+      "Priority": "Early-1000",
+      "When": {
+        "复选框样式修改": "方块"
+      },
+      "TargetLocale": "zh-CN",
+      "FromFile": "assets/复选框-方块.png",
+      "FromArea": { "X": 9, "Y": 0, "Width": 9, "Height": 9 },
+      "ToArea": { "X": 236, "Y": 425, "Width": 9, "Height": 9 }
+    },
+
+    {
+      "Action": "EditData",
+      "Target": "Strings/StringsFromCSFiles",
+      "SetProperties": {
+        "CurrentTime": "{{Time}}"
+      },
+      "Update": "OnTimeChange, OnLocationChange",
+      "Priority": "Early-1000",
+      "When": { 
+        "启用特殊爱称彩蛋": false,  
+        "Language": "zh"
+      },
+      "TargetLocale": "zh-CN",
+      "Entries": {
+        "NPC.cs.4507": "亲爱的", // Pookie 布奇->亲爱的（默认）小可爱（选项）
+        "NPC.cs.4508": "亲爱的", // Love 爱->亲爱的
+        "NPC.cs.4509": "亲爱的", // Hot Stuff 烫手货->亲爱的（默认）小太阳（选项）
+        "NPC.cs.4510": "亲爱的", // Cuddlebug 虫虫款->亲爱的（默认）黏人精（选项） 黏人虫（选项）
+        "NPC.cs.4511": "亲爱的", // Hunky 不错->亲爱的（默认）老公（选项）
+        "NPC.cs.4512": "亲爱的", // Peach 桃子->亲爱的（默认）老婆（选项）
+        "NPC.cs.4513": "亲爱的", // Cutie 惹人喜欢->亲爱的（默认）小可爱（选项）
+        "NPC.cs.4514": "亲爱的", // Ducky 顺心如愿->亲爱的（默认）宝贝（选项）
+        "NPC.cs.4515": "亲爱的", // Handsome 英俊->亲爱的（默认）帅哥（选项）
+        "NPC.cs.4517": "亲爱的", // Honey 甜心（默认）宝贝（选项）
+        "NPC.cs.4523": "亲爱的" // Sweetheart 亲爱的（默认）甜心（选项）
+      }
+    },
+
+    {
+      "Action": "EditData",
+      "Target": "Strings/StringsFromCSFiles",
+      "SetProperties": {
+        "CurrentTime": "{{Time}}"
+      },
+      "Update": "OnTimeChange, OnLocationChange",
+      "Priority": "Early-1000",
+      "When": { 
+        "启用特殊爱称彩蛋": true,  
+        "Language": "zh"
+      },
+      "TargetLocale": "zh-CN",
+      "Entries": {
+        "NPC.cs.4507": "小可爱", // Pookie 布奇->亲爱的（默认）小可爱（选项）
+        "NPC.cs.4508": "亲爱的", // Love 爱->亲爱的
+        "NPC.cs.4509": "小太阳", // Hot Stuff 烫手货->亲爱的（默认）小太阳（选项）
+        "NPC.cs.4510": "{{Random: 黏人精, 黏人虫}}", // Cuddlebug 虫虫款->亲爱的（默认）黏人精（选项） 黏人虫（选项）
+        "NPC.cs.4511": "老公", // Hunky 不错->亲爱的（默认）老公（选项）
+        "NPC.cs.4512": "老婆", // Peach 桃子->亲爱的（默认）老婆（选项）
+        "NPC.cs.4513": "小可爱", // Cutie 惹人喜欢->亲爱的（默认）小可爱（选项）
+        "NPC.cs.4514": "宝贝", // Ducky 顺心如愿->亲爱的（默认）宝贝（选项）
+        "NPC.cs.4515": "帅哥", // Handsome 英俊->亲爱的（默认）帅哥（选项）
+        "NPC.cs.4517": "宝贝", // Honey 甜心（默认）宝贝（选项）
+        "NPC.cs.4523": "甜心" // Sweetheart 亲爱的（默认）甜心（选项）
+      }
+    }
+  ]
+}

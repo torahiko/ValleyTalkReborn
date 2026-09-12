@@ -1,0 +1,9 @@
+{
+  "isConsumable": true,
+  "allowSowingOutsideFarm": false,
+  "targetScanRadius": 1,
+  "targetExecutionRadius": 1,
+  "alwaysSowOnAnyTilledSoil": false,
+  "preventFertilizerOnEmptySoil": true,
+  "useRectangularMarquee": true
+}

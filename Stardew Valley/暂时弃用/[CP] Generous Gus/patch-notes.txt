@@ -1,0 +1,4 @@
+### PATCH NOTES ###
+v1.0.3
+
+* Fixed a small bug with Gus' first quest involving Linus

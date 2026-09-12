@@ -1,0 +1,63 @@
+{
+    "Changes": [
+
+        //tilesheet
+        {
+            "LogName": "Edit Mega coopTiles",
+            "Action": "EditImage",
+            "PatchMode": "Replace",
+            "Target": "Maps/coopTiles",
+            "FromFile": "assets/recolors/coopTiles_wood_{{Map Recolor}}.png",
+            "Priority": "Late",
+            "When": {
+                "LocationName": "jenf1.megacoopbarn_MegaCoop, jenf1.megacoopbarn_MegaBarn"
+            },
+            "Update": "OnLocationChange"
+        },
+
+        //maps
+        {
+            "LogName": "Replace Mega Coop",
+            "Action": "EditMap",
+            "PatchMode": "Replace",
+            "Target": "Maps/jenf1.megacoopbarn_Coop4",
+            "FromFile": "assets/compat/jen/Green_Mega_Coop4.tmx"
+        },
+        {
+            "LogName": "Replace Mega Barn",
+            "Action": "EditMap",
+            "PatchMode": "Replace",
+            "Target": "Maps/jenf1.megacoopbarn_Barn4",
+            "FromFile": "assets/compat/jen/Green_Mega_Barn4.tmx"
+        },
+
+        //map properties
+        {
+            "LogName": "Replace Mega buildings' map properties",
+            "Action": "EditMap",
+            "Target": "Maps/jenf1.megacoopbarn_Coop4, Maps/jenf1.megacoopbarn_Barn4",
+            "MapProperties": {
+                "AmbientLight": "255 255 255",
+                "AmbientNightLight": "180 180 0",
+                "IsGreenhouse": "T"
+            }
+        },
+        {
+            "LogName": "Replace Mega Coop's map properties",
+            "Action": "EditMap",
+            "Target": "Maps/jenf1.megacoopbarn_Coop4",
+            "MapProperties": {
+                "ProduceArea": "6 4 24 14"
+            }
+        },
+        {
+            "LogName": "Replace Mega Barn's map properties",
+            "Action": "EditMap",
+            "Target": "Maps/jenf1.megacoopbarn_Barn4",
+            "MapProperties": {
+                "ProduceArea": "8 4 24 24"
+            }
+        }
+
+    ]
+}

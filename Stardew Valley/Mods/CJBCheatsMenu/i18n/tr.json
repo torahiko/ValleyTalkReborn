@@ -1,0 +1,245 @@
+﻿{
+    /*********
+    ** Main translations
+    *********/
+    // mod name shown in the menu
+    "mod-name": "CJB Hile Menüsü",
+
+    // tab names
+    "tabs.player-and-tools": "Oyuncu ve Aletler",
+    "tabs.farm-and-fishing": "Çiftlik ve Balıkçılık",
+    "tabs.skills": "Beceriler",
+    "tabs.weather": "Hava Durumu",
+    "tabs.relationships": "İlişkiler",
+    "tabs.warp": "Işınlanma",
+    "tabs.time": "Zaman",
+    "tabs.advanced": "Gelişmiş",
+    "tabs.controls": "Kontroller",
+
+
+    /*********
+    ** Player & Tools tab
+    *********/
+    // player
+    "player.title": "Oyuncu",
+    "player.infinite-stamina": "Sınırsız Güç",
+    "player.infinite-health": "Sınırsız Can",
+    "player.instant-cooldowns": "Anında Silah Dolumu",
+    "player.inventory-size": "Envanter Boyutu",
+    "player.movement-speed": "Yürüme Hızı",
+    "player.movement-speed.default": "normal",
+    "player.one-hit-kill": "Tek Vuruşta Öldürme",
+    "player.max-daily-luck": "Maksimum Günlük Şans",
+
+    // tools
+    "tools.title": "Aletler",
+    "tools.infinite-water": "Su Kabında Sınırsız Su",
+    "tools.one-hit-break": "Tek Vuruşta Kırma",
+    "tools.harvest-with-scythe": "Tırpanla Hasat Etme",
+
+    // tool enchantments
+    "tool-enchantments.title": "Alet büyüleri",
+    "tool-enchantments.select-tool": "Büyüleri düzenlemek için araç çubuğunuzdan bir alet seçin.",
+    "tool-enchantments.none-for-tool": "Seçilen {{toolName}} için bir büyü yok.",
+    "tool-enchantments.for-tool": "Seçilen {{toolName}} için.",
+
+    // money
+    "add.money": "Para",
+    "add.casino-coins": "Qi Sikkesi",
+    "add.golden-walnuts": "Altın Ceviz",
+    "add.qi-gems": "Qi Taşı",
+    "add.amount-gold": "Ekle {{amount}}g",
+    "add.amount-other": "Ekle {{amount}}",
+
+
+    /*********
+    ** Farm & Fishing tab
+    *********/
+    // farm
+    "farm.title": "Çiftlik",
+    "farm.auto-water-crops": "Ekinleri Otomatik Sula",
+    "farm.auto-water-pet-bowls": "Auto-Water Pet Bowls", // TODO
+    "farm.durable-fences": "Dayanıklı Çitler",
+    "farm.instant-build": "Anında İnşaat",
+    "farm.auto-feed-animals": "Her Zaman Otomatik Yemle",
+    "farm.auto-pet-animals": "Hayvanları Otomatik Sev",
+    "farm.auto-pet-pets": "Evcil Hayvanları Otomatik Sev",
+    "farm.infinite-hay": "Sınırsız Saman",
+
+    // fishing
+    "fishing.title": "Balıkçılık",
+    "fishing.instant-catch": "Anında Yakalama",
+    "fishing.instant-bite": "Anında Isırma ",
+    "fishing.always-throw-max-distance": "Her Zaman En Uzağa Fırlat",
+    "fishing.always-treasure": "Her Seferinde Hazine Sandığı",
+    "fishing.durable-tackles": "Dayanıklı Balıkçı Aletleri",
+
+    // fast machines
+    "fast-machines.title": "Hızlı Makine İşlemleri",
+    "fast-machines.fruit-trees": "Meyve Ağacı",
+    "fast-machines.ready-in-the-morning": "{{machineName}} (Sabaha Hazır)",
+
+
+    /*********
+    ** Skills tab
+    *********/
+    // skills
+    "skills.title": "Beceriler",
+    "skills.increase-skill": "{{skillName}} Seviyesini Yükselt: {{currentLevel}}",
+    "skills.increase-mastery": "Increase mastery level: {{currentLevel}}", // TODO
+
+    // professions
+    "professions.title": "Uzmanlık Alanları",
+    "professions.profession": "{{skillName}} svy {{level}} - {{professionName}}",
+
+
+    /*********
+    ** Weather tab
+    *********/
+    "weather.title": "Yarının Hava Durumu",
+    "weather.current-value": "Yarınki hava durumu {{weather}} olacak.",
+    "weather.explanation": "Yarınki hava durumunu ayarlamak için aşağıdaki düğmeye tıklayın. Bu sekme, hava durumu üzerinde başka hiçbir etkiye sahip değildir.",
+    "weather.cannot-change-weather": "The game forces tomorrow's weather to {{weather}}, so it can't be changed.", // TODO
+    "weather.sunny": "Güneşli",
+    "weather.raining": "Yağmurlu",
+    "weather.lightning": "Fırtınalı",
+    "weather.snowing": "Karlı",
+    "weather.green-rain": "Asit Yağmuru",
+
+
+    /*********
+    ** Relationships tab
+    *********/
+    "relationships.title": "İlişkiler",
+    "relationships.give-gifts-anytime": "Hediye Verme Sınırını Kaldır",
+    "relationships.no-decay": "Arkadaşlık Düşmesini Kapat",
+    "relationships.friends": "Arkadaşlar",
+
+
+    /*********
+    ** Warps tab
+    *********/
+    "warp.customized-warning": "Bu ışınlanma noktaları modlarınız tarafından düzenlenmiştir. Işınlanma sorunlarını, hangi mod düzenlemişse o moda bildiriniz.",
+
+    // main areas
+    "warp-section.main": "Ana Bölgeler",
+    "warp.farm": "Çiftlik",
+    "warp.carpenter": "Marangoz",
+    "warp.desert": "Çöl",
+    "warp.mines": "Madenler",
+    "warp.pierre-shop": "Pierre'nin Dükkanı",
+
+    // town
+    "warp-section.town": "Kasaba",
+    "warp.blacksmith": "Demirci",
+    "warp.community-center": "Halk Evi",
+    "warp.jojamart": "JojaMart",
+    "warp.movie-theater": "Sinema",
+    "warp.museum": "Müze",
+    "warp.saloon": "Salon",
+    "warp.sewer": "Lağım",
+
+    // forest
+    "warp-section.forest": "Orman",
+    "warp.hats": "Şapka",
+    "warp.mastery-cave": "Ustalık Mağarası",
+    "warp.ranch": "Marnie'nin Çiftliği",
+    "warp.secret-woods": "Gizli Koru",
+    "warp.wizard-tower": "Büyücü'nün Kulesi",
+
+    // mountain
+    "warp-section.mountain": "Dağ",
+    "warp.adventurers-guild": "Maceracılar Loncası",
+    "warp.bathhouse": "Hamam",
+    "warp.mutant-bug-lair": "Mutant Böcek Bölgesi",
+    "warp.quarry": "Taş Ocağı",
+    "warp.witch-swamp": "Cadı Bataklığı",
+
+    // beach
+    "warp-section.beach": "Sahil",
+    "warp.tide-pools": "Gelgit Havuzları",
+    "warp.willy-shop": "Willy'nin Dükkanı",
+
+    // island
+    "warp-section.island": "Zencefil Adası",
+    "warp.forge": "Demir Ocağı",
+    "warp.island-farm": "Ada Çiftliği",
+    "warp.dwarf-shop": "Volkan Cüce Dükkanı",
+    "warp.field-office": "Saha Ofisi",
+    "warp.leo-house": "Leo'nun Evi",
+
+    // desert
+    "warp-section.desert": "Çöl",
+    "warp.casino": "Kumarhane",
+    "warp.sandy-shop": "Sandy'nin Dükkanı",
+    "warp.skull-cavern": "Kafatası Mağarası",
+
+
+    /*********
+    ** Time tab
+    *********/
+    // time
+    "time.title": "Zaman",
+    "time.freeze-inside": "İçerideyken Zamanı Dondur",
+    "time.freeze-caves": "Mağaradayken Zamanı Dondur",
+    "time.freeze-everywhere": "Zamanı Her Yerde Dondur",
+    "time.fade-time-frozen-message": "'{{timeFrozen}}' birkaç saniye sonra gizle",
+    "time.time": "Saat",
+    "time.time-frozen-message": "Zaman Dondu",
+
+    // date
+    "date.title": "Tarih",
+    "date.warning": "Bazı şeyler bir gece geçmeden güncellenmez.",
+    "date.year": "Yıl",
+    "date.season": "Sezon",
+    "date.day": "Gün",
+
+
+    /*********
+    ** Advanced tab
+    *********/
+    "flags.warning": "Bu bölümün kullanım sorumluluğu size aittir!\nBu ayarlar postaların, olayların ya da görevlerin atlanması gibi sorunlara yol açabilir.",
+    "flags.quests": "Görevleri Tamamla",
+    "flags.wallet": "Cüzdandaki Nesneler",
+    "flags.unlocked": "Açılmış Yerler",
+    "flags.unlocked.guild": "Maceracılar Loncası",
+    "flags.unlocked.room": "Odası: {{name}}",
+    "flags.unlocked-content": "Açılmış İçerik",
+    "flags.unlocked-content.dyes-and-tailoring": "Boyama ve Dikiş",
+    "flags.unlocked-content.junimo-text": "Junimo yazılarını okuyabilme",
+    "flags.unlocked-content.perfection": "Mükemmellik elde edildi",
+    "flags.community-center": "Halkevi",
+    "flags.community-center.door-unlocked": "Kapı Açıldı",
+    "flags.jojamart.membership": "JojaMart Üyeliği",
+
+
+    /*********
+    ** Controls tab
+    *********/
+    "controls.title": "Kontroller",
+    "controls.android-config-note": "CJB Hile Menüsü ve Sanal Klavye modları için yapılandırma dosyalarındaki ekran düğmelerini değiştirebilirsiniz.",
+    "controls.open-menu": "Menüyü Aç",
+    "controls.freeze-time": "Zamanı Dondur",
+    "controls.grow-tree": "Ağacı Büyüt",
+    "controls.grow-crops": "Ekini Büyüt",
+    "controls.grow-radius": "Ekin Büyüme Mesafesi",
+    "controls.reset-controls": "Sıfırla",
+    "controls.press-new-key": "Yeni bir tuşa bas...",
+
+
+    /*********
+    ** Generic Mod Config Menu UI
+    *********/
+    "config.open-menu.desc": "Menüyü açan tuş ataması (başka bir menü açık değilken).",
+    "config.freeze-time.desc": "Oyun saatini durduran tuş ataması.",
+    "config.grow-tree.desc": "Oyuncu etrafında ağaç yetiştiren tuş ataması.",
+    "config.grow-crops.desc": "Oyuncu etrafında ekin yetiştirmek için kullanılan tuş ataması.",
+
+    "controls.reload-config": "Ayarları dosyadan yeniden yükle",
+    "controls.reload-config.desc": "Modun config.json dosyasından mod ayarlarını yeniden yükleyen tuş ataması. Menü şu anda açıksa, değişiklikler yalnızca menü yeniden açıldığında etkili olabilir.",
+
+    "config.title.other-options": "Diğer ayarlar",
+    "config.default-tab.name": "Varsayılan sekme",
+    "config.default-tab.desc": "Menüyü açtığınızda varsayılan olarak gösterilen sekme.",
+    "config.other-options": "Hileleri ayarlamak için, oyun içinde gösterilen 'menüyü aç' tuşuna basın. Kaydınızı yükledikten sonra başka bir menü veya diyalog penceresi açık değilken bu tuşa bastığınızdan emin olun."
+}

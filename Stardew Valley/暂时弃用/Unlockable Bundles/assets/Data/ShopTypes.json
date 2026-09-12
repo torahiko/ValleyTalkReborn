@@ -1,0 +1,150 @@
+﻿{
+//** Main Types
+
+"Dialogue": {
+	"ShopTexture": "UnlockableBundles/ShopTextures/Sign",
+	"ShopTextureSource": { "X": 0, "Y": 0, "Width": 32, "Height": 64},
+	"ShopDrawDimensions": "64, 128",
+	"InstantShopRemoval": true,
+	"ShopEvent": "carpentry",
+},
+
+"SpeechBubble": {
+	//BundleDescription = i18n:ub_speech_ask)
+	"ShopTexture": "UnlockableBundles/ShopTextures/Blue_Junimo",
+	"ShopTextureSource": { "X": 0, "Y": 0, "Width": 32, "Height": 64},
+	"ShopAnimation": "0-10@100,11@500",
+	"ShopDrawDimensions": "64, 128",
+	"InstantShopRemoval": true,
+	"ShopEvent": "carpentry",
+	"InteractionSound": "junimoMeep1",
+	
+	"TimeUntilChomp": 1.25
+},
+
+"ParrotPerch": {
+	//BundleDescription = i18n:ub_parrot_ask
+	"ShopTexture": "UnlockableBundles/ShopTextures/ParrotPerch",
+	"ShopTextureSource": { "X": 0, "Y": 0, "Width": 32, "Height": 64},
+	"ShopDrawDimensions": "64, 128",
+	"ShopEvent": "none",
+	"InteractionShake": true,
+	"InteractionSound": "parrot_squawk",
+	
+	"TimeUntilChomp": 1.0
+},
+
+"CCBundle": {
+	"ShopTexture": "UnlockableBundles/ShopTextures/CCBundle",
+	"ShopTextureSource": { "X": 0, "Y": 0, "Width": 32, "Height": 64},
+	"ShopAnimation": "0-7@100,8@1000",
+	"ShopDrawDimensions": "64, 128",
+	"ShopEvent": "none",
+	"ShopCompletedAnimation": "9@1000",
+},
+
+
+//** Themes
+
+"AltCCBundle": {
+	"ShopType": "CCBundle",
+
+	"ShopTexture": "UnlockableBundles/ShopTextures/Scroll",
+	"ShopTextureSource": { "X": 0, "Y": 0, "Width": 32, "Height": 64},
+	"ShopAnimation": "0-7@100,8@1000",
+	"ShopDrawDimensions": "64, 128",
+	"ShopEvent": "none",
+	"ShopCompletedAnimation": "9@1000",
+	
+	"JunimoNoteTexture": "UnlockableBundles/UI/AlternativeJunimoNote",
+},
+
+"CCMagicBook": {
+	"ShopType": "CCBundle",
+
+	"ShopTexture": "UnlockableBundles/ShopTextures/MagicBook",
+	"ShopTextureSource": { "X": 0, "Y": 0, "Width": 48, "Height": 96},
+	"ShopAnimation": "0-23@100",
+	"ShopDrawDimensions": "96, 192",
+	"ShopDrawOffset": "-16, -32",
+	"ShopEvent": "none",
+	"InteractionShake": true,
+	"InteractionSound": "qi_shop",
+	"OverviewTextureTarget": { "X": -12, "Y": -28, "Width": 48, "Height": 96},
+	
+	"JunimoNoteTexture": "UnlockableBundles/UI/MagicBookJunimoNote",
+},
+
+"Cookbook": {
+	"ShopType": "CCBundle",
+
+	"ShopTexture": "UnlockableBundles/ShopTextures/Cookbook",
+	"ShopTextureSource": { "X": 0, "Y": 0, "Width": 48, "Height": 64},
+	"ShopAnimation": "0@1500, 1-6@100, 7@1500, 8-13@100",
+	"ShopDrawDimensions": "96, 128",
+	"ShopDrawOffset": "-16, 0",
+	"ShopEvent": "none",
+	"OverviewTextureTarget": { "X": -12, "Y": -24, "Width": 48, "Height": 64},
+	
+	"JunimoNoteTexture": "UnlockableBundles/UI/CookbookJunimoNote",
+},
+
+
+"Raccoon": {
+	"ShopType": "CCBundle",
+
+	"ShopTexture": "Characters\\raccoon",
+	"ShopTextureSource": { "X": 0, "Y": 0, "Width": 32, "Height": 32},
+	"ShopAnimation": "0-7@100",
+	"ShopDrawDimensions": "128, 128",
+	"ShopDrawOffset": "-32, 0",
+	"ShopEvent": "none",
+	"InteractionShake": true,
+	"InteractionSound": "Raccoon",
+	"OverviewTextureTarget": { "X": -24, "Y": 0, "Width": 64, "Height": 64},
+	
+	"JunimoNoteTexture": "UnlockableBundles/UI/RaccoonJunimoNote",
+	"BundleCompletedRibbon": "Raccoon",
+},
+
+"MrsRaccoon": {
+	"ShopType": "CCBundle",
+
+	"ShopTexture": "Characters\\mrs_raccoon",
+	"ShopTextureSource": { "X": 0, "Y": 0, "Width": 32, "Height": 32},
+	"ShopAnimation": "0-7@100",
+	"ShopDrawDimensions": "128, 128",
+	"ShopDrawOffset": "-32, 0",
+	"ShopEvent": "none",
+	"InteractionShake": true,
+	"InteractionSound": "Raccoon",
+	"OverviewTextureTarget": { "X": -24, "Y": 0, "Width": 64, "Height": 64},
+	
+	"JunimoNoteTexture": "UnlockableBundles/UI/RaccoonJunimoNote",
+	"BundleCompletedRibbon": "Raccoon",
+},
+
+"TrashBear": {
+	"ShopType": "SpeechBubble",
+	
+	"ShopTexture":  "Characters\\TrashBear",
+	"ShopTextureSource": { "X": 0, "Y": 64, "Width": 32, "Height": 32 },
+	"ShopAnimation": "0",
+	"InteractionTextureSource": { "X": 0, "Y": 0, "Width": 32, "Height": 32 },
+	"InteractionAnimation": "0-3@250",
+	"InteractionType": "Click",
+	"ShopDrawDimensions": "128, 128",
+	"ShopDrawOffset": "-32, 8",
+	"InteractionShake": false,
+	"InteractionSound": "trashbear",
+	"OverviewTextureTarget": { "X": -10, "Y": 8, "Width": 48, "Height": 48},
+	
+	"SpeechBubbleOffset": "0, -40",
+	"ChompAcceleration": "0, 0.5",
+	"ChompMotion": "-0.8, -15",
+	"ChompPositionOffset": "64, -44",
+	"ChompTextureSource": { "X": 0, "Y": 32, "Width": 32, "Height": 32 },
+	"ChompAnimation": "0@250,1@1500,2-3@100,2-3,2-3,3@150"
+}
+
+}

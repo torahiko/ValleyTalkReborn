@@ -1,0 +1,181 @@
+{
+	"Changes": [
+	//LooseSprites
+		//Map
+		{
+			"LogName": "NPCMapLocations",
+			"Action": "EditImage",
+			"Target": "LooseSprites/map, LooseSprites/map_fall, LooseSprites/map_summer, LooseSprites/map_winter",
+			"FromFile": "assets/Patches/LooseSprites/NPCMapLocations_{{TargetWithoutPath}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"FromArea": { "X": 0, "Y": 0, "Width": 7, "Height": 7 },
+			"ToArea": { "X": 103, "Y": 67, "Width": 7, "Height": 7 }
+		},
+		{
+			"LogName": "NPCMapLocations",
+			"Action": "EditImage",
+			"Target": "LooseSprites/map, LooseSprites/map_fall, LooseSprites/map_summer, LooseSprites/map_winter",
+			"FromFile": "assets/Patches/LooseSprites/NPCMapLocations_{{TargetWithoutPath}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"FromArea": { "X": 0, "Y": 0, "Width": 7, "Height": 7 },
+			"ToArea": { "X": 103, "Y": 204, "Width": 7, "Height": 7 }
+		},
+		{
+			"LogName": "NPCMapLocations",
+			"Action": "EditImage",
+			"Target": "LooseSprites/map, LooseSprites/map_fall, LooseSprites/map_summer, LooseSprites/map_winter",
+			"FromFile": "assets/Patches/LooseSprites/NPCMapLocations_{{TargetWithoutPath}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"FromArea": { "X": 0, "Y": 0, "Width": 7, "Height": 7 },
+			"ToArea": { "X": 234, "Y": 204, "Width": 7, "Height": 7 }
+		},
+		{
+			"LogName": "NPCMapLocations",
+			"Action": "EditImage",
+			"Target": "LooseSprites/map, LooseSprites/map_fall, LooseSprites/map_summer, LooseSprites/map_winter",
+			"FromFile": "assets/Patches/LooseSprites/NPCMapLocations_{{TargetWithoutPath}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"FromArea": { "X": 0, "Y": 0, "Width": 7, "Height": 7 },
+			"ToArea": { "X": 103, "Y": 265, "Width": 7, "Height": 7 }
+		},
+		{
+			"LogName": "NPCMapLocations",
+			"Action": "EditImage",
+			"Target": "LooseSprites/map, LooseSprites/map_fall, LooseSprites/map_summer, LooseSprites/map_winter",
+			"FromFile": "assets/Patches/LooseSprites/NPCMapLocations_{{TargetWithoutPath}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"FromArea": { "X": 0, "Y": 0, "Width": 7, "Height": 7 },
+			"ToArea": { "X": 234, "Y": 265, "Width": 7, "Height": 7 }
+		},
+		{
+			"LogName": "NPCMapLocations",
+			"Action": "EditImage",
+			"Target": "LooseSprites/map, LooseSprites/map_fall, LooseSprites/map_summer, LooseSprites/map_winter",
+			"FromFile": "assets/Patches/LooseSprites/NPCMapLocations_{{TargetWithoutPath}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"FromArea": { "X": 0, "Y": 0, "Width": 7, "Height": 7 },
+			"ToArea": { "X": 103, "Y": 324, "Width": 7, "Height": 7 }
+		},
+		{
+			"LogName": "NPCMapLocations",
+			"Action": "EditImage",
+			"Target": "LooseSprites/map, LooseSprites/map_fall, LooseSprites/map_summer, LooseSprites/map_winter",
+			"FromFile": "assets/Patches/LooseSprites/NPCMapLocations_{{TargetWithoutPath}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"FromArea": { "X": 0, "Y": 0, "Width": 7, "Height": 7 },
+			"ToArea": { "X": 234, "Y": 326, "Width": 7, "Height": 7 }
+		},
+			//Green Fall
+			{
+				"LogName": "NPCMapLocations Green",
+				"Action": "EditImage",
+				"Target": "LooseSprites/map_fall",
+				"FromFile": "assets/Patches/LooseSprites/NPCMapLocations_{{TargetWithoutPath}}_green.png",
+				"PatchMode": "Overlay",
+				"Priority": "Early",
+				"FromArea": { "X": 0, "Y": 0, "Width": 7, "Height": 7 },
+				"ToArea": { "X": 103, "Y": 67, "Width": 7, "Height": 7 },
+				"When": { "VibrantPastoral.C/GreenFall": true }
+			},
+			{
+				"LogName": "NPCMapLocations Green",
+				"Action": "EditImage",
+				"Target": "LooseSprites/map_fall",
+				"FromFile": "assets/Patches/LooseSprites/NPCMapLocations_{{TargetWithoutPath}}_green.png",
+				"PatchMode": "Overlay",
+				"Priority": "Early",
+				"FromArea": { "X": 0, "Y": 0, "Width": 7, "Height": 7 },
+				"ToArea": { "X": 103, "Y": 204, "Width": 7, "Height": 7 },
+				"When": { "VibrantPastoral.C/GreenFall": true }
+			},
+			{
+				"LogName": "NPCMapLocations Green",
+				"Action": "EditImage",
+				"Target": "LooseSprites/map_fall",
+				"FromFile": "assets/Patches/LooseSprites/NPCMapLocations_{{TargetWithoutPath}}_green.png",
+				"PatchMode": "Overlay",
+				"Priority": "Early",
+				"FromArea": { "X": 0, "Y": 0, "Width": 7, "Height": 7 },
+				"ToArea": { "X": 234, "Y": 204, "Width": 7, "Height": 7 },
+				"When": { "VibrantPastoral.C/GreenFall": true }
+			},
+			{
+				"LogName": "NPCMapLocations Green",
+				"Action": "EditImage",
+				"Target": "LooseSprites/map_fall",
+				"FromFile": "assets/Patches/LooseSprites/NPCMapLocations_{{TargetWithoutPath}}_green.png",
+				"PatchMode": "Overlay",
+				"Priority": "Early",
+				"FromArea": { "X": 0, "Y": 0, "Width": 7, "Height": 7 },
+				"ToArea": { "X": 103, "Y": 265, "Width": 7, "Height": 7 },
+				"When": { "VibrantPastoral.C/GreenFall": true }
+			},
+			{
+				"LogName": "NPCMapLocations Green",
+				"Action": "EditImage",
+				"Target": "LooseSprites/map_fall",
+				"FromFile": "assets/Patches/LooseSprites/NPCMapLocations_{{TargetWithoutPath}}_green.png",
+				"PatchMode": "Overlay",
+				"Priority": "Early",
+				"FromArea": { "X": 0, "Y": 0, "Width": 7, "Height": 7 },
+				"ToArea": { "X": 234, "Y": 265, "Width": 7, "Height": 7 },
+				"When": { "VibrantPastoral.C/GreenFall": true }
+			},
+			{
+				"LogName": "NPCMapLocations Green",
+				"Action": "EditImage",
+				"Target": "LooseSprites/map_fall",
+				"FromFile": "assets/Patches/LooseSprites/NPCMapLocations_{{TargetWithoutPath}}_green.png",
+				"PatchMode": "Overlay",
+				"Priority": "Early",
+				"FromArea": { "X": 0, "Y": 0, "Width": 7, "Height": 7 },
+				"ToArea": { "X": 103, "Y": 324, "Width": 7, "Height": 7 },
+				"When": { "VibrantPastoral.C/GreenFall": true }
+			},
+			{
+				"LogName": "NPCMapLocations Green",
+				"Action": "EditImage",
+				"Target": "LooseSprites/map_fall",
+				"FromFile": "assets/Patches/LooseSprites/NPCMapLocations_{{TargetWithoutPath}}_green.png",
+				"PatchMode": "Overlay",
+				"Priority": "Early",
+				"FromArea": { "X": 0, "Y": 0, "Width": 7, "Height": 7 },
+				"ToArea": { "X": 234, "Y": 326, "Width": 7, "Height": 7 },
+				"When": { "VibrantPastoral.C/GreenFall": true }
+			},
+		//Meadowlands Farm
+		{
+			"LogName": "NPCMapLocations Meadows spring",
+			"Action": "EditImage",
+			"Target": "LooseSprites/Farm_ranching_map, LooseSprites/Farm_ranching_map_fall, LooseSprites/Farm_ranching_map_summer, LooseSprites/Farm_ranching_map_winter",
+			"FromFile": "assets/Patches/LooseSprites/NPCMapLocations_{{TargetWithoutPath}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"FromArea": { "X": 0, "Y": 0, "Width": 7, "Height": 7 },
+			"ToArea": { "X": 103, "Y": 24, "Width": 7, "Height": 7 },
+			"When": { "FarmType": "MeadowlandsFarm" }
+		},
+			//Green Fall
+			{
+				"LogName": "NPCMapLocations Meadows Green",
+				"Action": "EditImage",
+				"Target": "LooseSprites/Farm_ranching_map_fall",
+				"FromFile": "assets/Patches/LooseSprites/NPCMapLocations_{{TargetWithoutPath}}_green.png",
+				"PatchMode": "Overlay",
+				"Priority": "Early",
+				"FromArea": { "X": 0, "Y": 0, "Width": 7, "Height": 7 },
+				"ToArea": { "X": 103, "Y": 24, "Width": 7, "Height": 7 },
+				"When": {
+					"FarmType": "MeadowlandsFarm",
+					"VibrantPastoral.C/GreenFall": true
+				}
+			}
+	]
+}

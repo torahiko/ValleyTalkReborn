@@ -1,0 +1,46 @@
+{
+  "Changes": [
+    {
+      "Action": "EditData",
+      "Target": "Data/Shops",
+      "Entries": {
+        "LoveFestivalShop": {
+          "Currency": 0,
+          "Owners": [
+            {
+              "Name": "Pierre",
+              "Dialogues": [
+                // dialogue any other time
+                {
+                  "Id": "AvalonMFX.{{ModId}}_FestivalShopDialogue",
+                  "Dialogue": "{{i18n: shop.festival.message}}"
+                }
+              ]
+            }
+          ],
+          "Items": [
+            {
+              "AvailableStockLimit": "Player",
+              "AvailableStock": 3,
+              "Price": 1000,
+              "Id": "{{ModId}}_BoxOfChocolates",
+              "ItemId": "{{ModId}}_BoxOfChocolates"
+            },
+            {
+              "Price": 350,
+              "Id": "{{ModId}}_RosePot",
+              "ItemId": "{{ModId}}_RosePot" //(BO)
+            },
+            {
+              "AvailableStockLimit": "Player",
+              "AvailableStock": 1,
+              "Price": 7500,
+              "Id": "460",
+              "ItemId": "460"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

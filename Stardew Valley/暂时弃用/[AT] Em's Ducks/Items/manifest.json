@@ -1,0 +1,11 @@
+{
+	"Name": "Em's Duck Items",
+	"Author": "RivalRabbit",
+	"Version": "1.5",
+	"Description": "Changes the feather and duck icon at Marnies shop",
+	"UniqueID": "RivalRabbit.EmsDuckItems",
+		"UpdateKeys": [ "Nexus:33766" ],
+	"ContentPackFor": {
+		"UniqueID": "Pathoschild.ContentPatcher"
+	}
+}

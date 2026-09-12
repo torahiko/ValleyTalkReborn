@@ -1,0 +1,12 @@
+{
+  "Changes": [
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Elliott",
+      "Entries": {
+        "{{Weekday}}": "{{i18n:STP.{{Weekday}}.RegDialogue_{{Random:{{Range:0,5}}}}}}",
+        "{{Season}}_{{Weekday}}": "{{i18n:STP.{{Weekday}}.{{Season}}.RegDialogue_{{Random:{{Range:0,5}}}}}}"
+      }
+    }
+  ]
+}

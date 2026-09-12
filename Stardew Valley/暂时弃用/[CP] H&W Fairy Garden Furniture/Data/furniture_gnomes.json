@@ -1,0 +1,54 @@
+{
+  "Changes": [
+
+    {
+      "LogName":"Add Gnome Furniture",
+      "Action": "EditData",
+      "Target": "Data/Furniture",
+      "Entries": {
+        "HXW.FairyGardenFurni_GnomeBlushing": "HXW_GnomeBlushing/Decor/1 2/1 1/2/500/2/{{i18n: FairyGardenFurni_GnomeBlushing}}/0/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeButterflies": "HXW_GnomeButterflies/Decor/1 2/1 1/1/500/2/{{i18n: FairyGardenFurni_GnomeButterflies}}/2/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeDancing": "HXW_GnomeDancing/Decor/2 2/2 1/2/500/2/{{i18n: FairyGardenFurni_GnomeDancing}}/32/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeDelivery": "HXW_GnomeDelivery/Decor/2 2/2 1/2/500/2/{{i18n: FairyGardenFurni_GnomeDelivery}}/37/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeFairy": "HXW_GnomeFairy/Decor/1 2/1 1/1/500/2/{{i18n: FairyGardenFurni_GnomeFairy}}/4/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeFlorist": "HXW_GnomeFlorist/Decor/1 2/1 1/1/500/2/{{i18n: FairyGardenFurni_GnomeFlorist}}/5/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeFlowerBasket": "HXW_GnomeFlowerBasket/Decor/1 2/1 1/1/500/2/{{i18n: FairyGardenFurni_GnomeFlowerBasket}}/6/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeFlowerKing": "HXW_GnomeFlowerKing/Decor/1 2/1 1/1/500/2/{{i18n: FairyGardenFurni_GnomeFlowerKing}}/7/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeFlowerQueen": "HXW_GnomeFlowerQueen/Decor/1 2/1 1/1/500/2/{{i18n: FairyGardenFurni_GnomeFlowerQueen}}/8/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeGroovy": "HXW_GnomeGroovy/Decor/1 2/1 1/2/500/2/{{i18n: FairyGardenFurni_GnomeGroovy}}/72/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+      
+        "HXW.FairyGardenFurni_GnomeKissGraceful": "HXW_GnomeKissGraceful/Decor/1 2/1 1/1/500/2/{{i18n: FairyGardenFurni_GnomeKissGraceful}}/12/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeKissHandsome": "HXW_GnomeKissHandsome/Decor/1 2/1 1/1/500/2/{{i18n: FairyGardenFurni_GnomeKissHandsome}}/13/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeLeisurely": "HXW_GnomeLeisurely/Decor/1 2/1 1/1/500/2/{{i18n: FairyGardenFurni_GnomeLeisurely}}/68/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeLoving": "HXW_GnomeLoving/Decor/2 2/2 1/2/500/2/{{i18n: FairyGardenFurni_GnomeLoving}}/42/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeMaiden": "HXW_GnomeMaiden/Decor/1 2/1 1/1/500/2/{{i18n: FairyGardenFurni_GnomeMaiden}}/15/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeMushGirl": "HXW_GnomeMushGirl/Decor/1 2/1 1/2/500/2/{{i18n: FairyGardenFurni_GnomeMushGirl}}/128/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeMushGirl2": "HXW_GnomeMushGirl2/Decor/1 2/1 1/2/500/2/{{i18n: FairyGardenFurni_GnomeMushGirl2}}/130/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeOnePiece": "HXW_GnomeOnePiece/Decor/1 2/1 1/1/500/2/{{i18n: FairyGardenFurni_GnomeOnePiece}}/96/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeParasol": "HXW_GnomeParasol/Decor/1 2/1 1/1/500/2/{{i18n: FairyGardenFurni_GnomeParasol}}/14/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeTubular": "HXW_GnomeTubular/Decor/1 2/1 1/1/500/2/{{i18n: FairyGardenFurni_GnomeTubular}}/102/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+      
+        "HXW.FairyGardenFurni_GnomeOverworked": "HXW_GnomeOverworked/Decor/1 2/1 1/2/500/2/{{i18n: FairyGardenFurni_GnomeOverworked}}/69/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomePancakeLoving": "HXW_GnomePancakeLoving/Decor/1 2/1 1/1/500/2/{{i18n: FairyGardenFurni_GnomePancakeLoving}}/71/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomePotter": "HXW_GnomePotter/Decor/1 2/1 1/1/500/2/{{i18n: FairyGardenFurni_GnomePotter}}/64/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomePrince": "HXW_GnomePrince/Decor/1 2/1 1/1/500/2/{{i18n: FairyGardenFurni_GnomePrince}}/65/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomePrincess": "HXW_GnomePrincess/Decor/1 2/1 1/2/500/2/{{i18n: FairyGardenFurni_GnomePrincess}}/66/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomePKnome": "HXW_GnomePKnome/Decor/1 2/1 1/1/500/2/{{i18n: FairyGardenFurni_GnomePKnome}}/109/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeStill": "HXW_GnomeStill/Decor/1 2/1 1/1/500/2/{{i18n: FairyGardenFurni_GnomeStill}}/101/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeSturdy": "HXW_GnomeSturdy/Decor/1 2/1 1/2/500/2/{{i18n: FairyGardenFurni_GnomeSturdy}}/10/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeVigil": "HXW_GnomeVigil/Decor/1 2/1 1/2/500/2/{{i18n: FairyGardenFurni_GnomeVigil}}/103/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeWinking": "HXW_GnomeWinking/Decor/1 2/1 1/2/500/2/{{i18n: FairyGardenFurni_GnomeWinking}}/105/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeWitch": "HXW_GnomeWitch/Decor/2 2/2 1/2/500/2/{{i18n: FairyGardenFurni_GnomeWitch}}/107/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeParentDependable": "HXW_GnomeParentDependable/Decor/1 2/1 1/2/500/2/{{i18n: FairyGardenFurni_GnomeParentDependable}}/76/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeParentOutgoing": "HXW_GnomeParentOutgoing/Decor/1 2/1 1/2/500/2/{{i18n: FairyGardenFurni_GnomeParentOutgoing}}/78/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeParentSturdy": "HXW_GnomeParentSturdy/Decor/1 2/1 1/2/500/2/{{i18n: FairyGardenFurni_GnomeParentSturdy}}/97/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeParentWhimsical": "HXW_GnomeParentWhimsical/Decor/1 2/1 1/2/500/2/{{i18n: FairyGardenFurni_GnomeParentWhimsical}}/99/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeParentChild1": "HXW_GnomeParentChild1/Decor/1 2/1 1/1/500/2/{{i18n: FairyGardenFurni_GnomeParentChild1}}/73/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeParentChild2": "HXW_GnomeParentChild2/Decor/1 2/1 1/1/500/2/{{i18n: FairyGardenFurni_GnomeParentChild2}}/74/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeCat": "HXW_GnomeCat/Decor/1 2/1 1/1/500/2/{{i18n: FairyGardenFurni_GnomeCat}}/3/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni",
+        "HXW.FairyGardenFurni_GnomeFroggy": "HXW_GnomeFroggy/Decor/1 2/1 1/1/500/2/{{i18n: FairyGardenFurni_GnomeFroggy}}/9/Mods\\HXW.FairyGardenFurniture\\Furniture_Gnomes/true/collection_hwfairygardenfurni"
+      }
+    }
+    
+  ]
+}

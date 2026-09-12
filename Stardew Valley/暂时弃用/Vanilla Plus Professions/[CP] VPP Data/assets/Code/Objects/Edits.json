@@ -1,0 +1,303 @@
+{
+	"Changes": [
+		{
+			"Action": "EditData",
+			"Target": "Data/Objects",
+			"Fields": {
+				"92": {
+					"Edibility": 3
+				}
+			},
+			"When": {
+				"Esca.EMP/GameStateQuery:KediDili.VanillaPlusProfessions_PlayerHasTalent Any SapSipper": true
+			}
+		},
+		{
+			"Action": "EditData",
+			"Target": "Data/Objects",
+			"Fields": {
+				"578": {
+					"Category": -2
+				},
+				"565": {
+					"Category": -2
+				},
+				"564": {
+					"Category": -2
+				},
+				"563": {
+					"Category": -2
+				},
+				"562": {
+					"Category": -2
+				},
+			},
+			"When": {
+				"Esca.EMP/GameStateQuery:KediDili.VanillaPlusProfessions_PlayerHasTalent Any EveryonesBestFriend": true,
+				"TimeChangedUpdates": "true",
+			},
+			"Update": "OnTimeChange",
+		},
+		{
+			"Action": "EditData",
+			"Target": "Data/Objects",
+			"Fields": {
+				"578": {
+					"Category": -2
+				},
+				"565": {
+					"Category": -2
+				},
+				"564": {
+					"Category": -2
+				},
+				"563": {
+					"Category": -2
+				},
+				"562": {
+					"Category": -2
+				},
+			},
+			"When": {
+				"Esca.EMP/GameStateQuery:KediDili.VanillaPlusProfessions_PlayerHasTalent Any EveryonesBestFriend": true,
+				"TimeChangedUpdates": "false",
+			},
+		},
+		{
+			"Action": "EditData",
+			"Target": "Data/BigCraftables",
+			"Fields": {
+				"105": {
+					"ContextTags": [
+						"tapper_item",
+						"tapper_multiplier_0.75"
+					]
+				},
+				"264": {
+					"ContextTags": [
+						"tapper_item",
+						"tapper_multiplier_1.50"
+					]
+				},
+			},
+			"When": {
+				"KediDili.VanillaPlusProfessions/HasProfessions|contains=Sapper": true
+			}
+		},
+		{
+			"Action": "EditData",
+			"Target": "Data/Objects",
+			"TargetField": [ "208", "ContextTags" ],
+			"Entries": {
+				"ginger_item": "ginger_item"
+			},
+			"When": {
+				"KediDili.VanillaPlusProfessions/HasTalents|contains=SugarRush": true,
+			},
+		},
+		{
+			"Action": "EditData",
+			"Target": "Data/Objects",
+			"TargetField": [ "220", "ContextTags" ],
+			"Entries": {
+				"ginger_item": "ginger_item"
+			},
+			"When": {
+				"KediDili.VanillaPlusProfessions/HasTalents|contains=SugarRush": true,
+			},
+		},
+		{
+			"Action": "EditData",
+			"Target": "Data/Objects",
+			"TargetField": [ "221", "ContextTags" ],
+			"Entries": {
+				"ginger_item": "ginger_item"
+			},
+			"When": {
+				"KediDili.VanillaPlusProfessions/HasTalents|contains=SugarRush": true,
+			},
+		},
+		{
+			"Action": "EditData",
+			"Target": "Data/Objects",
+			"TargetField": [ "222", "ContextTags" ],
+			"Entries": {
+				"ginger_item": "ginger_item"
+			},
+			"When": {
+				"KediDili.VanillaPlusProfessions/HasTalents|contains=SugarRush": true,
+			},
+		},
+		{
+			"Action": "EditData",
+			"Target": "Data/Objects",
+			"TargetField": [ "223", "ContextTags" ],
+			"Entries": {
+				"ginger_item": "ginger_item"
+			},
+			"When": {
+				"KediDili.VanillaPlusProfessions/HasTalents|contains=SugarRush": true,
+			},
+		},
+		{
+			"Action": "EditData",
+			"Target": "Data/Objects",
+			"TargetField": [ "232", "ContextTags" ],
+			"Entries": {
+				"ginger_item": "ginger_item"
+			},
+			"When": {
+				"KediDili.VanillaPlusProfessions/HasTalents|contains=SugarRush": true,
+			},
+		},
+		{
+			"Action": "EditData",
+			"Target": "Data/Objects",
+			"TargetField": [ "233", "ContextTags" ],
+			"Entries": {
+				"ginger_item": "ginger_item"
+			},
+			"When": {
+				"KediDili.VanillaPlusProfessions/HasTalents|contains=SugarRush": true,
+			},
+		},
+		{
+			"Action": "EditData",
+			"Target": "Data/Objects",
+			"TargetField": [ "Kedi.VPP.GrilledLeek", "ContextTags" ],
+			"Entries": {
+				"ginger_item": "ginger_item"
+			},
+			"When": {
+				"KediDili.VanillaPlusProfessions/HasTalents|contains=SugarRush": true,
+			},
+		},
+		{
+			"Action": "EditData",
+			"Target": "Data/Objects",
+			"TargetField": [ "Kedi.VPP.SeaweedSalad", "ContextTags" ],
+			"Entries": {
+				"ginger_item": "ginger_item"
+			},
+			"When": {
+				"KediDili.VanillaPlusProfessions/HasTalents|contains=SugarRush": true,
+			},
+		},
+		{
+			"Action": "EditData",
+			"Target": "Data/Objects",
+			"TargetField": [ "Kedi.VPP.TrailMix", "ContextTags" ],
+			"Entries": {
+				"ginger_item": "ginger_item"
+			},
+			"When": {
+				"KediDili.VanillaPlusProfessions/HasTalents|contains=SugarRush": true,
+			},
+		},
+		{
+			"Action": "EditData",
+			"Target": "Data/Objects",
+			"TargetField": [ "Kedi.VPP.WildFruitSalad", "ContextTags" ],
+			"Entries": {
+				"ginger_item": "ginger_item"
+			},
+			"When": {
+				"KediDili.VanillaPlusProfessions/HasTalents|contains=SugarRush": true,
+			},
+		},
+		{
+			"Action": "EditData",
+			"Target": "Data/Objects",
+			"TargetField": [ "Kedi.VPP.GrilledFish", "ContextTags" ],
+			"Entries": {
+				"ginger_item": "ginger_item"
+			},
+			"When": {
+				"KediDili.VanillaPlusProfessions/HasTalents|contains=SugarRush": true,
+			},
+		},
+		{
+			"Action": "EditData",
+			"Target": "Data/Objects",
+			"TargetField": [ "Kedi.VPP.RoastedFiddleheads", "ContextTags" ],
+			"Entries": {
+				"ginger_item": "ginger_item"
+			},
+			"When": {
+				"KediDili.VanillaPlusProfessions/HasTalents|contains=SugarRush": true,
+			},
+		},
+		{
+			"Action": "EditData",
+			"Target": "Data/Objects",
+			"TargetField": [ "Kedi.VPP.BakedTubers", "ContextTags" ],
+			"Entries": {
+				"ginger_item": "ginger_item"
+			},
+			"When": {
+				"KediDili.VanillaPlusProfessions/HasTalents|contains=SugarRush": true,
+			},
+		},
+		{
+			"Action": "EditData",
+			"Target": "Data/Objects",
+			"TargetField": [ "Kedi.VPP.FriedBugSteak", "ContextTags" ],
+			"Entries": {
+				"ginger_item": "ginger_item"
+			},
+			"When": {
+				"KediDili.VanillaPlusProfessions/HasTalents|contains=SugarRush": true,
+			},
+		},
+		{
+			"Action": "EditData",
+			"Target": "Data/Objects",
+			"TargetField": [ "Kedi.VPP.SteamedClams", "ContextTags" ],
+			"Entries": {
+				"ginger_item": "ginger_item"
+			},
+			"When": {
+				"KediDili.VanillaPlusProfessions/HasTalents|contains=SugarRush": true,
+			},
+		},
+		{
+			"Action": "EditData",
+			"Target": "KediDili.VanillaPlusProfessions/InsiderInfo",
+			"Entries": {
+				"Abigail": "66 276 608 611",
+				"Alex": "139 201 210 211",
+				"Caroline": "593 614 815",
+				"Clint": "378 380 384 386 909 334 335 336 337 910",
+				"Demetrius": "420 422 635 613",
+				"Dwarf": "96 97 98 99 121 122 78 286 287 288",
+				"Elliott": "393 397 372 719 718 394",
+				"Emily": "428 440",
+				"Evelyn": "591 597 223",
+				"George": "20 86 205",
+				"Gus": "216 224 213",
+				"Haley": "88 421",
+				"Harvey": "342 395 349 351",
+				"Jas": "595 221",
+				"Jodi": "220 222 231 214 225",
+				"Kent": "259 649 408 607",
+				"Krobus": "305 308 203",
+				"Leah": "22 257 404, 281",
+				"Lewis": "235 208 200 260",
+				"Leo": "829 830 834 444",
+				"Linus": "296 410 396 406",
+				"Marnie": "184 186 436 438 424 426",
+				"Maru": "400 787",
+				"Penny": "Book_Artifact PurpleBook 376",
+				"Pierre": "419 247 246 245 423",
+				"Robin": "636 709 390 388",
+				"Sam": "206 90 562",
+				"Sandy": "418 18 402",
+				"Sebastian": "84 227 236 575",
+				"Shane": "176 174 180 182",
+				"Vincent": "721 722 612 399",
+				"Willy": "DeluxeBait 774 685 703 686 687 691 692 693 694 695 856 877 SonarBobber",
+				"Wizard": "768 769 155",
+			}
+		},
+	]
+}

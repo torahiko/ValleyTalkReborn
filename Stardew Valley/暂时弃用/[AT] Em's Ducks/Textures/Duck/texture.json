@@ -1,0 +1,7 @@
+{
+	"ItemName": "Duck",
+	"Type": "Character",
+	"TextureWidth": 64,
+	"TextureHeight": 224,
+    "Variations": 12
+}

@@ -1,0 +1,353 @@
+{
+    "Changes": [
+    // CATALOGUE DATA
+        {
+            "LogName": "Add Farmer's Market Fishmonger & Butcher Calcifer Data",
+            "Action": "EditData",
+            "Target": "sophie.Calcifer/FurnitureActions",
+            "Entries": {
+            // FISH
+                "(F)HXW.FM_FisherButcher_HalibutBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_FishShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_HerringBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_FishShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_SalmonBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_FishShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_PikeBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_FishShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_OctopusBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_FishShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_SturgeonBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_FishShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_MixFishBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_FishShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_ChubBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_FishShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_EelBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_FishShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_FlounderBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_FishShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_SmAnchovyBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_FishShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_SmSardineBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_FishShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_SmBassBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_FishShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_SmSnapperBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_FishShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_SmSquidBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_FishShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_SmFlounderBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_FishShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_SquidBarrel": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_FishShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_FishBarrel": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_FishShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_LgFreshDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_FishShop"
+                        }
+                    ]
+                },
+            // CRABPOT
+                "(F)HXW.FM_FisherButcher_ShrimpBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_CrabpotShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_LobsterBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_CrabpotShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_SmMusselBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_CrabpotShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_SmClamBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_CrabpotShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_SmOysterBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_CrabpotShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_SmOysterBasket2": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_CrabpotShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_SmUrchinBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_CrabpotShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_SmCrabBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_CrabpotShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_PeriwinkleBarrel": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_CrabpotShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_ClamBarrel": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_CrabpotShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_MedFishDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_CrabpotShop"
+                        }
+                    ]
+                },
+            // ROE
+                "(F)HXW.FM_FisherButcher_SmRoeBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_RoeShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_MedRoeDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_RoeShop"
+                        }
+                    ]
+                },
+            // MIXED
+                "(F)HXW.FM_FisherButcher_LgFishDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_AllFishShop"
+                        }
+                    ]
+                },
+            // MEAT
+                "(F)HXW.FM_FisherButcher_ChickenBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_MeatShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_ChickenLegBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_MeatShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_SteakBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_MeatShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_MeatBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_MeatShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_RibsBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_MeatShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_PorkBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_MeatShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_PorkLoinBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_MeatShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_SmMeatBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_MeatShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_SmBaconBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_MeatShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_SmChickenBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_MeatShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_SmHamBasket": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_MeatShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_SmDeliDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_MeatShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_MedDeliDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_MeatShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_LgPoultryDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_MeatShop"
+                        }
+                    ]
+                },
+                "(F)HXW.FM_FisherButcher_LgMeatDisplay": {
+                    "TileActions": [
+                        {
+                            "TileAction": "OpenShop {{ModID}}_FMFM_MeatShop"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

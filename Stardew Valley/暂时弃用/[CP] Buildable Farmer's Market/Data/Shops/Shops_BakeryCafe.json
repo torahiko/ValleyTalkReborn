@@ -1,0 +1,101 @@
+{
+    "Changes": [
+        {
+            "LogName": "Add Bakery & Cafe Core Shops",
+            "Action": "EditData",
+            "Target": "Data/Shops",
+            "Entries": {
+                "{{ModID}}_FMB_BreadShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMB_BreadShop1",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target food_bakery !food_sweet",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMB_BreadShop2",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target bread_item",
+                            "AvoidRepeat": true
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "bread_item",
+                        "food_bakery, !food_sweet"
+                    ]
+                },
+                "{{ModID}}_FMB_SweetBakeryShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMB_SweetBakeryShop1",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target food_bakery food_sweet",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMB_SweetBakeryShop2",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target food_cake",
+                            "AvoidRepeat": true
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "food_cake",
+                        "food_bakery, food_sweet"
+                    ]
+                },
+                "{{ModID}}_FMB_BreadJamShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMB_BreadJamShop1",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target bread_item",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMB_BreadJamShop2",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target food_bakery !food_sweet",
+                            "AvoidRepeat": true
+                        },
+                        {
+                            "Id": "{{ModID}}_FMB_BreadJamShop3",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target jelly_item",
+                            "AvoidRepeat": true
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "bread_item",
+                        "food_bakery, !food_sweet",
+                        "jelly_item"
+                    ]
+                }
+            }
+        }
+    ]
+}

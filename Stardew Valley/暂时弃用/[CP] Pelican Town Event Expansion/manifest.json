@@ -1,0 +1,12 @@
+{
+    "Name": "Pelican Town Event Expansion",
+    "Author": "L0veRaven",
+    "Description": "Adds more events to Stardew Valley, focusing on the original characters of Pelican Town, and sometimes features the farmer.",
+    "Version": "1.0.4",
+    "UniqueID": "L0veRaven.PTEE",
+    "UpdateKeys": ["Nexus:39292"],
+    "ContentPackFor": {"UniqueID": "Pathoschild.ContentPatcher",},
+    "Dependencies": [
+        {"UniqueID": "FlashShifter.StardewValleyExpandedCP","IsRequired": "false"},
+    ]
+}

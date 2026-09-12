@@ -1,0 +1,11 @@
+{
+   "Name": "Even More Dialogue - Alex",
+   "Author": "OSlySLy",
+   "Description": "Gives Alex even more personality/Adds cuter, more suggestive dialogue for Alex.",
+   "Version": "1.1.0",
+   "UniqueID": "oslysly.evenmoredialouge-alex",
+   "ContentPackFor": {
+      "UniqueID": "Pathoschild.ContentPatcher"
+   },
+"UpdateKeys": [ "Nexus:16528" ],
+}

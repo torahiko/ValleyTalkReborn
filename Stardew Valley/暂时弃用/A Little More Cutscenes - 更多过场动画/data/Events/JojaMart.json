@@ -1,0 +1,42 @@
+{
+  "Changes": [
+    {
+      "LogName": "JojaMart",
+      "Action": "EditData",
+      "Target": "Data/Events/JojaMart",
+      "Entries": {
+        "{{ModId}}_EvilMorris/t 600 1700/w sunny": "Of Dwarves/-1000 1000/farmer 0 0 0 Morris 0 1 1/skippable/addConversationTopic EvilMorris 2/pause 300/changePortrait Morris onphone/speak Morris \"{{i18n:EvilMorris.1}}\"/pause 300/speak Morris \"{{i18n:EvilMorris.2}}\"/pause 1500/speak Morris \"{{i18n:EvilMorris.3}}\"/pause 1500/speak Morris \"{{i18n:EvilMorris.4}}\"/pause 1500/message \"{{i18n:EvilMorris.5}}\"/playSound openBox/pause 3000/changePortrait Morris/speak Morris \"{{i18n:EvilMorris.6}}\"/pause 1500/speak Morris \"{{i18n:EvilMorris.7}}\"/playSound thunder/stopMusic/pause 500/playSound thunder/speak Morris \"{{i18n:EvilMorris.8}}\"/playSound thunder/pause 1200/message \"{{i18n:EvilMorris.9}}\"/end warpOut"
+      },
+      "When": {
+        "EvilMorris": true
+      }
+    },
+    {
+      "LogName": "JojaMart",
+      "Action": "EditData",
+      "Target": "Data/Events/JojaMart",
+      "Entries": {
+        "{{ModId}}_JojaCoupons/e 3102768/t 1000 1700": "continue/21 26/farmer 14 28 0 Morris 0 1 1 Jodi 11 25 3 Gus 11 24 2 Demetrius 11 22 2 Pam 11 20 2/skippable/addConversationTopic JojaCoupons 2/pause 500/emote Jodi 32 true/speak Morris \"{{i18n:JojaCoupons.1}}\"/move farmer 0 -1 0/advancedMove Jodi false 0 2 2 100 3 0 1 100 0 1 2 100/move farmer 7 0 1/move farmer 0 -1 0 true/stopAdvancedMoves/warp Jodi 1000 1000/playSound doorOpen/pause 100/move Gus 0 1 2/faceDirection Gus 3/addObject 10 25 245/speak Morris \"{{i18n:JojaCoupons.2}}\"/move Demetrius 0 2 2/playSound newArtifact/removeObject 10 25/emote farmer 40/move Pam 0 2 2/addObject 10 25 247/pause 300/speak Morris \"{{i18n:JojaCoupons.3}}\"/playSound newArtifact/removeObject 10 25/addObject 10 25 423/speak Morris \"{{i18n:JojaCoupons.4}}\"/playSound newArtifact/removeObject 10 25/addObject 10 25 246/speak Morris \"{{i18n:JojaCoupons.5}}\"/removeObject 10 25 246/animate Pam false true 240 28 29 28 29 28 29 28 29 28 29 28 29/emote Pam 12 true/playSound newArtifact/addObject 10 25 235/speak Morris \"{{i18n:JojaCoupons.6}}\"/emote farmer 12/pause 500/end"
+      },
+      "When": {
+        "JojaCoupons": true,
+        "Hasflag |contains=jojaMember": false,
+        "HasMod |contains=FlashShifter.StardewValleyExpandedCP": false,
+        "HasMod |contains=LemurKat.JulietHouse.NPC": false
+      }
+    },
+    {
+      "LogName": "JojaMart adds Shane",
+      "Action": "EditData",
+      "Target": "Data/Events/JojaMart",
+      "Entries": {
+        "{{ModId}}_JojaCoupons/e 3102768/t 1000 1700": "continue/21 26/farmer 14 28 0 Morris 0 1 1 Jodi 11 25 3 Gus 11 24 2 Demetrius 11 22 2 Pam 11 20 2 Shane_JojaMart 9 25 1/skippable/addConversationTopic JojaCoupons 2/pause 500/emote Jodi 32 true/speak Morris \"{{i18n:JojaCoupons.1}}\"/move farmer 0 -1 0/advancedMove Jodi false 0 2 2 100 3 0 1 100 0 1 2 100/move farmer 7 0 1/move farmer 0 -1 0 true/stopAdvancedMoves/warp Jodi 1000 1000/playSound doorOpen/pause 100/move Gus 0 1 2/faceDirection Gus 3/addObject 10 25 245/speak Morris \"{{i18n:JojaCoupons.2}}\"/move Demetrius 0 2 2/playSound newArtifact/removeObject 10 25/emote farmer 40/move Pam 0 2 2/addObject 10 25 247/pause 300/speak Morris \"{{i18n:JojaCoupons.3}}\"/playSound newArtifact/removeObject 10 25/addObject 10 25 423/speak Morris \"{{i18n:JojaCoupons.4}}\"/playSound newArtifact/removeObject 10 25/addObject 10 25 246/speak Morris \"{{i18n:JojaCoupons.5}}\"/removeObject 10 25 246/animate Pam false true 240 28 29 28 29 28 29 28 29 28 29 28 29/emote Pam 12 true/playSound newArtifact/addObject 10 25 235/speak Morris \"{{i18n:JojaCoupons.6}}\"/emote farmer 12/pause 500/end"
+      },
+      "When": {
+        "Hasflag |contains=jojaMember": false,
+        "HasMod |contains=FlashShifter.StardewValleyExpandedCP": false,
+        "HasMod |contains=LemurKat.JulietHouse.NPC": true
+      }
+    }
+  ]
+}

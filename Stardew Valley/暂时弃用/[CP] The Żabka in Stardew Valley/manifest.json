@@ -1,0 +1,12 @@
+{
+	"Name": "The Żabka in Stardew Valley",
+	"Author": "xzcute",
+	"Version": "2.0",
+	"Description": "Zastępuje budynek JojaMart sklepem Żabka.",
+	"UniqueID": "h4man.zabka",
+	"MinimumApiVersion": "3.0.0",
+	"UpdateKeys": [ " Nexus:34475 " ],
+	"ContentPackFor": {
+		"UniqueID": "Pathoschild.ContentPatcher"
+	}
+}

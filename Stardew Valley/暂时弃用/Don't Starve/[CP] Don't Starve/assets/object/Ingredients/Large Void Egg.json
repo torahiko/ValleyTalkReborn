@@ -1,0 +1,80 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "DS_Large_Void_Egg": {
+            "Name": "Large Void Egg",
+            "DisplayName": "{{i18n:Large_Void_Egg.name}}",
+            "Description": "{{i18n:Large_Void_Egg.text}}",
+            "Type": "egg",
+            "Category": -5,
+            "Price": 123,
+            "Texture": "Mods\\ZG.DS\\Large Void Egg",
+            "SpriteIndex": 0,
+            "Edibility": -22,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": false,
+            "ExcludeFromShippingCollection": false,
+            "ExcludeFromRandomSale": false,
+            "Buffs": [],
+          "ContextTags": [
+            "color_black",
+            "egg_item"
+          ]
+        }
+        }
+      },
+      {
+          "Action": "EditData",
+          "Target": "Data/Machines",
+          "TargetField": [
+              "(BC)24",
+              "OutputRules"
+          ],
+          "Entries": {
+              "DS_Void_Mayonnaise_gold": {
+                  "Id": "DS_Void_Mayonnaise_gold",
+                  "Triggers": [
+                      {
+                          "Trigger": "ItemPlacedInMachine",
+                          "RequiredItemId": "(O)DS_Large_Void_Egg",
+                          "RequiredCount": 1
+                      }
+                  ],
+                  "OutputItem": [
+                      {
+                          "Id": "(O)308",
+                          "ItemId": "(O)308",
+                          "Quality": 2
+                      }
+                  ],
+                  "MinutesUntilReady": 180
+              }
+          },
+          "MoveEntries": [
+              { "Id": "DS_Void_Mayonnaise_gold", "ToPosition": "Top" }
+        ]
+      },
+      {
+        "Action": "EditData",
+        "Target": "Data/Shops", 
+        "TargetField": [ 
+          "ShadowShop", 
+          "Items" 
+        ],
+        "Entries": { 
+          "DS_Large_Void_Egg": { 
+            "Id": "Large Void Egg", 
+            "ItemId": "DS_Large_Void_Egg", 
+            "AvailableStock": -1, 
+            "Price": 10000
+        }
+      },
+      "MoveEntries": [
+          { "Id": "Large Void Egg", "AfterID": "(O)305" }
+    ]
+    }
+    ]
+  }

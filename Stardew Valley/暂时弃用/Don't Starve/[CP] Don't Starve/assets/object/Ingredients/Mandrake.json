@@ -1,0 +1,207 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "DS_Mandrake": {
+            "Name": "Mandrake",
+            "DisplayName": "{{i18n:Mandrake.name}}",
+            "Description": "{{i18n:Mandrake.text}}",
+            "Type": "vegetable",
+            "Category": -75,
+            "Price": 5000,
+            "Texture": "Mods\\ZG.DS\\Mandrake",
+            "SpriteIndex": 0,
+            "Edibility": -299,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": false,
+            "ExcludeFromShippingCollection": false,
+            "ExcludeFromRandomSale": false,
+            "Buffs": [
+              {
+                "BuffId": "21", 
+              "Id": "21",
+              "Duration": 1440
+            }
+            ]
+          }
+        }
+      },
+          {
+              "Log": "Add Gift Tastes for NPCs",
+              "Action": "EditData",
+              "Target": "Data/NPCGiftTastes",
+              "TextOperations": [
+      { "Operation": "Append",
+                "Target": ["Entries", "Universal_Hate"],
+                "Value": " DS_Mandrake",
+                "Delimiter": " "
+              },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Abigail", "1"],
+          "Value": " DS_Mandrake", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Krobus", "1"],
+          "Value": " DS_Mandrake", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Wizard", "1"],
+          "Value": " DS_Mandrake", 
+          "Delimiter": " "
+        }
+      ]
+      },
+      {
+        "Action": "EditData",
+        "Target": "Data/Shops", 
+        "TargetField": [ 
+          "SeedShop", 
+          "Items" 
+        ],
+        "Entries": { 
+          "DS_Mandrake": { 
+            "Id": "Mandrake", 
+            "ItemId": "DS_Mandrake", 
+            "AvailableStock": 1, 
+            "Price": 10000,
+            "Condition":"DAY_OF_WEEK Wednesday , IS_COMMUNITY_CENTER_COMPLETE , SEASON spring"
+        }
+      },
+      "MoveEntries": [
+          { "Id": "Mandrake", "ToPosition": "Top" }
+    ]
+    },
+      {
+        "Action": "EditData",
+        "Target": "Data/Shops", 
+        "TargetField": [ 
+          "Festival_FeastOfTheWinterStar_Pierre", 
+          "Items" 
+        ],
+        "Entries": { 
+          "DS_Mandrake": { 
+            "Id": "Mandrake", 
+            "ItemId": "DS_Mandrake", 
+            "AvailableStock": 1, 
+            "Price": 10000,
+            "Condition":"SYNCED_RANDOM day DS_Mandrake 0.2"
+        }
+      }
+    },
+    {
+      "Action": "EditData", 
+      "Target": "Data/Mail", 
+      "Entries": { 
+        "DS_Krobus_Mandrake_gift": "[letterbg 0] {{i18n:Krobus_Mandrakegift.text}} %item object DS_Mandrake 1 %%[#]{{i18n:Krobus_Mandrakegift.name}}" 
+      }
+    },
+    {
+        "Action": "EditData",
+        "Target": "Data/TriggerActions",
+        "Entries": {
+            "DS_Krobus_MandrakeMail":{
+                "Id": "DS_Krobus_MandrakeMail",
+                "Trigger": "DayEnding",
+                "Condition": "PLAYER_HEARTS Current Krobus 6",
+                "Action": "AddMail Current DS_Krobus_Mandrake_gift tomorrow"}
+            }
+          },
+    {
+      "Action": "EditData", 
+      "Target": "Data/Mail", 
+      "Entries": { 
+        "DS_Dwarf_Mandrake_gift": "[letterbg 0] {{i18n:Dwarf_Mandrakegift.text}} %item object DS_Mandrake 1 %%[#]{{i18n:Dwarf_Mandrakegift.name}}" 
+      }
+    },
+    {
+        "Action": "EditData",
+        "Target": "Data/TriggerActions",
+        "Entries": {
+            "DS_Dwarf_MandrakeMail":{
+                "Id": "DS_Dwarf_MandrakeMail",
+                "Trigger": "DayEnding",
+                "Condition": "PLAYER_HEARTS Current Dwarf 2",
+                "Action": "AddMail Current DS_Dwarf_Mandrake_gift tomorrow"}
+            }
+          },
+    {
+      "Action": "EditData", 
+      "Target": "Data/Mail", 
+      "Entries": { 
+        "DS_Wizard_Mandrake_gift": "[letterbg 2] {{i18n:Wizard_Mandrakegift.text}} %item object DS_Mandrake 1 %%[#]{{i18n:Wizard_Mandrakegift.name}}" 
+      }
+    },
+    {
+        "Action": "EditData",
+        "Target": "Data/TriggerActions",
+        "Entries": {
+            "DS_Wizard_MandrakeMail":{
+                "Id": "DS_Wizard_MandrakeMail",
+                "Trigger": "DayEnding",
+                "Condition": "PLAYER_HEARTS Current Wizard 8",
+                "Action": "AddMail Current DS_Wizard_Mandrake_gift tomorrow"}
+            }
+          },
+    {
+      "Action": "EditData", 
+      "Target": "Data/Mail", 
+      "Entries": { 
+        "DS_Vincent_Mandrake_gift": "[letterbg 1] {{i18n:Vincent_Mandrakegift.text}} %item object DS_Mandrake 1 %%[#]{{i18n:Vincent_Mandrakegift.name}}" 
+      }
+    },
+    {
+        "Action": "EditData",
+        "Target": "Data/TriggerActions",
+        "Entries": {
+            "DS_Vincent_MandrakeMail":{
+                "Id": "DS_Vincent_MandrakeMail",
+                "Trigger": "DayEnding",
+                "Condition": "PLAYER_HEARTS Current Vincent 6",
+                "Action": "AddMail Current DS_Vincent_Mandrake_gift tomorrow"}
+            }
+          },
+    {
+      "Action": "EditData", 
+      "Target": "Data/Mail", 
+      "Entries": { 
+        "DS_Gil_Mandrake_gift": "[letterbg 0] {{i18n:Gil_Mandrakegift.text}} %item object DS_Mandrake 1 %%[#]{{i18n:Gil_Mandrakegift.name}}" 
+      }
+    },
+    {
+        "Action": "EditData",
+        "Target": "Data/TriggerActions",
+        "Entries": {
+            "DS_Gil_MandrakeMail":{
+                "Id": "DS_Gil_MandrakeMail",
+                "Trigger": "DayEnding",
+                "Condition": "MINE_LOWEST_LEVEL_REACHED 420",
+                "Action": "AddMail Current DS_Gil_Mandrake_gift tomorrow"}
+            }
+          },
+          {
+            "Action": "EditData", 
+            "Target": "Data/Mail", 
+            "Entries": { 
+              "DS_Harvey_Mandrake_gift": "[letterbg 0] {{i18n:Harvey_Mandrakegift.text}} %item object DS_Mandrake 1 %%[#]{{i18n:Harvey_Mandrakegift.name}}" 
+            }
+          },
+          {
+              "Action": "EditData",
+              "Target": "Data/TriggerActions",
+              "Entries": {
+                  "DS_Harvey_MandrakeMail":{
+                      "Id": "DS_Harvey_MandrakeMail",
+                      "Trigger": "DayEnding",
+                      "Condition": "MINE_LOWEST_LEVEL_REACHED 130",
+                      "Action": "AddMail Current DS_Harvey_Mandrake_gift tomorrow"}
+                  }
+                }
+    ]
+  }

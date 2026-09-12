@@ -1,0 +1,58 @@
+{
+   "Name": "Buildable Farmer's Market",
+   "Author": "Airyn",
+   "Version": "1.0.0",
+   "Description": "Lets you sell your items using the HxW Farmer's Market furniture.",
+   "UniqueID": "Airyn.BFM",
+   "MinimumApiVersion": "3.0.0",
+   "UpdateKeys": [ "Nexus:???" ],
+   "ContentPackFor": {
+      "UniqueID": "Pathoschild.ContentPatcher"
+   },
+   "Dependencies": [
+      {
+          "UniqueID": "sophie.Calcifer",
+          "IsRequired": true
+      },
+      {
+          "UniqueID": "Spiderbuttons.BETAS",
+          "IsRequired": true
+      },
+      {
+          "UniqueID": "hxw.tilesheets",
+          "IsRequired": true
+      },
+      {
+          "UniqueID": "HXW.FMCore",
+          "IsRequired": true
+      },
+      {
+          "UniqueID": "HXW.FMBakery",
+          "IsRequired": false
+      },
+      {
+          "UniqueID": "HXW.FM_FisherButcher",
+          "IsRequired": false
+      },
+      {
+          "UniqueID": "HXW.GreenhouseFurniture",
+          "IsRequired": false
+      },
+      {
+          "UniqueID": "HXW.BakeryFurni",
+          "IsRequired": false
+      },
+      {
+          "UniqueID": "HXW.BoutiqueBakeryFurniture",
+          "IsRequired": false
+      },
+      {
+          "UniqueID": "HXW.FM_Wildflour_Pack",
+          "IsRequired": false
+      },
+      {
+          "UniqueID": "mushlune.overgrown",
+          "IsRequired": false
+      }
+   ]
+}

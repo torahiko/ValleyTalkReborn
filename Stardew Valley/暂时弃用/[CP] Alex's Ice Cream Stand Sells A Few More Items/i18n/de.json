@@ -1,0 +1,12 @@
+{
+	"config.EnableMod.name": "Mod aktivieren",
+	"config.EnableMod.description": "Aktiviere alle Funktionen dieses Mods. (Standard: true)",
+	"config.YearRoundItems.name": "Ganzjährig verfügbare Artikel",
+	"config.YearRoundItems.description": "Aktiviere Artikel, die das ganze Jahr über verfügbar sind. (Standard: true)",
+	"config.SeasonalItems.name": "Saisonale Artikel",
+	"config.SeasonalItems.description": "Aktiviere Artikel, die nur in bestimmten Jahreszeiten verfügbar sind. (Standard: true)",
+	"config.WeekdayDependentItems.name": "Wochentagsabhängige Artikel",
+	"config.WeekdayDependentItems.description": "Aktiviere Artikel, die nur an bestimmten Wochentagen verfügbar sind. (Standard: true)",
+	"config.SpecialItems.name": "Spezielle Artikel",
+	"config.SpecialItems.description": "Aktiviere Artikel, die nur an bestimmten Daten verfügbar sind. (Standard: true)"
+}

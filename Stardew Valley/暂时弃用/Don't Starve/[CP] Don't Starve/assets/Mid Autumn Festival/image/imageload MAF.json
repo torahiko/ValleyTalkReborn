@@ -1,0 +1,69 @@
+{
+    "Changes": [
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Lotus Seed Egg Yolk Mooncake",
+        "FromFile": "assets/Mid Autumn Festival/image/Lotus Seed Egg Yolk Mooncake.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Cantonese Five Kernel Mooncake",
+        "FromFile": "assets/Mid Autumn Festival/image/Cantonese Five Kernel Mooncake.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Sesame Bean Paste Mooncake",
+        "FromFile": "assets/Mid Autumn Festival/image/Sesame Bean Paste Mooncake.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Snowy Coconut Mooncake",
+        "FromFile": "assets/Mid Autumn Festival/image/Snowy Coconut Mooncake.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Matcha Fruit Mooncake",
+        "FromFile": "assets/Mid Autumn Festival/image/Matcha Fruit Mooncake.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Shrimp Seafood Mooncake",
+        "FromFile": "assets/Mid Autumn Festival/image/Shrimp Seafood Mooncake.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Custard Mooncake",
+        "FromFile": "assets/Mid Autumn Festival/image/Custard Mooncake.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Flowing Chocolate Mooncake",
+        "FromFile": "assets/Mid Autumn Festival/image/Flowing Chocolate Mooncake.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Rose Flower Mooncake",
+        "FromFile": "assets/Mid Autumn Festival/image/Rose Flower Mooncake.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Snowy Durian Mooncake",
+        "FromFile": "assets/Mid Autumn Festival/image/Snowy Durian Mooncake.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Puff Pastry Yunnan Ham Mooncake",
+        "FromFile": "assets/Mid Autumn Festival/image/Puff Pastry Yunnan Ham Mooncake.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Puff Pastry Monster Mooncake",
+        "FromFile": "assets/Mid Autumn Festival/image/Puff Pastry Monster Mooncake.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Mooncake Gift Box",
+        "FromFile": "assets/Mid Autumn Festival/image/Mooncake Gift Box.png"
+      }
+    ]
+}

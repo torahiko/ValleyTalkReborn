@@ -1,0 +1,41 @@
+{
+    "Changes": [
+
+        //tilesheet
+        {
+            "LogName": "Edit RC coopTiles",
+            "Action": "EditImage",
+            "PatchMode": "Replace",
+            "Target": "Maps/coopTiles",
+            "FromFile": "assets/recolors/coopTiles_wood_{{Map Recolor}}.png",
+            "Priority": "Late",
+            "When": {
+                "LocationName": "UncleArya.ResourceChickens.GiantCoop"
+            },
+            "Update": "OnLocationChange"
+        },
+
+        //map
+        {
+            "LogName": "Replace Giant Coop",
+            "Action": "EditMap",
+            "PatchMode": "Replace",
+            "Target": "Maps/UncleArya.ResourceChickens.Coop4",
+            "FromFile": "assets/compat/rc/Green_RC_Coop4.tmx"
+        },
+
+        //map properties
+        {
+            "LogName": "Replace giant Coop's map properties",
+            "Action": "EditMap",
+            "Target": "Maps/UncleArya.ResourceChickens.Coop4",
+            "MapProperties": {
+                "AmbientLight": "255 255 255",
+                "AmbientNightLight": "180 180 0",
+                "IsGreenhouse": "T",
+                "ProduceArea": "2 4 30 10"
+            }
+        }
+
+    ]
+}

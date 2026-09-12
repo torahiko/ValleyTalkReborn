@@ -1,0 +1,11 @@
+{
+  "Name": "Anthro Babies Expanded (Furry Mod)",
+  "Author": "Crexyen",
+  "Version": "1.2.3",
+  "Description": "Replaces the babies and toddlers spridesheet with anthro versions to look like your anthro spouse",
+  "UniqueID": "Crexyen.AnthroBabiesExpanded",
+  "UpdateKeys": ["Nexus:9413"],
+  "ContentPackFor": {
+    "UniqueID": "Pathoschild.ContentPatcher"
+  }
+}

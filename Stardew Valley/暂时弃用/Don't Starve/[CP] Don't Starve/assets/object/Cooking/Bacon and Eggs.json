@@ -1,0 +1,140 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "DS_Bacon_and_Eggs": {
+            "Name": "Bacon and Eggs",
+            "DisplayName": "{{i18n:Bacon_and_Eggs.name}}",
+            "Description": "{{i18n:Bacon_and_Eggs.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 400,
+            "Texture": "Mods\\ZG.DS\\Bacon and Eggs",
+            "SpriteIndex": 0,
+            "Edibility": 96,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": false,
+            "ExcludeFromShippingCollection": false,
+            "ExcludeFromRandomSale": false,
+            "Buffs": [
+              {
+                "Duration": 250,
+                "CustomAttributes": {
+                  "FarmingLevel": 0,
+                  "FishingLevel": 0,
+                  "MiningLevel": 0,
+                  "LuckLevel": 1,
+                  "ForagingLevel": 0,
+                  "MaxStamina": 0,
+                  "MagneticRadius": 0,
+                  "Speed": 0,
+                  "Defense": 0,
+                  "Attack": 0
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "Action": "EditData", 
+        "Target": "Data/CookingRecipes", 
+      
+        "Entries": { 
+          "Bacon and Eggs":"DS_Meat 1 DS_Morsel 1 -5 2/25 5/DS_Bacon_and_Eggs/" 
+        }
+      },
+          {
+              "Log": "Add Gift Tastes for NPCs",
+              "Action": "EditData",
+              "Target": "Data/NPCGiftTastes",
+              "TextOperations": [
+      { "Operation": "Append",
+                "Target": ["Entries", "Universal_like"],
+                "Value": " DS_Bacon_and_Eggs",
+                "Delimiter": " "
+              },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Alex", "1"],
+          "Value": " DS_Bacon_and_Eggs", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Harvey", "1"],
+          "Value": " DS_Bacon_and_Eggs", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Maru", "1"],
+          "Value": " DS_Bacon_and_Eggs", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Demetrius", "1"],
+          "Value": " DS_Bacon_and_Eggs", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Robin", "1"],
+          "Value": " DS_Bacon_and_Eggs", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Leo", "5"],
+          "Value": " DS_Bacon_and_Eggs", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Krobus", "5"],
+          "Value": " DS_Bacon_and_Eggs", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Willy", "5"],
+          "Value": " DS_Bacon_and_Eggs", 
+          "Delimiter": " "
+        },
+        {
+            "Operation": "Append",
+            "Target": ["Fields", "Sebastian", "7"],
+            "Value": " DS_Bacon_and_Eggs", 
+            "Delimiter": " "
+          },
+        {
+          "Operation": "Append",
+          "Target":  ["Fields", "Shane", "9"],
+          "Value": " DS_Bacon_and_Eggs", 
+          "Delimiter": " "
+        }
+      ]
+      },
+      {
+        "Action": "EditData", 
+        "Target": "Data/Mail", 
+        "Entries": { 
+          "DS_Bacon_and_Eggs_recipe": "[letterbg 0] {{i18n:Demetrius_Bacon_and_Eggsrecipe.text}} %item cookingRecipe Bacon and Eggs %%[#]{{i18n:Demetrius_Bacon_and_Eggsrecipe.name}}" 
+        }
+      },
+      {
+          "Action": "EditData",
+          "Target": "Data/TriggerActions",
+          "Entries": {
+              "DS_Bacon_and_EggsMail":{
+                  "Id": "DS_Bacon_and_EggsMail",
+                  "Trigger": "DayEnding",
+                  "Condition": "PLAYER_HEARTS Current Demetrius 2",
+                  "Action": "AddMail Current DS_Bacon_and_Eggs_recipe tomorrow"}
+              }
+            }
+    ]
+  }

@@ -1,0 +1,13 @@
+﻿{
+	"Name": "[CP] Alex's Ice Cream Stand Sells A Few More Items",
+	"Author": "ketchupchappie",
+	"Version": "2.0.0",
+	"MinimumApiVersion": "4.0.0",
+	"Description": "Alex's Ice Cream Stand sells a few more items in addition to Ice Cream.",
+	"UniqueID": "ketchupchappie.AICSSAFMI",
+	"UpdateKeys": [ "Nexus:29350" ],
+	"ContentPackFor": 
+	{
+		"UniqueID": "Pathoschild.ContentPatcher"
+	}
+}

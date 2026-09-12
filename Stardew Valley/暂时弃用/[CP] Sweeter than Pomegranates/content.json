@@ -1,0 +1,63 @@
+{
+  "Format": "2.4.0",
+  "DynamicTokens": [
+
+    /*hey that's absolutely crazy if you're here and you're not claire
+    aviroen is reformatting this entire code because of plagarism and people who don't want to read content patcher docs or even join the stardew valley discord themselves to ask for help
+    this is future proofing for those who think chatgpt is a functioning website
+    */
+    {
+      "Name": "ElliottBookTitle",
+      "Value": "%book"
+    },
+    {
+
+    "Name": "ElliottBookTitle",
+    "Value": "{{Spiderbuttons.CMCT/Dynamic: tiakall.writerelliott, ElliottBook}}",
+    "When": {
+      "HasMod": "Spiderbuttons.CMCT, tiakall.writerelliott"  
+      }
+    },
+    {
+      "Name": "Weekday",
+      "When": { "DayOfWeek": "Monday" },
+      "Value": "Mon"
+    },
+    {
+      "Name": "Weekday",
+      "When": { "DayOfWeek": "Tuesday" },
+      "Value": "Tue"
+    },
+    {
+      "Name": "Weekday",
+      "When": { "DayOfWeek": "Wednesday" },
+      "Value": "Wed"
+    },
+    {
+      "Name": "Weekday",
+      "When": { "DayOfWeek": "Thursday" },
+      "Value": "Thu"
+    },
+    {
+      "Name": "Weekday",
+      "When": { "DayOfWeek": "Friday" },
+      "Value": "Fri"
+    },
+    {
+      "Name": "Weekday",
+      "When": { "DayOfWeek": "Saturday" },
+      "Value": "Sat"
+    },
+    {
+      "Name": "Weekday",
+      "When": { "DayOfWeek": "Sunday" },
+      "Value": "Sun"
+    }
+  ],
+  "Changes": [
+    {
+      "Action": "Include",
+      "FromFile": "Assets/pomegranate.json, Assets/bloom.json, Assets/arils.json"
+    }
+  ]
+}

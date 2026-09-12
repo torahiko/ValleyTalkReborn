@@ -1,0 +1,25 @@
+{
+"Changes": [
+//ROBIN DIALOGUE
+{
+	"LogName": "Robin Extra Dialogue",
+	"Action": "EditData",
+	"Target": "Characters/Dialogue/Robin",
+	"Entries": {
+		"Fri4": "{{i18n: robin.daily.Fri4.{{SebPronouns}}}}",
+		"spring_6": "{{i18n: robin.daily.spring_6}}",
+		"summer_22": "{{i18n: robin.daily.summer_22.{{SebPronouns}}}}",
+		"fall_Wed4": "{{i18n: robin.daily.fall_Wed4.{{SebPronouns}}}}",
+		"winter_Sun6": "{{i18n: robin.daily.winter_Sun6}}",
+		"fall_20": "{{i18n: robin.daily.fall_20.{{SebPronouns}}}}",
+		"dating_Sam": "{{i18n: robin.reaction.dating_Sam}}",
+		"maggdancenight": "{{i18n: robin.topic.maggdancenight}}",
+		"eventSeen_maggbeliever09082024": "{{i18n: robin.event.maggbeliever09082024}}",
+		"maggchickenwar": "{{i18n: robin.topic.maggchickenwar}}",
+		"maggbandstand": "{{i18n: robin.topic.maggbandstand}}",
+		"maggsebsgame": "{{i18n: robin.topic.maggsebsgame.{{SebPronouns}}}}",
+
+		}
+    },
+]
+}

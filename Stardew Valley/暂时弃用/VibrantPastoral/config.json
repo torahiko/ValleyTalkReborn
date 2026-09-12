@@ -1,0 +1,11 @@
+{
+  "GreenFall": true,
+  "PetBowlShadow": "",
+  "Furniture": true,
+  "Interiors": true,
+  "Vegetation": true,
+  "SnOverlay": true,
+  "Water": "transparent",
+  "IridiumOasis": false,
+  "EdNygma": false
+}

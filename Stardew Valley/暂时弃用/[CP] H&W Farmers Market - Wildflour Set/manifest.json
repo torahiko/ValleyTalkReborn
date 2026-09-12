@@ -1,0 +1,16 @@
+{
+    "Name": "[CP] HXW Farmers Market Wildflour Set",
+    "Author": "HimeTarts and wildflourmods",
+    "Version": "1.0.2",
+    "Description": "CP Version of HXW Farmers Market Wildflour Set",
+    "UniqueID": "HXW.FM_Wildflour_Pack",
+    "UpdateKeys": ["nexus:21767"], 
+    "Dependencies":[
+        { 
+         "UniqueID":"sophie.Calcifer",
+         "IsRequired": true}
+     ],
+    "ContentPackFor": {
+        "UniqueID": "Pathoschild.ContentPatcher"
+    }
+}

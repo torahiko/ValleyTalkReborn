@@ -1,0 +1,207 @@
+{
+  "Changes": [
+    {
+      "Action": "EditData",
+      "Target": "Data/Objects",
+      "Entries": {
+        "DS_Morsel": {
+          "Name": "Morsel",
+          "DisplayName": "{{i18n:Morsel.name}}",
+          "Description": "{{i18n:Morsel.text}}",
+          "Type": "meat",
+          "Category": -14,
+          "Price": 50,
+          "Texture": "Mods\\ZG.DS\\Morsel",
+          "SpriteIndex": 0,
+          "Edibility": 21,
+          "IsDrink": false,
+          "ExcludeFromFishingCollection": false,
+          "ExcludeFromShippingCollection": false,
+          "ExcludeFromRandomSale": false,
+          "Buffs": [
+            {
+              "Duration": 0,
+              "CustomAttributes": {
+                "FarmingLevel": 0,
+                "FishingLevel": 0,
+                "MiningLevel": 0,
+                "LuckLevel": 0,
+                "ForagingLevel": 0,
+                "MaxStamina": 0,
+                "MagneticRadius": 0,
+                "Speed": 0,
+                "Defense": 0,
+                "Attack": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Action": "EditData", 
+      "Target": "Data/CraftingRecipes", 
+    
+      "Entries": { 
+        "Morsel":"DS_Meat 1/Field/DS_Morsel 2/false/Combat 2/" 
+      }
+    },
+		{
+			"Log": "Add Gift Tastes for NPCs",
+			"Action": "EditData",
+			"Target": "Data/NPCGiftTastes",
+			"TextOperations": [
+    { "Operation": "Append",
+			  "Target": ["Entries", "Universal_Dislike"],
+			  "Value": " DS_Morsel",
+			  "Delimiter": " "
+			},
+      {
+        "Operation": "Append",
+        "Target": ["Fields", "Alex", "3"],
+        "Value": " DS_Morsel", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target": ["Fields", "Gus", "3"],
+        "Value": " DS_Morsel", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target": ["Fields", "Jodi", "3"],
+        "Value": " DS_Morsel", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target": ["Fields", "Linus", "3"],
+        "Value": " DS_Morsel", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target": ["Fields", "Emily", "7"],
+        "Value": " DS_Morsel", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target": ["Fields", "Penny", "7"],
+        "Value": " DS_Morsel", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target": ["Fields", "Evelyn", "7"],
+        "Value": " DS_Morsel", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target": ["Fields", "Jas", "7"],
+        "Value": " DS_Morsel", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target": ["Fields", "Kent", "7"],
+        "Value": " DS_Morsel", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target": ["Fields", "Leo", "7"],
+        "Value": " DS_Morsel", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target": ["Fields", "Vincent", "7"],
+        "Value": " DS_Morsel", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target": ["Fields", "Marnie", "7"],
+        "Value": " DS_Morsel", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target":  ["Fields", "Harvey", "9"],
+        "Value": " DS_Morsel", 
+        "Delimiter": " "
+      },{
+        "Operation": "Append",
+        "Target":  ["Fields", "Haley", "9"],
+        "Value": " DS_Morsel", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target":  ["Fields", "Leah", "9"],
+        "Value": " DS_Morsel", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target":  ["Fields", "Caroline", "9"],
+        "Value": " DS_Morsel", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target":  ["Fields", "Clint", "9"],
+        "Value": " DS_Morsel", 
+        "Delimiter": " "
+      },
+      {
+        "Operation": "Append",
+        "Target":  ["Fields", "Abigail", "9"],
+        "Value": " DS_Morsel", 
+        "Delimiter": " "
+      }
+    ]
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/Shops", 
+      "TargetField": [ 
+        "SeedShop", 
+        "Items" 
+      ],
+      "Entries": { 
+        "DS_Morsel": { 
+          "Id": "Morsel", 
+          "ItemId": "DS_Morsel", 
+          "AvailableStock": 10, 
+          "Price": 75
+      }
+    },
+    "MoveEntries": [
+        { "Id": "Morsel", "ToPosition": "Top" }
+  ]
+  },
+  {
+    "Action": "EditData",
+    "Target": "Data/Shops", 
+    "TargetField": [ 
+      "Joja", 
+      "Items" 
+    ],
+    "Entries": { 
+      "DS_Morsel": { 
+        "Id": "Morsel", 
+        "ItemId": "DS_Morsel", 
+        "AvailableStock": -1, 
+        "Price": 175
+    }
+  },
+  "MoveEntries": [
+      { "Id": "Morsel", "ToPosition": "Top" }
+]
+}
+  ]
+}

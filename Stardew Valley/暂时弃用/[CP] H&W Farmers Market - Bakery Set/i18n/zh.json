@@ -1,0 +1,56 @@
+{
+
+///////////////
+// FURNITURE //
+///////////////
+
+  "FMBakery_SmBunBasket": "小圆面包编织篮",
+  "FMBakery_SmWheatBreadBasket":"小麦面包编织篮",
+  "FMBakery_SmMixBunBasket":"混合面包编织篮",
+  "FMBakery_SmGoldBreadBasket":"金黄小麦面包编织篮",
+  "FMBakery_SmSourdoughBreadBasket":"酸种面包编织篮",
+  "FMBakery_SmBaguetteBasket":"迷你法棍编织篮",
+  "FMBakery_SmSpeckleBreadBasket":"橄榄面包编织篮",
+  "FMBakery_SmCiabattaBasket":"巧巴达面包编织篮",
+  "FMBakery_SmIcedBunBasket":"糖霜圆面包编织篮",
+  "FMBakery_SmOliveFocacciaBasket":"橄榄佛卡夏编织篮",
+  "FMBakery_SmTomatoFocacciaBasket":"西红柿佛卡夏编织篮",
+  "FMBakery_SmCroissantBasket":"可颂编织篮",
+  "FMBakery_SmDoughnutBasket":"甜甜圈编织蓝",
+  "FMBakery_SmFlouryBreadBasket":"裹粉面包编织篮",
+  "FMBakery_SmChocolateBunBasket":"巧克力豆圆面包编织篮",
+
+  "FMBakery_CinnamonRolls":"肉桂卷",
+  "FMBakery_HalfDozenDoughnuts":"半打甜甜圈",
+  "FMBakery_SconesPlatter":"司康拼盘",
+  "FMBakery_BunsPlatter":"圆面包拼盘",
+  "FMBakery_ChocolateSconesPlatter":"巧克力淋酱司康拼盘",
+  "FMBakery_PetitFourPlatter":"花色小蛋糕拼盘",
+  "FMBakery_DemiBaguetteBasket":"大型半长法棍编织篮",
+  "FMBakery_CiabattaBasket":"大型巧巴达编织篮",
+  "FMBakery_BaguetteBasket":"大型法棍编织篮",
+
+  "FMBakery_LgSconeBasket":"大型司康编织篮",
+  "FMBakery_LgBreadBasket":"大型面包编织篮",
+  "FMBakery_LgBaguetteBasket":"大型法棍编织篮",
+  "FMBakery_LgSourdoughBasket":"大型酸种面包编织篮",
+  "FMBakery_LgIcedBunBasket":"大型糖霜圆面包编织篮",
+  "FMBakery_LgCroissantBasket":"大型可颂编织篮",
+
+  "FMBakery_WineCheeseCrate":"红酒芝士板条箱",
+  "FMBakery_WineCheeseCrate2":"面包与芝士板条箱",
+  "FMBakery_WineCheeseCrate3":"红酒芝士与面包板条箱",
+
+  "FMBakery_BreadCheeseCrate":"大型面包芝士板条箱",
+  "FMBakery_MedWineBreadJamCrate":"大型红酒与面包板条箱",
+  "FMBakery_BreadJamCrate1":"大型面包与果酱板条箱",
+  "FMBakery_BreadJamCrate2":"大型面包与果酱板条箱",
+
+  "FMBakery_PastriesDisplay":"大型糕点展示桌",
+  "FMBakery_BreadShelvesCashierStand":"面包展示结账柜台",
+  "FMBakery_3x3BreadBasketDisplay":"方形面包篮展示桌",
+  "FMBakery_LgBreadDisplay":"大型综合面包展示桌",
+  "FMBakery_LgBreadDisplayMenu":"大型面包展示桌附菜单"
+
+}
+  

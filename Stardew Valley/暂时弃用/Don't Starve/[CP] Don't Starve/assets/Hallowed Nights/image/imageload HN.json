@@ -1,0 +1,114 @@
+{
+    "Changes": [
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Candy Apple",
+        "FromFile": "assets/Hallowed Nights/image/Candy Apple.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Candy Corn",
+        "FromFile": "assets/Hallowed Nights/image/Candy Corn.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Not So Candy Corn",
+        "FromFile": "assets/Hallowed Nights/image/Not So Candy Corn.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Gummy Spider",
+        "FromFile": "assets/Hallowed Nights/image/Gummy Spider.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Catcoon Candy",
+        "FromFile": "assets/Hallowed Nights/image/Catcoon Candy.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Not Raisins",
+        "FromFile": "assets/Hallowed Nights/image/Not Raisins.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/DS Raisins",
+        "FromFile": "assets/Hallowed Nights/image/DS Raisins.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Ghost Pop",
+        "FromFile": "assets/Hallowed Nights/image/Ghost Pop.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Jelly Worm",
+        "FromFile": "assets/Hallowed Nights/image/Jelly Worm.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Tentacle Lolli",
+        "FromFile": "assets/Hallowed Nights/image/Tentacle Lolli.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Choco Pigs",
+        "FromFile": "assets/Hallowed Nights/image/Choco Pigs.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Candy Lice",
+        "FromFile": "assets/Hallowed Nights/image/Candy Lice.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Otherworldly Jawbreaker",
+        "FromFile": "assets/Hallowed Nights/image/Otherworldly Jawbreaker.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Lava Pepper",
+        "FromFile": "assets/Hallowed Nights/image/Lava Pepper.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Candy Bag",
+        "FromFile": "assets/Hallowed Nights/image/Candy Bag.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Halloween Candy Machine",
+        "FromFile": "assets/Hallowed Nights/image/Halloween Candy Machine.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Ghost Decoration",
+        "FromFile": "assets/Hallowed Nights/image/Ghost Decoration.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Bat Decoration",
+        "FromFile": "assets/Hallowed Nights/image/Bat Decoration.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Spider Decoration",
+        "FromFile": "assets/Hallowed Nights/image/Spider Decoration.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Tentacle Decoration",
+        "FromFile": "assets/Hallowed Nights/image/Tentacle Decoration.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Dangling Depth Dweller Decoration",
+        "FromFile": "assets/Hallowed Nights/image/Dangling Depth Dweller Decoration.png"
+      },
+      {
+        "Action": "Load",
+        "Target": "Mods/ZG.DS/Crow Decoration",
+        "FromFile": "assets/Hallowed Nights/image/Crow Decoration.png"
+      }
+    ]
+}

@@ -1,0 +1,243 @@
+{
+  "Format": "2.4.0",
+  "ConfigSchema": {
+    "EvilMorris": {
+      "AllowValues": "true, false",
+      "Default": "true",
+      "Section": "Joja Mart"
+    },
+    "JojaCoupons": {
+      "AllowValues": "true, false",
+      "Default": "true",
+      "Section": "Joja Mart"
+    },
+    "BusRepair": {
+      "AllowValues": "true, false",
+      "Default": "true",
+      "Section": "Bus Stop"
+    },
+    "BridgeRepair": {
+      "AllowValues": "true, false",
+      "Default": "true",
+      "Section": "Mountain"
+    },
+    "IceCreamPromoted": {
+      "AllowValues": "true, false",
+      "Default": "true",
+      "Section": "Town"
+    },
+    "SilentAssistant": {
+      "AllowValues": "true, false",
+      "Default": "true",
+      "Section": "Sandy Shop"
+    },
+    "FriendRemembered": {
+      "AllowValues": "true, false",
+      "Default": "true",
+      "Section": "Secret Woods"
+    },
+    "WildGathering": {
+      "AllowValues": "true, false",
+      "Default": "true",
+      "Section": "Backwoods"
+    },
+    "FishyBusiness": {
+      "AllowValues": "true, false",
+      "Default": "true",
+      "Section": "Beach"
+    },
+    "FamilyReunited": {
+      "AllowValues": "true, false",
+      "Default": "true",
+      "Section": "Bus Stop"
+    },
+    "PinkCakeObsession": {
+      "AllowValues": "true, false",
+      "Default": "true",
+      "Section": "Haley House"
+    },
+    "JojaPrize": {
+      "AllowValues": "true, false",
+      "Default": "true",
+      "Section": "Saloon"
+    },
+    "MidnightFrogging": {
+      "AllowValues": "true, false",
+      "Default": "true",
+      "Section": "Mountain"
+    },
+    "ExoticMerchant": {
+      "AllowValues": "true, false",
+      "Default": "true",
+      "Section": "Forest"
+    },
+    "ChefsTouch": {
+      "AllowValues": "true, false",
+      "Default": "true",
+      "Section": "Saloon"
+    },
+    "BravePatient": {
+      "AllowValues": "true, false",
+      "Default": "true",
+      "Section": "Hospital"
+    },
+    "WillyProblem": {
+      "AllowValues": "true, false",
+      "Default": "true",
+      "Section": "Beach"
+    },
+    "LandAfterRain": {
+      "AllowValues": "true, false",
+      "Default": "true",
+      "Section": "Town"
+    },
+    "BirdieMermaidTale": {
+      "AllowValues": "true, false",
+      "Default": "true",
+      "Section": "Ginger Island"
+    },
+    "LatenightBoozer": {
+      "AllowValues": "true, false",
+      "Default": "true",
+      "Section": "Town"
+    },
+    "ShaneBlueChickenTale": {
+      "AllowValues": "true, false",
+      "Default": "true",
+      "Section": "Animal Shop"
+    },
+    "BoardgameNight": {
+      "AllowValues": "true, false",
+      "Default": "true",
+      "Section": "Library"
+    },
+  },
+
+  "DynamicTokens": [
+    {
+      "Name": "ThrowingDirt",
+      "Value": "positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 -5/positionOffset TempDirt -5 0/positionOffset TempDirt -5 0/positionOffset TempDirt -5 0/positionOffset TempDirt -5 0/positionOffset TempDirt -5 0/positionOffset TempDirt -5 0/positionOffset TempDirt -5 0/positionOffset TempDirt -5 0/positionOffset TempDirt -5 0/positionOffset TempDirt -5 0/positionOffset TempDirt -5 0/positionOffset TempDirt -5 0/positionOffset TempDirt -5 0/positionOffset TempDirt -5 0/positionOffset TempDirt -5 0/positionOffset TempDirt -5 0/positionOffset TempDirt -5 5/positionOffset TempDirt -5 5/positionOffset TempDirt -5 5/positionOffset TempDirt -5 5/positionOffset TempDirt -5 5/positionOffset TempDirt -5 5/positionOffset TempDirt -5 5/positionOffset TempDirt -5 5/positionOffset TempDirt -5 5/positionOffset TempDirt -5 5/positionOffset TempDirt -5 5/positionOffset TempDirt -5 5/positionOffset TempDirt -5 5/positionOffset TempDirt -5 5//positionOffset TempDirt -5 5/positionOffset TempDirt -5 5/positionOffset TempDirt -5 5/positionOffset TempDirt -5 5/positionOffset TempDirt -5 5/"
+    }
+  ],
+
+  "Changes": [
+    /* Data include */
+    {
+      "Action": "Include",
+      "FromFile": "data/CTs.json, data/TriggerActions.json, data/Mail.json"
+    },
+    {
+      "Action": "Load",
+      "Target": "Data/Events/JojaMart",
+      "FromFile": "data/Blank.json",
+      "Priority": "Low"
+    },
+
+    /* Event Location include */
+    {
+      "Action": "Include",
+      "FromFile": "data/Events/JojaMart.json, data/Events/BusStop.json, data/Events/Mountain.json, data/Events/Town.json, data/Events/SandyHouse.json, data/Events/Woods.json, data/Events/Forest.json, data/Events/Backwoods.json, data/Events/Beach.json, data/Events/HaleyHouse.json, data/Events/Saloon.json, data/Events/Hospital.json, data/Events/IslandWest.json, data/Events/AnimalShop.json, data/Events/ArchaeologyHouse.json"
+    },
+
+    /* Assets include */
+    {
+      "LogName": "Morris Onphone",
+      "Action": "Load",
+      "Target": "Portraits/Morris_onphone",
+      "FromFile": "assets/TempPortraits/Morris_onphone.png"
+    },
+    {
+      "LogName": "Morris Onphone (Nyapu)",
+      "Action": "EditImage",
+      "PatchMode": "Replace",
+      "Target": "Portraits/Morris_onphone",
+      "FromFile": "assets/TempPortraits/Morris_onphone_nyapu.png",
+      "When": {
+        "HasMod |contains=Nyapu.Portraits": true
+      }
+    },
+    {
+      "LogName": "Dirty Haley",
+      "Action": "Load",
+      "Target": "Portraits/Haley_Dirty",
+      "FromFile": "assets/TempPortraits/Haley_Dirty.png"
+    },
+    {
+      "LogName": "Dirty Haley (Nyapu)",
+      "Action": "EditImage",
+      "PatchMode": "Replace",
+      "Target": "Portraits/Haley_Dirty",
+      "FromFile": "assets/TempPortraits/Haley_Dirty_nyapu.png",
+      "When": {
+        "HasMod |contains=Nyapu.Portraits": true
+      }
+    },
+    {
+      "LogName": "Temporary Boxes",
+      "Action": "Load",
+      "Target": "Characters/Boxes_1, Characters/Boxes_2, Characters/Boxes_3, Characters/Boxes_4, Characters/Boxes_5, Characters/Boxes_6, Characters/Boxes_7",
+      "FromFile": "assets/TempActors/boxes.png"
+    },
+    {
+      "LogName": "Green Junimo",
+      "Action": "Load",
+      "Target": "Characters/GreenJunimo",
+      "FromFile": "assets/TempActors/GreenJunimo.png"
+    },
+    {
+      "LogName": "Sebastian on bike",
+      "Action": "Load",
+      "Target": "Characters/SebOnBike",
+      "FromFile": "assets/TempActors/SebOnBike.png"
+    },
+    {
+      "LogName": "Kent carrying a bag",
+      "Action": "Load",
+      "Target": "Characters/Kent_Back",
+      "FromFile": "assets/TempActors/KentBack.png"
+    },
+    {
+      "LogName": "Temp Items",
+      "Action": "Load",
+      "Target": "Characters/TempCola1, Characters/TempCola2, Characters/TempBucket, Characters/TempDirt, Characters/TempGame",
+      "FromFile": "assets/TempActors/temp-items.png"
+    },
+    {
+      "LogName": "Wizard Teleport",
+      "Action": "Load",
+      "Target": "Characters/Wizard_Warp",
+      "FromFile": "assets/TempActors/WarpWizard.png"
+    },
+    {
+      "LogName": "Phoenix",
+      "Action": "Load",
+      "Target": "Characters/Phoenix",
+      "FromFile": "assets/TempActors/Phoenix.png"
+    },
+
+    /* Audio include */
+    {
+      "Action": "EditData",
+      "Target": "Data/AudioChanges",
+      "Entries": {
+        "{{ModId}}_Motorcycle": {
+          "ID": "{{ModId}}_Motorcycle",
+          "Category": "Sound",
+          "FilePaths": [
+            "{{AbsoluteFilePath: assets/Sounds/ducati-monster-4-103262.wav}}"
+          ],
+          "Looped": false
+        },
+        "{{ModId}}_RollingDice": {
+          "ID": "{{ModId}}_RollingDice",
+          "Category": "Sound",
+          "FilePaths": [
+            "{{AbsoluteFilePath: assets/Sounds/067760_2d6-rolling-dice.ogg}}"
+          ],
+          "Looped": false
+        }
+      }
+    },
+
+  ]
+}

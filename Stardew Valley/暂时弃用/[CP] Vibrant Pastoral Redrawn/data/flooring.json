@@ -1,0 +1,22 @@
+{
+	"Changes": [
+        {
+            "Action": "EditData",
+            "Target": "Data/AdditionalWallpaperFlooring",
+            "Entries": {
+                "{{ModId}}": {
+                    "ID": "{{ModId}}",
+                    "Texture": "Mods/{{ModId}}/Flooring",
+                    "IsFlooring": true,
+                    "Count": 11
+                }
+            }
+        },
+        {
+            "Action": "Load",
+            "Target": "Mods/{{ModId}}/Flooring",
+            "FromFile": "assets/Maps/floors_extra.png",
+			"Priority": "Low"
+        }
+	]
+}

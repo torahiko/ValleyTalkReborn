@@ -1,0 +1,62 @@
+{
+    "Changes": [
+  {
+    "Action": "EditData",
+    "Target": "Data/Objects",
+    "Entries": {
+      "DS_Ostrich_Mayonnaise": {
+        "Name": "Ostrich Mayonnaise",
+        "DisplayName": "{{i18n:Ostrich_Mayonnaise.name}}",
+        "Description": "{{i18n:Ostrich_Mayonnaise.text}}",
+        "Type": "Basic",
+        "Category": -26,
+        "Price": 2280,
+        "Texture": "Mods\\ZG.DS\\Ostrich Mayonnaise",
+        "SpriteIndex": 0,
+        "Edibility": 200,
+        "IsDrink": true,
+        "ExcludeFromFishingCollection": false,
+        "ExcludeFromShippingCollection": false,
+        "ExcludeFromRandomSale": false,
+        "Buffs": [],
+      "ContextTags": [
+        "color_white",
+        "mayo_item"
+      ]
+    }
+    }
+  },
+  {
+      "Action": "EditData",
+      "Target": "Data/Machines",
+      "TargetField": [
+          "(BC)24",
+          "OutputRules"
+      ],
+      "Entries": {
+          "DS_Ostrich_Mayonnaise": {
+              "Id": "DS_Ostrich_Mayonnaise",
+              "Triggers": [
+                  {
+                      "Trigger": "ItemPlacedInMachine",
+                      "RequiredItemId": "(O)289",
+                      "RequiredCount": 1
+                  }
+              ],
+              "OutputItem": [
+                  {
+                      "CopyQuality": true,
+                      "Id": "(O)DS_Ostrich_Mayonnaise",
+                      "ItemId": "(O)DS_Ostrich_Mayonnaise",
+                      "Quality": -1
+                  }
+              ],
+              "MinutesUntilReady": 180
+          }
+      },
+      "MoveEntries": [
+          { "Id": "DS_Ostrich_Mayonnaise", "ToPosition": "Top" }
+    ]
+  }
+]
+}

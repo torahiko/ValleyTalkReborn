@@ -1,0 +1,13 @@
+{
+  "Name": "[CP] Soft Slow Seasons",
+  "Author": "nuupon",
+  "Version": "1.6.4-beta",
+  "Description": "Soft colored slow changing seasons",
+  "UniqueID": "nuupon.sss",
+  "MinimumApiVersion": "2.9",
+  "UpdateKeys": [ "Nexus:23095" ],
+  "ContentPackFor": {
+      "UniqueID": "Pathoschild.ContentPatcher",
+      "MinimumVersion": "1.6.1"
+  }
+}

@@ -1,0 +1,1000 @@
+{
+  "Changes": [
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Abigail",
+      "Entries": {
+        "AcceptGift_(O)119": "{{i18n:Characters/Dialogue/Abigail..AcceptGift_(O)119.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Abigail..AcceptGift_(O)119.Flavor.}}}}",
+        "Resort_Umbrella": "{{i18n:Characters/Dialogue/Abigail..Resort_Umbrella.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Abigail..Resort_Umbrella.Flavor.}}}}",
+        "summer_Thu10": "{{i18n:Characters/Dialogue/Abigail..summer_Thu10.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Abigail..summer_Thu10.Flavor.}}}}",
+        "summer_Thu4": "{{i18n:Characters/Dialogue/Abigail..summer_Thu4.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Abigail..summer_Thu4.Flavor.}}}}",
+        "fall_Thu": "{{i18n:Characters/Dialogue/Abigail..fall_Thu.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Abigail..fall_Thu.Flavor.}}}}",
+        "fall_Fri6": "{{i18n:Characters/Dialogue/Abigail..fall_Fri6.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Abigail..fall_Fri6.Flavor.}}}}",
+        "winter_7": "{{i18n:Characters/Dialogue/Abigail..winter_7.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Abigail..winter_7.Flavor.}}}}",
+        "fall_Mon": "{{i18n:Characters/Dialogue/Abigail..fall_Mon.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Abigail..fall_Mon.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Alex",
+      "Entries": {
+        "Sat": "{{i18n:Characters/Dialogue/Alex..Sat.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Alex..Sat.Flavor.}}}}",
+        "summer_Tue": "{{i18n:Characters/Dialogue/Alex..summer_Tue.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Alex..summer_Tue.Flavor.}}}}",
+        "summer_Sat": "{{i18n:Characters/Dialogue/Alex..summer_Sat.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Alex..summer_Sat.Flavor.}}}}",
+        "winter_Sat": "{{i18n:Characters/Dialogue/Alex..winter_Sat.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Alex..winter_Sat.Flavor. |Sebastian={{Sebastian}} |Sebastian_he={{Sebastian_he}}}} |Sebastian={{Sebastian}} |Sebastian_he={{Sebastian_he}}}}",
+        "Fri4": "{{i18n:Characters/Dialogue/Alex..Fri4.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Alex..Fri4.Flavor.}}}}",
+        "summer_Wed8": "{{i18n:Characters/Dialogue/Alex..summer_Wed8.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Alex..summer_Wed8.Flavor.}}}}",
+        "Resort_Towel": "{{i18n:Characters/Dialogue/Alex..Resort_Towel.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Alex..Resort_Towel.Flavor.}}}}",
+        "Tue": "{{i18n:Characters/Dialogue/Alex..Tue.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Alex..Tue.Flavor.}}}}",
+        "fall_Wed8": "{{i18n:Characters/Dialogue/Alex..fall_Wed8.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Alex..fall_Wed8.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Caroline",
+      "Entries": {
+        "Sat6": "{{i18n:Characters/Dialogue/Caroline..Sat6.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Caroline..Sat6.Flavor.}}}}",
+        "summer_Tue": "{{i18n:Characters/Dialogue/Caroline..summer_Tue.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Caroline..summer_Tue.Flavor.}}}}",
+        "fall_Wed6": "{{i18n:Characters/Dialogue/Caroline..fall_Wed6.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Caroline..fall_Wed6.Flavor.}}}}",
+        "AcceptGift_(O)16": "{{i18n:Characters/Dialogue/Caroline..AcceptGift_(O)16.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Caroline..AcceptGift_(O)16.Flavor.}}}}",
+        "summer_Sat_inlaw_Abigail": "{{i18n:Characters/Dialogue/Caroline..summer_Sat_inlaw_Abigail.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Caroline..summer_Sat_inlaw_Abigail.Flavor.}}}}",
+        "Resort_Shore": "{{i18n:Characters/Dialogue/Caroline..Resort_Shore.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Caroline..Resort_Shore.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Clint",
+      "Entries": {
+        "Resort_Chair": "{{i18n:Characters/Dialogue/Clint..Resort_Chair.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Clint..Resort_Chair.Flavor.}}}}",
+        "Resort_Bar": "{{i18n:Characters/Dialogue/Clint..Resort_Bar.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Clint..Resort_Bar.Flavor.}}}}",
+        "Wed6": "{{i18n:Characters/Dialogue/Clint..Wed6.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Clint..Wed6.Flavor.}}}}",
+        "Fri8": "{{i18n:Characters/Dialogue/Clint..Fri8.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Clint..Fri8.Flavor.}}}}",
+        "Resort_Shore": "{{i18n:Characters/Dialogue/Clint..Resort_Shore.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Clint..Resort_Shore.Flavor.}}}}",
+        "Resort_Shore_2": "{{i18n:Characters/Dialogue/Clint..Resort_Shore_2.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Clint..Resort_Shore_2.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Demetrius",
+      "Entries": {
+        "Fri": "{{i18n:Characters/Dialogue/Demetrius..Fri.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Demetrius..Fri.Flavor.}}}}",
+        "Fri4": "{{i18n:Characters/Dialogue/Demetrius..Fri4.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Demetrius..Fri4.Flavor.}}}}",
+        "married_Maru": "{{i18n:Characters/Dialogue/Demetrius..married_Maru.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Demetrius..married_Maru.Flavor.}}}}",
+        "summer_Mon6": "{{i18n:Characters/Dialogue/Demetrius..summer_Mon6.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Demetrius..summer_Mon6.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Dwarf",
+      "Entries": {
+        "Introduction": "{{i18n:Characters/Dialogue/Dwarf..Introduction.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/Dwarf..Introduction.FurryFarmerFlavor.}}}}",
+        "firstVisit_IslandNorth": "{{i18n:Characters/Dialogue/Dwarf..firstVisit_IslandNorth.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/Dwarf..firstVisit_IslandNorth.FurryFarmerFlavor.}}}}",
+        "Fri_2": "{{i18n:Characters/Dialogue/Dwarf..Fri_2.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/Dwarf..Fri_2.FurryFarmerFlavor.}}}}",
+        "mineArea_121": "{{i18n:Characters/Dialogue/Dwarf..mineArea_121.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/Dwarf..mineArea_121.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Elliott",
+      "Entries": {
+        "Fri8": "{{i18n:Characters/Dialogue/Elliott..Fri8.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Elliott..Fri8.Flavor.}}}}",
+        "fall_Wed8": "{{i18n:Characters/Dialogue/Elliott..fall_Wed8.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Elliott..fall_Wed8.Flavor.}}}}",
+        "Resort_Chair": "{{i18n:Characters/Dialogue/Elliott..Resort_Chair.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Elliott..Resort_Chair.Flavor.}}}}",
+        "fall_Fri4": "{{i18n:Characters/Dialogue/Elliott..fall_Fri4.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Elliott..fall_Fri4.Flavor.}}}}",
+        "fall_Fri": "{{i18n:Characters/Dialogue/Elliott..fall_Fri.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Elliott..fall_Fri.Flavor.}}}}",
+        "winter_Fri": "{{i18n:Characters/Dialogue/Elliott..winter_Fri.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Elliott..winter_Fri.Flavor.}}}}",
+        "summer_Sat": "{{i18n:Characters/Dialogue/Elliott..summer_Sat.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Elliott..summer_Sat.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Emily",
+      "Entries": {
+        "winter_Tue4": "{{i18n:Characters/Dialogue/Emily..winter_Tue4.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Emily..winter_Tue4.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Haley",
+      "Entries": {
+        "eventSeen_14": "{{i18n:Characters/Dialogue/Haley..eventSeen_14.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Haley..eventSeen_14.Flavor.}}}}",
+        "Resort_Chair": "{{i18n:Characters/Dialogue/Haley..Resort_Chair.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Haley..Resort_Chair.Flavor.}}}}",
+        "Fri2": "{{i18n:Characters/Dialogue/Haley..Fri2.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Haley..Fri2.Flavor.}}}}",
+        "summer_Mon": "{{i18n:Characters/Dialogue/Haley..summer_Mon.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Haley..summer_Mon.Flavor.}}}}",
+        "summer_Thu": "{{i18n:Characters/Dialogue/Haley..summer_Thu.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Haley..summer_Thu.Flavor.}}}}",
+        "summer_Thu6": "{{i18n:Characters/Dialogue/Haley..summer_Thu6.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Haley..summer_Thu6.Flavor.}}}}",
+        "fall_Sun": "{{i18n:Characters/Dialogue/Haley..fall_Sun.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Haley..fall_Sun.Flavor.}}}}",
+        "Resort_Towel": "{{i18n:Characters/Dialogue/Haley..Resort_Towel.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Haley..Resort_Towel.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Harvey",
+      "Entries": {
+        "Wed": "{{i18n:Characters/Dialogue/Harvey..Wed.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Harvey..Wed.Flavor.}}}}",
+        "Resort_Leaving": "{{i18n:Characters/Dialogue/Harvey..Resort_Leaving.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Harvey..Resort_Leaving.Flavor.}}}}",
+        "Resort_Shore": "{{i18n:Characters/Dialogue/Harvey..Resort_Shore.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Harvey..Resort_Shore.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Harvey",
+      "Entries": {
+        "Wed": "{{i18n:Characters/Dialogue/Harvey..Wed.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/Harvey..Wed.FurryFarmerFlavor.}}}}",
+        "Sun6": "{{i18n:Characters/Dialogue/Harvey..Sun6.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/Harvey..Sun6.FurryFarmerFlavor.}}}}",
+        "winter_Wed": "{{i18n:Characters/Dialogue/Harvey..winter_Wed.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/Harvey..winter_Wed.FurryFarmerFlavor.}}}}",
+        "summer_Mon": "{{i18n:Characters/Dialogue/Harvey..summer_Mon.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/Harvey..summer_Mon.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Jodi",
+      "Entries": {
+        "Wed4": "{{i18n:Characters/Dialogue/Jodi..Wed4.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Jodi..Wed4.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Kent",
+      "Entries": {
+        "Fri4": "{{i18n:Characters/Dialogue/Kent..Fri4.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Kent..Fri4.Flavor.}}}}",
+        "married_Sam": "{{i18n:Characters/Dialogue/Kent..married_Sam.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Kent..married_Sam.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Krobus",
+      "Entries": {
+        "4_*": "{{i18n:Characters/Dialogue/Krobus..4_*.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Krobus..4_*.Flavor.}}}}",
+        "AcceptBirthdayGift_Negative": "{{i18n:Characters/Dialogue/Krobus..AcceptBirthdayGift_Negative.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Krobus..AcceptBirthdayGift_Negative.Flavor.}}}}",
+        "Thu": "{{i18n:Characters/Dialogue/Krobus..Thu.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Krobus..Thu.Flavor.}}}}",
+        "Thu6": "{{i18n:Characters/Dialogue/Krobus..Thu6.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Krobus..Thu6.Flavor.}}}}",
+        "Mon": "{{i18n:Characters/Dialogue/Krobus..Mon.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Krobus..Mon.Flavor.}}}}",
+        "Mon2": "{{i18n:Characters/Dialogue/Krobus..Mon2.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Krobus..Mon2.Flavor.}}}}",
+        "Sat8": "{{i18n:Characters/Dialogue/Krobus..Sat8.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Krobus..Sat8.Flavor.}}}}",
+        "Sun": "{{i18n:Characters/Dialogue/Krobus..Sun.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Krobus..Sun.Flavor.}}}}",
+        "Sun4": "{{i18n:Characters/Dialogue/Krobus..Sun4.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Krobus..Sun4.Flavor.}}}}",
+        "Sun8": "{{i18n:Characters/Dialogue/Krobus..Sun8.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Krobus..Sun8.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Leah",
+      "Entries": {
+        "event_sculpt2": "{{i18n:Characters/Dialogue/Leah..event_sculpt2.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Leah..event_sculpt2.Flavor.}}}}",
+        "event_parents5": "{{i18n:Characters/Dialogue/Leah..event_parents5.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Leah..event_parents5.Flavor.}}}}",
+        "fall_Mon": "{{i18n:Characters/Dialogue/Leah..fall_Mon.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Leah..fall_Mon.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Lewis",
+      "Entries": {
+        "Resort_Shore": "{{i18n:Characters/Dialogue/Lewis..Resort_Shore.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Lewis..Resort_Shore.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Linus",
+      "Entries": {
+        "winter_Tue4": "{{i18n:Characters/Dialogue/Linus..winter_Tue4.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Linus..winter_Tue4.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogue",
+      "Entries": {
+        "Indoor_Day_Leah": "{{i18n:Characters/Dialogue/MarriageDialogue..Indoor_Day_Leah.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogue..Indoor_Day_Leah.Flavor.}}}}",
+        "Rainy_Day_Haley": "{{i18n:Characters/Dialogue/MarriageDialogue..Rainy_Day_Haley.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogue..Rainy_Day_Haley.Flavor.}}}}",
+        "Outdoor_Haley": "{{i18n:Characters/Dialogue/MarriageDialogue..Outdoor_Haley.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogue..Outdoor_Haley.Flavor.}}}}",
+        "spring_Sebastian": "{{i18n:Characters/Dialogue/MarriageDialogue..spring_Sebastian.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogue..spring_Sebastian.Flavor.}}}}",
+        "summer_Harvey": "{{i18n:Characters/Dialogue/MarriageDialogue..summer_Harvey.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogue..summer_Harvey.Flavor.}}}}",
+        "winter_Emily": "{{i18n:Characters/Dialogue/MarriageDialogue..winter_Emily.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogue..winter_Emily.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogueAbigail",
+      "Entries": {
+        "summer_1": "{{i18n:Characters/Dialogue/MarriageDialogueAbigail..summer_1.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueAbigail..summer_1.Flavor.}}}}",
+        "fall_6": "{{i18n:Characters/Dialogue/MarriageDialogueAbigail..fall_6.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueAbigail..fall_6.Flavor.}}}}",
+        "TwoKids_3": "{{i18n:Characters/Dialogue/MarriageDialogueAbigail..TwoKids_3.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueAbigail..TwoKids_3.Flavor.}}}}",
+        "funLeave_Abigail": "{{i18n:Characters/Dialogue/MarriageDialogueAbigail..funLeave_Abigail.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueAbigail..funLeave_Abigail.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogueAlex",
+      "Entries": {
+        "TwoKids_3": "{{i18n:Characters/Dialogue/MarriageDialogueAlex..TwoKids_3.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueAlex..TwoKids_3.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogueAlex",
+      "Entries": {
+        "Indoor_Night_1": "{{i18n:Characters/Dialogue/MarriageDialogueAlex..Indoor_Night_1.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueAlex..Indoor_Night_1.FurryFarmerFlavor.}}}}",
+        "winter_1": "{{i18n:Characters/Dialogue/MarriageDialogueAlex..winter_1.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueAlex..winter_1.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogueElliott",
+      "Entries": {
+        "Rainy_Day_3": "{{i18n:Characters/Dialogue/MarriageDialogueElliott..Rainy_Day_3.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueElliott..Rainy_Day_3.Flavor.}}}}",
+        "Indoor_Day_3": "{{i18n:Characters/Dialogue/MarriageDialogueElliott..Indoor_Day_3.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueElliott..Indoor_Day_3.Flavor.}}}}",
+        "Outdoor_1": "{{i18n:Characters/Dialogue/MarriageDialogueElliott..Outdoor_1.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueElliott..Outdoor_1.Flavor.}}}}",
+        "Outdoor_3": "{{i18n:Characters/Dialogue/MarriageDialogueElliott..Outdoor_3.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueElliott..Outdoor_3.Flavor.}}}}",
+        "fall_15": "{{i18n:Characters/Dialogue/MarriageDialogueElliott..fall_15.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueElliott..fall_15.Flavor.}}}}",
+        "OneKid_0": "{{i18n:Characters/Dialogue/MarriageDialogueElliott..OneKid_0.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueElliott..OneKid_0.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogueElliott",
+      "Entries": {
+        "Good_3": "{{i18n:Characters/Dialogue/MarriageDialogueElliott..Good_3.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueElliott..Good_3.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogueEmily",
+      "Entries": {
+        "TwoKids_1": "{{i18n:Characters/Dialogue/MarriageDialogueEmily..TwoKids_1.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueEmily..TwoKids_1.Flavor.}}}}",
+        "Neutral_0": "{{i18n:Characters/Dialogue/MarriageDialogueEmily..Neutral_0.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueEmily..Neutral_0.Flavor.}}}}",
+        "winter_Emily": "{{i18n:Characters/Dialogue/MarriageDialogueEmily..winter_Emily.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueEmily..winter_Emily.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogueEmily",
+      "Entries": {
+        "TwoKids_2": "{{i18n:Characters/Dialogue/MarriageDialogueEmily..TwoKids_2.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueEmily..TwoKids_2.FurryFarmerFlavor.}}}}",
+        "OneKid_1": "{{i18n:Characters/Dialogue/MarriageDialogueEmily..OneKid_1.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueEmily..OneKid_1.FurryFarmerFlavor.}}}}",
+        "TwoKids_3": "{{i18n:Characters/Dialogue/MarriageDialogueEmily..TwoKids_3.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueEmily..TwoKids_3.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogueHaley",
+      "Entries": {
+        "Rainy_Day_3": "{{i18n:Characters/Dialogue/MarriageDialogueHaley..Rainy_Day_3.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueHaley..Rainy_Day_3.Flavor.}}}}",
+        "Rainy_Day_Haley": "{{i18n:Characters/Dialogue/MarriageDialogueHaley..Rainy_Day_Haley.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueHaley..Rainy_Day_Haley.Flavor.}}}}",
+        "Outdoor_Haley": "{{i18n:Characters/Dialogue/MarriageDialogueHaley..Outdoor_Haley.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueHaley..Outdoor_Haley.Flavor.}}}}",
+        "summer_3": "{{i18n:Characters/Dialogue/MarriageDialogueHaley..summer_3.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueHaley..summer_3.Flavor.}}}}",
+        "winter_14": "{{i18n:Characters/Dialogue/MarriageDialogueHaley..winter_14.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueHaley..winter_14.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogueHaley",
+      "Entries": {
+        "TwoKids_2": "{{i18n:Characters/Dialogue/MarriageDialogueHaley..TwoKids_2.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueHaley..TwoKids_2.FurryFarmerFlavor.}}}}",
+        "TwoKids_3": "{{i18n:Characters/Dialogue/MarriageDialogueHaley..TwoKids_3.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueHaley..TwoKids_3.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogueHarvey",
+      "Entries": {
+        "Outdoor_1": "{{i18n:Characters/Dialogue/MarriageDialogueHarvey..Outdoor_1.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueHarvey..Outdoor_1.Flavor.}}}}",
+        "TwoKids_3": "{{i18n:Characters/Dialogue/MarriageDialogueHarvey..TwoKids_3.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueHarvey..TwoKids_3.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogueHarvey",
+      "Entries": {
+        "Good_3": "{{i18n:Characters/Dialogue/MarriageDialogueHarvey..Good_3.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueHarvey..Good_3.FurryFarmerFlavor.}}}}",
+        "summer_1": "{{i18n:Characters/Dialogue/MarriageDialogueHarvey..summer_1.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueHarvey..summer_1.FurryFarmerFlavor.}}}}",
+        "winter_1": "{{i18n:Characters/Dialogue/MarriageDialogueHarvey..winter_1.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueHarvey..winter_1.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogueKrobus",
+      "Entries": {
+        "Rainy_Night_1": "{{i18n:Characters/Dialogue/MarriageDialogueKrobus..Rainy_Night_1.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueKrobus..Rainy_Night_1.Flavor.}}}}",
+        "Indoor_Day_1": "{{i18n:Characters/Dialogue/MarriageDialogueKrobus..Indoor_Day_1.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueKrobus..Indoor_Day_1.Flavor.}}}}",
+        "Indoor_Day_2": "{{i18n:Characters/Dialogue/MarriageDialogueKrobus..Indoor_Day_2.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueKrobus..Indoor_Day_2.Flavor.}}}}",
+        "Indoor_Night_2": "{{i18n:Characters/Dialogue/MarriageDialogueKrobus..Indoor_Night_2.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueKrobus..Indoor_Night_2.Flavor.}}}}",
+        "Indoor_Night_3": "{{i18n:Characters/Dialogue/MarriageDialogueKrobus..Indoor_Night_3.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueKrobus..Indoor_Night_3.Flavor.}}}}",
+        "Indoor_Night_4": "{{i18n:Characters/Dialogue/MarriageDialogueKrobus..Indoor_Night_4.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueKrobus..Indoor_Night_4.Flavor.}}}}",
+        "Good_2": "{{i18n:Characters/Dialogue/MarriageDialogueKrobus..Good_2.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueKrobus..Good_2.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogueKrobus",
+      "Entries": {
+        "OneKid_3": "{{i18n:Characters/Dialogue/MarriageDialogueKrobus..OneKid_3.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueKrobus..OneKid_3.FurryFarmerFlavor.}}}}",
+        "TwoKids_2": "{{i18n:Characters/Dialogue/MarriageDialogueKrobus..TwoKids_2.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueKrobus..TwoKids_2.FurryFarmerFlavor.}}}}",
+        "TwoKids_3": "{{i18n:Characters/Dialogue/MarriageDialogueKrobus..TwoKids_3.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueKrobus..TwoKids_3.FurryFarmerFlavor.}}}}",
+        "Bad_4": "{{i18n:Characters/Dialogue/MarriageDialogueKrobus..Bad_4.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueKrobus..Bad_4.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogueLeah",
+      "Entries": {
+        "summer_9": "{{i18n:Characters/Dialogue/MarriageDialogueLeah..summer_9.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueLeah..summer_9.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogueMaru",
+      "Entries": {
+        "TwoKids_3": "{{i18n:Characters/Dialogue/MarriageDialogueMaru..TwoKids_3.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueMaru..TwoKids_3.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogueMaru",
+      "Entries": {
+        "Indoor_Day_4": "{{i18n:Characters/Dialogue/MarriageDialogueMaru..Indoor_Day_4.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueMaru..Indoor_Day_4.FurryFarmerFlavor.}}}}",
+        "Rainy_Night_4": "{{i18n:Characters/Dialogue/MarriageDialogueMaru..Rainy_Night_4.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueMaru..Rainy_Night_4.FurryFarmerFlavor.}}}}",
+        "OneKid_0": "{{i18n:Characters/Dialogue/MarriageDialogueMaru..OneKid_0.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueMaru..OneKid_0.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialoguePenny",
+      "Entries": {
+        "Rainy_Night_1": "{{i18n:Characters/Dialogue/MarriageDialoguePenny..Rainy_Night_1.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialoguePenny..Rainy_Night_1.Flavor.}}}}",
+        "Indoor_Day_0": "{{i18n:Characters/Dialogue/MarriageDialoguePenny..Indoor_Day_0.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialoguePenny..Indoor_Day_0.Flavor.}}}}",
+        "summer_1": "{{i18n:Characters/Dialogue/MarriageDialoguePenny..summer_1.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialoguePenny..summer_1.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialoguePenny",
+      "Entries": {
+        "Outdoor_1": "{{i18n:Characters/Dialogue/MarriageDialoguePenny..Outdoor_1.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialoguePenny..Outdoor_1.FurryFarmerFlavor.}}}}",
+        "OneKid_0": "{{i18n:Characters/Dialogue/MarriageDialoguePenny..OneKid_0.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialoguePenny..OneKid_0.FurryFarmerFlavor.}}}}",
+        "OneKid_3": "{{i18n:Characters/Dialogue/MarriageDialoguePenny..OneKid_3.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialoguePenny..OneKid_3.FurryFarmerFlavor.}}}}",
+        "TwoKids_0": "{{i18n:Characters/Dialogue/MarriageDialoguePenny..TwoKids_0.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialoguePenny..TwoKids_0.FurryFarmerFlavor.}}}}",
+        "TwoKids_3": "{{i18n:Characters/Dialogue/MarriageDialoguePenny..TwoKids_3.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialoguePenny..TwoKids_3.FurryFarmerFlavor.}}}}",
+        "Good_3": "{{i18n:Characters/Dialogue/MarriageDialoguePenny..Good_3.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialoguePenny..Good_3.FurryFarmerFlavor.}}}}",
+        "fall_1": "{{i18n:Characters/Dialogue/MarriageDialoguePenny..fall_1.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialoguePenny..fall_1.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogueSam",
+      "Entries": {
+        "Rainy_Night_3": "{{i18n:Characters/Dialogue/MarriageDialogueSam..Rainy_Night_3.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueSam..Rainy_Night_3.Flavor.}}}}",
+        "OneKid_3": "{{i18n:Characters/Dialogue/MarriageDialogueSam..OneKid_3.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueSam..OneKid_3.Flavor.}}}}",
+        "TwoKids_0": "{{i18n:Characters/Dialogue/MarriageDialogueSam..TwoKids_0.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueSam..TwoKids_0.Flavor.}}}}",
+        "fall_26": "{{i18n:Characters/Dialogue/MarriageDialogueSam..fall_26.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueSam..fall_26.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogueSam",
+      "Entries": {
+        "Good_3": "{{i18n:Characters/Dialogue/MarriageDialogueSam..Good_3.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueSam..Good_3.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogueSebastian",
+      "Entries": {
+        "TwoKids_1": "{{i18n:Characters/Dialogue/MarriageDialogueSebastian..TwoKids_1.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueSebastian..TwoKids_1.Flavor. |Maru={{Maru}}}} |Maru={{Maru}}}}",
+        "summer_1": "{{i18n:Characters/Dialogue/MarriageDialogueSebastian..summer_1.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueSebastian..summer_1.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogueSebastian",
+      "Entries": {
+        "Neutral_4": "{{i18n:Characters/Dialogue/MarriageDialogueSebastian..Neutral_4.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueSebastian..Neutral_4.FurryFarmerFlavor.}}}}",
+        "TwoKids_0": "{{i18n:Characters/Dialogue/MarriageDialogueSebastian..TwoKids_0.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueSebastian..TwoKids_0.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/MarriageDialogueShane",
+      "Entries": {
+        "OneKid_0": "{{i18n:Characters/Dialogue/MarriageDialogueShane..OneKid_0.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueShane..OneKid_0.FurryFarmerFlavor.}}}}",
+        "TwoKids_0": "{{i18n:Characters/Dialogue/MarriageDialogueShane..TwoKids_0.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueShane..TwoKids_0.FurryFarmerFlavor.}}}}",
+        "TwoKids_1": "{{i18n:Characters/Dialogue/MarriageDialogueShane..TwoKids_1.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueShane..TwoKids_1.FurryFarmerFlavor.}}}}",
+        "TwoKids_3": "{{i18n:Characters/Dialogue/MarriageDialogueShane..TwoKids_3.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/MarriageDialogueShane..TwoKids_3.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Maru",
+      "Entries": {
+        "winter_Thu10": "{{i18n:Characters/Dialogue/Maru..winter_Thu10.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/Maru..winter_Thu10.FurryFarmerFlavor.}}}}",
+        "Sat6": "{{i18n:Characters/Dialogue/Maru..Sat6.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Maru..Sat6.Flavor.}}}}",
+        "Sat8": "{{i18n:Characters/Dialogue/Maru..Sat8.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Maru..Sat8.Flavor.}}}}",
+        "event_robot_explain1": "{{i18n:Characters/Dialogue/Maru..event_robot_explain1.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Maru..event_robot_explain1.Flavor.}}}}",
+        "fall_Thu10": "{{i18n:Characters/Dialogue/Maru..fall_Thu10.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Maru..fall_Thu10.Flavor.}}}}",
+        "winter_Tue": "{{i18n:Characters/Dialogue/Maru..winter_Tue.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Maru..winter_Tue.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Maru",
+      "Entries": {
+        "AcceptGift_(O)910": "{{i18n:Characters/Dialogue/Maru..AcceptGift_(O)910.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/Maru..AcceptGift_(O)910.FurryFarmerFlavor.}}}}",
+        "eventSeen_9_memory_oneweek": "{{i18n:Characters/Dialogue/Maru..eventSeen_9_memory_oneweek.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/Maru..eventSeen_9_memory_oneweek.FurryFarmerFlavor.}}}}",
+        "summer_Thu10": "{{i18n:Characters/Dialogue/Maru..summer_Thu10.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/Maru..summer_Thu10.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Penny",
+      "Entries": {
+        "eventSeen_34_memory_fourweeks": "{{i18n:Characters/Dialogue/Penny..eventSeen_34_memory_fourweeks.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Penny..eventSeen_34_memory_fourweeks.Flavor.}}}}",
+        "eventSeen_36_memory_oneweek": "{{i18n:Characters/Dialogue/Penny..eventSeen_36_memory_oneweek.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Penny..eventSeen_36_memory_oneweek.Flavor. |Maru={{Maru}} |Maru_she={{Maru_she}} |Maru_hers_his={{Maru_hers_his}}}} |Maru={{Maru}} |Maru_she={{Maru_she}} |Maru_hers_his={{Maru_hers_his}}}}",
+        "Resort_Towel": "{{i18n:Characters/Dialogue/Penny..Resort_Towel.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Penny..Resort_Towel.Flavor.}}}}",
+        "Resort": "{{i18n:Characters/Dialogue/Penny..Resort.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Penny..Resort.Flavor.}}}}",
+        "Tue10": "{{i18n:Characters/Dialogue/Penny..Tue10.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Penny..Tue10.Flavor.}}}}",
+        "Wed2": "{{i18n:Characters/Dialogue/Penny..Wed2.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Penny..Wed2.Flavor.}}}}",
+        "GreenRain_2": "{{i18n:Characters/Dialogue/Penny..GreenRain_2.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Penny..GreenRain_2.Flavor.}}}}",
+        "event_speaker_kids5": "{{i18n:Characters/Dialogue/Penny..event_speaker_kids5.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Penny..event_speaker_kids5.Flavor.}}}}",
+        "event_speaker_yes": "{{i18n:Characters/Dialogue/Penny..event_speaker_yes.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Penny..event_speaker_yes.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Pierre",
+      "Entries": {
+        "Sat": "{{i18n:Characters/Dialogue/Pierre..Sat.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/Pierre..Sat.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/rainy",
+      "Entries": {
+        "Haley": "{{i18n:Characters/Dialogue/rainy..Haley.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/rainy..Haley.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Robin",
+      "Entries": {
+        "AcceptGift_(O)SkillBook_2": "{{i18n:Characters/Dialogue/Robin..AcceptGift_(O)SkillBook_2.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Robin..AcceptGift_(O)SkillBook_2.Flavor.}}}}",
+        "GreenRain": "{{i18n:Characters/Dialogue/Robin..GreenRain.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Robin..GreenRain.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Shane",
+      "Entries": {
+        "Sat8": "{{i18n:Characters/Dialogue/Shane..Sat8.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Shane..Sat8.Flavor.}}}}",
+        "Wed8": "{{i18n:Characters/Dialogue/Shane..Wed8.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Shane..Wed8.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Sam",
+      "Entries": {
+        "Sat8": "{{i18n:Characters/Dialogue/Shane..Sat8.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Shane..Sat8.Flavor.}}}}",
+        "Mon2": "{{i18n:Characters/Dialogue/Sam..Mon2.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Sam..Mon2.Flavor.}}}}",
+        "summer_Wed2": "{{i18n:Characters/Dialogue/Sam..summer_Wed2.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Sam..summer_Wed2.Flavor.}}}}",
+        "fall_Tue": "{{i18n:Characters/Dialogue/Sam..fall_Tue.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Sam..fall_Tue.Flavor.}}}}",
+        "fall_23": "{{i18n:Characters/Dialogue/Sam..fall_23.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Sam..fall_23.Flavor.}}}}",
+        "winter_Fri": "{{i18n:Characters/Dialogue/Sam..winter_Fri.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Sam..winter_Fri.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Sandy",
+      "Entries": {
+        "Sun": "{{i18n:Characters/Dialogue/Sandy..Sun.Flavor..AnthroConfig |default={{i18n:Characters/Dialogue/Sandy..Sun.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Characters/Dialogue/Wizard",
+      "Entries": {
+        "Introduction": "{{i18n:Characters/Dialogue/Wizard..Introduction.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/Wizard..Introduction.FurryFarmerFlavor.}}}}",
+        "Mon4": "{{i18n:Characters/Dialogue/Wizard..Mon4.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/Wizard..Mon4.FurryFarmerFlavor.}}}}",
+        "Fri": "{{i18n:Characters/Dialogue/Wizard..Fri.FurryFarmerFlavor..AnthroConfig |default={{i18n:Characters/Dialogue/Wizard..Fri.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/mail",
+      "Entries": {
+        "SeaAmulet": "{{i18n:Data/mail..SeaAmulet.Flavor..AnthroConfig |default={{i18n:Data/mail..SeaAmulet.Flavor.}}}}",
+        "KrobusCrafting": "{{i18n:Data/mail..KrobusCrafting.Flavor..AnthroConfig |default={{i18n:Data/mail..KrobusCrafting.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Data/mail",
+      "Entries": {
+        "quest10": "{{i18n:Data/mail..quest10.FurryFarmerFlavor..AnthroConfig |default={{i18n:Data/mail..quest10.FurryFarmerFlavor.}}}}",
+        "MSB_Pierre": "{{i18n:Data/mail..MSB_Pierre.FurryFarmerFlavor..AnthroConfig |default={{i18n:Data/mail..MSB_Pierre.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/SecretNotes",
+      "Entries": {
+        "24": "{{i18n:Data/SecretNotes..24.Flavor..AnthroConfig |default={{i18n:Data/SecretNotes..24.Flavor.}}}}",
+        "7": "{{i18n:Data/SecretNotes..7.Flavor..AnthroConfig |default={{i18n:Data/SecretNotes..7.Flavor. |Harvey={{Harvey}} |Harvey_he={{Harvey_he}} |Harvey_husband={{Harvey_husband}} |Harvey_He_Uppercase={{Harvey_He_Uppercase}} |Elliott={{Elliott}} |Elliott_He={{Elliott_He}} |Shane={{Shane}} |Shane_his_her={{Shane_his_her}} |Shane_his_her={{Shane_his_her}} |Shane_He={{Shane_He}}}} |Harvey={{Harvey}} |Harvey_he={{Harvey_he}} |Harvey_husband={{Harvey_husband}} |Harvey_He_Uppercase={{Harvey_He_Uppercase}} |Elliott={{Elliott}} |Elliott_He={{Elliott_He}} |Shane={{Shane}} |Shane_his_her={{Shane_his_her}} |Shane_his_her={{Shane_his_her}} |Shane_He={{Shane_He}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/Quests",
+      "Entries": {
+        "100": "{{i18n:Data/Quests..100.Flavor..AnthroConfig |default={{i18n:Data/Quests..100.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/NPCGiftTastes",
+      "Entries": {
+        "Dwarf": "{{i18n:Data/NPCGiftTastes..Dwarf.Flavor..AnthroConfig |default={{i18n:Data/NPCGiftTastes..Dwarf.Flavor.}}}}",
+        "Krobus": "{{i18n:Data/NPCGiftTastes..Krobus.Flavor..AnthroConfig |default={{i18n:Data/NPCGiftTastes..Krobus.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/Boots",
+      "Entries": {
+        "878": "{{i18n:Data/Boots..878.Flavor..AnthroConfig |default={{i18n:Data/Boots..878.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/Events/ArchaeologyHouse",
+      "Entries": {
+        "romanceBook": "{{i18n:Data/Events/ArchaeologyHouse..romanceBook.Flavor..AnthroConfig |default={{i18n:Data/Events/ArchaeologyHouse..romanceBook.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Data/Events/Beach",
+      "Entries": {
+        "711130/t 600 1710/f Willy 1500": "{{i18n:Data/Events/Beach..711130/t+600+1710/f+Willy+1500.FurryFarmerFlavor..AnthroConfig |default={{i18n:Data/Events/Beach..711130/t+600+1710/f+Willy+1500.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Data/Events/Woods",
+      "Entries": {
+        "2120303/S 23/i 724/t 600 1900": "{{i18n:Data/Events/Woods..2120303/S+23/i+724/t+600+1900.FurryFarmerFlavor..AnthroConfig |default={{i18n:Data/Events/Woods..2120303/S+23/i+724/t+600+1900.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/Events/BoatTunnel",
+      "Entries": {
+        "9348571/Hl willyBoatFixed": "{{i18n:Data/Events/BoatTunnel..9348571/Hl+willyBoatFixed.Flavor..AnthroConfig |default={{i18n:Data/Events/BoatTunnel..9348571/Hl+willyBoatFixed.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/Events/FarmHouse",
+      "Entries": {
+        "3917601/f Emily 3500/O Emily/n emilyFiber/A emilyFiber/t 2000 2400/p Emily": "{{i18n:Data/Events/FarmHouse..3917601/f+Emily+3500/O+Emily/n+emilyFiber/A+emilyFiber/t+2000+2400/p+Emily.Flavor..AnthroConfig |default={{i18n:Data/Events/FarmHouse..3917601/f+Emily+3500/O+Emily/n+emilyFiber/A+emilyFiber/t+2000+2400/p+Emily.Flavor.}}}}",
+        "9333220/e 9333219/O Sebastian/A sebastianFrog/t 620 1900": "{{i18n:Data/Events/FarmHouse..9333220/e+9333219/O+Sebastian/A+sebastianFrog/t+620+1900.Flavor..AnthroConfig |default={{i18n:Data/Events/FarmHouse..9333220/e+9333219/O+Sebastian/A+sebastianFrog/t+620+1900.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Data/Events/FarmHouse",
+      "Entries": {
+        "558291/y 3/H": "{{i18n:Data/Events/FarmHouse..558291/y+3/H.FurryFarmerFlavor..AnthroConfig |default={{i18n:Data/Events/FarmHouse..558291/y+3/H.FurryFarmerFlavor.}}}}",
+        "3917626/f Harvey 3500/O Harvey/t 2000 2400/p Harvey/L": "{{i18n:Data/Events/FarmHouse..3917626/f+Harvey+3500/O+Harvey/t+2000+2400/p+Harvey/L.FurryFarmerFlavor..AnthroConfig |default={{i18n:Data/Events/FarmHouse..3917626/f+Harvey+3500/O+Harvey/t+2000+2400/p+Harvey/L.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/Events/Forest",
+      "Entries": {
+        "fieldTripEnd": "{{i18n:Data/Events/Forest..fieldTripEnd.Flavor..AnthroConfig |default={{i18n:Data/Events/Forest..fieldTripEnd.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Data/Events/FishShop",
+      "Entries": {
+        "16253595/j 29/X": "{{i18n:Data/Events/FishShop..16253595/j+29/X.FurryFarmerFlavor..AnthroConfig |default={{i18n:Data/Events/FishShop..16253595/j+29/X.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Data/Events/HaleyHouse",
+      "Entries": {
+        "195019/f Haley 2500/f Emily 2500/f Penny 2500/f Abigail 2500/f Leah 2500/f Maru 2500/o Abigail/o Penny/o Leah/o Emily/o Maru/o Haley/o Shane/o Harvey/o Sebastian/o Sam/o Elliott/o Alex/e 38/e 2123343/e 10/e 901756/e 54/e 15/i 446/k 195012": "{{i18n:Data/Events/HaleyHouse..195019/f+Haley+2500/f+Emily+2500/f+Penny+2500/f+Abigail+2500/f+Leah+2500/f+Maru+2500/o+Abigail/o+Penny/o+Leah/o+Emily/o+Maru/o+Haley/o+Shane/o+Harvey/o+Sebastian/o+Sam/o+Elliott/o+Alex/e+38/e+2123343/e+10/e+901756/e+54/e+15/i+446/k+195012.FurryFarmerFlavor..AnthroConfig |default={{i18n:Data/Events/HaleyHouse..195019/f+Haley+2500/f+Emily+2500/f+Penny+2500/f+Abigail+2500/f+Leah+2500/f+Maru+2500/o+Abigail/o+Penny/o+Leah/o+Emily/o+Maru/o+Haley/o+Shane/o+Harvey/o+Sebastian/o+Sam/o+Elliott/o+Alex/e+38/e+2123343/e+10/e+901756/e+54/e+15/i+446/k+195012.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Data/Events/ManorHouse",
+      "Entries": {
+        "prizeTicketIntro/n completedFirstBillboardQuest": "{{i18n:Data/Events/ManorHouse..prizeTicketIntro/n+completedFirstBillboardQuest.FurryFarmerFlavor..AnthroConfig |default={{i18n:Data/Events/ManorHouse..prizeTicketIntro/n+completedFirstBillboardQuest.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/Events/Mountain",
+      "Entries": {
+        "BadAnswer": "{{i18n:Data/Events/Mountain..BadAnswer.Flavor..AnthroConfig |default={{i18n:Data/Events/Mountain..BadAnswer.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/Events/Railroad",
+      "Entries": {
+        "528052/f Harvey 2500/t 900 1700/n harveyBalloon": "{{i18n:Data/Events/Railroad..528052/f+Harvey+2500/t+900+1700/n+harveyBalloon.Flavor..AnthroConfig |default={{i18n:Data/Events/Railroad..528052/f+Harvey+2500/t+900+1700/n+harveyBalloon.Flavor.}}}}",
+        "afraid": "{{i18n:Data/Events/Railroad..afraid.Flavor..AnthroConfig |default={{i18n:Data/Events/Railroad..afraid.Flavor.}}}}",
+        "529952/C": "{{i18n:Data/Events/Railroad..529952/C.Flavor..AnthroConfig |default={{i18n:Data/Events/Railroad..529952/C.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/Events/Sewer",
+      "Entries": {
+        "691039/f Dwarf 50/n CF_Sewer/d Fri": "{{i18n:Data/Events/Sewer..691039/f+Dwarf+50/n+CF_Sewer/d+Fri.Flavor..AnthroConfig |default={{i18n:Data/Events/Sewer..691039/f+Dwarf+50/n+CF_Sewer/d+Fri.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Data/Events/ScienceHouse",
+      "Entries": {
+        "9/f Maru 2000/p Maru": "{{i18n:Data/Events/ScienceHouse..9/f+Maru+2000/p+Maru.FurryFarmerFlavor..AnthroConfig |default={{i18n:Data/Events/ScienceHouse..9/f+Maru+2000/p+Maru.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/Events/SeedShop",
+      "Entries": {
+        "963113/n pierreQualityCrops": "{{i18n:Data/Events/SeedShop..963113/n+pierreQualityCrops.Flavor..AnthroConfig |default={{i18n:Data/Events/SeedShop..963113/n+pierreQualityCrops.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Data/Events/SeedShop",
+      "Entries": {
+        "3/f Abigail 2000/p Abigail/t 2000 2200/n abbySpiritBoard": "{{i18n:Data/Events/SeedShop..3/f+Abigail+2000/p+Abigail/t+2000+2200/n+abbySpiritBoard.FurryFarmerFlavor..AnthroConfig |default={{i18n:Data/Events/SeedShop..3/f+Abigail+2000/p+Abigail/t+2000+2200/n+abbySpiritBoard.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/Festivals/fall16",
+      "Entries": {
+        "Willy_y2": "{{i18n:Data/Festivals/fall16..Willy_y2.Flavor..AnthroConfig |default={{i18n:Data/Festivals/fall16..Willy_y2.Flavor.}}}}",
+        "Linus": "{{i18n:Data/Festivals/fall16..Linus.Flavor..AnthroConfig |default={{i18n:Data/Festivals/fall16..Linus.Flavor.}}}}",
+        "Jas": "{{i18n:Data/Festivals/fall16..Jas.Flavor..AnthroConfig |default={{i18n:Data/Festivals/fall16..Jas.Flavor.}}}}",
+        "Demetrius_y2": "{{i18n:Data/Festivals/fall16..Demetrius_y2.Flavor..AnthroConfig |default={{i18n:Data/Festivals/fall16..Demetrius_y2.Flavor.}}}}",
+        "Dwarf_y2": "{{i18n:Data/Festivals/fall16..Dwarf_y2.Flavor..AnthroConfig |default={{i18n:Data/Festivals/fall16..Dwarf_y2.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/Festivals/fall27",
+      "Entries": {
+        "Jodi": "{{i18n:Data/Festivals/fall27..Jodi.Flavor..AnthroConfig |default={{i18n:Data/Festivals/fall27..Jodi.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/Festivals/spring13",
+      "Entries": {
+        "Haley_y2": "{{i18n:Data/Festivals/spring13..Haley_y2.Flavor..AnthroConfig |default={{i18n:Data/Festivals/spring13..Haley_y2.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/Festivals/summer11",
+      "Entries": {
+        "Demetrius_y2": "{{i18n:Data/Festivals/summer11..Demetrius_y2.Flavor..AnthroConfig |default={{i18n:Data/Festivals/summer11..Demetrius_y2.Flavor.}}}}",
+        "Haley_y2": "{{i18n:Data/Festivals/summer11..Haley_y2.Flavor..AnthroConfig |default={{i18n:Data/Festivals/summer11..Haley_y2.Flavor.}}}}",
+        "Sam": "{{i18n:Data/Festivals/summer11..Sam.Flavor..AnthroConfig |default={{i18n:Data/Festivals/summer11..Sam.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/Festivals/summer28",
+      "Entries": {
+        "Vincent_y2": "{{i18n:Data/Festivals/summer28..Vincent_y2.Flavor..AnthroConfig |default={{i18n:Data/Festivals/summer28..Vincent_y2.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/Festivals/winter8",
+      "Entries": {
+        "Haley_spouse": "{{i18n:Data/Festivals/winter8..Haley_spouse.Flavor..AnthroConfig |default={{i18n:Data/Festivals/winter8..Haley_spouse.Flavor.}}}}",
+        "Pierre": "{{i18n:Data/Festivals/winter8..Pierre.Flavor..AnthroConfig |default={{i18n:Data/Festivals/winter8..Pierre.Flavor.}}}}",
+        "George_y2": "{{i18n:Data/Festivals/winter8..George_y2.Flavor..AnthroConfig |default={{i18n:Data/Festivals/winter8..George_y2.Flavor.}}}}",
+        "Evelyn": "{{i18n:Data/Festivals/winter8..Evelyn.Flavor..AnthroConfig |default={{i18n:Data/Festivals/winter8..Evelyn.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/Festivals/winter25",
+      "Entries": {
+        "Sebastian_spouse_y2": "{{i18n:Data/Festivals/winter25..Sebastian_spouse_y2.Flavor..AnthroConfig |default={{i18n:Data/Festivals/winter25..Sebastian_spouse_y2.Flavor.}}}}",
+        "Elliott_spouse_y2": "{{i18n:Data/Festivals/winter25..Elliott_spouse_y2.Flavor..AnthroConfig |default={{i18n:Data/Festivals/winter25..Elliott_spouse_y2.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Data/Festivals/winter8",
+      "Entries": {
+        "Haley_spouse_y2": "{{i18n:Data/Festivals/winter8..Haley_spouse_y2.FurryFarmerFlavor..AnthroConfig |default={{i18n:Data/Festivals/winter8..Haley_spouse_y2.FurryFarmerFlavor.}}}}",
+        "George_y2": "{{i18n:Data/Festivals/winter8..George_y2.FurryFarmerFlavor..AnthroConfig |default={{i18n:Data/Festivals/winter8..George_y2.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/TV/CookingChannel",
+      "Entries": {
+        "26": "{{i18n:Data/TV/CookingChannel..26.Flavor..AnthroConfig |default={{i18n:Data/TV/CookingChannel..26.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/TV/TipChannel",
+      "Entries": {
+        "22": "{{i18n:Data/TV/TipChannel..22.Flavor..AnthroConfig |default={{i18n:Data/TV/TipChannel..22.Flavor.}}}}",
+        "88": "{{i18n:Data/TV/TipChannel..88.Flavor..AnthroConfig |default={{i18n:Data/TV/TipChannel..88.Flavor.}}}}",
+        "169": "{{i18n:Data/TV/TipChannel..169.Flavor..AnthroConfig |default={{i18n:Data/TV/TipChannel..169.Flavor.}}}}",
+        "179": "{{i18n:Data/TV/TipChannel..179.Flavor..AnthroConfig |default={{i18n:Data/TV/TipChannel..179.Flavor.}}}}",
+        "218": "{{i18n:Data/TV/TipChannel..218.Flavor..AnthroConfig |default={{i18n:Data/TV/TipChannel..218.Flavor.}}}}",
+        "197": "{{i18n:Data/TV/TipChannel..197.Flavor..AnthroConfig |default={{i18n:Data/TV/TipChannel..197.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Data/hats",
+      "Entries": {
+        "46": "{{i18n:Data/hats..46.Flavor..AnthroConfig |default={{i18n:Data/hats..46.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Strings/animationDescriptions",
+      "Entries": {
+        "penny_wave_left": "{{i18n:Strings/animationDescriptions..penny_wave_left.Flavor..AnthroConfig |default={{i18n:Strings/animationDescriptions..penny_wave_left.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Strings/1_6_Strings",
+      "Entries": {
+        "TrashCatalogueDescription": "{{i18n:Strings/1_6_Strings..TrashCatalogueDescription.Flavor..AnthroConfig |default={{i18n:Strings/1_6_Strings..TrashCatalogueDescription.Flavor.}}}}",
+        "DesertFestival_Elliott": "{{i18n:Strings/1_6_Strings..DesertFestival_Elliott.Flavor..AnthroConfig |default={{i18n:Strings/1_6_Strings..DesertFestival_Elliott.Flavor.}}}}",
+        "DesertFestival_Demetrius": "{{i18n:Strings/1_6_Strings..DesertFestival_Demetrius.Flavor..AnthroConfig |default={{i18n:Strings/1_6_Strings..DesertFestival_Demetrius.Flavor.}}}}",
+        "DesertFestival_Caroline": "{{i18n:Strings/1_6_Strings..DesertFestival_Caroline.Flavor..AnthroConfig |default={{i18n:Strings/1_6_Strings..DesertFestival_Caroline.Flavor.}}}}",
+        "DesertFestival_Pam": "{{i18n:Strings/1_6_Strings..DesertFestival_Pam.Flavor..AnthroConfig |default={{i18n:Strings/1_6_Strings..DesertFestival_Pam.Flavor.}}}}",
+        "MakeOver_Emily_Reaction8": "{{i18n:Strings/1_6_Strings..MakeOver_Emily_Reaction8.Flavor..AnthroConfig |default={{i18n:Strings/1_6_Strings..MakeOver_Emily_Reaction8.Flavor.}}}}",
+        "MakeOver_Emily_Reaction3": "{{i18n:Strings/1_6_Strings..MakeOver_Emily_Reaction3.Flavor..AnthroConfig |default={{i18n:Strings/1_6_Strings..MakeOver_Emily_Reaction3.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Strings/1_6_Strings",
+      "Entries": {
+        "DesertFestival_Haley_marriage": "{{i18n:Strings/1_6_Strings..DesertFestival_Haley_marriage.FurryFarmerFlavor..AnthroConfig |default={{i18n:Strings/1_6_Strings..DesertFestival_Haley_marriage.FurryFarmerFlavor.}}}}",
+        "DesertFestival_Haley": "{{i18n:Strings/1_6_Strings..DesertFestival_Haley.FurryFarmerFlavor..AnthroConfig |default={{i18n:Strings/1_6_Strings..DesertFestival_Haley.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Strings/BigCraftables",
+      "Entries": {
+        "AutoPetter_Description": "{{i18n:Strings/BigCraftables..AutoPetter_Description.Flavor..AnthroConfig |default={{i18n:Strings/BigCraftables..AutoPetter_Description.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Strings/Characters",
+      "Entries": {
+        "Henchman1": "{{i18n:Strings/Characters..Henchman1.FurryFarmerFlavor..AnthroConfig |default={{i18n:Strings/Characters..Henchman1.FurryFarmerFlavor.}}}}",
+        "MovieInvite_Invited_Krobus": "{{i18n:Strings/Characters..MovieInvite_Invited_Krobus.FurryFarmerFlavor..AnthroConfig |default={{i18n:Strings/Characters..MovieInvite_Invited_Krobus.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Strings/SimpleNonVillagerDialogues",
+      "Entries": {
+        "derby_contestent6": "{{i18n:Strings/SimpleNonVillagerDialogues..derby_contestent6.Flavor..AnthroConfig |default={{i18n:Strings/SimpleNonVillagerDialogues..derby_contestent6.Flavor.}}}}",
+        "winter_derby_contestent6": "{{i18n:Strings/SimpleNonVillagerDialogues..winter_derby_contestent6.Flavor..AnthroConfig |default={{i18n:Strings/SimpleNonVillagerDialogues..winter_derby_contestent6.Flavor.}}}}",
+        "winter_derby_contestent10": "{{i18n:Strings/SimpleNonVillagerDialogues..winter_derby_contestent10.Flavor..AnthroConfig |default={{i18n:Strings/SimpleNonVillagerDialogues..winter_derby_contestent10.Flavor.}}}}",
+        "derby_contestent0": "{{i18n:Strings/SimpleNonVillagerDialogues..derby_contestent0.Flavor..AnthroConfig |default={{i18n:Strings/SimpleNonVillagerDialogues..derby_contestent0.Flavor.}}}}",
+        "derby_contestent3": "{{i18n:Strings/SimpleNonVillagerDialogues..derby_contestent3.Flavor..AnthroConfig |default={{i18n:Strings/SimpleNonVillagerDialogues..derby_contestent3.Flavor.}}}}",
+        "derby_contestent7": "{{i18n:Strings/SimpleNonVillagerDialogues..derby_contestent7.Flavor..AnthroConfig |default={{i18n:Strings/SimpleNonVillagerDialogues..derby_contestent7.Flavor.}}}}",
+        "derby_contestent9": "{{i18n:Strings/SimpleNonVillagerDialogues..derby_contestent9.Flavor..AnthroConfig |default={{i18n:Strings/SimpleNonVillagerDialogues..derby_contestent9.Flavor.}}}}",
+        "winter_derby_contestent0": "{{i18n:Strings/SimpleNonVillagerDialogues..winter_derby_contestent0.Flavor..AnthroConfig |default={{i18n:Strings/SimpleNonVillagerDialogues..winter_derby_contestent0.Flavor.}}}}",
+        "winter_derby_contestent3": "{{i18n:Strings/SimpleNonVillagerDialogues..winter_derby_contestent3.Flavor..AnthroConfig |default={{i18n:Strings/SimpleNonVillagerDialogues..winter_derby_contestent3.Flavor.}}}}",
+        "winter_derby_contestent7": "{{i18n:Strings/SimpleNonVillagerDialogues..winter_derby_contestent7.Flavor..AnthroConfig |default={{i18n:Strings/SimpleNonVillagerDialogues..winter_derby_contestent7.Flavor.}}}}",
+        "winter_derby_contestent9": "{{i18n:Strings/SimpleNonVillagerDialogues..winter_derby_contestent9.Flavor..AnthroConfig |default={{i18n:Strings/SimpleNonVillagerDialogues..winter_derby_contestent9.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Strings/Locations",
+      "Entries": {
+        "FieldOfficeFinale": "{{i18n:Strings/Locations..FieldOfficeFinale.FurryFarmerFlavor..AnthroConfig |default={{i18n:Strings/Locations..FieldOfficeFinale.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Strings/MovieReactions",
+      "Entries": {
+        "Emily_spring_movie_1_BeforeMovie": "{{i18n:Strings/MovieReactions..Emily_spring_movie_1_BeforeMovie.Flavor..AnthroConfig |default={{i18n:Strings/MovieReactions..Emily_spring_movie_1_BeforeMovie.Flavor.}}}}",
+        "Demetrius_like_AfterMovie": "{{i18n:Strings/MovieReactions..Demetrius_like_AfterMovie.Flavor..AnthroConfig |default={{i18n:Strings/MovieReactions..Demetrius_like_AfterMovie.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Strings/Notes",
+      "Entries": {
+        "19": "{{i18n:Strings/Notes..19.Flavor..AnthroConfig |default={{i18n:Strings/Notes..19.Flavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Strings/Objects",
+      "Entries": {
+        "Fluorapatite_Description": "{{i18n:Strings/Objects..Fluorapatite_Description.Flavor..AnthroConfig |default={{i18n:Strings/Objects..Fluorapatite_Description.Flavor.}}}}",
+        "PrehistoricHandaxe_Description": "{{i18n:Strings/Objects..PrehistoricHandaxe_Description.Flavor..AnthroConfig |default={{i18n:Strings/Objects..PrehistoricHandaxe_Description.Flavor.}}}}",
+        "Stingray_Description": "{{i18n:Strings/Objects..Stingray_Description.Flavor..AnthroConfig |default={{i18n:Strings/Objects..Stingray_Description.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Strings/Objects",
+      "Entries": {
+        "Slimejack_Description": "{{i18n:Strings/Objects..Slimejack_Description.FurryFarmerFlavor..AnthroConfig |default={{i18n:Strings/Objects..Slimejack_Description.FurryFarmerFlavor.}}}}",
+        "WeddingRing_Description": "{{i18n:Strings/Objects..WeddingRing_Description.FurryFarmerFlavor..AnthroConfig |default={{i18n:Strings/Objects..WeddingRing_Description.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Strings/SpecialOrderStrings",
+      "Entries": {
+        "Emily_Text": "{{i18n:Strings/SpecialOrderStrings..Emily_Text.FurryFarmerFlavor..AnthroConfig |default={{i18n:Strings/SpecialOrderStrings..Emily_Text.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Strings/StringsFromCSFiles",
+      "Entries": {
+        "ItemDeliveryQuest.cs.13523": "{{i18n:Strings/StringsFromCSFiles..ItemDeliveryQuest=cs=13523.Flavor..AnthroConfig |default={{i18n:Strings/StringsFromCSFiles..ItemDeliveryQuest=cs=13523.Flavor.}}}}",
+        "SlayMonsterQuest.cs.13750": "{{i18n:Strings/StringsFromCSFiles..SlayMonsterQuest=cs=13750.Flavor..AnthroConfig |default={{i18n:Strings/StringsFromCSFiles..SlayMonsterQuest=cs=13750.Flavor.}}}}",
+        "NPC.cs.4427": "{{i18n:Strings/StringsFromCSFiles..NPC=cs=4427.Flavor..AnthroConfig |default={{i18n:Strings/StringsFromCSFiles..NPC=cs=4427.Flavor.}}}}",
+        "NPC.cs.4429": "{{i18n:Strings/StringsFromCSFiles..NPC=cs=4429.Flavor..AnthroConfig |default={{i18n:Strings/StringsFromCSFiles..NPC=cs=4429.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Strings/StringsFromCSFiles",
+      "Entries": {
+        "Event.cs.1681": "{{i18n:Strings/StringsFromCSFiles..Event=cs=1681.FurryFarmerFlavor..AnthroConfig |default={{i18n:Strings/StringsFromCSFiles..Event=cs=1681.FurryFarmerFlavor.}}}}",
+        "TV.cs.13200": "{{i18n:Strings/StringsFromCSFiles..TV=cs=13200.FurryFarmerFlavor..AnthroConfig |default={{i18n:Strings/StringsFromCSFiles..TV=cs=13200.FurryFarmerFlavor.}}}}",
+        "WateringCan_enchant": "{{i18n:Strings/StringsFromCSFiles..WateringCan_enchant.FurryFarmerFlavor..AnthroConfig |default={{i18n:Strings/StringsFromCSFiles..WateringCan_enchant.FurryFarmerFlavor.}}}}",
+        "NPC.cs.3990": "{{i18n:Strings/StringsFromCSFiles..NPC=cs=3990.FurryFarmerFlavor..AnthroConfig |default={{i18n:Strings/StringsFromCSFiles..NPC=cs=3990.FurryFarmerFlavor.}}}}",
+        "VolcanoShop0": "{{i18n:Strings/StringsFromCSFiles..VolcanoShop0.FurryFarmerFlavor..AnthroConfig |default={{i18n:Strings/StringsFromCSFiles..VolcanoShop0.FurryFarmerFlavor.}}}}",
+        "VolcanoShop2": "{{i18n:Strings/StringsFromCSFiles..VolcanoShop2.FurryFarmerFlavor..AnthroConfig |default={{i18n:Strings/StringsFromCSFiles..VolcanoShop2.FurryFarmerFlavor.}}}}",
+        "Buff.cs.475": "{{i18n:Strings/StringsFromCSFiles..Buff=cs=475.FurryFarmerFlavor..AnthroConfig |default={{i18n:Strings/StringsFromCSFiles..Buff=cs=475.FurryFarmerFlavor.}}}}"
+      }
+    },
+    {
+      "Action": "EditData",
+      "Target": "Strings/StringsFromMaps",
+      "Entries": {
+        "JojaMart.67": "{{i18n:Strings/StringsFromMaps..JojaMart=67.Flavor..AnthroConfig |default={{i18n:Strings/StringsFromMaps..JojaMart=67.Flavor.}}}}",
+        "JojaMart.80": "{{i18n:Strings/StringsFromMaps..JojaMart=80.Flavor..AnthroConfig |default={{i18n:Strings/StringsFromMaps..JojaMart=80.Flavor.}}}}",
+        "Pirates5": "{{i18n:Strings/StringsFromMaps..Pirates5.Flavor..AnthroConfig |default={{i18n:Strings/StringsFromMaps..Pirates5.Flavor.}}}}",
+        "SamHouse.3": "{{i18n:Strings/StringsFromMaps..SamHouse=3.Flavor..AnthroConfig |default={{i18n:Strings/StringsFromMaps..SamHouse=3.Flavor.}}}}"
+      }
+    },
+    {
+      "When": {
+        "HasMod": "krystedez.FurryFarmer"
+      },
+      "Action": "EditData",
+      "Target": "Strings/StringsFromMaps",
+      "Entries": {
+        "HarveyRoom.10": "{{i18n:Strings/StringsFromMaps..HarveyRoom=10.FurryFarmerFlavor..AnthroConfig |default={{i18n:Strings/StringsFromMaps..HarveyRoom=10.FurryFarmerFlavor.}}}}",
+        "Hospital.3": "{{i18n:Strings/StringsFromMaps..Hospital=3.FurryFarmerFlavor..AnthroConfig |default={{i18n:Strings/StringsFromMaps..Hospital=3.FurryFarmerFlavor. |Harvey={{Harvey}}}} |Harvey={{Harvey}}}}"
+      }
+    }
+  ]
+}

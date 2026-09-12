@@ -1,0 +1,79 @@
+{
+    "Changes": [
+        {
+            "LogName": "Add Farmer's Market Core Shops",
+            "Action": "EditData",
+            "Target": "Data/Shops",
+            "Entries": {
+                "{{ModID}}_FMC_AllCropsShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_AllCropsShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_vegetable"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "category_vegetable"
+                    ]
+                },
+                "{{ModID}}_FMC_ForageShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_ForageShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target forage_item !forage_item_beach"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "forage_item, !forage_item_beach"
+                    ]
+                },
+                "{{ModID}}_FMC_AllFruitShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_AllFruitShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_fruits !id_(o)889"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "category_fruits, !id_(o)889"
+                    ]
+                },
+                "{{ModID}}_FMC_FlowerShop": 
+                {
+                    "PriceModifiers": null,
+                    "PriceModifierMode": "Stack",
+                    "Items": [
+                        {
+                            "Id": "{{ModID}}_FMC_FlowerShop",
+                            "ItemId": "ALL_ITEMS (O)",
+                            "Price": 0,
+                            "AvailableStock": 0,
+                            "PerItemCondition": "ITEM_CONTEXT_TAG Target category_flowers"
+                        }
+                    ],
+                    "SalableItemTags": [
+                        "category_flowers"
+                    ]
+                }
+            }
+        }
+    ]
+}

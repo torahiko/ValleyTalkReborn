@@ -1,0 +1,16 @@
+﻿{
+	"Name": "[CP] LoveOfCooking_ChineseTranslation",
+	"Author": "vickylchq",
+	"Version": "2.0.0",
+	"Description": "Chinese translation for Love of Cooking",
+	"UniqueID": "vickylchq.LoveOfCookingChineseTranslation",
+	"UpdateKeys": [ "Nexus:29712" ],
+	"ContentPackFor": {
+		"UniqueID": "Pathoschild.ContentPatcher"
+	},
+	"Dependencies": [
+		{
+			"UniqueID": "blueberry.LoveOfCooking.CP"
+		}
+	]
+}

@@ -1,0 +1,30 @@
+{
+   "Name": "Maggs Immersive Sam Spicy Expansion",
+   "Author": "MaggPlays",
+   "Description": "Adds spicy immersive dialogue and events for Sam",
+   "Version": "3.0.15",
+   "UniqueID": "maggplays.SamSpicyExpansion",
+   "UpdateKeys": [ "Nexus:28035" ],
+   "ContentPackFor": {
+       "UniqueID": "Pathoschild.ContentPatcher",
+        "MinimumVersion": "2.8.0"
+	 },
+   "Dependencies": [
+		{
+			"UniqueID": "Pathoschild.ContentPatcher",
+			"IsRequired": true
+		},
+		{
+			"UniqueID": "maggplays.immersivesam",
+			"IsRequired": true
+		},
+		{
+           "UniqueID": "Spiderbuttons.CMCT",
+           "IsRequired": true
+        },
+		{
+			"UniqueID": "TheMightyAmondee.CustomTokens",
+			"IsRequired": true
+		}
+	]
+}

@@ -1,0 +1,41 @@
+{
+    "Format": "2.3.0",
+
+    "ConfigSchema": {
+
+          "Recolor": {
+            "Description": "If you want to use a recolor, choose Light or Dark. Defaults to Classic.",
+            "AllowValues": "Light, Dark, Classic",
+            "Default": "Classic",
+            "AllowBlank": false,
+            "AllowMultiple": false
+          }
+    },
+    
+    "Changes": [
+
+        //Include Furniture
+
+        {
+        "LogName": "HXW Furniture",
+        "Action": "Include",
+        "FromFile": "Data/furniture.json"
+        },
+
+        //Include new Catalogue and Shop
+
+        {
+        "LogName": "HXW Farmers Market Shop and Catalogue",
+        "Action": "Include",
+        "FromFile": "Data/shops.json"
+        },
+
+        //Include Textures
+
+        {
+        "LogName": "HXW Furniture Textures",
+        "Action": "Include",
+        "FromFile": "Data/textures.json"
+        }
+    ]
+}

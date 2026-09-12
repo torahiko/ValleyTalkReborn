@@ -1,0 +1,121 @@
+{
+  "Changes": [
+    {
+      "Action": "EditImage",
+      "Target": "TileSheets/junimo_furniture",
+      "FromFile": "assets/TileSheets/junimo_furniture_portraits.png",
+      "Priority": "Late + 1",
+      "FromArea": {
+        "X": 39,
+        "Y": 71,
+        "Width": 18,
+        "Height": 18
+      },
+      "ToArea": {
+        "X": 39,
+        "Y": 279,
+        "Width": 18,
+        "Height": 18
+      }
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Characters/Haley",
+      "FromFile": "assets/Characters/Hayden.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Characters/Haley_Beach",
+      "FromFile": "assets/Characters/Hayden_Beach.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Characters/Haley_Winter",
+      "FromFile": "assets/Characters/Hayden_Winter.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Portraits/Haley",
+      "FromFile": "assets/Portraits/Hayden.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Portraits/Haley_Beach",
+      "FromFile": "assets/Portraits/Hayden_Beach.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Portraits/Haley_Winter",
+      "FromFile": "assets/Portraits/Hayden_Winter.png"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Maps/townInterior",
+      "FromFile": "assets/Maps/townInterior/townInterior_hayden_vanity.png",
+      "Priority": "Late + 1",
+      "ToArea": {
+        "X": 368,
+        "Y": 320,
+        "Width": 16,
+        "Height": 48
+      }
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Maps/townInterior",
+      "FromFile": "assets/Maps/townInterior/townInterior_hayden_stool.png",
+      "Priority": "Late + 1",
+      "ToArea": {
+        "X": 352,
+        "Y": 336,
+        "Width": 16,
+        "Height": 32
+      }
+    },
+    {
+      "Action": "EditImage",
+      "Target": "LooseSprites/cowPhotos",
+      "FromFile": "assets/LooseSprites/cowPhotos.png",
+      "PatchMode": "Overlay",
+      "Priority": "Late + 1"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "LooseSprites/cowPhotosWinter",
+      "FromFile": "assets/LooseSprites/cowPhotosWinter.png",
+      "PatchMode": "Overlay",
+      "Priority": "Late + 1"
+    },
+    {
+      "Action": "EditImage",
+      "Target": "LooseSprites/emojis",
+      "FromFile": "assets/LooseSprites/emojis_characters.png",
+      "Priority": "Late + 1",
+      "FromArea": {
+        "X": 36,
+        "Y": 27,
+        "Width": 9,
+        "Height": 9
+      },
+      "ToArea": {
+        "X": 36,
+        "Y": 99,
+        "Width": 9,
+        "Height": 9
+      }
+    },
+    {
+      "Action": "EditImage",
+      "Target": "Maps/townInterior",
+      "FromFile": "assets/Maps/townInterior/townInterior_rug.png",
+      "PatchMode": "Overlay",
+      "Priority": "Late + 1",
+      "ToArea": {
+        "X": 464,
+        "Y": 208,
+        "Width": 48,
+        "Height": 32
+      }
+    }
+  ]
+}

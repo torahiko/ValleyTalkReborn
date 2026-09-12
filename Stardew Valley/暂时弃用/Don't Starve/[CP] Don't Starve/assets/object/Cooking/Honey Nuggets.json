@@ -1,0 +1,98 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "DS_Honey_Nuggets": {
+            "Name": "Honey Nuggets",
+            "DisplayName": "{{i18n:Honey_Nuggets.name}}",
+            "Description": "{{i18n:Honey_Nuggets.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 100,
+            "Texture": "Mods\\ZG.DS\\Honey Nuggets",
+            "SpriteIndex": 0,
+            "Edibility": 42,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": false,
+            "ExcludeFromShippingCollection": false,
+            "ExcludeFromRandomSale": false,
+            "Buffs": [
+              {
+                "Duration": 300,
+                "CustomAttributes": {
+                  "FarmingLevel": 0,
+                  "FishingLevel": 0,
+                  "MiningLevel": 0,
+                  "LuckLevel": 0,
+                  "ForagingLevel": 3,
+                  "MaxStamina": 0,
+                  "MagneticRadius": 0,
+                  "Speed": 0,
+                  "Defense": 0,
+                  "Attack": 0
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "Action": "EditData", 
+        "Target": "Data/CookingRecipes", 
+      
+        "Entries": { 
+          "Honey Nuggets":"DS_Morsel 1 340 1/25 5/DS_Honey_Nuggets/s Farming 3/" 
+        }
+      },
+          {
+              "Log": "Add Gift Tastes for NPCs",
+              "Action": "EditData",
+              "Target": "Data/NPCGiftTastes",
+              "TextOperations": [
+      { "Operation": "Append",
+                "Target": ["Entries", "Universal_like"],
+                "Value": " DS_Honey_Nuggets",
+                "Delimiter": " "
+              },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Alex", "1"],
+          "Value": " DS_Honey_Nuggets", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Maru", "7"],
+          "Value": " DS_Honey_Nuggets", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target":  ["Fields", "Robin", "1"],
+          "Value": " DS_Honey_Nuggets", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Leo", "5"],
+          "Value": " DS_Honey_Nuggets", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Krobus", "5"],
+          "Value": " DS_Honey_Nuggets", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Willy", "5"],
+          "Value": " DS_Honey_Nuggets", 
+          "Delimiter": " "
+        }
+      ]
+      }
+    ]
+  }

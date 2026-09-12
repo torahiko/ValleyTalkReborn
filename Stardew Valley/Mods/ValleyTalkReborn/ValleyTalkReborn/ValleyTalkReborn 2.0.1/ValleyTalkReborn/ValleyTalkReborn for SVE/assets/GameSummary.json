@@ -1,0 +1,43 @@
+{
+  "Changes": [
+    {
+      "Action": "EditData",
+      "Target": "ValleyTalkReborn/GameSummary",
+      "TargetField": [ "Villagers", "Entries" ],
+      "Entries": {
+        "Alesia": { "id": "Alesia", "Name": "Alesia", "Description": "Castle Village archer and Adventurer's Guild member." },
+        "Andy": { "id": "Andy", "Name": "Andy", "Description": "Gruff elderly farmer owning Fairhaven Farm." },
+        "Apples": { "id": "Apples", "Name": "Apples", "Description": "Friendly young Junimo living in Aurora Vineyard." },
+        "Camilla": { "id": "Camilla", "Name": "Camilla", "Description": "Powerful witch from Castle Village." },
+        "Claire": { "id": "Claire", "Name": "Claire", "Description": "Shy employee at JojaMart and the Movie Theater." },
+        "Gunther": { "id": "Gunther", "Name": "Gunther", "Description": "Curator of the Pelican Town Museum & Library." },
+        "Hank": { "id": "Hank", "Name": "Hank", "Description": "Handyman from Grampleton, married to Treyvon." },
+        "Henchman": { "id": "Henchman", "Name": "Henchman", "Description": "Goblin living in the Witch's Swamp." },
+        "Isaac": { "id": "Isaac", "Name": "Isaac", "Description": "Adventurer's Guild veteran operating in the Badlands." },
+        "Jadu": { "id": "Jadu", "Name": "Jadu", "Description": "Adventurer guarding the Calico Desert entrance." },
+        "Jolyne": { "id": "Jolyne", "Name": "Jolyne", "Description": "Leader of The First Slash guild on the Fern Islands." },
+        "Lance": { "id": "Lance", "Name": "Lance", "Description": "Galdoran researcher and monster specialist." },
+        "Marlon": { "id": "Marlon", "Name": "Marlon", "Description": "One-eyed leader of the Adventurer's Guild." },
+        "Martin": { "id": "Martin", "Name": "Martin", "Description": "Shy JojaMart worker and Claire's best friend." },
+        "Morgan": { "id": "Morgan", "Name": "Morgan", "Description": "Non-binary magic apprentice at the Wizard's Tower." },
+        "Morris": { "id": "Morris", "Name": "Morris", "Description": "Ambitious manager of JojaMart." },
+        "Olivia": { "id": "Olivia", "Name": "Olivia", "Description": "Wealthy widow living in Pelican Town with son Victor." },
+        "Peaches": { "id": "Peaches", "Name": "Peaches", "Description": "Cheerful Junimo and best friend of Apples." },
+        "Scarlett": { "id": "Scarlett", "Name": "Scarlett", "Description": "Grampleton farmhand and Sophia's best friend." },
+        "Sophia": { "id": "Sophia", "Name": "Sophia", "Description": "Owner of Blue Moon Vineyard who loves cosplay and anime." },
+        "Susan": { "id": "Susan", "Name": "Susan", "Description": "Elderly owner of Emerald Farm near the railroad." },
+        "Treyvon": { "id": "Treyvon", "Name": "Treyvon", "Description": "Owner of Treyvon's Essentials shop, married to Hank." },
+        "Hakan": { "id": "Hakan", "Name": "Hakan", "Description": "Werewolf-orc explorer allied with Marlon's guild." },
+        "Victor": { "id": "Victor", "Name": "Victor", "Description": "Olivia's son and apprentice bridge engineer." },
+        "blueMoonVineyard": { "id": "blueMoonVineyard", "Name": "Blue Moon Vineyard", "Location": "Cindersap Forest" },
+        "fairHavenFarm": { "id": "fairHavenFarm", "Name": "Fairhaven Farm", "Location": "Cindersap Forest" },
+        "GrandpasShed": { "id": "GrandpasShed", "Name": "Grandpa's Shed", "Location": "Cindersap Forest" },
+        "AuroraVineyard": { "id": "AuroraVineyard", "Name": "Aurora Vineyard", "Location": "Cindersap Forest" },
+        "HanksGarage": { "id": "HanksGarage", "Name": "Hank's Garage", "Location": "Pelican Town" },
+        "LanceHouse": { "id": "LanceHouse", "Name": "Lance's House", "Location": "Mountain" },
+        "OliviasHouse": { "id": "OliviasHouse", "Name": "Olivia's House", "Location": "Pelican Town" },
+        "SophiaHouse": { "id": "SophiaHouse", "Name": "Sophia's House", "Location": "Cindersap Forest" }
+      }
+    }
+  ]
+}

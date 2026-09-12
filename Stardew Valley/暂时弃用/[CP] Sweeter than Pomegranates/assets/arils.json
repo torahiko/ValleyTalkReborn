@@ -1,0 +1,51 @@
+
+{
+"Changes": [
+    {
+    "Action": "EditData",
+    "Priority": "Late",
+    "When": {
+        "Spouse": "Elliott"
+    },
+    "Target": "Characters/Dialogue/Elliott",
+    "Entries": {
+
+	 //gift dialogue//
+
+       "AcceptBirthdayGift_Positive":"{{i18n:STP.AcceptBirthdayGift_Positive_{{Random:0,1}}}}",         	"AcceptBirthdayGift_Disliked":"{{i18n:STP.AcwceptBirthdayGift_Dislike}}",         	"AcceptBirthdayGift_Hated":"{{i18n:STP.AcceptBirthdayGift_Hated}}", 
+        "AcceptBirthdayGift_(O)154": "{{i18n:STP.AcceptBirthdayGift_(O)154}}", // Sea Cucumber
+        "AcceptBirthdayGift_(O)155": "{{i18n:STP.AcceptBirthdayGift_(O)155}}", // Super Cucumber
+        "AcceptBirthdayGift_(O)296": "{{i18n:STP.AcceptBirthdayGift_(O)296}}", // Salmonberry
+
+        "AcceptGift_(O)637": "{{i18n:STP.AcceptGift_(O)637}}", // Pomegranate
+        "AcceptGift_(O)814": "{{i18n:STP.AcceptGift_(O)814}}", // Squid Ink
+        "AcceptGift_Disliked":"{{i18n:STP.AcceptGift_Dislike}}", 
+        "AcceptGift_Neutral":"{{i18n:STP.AcceptGift_Neutral}}", // 
+        "AcceptGift_(O)218": "{{i18n:STP.AcceptGift_(O)218}}", // Tom Kha Soup
+        "AcceptGift_(O)154": "{{i18n:STP.AcceptGift_(O)154}}", // Sea Cucumber
+        "AcceptGift_(O)155": "{{i18n:STP.AcceptGift_(O)155}}", // Super Cucumber
+        "AcceptGift_(O)296": "{{i18n:STP.AcceptGift_(O)296}}", // Salmonberry
+    
+ //14H eventSeen dialogue//
+    
+        "eventSeen_3912132_memory_oneday": "{{i18n:STP.eventSeen_3912132_memory_oneday}}",
+        "eventSeen_3912132_memory_oneweek": "{{i18n:STP.eventSeen_3912132_memory_oneweek}}",
+        "eventSeen_3912132_memory_twoweeks": "{{i18n:STP.eventSeen_3912132_memory_twoweeks}}"
+    }
+},
+{
+"Action": "EditData",
+    "Priority": "Late",
+    "Target": "Characters/Dialogue/Elliott",
+    "Entries": {
+
+    //RWE 14H eventSeen dialogue//
+    "eventSeen_3912132_memory_oneweek": "{{i18n:STP.RWE.eventSeen_3912132_memory_oneweek}}",
+    "eventSeen_3912132_memory_fourweeks": "{{i18n:STP.RWE.eventSeen_3912132_memory_fourweeks}}"
+    },
+    "When": { "HasMod |contains=tiakall.writerelliott": true,
+        "Spouse": "Elliott"
+    }
+},
+]
+}

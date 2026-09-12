@@ -1,0 +1,10 @@
+﻿{
+  "Name": "Minute time helper",
+  "Author": "Yurin",
+  "Version": "1.0.4",
+  "Description": "Minute time helper",
+  "UniqueID": "Yurin.MinuteTimeHelper",
+  "EntryDll": "MinuteTimeHelper.dll",
+  "MinimumApiVersion": "4.0.0",
+  "UpdateKeys": [ "Github:Nyayurin/MinuteTimeHelper" ]
+}

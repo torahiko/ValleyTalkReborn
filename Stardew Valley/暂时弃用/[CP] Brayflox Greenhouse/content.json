@@ -1,0 +1,14 @@
+{  
+ "Format": "2.4.0",
+ "ConfigSchema": { 
+	"Recolor": { "AllowValues": "Vanilla, Vibrant Pastoral, Simple Foliage", "Default": "Vanilla"},
+        }, 
+  "Changes": [
+   //Houses
+        {  
+            "Action": "EditImage",
+            "Target": "Buildings/greenhouse",
+            "FromFile": "assets/{{Recolor}}/{{season}}/greenhouse.png",
+         }
+     ]
+}

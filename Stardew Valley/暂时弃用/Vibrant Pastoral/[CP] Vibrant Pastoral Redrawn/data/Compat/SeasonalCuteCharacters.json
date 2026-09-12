@@ -1,0 +1,13 @@
+{
+	"Changes": [
+        {
+            "LogName": "Marnie Luau SCC",
+            "Action": "EditImage",
+            "Target": "Characters/Marnie_Summer",
+            "FromFile": "assets/Patches/Characters/Marnie_Luau_SCC.png",
+            "PatchMode": "Overlay",
+			"Priority": "Late",
+            "ToArea": { "X": 0, "Y":128, "Width": 64, "Height": 32 }
+        }
+    ]
+}

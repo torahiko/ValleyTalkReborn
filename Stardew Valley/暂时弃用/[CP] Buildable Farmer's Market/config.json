@@ -1,0 +1,10 @@
+{
+  "TownMarket": "true",
+  "MarketProgressionMode": "true",
+  "FasterProgression": "false",
+  "ProgressionDifficulty": "Normal",
+  "ProgressionDates": "Expand",
+  "DialogueTriggerRarity": "Uncommon",
+  "DialogueRepeatRarity": "Uncommon",
+  "OnlyDiscussRecentItems": "true"
+}

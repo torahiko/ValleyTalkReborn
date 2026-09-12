@@ -1,0 +1,771 @@
+{
+	"Changes": [
+	//Load Tilesheet
+		{
+			"Action": "Load",
+			"Target": "Maps/fall_VibrantPastoral, Maps/spring_VibrantPastoral, Maps/summer_VibrantPastoral, Maps/winter_VibrantPastoral",
+			"FromFile": "assets/{{Target}}.png"
+		},
+	//Map Edits
+        {
+            "Action": "EditMap",
+            "Target": "Maps/Backwoods_Staircase",
+            "FromFile": "assets/MapEdits/{{TargetWithoutPath}}.tmx",
+			"PatchMode": "Replace"
+        },
+        {
+            "Action": "EditMap",
+            "Target": "Maps/Farm_Island",
+            "FromFile": "assets/MapEdits/{{TargetWithoutPath}}.tmx",
+			"PatchMode": "Replace"
+        },
+        {
+            "Action": "EditMap",
+            "Target": "Maps/Mountain",
+            "FromFile": "assets/MapEdits/Mountain-PathFix.tmx",
+			"PatchMode": "Overlay",
+			"ToArea": { "X": 83, "Y": 19, "Width": 7, "Height": 12 }
+        },
+        {
+            "Action": "EditMap",
+            "Target": "Maps/Town",
+            "FromFile": "assets/MapEdits/Town-Bookseller.tmx",
+			"PatchMode": "Overlay",
+			"ToArea": { "X": 112, "Y": 26, "Width": 1, "Height": 1 }
+        },
+        {
+            "Action": "EditMap",
+            "Target": "Maps/Town, Maps/Town-Christmas, Maps/Town-Christmas2, Maps/Town-EggFestival, Maps/Town-EggFestival2, Maps/Town-Fair, Maps/Town-Fair2, Maps/Town-Halloween, Maps/Town-Halloween2",
+            "FromFile": "assets/MapEdits/Town-LampDirt.tmx",
+			"PatchMode": "Overlay",
+            "ToArea": { "X": 23, "Y": 52, "Width": 3, "Height": 2 }
+        },
+        {
+            "Action": "EditMap",
+            "Target": "Maps/Town, Maps/Town-Christmas, Maps/Town-Christmas2, Maps/Town-EggFestival, Maps/Town-EggFestival2, Maps/Town-Fair, Maps/Town-Fair2, Maps/Town-Halloween, Maps/Town-Halloween2",
+            "FromFile": "assets/MapEdits/Town-LampClinic.tmx",
+			"PatchMode": "Overlay",
+			"ToArea": { "X": 32, "Y": 55, "Width": 3, "Height": 2 }
+        },
+        {
+            "Action": "EditMap",
+            "Target": "Maps/Town, Maps/Town-Christmas, Maps/Town-Christmas2, Maps/Town-EggFestival, Maps/Town-EggFestival2, Maps/Town-Fair, Maps/Town-Fair2, Maps/Town-Halloween, Maps/Town-Halloween2",
+            "FromFile": "assets/MapEdits/Town-GCrClinik.tmx",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+            "ToArea": { "X": 36, "Y": 52, "Width": 1, "Height": 2 },
+			"When": {
+				"VibrantPastoral.C/EdNygma": false,
+				"Buildings |contains=town": true
+			}
+        },
+        {
+            "Action": "EditMap",
+            "Target": "Maps/Town, Maps/Town-Christmas, Maps/Town-Christmas2, Maps/Town-EggFestival, Maps/Town-EggFestival2, Maps/Town-Fair, Maps/Town-Fair2, Maps/Town-Halloween, Maps/Town-Halloween2",
+            "FromFile": "assets/MapEdits/Town-GCgClinik.tmx",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+            "ToArea": { "X": 36, "Y": 52, "Width": 1, "Height": 2 },
+			"When": {
+				"VibrantPastoral.C/EdNygma": true,
+				"Buildings |contains=town": true
+			}
+        },
+	//LooseSprites
+		//Book Animation
+		{
+			"LogName": "Book Animation",
+			"Action": "EditImage",
+			"Target": "LooseSprites/BookAnimation",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Cloudy Ocean
+		{
+			"LogName": "Cloudy Ocean",
+			"Action": "EditImage",
+			"Target": "LooseSprites/Cloudy_Ocean_BG, LooseSprites/Cloudy_Ocean_BG_Night",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early"
+		},
+		//Cow Photos
+		{
+			"LogName": "Cow Photos",
+			"Action": "EditImage",
+			"Target": "LooseSprites/cowPhotos, LooseSprites/cowPhotosWinter",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Cursors
+		{
+			"LogName": "Cursors",
+			"Action": "EditImage",
+			"Target": "LooseSprites/Cursors",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		{
+			"LogName": "Background",
+			"Action": "EditImage",
+			"Target": "LooseSprites/Cursors",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early",
+			"FromArea": { "X": 0, "Y": 736, "Width": 639, "Height": 447 },
+			"ToArea": { "X": 0, "Y": 736, "Width": 639, "Height": 447 }
+		},
+		{
+			"LogName": "Warehouse Loca",
+			"Action": "EditImage",
+			"Target": "LooseSprites/Cursors",
+			"FromFile": "assets/Locale/LooseSprites/{{Season}}_warehouse.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"FromArea": { "X": 0, "Y": 25, "Width": 174, "Height": 101 },
+			"ToArea": { "X": 424, "Y": 1275, "Width": 174, "Height": 101 },
+			"When": {
+				"Query: {{Language |contains=en}} OR NOT {{HasFile:assets/Locale/LooseSprites/{{Season}}_warehouse.{{Language}}.png}}": true,
+				"Buildings |contains=town": true
+			}
+		},
+		{
+			"LogName": "Warehouse Loca Int",
+			"Action": "EditImage",
+			"Target": "LooseSprites/Cursors",
+			"FromFile": "assets/Locale/LooseSprites/{{Season}}_warehouse.{{Language}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"FromArea": { "X": 0, "Y": 25, "Width": 174, "Height": 101 },
+			"ToArea": { "X": 424, "Y": 1275, "Width": 174, "Height": 101 },
+			"When": {
+				"Language |contains=en": false,
+				"HasFile:{{FromFile}}": true,
+				"Buildings |contains=town": true
+			}
+		},
+		{
+			"LogName": "Warehouse Roof Loca",
+			"Action": "EditImage",
+			"Target": "LooseSprites/Cursors",
+			"FromFile": "assets/Locale/LooseSprites/{{Season}}_warehouse.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"FromArea": { "X": 0, "Y": 0, "Width": 174, "Height": 25 },
+			"ToArea": { "X": 66, "Y": 1678, "Width": 174, "Height": 25 },
+			"When": {
+				"Query: {{Language |contains=en}} OR NOT {{HasFile:assets/Locale/LooseSprites/{{Season}}_warehouse.{{Language}}.png}}": true,
+				"Buildings |contains=town": true,
+				"Season": "winter"
+			}
+		},
+		{
+			"LogName": "Warehouse Roof Loca Int",
+			"Action": "EditImage",
+			"Target": "LooseSprites/Cursors",
+			"FromFile": "assets/Locale/LooseSprites/{{Season}}_warehouse.{{Language}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"FromArea": { "X": 0, "Y": 0, "Width": 174, "Height": 25 },
+			"ToArea": { "X": 66, "Y": 1678, "Width": 174, "Height": 25 },
+			"When": {
+				"Language |contains=en": false,
+				"HasFile:{{FromFile}}": true,
+				"Buildings |contains=town": true,
+				"Season": "winter"
+			}
+		},
+		{
+			"LogName": "Water Warm",
+			"Action": "EditImage",
+			"Target": "LooseSprites/Cursors",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early",
+			"FromArea": { "X": 0, "Y": 2000, "Width": 640, "Height": 256 },
+			"ToArea": { "X": 0, "Y": 2000, "Width": 640, "Height": 256 },
+			"When": { "Season": "spring, summer" }
+		},
+		{
+			"LogName": "Water Cold",
+			"Action": "EditImage",
+			"Target": "LooseSprites/Cursors",
+			"FromFile": "assets/{{Target}}_cold.png",
+			"PatchMode": "Replace",
+			"Priority": "Early",
+			"ToArea": { "X": 0, "Y": 2000, "Width": 640, "Height": 256 },
+			"When": { "Season": "fall, winter" }
+		},
+		//Cursors 1.6
+		{
+			"LogName": "Cursors 1.6",
+			"Action": "EditImage",
+			"Target": "LooseSprites/Cursors_1_6",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Cursors 2
+		{
+			"LogName": "Cursors 2",
+			"Action": "EditImage",
+			"Target": "LooseSprites/Cursors2",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+        //Map
+        {
+            "LogName": "Map",
+            "Action": "EditImage",
+			"Target": "LooseSprites/map, LooseSprites/map_fall, LooseSprites/map_summer, LooseSprites/map_winter",
+            "FromFile": "assets/{{Target}}.png",
+            "PatchMode": "Overlay",
+			"Priority": "Early"
+        },
+		//Map Island
+		{
+			"LogName": "Map Island",
+			"Action": "EditImage",
+			"Target": "LooseSprites/map_island",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Meadowlands Farm
+		{
+			"LogName": "Meadowlands Farm",
+			"Action": "EditImage",
+            "Target": "LooseSprites/Farm_ranching_map, LooseSprites/Farm_ranching_map_fall, LooseSprites/Farm_ranching_map_summer, LooseSprites/Farm_ranching_map_winter",
+            "FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early",
+			"When": { "FarmType": "MeadowlandsFarm" }
+		},
+		//Panorama
+		{
+			"LogName": "Panorama",
+			"Action": "EditImage",
+			"Target": "LooseSprites/stardewPanorama",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early"
+		},
+		//Suspension Bridge
+		{
+			"LogName": "Suspension Bridge",
+			"Action": "EditImage",
+			"Target": "LooseSprites/SuspensionBridge",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Temporary Sprites
+		{
+			"LogName": "Temporary Sprites",
+			"Action": "EditImage",
+			"Target": "LooseSprites/temporary_sprites_1",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+	//Maps
+		//Beach
+		{
+			"LogName": "Beach",
+			"Action": "EditImage",
+			"Target": "Maps/fall_beach, Maps/spring_beach, Maps/summer_beach, Maps/winter_beach",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early"
+		},
+		{
+			"LogName": "Beach Loca",
+			"Action": "EditImage",
+			"Target": "Maps/fall_beach, Maps/spring_beach, Maps/summer_beach, Maps/winter_beach",
+			"FromFile": "assets/Locale/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"ToArea": { "X": 32, "Y": 416, "Width": 48, "Height": 32 },
+			"When": { "Query: {{Language |contains=en}} OR NOT {{HasFile:assets/Locale/{{Target}}.{{Language}}.png}}": true }
+		},
+		{
+			"LogName": "Beach Loca Int",
+			"Action": "EditImage",
+			"Target": "Maps/fall_beach, Maps/spring_beach, Maps/summer_beach, Maps/winter_beach",
+			"FromFile": "assets/Locale/{{Target}}.{{Language}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"ToArea": { "X": 32, "Y": 416, "Width": 48, "Height": 32 },
+			"When": {
+				"Language |contains=en": false,
+				"HasFile:{{FromFile}}": true
+			}
+		},
+		//Bugland Tiles
+		{
+			"LogName": "Bugland Tiles",
+			"Action": "EditImage",
+			"Target": "Maps/bugLandTiles",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Coop Tiles
+		{
+			"LogName": "Coop Tiles",
+			"Action": "EditImage",
+			"Target": "Maps/coopTiles",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Desert Festival
+		{
+			"LogName": "Desert Festival a",
+			"Action": "EditImage",
+			"Target": "Maps/desert_festival_tilesheet",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		{
+			"LogName": "Desert Festival b",
+			"Action": "EditImage",
+			"Target": "Maps/desert_festival_tilesheet",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early",
+			"FromArea": { "X": 112, "Y": 512, "Width": 112, "Height": 32 },
+			"ToArea": { "X": 112, "Y": 512, "Width": 112, "Height": 32 }
+		},
+		//Desert Tiles
+		{
+			"LogName": "Desert Tiles",
+			"Action": "EditImage",
+			"Target": "Maps/DesertTiles",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		{
+			"LogName": "Desert Tiles Loca",
+			"Action": "EditImage",
+			"Target": "Maps/DesertTiles",
+			"FromFile": "assets/Locale/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"When": { "Query: {{Language |contains=en}} OR NOT {{HasFile:assets/Locale/{{Target}}.{{Language}}.png}}": true }
+		},
+		{
+			"LogName": "Desert Tiles Loca Int",
+			"Action": "EditImage",
+			"Target": "Maps/DesertTiles",
+			"FromFile": "assets/Locale/{{Target}}.{{Language}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"When": {
+				"Language |contains=en": false,
+				"HasFile:{{FromFile}}": true
+			}
+		},
+		//Desert Tiles Extended
+		{
+			"LogName": "Desert Tiles Extended",
+			"Action": "EditImage",
+			"Target": "Maps/DesertTiles_Extended",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Elliott Sea Tiles
+		{
+			"LogName": "Elliott Sea Tiles",
+			"Action": "EditImage",
+			"Target": "Maps/ElliottSeaTiles",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Festivals
+		{
+			"LogName": "Festivals",
+			"Action": "EditImage",
+			"Target": "Maps/Festivals",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		{
+			"LogName": "Festivals Loca",
+			"Action": "EditImage",
+			"Target": "Maps/Festivals",
+			"FromFile": "assets/Locale/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"When": { "Query: {{Language |contains=en}} OR NOT {{HasFile:assets/Locale/{{Target}}.{{Language}}.png}}": true }
+		},
+		{
+			"LogName": "Festivals Loca Int",
+			"Action": "EditImage",
+			"Target": "Maps/Festivals",
+			"FromFile": "assets/Locale/{{Target}}.{{Language}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"When": {
+				"Language |contains=en": false,
+				"HasFile:{{FromFile}}": true
+			}
+		},
+		//Fishing Derby Tiles
+		{
+			"LogName": "Fishing Derby Tiles",
+			"Action": "EditImage",
+			"Target": "Maps/FishingDerbyTiles",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//HarveyBallon
+		{
+			"LogName": "Ballon",
+			"Action": "EditImage",
+			"Target": "Maps/HarveyBalloonTiles",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Island Tilesheet
+		{
+			"LogName": "its",
+			"Action": "EditImage",
+			"Target": "Maps/island_tilesheet_1",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early"
+		},
+		//Island Tilesheet (seasonal)
+		{
+			"LogName": "its Season",
+			"Action": "EditImage",
+			"Target": "Maps/fall_island_tilesheet_1, Maps/spring_island_tilesheet_1, Maps/summer_island_tilesheet_1, Maps/winter_island_tilesheet_1",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early"
+		},
+		//Island Tilesheet 2
+		{
+			"LogName": "its2",
+			"Action": "EditImage",
+			"Target": "Maps/island_tilesheet_2",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Mastery Cave
+		{
+			"LogName": "Mastery Cave",
+			"Action": "EditImage",
+			"Target": "Maps/masteryCaveTilesheet",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Mines
+		{
+			"LogName": "Mines",
+			"Action": "EditImage",
+			"Target": "Maps/mine, Maps/mine_desert, Maps/mine_desert_dark, Maps/mine_dino, Maps/mine_frost, Maps/mine_frost_dark, Maps/mine_lava, Maps/mine_lava_dark, Maps/mine_slime, Maps/volcano_caldera",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Monster Grave
+		{
+			"LogName": "Monster Grave",
+			"Action": "EditImage",
+			"Target": "Maps/fall_monsterGraveTiles, Maps/spring_monsterGraveTiles, Maps/summer_monsterGraveTiles, Maps/winter_monsterGraveTiles",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//NightMarket
+		{
+			"LogName": "NightMarket",
+			"Action": "EditImage",
+			"Target": "Maps/night_market_tilesheet_objects",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//NightScene Maru
+		{
+			"LogName": "NightScene Maru",
+			"Action": "EditImage",
+			"Target": "Maps/nightSceneMaru",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//OutdoorsTileSheet
+		{
+			"LogName": "Outdoors Tilesheet",
+			"Action": "EditImage",
+			"Target": "Maps/fall_outdoorsTileSheet, Maps/spring_outdoorsTileSheet, Maps/summer_outdoorsTileSheet, Maps/winter_outdoorsTileSheet",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		{
+			"LogName": "Outdoors Tilesheet Vege",
+			"Action": "EditImage",
+			"Target": "Maps/fall_outdoorsTileSheet, Maps/spring_outdoorsTileSheet, Maps/summer_outdoorsTileSheet, Maps/winter_outdoorsTileSheet",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early",
+			"FromArea": { "X": 0, "Y": 0, "Width": 352, "Height": 112 },
+			"ToArea": { "X": 0, "Y": 0, "Width": 352, "Height": 112 }
+		},
+		{
+			"LogName": "Outdoors Tilesheet Cave",
+			"Action": "EditImage",
+			"Target": "Maps/winter_outdoorsTileSheet",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early",
+			"FromArea": { "X": 128, "Y": 1088, "Width": 48, "Height": 16 },
+			"ToArea": { "X": 128, "Y": 1088, "Width": 48, "Height": 16 }
+		},
+		//OutdoorsTileSheet2
+		{
+			"LogName": "Outdoors Tilesheet 2",
+			"Action": "EditImage",
+			"Target": "Maps/fall_outdoorsTileSheet2, Maps/spring_outdoorsTileSheet2, Maps/summer_outdoorsTileSheet2, Maps/winter_outdoorsTileSheet2",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early"
+		},
+		//OutdoorTileSheet Extra
+		{
+			"LogName": "Outdoor Tilesheet Extra",
+			"Action": "EditImage",
+			"Target": "Maps/fall_outdoorTileSheet_Extra, Maps/spring_outdoorTileSheet_Extra, Maps/summer_outdoorTileSheet_Extra, Maps/winter_outdoorTileSheet_Extra",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//SamShowTiles
+		{
+			"LogName": "Sam Show Tiles",
+			"Action": "EditImage",
+			"Target": "Maps/samshowtiles",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Sebastian MountainTiles
+		{
+			"LogName": "Sebastian MountainTiles",
+			"Action": "EditImage",
+			"Target": "Maps/sebastianMountainTiles",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Springobjects
+		{
+			"LogName": "Springobjects",
+			"Action": "EditImage",
+			"Target": "Maps/springobjects",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Stadium Tiles
+		{
+			"LogName": "Stadium Tiles",
+			"Action": "EditImage",
+			"Target": "Maps/stadium_tiles",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Submarine Tilesheet
+		{
+			"LogName": "Submarine Tilesheet",
+			"Action": "EditImage",
+			"Target": "Maps/submarine_tilesheet",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Town
+		{
+			"LogName": "Town",
+			"Action": "EditImage",
+			"Target": "Maps/fall_town, Maps/spring_town, Maps/summer_town, Maps/winter_town",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early"
+		},
+		{
+			"LogName": "Town Loca",
+			"Action": "EditImage",
+			"Target": "Maps/fall_town, Maps/spring_town, Maps/summer_town, Maps/winter_town",
+			"FromFile": "assets/Locale/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"When": { "Query: {{Language |contains=en}} OR NOT {{HasFile:assets/Locale/{{Target}}.{{Language}}.png}}": true }
+		},
+		{
+			"LogName": "Town Loca Int",
+			"Action": "EditImage",
+			"Target": "Maps/fall_town, Maps/spring_town, Maps/summer_town, Maps/winter_town",
+			"FromFile": "assets/Locale/{{Target}}.{{Language}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"When": {
+				"Language |contains=en": false,
+				"HasFile:{{FromFile}}": true
+			}
+		},
+		//Waterfalls
+		{
+			"LogName": "Waterfalls",
+			"Action": "EditImage",
+			"Target": "Maps/fall_waterfalls, Maps/spring_waterfalls, Maps/summer_waterfalls, Maps/winter_waterfalls",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early",
+			"When": { "HasMod |contains=Neopffe.BetterWater": false }
+		},
+		//WitchHutTiles
+		{
+			"LogName": "Witch Hut Tiles",
+			"Action": "EditImage",
+			"Target": "Maps/WitchHutTiles",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//WitchSwampTiles
+		{
+			"LogName": "Witch Swamp Tiles",
+			"Action": "EditImage",
+			"Target": "Maps/witchHutTiles",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+	//Minigames
+		//Boat Journey Map
+		{
+			"LogName": "BJM",
+			"Action": "EditImage",
+			"Target": "Minigames/fall_boatJourneyMap, Minigames/spring_boatJourneyMap, Minigames/summer_boatJourneyMap, Minigames/winter_boatJourneyMap",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Clouds
+		{
+			"LogName": "Clouds a",
+			"Action": "EditImage",
+			"Target": "Minigames/Clouds",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early",
+			"FromArea": { "X": 0, "Y": 0, "Width": 512, "Height": 544 },
+			"ToArea": { "X": 0, "Y": 0, "Width": 512, "Height": 544 }
+		},
+		{
+			"LogName": "Clouds b",
+			"Action": "EditImage",
+			"Target": "Minigames/Clouds",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early",
+			"FromArea": { "X": 0, "Y": 544, "Width": 512, "Height": 458 },
+			"ToArea": { "X": 0, "Y": 544, "Width": 512, "Height": 458}
+		},
+		//Intro
+		{
+			"LogName": "Intro",
+			"Action": "EditImage",
+			"Target": "Minigames/Intro",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Treestrip
+		{
+			"LogName": "Treestrip",
+			"Action": "EditImage",
+			"Target": "Minigames/treestrip",
+			"FromFile": "assets/Minigames/{{TreeType}}/{{TargetWithoutPath}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early"
+		},
+	//TerrainFeatures
+		//Flooring
+		{
+			"LogName": "Flooring",
+			"Action": "EditImage",
+			"Target": "TerrainFeatures/Flooring, TerrainFeatures/Flooring_winter",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Hoe Dirt
+		{
+			"LogName": "Hoe Dirt",
+			"Action": "EditImage",
+			"Target": "TerrainFeatures/hoeDirt, TerrainFeatures/hoeDirtDark, TerrainFeatures/hoeDirtSnow",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+	//TileSheets
+		//Animations
+		{
+			"LogName": "Animations",
+			"Action": "EditImage",
+			"Target": "TileSheets/animations",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early",
+			"ToArea": { "X": 0, "Y": 1472, "Width": 640, "Height": 128 },
+			"When": { "HasMod |contains=Az.Resources": false }
+		},
+		//ChairTiles
+		{
+			"LogName": "ChairTiles",
+			"Action": "EditImage",
+			"Target": "TileSheets/ChairTiles",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Replace",
+			"Priority": "Early"
+		},
+		//Craftables
+		{
+			"LogName": "Craftables",
+			"Action": "EditImage",
+			"Target": "TileSheets/Craftables",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		},
+		//Free Cactuses
+		{
+			"LogName": "Free Cactuses",
+			"Action": "EditImage",
+			"Target": "TileSheets/freecactuses",
+			"FromFile": "assets/{{Target}}.png",
+			"PatchMode": "Overlay",
+			"Priority": "Early"
+		}
+	]
+}

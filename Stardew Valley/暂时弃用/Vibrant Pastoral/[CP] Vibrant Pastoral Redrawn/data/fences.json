@@ -1,0 +1,25 @@
+{
+	"Changes": [
+        {
+            "LogName": "Fences",
+            "Action": "EditImage",
+            "Target": "LooseSprites/Fence1, LooseSprites/Fence2, LooseSprites/Fence3, LooseSprites/Fence5",
+            "FromFile": "assets/LooseSprites/fences/{{SeasonOverride}}_{{TargetWithoutPath}}.png",
+            "Update": "OnLocationChange",
+            "PatchMode": "Replace"
+        },
+		//SnOverlay
+		{
+			"LogName": "Snow Fence",
+			"Action": "EditImage",
+			"Target": "LooseSprites/Fence1, LooseSprites/Fence5",
+			"FromFile": "assets/LooseSprites/fences/Fence_snow.png",
+			"Update": "OnLocationChange",
+			"PatchMode": "Overlay",
+			"When": {
+				"VibrantPastoral.C/SnOverlay": true,
+				"SeasonOverride": "winter"
+			}
+		}
+    ]
+}

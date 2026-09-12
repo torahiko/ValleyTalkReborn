@@ -1,0 +1,213 @@
+{
+  // Schedule Editor Menu
+  "schedule-editor.title": "Schedule Editor",
+  "schedule-editor.title-with-npc": "{{npc}}'s Schedule Editor",
+  "schedule-editor.action-details": "{{time}} When: {{when}} - Tile: {{location}} {{x}},{{y}} \nFacing: {{facing}} - Anim: {{animation}}",
+  "schedule-editor.entry-not-found": "Schedule entry not found!",
+  "schedule-editor.entry-deleted": "Schedule entry for {{npc}} at {{time}} deleted!",
+  "schedule-editor.no-entries": "No schedule entries",
+  "schedule-editor.filter": "Filter:",
+  "schedule-editor.filter-help": "Filter by season, day, or 'today'...",
+
+  // Common buttons
+  "common.add-button": "Add",
+  "common.edit-button": "Edit",
+  "common.delete-button": "x",
+  "common.close-button": "Close",
+  "common.save-button": "Save",
+  "common.cancel-button": "Cancel",
+  "common.ok-button": ">",
+
+  // Debug messages
+  "debug.found-spouses": "Found {{count}} spouses for {{player}}: {{spouses}}",
+  "debug.error-getting-spouses": "Error getting married spouses: {{error}}",
+  "debug.name-converted": "Converted NPC name: '{{original}}' -> '{{converted}}'",
+  "debug.error-converting-name": "Error extracting friendly name for '{{name}}': {{error}}",
+
+  // Add Schedule Menu
+  "add-schedule.title-add": "Add Schedule for {{npc}}",
+  "add-schedule.title-edit": "Edit Schedule for {{npc}} at {{time}}",
+  "add-schedule.time-label": "Time (HHMM):",
+  "add-schedule.x-label": "X Coordinate:",
+  "add-schedule.y-label": "Y Coordinate:",
+  "add-schedule.facing-label": "Facing:",
+  "add-schedule.animation-label": "Animation:",
+  "add-schedule.sprite-label": "Sprite (opt.):",
+  "add-schedule.dialogue-label": "Dialogue (opt.):",
+  "add-schedule.loop-label": "Loop Animation",
+  "add-schedule.error-invalid-time": "Invalid time! Please use 4-digit format (HHMM).",
+  "add-schedule.error-invalid-x": "Invalid X coordinate! Please enter a number.",
+  "add-schedule.error-invalid-y": "Invalid Y coordinate! Please enter a number.",
+  "add-schedule.error-invalid-facing": "Invalid facing! Please enter 0, 1, 2, or 3.",
+  "add-schedule.error-empty-animation": "Animation field cannot be empty!",
+  "add-schedule.success-added": "Schedule added for {{npc}} at {{time}}!",
+  "add-schedule.success-updated": "Schedule updated for {{npc}} at {{time}}!",
+  "addschedule.whenlabel": "When:",
+  "addschedule.getpositionbutton": "Use farmer actual position as reference.",
+  "facing.up": "Up",
+  "facing.right": "Right",
+  "facing.down": "Down",
+  "facing.left": "Left",
+  "add-schedule.locationlabel": "Map:",
+  "add-schedule.whenhelptext": "Here are the supported formats:\n• empty → always true\n• sunny → sunny day (no rain, snow, lightning, debris, or green rain)\n• rain → when it's raining\n• lightning → during lightning storm\n• snow → when it's snowing\n• windy → during debris weather\n• greenrain → during green rain\n• spring, summer, fall, winter → by season\n• mon, tue, wed, thu, fri, sat, sun → by weekday\n• 15 → specific day of the month (e.g., 15th)\n• spring_15 → specific season + day\n• spring_mon → season + weekday\n• spring_sunny, summer_rain, etc. → season + weather combination\n\nYou can list multiple conditions separated by commas, e.g.\n\"spring_mon, rain, 15, sat_sunny\"\nOnly runs if any of them match.",
+  "addSchedule.dialogInTalk.label": "Dialogue in talk box",
+  "addSchedule.dialogInTalk.hint": "If checked, dialogue will appear in the regular talk box instead of a floating bubble",
+  // GMCM - Generic Mod Config Menu
+  "gmcm.not-available": "Generic Mod Config Menu not available - config menu disabled",
+  "gmcm.reset-blocked": "Config reset blocked to preserve all settings and schedules",
+  "gmcm.reset-blocked-message": "Settings reset is disabled to protect your custom schedules",
+  "gmcm.config-saved": "All configurations saved successfully",
+  "gmcm.registered": "GMCM configuration menu registered successfully",
+  "gmcm.setup-error": "Error setting up GMCM: {{error}}",
+  "gmcm.setup-complete": "GMCM configuration menu setup completed successfully",
+
+  // GMCM Sections
+  "gmcm.sections.main-settings": "Main Settings",
+  "gmcm.sections.hotkey-settings": "Hotkey Settings",
+  "gmcm.sections.behavior-settings": "Behavior Settings",
+  "gmcm.sections.animation-settings": "Animation Settings",
+  "gmcm.sections.debug-settings": "Debug & Logging",
+  "gmcm.sections.instructions": "Instructions",
+  "gmcm.sections.mod-status": "Mod Status",
+
+  // GMCM Options
+  "gmcm.options.use-manual-schedules.name": "Use Manual Schedules",
+  "gmcm.options.use-manual-schedules.tooltip": "Enable custom schedule creation via the editor\nWhen enabled, manual schedules will be used instead of default ones",
+  "gmcm.options.use-manual-schedules.changed": "Manual schedules {{enabled}}",
+
+  "gmcm.options.override-content-patcher.name": "Disable Vanilla Schedules",
+  "gmcm.options.override-content-patcher.tooltip": "Manual schedules will override Vanilla schedules\nUseful when using other mods that modify spouse schedules",
+  "gmcm.options.override-content-patcher.changed": "Vanilla Schedules override {{enabled}}",
+
+  "gmcm.options.disable-wandering.name": "Disable Wandering",
+  "gmcm.options.disable-wandering.tooltip": "Prevents the spouse from wandering randomly around the farmhouse",
+  "gmcm.options.disable-wandering.changed": "Wandering {{enabled}}",
+
+  "gmcm.options.open-editor-keybind.name": "Open Schedule Editor",
+  "gmcm.options.open-editor-keybind.tooltip": "Press any key, mouse button, or controller button to open the schedule editor\nExamples: F2, MouseMiddle, LeftStick, RightTrigger",
+  "gmcm.options.open-editor-keybind.changed": "Editor hotkey updated to: {{key}}",
+
+  // Bed Assignment Keybind
+  "gmcm.options.open-bed-assignment-keybind.name": "Open Bed Assignment",
+  "gmcm.options.open-bed-assignment-keybind.tooltip": "Press any key, mouse button, or controller button to open the bed assignment UI\nExamples: B, MouseMiddle, LeftStick, RightTrigger",
+  "gmcm.options.open-bed-assignment-keybind.changed": "Bed assignment hotkey updated to: {{key}}",
+
+  "gmcm.options.movement-timeout.name": "Movement Timeout (seconds)",
+  "gmcm.options.movement-timeout.tooltip": "Maximum time in seconds for NPCs to reach their destination\nIncrease if NPCs frequently timeout during movement",
+  "gmcm.options.movement-timeout.changed": "Movement timeout set to {{timeout}} seconds",
+
+  "gmcm.options.enable-logging.name": "Enable Detailed Logging",
+  "gmcm.options.enable-logging.tooltip": "Enable detailed debug logging in the SMAPI console\nUseful for troubleshooting issues",
+  "gmcm.options.enable-logging.changed": "Detailed logging {{enabled}}",
+
+  "gmcm.options.log-pathfinding.name": "Log Pathfinding Details",
+  "gmcm.options.log-pathfinding.tooltip": "Log detailed pathfinding information\nCan generate a lot of log entries",
+  "gmcm.options.log-pathfinding.changed": "Pathfinding logging {{enabled}}",
+
+  "gmcm.options.show-position-debug.name": "Show Position Debug",
+  "gmcm.options.show-position-debug.tooltip": "Show NPC positions in debug logs\nHelps with coordinate troubleshooting",
+  "gmcm.options.show-position-debug.changed": "Position debug {{enabled}}",
+
+  // GMCM Texts
+  "gmcm.texts.hotkey-info": "Current Hotkeys:\n• Schedule Editor: {{currentKey}}\n• Bed Assignment: {{currentBedKey}}\n\n Tips:\n• Keyboard: F2-F12, B, etc.\n• Mouse: MouseMiddle, MouseX1, MouseX2\n• Controller: LeftStick, RightTrigger, etc.",
+  "gmcm.texts.instructions": "How to Use:\n\n1. Set your preferred hotkeys above\n2. Press the hotkeys in-game to open the editors\n3. Select an NPC tab and click 'Add' to create schedules\n4. Use 4-digit time format (0600, 1430, 2200)\n5. Common animations: idle, emote:4, emote:8, etc.\n\n   Make: patch export Data/animationDescriptions to see\n   animations available.\n\n🛠️ Need Help?\n• Enable debug logging for troubleshooting\n• Check SMAPI console for error messages\n• Reduce movement timeout if NPCs get stuck",
+  "gmcm.texts.status-info": "Current Status:\n• Married Spouses: {{spouses}}\n• NPCs with Manual Schedules: {{manualSchedules}}\n• Total Schedule Entries: {{totalEntries}}\n• Editor Hotkey: {{hotkey}}\n",
+
+  // GMCM Hotkey Management
+  "gmcm.hotkey.parsed": "Successfully parsed hotkey: {{key}}",
+  "gmcm.hotkey.parse-failed": "Failed to parse hotkey '{{key}}', using F2 as fallback",
+  "gmcm.hotkey.loaded": "Hotkey loaded: {{key}}",
+  "gmcm.hotkey.load-error": "Error loading hotkey, using F2 as fallback: {{error}}",
+
+  // Bed Hotkey Management
+  "gmcm.hotkey.bed-parsed": "Successfully parsed bed assignment hotkey: {{key}}",
+  "gmcm.hotkey.bed-parse-failed": "Failed to parse bed assignment hotkey '{{key}}', using B as fallback",
+  "gmcm.hotkey.both-loaded": "Hotkeys loaded - Editor: {{editorKey}}, Bed Assignment: {{bedKey}}",
+  "gmcm.hotkey.both-load-error": "Error loading hotkeys, using defaults: {{error}}",
+
+  // Errors
+  "errors.editor-not-in-game": "Schedule editor can only be opened in-game.",
+  "errors.editor-open": "Error opening schedule editor: {{error}}",
+  "errors.editor-open-message": "Error opening schedule editor: {{error}}",
+
+  // Bed Assignment Errors
+  "errors.bed-assignment-not-in-game": "Bed assignment can only be opened in-game.",
+  "errors.bed-assignment-open": "Error opening bed assignment: {{error}}",
+  "errors.bed-assignment-open-message": "Error opening bed assignment: {{error}}",
+
+  // Debug
+  "debug.editor-opened": "Schedule editor opened with hotkey: {{key}}",
+
+  // Bed Assignment Debug
+  "debug.bed-assignment-opened": "Bed assignment opened with hotkey: {{key}}",
+
+  // Bed Assignment System
+  "bed-assignment.title": "Assign Custom Bed Position",
+  "bed-assignment.select-spouse": "Select Spouse:",
+  "bed-assignment.bed-coordinates": "Bed Coordinates:",
+  "bed-assignment.x-label": "X:",
+  "bed-assignment.y-label": "Y:",
+  "bed-assignment.assign-button": "Assign",
+  "bed-assignment.cancel-button": "Cancel",
+  "bed-assignment.tip": "Tip: Use coordinates to position spouse on specific pillow",
+  "bed-assignment.instructions": "Select spouse and enter X,Y coordinates",
+  "bed-assignment.selected-spouse": "Selected: {{spouse}} - Enter coordinates",
+  "bed-assignment.assignment-confirmation": "Assign {{spouse}} to bed at ({{x}},{{y}})",
+  "bed-assignment.counter": "{{start}}-{{end}} of {{total}}",
+
+  // Bed Assignment Messages
+  "bed-assignment.success": "Assigned bed to {{spouse}}",
+  "bed-assignment.error": "Failed to assign bed to {{spouse}}",
+  "bed-assignment.removed": "Removed bed assignment for {{spouse}}",
+  "bed-assignment.loaded-existing": "Loaded existing assignment: ({{x}}, {{y}})",
+  "bed-assignment.no-existing": "No existing assignment found",
+
+  // Bed Assignment UI States
+  "bed-assignment.ready-to-assign": "Ready to assign",
+  "bed-assignment.select-spouse-first": "Select a spouse first",
+  "bed-assignment.enter-coordinates": "Enter coordinates",
+  "bed-assignment.invalid-coordinates": "Invalid coordinates",
+  "bed-assignment.delete-button": "Delete",
+  "bed-assignment.enabled": "Enabled",
+  "bed-assignment.disabled": "Disabled",
+  "bed-assignment.deleted": "Bed assignment deleted for {{spouse}}",
+  "bed-assignment.enabled-message": "Bed assignment enabled for {{spouse}}",
+  "bed-assignment.disabled-message": "Bed assignment disabled for {{spouse}}",
+
+  //Warp UI
+  "warp-list.title": "Custom Warp Registry",
+  "warp-list.addbutton": "Add New Warp",
+
+  //Warp Editor
+  "warp-editor.titleAdd": "Add New Warp",
+  "warp-editor.titleEdit": "Edit Warp",
+  "warp-editor.warpname": "Warp Name:",
+  "warp-editor.insidelocation": "Inside Location:",
+  "warp-editor.insideposition": "Inside Position (X,Y):",
+  "warp-editor.outsidelocation": "Outside Location:",
+  "warp-editor.outsideposition": "Outside Position (X,Y):",
+  "warp-editor.outsidebutton": "Set Current Location to Inside Position",
+  "warp-editor.insidebutton": "Set Current Location to Outside Position",
+
+  //Main Menu
+  "main-menu.title": "Spouse Schedules Config",
+  "main-menu.bedassigment": "Bed\nAssignment",
+  "main-menu.spouseSchedules": "Schedules\nConfig",
+  "main-menu.warpconfig": "Warp\nConfig",
+  "main-menu.bedassigment_hover": "Assign beds to spouses",
+  "main-menu.spouseSchedules_hover": "Set schedules for spouses",
+  "main-menu.warpconfig_hover": "Configure warps and paths",
+
+
+  "schedule-editor.import-vanilla": "Import Vanilla Schedule",
+  "schedule-editor.import-vanilla-question": "Import vanilla schedule for {{npc}}?",
+  "schedule-editor.import-today-only": "Today only",
+  "schedule-editor.import-all-days": "All days (experimental)",
+  "schedule-editor.import-successful": "Vanilla schedule imported successfully!",
+  "schedule-editor.import-failed": "Failed to import vanilla schedule.",
+  "schedule-editor.spouse-not-found": "Spouse not found in game.",
+  "schedule-editor.no-vanilla-schedule": "No vanilla schedule found for this spouse.",
+  "schedule-editor.no-schedule-for-today": "No vanilla schedule for today.",
+  "schedule-editor.no-vanilla-schedule-data": "Could not load vanilla schedule data."
+
+}

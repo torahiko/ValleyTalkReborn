@@ -1,0 +1,516 @@
+[
+
+//Flower Dance
+	{
+		"Id": "YandereElliott.Mail.FlowerDance",
+		"GroupId": "YandereElliott.Mail",
+		"Title": "ElliottMail.Title.1",
+		"Text": "ElliottMail.Text.1",
+		"WhichBG": 0,
+		"Repeatable": false,
+		"Days": [ 24 ],
+		"Seasons": [ "spring" ],
+		"FriendshipConditions": [
+			{
+				"NpcName": "Elliott",
+				"FriendshipLevel": 4,
+				"FriendshipStatus": [ "Friendly", "Dating", "Engaged" ]
+			}
+		],
+		"AdditionalMailReceived": [ "VANILLA_FLAG" ],
+		"EventsSeen": [ "626070201" ]
+	},
+//Sping
+	{
+		"Id": "YandereElliott.Mail.Spring",
+		"GroupId": "YandereElliott.Mail",
+		"Title": "ElliottMail.Title.2",
+		"Text": "ElliottMail.Text.2",
+		"WhichBG": 0,
+		"Repeatable": false,
+		"Attachments": [
+			{
+				"Type": "Object",
+				"Index": 745,
+				"Stack": 30
+			}
+		],
+		"Days": [ 14 ],
+		"Seasons": [ "spring" ],
+		"FriendshipConditions": [
+			{
+				"NpcName": "Elliott",
+				"FriendshipStatus": [ "Friendly", "Dating", "Engaged" ]
+			}
+		],
+		"MailNotReceived": [ "YandereElliott.Mail.Final" ],
+		"AdditionalMailReceived": [ "VANILLA_FLAG" ],
+		"EventsSeen": [ "626070201" ]
+	},
+	
+//Summer
+	{
+		"Id": "YandereElliott.Mail.Summer",
+		"GroupId": "YandereElliott.Mail",
+		"Title": "ElliottMail.Title.3",
+		"Text": "ElliottMail.Text.3",
+		"WhichBG": 0,
+		"Repeatable": false,
+		"Attachments": [
+			{
+				"Type": "Object",
+				"Index": 394,
+				"Stack": 1
+			}
+		],
+		"Days": [ 20 ],
+		"Seasons": [ "summer" ],
+		"FriendshipConditions": [
+			{
+				"NpcName": "Elliott",
+				"FriendshipStatus": [ "Friendly", "Dating", "Engaged" ]
+			}
+		],
+		"MailNotReceived": [ "YandereElliott.Mail.Final" ],
+		"AdditionalMailReceived": [ "VANILLA_FLAG" ],
+		"EventsSeen": [ "626070201" ]
+	},
+	
+//fall
+	{
+		"Id": "YandereElliott.Mail.Fall",
+		"GroupId": "YandereElliott.Mail",
+		"Title": "ElliottMail.Title.4",
+		"Text": "ElliottMail.Text.4",
+		"WhichBG": 0,
+		"Repeatable": false,
+		"Attachments": [
+			{
+				"Type": "Object",
+				"Index": 446,
+				"Stack": 1
+			}
+		],
+		"Days": [ 6 ],
+		"Seasons": [ "fall" ],
+		"FriendshipConditions": [
+			{
+				"NpcName": "Elliott",
+				"FriendshipStatus": [ "Friendly", "Dating", "Engaged" ]
+			}
+		],
+		"MailNotReceived": [ "YandereElliott.Mail.Final" ],
+		"AdditionalMailReceived": [ "VANILLA_FLAG" ],
+		"EventsSeen": [ "626070201" ]
+	},
+	
+//winter
+	{
+		"Id": "YandereElliott.Mail.Winter",
+		"GroupId": "YandereElliott.Mail",
+		"Title": "ElliottMail.Title.5",
+		"Text": "ElliottMail.Text.5",
+		"WhichBG": 0,
+		"Repeatable": false,
+		"Attachments": [
+			{
+				"Type": "Object",
+				"Index": 797,
+				"Stack": 1
+			}
+		],
+		"Date": "28 winter Y1",
+		"FriendshipConditions": [
+			{
+				"NpcName": "Elliott",
+				"FriendshipStatus": [ "Friendly", "Dating", "Engaged" ]
+			}
+		],
+		"MailNotReceived": [ "YandereElliott.Mail.Final" ],
+		"AdditionalMailReceived": [ "VANILLA_FLAG" ],
+		"EventsSeen": [ "626070201" ]
+	},
+
+//Stalker Letters
+	{
+		"Id": "YandereElliott.Mail.Begin",
+		"GroupId": "YandereElliott.Mail",
+		"Title": "ElliottMail.Title.6",
+		"Text": "ElliottMail.Text.6",
+		"WhichBG": 0,
+		"Repeatable": false,
+		"FriendshipConditions": [
+			{
+				"NpcName": "Elliott",
+				"FriendshipLevel": 1,
+				"FriendshipStatus": [ "Friendly", "Dating" ]
+			}
+		],
+		"MailNotReceived": [ "YandereElliott.Mail.Final" ],
+		"AdditionalMailReceived": [ "VANILLA_FLAG" ],
+		"EventsSeen": [ "626070201" ]
+	},
+	{
+		"Id": "YandereElliott.Mail.Passionate",
+		"GroupId": "YandereElliott.Mail",
+		"Title": "ElliottMail.Title.7",
+		"Text": "ElliottMail.Text.7",
+		"WhichBG": 0,
+		"Repeatable": false,
+		"FriendshipConditions": [
+			{
+				"NpcName": "Elliott",
+				"FriendshipLevel": 2,
+				"FriendshipStatus": [ "Friendly", "Dating" ]
+			}
+		],
+		"EventsSeen": [ 39, "626070201" ],
+		"MailNotReceived": [ "YandereElliott.Mail.Final" ],
+		"AdditionalMailReceived": [ "VANILLA_FLAG" ],
+		"RequireAllEventsSeen": true
+	},
+
+	{
+		"Id": "YandereElliott.Mail.Complain",
+		"GroupId": "YandereElliott.Mail",
+		"Title": "ElliottMail.Title.8",
+		"Text": "ElliottMail.Text.8",
+		"WhichBG": 0,
+		"Repeatable": false,
+		"FriendshipConditions": [
+			{
+				"NpcName": "Elliott",
+				"FriendshipLevel": 3,
+				"FriendshipStatus": [ "Friendly", "Dating" ]
+			}
+		],
+		"EventsSeen": [ 40, "626070201" ],
+		"MailNotReceived": [ "YandereElliott.Mail.Final" ],
+		"AdditionalMailReceived": [ "VANILLA_FLAG" ],
+		"RequireAllEventsSeen": true
+	},
+	
+	{
+		"Id": "YandereElliott.Mail.Desire", 
+		"GroupId": "YandereElliott.Mail", 
+		"Title": "ElliottMail.Title.9", 
+		"Text": "ElliottMail.Text.9", 
+		"WhichBG": 0, 
+		"Repeatable": false, 
+		"FriendshipConditions": 
+		[
+			{
+				"NpcName": "Elliott", 
+				"FriendshipLevel": 4, 
+				"FriendshipStatus": ["Friendly","Dating"] 
+			}
+		],
+		"EventsSeen": [626070201],
+		"MailNotReceived": ["YandereElliott.Mail.Final"],
+		"AdditionalMailReceived": [ "VANILLA_FLAG" ],
+	},
+	
+	{
+		"Id": "YandereElliott.Mail.Confession", 
+		"GroupId": "YandereElliott.Mail", 
+		"Title": "ElliottMail.Title.10", 
+		"Text": "ElliottMail.Text.10", 
+		"WhichBG": 0, 
+		"Repeatable": false, 
+		"FriendshipConditions": 
+		[
+			{
+				"NpcName": "Elliott", 
+				"FriendshipLevel": 5, 
+				"FriendshipStatus": ["Friendly","Dating"] 
+			}
+		],
+		"EventsSeen": [626070501],
+		"MailNotReceived": ["YandereElliott.Mail.Final"], 
+		"AdditionalMailReceived": ["VANILLA_FLAG"],
+	},
+
+	{
+		"Id": "YandereElliott.Mail.Jealous",
+		"GroupId": "YandereElliott.Mail",
+		"Title": "ElliottMail.Title.11",
+		"Text": "ElliottMail.Text.11",
+		"WhichBG": 0,
+		"Repeatable": false,
+		"FriendshipConditions": [
+			{
+				"NpcName": "Elliott",
+				"FriendshipLevel": 6,
+				"FriendshipStatus": [ "Friendly", "Dating" ]
+			}
+		],
+		"EventsSeen": [ 1848481, "626070201" ],
+		"MailNotReceived": [ "YandereElliott.Mail.Final" ],
+		"AdditionalMailReceived": [ "VANILLA_FLAG" ],
+		"RequireAllEventsSeen": true
+	},
+	
+	{
+		"Id": "YandereElliott.Mail.Comfort", 
+		"GroupId": "YandereElliott.Mail", 
+		"Title": "ElliottMail.Title.12", 
+		"Text": "ElliottMail.Text.12", 
+		"WhichBG": 0, 
+		"Repeatable": false, 
+		"FriendshipConditions": 
+		[
+			{
+				"NpcName": "Elliott", 
+				"FriendshipLevel": 7, 
+				"FriendshipStatus": ["Friendly","Dating"] 
+			}
+		],
+		"EventsSeen": [626070401],
+		"MailNotReceived": ["YandereElliott.Mail.Final"], 
+		"AdditionalMailReceived": ["VANILLA_FLAG"],
+	},
+
+	{
+		"Id": "YandereElliott.Mail.Final",
+		"GroupId": "YandereElliott.Mail",
+		"Title": "ElliottMail.Title.13",
+		"Text": "ElliottMail.Text.13",
+		"WhichBG": 0,
+		"Repeatable": false,
+		"Attachments": [
+			{
+				"Type": "Object",
+				"Index": 458,
+				"Stack": 1
+			}
+		],
+		"FriendshipConditions": [
+			{
+				"NpcName": "Elliott",
+				"FriendshipLevel": 8,
+				"FriendshipStatus": [ "Friendly", "Dating" ]
+			}
+		],
+		"AdditionalMailReceived": [ "VANILLA_FLAG" ],
+		"EventsSeen": [ "626070201" ]
+	},
+//Jealous Letters
+
+	{
+		"Id": "YandereElliott.Mail.DateAllGuys",
+		"GroupId": "YandereElliott.Mail",
+		"Title": "ElliottMail.Title.14",
+		"Text": "ElliottMail.Text.14",
+		"WhichBG": 0,
+		"Repeatable": false,
+		"FriendshipConditions": [
+			{
+				"NpcName": "Elliott",
+				"FriendshipStatus": [ "Friendly", "Dating", "Engaged" ]
+			},
+			{
+				"NpcName": "Alex",
+				"FriendshipStatus": [ "Dating", "Engaged" ]
+			},
+			{
+				"NpcName": "Harvey",
+				"FriendshipStatus": [ "Dating", "Engaged" ]
+			},
+			{
+				"NpcName": "Sam",
+				"FriendshipStatus": [ "Dating", "Engaged" ]
+			},
+			{
+				"NpcName": "Sebastian",
+				"FriendshipStatus": [ "Dating", "Engaged" ]
+			},
+			{
+				"NpcName": "Shane",
+				"FriendshipStatus": [ "Dating", "Engaged" ]
+			}
+		],
+		"MailReceived": [ "YandereElliott.Mail.Begin" ],
+		"AdditionalMailReceived": [ "VANILLA_FLAG" ],
+		"EventsSeen": [ "626070201" ]
+	},
+
+	{
+		"Id": "YandereElliott.Mail.Alex",
+		"GroupId": "YandereElliott.Mail",
+		"Title": "ElliottMail.Title.15",
+		"Text": "ElliottMail.Text.15.1",
+		"WhichBG": 0,
+		"Repeatable": false,
+		"Attachments": [
+			{
+				"Type": "Object",
+				"Index": 277,
+				"Stack": 1
+			}
+		],
+		"FriendshipConditions": [
+			{
+				"NpcName": "Elliott",
+				"FriendshipStatus": [ "Friendly", "Dating", "Engaged" ]
+			},
+			{
+				"NpcName": "Alex",
+				"FriendshipStatus": [ "Dating", "Engaged" ]
+			}
+		],
+		"MailReceived": [ "YandereElliott.Mail.Begin" ],
+		"MailNotReceived": [ "YandereElliott.Mail.DateAllGuys", "YandereElliott.Mail.Harvey", "YandereElliott.Mail.Sam", "YandereElliott.Mail.Sebastian", "YandereElliott.Mail.Shane" ],
+		"AdditionalMailReceived": [ "VANILLA_FLAG" ],
+		"EventsSeen": [ "626070201" ]
+	},
+
+	{
+		"Id": "YandereElliott.Mail.Harvey",
+		"GroupId": "YandereElliott.Mail",
+		"Title": "ElliottMail.Title.15",
+		"Text": "ElliottMail.Text.15.2",
+		"WhichBG": 0,
+		"Repeatable": false,
+		"Attachments": [
+			{
+				"Type": "Object",
+				"Index": 277,
+				"Stack": 1
+			}
+		],
+		"FriendshipConditions": [
+			{
+				"NpcName": "Elliott",
+				"FriendshipStatus": [ "Friendly", "Dating", "Engaged" ]
+			},
+			{
+				"NpcName": "Harvey",
+				"FriendshipStatus": [ "Dating", "Engaged" ]
+			}
+		],
+		"MailReceived": [ "YandereElliott.Mail.Begin" ],
+		"MailNotReceived": [ "YandereElliott.Mail.DateAllGuys", "YandereElliott.Mail.Alex", "YandereElliott.Mail.Sam", "YandereElliott.Mail.Sebastian", "YandereElliott.Mail.Shane" ],
+		"AdditionalMailReceived": [ "VANILLA_FLAG" ],
+		"EventsSeen": [ "626070201" ]
+	},
+
+	{
+		"Id": "YandereElliott.Mail.Sam",
+		"GroupId": "YandereElliott.Mail",
+		"Title": "ElliottMail.Title.15",
+		"Text": "ElliottMail.Text.15.3",
+		"WhichBG": 0,
+		"Repeatable": false,
+		"Attachments": [
+			{
+				"Type": "Object",
+				"Index": 277,
+				"Stack": 1
+			}
+		],
+		"FriendshipConditions": [
+			{
+				"NpcName": "Elliott",
+				"FriendshipStatus": [ "Friendly", "Dating", "Engaged" ]
+			},
+			{
+				"NpcName": "Sam",
+				"FriendshipStatus": [ "Dating", "Engaged" ]
+			}
+		],
+		"MailReceived": [ "YandereElliott.Mail.Begin" ],
+		"MailNotReceived": [ "YandereElliott.Mail.DateAllGuys", "YandereElliott.Mail.Alex", "YandereElliott.Mail.Harvey", "YandereElliott.Mail.Sebastian", "YandereElliott.Mail.Shane" ],
+		"AdditionalMailReceived": [ "VANILLA_FLAG" ],
+		"EventsSeen": [ "626070201" ]
+	},
+
+	{
+		"Id": "YandereElliott.Mail.Sebastian",
+		"GroupId": "YandereElliott.Mail",
+		"Title": "ElliottMail.Title.15",
+		"Text": "ElliottMail.Text.15.4",
+		"WhichBG": 0,
+		"Repeatable": false,
+		"Attachments": [
+			{
+				"Type": "Object",
+				"Index": 277,
+				"Stack": 1
+			}
+		],
+		"FriendshipConditions": [
+			{
+				"NpcName": "Elliott",
+				"FriendshipStatus": [ "Friendly", "Dating", "Engaged" ]
+			},
+			{
+				"NpcName": "Sebastian",
+				"FriendshipStatus": [ "Dating", "Engaged" ]
+			}
+		],
+		"MailReceived": [ "YandereElliott.Mail.Begin" ],
+		"MailNotReceived": [ "YandereElliott.Mail.DateAllGuys", "YandereElliott.Mail.Alex", "YandereElliott.Mail.Harvey", "YandereElliott.Mail.Sam", "YandereElliott.Mail.Shane" ],
+		"AdditionalMailReceived": [ "VANILLA_FLAG" ],
+		"EventsSeen": [ "626070201" ]
+	},
+
+	{
+		"Id": "YandereElliott.Mail.Shane",
+		"GroupId": "YandereElliott.Mail",
+		"Title": "ElliottMail.Title.15",
+		"Text": "ElliottMail.Text.15.5",
+		"WhichBG": 0,
+		"Repeatable": false,
+		"Attachments": [
+			{
+				"Type": "Object",
+				"Index": 277,
+				"Stack": 1
+			}
+		],
+		"FriendshipConditions": [
+			{
+				"NpcName": "Elliott",
+				"FriendshipStatus": [ "Friendly", "Dating", "Engaged" ]
+			},
+			{
+				"NpcName": "Shane",
+				"FriendshipStatus": [ "Dating", "Engaged" ]
+			}
+		],
+		"MailReceived": [ "YandereElliott.Mail.Begin" ],
+		"MailNotReceived": [ "YandereElliott.Mail.DateAllGuys", "YandereElliott.Mail.Alex", "YandereElliott.Mail.Harvey", "YandereElliott.Mail.Sam", "YandereElliott.Mail.Sebastian" ],
+		"AdditionalMailReceived": [ "VANILLA_FLAG" ],
+		"EventsSeen": [ "626070201" ]
+	},
+
+//Propose
+
+	{
+		"Id": "YandereElliott.Mail.Proposal",
+		"GroupId": "YandereElliott.Mail",
+		"Title": "ElliottMail.Title.16",
+		"Text": "ElliottMail.Text.16",
+		"WhichBG": 0,
+		"Repeatable": false,
+		"Attachments": [
+			{
+				"Type": "Object",
+				"Index": 460,
+				"Stack": 1
+			}
+		],
+		"HouseUpgradeLevel": 1,
+		"FriendshipConditions": [
+			{
+				"NpcName": "Elliott",
+				"FriendshipLevel": 10,
+				"FriendshipStatus": [ "Dating" ]
+			}
+		],
+		"AdditionalMailReceived": [ "VANILLA_FLAG" ],
+		"EventsSeen": [ "626070201" ]
+	},
+		
+	
+]

@@ -1,0 +1,394 @@
+{
+	"Format": "2.6.0",
+	"ConfigSchema": {
+		"Buildings": {
+			"AllowValues": "farm, outskirts, town",
+			"AllowMultiple": true,
+			"AllowBlank": true,
+			"Default": "farm, outskirts, town",
+			"Section": "Buildings"
+		},
+		"Barn": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "Farm"
+		},
+		"BigBarn": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "Farm"
+		},
+		"DeluxeBarn": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "Farm"
+		},
+		"Coop": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "Farm"
+		},
+		"BigCoop": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "Farm"
+		},
+		"DeluxeCoop": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "Farm"
+		},
+		"Greenhouse": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "Farm"
+		},
+		"Houses": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "Farm"
+		},
+		"FishPond": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "Farm"
+		},
+		"GoldClock": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "Farm"
+		},
+		"Mill": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "Farm"
+		},
+		"Obelisks": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "Farm"
+		},
+		"PetBowl": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "Farm"
+		},
+		"Shed": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "Farm"
+		},
+		"BigShed": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "Farm"
+		},
+		"ShippingBin": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "Farm"
+		},
+		"Silo": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "Farm"
+		},
+		"SlimeHutch": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "Farm"
+		},
+		"Stable": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "Farm"
+		},
+		"Well": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "Farm"
+		},
+		"Beach": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "FarmCabins"
+		},
+		"Log": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "FarmCabins"
+		},
+		"Neighbor": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "FarmCabins"
+		},
+		"Plank": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "FarmCabins"
+		},
+		"Rustic": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "FarmCabins"
+		},
+		"Stone": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "FarmCabins"
+		},
+		"Trailer": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "FarmCabins"
+		},
+		"Fences": {
+			"AllowValues": "true, false",
+			"Default": "true",
+			"Section": "Buildables"
+		},
+		"FloweringBushes": {
+			"AllowValues": "true, false",
+			"Default": "false",
+			"Section": "Vegetation"
+		},
+		"SummerBushes": {
+			"AllowValues": "true, false",
+			"Default": "false",
+			"Section": "Vegetation"
+		},
+		"TerrainFlowers": {
+			"AllowValues": "true, false",
+			"Default": "false",
+			"Section": "Vegetation"
+		},
+		"Grass": {
+			"AllowValues": "false, medium, short, flowering, greenerblue",
+			"AllowMultiple": true,
+			"AllowBlank": true,
+			"Default": "",
+			"Section": "Grass"
+		}
+	},
+	"DynamicTokens": [
+		{
+			"Name": "Version",
+			"Value": "Vanilla"
+		},
+		{
+			"Name": "Version",
+			"Value": "Expanded",
+			"When": { "HasMod": "FlashShifter.StardewValleyExpandedCP" }
+		},
+		{
+			"Name": "SeasonOverride",
+			"Value": "{{Season}}"
+		},
+		{
+			"Name": "SeasonOverride",
+			"Value": "Spring",
+			"When": { "Query: NOT {{IsOutdoors}} OR ( {{LocationContext |contains=Desert}} AND {{HasMod |contains=VibrantPastoral.Expanded}} )": true}
+		},
+		{
+			"Name": "SeasonOverride",
+			"Value": "Summer",
+			"When": { "LocationContext": "Island" }
+		},
+		{
+			"Name": "GrassHeight",
+			"Value": ""
+		},
+		{
+			"Name": "GrassHeight",
+			"Value": "_medium",
+			"When": {
+				"Grass |contains=medium": true,
+				"Grass |contains=short": false
+			}
+		},
+		{
+			"Name": "GrassHeight",
+			"Value": "_short",
+			"When": {
+				"Grass |contains=medium": false,
+				"Grass |contains=short": true
+			}
+		},
+		{
+			"Name": "GrassFlower",
+			"Value": ""
+		},
+		{
+			"Name": "GrassFlower",
+			"Value": "_flower",
+			"When": { "Grass |contains=flowering": true }
+		},
+		{
+			"Name": "GrassBlue",
+			"Value": ""
+		},
+		{
+			"Name": "GrassBlue",
+			"Value": "_blue",
+			"When": { "Grass |contains=greenerblue": true }
+		},
+		{
+			"Name": "FarmLayout",
+			"Value": "{{FarmType}}"
+		},
+		{
+			"Name": "FarmLayout",
+			"Value": "{{VibrantPastoral.C/PetBowlShadow}}",
+			"When": { "VibrantPastoral.C/PetBowlShadow": "Beach, Standard" }
+		},
+		{
+			"Name": "FarmLayout",
+			"Value": "void",
+			"When": {
+				"FarmType": "Standard",
+				"HasMod": "flashshifter.GrandpasFarm, flashshifter.immersivefarm2remastered"
+			}
+		},
+		{
+			"Name": "TreeType",
+			"Value": "Vanilla"
+		},
+		{
+			"Name": "TreeType",
+			"Value": "Simple Foliage",
+			"When": { "HasMod": "Az.Foliage" }
+		},
+		{
+			"Name": "MarnieLuau",
+			"Value": ""
+		},
+		{
+			"Name": "MarnieLuau",
+			"Value": "_HYM",
+			"When": { "HasMod": "Hitme.HitmeYoungerMarnie" }
+		},
+		{
+			"Name": "MarnieLuau",
+			"Value": "_MNL",
+			"When": { "HasMod": "pinzol.MarnieNewLook" }
+		},
+		{
+			"Name": "SnOverlay",
+			"Value": ""
+		},
+		{
+			"Name": "SnOverlay",
+			"Value": "{{LocationContext}}",
+            "When": {
+				"VibrantPastoral.C/SnOverlay": true,
+				"Season": "winter"
+            }
+		}
+	],
+	"Changes": [
+	//Inclusions
+		//0Main
+        {
+            "Action": "Include",
+            "FromFile": "data/{{Version}}/0main.json"
+        },
+		//Buildings:Farm
+        {
+            "Action": "Include",
+            "FromFile": "data/buildings.json, data/masks.json",
+			"When": { "Buildings |contains=farm": true }
+        },
+		//Fences
+        {
+            "Action": "Include",
+            "FromFile": "data/fences.json",
+			"When": { "Fences": true }
+        },
+		//Grass
+        {
+            "Action": "Include",
+            "FromFile": "data/grass.json",
+			"When": { "Grass |contains=false": false }
+        },
+		//Vegetation
+        {
+            "Action": "Include",
+            "FromFile": "data/vegetation.json",
+			"When": { "VibrantPastoral.C/Vegetation": true }
+        },
+		//Mail
+        {
+            "Action": "Include",
+            "FromFile": "data/mail.json",
+			"When": { "VibrantPastoral.C/EdNygma": true }
+        },
+		//Patches
+        {
+            "Action": "Include",
+            "FromFile": "data/{{Version}}/patches.json"
+        },
+		//Seasonal Cute Characters
+        {
+            "Action": "Include",
+            "FromFile": "data/compat/SeasonalCuteCharacters.json",
+			"When": { "HasMod": "Poltergeister.SeasonalCuteCharacters" }
+        },
+		//SnOverlay
+        {
+            "Action": "Include",
+            "FromFile": "data/snoverlay.json",
+			"Update": "OnLocationChange",
+			"When": { "SnOverlay": "Default" }
+        },
+		//Build on/Buildable Ginger Island
+        {
+            "Action": "Include",
+            "FromFile": "data/compat/BuildGingerIsland.json",
+			"Update": "OnLocationChange",
+			"When": {
+				"Buildings |contains=farm": true,
+				"Query: {{HasMod |contains=Sexynes.CP.BuildOnGingerIslandFarm}} OR {{HasMod |contains=mouahrara.BuildableGingerIslandFarm}}": true,
+				"LocationName": "IslandWest"
+			}
+        },
+		//NPC Map Locations
+        {
+            "Action": "Include",
+            "FromFile": "data/compat/NPCMapLocations.json",
+			"When": {
+				"HasMod": "Bouhm.NPCMapLocations",
+				"HasMod |contains=VibrantPastoral.Expanded": false
+			}
+        },
+		//Floors Extra
+        {
+            "Action": "Include",
+            "FromFile": "data/flooring.json",
+			"When": { "VibrantPastoral.C/Interiors": true }
+        },
+		//Furniture
+        {
+            "Action": "Include",
+            "FromFile": "data/{{Version}}/furniture.json",
+			"When": { "VibrantPastoral.C/Furniture": true }
+        },
+		//Interiors
+        {
+            "Action": "Include",
+            "FromFile": "data/{{Version}}/interiors.json",
+			"When": { "VibrantPastoral.C/Interiors": true }
+        },
+		//Data Strings
+        {
+            "Action": "Include",
+            "FromFile": "data/strings.json"
+        },
+		//Loca Edits
+        {
+            "Action": "Include",
+            "FromFile": "data/Locale/{{Language}}.json",
+			"When": { "HasFile:{{FromFile}}": true }
+        }
+	]
+}

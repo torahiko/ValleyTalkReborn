@@ -1,0 +1,22 @@
+[1mdiff --git a/src/Core/ModEntry.cs b/src/Core/ModEntry.cs[m
+[1mindex 67a4c8d..562b481 100644[m
+[1m--- a/src/Core/ModEntry.cs[m
+[1m+++ b/src/Core/ModEntry.cs[m
+[36m@@ -456,7 +456,7 @@[m [mnamespace ValleytalkReborn[m
+                 Log.Error($"[ValleyTalkReborn] Error initializing Action Awareness System: {ex.Message}");[m
+             }[m
+ [m
+[31m-            Log.Debug("[ValleyTalkReborn] The module has been enabled, and the LLM and module configurations have been updated.");[m
+[32m+[m[32m            Log.Debug("[ValleyTalkReborn] Module enabled; LLM and module configurations updated.");[m
+         }[m
+ [m
+         /// <summary>[m
+[36m@@ -465,7 +465,7 @@[m [mnamespace ValleytalkReborn[m
+         private void RegisterDebugConsoleCommands(IModHelper helper)[m
+         {[m
+             helper.ConsoleCommands.Add("vt_test_date", "测试 Agent 约会预约分发器\n用法: vt_test_date <NPC名字> <地点ID>",[m
+[31m-                (cmd, args) =>[m
+[32m+[m[32m                (cmd, args) =>+[m
+                 {[m
+                     string npcName = args.Length > 0 ? args[0] : "Abigail";[m
+                     string location = args.Length > 1 ? args[1] : "Saloon";[m

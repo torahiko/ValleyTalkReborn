@@ -1,0 +1,909 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "DS_Candy_Apple": {
+            "Name": "Candy Apple",
+            "DisplayName": "{{i18n:Candy_Apple.name}}",
+            "Description": "{{i18n:Candy_Apple.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 0,
+            "Texture": "Mods\\ZG.DS\\Candy Apple",
+            "SpriteIndex": 0,
+            "Edibility": 1,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": true,
+            "ExcludeFromShippingCollection": true,
+            "ExcludeFromRandomSale": true,
+            "Buffs": [
+              {
+                "Duration": 10,
+                "CustomAttributes": {
+                  "FarmingLevel": 1,
+                  "FishingLevel": 0,
+                  "MiningLevel": 0,
+                  "LuckLevel": 0,
+                  "ForagingLevel": 0,
+                  "MaxStamina": 0,
+                  "MagneticRadius": 0,
+                  "Speed": 0,
+                  "Defense": 0,
+                  "Attack": 0
+                }
+              }
+            ]
+          },
+          "DS_Candy_Corn": {
+            "Name": "Candy Corn",
+            "DisplayName": "{{i18n:Candy_Corn.name}}",
+            "Description": "{{i18n:Candy_Corn.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 0,
+            "Texture": "Mods\\ZG.DS\\Candy Corn",
+            "SpriteIndex": 0,
+            "Edibility": 1,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": true,
+            "ExcludeFromShippingCollection": true,
+            "ExcludeFromRandomSale": true,
+            "Buffs": [
+              {
+                "Duration": 10,
+                "CustomAttributes": {
+                  "FarmingLevel": 0,
+                  "FishingLevel": 0,
+                  "MiningLevel": 0,
+                  "LuckLevel": 0.5,
+                  "ForagingLevel": 0,
+                  "MaxStamina": 0,
+                  "MagneticRadius": 0,
+                  "Speed": 0,
+                  "Defense": 0,
+                  "Attack": 0
+                }
+              }
+            ]
+          },
+          "DS_Not_So_Candy_Corn": {
+            "Name": "Not So Candy Corn",
+            "DisplayName": "{{i18n:Not_So_Candy_Corn.name}}",
+            "Description": "{{i18n:Not_So_Candy_Corn.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 0,
+            "Texture": "Mods\\ZG.DS\\Not So Candy Corn",
+            "SpriteIndex": 0,
+            "Edibility": 1,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": true,
+            "ExcludeFromShippingCollection": true,
+            "ExcludeFromRandomSale": true,
+            "Buffs": [
+              {
+                "Duration": 0,
+                "CustomAttributes": {
+                  "FarmingLevel": 0,
+                  "FishingLevel": 0,
+                  "MiningLevel": 0,
+                  "LuckLevel": 0,
+                  "ForagingLevel": 0,
+                  "MaxStamina": 0,
+                  "MagneticRadius": 0,
+                  "Speed": 0,
+                  "Defense": 0,
+                  "Attack": 0
+                }
+              }
+            ]
+          },
+          "DS_Gummy_Spider": {
+            "Name": "Gummy Spider",
+            "DisplayName": "{{i18n:Gummy_Spider.name}}",
+            "Description": "{{i18n:Gummy_Spider.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 0,
+            "Texture": "Mods\\ZG.DS\\Gummy Spider",
+            "SpriteIndex": 0,
+            "Edibility": 2,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": true,
+            "ExcludeFromShippingCollection": true,
+            "ExcludeFromRandomSale": true,
+            "Buffs": [
+              {
+                "BuffId": "24", 
+              "Id": "24",
+              "Duration": 10
+            }
+            ]
+          },
+          "DS_Catcoon_Candy": {
+            "Name": "Catcoon Candy",
+            "DisplayName": "{{i18n:Catcoon_Candy.name}}",
+            "Description": "{{i18n:Catcoon_Candy.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 0,
+            "Texture": "Mods\\ZG.DS\\Catcoon Candy",
+            "SpriteIndex": 0,
+            "Edibility": 1,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": true,
+            "ExcludeFromShippingCollection": true,
+            "ExcludeFromRandomSale": true,
+            "Buffs": [
+              {
+                "Duration": 10,
+                "CustomAttributes": {
+                  "FarmingLevel": 0,
+                  "FishingLevel": 0,
+                  "MiningLevel": 0,
+                  "LuckLevel": 0,
+                  "ForagingLevel": 1,
+                  "MaxStamina": 0,
+                  "MagneticRadius": 0,
+                  "Speed": 0,
+                  "Defense": 0,
+                  "Attack": 0
+                }
+              }
+            ]
+          },
+          "DS_Not_Raisins": {
+            "Name": "Not Raisins",
+            "DisplayName": "{{i18n:Not_Raisins.name}}",
+            "Description": "{{i18n:Not_Raisins.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 0,
+            "Texture": "Mods\\ZG.DS\\Not Raisins",
+            "SpriteIndex": 0,
+            "Edibility": 2,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": true,
+            "ExcludeFromShippingCollection": true,
+            "ExcludeFromRandomSale": true,
+            "Buffs": [
+              {
+                "BuffId": "25", 
+              "Id": "25",
+              "Duration": 10
+            }
+            ]
+          },
+          "DS_Raisins": {
+            "Name": "DS Raisins",
+            "DisplayName": "{{i18n:DS_Raisins.name}}",
+            "Description": "{{i18n:DS_Raisins.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 0,
+            "Texture": "Mods\\ZG.DS\\DS Raisins",
+            "SpriteIndex": 0,
+            "Edibility": 2,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": true,
+            "ExcludeFromShippingCollection": true,
+            "ExcludeFromRandomSale": true,
+            "Buffs": [
+              {
+                "Duration": 0,
+                "CustomAttributes": {
+                  "FarmingLevel": 0,
+                  "FishingLevel": 0,
+                  "MiningLevel": 0,
+                  "LuckLevel": 0,
+                  "ForagingLevel": 0,
+                  "MaxStamina": 0,
+                  "MagneticRadius": 0,
+                  "Speed": 0,
+                  "Defense": 0,
+                  "Attack": 0
+                }
+              }
+            ]
+          },
+          "DS_Ghost_Pop": {
+            "Name": "Ghost Pop",
+            "DisplayName": "{{i18n:Ghost_Pop.name}}",
+            "Description": "{{i18n:Ghost_Pop.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 0,
+            "Texture": "Mods\\ZG.DS\\Ghost Pop",
+            "SpriteIndex": 0,
+            "Edibility": 1,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": true,
+            "ExcludeFromShippingCollection": true,
+            "ExcludeFromRandomSale": true,
+            "Buffs": [
+              {
+                "BuffId": "21", 
+              "Id": "21",
+              "Duration": 10
+            }
+            ]
+          },
+          "DS_Jelly_Worm": {
+            "Name": "Jelly Worm",
+            "DisplayName": "{{i18n:Jelly_Worm.name}}",
+            "Description": "{{i18n:Jelly_Worm.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 0,
+            "Texture": "Mods\\ZG.DS\\Jelly Worm",
+            "SpriteIndex": 0,
+            "Edibility": 1,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": true,
+            "ExcludeFromShippingCollection": true,
+            "ExcludeFromRandomSale": true,
+            "Buffs": [
+              {
+                "Duration": 10,
+                "CustomAttributes": {
+                  "FarmingLevel": 0,
+                  "FishingLevel": 0,
+                  "MiningLevel": 1,
+                  "LuckLevel": 0,
+                  "ForagingLevel": 0,
+                  "MaxStamina": 0,
+                  "MagneticRadius": 0,
+                  "Speed": 0,
+                  "Defense": 0,
+                  "Attack": 0
+                }
+              }
+            ]
+          },
+          "DS_Tentacle_Lolli": {
+            "Name": "Tentacle Lolli",
+            "DisplayName": "{{i18n:Tentacle_Lolli.name}}",
+            "Description": "{{i18n:Tentacle_Lolli.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 0,
+            "Texture": "Mods\\ZG.DS\\Tentacle Lolli",
+            "SpriteIndex": 0,
+            "Edibility": 2,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": true,
+            "ExcludeFromShippingCollection": true,
+            "ExcludeFromRandomSale": true,
+            "Buffs": [
+              {
+                "Duration": 10,
+                "CustomAttributes": {
+                  "FarmingLevel": 0,
+                  "FishingLevel": 0,
+                  "MiningLevel": 0,
+                  "LuckLevel": 0,
+                  "ForagingLevel": 0,
+                  "MaxStamina": 0,
+                  "MagneticRadius": 12,
+                  "Speed": 0,
+                  "Defense": 0,
+                  "Attack": 0
+                }
+              }
+            ]
+          },
+          "DS_Choco_Pigs": {
+            "Name": "Choco Pigs",
+            "DisplayName": "{{i18n:Choco_Pigs.name}}",
+            "Description": "{{i18n:Choco_Pigs.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 0,
+            "Texture": "Mods\\ZG.DS\\Choco Pigs",
+            "SpriteIndex": 0,
+            "Edibility": 1,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": true,
+            "ExcludeFromShippingCollection": true,
+            "ExcludeFromRandomSale": true,
+            "Buffs": [
+              {
+                "Duration": 10,
+                "CustomAttributes": {
+                  "FarmingLevel": 0,
+                  "FishingLevel": 0,
+                  "MiningLevel": 0,
+                  "LuckLevel": 0,
+                  "ForagingLevel": 0,
+                  "MaxStamina": 0,
+                  "MagneticRadius": 0,
+                  "Speed": 0.5,
+                  "Defense": 0,
+                  "Attack": 0
+                }
+              }
+            ]
+          },
+          "DS_Candy_Lice": {
+            "Name": "Candy Lice",
+            "DisplayName": "{{i18n:Candy_Lice.name}}",
+            "Description": "{{i18n:Candy_Lice.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 0,
+            "Texture": "Mods\\ZG.DS\\Candy Lice",
+            "SpriteIndex": 0,
+            "Edibility": 1,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": true,
+            "ExcludeFromShippingCollection": true,
+            "ExcludeFromRandomSale": true,
+            "Buffs": [
+              {
+                "Duration": 10,
+                "CustomAttributes": {
+                  "FarmingLevel": 0,
+                  "FishingLevel": 1,
+                  "MiningLevel": 0,
+                  "LuckLevel": 0,
+                  "ForagingLevel": 0,
+                  "MaxStamina": 0,
+                  "MagneticRadius": 0,
+                  "Speed": 0,
+                  "Defense": 0,
+                  "Attack": 0
+                }
+              }
+            ]
+          },
+          "DS_Otherworldly_Jawbreaker": {
+            "Name": "Otherworldly Jawbreaker",
+            "DisplayName": "{{i18n:Otherworldly_Jawbreaker.name}}",
+            "Description": "{{i18n:Otherworldly_Jawbreaker.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 0,
+            "Texture": "Mods\\ZG.DS\\Otherworldly Jawbreaker",
+            "SpriteIndex": 0,
+            "Edibility": 1,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": true,
+            "ExcludeFromShippingCollection": true,
+            "ExcludeFromRandomSale": true,
+            "Buffs": [
+              {
+                "Duration": 10,
+                "CustomAttributes": {
+                  "FarmingLevel": 0,
+                  "FishingLevel": 0,
+                  "MiningLevel": 0,
+                  "LuckLevel": 0,
+                  "ForagingLevel": 0,
+                  "MaxStamina": 0,
+                  "MagneticRadius": 0,
+                  "Speed": 0,
+                  "Defense": 3,
+                  "Attack": 0
+                }
+              }
+            ]
+          },
+          "DS_Lava_Pepper": {
+            "Name": "Lava Pepper",
+            "DisplayName": "{{i18n:Lava_Pepper.name}}",
+            "Description": "{{i18n:Lava_Pepper.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 0,
+            "Texture": "Mods\\ZG.DS\\Lava Pepper",
+            "SpriteIndex": 0,
+            "Edibility": 0,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": true,
+            "ExcludeFromShippingCollection": true,
+            "ExcludeFromRandomSale": true,
+            "Buffs": [
+              {
+                "Duration": 10,
+                "CustomAttributes": {
+                  "FarmingLevel": 0,
+                  "FishingLevel": 0,
+                  "MiningLevel": 0,
+                  "LuckLevel": 0,
+                  "ForagingLevel": 0,
+                  "MaxStamina": 0,
+                  "MagneticRadius": 0,
+                  "Speed": 0,
+                  "Defense": 0,
+                  "Attack": 1
+                }
+              }
+            ]
+          },
+          "DS_Candy_Bag": {
+            "Name": "Candy Bag",
+            "DisplayName": "{{i18n:Candy_Bag.name}}",
+            "Description": "{{i18n:Candy_Bag.text}}",
+            "Type": "Basic",
+            "Category": 0,
+            "Price": 5,
+            "Edibility": -300,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": true,
+            "ExcludeFromShippingCollection": true,
+            "ExcludeFromRandomSale": true,
+            "Buff": {
+            },
+            "ContextTags": [ 
+              "color_brown",
+              "geode",
+              "geode_crusher_ignored"
+            ],
+            "Miscellaneous": null,
+            "Texture": "Mods\\ZG.DS\\Candy Bag",
+            "SpriteIndex": 0,
+						"GeodeDrops":
+						[
+              {
+                "Id": "DS_Candy_Bag_1",
+                "Chance": 0.0001,
+                "Precedence": 0,
+                "Condition": null,
+                "ItemId": null,
+                "RandomItemId": [
+                    "(O)279"
+                  ],
+                "MinStack": "1",
+                "MaxStack": "1",
+                "Quality": "{{Random:-1, 1, 2, 4}}"
+            },
+            {
+              "Id": "DS_Candy_Bag_2",
+              "Chance": 0.0099,
+              "Precedence": 0,
+              "Condition": null,
+              "ItemId": null,
+              "RandomItemId": [
+                  "(O)612",
+                  "(O)731"
+                ],
+              "MinStack": "1",
+              "MaxStack": "3",
+              "Quality": "{{Random:-1, 1, 2, 4}}"
+            },
+              {
+                "Id": "DS_Candy_Bag_3",
+                "Chance": 1.00,
+                "Precedence": 0,
+                "Condition": null,
+                "ItemId": null,
+                "RandomItemId": [
+                    "(O)DS_Candy_Apple",
+                    "(O)DS_Candy_Corn",
+                    "(O)DS_Not_So_Candy_Corn",
+                    "(O)DS_Gummy_Spider",
+                    "(O)DS_Catcoon_Candy",
+                    "(O)DS_Not_Raisins",
+                    "(O)DS_Raisins",
+                    "(O)DS_Ghost_Pop",
+                    "(O)DS_Jelly_Worm",
+                    "(O)DS_Tentacle_Lolli",
+                    "(O)DS_Choco_Pigs",
+                    "(O)DS_Candy_Lice",
+                    "(O)DS_Otherworldly_Jawbreaker",
+                    "(O)DS_Lava_Pepper"
+                  ],
+                "MinStack": "3",
+                "MaxStack": "9",
+                "Quality": "{{Random:-1, 1, 2, 4}}"
+            }
+            ]
+          }
+        }
+        },
+        {
+          "Action": "EditData", 
+          "Target": "Data/CraftingRecipes", 
+          "When":{"Hallowed_Nights": "true"},
+          "Entries": { 
+            "Candy Bag":"771 6/Field/DS_Candy_Bag/false/Farming 0/" 
+          }
+        },
+          {
+              "Log": "Add Gift Tastes for NPCs",
+              "Action": "EditData",
+              "Target": "Data/NPCGiftTastes",
+              "TextOperations": [
+      { "Operation": "Append",
+                "Target": ["Entries", "Universal_like"],
+                "Value": " DS_Candy_Apple DS_Candy_Corn DS_Not_So_Candy_Corn DS_Gummy_Spider DS_Catcoon_Candy DS_Ghost_Pop DS_Jelly_Worm DS_Tentacle_Lolli DS_Choco_Pigs DS_Candy_Lice DS_Otherworldly_Jawbreaker DS_Lava_Pepper DS_Candy_Bag",
+                "Delimiter": " "
+              },
+              { "Operation": "Append",
+              "Target": ["Entries", "Universal_Hate"],
+              "Value": " DS_Not_Raisins",
+              "Delimiter": " "
+              },
+              { "Operation": "Append",
+              "Target": ["Entries", "Universal_Dislike"],
+              "Value": " DS_Raisins",
+              "Delimiter": " "
+              },
+              {
+                "Operation": "Append",
+                "Target": ["Fields", "Dwarf", "3"],
+                "Value": " DS_Not_Raisins", 
+                "Delimiter": " "
+              },
+              {
+                "Operation": "Append",
+                "Target": ["Fields", "Sam", "3"],
+                "Value": " DS_Raisins", 
+                "Delimiter": " "
+              },
+              {
+                "Operation": "Append",
+                "Target": ["Fields", "Abigail", "7"],
+                "Value": " DS_Gummy_Spider", 
+                "Delimiter": " "
+              }
+      ]
+      },
+        {
+          "Action": "EditData",
+          "Target": "Data/Shops", 
+          "TargetField": [ 
+            "Festival_SpiritsEve_Pierre", 
+            "Items" 
+          ],
+          "When":{"Hallowed_Nights": "true"},
+          "Entries": { 
+            "DS_Halloween_Candy_Machine": { 
+              "Id": "(BC)Halloween Candy Machine", 
+              "ItemId": "(BC)DS_Halloween_Candy_Machine", 
+              "AvailableStock": 1, 
+              "TradeItemId": "(O)373",
+              "TradeItemAmount": 1,
+              "Price": 10000
+          },
+            "DS_Candy_Apple": { 
+              "Id": "(O)Candy Apple", 
+              "ItemId": "(O)DS_Candy_Apple", 
+              "AvailableStock": -1, 
+              "Price": 5
+          },
+          "DS_Candy_Corn": { 
+            "Id": "(O)Candy Corn", 
+            "ItemId": "(O)DS_Candy_Corn", 
+            "AvailableStock": -1, 
+            "Price": 5
+        },
+        "DS_Not_So_Candy_Corn": { 
+          "Id": "(O)Not So Candy Corn", 
+          "ItemId": "(O)DS_Not_So_Candy_Corn", 
+          "AvailableStock": -1, 
+          "Price": 5
+      },
+      "DS_Gummy_Spider": { 
+        "Id": "(O)Gummy Spider", 
+        "ItemId": "(O)DS_Gummy_Spider", 
+        "AvailableStock": -1, 
+        "Price": 5
+    },
+    "DS_Catcoon_Candy": { 
+      "Id": "(O)Catcoon Candy", 
+      "ItemId": "(O)DS_Catcoon_Candy", 
+      "AvailableStock": -1, 
+      "Price": 5
+  },
+  "DS_Not_Raisins": { 
+    "Id": "(O)Not Raisins", 
+    "ItemId": "(O)DS_Not_Raisins", 
+    "AvailableStock": -1, 
+    "Price": 5
+},
+"DS_Ghost_Pop": { 
+  "Id": "(O)Ghost Pop", 
+  "ItemId": "(O)DS_Ghost_Pop", 
+  "AvailableStock": -1, 
+  "Price": 5
+},
+"DS_Jelly_Worm": { 
+  "Id": "(O)Jelly Worm", 
+  "ItemId": "(O)DS_Jelly_Worm", 
+  "AvailableStock": -1, 
+  "Price": 5
+},
+"DS_Tentacle_Lolli": { 
+  "Id": "(O)Tentacle Lolli", 
+  "ItemId": "(O)DS_Tentacle_Lolli", 
+  "AvailableStock": -1, 
+  "Price": 5
+},
+"DS_Choco_Pigs": { 
+  "Id": "(O)Choco Pigs", 
+  "ItemId": "(O)DS_Choco_Pigs", 
+  "AvailableStock": -1, 
+  "Price": 5
+},
+"DS_Candy_Lice": { 
+  "Id": "(O)Candy Lice", 
+  "ItemId": "(O)DS_Candy_Lice", 
+  "AvailableStock": -1, 
+  "Price": 5
+},
+"DS_Otherworldly_Jawbreaker": { 
+  "Id": "(O)Otherworldly Jawbreaker", 
+  "ItemId": "(O)DS_Otherworldly_Jawbreaker", 
+  "AvailableStock": -1, 
+  "Price": 5
+},
+"DS_Lava_Pepper": { 
+  "Id": "(O)Lava Pepper", 
+  "ItemId": "(O)DS_Lava_Pepper", 
+  "AvailableStock": -1, 
+  "Price": 5
+},
+"DSGhostDecoration": { 
+  "Id": "(F)DSGhostDecoration", 
+  "ItemId": "(F)DSGhostDecoration", 
+  "AvailableStock": -1, 
+  "Price": 500
+},
+"DSBatDecoration": { 
+  "Id": "(F)DSBatDecoration", 
+  "ItemId": "(F)DSBatDecoration", 
+  "AvailableStock": -1, 
+  "Price": 500
+},
+"DSSpiderDecoration": { 
+  "Id": "(F)DSSpiderDecoration", 
+  "ItemId": "(F)DSSpiderDecoration", 
+  "AvailableStock": -1, 
+  "Price": 500
+},
+"DSTentacleDecoration": { 
+  "Id": "(F)DSTentacleDecoration", 
+  "ItemId": "(F)DSTentacleDecoration", 
+  "AvailableStock": -1, 
+  "Price": 500
+},
+"DSDanglingDepthDwellerDecoration": { 
+  "Id": "(F)DSDanglingDepthDwellerDecoration", 
+  "ItemId": "(F)DSDanglingDepthDwellerDecoration", 
+  "AvailableStock": -1, 
+  "Price": 500
+},
+"DSCrowDecoration": { 
+  "Id": "(F)DSCrowDecoration", 
+  "ItemId": "(F)DSCrowDecoration", 
+  "AvailableStock": -1, 
+  "Price": 500
+}
+        }
+      },
+      {
+        "Action": "EditData",
+        "Target": "Data/Shops", 
+        "TargetField": [ 
+          "Joja", 
+          "Items" 
+        ],
+        "When":{"Hallowed_Nights": "true"},
+        "Entries": { 
+          "DS_Raisins": { 
+            "Id": "DS Raisins", 
+            "ItemId": "DS_Raisins", 
+            "AvailableStock": -1, 
+            "Price": 5,
+            "Condition":"SEASON_DAY fall 25 fall 26"
+        },
+          "DS_Raisins2": { 
+            "Id": "DS_Raisins", 
+            "ItemId": "DS_Raisins", 
+            "AvailableStock": -1, 
+            "Price": 1,
+            "Condition":"SEASON_DAY fall 28 winter 1"
+      }
+      },
+      "MoveEntries": [
+          { "Id": "DS Raisins", "ToPosition": "Top" },
+          { "Id": "DS_Raisins", "ToPosition": "Top" }
+    ]
+    },
+      {
+        "Log": "Add objects to drop",
+        "Action": "EditData",
+        "Target": "Data/Monsters",
+        "When":{"Hallowed_Nights": "true"},
+        "TextOperations": [
+        { "Operation": "Append",
+          "Target": ["Fields","Green Slime", "6"],
+          "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Dust Spirit", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Bat", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Frost Bat", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Lava Bat", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Iridium Bat", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Stone Golem", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Wilderness Golem", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Iridium Golem", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Grub", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Fly", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Frost Jelly", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Sludge", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Shadow Guy", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Ghost", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Carbon Ghost", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Duggy", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Rock Crab", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Truffle Crab", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Lava Crab", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Iridium Crab", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Squid Kid", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Skeleton Warrior", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Shadow Brute", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Shadow Shaman", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Skeleton", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Skeleton Mage", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Metal Head", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Bug", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Mummy", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Big Slime", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Serpent", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Pepper Rex", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Tiger Slime", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Lava Lurk", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Hot Head", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Magma Sprite", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Magma Duggy", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Magma Sparker", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","False Magma Cap", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Dwarvish Sentry", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Putrid Ghost", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Shadow Sniper", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Spider", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Royal Serpent", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        },
+        { "Operation": "Append",
+        "Target": ["Fields","Blue Squid", "6"],
+        "Value": " DS_Candy_Apple .014 DS_Candy_Corn .014 DS_Not_So_Candy_Corn .014 DS_Gummy_Spider .014 DS_Catcoon_Candy .014 DS_Not_Raisins .014 DS_Raisins .014 DS_Ghost_Pop .014 DS_Jelly_Worm .014 DS_Tentacle_Lolli .014 DS_Choco_Pigs .014 DS_Candy_Lice .014 DS_Otherworldly_Jawbreaker .014 DS_Lava_Pepper .014"
+        }
+      ]
+      }
+    ]
+  }

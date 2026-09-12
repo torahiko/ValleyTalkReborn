@@ -1,0 +1,348 @@
+{
+"Changes": [
+
+//Egg Festival
+{
+    "Action": "EditData",
+	"Target": "Data/Festivals/spring13",
+	"Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Spring13.01}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Spring13.01}}",
+	}
+},   
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/spring13",
+    "When": { "Relationship:Elliott": "Dating", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Spring13.02}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Spring13.02}}",
+		"Abigail": "{{i18n:Abigail.Festival.Spring13}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/spring13",
+    "When": { "Relationship:Elliott": "Married", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Spring13.03}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Spring13.03}}",
+		"Elliott_spouse": "{{i18n:Elliott.Festival.Spring13.03}}",
+		"Elliott_spouse_y2": "{{i18n:Elliott.Festival.Spring13.03}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/spring13",
+    "When": { "Relationship:Elliott": "Divorced", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Spring13.04}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Spring13.04}}",
+	}
+},
+
+//Flower Dance
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/spring24",
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Spring24.01}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Spring24.01}}",
+		"Leah": "{{i18n:Leah.Festival.Spring24.01}}",
+		"Leah_y2": "{{i18n:Leah.Festival.Spring24.01}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/spring24",
+    "When": { "Hearts:Elliott": "4, 5, 6, 7, 8" },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Spring24.02}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Spring24.02}}",
+        "Leah": "{{i18n:Leah.Festival.Spring24.02}}",
+		"Leah_y2": "{{i18n:Leah.Festival.Spring24.02}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/spring24",
+    "When": { "Relationship:Elliott": "Dating" },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Spring24.03}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Spring24.03}}",
+		"Leah": "{{i18n:Leah.Festival.Spring24.03}}",
+		"Leah_y2": "{{i18n:Leah.Festival.Spring24.03}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/spring24",
+    "When": { "Relationship:Elliott": "Married" },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Spring24.04}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Spring24.04}}",
+		"Elliott_spouse": "{{i18n:Elliott.Festival.Spring24.04}}",
+		"Elliott_spouse_y2": "{{i18n:Elliott.Festival.Spring24.04}}",
+		"Leah": "{{i18n:Leah.Festival.Spring24.04}}",
+		"Leah_y2": "{{i18n:Leah.Festival.Spring24.04}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/spring24",
+    "When": { "Relationship:Elliott": "Divorced", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Spring24.05}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Spring24.05}}",
+	}
+},
+
+//Luau
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/summer11",
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Summer11.01}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Summer11.01}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/summer11",
+    "When": { "Hearts:Elliott": "4, 5, 6, 7, 8", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Summer11.02}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Summer11.02}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/summer11",
+    "When": { "Relationship:Elliott": "Dating", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Summer11.03}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Summer11.03}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/summer11",
+    "When": { "Relationship:Elliott": "Married", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Summer11.04}}",
+		"Elliott_spouse": "{{i18n:Elliott.Festival.Summer11.04}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/summer11",
+    "When": { "Relationship:Elliott": "Divorced", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Summer11.05}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Summer11.05}}",
+	}
+},
+
+//Moonlight Jellies
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/summer28",
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Summer28.01}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Summer28.01}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/summer28",
+    "When": { "Hearts:Elliott": "4, 5, 6, 7, 8", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Summer28.02}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Summer28.02}}",
+	}
+},  
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/summer28",
+    "When": { "Relationship:Elliott": "Dating", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Summer28.03}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Summer28.03}}",
+	}
+},  
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/summer28",
+     "When": { "Relationship:Elliott": "Married", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Summer28.04}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Summer28.04}}",
+		"Elliott_spouse": "{{i18n:Elliott.Festival.Summer28.04}}",
+		"Elliott_spouse_y2": "{{i18n:Elliott.Festival.Summer28.04}}",
+	}
+},  
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/summer28",
+    "When": { "Relationship:Elliott": "Divorced", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Summer28.05}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Summer28.05}}",
+	}
+},
+
+//Stardew Fair
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/fall16",
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Fall16.01}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Fall16.01}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/fall16",
+    "When": { "Relationship:Elliott": "Dating", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Fall16.02}}",
+	}
+},    
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/fall16",
+    "When": { "Relationship:Elliott": "Married", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Fall16.03}}",
+		"Elliott_spouse": "{{i18n:Elliott.Festival.Fall16.03}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/fall16",
+    "When": { "Relationship:Elliott": "Divorced", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Fall16.04}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Fall16.04}}",
+	}
+},
+
+//Spirit's Eve      
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/fall27",
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Fall27.01}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Fall27.01}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/fall27",
+    "When": { "Relationship:Elliott": "Dating", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Fall27.02}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Fall27.02}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/fall27",
+    "When": { "Relationship:Elliott": "Married", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Fall27.03}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Fall27.03}}",
+		"Elliott_spouse": "{{i18n:Elliott.Festival.Fall27.03}}",
+		"Elliott_spouse_y2": "{{i18n:Elliott.Festival.Fall27.03}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/fall27",
+    "When": { "Relationship:Elliott": "Divorced", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Fall27.04}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Fall27.04}}",
+	}
+},
+
+//Ice Festival
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/winter8",
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Winter8.01}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Winter8.01}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/winter8",
+    "When": { "Relationship:Elliott": "Dating", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Winter8.02}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Winter8.02}}",
+	}
+},    
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/winter8",
+    "When": { "Relationship:Elliott": "Married", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Winter8.03}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Winter8.03}}",
+		"Elliott_spouse": "{{i18n:Elliott.Festival.Winter8.03}}",
+		"Elliott_spouse_y2": "{{i18n:Elliott.Festival.Winter8.03}}",
+	}
+},  
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/winter8",
+    "When": { "Relationship:Elliott": "Divorced", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Winter8.04}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Winter8.04}}",
+	}
+},
+
+//Winter Star
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/winter25",
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Winter25.01}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Winter25.01}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/winter25",
+    "When": { "Relationship:Elliott": "Dating", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Winter25.02}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Winter25.02}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/winter25",
+    "When": { "Relationship:Elliott": "Married", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Winter25.03}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Winter25.03}}",
+		"Elliott_spouse": "{{i18n:Elliott.Festival.Winter25.03}}",
+		"Elliott_spouse_y2": "{{i18n:Elliott.Festival.Winter25.03}}",
+	}
+},
+{
+    "Action": "EditData",
+    "Target": "Data/Festivals/winter25",
+    "When": { "Relationship:Elliott": "Divorced", },
+    "Entries": {
+        "Elliott": "{{i18n:Elliott.Festival.Winter25.04}}",
+		"Elliott_y2": "{{i18n:Elliott.Festival.Winter25.04}}",
+	}
+},
+
+]
+}

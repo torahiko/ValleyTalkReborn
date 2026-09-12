@@ -1,0 +1,11 @@
+{
+    "Name": "Sweeter than Pomegranates",
+    "Author": "ClairesStoryofSeasons",
+    "Version": "2.0.2",
+    "Description": "A mod that enhances Elliott's marriage dialogue, making him a more realistic partner by incorporating additional lines, deeper personality traits, non-canon lore, and suggestive elements to make interactions with him feel more authentic and engaging.",
+    "UniqueID": "ClairesStoryofSeasons.SweeterthanPomegranates",
+    "UpdateKeys": ["Nexus:26598"],
+       "ContentPackFor": {
+        "UniqueID": "Pathoschild.ContentPatcher"
+    }
+}

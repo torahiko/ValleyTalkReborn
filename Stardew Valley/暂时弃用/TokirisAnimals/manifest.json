@@ -1,0 +1,13 @@
+{
+  "Name": "Tokiri's Animals",
+  "Author": "Tokiri strifedanish silvermoonchan",
+  "Version": "1.0.6",
+  "Description": "Adds a few animals to the farm.",
+  "UniqueID": "tokiri.animals",
+  "UpdateKeys": [ "Nexus:27363" ],
+  "MinimumApiVersion": "3.6",
+  "ContentPackFor": {
+      "UniqueID": "Pathoschild.ContentPatcher",
+      "MinimumVersion": "1.17.0"
+      }
+}

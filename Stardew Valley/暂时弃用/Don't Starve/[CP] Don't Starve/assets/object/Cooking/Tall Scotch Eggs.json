@@ -1,0 +1,92 @@
+{
+    "Changes": [
+      {
+        "Action": "EditData",
+        "Target": "Data/Objects",
+        "Entries": {
+          "DS_Tall_Scotch_Eggs": {
+            "Name": "Tall Scotch Eggs",
+            "DisplayName": "{{i18n:Tall_Scotch_Eggs.name}}",
+            "Description": "{{i18n:Tall_Scotch_Eggs.text}}",
+            "Type": "Cooking",
+            "Category": -7,
+            "Price": 2500,
+            "Texture": "Mods\\ZG.DS\\Tall Scotch Eggs",
+            "SpriteIndex": 0,
+            "Edibility": 600,
+            "IsDrink": false,
+            "ExcludeFromFishingCollection": false,
+            "ExcludeFromShippingCollection": false,
+            "ExcludeFromRandomSale": false,
+            "Buffs": [
+              {
+                "Duration": 1500,
+                "CustomAttributes": {
+                  "FarmingLevel": 0,
+                  "FishingLevel": 0,
+                  "MiningLevel": 0,
+                  "LuckLevel": 2,
+                  "ForagingLevel": 0,
+                  "MaxStamina": 0,
+                  "MagneticRadius": 0,
+                  "Speed": 2,
+                  "Defense": 20,
+                  "Attack": 5
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "Action": "EditData", 
+        "Target": "Data/CookingRecipes", 
+      
+        "Entries": { 
+          "Tall Scotch Eggs":"289 1 Carrot 1/25 5/DS_Tall_Scotch_Eggs/s Combat 6/" 
+        }
+      },
+          {
+              "Log": "Add Gift Tastes for NPCs",
+              "Action": "EditData",
+              "Target": "Data/NPCGiftTastes",
+              "TextOperations": [
+      { "Operation": "Append",
+                "Target": ["Entries", "Universal_like"],
+                "Value": " DS_Tall_Scotch_Eggs",
+                "Delimiter": " "
+              },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Alex", "1"],
+          "Value": " DS_Tall_Scotch_Eggs", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Sebastian", "1"],
+          "Value": " DS_Tall_Scotch_Eggs", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Leo", "5"],
+          "Value": " DS_Tall_Scotch_Eggs", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Krobus", "5"],
+          "Value": " DS_Tall_Scotch_Eggs", 
+          "Delimiter": " "
+        },
+        {
+          "Operation": "Append",
+          "Target": ["Fields", "Willy", "5"],
+          "Value": " DS_Tall_Scotch_Eggs", 
+          "Delimiter": " "
+        }
+      ]
+      }
+    ]
+  }

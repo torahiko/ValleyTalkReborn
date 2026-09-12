@@ -1,0 +1,9 @@
+{
+	"Name": "[CP] Overgrown Flowery Interface",
+	"Author": "Maraluna & Mae",
+	"Version": "1.6.4",
+	"Description": "Fresh vines, dreamy petals and floral romance on your interface.",
+	"UniqueID": "Maraluna.OvergrownFloweryInterface",
+	"ContentPackFor": {"UniqueID": "Pathoschild.ContentPatcher"},
+	"UpdateKeys": ["Nexus:6166"], 
+}

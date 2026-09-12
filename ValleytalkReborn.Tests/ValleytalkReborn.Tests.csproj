@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <SuppressTfmSupportBuildErrors>true</SuppressTfmSupportBuildErrors>
+    <NoWarn>NU1605;NU1701</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="3.2.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
+    <PackageReference Include="xunit" Version="2.4.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\src\ValleytalkReborn.csproj">
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>
+  </ItemGroup>
+
+  <!--
+    Local SMAPI / game assembly references so tests can resolve StardewModdingAPI
+    when exercising code paths that use ModEntry.SMonitor.
+  -->
+  <ItemGroup>
+    <Reference Include="StardewModdingAPI">
+      <HintPath>..\Stardew Valley\StardewModdingAPI.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="StardewValley">
+      <HintPath>..\Stardew Valley\Stardew Valley.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>..\Stardew Valley\smapi-internal\0Harmony.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>
