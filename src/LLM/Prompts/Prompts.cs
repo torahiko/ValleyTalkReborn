@@ -54,9 +54,9 @@
 //
 // [Command] <- Action tag syntax & tool calling rules
 //   +- Emote bubbles ([ACTION:EMOTE:HAPPY])
-//   +- Movement tags ([ACTION:FOLLOW], [ACTION:STEP:FORWARD])
+//   +- Movement tags ([ACTION:STEP:FORWARD], [ACTION:STEP:BACKWARD], [ACTION:STEP:LEFT], [ACTION:STEP:RIGHT])
 //   +- Native tool calling (if enabled)
-//   +- Dual output rule (text + tool call simultaneously)
+//   +- Native tools limited to date scheduling & emote bubbles
 //
 // [ResponseStart] <- Final delimiter ("[In-Character Dialogue]:")
 //
@@ -514,6 +514,7 @@ public class Prompts
 
             // ── 🔧 早返回分支同样需要注入约会协议，否则 LLM 无法输出 [UI:DATE_INVITE] ──
             AppendDateInvitationProtocol(prompt);
+            AppendFollowInvitationProtocol(prompt);
 
             string stoodUpPrompt = prompt.ToString();
             LogTopologyVerification(stoodUpPrompt, "STOOD_UP");
@@ -597,6 +598,7 @@ public class Prompts
 
             // ── 🔧 早返回分支同样需要注入约会协议，否则 LLM 无法输出 [UI:DATE_INVITE] ──
             AppendDateInvitationProtocol(prompt);
+            AppendFollowInvitationProtocol(prompt);
 
             string datePrompt = prompt.ToString();
             LogTopologyVerification(datePrompt, "DATE_CONTEXT");
@@ -832,6 +834,49 @@ public class Prompts
                 : "- IF DECLINING: Provide an in-character explanation as dialogue text only.");
         }
         sb.AppendLine("</date_invitation_protocol>\n");
+    }
+
+    private void AppendFollowInvitationProtocol(StringBuilder sb)
+    {
+        // 门禁 a: CurrentFlags 为 null 或非 Follow 请求或已在跟随状态 → 不注入
+        if (CurrentFlags == null
+            || CurrentFlags.RequestedAction != ActionTag.Follow
+            || CurrentFlags.IsFollowing)
+            return;
+
+        bool isZh = IsChineseLanguage;
+
+        // 门禁 b: 已有其他 NPC 跟随 → decline 块
+        if (MovementManager.Instance != null
+            && MovementManager.Instance.HasActiveFollow
+            && MovementManager.Instance.CurrentFollowingNpc?.Name != Character?.Name)
+        {
+            sb.AppendLine("<follow_unavailable>");
+            sb.AppendLine(isZh
+                ? "- 事实: 农夫身边已有其他同伴随行，你现在无法加入同行。"
+                : "- Fact: The farmer already has another companion with them. You cannot join right now.");
+            sb.AppendLine(isZh
+                ? "- 反应要求: 依据角色性格做出回应，仅输出对白文本，不附加任何标签。"
+                : "- Instruction: Respond according to character personality. Output dialogue text only, no tags.");
+            sb.AppendLine("</follow_unavailable>\n");
+            return;
+        }
+
+        // 门禁 c: 正常邀请协议
+        sb.AppendLine("<follow_invitation_protocol>");
+        sb.AppendLine(isZh
+            ? "农夫正在邀请你与他同行。"
+            : "The farmer is inviting you to come along.");
+        sb.AppendLine(isZh
+            ? "- 若同意: 依据角色性格与好感度表达回应，并在台词的最末尾附加内部标签 [UI:FOLLOW]。"
+            : "- IF ACCEPTING: Respond according to character personality and heart level, and append [UI:FOLLOW] at the absolute end.");
+        sb.AppendLine(isZh
+            ? "- 若拒绝: 依据角色性格在对白中委婉说明缘由，仅输出对白文本。"
+            : "- IF DECLINING: Provide an in-character explanation as dialogue text only.");
+        sb.AppendLine(isZh
+            ? "- 无论如何都不要输出 [ACTION:FOLLOW]，也不要调用任何工具。"
+            : "- Do NOT output [ACTION:FOLLOW] or call any tools under any circumstance.");
+        sb.AppendLine("</follow_invitation_protocol>\n");
     }
 
     /// <summary>
@@ -1128,11 +1173,68 @@ public class Prompts
     // ── movement instruction: 修复 following/adjacent 语气指令 ──
     private void InjectMovementInstruction(StringBuilder prompt)
     {
-        if (!CurrentFlags.IsMovementRequested && !CurrentFlags.IsFollowing) return;
-        if (CurrentFlags.IsOnDate) return;
-        if (CurrentFlags.IsJealousy) return;
+        if (CurrentFlags.IsOnDate || CurrentFlags.IsJealousy) return;
+        if (!CurrentFlags.IsActionRequested && !CurrentFlags.IsFollowing) return;
 
         bool isZh = IsChineseLanguage;
+
+        // ── VT-FOLLOW-T2: Follow invitation ──
+        if (CurrentFlags.RequestedAction == ActionTag.Follow && !CurrentFlags.IsFollowing)
+        {
+            AppendFollowInvitationProtocol(prompt);
+            return;
+        }
+
+        // ── VT-FOLLOW-T2: Stop follow ──
+        if (CurrentFlags.RequestedAction == ActionTag.StopFollow)
+        {
+            prompt.AppendLine("<movement_instruction mode=\"stop_follow\">");
+            prompt.AppendLine(isZh
+                ? "农夫希望你停止跟随。"
+                : "The farmer wants you to stop following.");
+            prompt.AppendLine(isZh
+                ? "- 若同意停止: 依据角色性格简短回应，并在台词最末尾附加 [ACTION:STOP_FOLLOW]。"
+                : "- IF ACCEPTING: Respond briefly in character, and append [ACTION:STOP_FOLLOW] at the absolute end.");
+            prompt.AppendLine(isZh
+                ? "- 若想继续跟随: 仅输出对白说明缘由，不附加标签。"
+                : "- IF DECLINING: Explain in character as dialogue text only, no tags.");
+            prompt.AppendLine("</movement_instruction>\n");
+            return;
+        }
+
+        // ── VT-FOLLOW-T2: Stay home ──
+        if (CurrentFlags.RequestedAction == ActionTag.StayHome)
+        {
+            prompt.AppendLine("<movement_instruction mode=\"stay_home\">");
+            prompt.AppendLine(isZh
+                ? "农夫希望你今天留在家里，不要出门。"
+                : "The farmer wants you to stay home today.");
+            prompt.AppendLine(isZh
+                ? "- 若同意: 依据角色性格简短回应，并在台词最末尾附加 [ACTION:STAY_HOME]。"
+                : "- IF ACCEPTING: Respond briefly in character, and append [ACTION:STAY_HOME] at the absolute end.");
+            prompt.AppendLine(isZh
+                ? "- 若拒绝: 仅输出对白说明缘由，不附加标签。"
+                : "- IF DECLINING: Explain in character as dialogue text only, no tags.");
+            prompt.AppendLine("</movement_instruction>\n");
+            return;
+        }
+
+        // ── VT-FOLLOW-T2: All-day follow ──
+        if (CurrentFlags.RequestedAction == ActionTag.AllDayFollow)
+        {
+            prompt.AppendLine("<movement_instruction mode=\"all_day_follow\">");
+            prompt.AppendLine(isZh
+                ? "农夫希望你今天一整天都陪着他。"
+                : "The farmer wants you to accompany them all day.");
+            prompt.AppendLine(isZh
+                ? "- 若同意: 依据角色性格与好感度表达回应，并在台词最末尾附加 [ACTION:ALL_DAY_FOLLOW]。"
+                : "- IF ACCEPTING: Respond in character, and append [ACTION:ALL_DAY_FOLLOW] at the absolute end.");
+            prompt.AppendLine(isZh
+                ? "- 若拒绝: 仅输出对白说明缘由，不附加标签。"
+                : "- IF DECLINING: Explain in character as dialogue text only, no tags.");
+            prompt.AppendLine("</movement_instruction>\n");
+            return;
+        }
 
         if (CurrentFlags.IsFollowing && !CurrentFlags.IsMovementRequested)
         {
@@ -1186,26 +1288,14 @@ public class Prompts
 
         prompt.AppendLine("<movement_instruction mode=\"move_request\">");
         prompt.AppendLine(isZh
-            ? "玩家要求你移动或跟上对方，前方路径畅通。"
-            : "The player asked you to move or follow them. The path is CLEAR.");
-        if (ModEntry.Config?.UseNativeToolCalling == true)
-        {
-            prompt.AppendLine(isZh
-                ? "- 同时执行 `trigger_physical_action` 工具调用（FOLLOW / STEP:FORWARD / STEP:LEFT 等）。"
-                : "- Invoke `trigger_physical_action` tool simultaneously (FOLLOW / STEP:FORWARD / STEP:LEFT, etc.).");
-            prompt.AppendLine(isZh
-                ? "- 始终保持【台词 + 工具调用】的双重同时输出。"
-                : "- ALWAYS provide spoken text in your response alongside tool execution.");
-        }
-        else
-        {
-            prompt.AppendLine(isZh
-                ? "- 若同意: 将对应动作标签（如 [ACTION:FOLLOW] 或 [ACTION:STEP:FORWARD]）置于台词最末尾。"
-                : "- IF ACCEPTING: Place the action tag (e.g., [ACTION:FOLLOW] or [ACTION:STEP:FORWARD]) at the absolute end.");
-            prompt.AppendLine(isZh
-                ? "- 若拒绝: 保持纯口头对白说明缘由，结束输出。"
-                : "- IF DECLINING: Provide pure conversational reasoning as regular dialogue.");
-        }
+            ? "玩家要求你移动，前方路径畅通。"
+            : "The player asked you to move. The path is CLEAR.");
+        prompt.AppendLine(isZh
+            ? "- 若同意: 将对应动作标签（如 [ACTION:STEP:FORWARD]、[ACTION:STEP:LEFT]）置于台词最末尾。"
+            : "- IF ACCEPTING: Place the action tag (e.g. [ACTION:STEP:FORWARD], [ACTION:STEP:LEFT]) at the absolute end.");
+        prompt.AppendLine(isZh
+            ? "- 若拒绝: 保持纯口头对白说明缘由，结束输出。"
+            : "- IF DECLINING: Provide pure conversational reasoning as regular dialogue.");
         prompt.AppendLine("</movement_instruction>\n");
     }
 
@@ -1629,22 +1719,15 @@ public class Prompts
         {
             commandPrompt.AppendLine();
             commandPrompt.AppendLine(isZh
-                ? "- 机制分工: `trigger_physical_action` 工具专用于物理位移或跟随；头顶表情气泡使用上述文本标签。"
-                : "- Mechanics: `trigger_physical_action` is dedicated to movement/following; emote bubbles use the text tags above.");
-            commandPrompt.AppendLine();
-            commandPrompt.AppendLine("<dual_output_rule>");
-            commandPrompt.AppendLine(isZh
-                ? "调用工具的同时，在文本响应中同步给出口头台词：每次输出都是【台词 + 工具调用】成对出现。"
-                : "When calling a tool, include spoken dialogue in the same response: every output pairs dialogue with the tool call.");
-            commandPrompt.AppendLine("</dual_output_rule>");
+                ? "- 原生工具仅用于约会安排(schedule_date / end_current_date)与头顶气泡(speak_in_bubble)；位移与表情一律使用文本标签。"
+                : "- Native tools are only for date scheduling (schedule_date / end_current_date) and emote bubbles (speak_in_bubble); movement and emotes always use text tags.");
         }
         else
         {
             commandPrompt.AppendLine(isZh ? "- 转向标签: [ACTION:FACE:FARMER] (面向玩家), [ACTION:FACE:UP] / [DOWN] / [LEFT] / [RIGHT]" : "- Turn tags: [ACTION:FACE:FARMER] (look at player), [ACTION:FACE:UP] / [DOWN] / [LEFT] / [RIGHT]");
-            commandPrompt.AppendLine(isZh ? "- 位移与跟随标签: [ACTION:STEP:FORWARD], [ACTION:STEP:BACKWARD], [ACTION:STEP:LEFT], [ACTION:STEP:RIGHT], [ACTION:FOLLOW]" : "- Movement tags: [ACTION:STEP:FORWARD], [ACTION:STEP:BACKWARD], [ACTION:STEP:LEFT], [ACTION:STEP:RIGHT], [ACTION:FOLLOW]");
+            commandPrompt.AppendLine(isZh ? "- 位移标签: [ACTION:STEP:FORWARD], [ACTION:STEP:BACKWARD], [ACTION:STEP:LEFT], [ACTION:STEP:RIGHT]" : "- Movement tags: [ACTION:STEP:FORWARD], [ACTION:STEP:BACKWARD], [ACTION:STEP:LEFT], [ACTION:STEP:RIGHT]");
             commandPrompt.AppendLine();
             commandPrompt.AppendLine(isZh ? "格式规则 — 动作标签置于台词的最末尾：" : "OUTPUT FORMAT — Action tags MUST be placed at the absolute end of spoken line:");
-            commandPrompt.AppendLine("  [Dialogue Text] [ACTION:FOLLOW]");
             commandPrompt.AppendLine("  [Dialogue Text] [ACTION:STEP:BACKWARD]");
             commandPrompt.AppendLine("  [Dialogue Text] [ACTION:EMOTE:HAPPY]");
         }

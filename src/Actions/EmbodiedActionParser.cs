@@ -18,6 +18,7 @@ namespace ValleytalkReborn
         private static readonly Regex EndDateRegex = new(@"\[ACTION:END_DATE\]",            RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex StayHomeRegex    = new(@"\[ACTION:STAY_HOME\]",    RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex AllDayFollowRegex = new(@"\[ACTION:ALL_DAY_FOLLOW\]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex StopFollowRegex = new(@"\[ACTION:STOP_FOLLOW\]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         // ─────────────────────────────────────────────────────────────────────
         // Public entry points
@@ -30,6 +31,35 @@ namespace ValleytalkReborn
             bool allowFallbackEmotes = true)
         {
             if (npc == null || lines == null || lines.Length == 0) return;
+
+            // ── VT-FOLLOW-T3: STOP_FOLLOW pre-scan (before busy check) ──
+            bool stopFollowRequested = false;
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (StopFollowRegex.IsMatch(lines[i]))
+                {
+                    lines[i] = StopFollowRegex.Replace(lines[i], string.Empty);
+                    stopFollowRequested = true;
+                }
+            }
+            if (stopFollowRequested)
+            {
+                StardewValley.DelayedAction.functionAfterDelay(() =>
+                {
+                    try
+                    {
+                        MovementManager.Instance.StopFollow(npc);
+                        if (DateManager.Instance != null && DateManager.Instance.IsOnDate(npc.Name))
+                            DateManager.Instance.EndDateGracefully(npc.Name, "Player_Stopped_Follow");
+                        npc.doEmote(32);
+                    }
+                    catch (Exception ex)
+                    {
+                        ModEntry.SMonitor?.Log("[EmbodiedActionParser] STOP_FOLLOW error: " + ex.Message, LogLevel.Error);
+                    }
+                }, 200);
+                ModEntry.SMonitor?.Log($"[EmbodiedActionParser] STOP_FOLLOW executed (pre-busy-pass): {npc.Name}", LogLevel.Info);
+            }
 
             if (MovementManager.Instance.IsNpcMoving(npc))
             {
@@ -95,25 +125,11 @@ namespace ValleytalkReborn
                     return string.Empty;
                 });
 
-                lines[i] = FollowRegex.Replace(lines[i], match =>
-                {
-                    ModEntry.SMonitor?.Log($"[EmbodiedActionParser] FOLLOW dispatched for {npc.Name}", LogLevel.Debug);
-                    StardewValley.DelayedAction.functionAfterDelay(() =>
-                    {
-                        try
-                        {
-                            bool ok = DateManager.Instance.TryStartFollow(npc);
-                            ModEntry.SMonitor?.Log(
-                                ok ? $"[EmbodiedActionParser] Follow started: {npc.Name}" : $"[EmbodiedActionParser] Follow start failed: {npc.Name}",
-                                ok ? LogLevel.Info : LogLevel.Warn);
-                        }
-                        catch (Exception ex)
-                        {
-                            ModEntry.SMonitor?.Log($"[EmbodiedActionParser] FOLLOW error: {ex.Message}", LogLevel.Error);
-                        }
-                    }, 200);
-                    return string.Empty;
-                });
+                if (FollowRegex.IsMatch(lines[i]))
+                    ModEntry.SMonitor?.Log($"[EmbodiedActionParser] FOLLOW tag stripped (UI-confirm pipeline): {npc.Name}", LogLevel.Debug);
+                lines[i] = FollowRegex.Replace(lines[i], string.Empty);
+
+                lines[i] = StopFollowRegex.Replace(lines[i], string.Empty);
 
                 lines[i] = StayHomeRegex.Replace(lines[i], match =>
                 {
@@ -226,6 +242,7 @@ namespace ValleytalkReborn
                 lines[i] = MoveRegex.Replace(lines[i], string.Empty);
                 lines[i] = GotoRegex.Replace(lines[i], string.Empty);
                 lines[i] = FollowRegex.Replace(lines[i], string.Empty);
+                lines[i] = StopFollowRegex.Replace(lines[i], string.Empty);
                 lines[i] = StayHomeRegex.Replace(lines[i], string.Empty);
                 lines[i] = AllDayFollowRegex.Replace(lines[i], string.Empty);
 
@@ -321,6 +338,7 @@ namespace ValleytalkReborn
                 lines[i] = MoveRegex.Replace(lines[i], string.Empty);
                 lines[i] = GotoRegex.Replace(lines[i], string.Empty);
                 lines[i] = FollowRegex.Replace(lines[i], string.Empty);
+                lines[i] = StopFollowRegex.Replace(lines[i], string.Empty);
                 lines[i] = StayHomeRegex.Replace(lines[i], string.Empty);
                 lines[i] = AllDayFollowRegex.Replace(lines[i], string.Empty);
                 lines[i] = lines[i].Trim();

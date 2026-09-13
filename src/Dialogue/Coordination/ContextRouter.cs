@@ -396,7 +396,7 @@ internal static class IntentRegex
         | RegexOptions.CultureInvariant);
 
     public static readonly Regex Follow = new Regex(
-        @"(跟着我?|跟我走?|跟上我|一起走|跟我来|"
+        @"(跟着我|跟我走|跟上我|一起走|跟我来|"
         + @"\bfollow me\b|\bcome with me\b|\bstay with me\b)",
         RegexOptions.Compiled
         | RegexOptions.IgnoreCase
