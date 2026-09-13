@@ -185,6 +185,19 @@ internal sealed class DialogueCoordinator
         return VanillaInteractionGuard.IsFestivalRoam();
     }
 
+    /// <summary>
+    /// 当前事件态下是否允许推进 A2A。
+    /// 判据收敛到守卫层（VanillaInteractionGuard.IsFestivalRoam），
+    /// 与 Bark 侧 IsBarkAllowedInCurrentEvent 对称。
+    /// 非事件期恒为 true；事件期仅节日漫游态放行，心事件/剧情事件一律冻结。
+    /// </summary>
+    private static bool IsA2AAllowedInCurrentEvent()
+    {
+        if (!Game1.eventUp)
+            return true;
+        return VanillaInteractionGuard.IsFestivalRoam();
+    }
+
     private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
     {
         if (!Context.IsWorldReady || Game1.paused)
@@ -292,6 +305,15 @@ internal sealed class DialogueCoordinator
             {
                 _monitor.Log($"[DialogueCoordinator] FestivalRoamEnded error: {ex.Message}", LogLevel.Error);
             }
+
+            try
+            {
+                _a2a.SessionManager.CancelAll("festivalRoamEnded", applyCooldown: true);
+            }
+            catch (System.Exception ex)
+            {
+                _monitor.Log($"[DialogueCoordinator] FestivalRoamEnded A2A error: {ex.Message}", LogLevel.Error);
+            }
         }
         else if (Game1.eventUp && isBarkAllowed)
         {
@@ -302,8 +324,8 @@ internal sealed class DialogueCoordinator
         // 阶段 3：世界推进（TickA2A 在此处运行，入睡检查在此处彻底卡死任何非法播放）
         // ════════════════════════════════════════════════════════════
 
-        // 3. A2A Radar（节日内冻结，避免节日 A2A 活动）
-        if (config.EnableA2A && !Game1.eventUp)
+        // 3. A2A Radar（节日漫游放行，剧情/心事件冻结）
+        if (config.EnableA2A && IsA2AAllowedInCurrentEvent())
         {
             try
             {

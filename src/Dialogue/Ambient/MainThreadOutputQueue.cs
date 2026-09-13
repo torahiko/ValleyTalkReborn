@@ -126,8 +126,10 @@ internal sealed class MainThreadOutputQueue
                 }
 
                 // 检查原版交互守卫
-                if (VanillaInteractionGuard.HasActiveVanillaInteraction() ||
-                    VanillaInteractionGuard.IsNpcInAnyVanillaInteraction(item.NpcName))
+                bool vanillaBlocked =
+                    (VanillaInteractionGuard.HasActiveVanillaInteraction() && !VanillaInteractionGuard.IsFestivalRoam())
+                    || VanillaInteractionGuard.IsNpcInAnyVanillaInteraction(item.NpcName);
+                if (vanillaBlocked)
                 {
                     ModEntry.SMonitor?.Log(
                         $"[A2A] 输出丢弃：原版交互中 ({item.NpcName})",
@@ -145,12 +147,9 @@ internal sealed class MainThreadOutputQueue
 
             var npc = Game1.getCharacterFromName(item.NpcName);
 
-            bool festivalBark = string.Equals(item.Source, "Bark", StringComparison.Ordinal)
-                                && Game1.CurrentEvent?.isFestival == true;
-
             if (npc == null ||
                 DialogueUtilities.IsNpcSleeping(npc) ||
-                !(festivalBark
+                !(VanillaInteractionGuard.IsFestivalRoam()
                     ? DialogueUtilities.IsInRangeSquaredDuringFestival(
                         npc,
                         Game1.player,

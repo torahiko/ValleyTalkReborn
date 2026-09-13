@@ -208,18 +208,19 @@ internal static class DialogueModels
 
             if (participants.Count < 2) return true;
 
+            bool festival = Game1.CurrentEvent?.isFestival == true;
             var firstLoc = participants[0]?.currentLocation;
-            if (firstLoc == null) return true;
+            if (firstLoc == null && !festival) return true;
 
             for (int i = 0; i < participants.Count; i++)
             {
                 if (participants[i] == null) return true;
-                if (participants[i].currentLocation != firstLoc) return true;
+                if (!festival && participants[i].currentLocation != firstLoc) return true;
 
                 for (int j = i + 1; j < participants.Count; j++)
                 {
                     if (participants[j] == null) return true;
-                    if (participants[j].currentLocation != firstLoc) return true;
+                    if (!festival && participants[j].currentLocation != firstLoc) return true;
 
                     if (!DialogueUtilities.IsInRangeSquared(participants[i], participants[j], A2ASessionManager.A2A_PLAYBACK_MAX_SPREAD_SQ))
                         return true;
@@ -237,9 +238,12 @@ internal static class DialogueModels
             if (ParticipantNames.Count == 0) return true;
 
             var participants = ResolveParticipants();
+            bool festival = Game1.CurrentEvent?.isFestival == true;
 
             bool anyNearPlayer = Game1.player != null && participants.Any(n =>
-                n != null && DialogueUtilities.IsInRangeSquared(n, (Farmer)Game1.player, DialogueConstants.DisplayRangeSquared));
+                n != null && (festival
+                    ? DialogueUtilities.IsInRangeSquaredDuringFestival(n, (Farmer)Game1.player, DialogueConstants.DisplayRangeSquared)
+                    : DialogueUtilities.IsInRangeSquared(n, (Farmer)Game1.player, DialogueConstants.DisplayRangeSquared)));
 
             return !anyNearPlayer;
         }

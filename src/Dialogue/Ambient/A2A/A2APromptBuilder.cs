@@ -110,11 +110,19 @@ internal sealed class A2APromptBuilder
                 : $"{dn}'s speaking style: {persona}");
         }
 
-        string sceneBlock = SceneContextBuilder.BuildSceneBlock(
-            participants[0],
-            radiusTiles: 5,
-            maxItems: 2,
-            excludeNames: excludeNames.ToArray());
+        string sceneBlock;
+        if (VanillaInteractionGuard.IsFestivalRoam())
+        {
+            sceneBlock = BuildFestivalSceneLine(isZh);
+        }
+        else
+        {
+            sceneBlock = SceneContextBuilder.BuildSceneBlock(
+                participants[0],
+                radiusTiles: 5,
+                maxItems: 2,
+                excludeNames: excludeNames.ToArray());
+        }
 
         string gossip = TryGetRecentGossip(participants);
         if (!string.IsNullOrWhiteSpace(gossip) && isZh)
@@ -244,6 +252,8 @@ internal sealed class A2APromptBuilder
     /// </summary>
     private static string BuildEmbodiedActionLines(List<NPC> participants, bool isZh)
     {
+        if (Game1.CurrentEvent?.isFestival == true) return null;
+
         if (participants == null || participants.Count == 0)
             return null;
 
@@ -299,7 +309,22 @@ internal sealed class A2APromptBuilder
     }
 
     /// <summary>
-    /// 当玩家站在参与者 3 格（含）范围内时，返回一行"农夫就在旁边"的注脚。
+    /// 构建节日场景块：节日漫游下跳过 SceneContextBuilder（规避临时 Actor currentLocation=null），
+    /// 改为直接输出一行节日氛围文本。
+    /// </summary>
+    private static string BuildFestivalSceneLine(bool isZh)
+    {
+        string name = Game1.CurrentEvent?.FestivalName;
+        if (string.IsNullOrWhiteSpace(name) || (isZh && !ContainsCjkCharacter(name)))
+            name = isZh ? "节日集会" : "the Festival";
+
+        return isZh
+            ? $"你们正身处【{name}】的节日现场，周围满是摊位、装饰与来往的镇民，喧闹而热闹。"
+            : $"You're at the {name} grounds, surrounded by stalls, decorations, and townsfolk milling about.";
+    }
+
+    /// <summary>
+     /// 当玩家站在参与者 3 格（含）范围内时，返回一行"农夫就在旁边"的注脚。
     /// </summary>
     private static string BuildPlayerProximityNote(List<NPC> participants, bool isZh)
     {
@@ -309,8 +334,10 @@ internal sealed class A2APromptBuilder
         if (participants == null || participants.Count == 0)
             return null;
 
-        if (!DialogueUtilities.IsInRangeSquared(participants[0], (Farmer)Game1.player, A2APlayerCloseRangeSq))
-            return null;
+        bool inRange = VanillaInteractionGuard.IsFestivalRoam()
+            ? DialogueUtilities.IsInRangeSquaredDuringFestival(participants[0], (Farmer)Game1.player, A2APlayerCloseRangeSq)
+            : DialogueUtilities.IsInRangeSquared(participants[0], (Farmer)Game1.player, A2APlayerCloseRangeSq);
+        if (!inRange) return null;
 
         bool spouseAny = participants.Any(IsSpouse);
 
@@ -526,6 +553,19 @@ internal sealed class A2APromptBuilder
     /// </summary>
     internal static string GenerateConversationTopic(List<NPC> participants, bool isChinese)
     {
+        var evt = Game1.CurrentEvent;
+        if (evt != null && evt.isFestival)
+        {
+            string name = evt.FestivalName;
+            if (string.IsNullOrWhiteSpace(name) || (isChinese && !ContainsCjkCharacter(name)))
+                name = isChinese ? "节日集会" : "the Festival";
+
+            if (isChinese)
+                return $"今天是【{name}】。你们都在节日现场，暂时放下了日常劳作。围绕眼前的摊位、食物、人群或彼此的节日见闻随口搭话。";
+            else
+                return $"Today is the {name}. You're both at the festival grounds, away from daily routines. Offhand remarks about the stalls, food, crowds, or what you've seen so far.";
+        }
+
         int time = Game1.timeOfDay;
         var loc = participants[0]?.currentLocation ?? Game1.player?.currentLocation;
         string locName = loc?.Name ?? "";

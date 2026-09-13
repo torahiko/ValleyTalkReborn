@@ -21,6 +21,7 @@ internal sealed class A2ASessionManager
     private const int A2A_STARE_TICKS_REQUIRED = 180;
     private const int A2A_PAIR_RANGE_SQ = 9;
     private const int A2A_GROUP_RANGE_SQ = 16;
+    private const int A2A_STRANGER_RANGE_SQ = 4;   // 2×2 格，陌生人破冰对专用
     internal const int A2A_BREAK_RANGE_SQ = 25;
     internal const int A2A_PLAYBACK_MAX_SPREAD_SQ = 49;
     private const int A2A_SPEAK_INTERVAL_TICKS = 240;
@@ -89,7 +90,13 @@ internal sealed class A2ASessionManager
     private int _radarCooldown = 0;
 
     /// <summary>
-    /// 当 NPC 被 A2A 锁定（凝视完成）时触发，用于通知外部模块清理该 NPC 的单人状态。
+    /// 结构性判据：仅表达"参与者是否为事件 Actor"，不掺入 CanMove 等玩家移动性。
+    /// 与 VT-A2A-01 在 DialogueModels 中的判据同构。
+    /// </summary>
+    private static bool IsFestivalNow => Game1.CurrentEvent?.isFestival == true;
+
+    /// <summary>
+     /// 当 NPC 被 A2A 锁定（凝视完成）时触发，用于通知外部模块清理该 NPC 的单人状态。
     /// </summary>
     internal Action<string> OnNpcA2ALocked { get; set; }
 
@@ -361,7 +368,7 @@ internal sealed class A2ASessionManager
         if (session.Generation != generation)
             return false;
 
-        if (VanillaInteractionGuard.HasActiveVanillaInteraction())
+        if (VanillaInteractionGuard.HasActiveVanillaInteraction() && !VanillaInteractionGuard.IsFestivalRoam())
             return false;
 
         return true;
@@ -548,9 +555,11 @@ internal sealed class A2ASessionManager
 
                 if (npc != null
                     && Game1.player != null
-                    && npc.currentLocation == Game1.player.currentLocation
                     && !DialogueUtilities.IsNpcSleeping(npc)
-                    && DialogueUtilities.IsInRangeSquared(npc, (Farmer)Game1.player, DialogueConstants.DisplayRangeSquared))
+                    && (IsFestivalNow
+                        ? DialogueUtilities.IsInRangeSquaredDuringFestival(npc, (Farmer)Game1.player, DialogueConstants.DisplayRangeSquared)
+                        : npc.currentLocation == Game1.player.currentLocation
+                          && DialogueUtilities.IsInRangeSquared(npc, (Farmer)Game1.player, DialogueConstants.DisplayRangeSquared)))
                 {
                     _outputQueue.EnqueueA2A(
                         session.SessionId,
@@ -575,21 +584,85 @@ internal sealed class A2ASessionManager
         }
     }
 
+    /// <summary>
+    /// 候选会话：成员表 + 权重 + 是否陌生人破冰。由 PerformRadarScan 枚举并决选。
+    /// </summary>
+    private sealed class A2ACandidate
+    {
+        public List<NPC> Members;
+        public float Weight;
+        public bool IsStranger;
+    }
+
+    /// <summary>
+    /// 组合种子：同一阵容下选簇决策稳定，保证既有会话的凝视复用可累积。
+    /// </summary>
+    private static int StableCompositionSeed(IEnumerable<string> names)
+    {
+        unchecked
+        {
+            int seed = 17;
+            foreach (var name in names.OrderBy(n => n, StringComparer.OrdinalIgnoreCase))
+                seed = seed * 31 + StringComparer.OrdinalIgnoreCase.GetHashCode(name);
+            return seed ^ Game1.Date.TotalDays;
+        }
+    }
+
+    /// <summary>
+    /// 生成从 n 个元素中取 k 个的全部组合（索引列表），供关系团枚举使用。
+    /// </summary>
+    private static IEnumerable<List<int>> Combinations(int n, int k)
+    {
+        if (k <= 0 || k > n) yield break;
+        var indices = new List<int>(k);
+        for (int i = 0; i < k; i++) indices.Add(i);
+        while (true)
+        {
+            yield return new List<int>(indices);
+            int pos = k - 1;
+            while (pos >= 0 && indices[pos] == pos + n - k) pos--;
+            if (pos < 0) yield break;
+            indices[pos]++;
+            for (int i = pos + 1; i < k; i++) indices[i] = indices[i - 1] + 1;
+        }
+    }
+
     private void PerformRadarScan()
     {
         if (Game1.player == null) return;
 
-        var allNpcs = Game1.currentLocation?.characters;
-        if (allNpcs == null || allNpcs.Count == 0) return;
+        // ★ 全局互斥：任一会话锁定（含 LLM 生成期）期间，全场雷达静默，杜绝双会话交替弹字
+        if (_activeA2ASessions.Any(s => s.MembersLocked)) return;
+
+        System.Collections.Generic.IEnumerable<NPC> scanSource;
+        if (IsFestivalNow && Game1.CurrentEvent?.actors is { Count: > 0 })
+            scanSource = Game1.CurrentEvent.actors;
+        else
+        {
+            var chars = Game1.currentLocation?.characters;
+            if (chars == null || chars.Count == 0) return;
+            scanSource = chars;
+        }
 
         var a2aNearbyNpcs = new List<NPC>();
 
         // ★ 排除玩家正在对话的 NPC（防止 A2A 拉入正在与玩家交谈的对象）
         string currentSpeakerName = Game1.currentSpeaker?.Name;
 
-        foreach (var npc in allNpcs)
+        foreach (var npc in scanSource)
         {
-            if (npc == null || DialogueUtilities.IsNpcSleeping(npc) || !npc.IsVillager)
+            if (npc == null || DialogueUtilities.IsNpcSleeping(npc))
+                continue;
+
+            // 节日时跳过 "!npc.IsVillager" 检查（非村民临时 Actor 由下游成员门禁兜底）
+            if (!IsFestivalNow && !npc.IsVillager)
+                continue;
+
+            // ★ 节日网关（防缓存污染）：节日下只有 GetCharacterByName 命中的村民才能进入会话。
+            // 单点封闭论证与 Bark 同款：只有缓存命中的村民才能进入会话 →
+            // A2APromptBuilder.Build / EnrichBarkPromptWithState 的 GetCharacter 必然缓存命中、
+            // 绝不以临时 Actor 创建 Character。
+            if (IsFestivalNow && DialogueBuilder.Instance?.GetCharacterByName(npc.Name) == null)
                 continue;
 
             // ★ 排除玩家正在对话的 NPC
@@ -599,41 +672,115 @@ internal sealed class A2ASessionManager
                 continue;
             }
 
-            if (DialogueUtilities.IsInRangeSquared(npc, (Farmer)Game1.player, A2A_RADAR_RANGE_SQ))
+            // 雷达距离：节日时改用节日语义距离（跳过 currentLocation 相等性），非节日保持原样
+            bool inRange = IsFestivalNow
+                ? DialogueUtilities.IsInRangeSquaredDuringFestival(npc, (Farmer)Game1.player, A2A_RADAR_RANGE_SQ)
+                : DialogueUtilities.IsInRangeSquared(npc, (Farmer)Game1.player, A2A_RADAR_RANGE_SQ);
+            if (inRange)
                 a2aNearbyNpcs.Add(npc);
         }
 
-        var visited = new HashSet<int>();
-        var clusters = new List<List<NPC>>();
+        // ── 候选会话枚举（关系对 / 陌生人破冰对 / 关系团）──
+        int n = a2aNearbyNpcs.Count;
 
-        for (int i = 0; i < a2aNearbyNpcs.Count; i++)
+        // a) 关系矩阵（一次构建复用，禁止在候选循环内重复调用 HasRelation 同一对）
+        bool[,] related = new bool[n, n];
+        var registry = NpcRelationRegistry.Instance;
+        for (int i = 0; i < n; i++)
         {
-            if (visited.Contains(i)) continue;
-
-            var cluster = new List<NPC> { a2aNearbyNpcs[i] };
-            visited.Add(i);
-
-            for (int j = i + 1; j < a2aNearbyNpcs.Count; j++)
+            for (int j = i + 1; j < n; j++)
             {
-                if (visited.Contains(j)) continue;
-
-                bool canJoin = cluster.Count == 1
-                    ? cluster.Any(m => DialogueUtilities.IsInRangeSquared(m, a2aNearbyNpcs[j], A2A_PAIR_RANGE_SQ))
-                    : cluster.Any(m => DialogueUtilities.IsInRangeSquared(m, a2aNearbyNpcs[j], A2A_GROUP_RANGE_SQ));
-
-                if (canJoin)
-                {
-                    cluster.Add(a2aNearbyNpcs[j]);
-                    visited.Add(j);
-                }
+                related[i, j] = related[j, i] = registry != null
+                    && registry.HasRelation(a2aNearbyNpcs[i].Name, a2aNearbyNpcs[j].Name);
             }
-
-            if (cluster.Count >= 2)
-                clusters.Add(cluster);
         }
 
-        foreach (var cluster in clusters)
-            TryEstablishA2ASession(cluster);
+        var candidates = new List<A2ACandidate>();
+
+        // b) 候选枚举
+        int maxP = Math.Max(2, Math.Min(4, _config.A2AMaxParticipants));
+
+        // 对（2 人）
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = i + 1; j < n; j++)
+            {
+                var a = a2aNearbyNpcs[i];
+                var b = a2aNearbyNpcs[j];
+                if (!DialogueUtilities.AreNpcsMutuallyAware(a, b)) continue;
+
+                if (related[i, j])
+                {
+                    if (DialogueUtilities.IsInRangeSquared(a, b, A2A_PAIR_RANGE_SQ))
+                        candidates.Add(new A2ACandidate { Members = new List<NPC> { a, b }, Weight = 3.0f, IsStranger = false });
+                }
+                else
+                {
+                    if (DialogueUtilities.IsInRangeSquared(a, b, A2A_STRANGER_RANGE_SQ))
+                        candidates.Add(new A2ACandidate { Members = new List<NPC> { a, b }, Weight = 0.5f, IsStranger = true });
+                }
+            }
+        }
+
+        // 关系团（3~maxP 人完全图）
+        for (int size = 3; size <= maxP; size++)
+        {
+            foreach (var combo in Combinations(n, size))
+            {
+                bool ok = true;
+                for (int x = 0; x < combo.Count && ok; x++)
+                    for (int y = x + 1; y < combo.Count && ok; y++)
+                    {
+                        int ci = combo[x];
+                        int cj = combo[y];
+                        if (!related[ci, cj] || !DialogueUtilities.IsInRangeSquared(a2aNearbyNpcs[ci], a2aNearbyNpcs[cj], A2A_GROUP_RANGE_SQ) || !DialogueUtilities.AreNpcsMutuallyAware(a2aNearbyNpcs[ci], a2aNearbyNpcs[cj]))
+                            ok = false;
+                    }
+
+                if (ok)
+                    candidates.Add(new A2ACandidate { Members = combo.Select(idx => a2aNearbyNpcs[idx]).ToList(), Weight = 1.0f, IsStranger = false });
+            }
+        }
+
+        // c) 组合种子
+        var rng = new Random(StableCompositionSeed(a2aNearbyNpcs.Select(npc => npc.Name)));
+
+        // d) 候选过滤
+        var filtered = new List<A2ACandidate>();
+        foreach (var c in candidates)
+        {
+            if (c.Members.Count < 2 || c.Members.Count > maxP) continue;
+
+            bool allClear = true;
+            foreach (var npc in c.Members)
+            {
+                string name = npc.Name;
+                if (_a2aPersonalCooldowns.ContainsKey(name) || _reservations.IsReserved(name)) { allClear = false; break; }
+                if (_activeA2ASessions.Any(s => s.ParticipantNames.Contains(name, StringComparer.OrdinalIgnoreCase))) { allClear = false; break; }
+                if (!string.IsNullOrEmpty(currentSpeakerName) && string.Equals(name, currentSpeakerName, StringComparison.OrdinalIgnoreCase)) { allClear = false; break; }
+            }
+            if (!allClear) continue;
+
+            if (_a2aCooldowns.ContainsKey(DialogueUtilities.MakePairKey(c.Members.Select(m => m.Name)))) continue;
+
+            if (c.IsStranger && rng.NextDouble() >= 0.15) continue;
+
+            filtered.Add(c);
+        }
+
+        if (filtered.Count == 0) return;
+
+        // e) 加权决选
+        float total = filtered.Sum(c => c.Weight);
+        float roll = (float)rng.NextDouble() * total;
+        A2ACandidate selected = filtered[filtered.Count - 1];
+        foreach (var c in filtered)
+        {
+            roll -= c.Weight;
+            if (roll <= 0) { selected = c; break; }
+        }
+
+        TryEstablishA2ASession(selected.Members);
     }
 
     private void TryEstablishA2ASession(List<NPC> cluster)
@@ -690,6 +837,9 @@ internal sealed class A2ASessionManager
             return;
         }
 
+        // ★ 全局互斥：防两簇同时凝视、先后锁死的竞态；落选簇由既有 IdleTicks 超时自然散场
+        if (_activeA2ASessions.Any(s => s.MembersLocked)) return;
+
         var candidateNpcs = cluster
             .Where(n =>
             {
@@ -726,18 +876,6 @@ internal sealed class A2ASessionManager
 
         if (availableNpcs.Count < 2)
             return;
-
-        int maxParticipants = Math.Max(
-            2,
-            Math.Min(4, _config.A2AMaxParticipants));
-
-        if (availableNpcs.Count > maxParticipants)
-        {
-            availableNpcs = availableNpcs
-                .OrderBy(n => DialogueUtilities.DistanceSqToPlayer(n))
-                .Take(maxParticipants)
-                .ToList();
-        }
 
         string pairKey = DialogueUtilities.MakePairKey(availableNpcs.Select(n => n.Name));
         if (_a2aCooldowns.TryGetValue(pairKey, out int remaining) && remaining > 0)

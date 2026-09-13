@@ -231,6 +231,142 @@
         "zh": "莱纳斯和罗宾是老朋友，彼此尊重。",
         "en": "Linus and Robin are old friends who respect each other."
       }
+    },
+    {
+      "NpcA": "Lewis",
+      "NpcB": "Marnie",
+      "Descriptions": {
+        "zh": "刘易斯镇长和玛妮是一对低调交往多年的恋人，在公开场合表现得像老朋友。",
+        "en": "Mayor Lewis and Marnie have been discreet sweethearts for years; in public they act like old friends."
+      }
+    },
+    {
+      "NpcA": "Clint",
+      "NpcB": "Emily",
+      "Descriptions": {
+        "zh": "克林特暗恋着艾米丽，在她面前总是紧张笨拙、欲言又止。",
+        "en": "Clint has a crush on Emily and gets nervous and awkward around her."
+      }
+    },
+    {
+      "NpcA": "Gus",
+      "NpcB": "Emily",
+      "Descriptions": {
+        "zh": "格斯和艾米丽是酒吧的老搭档，一个掌勺一个招呼客人，配合默契。",
+        "en": "Gus and Emily are longtime saloon coworkers who work together seamlessly."
+      }
+    },
+    {
+      "NpcA": "Pam",
+      "NpcB": "Gus",
+      "Descriptions": {
+        "zh": "潘姆是酒吧的常客，格斯闭着眼都知道她要喝什么。",
+        "en": "Pam is a saloon regular; Gus knows her usual order by heart."
+      }
+    },
+    {
+      "NpcA": "Kent",
+      "NpcB": "Jodi",
+      "Descriptions": {
+        "zh": "肯特和乔迪是夫妻关系，肯特退役归来后努力重新融入家庭生活。",
+        "en": "Kent and Jodi are husband and wife; Kent is adjusting to domestic life after returning from the war."
+      }
+    },
+    {
+      "NpcA": "Kent",
+      "NpcB": "Sam",
+      "Descriptions": {
+        "zh": "肯特和山姆是父子关系，山姆既尊敬父亲，也对他的严厉略感拘谨。",
+        "en": "Kent and Sam are father and son; Sam respects his father but can feel strained under his strictness."
+      }
+    },
+    {
+      "NpcA": "Kent",
+      "NpcB": "Vincent",
+      "Descriptions": {
+        "zh": "肯特和文森特是父子关系，文森特十分崇拜从战场归来的父亲。",
+        "en": "Kent and Vincent are father and son; Vincent looks up to his war-veteran father."
+      }
+    },
+    {
+      "NpcA": "Abigail",
+      "NpcB": "Wizard",
+      "Descriptions": {
+        "zh": "阿比盖尔和法师之间存在微妙的血缘暗线联系，她对神秘学有着天生的好奇心。",
+        "en": "Abigail and the Wizard share subtle mysterious ties, as she feels an innate pull toward the occult."
+      }
+    },
+    {
+      "NpcA": "Jas",
+      "NpcB": "Vincent",
+      "Descriptions": {
+        "zh": "贾斯和文森特是镇上仅有的两个同龄儿童，是形影不离的青梅竹马。",
+        "en": "Jas and Vincent are the only two kids in town and inseparable childhood playmates."
+      }
+    },
+    {
+      "NpcA": "Penny",
+      "NpcB": "Jas",
+      "Descriptions": {
+        "zh": "潘妮在博物馆图书馆志愿担任贾斯的家庭教师，教她读书识字。",
+        "en": "Penny tutors Jas at the museum library, teaching her reading and writing."
+      }
+    },
+    {
+      "NpcA": "Penny",
+      "NpcB": "Vincent",
+      "Descriptions": {
+        "zh": "潘妮在博物馆图书馆志愿担任文森特的家庭教师。",
+        "en": "Penny acts as Vincent's volunteer tutor at the museum library."
+      }
+    },
+    {
+      "NpcA": "Harvey",
+      "NpcB": "Maru",
+      "Descriptions": {
+        "zh": "哈维和玛鲁是诊所的雇主与护士搭档，在日常医疗工作中配合默契。",
+        "en": "Harvey and Maru are doctor and nurse colleagues at the clinic who work well together."
+      }
+    },
+    {
+      "NpcA": "Emily",
+      "NpcB": "Sandy",
+      "Descriptions": {
+        "zh": "艾米丽和桑迪是相隔两地的挚友闺蜜，经常互通书信。",
+        "en": "Emily and Sandy are long-distance best friends who keep in regular touch through letters."
+      }
+    },
+    {
+      "NpcA": "Leo",
+      "NpcB": "Linus",
+      "Descriptions": {
+        "zh": "雷欧和莱纳斯是野外生活的忘年交，莱纳斯像导师一样照料雷欧并传授生存技巧。",
+        "en": "Leo and Linus share a close bond in nature; Linus mentors Leo in wilderness survival."
+      }
+    },
+    {
+      "NpcA": "Marlon",
+      "NpcB": "Marnie",
+      "Descriptions": {
+        "zh": "马龙默默倾慕着玛妮，在节日等场合常流露出对她的关注。",
+        "en": "Marlon harbors a quiet crush on Marnie and often gazes at her during town festivals."
+      }
+    },
+    {
+      "NpcA": "Marlon",
+      "NpcB": "Gil",
+      "Descriptions": {
+        "zh": "马龙和吉尔是探险家公会的老搭档，共同坐镇公会接待冒险者。",
+        "en": "Marlon and Gil are longtime partners who run the Adventurer's Guild together."
+      }
+    },
+    {
+      "NpcA": "Krobus",
+      "NpcB": "Dwarf",
+      "Descriptions": {
+        "zh": "科罗布斯和矮人分属暗影族与矮人族，背负着千年种族战争的宿怨。",
+        "en": "Krobus and the Dwarf belong to the Shadow Brutes and Dwarves respectively, bearing ancestral racial enmity."
+      }
     }
   ]
 }

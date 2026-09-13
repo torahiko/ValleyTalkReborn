@@ -217,4 +217,37 @@ internal static class DialogueUtilities
                 dict.Remove(key);
         }
     }
+
+    /// <summary>
+    /// 判定两名 NPC 是否具备对话的空间姿态。
+    /// 仅拦截四组明确背对背构型，其余（正对、斜对、并排同向、垂直相邻）一律视为可感知。
+    /// 坐标系约定：y 轴向下增长；FacingDirection 0:上 1:右 2:下 3:左。
+    /// 几何示例（"×"=不可感知，"✓"=可感知）：
+    ///   ×  A↑ B↓   (dy>0, A 朝上, B 朝下：A 在上背对下方的 B)
+    ///   ×  A↓ B↑   (dy<0, A 朝下, B 朝上：A 在下背对上方的 B)
+    ///   ×  A← B→   (dx>0, A 朝左, B 朝右：A 在左背对右侧的 B)
+    ///   ×  A→ B←   (dx<0, A 朝右, B 朝左：A 在右背对左侧的 B)
+    ///   ✓  并排同向（同 dir，如吧台并排）、正对、垂直相邻、重叠 → 一律放行
+    /// 调用时机约束：仅在雷达建簇时判定一次。POI 与节日 NPC 朝向静态，禁止逐 tick 重复判定。
+    /// </summary>
+    internal static bool AreNpcsMutuallyAware(NPC a, NPC b)
+    {
+        if (a == null || b == null) return false;
+
+        long dx = (long)b.Position.X - (long)a.Position.X;
+        long dy = (long)b.Position.Y - (long)a.Position.Y;
+        int dirA = a.FacingDirection;
+        int dirB = b.FacingDirection;
+
+        // A 在上朝上、B 在下朝下 → 背对
+        if (dy > 0 && dirA == 0 && dirB == 2) return false;
+        // A 在下朝下、B 在上朝上 → 背对
+        if (dy < 0 && dirA == 2 && dirB == 0) return false;
+        // A 在左朝左、B 在右朝右 → 背对
+        if (dx > 0 && dirA == 3 && dirB == 1) return false;
+        // A 在右朝右、B 在左朝左 → 背对
+        if (dx < 0 && dirA == 1 && dirB == 3) return false;
+
+        return true;
+    }
 }
