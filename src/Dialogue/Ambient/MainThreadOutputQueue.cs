@@ -143,12 +143,20 @@ internal sealed class MainThreadOutputQueue
 
             var npc = Game1.getCharacterFromName(item.NpcName);
 
+            bool festivalBark = string.Equals(item.Source, "Bark", StringComparison.Ordinal)
+                                && Game1.CurrentEvent?.isFestival == true;
+
             if (npc == null ||
                 DialogueUtilities.IsNpcSleeping(npc) ||
-                !DialogueUtilities.IsInRangeSquared(
-                    npc,
-                    Game1.player,
-                    DialogueConstants.DisplayRangeSquared))
+                !(festivalBark
+                    ? DialogueUtilities.IsInRangeSquaredDuringFestival(
+                        npc,
+                        Game1.player,
+                        DialogueConstants.DisplayRangeSquared)
+                    : DialogueUtilities.IsInRangeSquared(
+                        npc,
+                        Game1.player,
+                        DialogueConstants.DisplayRangeSquared)))
             {
                 continue;
             }

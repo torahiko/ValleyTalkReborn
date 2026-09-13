@@ -528,14 +528,10 @@ internal static class BarkFocusRouter
 private static List<PersonCandidate> EvaluateNearbyPresence(NPC npc, bool isZh)
 {
     var result = new List<PersonCandidate>();
-    var loc = npc?.currentLocation;
-    if (loc == null) return result;
-
     bool isFestival = Game1.isFestival() || Game1.CurrentEvent?.isFestival == true;
-    int rangeSquared = loc.IsOutdoors ? 100 : 49;
-    var player = Game1.player;
 
-    // ── 1. 节日专属氛围拦截 ──
+    // ── 1. 节日专属氛围拦截（节日临时 Actor 的 currentLocation 可能为 null，
+    //       故分支必须置于 loc 解引用与 null 早退之前以保证可达）──
     if (isFestival)
     {
         // 节日时全员聚拢，注意力首选节日整体氛围，不再逐个挑路人
@@ -547,9 +543,10 @@ private static List<PersonCandidate> EvaluateNearbyPresence(NPC npc, bool isZh)
         result.Add(new PersonCandidate(1.2f, festDesc));
 
         // 节日里如果有配偶在身边，依然保留极高亲密注目
+        int festRangeSquared = Game1.currentLocation?.IsOutdoors == true ? 100 : 49;
         string spouseN = npc.getSpouse()?.Name;
-        if (!string.IsNullOrEmpty(spouseN) && loc.getCharacterFromName(spouseN) is NPC sp &&
-            DialogueUtilities.IsInRangeSquared(npc, sp, rangeSquared))
+        if (!string.IsNullOrEmpty(spouseN) && Game1.currentLocation?.getCharacterFromName(spouseN) is NPC sp &&
+            IsFestivalActorNear(npc, sp, festRangeSquared))
         {
             string sName = isZh ? NpcNameLocalizer.GetZhName(sp.Name) : (sp.displayName ?? sp.Name);
             result.Add(new PersonCandidate(1.6f, isZh ? $"{sName}就在你身边。" : $"{sName} is right by your side."));
@@ -557,6 +554,12 @@ private static List<PersonCandidate> EvaluateNearbyPresence(NPC npc, bool isZh)
 
         return result; // 节日直接收口，不再处理日常人际扫描
     }
+
+    var loc = npc?.currentLocation;
+    if (loc == null) return result;
+
+    int rangeSquared = loc.IsOutdoors ? 100 : 49;
+    var player = Game1.player;
 
     // ── 2. 玩家在场判定 ──
     if (player != null && player.currentLocation == loc && DialogueUtilities.IsInRangeSquared(npc, player, rangeSquared))
@@ -658,6 +661,23 @@ private static List<PersonCandidate> EvaluateNearbyPresence(NPC npc, bool isZh)
 
     return result;
 }
+
+    /// <summary>
+    /// 节日语境下两个 Actor 的距离判定。
+    /// 节日 actors 与玩家同处活动地图，npc.currentLocation 在临时 Actor 上可能为 null，
+    /// 故不做 currentLocation 相等性检查，仅做 null 检查后与 DialogueUtilities.IsInRangeSquared
+    /// 相同的像素平方距离计算（long 防溢出、除以 64*64=4096、&lt;= rangeSquared）。
+    /// </summary>
+    private static bool IsFestivalActorNear(NPC a, NPC b, int rangeSquared)
+    {
+        if (a == null || b == null) return false;
+
+        long dx = (long)a.Position.X - (long)b.Position.X;
+        long dy = (long)a.Position.Y - (long)b.Position.Y;
+        long distSq = (dx * dx + dy * dy) / (64 * 64);
+
+        return distSq <= rangeSquared;
+    }
 
     // ══════════════════════════════════════════════════════════
     //  辅助：Perception 模板净化

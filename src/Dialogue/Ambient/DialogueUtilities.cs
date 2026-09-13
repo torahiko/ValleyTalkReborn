@@ -43,6 +43,24 @@ internal static class DialogueUtilities
     }
 
     /// <summary>
+    /// 节日语境下的 NPC 与玩家距离判断。
+    /// 节日内全部 Event.actors 与玩家必然同处活动地图，npc.currentLocation 在临时 Actor 上可能为 null，
+    /// 故不做 npc.currentLocation 相等性检查，改为校验玩家确实处于当前活动地图（Game1.currentLocation）。
+    /// 距离计算本体与 <see cref="IsInRangeSquared(NPC, Farmer, int)"/> 完全一致（long 防溢出、TILE_SIZE² 归一）。
+    /// </summary>
+    internal static bool IsInRangeSquaredDuringFestival(NPC npc, Farmer player, int rangeSquared)
+    {
+        if (npc == null || player == null) return false;
+        if (Game1.currentLocation == null || player.currentLocation != Game1.currentLocation) return false;
+
+        long dx = (long)npc.Position.X - (long)player.Position.X;
+        long dy = (long)npc.Position.Y - (long)player.Position.Y;
+        long distSq = (dx * dx + dy * dy) / (TILE_SIZE * TILE_SIZE);
+
+        return distSq <= rangeSquared;
+    }
+
+    /// <summary>
     /// 判断 NPC 是否正在睡眠。
     /// </summary>
     internal static bool IsNpcSleeping(NPC npc)
