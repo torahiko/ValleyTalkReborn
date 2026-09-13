@@ -769,7 +769,7 @@ internal sealed class A2ASessionManager
         }
 
         if (filtered.Count == 0) return;
-
+ 
         // e) 加权决选
         float total = filtered.Sum(c => c.Weight);
         float roll = (float)rng.NextDouble() * total;

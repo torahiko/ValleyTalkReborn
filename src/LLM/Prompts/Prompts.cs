@@ -861,7 +861,7 @@ public class Prompts
             return;
         }
 
-        // 门禁 c: 正常邀请协议
+        // 门禁 c: 正常邀请协议（彻底移除末尾无意义的工具警示）
         sb.AppendLine("<follow_invitation_protocol>");
         sb.AppendLine(isZh
             ? "农夫正在邀请你与他同行。"
@@ -872,23 +872,20 @@ public class Prompts
         sb.AppendLine(isZh
             ? "- 若拒绝: 依据角色性格在对白中委婉说明缘由，仅输出对白文本。"
             : "- IF DECLINING: Provide an in-character explanation as dialogue text only.");
-        sb.AppendLine(isZh
-            ? "- 无论如何都不要输出 [ACTION:FOLLOW]，也不要调用任何工具。"
-            : "- Do NOT output [ACTION:FOLLOW] or call any tools under any circumstance.");
         sb.AppendLine("</follow_invitation_protocol>\n");
     }
 
     private void AppendDateEndingProtocol(StringBuilder sb)
     {
-        if (CurrentFlags?.IsOnDate != true) return;   // 防御性门禁，调用处已保证
+        if (CurrentFlags?.IsOnDate != true) return;
         bool isZh = IsChineseLanguage;
         sb.AppendLine("<date_ending_protocol>");
         sb.AppendLine(isZh
             ? "- 若玩家提出结束今天的约会或向你道别（例如\"今天就到这吧\"\"我先回去\"）：依据角色性格与好感度回应，并在台词的最末尾附加内部标签 [ACTION:END_DATE]。"
             : "- IF THE PLAYER PROPOSES ENDING TODAY'S DATE OR SAYS GOODBYE: Respond in character, and append [ACTION:END_DATE] at the absolute end.");
         sb.AppendLine(isZh
-            ? "- 若玩家未提及结束约会：正常进行对白，不要附加该标签。"
-            : "- OTHERWISE: Continue normally; do NOT append that tag.");
+            ? "- 若玩家未提及结束约会：保持正常对话，仅输出纯对白文本。"
+            : "- OTHERWISE: Continue regular dialogue as plain text only.");
         sb.AppendLine("</date_ending_protocol>\n");
     }
 
@@ -1078,13 +1075,9 @@ public class Prompts
         bool isZh = IsChineseLanguage;
         _injectedPrivateThoughts.Add(pending);
         prompt.AppendLine("<pending_thought>");
-        prompt.AppendLine(isZh
-            ? "在本次对话开启前，你心中念念不忘的事情："
-            : "Before this exchange began, this key thought was lingering in your mind:");
+        prompt.AppendLine(Util.GetString(Character, "pendingTopicIntro"));
         prompt.AppendLine(pending);
-        prompt.AppendLine(isZh
-            ? "此事农夫尚不知情。若要让农夫知道，需由你自己先在台词中说出来；发言选项的内容范围以你已经说出口的台词为准。表达方式由角色性格与好感度决定。"
-            : "The farmer doesn't know about this yet. If you want them to know, voice it yourself in dialogue first; base any farmer response options only on what you have already said aloud. The expression style follows character personality and heart level.");
+        prompt.AppendLine(Util.GetString(Character, "pendingTopicOutro"));
         prompt.AppendLine("</pending_thought>\n");
     }
 
@@ -1543,7 +1536,7 @@ public class Prompts
             (Season.Fall, 1) => Util.GetString(Character, "specialDatesFall1"),
             (Season.Fall, 15) => Util.GetString(Character, "specialDatesFall15"),
             (Season.Fall, 26) => Util.GetString(Character, "specialDatesFall26"),
-            (Season.Winter, 1) => Util.GetString(Character, "specialDatesWInter1"),
+            (Season.Winter, 1) => Util.GetString(Character, "specialDatesWinter1"),
             (Season.Winter, 7) => Util.GetString(Character, "specialDatesWinter7"),
             (Season.Winter, 24) => Util.GetString(Character, "specialDatesWinter24"),
             (Season.Winter, 28) => Util.GetString(Character, "specialDatesWinter28"),
