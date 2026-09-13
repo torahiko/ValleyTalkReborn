@@ -302,6 +302,25 @@ Example 3 (Paranoia & Appetite):
     /// </summary>
     private static string BuildAmbientScene(NPC npc, bool isZh)
     {
+        var currentEvent = Game1.CurrentEvent;
+        if (currentEvent != null && currentEvent.isFestival)
+        {
+            string festivalName = currentEvent.FestivalName;
+            if (string.IsNullOrWhiteSpace(festivalName) || (isZh && !ContainsCjkCharacter(festivalName)))
+            {
+                festivalName = isZh ? "节日集会" : "the Festival";
+            }
+
+            if (isZh)
+            {
+                return $"今天是【{festivalName}】。你正身处热闹的节日现场，镇民们都聚集在周围，暂时放下了日常劳作。";
+            }
+            else
+            {
+                return $"Today is the [{festivalName}]. You are gathered at the festival grounds with the other villagers, away from daily routines.";
+            }
+        }
+
         var loc = npc?.currentLocation;
         if (loc == null) return null;
 
@@ -461,6 +480,7 @@ Example 3 (Paranoia & Appetite):
     {
         var sb = new StringBuilder();
         bool needLangConstraint = ShouldInjectLanguageConstraint(out string targetLangZh, out string targetLangEn);
+        bool isFestivalNow = Game1.CurrentEvent?.isFestival == true;
 
         sb.AppendLine(isZh ? "### [开始想]" : "### [START THINKING]");
 
@@ -483,6 +503,10 @@ Example 3 (Paranoia & Appetite):
             sb.AppendLine("- 4~6 条，每条 15~25 个汉字");
             sb.AppendLine("- 可以连着想，可以突然跳开，可以想到一半就算了");
             sb.AppendLine("- 用你自己的说话方式（看上面 [你是谁] 里的语言习惯）");
+            if (isFestivalNow)
+            {
+                sb.AppendLine("- 此时正身处节日集会，念头可围绕集会活动、食物、周围人潮、或是想早点回家休息等现场心境");
+            }
             if (needLangConstraint)
             {
                 sb.AppendLine($"- 所有输出请严格使用“{targetLangZh}”");
@@ -498,6 +522,10 @@ Example 3 (Paranoia & Appetite):
             sb.AppendLine($"- 4-6 lines, {lengthBullet}");
             sb.AppendLine("- Can flow together, jump around, or drop mid-thought");
             sb.AppendLine("- Use your own speaking style (see [WHO YOU ARE] above)");
+            if (isFestivalNow)
+            {
+                sb.AppendLine("- You are at a festival; thoughts naturally drift to the events, food, crowds, or wanting to head home");
+            }
             if (needLangConstraint)
             {
                 sb.AppendLine($"- All output must strictly use {targetLangEn}");
