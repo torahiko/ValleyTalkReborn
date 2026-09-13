@@ -12,7 +12,6 @@ internal static class AgentToolDefinitions
     // ── Tool name constants (shared with AgentToolDispatcher) ─────────────────
     internal const string ToolScheduleDate   = "schedule_date";
     internal const string ToolEndDate        = "end_current_date";
-    internal const string ToolPhysicalAction = "trigger_physical_action";
     internal const string ToolSpeakInBubble  = "speak_in_bubble";
 
     // Maximum characters allowed in a speech bubble before truncation
@@ -21,9 +20,6 @@ internal static class AgentToolDefinitions
     // 🔧 FIX: 集合表达式 ["..."] 是 C# 12 语法，改为 new[] { ... } 兼容 C# 10/11
     private static readonly string[] LocationIds =
         new[] { "Saloon", "Beach", "Town", "Forest", "Mountain", "FarmHouse", "Farm" };
-
-    private static readonly string[] ActionTypes =
-        new[] { "STEP:FORWARD", "STEP:BACKWARD", "STEP:LEFT", "STEP:RIGHT", "STEP:UP", "STEP:DOWN", "FOLLOW", "STAY_HOME", "ALL_DAY_FOLLOW" };
 
     private static bool IsChinese =>
         LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
@@ -211,33 +207,6 @@ internal static class AgentToolDefinitions
             ["type"] = "function",
             ["function"] = new JObject
             {
-                ["name"] = ToolPhysicalAction,
-                ["description"] = zh
-                    ? "使自己执行物理移动、跟随玩家或调整陪伴状态。"
-                    : "Call this tool to make yourself perform a physical movement, follow the player, or adjust companion state.",
-                ["parameters"] = new JObject
-                {
-                    ["type"] = "object",
-                    ["properties"] = new JObject
-                    {
-                        ["action_type"] = new JObject
-                        {
-                            ["type"] = "string",
-                            ["description"] = zh
-                                ? "要执行的动作类型。STAY_HOME：让配偶今天留在家里不外出。ALL_DAY_FOLLOW：让配偶今天全程陪伴玩家。"
-                                : "The type of movement or physical action to perform. STAY_HOME: keep the spouse at home all day. ALL_DAY_FOLLOW: have the spouse accompany the player all day.",
-                            ["enum"] = new JArray(ActionTypes)
-                        }
-                    },
-                    ["required"] = new JArray("action_type")
-                }
-            }
-        });
-        tools.Add(new JObject
-        {
-            ["type"] = "function",
-            ["function"] = new JObject
-            {
                 ["name"] = ToolSpeakInBubble,
                 ["description"] = zh
                     ? $"在头顶显示简短悬浮气泡，不打开对话框。字数限制在 {BubbleMaxChars} 字以内。"
@@ -278,29 +247,6 @@ internal static class AgentToolDefinitions
         }
 
         // ── 通用工具：始终注册 ──
-        tools.Add(new JObject
-        {
-            ["name"] = ToolPhysicalAction,
-            ["description"] = zh
-                ? "使自己执行物理移动、跟随玩家或调整陪伴状态。"
-                : "Call this tool to make yourself perform a physical movement, follow the player, or adjust companion state.",
-            ["input_schema"] = new JObject
-            {
-                ["type"] = "object",
-                ["properties"] = new JObject
-                {
-                    ["action_type"] = new JObject
-                    {
-                        ["type"] = "string",
-                        ["description"] = zh
-                            ? "要执行的动作类型。STAY_HOME：让配偶今天留在家里不外出。ALL_DAY_FOLLOW：让配偶今天全程陪伴玩家。"
-                            : "The type of movement or physical action to perform. STAY_HOME: keep the spouse at home all day. ALL_DAY_FOLLOW: have the spouse accompany the player all day.",
-                        ["enum"] = new JArray(ActionTypes)
-                    }
-                },
-                ["required"] = new JArray("action_type")
-            }
-        });
         tools.Add(new JObject
         {
             ["name"] = ToolSpeakInBubble,

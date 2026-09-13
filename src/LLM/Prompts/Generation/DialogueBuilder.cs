@@ -1,4 +1,4 @@
-﻿// DialogueBuilder.cs
+// DialogueBuilder.cs
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -153,25 +153,6 @@ namespace ValleytalkReborn
             // 重置上轮短路状态，防止复用 context 时 IsDuplicate 误判
             context.LocallyExecutedAction = null;
 
-            // ── 本地明确指令短路执行 (Local Short-circuit) ──
-            bool shortCircuitExecuted = false;
-            if (context.RoutingFlags.IsActionRequested && context.RoutingFlags.RequestedAction != ActionTag.None)
-            {
-                string actionType = context.RoutingFlags.RequestedAction.ToTagString();
-                if (!string.IsNullOrWhiteSpace(actionType))
-                {
-                    string jsonArgs = Newtonsoft.Json.JsonConvert.SerializeObject(new { action_type = actionType });
-                    // 注意：返回值是 usedBubble 语义，不是 accepted；不得据此做任何门控
-                    AgentToolDispatcher.DispatchToolCall(instance, AgentToolDefinitions.ToolPhysicalAction, jsonArgs);
-                    shortCircuitExecuted = true;
-                    context.LocallyExecutedAction = actionType;
-                    ModEntry.SMonitor?.Log(
-                        $"[DialogueBuilder] Local action short-circuit: {instance.Name} -> {actionType}",
-                        StardewModdingAPI.LogLevel.Debug);
-                }
-            }
-
-
             SetContext(instance.Name, context);
 
 // 流式传输策略：仅当（a）调用方提供了回调，且（b）当前这一回合大概率不需要工具调用，
@@ -179,12 +160,10 @@ namespace ValleytalkReborn
 // 原因：LlmClaude / LlmGemini 的流式路径目前不会附带 tools schema，
 // 如果在期望工具调用的回合（跟随/移动/邀请/结束约会等）强行流式，模型不会产出工具调用，
 // 导致对应的游戏内动作被静默忽略（无报错、无日志）。
+            // FOLLOW/STEP/GOTO 已改为文本标签 + UI 按钮管道，不再需要工具 schema；
+            // 仅约会邀请与约会中仍需 Native tool calling（schedule_date / end_current_date / speak_in_bubble）。
             bool toolsLikelyNeededThisTurn =
-                context.RoutingFlags.IsActionRequested
-                || context.RoutingFlags.IsMovementRequested
-                || context.RoutingFlags.IsFollowing
-                || context.RoutingFlags.IsGotoRequested
-                || context.RoutingFlags.IsInviteRequested
+                context.RoutingFlags.IsInviteRequested
                 || context.RoutingFlags.IsOnDate;
 
             bool useStreaming = onStreamingToken != null
@@ -209,7 +188,7 @@ namespace ValleytalkReborn
             ApplyEmbodiedActions(instance, context, theLine);
 
             // speak_in_bubble sentinel: 气泡模式下跳过对白肢体解析
-            if (theLine != null && !shortCircuitExecuted)
+            if (theLine != null)
             {
                 if (context.RoutingFlags.IsActionRequested
                     || context.RoutingFlags.IsMovementRequested
@@ -249,17 +228,13 @@ namespace ValleytalkReborn
             bool allowDateUI = false;
             bool allowFollowUI = false;
 
-            if (theLine[0] != null)
+            if (theLine != null && theLine.Length > 0)
             {
-                if (theLine[0].Contains("[UI:DATE_INVITE]"))
+                for (int i = 0; i < theLine.Length; i++)
                 {
-                    allowDateUI = true;
-                    theLine[0] = theLine[0].Replace("[UI:DATE_INVITE]", "").Trim();
-                }
-                if (theLine[0].Contains("[UI:FOLLOW]"))
-                {
-                    allowFollowUI = true;
-                    theLine[0] = theLine[0].Replace("[UI:FOLLOW]", "").Trim();
+                    if (theLine[i] == null) continue;
+                    if (theLine[i].Contains("[UI:DATE_INVITE]")) { allowDateUI = true;  theLine[i] = theLine[i].Replace("[UI:DATE_INVITE]", "").Trim(); }
+                    if (theLine[i].Contains("[UI:FOLLOW]"))      { allowFollowUI = true; theLine[i] = theLine[i].Replace("[UI:FOLLOW]", "").Trim(); }
                 }
             }
 
@@ -472,9 +447,61 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
-        /// 拦截特殊操作响应 Key，分发给对应的 UI / 状态流转。
-        /// 由 Dialogue_ChooseResponse_Patch 调用。
+
+
         /// </summary>
+
+        /// <summary>
+        /// 尝试为当前上下文启动跟随（约会跟随或普通跟随）。
+        /// </summary>
+        private static bool TryStartFollowForContext(NPC npc)
+        {
+            var movement = MovementManager.Instance;
+            if (movement == null)
+            {
+                ModEntry.SMonitor?.Log("[DialogueBuilder] Follow failed: MovementManager null", LogLevel.Warn);
+                return false;
+            }
+
+            // 【新增守卫】待排期约会防杀
+            if (DateManager.Instance != null
+                && DateManager.Instance.Phase == DatePhase.Pending
+                && DateManager.Instance.CurrentDateMode == DateManager.DateMode.Scheduled
+                && string.Equals(DateManager.Instance.ActiveDateNpcName, npc.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                bool isZh = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+                Game1.addHUDMessage(new HUDMessage(isZh ? $"今晚已和 {npc.displayName} 有约。" : $"You already have plans with {npc.displayName} tonight.", 3));
+                ModEntry.SMonitor?.Log($"[DialogueBuilder] Regular follow refused: pending scheduled date for {npc.Name}", LogLevel.Info);
+                return false;
+            }
+
+            bool isDateFollow = ModEntry.Config.EnableDateSystem && DateManager.Instance != null && DateManager.Instance.IsOnDate(npc.Name);
+            if (isDateFollow)
+            {
+                bool ok = DateManager.Instance.TryStartFollow(npc);
+                if (!ok)
+                {
+                    ModEntry.SMonitor?.Log($"[DialogueBuilder] Date follow refused by DateManager: {npc.Name}", LogLevel.Warn);
+                    return false;
+                }
+            }
+            else
+            {
+                // 普通跟随（时长 120 游戏分钟 → 换算为截止时刻，封顶 2600）
+                int rawEnd = Utility.ModifyTime(Game1.timeOfDay, 120);
+                int endTime = Math.Min(rawEnd, 2600);
+                MovementManager.Instance.StartRegularFollow(npc, endTime);
+                ModEntry.SMonitor?.Log($"[DialogueBuilder] Regular follow started: {npc.Name}, endTime={endTime}", LogLevel.Info);
+            }
+
+            // 启动成功后（date/regular 两路径共用）
+            try { npc.doEmote(20); } catch (Exception ex) { ModEntry.SMonitor?.Log($"[DialogueBuilder] Emote failed: {ex.Message}", LogLevel.Warn); }
+            try { Game1.playSound("dwop"); } catch (Exception ex) { ModEntry.SMonitor?.Log($"[DialogueBuilder] Sound failed: {ex.Message}", LogLevel.Warn); }
+            bool isZhFollow = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+            Game1.addHUDMessage(new HUDMessage(isZhFollow ? $"{npc.displayName} 开始跟着你了" : $"{npc.displayName} is now following you", 3));
+            return true;
+        }
+
         public static bool HandleSpecialActionResponse(string responseKey, NPC npc)
         {
             if (string.IsNullOrEmpty(responseKey) || npc == null) return false;
@@ -495,7 +522,7 @@ namespace ValleytalkReborn
                 Game1.activeClickableMenu = null;
                 Game1.player.forceCanMove();
 
-                DateManager.Instance.TryStartFollow(npc);
+                TryStartFollowForContext(npc);
                 return true;
             }
 
