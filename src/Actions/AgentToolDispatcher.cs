@@ -73,11 +73,6 @@ internal static class AgentToolDispatcher
                 return EndDate(npc, args);
             }
 
-            if (string.Equals(functionName, AgentToolDefinitions.ToolPhysicalAction, StringComparison.OrdinalIgnoreCase))
-            {
-                return TriggerPhysicalAction(npc, args);
-            }
-
             if (string.Equals(functionName, AgentToolDefinitions.ToolSpeakInBubble, StringComparison.OrdinalIgnoreCase))
             {
                 return SpeakInBubble(npc, args);
@@ -156,92 +151,6 @@ internal static class AgentToolDispatcher
 
             DateManager.Instance.EndDateGracefully(target.Name, reason);
             LogInfo($"[AgentToolDispatcher] Date ended gracefully: {target.Name} (reason: {reason})");
-        });
-
-        return true;
-    }
-
-    private static bool TriggerPhysicalAction(NPC npc, JObject args)
-    {
-        var actionType = GetString(args, "action_type");
-        if (string.IsNullOrWhiteSpace(actionType))
-        {
-            LogWarn("[AgentToolDispatcher] trigger_physical_action: missing action_type.");
-            return false;
-        }
-
-                var tag = ActionTagExtensions.FromTagString(actionType);
-        if (tag == ActionTag.None)
-        {
-            LogWarn($"[AgentToolDispatcher] trigger_physical_action: unknown action_type '{actionType}'.");
-            return false;
-        }
-
-        RunOnMainThread(() =>
-        {
-            var target = ResolveNpc(npc);
-            if (target == null)
-            {
-                LogWarn($"[AgentToolDispatcher] trigger_physical_action: target NPC is no longer valid for '{actionType}'.");
-                return;
-            }
-
-            if (tag == ActionTag.Follow)
-            {
-                // ── 幂等性保护：如果已经在跟随，直接忽略重复调用 ──
-                if (MovementManager.Instance != null &&
-                    MovementManager.Instance.HasActiveFollow &&
-                    MovementManager.Instance.CurrentFollowingNpc == target)
-                {
-                    LogDebug($"[AgentToolDispatcher] Follow ignored: {target.Name} is already following.");
-                    return;
-                }
-
-                bool ok = false;
-                if (DateManager.Instance != null)
-                {
-                    ok = DateManager.Instance.TryStartFollow(target);
-                }
-
-                if (ok)
-                {
-                    LogInfo($"[AgentToolDispatcher] Follow started via DateManager: {target.Name}");
-                }
-                else
-                {
-                    // Fallback: 如果不在约会状态或约会跟随失败，回退到普通的 MovementManager 跟随
-                    if (MovementManager.Instance != null)
-                    {
-                        MovementManager.Instance.QueueMovement(target, ActionTag.Follow, skipDialogueWait: true);
-                        LogInfo($"[AgentToolDispatcher] Follow fallback to MovementManager: {target.Name}");
-                    }
-                    else
-                    {
-                        LogWarn("[AgentToolDispatcher] trigger_physical_action (Follow): Both DateManager and MovementManager are null.");
-                    }
-                }
-            }
-            else if (tag == ActionTag.StayHome)
-            {
-                CompanionScheduleManager.Instance.SetStayHomeMode(target.Name);
-                LogInfo($"[AgentToolDispatcher] StayHome set: {target.Name}");
-            }
-            else if (tag == ActionTag.AllDayFollow)
-            {
-                CompanionScheduleManager.Instance.SetAllDayFollow(target.Name);
-                LogInfo($"[AgentToolDispatcher] AllDayFollow set: {target.Name}");
-            }
-            else
-            {
-                if (MovementManager.Instance == null)
-                {
-                    LogWarn("[AgentToolDispatcher] trigger_physical_action: MovementManager.Instance is null.");
-                    return;
-                }
-
-                MovementManager.Instance.QueueMovement(target, tag, skipDialogueWait: true);
-                LogDebug($"[AgentToolDispatcher] Physical action queued on main thread: {target.Name} → {tag}");
-            }
         });
 
         return true;

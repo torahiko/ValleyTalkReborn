@@ -447,11 +447,6 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
-
-
-        /// </summary>
-
-        /// <summary>
         /// 尝试为当前上下文启动跟随（约会跟随或普通跟随）。
         /// </summary>
         private static bool TryStartFollowForContext(NPC npc)
@@ -814,3 +809,4 @@ namespace ValleytalkReborn
         }
     }
 }
+

@@ -31,24 +31,6 @@ public class LlmDialogueService
     private const int MAX_TIMEOUT_SECONDS = 120;
     private const int RETRY_DELAY_SECONDS = 5;
 
-    /// <summary>
-    /// 判断工具调用是否与本地已短路执行的物理动作重复（防止二次派发）
-    /// </summary>
-    private static bool IsDuplicateOfLocallyExecutedAction(string functionName, string jsonArguments, DialogueContext context)
-    {
-        if (context?.LocallyExecutedAction == null) return false;
-        if (!string.Equals(functionName, AgentToolDefinitions.ToolPhysicalAction, StringComparison.OrdinalIgnoreCase))
-            return false;
-
-        try
-        {
-            var args = Newtonsoft.Json.Linq.JObject.Parse(jsonArguments ?? "{}");
-            string actionType = (string)args["action_type"];
-            return string.Equals(actionType, context.LocallyExecutedAction, StringComparison.OrdinalIgnoreCase);
-        }
-        catch { return false; }
-    }
-
     private LlmDialogueService() { }  
 
     /// <summary>
@@ -220,11 +202,6 @@ public class LlmDialogueService
                     var npc = character.StardewNpc;
                     foreach (var tool in streamToolCalls)
                     {
-                        if (IsDuplicateOfLocallyExecutedAction(tool.FunctionName, tool.JsonArguments, context))
-                        {
-                            ModEntry.SMonitor?.Log($"[LlmDialogueService] Skipped duplicate physical tool call for {character.Name}.", LogLevel.Trace);
-                            continue;
-                        }
                         bool usedBubble = AgentToolDispatcher.DispatchToolCall(npc, tool.FunctionName, tool.JsonArguments);
                         if (usedBubble) streamResult.UsedBubble = true;
                     }
@@ -328,11 +305,6 @@ public class LlmDialogueService
                             var npc = character.StardewNpc;
                             foreach (var tool in toolCalls)
                             {
-                                if (IsDuplicateOfLocallyExecutedAction(tool.FunctionName, tool.JsonArguments, context))
-                                {
-                                    ModEntry.SMonitor?.Log($"[LlmDialogueService] Skipped duplicate physical tool call for {character.Name}.", LogLevel.Trace);
-                                    continue;
-                                }
                                 bool usedBubble = AgentToolDispatcher.DispatchToolCall(npc, tool.FunctionName, tool.JsonArguments);
                                 if (usedBubble) result.UsedBubble = true;
                             }

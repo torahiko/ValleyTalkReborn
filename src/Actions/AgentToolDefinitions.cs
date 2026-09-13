@@ -290,29 +290,6 @@ internal static class AgentToolDefinitions
         // ── 通用工具：始终注册 ──
         tools.Add(new JObject
         {
-            ["name"] = ToolPhysicalAction,
-            ["description"] = zh
-                ? "使自己执行物理移动、跟随玩家或调整陪伴状态。"
-                : "Call this tool to make yourself perform a physical movement, follow the player, or adjust companion state.",
-            ["parameters"] = new JObject
-            {
-                ["type"] = "OBJECT",
-                ["properties"] = new JObject
-                {
-                    ["action_type"] = new JObject
-                    {
-                        ["type"] = "STRING",
-                        ["description"] = zh
-                            ? "要执行的动作类型。STAY_HOME：让配偶今天留在家里不外出。ALL_DAY_FOLLOW：让配偶今天全程陪伴玩家。"
-                            : "The type of movement or physical action to perform. STAY_HOME: keep the spouse at home all day. ALL_DAY_FOLLOW: have the spouse accompany the player all day.",
-                        ["enum"] = new JArray(ActionTypes)
-                    }
-                },
-                ["required"] = new JArray("action_type")
-            }
-        });
-        tools.Add(new JObject
-        {
             ["name"] = ToolSpeakInBubble,
             ["description"] = zh
                 ? $"在头顶显示简短悬浮气泡，不打开对话框。字数限制在 {BubbleMaxChars} 字以内。"

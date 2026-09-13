@@ -481,24 +481,6 @@ namespace ValleytalkReborn
                     AgentToolDispatcher.DispatchToolCall(npc, "schedule_date", $"{{\"location_id\":\"{location}\"}}");
                 });
 
-            helper.ConsoleCommands.Add("vt_test_action", "测试 Agent 物理动作分发器\n用法: vt_test_action <NPC名字> <动作类型>",
-                (cmd, args) =>
-                {
-                    string npcName = args.Length > 0 ? args[0] : "Abigail";
-                    string action = args.Length > 1 ? args[1] : "FOLLOW";
-
-                    var npc = Game1.getCharacterFromName(npcName);
-                    if (npc == null)
-                    {
-                        Monitor.Log($"[Test] 未找到 NPC: {npcName}", LogLevel.Error);
-                        return;
-                    }
-
-                    Monitor.Log($"[Test] >>> 正在测试分发 trigger_physical_action: {npcName} -> {action}", LogLevel.Info);
-                    AgentToolDispatcher.DispatchToolCall(npc, "trigger_physical_action",
-                        $"{{\"action_type\":\"{action}\"}}");
-                });
-
             helper.ConsoleCommands.Add("vt_test_end", "测试 Agent 自然解约分发器\n用法: vt_test_end <NPC名字>", (cmd, args) =>
             {
                 string npcName = args.Length > 0 ? args[0] : "Abigail";
