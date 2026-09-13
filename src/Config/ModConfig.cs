@@ -174,10 +174,9 @@ namespace ValleytalkReborn
         public SafetyModeLevel RomanceSafetyMode { get; set; } = SafetyModeLevel.Moderate;
 
         /// <summary>
-        /// 启用原生 Function Calling（云端 LLM）。
-        /// 设为 false 时回退至 Legacy [ACTION:TAG] 文本解析模式（适合本地 Llama 模型）。
+        /// 【已废弃】原生工具调用已全量移除。此开关仅为旧配置文件兼容保留，不再产生任何运行时效果。
         /// </summary>
-        public bool UseNativeToolCalling { get; set; } = true;
+        public bool UseNativeToolCalling { get; set; } = false;
         public bool EnableVanillaFirst { get; set; } = false;
         public bool EnableNightlyConsolidation { get; set; } = true;
 

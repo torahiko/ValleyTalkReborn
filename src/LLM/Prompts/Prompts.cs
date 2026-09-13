@@ -55,8 +55,6 @@
 // [Command] <- Action tag syntax & tool calling rules
 //   +- Emote bubbles ([ACTION:EMOTE:HAPPY])
 //   +- Movement tags ([ACTION:STEP:FORWARD], [ACTION:STEP:BACKWARD], [ACTION:STEP:LEFT], [ACTION:STEP:RIGHT])
-//   +- Native tool calling (if enabled)
-//   +- Native tools limited to date scheduling & emote bubbles
 //
 // [ResponseStart] <- Final delimiter ("[In-Character Dialogue]:")
 //
@@ -599,6 +597,7 @@ public class Prompts
             // ── 🔧 早返回分支同样需要注入约会协议，否则 LLM 无法输出 [UI:DATE_INVITE] ──
             AppendDateInvitationProtocol(prompt);
             AppendFollowInvitationProtocol(prompt);
+            AppendDateEndingProtocol(prompt);
 
             string datePrompt = prompt.ToString();
             LogTopologyVerification(datePrompt, "DATE_CONTEXT");
@@ -879,6 +878,20 @@ public class Prompts
         sb.AppendLine("</follow_invitation_protocol>\n");
     }
 
+    private void AppendDateEndingProtocol(StringBuilder sb)
+    {
+        if (CurrentFlags?.IsOnDate != true) return;   // 防御性门禁，调用处已保证
+        bool isZh = IsChineseLanguage;
+        sb.AppendLine("<date_ending_protocol>");
+        sb.AppendLine(isZh
+            ? "- 若玩家提出结束今天的约会或向你道别（例如\"今天就到这吧\"\"我先回去\"）：依据角色性格与好感度回应，并在台词的最末尾附加内部标签 [ACTION:END_DATE]。"
+            : "- IF THE PLAYER PROPOSES ENDING TODAY'S DATE OR SAYS GOODBYE: Respond in character, and append [ACTION:END_DATE] at the absolute end.");
+        sb.AppendLine(isZh
+            ? "- 若玩家未提及结束约会：正常进行对白，不要附加该标签。"
+            : "- OTHERWISE: Continue normally; do NOT append that tag.");
+        sb.AppendLine("</date_ending_protocol>\n");
+    }
+
     /// <summary>
     /// Logs topology verification information in debug mode.
     /// Helps diagnose prompt assembly order, dynamic injection sequence, and cache-friendly structure.
@@ -982,10 +995,8 @@ public class Prompts
             int promptLength = promptText.Length;
             int estimatedTokens = promptText.Count(c => c > 127) * 3 / 2
                                   + promptText.Count(c => c <= 127) / 4;
-            string toolMode = (ModEntry.Config?.UseNativeToolCalling == true)
-                ? "NativeTool" : "TagParse";
             string debugMsg =
-                $"[ContextRouter] Target: {Name} | Mode: {routeType} ({toolMode}) | " +
+                $"[ContextRouter] Target: {Name} | Mode: {routeType} | " +
                 $"Length: {promptLength} chars (~{estimatedTokens} Tokens) " +
                 $"| [Flags -> Greeting: {CurrentFlags.IsSimpleGreeting}, " +
                 $"Farm: {CurrentFlags.IncludeFarmDetails}, " +
@@ -1715,22 +1726,12 @@ public class Prompts
             commandPrompt.AppendLine("  * [ACTION:EMOTE:ANGRY]: Angry");
         }
 
-        if (ModEntry.Config.UseNativeToolCalling)
-        {
-            commandPrompt.AppendLine();
-            commandPrompt.AppendLine(isZh
-                ? "- 原生工具仅用于约会安排(schedule_date / end_current_date)与头顶气泡(speak_in_bubble)；位移与表情一律使用文本标签。"
-                : "- Native tools are only for date scheduling (schedule_date / end_current_date) and emote bubbles (speak_in_bubble); movement and emotes always use text tags.");
-        }
-        else
-        {
-            commandPrompt.AppendLine(isZh ? "- 转向标签: [ACTION:FACE:FARMER] (面向玩家), [ACTION:FACE:UP] / [DOWN] / [LEFT] / [RIGHT]" : "- Turn tags: [ACTION:FACE:FARMER] (look at player), [ACTION:FACE:UP] / [DOWN] / [LEFT] / [RIGHT]");
-            commandPrompt.AppendLine(isZh ? "- 位移标签: [ACTION:STEP:FORWARD], [ACTION:STEP:BACKWARD], [ACTION:STEP:LEFT], [ACTION:STEP:RIGHT]" : "- Movement tags: [ACTION:STEP:FORWARD], [ACTION:STEP:BACKWARD], [ACTION:STEP:LEFT], [ACTION:STEP:RIGHT]");
-            commandPrompt.AppendLine();
-            commandPrompt.AppendLine(isZh ? "格式规则 — 动作标签置于台词的最末尾：" : "OUTPUT FORMAT — Action tags MUST be placed at the absolute end of spoken line:");
-            commandPrompt.AppendLine("  [Dialogue Text] [ACTION:STEP:BACKWARD]");
-            commandPrompt.AppendLine("  [Dialogue Text] [ACTION:EMOTE:HAPPY]");
-        }
+        commandPrompt.AppendLine(isZh ? "- 转向标签: [ACTION:FACE:FARMER] (面向玩家), [ACTION:FACE:UP] / [DOWN] / [LEFT] / [RIGHT]" : "- Turn tags: [ACTION:FACE:FARMER] (look at player), [ACTION:FACE:UP] / [DOWN] / [LEFT] / [RIGHT]");
+        commandPrompt.AppendLine(isZh ? "- 位移标签: [ACTION:STEP:FORWARD], [ACTION:STEP:BACKWARD], [ACTION:STEP:LEFT], [ACTION:STEP:RIGHT]" : "- Movement tags: [ACTION:STEP:FORWARD], [ACTION:STEP:BACKWARD], [ACTION:STEP:LEFT], [ACTION:STEP:RIGHT]");
+        commandPrompt.AppendLine();
+        commandPrompt.AppendLine(isZh ? "格式规则 — 动作标签置于台词的最末尾：" : "OUTPUT FORMAT — Action tags MUST be placed at the absolute end of spoken line:");
+        commandPrompt.AppendLine("  [Dialogue Text] [ACTION:STEP:BACKWARD]");
+        commandPrompt.AppendLine("  [Dialogue Text] [ACTION:EMOTE:HAPPY]");
 
         // Skip language instruction when target is English or InvariantCulture (no meaningful constraint)
         string targetLang = TargetLanguageName;

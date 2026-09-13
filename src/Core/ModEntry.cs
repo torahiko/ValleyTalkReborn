@@ -464,38 +464,6 @@ namespace ValleytalkReborn
         /// </summary>
         private void RegisterDebugConsoleCommands(IModHelper helper)
         {
-            helper.ConsoleCommands.Add("vt_test_date", "测试 Agent 约会预约分发器\n用法: vt_test_date <NPC名字> <地点ID>",
-                (cmd, args) =>
-                {
-                    string npcName = args.Length > 0 ? args[0] : "Abigail";
-                    string location = args.Length > 1 ? args[1] : "Saloon";
-
-                    var npc = Game1.getCharacterFromName(npcName);
-                    if (npc == null)
-                    {
-                        Monitor.Log($"[Test] 未找到 NPC: {npcName}", LogLevel.Error);
-                        return;
-                    }
-
-                    Monitor.Log($"[Test] >>> 正在测试分发 schedule_date: {npcName} -> {location}", LogLevel.Info);
-                    AgentToolDispatcher.DispatchToolCall(npc, "schedule_date", $"{{\"location_id\":\"{location}\"}}");
-                });
-
-            helper.ConsoleCommands.Add("vt_test_end", "测试 Agent 自然解约分发器\n用法: vt_test_end <NPC名字>", (cmd, args) =>
-            {
-                string npcName = args.Length > 0 ? args[0] : "Abigail";
-
-                var npc = Game1.getCharacterFromName(npcName);
-                if (npc == null)
-                {
-                    Monitor.Log($"[Test] 未找到 NPC: {npcName}", LogLevel.Error);
-                    return;
-                }
-
-                Monitor.Log($"[Test] >>> 正在测试分发 end_current_date: {npcName}", LogLevel.Info);
-                AgentToolDispatcher.DispatchToolCall(npc, "end_current_date", "{\"reason\":\"console_command_test\"}");
-            });
-
             helper.ConsoleCommands.Add("vt_test_llm_tools", "测试大模型 Native Tool Calling 是否正确返回 JSON",
                 async (cmd, args) =>
                 {

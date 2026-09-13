@@ -1,4 +1,4 @@
-// DialogueBuilder.cs
+﻿// DialogueBuilder.cs
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -155,19 +155,8 @@ namespace ValleytalkReborn
 
             SetContext(instance.Name, context);
 
-// 流式传输策略：仅当（a）调用方提供了回调，且（b）当前这一回合大概率不需要工具调用，
-// 或者当前 Provider 已确认支持"流式 + 工具调用"（SupportsStreamingWithTools）时，才走流式通道。
-// 原因：LlmClaude / LlmGemini 的流式路径目前不会附带 tools schema，
-// 如果在期望工具调用的回合（跟随/移动/邀请/结束约会等）强行流式，模型不会产出工具调用，
-// 导致对应的游戏内动作被静默忽略（无报错、无日志）。
-            // FOLLOW/STEP/GOTO 已改为文本标签 + UI 按钮管道，不再需要工具 schema；
-            // 仅约会邀请与约会中仍需 Native tool calling（schedule_date / end_current_date / speak_in_bubble）。
-            bool toolsLikelyNeededThisTurn =
-                context.RoutingFlags.IsInviteRequested
-                || context.RoutingFlags.IsOnDate;
-
-            bool useStreaming = onStreamingToken != null
-                && (!toolsLikelyNeededThisTurn || Llm.Instance.SupportsStreamingWithTools);
+            // ── VT-NOTOOLS-T2: 原生工具调用已全量移除；主对话为纯文本 + Consent Tag 管线，全程可流式 ──
+            bool useStreaming = onStreamingToken != null;
             
             if (ModEntry.Config?.Debug ?? false)
             {
@@ -809,4 +798,3 @@ namespace ValleytalkReborn
         }
     }
 }
-

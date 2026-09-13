@@ -495,9 +495,11 @@ namespace ValleytalkReborn
             }
 
             // 推理模型与后台环境气泡/剧本（Bark / A2A）均不挂载原生 tools
-            if (includeTools && !reasoningModel && ModEntry.Config.UseNativeToolCalling)
+            // ── VT-NOTOOLS-T6: 工具调用已全量移除；以 Count 守卫替换 UseNativeToolCalling ──
+            var openAiTools = AgentToolDefinitions.GetOpenAiToolsArray();
+            if (includeTools && !reasoningModel && openAiTools.Count > 0)
             {
-                requestBody["tools"] = AgentToolDefinitions.GetOpenAiToolsArray();
+                requestBody["tools"] = openAiTools;
             }
 
             return requestBody;

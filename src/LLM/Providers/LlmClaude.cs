@@ -86,9 +86,9 @@ internal class LlmClaude : Llm, IGetModelNames
         string promptString, string responseStart = "", int n_predict = 2048, 
         string cacheContext = "", bool allowRetry = true) // TODO: cacheContext 参数当前未使用。若后续需要按会话/NPC分组缓存策略，可在此处理。
     {
-        var tools = ModEntry.Config.UseNativeToolCalling
-            ? (object)AgentToolDefinitions.GetAnthropicToolsArray()
-            : null;
+        // ── VT-NOTOOLS-T6: 工具调用已全量移除；恒空 → tools 字段整体省略 ──
+        var anthropicTools = AgentToolDefinitions.GetAnthropicToolsArray();
+        var tools = anthropicTools.Count > 0 ? (object)anthropicTools : null;
 
         // ★ 从单一数据源解析参数（自动完成 Bark/A2A 豁免）
         var genParams = ResolveParameters(cacheContext);
@@ -109,7 +109,7 @@ internal class LlmClaude : Llm, IGetModelNames
                     new { role = "assistant", content = responseStart }
                 },
             tools
-        });
+        }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
         int retry = allowRetry ? 3 : 1;
         var fullUrl = url;
@@ -211,9 +211,9 @@ internal class LlmClaude : Llm, IGetModelNames
         if (AndroidHelper.IsAndroid && !NetworkHelper.IsNetworkAvailable())
             throw new InvalidOperationException("Network not available");
 
-        var tools = ModEntry.Config.UseNativeToolCalling
-            ? (object)AgentToolDefinitions.GetAnthropicToolsArray()
-            : null;
+        // ── VT-NOTOOLS-T6: 工具调用已全量移除；恒空 → tools 字段整体省略 ──
+        var anthropicTools = AgentToolDefinitions.GetAnthropicToolsArray();
+        var tools = anthropicTools.Count > 0 ? (object)anthropicTools : null;
 
         // ★ 从单一数据源解析参数（自动完成 Bark/A2A 豁免）
         var genParams = ResolveParameters(cacheContext);
@@ -235,7 +235,7 @@ internal class LlmClaude : Llm, IGetModelNames
                     new { role = "assistant", content = responseStart }
                 },
             tools
-        });
+        }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
         var fullText = new StringBuilder();
 

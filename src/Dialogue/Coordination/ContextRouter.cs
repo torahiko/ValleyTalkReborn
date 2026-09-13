@@ -403,7 +403,7 @@ internal static class IntentRegex
         | RegexOptions.CultureInvariant);
 
     public static readonly Regex StopFollow = new Regex(
-        @"(别跟了|不要跟了|停止跟随|取消跟随|不用跟了|别跟着我|别跟着|不用跟着|回去吧|你走吧|"
+        @"(别跟了|不要跟了|不要跟着我|不要跟着|停止跟随|取消跟随|不用跟了|别跟着我|别跟着|不用跟着|回去吧|你走吧|"
         + @"\bstop following( me)?\b|\bdon'?t follow( me)?\b|\bgo back\b|\byou can go now\b|\bstay here\b)",
         RegexOptions.Compiled
         | RegexOptions.IgnoreCase

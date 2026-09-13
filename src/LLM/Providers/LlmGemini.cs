@@ -86,8 +86,10 @@ internal class LlmGemini : Llm, IGetModelNames
         promptString = gameCacheString + npcCacheString + promptString;
 
         int thinkingBudget = 0;
-        var toolsPayload = ModEntry.Config.UseNativeToolCalling
-            ? new[] { new { functionDeclarations = AgentToolDefinitions.GetGeminiToolsArray() } }
+        // ── VT-NOTOOLS-T6: 工具调用已全量移除；恒空 → tools 字段整体省略 ──
+        var geminiTools = AgentToolDefinitions.GetGeminiToolsArray();
+        var toolsPayload = geminiTools.Count > 0
+            ? new[] { new { functionDeclarations = geminiTools } }
             : null;
 
         bool isGemmaModel = !string.IsNullOrEmpty(modelName) && modelName.IndexOf("gemma", StringComparison.OrdinalIgnoreCase) >= 0;
@@ -111,7 +113,7 @@ internal class LlmGemini : Llm, IGetModelNames
             contents = new[] { new { parts = new[] { new { text = promptString } } } },
             generationConfig,
             tools = toolsPayload
-        });
+        }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
         int retry = allowRetry ? 3 : 1;
         var fullUrl = url + apiKey;
@@ -224,8 +226,10 @@ internal class LlmGemini : Llm, IGetModelNames
         if (AndroidHelper.IsAndroid && !NetworkHelper.IsNetworkAvailable())
             throw new InvalidOperationException("Network not available");
 
-        var toolsPayload = ModEntry.Config.UseNativeToolCalling
-            ? new[] { new { functionDeclarations = AgentToolDefinitions.GetGeminiToolsArray() } }
+        // ── VT-NOTOOLS-T6: 工具调用已全量移除；恒空 → tools 字段整体省略 ──
+        var geminiTools = AgentToolDefinitions.GetGeminiToolsArray();
+        var toolsPayload = geminiTools.Count > 0
+            ? new[] { new { functionDeclarations = geminiTools } }
             : null;
 
         bool isGemmaModel = !string.IsNullOrEmpty(modelName) && modelName.IndexOf("gemma", StringComparison.OrdinalIgnoreCase) >= 0;
@@ -248,7 +252,7 @@ internal class LlmGemini : Llm, IGetModelNames
             contents = new[] { new { parts = new[] { new { text = gameCacheString + npcCacheString + promptString } } } },
             generationConfig,
             tools = toolsPayload
-        });
+        }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
         var streamUrl = $"https://generativelanguage.googleapis.com/v1beta/models/" +
                         $"{modelName}:streamGenerateContent?alt=sse&key={apiKey}";

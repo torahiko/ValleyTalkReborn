@@ -59,6 +59,22 @@ namespace ValleytalkReborn
                 ModEntry.SMonitor?.Log($"[EmbodiedActionParser] STOP_FOLLOW executed (pre-busy-pass): {npc.Name}", LogLevel.Info);
             }
 
+            // ── VT-NOTOOLS-T5: END_DATE pre-scan (before busy check) ──
+            bool endDateRequested = false;
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (EndDateRegex.IsMatch(lines[i])) { lines[i] = EndDateRegex.Replace(lines[i], string.Empty); endDateRequested = true; }
+            }
+            if (endDateRequested)
+            {
+                StardewValley.DelayedAction.functionAfterDelay(() =>
+                {
+                    try { DateManager.Instance.EndDateGracefully(npc.Name); }
+                    catch (Exception ex) { ModEntry.SMonitor?.Log("[EmbodiedActionParser] END_DATE error: " + ex.Message, LogLevel.Error); }
+                }, 500);
+                ModEntry.SMonitor?.Log($"[EmbodiedActionParser] END_DATE executed (pre-busy-pass): {npc.Name}", LogLevel.Info);
+            }
+
             if (MovementManager.Instance.IsNpcMoving(npc))
             {
                 StripMoveTags(lines);
@@ -186,23 +202,8 @@ namespace ValleytalkReborn
                     return string.Empty;
                 });
 
-                lines[i] = EndDateRegex.Replace(lines[i], match =>
-                {
-                    ModEntry.SMonitor?.Log($"[EmbodiedActionParser] END_DATE dispatched for {npc.Name}", LogLevel.Debug);
-                    StardewValley.DelayedAction.functionAfterDelay(() =>
-                    {
-                        try
-                        {
-                            DateManager.Instance.EndDateGracefully(npc.Name);
-                            ModEntry.SMonitor?.Log($"[EmbodiedActionParser] Date ended gracefully: {npc.Name}", LogLevel.Info);
-                        }
-                        catch (Exception ex)
-                        {
-                            ModEntry.SMonitor?.Log($"[EmbodiedActionParser] END_DATE error: {ex.Message}", LogLevel.Error);
-                        }
-                    }, 500);
-                    return string.Empty;
-                });
+                // VT-NOTOOLS-T5: END_DATE is handled in pre-busy-pass; strip residual tag only
+                lines[i] = EndDateRegex.Replace(lines[i], string.Empty);
 
                 if (allowFallbackEmotes) DispatchFallbackEmote(npc, lines[i]);
                 lines[i] = lines[i].Trim();
@@ -241,6 +242,7 @@ namespace ValleytalkReborn
                 lines[i] = GotoRegex.Replace(lines[i], string.Empty);
                 lines[i] = FollowRegex.Replace(lines[i], string.Empty);
                 lines[i] = StopFollowRegex.Replace(lines[i], string.Empty);
+                lines[i] = EndDateRegex.Replace(lines[i], string.Empty);
                 lines[i] = StayHomeRegex.Replace(lines[i], string.Empty);
                 lines[i] = AllDayFollowRegex.Replace(lines[i], string.Empty);
 
@@ -339,6 +341,7 @@ namespace ValleytalkReborn
                 lines[i] = StopFollowRegex.Replace(lines[i], string.Empty);
                 lines[i] = StayHomeRegex.Replace(lines[i], string.Empty);
                 lines[i] = AllDayFollowRegex.Replace(lines[i], string.Empty);
+                lines[i] = EndDateRegex.Replace(lines[i], string.Empty);
                 lines[i] = lines[i].Trim();
             }
         }

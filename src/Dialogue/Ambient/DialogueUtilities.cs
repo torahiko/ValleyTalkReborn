@@ -154,22 +154,26 @@ internal static class DialogueUtilities
     {
         if (npc == null) return 0;
 
+        // 跟随或约会拥有最高优先级
         if (IsFollowingSafe(npc) || IsOnDate(npc))
-            return 3;
+            return 4;
 
         var player = Game1.player;
+        if (player == null) return 0;
 
-        if (player?.friendshipData == null) return 0;
+        int hearts = 0;
+        if (player.friendshipData != null && 
+            player.friendshipData.TryGetValue(npc.Name, out var friendship) && 
+            friendship != null)
+        {
+            hearts = Math.Max(0, friendship.Points / 250);
+        }
 
-        if (!player.friendshipData.TryGetValue(npc.Name, out var friendship) || friendship == null)
-            return 0;
+        if (hearts >= 6) return 3;
+        if (hearts >= 3) return 2;
 
-        int hearts = friendship.Points / 250;
-
-        if (hearts >= 6) return 2;
-        if (hearts >= 3) return 1;
-
-        return 0;
+        // 基础优先级：新存档、0心、未结识的村民返回 1，保证能正常触发 Bark
+        return 1;
     }
 
     /// <summary>
