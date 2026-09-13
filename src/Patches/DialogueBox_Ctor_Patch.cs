@@ -1,5 +1,6 @@
 using System.Linq;
 using HarmonyLib;
+using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Menus;
 
@@ -42,8 +43,17 @@ namespace ValleytalkReborn
             }
             else
             {
-                DialogueHistoryManager.Instance.RecordNpcDialogue(npc.Name, combinedText, "vanilla");
-                RecentConversationTracker.RecordResponse(npc.Name, combinedText, null);
+                if (ModEntry.Config.RecordVanillaDialogue)
+                {
+                    DialogueHistoryManager.Instance.RecordNpcDialogue(npc.Name, combinedText, "vanilla");
+                    RecentConversationTracker.RecordResponse(npc.Name, combinedText, null);
+                }
+                else
+                {
+                    ModEntry.SMonitor?.Log(
+                        "[DialogueBoxCtor] RecordVanillaDialogue=off — skipped vanilla record.",
+                        LogLevel.Trace);
+                }
             }
         }
     }

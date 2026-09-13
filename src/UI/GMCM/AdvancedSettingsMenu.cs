@@ -25,6 +25,7 @@ namespace ValleytalkReborn
         // Checkbox rectangles
         private readonly Rectangle _checkboxRect;
         private readonly Rectangle _vanillaFirstCheckboxRect;
+        private readonly Rectangle _recordVanillaCheckboxRect;
 
         public AdvancedSettingsMenu(DialogueTextInputMenu ownerMenu)
             : base(
@@ -48,6 +49,7 @@ namespace ValleytalkReborn
             // Checkbox positions.
             _checkboxRect = new Rectangle(xPositionOnScreen + 64, yPositionOnScreen + 120, 36, 36);
             _vanillaFirstCheckboxRect = new Rectangle(xPositionOnScreen + 64, yPositionOnScreen + 180, 36, 36);
+            _recordVanillaCheckboxRect = new Rectangle(xPositionOnScreen + 64, yPositionOnScreen + 240, 36, 36);
         }
 
         /// <summary>
@@ -93,6 +95,13 @@ namespace ValleytalkReborn
             {
                 ModEntry.Config.EnableVanillaFirst = !ModEntry.Config.EnableVanillaFirst;
                 Game1.playSound(ModEntry.Config.EnableVanillaFirst ? "coin" : "drumkit6");
+                ModEntry.SHelper.WriteConfig(ModEntry.Config);
+            }
+
+            if (_recordVanillaCheckboxRect.Contains(x, y))
+            {
+                ModEntry.Config.RecordVanillaDialogue = !ModEntry.Config.RecordVanillaDialogue;
+                Game1.playSound(ModEntry.Config.RecordVanillaDialogue ? "coin" : "drumkit6");
                 ModEntry.SHelper.WriteConfig(ModEntry.Config);
             }
         }
@@ -219,6 +228,34 @@ namespace ValleytalkReborn
                 Game1.textColor
             );
 
+            // Record-Vanilla-Dialogue checkbox.
+            Rectangle recordVanillaSource = ModEntry.Config.RecordVanillaDialogue
+                ? new Rectangle(236, 425, 9, 9)
+                : new Rectangle(227, 425, 9, 9);
+
+            b.Draw(
+                Game1.mouseCursors,
+                new Vector2(_recordVanillaCheckboxRect.X, _recordVanillaCheckboxRect.Y),
+                recordVanillaSource,
+                Color.White,
+                0f,
+                Vector2.Zero,
+                4f,
+                SpriteEffects.None,
+                1f
+            );
+
+            string recordVanillaLabel = ModEntry.SHelper.Translation
+                .Get("AdvancedSettings.RecordVanillaDialogue")
+                .Default("Record Vanilla Dialogue to Memory");
+
+            b.DrawString(
+                Game1.smallFont,
+                recordVanillaLabel,
+                new Vector2(_recordVanillaCheckboxRect.X + 44, _recordVanillaCheckboxRect.Y + 4),
+                Game1.textColor
+            );
+
             // Disclaimer.
             string disclaimer = ModEntry.SHelper.Translation
                 .Get("AdvancedSettings.Disclaimer")
@@ -252,6 +289,14 @@ namespace ValleytalkReborn
                     .Default("Wait until all native in-game dialogue is exhausted before triggering AI dialogue.");
 
                 IClickableMenu.drawHoverText(b, vanillaFirstTooltip, Game1.smallFont);
+            }
+            else if (_recordVanillaCheckboxRect.Contains(mouseX, mouseY))
+            {
+                string tooltip = ModEntry.SHelper.Translation
+                    .Get("AdvancedSettings.RecordVanillaDialogueTooltip")
+                    .Default("Inject vanilla lines into AI memory. Turn OFF to prevent the AI from obsessing over repetitive game dialogue.");
+
+                IClickableMenu.drawHoverText(b, tooltip, Game1.smallFont);
             }
 
             drawMouse(b);

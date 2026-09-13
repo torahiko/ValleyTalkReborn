@@ -417,7 +417,7 @@ internal static class PlayerStateScanner
         {
             return isZh
                 ? $"[视觉线索] 玩家行囊的搭扣边缘，隐约泛着【{name}】独特的鲜明反光或微弱魔法微光（不经意间瞥见的一角）。"
-                : $"[Visual clue] A subtle gleam or faint magical pulse from [{name}] caught your eye through the flap of the player's pack (an incidental glance; do not speak as if possessing X-ray vision).";
+                : $"[Visual clue] A subtle gleam or faint magical pulse from [{name}] caught your eye through the flap of the player's pack (an incidental glance;).";
         }
 
         // 5. 沉重金属与负重碰撞（金属锭、重型矿石、建材）

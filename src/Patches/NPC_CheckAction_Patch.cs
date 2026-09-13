@@ -204,32 +204,41 @@ namespace ValleytalkReborn
                                 var cleanedText = DialogueHistoryManager.SanitizeForStorage(rawText);
                                 if (!string.IsNullOrWhiteSpace(cleanedText))
                                 {
-                                    // 1. 记录发话者自身原版对话（供后续 AI 续聊直接读取）
-                                    DialogueHistoryManager.Instance.RecordNpcDialogue(
-                                        __instance.Name,
-                                        cleanedText,
-                                        "vanilla"
-                                    );
-
-                                    // 2. 偷听广播给 512 像素内的路人 NPC（供 EavesdropInjector 使用）
-                                    if (__instance.currentLocation != null && Game1.player != null)
+                                    if (ModEntry.Config.RecordVanillaDialogue)
                                     {
-                                        var farmerLabel = Util.GetString("generalFarmerLabel") ?? "农夫";
-                                        var eavesdropText = $"{farmerLabel}与{__instance.displayName}交谈，{__instance.displayName}说道：\"{cleanedText}\"";
+                                        // 1. 记录发话者自身原版对话（供后续 AI 续聊直接读取）
+                                        DialogueHistoryManager.Instance.RecordNpcDialogue(
+                                            __instance.Name,
+                                            cleanedText,
+                                            "vanilla"
+                                        );
 
-                                        foreach (var nearbyNpc in __instance.currentLocation.characters)
+                                        // 2. 偷听广播给 512 像素内的路人 NPC（供 EavesdropInjector 使用）
+                                        if (__instance.currentLocation != null && Game1.player != null)
                                         {
-                                            if (nearbyNpc == null || nearbyNpc == __instance) continue;
+                                            var farmerLabel = Util.GetString("generalFarmerLabel") ?? "农夫";
+                                            var eavesdropText = $"{farmerLabel}与{__instance.displayName}交谈，{__instance.displayName}说道：\"{cleanedText}\"";
 
-                                            float dx = nearbyNpc.Position.X - __instance.Position.X;
-                                            float dy = nearbyNpc.Position.Y - __instance.Position.Y;
-                                            float distance = (float)Math.Sqrt(dx * dx + dy * dy);
-
-                                            if (distance <= 512f)
+                                            foreach (var nearbyNpc in __instance.currentLocation.characters)
                                             {
-                                                DialogueHistoryManager.Instance.RecordSystemEvent(nearbyNpc.Name, eavesdropText, "eavesdrop");
+                                                if (nearbyNpc == null || nearbyNpc == __instance) continue;
+
+                                                float dx = nearbyNpc.Position.X - __instance.Position.X;
+                                                float dy = nearbyNpc.Position.Y - __instance.Position.Y;
+                                                float distance = (float)Math.Sqrt(dx * dx + dy * dy);
+
+                                                if (distance <= 512f)
+                                                {
+                                                    DialogueHistoryManager.Instance.RecordSystemEvent(nearbyNpc.Name, eavesdropText, "eavesdrop");
+                                                }
                                             }
                                         }
+                                    }
+                                    else
+                                    {
+                                        ModEntry.SMonitor?.Log(
+                                            "[CheckAction] RecordVanillaDialogue=off — skipped vanilla record/eavesdrop.",
+                                            LogLevel.Trace);
                                     }
                                 }
                             }

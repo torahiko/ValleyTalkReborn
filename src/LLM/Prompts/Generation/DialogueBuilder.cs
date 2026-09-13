@@ -639,7 +639,7 @@ namespace ValleytalkReborn
                     context.ChatHistory = historyEntries
                         .Where(e =>
                             e.DialogueType != "eavesdrop" && 
-                            //e.DialogueType != "vanilla" &&   // ← 原版台词不进对话历史
+                            (ModEntry.Config.RecordVanillaDialogue || e.DialogueType != "vanilla") &&
                             e.DialogueType != "event" &&     // ← 剧情事件台词不进对话历史
                             e.DialogueType != "gift" &&      // ← 礼物系统条目不进对话历史
                             e.SpeakerType != SpeakerType.System)

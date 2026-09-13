@@ -99,6 +99,9 @@ public class Prompts
     private readonly List<string> _injectedPrivateThoughts = new List<string>();
     public IReadOnlyList<string> InjectedPrivateThoughts => _injectedPrivateThoughts;
 
+    // ── 【VT-PROMPTS-VERIFY-01】已发射块键台账（Memory 作用域，不序列化，幂等 Add） ──
+    private readonly HashSet<string> _emittedBlockKeys = new HashSet<string>(StringComparer.Ordinal);
+
     private bool IsChineseLanguage =>
         LocalizedContentManager.CurrentLanguageCode.ToString().StartsWith("zh", StringComparison.OrdinalIgnoreCase);
 
@@ -125,6 +128,53 @@ public class Prompts
                 _ => LocalizedContentManager.CurrentLanguageCode.ToString()
             };
         }
+    }
+
+    // ── 【VT-PROMPTS-VERIFY-01】块发射台账与谓词 helpers ──
+
+    /// <summary>
+    /// 标记某个块键已被本次对话组装发射。幂等：重复调用等价于单次。
+    /// Memory 作用域，不序列化。
+    /// </summary>
+    private void MarkEmitted(string blockKey)
+    {
+        _emittedBlockKeys.Add(blockKey);
+    }
+
+    /// <summary>
+    /// 复现 GetCurrentConversation 两分支的标题行拼接（逐字符一致）：
+    /// "### " + Util.GetString(Character, "currentConversationHeading")
+    /// </summary>
+    private string ComposeCurrentConversationHeading()
+    {
+        return "### " + Util.GetString(Character, "currentConversationHeading");
+    }
+
+    /// <summary>
+    /// 复现 GetInstructions 的标题行拼接（逐字符一致）：
+    /// "## " + Util.GetString(Character, "instructionsHeading", new { Language = TargetLanguageName })
+    /// </summary>
+    private string ComposeInstructionsHeading()
+    {
+        return "## " + Util.GetString(Character, "instructionsHeading", new { Language = TargetLanguageName });
+    }
+
+    /// <summary>
+    /// 判定"当前对话"块是否应出现（内容与 GetCurrentConversation 的 if/else-if 门禁同源）。
+    /// </summary>
+    private bool CurrentConversationHasContent()
+    {
+        return (Context?.ChatHistory?.Any() ?? false) || (Character?.SpokeJustNow() ?? false);
+    }
+
+    /// <summary>
+    /// 判定移动指令是否应注入（合并 InjectMovementInstruction 现有前两行 early-return 语义，一字不差）。
+    /// </summary>
+    private bool MovementInstructionApplicable()
+    {
+        return !(CurrentFlags?.IsOnDate == true)
+            && !(CurrentFlags?.IsJealousy == true)
+            && ((CurrentFlags?.IsActionRequested ?? false) || (CurrentFlags?.IsFollowing ?? false));
     }
 
     private string BuildStardewSummary()
@@ -469,13 +519,13 @@ public class Prompts
         if (flags?.IncludeMemories == true)
             DefaultOrOverride("EventHistory", GetEventHistory, prompt);
 
-        // ── stood_up: 纯事实+结构约束，不预设情绪 ──
+        // ── stood_up: 纯事实，不预设情绪，不下"反应要求" ──
         if (flags?.HasStoodUpPending == true && ModEntry.Config.EnableDateSystem)
         {
             prompt.AppendLine("<emotional_conflict type=\"stood_up\">");
             prompt.AppendLine(isZh
-                ? "- 事实：你昨晚一直等待着玩家赴约，但玩家完全没有出现。\n- 反应要求：依据角色性格与当前好感度做出回应。"
-                : "- Fact: You waited for the player last night, but they did not show up.\n- Instruction: Respond according to character personality and current heart level.");
+                ? "- 事实：你昨晚一直等着玩家赴约，但玩家没有出现。"
+                : "- Fact: You waited for the player last night, and they never showed.");
             prompt.AppendLine("</emotional_conflict>\n");
             GetMicroEnvironment(prompt);
             InjectPendingTopic(prompt);
@@ -529,10 +579,9 @@ public class Prompts
                 prompt.AppendLine(isZh
                     ? $"- 当前地点：{DateManager.Instance.ActiveDateLocation ?? ""}"
                     : $"- Location: {DateManager.Instance.ActiveDateLocation ?? ""}");
-                // 修复：删除"轻松自然的日常氛围"
                 prompt.AppendLine(isZh
-                    ? "- 你正在陪农夫在附近走走。依据角色性格与当前好感度进行表达。"
-                    : "- You are walking around together. Respond according to character personality and current heart level.");
+                    ? "- 你正在陪农夫在附近走走。"
+                    : "- You're walking around together.");
                 prompt.AppendLine("</date_context>\n");
             }
             else
@@ -549,10 +598,9 @@ public class Prompts
                 prompt.AppendLine(isZh ? $"- 当前地点：{locName}" : $"- Location: {locName}");
                 if (!string.IsNullOrWhiteSpace(locDetail))
                     prompt.AppendLine(isZh ? $"- 周围环境：{locDetail}" : $"- Atmosphere: {locDetail}");
-                // 修复：删除"倾听与深情""浪漫环境互动"
                 prompt.AppendLine(isZh
-                    ? "- 你们正在进行约会。依据角色性格与当前好感度进行表达，可将当前环境作为上下文参考。"
-                    : "- You are currently on a date. Respond according to character personality and current heart level. Reference the current surroundings as context.");
+                    ? "- 你们正在进行约会。周围的环境就在眼前。"
+                    : "- You're on a date. The surroundings are right there.");
                 prompt.AppendLine("</date_context>\n");
             }
 
@@ -608,10 +656,9 @@ public class Prompts
         if (flags?.IsSimpleGreeting == true && flags?.IsMovementRequested != true && string.IsNullOrEmpty(PendingMilestoneBlock))
         {
             prompt.AppendLine("<greeting_fast_pass>");
-            // 修复：删除"随和、自然且简练"
             prompt.AppendLine(isZh
-                ? "农夫正向你打招呼。依据角色性格与当前好感度做出简短回应。"
-                : "The farmer is greeting you. Respond briefly according to character personality and current heart level.");
+                ? "农夫正向你打招呼。"
+                : "The farmer just greeted you.");
             prompt.AppendLine("</greeting_fast_pass>\n");
             GetMicroEnvironment(prompt);
             DefaultOrOverride("CurrentConversation", GetCurrentConversation, prompt);
@@ -715,13 +762,13 @@ public class Prompts
         // ── date invitation protocol (Consent Tag + Client UI Dispatch) ──
         AppendDateInvitationProtocol(prompt);
 
-        // ── jealousy trigger: 删除"吃醋情绪" ──
+        // ── jealousy trigger: 纯事实，不预设情绪 ──
         if (ModEntry.Config.EnableDateSystem && flags?.IsJealousy == true && DateManager.Instance != null)
         {
             prompt.AppendLine("<jealousy_trigger>");
             prompt.AppendLine(isZh
-                ? $"你注意到农夫今晚已经与 {DateManager.Instance.ActiveDateNpcName} 有约。依据角色性格与当前好感度做出回应。"
-                : $"You notice the farmer already has plans with {DateManager.Instance.ActiveDateNpcName} tonight. Respond according to character personality and current heart level.");
+                ? $"你注意到农夫今晚已经与 {DateManager.Instance.ActiveDateNpcName} 有约。"
+                : $"You notice the farmer already has plans with {DateManager.Instance.ActiveDateNpcName} tonight.");
             prompt.AppendLine("</jealousy_trigger>\n");
         }
 
@@ -820,17 +867,17 @@ public class Prompts
         if (isFestivalToday)
         {
             sb.AppendLine(isZh
-                ? "- 冲突拒绝: 今天是节日，日程有冲突。依据角色性格在对白中委婉说明改天再约，本次仅输出对白文本。"
+                ? "- 冲突拒绝: 今天是节日，日程有冲突。在对白中委婉说明改天再约，本次仅输出对白文本。"
                 : "- DECLINE: Festival conflict today. Explain in dialogue that you'll reschedule; output dialogue text only.");
         }
         else
         {
             sb.AppendLine(isZh
-                ? "- 若同意赴约: 依据角色性格与好感度表达欣喜与期待，并在回复台词的最末尾附加内部标签 [UI:DATE_INVITE]。"
-                : "- IF ACCEPTING: Express anticipation consistent with your persona, and append [UI:DATE_INVITE] at the absolute end.");
+                ? "- 若同意赴约: 在台词最末尾附加内部标签 [UI:DATE_INVITE]。"
+                : "- IF ACCEPTING: Append [UI:DATE_INVITE] at the absolute end.");
             sb.AppendLine(isZh
-                ? "- 若拒绝赴约: 依据角色性格在对白中委婉表达理由，本情况仅输出对白文本。"
-                : "- IF DECLINING: Provide an in-character explanation as dialogue text only.");
+                ? "- 若拒绝赴约: 只输出对白文本，不加标签。"
+                : "- IF DECLINING: Dialogue text only, no tags.");
         }
         sb.AppendLine("</date_invitation_protocol>\n");
     }
@@ -855,8 +902,8 @@ public class Prompts
                 ? "- 事实: 农夫身边已有其他同伴随行，你现在无法加入同行。"
                 : "- Fact: The farmer already has another companion with them. You cannot join right now.");
             sb.AppendLine(isZh
-                ? "- 反应要求: 依据角色性格做出回应，仅输出对白文本，不附加任何标签。"
-                : "- Instruction: Respond according to character personality. Output dialogue text only, no tags.");
+                ? "- 只输出对白文本，不加标签。"
+                : "- Dialogue text only, no tags.");
             sb.AppendLine("</follow_unavailable>\n");
             return;
         }
@@ -867,11 +914,11 @@ public class Prompts
             ? "农夫正在邀请你与他同行。"
             : "The farmer is inviting you to come along.");
         sb.AppendLine(isZh
-            ? "- 若同意: 依据角色性格与好感度表达回应，并在台词的最末尾附加内部标签 [UI:FOLLOW]。"
-            : "- IF ACCEPTING: Respond according to character personality and heart level, and append [UI:FOLLOW] at the absolute end.");
+            ? "- 若同意: 在台词最末尾附加内部标签 [UI:FOLLOW]。"
+            : "- IF ACCEPTING: Append [UI:FOLLOW] at the absolute end.");
         sb.AppendLine(isZh
-            ? "- 若拒绝: 依据角色性格在对白中委婉说明缘由，仅输出对白文本。"
-            : "- IF DECLINING: Provide an in-character explanation as dialogue text only.");
+            ? "- 若拒绝: 只输出对白文本，不加标签。"
+            : "- IF DECLINING: Dialogue text only, no tags.");
         sb.AppendLine("</follow_invitation_protocol>\n");
     }
 
@@ -881,8 +928,8 @@ public class Prompts
         bool isZh = IsChineseLanguage;
         sb.AppendLine("<date_ending_protocol>");
         sb.AppendLine(isZh
-            ? "- 若玩家提出结束今天的约会或向你道别（例如\"今天就到这吧\"\"我先回去\"）：依据角色性格与好感度回应，并在台词的最末尾附加内部标签 [ACTION:END_DATE]。"
-            : "- IF THE PLAYER PROPOSES ENDING TODAY'S DATE OR SAYS GOODBYE: Respond in character, and append [ACTION:END_DATE] at the absolute end.");
+            ? "- 若玩家提出结束今天的约会或向你道别（例如\"今天就到这吧\"\"我先回去\"）：在台词最末尾附加内部标签 [ACTION:END_DATE]。"
+            : "- IF THE PLAYER PROPOSES ENDING TODAY'S DATE OR SAYS GOODBYE: Append [ACTION:END_DATE] at the absolute end.");
         sb.AppendLine(isZh
             ? "- 若玩家未提及结束约会：保持正常对话，仅输出纯对白文本。"
             : "- OTHERWISE: Continue regular dialogue as plain text only.");
@@ -918,36 +965,58 @@ public class Prompts
             sb.AppendLine("║");
             sb.AppendLine("║ [Topology Structure]");
 
-            bool hasCurrentConversation = finalPrompt.Contains("### 当前对话")
-                || finalPrompt.Contains("### 对话历史")
-                || finalPrompt.Contains("### Conversation History")
-                || finalPrompt.Contains("### CURRENT");
+            // 3.a 计算期望标题（复现拼接，精确匹配组装路径）
+            string computedHeading = ComposeCurrentConversationHeading();
+
+            // 3.b 文本扫描命中
+            bool found = finalPrompt.Contains(computedHeading);
+
+            // 3.c / 3.d override / ledger 兜底信号
+            bool overrideUsed = PromptOverrides?.ContainsKey("CurrentConversation") ?? false;
+            bool ledgerEmitted = _emittedBlockKeys.Contains("CurrentConversation");
+
+            // 3.e 期望出现（非 STOOD_UP 路由，且历史内容非空）
+            bool expected = routeType != "STOOD_UP" && CurrentConversationHasContent();
+
+            // 3.f CurrentConversation 状态串（按序短路，只取第一个命中）
+            string currentConversationStatus;
+            if (found)
+                currentConversationStatus = "✓ Present";
+            else if (overrideUsed)
+                currentConversationStatus = "✓ Present (override)";
+            else if (ledgerEmitted)
+                currentConversationStatus = "✓ Present (ledger; heading 文本漂移)";
+            else if (!expected)
+                currentConversationStatus = routeType == "STOOD_UP"
+                    ? "– Not Required (route omits history)"
+                    : "– Not Required (empty history)";
+            else
+                currentConversationStatus = "✗ Missing";
+
+            // failure_path 1: heading key 空 → 文本扫描已降级 Warn
+            if (!found && !overrideUsed && !ledgerEmitted && string.IsNullOrEmpty(Util.GetString(Character, "currentConversationHeading")))
+            {
+                sb.AppendLine("║   ⚠ [Topology] heading key 为空，文本扫描已降级");
+            }
 
             bool hasMovementInstruction = finalPrompt.Contains("<movement_instruction");
-            bool isMovementExpected = CurrentFlags?.IsMovementRequested == true || CurrentFlags?.IsFollowing == true;
+            // 3.g Movement 期望值来源
+            bool isMovementExpected = (routeType == "FULL_CONTEXT_BUILD") && MovementInstructionApplicable();
 
+            // 3.h InstructionsBlock：强制求值惰性属性，外层 try/catch 兜底
             string instructionsText = Instructions ?? "";
-            bool hasInstructions = instructionsText.Contains("## 输出指令")
-                                   || instructionsText.Contains("## 格式与排版要求")
-                                   || instructionsText.Contains("## OUTPUT INSTRUCTIONS")
-                                   || instructionsText.Contains("## Formatting & Output Requirements")
-                                   || !string.IsNullOrWhiteSpace(instructionsText);
+            bool hasInstructions = instructionsText.Contains(ComposeInstructionsHeading())
+                                  || !string.IsNullOrWhiteSpace(instructionsText);
 
-            sb.AppendLine($"║   CurrentConversation: {(hasCurrentConversation ? "✓ Present" : "✗ Missing")}");
+            sb.AppendLine($"║   CurrentConversation: {currentConversationStatus}");
             sb.AppendLine($"║   MovementInstruction: {(hasMovementInstruction ? "✓ Present" : (isMovementExpected ? "✗ Missing" : "– Not Required"))}");
             sb.AppendLine($"║   InstructionsBlock: {(hasInstructions ? "✓ Present" : "✗ Missing")}");
 
             // ── 3. 对话历史位置验证（关键：必须在 movement_instruction 之前） ──
-            if (hasCurrentConversation && hasMovementInstruction)
+            // 3.i 仅当 found && hasMovementInstruction 时执行
+            if (found && hasMovementInstruction)
             {
-                int conversationPos = finalPrompt.LastIndexOf("### 当前对话", StringComparison.Ordinal);
-                if (conversationPos < 0)
-                    conversationPos = finalPrompt.LastIndexOf("### 对话历史", StringComparison.Ordinal);
-                if (conversationPos < 0)
-                    conversationPos = finalPrompt.LastIndexOf("### Conversation History", StringComparison.Ordinal);
-                if (conversationPos < 0)
-                    conversationPos = finalPrompt.LastIndexOf("### CURRENT", StringComparison.Ordinal);
-
+                int conversationPos = finalPrompt.LastIndexOf(computedHeading, StringComparison.Ordinal);
                 int movementPos = finalPrompt.LastIndexOf("<movement_instruction", StringComparison.Ordinal);
 
                 bool correctOrder = conversationPos < movementPos;
@@ -958,6 +1027,12 @@ public class Prompts
                     sb.AppendLine("║   ⚠ WARNING: Movement instruction appears BEFORE conversation history!");
                     sb.AppendLine("║   ⚠ This breaks the 'dialogue history at bottom' principle.");
                 }
+            }
+
+            // failure_path 1: heading key 空 → 文本扫描已降级（独立 Warn 行，与拓扑日志同批输出）
+            if (!found && !overrideUsed && !ledgerEmitted && string.IsNullOrEmpty(Util.GetString(Character, "currentConversationHeading")))
+            {
+                sb.AppendLine("║   ⚠ [Topology] heading key 为空，文本扫描已降级");
             }
 
             // ── 4. Turn 判定验证 ──
@@ -1040,7 +1115,8 @@ public class Prompts
     {
         if (Context.ChatHistory.Any())
         {
-            prompt.AppendLine($"### {Util.GetString(Character, "currentConversationHeading")}");
+            prompt.AppendLine(ComposeCurrentConversationHeading());
+            MarkEmitted("CurrentConversation");
             prompt.AppendLine(Util.GetString(Character, "currentConversationIntro", new { Name = Name }));
             for (int i = 0; i < Context.ChatHistory.Count; i++)
             {
@@ -1053,7 +1129,8 @@ public class Prompts
         }
         else if (Character.SpokeJustNow())
         {
-            prompt.AppendLine($"### {Util.GetString(Character, "currentConversationHeading")}");
+            prompt.AppendLine(ComposeCurrentConversationHeading());
+            MarkEmitted("CurrentConversation");
             prompt.AppendLine(Util.GetString(Character, "currentConversationJustSpoke", new { Name = Name }));
         }
     }
@@ -1174,11 +1251,10 @@ public class Prompts
         prompt.AppendLine();
     }
 
-    // ── movement instruction: 修复 following/adjacent 语气指令 ──
+    // ── movement instruction: 去考官化，纯事实 + 标签约束 ──
     private void InjectMovementInstruction(StringBuilder prompt)
     {
-        if (CurrentFlags.IsOnDate || CurrentFlags.IsJealousy) return;
-        if (!CurrentFlags.IsActionRequested && !CurrentFlags.IsFollowing) return;
+        if (!MovementInstructionApplicable()) return;
 
         bool isZh = IsChineseLanguage;
 
@@ -1197,11 +1273,11 @@ public class Prompts
                 ? "农夫希望你停止跟随。"
                 : "The farmer wants you to stop following.");
             prompt.AppendLine(isZh
-                ? "- 若同意停止: 依据角色性格简短回应，并在台词最末尾附加 [ACTION:STOP_FOLLOW]。"
-                : "- IF ACCEPTING: Respond briefly in character, and append [ACTION:STOP_FOLLOW] at the absolute end.");
+                ? "- 若同意停止: 在台词最末尾附加 [ACTION:STOP_FOLLOW]。"
+                : "- IF ACCEPTING: Append [ACTION:STOP_FOLLOW] at the absolute end.");
             prompt.AppendLine(isZh
-                ? "- 若想继续跟随: 仅输出对白说明缘由，不附加标签。"
-                : "- IF DECLINING: Explain in character as dialogue text only, no tags.");
+                ? "- 若想继续跟随: 只输出对白文本，不加标签。"
+                : "- IF DECLINING: Dialogue text only, no tags.");
             prompt.AppendLine("</movement_instruction>\n");
             return;
         }
@@ -1214,11 +1290,11 @@ public class Prompts
                 ? "农夫希望你今天留在家里，不要出门。"
                 : "The farmer wants you to stay home today.");
             prompt.AppendLine(isZh
-                ? "- 若同意: 依据角色性格简短回应，并在台词最末尾附加 [ACTION:STAY_HOME]。"
-                : "- IF ACCEPTING: Respond briefly in character, and append [ACTION:STAY_HOME] at the absolute end.");
+                ? "- 若同意: 在台词最末尾附加 [ACTION:STAY_HOME]。"
+                : "- IF ACCEPTING: Append [ACTION:STAY_HOME] at the absolute end.");
             prompt.AppendLine(isZh
-                ? "- 若拒绝: 仅输出对白说明缘由，不附加标签。"
-                : "- IF DECLINING: Explain in character as dialogue text only, no tags.");
+                ? "- 若拒绝: 只输出对白文本，不加标签。"
+                : "- IF DECLINING: Dialogue text only, no tags.");
             prompt.AppendLine("</movement_instruction>\n");
             return;
         }
@@ -1231,11 +1307,11 @@ public class Prompts
                 ? "农夫希望你今天一整天都陪着他。"
                 : "The farmer wants you to accompany them all day.");
             prompt.AppendLine(isZh
-                ? "- 若同意: 依据角色性格与好感度表达回应，并在台词最末尾附加 [ACTION:ALL_DAY_FOLLOW]。"
-                : "- IF ACCEPTING: Respond in character, and append [ACTION:ALL_DAY_FOLLOW] at the absolute end.");
+                ? "- 若同意: 在台词最末尾附加 [ACTION:ALL_DAY_FOLLOW]。"
+                : "- IF ACCEPTING: Append [ACTION:ALL_DAY_FOLLOW] at the absolute end.");
             prompt.AppendLine(isZh
-                ? "- 若拒绝: 仅输出对白说明缘由，不附加标签。"
-                : "- IF DECLINING: Explain in character as dialogue text only, no tags.");
+                ? "- 若拒绝: 只输出对白文本，不加标签。"
+                : "- IF DECLINING: Dialogue text only, no tags.");
             prompt.AppendLine("</movement_instruction>\n");
             return;
         }
@@ -1243,10 +1319,9 @@ public class Prompts
         if (CurrentFlags.IsFollowing && !CurrentFlags.IsMovementRequested)
         {
             prompt.AppendLine("<movement_instruction mode=\"following\">");
-            // 修复：删除"轻松随和且专注陪伴"
             prompt.AppendLine(isZh
-                ? "你此刻正跟在农夫身边。依据角色性格与当前好感度进行表达。"
-                : "You are currently following the farmer. Respond according to character personality and current heart level.");
+                ? "你此刻正跟在农夫身边。"
+                : "You're currently walking along with the farmer.");
             prompt.AppendLine("</movement_instruction>\n");
             return;
         }
@@ -1282,10 +1357,9 @@ public class Prompts
         if (CurrentFlags.IsAlreadyAdjacent)
         {
             prompt.AppendLine("<movement_instruction mode=\"adjacent\">");
-            // 修复：删除"打趣对方重复要求"
             prompt.AppendLine(isZh
-                ? "你此刻已经站在农夫正前方。依据角色性格与好感度对重复请求做出回应。"
-                : "You are ALREADY standing face-to-face with the farmer. Address the repeated request according to character personality and heart level.");
+                ? "你此刻已经站在农夫正前方。"
+                : "You're already standing face-to-face with the farmer.");
             prompt.AppendLine("</movement_instruction>\n");
             return;
         }
@@ -1752,6 +1826,9 @@ public class Prompts
         instructions.AppendLine(isZh
             ? "- 【核心视角】仅输出你自身角色的言语、动作与神态反应。完成当前台词表达后立即停下，将话语权交还给面前的农夫。"
             : "- [CORE PERSPECTIVE] Output only your own character's dialogue, actions, and mannerisms. Conclude your lines cleanly and yield the floor to the farmer.");
+        instructions.AppendLine(isZh
+            ? "- 【当面接话】农夫刚说的那句话就在你耳边。第一句必须直接回答或接住他刚才的话；答完之后，手头有事或想起别的事再顺着往下提。"
+            : "- [IN-PERSON REPLY] The farmer's last words just reached your ears. Your very first sentence must directly address or answer what they just said. Only after answering can you naturally follow up with your own chores or thoughts.");
         instructions.AppendLine(isZh
             ? "- 若本次对话结束后你的情绪明显转变（如变得好奇/生气/高兴），在台词最末尾附加 [MOOD:curious] / [MOOD:annoyed] / [MOOD:happy] 等标签。"
             : "- If your emotional tone has clearly shifted after this exchange (e.g. curious/annoyed/happy), append [MOOD:curious] / [MOOD:annoyed] / [MOOD:happy] at the absolute end.");

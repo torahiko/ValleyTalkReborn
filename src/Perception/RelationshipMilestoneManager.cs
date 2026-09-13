@@ -78,11 +78,11 @@ internal class RelationshipMilestoneManager
                 return isZh
                     ? "<relationship_conflict type=\"divorce_pending\">\n" +
                       "- 事实：农夫今天已正式在镇长刘易斯处提交了与你的离婚申请。明天清晨你将会收拾行李搬离农场。\n" +
-                      "- 指令：面对面前的农夫，依据角色性格自尊、好感度与当前心境做出回应（可流露心碎、愤怒、决绝、质问或释怀）。\n" +
+                      "- 你现在心里翻着什么，嘴上就会漏出什么——心碎也好、火气也好、冷了心的干脆也好，都顺着你平时的脾气和自尊走。\n" +
                       "</relationship_conflict>"
                     : "<relationship_conflict type=\"divorce_pending\">\n" +
                       "- Fact: The farmer has officially filed for divorce at Mayor Lewis's manor today. You will pack up and leave the farm tomorrow morning.\n" +
-                      "- Instruction: Respond according to character personality, pride, heart level, and emotional state.\n" +
+                      "- Whatever's churning in you now is what comes out — heartbreak, anger, a cold goodbye, or a hard question. Let it come out the way your usual temper and pride would have it.\n" +
                       "</relationship_conflict>";
             }
         }
@@ -101,11 +101,11 @@ internal class RelationshipMilestoneManager
                 return isZh
                     ? $"<relationship_milestone type=\"wedding_countdown\">\n" +
                       $"- 事实：你与农夫已经正式订婚，你们的婚礼将在【{timeStr}】正式举行。\n" +
-                      "- 指令：依据角色性格与好感度，在言谈中自然流露出对即将到来的婚礼的期盼、准备细节或紧张心境。\n" +
+                      $"- 这件事一直搁在你脑子里，说起话来自然就带出来了。可能是一句盼头，可能是准备中的琐事，也可能是一丝紧张。\n" +
                       "</relationship_milestone>"
                     : $"<relationship_milestone type=\"wedding_countdown\">\n" +
                       $"- Fact: You and the farmer are officially engaged. Your wedding ceremony will be held {timeStr}.\n" +
-                      "- Instruction: Naturally express anticipation, preparations, or nervous excitement about the upcoming wedding.\n" +
+                      $"- It's been sitting in the back of your mind — it'll find its way into how you talk today without you forcing it. Anticipation, prep details, or nerves, whichever fits.\n" +
                       "</relationship_milestone>";
             }
         }
@@ -149,11 +149,11 @@ internal class RelationshipMilestoneManager
                 return isZh
                     ? $"<relationship_milestone type=\"spouse_new_engagement\">\n" +
                       $"- 事实：农夫作为你的伴侣，已正式与【{fianceDisplayName}】订婚，他们的婚礼将在【{timeStr}】举行。\n" +
-                      "- 指令：作为现有的伴侣，依据角色性格、好感度、自尊以及对多伴侣/新成员加入的态度（如吃醋微酸、包容理解、好奇审视或打趣调侃）做出真实且符合人设的回应。\n" +
+                      $"- 这事你心里有数。你对多伴侣的态度、你自己的自尊和你们俩的交情，都会自然从话里带出来——可能微酸、可能坦然、可能好奇、也可能拿来打趣。\n" +
                       "</relationship_milestone>"
                     : $"<relationship_milestone type=\"spouse_new_engagement\">\n" +
                       $"- Fact: The farmer, who is already married to you, has officially gotten engaged to [{fianceDisplayName}]. Their wedding will take place {timeStr}.\n" +
-                      "- Instruction: As an existing spouse, react naturally according to your personality, pride, heart level, and attitude toward polyamory or a new spouse joining the household (e.g., subtle jealousy, acceptance, curiosity, or teasing banter).\n" +
+                      $"- You know about it. How you take it — a little stung, fine with it, curious, or having fun with it — comes out of your usual temper, your pride, and how you two handle sharing the house.\n" +
                       "</relationship_milestone>";
             }
         }
@@ -171,11 +171,11 @@ internal class RelationshipMilestoneManager
                     return isZh
                         ? "<festival_afterglow type=\"flower_dance_partner\">\n" +
                           "- 事实：在昨天（春季24日）的花舞节上，农夫邀请了你作为舞伴，你们在全镇村民面前一起跳了双人舞。\n" +
-                          "- 指令：依据角色性格与好感度，自然流露出对昨天共舞的回味、喜悦、害羞或浪漫余韵。\n" +
+                          "- 昨天那场舞还在你身上留着余温——嘴上可能是一句回味、一点藏不住的开心、一丝不好意思，也可能轻描淡写地绕过去。\n" +
                           "</festival_afterglow>"
                         : "<festival_afterglow type=\"flower_dance_partner\">\n" +
                           "- Fact: At yesterday's Flower Dance, the farmer invited you to be their dance partner, and you danced together before the whole town.\n" +
-                          "- Instruction: Express fond memories, happiness, or subtle shyness about yesterday's dance according to your persona.\n" +
+                          "- That dance is still warm in you — it could come out as fondness, a little glow, some shyness, or you shrug it off like it was nothing. Let it be what it is.\n" +
                           "</festival_afterglow>";
                 }
 
@@ -188,11 +188,11 @@ internal class RelationshipMilestoneManager
                     return isZh
                         ? $"<relationship_conflict type=\"flower_dance_jealousy\">\n" +
                           $"- 事实：在昨天（春季24日）的花舞节上，农夫作为你的伴侣却没有邀请你跳舞，而是选择了与【{partnerDisplayName}】共舞。\n" +
-                          "- 指令：依据角色性格、好感度与自尊做出真实回应。\n" +
+                          "- 这件事你心里是有数的。会不会提、怎么提、提几分，全看你平时的脾气、自尊和你们俩的交情。\n" +
                           "</relationship_conflict>"
                         : $"<relationship_conflict type=\"flower_dance_jealousy\">\n" +
                           $"- Fact: At yesterday's Flower Dance, your spouse did not dance with you, but instead chose to dance with [{partnerDisplayName}].\n" +
-                          "- Instruction: React in character regarding this slight.\n" +
+                          "- You've noticed. Whether you bring it up, how you bring it up, and how sharp it is — all runs off your usual temper, your pride, and where you two stand.\n" +
                           "</relationship_conflict>";
                 }
             }

@@ -61,6 +61,8 @@
   "AdvancedSettings.Disclaimer": "实验性功能，可能导致意外情况。",
   "AdvancedSettings.VanillaFirst": "优先使用原版对话",
   "AdvancedSettings.VanillaFirstTooltip": "仅在原版内置对话用尽后，才触发AI生成的对话。",
+  "AdvancedSettings.RecordVanillaDialogue": "记录原版对话至记忆",
+  "AdvancedSettings.RecordVanillaDialogueTooltip": "是否将原版对白记入历史并作为上下文提供给大模型。建议关闭，彻底避免大模型反复纠结原版对白或被其分散注意力。",
   "ui.thinking": "思考中...",
   "ui.cancelled": "请求已取消。",
   "configFetchHint": "设置指南：选择你使用的AI服务商（服务器地址仅在选择“自定义”时需要填写），\n\n填入API密钥后点击“保存”并关闭此菜单。重新打开设置菜单即可从下拉列表中选择可用的模型。",

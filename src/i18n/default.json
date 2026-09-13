@@ -61,6 +61,8 @@
   "AdvancedSettings.Disclaimer": "Experimental feature — may cause unexpected behavior.",
   "AdvancedSettings.VanillaFirst": "Prioritize Vanilla Dialogue",
   "AdvancedSettings.VanillaFirstTooltip": "Only trigger AI dialogue once the game's built-in dialogue has been exhausted.",
+  "AdvancedSettings.RecordVanillaDialogue": "Record Vanilla Dialogue",
+  "AdvancedSettings.RecordVanillaDialogueTooltip": "Inject vanilla in-game lines into AI context. Keep OFF to prevent the model from getting distracted by repetitive game dialogue.",
   "ui.thinking": "Thinking...",
   "ui.cancelled": "Request cancelled.",
   "configFetchHint": "Setup guide: choose your AI provider (Server Address is only needed for Custom providers), enter your API key, then click 'Save' and close this menu. Reopen the settings to pick from the list of available models.",

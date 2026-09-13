@@ -178,6 +178,10 @@ namespace ValleytalkReborn
         /// </summary>
         public bool UseNativeToolCalling { get; set; } = false;
         public bool EnableVanillaFirst { get; set; } = false;
+        /// <summary>
+        /// 开启 = 原版台词入历史库供 AI 续聊（可能话题粘滞）；关闭（推荐/默认）= 仅优先展示给玩家，不入库、不偷听广播、不注入 Prompt。
+        /// </summary>
+        public bool RecordVanillaDialogue { get; set; } = false;
         public bool EnableNightlyConsolidation { get; set; } = true;
 
         /// <summary>
