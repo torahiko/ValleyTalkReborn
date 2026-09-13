@@ -48,9 +48,7 @@ namespace ValleytalkReborn
                 {
                     try
                     {
-                        MovementManager.Instance.StopFollow(npc);
-                        if (DateManager.Instance != null && DateManager.Instance.IsOnDate(npc.Name))
-                            DateManager.Instance.EndDateGracefully(npc.Name, "Player_Stopped_Follow");
+                        MovementManager.Instance.StopFollow(npc); // 内部已联动 EndDateGracefully
                         npc.doEmote(32);
                     }
                     catch (Exception ex)

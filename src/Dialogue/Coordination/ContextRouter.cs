@@ -1057,23 +1057,12 @@ public static class ContextRouter
         if (string.IsNullOrWhiteSpace(cleanInput))
             return ActionTag.None;
 
-        // 只有明显以否定词开头时才拦截。
-        // 例如“不要亲我”“别往前走”不会触发动作。
-        // 不对“我不想亲你，但请你往前走”做复杂复合句解析。
-        if (IsNegatedCommand(cleanInput))
-        {
-            DebugLog(
-                debugEnabled,
-                $"Action ignored because input is negated: \"{cleanInput}\"");
-
-            return ActionTag.None;
-        }
-
         string stripped = cleanInput.Trim(PunctuationTrimChars);
 
         // 语义优先级：
         // StayHome / AllDayFollow
-        // → StopFollow
+        // → StopFollow（在否定词检查之前，确保"别跟着我"等能正常命中）
+        // → 否定词拦截（仅影响 Follow 及方向移动）
         // → Follow
         // → 方向移动
         if (IntentRegex.StayHome.IsMatch(stripped))
@@ -1084,6 +1073,18 @@ public static class ContextRouter
 
         if (IntentRegex.StopFollow.IsMatch(stripped))
             return ActionTag.StopFollow;
+
+        // 只有明显以否定词开头时才拦截后续动作。
+        // 例如"不要亲我""别往前走"不会触发动作。
+        // StopFollow 已在上方处理，不受此守卫影响。
+        if (IsNegatedCommand(cleanInput))
+        {
+            DebugLog(
+                debugEnabled,
+                $"Action ignored because input is negated: \"{cleanInput}\"");
+
+            return ActionTag.None;
+        }
 
         if (IntentRegex.Follow.IsMatch(stripped))
             return ActionTag.Follow;
