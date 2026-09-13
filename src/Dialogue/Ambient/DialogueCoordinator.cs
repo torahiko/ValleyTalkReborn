@@ -31,6 +31,12 @@ internal sealed class DialogueCoordinator
     // 状态跟踪：当前正在与玩家交互的 NPC 名字（null = 未交互）
     private string _activeInteractingSpeaker = null;
 
+    /// <summary>
+    /// 是否已观察到节日漫游态（eventUp + CanMove + 无对话无菜单）。
+    /// 用于在 eventUp false→... 边沿触发 OnFestivalRoamEnded 清理。纯运行时记忆。
+    /// </summary>
+    private bool _festivalRoamObserved;
+
     internal DialogueCoordinator(
         IModHelper helper,
         IMonitor monitor,
@@ -166,6 +172,19 @@ internal sealed class DialogueCoordinator
         _outputQueue.Clear();
     }
 
+    /// <summary>
+    /// 当前事件态下是否允许推进 Ambient Bark。
+    /// 判据收敛到守卫层（VanillaInteractionGuard.IsFestivalRoam），
+    /// 与 MainThreadOutputQueue 的 Bark 显示侧豁免共享同一实现，杜绝两侧门禁漂移。
+    /// 非事件期恒为 true；事件期仅节日漫游态放行，心事件/剧情事件一律冻结。
+    /// </summary>
+    private static bool IsBarkAllowedInCurrentEvent()
+    {
+        if (!Game1.eventUp)
+            return true;
+        return VanillaInteractionGuard.IsFestivalRoam();
+    }
+
     private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
     {
         if (!Context.IsWorldReady || Game1.paused)
@@ -252,17 +271,39 @@ internal sealed class DialogueCoordinator
             return;
         }
 
-        if (Game1.activeClickableMenu != null || Game1.eventUp)
+        // 菜单遮挡时挂起（eventUp 不再在此处一刀切，改由下方 isBarkAllowed 按节日/剧情分流）
+        if (Game1.activeClickableMenu != null)
         {
             return;
+        }
+
+        // 当前事件态下是否允许推进 Ambient Bark（判据收敛到守卫层，与显示侧豁免共享实现）
+        bool isBarkAllowed = IsBarkAllowedInCurrentEvent();
+
+        // 节日漫游结束边沿：eventUp 从 true 回落 → 清理节日残留队列，打捞未播放台词
+        if (_festivalRoamObserved && !Game1.eventUp)
+        {
+            _festivalRoamObserved = false;
+            try
+            {
+                _ambientBark.OnFestivalRoamEnded();
+            }
+            catch (System.Exception ex)
+            {
+                _monitor.Log($"[DialogueCoordinator] FestivalRoamEnded error: {ex.Message}", LogLevel.Error);
+            }
+        }
+        else if (Game1.eventUp && isBarkAllowed)
+        {
+            _festivalRoamObserved = true;
         }
 
         // ════════════════════════════════════════════════════════════
         // 阶段 3：世界推进（TickA2A 在此处运行，入睡检查在此处彻底卡死任何非法播放）
         // ════════════════════════════════════════════════════════════
 
-        // 3. A2A Radar
-        if (config.EnableA2A)
+        // 3. A2A Radar（节日内冻结，避免节日 A2A 活动）
+        if (config.EnableA2A && !Game1.eventUp)
         {
             try
             {
@@ -284,8 +325,8 @@ internal sealed class DialogueCoordinator
             }
         }
 
-        // 4.5 Ambient Bark Radar
-        if (config.EnableAmbientBarks)
+        // 4.5 Ambient Bark Radar（节日漫游放行，剧情事件静默）
+        if (config.EnableAmbientBarks && isBarkAllowed)
         {
             try
             {
@@ -298,7 +339,7 @@ internal sealed class DialogueCoordinator
         }
 
         // 5. Ambient Bark Request Dispatch (guarded - controls new requests only)
-        if (config.EnableAmbientBarks)
+        if (config.EnableAmbientBarks && isBarkAllowed)
         {
             bool hasActiveA2APlayback = config.EnableA2A && _a2a.SessionManager.HasActivePlayback();
             try
@@ -311,18 +352,20 @@ internal sealed class DialogueCoordinator
             }
         }
 
-        // 6. Ambient Bark State Tick - ALWAYS called!
-        // Module checks Config.EnableAmbientBarks internally and runs CleanupAll when disabled.
-        try
+        // 6. Ambient Bark State Tick（节日漫游放行，剧情事件静默；模块内部仍自查 Config）
+        if (isBarkAllowed)
         {
-            _ambientBark.TickStates();
-        }
-        catch (System.Exception ex)
-        {
-            _monitor.Log($"[DialogueCoordinator] AmbientBark TickStates error: {ex.Message}", LogLevel.Error);
+            try
+            {
+                _ambientBark.TickStates();
+            }
+            catch (System.Exception ex)
+            {
+                _monitor.Log($"[DialogueCoordinator] AmbientBark TickStates error: {ex.Message}", LogLevel.Error);
+            }
         }
 
-        // 7. MainThreadOutputQueue.Process(20) (always called to drain queue)
+        // 7. MainThreadOutputQueue.Process(20) (always called to drain queue，无 gate)
         try
         {
             _outputQueue.Process(20);
@@ -369,6 +412,8 @@ internal sealed class DialogueCoordinator
 
         _reservations.Clear();
         _outputQueue.Clear();
+
+        _festivalRoamObserved = false;
     }
 
     /// <summary>
@@ -401,6 +446,7 @@ internal sealed class DialogueCoordinator
 
         // 清理状态跟踪字段
         _activeInteractingSpeaker = null;
+        _festivalRoamObserved = false;
     }
 
     /// <summary>

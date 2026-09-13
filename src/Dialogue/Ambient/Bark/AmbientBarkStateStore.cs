@@ -29,6 +29,12 @@ internal sealed class AmbientBarkStateStore
         public int DisplayCountdown { get; set; }
         public bool HasPlayedFirst { get; set; }
 
+        /// <summary>
+        /// 节日播报占用剩余 Ticks。&gt; 0 时该 NPC 被认为正在占用播报通道，
+        /// 其余节日 NPC 的出队将被延迟。纯运行时记忆，绝不写入存档。
+        /// </summary>
+        public int BusyTicksRemaining { get; set; }
+
         // ── 冷却控制（Tick 计数，与游戏暂停/加速完全同步）──
 
         /// <summary>
@@ -129,6 +135,7 @@ internal sealed class AmbientBarkStateStore
             RecentBarks.Clear();
             LastFocusType  = BarkFocusType.FreeDrift;
             LastSensoryKey = null;
+            BusyTicksRemaining = 0;
         }
 
         /// <summary>
@@ -146,6 +153,7 @@ internal sealed class AmbientBarkStateStore
             DisplayCountdown = 0;
             HasPlayedFirst = false;
             CooldownTicksRemaining = null; // 必须清空为 null，关闭 TickStates 分支 2 的触发条件
+            BusyTicksRemaining = 0;
         }
 
         /// <summary>

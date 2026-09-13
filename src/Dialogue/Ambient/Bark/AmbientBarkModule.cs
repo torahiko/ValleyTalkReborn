@@ -26,6 +26,12 @@ internal sealed class AmbientBarkModule : IDialogueModule
     private const int API_COOLDOWN_TICKS = 300;
 
     /// <summary>
+    /// 单条台词浮字可见时长对应的 Ticks（3500ms × 60fps）。
+    /// 与 _outputQueue.Enqueue 的 duration=3500 一致，用于节日播报通道占用计时。
+    /// </summary>
+    private const int DISPLAY_LINE_VISIBLE_TICKS = 210;
+
+    /// <summary>
     /// 首播轮询间隔：在结果尚未到达前用于短周期检测。
     /// </summary>
     private const int FIRST_BARK_POLL_TICKS = 20;
@@ -45,9 +51,20 @@ internal sealed class AmbientBarkModule : IDialogueModule
     // ★ 实时读取全局 Config，避免 GMCM reset 后引用断开导致模块读到旧实例
     private static ModConfig Config => ModEntry.Config;
 
+    /// <summary>
+    /// 当前是否处于节日活动地图（Event.isFestival）。节日临时 Actor 的 currentLocation 可能为 null，
+    /// 故节日判定统一走 Event 标志，不做 location 解引用。
+    /// </summary>
+    private static bool IsFestivalNow => Game1.CurrentEvent?.isFestival == true;
+
     private readonly Queue<NPC> _globalRequestQueue = new Queue<NPC>();
     private int _globalRequestCooldown = 0;
     private int _radarCooldown = 0;
+
+    /// <summary>
+    /// 节日雷达源一次性诊断日志门控（Memory）。CleanupAll 中复位。
+    /// </summary>
+    private bool _loggedFestivalRadarSource;
 
     /// <summary>
     /// 由 DialogueCoordinator 注入，用于查询某 NPC 是否仍处于
@@ -221,21 +238,64 @@ internal sealed class AmbientBarkModule : IDialogueModule
 
         if (Game1.player == null) return;
 
-        var allNpcs = Game1.currentLocation?.characters;
-        if (allNpcs == null || allNpcs.Count == 0) return;
+        bool isFestival = IsFestivalNow;
+
+        // 节日临时 Actor 的 currentLocation 可能为 null，故节日内直接以 Event.actors 为扫描源
+        var allNpcs = GetScanCandidates();
 
         var nearbyNpcs = new List<NPC>();
         bool isPlayerMoving = Game1.player.isMoving();
 
+        // 节日雷达源一次性诊断日志：确认节日 NPC 容器假设（actors vs characters）
+        if (isFestival && !_loggedFestivalRadarSource)
+        {
+            int actorCount = Game1.CurrentEvent?.actors?.Count ?? 0;
+            int charCount  = Game1.currentLocation?.characters?.Count ?? 0;
+            ModEntry.SMonitor?.Log(
+                $"[AmbientBark] Festival radar source: actors={actorCount}, characters={charCount}",
+                LogLevel.Debug);
+
+            foreach (var actor in (Game1.CurrentEvent?.actors ?? Enumerable.Empty<NPC>()).Where(n => n != null).Take(3))
+            {
+                string curLocDesc;
+                if (actor.currentLocation == null)
+                    curLocDesc = "null";
+                else if (actor.currentLocation == Game1.currentLocation)
+                    curLocDesc = "match";
+                else
+                    curLocDesc = "other";
+
+                bool inRange = DialogueUtilities.IsInRangeSquaredDuringFestival(
+                    actor,
+                    (Farmer)Game1.player,
+                    RADAR_RANGE_SQ);
+
+                ModEntry.SMonitor?.Log(
+                    $"[AmbientBark]  actor {actor.Name}: curLoc={curLocDesc}, inRange={inRange}",
+                    LogLevel.Debug);
+            }
+
+            _loggedFestivalRadarSource = true;
+        }
+
         foreach (var npc in allNpcs)
         {
-            if (npc == null || DialogueUtilities.IsNpcSleeping(npc) || !npc.IsVillager)
+            if (npc == null) continue;
+
+            // 节日临时 Actor 不做村民检查（非村民临时 Actor 由后续 character?.Bio == null 兜底）；
+            // IsNpcSleeping 保持原样，不做节日特判；非节日保持原判定不变。
+            if (DialogueUtilities.IsNpcSleeping(npc) || (!isFestival && !npc.IsVillager))
                 continue;
 
-            bool inRange = DialogueUtilities.IsInRangeSquared(
-                npc,
-                (Farmer)Game1.player,
-                RADAR_RANGE_SQ);
+            bool inRange = isFestival
+                ? DialogueUtilities.IsInRangeSquaredDuringFestival(
+                    npc,
+                    (Farmer)Game1.player,
+                    RADAR_RANGE_SQ)
+                : DialogueUtilities.IsInRangeSquared(
+                    npc,
+                    (Farmer)Game1.player,
+                    RADAR_RANGE_SQ);
 
             if (!_proximityScans.TryGetValue(npc.Name, out int currentScans))
                 currentScans = 0;
@@ -251,12 +311,23 @@ internal sealed class AmbientBarkModule : IDialogueModule
 
             _proximityScans[npc.Name] = currentScans;
 
-            // ★ 修复 3：意图检测
-            // 如果玩家正处于移动状态（可能正跑向 NPC），大幅提高驻留门槛（至少 3 次雷达扫描即 3 秒）；
-            // 只有静止/徘徊时才采用默认 BarkDwellScans。
-            int requiredScans = isPlayerMoving
-                ? Math.Max(Config.BarkDwellScans + 2, 3)
-                : Math.Max(Config.BarkDwellScans, 1);
+            int requiredScans;
+            if (isFestival)
+            {
+                // 节日驻留门槛：moving 至少 5 次扫描，static 至少 4 次
+                requiredScans = isPlayerMoving
+                    ? Math.Max(Config.BarkDwellScans + 2, 5)
+                    : Math.Max(Config.BarkDwellScans, 4);
+            }
+            else
+            {
+                // ★ 修复 3：意图检测
+                // 如果玩家正处于移动状态（可能正跑向 NPC），大幅提高驻留门槛（至少 3 次雷达扫描即 3 秒）；
+                // 只有静止/徘徊时才采用默认 BarkDwellScans。
+                requiredScans = isPlayerMoving
+                    ? Math.Max(Config.BarkDwellScans + 2, 3)
+                    : Math.Max(Config.BarkDwellScans, 1);
+            }
 
             if (!inRange || currentScans < requiredScans)
                 continue;
@@ -268,7 +339,15 @@ internal sealed class AmbientBarkModule : IDialogueModule
 
         foreach (var npc in nearbyNpcs)
         {
-            var character = DialogueBuilder.Instance?.GetCharacter(npc);
+            // 节日下仅允许命中既有缓存（Character.StardewNpc 必然绑定真实实体），
+            // 绝不创建绑定临时 Actor 的新 Character → DialogueBuilder 缓存零污染。
+            // 封闭性论证：PerformRadarScan 是 Bark 管线唯一入口；节日下仅缓存命中的村民会入队，
+            // 故下游 BarkPromptBuilder.Build / EnrichWithDynamicState 的 GetCharacter(临时Actor) 必然缓存命中、
+            // 不触发创建 → 无需改动 DialogueBuilder 内部任何代码。
+            // 非节日保持原路径逐字符不变。
+            var character = isFestival
+                ? DialogueBuilder.Instance?.GetCharacterByName(npc?.Name)
+                : DialogueBuilder.Instance?.GetCharacter(npc);
 
             if (character?.Bio == null ||
                 !character.Bio.EnableAmbientBarks ||
@@ -500,6 +579,10 @@ internal sealed class AmbientBarkModule : IDialogueModule
             return;
         }
 
+        bool festival = IsFestivalNow;
+        // 节日内任一 NPC 正在占用播报通道时，其余节日 NPC 出队延迟（每 tick 仅计算一次）
+        bool festivalAnyBusy = festival && _stateStore.Snapshot().Any(kv => kv.Value.BusyTicksRemaining > 0);
+
         foreach (var kv in _stateStore.Snapshot())
         {
             var npcName = kv.Key;
@@ -517,6 +600,12 @@ internal sealed class AmbientBarkModule : IDialogueModule
 
             lock (state)
             {
+                // 推进占用计时递减（每 Tick 减 1）
+                if (state.BusyTicksRemaining > 0)
+                {
+                    state.BusyTicksRemaining--;
+                }
+
                 // 推进冷却递减（每 Tick 减 1）
                 if (state.CooldownTicksRemaining.HasValue && state.CooldownTicksRemaining.Value > 0)
                 {
@@ -544,7 +633,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
                 // 3. 展示推进逻辑
                 if (state.BarkQueue.Count > 0)
                 {
-                    TickDisplayLocked(npc, state);
+                    TickDisplayLocked(npc, state, festivalAnyBusy);
                 }
                 else if (state.HasPlayedFirst)
                 {
@@ -557,7 +646,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
     /// <summary>
     /// 推进展示倒计时并出队台词（锁内调用）
     /// </summary>
-    private void TickDisplayLocked(NPC npc, AmbientBarkStateStore.State state)
+    private void TickDisplayLocked(NPC npc, AmbientBarkStateStore.State state, bool festivalAnyBusy)
     {
         if (Game1.activeClickableMenu != null || Game1.dialogueUp || DialogueUtilities.IsNpcSleeping(npc))
             return;
@@ -566,12 +655,24 @@ internal sealed class AmbientBarkModule : IDialogueModule
         if (IsReservedByOther(npc.Name))
             return;
 
+        // 节日内若其他 NPC 正在占用播报通道，延迟本轮出队，避免多 NPC 同时堆字
+        if (festivalAnyBusy)
+        {
+            state.DisplayCountdown = FIRST_BARK_POLL_TICKS;
+            return;
+        }
+
         state.DisplayCountdown--;
         if (state.DisplayCountdown > 0)
             return;
 
         // 距离保护：玩家过远时挂起倒计时，使用短周期轮询检测
-        if (!DialogueUtilities.IsInRangeSquared(npc, (Farmer)Game1.player, DialogueConstants.DisplayRangeSquared))
+        // 节日临时 Actor 的 currentLocation 可能为 null，故节日内使用 IsInRangeSquaredDuringFestival
+        bool inDisplayRange = IsFestivalNow
+            ? DialogueUtilities.IsInRangeSquaredDuringFestival(npc, (Farmer)Game1.player, DialogueConstants.DisplayRangeSquared)
+            : DialogueUtilities.IsInRangeSquared(npc, (Farmer)Game1.player, DialogueConstants.DisplayRangeSquared);
+
+        if (!inDisplayRange)
         {
             state.DisplayCountdown = FIRST_BARK_POLL_TICKS;
             return;
@@ -586,6 +687,9 @@ internal sealed class AmbientBarkModule : IDialogueModule
         state.DisplayCountdown = DialogueUtilities.NextDisplayInterval(npc, _rng);
 
         _outputQueue.Enqueue(npc.Name, bark, 3500, "Bark");
+
+        // 标记本 NPC 进入播报占用态，占用期间其余节日 NPC 出队延迟
+        state.BusyTicksRemaining = DISPLAY_LINE_VISIBLE_TICKS;
     }
 
     /// <summary>
@@ -611,11 +715,17 @@ internal sealed class AmbientBarkModule : IDialogueModule
         state.HasPlayedFirst = false;
         state.DisplayCountdown = 0;
 
-        // ★ 冷却时间微调：跟随/约会 60 秒，日常闲逛/站桩 120 秒（2分钟）
+        // ★ 冷却时间三级选择：节日 300 秒（避免节日内台词扎堆），跟随/约会 60 秒，日常 120 秒
         // 120 秒是为了给"短间隔延续"（≤3分钟）留出足够的缓冲窗口，
         // 同时避免 NPC 话太密集像话痨
         bool isFollowOrDate = DialogueUtilities.IsFollowingSafe(npc) || DialogueUtilities.IsOnDate(npc);
-        int cooldownSeconds = isFollowOrDate ? 60 : 120;
+        int cooldownSeconds;
+        if (IsFestivalNow)
+            cooldownSeconds = 300;
+        else if (isFollowOrDate)
+            cooldownSeconds = 60;
+        else
+            cooldownSeconds = 120;
 
         state.CooldownTicksRemaining = cooldownSeconds * 60;
 
@@ -625,6 +735,72 @@ internal sealed class AmbientBarkModule : IDialogueModule
     }
 
     /// <summary>
+    /// 节日漫游结束（DialogueCoordinator 在 eventUp true→false 边沿调用）。
+    /// 严格按序：① 将各 NPC 队列残余台词打捞到 ImmediateEchoStore（locationName=null）；
+    /// ② 清空运行态字段（保留思绪记忆）；③ 清空全局请求队列。
+    /// </summary>
+    internal void OnFestivalRoamEnded()
+    {
+        int salvagedNpcCount = 0;
+
+        foreach (var kv in _stateStore.Snapshot())
+        {
+            var npcName = kv.Key;
+            var state = kv.Value;
+
+            try
+            {
+                lock (state)
+                {
+                    if (state.BarkQueue.Count > 0)
+                    {
+                        var tail = state.BarkQueue.Take(2).ToList();
+                        ImmediateEchoStore.RecordBark(npcName, tail, null);
+                        salvagedNpcCount++;
+                    }
+
+                    state.BarkQueue.Clear();
+
+                    if (state.IsRequesting)
+                        state.ReplaceCts();
+
+                    state.IsRequesting = false;
+                    state.DisplayCountdown = 0;
+                    state.BusyTicksRemaining = 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[AmbientBark] OnFestivalRoamEnded 处理 {npcName} 异常：{ex.Message}",
+                    LogLevel.Warn);
+            }
+        }
+
+        // 无论上面是否异常，最终清除可能滞留的节日临时 Actor 引用
+        _globalRequestQueue.Clear();
+
+        ModEntry.SMonitor?.Log(
+            $"[AmbientBark] Festival roam ended: salvaged & cleared {salvagedNpcCount} npc queue(s)",
+            LogLevel.Debug);
+    }
+
+    /// <summary>
+    /// 节日语境下的雷达扫描源：节日内 Event.actors 与玩家必然同处活动地图，
+    /// 直接以 actors 为候选；否则回退到当前地图 characters。
+    /// </summary>
+    private IEnumerable<NPC> GetScanCandidates()
+    {
+        if (IsFestivalNow)
+        {
+            var actors = Game1.CurrentEvent.actors;
+            if (actors != null && actors.Count > 0)
+                return actors;
+        }
+
+        return Game1.currentLocation?.characters ?? Enumerable.Empty<NPC>();
+    }
+
     /// 推进雷达冷却并触发雷达扫描。
     /// </summary>
     internal void TickRadarCooldown()
@@ -652,6 +828,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
         _globalRequestCooldown = 0;
         _radarCooldown = 0;
         _proximityScans.Clear();
+        _loggedFestivalRadarSource = false;
 
         while (_pendingBarkResults.TryDequeue(out _))
         {

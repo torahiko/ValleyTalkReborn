@@ -135,9 +135,11 @@ internal sealed class MainThreadOutputQueue
                     continue;
                 }
             }
-            else if (VanillaInteractionGuard.HasActiveVanillaInteraction())
+            else if (VanillaInteractionGuard.HasActiveVanillaInteraction()
+                     && !VanillaInteractionGuard.IsFestivalRoam())
             {
-                // Bark 输出在原版交互期间也丢弃
+                // Bark 输出在原版交互期间也丢弃；
+                // 节日漫游态（eventUp 单轴、无对话无菜单、CanMove）除外——放行节日 Bark 浮字
                 continue;
             }
 
