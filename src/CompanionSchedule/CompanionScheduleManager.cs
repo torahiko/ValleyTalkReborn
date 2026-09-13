@@ -647,6 +647,8 @@ namespace ValleytalkReborn
             foreach (var state in _states.Values.ToArray())
             {
                 if (state.IsStayHome || state.IsReturningHome) continue;
+                var npc = state.TrackedNpc;
+                if (npc != null && MovementManager.Instance.IsFollowing(npc)) continue;
                 RecallSpouseNow(state, Game1.timeOfDay);
             }
         }

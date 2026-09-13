@@ -572,12 +572,123 @@ namespace ValleytalkReborn
                 return;
 
             var movement = MovementManager.Instance;
-            if (!movement.HasActiveFollow)
+            if (movement.HasActiveFollow)
+            {
+                Helper.Input.Suppress(e.Button);
+                TryShowDismissConfirmation(movement);
+                return;
+            }
+
+            TryRecruitFacingNpc();
+        }
+
+        /// <summary>
+        /// 查找玩家正前方可招募的 NPC（面对面快捷招募用）。
+        /// </summary>
+        private static NPC FindRecruitableFacingNpc()
+        {
+            var loc = Game1.currentLocation;
+            if (loc == null) return null;
+
+            var characters = loc.characters;
+            if (characters == null || characters.Count == 0) return null;
+
+            var player = Game1.player;
+            var baseTile = player.Tile;
+
+            // 手工计算前方格子（不使用未经验证的 Utility.getFacingDirectionTile）
+            Microsoft.Xna.Framework.Vector2 frontTile = player.FacingDirection switch
+            {
+                0 => new Microsoft.Xna.Framework.Vector2(baseTile.X, baseTile.Y - 1), // Up
+                1 => new Microsoft.Xna.Framework.Vector2(baseTile.X + 1, baseTile.Y), // Right
+                2 => new Microsoft.Xna.Framework.Vector2(baseTile.X, baseTile.Y + 1), // Down
+                3 => new Microsoft.Xna.Framework.Vector2(baseTile.X - 1, baseTile.Y), // Left
+                _ => baseTile
+            };
+
+            var toolLoc = player.GetToolLocation();
+            var toolTile = new Microsoft.Xna.Framework.Vector2((int)(toolLoc.X / 64f), (int)(toolLoc.Y / 64f));
+
+            NPC best = null;
+            float bestDistSq = float.MaxValue;
+
+            foreach (var npc in characters)
+            {
+                if (npc == null || !npc.IsVillager || DialogueUtilities.IsNpcSleeping(npc))
+                    continue;
+
+                if (npc.Tile == frontTile || npc.Tile == toolTile
+                    || Microsoft.Xna.Framework.Vector2.Distance(npc.Tile, frontTile) <= 1.2f)
+                {
+                    float distSq = DialogueUtilities.DistanceSqToPlayer(npc);
+                    if (distSq < bestDistSq)
+                    {
+                        bestDistSq = distSq;
+                        best = npc;
+                    }
+                }
+            }
+
+            return best;
+        }
+
+        /// <summary>
+        /// 面对面快捷招募 NPC 跟随（热键 G 无活跃跟随时触发）。
+        /// </summary>
+        private void TryRecruitFacingNpc()
+        {
+            if (!Context.IsWorldReady || !Context.IsPlayerFree || Game1.currentLocation == null)
                 return;
 
-            // ★ 抑制按键：防止同一个热键被其他 mod 或游戏逻辑重复处理
-            Helper.Input.Suppress(e.Button);
-            TryShowDismissConfirmation(movement);
+            if (!ModEntry.Config.EnableMod)
+                return;
+
+            var target = FindRecruitableFacingNpc();
+            if (target == null) return;
+
+            Helper.Input.Suppress(Config.DismissFollowerKey);
+
+            // 忙碌守卫
+            if (MovementManager.Instance.IsNpcMoving(target) || target.controller != null)
+            {
+                bool isZh = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+                Game1.addHUDMessage(new HUDMessage(isZh ? $"{target.displayName} 正忙着别的事情。" : $"{target.displayName} is busy right now.", 3));
+                return;
+            }
+
+            // 好感度门槛
+            bool isExempt = SpouseQueryService.Instance.IsMarried(target.Name);
+            int hearts = 0;
+            if (Game1.player.friendshipData.TryGetValue(target.Name, out var fs) && fs != null)
+            {
+                if (fs.IsDating() || fs.IsRoommate() || fs.IsMarried()) isExempt = true;
+                hearts = fs.Points / 250;
+            }
+
+            if (!isExempt && hearts < 4)
+            {
+                bool isZh = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+                Game1.showRedMessage(isZh
+                    ? $"{target.displayName} 和你的关系还不够亲密（需达到 4 心）。"
+                    : $"{target.displayName} isn't familiar enough with you yet (Requires 4 hearts).");
+                try { target.doEmote(28); } catch { }
+                try { Game1.playSound("cancel"); } catch { }
+                return;
+            }
+
+            // CSM 上下文收口
+            CompanionScheduleManager.Instance.ClearScheduleForOverride("HotkeyRecruited", target.Name);
+
+            // 面向对齐
+            target.faceGeneralDirection(Game1.player.getStandingPosition());
+            Game1.player.faceGeneralDirection(target.getStandingPosition());
+
+            // 统一启动
+            bool isZhFollow = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+            string hud = isZhFollow
+                ? $"{target.displayName} 开始跟着你了（按 [{Config.DismissFollowerKey}] 结束）"
+                : $"{target.displayName} is now following you (Press [{Config.DismissFollowerKey}] to dismiss)";
+            DialogueBuilder.TryStartFollowForContext(target, hud);
         }
 
         private static void TryShowDismissConfirmation(MovementManager movement)

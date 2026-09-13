@@ -438,7 +438,7 @@ namespace ValleytalkReborn
         /// <summary>
         /// 尝试为当前上下文启动跟随（约会跟随或普通跟随）。
         /// </summary>
-        private static bool TryStartFollowForContext(NPC npc)
+        internal static bool TryStartFollowForContext(NPC npc, string hudMessageOverride = null)
         {
             var movement = MovementManager.Instance;
             if (movement == null)
@@ -482,7 +482,9 @@ namespace ValleytalkReborn
             try { npc.doEmote(20); } catch (Exception ex) { ModEntry.SMonitor?.Log($"[DialogueBuilder] Emote failed: {ex.Message}", LogLevel.Warn); }
             try { Game1.playSound("dwop"); } catch (Exception ex) { ModEntry.SMonitor?.Log($"[DialogueBuilder] Sound failed: {ex.Message}", LogLevel.Warn); }
             bool isZhFollow = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
-            Game1.addHUDMessage(new HUDMessage(isZhFollow ? $"{npc.displayName} 开始跟着你了" : $"{npc.displayName} is now following you", 3));
+            string hudText = hudMessageOverride
+                ?? (isZhFollow ? $"{npc.displayName} 开始跟着你了" : $"{npc.displayName} is now following you");
+            Game1.addHUDMessage(new HUDMessage(hudText, 3));
             return true;
         }
 
