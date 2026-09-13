@@ -396,17 +396,15 @@ internal static class IntentRegex
         | RegexOptions.CultureInvariant);
 
     public static readonly Regex Follow = new Regex(
-        @"^(跟着我?|跟我走?|跟上|一起走|跟我来|"
-        + @"follow me|come with me|stay with me)$",
+        @"(跟着我?|跟我走?|跟上我|一起走|跟我来|"
+        + @"\bfollow me\b|\bcome with me\b|\bstay with me\b)",
         RegexOptions.Compiled
         | RegexOptions.IgnoreCase
         | RegexOptions.CultureInvariant);
 
     public static readonly Regex StopFollow = new Regex(
-        @"^(别跟了|不要跟了|停止跟随|取消跟随|不用跟了|别跟着我|"
-        + @"回去吧|你走吧|不用跟着|别跟着|"
-        + @"stop following|stop following me|don't follow|"
-        + @"go back|you can go now|stay here)$",
+        @"(别跟了|不要跟了|停止跟随|取消跟随|不用跟了|别跟着我|别跟着|不用跟着|回去吧|你走吧|"
+        + @"\bstop following( me)?\b|\bdon'?t follow( me)?\b|\bgo back\b|\byou can go now\b|\bstay here\b)",
         RegexOptions.Compiled
         | RegexOptions.IgnoreCase
         | RegexOptions.CultureInvariant);
@@ -1071,40 +1069,41 @@ public static class ContextRouter
             return ActionTag.None;
         }
 
+        string stripped = cleanInput.Trim(PunctuationTrimChars);
+
         // 语义优先级：
         // StayHome / AllDayFollow
         // → StopFollow
         // → Follow
         // → 方向移动
-        if (IntentRegex.StayHome.IsMatch(cleanInput))
+        if (IntentRegex.StayHome.IsMatch(stripped))
             return ActionTag.StayHome;
 
-        if (IntentRegex.AllDayFollow.IsMatch(cleanInput))
+        if (IntentRegex.AllDayFollow.IsMatch(stripped))
             return ActionTag.AllDayFollow;
 
-        if (IntentRegex.StopFollow.IsMatch(cleanInput))
+        if (IntentRegex.StopFollow.IsMatch(stripped))
             return ActionTag.StopFollow;
 
-        if (IntentRegex.Follow.IsMatch(cleanInput))
+        if (IntentRegex.Follow.IsMatch(stripped))
             return ActionTag.Follow;
 
-
-        if (IntentRegex.Forward.IsMatch(cleanInput))
+        if (IntentRegex.Forward.IsMatch(stripped))
             return ActionTag.StepForward;
 
-        if (IntentRegex.Backward.IsMatch(cleanInput))
+        if (IntentRegex.Backward.IsMatch(stripped))
             return ActionTag.StepBackward;
 
-        if (IntentRegex.Left.IsMatch(cleanInput))
+        if (IntentRegex.Left.IsMatch(stripped))
             return ActionTag.StepLeft;
 
-        if (IntentRegex.Right.IsMatch(cleanInput))
+        if (IntentRegex.Right.IsMatch(stripped))
             return ActionTag.StepRight;
 
-        if (IntentRegex.Up.IsMatch(cleanInput))
+        if (IntentRegex.Up.IsMatch(stripped))
             return ActionTag.StepUp;
 
-        if (IntentRegex.Down.IsMatch(cleanInput))
+        if (IntentRegex.Down.IsMatch(stripped))
             return ActionTag.StepDown;
 
         return ActionTag.None;
