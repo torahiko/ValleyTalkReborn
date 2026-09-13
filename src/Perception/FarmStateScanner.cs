@@ -26,6 +26,7 @@ internal static class FarmStateScanner
     /// <summary>
     /// 扫描全农场生态，构建指标化经营状态概况。
     /// 同一游戏日内多次调用返回完全相同的字符串（按天缓存），跨天自动失效重扫。
+    /// isZh 为 false 时（包含所有小语种）自动回落为英文输出。
     /// </summary>
     public static string BuildFarmSummary(bool isZh)
     {
@@ -73,8 +74,6 @@ internal static class FarmStateScanner
         var (fruitTreeProducing, fruitTreeTypes, topFruits, fruitTreeGrowing) = ScanFruitTreesInLocation(farm);
 
         // ── 3. 扫描温室 ──
-        // 检查实际收到的邮件状态：ccPantry（献祭路线）或 jojaGreenhouse（Joja 路线）
-        // 这样既解决了地图实例默认存在导致的误判，又避免了 hasOrWillReceiveMail 在献祭当天的提前判定问题
         var ghLocation = Game1.getLocationFromName("Greenhouse");
         bool isGreenhouseUnlocked = Game1.MasterPlayer.mailReceived.Contains("ccPantry") ||
                                     Game1.MasterPlayer.mailReceived.Contains("jojaGreenhouse");
@@ -89,10 +88,7 @@ internal static class FarmStateScanner
             (ghReadyCrops, ghGrowingCrops, _, ghTopReady, ghTopGrowing) = ScanCropsInLocation(ghLocation);
         }
 
-        // ── 4. 扫描动物（仅统计数量与种类：天级粒度，纳入缓存） ──
-        // 注意：饥饿度(fullness)、抚摸状态(wasPet) 属于分钟级实时字段，故意不放进本摘要，
-        // 避免污染按天缓存的 GameConstantContext。如需体现实时状态，
-        // 请改在 Prompts.CorePrompt 中单独注入（该层本来就每轮重建，不受缓存分段影响）。
+        // ── 4. 扫描动物 ──
         int totalAnimals = 0;
         var animalCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
@@ -120,11 +116,12 @@ internal static class FarmStateScanner
             if (building is FishPond pond && pond.currentOccupants.Value > 0 && !string.IsNullOrWhiteSpace(pond.fishType.Value))
             {
                 string fishName = SafeGetDisplayName(pond.fishType.Value) ?? (isZh ? "鱼" : "Fish");
-                fishPondInfos.Add(isZh ? $"{fishName}({pond.currentOccupants.Value}条)" : $"{fishName} ({pond.currentOccupants.Value})");
+                string pondFuzzy = GetFishPondOccupantsFuzzy(pond.currentOccupants.Value, pond.maxOccupants.Value, isZh);
+                fishPondInfos.Add(isZh ? $"{fishName}（{pondFuzzy}）" : $"{fishName} ({pondFuzzy})");
             }
         }
 
-        // ── 6. 格式化输出 ──
+        // ── 6. 格式化输出（全部采用模糊感知描述，杜绝精准报数） ──
         if (isZh)
         {
             sb.AppendLine("### [农场经营状态]");
@@ -133,50 +130,52 @@ internal static class FarmStateScanner
             if (readyCrops > 0)
             {
                 string sample = topReadyCropNames.Count > 0 ? $"（包含: {string.Join("、", topReadyCropNames)} 等）" : "";
-                sb.AppendLine($"- 农田作物: 有 {readyCrops} 块作物已成熟待收割{sample}。");
+                sb.AppendLine($"- 农田作物: 田里有{GetCropQuantityFuzzy(readyCrops, isZh: true)}作物已成熟待收割{sample}。");
             }
             else if (growingCrops > 0)
             {
                 string sample = topGrowingCropNames.Count > 0 ? $"（包含: {string.Join("、", topGrowingCropNames)} 等）" : "";
-                sb.AppendLine($"- 农田作物: 有 {growingCrops} 块作物正在生长中{sample}。");
+                sb.AppendLine($"- 农田作物: 田里有{GetCropQuantityFuzzy(growingCrops, isZh: true)}作物正在生长中{sample}。");
             }
 
             if (deadCrops > 0)
             {
-                sb.AppendLine($"- 农田异常: 发现了 {deadCrops} 株枯萎死去的作物。");
+                sb.AppendLine($"- 农田异常: 发现了{GetDeadCropFuzzy(deadCrops, isZh: true)}枯萎死去的作物。");
             }
 
             // 果树展示
             if (fruitTreeProducing > 0)
             {
+                string producingTrees = GetFruitTreeQuantityFuzzy(fruitTreeProducing, isZh: true);
                 if (fruitTreeTypes > 3)
                 {
                     string sample = topFruits.Count > 0 ? $"（主要包括: {string.Join("、", topFruits)} 等）" : "";
-                    sb.AppendLine($"- 果园状态: 果树品种丰富，共 {fruitTreeProducing} 棵树挂果待摘，涵盖 {fruitTreeTypes} 个品种{sample}。");
+                    sb.AppendLine($"- 果园状态: 果树品种丰富，有{producingTrees}果树挂果待摘，涵盖多种不同品种{sample}。");
                 }
                 else
                 {
                     string sample = topFruits.Count > 0 ? $"（包含: {string.Join("、", topFruits)}）" : "";
-                    sb.AppendLine($"- 果园状态: 有 {fruitTreeProducing} 棵果树果实累累{sample}。");
+                    sb.AppendLine($"- 果园状态: 有{producingTrees}果树果实累累{sample}。");
                 }
             }
             else if (fruitTreeGrowing > 0)
             {
-                sb.AppendLine($"- 果园状态: 有 {fruitTreeGrowing} 棵幼年果树正在生长中。");
+                string growingTrees = GetFruitTreeQuantityFuzzy(fruitTreeGrowing, isZh: true);
+                sb.AppendLine($"- 果园状态: 有{growingTrees}幼年果树正在生长中。");
             }
 
-            // 温室展示（修复后/破损废弃）
+            // 温室展示
             if (isGreenhouseUnlocked)
             {
                 if (ghReadyCrops > 0)
                 {
                     string sample = ghTopReady.Count > 0 ? $"（包含: {string.Join("、", ghTopReady)} 等）" : "";
-                    sb.AppendLine($"- 室内温室: 有 {ghReadyCrops} 块作物已成熟待收割{sample}。");
+                    sb.AppendLine($"- 室内温室: 温室内有{GetCropQuantityFuzzy(ghReadyCrops, isZh: true)}作物已成熟待收割{sample}。");
                 }
                 else if (ghGrowingCrops > 0)
                 {
                     string sample = ghTopGrowing.Count > 0 ? $"（包含: {string.Join("、", ghTopGrowing)} 等）" : "";
-                    sb.AppendLine($"- 室内温室: 有 {ghGrowingCrops} 块作物正在生长中{sample}。");
+                    sb.AppendLine($"- 室内温室: 温室内有{GetCropQuantityFuzzy(ghGrowingCrops, isZh: true)}作物正在生长中{sample}。");
                 }
                 else
                 {
@@ -191,7 +190,8 @@ internal static class FarmStateScanner
             if (totalAnimals > 0)
             {
                 string animalTypesStr = topAnimals.Count > 0 ? $"（主要养殖: {string.Join("、", topAnimals)}）" : "";
-                sb.AppendLine($"- 农场牲畜: 共养了 {totalAnimals} 只动物{animalTypesStr}。");
+                string animalQty = GetAnimalQuantityFuzzy(totalAnimals, isZh: true);
+                sb.AppendLine($"- 农场牲畜: 养了{animalQty}牲畜{animalTypesStr}。");
             }
 
             if (fishPondInfos.Count > 0)
@@ -204,42 +204,45 @@ internal static class FarmStateScanner
         }
         else
         {
+            // 英文模板（其他非中文语言自动回落至此）
             sb.AppendLine("### [FARM OPERATION STATUS]");
             sb.AppendLine("<farm_state>");
 
             if (readyCrops > 0)
             {
                 string sample = topReadyCropNames.Count > 0 ? $" (including: {string.Join(", ", topReadyCropNames)})" : "";
-                sb.AppendLine($"- Outdoor Crops: {readyCrops} crops are ripe and ready to harvest{sample}.");
+                sb.AppendLine($"- Outdoor Crops: {GetCropQuantityFuzzy(readyCrops, isZh: false)} crops are ripe and ready to harvest{sample}.");
             }
             else if (growingCrops > 0)
             {
                 string sample = topGrowingCropNames.Count > 0 ? $" (including: {string.Join(", ", topGrowingCropNames)})" : "";
-                sb.AppendLine($"- Outdoor Crops: {growingCrops} crops growing{sample}.");
+                sb.AppendLine($"- Outdoor Crops: {GetCropQuantityFuzzy(growingCrops, isZh: false)} crops growing{sample}.");
             }
 
             if (deadCrops > 0)
             {
-                sb.AppendLine($"- Field Warning: {deadCrops} withered crops spotted.");
+                sb.AppendLine($"- Field Warning: {GetDeadCropFuzzy(deadCrops, isZh: false)} withered crops spotted.");
             }
 
             // Fruit Trees
             if (fruitTreeProducing > 0)
             {
+                string producingTrees = GetFruitTreeQuantityFuzzy(fruitTreeProducing, isZh: false);
                 if (fruitTreeTypes > 3)
                 {
                     string sample = topFruits.Count > 0 ? $" (mainly: {string.Join(", ", topFruits)}, etc.)" : "";
-                    sb.AppendLine($"- Orchard: Diverse orchard with {fruitTreeProducing} trees bearing ripe fruit across {fruitTreeTypes} varieties{sample}.");
+                    sb.AppendLine($"- Orchard: Diverse orchard with {producingTrees} trees bearing ripe fruit across multiple varieties{sample}.");
                 }
                 else
                 {
                     string sample = topFruits.Count > 0 ? $" (including: {string.Join(", ", topFruits)})" : "";
-                    sb.AppendLine($"- Orchard: {fruitTreeProducing} fruit trees are bearing ripe fruit{sample}.");
+                    sb.AppendLine($"- Orchard: {producingTrees} fruit trees are bearing ripe fruit{sample}.");
                 }
             }
             else if (fruitTreeGrowing > 0)
             {
-                sb.AppendLine($"- Orchard: {fruitTreeGrowing} young fruit trees are growing.");
+                string growingTrees = GetFruitTreeQuantityFuzzy(fruitTreeGrowing, isZh: false);
+                sb.AppendLine($"- Orchard: {growingTrees} young fruit trees are growing.");
             }
 
             // Greenhouse
@@ -248,12 +251,12 @@ internal static class FarmStateScanner
                 if (ghReadyCrops > 0)
                 {
                     string sample = ghTopReady.Count > 0 ? $" (including: {string.Join(", ", ghTopReady)})" : "";
-                    sb.AppendLine($"- Greenhouse: {ghReadyCrops} crops ripe and ready to harvest{sample}.");
+                    sb.AppendLine($"- Greenhouse: {GetCropQuantityFuzzy(ghReadyCrops, isZh: false)} crops ripe and ready to harvest{sample}.");
                 }
                 else if (ghGrowingCrops > 0)
                 {
                     string sample = ghTopGrowing.Count > 0 ? $" (including: {string.Join(", ", ghTopGrowing)})" : "";
-                    sb.AppendLine($"- Greenhouse: {ghGrowingCrops} crops growing{sample}.");
+                    sb.AppendLine($"- Greenhouse: {GetCropQuantityFuzzy(ghGrowingCrops, isZh: false)} crops growing{sample}.");
                 }
                 else
                 {
@@ -268,7 +271,8 @@ internal static class FarmStateScanner
             if (totalAnimals > 0)
             {
                 string animalTypesStr = topAnimals.Count > 0 ? $" (Mainly: {string.Join(", ", topAnimals)})" : "";
-                sb.AppendLine($"- Livestock: {totalAnimals} animals{animalTypesStr}.");
+                string animalQty = GetAnimalQuantityFuzzy(totalAnimals, isZh: false);
+                sb.AppendLine($"- Livestock: Raising {animalQty} animals{animalTypesStr}.");
             }
 
             if (fishPondInfos.Count > 0)
@@ -282,6 +286,98 @@ internal static class FarmStateScanner
 
         return sb.Length > 30 ? sb.ToString() : null;
     }
+
+    // ── 模糊化感知映射辅助方法（全数量去面板化） ──
+
+    private static string GetCropQuantityFuzzy(int count, bool isZh)
+{
+    if (isZh)
+    {
+        if (count < 10) return "零星几株";
+        if (count < 30) return "一小片";
+        if (count < 80) return "成片";
+        if (count < 200) return "一大片";
+        return "漫野成片";
+    }
+    else
+    {
+        if (count < 10) return "a few";
+        if (count < 30) return "a small patch of";
+        if (count < 80) return "a sizable patch of";
+        if (count < 200) return "a large field of";
+        return "sprawling fields of";
+    }
+}
+
+private static string GetDeadCropFuzzy(int count, bool isZh)
+{
+    if (isZh)
+    {
+        if (count < 5) return "零星几株";
+        if (count < 20) return "一小片";
+        return "成片枯萎";
+    }
+    else
+    {
+        if (count < 5) return "a few";
+        if (count < 20) return "a small patch of";
+        return "swaths of";
+    }
+}
+
+private static string GetFruitTreeQuantityFuzzy(int count, bool isZh)
+{
+    if (isZh)
+    {
+        if (count <= 2) return "一两棵";
+        if (count <= 6) return "几棵";
+        if (count <= 15) return "一小片果林";
+        return "一大片果园";
+    }
+    else
+    {
+        if (count <= 2) return "a couple of";
+        if (count <= 6) return "a few";
+        if (count <= 15) return "a small grove of";
+        return "a sprawling orchard of";
+    }
+}
+
+private static string GetAnimalQuantityFuzzy(int count, bool isZh)
+{
+    if (isZh)
+    {
+        if (count <= 2) return "一两只";
+        if (count <= 6) return "几只";
+        if (count <= 15) return "一小群";
+        if (count <= 30) return "一大群";
+        return "成群结队";
+    }
+    else
+    {
+        if (count <= 2) return "a couple of";
+        if (count <= 6) return "a few";
+        if (count <= 15) return "a small herd of";
+        if (count <= 30) return "a large herd of";
+        return "a massive herd of";
+    }
+}
+
+private static string GetFishPondOccupantsFuzzy(int currentOccupants, int maxOccupants, bool isZh)
+{
+    if (isZh)
+    {
+        if (currentOccupants >= 8 || currentOccupants >= maxOccupants) return "满满一塘";
+        if (currentOccupants <= 2) return "零星几尾";
+        return "数尾";
+    }
+    else
+    {
+        if (currentOccupants >= 8 || currentOccupants >= maxOccupants) return "a pond teeming with";
+        if (currentOccupants <= 2) return "a couple of";
+        return "a small school of";
+    }
+}
 
     private static (int readyCount, int growingCount, int deadCount, List<string> topReady, List<string> topGrowing) ScanCropsInLocation(GameLocation location)
     {
@@ -344,7 +440,6 @@ internal static class FarmStateScanner
         {
             if (pair.Value is FruitTree tree)
             {
-                // 1.6+ 写法：tree.fruit 是果实列表，Count > 0 表示挂果
                 if (tree.fruit != null && tree.fruit.Count > 0)
                 {
                     producingTreeCount++;
@@ -359,7 +454,6 @@ internal static class FarmStateScanner
                         }
                     }
                 }
-                // 处于成长阶段（未达到最终成熟树形态）
                 else if (tree.growthStage.Value < FruitTree.treeStage)
                 {
                     growingCount++;
@@ -378,26 +472,20 @@ internal static class FarmStateScanner
         return (producingTreeCount, fruitTypeCount, topFruits, growingCount);
     }
 
-    /// <summary>
-    /// 无视语言：检查物品实例是否有效且存在于当前游戏注册表中
-    /// </summary>
     private static bool IsValidItem(Item item)
     {
         if (item == null) return false;
 
-        // 1. 检查类名是否为内部的 ErrorItem
         if (item.GetType().Name.Contains("Error", StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }
 
-        // 2. 检查 QualifiedItemId 是否包含 Error 占位
         if (!string.IsNullOrEmpty(item.QualifiedItemId) && item.QualifiedItemId.Contains("Error", StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }
 
-        // 3. 检查数据项是否在当前游戏中注册
         var parsedData = ItemRegistry.GetData(item.QualifiedItemId);
         if (parsedData == null)
         {
@@ -407,9 +495,6 @@ internal static class FarmStateScanner
         return true;
     }
 
-    /// <summary>
-    /// 安全获取物品显示名，过滤掉任何无效或缺失 Mod 的异常占位物品。
-    /// </summary>
     private static string SafeGetDisplayName(string itemId)
     {
         if (string.IsNullOrWhiteSpace(itemId)) return null;
