@@ -44,6 +44,9 @@ namespace ValleytalkReborn
         private FieldInfo _currentSpousesField;
         private FieldInfo _unofficialSpousesField;
 
+        /// <summary>_poly API 或反射任一可用即为 true；用于求婚守卫的 poly 感知降级。</summary>
+        public bool IsPolyamoryEnvironmentActive => _psApi != null || _reflectionAvailable;
+
         private SpouseQueryService() { }
 
         /// <summary>在 ModEntry.Entry 中调用初始化。</summary>
