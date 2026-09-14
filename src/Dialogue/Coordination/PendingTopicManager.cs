@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
+using StardewValley;
 
 namespace ValleytalkReborn
 {
@@ -19,6 +20,11 @@ namespace ValleytalkReborn
         /// false = 传统实时短期 topic（3分钟过期）。
         /// </summary>
         public bool IsCrossDay { get; set; } = false;
+        /// <summary>
+        /// 创建时的游戏日（Game1.Date.TotalDays）。
+        /// -1 = 传统条目（无游戏日过期语义）；仅 SetNaturalMorningThought 置值。
+        /// </summary>
+        public int CreatedDay { get; set; } = -1;
     }
 
     /// <summary>
@@ -44,25 +50,50 @@ namespace ValleytalkReborn
                 ModEntry.SHelper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
                 ModEntry.SHelper.Events.GameLoop.Saving     += OnSaving;
             }
+            else
+            {
+                ModEntry.SMonitor?.Log(
+                    "[PendingTopicManager] SHelper null at construction; persistence disabled.",
+                    LogLevel.Warn);
+            }
         }
 
         // ── 事件处理 ───────────────────────────────────────────
 
         private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
         {
+            // ── 先清空再读取，防止跨存档污染（修复 A1-1）──
+            _pendingTopics.Clear();
+
             try
             {
                 var persisted = ModEntry.SHelper.Data
                     .ReadJsonFile<Dictionary<string, PendingTopicEntry>>(FilePath);
                 if (persisted == null) return;
 
+                int currentDay = Context.IsWorldReady ? (int)Game1.Date.TotalDays : -1;
+                int loaded = 0;
+
                 foreach (var kv in persisted)
                 {
-                    if (!_pendingTopics.ContainsKey(kv.Key))
-                        _pendingTopics[kv.Key] = kv.Value;
+                    var entry = kv.Value;
+                    if (entry == null || !entry.IsCrossDay) continue;
+
+                    // 二次过滤：CreatedDay >= 0 且当前游戏日 > CreatedDay → 陈旧心境，丢弃
+                    if (entry.CreatedDay >= 0 && currentDay > 0 && currentDay > entry.CreatedDay)
+                    {
+                        ModEntry.SMonitor?.Log(
+                            $"[PendingTopicManager] Stale morning thought discarded for [{kv.Key}] (created d{entry.CreatedDay}, now d{currentDay}).",
+                            LogLevel.Trace);
+                        continue;
+                    }
+
+                    _pendingTopics[kv.Key] = entry;
+                    loaded++;
                 }
+
                 ModEntry.SMonitor?.Log(
-                    $"[PendingTopicManager] Loaded {persisted.Count} cross-day topic(s).",
+                    $"[PendingTopicManager] Loaded {loaded} cross-day topic(s).",
                     LogLevel.Debug);
             }
             catch (Exception ex)
@@ -140,8 +171,46 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
+        /// 写入晨间自然心境（MEM-05 调用）。
+        /// 覆盖语义：无条件替换该 NPC 的既有跨天条目（不追加——幂等）。
+        /// CreatedDay = 当前游戏日（Context.IsWorldReady 时），供跨日过期判定。
+        /// </summary>
+        public void SetNaturalMorningThought(string npcName, string thought)
+        {
+            if (string.IsNullOrWhiteSpace(npcName) || string.IsNullOrWhiteSpace(thought))
+            {
+                ModEntry.SMonitor?.Log(
+                    "[PendingTopicManager] SetNaturalMorningThought ignored: npcName or thought empty.",
+                    LogLevel.Debug);
+                return;
+            }
+
+            int today = Context.IsWorldReady ? (int)Game1.Date.TotalDays : -1;
+            if (today <= 0)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[PendingTopicManager] SetNaturalMorningThought [{npcName}]: world not ready, CreatedDay set to -1.",
+                    LogLevel.Trace);
+            }
+
+            _pendingTopics[npcName] = new PendingTopicEntry
+            {
+                NpcName      = npcName,
+                TopicContent = thought.Trim(),
+                ExpireTime   = DateTime.MaxValue,
+                IsCrossDay   = true,
+                CreatedDay   = today
+            };
+
+            ModEntry.SMonitor?.Log(
+                $"[PendingTopicManager] Natural morning thought set for [{npcName}].",
+                LogLevel.Debug);
+        }
+
+        /// <summary>
         /// 获取并消费 topic（消费后立即清除，保证只对下一次直接对话生效一次）。
         /// 实时 topic 检查时间过期；跨天 topic 直接消费。
+        /// 跨天条目新增 CreatedDay 过滤：当前游戏日 != CreatedDay → 视为陈旧，静默废弃并返回 null。
         /// </summary>
         public string ConsumePendingTopic(string npcName)
         {
@@ -152,7 +221,21 @@ namespace ValleytalkReborn
             _pendingTopics.Remove(npcName);
 
             if (entry.IsCrossDay)
+            {
+                // ── 晨间心境过期判定（仅 CreatedDay >= 0 的条目）──
+                if (entry.CreatedDay >= 0 && Context.IsWorldReady)
+                {
+                    int today = (int)Game1.Date.TotalDays;
+                    if (today != entry.CreatedDay)
+                    {
+                        ModEntry.SMonitor?.Log(
+                            $"[PendingTopicManager] Stale morning thought for [{npcName}] consumed and discarded (created d{entry.CreatedDay}, now d{today}).",
+                            LogLevel.Trace);
+                        return null;
+                    }
+                }
                 return entry.TopicContent;
+            }
 
             return DateTime.Now <= entry.ExpireTime ? entry.TopicContent : null;
         }

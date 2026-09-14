@@ -136,7 +136,7 @@ internal static class NightlyWorkStore
             dict[item.NpcName.Trim()] = item;
         }
 
-        return dict.Values.ToList();
+        return dict.Values.OrderBy(k => k.NpcName, StringComparer.OrdinalIgnoreCase).ToList();
     }
 
     public static List<NightlyWorkItem> Load()

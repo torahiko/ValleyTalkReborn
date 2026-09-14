@@ -848,6 +848,16 @@ namespace ValleytalkReborn
                     Log.Error($"[ValleyTalkReborn] Error cleaning MemoryManager: {ex.Message}");
                 }
 
+                // ★ 清理 PendingTopicManager（跨存档卫生，修复 A1-1/A3-1）
+                try
+                {
+                    PendingTopicManager.Instance?.Cleanup();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[ValleyTalkReborn] Error cleaning PendingTopicManager: {ex.Message}");
+                }
+
                 try
                 {
                     MovementManager.Instance?.Cleanup(SHelper);
