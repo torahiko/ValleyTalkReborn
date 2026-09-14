@@ -38,6 +38,8 @@ public class AsyncBuilder
     private string _originalLine = null;
     private IEnumerable<ConversationElement> _currentConversation = null;
     private StardewValley.Object _currentGift = null;
+    private StardewValley.Object _currentHandoverItem = null;
+    private HandoverVerdict _currentHandoverVerdict = HandoverVerdict.Passthrough_Vanilla;
     private int _currentTaste = 0;
     private readonly HashSet<string> _requestedThisFrame = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     private int _generationCooldownFrames = 0;
@@ -91,6 +93,8 @@ public class AsyncBuilder
         _originalLine = null;
         _currentConversation = null;
         _currentGift = null;
+        _currentHandoverItem = null;
+        _currentHandoverVerdict = HandoverVerdict.Passthrough_Vanilla;
         _currentTaste = 0;
         _awaitedType = GenerationType.None;
         while (_streamTokenQueue.TryDequeue(out _)) { }
@@ -141,7 +145,8 @@ public class AsyncBuilder
 
         if (_awaitingGeneration)
         {
-            if (_awaitedType == GenerationType.conversation || _awaitedType == GenerationType.Gift)
+            if (_awaitedType == GenerationType.conversation || _awaitedType == GenerationType.Gift
+                || _awaitedType == GenerationType.Handover)
             {
                 if (Game1.activeClickableMenu == null)
                 {
@@ -233,6 +238,7 @@ public class AsyncBuilder
                 GenerationType.Basic => GenerateNpc(),
                 GenerationType.conversation => GenerateNpcResponse(),
                 GenerationType.Gift => GenerateNpcGift(),
+                GenerationType.Handover => GenerateNpcHandover(),
                 _ => null
             };
 
@@ -404,7 +410,8 @@ public class AsyncBuilder
         if (currentNpc == null) return false;
 
         // Only block when truly in gift-generation phase; avoid stale marks permanently locking subsequent dialogue
-        if (_awaitedType == GenerationType.Gift && IsGeneratingDialogue)
+        if ((_awaitedType == GenerationType.Gift || _awaitedType == GenerationType.Handover)
+            && IsGeneratingDialogue)
         {
             ModEntry.SMonitor?.Log(
                 $"[AsyncBuilder] Suppressed conversation request for {currentNpc.Name}: gift interaction in progress.",
@@ -463,7 +470,8 @@ public class AsyncBuilder
         }
 
         // Gift also preempts in-progress Gift generation (e.g. player gifts the same NPC rapidly).
-        if (IsGeneratingDialogue && _awaitedType == GenerationType.Gift)
+        if (IsGeneratingDialogue && (_awaitedType == GenerationType.Gift
+            || _awaitedType == GenerationType.Handover))
         {
             ModEntry.SMonitor?.Log(
                 $"[AsyncBuilder] ★ Gift preempting IN-PROGRESS Gift for {currentNpc.Name}.",
@@ -577,6 +585,63 @@ public class AsyncBuilder
         return await DialogueBuilder.Instance.GenerateGift(_speakingNpc, _currentGift, _currentTaste, streamCallback);
     }
 
+    internal void RequestNpcHandover(NPC currentNpc, HandoverVerdict verdict, StardewValley.Object handoverItem)
+    {
+        if (currentNpc == null) return;
+
+        // 1. 抢占 PENDING Basic（未开始生成）
+        if (_awaitingGeneration && _awaitedType == GenerationType.Basic && !IsGeneratingDialogue)
+        {
+            _awaitingGeneration = false;
+            _awaitedType = GenerationType.None;
+            _speakingNpc = null;
+            _currentDialogueKey = string.Empty;
+            _originalLine = null;
+            _currentConversation = null;
+            _waitFrames = 0;
+            _requestedThisFrame.Remove(currentNpc.Name);
+        }
+
+        // 2. 抢占 IN-PROGRESS Basic / Gift / Handover
+        if (IsGeneratingDialogue && (_awaitedType == GenerationType.Basic
+            || _awaitedType == GenerationType.Gift
+            || _awaitedType == GenerationType.Handover))
+        {
+            if (Game1.activeClickableMenu == _placeholderMenu)
+                Game1.exitActiveMenu();
+            AbortCurrentGeneration();
+            _requestedThisFrame.Remove(currentNpc.Name);
+        }
+
+        // 3. 阻塞检查
+        if (_awaitingGeneration || IsGeneratingDialogue)
+        {
+            ModEntry.SMonitor?.Log("[AsyncBuilder] Handover request blocked: generation in progress.", LogLevel.Trace);
+            return;
+        }
+
+        _generationCooldownFrames = 0;
+        if (!TryClaimNpc(currentNpc.Name)) return;
+
+        MarkGiftInteraction(currentNpc.Name);
+        _speakingNpc = currentNpc;
+        _currentHandoverVerdict = verdict;
+        _currentHandoverItem = handoverItem;
+        _awaitedType = GenerationType.Handover;
+        _awaitingGeneration = true;
+        ModEntry.SMonitor?.Log(
+            $"[AsyncBuilder] ★ Handover request queued for {currentNpc.Name}. verdict={verdict}",
+            LogLevel.Debug);
+    }
+
+    private async Task<Dialogue> GenerateNpcHandover()
+    {
+        _isStreaming = true;
+        Action<string> streamCallback = token => _streamTokenQueue.Enqueue(token);
+        return await DialogueBuilder.Instance.GenerateHandover(
+            _speakingNpc, _currentHandoverVerdict, _currentHandoverItem, streamCallback);
+    }
+
     private async Task<Dialogue> GenerateNpc()
     {
         _isStreaming = true;
@@ -603,5 +668,6 @@ internal enum GenerationType
     None,
     Basic,
     conversation,
-    Gift
+    Gift,
+    Handover
 }
