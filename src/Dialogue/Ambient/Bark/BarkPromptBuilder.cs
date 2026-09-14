@@ -331,7 +331,7 @@ Example 3 (Paranoia & Appetite):
 
         string locName  = EnvironmentScanner.GetLocationFriendlyName(loc.Name);
         string timeDesc = GetTimeOfDayDescription(isZh);
-        string weather  = (!isIndoor) ? GetWeatherDescription(isZh) : null;
+        string weather  = (!isIndoor) ? GetWeatherDescription(loc, isZh) : null;
 
         var sb = new StringBuilder();
 
@@ -400,7 +400,7 @@ Example 3 (Paranoia & Appetite):
 
         if (isIndoor)
         {
-            sb.Append(BuildIndoorWeatherSentence(isZh));
+            sb.Append(BuildIndoorWeatherSentence(loc, isZh));
             string objs = BuildNearbyObjectsSentence(npc, isZh);
             if (objs != null) sb.Append(objs);
         }
@@ -411,13 +411,13 @@ Example 3 (Paranoia & Appetite):
     /// <summary>
     /// 构建室内常驻天气句（优先级：绿雨 > 雪 > 雷 > 雨 > 风 > 晴）。
     /// </summary>
-    private static string BuildIndoorWeatherSentence(bool isZh)
+    private static string BuildIndoorWeatherSentence(GameLocation loc, bool isZh)
     {
-        if (Game1.isGreenRain)          return isZh ? "屋外正下着诡异的绿雨。" : "Strange green rain is falling outside.";
-        if (Game1.IsSnowingHere())      return isZh ? "屋外正下着雪。"   : "It's snowing outside.";
-        if (Game1.IsLightningHere())    return isZh ? "屋外雷雨大作。"   : "A thunderstorm is raging outside.";
-        if (Game1.IsRainingHere())      return isZh ? "屋外正下着雨。"   : "It's raining outside.";
-        if (Game1.isDebrisWeather)      return isZh ? "屋外正刮着风。"   : "It's windy outside.";
+        if (Game1.IsGreenRainingHere())  return isZh ? "屋外正下着诡异的绿雨。" : "Strange green rain is falling outside.";
+        if (loc != null && Game1.IsSnowingHere(loc))    return isZh ? "屋外正下着雪。"   : "It's snowing outside.";
+        if (loc != null && Game1.IsLightningHere(loc))  return isZh ? "屋外雷雨大作。"   : "A thunderstorm is raging outside.";
+        if (loc != null && Game1.IsRainingHere(loc))    return isZh ? "屋外正下着雨。"   : "It's raining outside.";
+        if (loc != null && Game1.IsDebrisWeatherHere(loc)) return isZh ? "屋外正刮着风。"   : "It's windy outside.";
         return isZh ? "屋外是个大晴天。" : "Clear skies outside.";
     }
 
@@ -575,12 +575,12 @@ Example 3 (Paranoia & Appetite):
         if (isZh)
         {
             parts.Add($"玩家姓名：{pName}");
-            parts.Add($"性别性别：{genderStr}（自言自语中若提及玩家，第三人称代词使用“{pronoun}”）");
+            parts.Add($"性别：{genderStr}（自言自语中若提及玩家，第三人称代词使用“{pronoun}”）");
         }
         else
         {
             parts.Add($"Player Name: {pName}");
-            parts.Add($"Gender: {genderStr} (When referring to the player, 3rd-person pronoun MUST strictly be \"{pronoun}\"");
+            parts.Add($"Gender: {genderStr} (When referring to the player, 3rd-person pronoun MUST strictly be \"{pronoun}\")");
         }
 
         // 2. 关系状态解析（伴侣 > 恋爱中 > 挚友 > 熟人 > 镇民）
@@ -632,13 +632,13 @@ Example 3 (Paranoia & Appetite):
             : $"- {string.Join("\n- ", parts)}";
     }
 
-    private static string GetWeatherDescription(bool isZh)
+    private static string GetWeatherDescription(GameLocation loc, bool isZh)
     {
-        if (Game1.isGreenRain)  return isZh ? "绿雨" : "green rain";
-        if (Game1.isSnowing)    return isZh ? "下雪" : "snowing";
-        if (Game1.isLightning)  return isZh ? "雷雨" : "stormy";
-        if (Game1.isRaining)    return isZh ? "下雨" : "raining";
-        if (Game1.isDebrisWeather) return isZh ? "刮风" : "windy";
+        if (Game1.IsGreenRainingHere())  return isZh ? "绿雨" : "green rain";
+        if (loc != null && Game1.IsSnowingHere(loc))    return isZh ? "下雪" : "snowing";
+        if (loc != null && Game1.IsLightningHere(loc))  return isZh ? "雷雨" : "stormy";
+        if (loc != null && Game1.IsRainingHere(loc))    return isZh ? "下雨" : "raining";
+        if (loc != null && Game1.IsDebrisWeatherHere(loc)) return isZh ? "刮风" : "windy";
         return isZh ? "晴天" : "clear";
     }
 

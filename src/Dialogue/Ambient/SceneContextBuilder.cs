@@ -34,10 +34,11 @@ namespace ValleytalkReborn
 
             string seasonStr = isZh ? Game1.CurrentSeasonDisplayName : Game1.currentSeason;
 
+            GameLocation weatherLoc = centerNpc?.currentLocation ?? Game1.currentLocation;
             var weatherParts = new List<string>();
-            if (Game1.IsRainingHere())   weatherParts.Add(isZh ? "雨天" : "Rainy");
-            if (Game1.IsSnowingHere())   weatherParts.Add(isZh ? "飞雪" : "Snowy");
-            if (Game1.IsLightningHere()) weatherParts.Add(isZh ? "雷雨" : "Thunder");
+            if (weatherLoc != null && Game1.IsRainingHere(weatherLoc))   weatherParts.Add(isZh ? "雨天" : "Rainy");
+            if (weatherLoc != null && Game1.IsSnowingHere(weatherLoc))   weatherParts.Add(isZh ? "飞雪" : "Snowy");
+            if (weatherLoc != null && Game1.IsLightningHere(weatherLoc)) weatherParts.Add(isZh ? "雷雨" : "Thunder");
             if (weatherParts.Count == 0) weatherParts.Add(isZh ? "晴天" : "Sunny");
 
             string weatherCombined = string.Join(", ", weatherParts);

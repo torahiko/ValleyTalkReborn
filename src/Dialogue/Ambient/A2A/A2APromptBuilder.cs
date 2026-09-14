@@ -568,28 +568,29 @@ internal sealed class A2APromptBuilder
 
         int time = Game1.timeOfDay;
         var loc = participants[0]?.currentLocation ?? Game1.player?.currentLocation;
+        GameLocation moodLoc = participants[0]?.currentLocation ?? Game1.currentLocation;
         string locName = loc?.Name ?? "";
         bool isOutdoors = loc?.IsOutdoors ?? false;
         string season = Game1.currentSeason?.ToLowerInvariant() ?? "spring";
 
         string seasonMoodZh = season switch
         {
-            "spring" => Game1.isRaining ? "春雨连绵的潮湿泥泞" : "初春微凉而透着新绿的空气",
-            "summer" => Game1.isGreenRain 
-                ? "笼罩小镇的诡异绿雨与疯长苔藓" 
-                : (Game1.isRaining ? "沉闷潮湿的夏日暴雨" : "夏日耀眼的阳光与燥热微风"),
-            "fall"   => Game1.isRaining ? "秋雨浸透落叶的萧瑟微寒" : "秋高气爽的丰收时节与微凉秋风",
+            "spring" => (moodLoc != null ? Game1.IsRainingHere(moodLoc) : Game1.isRaining) ? "春雨连绵的潮湿泥泞" : "初春微凉而透着新绿的空气",
+            "summer" => Game1.IsGreenRainingHere()
+                ? "笼罩小镇的诡异绿雨与疯长苔藓"
+                : ((moodLoc != null ? Game1.IsRainingHere(moodLoc) : Game1.isRaining) ? "沉闷潮湿的夏日暴雨" : "夏日耀眼的阳光与燥热微风"),
+            "fall"   => (moodLoc != null ? Game1.IsRainingHere(moodLoc) : Game1.isRaining) ? "秋雨浸透落叶的萧瑟微寒" : "秋高气爽的丰收时节与微凉秋风",
             "winter" => "冬日凛冽的寒风与屋外积雪",
             _ => "当季特有的时节气息"
         };
 
         string seasonMoodEn = season switch
         {
-            "spring" => Game1.isRaining ? "damp spring drizzle and wet soil" : "crisp, fresh air of early spring",
-            "summer" => Game1.isGreenRain 
-                ? "the eerie green rain and wild moss overgrowth" 
-                : (Game1.isRaining ? "muggy, humid summer downpours" : "blazing sunlight and heavy summer warmth"),
-            "fall"   => Game1.isRaining ? "chilly autumn drizzle soaking the leaves" : "brisk autumn breeze and harvest season energy",
+            "spring" => (moodLoc != null ? Game1.IsRainingHere(moodLoc) : Game1.isRaining) ? "damp spring drizzle and wet soil" : "crisp, fresh air of early spring",
+            "summer" => Game1.IsGreenRainingHere()
+                ? "the eerie green rain and wild moss overgrowth"
+                : ((moodLoc != null ? Game1.IsRainingHere(moodLoc) : Game1.isRaining) ? "muggy, humid summer downpours" : "blazing sunlight and heavy summer warmth"),
+            "fall"   => (moodLoc != null ? Game1.IsRainingHere(moodLoc) : Game1.isRaining) ? "chilly autumn drizzle soaking the leaves" : "brisk autumn breeze and harvest season energy",
             "winter" => "freezing wind and quiet snow outside",
             _ => "the current seasonal atmosphere"
         };
