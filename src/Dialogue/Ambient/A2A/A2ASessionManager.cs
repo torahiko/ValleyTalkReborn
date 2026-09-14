@@ -54,7 +54,6 @@ internal sealed class A2ASessionManager
     private readonly NpcReservationService _reservations;
     private readonly MainThreadOutputQueue _outputQueue;
     private readonly LlmRequestGateway _llmGateway;
-    private readonly ModConfig _config;
     private readonly A2APromptBuilder _promptBuilder;
 
     private readonly List<DialogueModels.A2ASession> _activeA2ASessions = new List<DialogueModels.A2ASession>();
@@ -95,6 +94,9 @@ internal sealed class A2ASessionManager
     /// </summary>
     private static bool IsFestivalNow => Game1.CurrentEvent?.isFestival == true;
 
+    // ★ 实时读取全局 Config，避免 GMCM reset 后引用断开导致模块读到旧实例
+    private static ModConfig Config => ModEntry.Config;
+
     /// <summary>
      /// 当 NPC 被 A2A 锁定（凝视完成）时触发，用于通知外部模块清理该 NPC 的单人状态。
     /// </summary>
@@ -104,13 +106,11 @@ internal sealed class A2ASessionManager
         NpcReservationService reservations,
         MainThreadOutputQueue outputQueue,
         LlmRequestGateway llmGateway,
-        ModConfig config,
         A2APromptBuilder promptBuilder)
     {
         _reservations = reservations;
         _outputQueue = outputQueue;
         _llmGateway = llmGateway;
-        _config = config;
         _promptBuilder = promptBuilder;
     }
 
@@ -144,7 +144,7 @@ internal sealed class A2ASessionManager
     /// </summary>
     internal void Tick()
     {
-        if (!_config.EnableA2A)
+        if (!Config.EnableA2A)
         {
             // 如果 A2A 被禁用，清理所有会话但不推进 Tick
             CancelAll("A2A disabled", applyCooldown: false);
@@ -160,7 +160,7 @@ internal sealed class A2ASessionManager
      /// </summary>
     internal void TickRadarCooldown()
     {
-        if (!_config.EnableA2A) return;
+        if (!Config.EnableA2A) return;
 
         _radarCooldown--;
         if (_radarCooldown <= 0)
@@ -518,7 +518,7 @@ internal sealed class A2ASessionManager
                         var token = session.RequestCts.Token;
                         _ = Task.Run(() => FetchA2AScriptAsync(session.SessionId, request, token));
                         // ★ 修复：长文本上下文受 Config.Debug 门控保护，未开启时降级为简短状态行
-                        if (_config?.Debug == true)
+                        if (Config?.Debug == true)
                         {
                             ModEntry.SMonitor?.Log(
                                 $"[A2A] 发送脚本请求：{request.NamesLog}\n--- System Prompt ---\n{request.SystemPrompt}\n--- User Prompt ---\n{request.UserPrompt}",
@@ -676,8 +676,24 @@ internal sealed class A2ASessionManager
             bool inRange = IsFestivalNow
                 ? DialogueUtilities.IsInRangeSquaredDuringFestival(npc, (Farmer)Game1.player, A2A_RADAR_RANGE_SQ)
                 : DialogueUtilities.IsInRangeSquared(npc, (Farmer)Game1.player, A2A_RADAR_RANGE_SQ);
-            if (inRange)
-                a2aNearbyNpcs.Add(npc);
+
+            if (!inRange)
+                continue;
+
+            // ★ Bios 门禁：无有效 Bios 的角色禁止参与 A2A 会话（角色卡缺失 = LLM 纯脑补幻觉）
+            var a2aBioCharacter = IsFestivalNow
+                ? DialogueBuilder.Instance?.GetCharacterByName(npc.Name)
+                : DialogueBuilder.Instance?.GetCharacter(npc);
+            if (a2aBioCharacter == null || !a2aBioCharacter.HasValidBio)
+                continue;
+
+            // ★ 意愿门禁：Bio 中关闭环境气泡（EnableAmbientBarks=false）的角色，
+            // 同样不得被 A2A 拉去自发闲聊——与 Bark 的意愿开关语义统一。
+            // 注：HasValidBio=true 已保证 Bio 非 null，此处无需重复判空。
+            if (!a2aBioCharacter.Bio.EnableAmbientBarks)
+                continue;
+
+            a2aNearbyNpcs.Add(npc);
         }
 
         // ── 候选会话枚举（关系对 / 陌生人破冰对 / 关系团）──
@@ -698,7 +714,7 @@ internal sealed class A2ASessionManager
         var candidates = new List<A2ACandidate>();
 
         // b) 候选枚举
-        int maxP = Math.Max(2, Math.Min(4, _config.A2AMaxParticipants));
+        int maxP = Math.Max(2, Math.Min(4, Config.A2AMaxParticipants));
 
         // 对（2 人）
         for (int i = 0; i < n; i++)

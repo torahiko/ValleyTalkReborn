@@ -351,7 +351,8 @@ internal sealed class AmbientBarkModule : IDialogueModule
 
             if (character?.Bio == null ||
                 !character.Bio.EnableAmbientBarks ||
-                string.IsNullOrWhiteSpace(character.Bio.AmbientBarkPrompt))
+                string.IsNullOrWhiteSpace(character.Bio.AmbientBarkPrompt) ||
+                !character.HasValidBio)   // ★ Bios 门禁
                 continue;
 
             if (_reservations.IsReserved(npc.Name))
@@ -846,7 +847,8 @@ internal sealed class AmbientBarkModule : IDialogueModule
         if (character == null) return;
 
         var bio = character.Bio;
-        if (bio == null || !bio.EnableAmbientBarks || string.IsNullOrWhiteSpace(bio.AmbientBarkPrompt))
+        if (bio == null || !bio.EnableAmbientBarks || string.IsNullOrWhiteSpace(bio.AmbientBarkPrompt) ||
+            !character.HasValidBio)   // ★ Bios 门禁
             return;
 
         RemoveFromGlobalQueue(npc);

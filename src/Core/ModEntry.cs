@@ -387,7 +387,7 @@ namespace ValleytalkReborn
 
             var a2aPromptBuilder = new A2APromptBuilder();
             var a2aSessionManager = new A2ASessionManager(
-                npcReservations, outputQueue, llmGateway, Config, a2aPromptBuilder);
+                npcReservations, outputQueue, llmGateway, a2aPromptBuilder);
             var a2aModule = new A2AModule(a2aSessionManager);
 
             _dialogueCoordinator = new DialogueCoordinator(

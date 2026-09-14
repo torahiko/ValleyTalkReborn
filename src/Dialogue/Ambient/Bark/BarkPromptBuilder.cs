@@ -31,7 +31,9 @@ internal sealed class BarkPromptBuilder
 
         var character = DialogueBuilder.Instance?.GetCharacter(npc);
         var bio = character?.Bio;
-        if (bio == null || !bio.EnableAmbientBarks || string.IsNullOrWhiteSpace(bio.AmbientBarkPrompt))
+        if (character == null || bio == null || !bio.EnableAmbientBarks ||
+            string.IsNullOrWhiteSpace(bio.AmbientBarkPrompt) ||
+            !character.HasValidBio)   // ★ Bios 门禁（纵深防御）
             return null;
 
         PlayerStateScanner.Scan();
