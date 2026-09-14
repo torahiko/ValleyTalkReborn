@@ -938,7 +938,6 @@ namespace ValleytalkReborn
 
             if (_okButton.containsPoint(x, y))
             {
-                Game1.playSound("coin");
                 Submit(_inputBox.Text);
             }
             else if (_cancelButton.containsPoint(x, y))
@@ -961,7 +960,6 @@ namespace ValleytalkReborn
 
                 if (key == Keys.Enter)
                 {
-                    Game1.playSound("coin");
                     Submit(_inputBox.Text);
                     return;
                 }

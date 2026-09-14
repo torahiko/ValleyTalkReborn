@@ -297,5 +297,34 @@ namespace ValleytalkReborn
         {
             public static string ButtonHover() => Lookup("AdvancedSettings.ButtonHover");
         }
+
+        public static class Follower
+        {
+            public static string BusyHud(string name)
+                => Lookup("Follower.BusyHud").Replace("{{name}}", name ?? string.Empty);
+
+            public static string NotFamiliar(string name)
+                => Lookup("Follower.NotFamiliar").Replace("{{name}}", name ?? string.Empty);
+
+            public static string StartFollowingHud(string name, string key)
+                => Lookup("Follower.StartFollowingHud")
+                    .Replace("{{name}}", name ?? string.Empty)
+                    .Replace("{{key}}",  key  ?? string.Empty);
+
+            public static string DismissDateConfirm(string name)
+                => Lookup("Follower.DismissDateConfirm").Replace("{{name}}", name ?? string.Empty);
+
+            public static string DismissFollowConfirm(string name)
+                => Lookup("Follower.DismissFollowConfirm").Replace("{{name}}", name ?? string.Empty);
+
+            public static string ConfirmYes() => Lookup("Follower.ConfirmYes");
+            public static string ConfirmNo()  => Lookup("Follower.ConfirmNo");
+
+            public static string DateLeaveHeadText()   => Lookup("Follower.DateLeaveHeadText");
+            public static string FollowLeaveHeadText() => Lookup("Follower.FollowLeaveHeadText");
+
+            public static string TooFarAway(string name)
+                => Lookup("Follower.TooFarAway").Replace("{{name}}", name ?? string.Empty);
+        }
     }
 }

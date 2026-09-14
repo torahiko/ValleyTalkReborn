@@ -157,5 +157,15 @@
   "Hub.SelectNpcLabel": "NPC: ",
   "Hub.EmptyNpcList": "No villagers available yet. Talk to or befriend a villager first.",
   "Hub.KeybindsTitle": "Current Keybinds",
-  "Hub.KeybindsLine": "{{name}}: {{key}}"
+  "Hub.KeybindsLine": "{{name}}: {{key}}",
+  "Follower.BusyHud": "{{name}} is busy right now.",
+  "Follower.NotFamiliar": "{{name}} isn't familiar enough with you yet (Requires 4 hearts).",
+  "Follower.StartFollowingHud": "{{name}} is now following you (Press [{{key}}] to dismiss)",
+  "Follower.DismissDateConfirm": "Are you sure you want to end the date with {{name}} early?",
+  "Follower.DismissFollowConfirm": "Have {{name}} stop following and head back?",
+  "Follower.ConfirmYes": "Yes",
+  "Follower.ConfirmNo": "No",
+  "Follower.DateLeaveHeadText": "That's it for today? I'll head back then.",
+  "Follower.FollowLeaveHeadText": "I'll head back now, see you later!",
+  "Follower.TooFarAway": "{{name}} has wandered too far away..."
 }

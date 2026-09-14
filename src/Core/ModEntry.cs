@@ -530,7 +530,8 @@ namespace ValleytalkReborn
 
                     if (!sameLocation || distance > 256f)
                     {
-                        Game1.addHUDMessage(new HUDMessage($"{LastSpokenNPC.displayName} 已经走远了...", 3));
+                        Game1.addHUDMessage(new HUDMessage(
+                            I18n.Follower.TooFarAway(LastSpokenNPC.displayName), 3));
                     }
                     else
                     {
@@ -621,6 +622,8 @@ namespace ValleytalkReborn
 
         private void OnDismissFollowerButtonPressed(object sender, ButtonPressedEventArgs e)
         {
+            if (!Config.EnableMod) return;
+
             if (!Context.IsWorldReady || !Context.IsPlayerFree)
                 return;
 
@@ -707,8 +710,8 @@ namespace ValleytalkReborn
             // 忙碌守卫
             if (MovementManager.Instance.IsNpcMoving(target) || target.controller != null)
             {
-                bool isZh = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
-                Game1.addHUDMessage(new HUDMessage(isZh ? $"{target.displayName} 正忙着别的事情。" : $"{target.displayName} is busy right now.", 3));
+                Game1.addHUDMessage(new HUDMessage(
+                    I18n.Follower.BusyHud(target.displayName), 3));
                 return;
             }
 
@@ -723,10 +726,8 @@ namespace ValleytalkReborn
 
             if (!isExempt && hearts < 4)
             {
-                bool isZh = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
-                Game1.showRedMessage(isZh
-                    ? $"{target.displayName} 和你的关系还不够亲密（需达到 4 心）。"
-                    : $"{target.displayName} isn't familiar enough with you yet (Requires 4 hearts).");
+                Game1.showRedMessage(
+                    I18n.Follower.NotFamiliar(target.displayName));
                 try { target.doEmote(28); } catch { }
                 try { Game1.playSound("cancel"); } catch { }
                 return;
@@ -740,10 +741,8 @@ namespace ValleytalkReborn
             Game1.player.faceGeneralDirection(target.getStandingPosition());
 
             // 统一启动
-            bool isZhFollow = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
-            string hud = isZhFollow
-                ? $"{target.displayName} 开始跟着你了（按 [{Config.DismissFollowerKey}] 结束）"
-                : $"{target.displayName} is now following you (Press [{Config.DismissFollowerKey}] to dismiss)";
+            string hud = I18n.Follower.StartFollowingHud(
+                target.displayName, Config.DismissFollowerKey.ToString());
             DialogueBuilder.TryStartFollowForContext(target, hud);
         }
 
@@ -755,13 +754,13 @@ namespace ValleytalkReborn
 
             bool isDate = movement.HasActiveDateFollow;
             string prompt = isDate
-                ? $"确定要提前结束与 {npc.displayName} 的约会吗？"
-                : $"要让 {npc.displayName} 结束跟随并返回吗？";
+                ? I18n.Follower.DismissDateConfirm(npc.displayName)
+                : I18n.Follower.DismissFollowConfirm(npc.displayName);
 
             var responses = new Response[]
             {
-                new Response("Yes", "是"),
-                new Response("No", "否")
+                new Response("Yes", I18n.Follower.ConfirmYes()),
+                new Response("No",  I18n.Follower.ConfirmNo())
             };
 
             Game1.currentLocation.createQuestionDialogue(
@@ -787,12 +786,12 @@ namespace ValleytalkReborn
             // 头顶气泡反馈：非阻塞、不等 LLM；NPC 不在视野内时静默无害
             if (isDate)
             {
-                npc.showTextAboveHead("今天就先到这里吗？那我先回去了。");
+                npc.showTextAboveHead(I18n.Follower.DateLeaveHeadText());
                 npc.doEmote(24);
             }
             else
             {
-                npc.showTextAboveHead("那我先回去啦，晚点见！");
+                npc.showTextAboveHead(I18n.Follower.FollowLeaveHeadText());
                 npc.doEmote(32);
             }
 
