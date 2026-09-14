@@ -16,6 +16,14 @@ namespace ValleytalkReborn
             if (__instance == null || gift == null)
                 return true;
 
+            if (gift.QualifiedItemId is "(O)458" or "(O)460" or "(O)277" || gift.questItem.Value)
+            {
+                ModEntry.SMonitor.Log(
+                    $"[GetGiftReaction] ritual/quest item reached legacy path, handing back to vanilla: {__instance.Name} {gift.QualifiedItemId}",
+                    StardewModdingAPI.LogLevel.Trace);
+                return true;
+            }
+
             var giftName = gift.DisplayName ?? gift.Name ?? "Gift";
             ModEntry.SMonitor.Log(
                 $"NPC {__instance.Name} trying to get gift reaction for {giftName}",
@@ -94,8 +102,8 @@ namespace ValleytalkReborn
                 : string.Empty;
 
             string topic = isZh
-                ? $"农夫（@）刚刚送给你一件礼物：[{itemName}]，{tasteDesc}{birthdayNote}。请在这次对话里真实、生动地表达你对这份礼物的反应。"
-                : $"The farmer (@) just gave you a gift: [{itemName}] — {tasteDesc}{birthdayNote}. React to this gift authentically and vividly in your response.";
+                ? $"农夫（@）刚刚送给了你一件礼物：[{itemName}]。事实：{tasteDesc}{birthdayNote}。"
+                : $"The farmer (@) just handed you a gift: [{itemName}]. Fact: {tasteDesc}{birthdayNote}.";
 
             PendingTopicManager.Instance.SetPendingTopic(npc.Name, topic);
         }
