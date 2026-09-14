@@ -138,5 +138,30 @@ public class BioData
         /// 会被追加拼接到角色说话风格描述之后。
         /// </summary>
         public string Text { get; set; } = "";
+
+        /// <summary>
+        /// 若为 true，则要求巴士已修复才命中此档；null 表示不做此限制。
+        /// 用于把角色阶段性状态与社区中心/Joja 事件进度绑定。
+        /// </summary>
+        public bool? RequireBusRepaired { get; set; } = null;
+
+        /// <summary>
+        /// 若为非空字符串，则要求玩家与该角色已婚才命中此档，值为配偶的 NPC 唯一 ID；
+        /// null 表示不做此限制。与 RequireMarried 不同，它额外约束了"和谁结婚"。
+        /// </summary>
+        public string RequirePlayerMarriedTo { get; set; } = null;
+
+        /// <summary>
+        /// 命中该档位时注入 Bark 的心智状态覆盖标识，由 BarkSlotResolver 消费，
+        /// null 表示沿用默认心智选择。
+        /// </summary>
+        public string BarkMindset { get; set; } = null;
+
+        /// <summary>
+        /// 命中该档位时注入的 Preoccupation 覆盖池；
+        /// 以 "!= null && Count > 0" 区分"配置了覆盖池"与"未配置"，故默认必须为 null，
+        /// 禁止初始化为空列表。
+        /// </summary>
+        public List<string> Preoccupations { get; set; } = null;
     }
 }
