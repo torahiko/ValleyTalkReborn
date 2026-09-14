@@ -218,6 +218,9 @@ namespace ValleytalkReborn
             };
         }
 
+        /// <summary>读取当前存档 Bio（SaveData 优先、legacy 文件兜底）。供 UI 展示与提示词同源。</summary>
+        public static string GetCustomBio() => GetSaveCustomBio();
+
         /// <summary>
         /// 读取当前存档专属的 PlayerCustomBio（带轻量缓存）。
         /// </summary>

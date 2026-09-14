@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Menus;
 using System;
@@ -55,6 +56,28 @@ namespace ValleytalkReborn
         private readonly float _closeButtonBaseScale;
         private readonly float _upArrowBaseScale;
         private readonly float _downArrowBaseScale;
+
+        // ── Tab2（农夫档案）状态 ────────────────────────────────────────
+        private bool _tab2Initialized;
+        private int _safetyModeIndex; // 0..3
+        private List<(string Id, string Label)> _orientationItems;
+        private DropdownList _orientationDropdown;
+        private DialogueTextInputBox _bioTextBox;
+        private int _tab2RightColW;
+        private int _tab2RightColX;
+        private Rectangle _enableProfileCheckboxRect;
+        private Rectangle _orientationLabelRect;
+        private Rectangle _orientationDropdownRect;
+        private Rectangle _safetyLabelRect;
+        private Rectangle _safetySliderRect;
+        private Rectangle _bioLabelRect;
+        private Rectangle _bioBoxRect;
+        private Rectangle _saveButtonRect;
+
+        // ── Tab3（高级设置）状态 ────────────────────────────────────────
+        private Rectangle _tab3CheckboxInfinite;
+        private Rectangle _tab3CheckboxVanillaFirst;
+        private Rectangle _tab3CheckboxRecordVanilla;
 
         public IntegratedHubMenu(string initialNpcName, int initialTab)
         {
@@ -146,6 +169,15 @@ namespace ValleytalkReborn
             // 列表区顶部：Tab0 为下拉/称谓子标题腾出一行
             _listTopY = yPositionOnScreen + TopPadding + (_currentTab == 0 ? TabHeight + 8 : 0);
 
+            // Tab2 惰性初始化
+            if (_currentTab == 2 && !_tab2Initialized)
+                InitializeTab2();
+
+            // 恢复键盘焦点（用户意图聚焦 + 当前无占用）
+            if (_currentTab == 2 && _bioTextBox != null && _bioTextBox.Selected
+                && Game1.keyboardDispatcher.Subscriber == null)
+                Game1.keyboardDispatcher.Subscriber = _bioTextBox;
+
             ClampStartIndex();
             RefreshActionButtons();
             PositionScrollComponents();
@@ -170,6 +202,11 @@ namespace ValleytalkReborn
         private void SwitchTab(int tab)
         {
             if (_currentTab == tab) return;
+
+            // 离开 Tab2 时归还键盘焦点（不清 Selected，保留用户意图）
+            if (_currentTab == 2 && Game1.keyboardDispatcher.Subscriber == _bioTextBox)
+                Game1.keyboardDispatcher.Subscriber = null;
+
             _currentTab = tab;
             _startIndex = 0;
             Game1.playSound("smallSelect");
@@ -225,11 +262,13 @@ namespace ValleytalkReborn
             }
 
             Game1.playSound("bigSelect");
+            ReleaseKeyboard();
             Game1.activeClickableMenu = new AddMemoryInputMenu(_currentNpcName, this, null, _currentTab);
         }
 
         private void OpenEditMemory(MemoryEntry e)
         {
+            ReleaseKeyboard();
             Game1.activeClickableMenu = new AddMemoryInputMenu(_currentNpcName, this, e, _currentTab);
         }
 
@@ -256,11 +295,29 @@ namespace ValleytalkReborn
                 });
         }
 
+        private void ReleaseKeyboard()
+        {
+            if (_bioTextBox != null && Game1.keyboardDispatcher.Subscriber == _bioTextBox)
+                Game1.keyboardDispatcher.Subscriber = null;
+        }
+
         // ── 输入 ────────────────────────────────────────────────────────
 
         public override void receiveScrollWheelAction(int direction)
         {
             base.receiveScrollWheelAction(direction);
+
+            // Tab2：取向下拉 或 Bio 滚动
+            if (_currentTab == 2)
+            {
+                if (_orientationDropdown.IsOpen)
+                {
+                    _orientationDropdown.ReceiveScrollWheel(direction);
+                    return;
+                }
+                _bioTextBox?.ReceiveScrollWheel(direction);
+                return;
+            }
 
             if (_npcDropdown.IsOpen)
             {
@@ -322,6 +379,7 @@ namespace ValleytalkReborn
                 if (_callsignRect.Contains(x, y) && !string.IsNullOrEmpty(_currentNpcName))
                 {
                     Game1.playSound("bigSelect");
+                    ReleaseKeyboard();
                     Game1.activeClickableMenu = new SetCallsignInputMenu(_currentNpcName, this);
                     return;
                 }
@@ -344,8 +402,121 @@ namespace ValleytalkReborn
 
                 HandleListRowClicks(x, y);
             }
+            else if (_currentTab == 2)
+            {
+                HandleTab2Click(x, y);
+            }
+            else if (_currentTab == 3)
+            {
+                HandleTab3Click(x, y);
+            }
+        }
 
-            // Tab2 / Tab3：无可交互控件
+        private void HandleTab2Click(int x, int y)
+        {
+            // 1. 取向下拉展开时优先消费
+            if (_orientationDropdown.IsOpen && _orientationDropdown.ReceiveLeftClick(x, y))
+                return;
+
+            // 2. 启用开关
+            if (_enableProfileCheckboxRect.Contains(x, y))
+            {
+                ModEntry.Config.EnablePlayerProfile = !ModEntry.Config.EnablePlayerProfile;
+                Game1.playSound("select");
+                return;
+            }
+
+            // 3. 禁用态：下方控件点击穿透
+            if (!ModEntry.Config.EnablePlayerProfile)
+                return;
+
+            // 4. 取向下拉头部
+            if (_orientationDropdown.HeaderBounds.Contains(x, y))
+            {
+                _orientationDropdown.ToggleOpen();
+                Game1.playSound("select");
+                return;
+            }
+
+            // 5. 恋爱尺度滑块
+            if (_safetySliderRect.Contains(x, y))
+            {
+                int trackX = _safetySliderRect.X;
+                int trackW = _safetySliderRect.Width;
+                int relativeX = Math.Clamp(x - trackX, 0, trackW);
+                _safetyModeIndex = Math.Min(3, (int)((float)relativeX / trackW * 4));
+                Game1.playSound("select");
+                return;
+            }
+
+            // 6. Bio 输入框
+            if (_bioBoxRect.Contains(x, y))
+            {
+                _bioTextBox.Selected = true;
+                Game1.keyboardDispatcher.Subscriber = _bioTextBox;
+                _bioTextBox.ReceiveLeftClick(x, y);
+                return;
+            }
+
+            // 7. 保存按钮
+            if (_saveButtonRect.Contains(x, y))
+            {
+                SaveTab2();
+                return;
+            }
+        }
+
+        private void HandleTab3Click(int x, int y)
+        {
+            if (_tab3CheckboxInfinite.Contains(x, y))
+            {
+                ModEntry.Config.EnableInfiniteChat = !ModEntry.Config.EnableInfiniteChat;
+                Game1.playSound(ModEntry.Config.EnableInfiniteChat ? "coin" : "drumkit6");
+                ModEntry.SHelper.WriteConfig(ModEntry.Config);
+                return;
+            }
+
+            if (_tab3CheckboxVanillaFirst.Contains(x, y))
+            {
+                ModEntry.Config.EnableVanillaFirst = !ModEntry.Config.EnableVanillaFirst;
+                Game1.playSound(ModEntry.Config.EnableVanillaFirst ? "coin" : "drumkit6");
+                ModEntry.SHelper.WriteConfig(ModEntry.Config);
+                return;
+            }
+
+            if (_tab3CheckboxRecordVanilla.Contains(x, y))
+            {
+                ModEntry.Config.RecordVanillaDialogue = !ModEntry.Config.RecordVanillaDialogue;
+                Game1.playSound(ModEntry.Config.RecordVanillaDialogue ? "coin" : "drumkit6");
+                ModEntry.SHelper.WriteConfig(ModEntry.Config);
+                return;
+            }
+        }
+
+        private void SaveTab2()
+        {
+            Game1.playSound("select");
+
+            // 取向：取当前下拉选中 Id
+            ModEntry.Config.PlayerSexualOrientation = _orientationDropdown.SelectedId ?? "";
+            ModEntry.Config.RomanceSafetyMode = (SafetyModeLevel)_safetyModeIndex;
+
+            try
+            {
+                ModEntry.SHelper.WriteConfig(ModEntry.Config);
+            }
+            catch (Exception ex)
+            {
+                ModEntry.SMonitor.Log($"[Hub] config save failed: {ex.Message}", LogLevel.Error);
+                return;
+            }
+
+            string bioText = _bioTextBox.Text ?? "";
+            if (bioText.Length > 300)
+                bioText = bioText.Substring(0, 300);
+
+            PlayerProfileManager.SaveCustomBio(bioText);
+            Game1.addHUDMessage(new HUDMessage(T("PProfile.UI.ProfileSaved", "Profile saved!"), 2));
         }
 
         private void HandleListRowClicks(int x, int y)
@@ -398,6 +569,21 @@ namespace ValleytalkReborn
         {
             base.leftClickHeld(x, y);
 
+            // Tab2：滑块拖拽
+            if (_currentTab == 2 && !_orientationDropdown.IsOpen && _safetySliderRect.Contains(x, y))
+            {
+                int trackX = _safetySliderRect.X;
+                int trackW = _safetySliderRect.Width;
+                int relativeX = Math.Clamp(x - trackX, 0, trackW);
+                int idx = Math.Min(3, (int)((float)relativeX / trackW * 4));
+                if (idx != _safetyModeIndex)
+                {
+                    _safetyModeIndex = idx;
+                    Game1.playSound("shwip");
+                }
+                return;
+            }
+
             var entries = ActiveEntries;
             int maxLines = GetVisibleLineCount();
 
@@ -421,6 +607,20 @@ namespace ValleytalkReborn
 
         public override void receiveKeyPress(Keys key)
         {
+            // Tab2 Bio 键盘输入
+            if (_bioTextBox != null && Game1.keyboardDispatcher.Subscriber == _bioTextBox)
+            {
+                if (key == Keys.Escape || key == Keys.Enter)
+                {
+                    _bioTextBox.Selected = false;
+                    Game1.keyboardDispatcher.Subscriber = null;
+                    return;
+                }
+                if (!DialogueTextInputBox.IsControlKeyDown())
+                    _bioTextBox.RecieveSpecialInput(key);
+                return;
+            }
+
             if (key == Keys.Escape)
             {
                 Game1.playSound("bigDeSelect");
@@ -481,11 +681,13 @@ namespace ValleytalkReborn
             {
                 DrawEntries(b);
             }
+            else if (_currentTab == 2)
+            {
+                DrawTab2(b);
+            }
             else
             {
-                DrawPlaceholder(b, _currentTab == 2
-                    ? T("Hub.TabProfile", "Farmer Profile")
-                    : T("Hub.TabAdvanced", "Advanced Settings"));
+                DrawTab3(b);
             }
 
             // 添加按钮与计数（仅 Tab0/1）
@@ -505,15 +707,6 @@ namespace ValleytalkReborn
             drawMouse(b);
         }
 
-        private void DrawPlaceholder(SpriteBatch b, string tabName)
-        {
-            string text = $"{tabName} — {T("Hub.EmptyNpcList", "No villagers available yet. Talk to or befriend a villager first.")}";
-            var size = Game1.smallFont.MeasureString(text);
-            b.DrawString(Game1.smallFont, text,
-                new Vector2(xPositionOnScreen + (width - size.X) / 2f,
-                            yPositionOnScreen + TopPadding + 60),
-                Color.Gray);
-        }
 
         private void DrawTab(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my)
         {
@@ -622,6 +815,280 @@ namespace ValleytalkReborn
                 SetScrollbarPosition();
                 _scrollbar.draw(b);
             }
+        }
+
+
+        // ── Tab2（农夫档案）══════════════════════════════════════════════
+
+        private void InitializeTab2()
+        {
+            int leftColX = xPositionOnScreen + LeftPadding;
+            _tab2RightColX = leftColX + 140 + 30;
+            _tab2RightColW = (xPositionOnScreen + width - RightPadding) - _tab2RightColX;
+
+            // 取向选项（None + 4 keys）
+            _orientationItems = new List<(string, string)>
+            {
+                ("", T("PProfile.UI.None", "(None)")),
+                ("Heterosexual", T("PProfile.Orientation.Heterosexual", "Straight")),
+                ("Homosexual", T("PProfile.Orientation.Homosexual", "Gay/Lesbian")),
+                ("Bisexual", T("PProfile.Orientation.Bisexual", "Bisexual")),
+                ("Asexual", T("PProfile.Orientation.Asexual", "Asexual")),
+            };
+
+            // 加载选中（精确匹配，无匹配 → None）
+            string current = ModEntry.Config.PlayerSexualOrientation ?? "";
+            string selectedId = "";
+            foreach (var item in _orientationItems)
+            {
+                if (string.Equals(item.Id, current, StringComparison.OrdinalIgnoreCase))
+                {
+                    selectedId = item.Id;
+                    break;
+                }
+            }
+
+            _safetyModeIndex = Math.Clamp((int)ModEntry.Config.RomanceSafetyMode, 0, 3);
+
+            // 取向下拉（HeaderPrefix = null）
+            _orientationDropdown = new DropdownList(new Rectangle(0, 0, 1, 1));
+            _orientationDropdown.OnItemSelected = id => Game1.playSound("select");
+            _orientationDropdown.SetItems(_orientationItems, selectedId);
+
+            // Bio 输入框（单参构造，Extent 高度 160）
+            _bioTextBox = new DialogueTextInputBox(300)
+            {
+                Font = Game1.smallFont,
+                Extent = new Vector2(1, 160),
+                Selected = false
+            };
+            _bioTextBox.SetText(PlayerProfileManager.GetCustomBio() ?? string.Empty);
+
+            RecalculateTab2Layout();
+
+            _tab2Initialized = true;
+        }
+
+        /// <summary>重新计算 Tab2 所有矩形与控件位置（初始化与窗口尺寸变化时共用）。</summary>
+        private void RecalculateTab2Layout()
+        {
+            int leftColX = xPositionOnScreen + LeftPadding;
+            _tab2RightColX = leftColX + 140 + 30;
+            _tab2RightColW = (xPositionOnScreen + width - RightPadding) - _tab2RightColX;
+
+            // 刷新列表区顶部（gameWindowSizeChanged 调用时 _listTopY 尚未重算）
+            _listTopY = yPositionOnScreen + TopPadding + (_currentTab == 0 ? TabHeight + 8 : 0);
+
+            int y = _listTopY;
+
+            // 取向下拉头部
+            _orientationDropdownRect = new Rectangle(_tab2RightColX, y + 36 + 8, _tab2RightColW, TabHeight);
+            _orientationDropdown?.SetHeaderBounds(_orientationDropdownRect);
+
+            // 矩形计算
+            _enableProfileCheckboxRect = new Rectangle(leftColX, y, 36, 36);
+            _orientationLabelRect = new Rectangle(leftColX, y + 36 + 8, 140, TabHeight);
+            _safetyLabelRect = new Rectangle(leftColX, y + 36 + 8 + TabHeight + 8, 140, TabHeight);
+
+            int safetyRightY = y + 36 + 8 + TabHeight + 8;
+            int safetyTrackW = Math.Min(220, _tab2RightColW);
+            _safetySliderRect = new Rectangle(_tab2RightColX, safetyRightY + 4, safetyTrackW, 24);
+
+            // 动态测量安全描述高度，避免与 Bio 框重叠
+            string desc = Game1.parseText(T("PProfile.Safety.Desc",
+                "Sets how far romantic dialogue can go."), Game1.smallFont, _tab2RightColW);
+            int descHeight = (int)Game1.smallFont.MeasureString(desc).Y;
+
+            int bioY = safetyRightY + 24 + 28 + descHeight + 8;
+            _bioLabelRect = new Rectangle(leftColX, bioY, 140, TabHeight);
+            _bioBoxRect = new Rectangle(_tab2RightColX, bioY, _tab2RightColW, 160);
+
+            if (_bioTextBox != null)
+            {
+                _bioTextBox.Position = new Vector2(_tab2RightColX, bioY);
+                _bioTextBox.Extent = new Vector2(_tab2RightColW, 160);
+            }
+
+            _saveButtonRect = new Rectangle(xPositionOnScreen + width / 2 - 80, yPositionOnScreen + height - 60, 160, 44);
+        }
+
+        private void DrawTab2(SpriteBatch b)
+        {
+            int mx = Game1.getMouseX();
+            int my = Game1.getMouseY();
+
+            // a) 启用开关
+            bool enabled = ModEntry.Config.EnablePlayerProfile;
+            Rectangle enableSrc = enabled
+                ? new Rectangle(236, 425, 9, 9)
+                : new Rectangle(227, 425, 9, 9);
+            b.Draw(Game1.mouseCursors, new Vector2(_enableProfileCheckboxRect.X, _enableProfileCheckboxRect.Y),
+                enableSrc, Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 1f);
+            b.DrawString(Game1.smallFont, T("PProfile.UI.EnableProfile", "Enable Farmer Profile"),
+                new Vector2(_enableProfileCheckboxRect.X + 44, _enableProfileCheckboxRect.Y + 4),
+                Game1.textColor);
+
+            // 禁用态：不再绘制下方控件
+            if (!enabled)
+                return;
+
+            // c) 性取向（仅绘制标签，下拉在方法末尾统一叠层绘制）
+            b.DrawString(Game1.smallFont, T("PProfile.UI.SexualOrientation", "Orientation:"),
+                new Vector2(_orientationLabelRect.X, _orientationLabelRect.Y + 4),
+                Game1.textColor);
+
+            // d) 恋爱尺度滑块
+            b.DrawString(Game1.smallFont, T("PProfile.UI.RomanceSafetyMode", "Romance Boundaries:"),
+                new Vector2(_safetyLabelRect.X, _safetyLabelRect.Y + 4),
+                Game1.textColor);
+
+            int trackX = _safetySliderRect.X;
+            int trackW = _safetySliderRect.Width;
+            int trackY = _safetySliderRect.Y;
+
+            // 轨道
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6),
+                trackX, trackY, trackW, 24, Color.White, 4f, false);
+
+            // 4 个刻度
+            for (int t = 0; t < 4; t++)
+            {
+                int tickX = trackX + (int)((float)t * (trackW / 3));
+                b.Draw(Game1.mouseCursors, new Vector2(tickX, trackY + 6),
+                    new Rectangle(240, 428, 12, 12), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 1f);
+            }
+
+            // 滑块
+            int thumbX = trackX + (int)((float)_safetyModeIndex * (trackW / 3)) - 12;
+            b.Draw(Game1.mouseCursors, new Vector2(thumbX, trackY - 8),
+                new Rectangle(435, 463, 6, 10), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 1f);
+
+            // 右侧文字
+            string[] safetyLabels = {
+                T("PProfile.Safety.Off", "1: Unrestricted"),
+                T("PProfile.Safety.Loose", "2: Relaxed"),
+                T("PProfile.Safety.Moderate", "3: Hearts Matter"),
+                T("PProfile.Safety.Strict", "4: Committed Only")
+            };
+            b.DrawString(Game1.smallFont, safetyLabels[_safetyModeIndex],
+                new Vector2(trackX + trackW + 16, trackY + 2), Game1.textColor);
+
+            // 下方描述（动态测量高度，避免与 Bio 框重叠）
+            string desc = Game1.parseText(T("PProfile.Safety.Desc",
+                "Sets how far romantic dialogue can go."), Game1.smallFont, _tab2RightColW);
+            var descSize = Game1.smallFont.MeasureString(desc);
+            b.DrawString(Game1.smallFont, desc,
+                new Vector2(_tab2RightColX, trackY + 28), Color.Gray);
+
+            // e) Bio
+            b.DrawString(Game1.smallFont, T("PProfile.UI.CustomBio", "About You:"),
+                new Vector2(_bioLabelRect.X, _bioLabelRect.Y + 4),
+                Game1.textColor);
+
+            _bioTextBox.Position = new Vector2(_bioBoxRect.X, _bioBoxRect.Y);
+            _bioTextBox.Update(Game1.currentGameTime);
+            _bioTextBox.Draw(b);
+
+            // 空文本占位
+            if (string.IsNullOrWhiteSpace(_bioTextBox.Text))
+            {
+                string placeholder = Game1.parseText(T("PProfile.UI.BioPlaceholder",
+                    "e.g. Ex-Joja accountant, loves hot coffee, hates the rain."),
+                    Game1.smallFont, _bioBoxRect.Width - 32);
+                b.DrawString(Game1.smallFont, placeholder,
+                    new Vector2(_bioBoxRect.X + 4, _bioBoxRect.Y + 4), Color.Gray * 0.7f);
+            }
+
+            // f) 保存按钮
+            bool saveHover = _saveButtonRect.Contains(mx, my);
+            Color saveColor = saveHover ? Color.Gold : Color.White;
+            IClickableMenu.drawTextureBox(b, _saveButtonRect.X, _saveButtonRect.Y,
+                _saveButtonRect.Width, _saveButtonRect.Height, saveColor);
+            string saveText = T("PProfile.UI.Save", "Save");
+            var saveSize = Game1.smallFont.MeasureString(saveText);
+            b.DrawString(Game1.smallFont, saveText,
+                new Vector2(_saveButtonRect.X + (_saveButtonRect.Width - saveSize.X) / 2f,
+                            _saveButtonRect.Y + (_saveButtonRect.Height - saveSize.Y) / 2f),
+                Game1.textColor);
+
+            // ★ 取向下拉最后绘制（叠层最上，与 NPC 下拉顺序一致），永不被 Bio 框/按钮遮挡
+            _orientationDropdown.Draw(b);
+        }
+
+        // ── Tab3（高级设置）══════════════════════════════════════════════
+
+        private void DrawTab3(SpriteBatch b)
+        {
+            int mx = Game1.getMouseX();
+            int my = Game1.getMouseY();
+            int leftColX = xPositionOnScreen + LeftPadding;
+            int y = _listTopY;
+
+            // 计算三个复选框矩形
+            _tab3CheckboxInfinite = new Rectangle(leftColX, y, 36, 36);
+            _tab3CheckboxVanillaFirst = new Rectangle(leftColX, y + 56, 36, 36);
+            _tab3CheckboxRecordVanilla = new Rectangle(leftColX, y + 112, 36, 36);
+
+            // EnableInfiniteChat
+            DrawCheckbox(b, _tab3CheckboxInfinite, ModEntry.Config.EnableInfiniteChat,
+                T("AdvancedSettings.InfiniteChat", "Unlimited Conversations"),
+                T("AdvancedSettings.InfiniteChatTooltip", "Removes the daily limit on conversations with NPCs."),
+                mx, my);
+            // 附注
+            b.DrawString(Game1.smallFont, T("AdvancedSettings.Disclaimer", "Experimental feature."),
+                new Vector2(leftColX + 44, y + 36 + 2), Color.Gray);
+
+            // EnableVanillaFirst
+            DrawCheckbox(b, _tab3CheckboxVanillaFirst, ModEntry.Config.EnableVanillaFirst,
+                T("AdvancedSettings.VanillaFirst", "Prioritize Vanilla Dialogue"),
+                T("AdvancedSettings.VanillaFirstTooltip", "Only trigger AI dialogue once vanilla is exhausted."),
+                mx, my);
+
+            // RecordVanillaDialogue
+            DrawCheckbox(b, _tab3CheckboxRecordVanilla, ModEntry.Config.RecordVanillaDialogue,
+                T("AdvancedSettings.RecordVanillaDialogue", "Record Vanilla Dialogue"),
+                T("AdvancedSettings.RecordVanillaDialogueTooltip", "Inject vanilla lines into AI context."),
+                mx, my);
+
+            // 底部按键速览
+            int keybindY = y + 180;
+            b.DrawString(Game1.smallFont, T("Hub.KeybindsTitle", "Current Keybinds"),
+                new Vector2(leftColX, keybindY), Game1.textColor);
+            keybindY += 24;
+
+            string[] names = {
+                T("configInitiateKey", "Initiate Conversation Key"),
+                T("configQuickReplyKey", "Quick Reply Key"),
+                T("configDismissFollowerKey", "Dismiss Follower Key"),
+                T("configOpenHubMenuKey", "Open Hub Menu Key")
+            };
+            SButton[] keys = {
+                ModEntry.Config.InitiateTypedDialogueKey,
+                ModEntry.Config.QuickReplyKey,
+                ModEntry.Config.DismissFollowerKey,
+                ModEntry.Config.OpenHubMenuKey
+            };
+            for (int i = 0; i < names.Length; i++)
+            {
+                string line = T("Hub.KeybindsLine", "{{name}}: {{key}}",
+                    new { name = names[i], key = keys[i].ToString() });
+                b.DrawString(Game1.smallFont, line, new Vector2(leftColX, keybindY), Game1.textColor);
+                keybindY += 22;
+            }
+        }
+
+        private void DrawCheckbox(SpriteBatch b, Rectangle rect, bool isChecked, string label, string tooltip, int mx, int my)
+        {
+            Rectangle src = isChecked
+                ? new Rectangle(236, 425, 9, 9)
+                : new Rectangle(227, 425, 9, 9);
+            b.Draw(Game1.mouseCursors, new Vector2(rect.X, rect.Y),
+                src, Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 1f);
+            b.DrawString(Game1.smallFont, label,
+                new Vector2(rect.X + 44, rect.Y + 4), Game1.textColor);
+
+            if (rect.Contains(mx, my) && !string.IsNullOrEmpty(tooltip))
+                IClickableMenu.drawHoverText(b, tooltip, Game1.smallFont);
         }
 
         private void DrawAddButton(SpriteBatch b)
@@ -743,12 +1210,19 @@ namespace ValleytalkReborn
                 xPositionOnScreen + width - RightPadding - 60 - 280,
                 yPositionOnScreen + TopPadding, 280, TabHeight);
 
+            // 重算 Tab2 布局（若已初始化）
+            if (_tab2Initialized)
+                RecalculateTab2Layout();
+
             RefreshEntries();
         }
 
         protected override void cleanupBeforeExit()
         {
             base.cleanupBeforeExit();
+
+            if (_bioTextBox != null && Game1.keyboardDispatcher.Subscriber == _bioTextBox)
+                Game1.keyboardDispatcher.Subscriber = null;
         }
 
         // ── i18n 转发 ───────────────────────────────────────────────────
@@ -776,6 +1250,7 @@ namespace ValleytalkReborn
 
             public bool IsOpen => _isOpen;
             public int ScrollIndex => _scrollIndex;
+            public string SelectedId => _selectedId;
 
             public Rectangle HeaderBounds => _headerRect;
 
