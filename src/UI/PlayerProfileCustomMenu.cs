@@ -228,32 +228,9 @@ namespace ValleytalkReborn
 
             if (_bioTextBox != null)
             {
-                if (!string.IsNullOrWhiteSpace(StardewModdingAPI.Constants.SaveFolderName))
-                {
-                    string path = $"data/{StardewModdingAPI.Constants.SaveFolderName}/PlayerProfile.json";
-                    try
-                    {
-                        var saveData = ModEntry.SHelper.Data.ReadJsonFile<Dictionary<string, string>>(path);
-                        if (saveData != null && saveData.TryGetValue("PlayerCustomBio", out string savedBio))
-                        {
-                            _bioTextBox.SetText(savedBio);
-                            ModEntry.SMonitor?.Log($"[ValleytalkReborn] Successfully loaded custom bio.", LogLevel.Trace);
-                        }
-                        else
-                        {
-                            _bioTextBox.SetText("");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        ModEntry.SMonitor?.Log($"[ValleytalkReborn] Failed to read PlayerProfile.json: {ex.Message}", LogLevel.Error);
-                        _bioTextBox.SetText("");
-                    }
-                }
-                else
-                {
-                    _bioTextBox.SetText("");
-                }
+                string savedBio = PlayerProfileManager.GetCustomBio();
+                _bioTextBox.SetText(savedBio ?? string.Empty);
+                ModEntry.SMonitor?.Log("[ValleytalkReborn] Loaded custom bio via PlayerProfileManager.", LogLevel.Trace);
             }
         }
 

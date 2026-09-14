@@ -98,6 +98,7 @@ namespace ValleytalkReborn
             try
             {
                 // 通过 lambda 闭包直接将 request 传递给回调，无需依赖全局静态状态
+                ModEntry.LastSpokenNPC = request.Npc;
                 var textInputMenu = new DialogueTextInputMenu(request.Title, text => OnTextEntered(text, request), request.Npc);
                 Game1.activeClickableMenu = new DialogueTextInputMenuWrapper(textInputMenu);
             }
