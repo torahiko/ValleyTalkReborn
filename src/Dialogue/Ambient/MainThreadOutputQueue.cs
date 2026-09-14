@@ -97,6 +97,31 @@ internal sealed class MainThreadOutputQueue
     }
 
     /// <summary>
+    /// 清除指定类型（如 "Bark"）的所有未播放队列条目，其余类型条目保持原有顺序不变。
+    /// 访问模型：纯主线程调用（与 Enqueue/Process 一致），不引入新锁。
+    /// 空队列 O(1) 快速返回，无 LINQ/GC 分配。
+    /// </summary>
+    public void ClearType(string type)
+    {
+        if (string.IsNullOrEmpty(type) || _queue.IsEmpty)
+            return;
+
+        // 仅遍历当前快照数量：先出队，非目标类型重新入队，目标类型直接丢弃。
+        int count = _queue.Count;
+        for (int i = 0; i < count; i++)
+        {
+            if (!_queue.TryDequeue(out var item))
+                break;
+            if (item != null &&
+                string.Equals(item.Source, type, StringComparison.OrdinalIgnoreCase))
+            {
+                continue; // 丢弃目标类型条目
+            }
+            _queue.Enqueue(item);
+        }
+    }
+
+    /// <summary>
     /// 处理队列中的输出请求（必须在主线程调用）。
     /// </summary>
     internal void Process(int maxPerTick)
@@ -110,6 +135,13 @@ internal sealed class MainThreadOutputQueue
 
             if (item == null || Game1.player == null)
                 continue;
+
+            // ★ Bark 门禁：Bark 关闭时直接丢弃 Bark 条目，零副作用（不播放、不写历史、不触发状态）；A2A 条目不受影响
+            if (string.Equals(item.Source, "Bark", StringComparison.OrdinalIgnoreCase)
+                && !ModEntry.Config.EnableAmbientBarks)
+            {
+                continue;
+            }
 
             // A2A 输出校验：检查会话是否仍然有效
             if (!string.IsNullOrEmpty(item.A2ASessionId))

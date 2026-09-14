@@ -599,6 +599,22 @@ internal sealed class AmbientBarkModule : IDialogueModule
                 continue;
             }
 
+            // ★ Bio 实时校验：bio 被热重载静音（或角色卡失效）的 NPC，立即硬清理其 Bark 残留状态
+            // 注意：锁外执行，禁止在 lock 内调用 GetCharacter/CheckBio 等可能触发内容加载的操作
+            var vtCharacter = DialogueBuilder.Instance?.GetCharacter(npc);
+            bool bioMuted = vtCharacter == null
+                            || !vtCharacter.HasValidBio
+                            || vtCharacter.Bio == null
+                            || !vtCharacter.Bio.EnableAmbientBarks;
+            if (bioMuted)
+            {
+                RemoveFromGlobalQueue(npcName);
+                _stateStore.HardReset(npcName);
+                _stateStore.TryRemove(npcName, out _);
+                _proximityScans.Remove(npcName);
+                continue;
+            }
+
             lock (state)
             {
                 // 推进占用计时递减（每 Tick 减 1）
@@ -834,6 +850,9 @@ internal sealed class AmbientBarkModule : IDialogueModule
         while (_pendingBarkResults.TryDequeue(out _))
         {
         }
+
+        // ★ 立即清空输出队列中所有未播放的 Bark 浮字，实现"禁用即闭嘴"
+        _outputQueue.ClearType("Bark");
     }
 
     /// <summary>
