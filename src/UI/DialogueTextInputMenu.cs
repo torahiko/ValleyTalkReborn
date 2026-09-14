@@ -87,7 +87,7 @@ namespace ValleytalkReborn
 
             float textBoxWidth = Math.Max(64, _currentMenuWidth - 4 * Margin);
 
-            _inputTextBox = new DialogueTextInputBox(200)
+            _inputTextBox = new DialogueTextInputBox(300)
             {
                 Position = new Vector2(_menuPosition.X + Margin * 2, _menuPosition.Y + TopPadding + HeaderHeight + 16),
                 Extent = new Vector2(textBoxWidth, TextBoxHeight),

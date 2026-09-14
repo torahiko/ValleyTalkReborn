@@ -16,8 +16,16 @@ namespace ValleytalkReborn
         private readonly List<DateLocationInfo> _availableLocations;
         private readonly List<ClickableComponent> _locationCards = new();
 
+        private ClickableTextureComponent _closeButton;
         private ClickableTextureComponent _prevPageButton;
         private ClickableTextureComponent _nextPageButton;
+
+        private float _closeHoverScale;
+        private float _prevHoverScale;
+        private float _nextHoverScale;
+
+        private const float CloseButtonBaseScale = 3.5f;
+        private const float ArrowButtonBaseScale = 4f;
 
         private const int ItemsPerPage = 4;
         private int _currentPage = 0;
@@ -42,37 +50,54 @@ namespace ValleytalkReborn
             _targetNpc = npc;
             _availableLocations = DateLocationRegistry.Locations.Values.ToList();
 
-            // 🔧 清理正在排队/后台生成的 Bark / A2A 任务，防止打开菜单时被并发气泡顶掉
+            // 清理排队/后台生成的 Bark / A2A 任务，防止打开菜单时被气泡顶掉
             DynamicBarkManager.CancelBackgroundTasks(npc.Name);
 
-            width = 800;
-            height = 560;
-            Vector2 centeringOnScreen = Utility.getTopLeftPositionForCenteringOnScreen(width, height);
-            xPositionOnScreen = (int)centeringOnScreen.X;
-            yPositionOnScreen = (int)centeringOnScreen.Y;
+            RecalculateDimensions();
+            UpdateCardLayout();
 
-            initializeUpperRightCloseButton();
+            exitFunction = () => Game1.playSound("bigDeSelect");
+        }
 
+        private void RecalculateDimensions()
+        {
+            width = Math.Max(720, Math.Min(840, Game1.uiViewport.Width - 80));
+            height = Math.Max(520, Math.Min(580, Game1.uiViewport.Height - 80));
+            xPositionOnScreen = (Game1.uiViewport.Width - width) / 2;
+            yPositionOnScreen = (Game1.uiViewport.Height - height) / 2;
+
+            // 关闭按钮（与 IntegratedHubMenu 保持一致）
+            _closeButton = new ClickableTextureComponent(
+                new Rectangle(xPositionOnScreen + width - 60, yPositionOnScreen + 16, 44, 44),
+                Game1.mouseCursors,
+                new Rectangle(337, 494, 12, 12),
+                CloseButtonBaseScale)
+            {
+                hoverText = Game1.content.LoadString("Strings\\UI:ItemHover_Close")
+            };
+
+            // 底部翻页按钮
             _prevPageButton = new ClickableTextureComponent(
-                new Rectangle(xPositionOnScreen + 30, yPositionOnScreen + height - 55, 48, 44),
+                new Rectangle(xPositionOnScreen + 44, yPositionOnScreen + height - 56, 48, 44),
                 Game1.mouseCursors,
                 new Rectangle(352, 495, 12, 11),
-                4f);
+                ArrowButtonBaseScale);
 
             _nextPageButton = new ClickableTextureComponent(
-                new Rectangle(xPositionOnScreen + width - 78, yPositionOnScreen + height - 55, 48, 44),
+                new Rectangle(xPositionOnScreen + width - 92, yPositionOnScreen + height - 56, 48, 44),
                 Game1.mouseCursors,
                 new Rectangle(365, 495, 12, 11),
-                4f);
-
-            UpdateCardLayout();
+                ArrowButtonBaseScale);
         }
 
         private void UpdateCardLayout()
         {
             _locationCards.Clear();
             _currentPagedCards.Clear();
-            int startY = yPositionOnScreen + 95;
+
+            int startY = yPositionOnScreen + 74;
+            int cardH = 88;
+            int cardGap = 12;
 
             var pageItems = _availableLocations
                 .Skip(_currentPage * ItemsPerPage)
@@ -80,22 +105,24 @@ namespace ValleytalkReborn
                 .ToList();
 
             bool isZh = IsZhLanguage;
-            int cardInnerWidth = width - 160; // 预留左右边距与时间徽章宽度，防止描述文本穿出卡片
+            int cardW = width - 80;
+            // 预留右侧时间胶囊空间与内边距
+            int wrapWidth = (int)((cardW - 170) / 0.85f);
 
             for (int i = 0; i < pageItems.Count; i++)
             {
                 var info = pageItems[i];
                 _locationCards.Add(new ClickableComponent(
-                    new Rectangle(xPositionOnScreen + 40, startY + i * 95, width - 80, 85),
+                    new Rectangle(xPositionOnScreen + 40, startY + i * (cardH + cardGap), cardW, cardH),
                     info.LocationId
                 ));
 
-                // ── 状态驱动：一次性计算可用性、锁定原因与折行描述，供 draw() 直接读取 ──
                 bool isAvailable = info.IsAvailable(_targetNpc, out string lockedReason);
                 string rawDescription = isAvailable
                     ? (isZh ? info.ContextDescriptionZh : info.ContextDescriptionEn)
                     : (isZh ? $"[不可用: {lockedReason}]" : $"[Locked: {lockedReason}]");
-                string wrappedDesc = Game1.parseText(rawDescription, Game1.smallFont, cardInnerWidth);
+
+                string wrappedDesc = Game1.parseText(rawDescription, Game1.smallFont, wrapWidth);
 
                 _currentPagedCards.Add(new CardViewData
                 {
@@ -106,11 +133,9 @@ namespace ValleytalkReborn
                 });
             }
 
-            // 页切换后重置选中索引，防止越界
             _selectedIndex = -1;
         }
 
-        /// <summary>当前是否为中文语言环境（缓存供布局与绘制复用）。</summary>
         private bool IsZhLanguage =>
             LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
 
@@ -127,14 +152,18 @@ namespace ValleytalkReborn
                     break;
                 }
             }
-
-            _prevPageButton.tryHover(x, y);
-            _nextPageButton.tryHover(x, y);
         }
 
         public override void receiveLeftClick(int x, int y, bool playSound = true)
         {
             base.receiveLeftClick(x, y, playSound);
+
+            if (_closeButton.containsPoint(x, y))
+            {
+                Game1.playSound("bigDeSelect");
+                exitThisMenu();
+                return;
+            }
 
             if (_currentPage > 0 && _prevPageButton.containsPoint(x, y))
             {
@@ -153,7 +182,6 @@ namespace ValleytalkReborn
                 return;
             }
 
-            // 点击判定直接遍历卡片做命中检测，避免依赖 _hoveredIndex（手柄/触摸屏/快速点击均可靠）
             int clickedIndex = -1;
             for (int i = 0; i < _locationCards.Count; i++)
             {
@@ -170,10 +198,6 @@ namespace ValleytalkReborn
             }
         }
 
-        /// <summary>
-        /// 尝试选中指定索引的卡片：若地点不可用则提示锁定原因，否则敲定约会。
-        /// 供鼠标点击、键盘回车、手柄 A 键统一调用。
-        /// </summary>
         private void AttemptSelectCard(int index)
         {
             if (index < 0 || index >= _currentPagedCards.Count)
@@ -193,10 +217,6 @@ namespace ValleytalkReborn
             exitThisMenu();
         }
 
-        // ══════════════════════════════════════════════════════════════════════
-        //  键盘与手柄导航支持（主机/手柄党核心体验）
-        // ══════════════════════════════════════════════════════════════════════
-        /// <summary>允许本菜单接管键盘/手柄光标移动（禁用游戏默认的 snappy 光标吸附）。</summary>
         public override bool overrideSnappyMenuCursorMovementBan() => true;
 
         public override void receiveKeyPress(Keys key)
@@ -205,14 +225,12 @@ namespace ValleytalkReborn
 
             int pageCount = _currentPagedCards.Count;
 
-            // Esc 快捷退出
             if (key == Keys.Escape)
             {
                 exitThisMenu();
                 return;
             }
 
-            // 翻页：左/右方向键或 PageUp/PageDown
             int maxPage = (_availableLocations.Count - 1) / ItemsPerPage;
             if (key == Keys.Left || key == Keys.PageUp)
             {
@@ -238,7 +256,6 @@ namespace ValleytalkReborn
             if (pageCount == 0)
                 return;
 
-            // 上下方向键切换选中卡片
             if (key == Keys.Up)
             {
                 if (_selectedIndex <= 0)
@@ -258,7 +275,6 @@ namespace ValleytalkReborn
                 return;
             }
 
-            // Enter / Space 确认选中
             if (key == Keys.Enter || key == Keys.Space)
             {
                 if (_selectedIndex < 0)
@@ -274,14 +290,12 @@ namespace ValleytalkReborn
 
             int pageCount = _currentPagedCards.Count;
 
-            // B 键 / Start 退出
             if (button == Buttons.B || button == Buttons.Start)
             {
                 exitThisMenu();
                 return;
             }
 
-            // 翻页：LB / RB
             int maxPage = (_availableLocations.Count - 1) / ItemsPerPage;
             if (button == Buttons.LeftTrigger)
             {
@@ -307,7 +321,6 @@ namespace ValleytalkReborn
             if (pageCount == 0)
                 return;
 
-            // 十字键上下切换选中卡片
             if (button == Buttons.DPadUp || button == Buttons.LeftThumbstickUp)
             {
                 if (_selectedIndex <= 0)
@@ -327,7 +340,6 @@ namespace ValleytalkReborn
                 return;
             }
 
-            // A 键确认选中
             if (button == Buttons.A)
             {
                 if (_selectedIndex < 0)
@@ -369,24 +381,43 @@ namespace ValleytalkReborn
             }
         }
 
+        public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
+        {
+            base.gameWindowSizeChanged(oldBounds, newBounds);
+            RecalculateDimensions();
+            UpdateCardLayout();
+        }
+
         public override void draw(SpriteBatch b)
         {
             bool isZh = IsZhLanguage;
+            int mx = Game1.getMouseX();
+            int my = Game1.getMouseY();
 
-            b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.5f);
+            // 1. 背景暗化遮罩
+            b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.45f);
 
-            drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
-                xPositionOnScreen, yPositionOnScreen, width, height, Color.White);
+            // 2. 双层木框外边框
+            IClickableMenu.drawTextureBox(b, xPositionOnScreen - 16, yPositionOnScreen - 16, width + 32, height + 32, Color.White);
+            IClickableMenu.drawTextureBox(b, xPositionOnScreen - 8, yPositionOnScreen - 8, width + 16, height + 16, Color.White);
 
-            // 标题：使用 dialogueFont 居中绘制（中文环境下 SpriteText 易出现测量空白/乱码）
+            // 3. 羊皮纸主对话底框
+            Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
+
+            // 4. 标题居中绘制（向上提升，预留呼吸感）
             string title = isZh ? $"选择今晚与 {_targetNpc.displayName} 赴约的地点" : $"Date with {_targetNpc.displayName}";
             Vector2 titleSize = Game1.dialogueFont.MeasureString(title);
             Vector2 titlePos = new Vector2(
                 xPositionOnScreen + (width - titleSize.X) / 2f,
-                yPositionOnScreen + 30);
-            Utility.drawTextWithShadow(b, title, Game1.dialogueFont, titlePos, Game1.textColor);
+                yPositionOnScreen + 16);
+            b.DrawString(Game1.dialogueFont, title, titlePos, Game1.textColor);
 
-            // ── 从视图缓存直接读取，消除每帧重复 IsAvailable 校验与字符串分配 ──
+            // 5. 标题下方精致分割线
+            b.Draw(Game1.staminaRect,
+                new Rectangle(xPositionOnScreen + 40, yPositionOnScreen + 60, width - 80, 2),
+                Color.Gray * 0.4f);
+
+            // 6. 卡片列表绘制
             for (int i = 0; i < _locationCards.Count; i++)
             {
                 var card = _locationCards[i];
@@ -394,51 +425,93 @@ namespace ValleytalkReborn
                 bool isHovered = (_hoveredIndex == i);
                 bool isSelected = (_selectedIndex == i);
 
-                // 手柄/键盘选中高亮边框
+                // 手柄/键盘选中金边外框
                 if (isSelected)
                 {
-                    IClickableMenu.drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
+                    IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
                         card.bounds.X - 4, card.bounds.Y - 4, card.bounds.Width + 8, card.bounds.Height + 8,
-                        Color.Gold * 0.7f);
+                        Color.Gold * 0.9f, 4f, false);
                 }
 
-                Color boxColor = !view.IsAvailable ? (Color.Gray * 0.7f) : (isHovered ? Color.Wheat : Color.White);
-                drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
-                    card.bounds.X, card.bounds.Y, card.bounds.Width, card.bounds.Height, boxColor);
+                // 卡片底色（区分悬停与可用状态）
+                Color cardBgColor = !view.IsAvailable
+                    ? new Color(200, 200, 200) * 0.55f
+                    : (isHovered ? new Color(255, 235, 205) : new Color(245, 238, 225));
 
+                IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
+                    card.bounds.X, card.bounds.Y, card.bounds.Width, card.bounds.Height,
+                    cardBgColor, 4f, false);
+
+                // 地点名称：0.80f 缩放规整绘制，消除与下方文字的垂直冲突
                 string displayName = isZh ? view.Info.DisplayNameZh : view.Info.DisplayNameEn;
+                Color nameColor = view.IsAvailable
+                    ? (isHovered ? new Color(120, 40, 10) : Game1.textColor)
+                    : Color.DimGray;
 
-                Utility.drawTextWithShadow(b, displayName, Game1.dialogueFont,
-                    new Vector2(card.bounds.X + 20, card.bounds.Y + 12),
-                    view.IsAvailable ? (isHovered ? Game1.textColor : new Color(64, 32, 16)) : Color.DarkRed);
+                b.DrawString(Game1.dialogueFont, displayName,
+                    new Vector2(card.bounds.X + 18, card.bounds.Y + 12),
+                    nameColor, 0f, Vector2.Zero, 0.80f, SpriteEffects.None, 1f);
 
-                // 折行后的描述文本（Game1.parseText 已处理换行）
-                Utility.drawTextWithShadow(b, view.DescriptionText, Game1.smallFont,
-                    new Vector2(card.bounds.X + 22, card.bounds.Y + 48),
-                    view.IsAvailable ? Color.DarkSlateGray : Color.DimGray);
-
+                // 右侧时间徽章胶囊
                 if (view.IsAvailable)
                 {
-                    Utility.drawTextWithShadow(b, "18:00 - 21:30", Game1.tinyFont,
-                        new Vector2(card.bounds.Right - 110, card.bounds.Y + 16),
-                        new Color(180, 80, 30));
+                    int badgeW = 116;
+                    int badgeH = 26;
+                    int badgeX = card.bounds.Right - badgeW - 16;
+                    int badgeY = card.bounds.Y + 12;
+
+                    IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
+                        badgeX, badgeY, badgeW, badgeH,
+                        new Color(230, 210, 185) * 0.75f, 3f, false);
+
+                    string timeStr = "18:00 - 21:30";
+                    Vector2 timeSize = Game1.tinyFont.MeasureString(timeStr);
+                    b.DrawString(Game1.tinyFont, timeStr,
+                        new Vector2(badgeX + (badgeW - timeSize.X) / 2f, badgeY + (badgeH - timeSize.Y) / 2f + 1),
+                        new Color(175, 75, 25));
                 }
+
+                // 描述文本：0.85f 紧凑渲染
+                Color descColor = view.IsAvailable
+                    ? Color.DarkSlateGray
+                    : new Color(160, 45, 45);
+
+                b.DrawString(Game1.smallFont, view.DescriptionText,
+                    new Vector2(card.bounds.X + 20, card.bounds.Y + 46),
+                    descColor, 0f, Vector2.Zero, 0.85f, SpriteEffects.None, 1f);
             }
 
+            // 7. 底部导航与页码指示器
             int maxPage = (_availableLocations.Count - 1) / ItemsPerPage;
-            if (_currentPage > 0) _prevPageButton.draw(b);
-            if (_currentPage < maxPage) _nextPageButton.draw(b);
+
+            if (_currentPage > 0)
+            {
+                UiHelper.UpdateButtonScale(ref _prevHoverScale, _prevPageButton, mx, my);
+                _prevPageButton.scale = ArrowButtonBaseScale * _prevHoverScale;
+                _prevPageButton.draw(b);
+            }
+
+            if (_currentPage < maxPage)
+            {
+                UiHelper.UpdateButtonScale(ref _nextHoverScale, _nextPageButton, mx, my);
+                _nextPageButton.scale = ArrowButtonBaseScale * _nextHoverScale;
+                _nextPageButton.draw(b);
+            }
 
             if (maxPage > 0)
             {
                 string pageStr = $"{_currentPage + 1} / {maxPage + 1}";
                 Vector2 textSize = Game1.smallFont.MeasureString(pageStr);
-                Utility.drawTextWithShadow(b, pageStr, Game1.smallFont,
-                    new Vector2(xPositionOnScreen + (width - textSize.X) / 2, yPositionOnScreen + height - 46),
-                    Game1.textColor);
+                b.DrawString(Game1.smallFont, pageStr,
+                    new Vector2(xPositionOnScreen + (width - textSize.X) / 2f, yPositionOnScreen + height - 48),
+                    Game1.textColor * 0.9f);
             }
 
-            base.draw(b);
+            // 8. 关闭按钮（置顶绘制）
+            UiHelper.UpdateButtonScale(ref _closeHoverScale, _closeButton, mx, my);
+            _closeButton.scale = CloseButtonBaseScale * _closeHoverScale;
+            _closeButton.draw(b);
+
             drawMouse(b);
         }
     }

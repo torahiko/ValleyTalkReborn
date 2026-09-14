@@ -127,7 +127,7 @@ namespace ValleytalkReborn
         // 构造函数
         ///////////////////////////////////////////////////////////////////
 
-        public DialogueTextInputBox() : this(200, 180)
+        public DialogueTextInputBox() : this(300, 280)
         {
         }
 
