@@ -347,6 +347,62 @@ namespace ValleytalkReborn
             return newDialogue;
         }
 
+        internal async Task<Dialogue> GenerateHandover(NPC instance, HandoverVerdict verdict,
+                                                       StardewValley.Object item,
+                                                       Action<string> onStreamingToken = null)
+        {
+            var character = GetCharacter(instance);
+            if (character == null || !character.HasValidBio)
+            {
+                return null;   // 兜底守卫：无有效 Bios 交还调用方（既有 null 语义）
+            }
+
+            DialogueContext context = GetBasicContext(instance);
+            context.IsActiveTurn = false;
+            context.DialogueSessionId = $"{instance.Name}_Handover_{Game1.Date?.TotalDays ?? 0}_{DateTime.UtcNow.Ticks}";
+
+            bool isZh = LocalizedContentManager.CurrentLanguageCode
+                .ToString().StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+
+            // 种子行：仅客观动作事实，无情绪预设、无指令句式
+            string itemName = item?.DisplayName ?? item?.Name ?? (isZh ? "物品" : "item");
+            string seedLine = isZh
+                ? $"[农夫向你递上了【{itemName}】]"
+                : $"[The farmer holds out a [{itemName}] to you]";
+
+            context.ChatHistory = new List<ConversationElement>
+            {
+                new ConversationElement(seedLine, true)
+                {
+                    FuzzyTime = isZh ? "刚刚" : "Just now"
+                }
+            };
+
+            // RoutingFlags 全路径（照抄 GenerateGift；不设置任何礼物/生日上下文）
+            context.RoutingFlags = new ContextFlags
+            {
+                IsSimpleGreeting        = false,
+                IncludeMemories         = true,
+                IncludeEnvironment      = true,
+                IncludeFarmDetails      = true,
+                IncludeShortTermContext = false,
+                IncludeSafetyRules      = true,
+            };
+
+            SetContext(instance.Name, context);
+            var theLine = await LlmDialogueService.Instance.GenerateDialogueAsync(character, context, onStreamingToken);
+            if (theLine == null)
+                return null;
+
+            EmbodiedActionParser.ParseEmotesAndFaceOnly(
+                instance,
+                theLine,
+                allowFallbackEmotes: !context.RoutingFlags.IsSimpleGreeting);
+
+            string formattedLine = FormatLine(theLine);
+            return new Dialogue(instance, $"Handover_{verdict}", formattedLine);
+        }
+
         internal async Task<Dialogue> Generate(NPC instance, string dialogueKey, string originalLine = "", Action<string> onStreamingToken = null)
         {
             if (Game1.fadeToBlack || Game1.eventUp || !Game1.hasLoadedGame)
