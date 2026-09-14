@@ -20,6 +20,10 @@ namespace ValleytalkReborn
         private readonly Dictionary<string, DialogueHistoryEntry> _lastEntry = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, DialogueHistoryEntry> _pendingGifts = new(StringComparer.OrdinalIgnoreCase);
 
+        // ── 并发压缩守卫（MEM-08 N5 修复）──
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte>
+            CompressionInFlight = new(System.StringComparer.OrdinalIgnoreCase);
+
         private readonly object _historyLock = new();
         private const int MaxEntriesPerNpc = 300;
         private const string SaveKey = "ValleyTalk.DialogueHistory";
@@ -408,8 +412,36 @@ namespace ValleytalkReborn
             var cached = DialogueMemoryCompressor.GetCachedSummary(npcName, entries.Count, recentCount);
             if (string.IsNullOrEmpty(cached))
             {
-                _ = System.Threading.Tasks.Task.Run(() =>
-                    DialogueMemoryCompressor.GetCompressedSummary(npcName, entries, recentCount));
+                // ── 并发压缩守卫（MEM-08 N5 修复）：避免同一 NPC 重复启动压缩任务 ──
+                if (!CompressionInFlight.TryAdd(npcName, 0)) return;
+
+                try
+                {
+#pragma warning disable CS4014 // Intentional fire-and-forget with in-flight guard
+                    _ = System.Threading.Tasks.Task.Run(() =>
+                    {
+                        try
+                        {
+                            DialogueMemoryCompressor.GetCompressedSummary(npcName, entries, recentCount);
+                        }
+                        catch (Exception ex)
+                        {
+                            ModEntry.SMonitor?.Log(
+                                $"[DialogueHistoryManager] Compression task failed for [{npcName}]: {ex.Message}",
+                                LogLevel.Debug);
+                        }
+                        finally
+                        {
+                            CompressionInFlight.TryRemove(npcName, out _);
+                        }
+                    });
+#pragma warning restore CS4014
+                }
+                catch
+                {
+                    CompressionInFlight.TryRemove(npcName, out _);
+                    throw;
+                }
             }
         }
 

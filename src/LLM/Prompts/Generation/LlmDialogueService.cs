@@ -286,13 +286,14 @@ public class LlmDialogueService
                     break;
                 }
 
-                // Execute with timeout
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
+                // Execute with timeout (explicit CTS lifecycle — MEM-08 fix A2-5)
+                CancellationTokenSource cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
                 character.CurrentDialogueCts = cts;
                 string[] resultsInternal = Array.Empty<string>();
 
                 try
                 {
+
                     if (isDebug) LogDebugRequest(character, prompts, attempt + 1);
 
                     var inferenceTask = Llm.Instance.RunInference(
@@ -347,7 +348,7 @@ public class LlmDialogueService
                 {
                     // User-initiated cancellation, silent handling, no error logging
                     Log.Debug($"AI request cancelled for {character.Name}.");
-                  
+
                     // 🔧 清理已注入的感知，避免重复（与流式路径保持一致）
                     try
                     {
@@ -359,7 +360,7 @@ public class LlmDialogueService
                     {
                         Log.Warning($"Perception cleanup failed after cancellation: {cleanupEx.Message}");
                     }
-                  
+
                     resultsInternal = new string[] { "..." };
                     results = resultsInternal;
                     break; // Exit retry loop, no further retries
@@ -368,6 +369,12 @@ public class LlmDialogueService
                 {
                     lastException = ex;
                     Log.Error(ex, $"Error generating AI response for {character.StardewNpc.displayName}");
+                }
+                finally
+                {
+                    if (ReferenceEquals(character.CurrentDialogueCts, cts))
+                        character.CurrentDialogueCts = null;
+                    cts.Dispose();
                 }
 
                 if (resultsInternal.Length > 0)

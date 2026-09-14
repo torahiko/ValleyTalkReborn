@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,18 +13,7 @@ internal static class EvolvedTraitManager
     private static bool _dirty;
     private static readonly object LockObject = new();
 
-    private static readonly HashSet<string> PendingFoldSet =
-        new(StringComparer.OrdinalIgnoreCase);
-
-    private static readonly ConcurrentQueue<string> FoldingQueue = new();
-
-    public const int FoldThreshold = 10;
-
     public const int MaxTraitsPerNpc = 100;
-    public const int MaxFoldRetries = 3;
-
-    private static readonly Dictionary<string, int> FoldRetryCount =
-        new(StringComparer.OrdinalIgnoreCase);
 
     // ── 常驻心智看板（MEM-02 新增）──
     private const string MindsetsSaveDataKey = "valleytalk.npc-mindsets";
@@ -50,8 +38,6 @@ internal static class EvolvedTraitManager
     {
         lock (LockObject)
         {
-            ClearPendingFoldState();
-
             try
             {
                 _cache = ModEntry.SHelper.Data
@@ -61,8 +47,6 @@ internal static class EvolvedTraitManager
                 NormalizeCache();
 
                 _dirty = false;
-
-                RequeueFoldingTargets();
 
                 ModEntry.SMonitor?.Log(
                     $"[EvolvedTraitManager] Cache loaded. NPCs: {_cache.Count}.",
@@ -184,6 +168,22 @@ internal static class EvolvedTraitManager
         }
     }
 
+    /// <summary>
+    /// 重置所有状态（标题期调用）。
+    /// </summary>
+    public static void Reset()
+    {
+        lock (LockObject)
+        {
+            _cache = null;                 // EnsureLoaded 将按需重建（标题期 Constants.SaveFolderName=null
+            _mindsets = CreateMindsetDict(); // 时不会触发懒加载——无对话路径）
+            _mindsetsDirty = false;
+        }
+
+        ModEntry.SMonitor?.Log("[EvolvedTraitManager] State reset.", LogLevel.Debug);
+    }
+
+    [Obsolete("Superseded by UpdateMindset; retained for compatibility.")]
     public static void AddTrait(string npcName, string trait)
     {
         npcName = NormalizeString(npcName);
@@ -229,7 +229,6 @@ internal static class EvolvedTraitManager
             }
 
             // Guard: 硬上限保护，防止 traits 无限增长。
-            // 当夜间整合被禁用或折叠持续失败时，traits 可能累积。
             if (traits.Count >= MaxTraitsPerNpc)
             {
                 traits.RemoveAt(0);
@@ -255,95 +254,6 @@ internal static class EvolvedTraitManager
             ModEntry.SMonitor?.Log(
                 $"[EvolvedTraitManager] Trait added for [{npcName}]. Count: {traits.Count}. Text: \"{trait}\"",
                 LogLevel.Info);
-
-            QueueFoldIfNeeded(npcName);
-        }
-    }
-
-    public static void ReplaceFoldedTraits(
-        string npcName,
-        List<string> folded,
-        List<string> originalSnapshot)
-    {
-        npcName = NormalizeString(npcName);
-
-        if (string.IsNullOrWhiteSpace(npcName) ||
-            folded == null ||
-            folded.Count == 0)
-        {
-            ModEntry.SMonitor?.Log(
-                $"[EvolvedTraitManager] ReplaceFoldedTraits ignored for [{npcName}]. Invalid result.",
-                LogLevel.Warn);
-
-            RequeueFoldTarget(npcName);
-            return;
-        }
-
-        lock (LockObject)
-        {
-            EnsureLoaded();
-
-            if (!_cache.TryGetValue(npcName, out var current) ||
-                current == null)
-            {
-                current = new List<string>();
-            }
-
-            var originalSet = new HashSet<string>(
-                originalSnapshot ?? new List<string>(),
-                StringComparer.OrdinalIgnoreCase);
-
-            var merged = new List<string>();
-            var seen = new HashSet<string>(
-                StringComparer.OrdinalIgnoreCase);
-
-            foreach (string item in folded)
-            {
-                string value = NormalizeString(item);
-
-                if (!string.IsNullOrWhiteSpace(value) &&
-                    value.Length <= 200 &&
-                    seen.Add(value))
-                {
-                    merged.Add(value);
-                }
-            }
-
-            int newAdditionCount = 0;
-
-            foreach (string item in current)
-            {
-                string value = NormalizeString(item);
-
-                if (string.IsNullOrWhiteSpace(value))
-                    continue;
-
-                if (!originalSet.Contains(value))
-                {
-                    newAdditionCount++;
-                }
-
-                if (seen.Add(value))
-                {
-                    merged.Add(value);
-                }
-            }
-
-            _cache[npcName] = merged;
-            _dirty = true;
-
-            // ── MEM-02 止血：折叠成功即复位重试计数（修复 A2-1/A3-2）──
-            FoldRetryCount.Remove(npcName);
-            PendingFoldSet.Remove(npcName);
-
-            ModEntry.SMonitor?.Log(
-                $"[EvolvedTraitManager] Traits folded for [{npcName}]. " +
-                $"Original: {current.Count}, Folded: {folded.Count}, " +
-                $"New additions: {newAdditionCount}, Final: {merged.Count}.",
-                LogLevel.Info);
-
-            // 折叠期间新增数据后，合并结果仍然达到阈值，需要再次排队。
-            QueueFoldIfNeeded(npcName);
         }
     }
 
@@ -450,9 +360,72 @@ internal static class EvolvedTraitManager
         return sb.ToString();
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // 常驻心智看板 API（MEM-02 新增）
-    // ──────────────────────────────────────────────────────────────
+    private static List<string> BuildContextKeywords(DialogueContext context, string npcName)
+    {
+        var keywords = new List<string>();
+
+        if (context == null)
+            return keywords;
+
+        if (context.Accept != null)
+        {
+            keywords.AddRange(new[]
+            {
+                "gift", "礼物", "送", "present", "giving"
+            });
+        }
+
+        // 仅在对话目标确实是配偶时才加入婚姻关键词，
+        // 避免非配偶 NPC（克林特、马尔隆等）在多人婚姻存档中被强行拉取暧昧印象。
+        if (context.Married && Game1.player?.spouse == npcName)
+        {
+            keywords.AddRange(new[]
+            {
+                "marry", "married", "spouse", "wedding",
+                "婚", "爱", "love", "dear"
+            });
+        }
+
+        if (context.RoutingFlags?.IsOnDate == true)
+        {
+            keywords.AddRange(new[]
+            {
+                "date", "romance", "love",
+                "约会", "浪漫", "心动"
+            });
+        }
+
+        if (context.RoutingFlags?.IsJealousy == true)
+        {
+            keywords.AddRange(new[]
+            {
+                "jealous", "other",
+                "吃醋", "嫉妒", "其他人"
+            });
+        }
+
+        string lastPlayerLine = context.ChatHistory?
+            .LastOrDefault(x => x.IsPlayerLine)?
+            .Text ?? string.Empty;
+
+        if (!string.IsNullOrWhiteSpace(lastPlayerLine))
+        {
+            var words = lastPlayerLine
+                .Split(
+                    new[]
+                    {
+                        ' ', '，', ',', '。', '.', '！', '!',
+                        '？', '?', '\n', '\r', '、', '；', ';'
+                    },
+                    StringSplitOptions.RemoveEmptyEntries)
+                    .Where(word => word.Length > 2)
+                    .Take(8);
+
+            keywords.AddRange(words);
+        }
+
+        return keywords;
+    }
 
     public static bool HasMindset(string npcName)
     {
@@ -473,7 +446,7 @@ internal static class EvolvedTraitManager
     }
 
     /// <summary>
-    /// 覆盖式更新心智（幂 id）。stance/boundary 截断至 120；
+    /// 覆盖式更新心智（幂等）。stance/boundary 截断至 120；
     /// impressions 去空白/去重/截断/Take(3)；LastUpdateDay = Game1.Date.TotalDays。
     /// </summary>
     public static void UpdateMindset(string npcName, string stance,
@@ -580,173 +553,9 @@ internal static class EvolvedTraitManager
         return sb.ToString();
     }
 
-    /// <summary>
-    /// 句末标点优先截断（与 MEM-01 SmartTruncate 同规则，本地实现保持可并行）。
-    /// </summary>
-    private static string TruncateAt(string content, int maxLen)
+    private static string NormalizeString(string value)
     {
-        if (string.IsNullOrEmpty(content) || content.Length <= maxLen) return content;
-
-        int minLen = (int)(maxLen * 0.6);
-        char[] endPunctuation = { '。', '！', '？', '!', '?', '.', '…' };
-
-        for (int i = maxLen - 1; i >= minLen; i--)
-        {
-            if (content.Length <= i) continue;
-            char c = content[i];
-            if (endPunctuation.Contains(c))
-            {
-                return content.Substring(0, i + 1);
-            }
-        }
-
-        return content.Substring(0, maxLen);
-    }
-
-    private static string TruncateForLog(string s, int max = 30) =>
-        string.IsNullOrEmpty(s) ? "" : (s.Length <= max ? s : s.Substring(0, max) + "…");
-
-    public static bool TryDequeueFoldTarget(out string npcName)
-    {
-        bool result = FoldingQueue.TryDequeue(out npcName);
-
-        if (result)
-        {
-            ModEntry.SMonitor?.Log(
-                $"[EvolvedTraitManager] Fold target dequeued: {npcName}. Remaining: {FoldingQueue.Count}.",
-                LogLevel.Debug);
-        }
-
-        return result;
-    }
-
-    public static void RequeueFoldTarget(string npcName)
-    {
-        npcName = NormalizeString(npcName);
-
-        if (string.IsNullOrWhiteSpace(npcName))
-            return;
-
-        lock (LockObject)
-        {
-            EnsureLoaded();
-
-            // Guard: 折叠重试次数上限，防止 LLM 持续失败时无限重试。
-            FoldRetryCount.TryGetValue(npcName, out int count);
-            count++;
-
-            if (count > MaxFoldRetries)
-            {
-                PendingFoldSet.Remove(npcName);
-                FoldRetryCount.Remove(npcName);
-
-                ModEntry.SMonitor?.Log(
-                    $"[EvolvedTraitManager] Fold retry limit reached for [{npcName}]. " +
-                    "Traits will not be folded this session.",
-                    LogLevel.Warn);
-
-                return;
-            }
-
-            FoldRetryCount[npcName] = count;
-            PendingFoldSet.Remove(npcName);
-
-            ModEntry.SMonitor?.Log(
-                $"[EvolvedTraitManager] Preparing fold retry for [{npcName}] (attempt {count}/{MaxFoldRetries}).",
-                LogLevel.Debug);
-
-            QueueFoldIfNeeded(npcName);
-        }
-    }
-
-    private static void QueueFoldIfNeeded(string npcName)
-    {
-        if (!_cache.TryGetValue(npcName, out var traits) ||
-            traits == null ||
-            traits.Count < FoldThreshold)
-        {
-            return;
-        }
-
-        if (PendingFoldSet.Add(npcName))
-        {
-            FoldingQueue.Enqueue(npcName);
-
-            ModEntry.SMonitor?.Log(
-                $"[EvolvedTraitManager] Fold queued for [{npcName}]. Trait count: {traits.Count}.",
-                LogLevel.Debug);
-        }
-    }
-
-    private static void RequeueFoldingTargets()
-    {
-        int count = 0;
-
-        foreach (var pair in _cache)
-        {
-            if (pair.Value == null ||
-                pair.Value.Count < FoldThreshold)
-            {
-                continue;
-            }
-
-            if (PendingFoldSet.Add(pair.Key))
-            {
-                FoldingQueue.Enqueue(pair.Key);
-                count++;
-            }
-        }
-
-        if (count > 0)
-        {
-            ModEntry.SMonitor?.Log(
-                $"[EvolvedTraitManager] Restored {count} pending folding task(s).",
-                LogLevel.Debug);
-        }
-    }
-
-    private static void ClearPendingFoldState()
-    {
-        while (FoldingQueue.TryDequeue(out _))
-        {
-        }
-
-        PendingFoldSet.Clear();
-
-        FoldRetryCount.Clear();
-
-        ModEntry.SMonitor?.Log(
-            "[EvolvedTraitManager] Cleared old folding and retry state.",
-            LogLevel.Debug);
-    }
-
-    private static void EnsureLoaded()
-    {
-        if (_cache != null)
-            return;
-
-        try
-        {
-            _cache = ModEntry.SHelper.Data
-                .ReadJsonFile<Dictionary<string, List<string>>>(FilePath)
-                ?? CreateCache();
-
-            NormalizeCache();
-        }
-        catch (Exception ex)
-        {
-            ModEntry.SMonitor?.Log(
-                $"[EvolvedTraitManager] Lazy load failed: {ex}",
-                LogLevel.Error);
-
-            _cache = CreateCache();
-        }
-    }
-
-    private static Dictionary<string, List<string>> CreateCache()
-    {
-        return new Dictionary<string, List<string>>(
-            StringComparer.OrdinalIgnoreCase);
+        return value?.Trim();
     }
 
     private static void NormalizeCache()
@@ -792,75 +601,55 @@ internal static class EvolvedTraitManager
         _cache = normalized;
     }
 
-    private static string NormalizeString(string value)
+    private static string TruncateAt(string content, int maxLen)
     {
-        return value?.Trim();
+        if (string.IsNullOrEmpty(content) || content.Length <= maxLen) return content;
+
+        int minLen = (int)(maxLen * 0.6);
+        char[] endPunctuation = { '。', '！', '？', '!', '?', '.', '…' };
+
+        for (int i = maxLen - 1; i >= minLen; i--)
+        {
+            if (content.Length <= i) continue;
+            char c = content[i];
+            if (endPunctuation.Contains(c))
+            {
+                return content.Substring(0, i + 1);
+            }
+        }
+
+        return content.Substring(0, maxLen);
     }
 
-    private static List<string> BuildContextKeywords(DialogueContext context, string npcName)
+    private static string TruncateForLog(string s, int max = 30) =>
+        string.IsNullOrEmpty(s) ? "" : (s.Length <= max ? s : s.Substring(0, max) + "…");
+
+    private static void EnsureLoaded()
     {
-        var keywords = new List<string>();
+        if (_cache != null)
+            return;
 
-        if (context == null)
-            return keywords;
-
-        if (context.Accept != null)
+        try
         {
-            keywords.AddRange(new[]
-            {
-                "gift", "礼物", "送", "present", "giving"
-            });
-        }
+            _cache = ModEntry.SHelper.Data
+                .ReadJsonFile<Dictionary<string, List<string>>>(FilePath)
+                ?? CreateCache();
 
-        // 仅在对话目标确实是配偶时才加入婚姻关键词，
-        // 避免非配偶 NPC（克林特、马尔隆等）在多人婚姻存档中被强行拉取暧昧印象。
-        if (context.Married && Game1.player?.spouse == npcName)
+            NormalizeCache();
+        }
+        catch (Exception ex)
         {
-            keywords.AddRange(new[]
-            {
-                "marry", "married", "spouse", "wedding",
-                "婚", "爱", "love", "dear"
-            });
+            ModEntry.SMonitor?.Log(
+                $"[EvolvedTraitManager] Lazy load failed: {ex}",
+                LogLevel.Error);
+
+            _cache = CreateCache();
         }
+    }
 
-        if (context.RoutingFlags?.IsOnDate == true)
-        {
-            keywords.AddRange(new[]
-            {
-                "date", "romance", "love",
-                "约会", "浪漫", "心动"
-            });
-        }
-
-        if (context.RoutingFlags?.IsJealousy == true)
-        {
-            keywords.AddRange(new[]
-            {
-                "jealous", "other",
-                "吃醋", "嫉妒", "其他人"
-            });
-        }
-
-        string lastPlayerLine = context.ChatHistory?
-            .LastOrDefault(x => x.IsPlayerLine)?
-            .Text ?? string.Empty;
-
-        if (!string.IsNullOrWhiteSpace(lastPlayerLine))
-        {
-            var words = lastPlayerLine
-                .Split(
-                    new[]
-                    {
-                        ' ', '，', ',', '。', '.', '！', '!',
-                        '？', '?', '\n', '\r', '、', '；', ';'
-                    },
-                    StringSplitOptions.RemoveEmptyEntries)
-                .Where(word => word.Length > 2)
-                .Take(8);
-
-            keywords.AddRange(words);
-        }
-
-        return keywords;
+    private static Dictionary<string, List<string>> CreateCache()
+    {
+        return new Dictionary<string, List<string>>(
+            StringComparer.OrdinalIgnoreCase);
     }
 }

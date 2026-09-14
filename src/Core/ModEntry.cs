@@ -496,6 +496,57 @@ namespace ValleytalkReborn
                         }
                     }
                 });
+
+        // ── Promise 管理控制台命令（MEM-08 新增）──
+        helper.ConsoleCommands.Add("vt_promises", "查看指定 NPC 的待履约约定。用法: vt_promises <npcName>",
+            async (cmd, args) =>
+            {
+                if (args.Length < 1)
+                {
+                    Monitor.Log("[用法] vt_promises <npcName>  例: vt_promises Abigail", LogLevel.Info);
+                    return;
+                }
+
+                string npcName = args[0];
+
+                await MainThreadDispatcher.RunOnMainThreadAsync(() =>
+                {
+                    var promises = MemoryManager.Instance.GetActivePromises(npcName);
+                    if (promises == null || promises.Count == 0)
+                    {
+                        Monitor.Log($"[{npcName}] 无待履约约定。", LogLevel.Info);
+                        return;
+                    }
+
+                    Monitor.Log($"[{npcName}] 待履约约定 ({promises.Count} 条):", LogLevel.Info);
+                    foreach (var p in promises)
+                    {
+                        Monitor.Log($"id={p.Id} | day={p.TargetDayHint} | loc={p.TriggerLocation} | imp={p.Importance} | {p.Content}", LogLevel.Info);
+                    }
+                });
+            });
+
+        helper.ConsoleCommands.Add("vt_fulfill", "标记指定 Promise 为已履约。用法: vt_fulfill <npcName> <memoryId>",
+            async (cmd, args) =>
+            {
+                if (args.Length < 2)
+                {
+                    Monitor.Log("[用法] vt_fulfill <npcName> <memoryId>  例: vt_fulfill Abigail abc-123", LogLevel.Info);
+                    return;
+                }
+
+                string npcName = args[0];
+                string memoryId = args[1];
+
+                await MainThreadDispatcher.RunOnMainThreadAsync(() =>
+                {
+                    bool ok = MemoryManager.Instance.MarkPromiseFulfilled(npcName, memoryId);
+                    if (ok)
+                        Monitor.Log($"已标记履约: [{npcName}] {memoryId}", LogLevel.Info);
+                    else
+                        Monitor.Log($"未找到约定 {memoryId} (NPC: {npcName})", LogLevel.Warn);
+                });
+            });
         }
 
         /// <summary>
@@ -856,6 +907,16 @@ namespace ValleytalkReborn
                 catch (Exception ex)
                 {
                     Log.Error($"[ValleyTalkReborn] Error cleaning PendingTopicManager: {ex.Message}");
+                }
+
+                // ★ 清理 EvolvedTraitManager（标题期重置，修复折叠链废除后的状态残留）
+                try
+                {
+                    EvolvedTraitManager.Reset();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[ValleyTalkReborn] Error resetting EvolvedTraitManager: {ex.Message}");
                 }
 
                 try
