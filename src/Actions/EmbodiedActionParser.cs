@@ -127,10 +127,10 @@ namespace ValleytalkReborn
                         var targetTile    = new Microsoft.Xna.Framework.Vector2(tx, ty);
                         var capturedInput = originalPlayerInput;
                         ModEntry.SMonitor?.Log($"[EmbodiedActionParser] GOTO dispatched: ({tx},{ty}) for {npc.Name}", LogLevel.Debug);
-                        MovementManager.Instance.MoveToTile(npc, targetTile, onComplete: () =>
-                        {
-                            GotoCompletionInjector.InjectCompletion(npc, capturedInput);
-                        });
+                        MovementManager.Instance.MoveToTile(
+                            npc, targetTile,
+                            onComplete: () => GotoCompletionInjector.InjectCompletion(npc, capturedInput),
+                            onFail:     () => OnGotoFailed(npc));
                     }
                     else if (moveDispatched)
                     {
@@ -344,6 +344,27 @@ namespace ValleytalkReborn
                 lines[i] = EndDateRegex.Replace(lines[i], string.Empty);
                 lines[i] = lines[i].Trim();
             }
+        }
+
+        private static bool IsChinese =>
+            LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+
+        private static void OnGotoFailed(NPC npc)
+        {
+            // 跨地失败（理论路径）静默；同地才给反馈，避免隐形浪费
+            if (npc == null || npc.currentLocation != Game1.player?.currentLocation) return;
+            StardewValley.DelayedAction.functionAfterDelay(() =>
+            {
+                try
+                {
+                    npc.doEmote(28); // SAD
+                    npc.showTextAboveHead(IsChinese ? "……过不去啊。" : "...Can't get through...");
+                }
+                catch (Exception ex)
+                {
+                    ModEntry.SMonitor?.Log($"[EmbodiedActionParser] GOTO fail feedback error: {ex.Message}", LogLevel.Trace);
+                }
+            }, 100);
         }
     }
 }
