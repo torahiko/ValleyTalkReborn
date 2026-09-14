@@ -124,7 +124,7 @@ namespace ValleytalkReborn
                 if (who.friendshipData == null || !who.friendshipData.TryGetValue(npc.Name, out var f7))
                     return new HandoverDecision(HandoverVerdict.Pendant_Reject_NotDating, "no_friendship");
                 if (f7.IsDivorced())
-                    return new HandoverDecision(HandoverVerdict.Pendant_Reject_NotDating, "divorced");
+                    return new HandoverDecision(HandoverVerdict.Pendant_Reject_NotDatable, "divorced");
                 if (f7.Points < PendantFloorPoints)
                     return new HandoverDecision(HandoverVerdict.Pendant_Reject_NotDating, "under_6_hearts");
                 // 模组策略：原版无此闸门
