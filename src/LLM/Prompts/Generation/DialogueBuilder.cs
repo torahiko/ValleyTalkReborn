@@ -427,9 +427,7 @@ namespace ValleytalkReborn
             }
 
             // 🌟【强力防抽风 1】：NPC 台词分页与超长字符限制
-            bool willAppendResponses = !(theLine.Length == 1
-                && ModEntry.Config.TypedResponses != "Always"
-                && !allowDateUI && !allowFollowUI);
+            bool willAppendResponses = !(ModEntry.Config.TypedResponses == "Never" && !allowDateUI && !allowFollowUI);
             int npcPageBudget = willAppendResponses ? MaxDialoguePages - 1 : MaxDialoguePages;
 
             string npcSpeech = theLine[0];
@@ -448,6 +446,7 @@ namespace ValleytalkReborn
                 // 2. 限制单段文字的总字符上限（标点回溯截断，避免硬切在句中）
                 if (npcSpeech.Length > MaxDialogueChars)
                 {
+                    int originalLength = npcSpeech.Length;
                     int searchStart = Math.Min(MaxDialogueChars, npcSpeech.Length - 1);
                     int lastSentenceEnd = npcSpeech.LastIndexOfAny(SentenceEnders, searchStart);
                     int cutoff = MaxDialogueChars;
@@ -460,13 +459,17 @@ namespace ValleytalkReborn
                     {
                         truncated = truncated.Substring(0, truncated.Length - 1).TrimEnd();
                     }
+                    if (truncated.EndsWith("$b") || truncated.EndsWith("$e"))
+                    {
+                        truncated = truncated.Substring(0, truncated.Length - 3).TrimEnd();
+                    }
                     npcSpeech = truncated + "...";
-                    ModEntry.SMonitor?.Log($"[DialogueBuilder] Truncated npcSpeech {searchStart} -> {npcSpeech.Length} chars", LogLevel.Debug);
+                    ModEntry.SMonitor?.Log($"[DialogueBuilder] Truncated npcSpeech {originalLength} -> {npcSpeech.Length} chars (cutoff={cutoff})", LogLevel.Debug);
                 }
             }
             theLine[0] = npcSpeech;
 
-            if (theLine.Length == 1 && ModEntry.Config.TypedResponses != "Always" && !allowDateUI && !allowFollowUI)
+            if (ModEntry.Config.TypedResponses == "Never" && !allowDateUI && !allowFollowUI)
             {
                 return theLine[0];
             }
@@ -483,7 +486,7 @@ namespace ValleytalkReborn
             {
                 if (string.IsNullOrWhiteSpace(theLine[i])) continue;
                 sb.Append($"#$r -999998 0 {SldConstants.DialogueKeyPrefix}Next#");
-                sb.Append(theLine[i].Replace("#", " ").Trim());
+                sb.Append(theLine[i]);
             }
             if (ModEntry.Config.TypedResponses != "Never")
             {
