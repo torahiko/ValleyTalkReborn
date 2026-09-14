@@ -100,6 +100,18 @@ namespace ValleytalkReborn
 
             DialogueContext context = GetContext(instance.Name) ?? GetBasicContext(instance);
 
+            // 🌟【残留礼物状态规范化】：续聊轮次若仍残留上轮 Accept/GiftTaste，清零以防污染。
+            // Accept 为 null 后无人读取；清零仅为卫生。
+            if (context.Accept != null)
+            {
+                context.Accept = null;
+                context.GiftTaste = 0;
+                if (ModEntry.Config?.Debug ?? false)
+                {
+                    ModEntry.SMonitor?.Log($"[DialogueBuilder] Cleared stale gift context (Accept/GiftTaste) for {instance.Name} on continuation turn.", LogLevel.Debug);
+                }
+            }
+
             // ── 🔑 [TURN TRACKING] 标记为连续对话（Turn 1+） ──
             context.IsActiveTurn = true;
 
@@ -109,26 +121,48 @@ namespace ValleytalkReborn
                 context.DialogueSessionId = $"{instance.Name}_{Game1.Date?.TotalDays ?? 0}_{DateTime.UtcNow.Ticks}";
             }
 
-            var fullHistory = context.ChatHistory.ToList();
-
-            foreach (var elem in conversation)
+            // ── 🔑 [HISTORY RECONCILE] 合并段：superset 分支 + 逐字保留 legacy 分支 ──
+            List<ConversationElement> merged;
+            if (IsConversationSupersetOfStored(context, conversation))
             {
-                string cleanedText = CleanHistoryText(elem.Text);
-                string dedupKey = DialogueHistoryManager.SanitizeForStorage(cleanedText);
-                if (string.IsNullOrWhiteSpace(dedupKey)) continue;
-                if (fullHistory.Count > 0
-                    && fullHistory.Last().IsPlayerLine == elem.IsPlayerLine
-                    && string.Equals(DialogueHistoryManager.SanitizeForStorage(fullHistory.Last().Text), dedupKey,
-                         StringComparison.OrdinalIgnoreCase))
-                { continue; }
-                else
+                // conversation 以 stored 为前缀 → 直接清洗 conversation，保留 FuzzyTime
+                merged = new List<ConversationElement>();
+                foreach (var elem in conversation)
                 {
-                    fullHistory.Add(new ConversationElement(cleanedText, elem.IsPlayerLine));
+                    var cleaned = CleanElement(elem);
+                    if (cleaned != null) merged.Add(cleaned);
+                }
+                if (ModEntry.Config?.Debug ?? false)
+                {
+                    int storedCount = context?.ChatHistory?.Count ?? 0;
+                    ModEntry.SMonitor?.Log($"[DialogueBuilder] History reconcile: conversation supersedes stored history ({storedCount} -> {merged.Count}) for {instance.Name}", LogLevel.Debug);
+                }
+            }
+            else
+            {
+                // 🌟 legacy 分支：逐字保留现有 tail-only 合并循环
+                // 保住 Alt+click 路径的 GetBasicContext 预载历史（stored 比 conversation 长时走此分支）
+                merged = context.ChatHistory.ToList();
+                foreach (var elem in conversation)
+                {
+                    string cleanedText = CleanHistoryText(elem.Text);
+                    string dedupKey = DialogueHistoryManager.SanitizeForStorage(cleanedText);
+                    if (string.IsNullOrWhiteSpace(dedupKey)) continue;
+                    if (merged.Count > 0
+                        && merged.Last().IsPlayerLine == elem.IsPlayerLine
+                        && string.Equals(DialogueHistoryManager.SanitizeForStorage(merged.Last().Text), dedupKey,
+                             StringComparison.OrdinalIgnoreCase))
+                    { continue; }
+                    else
+                    {
+                        merged.Add(new ConversationElement(cleanedText, elem.IsPlayerLine));
+                    }
                 }
             }
 
+            // ── 现有连续去重 pass 不变，作用于 merged ──
             var cleanHistory = new List<ConversationElement>();
-            foreach (var elem in fullHistory)
+            foreach (var elem in merged)
             {
                 if (cleanHistory.Count > 0 &&
                     cleanHistory.Last().IsPlayerLine == elem.IsPlayerLine &&
@@ -518,6 +552,43 @@ namespace ValleytalkReborn
         private static string CleanHistoryText(string raw)
         {
             return DialogueHistoryManager.SanitizeForStorage(raw);
+        }
+
+        /// <summary>
+        /// 稳定历史 key：玩家/NPC 前缀 + 归一化文本，用于集合等价比较。
+        /// 对 "[农夫刚刚送给你一件礼物：X]" 无剥除动作，key 保持稳定。
+        /// </summary>
+        private static string HistoryKey(ConversationElement e)
+        {
+            return (e.IsPlayerLine ? "P|" : "N|") + DialogueHistoryManager.SanitizeForStorage(e.Text ?? string.Empty);
+        }
+
+        /// <summary>
+        /// 新建清洗后元素，保留 FuzzyTime；禁止改写传入元素。
+        /// 若清洗结果为空白，返回 null 由调用方跳过。
+        /// </summary>
+        private static ConversationElement CleanElement(ConversationElement e)
+        {
+            string cleaned = CleanHistoryText(e.Text);
+            if (string.IsNullOrWhiteSpace(cleaned)) return null;
+            return new ConversationElement(cleaned, e.IsPlayerLine) { FuzzyTime = e.FuzzyTime };
+        }
+
+        /// <summary>
+        /// 判断当前 conversation 是否以 stored 为前缀（即 stored 是 conversation 的会话超集起点）。
+        /// stored 为空 → true；conversation 比 stored 短 → false；否则逐位比较 HistoryKey。
+        /// </summary>
+        private static bool IsConversationSupersetOfStored(DialogueContext context, List<ConversationElement> conversation)
+        {
+            var stored = context?.ChatHistory;
+            if (stored == null || stored.Count == 0) return true;
+            if (conversation.Count < stored.Count) return false;
+            for (int i = 0; i < stored.Count; i++)
+            {
+                if (!string.Equals(HistoryKey(stored[i]), HistoryKey(conversation[i]), StringComparison.OrdinalIgnoreCase))
+                    return false;
+            }
+            return true;
         }
 
         private DialogueContext GetBasicContext(NPC instance)

@@ -81,7 +81,13 @@ namespace ValleytalkReborn
 
             // 【Bug 修复】防护 LastContext 为 null 的致命空指针隐患
             var context = DialogueBuilder.Instance.GetContext(__instance.speaker.Name);
-            var previous = context?.ChatHistory ?? new List<ConversationElement>();
+
+            // 🌟【精准修复】：拷贝 context.ChatHistory，避免对话框交互对共享会话历史原地突变
+            // （后续 AddRange / Contains 过滤全部作用在副本上，切断写入方 #1）
+            List<ConversationElement> previous =
+                context?.ChatHistory != null
+                    ? new List<ConversationElement>(context.ChatHistory)
+                    : new List<ConversationElement>();
 
             if (dialogueStrings != null)
             {

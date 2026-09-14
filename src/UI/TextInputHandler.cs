@@ -130,7 +130,6 @@ namespace ValleytalkReborn
                 if (accepted)
                 {
                     DialogueHistoryManager.Instance.RecordPlayerDialogue(request.Npc.Name, enteredText);
-                    request.ResponseHistory.Add(new ConversationElement(enteredText, true));
                     request.Npc.grantConversationFriendship(Game1.player);
                 }
                 else
