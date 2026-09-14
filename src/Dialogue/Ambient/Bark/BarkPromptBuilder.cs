@@ -413,7 +413,7 @@ Example 3 (Paranoia & Appetite):
     /// </summary>
     private static string BuildIndoorWeatherSentence(GameLocation loc, bool isZh)
     {
-        if (Game1.IsGreenRainingHere())  return isZh ? "屋外正下着诡异的绿雨。" : "Strange green rain is falling outside.";
+        if (loc != null && Game1.IsGreenRainingHere(loc))  return isZh ? "屋外正下着诡异的绿雨。" : "Strange green rain is falling outside.";
         if (loc != null && Game1.IsSnowingHere(loc))    return isZh ? "屋外正下着雪。"   : "It's snowing outside.";
         if (loc != null && Game1.IsLightningHere(loc))  return isZh ? "屋外雷雨大作。"   : "A thunderstorm is raging outside.";
         if (loc != null && Game1.IsRainingHere(loc))    return isZh ? "屋外正下着雨。"   : "It's raining outside.";
@@ -634,7 +634,7 @@ Example 3 (Paranoia & Appetite):
 
     private static string GetWeatherDescription(GameLocation loc, bool isZh)
     {
-        if (Game1.IsGreenRainingHere())  return isZh ? "绿雨" : "green rain";
+        if (loc != null && Game1.IsGreenRainingHere(loc))  return isZh ? "绿雨" : "green rain";
         if (loc != null && Game1.IsSnowingHere(loc))    return isZh ? "下雪" : "snowing";
         if (loc != null && Game1.IsLightningHere(loc))  return isZh ? "雷雨" : "stormy";
         if (loc != null && Game1.IsRainingHere(loc))    return isZh ? "下雨" : "raining";

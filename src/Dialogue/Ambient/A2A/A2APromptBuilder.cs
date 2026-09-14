@@ -576,7 +576,7 @@ internal sealed class A2APromptBuilder
         string seasonMoodZh = season switch
         {
             "spring" => (moodLoc != null ? Game1.IsRainingHere(moodLoc) : Game1.isRaining) ? "春雨连绵的潮湿泥泞" : "初春微凉而透着新绿的空气",
-            "summer" => Game1.IsGreenRainingHere()
+            "summer" => (moodLoc != null && Game1.IsGreenRainingHere(moodLoc))
                 ? "笼罩小镇的诡异绿雨与疯长苔藓"
                 : ((moodLoc != null ? Game1.IsRainingHere(moodLoc) : Game1.isRaining) ? "沉闷潮湿的夏日暴雨" : "夏日耀眼的阳光与燥热微风"),
             "fall"   => (moodLoc != null ? Game1.IsRainingHere(moodLoc) : Game1.isRaining) ? "秋雨浸透落叶的萧瑟微寒" : "秋高气爽的丰收时节与微凉秋风",
@@ -587,7 +587,7 @@ internal sealed class A2APromptBuilder
         string seasonMoodEn = season switch
         {
             "spring" => (moodLoc != null ? Game1.IsRainingHere(moodLoc) : Game1.isRaining) ? "damp spring drizzle and wet soil" : "crisp, fresh air of early spring",
-            "summer" => Game1.IsGreenRainingHere()
+            "summer" => (moodLoc != null && Game1.IsGreenRainingHere(moodLoc))
                 ? "the eerie green rain and wild moss overgrowth"
                 : ((moodLoc != null ? Game1.IsRainingHere(moodLoc) : Game1.isRaining) ? "muggy, humid summer downpours" : "blazing sunlight and heavy summer warmth"),
             "fall"   => (moodLoc != null ? Game1.IsRainingHere(moodLoc) : Game1.isRaining) ? "chilly autumn drizzle soaking the leaves" : "brisk autumn breeze and harvest season energy",
