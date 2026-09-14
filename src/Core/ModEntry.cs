@@ -510,6 +510,10 @@ namespace ValleytalkReborn
 
                 if (tickDiff > 0 && tickDiff <= 300 && _lastSpokenNPC != null)
                 {
+                    // ★ 确保目标 NPC 具备 AI 对话资格：无有效 Bios 时不弹输入框、不发请求。
+                    // 注意：此处直接 return 且不 Suppress，将按键交还原版处理。
+                    if (!DialogueBuilder.Instance.PatchNpc(_lastSpokenNPC))
+                        return;
                     bool sameLocation = Game1.player.currentLocation == _lastSpokenNPC.currentLocation;
                     float distance = sameLocation
                         ? Vector2.Distance(Game1.player.Position, _lastSpokenNPC.Position)

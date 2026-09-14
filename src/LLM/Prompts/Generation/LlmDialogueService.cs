@@ -39,6 +39,13 @@ public class LlmDialogueService
     /// </summary>
     public async Task<string[]> GenerateDialogueAsync(Character character, DialogueContext context, Action<string> onStreamingToken = null)
     {
+        // ★ 最后防线熔断：上游全部失守时拒绝生成，绝不向 LLM 发送空设定请求
+        if (character == null || !character.HasValidBio)
+        {
+            Log.Warning($"[LlmDialogueService] {character?.Name ?? "Unknown"} 无有效 Bios，拒绝生成（最后防线熔断）。");
+            return null;
+        }
+
         // 严格的最外层状态管理，确保无论是正常 return 还是异常 throw，都能正确重置状态
         _isRequestInProgress = true;
         try

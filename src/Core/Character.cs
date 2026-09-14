@@ -33,6 +33,9 @@ public class Character : IDisposable
         { "wonEggHunt", Util.GetString("wonEggHunt") }
     };
 
+    // ★ Bios 有效性门禁的实质 Biography 长度阈值（含）：低于此长度视为无实质设定，回退原版对话
+    private const int MinValidBioLength = 10;
+
     public Character(string name, NPC stardewNpc)
     {
         Name = name;
@@ -163,7 +166,19 @@ public class Character : IDisposable
 
         bioData.Name = Name;
         _bioData = bioData;
-        _bioData.Missing = false;
+
+        // ★ 核心修复：CP 未提供实质 Biography（含 LoadFrom 兜底空对象）时，
+        // 明确标记 Missing = true，杜绝空设定进入 AI 管线产生幻觉
+        bool hasSubstantiveBio = !string.IsNullOrWhiteSpace(bioData.Biography)
+                                 && bioData.Biography.Trim().Length > MinValidBioLength;
+        _bioData.Missing = !hasSubstantiveBio;
+        if (_bioData.Missing)
+        {
+            ModEntry.SMonitor?.Log(
+                $"[Character] {Name}: bio 缺失或无实质 Biography（长度 <= {MinValidBioLength}），AI 对话已禁用，回退原版对话。",
+                StardewModdingAPI.LogLevel.Trace);
+            return;
+        }
 
         ValidPortraits = new List<string>() { "h", "s", "l", "a" };
         ValidPortraits.AddRange(_bioData.ExtraPortraits.Keys);
@@ -279,6 +294,22 @@ public class Character : IDisposable
         {
             CheckBio();
             return _bioData;
+        }
+    }
+
+    /// <summary>
+    /// 派生只读属性：该角色是否具备可用于 AI 管线的有效 Bios。
+    /// 用局部变量缓存 Bio，避免重复触发 CheckBio（CheckBio 幂等但含 IO/反射，
+    /// 首访后 Missing 标记使守卫短路，后续为 O(1) 字段读取）。
+    /// </summary>
+    public bool HasValidBio
+    {
+        get
+        {
+            var bio = Bio;
+            if (bio == null || bio.Missing) return false;
+            return !string.IsNullOrWhiteSpace(bio.Biography)
+                   && bio.Biography.Trim().Length > MinValidBioLength;
         }
     }
 

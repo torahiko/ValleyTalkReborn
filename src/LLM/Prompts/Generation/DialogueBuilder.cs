@@ -101,6 +101,11 @@ namespace ValleytalkReborn
         internal async Task<string> GenerateResponse(NPC instance, List<ConversationElement> conversation, bool dontSkipNext = false, Action<string> onStreamingToken = null)
         {
             var character = GetCharacter(instance);
+            // ★ 兜底守卫：返回 null 终止 AI 续聊（既有 null 语义），顺带消除 instance 为 null 时的 NRE
+            if (character == null || !character.HasValidBio)
+            {
+                return null;
+            }
 
             DialogueContext context = GetContext(instance.Name) ?? GetBasicContext(instance);
 
@@ -272,6 +277,11 @@ namespace ValleytalkReborn
         internal async Task<Dialogue> GenerateGift(NPC instance, StardewValley.Object gift, int taste, Action<string> onStreamingToken = null)
         {
             var character = GetCharacter(instance);
+            // ★ 兜底守卫：返回 null 交由调用方回退原版送礼台词（既有 null 语义）
+            if (character == null || !character.HasValidBio)
+            {
+                return null;
+            }
             DialogueContext context = GetBasicContext(instance);
 
             // ── 🔑 [TURN TRACKING] 送礼是独立事件，标记为新开场 ──
@@ -344,6 +354,15 @@ namespace ValleytalkReborn
                 return new Dialogue(instance, dialogueKey, originalLine ?? "...");
             }
             var character = GetCharacter(instance);
+            // ★ 兜底守卫：无有效 Bios 时直接返回原版台词，不进入任何 AI 流程
+            if (character == null || !character.HasValidBio)
+            {
+                if (ModEntry.Config?.Debug ?? false)
+                {
+                    ModEntry.SMonitor?.Log($"[DialogueBuilder] Generate 守卫：{instance?.Name} 无有效 Bios，返回原版台词。", LogLevel.Debug);
+                }
+                return new Dialogue(instance, dialogueKey, originalLine ?? "...");
+            }
             DialogueContext context = GetBasicContext(instance);
 
             // ── 🔑 [TURN TRACKING] 新开场对话，标记为 Turn 0 ──
@@ -762,6 +781,18 @@ namespace ValleytalkReborn
             }
             if (ModEntry.Config.DisabledCharactersList.Contains(n.Name))
             {
+                return false;
+            }
+            // ★★★ Bios 有效性门禁：独立于 RespectAuthorAiConsent，无有效 Bios 一律回退原版对话 ★★★
+            var bioCharacter = GetCharacter(n);
+            if (bioCharacter == null || !bioCharacter.HasValidBio)
+            {
+                if (ModEntry.Config.Debug)
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[DialogueBuilder] {n.Name} 未设置有效 Bios，跳过 AI 对话，回退原版日常对话。",
+                        LogLevel.Debug);
+                }
                 return false;
             }
             // 🌟【核心重构】：仅针对明确属于未授权内容包的自定义 NPC 进行独立拦截
