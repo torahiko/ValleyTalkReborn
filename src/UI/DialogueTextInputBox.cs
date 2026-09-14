@@ -10,8 +10,7 @@ using System.Text;
 namespace ValleytalkReborn
 {
     /// <summary>
-    /// A larger text input box specifically designed for dialogue responses.
-    /// Supports character limit, counter display, scrolling, caret movement, and clipboard shortcuts.
+    /// 对话/输入文本框：支持自适应字阶、字数限制、滚动、光标定位及剪贴板。
     /// </summary>
     public class DialogueTextInputBox : IKeyboardSubscriber
     {
@@ -19,7 +18,7 @@ namespace ValleytalkReborn
         public event TextBoxEvent OnSubmit;
 
         ///////////////////////////////////////////////////////////////////
-        // Basic properties
+        // 基础属性与自适应缩放
         ///////////////////////////////////////////////////////////////////
 
         public Vector2 Position { get; set; }
@@ -54,69 +53,89 @@ namespace ValleytalkReborn
             }
         }
 
+        /// <summary>
+        /// 手动指定缩放比例。若为 null，则自动根据 Extent.Y 与字体高度进行自适应匹配。
+        /// </summary>
+        public float? CustomScale { get; set; } = null;
+
+        /// <summary>
+        /// 最终生效的文字与光标缩放比例（自动计算或手动指定）。
+        /// </summary>
+        public float EffectiveScale
+        {
+            get
+            {
+                if (CustomScale.HasValue)
+                    return CustomScale.Value;
+
+                float rawLineHeight = Font.MeasureString("Ag").Y;
+                if (rawLineHeight <= 0f)
+                    return 1f;
+
+                // 当文本框高度不足以容纳两行以上文字时（属于浅型单行输入框，如 50px、60px），
+                // 自动将文字压缩至占框高的 60% 左右，留出充裕的上下呼吸感和边框内边距。
+                if (Extent.Y < rawLineHeight * 1.65f)
+                {
+                    float targetHeight = Math.Min(Extent.Y * 0.60f, Extent.Y - 14f);
+                    float autoScale = targetHeight / rawLineHeight;
+                    return Math.Clamp(autoScale, 0.35f, 1f);
+                }
+
+                return 1f;
+            }
+        }
+
         public bool Selected { get; set; } = true;
 
         public string Text { get; private set; } = "";
 
         ///////////////////////////////////////////////////////////////////
-        // Configuration
+        // 配置
         ///////////////////////////////////////////////////////////////////
 
         private readonly int _characterLimit;
         private readonly int _warningThreshold;
 
         ///////////////////////////////////////////////////////////////////
-        // Internal state
+        // 内部状态
         ///////////////////////////////////////////////////////////////////
 
         private int _caretPosition = 0;
 
-        // Scrolling fields
+        // 滚动状态
         private int _scrollOffset = 0;
         private int _visibleLineCount = 0;
         private readonly ClickableTextureComponent _scrollUpArrow;
         private readonly ClickableTextureComponent _scrollDownArrow;
         private bool _needsScrolling = false;
 
-        // Key repeat configuration
+        // 按键长按连发
         private const double InitialRepeatDelay = 0.5;
         private const double RepeatInterval = 0.03;
         private Keys _currentSpecialKey = Keys.None;
         private double _keyPressTime = 0;
         private int _repeatCount = 0;
 
-        // Cached wrapped lines to avoid per-frame allocation
+        // 换行缓存
         private List<string> _cachedWrappedLines;
         private bool _isTextDirty = true;
 
-        // Counter display padding
         private const int CounterPadding = 8;
-
-        // Prevent duplicate submit events caused by multiple input paths.
         private DateTime _lastSubmitTime = DateTime.MinValue;
 
         ///////////////////////////////////////////////////////////////////
-        // Constructors
+        // 构造函数
         ///////////////////////////////////////////////////////////////////
 
-        /// <summary>
-        /// Creates a new DialogueTextInputBox with default settings (200 char limit).
-        /// </summary>
         public DialogueTextInputBox() : this(200, 180)
         {
         }
 
-        /// <summary>
-        /// Creates a new DialogueTextInputBox with custom character limit.
-        /// </summary>
-        /// <param name="characterLimit">Maximum number of characters allowed.</param>
-        /// <param name="warningThreshold">Character count at which the counter turns orange.</param>
         public DialogueTextInputBox(int characterLimit, int warningThreshold = 0)
         {
             _characterLimit = characterLimit;
             _warningThreshold = warningThreshold > 0 ? warningThreshold : (int)(characterLimit * 0.9);
 
-            // Initialize scroll arrows
             _scrollUpArrow = new ClickableTextureComponent(
                 new Rectangle(0, 0, 32, 32),
                 Game1.mouseCursors,
@@ -133,7 +152,7 @@ namespace ValleytalkReborn
         }
 
         ///////////////////////////////////////////////////////////////////
-        // Public helpers
+        // 辅助方法
         ///////////////////////////////////////////////////////////////////
 
         public bool ContainsPoint(float x, float y)
@@ -142,10 +161,6 @@ namespace ValleytalkReborn
                    x <= Position.X + Extent.X && y <= Position.Y + Extent.Y;
         }
 
-        /// <summary>
-        /// Sets the text content directly and moves the caret to the end.
-        /// Used for pre-filling the box in edit mode.
-        /// </summary>
         public void SetText(string text)
         {
             Text = NormalizeLineEndings(text ?? "");
@@ -159,22 +174,15 @@ namespace ValleytalkReborn
             _caretPosition = Text.Length;
         }
 
-        /// <summary>
-        /// Call this after changing layout-related values such as Extent or Font.
-        /// </summary>
         public void InvalidateLayout()
         {
             _isTextDirty = true;
         }
 
         ///////////////////////////////////////////////////////////////////
-        // Input handling
+        // 输入事件处理
         ///////////////////////////////////////////////////////////////////
 
-        /// <summary>
-        /// Handles left click for scroll arrows.
-        /// Returns true if the click was handled by this text box.
-        /// </summary>
         public bool ReceiveLeftClick(int x, int y)
         {
             if (!_needsScrolling)
@@ -203,9 +211,6 @@ namespace ValleytalkReborn
             return false;
         }
 
-        /// <summary>
-        /// Handles scroll wheel input.
-        /// </summary>
         public void ReceiveScrollWheel(int direction)
         {
             if (!_needsScrolling)
@@ -231,25 +236,21 @@ namespace ValleytalkReborn
 
         public void RecieveTextInput(char inputChar)
         {
-            // Handle backspace.
             if (inputChar == '\b')
             {
                 ExecuteBackspace();
                 return;
             }
 
-            // Handle Enter - submit the text.
             if (inputChar == '\r' || inputChar == '\n')
             {
                 InvokeSubmit();
                 return;
             }
 
-            // Skip other control characters, but allow space.
             if (char.IsControl(inputChar) && inputChar != ' ')
                 return;
 
-            // Insert printable character at cursor position.
             if (Text.Length < _characterLimit)
             {
                 Text = Text.Insert(_caretPosition, inputChar.ToString());
@@ -290,7 +291,6 @@ namespace ValleytalkReborn
 
         public void RecieveSpecialInput(Keys key)
         {
-            // Handle Ctrl+key clipboard shortcuts.
             if (IsControlKeyDown())
             {
                 switch (key)
@@ -353,9 +353,6 @@ namespace ValleytalkReborn
             }
         }
 
-        /// <summary>
-        /// Updates key repeat state. Should be called once per frame.
-        /// </summary>
         public void Update(GameTime gameTime)
         {
             if (_currentSpecialKey == Keys.None)
@@ -363,7 +360,6 @@ namespace ValleytalkReborn
 
             var currentKeyState = Game1.input.GetKeyboardState();
 
-            // Detect key release.
             if (!currentKeyState.IsKeyDown(_currentSpecialKey))
             {
                 _currentSpecialKey = Keys.None;
@@ -387,12 +383,12 @@ namespace ValleytalkReborn
         }
 
         ///////////////////////////////////////////////////////////////////
-        // Drawing
+        // 绘制逻辑
         ///////////////////////////////////////////////////////////////////
 
         public void Draw(SpriteBatch spriteBatch)
         {
-            // Draw textbox background using the game's standard texture box.
+            // 绘制底框
             IClickableMenu.drawTextureBox(
                 spriteBatch,
                 (int)Position.X,
@@ -402,38 +398,49 @@ namespace ValleytalkReborn
                 Color.White
             );
 
-            // Calculate text area with padding.
+            float scale = EffectiveScale;
+            int lineHeight = (int)Math.Ceiling(Font.MeasureString("A").Y * scale);
+
+            // 🌟 动态内边距：单行浅框自动在 Y 轴居中；多行框保留合理的顶部边距
+            int padY;
+            if (Extent.Y <= lineHeight * 2.1f)
+            {
+                padY = Math.Max(2, (int)((Extent.Y - lineHeight) / 2f));
+            }
+            else
+            {
+                padY = 14;
+            }
+
+            int padX = 14;
             var textArea = new Rectangle(
-                (int)Position.X + 16,
-                (int)Position.Y + 16,
-                (int)Extent.X - 32,
-                (int)Extent.Y - 32
+                (int)Position.X + padX,
+                (int)Position.Y + padY,
+                Math.Max(1, (int)Extent.X - padX * 2),
+                Math.Max(lineHeight, (int)Extent.Y - padY * 2)
             );
 
-            // Calculate visible line count.
-            int lineHeight = (int)Font.MeasureString("A").Y;
             _visibleLineCount = Math.Max(1, textArea.Height / lineHeight);
 
-            // Draw text with wrapping and scrolling.
+            // 绘制文本
             if (!string.IsNullOrEmpty(Text))
             {
                 DrawWrappedTextWithScroll(spriteBatch, Text, textArea, Font, TextColor);
             }
 
-            // Determine if scrolling is needed.
+            // 滚动检测
             int totalVisualLines = GetTotalVisualLines();
             _needsScrolling = totalVisualLines > _visibleLineCount;
 
-            // Draw scroll arrows if needed.
             if (_needsScrolling)
             {
                 DrawScrollArrows(spriteBatch);
             }
 
-            // Draw character counter.
+            // 绘制字数指示器
             DrawCounter(spriteBatch);
 
-            // Draw caret if selected.
+            // 绘制光标
             if (Selected)
             {
                 DrawCaret(spriteBatch, textArea);
@@ -448,9 +455,8 @@ namespace ValleytalkReborn
             Color color)
         {
             var lines = GetWrappedLines(text);
-
-            // 这里 MeasureString 返回的是 Vector2，Y 是 float，需要强制转换成 int
-            int lineHeight = (int)font.MeasureString("A").Y;
+            float scale = EffectiveScale;
+            int lineHeight = (int)Math.Ceiling(font.MeasureString("A").Y * scale);
             int y = area.Y;
 
             int totalVisualLines = Math.Max(lines.Count, GetCaretLine() + 1);
@@ -458,7 +464,7 @@ namespace ValleytalkReborn
 
             for (int i = _scrollOffset; i < lines.Count && (i - _scrollOffset) < _visibleLineCount; i++)
             {
-                spriteBatch.DrawString(font, lines[i], new Vector2(area.X, y), color);
+                spriteBatch.DrawString(font, lines[i], new Vector2(area.X, y), color, 0f, Vector2.Zero, scale, SpriteEffects.None, 1f);
                 y += lineHeight;
             }
         }
@@ -488,10 +494,13 @@ namespace ValleytalkReborn
             var counterSize = Game1.smallFont.MeasureString(counterText);
 
             float counterX = Position.X + Extent.X - counterSize.X - CounterPadding;
-            float counterY = Position.Y + Extent.Y - counterSize.Y - CounterPadding;
+
+            // 浅型单行框中，计数器也自动随文字垂直居中
+            float counterY = Extent.Y < 70
+                ? Position.Y + (Extent.Y - counterSize.Y) / 2f
+                : Position.Y + Extent.Y - counterSize.Y - CounterPadding;
 
             Color counterColor;
-
             if (Text.Length >= _characterLimit)
                 counterColor = Color.Red;
             else if (Text.Length >= _warningThreshold)
@@ -504,7 +513,8 @@ namespace ValleytalkReborn
 
         private void DrawCaret(SpriteBatch spriteBatch, Rectangle textArea)
         {
-            int lineHeight = (int)Font.MeasureString("A").Y;
+            float scale = EffectiveScale;
+            int lineHeight = (int)Math.Ceiling(Font.MeasureString("A").Y * scale);
             int caretLine = GetCaretLine();
             int visibleCaretLine = caretLine - _scrollOffset;
 
@@ -516,30 +526,30 @@ namespace ValleytalkReborn
 
             int caretX = textArea.X;
 
-            // If caret is not immediately after an explicit newline, try to place it after the current line text.
             if (textBeforeCaret.Length > 0 && textBeforeCaret[textBeforeCaret.Length - 1] != '\n')
             {
                 var linesBeforeCaret = WrapTextByPixelWidth(textBeforeCaret, wrapWidth, Font);
 
                 if (caretLine < linesBeforeCaret.Count)
                 {
-                    caretX = textArea.X + (int)Font.MeasureString(linesBeforeCaret[caretLine]).X;
+                    caretX = textArea.X + (int)(Font.MeasureString(linesBeforeCaret[caretLine]).X * scale);
                 }
             }
 
             int caretY = textArea.Y + visibleCaretLine * lineHeight;
-            var caretRect = new Rectangle(caretX, caretY, 2, lineHeight);
+            int caretHeight = Math.Max(4, lineHeight - 2);
+            var caretRect = new Rectangle(caretX, caretY + 1, 2, caretHeight);
 
             spriteBatch.Draw(Game1.staminaRect, caretRect, TextColor);
         }
 
         ///////////////////////////////////////////////////////////////////
-        // Text wrapping / caret helpers
+        // 换行与光标定位辅助
         ///////////////////////////////////////////////////////////////////
 
         private int GetWrapWidth()
         {
-            return Math.Max(1, (int)Extent.X - 64);
+            return Math.Max(1, (int)Extent.X - 56);
         }
 
         private int GetTotalVisualLines()
@@ -559,9 +569,6 @@ namespace ValleytalkReborn
             return _cachedWrappedLines;
         }
 
-        /// <summary>
-        /// Wraps text into lines based on actual pixel width measured by SpriteFont.
-        /// </summary>
         private List<string> WrapTextByPixelWidth(string text, int maxWidth, SpriteFont font)
         {
             var lines = new List<string>();
@@ -570,17 +577,16 @@ namespace ValleytalkReborn
                 return lines;
 
             maxWidth = Math.Max(1, maxWidth);
+            float scale = EffectiveScale;
 
             var currentLine = new StringBuilder();
             float currentLineWidth = 0f;
 
             foreach (char c in text)
             {
-                // Ignore stray carriage returns. Normalized text should use '\n'.
                 if (c == '\r')
                     continue;
 
-                // Handle explicit newlines.
                 if (c == '\n')
                 {
                     lines.Add(currentLine.ToString());
@@ -589,7 +595,7 @@ namespace ValleytalkReborn
                     continue;
                 }
 
-                float charWidth = font.MeasureString(c.ToString()).X;
+                float charWidth = font.MeasureString(c.ToString()).X * scale;
 
                 if (currentLineWidth + charWidth > maxWidth && currentLine.Length > 0)
                 {
@@ -610,9 +616,6 @@ namespace ValleytalkReborn
             return lines;
         }
 
-        /// <summary>
-        /// Calculates the visual line index where the caret is positioned.
-        /// </summary>
         private int GetCaretLine()
         {
             if (_caretPosition < 0)
@@ -632,7 +635,6 @@ namespace ValleytalkReborn
 
             var linesBeforeCaret = WrapTextByPixelWidth(textBeforeCaret, wrapWidth, Font);
 
-            // If the caret is immediately after an explicit newline, it belongs to the next line.
             if (textBeforeCaret[textBeforeCaret.Length - 1] == '\n')
             {
                 return linesBeforeCaret.Count;
@@ -640,15 +642,15 @@ namespace ValleytalkReborn
 
             int line = Math.Max(0, linesBeforeCaret.Count - 1);
 
-            // If the caret sits exactly on an automatic wrap boundary, prefer showing it on the next line.
             if (_caretPosition < Text.Length && linesBeforeCaret.Count > 0)
             {
                 var fullTextLines = GetWrappedLines(Text);
 
                 if (line < fullTextLines.Count - 1)
                 {
-                    float lastLineWidth = Font.MeasureString(linesBeforeCaret[line]).X;
-                    float nextCharWidth = Font.MeasureString(Text[_caretPosition].ToString()).X;
+                    float scale = EffectiveScale;
+                    float lastLineWidth = Font.MeasureString(linesBeforeCaret[line]).X * scale;
+                    float nextCharWidth = Font.MeasureString(Text[_caretPosition].ToString()).X * scale;
 
                     if (lastLineWidth + nextCharWidth > wrapWidth)
                     {
@@ -660,9 +662,6 @@ namespace ValleytalkReborn
             return line;
         }
 
-        /// <summary>
-        /// Adjusts scroll offset to ensure the caret is visible.
-        /// </summary>
         private void EnsureCaretVisible(int totalVisualLines)
         {
             if (totalVisualLines <= _visibleLineCount)
@@ -687,7 +686,7 @@ namespace ValleytalkReborn
         }
 
         ///////////////////////////////////////////////////////////////////
-        // Editing helpers
+        // 按键操作辅助
         ///////////////////////////////////////////////////////////////////
 
         private void StartKeyRepeat(Keys key)
@@ -754,8 +753,6 @@ namespace ValleytalkReborn
         private void InvokeSubmit()
         {
             var now = DateTime.UtcNow;
-
-            // Prevent duplicate submit events from multiple input paths.
             if ((now - _lastSubmitTime).TotalMilliseconds < 100)
                 return;
 
@@ -779,7 +776,6 @@ namespace ValleytalkReborn
             text = NormalizeLineEndings(text);
 
             var sb = new StringBuilder(text.Length);
-
             foreach (char c in text)
             {
                 if (c == '\n' || !char.IsControl(c))
@@ -790,10 +786,6 @@ namespace ValleytalkReborn
 
             return sb.ToString();
         }
-
-        ///////////////////////////////////////////////////////////////////
-        // Clipboard
-        ///////////////////////////////////////////////////////////////////
 
         public static bool IsControlKeyDown()
         {
@@ -827,7 +819,6 @@ namespace ValleytalkReborn
                     return;
 
                 int remainingCapacity = _characterLimit - Text.Length;
-
                 if (remainingCapacity <= 0)
                     return;
 
@@ -854,7 +845,6 @@ namespace ValleytalkReborn
                     return;
 
                 TextCopy.ClipboardService.SetText(Text);
-
                 Text = "";
                 _caretPosition = 0;
                 _isTextDirty = true;

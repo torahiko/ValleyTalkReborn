@@ -15,6 +15,8 @@ internal static class NightlyConsolidationHook
 
     private static string _processingSaveFolder;
 
+    private const int MinValidBioLength = 10;   // 镜像 Character.MinValidBioLength（该常量为 private，不得跨类引用）
+
     public static void Register(IModHelper helper)
     {
         MainThreadDispatcher.Register(helper);
@@ -122,7 +124,7 @@ internal static class NightlyConsolidationHook
                         .ToList(),
 
                     DialogueTurns = BuildDialogueTurns(npcName),
-                    CharacterLens = string.Empty,
+                    CharacterLens = BuildCharacterLens(npcName),
 
                     RelationshipContext =
                         BuildRelationshipContext(
@@ -244,6 +246,126 @@ internal static class NightlyConsolidationHook
                 _processingSaveFolder = null;
             }
         });
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // 🌟 CharacterLens：角色认知棱镜（MEM-04 新增）
+    // 组装静态角色卡分段 → 夜间 batch prompt 的 <persona_lens> 素材。
+    // 全部不可用时返回 string.Empty（MEM-05 对空 Lens 省略整块）。
+    // ──────────────────────────────────────────────────────────────
+
+    private static BioData TryLoadBio(string npcName)
+    {
+        string path = $"{VtConstants.BiosPath}/{DialogueCleaner.RemoveDotSuffixes(npcName)}";
+        var bio = Game1.content.LoadLocalized<BioData>(path);
+        if (bio == null) return null;
+        if (string.IsNullOrWhiteSpace(bio.Biography) || bio.Biography.Trim().Length <= MinValidBioLength)
+            return null;
+        return bio;
+    }
+
+    private static string ExtractBioSection(string source, string header)
+    {
+        if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(header)) return null;
+
+        string normalizedHeader = header.Replace(" ", "").ToLowerInvariant();
+        var lines = source.Split('\n');
+        var collected = new List<string>();
+        bool inSection = false;
+
+        foreach (var rawLine in lines)
+        {
+            string trimmed = rawLine.Trim();
+
+            // 检测分段头：形如 "[HEADER]"，空白移除后 OrdinalIgnoreCase 比较
+            if (!inSection)
+            {
+                if (trimmed.StartsWith("[") && trimmed.EndsWith("]"))
+                {
+                    string inner = trimmed[1..^1].Replace(" ", "");
+                    if (string.Equals(inner, normalizedHeader, StringComparison.OrdinalIgnoreCase))
+                    {
+                        inSection = true;
+                        continue;
+                    }
+                }
+                continue;
+            }
+
+            // 已在段内：遇到下一个分段头则结束
+            if (trimmed.StartsWith("[") && trimmed.EndsWith("]"))
+                break;
+
+            collected.Add(rawLine);
+        }
+
+        if (collected.Count == 0) return null;
+        return string.Join("\n", collected).Trim();
+    }
+
+    private static string Clip(string value, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+        string t = value.Trim();
+        return t.Length <= maxLength ? t : t[..maxLength];
+    }
+
+    private static string BuildCharacterLens(string npcName)
+    {
+        try
+        {
+            var bio = TryLoadBio(npcName);
+            if (bio == null)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[NightlyConsolidation] Bio unavailable for [{npcName}], lens skipped.",
+                    LogLevel.Trace);
+                return string.Empty;
+            }
+
+            string identity = ExtractBioSection(bio.Biography, "IDENTITY");
+            string passions = ExtractBioSection(bio.Biography, "DAILY PASSIONS");
+            string lenses = ExtractBioSection(bio.AmbientBarkPrompt ?? string.Empty, "OBSERVATION LENSES");
+            string stage = ProgressStateResolver.ResolveActiveState(
+                Game1.getCharacterFromName(npcName),
+                bio.ProgressStates);
+
+            // Fallback：identity 与 passions 均缺失 → 截取整段 Biography
+            if (identity == null && passions == null)
+            {
+                identity = Clip(bio.Biography, 400);
+                ModEntry.SMonitor?.Log(
+                    $"[NightlyConsolidation] Lens fallback to raw biography for [{npcName}].",
+                    LogLevel.Debug);
+            }
+
+            // 按序拼装（跳过 null/空白段）
+            var sections = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(identity))
+                sections.Add($"[IDENTITY]\n{Clip(identity, 300)}");
+
+            if (!string.IsNullOrWhiteSpace(passions))
+                sections.Add($"[DAILY PASSIONS]\n{Clip(passions, 300)}");
+
+            if (!string.IsNullOrWhiteSpace(stage))
+                sections.Add($"[CURRENT STAGE]\n{Clip(stage, 200)}");
+
+            if (!string.IsNullOrWhiteSpace(lenses))
+                sections.Add($"[OBSERVATION LENSES]\n{Clip(lenses, 300)}");
+
+            if (sections.Count == 0) return string.Empty;
+
+            string result = string.Join("\n\n", sections);
+            return Clip(result, 900);
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log(
+                $"[NightlyConsolidation] BuildCharacterLens failed for [{npcName}]: {ex.Message}",
+                LogLevel.Warn);
+            return string.Empty;
+        }
     }
 
     /// <summary>

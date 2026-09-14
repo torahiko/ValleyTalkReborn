@@ -13,7 +13,7 @@
   "Memory.MenuTitle": "记忆管理",
   "Memory.TabNpc": "{{npcName}}的记忆",
   "Memory.TabWorld": "世界记忆",
-  "Memory.WorldEmpty": "暂无世界记忆，点击下方按钮添加。",
+  "Memory.WorldEmpty": "暂无世界记忆，点击下方按钮添加一条吧！",
   "Memory.WorldEditTitle": "编辑世界记忆",
   "Memory.WorldAddTitle": "添加世界记忆",
   "Memory.WorldAddHint": "输入世界记忆内容（最多{{max}}字符）",
