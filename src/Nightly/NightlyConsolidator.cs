@@ -441,18 +441,18 @@ internal static class NightlyConsolidator
                     sb.AppendLine($"- {Limit(ev, 1000)}");
             }
 
-            // 关键修复：使用 DayEnding 时保存的摘录，
+            // 关键修复：使用 DayEnding 时保存的对话切片，
             // 不要在第二天重新读取 Game1.Date。
-            if (item.DialogueExcerpts?.Count > 0)
+            if (item.DialogueTurns?.Count > 0)
             {
                 sb.AppendLine(isZh
                     ? "【农夫当天说的话与礼物记录】"
                     : "[Farmer's Words & Gift Record]");
 
-                foreach (string line in item.DialogueExcerpts)
+                foreach (string line in item.DialogueTurns)
                 {
                     if (!string.IsNullOrWhiteSpace(line))
-                        sb.AppendLine($"- {Limit(line, 500)}");
+                        sb.AppendLine($"- {Limit(line, 200)}");
                 }
             }
 

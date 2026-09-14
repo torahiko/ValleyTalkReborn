@@ -11,7 +11,7 @@ namespace ValleytalkReborn;
 
 internal static class NightlyConsolidationHook
 {
-    private static bool _processing;
+    private static volatile bool _processing;
 
     private static string _processingSaveFolder;
 
@@ -121,7 +121,8 @@ internal static class NightlyConsolidationHook
                         .Take(20)
                         .ToList(),
 
-                    DialogueExcerpts = BuildDialogueExcerpts(npcName),
+                    DialogueTurns = BuildDialogueTurns(npcName),
+                    CharacterLens = string.Empty,
 
                     RelationshipContext =
                         BuildRelationshipContext(
@@ -245,7 +246,14 @@ internal static class NightlyConsolidationHook
         });
     }
 
-    private static List<string> BuildDialogueExcerpts(string npcName)
+    /// <summary>
+    /// 构建今日对话回合切片。
+    /// 过滤：排除 eavesdrop；保留 Player/NPC 行 + gift 类型行。
+    /// 回合组装：遇到 Player 行且当前回合已含 [Farmer] 时封存并开启新回合；
+    ///           System/gift 并入当前回合（无回合则开启仅含 [Gift] 的新回合）。
+    /// 结果扁平列表 TakeLast(12)；每行 ≤200 字符。
+    /// </summary>
+    private static List<string> BuildDialogueTurns(string npcName)
     {
         var today = Game1.Date;
 
@@ -257,54 +265,75 @@ internal static class NightlyConsolidationHook
                 e.Timestamp.DayOfMonth == today.DayOfMonth)
             .ToList();
 
-        var excerpts = new List<string>();
+        // 候选：非 eavesdrop，且为 Player/NPC 行 或 gift 类型
+        var candidates = allToday
+            .Where(e => e.DialogueType != "eavesdrop")
+            .Where(e =>
+                e.SpeakerType == SpeakerType.Player ||
+                e.SpeakerType == SpeakerType.NPC ||
+                e.DialogueType == "gift")
+            .ToList();
 
-        foreach (var entry in allToday
-                     .Where(e => e.SpeakerType == SpeakerType.Player)
-                     .TakeLast(12))
+        // 回合组装
+        var rounds = new List<List<string>>();
+        List<string> currentRound = null;
+
+        foreach (var entry in candidates)
         {
-            if (!string.IsNullOrWhiteSpace(entry.Text))
+            if (entry.SpeakerType == SpeakerType.Player)
             {
-                string text = entry.Text.Trim();
+                // 当前回合已含 [Farmer] 行 → 封存并开启新回合
+                if (currentRound != null && currentRound.Count > 0 && currentRound.Any(l => l.StartsWith("[Farmer]")))
+                {
+                    rounds.Add(currentRound);
+                    currentRound = null;
+                }
+                currentRound ??= new List<string>();
 
-                if (text.Length > 500)
-                    text = text[..500];
-
-                excerpts.Add($"[Farmer]: {text}");
+                string text = FormatLine(entry.Text, 200);
+                if (text != null)
+                    currentRound.Add($"[Farmer] {text}");
             }
+            else if (entry.SpeakerType == SpeakerType.NPC)
+            {
+                currentRound ??= new List<string>();
+                string text = FormatLine(entry.Text, 200);
+                if (text != null)
+                    currentRound.Add($"[{npcName}] {text}");
+            }
+            else if (entry.DialogueType == "gift")
+            {
+                currentRound ??= new List<string>();
+                string text = FormatLine(entry.Text, 200);
+                if (text != null)
+                    currentRound.Add($"[Gift] {text}");
+            }
+            // System 非 gift 类：忽略（不独立成行，避免噪声）
         }
 
-        var latestGift = allToday.LastOrDefault(e =>
-            e.DialogueType == "gift" ||
-            (!string.IsNullOrWhiteSpace(e.Text) &&
-             (
-                 e.Text.Contains(
-                     "礼物",
-                     StringComparison.OrdinalIgnoreCase) ||
-                 e.Text.Contains(
-                     "gift",
-                     StringComparison.OrdinalIgnoreCase) ||
-                 e.Text.Contains(
-                     "present",
-                     StringComparison.OrdinalIgnoreCase)
-             )));
-
-        if (latestGift != null &&
-            !string.IsNullOrWhiteSpace(latestGift.Text))
+        // 封存最后一个回合
+        if (currentRound != null && currentRound.Count > 0)
         {
-            string text = latestGift.Text.Trim();
-
-            if (text.Length > 500)
-                text = text[..500];
-
-            excerpts.Add($"[Gift]: {text}");
+            rounds.Add(currentRound);
         }
+
+        // 扁平化并 TakeLast(12)
+        var allLines = rounds.SelectMany(r => r).ToList();
+        var result = allLines.Count > 12 ? allLines.Skip(allLines.Count - 12).ToList() : allLines;
 
         ModEntry.SMonitor?.Log(
-            $"[NightlyConsolidation] Built {excerpts.Count} dialogue excerpt(s) for [{npcName}].",
+            $"[NightlyConsolidation] Built {result.Count} dialogue turn line(s) for [{npcName}].",
             LogLevel.Debug);
 
-        return excerpts;
+        return result;
+    }
+
+    private static string FormatLine(string text, int maxLen)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return null;
+        string t = text.Trim();
+        if (t.Length > maxLen) t = t[..maxLen];
+        return t;
     }
 
     private static List<string> BuildRelationshipContext(

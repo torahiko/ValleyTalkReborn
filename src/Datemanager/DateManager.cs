@@ -790,9 +790,9 @@ namespace ValleytalkReborn
                 if (!string.IsNullOrWhiteSpace(action.Description))
                     item.Events.Add(action.Description);
 
-            // ── DialogueExcerpts：对话 + 礼物 ──
+            // ── DialogueTurns：对话 + 礼物 ──
             foreach (var log in session.DialogueLogs)
-                item.DialogueExcerpts.Add($"[{log.Speaker}]: {log.Text}");
+                item.DialogueTurns.Add($"[{log.Speaker}]: {log.Text}");
 
             foreach (var gift in session.GiftLogs)
             {
@@ -804,7 +804,7 @@ namespace ValleytalkReborn
                     NPC.gift_taste_hate    => "讨厌",
                     _                      => "普通"
                 };
-                item.DialogueExcerpts.Add($"农夫赠送了礼物【{gift.ItemName}】（{tasteName}）。");
+                item.DialogueTurns.Add($"农夫赠送了礼物【{gift.ItemName}】（{tasteName}）。");
             }
 
             // ── RelationshipContext：关系状态 ──

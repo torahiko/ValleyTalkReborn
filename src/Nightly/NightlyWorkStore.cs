@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using StardewModdingAPI;
 
 namespace ValleytalkReborn;
@@ -23,9 +24,13 @@ internal static class NightlyWorkStore
         {
             try
             {
+                // ── 与既有文件合并（新 items 覆盖同名 NPC，其余保留）──
+                List<NightlyWorkItem> existing = ReadExistingForMerge();
+                var merged = MergeWithExisting(items, existing);
+
                 var cleanItems = new List<NightlyWorkItem>();
 
-                foreach (var item in items)
+                foreach (var item in merged)
                 {
                     if (item == null ||
                         string.IsNullOrWhiteSpace(item.NpcName))
@@ -37,10 +42,8 @@ internal static class NightlyWorkStore
                     {
                         NpcName = item.NpcName.Trim(),
                         Events = LimitList(item.Events, 20, 1000),
-                        DialogueExcerpts = LimitList(
-                            item.DialogueExcerpts,
-                            12,
-                            500),
+                        DialogueTurns = LimitList(item.DialogueTurns, 12, 200),
+                        CharacterLens = (item.CharacterLens ?? "").Trim(),
                         RelationshipContext = LimitList(
                             item.RelationshipContext,
                             20,
@@ -51,17 +54,14 @@ internal static class NightlyWorkStore
                 if (cleanItems.Count == 0)
                     return;
 
-                // 先写备份，降低写入过程中进程退出导致数据损坏的风险。
+                // 先写备份（备份"合并前"的既有文件），降低写入过程中进程退出导致数据损坏的风险。
                 try
                 {
-                    var old = ModEntry.SHelper.Data
-                        .ReadJsonFile<List<NightlyWorkItem>>(FilePath);
-
-                    if (old != null && old.Count > 0)
+                    if (existing != null && existing.Count > 0)
                     {
                         ModEntry.SHelper.Data.WriteJsonFile(
                             BackupPath,
-                            old);
+                            existing);
                     }
                 }
                 catch (Exception ex)
@@ -78,6 +78,13 @@ internal static class NightlyWorkStore
                 ModEntry.SMonitor?.Log(
                     $"[NightlyWorkStore] Saved {cleanItems.Count} work item(s).",
                     LogLevel.Debug);
+
+                if (existing != null && existing.Count > 0)
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[NightlyWorkStore] Merged {existing.Count} existing + {items.Count} new = {cleanItems.Count} work item(s).",
+                        LogLevel.Debug);
+                }
             }
             catch (Exception ex)
             {
@@ -88,6 +95,48 @@ internal static class NightlyWorkStore
                 throw;
             }
         }
+    }
+
+    private static List<NightlyWorkItem> ReadExistingForMerge()
+    {
+        try
+        {
+            return ModEntry.SHelper.Data
+                .ReadJsonFile<List<NightlyWorkItem>>(FilePath);
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log(
+                $"[NightlyWorkStore] Merge read failed, treating as empty: {ex.Message}",
+                LogLevel.Warn);
+            return null;
+        }
+    }
+
+    private static List<NightlyWorkItem> MergeWithExisting(
+        List<NightlyWorkItem> fresh,
+        List<NightlyWorkItem> existing)
+    {
+        var dict = new Dictionary<string, NightlyWorkItem>(StringComparer.OrdinalIgnoreCase);
+
+        // 先加载既有条目
+        if (existing != null)
+        {
+            foreach (var item in existing)
+            {
+                if (item == null || string.IsNullOrWhiteSpace(item.NpcName)) continue;
+                dict[item.NpcName.Trim()] = item;
+            }
+        }
+
+        // 新 items 覆盖同名 NPC
+        foreach (var item in fresh)
+        {
+            if (item == null || string.IsNullOrWhiteSpace(item.NpcName)) continue;
+            dict[item.NpcName.Trim()] = item;
+        }
+
+        return dict.Values.ToList();
     }
 
     public static List<NightlyWorkItem> Load()
@@ -169,7 +218,8 @@ internal static class NightlyWorkStore
 
                 item.NpcName = item.NpcName.Trim();
                 item.Events ??= new List<string>();
-                item.DialogueExcerpts ??= new List<string>();
+                item.DialogueTurns ??= new List<string>();
+                item.CharacterLens ??= string.Empty;
                 item.RelationshipContext ??= new List<string>();
 
                 validItems.Add(item);

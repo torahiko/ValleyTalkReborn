@@ -373,12 +373,9 @@ namespace ValleytalkReborn
         {
             SaveSync();
 
-            if (ModEntry.SHelper != null)
-            {
-                ModEntry.SHelper.Events.GameLoop.Saving -= OnSaving;
-                ModEntry.SHelper.Events.GameLoop.SaveLoaded -= OnSaveLoaded;
-                ModEntry.SHelper.Events.GameLoop.DayEnding -= OnDayEnding;
-            }
+            // 注意：不在此处注销 Saving/SaveLoaded/DayEnding 事件。
+            // 单例构造器只运行一次，注销后无重订阅路径；
+            // 首次返回标题后再读档，OnSaving → SaveSync 将永久失效。
 
             lock (_historyLock)
             {
