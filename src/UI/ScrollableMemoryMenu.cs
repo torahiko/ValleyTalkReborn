@@ -10,6 +10,15 @@ using System.Linq;
 
 namespace ValleytalkReborn
 {
+    /// <summary>
+    /// 记忆菜单刷新契约。IntegratedHubMenu（VT-HUB-104）与 ScrollableMemoryMenu 均实现此接口，
+    /// 使 AddMemoryInputMenu / SetCallsignInputMenu 的返回目标不必依赖具体菜单类型。
+    /// </summary>
+    internal interface IMemoryRefreshTarget
+    {
+        void RefreshEntries();
+    }
+
     // ─── 工具类 ──────────────────────────────────────────────────────
     internal static class UiHelper
     {
@@ -22,7 +31,7 @@ namespace ValleytalkReborn
     }
 
     // ─── 主菜单 ──────────────────────────────────────────────────────
-    internal class ScrollableMemoryMenu : IClickableMenu
+    internal class ScrollableMemoryMenu : IClickableMenu, IMemoryRefreshTarget
     {
         private readonly string _npcName;
         private readonly IClickableMenu _ownerMenu;
@@ -208,7 +217,7 @@ namespace ValleytalkReborn
                 (int)(pct * (_scrollbarRunner.Height - _scrollbar.bounds.Height));
         }
 
-        internal void RefreshEntries()
+        public void RefreshEntries()
         {
             // 🌟 从 Manager 读取一次，并缓存
             _cachedEntries = _currentTab == 0
@@ -570,7 +579,7 @@ namespace ValleytalkReborn
         {
             base.cleanupBeforeExit();
 
-            if (_ownerMenu != null)
+            if (_ownerMenu != null && Game1.activeClickableMenu == this)
                 Game1.activeClickableMenu = _ownerMenu;
         }
 
@@ -607,7 +616,7 @@ namespace ValleytalkReborn
     internal class SetCallsignInputMenu : IClickableMenu
     {
         private readonly string _npcName;
-        private readonly ScrollableMemoryMenu _returnMenu;
+        private readonly IClickableMenu _returnMenu;
         private readonly DialogueTextInputBox _inputBox;
         private readonly ClickableTextureComponent _okButton;
         private readonly ClickableTextureComponent _cancelButton;
@@ -617,7 +626,7 @@ namespace ValleytalkReborn
         private const int MenuWidth  = 560;
         private const int MenuHeight = 240;
 
-        public SetCallsignInputMenu(string npcName, ScrollableMemoryMenu returnMenu)
+        public SetCallsignInputMenu(string npcName, IClickableMenu returnMenu)
         {
             _npcName    = npcName;
             _returnMenu = returnMenu;
@@ -760,7 +769,7 @@ namespace ValleytalkReborn
     internal class AddMemoryInputMenu : IClickableMenu
     {
         private readonly string _npcName;
-        private readonly ScrollableMemoryMenu _returnMenu;
+        private readonly IClickableMenu _returnMenu;
         private readonly DialogueTextInputBox _inputBox;
         private readonly ClickableTextureComponent _okButton;
         private readonly ClickableTextureComponent _cancelButton;
@@ -780,7 +789,7 @@ namespace ValleytalkReborn
 
         public AddMemoryInputMenu(
             string npcName,
-            ScrollableMemoryMenu returnMenu,
+            IClickableMenu returnMenu,
             MemoryEntry existingEntry = null,
             int tab = 0)
         {
@@ -836,8 +845,8 @@ namespace ValleytalkReborn
             if (Game1.keyboardDispatcher.Subscriber == _inputBox)
                 Game1.keyboardDispatcher.Subscriber = null;
 
-            if (refresh)
-                _returnMenu.RefreshEntries();
+            if (refresh && _returnMenu is IMemoryRefreshTarget refreshable)
+                refreshable.RefreshEntries();
 
             Game1.activeClickableMenu = _returnMenu;
         }
