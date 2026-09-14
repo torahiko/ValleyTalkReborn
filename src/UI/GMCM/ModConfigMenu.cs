@@ -56,7 +56,7 @@ namespace ValleytalkReborn
             return GetUIString(fallbackKey, providerName);
         }
 
-        private static string GetUIString(string key, string fallback, object tokens = null)
+        internal static string GetUIString(string key, string fallback, object tokens = null)
         {
             string result = null;
 
@@ -439,10 +439,11 @@ namespace ValleytalkReborn
 
             ConfigMenu.AddKeybind(
                 mod: ModManifest,
-                name: () => GetUIString("configDismissFollowerKey", "Dismiss Follower Key"),
-                tooltip: () => GetUIString("configDismissFollowerKeyTooltip", "Key to dismiss the currently following NPC (regular or date)."),
-                getValue: () => ModEntry.Config.DismissFollowerKey,
-                setValue: value => ModEntry.Config.DismissFollowerKey = value
+                name: () => GetUIString("configOpenHubMenuKey", "Open Management Hub"),
+                tooltip: () => GetUIString("configOpenHubMenuKeyTooltip",
+                    "Press to open the combined management hub (NPC memories / world memories / farmer profile / advanced settings). Opens on your most recently spoken NPC. Avoid keys already used by the game or other mods."),
+                getValue: () => ModEntry.Config.OpenHubMenuKey,
+                setValue: value => ModEntry.Config.OpenHubMenuKey = value
             );
 
             // =========================================================================

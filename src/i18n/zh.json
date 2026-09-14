@@ -80,6 +80,8 @@
   "configQuickSelectPlaceholder": "--- 选择以自动填入 ---",
   "configDismissFollowerKey": "遣散跟随者按键",
   "configDismissFollowerKeyTooltip": "用于让当前跟随你的NPC（普通同行或约会对象）停止跟随的按键。",
+  "configOpenHubMenuKey": "打开综合管理面板",
+  "configOpenHubMenuKeyTooltip": "按下此键打开四合一管理面板（NPC记忆 / 世界记忆 / 农夫档案 / 高级设置）。默认自动定位到你最近对话过的NPC。请避免设置成游戏或其他模组已占用的按键。",
   "Memory.AutoPrefix": "[自动] ",
   "Memory.CallsignPrefix": "称呼我为：",
   "Memory.CallsignUnset": "（点击设置）",
@@ -146,5 +148,14 @@
   "configCustomBodyJson": "自定义请求体JSON（极客模式）",
   "configCustomBodyJsonTooltip": "面向高级用户：输入合法的JSON对象（例如{\"presence_penalty\": 0.5}），将深度合并进请求负载中。\n\n可用于注入特定服务商的专属参数，或覆盖思考模式设置。留空则使用默认标准负载。\n\n⚠️注意：仅对“自定义（OpenAI兼容）”服务商生效，且仅影响玩家与NPC的主对话，不影响NPC环境自语（Bark）或NPC互动闲聊（A2A）。",
   "configServerAddress": "服务器地址",
-  "configServerAddressTooltip": "自定义（OpenAI兼容）/ 火山引擎：填写基础URL，例如 https://api.deepseek.com（缺少https://或/v1、多余的结尾斜杠、误粘贴的/chat/completions后缀等，均会自动修正）。本地模型（Llama.cpp/Ollama）：需填写完整端点，例如 http://localhost:8080/completion 或 http://localhost:11434/api/generate。"
+  "configServerAddressTooltip": "自定义（OpenAI兼容）/ 火山引擎：填写基础URL，例如 https://api.deepseek.com（缺少https://或/v1、多余的结尾斜杠、误粘贴的/chat/completions后缀等，均会自动修正）。本地模型（Llama.cpp/Ollama）：需填写完整端点，例如 http://localhost:8080/completion 或 http://localhost:11434/api/generate。",
+  "Hub.Title": "综合管理面板",
+  "Hub.TabNpcMemory": "NPC记忆",
+  "Hub.TabWorldMemory": "世界记忆",
+  "Hub.TabProfile": "农夫档案",
+  "Hub.TabAdvanced": "高级设置",
+  "Hub.SelectNpcLabel": "NPC：",
+  "Hub.EmptyNpcList": "暂无可选村民。请先与村民对话或建立好感度。",
+  "Hub.KeybindsTitle": "当前按键一览",
+  "Hub.KeybindsLine": "{{name}}：{{key}}"
 }

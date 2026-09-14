@@ -128,6 +128,8 @@ namespace ValleytalkReborn
         public SButton QuickReplyKey { get; set; } = SButton.Enter;
         /// <summary>面对面快捷招募 NPC / 主动取消 NPC 跟随的双向热键。</summary>
         public SButton DismissFollowerKey { get; set; } = SButton.G;
+        /// <summary>唤起四合一综合管理面板（NPC记忆 / 世界记忆 / 农夫档案 / 高级设置），默认定位最近对话 NPC。</summary>
+        public SButton OpenHubMenuKey { get; set; } = SButton.K;
         public bool SuppressConnectionCheck { get; set; } = false;
         public bool EnableMemoryCompression { get; set; } = true;
         public int MemoryRecentCount { get; set; } = 10;
