@@ -214,6 +214,12 @@ internal sealed class DialogueCoordinator
 
         var config = ModEntry.Config;
 
+        // ★ 总开关门禁：EnableMod=false 时停止一切对话模块推进（Bark/A2A/输出队列）
+        if (!config.EnableMod)
+        {
+            return;
+        }
+
         // ════════════════════════════════════════════════════════════
         // 阶段 1：网络回传处理（任何时候都必须优先消化，绝不阻塞）
         // ════════════════════════════════════════════════════════════

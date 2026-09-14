@@ -108,7 +108,6 @@ namespace ValleytalkReborn
         internal static void Register(ModEntry modEntry)
         {
             _modEntry = modEntry;
-            var Config = ModEntry.Config;
             ModManifest = modEntry.ModManifest;
             ConfigMenu = GetConfigMenu(modEntry);
 
@@ -119,9 +118,9 @@ namespace ValleytalkReborn
                 return;
             }
 
-            if (!ModEntry.LlmMap.ContainsKey(Config.Provider))
+            if (!ModEntry.LlmMap.ContainsKey(ModEntry.Config.Provider))
             {
-                Config.Provider = "OpenAiCompatible";
+                ModEntry.Config.Provider = "OpenAiCompatible";
             }
 
             ConfigMenu.Unregister(ModManifest);
@@ -133,6 +132,10 @@ namespace ValleytalkReborn
                     modEntry.Helper.WriteConfig(ModEntry.Config);
 
                     ModEntry.CleanupOnConfigToggle();
+
+                    // ★ 保存后即时生效：刷新第三方授权名单与 DialogueBuilder 配置引用
+                    ModEntry.CheckContentPacks();
+                    DialogueBuilder.Instance.Config = ModEntry.Config;
 
                     if (!ModEntry.Config.EnableSpouseSchedule)
                     {
@@ -163,8 +166,8 @@ namespace ValleytalkReborn
                 mod: ModManifest,
                 name: () => GetUIString("configEnable", "Enable Mod"),
                 tooltip: () => GetUIString("configEnableTooltip", "Enable or disable the mod."),
-                getValue: () => Config.EnableMod,
-                setValue: value => Config.EnableMod = value
+                getValue: () => ModEntry.Config.EnableMod,
+                setValue: value => ModEntry.Config.EnableMod = value
             );
 
             ConfigMenu.AddBoolOption(
@@ -172,8 +175,8 @@ namespace ValleytalkReborn
                 name: () => GetUIString("configRespectAuthorConsent", "Respect Modder AI Consent"),
                 tooltip: () => GetUIString("configRespectAuthorConsentTooltip",
                     "Enabled by default. Respects third-party mod authors' permitAiUse declarations. When disabled, AI dialogue is enabled for all custom NPCs."),
-                getValue: () => Config.RespectAuthorAiConsent,
-                setValue: value => Config.RespectAuthorAiConsent = value
+                getValue: () => ModEntry.Config.RespectAuthorAiConsent,
+                setValue: value => ModEntry.Config.RespectAuthorAiConsent = value
             );
 
 #if DEBUG
@@ -181,8 +184,8 @@ namespace ValleytalkReborn
                 mod: ModManifest,
                 name: () => GetUIString("configLogging", "Enable Logging"),
                 tooltip: () => GetUIString("configLoggingTooltip", "Enable or disable logging of prompts and responses."),
-                getValue: () => Config.Debug,
-                setValue: value => Config.Debug = value
+                getValue: () => ModEntry.Config.Debug,
+                setValue: value => ModEntry.Config.Debug = value
             );
 #endif
 
@@ -196,10 +199,10 @@ namespace ValleytalkReborn
             ConfigMenu.AddTextOption(
                 mod: ModManifest,
                 name: () => GetUIString("configProvider", "AI Model Provider"),
-                getValue: () => Config.Provider,
+                getValue: () => ModEntry.Config.Provider,
                 setValue: value =>
                 {
-                    Config.Provider = value;
+                    ModEntry.Config.Provider = value;
                     _cachedModelNames = null;
                     RefreshModelNamesCacheAsync();
                 },
@@ -208,7 +211,7 @@ namespace ValleytalkReborn
                 fieldId: "Provider"
             );
 
-            if (!ModEntry.LlmMap.TryGetValue(Config.Provider, out var llmType))
+            if (!ModEntry.LlmMap.TryGetValue(ModEntry.Config.Provider, out var llmType))
             {
                 llmType = typeof(LlmOAICompatible);
             }
@@ -221,8 +224,8 @@ namespace ValleytalkReborn
                     mod: ModManifest,
                     name: () => GetUIString("configApiKey", "API Key"),
                     tooltip: () => GetUIString("configApiKeyTooltip", "API Key for the AI model provider."),
-                    getValue: () => Config.ApiKey,
-                    setValue: value => Config.ApiKey = value?.Trim() ?? string.Empty,
+                    getValue: () => ModEntry.Config.ApiKey,
+                    setValue: value => ModEntry.Config.ApiKey = value?.Trim() ?? string.Empty,
                     fieldId: "ApiKey"
                 );
             }
@@ -239,8 +242,8 @@ namespace ValleytalkReborn
                     mod: ModManifest,
                     name: () => GetUIString("configModelName", "Model Name"),
                     tooltip: () => GetUIString("configModelNameTooltip", "Name of the AI model to use."),
-                    getValue: () => Config.ModelName,
-                    setValue: value => Config.ModelName = value?.Trim() ?? string.Empty,
+                    getValue: () => ModEntry.Config.ModelName,
+                    setValue: value => ModEntry.Config.ModelName = value?.Trim() ?? string.Empty,
                     fieldId: "ModelName"
                 );
 
@@ -260,7 +263,7 @@ namespace ValleytalkReborn
                         {
                             if (value != placeholder)
                             {
-                                Config.ModelName = value;
+                                ModEntry.Config.ModelName = value;
                             }
                         },
                         allowedValues: quickSelectOptions.ToArray(),
@@ -286,8 +289,8 @@ namespace ValleytalkReborn
                     name: () => GetUIString("configServerAddress", "Server Address"),
                     tooltip: () => GetUIString("configServerAddressTooltip",
                         "For Custom (OpenAI-Compatible) / VolcEngine: base URL, e.g. https://api.deepseek.com — missing https:// or /v1, trailing slashes, or pasted /chat/completions endings are auto-corrected. For Local (Llama.cpp/Ollama): the FULL endpoint, e.g. http://localhost:8080/completion or http://localhost:11434/api/generate."),
-                    getValue: () => Config.ServerAddress,
-                    setValue: value => Config.ServerAddress = value?.Trim() ?? string.Empty,
+                    getValue: () => ModEntry.Config.ServerAddress,
+                    setValue: value => ModEntry.Config.ServerAddress = value?.Trim() ?? string.Empty,
                     fieldId: "ServerAddress"
                 );
             }
@@ -306,8 +309,8 @@ namespace ValleytalkReborn
                 name: () => GetUIString("configTranslation", "Translate Outputs"),
                 tooltip: () => GetUIString("configTranslationTooltip",
                     "Translate the AI model outputs to the game language (without i18n pack)."),
-                getValue: () => Config.ApplyTranslation,
-                setValue: value => Config.ApplyTranslation = value
+                getValue: () => ModEntry.Config.ApplyTranslation,
+                setValue: value => ModEntry.Config.ApplyTranslation = value
             );
 
             ConfigMenu.AddTextOption(
@@ -315,11 +318,11 @@ namespace ValleytalkReborn
                 name: () => GetUIString("configFrequencyGeneral", "Frequency of general lines"),
                 tooltip: () => GetUIString("configFrequencyGeneralTooltip",
                     "How often should the mod generate general lines."),
-                getValue: () => Config.GeneralFrequency.ToString(),
+                getValue: () => ModEntry.Config.GeneralFrequency.ToString(),
                 setValue: value =>
                 {
                     if (int.TryParse(value, out int val))
-                        Config.GeneralFrequency = Math.Clamp(val, 0, 4);
+                        ModEntry.Config.GeneralFrequency = Math.Clamp(val, 0, 4);
                 },
                 allowedValues: FrequencyValues,
                 formatAllowedValue: FormatFrequency
@@ -330,11 +333,11 @@ namespace ValleytalkReborn
                 name: () => GetUIString("configFrequencyGift", "Frequency of gift lines"),
                 tooltip: () => GetUIString("configFrequencyGiftTooltip",
                     "How often should the mod generate gift lines."),
-                getValue: () => Config.GiftFrequency.ToString(),
+                getValue: () => ModEntry.Config.GiftFrequency.ToString(),
                 setValue: value =>
                 {
                     if (int.TryParse(value, out int val))
-                        Config.GiftFrequency = Math.Clamp(val, 0, 4);
+                        ModEntry.Config.GiftFrequency = Math.Clamp(val, 0, 4);
                 },
                 allowedValues: FrequencyValues,
                 formatAllowedValue: FormatFrequency
@@ -345,11 +348,11 @@ namespace ValleytalkReborn
                 name: () => GetUIString("configFrequencyMarriage", "Frequency of marriage lines"),
                 tooltip: () => GetUIString("configFrequencyMarriageTooltip",
                     "How often should the mod generate marriage lines."),
-                getValue: () => Config.MarriageFrequency.ToString(),
+                getValue: () => ModEntry.Config.MarriageFrequency.ToString(),
                 setValue: value =>
                 {
                     if (int.TryParse(value, out int val))
-                        Config.MarriageFrequency = Math.Clamp(val, 0, 4);
+                        ModEntry.Config.MarriageFrequency = Math.Clamp(val, 0, 4);
                 },
                 allowedValues: FrequencyValues,
                 formatAllowedValue: FormatFrequency
@@ -360,8 +363,8 @@ namespace ValleytalkReborn
                 name: () => GetUIString("configDisableForCharacters", GetUIString("configDiableForCharacters", "Disable for specific NPCs")),
                 tooltip: () => GetUIString("configDisableForCharactersTooltip", GetUIString("configDiableForCharactersTooltip",
                     "Comma-separated list of villagers to disable the mod for, e.g. (\"Abigail,Leah,Sam\")")),
-                getValue: () => Config.DisableCharacters,
-                setValue: value => Config.DisableCharacters = value
+                getValue: () => ModEntry.Config.DisableCharacters,
+                setValue: value => ModEntry.Config.DisableCharacters = value
             );
 
             // ── 环境气泡与 NPC 互动 (Bark & A2A) ──
@@ -375,8 +378,8 @@ namespace ValleytalkReborn
                 name: () => GetUIString("configEnableBark", "Enable NPC Self-Talk (Barks)"),
                 tooltip: () => GetUIString("configEnableBarkTooltip",
                     "Allows nearby NPCs to display spontaneous overhead thought bubbles."),
-                getValue: () => Config.EnableAmbientBarks,
-                setValue: value => Config.EnableAmbientBarks = value
+                getValue: () => ModEntry.Config.EnableAmbientBarks,
+                setValue: value => ModEntry.Config.EnableAmbientBarks = value
             );
 
             ConfigMenu.AddBoolOption(
@@ -384,8 +387,8 @@ namespace ValleytalkReborn
                 name: () => GetUIString("configEnableA2A", "Enable NPC-to-NPC Conversations (A2A)"),
                 tooltip: () => GetUIString("configEnableA2ATooltip",
                     "Allows NPCs who meet each other to engage in emergent dynamic conversations."),
-                getValue: () => Config.EnableA2A,
-                setValue: value => Config.EnableA2A = value
+                getValue: () => ModEntry.Config.EnableA2A,
+                setValue: value => ModEntry.Config.EnableA2A = value
             );
 
             // ── 伴侣日程与出游系统 ──
@@ -399,8 +402,8 @@ namespace ValleytalkReborn
                 name: () => GetUIString("configEnableSpouseSchedule", "Enable Spouse Schedules"),
                 tooltip: () => GetUIString("configEnableSpouseScheduleTooltip",
                     "Allows married spouses to have dynamic daily schedules, wander the farm, and visit locations around town."),
-                getValue: () => Config.EnableSpouseSchedule,
-                setValue: value => Config.EnableSpouseSchedule = value
+                getValue: () => ModEntry.Config.EnableSpouseSchedule,
+                setValue: value => ModEntry.Config.EnableSpouseSchedule = value
             );
 
             ConfigMenu.AddBoolOption(
@@ -408,8 +411,8 @@ namespace ValleytalkReborn
                 name: () => GetUIString("configEnableDateSystem", "Enable Date System (WIP)"),
                 tooltip: () => GetUIString("configEnableDateSystemTooltip",
                     "Allows scheduling dates and romantic outings with eligible NPCs. Currently experimental and disabled by default."),
-                getValue: () => Config.EnableDateSystem,
-                setValue: value => Config.EnableDateSystem = value
+                getValue: () => ModEntry.Config.EnableDateSystem,
+                setValue: value => ModEntry.Config.EnableDateSystem = value
             );
 
             // ── 快捷键设置 ──
@@ -422,24 +425,24 @@ namespace ValleytalkReborn
                 mod: ModManifest,
                 name: () => GetUIString("configInitiateKey", "Initiate Conversation Key"),
                 tooltip: () => GetUIString("configInitiateKeyTooltip", "Hold this key and click an NPC to open the custom chat box."),
-                getValue: () => Config.InitiateTypedDialogueKey,
-                setValue: value => Config.InitiateTypedDialogueKey = value
+                getValue: () => ModEntry.Config.InitiateTypedDialogueKey,
+                setValue: value => ModEntry.Config.InitiateTypedDialogueKey = value
             );
 
             ConfigMenu.AddKeybind(
                 mod: ModManifest,
                 name: () => GetUIString("configQuickReplyKey", "Quick Reply Key"),
                 tooltip: () => GetUIString("configQuickReplyKeyTooltip", "Press this key within 5 seconds after an NPC speaks to send a quick follow-up reply."),
-                getValue: () => Config.QuickReplyKey,
-                setValue: value => Config.QuickReplyKey = value
+                getValue: () => ModEntry.Config.QuickReplyKey,
+                setValue: value => ModEntry.Config.QuickReplyKey = value
             );
 
             ConfigMenu.AddKeybind(
                 mod: ModManifest,
                 name: () => GetUIString("configDismissFollowerKey", "Dismiss Follower Key"),
                 tooltip: () => GetUIString("configDismissFollowerKeyTooltip", "Key to dismiss the currently following NPC (regular or date)."),
-                getValue: () => Config.DismissFollowerKey,
-                setValue: value => Config.DismissFollowerKey = value
+                getValue: () => ModEntry.Config.DismissFollowerKey,
+                setValue: value => ModEntry.Config.DismissFollowerKey = value
             );
 
             // =========================================================================
@@ -462,8 +465,8 @@ namespace ValleytalkReborn
                 name: () => GetUIString("configTemperature", "Temperature (Creativity)"),
                 tooltip: () => GetUIString("configTemperatureTooltip",
                     "Controls randomness and creativity. Range: 0.0 ~ 2.0, default 0.9."),
-                getValue: () => Config.Temperature,
-                setValue: value => Config.Temperature = value,
+                getValue: () => ModEntry.Config.Temperature,
+                setValue: value => ModEntry.Config.Temperature = value,
                 min: 0.0f,
                 max: 2.0f,
                 interval: 0.05f
@@ -474,8 +477,8 @@ namespace ValleytalkReborn
                 name: () => GetUIString("configTopP", "Top_P (Nucleus Sampling)"),
                 tooltip: () => GetUIString("configTopPTooltip",
                     "Nucleus sampling threshold for output diversity. Range: 0.0 ~ 1.0, default 0.9."),
-                getValue: () => Config.TopP,
-                setValue: value => Config.TopP = value,
+                getValue: () => ModEntry.Config.TopP,
+                setValue: value => ModEntry.Config.TopP = value,
                 min: 0.0f,
                 max: 1.0f,
                 interval: 0.05f
@@ -486,8 +489,8 @@ namespace ValleytalkReborn
                 name: () => GetUIString("configMaxTokens", "Max Tokens (Max Length)"),
                 tooltip: () => GetUIString("configMaxTokensTooltip",
                     "Maximum number of tokens per generation. Range: 100 ~ 8192, default 1024."),
-                getValue: () => Config.MaxTokens,
-                setValue: value => Config.MaxTokens = value,
+                getValue: () => ModEntry.Config.MaxTokens,
+                setValue: value => ModEntry.Config.MaxTokens = value,
                 min: 100,
                 max: 8192,
                 interval: 50
@@ -498,8 +501,8 @@ namespace ValleytalkReborn
                 name: () => GetUIString("configCustomBodyJson", "Custom Body JSON (Geek Mode)"),
                 tooltip: () => GetUIString("configCustomBodyJsonTooltip",
                     "For advanced users: Enter valid JSON object to deep-merge into the request payload. Only applies to Main dialogue."),
-                getValue: () => Config.CustomBodyJson,
-                setValue: value => Config.CustomBodyJson = value
+                getValue: () => ModEntry.Config.CustomBodyJson,
+                setValue: value => ModEntry.Config.CustomBodyJson = value
             );
         }
 

@@ -31,6 +31,14 @@ namespace ValleytalkReborn
         /// </summary>
         public static void CleanupOnConfigToggle()
         {
+            // ★ 总开关关闭：全量重置对话系统（含输出队列与 EchoStore），立即静音
+            if (!Config.EnableMod)
+            {
+                _dialogueCoordinator?.ResetAllDialogueState("EnableMod disabled");
+                SMonitor?.Log("[ModEntry] EnableMod disabled — all dialogue state reset.", LogLevel.Debug);
+                return;
+            }
+
             // ── 关闭时：立即清理进行中的对话与残余状态 ──
             if (!Config.EnableAmbientBarks)
             {
@@ -982,7 +990,7 @@ namespace ValleytalkReborn
             }
         }
 
-        private static void CheckContentPacks()
+        internal static void CheckContentPacks()
         {
             DisallowedContentPackIds.Clear();
 
