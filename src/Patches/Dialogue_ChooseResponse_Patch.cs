@@ -57,25 +57,29 @@ namespace ValleytalkReborn
                 return false;
             }
 
-            // 【优化】动态获取翻译，避免多语言切换或未初始化时失效
+            // 【优化】动态获取翻译，仅用于诊断日志归档
             string respondString = Util.GetString("outputRespond");
-            
+
+            // 🌟【结构性移除】：进入本补丁的皆为 SLD_* 响应；$q 问题页的唯一发射点是
+            // DialogueBuilder.FormatLine，且 $q 与 $r 总是成对出现在字符串末尾、$r 不产生解析页，
+            // 因此 $q 问题页必然存在且必为 __instance.dialogues 的最后一页——无需文本比对即可安全移除。
             var dialogueStrings = __instance.dialogues;
             if (dialogueStrings != null && dialogueStrings.Count > 0)
             {
-                // 【Bug 修复】使用 LastOrDefault 防止列表为空时抛出 InvalidOperationException
                 var lastLine = dialogueStrings.LastOrDefault();
-                if (lastLine != null && lastLine.Text == respondString)
+                if (lastLine != null && lastLine.Text != respondString)
                 {
-                    // 🌟【精准修复 2】：Count == 1 时改设为占位符，绝不删空列表触发 DialogueBox.Pop() 空栈崩溃
-                    if (dialogueStrings.Count == 1)
-                    {
-                        dialogueStrings[0].Text = "...";
-                    }
-                    else
-                    {
-                        dialogueStrings.RemoveAt(dialogueStrings.Count - 1);
-                    }
+                    ModEntry.SMonitor?.Log($"[ChooseResponse] Question page text mismatch (expected '{respondString}', got '{lastLine.Text}'). Removing tail structurally.", StardewModdingAPI.LogLevel.Trace);
+                }
+
+                // 🌟【精准修复 2】：Count == 1 时改设为占位符，绝不删空列表触发 DialogueBox.Pop() 空栈崩溃
+                if (dialogueStrings.Count == 1)
+                {
+                    dialogueStrings[0].Text = "...";
+                }
+                else
+                {
+                    dialogueStrings.RemoveAt(dialogueStrings.Count - 1);
                 }
             }
 

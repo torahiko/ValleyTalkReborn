@@ -20,6 +20,28 @@ public static class DialogueCleaner
     // Pre-compiled regex to avoid per-call allocation overhead
     private static readonly Regex InvalidTagRegex = new(@"\$([a-zA-Z]+)", RegexOptions.Compiled);
 
+    // Sentence-preferred chunk splitting (DialogueLineCleanup step 4): sentence enders first, commas as fallback.
+    private static readonly char[] SentenceSplitChars = { '.', '!', '?', '。', '！', '？', '—', '…' };
+    private static readonly char[] CommaSplitChars = { '，', ',' };
+
+    /// <summary>
+    /// Returns the preferred split index within window (already validated as a safe cut point), or -1 if none.
+    /// Preference: last valid sentence ender; fallback to last valid comma; else -1 (caller hard-cuts).
+    /// "Valid" means idx > 0 and idx < window.Length - 1 (no empty head, no trailing-punctuation degenerate cut).
+    /// </summary>
+    private static int FindPreferredSplitIndex(string window)
+    {
+        int idx = window.LastIndexOfAny(SentenceSplitChars);
+        if (idx > 0 && idx < window.Length - 1)
+            return idx;
+
+        idx = window.LastIndexOfAny(CommaSplitChars);
+        if (idx > 0 && idx < window.Length - 1)
+            return idx;
+
+        return -1;
+    }
+
     /// <summary>
     /// Removes trailing dot-style suffix characters from a name.
     /// </summary>
@@ -177,8 +199,8 @@ public static class DialogueCleaner
                         int maxChunkLen = Math.Min(maxChunkLenBase, remainder.Length);
                         var elementStart = remainder.Substring(0, maxChunkLen);
 
-                        // Support Chinese punctuation
-                        var lastPeriod = elementStart.LastIndexOfAny(new char[] { '.', '!', '?', '。', '！', '？', '—', '…', '，', ',' });
+                        // Support Chinese punctuation — sentence enders preferred, commas as fallback
+                        int lastPeriod = FindPreferredSplitIndex(elementStart);
 
                         if (lastPeriod > 0 && lastPeriod < elementStart.Length - 1)
                         {
