@@ -269,6 +269,15 @@ namespace ValleytalkReborn.Movement
         {
             if (npc == null) return;
 
+            if (npc.IsInvisible)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[MovementCoordinator] {npc.Name} GOTO rejected: invisible (event actor).",
+                    LogLevel.Debug);
+                onFail?.Invoke();
+                return;
+            }
+
             if (Game1.player == null)
             {
                 onFail?.Invoke();
