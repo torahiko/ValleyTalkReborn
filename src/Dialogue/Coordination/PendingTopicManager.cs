@@ -25,6 +25,11 @@ namespace ValleytalkReborn
         /// -1 = 传统条目（无游戏日过期语义）；仅 SetNaturalMorningThought 置值。
         /// </summary>
         public int CreatedDay { get; set; } = -1;
+        /// <summary>
+        /// 优先级（0 = 普通实时 topic；10 = 跨天 story topic）。
+        /// 高优先级 topic 不会被低优先级覆盖（同 NPC 已有更高优先级且未过期时丢弃新 topic）。
+        /// </summary>
+        public int Priority { get; set; } = 0;
     }
 
     /// <summary>
@@ -127,16 +132,26 @@ namespace ValleytalkReborn
         /// <summary>
         /// 设置实时短期 topic（默认 3 分钟内有效，原有行为不变）。
         /// </summary>
-        public void SetPendingTopic(string npcName, string topic, int validMinutes = 3)
+        public void SetPendingTopic(string npcName, string topic, int validMinutes = 3, int priority = 0)
         {
             if (string.IsNullOrWhiteSpace(npcName) || string.IsNullOrWhiteSpace(topic)) return;
-
+            if (_pendingTopics.TryGetValue(npcName, out var existing)
+                && !existing.IsCrossDay
+                && existing.Priority > priority
+                && DateTime.Now <= existing.ExpireTime)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[PendingTopicManager] Lower-priority topic discarded for [{npcName}] (existing P{existing.Priority} > new P{priority}).",
+                    LogLevel.Trace);
+                return;
+            }
             _pendingTopics[npcName] = new PendingTopicEntry
             {
                 NpcName      = npcName,
                 TopicContent = topic.Trim(),
                 ExpireTime   = DateTime.Now.AddMinutes(validMinutes),
-                IsCrossDay   = false
+                IsCrossDay   = false,
+                Priority     = priority
             };
         }
 

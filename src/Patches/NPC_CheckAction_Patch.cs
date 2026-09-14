@@ -83,7 +83,10 @@ namespace ValleytalkReborn
             // ══════════════════════════════════════════════
             // 保护：送礼与特定道具检测
             // ══════════════════════════════════════════════
-            if (who.ActiveObject != null && who.ActiveObject.canBeGivenAsGift())
+            if (who.ActiveObject != null
+                && (who.ActiveObject.canBeGivenAsGift()
+                    || who.ActiveObject.questItem.Value
+                    || who.ActiveObject.QualifiedItemId is "(O)458" or "(O)460" or "(O)277"))
                 return true;
 
             // ══════════════════════════════════════════════

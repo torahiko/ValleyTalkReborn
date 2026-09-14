@@ -271,6 +271,14 @@ internal static class PlayerStateScanner
     {
         string qId = handItem.QualifiedItemId;
 
+        // 0. 任务物品（属于别人的失物）
+        if (handItem is StardewValley.Object qo && qo.questItem.Value)
+        {
+            return isZh
+                ? $"[随身细节] 玩家手中郑重地捧着【{name}】——那是一件属于别人的失物。"
+                : $"[Item detail] The player is carefully holding [{name}] — something that belongs to someone else.";
+        }
+
         // 1. 武器类（剑、匕首、锤、弹弓）
         if (handItem is MeleeWeapon || handItem is Slingshot)
         {
