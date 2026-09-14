@@ -16,6 +16,10 @@ namespace ValleytalkReborn
 {
     internal class DialogueBuilder
     {
+        internal const int MaxDialoguePages = 8;
+        internal const int MaxDialogueChars = 1800;
+        private static readonly char[] SentenceEnders = { '.', '!', '?', '。', '！', '？', '…', '\n' };
+
         private static int responseIndex = 20000;
         public static DialogueBuilder Instance
         {
@@ -404,6 +408,11 @@ namespace ValleytalkReborn
             }
 
             // 🌟【强力防抽风 1】：NPC 台词分页与超长字符限制
+            bool willAppendResponses = !(theLine.Length == 1
+                && ModEntry.Config.TypedResponses != "Always"
+                && !allowDateUI && !allowFollowUI);
+            int npcPageBudget = willAppendResponses ? MaxDialoguePages - 1 : MaxDialoguePages;
+
             string npcSpeech = theLine[0];
             if (string.IsNullOrWhiteSpace(npcSpeech))
             {
@@ -411,18 +420,29 @@ namespace ValleytalkReborn
             }
             else
             {
-                // 1. 限制通过 '#' 分割的显式翻页数量（最多允许 3 个 '#' 即最多 4 页台词）
+                // 1. 限制通过 '#' 分割的显式翻页数量
                 var pages = npcSpeech.Split(new[] { '#' }, StringSplitOptions.RemoveEmptyEntries);
-                const int maxPages = 4;
-                if (pages.Length > maxPages)
+                if (pages.Length > npcPageBudget)
                 {
-                    npcSpeech = string.Join("#", pages.Take(maxPages)) + "...";
+                    npcSpeech = string.Join("#", pages.Take(npcPageBudget)) + "...";
                 }
-                // 2. 限制单段文字的总字符上限（防止单段成千上万字撑死渲染）
-                const int maxTotalChars = 600;
-                if (npcSpeech.Length > maxTotalChars)
+                // 2. 限制单段文字的总字符上限（标点回溯截断，避免硬切在句中）
+                if (npcSpeech.Length > MaxDialogueChars)
                 {
-                    npcSpeech = npcSpeech.Substring(0, maxTotalChars).TrimEnd() + "...";
+                    int searchStart = Math.Min(MaxDialogueChars, npcSpeech.Length - 1);
+                    int lastSentenceEnd = npcSpeech.LastIndexOfAny(SentenceEnders, searchStart);
+                    int cutoff = MaxDialogueChars;
+                    if (lastSentenceEnd > MaxDialogueChars / 2)
+                    {
+                        cutoff = lastSentenceEnd + 1;
+                    }
+                    string truncated = npcSpeech.Substring(0, cutoff).TrimEnd();
+                    while (truncated.EndsWith("#"))
+                    {
+                        truncated = truncated.Substring(0, truncated.Length - 1).TrimEnd();
+                    }
+                    npcSpeech = truncated + "...";
+                    ModEntry.SMonitor?.Log($"[DialogueBuilder] Truncated npcSpeech {searchStart} -> {npcSpeech.Length} chars", LogLevel.Debug);
                 }
             }
             theLine[0] = npcSpeech;
@@ -444,7 +464,7 @@ namespace ValleytalkReborn
             {
                 if (string.IsNullOrWhiteSpace(theLine[i])) continue;
                 sb.Append($"#$r -999998 0 {SldConstants.DialogueKeyPrefix}Next#");
-                sb.Append(theLine[i]);
+                sb.Append(theLine[i].Replace("#", " ").Trim());
             }
             if (ModEntry.Config.TypedResponses != "Never")
             {

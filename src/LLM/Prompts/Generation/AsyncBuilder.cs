@@ -278,24 +278,16 @@ public class AsyncBuilder
                         _aiDialogueNpcNames.Add(npc.Name);
                     }
 
-                    // 🌟【终极防线】：强制保证 DialogueBox 总页数绝不超过 4 页
-                    const int maxAllowedPages = 4;
-                    if (newDialogue.dialogues.Count > maxAllowedPages)
+                    // 🌟【终极防线】：无条件保尾裁中，确保 DialogueBox 总页数绝不超过上限且末页（选项页）必保留
+                    if (newDialogue.dialogues.Count > DialogueBuilder.MaxDialoguePages)
                     {
+                        int originalCount = newDialogue.dialogues.Count;
                         var lastPage = newDialogue.dialogues.Last();
-                        bool hasQuestionPage = lastPage.Text == Util.GetString("outputRespond");
-                        if (hasQuestionPage)
-                        {
-                            // 如果最后一页带交互选项，保留前 (maxAllowedPages - 1) 页并接上选项页
-                            var preservedPages = newDialogue.dialogues.Take(maxAllowedPages - 1).ToList();
-                            preservedPages.Add(lastPage);
-                            newDialogue.dialogues.Clear();
-                            newDialogue.dialogues.AddRange(preservedPages);
-                        }
-                        else
-                        {
-                            newDialogue.dialogues.RemoveRange(maxAllowedPages, newDialogue.dialogues.Count - maxAllowedPages);
-                        }
+                        var preservedPages = newDialogue.dialogues.Take(DialogueBuilder.MaxDialoguePages - 1).ToList();
+                        preservedPages.Add(lastPage);
+                        newDialogue.dialogues.Clear();
+                        newDialogue.dialogues.AddRange(preservedPages);
+                        ModEntry.SMonitor?.Log($"[AsyncBuilder] Page guard trimmed {originalCount} -> {DialogueBuilder.MaxDialoguePages} pages (tail preserved) for {npc?.Name}", LogLevel.Warn);
                     }
 
                     Game1.DrawDialogue(newDialogue);
