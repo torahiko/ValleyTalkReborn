@@ -439,6 +439,15 @@ namespace ValleytalkReborn
 
             ConfigMenu.AddKeybind(
                 mod: ModManifest,
+                name: () => GetUIString("configDismissFollowerKey", "Dismiss Follower Key"),
+                tooltip: () => GetUIString("configDismissFollowerKeyTooltip",
+                    "Key used to stop the NPC currently following you, whether they're just tagging along or accompanying you on a date."),
+                getValue: () => ModEntry.Config.DismissFollowerKey,
+                setValue: value => ModEntry.Config.DismissFollowerKey = value
+            );
+
+            ConfigMenu.AddKeybind(
+                mod: ModManifest,
                 name: () => GetUIString("configOpenHubMenuKey", "Open Management Hub"),
                 tooltip: () => GetUIString("configOpenHubMenuKeyTooltip",
                     "Press to open the combined management hub (NPC memories / world memories / farmer profile / advanced settings). Opens on your most recently spoken NPC. Avoid keys already used by the game or other mods."),
