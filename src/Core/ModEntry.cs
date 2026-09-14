@@ -108,7 +108,8 @@ namespace ValleytalkReborn
 
         private int _lastDialogueCloseTick = -9999;
 
-        private NPC _lastSpokenNPC = null;
+        /// <summary>最近一次对话的 NPC（内部名 Name 用于记忆键）。跨存档必须在 OnSaveLoaded/Cleanup 置空。</summary>
+        public static NPC LastSpokenNPC { get; internal set; }
 
         /// <summary>
         /// Exposes the cancel button plugin instance so Character can register itself as active.
@@ -516,30 +517,40 @@ namespace ValleytalkReborn
             {
                 int tickDiff = Game1.ticks - _lastDialogueCloseTick;
 
-                if (tickDiff > 0 && tickDiff <= 300 && _lastSpokenNPC != null)
+                if (tickDiff > 0 && tickDiff <= 300 && LastSpokenNPC != null)
                 {
                     // ★ 确保目标 NPC 具备 AI 对话资格：无有效 Bios 时不弹输入框、不发请求。
                     // 注意：此处直接 return 且不 Suppress，将按键交还原版处理。
-                    if (!DialogueBuilder.Instance.PatchNpc(_lastSpokenNPC))
+                    if (!DialogueBuilder.Instance.PatchNpc(LastSpokenNPC))
                         return;
-                    bool sameLocation = Game1.player.currentLocation == _lastSpokenNPC.currentLocation;
+                    bool sameLocation = Game1.player.currentLocation == LastSpokenNPC.currentLocation;
                     float distance = sameLocation
-                        ? Vector2.Distance(Game1.player.Position, _lastSpokenNPC.Position)
+                        ? Vector2.Distance(Game1.player.Position, LastSpokenNPC.Position)
                         : float.MaxValue;
 
                     if (!sameLocation || distance > 256f)
                     {
-                        Game1.addHUDMessage(new HUDMessage($"{_lastSpokenNPC.displayName} 已经走远了...", 3));
+                        Game1.addHUDMessage(new HUDMessage($"{LastSpokenNPC.displayName} 已经走远了...", 3));
                     }
                     else
                     {
                         Game1.playSound("bigSelect");
-                        TextInputManager.RequestTextInput($"与 {_lastSpokenNPC.displayName} 交谈", _lastSpokenNPC);
+                        TextInputManager.RequestTextInput($"与 {LastSpokenNPC.displayName} 交谈", LastSpokenNPC);
                     }
 
                     Helper.Input.Suppress(e.Button);
                     return;
                 }
+            }
+
+            if (e.Button == Config.OpenHubMenuKey
+                && Context.IsPlayerFree
+                && Game1.activeClickableMenu == null
+                && Game1.keyboardDispatcher?.Subscriber is not DialogueTextInputBox)
+            {
+                Helper.Input.Suppress(e.Button);
+                OpenHubMenu(0);
+                return;
             }
 
             if (Game1.keyboardDispatcher?.Subscriber is DialogueTextInputBox)
@@ -575,6 +586,39 @@ namespace ValleytalkReborn
         /// 取消跟随热键处理：弹出确认框 → 气泡反馈 → 调用 MovementManager.StopFollow。
         /// 普通跟随走 BeginSmoothDeparture；约会跟随走 StopDateFollow + EndDateGracefully。
         /// </summary>
+        internal static void OpenHubMenu(int targetTab)
+        {
+            if (!Context.IsWorldReady || Game1.activeClickableMenu != null) return;
+
+            targetTab = Math.Clamp(targetTab, 0, 3);
+
+            string npcName = null;
+
+            // a) 优先使用最近对话的 NPC
+            if (LastSpokenNPC != null && !string.IsNullOrWhiteSpace(LastSpokenNPC.Name))
+            {
+                npcName = LastSpokenNPC.Name;
+            }
+            else
+            {
+                // b) 回退：按字母序取第一个有效村民
+                foreach (var name in Game1.player.friendshipData.Keys
+                             .OrderBy(k => k, StringComparer.OrdinalIgnoreCase))
+                {
+                    if (Game1.getCharacterFromName(name) != null)
+                    {
+                        npcName = name;
+                        break;
+                    }
+                }
+                // c) 仍无 → npcName 保持 null（Hub 空态）
+            }
+
+            Game1.playSound("bigSelect");
+            Game1.activeClickableMenu = new IntegratedHubMenu(npcName, targetTab);
+            SMonitor.Log($"[ModEntry] Hub opened (tab={targetTab}, npc={npcName ?? "none"})", LogLevel.Trace);
+        }
+
         private void OnDismissFollowerButtonPressed(object sender, ButtonPressedEventArgs e)
         {
             if (!Context.IsWorldReady || !Context.IsPlayerFree)
@@ -948,6 +992,7 @@ namespace ValleytalkReborn
                     _localeCache = string.Empty;
                     _localeCacheFixPunctuation = string.Empty;
                     DisallowedContentPackIds.Clear();
+                    LastSpokenNPC = null;
                 }
                 catch (Exception ex)
                 {
@@ -1072,7 +1117,7 @@ namespace ValleytalkReborn
                 var speaker = oldDb.characterDialogue?.speaker ?? Game1.currentSpeaker;
                 if (speaker != null)
                 {
-                    _lastSpokenNPC = speaker;
+                    LastSpokenNPC = speaker;
                     _lastDialogueCloseTick = Game1.ticks;
                 }
 
@@ -1086,6 +1131,8 @@ namespace ValleytalkReborn
 
         private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
         {
+            LastSpokenNPC = null;
+
             // 修复：返回标题后 Cleanup 会销毁 _dialogueCoordinator，
             // 重新读档时必须重建并订阅，否则 A2A 雷达与 AmbientBark 状态机将永久停摆。
             InitializeDialogueCoordinator();
