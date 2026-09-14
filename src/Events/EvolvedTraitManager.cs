@@ -27,6 +27,17 @@ internal static class EvolvedTraitManager
     private static readonly Dictionary<string, int> FoldRetryCount =
         new(StringComparer.OrdinalIgnoreCase);
 
+    // ── 常驻心智看板（MEM-02 新增）──
+    private const string MindsetsSaveDataKey = "valleytalk.npc-mindsets";
+    private const int MaxCoreImpressions = 3;
+    private const int MaxStanceLength = 120;
+    private const int MaxImpressionLength = 60;
+    private static Dictionary<string, NpcMindset> _mindsets = CreateMindsetDict();
+    private static bool _mindsetsDirty = false;
+
+    private static Dictionary<string, NpcMindset> CreateMindsetDict() =>
+        new Dictionary<string, NpcMindset>(StringComparer.OrdinalIgnoreCase);
+
     private static bool IsChineseLanguage =>
         LocalizedContentManager.CurrentLanguageCode
             .ToString()
@@ -66,6 +77,57 @@ internal static class EvolvedTraitManager
                 _cache = CreateCache();
                 _dirty = false;
             }
+
+            // ── 常驻心智看板加载（先重建空字典，再读取，跨存档安全）──
+            try
+            {
+                _mindsets = CreateMindsetDict();
+                var loadedMindsets = ModEntry.SHelper.Data
+                    .ReadSaveData<Dictionary<string, NpcMindset>>(MindsetsSaveDataKey);
+
+                if (loadedMindsets != null)
+                {
+                    foreach (var kv in loadedMindsets)
+                    {
+                        if (string.IsNullOrWhiteSpace(kv.Key)) continue;
+                        var m = kv.Value;
+                        if (m == null) continue;
+
+                        // clamp on load
+                        m.RelationshipStance = TruncateAt(m.RelationshipStance, MaxStanceLength);
+                        m.BoundaryLevel = TruncateAt(m.BoundaryLevel, MaxStanceLength);
+                        if (m.CoreImpressions != null)
+                        {
+                            m.CoreImpressions = m.CoreImpressions
+                                .Where(i => !string.IsNullOrWhiteSpace(i))
+                                .Select(i => TruncateAt(i, MaxImpressionLength))
+                                .Distinct(StringComparer.OrdinalIgnoreCase)
+                                .Take(MaxCoreImpressions)
+                                .ToList();
+                        }
+                        else
+                        {
+                            m.CoreImpressions = new List<string>();
+                        }
+
+                        _mindsets[kv.Key] = m;
+                    }
+                }
+
+                _mindsetsDirty = false;
+
+                ModEntry.SMonitor?.Log(
+                    $"[EvolvedTraitManager] Mindsets loaded. NPCs: {_mindsets.Count}.",
+                    LogLevel.Debug);
+            }
+            catch (Exception ex)
+            {
+                _mindsets = CreateMindsetDict();
+                _mindsetsDirty = false;
+                ModEntry.SMonitor?.Log(
+                    $"[EvolvedTraitManager] Mindset load failed; starting fresh. Error: {ex.Message}",
+                    LogLevel.Warn);
+            }
         }
     }
 
@@ -79,6 +141,8 @@ internal static class EvolvedTraitManager
                     "[EvolvedTraitManager] Saving skipped because cache is clean.",
                     LogLevel.Trace);
 
+                // 即使 traits 不脏，mindsets 仍可能需要保存
+                SaveMindsets(force: false);
                 return;
             }
 
@@ -97,6 +161,26 @@ internal static class EvolvedTraitManager
                     $"[EvolvedTraitManager] Save failed; will retry next save: {ex}",
                     LogLevel.Warn);
             }
+
+            SaveMindsets(force: false);
+        }
+    }
+
+    private static void SaveMindsets(bool force)
+    {
+        if (!force && !_mindsetsDirty) return;
+
+        try
+        {
+            if (!Context.IsWorldReady || ModEntry.SHelper == null) return;
+            ModEntry.SHelper.Data.WriteSaveData(MindsetsSaveDataKey, _mindsets);
+            _mindsetsDirty = false;
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log(
+                $"[EvolvedTraitManager] Mindset save failed: {ex.Message}",
+                LogLevel.Warn);
         }
     }
 
@@ -112,6 +196,15 @@ internal static class EvolvedTraitManager
                 "[EvolvedTraitManager] AddTrait ignored because NPC name or trait was empty.",
                 LogLevel.Trace);
 
+            return;
+        }
+
+        // ── MEM-02 熔断：常驻心智存在时，禁止 traits 通道回灌 ──
+        if (HasMindset(npcName))
+        {
+            ModEntry.SMonitor?.Log(
+                $"[EvolvedTraitManager] AddTrait bypassed for [{npcName}]: mindset exists, traits channel frozen.",
+                LogLevel.Debug);
             return;
         }
 
@@ -239,24 +332,8 @@ internal static class EvolvedTraitManager
             _cache[npcName] = merged;
             _dirty = true;
 
-            // Guard: 折叠重试次数上限，防止 LLM 持续失败时无限重试。
-            FoldRetryCount.TryGetValue(npcName, out int count);
-            count++;
-
-            if (count > MaxFoldRetries)
-            {
-                PendingFoldSet.Remove(npcName);
-                FoldRetryCount.Remove(npcName);
-
-                ModEntry.SMonitor?.Log(
-                    $"[EvolvedTraitManager] Fold retry limit reached for [{npcName}]. " +
-                    "Traits will not be folded this session.",
-                    LogLevel.Warn);
-
-                return;
-            }
-
-            FoldRetryCount[npcName] = count;
+            // ── MEM-02 止血：折叠成功即复位重试计数（修复 A2-1/A3-2）──
+            FoldRetryCount.Remove(npcName);
             PendingFoldSet.Remove(npcName);
 
             ModEntry.SMonitor?.Log(
@@ -290,6 +367,12 @@ internal static class EvolvedTraitManager
 
     public static string GetPromptBlock(string npcName)
     {
+        // ── MEM-02 分流：常驻心智存在时直接输出基线块 ──
+        if (HasMindset(npcName))
+        {
+            return GetMindsetBaselineBlock(npcName);
+        }
+
         var traits = GetTraits(npcName);
 
         if (traits.Count == 0)
@@ -318,6 +401,12 @@ internal static class EvolvedTraitManager
         string npcName,
         DialogueContext context)
     {
+        // ── MEM-02 分流：常驻心智存在时直接输出基线块 ──
+        if (HasMindset(npcName))
+        {
+            return GetMindsetBaselineBlock(npcName);
+        }
+
         var traits = GetTraits(npcName);
 
         if (traits.Count == 0)
@@ -360,6 +449,162 @@ internal static class EvolvedTraitManager
         sb.AppendLine("</farmer_impressions>");
         return sb.ToString();
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // 常驻心智看板 API（MEM-02 新增）
+    // ──────────────────────────────────────────────────────────────
+
+    public static bool HasMindset(string npcName)
+    {
+        if (string.IsNullOrWhiteSpace(npcName)) return false;
+        lock (LockObject)
+        {
+            return _mindsets.ContainsKey(npcName);
+        }
+    }
+
+    public static NpcMindset GetMindset(string npcName)
+    {
+        if (string.IsNullOrWhiteSpace(npcName)) return null;
+        lock (LockObject)
+        {
+            return _mindsets.TryGetValue(npcName, out var m) ? m : null;
+        }
+    }
+
+    /// <summary>
+    /// 覆盖式更新心智（幂 id）。stance/boundary 截断至 120；
+    /// impressions 去空白/去重/截断/Take(3)；LastUpdateDay = Game1.Date.TotalDays。
+    /// </summary>
+    public static void UpdateMindset(string npcName, string stance,
+        List<string> coreImpressions, string boundary)
+    {
+        if (string.IsNullOrWhiteSpace(npcName) || string.IsNullOrWhiteSpace(stance))
+        {
+            ModEntry.SMonitor?.Log(
+                "[EvolvedTraitManager] UpdateMindset rejected: npcName or stance empty.",
+                LogLevel.Warn);
+            return;
+        }
+
+        if (!Context.IsWorldReady || ModEntry.SHelper == null) return;
+
+        string cleanStance = TruncateAt(stance.Trim(), MaxStanceLength);
+        string cleanBoundary = TruncateAt(boundary?.Trim() ?? "", MaxStanceLength);
+
+        var cleanImpressions = new List<string>();
+        if (coreImpressions != null)
+        {
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var imp in coreImpressions)
+            {
+                if (imp == null) continue;
+                string t = imp.Trim();
+                if (string.IsNullOrWhiteSpace(t)) continue;
+                t = TruncateAt(t, MaxImpressionLength);
+                if (seen.Add(t)) cleanImpressions.Add(t);
+            }
+        }
+
+        if (cleanImpressions.Count > MaxCoreImpressions)
+        {
+            ModEntry.SMonitor?.Log(
+                $"[EvolvedTraitManager] UpdateMindset [{npcName}]: impressions truncated from {cleanImpressions.Count} to {MaxCoreImpressions}.",
+                LogLevel.Warn);
+            cleanImpressions = cleanImpressions.Take(MaxCoreImpressions).ToList();
+        }
+
+        lock (LockObject)
+        {
+            var mindset = new NpcMindset
+            {
+                RelationshipStance = cleanStance,
+                CoreImpressions = cleanImpressions,
+                BoundaryLevel = cleanBoundary,
+                LastUpdateDay = Game1.Date.TotalDays
+            };
+            _mindsets[npcName] = mindset;
+            _mindsetsDirty = true;
+        }
+
+        // 即时落盘
+        SaveMindsets(force: true);
+
+        ModEntry.SMonitor?.Log(
+            $"[EvolvedTraitManager] Mindset updated for [{npcName}]: " +
+            $"stance=\"{TruncateForLog(cleanStance)}\", impressions={cleanImpressions.Count}, boundary=\"{TruncateForLog(cleanBoundary)}\".",
+            LogLevel.Info);
+    }
+
+    /// <summary>
+    /// 输出常驻心智基线块。无 mindset 返回 null。
+    /// 内容顺序固定，无随机/时间因素（供 MEM-04/05 KV-Cache 稳定前提）。
+    /// </summary>
+    public static string GetMindsetBaselineBlock(string npcName)
+    {
+        if (string.IsNullOrWhiteSpace(npcName)) return null;
+        if (!Context.IsWorldReady) return null;
+
+        NpcMindset mindset;
+        lock (LockObject)
+        {
+            if (!_mindsets.TryGetValue(npcName, out mindset) || mindset == null)
+                return null;
+        }
+
+        bool isZh = IsChineseLanguage;
+        var sb = new StringBuilder();
+
+        sb.AppendLine(isZh
+            ? "### 对农夫的常驻心智底色（长期稳定的态度基线，非本次对话事件）"
+            : "### STABLE BASELINE MINDSET (long-term stable attitude, not a current event)");
+
+        sb.AppendLine("<mindset_baseline>");
+        sb.AppendLine(isZh
+            ? $"关系定位：{mindset.RelationshipStance}"
+            : $"Relationship Stance: {mindset.RelationshipStance}");
+
+        if (mindset.CoreImpressions != null && mindset.CoreImpressions.Count > 0)
+        {
+            foreach (var imp in mindset.CoreImpressions)
+            {
+                sb.AppendLine($"- {imp}");
+            }
+        }
+
+        sb.AppendLine(isZh
+            ? $"边界层级：{mindset.BoundaryLevel}"
+            : $"Boundary Level: {mindset.BoundaryLevel}");
+        sb.AppendLine("</mindset_baseline>");
+
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// 句末标点优先截断（与 MEM-01 SmartTruncate 同规则，本地实现保持可并行）。
+    /// </summary>
+    private static string TruncateAt(string content, int maxLen)
+    {
+        if (string.IsNullOrEmpty(content) || content.Length <= maxLen) return content;
+
+        int minLen = (int)(maxLen * 0.6);
+        char[] endPunctuation = { '。', '！', '？', '!', '?', '.', '…' };
+
+        for (int i = maxLen - 1; i >= minLen; i--)
+        {
+            if (content.Length <= i) continue;
+            char c = content[i];
+            if (endPunctuation.Contains(c))
+            {
+                return content.Substring(0, i + 1);
+            }
+        }
+
+        return content.Substring(0, maxLen);
+    }
+
+    private static string TruncateForLog(string s, int max = 30) =>
+        string.IsNullOrEmpty(s) ? "" : (s.Length <= max ? s : s.Substring(0, max) + "…");
 
     public static bool TryDequeueFoldTarget(out string npcName)
     {
