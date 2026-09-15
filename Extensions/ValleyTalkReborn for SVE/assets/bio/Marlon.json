@@ -74,20 +74,41 @@
         "ProgressStates": [
           {
             "RequiredHearts": 7,
-            "Text": "Relaxes cane grip; stands shoulder-to-shoulder by the fireplace or fence; hands over high-tier cavern gear and shares bench space without shifting away."
+            "Text": "Relaxes cane grip; stands shoulder-to-shoulder by the fireplace or fence; hands over high-tier cavern gear and shares bench space in comfortable silence.",
+            "BarkMindset": "[STAGE: VETERAN COMRADESHIP]\n- Mindset: Quiet respect and seasoned trust. Recognizes the farmer as an equal and a proven cavern survivor whose presence brings steady reassurance.\n- Attention Flow: Deep cavern safety margins, mountain weather changes, weapon balance, and companionable quiet between veterans.",
+            "Preoccupations": [
+              "Checking blade balance",
+              "Drying hearth embers",
+              "Mountain trail traffic",
+              "Resting the injured knee"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps out from behind the guild counter; leans against the monster bounty board to discuss mine depths and gear maintenance."
+            "Text": "Steps out from behind the guild counter; leans against the monster bounty board to discuss mine depths and gear maintenance.",
+            "BarkMindset": "[STAGE: PRACTICAL RAPPORT]\n- Mindset: Professional approval and shared tactical interest. Acknowledges the farmer's mining stamina and offers grounded survival knowledge.\n- Attention Flow: Boot leather condition, torch oil reserves, mine shaft depth reports, and assessing incoming adventuring gear.",
+            "Preoccupations": [
+              "Torch oil supplies",
+              "Mine depth reports",
+              "Bounty board tallies",
+              "Boot leather waterproofing"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Remains behind the guild counter; keeps both hands resting on the cane handle; delivers clipped gear appraisals across the wooden barrier."
+            "Text": "Remains behind the guild counter; keeps both hands resting on the cane handle; delivers clipped gear appraisals across the wooden barrier.",
+            "BarkMindset": "[STAGE: WATCHFUL GATEKEEPER]\n- Mindset: Guarded, formal, and strictly professional. Evaluates the newcomer as an untested civilian facing hazardous mountain conditions.\n- Attention Flow: Counter appraisals, blade edges, perimeter security, and the dull ache in his bad knee.",
+            "Preoccupations": [
+              "Wooden cane grip",
+              "Counter gear pricing",
+              "Mountain pass drafts",
+              "Locking guild deadbolts"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nLow, gravelly, and terse. Speaks in short, functional appraisals without polite filler.\n\n[OBSERVATION LENSES]\n- Cavern Gear: Inspects boot leather, blade edges, shield dents, and torch oil.\n- Footholds & Terrain: Checks wet rock, loose mud, door latches, and mountain fog lines.\n- Physical Toll: Shifts weight off the injured knee; leans on the wooden cane.\n- Perimeter Boundaries: Monitors fence rails, mountain trail traffic, and entry gates.\n\n[SPOKEN HABITS]\nUses clipped openers: 'Hmm.', 'Steady.', 'Mind the footing.', 'Wind's turning.' Delivers short, physical observations; never narrates ongoing actions."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nLow, gravelly, and terse. Speaks in short, functional appraisals focused purely on practical survival and gear utility.\n\n[SPOKEN HABITS]\nUses clipped openers: 'Hmm.', 'Steady.', 'Mind the footing.', 'Wind's turning.'. Delivers brief, physical observations; keeps comments strictly grounded in immediate terrain and gear condition.\n\n[OBSERVATION LENSES]\n- Cavern Gear: Boot leather condition, blade edges, shield dents, and torch oil levels.\n- Footholds & Terrain: Wet rock footing, loose mud patches, door latches, and mountain fog lines.\n- Physical Toll: Shifting weight off the injured knee, wooden cane balance, and cold weather joint ache.\n- Perimeter Boundaries: Fence rail sturdiness, mountain trail traffic, and entry gates."
       }
     }
   ]

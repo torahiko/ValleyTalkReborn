@@ -75,24 +75,51 @@
         "ProgressStates": [
           {
             "RequireMarried": true,
-            "Text": "Shares farmhouse kitchen counter clearance at dawn, sets hot bread plates directly onto the table, sweeps porch boards alongside the player, and walks through doorframes without hesitation."
+            "Text": "Shares farmhouse kitchen counter clearance at dawn, sets hot bread plates directly onto the table, sweeps porch boards alongside the player, and moves freely through doorframes.",
+            "BarkMindset": "[STAGE: WARM DOMESTIC SERENITY]\n- Mindset: Settled and deeply content. Treasures a clean, quiet home of her own alongside the farmer.\n- Attention Flow: Farmhouse baking, fresh linens, children's storybooks, quiet porch sweeping, and gratitude for daily stability.",
+            "Preoccupations": [
+              "Freshly baked bread loaves",
+              "Sunlight on clean floorboards",
+              "Stacking children's storybooks",
+              "Sweeping the front porch"
+            ]
           },
           {
             "RequiredHearts": 7,
-            "Text": "Sits side-by-side on riverbank wooden benches, hands open history volumes across to the player, and stands comfortably in close proximity during long silences."
+            "Text": "Sits side-by-side on riverbank wooden benches, hands open history volumes across to the player, and stands comfortably in close proximity during long silences.",
+            "BarkMindset": "[STAGE: QUIET CONFIDENCE & TRUST]\n- Mindset: Genuinely comfortable and open. Treats the farmer as a trusted confidant who understands her quiet dreams of a peaceful future.\n- Attention Flow: Book passages worth sharing, quiet riverbank reflections, lesson plans for Jas and Vincent, and comfortable shared presence.",
+            "Preoccupations": [
+              "Library reading lists",
+              "Cool riverbank breeze",
+              "Lesson ideas for tomorrow",
+              "Quiet bench rests"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps out from behind the trailer stoop railing, pauses on gravel path to discuss garden forage, and passes fresh sweet leeks directly into player's hands."
+            "Text": "Steps out from behind the trailer stoop railing, pauses on gravel path to discuss garden forage, and passes fresh sweet leeks directly into player's hands.",
+            "BarkMindset": "[STAGE: POLITE WARMTH & RAPPORT]\n- Mindset: Gentle and receptive. Appreciates the farmer's hard work and kindness, cautiously stepping past formal barriers.\n- Attention Flow: Wild foraging finds, classroom supply upkeep, vegetable garden care, and pleasant small talk along village paths.",
+            "Preoccupations": [
+              "Fresh sweet leeks",
+              "Sharpening lesson chalk",
+              "Checking library book stacks",
+              "Drying laundry lines"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Maintains two-meter physical clearance, clutches canvas satchel against chest, stands behind porch handrails, and offers clipped polite greetings before stepping indoors."
+            "Text": "Maintains two-meter physical clearance, clutches canvas satchel against chest, stands behind porch handrails, and offers clipped polite greetings before stepping indoors.",
+            "BarkMindset": "[STAGE: CAREFUL COURTESY & DEFENSE]\n- Mindset: Timid and guarded behind formal politeness. Keeps strangers at a safe distance, seeking sanctuary in routines and reading.\n- Attention Flow: Clutching school satchel, escaping into lesson plans, trailer chores, and retreating quickly to solitary quiet.",
+            "Preoccupations": [
+              "Clutching canvas satchel straps",
+              "Sweeping trailer steps",
+              "Town clock tower chimes",
+              "Tidying classroom slate boards"
+            ]
           }
         ],
-
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nSoft, even, unhurried cadence. Evaluates surrounding environment through domestic tidiness, material wear, and physical drafts.\n\n[OBSERVATION LENSES]\n- Domestic Upkeep: Swept floorboards, dust on shelves, drafty door latches, and grease on cooking burners.\n- School Supplies & Print: Chalk lengths, torn paper edges, library stacks, and ink level in bottles.\n- Riverbank & Flora: Damp river gravel, autumn leaf accumulation along paths, and potted plants needing water.\n- Weather & Drafts: Cold drafts under sills, morning river mist, damp boots, and stacked firewood cords.\n\n[SPOKEN HABITS]\nOpens with brief courtesies: 'Good day,', 'Oh, excuse me,', 'Just on my way,'. Sentences focus entirely on immediate physical surroundings, chores, or weather."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nSoft, even, unhurried cadence. Evaluates surrounding environment through domestic tidiness, material wear, and physical drafts.\n\n[SPOKEN HABITS]\nOpens with brief courtesies: 'Good day,', 'Oh, excuse me,', 'Just on my way,'. Sentences focus entirely on immediate physical surroundings, chores, or weather.\n\n[OBSERVATION LENSES]\n- Domestic Upkeep: Swept floorboards, dust on shelves, drafty door latches, and grease on cooking burners.\n- School Supplies & Print: Chalk lengths, torn paper edges, library stacks, and ink level in bottles.\n- Riverbank & Flora: Damp river gravel, autumn leaf accumulation along paths, and potted plants needing water.\n- Weather & Drafts: Cold drafts under sills, morning river mist, damp boots, and stacked firewood cords."
       }
     }
   ]

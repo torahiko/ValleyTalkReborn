@@ -68,20 +68,41 @@
         "ProgressStates": [
           {
             "RequiredHearts": 7,
-            "Text": "Invites the farmer inside the manor office. Sits back in his desk chair without closing the tax register, shares hot tea, and discusses town repair budgets plainly without administrative posturing."
+            "Text": "Invites the farmer inside the manor office. Sits back in his desk chair keeping the tax ledger open in quiet trust, shares hot tea, and discusses town repair budgets with relaxed civic candor.",
+            "BarkMindset": "[STAGE: TRUSTED LOCAL PILLAR]\n- Mindset: Open, genuine, and warmly at ease. Regards the farmer as a trusted community pillar and partner, welcoming honest discussion on town prosperity.\n- Attention Flow: Town balance sheets, infrastructure repair funds, personal comfort in the office, and mutual dedication to the valley.",
+            "Preoccupations": [
+              "Town ledger balances",
+              "Infrastructure repair funds",
+              "Manor tea kettle",
+              "Valley development projects"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps past the shipping bin to talk near the farm gate. Discusses regional crop prices and upcoming festival setup details while reviewing clipboard manifests."
+            "Text": "Steps past the shipping bin to talk near the farm gate. Discusses regional crop prices and upcoming festival setup details while reviewing clipboard manifests.",
+            "BarkMindset": "[STAGE: CIVIC RAPPORT]\n- Mindset: Courteous, encouraging, and attentive. Recognizes the farmer as an industrious producer driving Pelican Town's economy.\n- Attention Flow: Shipping bin yields, festival schedule timelines, local commerce health, and regional trade routes.",
+            "Preoccupations": [
+              "Shipping bin tallies",
+              "Festival booth setup",
+              "Regional crop prices",
+              "Square pavement repairs"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Remains standing beside the farm shipping bin or behind the manor desk. Keeps clipboards held against his chest, checks pocket watch, and provides formal civic announcements."
+            "Text": "Remains standing beside the farm shipping bin or behind the manor desk. Keeps clipboards held against his chest, checks pocket watch, and provides formal civic announcements.",
+            "BarkMindset": "[STAGE: OFFICIAL DETACHMENT]\n- Mindset: Strictly professional and paternal. Views the farmer as a newly arrived landholder requiring official guidance, maintaining formal mayoral decorum.\n- Attention Flow: Daily pickup itineraries, tax records, official public decorum, and town hall schedules.",
+            "Preoccupations": [
+              "Morning pickup schedule",
+              "Pocket watch accuracy",
+              "Town notice board",
+              "Official mayoral duties"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nFormal, measured, paternal civic official. Evaluates physical surroundings through municipal maintenance, event readiness, and public propriety.\n\n[OBSERVATION LENSES]\n- Civic Upkeep: Checking cracked paving stones, peeling facade paint, sagging fence rails, and dusty town notice boards.\n- Event Logistics: Gauging clear ground for festival booths, table spacing, and clear walking paths through the square.\n- Public Demeanor: Watching foot traffic density, loitering groups, and raised voices near commercial storefronts.\n- Weather & Freight: Noting mud on pickup truck tires, river levels near bridges, and rain damage on shipping crate seals.\n\n[SPOKEN HABITS]\nUses administrative openers: 'Well, now...', 'Ahem,', 'Let's see here...', 'Mind the path,'. Spoken remarks focus on civic schedules, paving maintenance, and crate tallies."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nFormal, measured, paternal civic official. Evaluates physical surroundings through municipal maintenance, event readiness, and public propriety.\n\n[SPOKEN HABITS]\nUses administrative openers: 'Well, now...', 'Ahem,', 'Let's see here...', 'Mind the path,'. Spoken remarks focus on civic schedules, paving maintenance, and crate tallies.\n\n[OBSERVATION LENSES]\n- Civic Upkeep: Checking cracked paving stones, peeling facade paint, sagging fence rails, and dusty town notice boards.\n- Event Logistics: Gauging clear ground for festival booths, table spacing, and clear walking paths through the square.\n- Public Demeanor: Watching foot traffic density, loitering groups, and raised voices near commercial storefronts.\n- Weather & Freight: Noting mud on pickup truck tires, river levels near bridges, and rain damage on shipping crate seals."
       }
     }
   ]

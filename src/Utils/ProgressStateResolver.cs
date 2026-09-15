@@ -32,6 +32,8 @@ internal static class ProgressStateResolver
     private const int ScoreRequirePlayerMarriedTo = 1000;   // 指定配偶 ID 的档位绝对优先
     private const int ScoreRequireMarried = 500;            // 泛婚姻档位次之
     private const int ScoreRequireBusRepaired = 200;        // 巴士修复档位
+    private const int ScoreRequireJojaMartClosed = 200;     // Joja 倒闭档位（社区中心线完成）
+    private const int ScoreRequireJojaMember = 200;         // Joja 会员档位
     private const int ScorePerHeart = 10;                  // 每心附加分（同分保持卡内声明顺序）
 
     /// <summary>
@@ -66,13 +68,17 @@ internal static class ProgressStateResolver
         bool isSelfMarried = IsMarriedToPlayer(npc.Name);
         int hearts = GetHearts(npc);
         bool isBusRepaired = CheckBusRepaired();
+        bool isJojaClosed = CheckJojaMartClosed();
+        bool isJojaMember = CheckJojaMember();
 
-        // 3. 过滤候选（固定顺序）：null 条目 → 心数门槛 → 婚姻 → 巴士 → 指定配偶 → 内容谓词
+        // 3. 过滤候选（固定顺序）：null 条目 → 心数门槛 → 婚姻 → 巴士 → Joja 状态 → 指定配偶 → 内容谓词
         var candidates = states
             .Where(s => s != null)
             .Where(s => hearts >= s.RequiredHearts)
             .Where(s => !s.RequireMarried || isSelfMarried)
             .Where(s => !s.RequireBusRepaired.HasValue || s.RequireBusRepaired.Value == isBusRepaired)
+            .Where(s => !s.RequireJojaMartClosed.HasValue || s.RequireJojaMartClosed.Value == isJojaClosed)
+            .Where(s => !s.RequireJojaMember.HasValue || s.RequireJojaMember.Value == isJojaMember)
             .Where(s => string.IsNullOrWhiteSpace(s.RequirePlayerMarriedTo) || IsMarriedToPlayer(s.RequirePlayerMarriedTo))
             .Where(contentFilter);
 
@@ -94,6 +100,8 @@ internal static class ProgressStateResolver
         if (!string.IsNullOrWhiteSpace(entry.RequirePlayerMarriedTo)) score += ScoreRequirePlayerMarriedTo;
         if (entry.RequireMarried) score += ScoreRequireMarried;
         if (entry.RequireBusRepaired.HasValue) score += ScoreRequireBusRepaired;
+        if (entry.RequireJojaMartClosed.HasValue) score += ScoreRequireJojaMartClosed;
+        if (entry.RequireJojaMember.HasValue) score += ScoreRequireJojaMember;
         score += entry.RequiredHearts * ScorePerHeart;
         return score;
     }
@@ -166,6 +174,48 @@ internal static class ProgressStateResolver
         catch (Exception ex)
         {
             ModEntry.SMonitor?.Log($"[ProgressStateResolver] CheckBusRepaired 判定异常: {ex.Message}", LogLevel.Trace);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 判定 Joja 超市是否已倒闭（社区中心线完成，ccIsComplete 旗标）。
+    /// 判定域 = Host 世界旗标，取自 Game1.MasterPlayer.mailReceived（与世界级 bus 同域）。
+    /// mailReceived.Contains 为大小写敏感，故并检 "ccIsComplete"。
+    /// 任何异常 → Trace 日志 + false（落入中性阶梯，安全降级）。
+    /// </summary>
+    internal static bool CheckJojaMartClosed()
+    {
+        try
+        {
+            var mail = Game1.MasterPlayer?.mailReceived;
+            if (mail == null) return false;
+            return mail.Contains("ccIsComplete");
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log($"[ProgressStateResolver] CheckJojaMartClosed 异常: {ex.Message}", LogLevel.Trace);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 判定当前本地玩家是否已加入 Joja 会员（JojaMember 旗标）。
+    /// 判定域 = 本地玩家旗标，取自 Game1.player.mailReceived（与婚姻/心数同域——RESILIENT FRIENDSHIP 档的关系主体是眼前农夫）。
+    /// mailReceived.Contains 为大小写敏感。
+    /// 原版 ccIsComplete 与 JojaMember 两旗标进程互斥；引擎不设特化守卫，双旗标并存时解析仍确定。
+    /// 任何异常 → Trace 日志 + false。
+    /// </summary>
+    internal static bool CheckJojaMember()
+    {
+        try
+        {
+            var player = Game1.player;
+            return player?.mailReceived?.Contains("JojaMember") == true;
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log($"[ProgressStateResolver] CheckJojaMember 异常: {ex.Message}", LogLevel.Trace);
             return false;
         }
     }

@@ -74,20 +74,41 @@
         "ProgressStates": [
           {
             "RequiredHearts": 7,
-            "Text": "Sits directly beside the player on the riverbank gravel or the tower bench. Hands over mineral samples to inspect, shows stone-skipping technique, and converses freely without referencing textbook rules."
+            "Text": "Sits directly beside the player on the riverbank gravel or the tower bench. Hands over mineral samples to inspect, shows stone-skipping technique, and converses freely with relaxed curiosity.",
+            "BarkMindset": "[STAGE: CANDID CURIOSITY & TRUST]\n- Mindset: Open and enthusiastically engaged. Treats the farmer as a trusted friend and fellow explorer, sharing discoveries with genuine warmth.\n- Attention Flow: Smooth skipping stones, crystal luster, rare forest flora, and quiet riverside companionability.",
+            "Preoccupations": [
+              "Riverbed stone skipping",
+              "Crystal resonance notes",
+              "Forest herb drying",
+              "Tower library scrolls"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps out from behind the workbench toward the stone landing. Discusses forest timber types and water sediment while holding slate chalk at their side."
+            "Text": "Steps out from behind the workbench toward the stone landing. Discusses forest timber types and water sediment while holding slate chalk at their side.",
+            "BarkMindset": "[STAGE: ACADEMIC RAPPORT]\n- Mindset: Respectful and inquisitive. Values the farmer's practical outdoor expertise, comparing book theory with real valley ecology.\n- Attention Flow: Timber density, river sediment layers, chalk formula sketches, and outdoor specimen collecting.",
+            "Preoccupations": [
+              "Sediment sample trays",
+              "Timber grain hardness",
+              "Chalk slate diagrams",
+              "Reagent measurements"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Remains stationed behind the main tower workbench. Keeps the slate board between themselves and the player, delivering rigid textbook citations and clipped procedural warnings."
+            "Text": "Remains stationed behind the main tower workbench. Keeps the slate board between themselves and the player, delivering rigid textbook citations and clipped procedural warnings.",
+            "BarkMindset": "[STAGE: FORMAL APPRENTICE DEFENSE]\n- Mindset: Guarded by protocol and textbook formality. Treats the farmer as an unfamiliar visitor subject to strict tower rules.\n- Attention Flow: Accurate reagent formulas, remaining chore tallies, ink supply, and keeping order behind the workbench.",
+            "Preoccupations": [
+              "Textbook formula lists",
+              "Tower chore rosters",
+              "Ink bottle levels",
+              "Bench safety guidelines"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nDirect, alert apprentice cadence. Pragmatic, inquisitive, focused on physical substances, timber dryness, and observable environmental conditions.\n\n[OBSERVATION LENSES]\n- Material States: Spotting wood moisture, mold patches, metal oxidation, and glass chips.\n- Environmental Drafts: Noting chimney smoke direction, wind around stone sills, and wet ground mud.\n- Workspace Upkeep: Tracking remaining chore stacks, candle length, ink bottle levels, and clean glassware.\n- Weather & Soil: Comparing valley rain patterns and morning frost against northern mountain records.\n\n[SPOKEN HABITS]\nUses succinct openers: 'Hold on,', 'The ratio is off.', 'Check this sediment.', 'Master needs...'. Reports observable physical facts; never narrates ongoing actions."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nDirect, alert apprentice cadence. Pragmatic, inquisitive, focused on physical substances, timber dryness, and observable environmental conditions.\n\n[SPOKEN HABITS]\nUses succinct openers: 'Hold on,', 'The ratio is off.', 'Check this sediment.', 'Master needs...'. Anchors remarks strictly in tangible facts and physical readings.\n\n[OBSERVATION LENSES]\n- Material States: Spotting wood moisture, mold patches, metal oxidation, and glass chips.\n- Environmental Drafts: Noting chimney smoke direction, wind around stone sills, and wet ground mud.\n- Workspace Upkeep: Tracking remaining chore stacks, candle length, ink bottle levels, and clean glassware.\n- Weather & Soil: Comparing valley rain patterns and morning frost against northern mountain records."
       }
     }
   ]

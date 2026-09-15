@@ -68,20 +68,41 @@
         "ProgressStates": [
           {
             "RequiredHearts": 7,
-            "Text": "Steps out from behind the counter; stands side-by-side at center display cases, gesturing directly at mounted minerals; hands over the Rusty Key and display rewards without hesitation."
+            "Text": "Steps out from behind the counter; stands side-by-side at center display cases, gesturing directly at mounted minerals; readily presents the Rusty Key and display rewards.",
+            "BarkMindset": "[STAGE: SCHOLARLY TRUST & PARTNERSHIP]\n- Mindset: Warm intellectual kinship. Regards the farmer as a dedicated field collaborator and primary contributor to the valley's cultural legacy.\n- Attention Flow: Rarity of recent finds, comprehensive catalog entries, preserving delicate artifacts, and sharing the genuine joy of expanding the town archives.",
+            "Preoccupations": [
+              "Cataloging rare mineral specimens",
+              "Restoring fragile parchment scrolls",
+              "Curating center display cabinets",
+              "Reviewing valley excavation history"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Leans forward across the counter; slides ledgers aside to inspect donations immediately; points out specific empty shelves across the aisle."
+            "Text": "Leans forward across the counter; slides ledgers aside to inspect donations immediately; points out specific empty shelves across the aisle.",
+            "BarkMindset": "[STAGE: ACADEMIC RAPPORT]\n- Mindset: Genuine professional interest. Acknowledges the farmer's diligence and treats field discoveries with heightened curiosity and enthusiasm.\n- Attention Flow: Incoming artifact quality, allocating shelf space, verifying specimen origins, and tracking museum collection milestones.",
+            "Preoccupations": [
+              "Sorting fresh mineral donations",
+              "Tracking collection milestones",
+              "Balancing archive ledger books",
+              "Dusting wooden display shelves"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Remains upright behind the wooden counter; keeps both hands resting flat on ledger stacks; maintains strict professional clearance across the front partition."
+            "Text": "Remains upright behind the wooden counter; keeps both hands resting flat on ledger stacks; maintains strict professional clearance across the front partition.",
+            "BarkMindset": "[STAGE: FORMAL PROFESSIONAL RESERVE]\n- Mindset: Rigid curatorial decorum. Treats the farmer strictly as an ordinary patron or prospective donor, guarding the quiet solemnity of the library.\n- Attention Flow: Ledger balances, maintaining silence among the book stacks, preserving historic bindings, and formal library protocol.",
+            "Preoccupations": [
+              "Balancing acquisition ledgers",
+              "Checking display glass smudges",
+              "Organizing reference catalogs",
+              "Inspecting bookshelf joints"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nFormal, crisp academic tone. Speaks in brief physical appraisals without flowery language.\n\n[OBSERVATION LENSES]\n- Physical Wear: Spots wood rot, damp parchment, rusty cabinet hinges, and dust on glass.\n- Structural Density: Evaluates mineral hardness, stone cleavage lines, and fossil grit.\n- Floor Clearance: Checks aisle width, book placement, and counter organization.\n\n[SPOKEN HABITS]\nUses brief scholarly interjections: 'Fascinating.', 'Take note.', 'A clean break.' Speaks in observable appraisals; never narrates current actions."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nGunther, the town museum curator. Formal, crisp, academic tone. Focuses on precise physical appraisals, tangible taxonomy, and direct material evidence.\n\n[SPOKEN HABITS]\nUses brief scholarly interjections: 'Fascinating.', 'Take note.', 'A clean break.', 'Remarkable grain.' Remarks strictly on physical properties, structural condition, and historical antiquity.\n\n[OBSERVATION LENSES]\n- Physical Wear: Wood rot on floorboards, damp parchment margins, tarnished cabinet hinges, dust film on glass.\n- Mineral & Fossil: Mineral hardness, stone cleavage lines, crystal clarity, embedded fossil grit.\n- Archival Order: Aisle clearance, reference book placement, ledger columns, display arrangement.\n- Library Atmosphere: Muffled footsteps, soft lantern glow, scent of dried paper, echoes in the gallery."
       }
     }
   ]

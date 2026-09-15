@@ -316,4 +316,11 @@ public class Character : IDisposable
     public List<string> PossiblePreoccupations { get; internal set; }
     public string Preoccupation { get; internal set; }
     public WorldDate PreoccupationDate { get; internal set; }
+
+    /// <summary>
+    /// 心事日缓存的阶段键（Memory，不写存档）。
+    /// "GLOBAL" = 全局池缓存；其他值 = 阶段池内容签名 string.Join("|", pool)。
+    /// 与 Preoccupation / PreoccupationDate 构成复合缓存键，档位变更即失效（T6-Q1b）。
+    /// </summary>
+    public string PreoccupationStageKey { get; internal set; }
 }

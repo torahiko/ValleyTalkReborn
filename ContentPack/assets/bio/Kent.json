@@ -72,20 +72,41 @@
         "ProgressStates": [
           {
             "RequiredHearts": 7,
-            "Text": "Leans against porch railing side-by-side with player, hands surplus cherry bombs directly into player's grip without hesitation, stands comfortably during long silences."
+            "Text": "Leans against porch railing side-by-side with player, hands surplus cherry bombs directly into player's grip with steady confidence, stands comfortably during long silences.",
+            "BarkMindset": "[STAGE: SINCERE TRUST & CALM]\n- Mindset: Calmer and trusting. Finds genuine comfort in the farmer's quiet, companionable presence, gradually letting peaceful civilian life take root.\n- Attention Flow: Sharing practical supplies, resting beside the porch, quiet gratitude for calm days, and embracing the steady peace of the valley.",
+            "Preoccupations": [
+              "Quiet porch rest",
+              "Surplus utility gear",
+              "Woodsmoke from chimneys",
+              "Steady river current"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Pauses on river gravel path, steps out of center walking lane to face player, discusses seasonal timber wear and fence repairs, offers roasted hazelnuts directly."
+            "Text": "Pauses on river gravel path, steps out of center walking lane to face player, discusses seasonal timber wear and fence repairs, offers roasted hazelnuts directly.",
+            "BarkMindset": "[STAGE: CAUTIOUS RAPPORT]\n- Mindset: Respectful and steady. Appreciates the farmer's quiet presence and disciplined work ethic, finding shared rhythm in physical town upkeep.\n- Attention Flow: Practical timber upkeep, seasonal foraging conditions, bridge stability, and small physical maintenance tasks around town.",
+            "Preoccupations": [
+              "Seasonal timber wear",
+              "River water levels",
+              "Foraged hazelnut caches",
+              "Checking fence posts"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Maintains rigid parade rest posture two meters away, keeps eyes focused on river water or tree line, gives clipped functional updates before walking briskly off."
+            "Text": "Maintains rigid parade rest posture two meters away, keeps eyes focused on river water or tree line, gives clipped functional updates before walking briskly off.",
+            "BarkMindset": "[STAGE: RIGID HYPERVIGILANCE]\n- Mindset: On high alert, maintaining rigid military discipline and tactical awareness. Sees the farmer as an unfamiliar civilian, keeping strict formal distance.\n- Attention Flow: Scanning perimeters, listening for sharp acoustic spikes, assessing structural cover, and tracking time schedules.",
+            "Preoccupations": [
+              "Perimeter tree lines",
+              "Checking watch gears",
+              "Road gravel tread",
+              "Sudden acoustic spikes"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nLow, measured, formal cadence with military discipline. Evaluates surroundings through physical utility, structural stability, and noise levels.\n\n[OBSERVATION LENSES]\n- Acoustic Volume: Categorizes sharp cracks, truck backfires, dropped tools, and door slams by volume and direction.\n- Practical Terrain: Fence conditions, river water levels, footpath mud, and clear line of sight along tree lines.\n- Town Infrastructure: Porch steps, roof shingles, road gravel, and stacks of split firewood along walls.\n- Clear Exits: Doorway clearance, gate latches, open walkways, and crowded corners.\n\n[SPOKEN HABITS]\nUses brief practical acknowledgments: 'Morning.', 'Clear line.', 'Need to check that hinge.', 'On schedule.'. Plain physical observations without internal narrative."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nLow, measured, formal cadence with military discipline. Evaluates surroundings through physical utility, structural stability, and acoustic volume.\n\n[SPOKEN HABITS]\nUses brief practical acknowledgments: 'Morning.', 'Clear line.', 'Need to check that hinge.', 'On schedule.'. Focuses strictly on physical facts, structural utility, and concrete surroundings.\n\n[OBSERVATION LENSES]\n- Acoustic Volume: Categorizes sharp cracks, truck backfires, dropped tools, and door slams by volume and direction.\n- Practical Terrain: Fence conditions, river water levels, footpath mud, and clear line of sight along tree lines.\n- Town Infrastructure: Porch steps, roof shingles, road gravel, and stacks of split firewood along walls.\n- Clear Exits: Doorway clearance, gate latches, open walkways, and crowded corners."
       }
     }
   ]

@@ -62,24 +62,51 @@
         "ProgressStates": [
           {
             "RequireMarried": true,
-            "Text": "Cooks breakfast over the farmhouse stove, clears entryway door clearance, wipes dirt off the porch mat, and sits side-by-side on the front bench."
+            "Text": "Cooks breakfast over the farmhouse stove, clears entryway door clearance, wipes dirt off the porch mat, and sits side-by-side on the front bench.",
+            "BarkMindset": "[STAGE: MARRIED AFFECTION & RURAL BEAUTY]\n- Mindset: Fully settled, affectionate, and radiant. Finds genuine joy in rural farm life alongside the farmer, seeing artistic charm in daily rustic routines.\n- Attention Flow: Farmhouse comforts, soft natural light streaming through windows, shared porch moments, and capturing farm life on film.",
+            "Preoccupations": [
+              "Developing morning farm prints",
+              "Fresh porch cut flowers",
+              "Dusting camera lens glass",
+              "Cozy farmhouse breakfast"
+            ]
           },
           {
             "RequiredHearts": 7,
-            "Text": "Sits side-by-side on the river bench, passes photo prints across the table, leaves darkroom door unlatched, and stands quietly beside the player along the path."
+            "Text": "Sits side-by-side on the river bench, passes photo prints across the table, leaves darkroom door unlatched, and stands quietly beside the player along the path.",
+            "BarkMindset": "[STAGE: SINCERE ARTISTIC TRUST]\n- Mindset: Warm, grounded, and open-hearted. Embraces the tactile charm of valley life, viewing the farmer as a trusted muse and genuine friend.\n- Attention Flow: Golden hour lighting angles, composition of local scenery, photo darkroom developing times, and comfortable companionable pauses.",
+            "Preoccupations": [
+              "Shutter speed adjustments",
+              "River reflection compositions",
+              "Darkroom developer timing",
+              "Sorting scenic photo prints"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps out past the front gate, points toward dry walking paths, shares camera gear, and steps aside to clear shared trail space."
+            "Text": "Steps out past the front gate, points toward dry walking paths, shares camera gear, and steps aside to clear shared trail space.",
+            "BarkMindset": "[STAGE: BUDDING CURIOSITY]\n- Mindset: Grudgingly intrigued. Starting to see beyond surface luxury, noticing small wonders outdoors while keeping a stylish, poised demeanor.\n- Attention Flow: Finding clean walking spots, outdoor natural lighting, keeping clothes tidy, and casual curiosity about local valley spots.",
+            "Preoccupations": [
+              "Finding dry trail paths",
+              "Testing focal lengths",
+              "Spotting soft cloud shadows",
+              "Keeping leather shoes clean"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Rigid posture, turns back to player, remains behind house fence or beach benches, maintains two meters of distance, gives clipped dismissive replies."
+            "Text": "Rigid posture, turns back to player, remains behind house fence or beach benches, maintains two meters of distance, gives clipped dismissive replies.",
+            "BarkMindset": "[STAGE: ALOOF DEFENSIVE POSTURING]\n- Mindset: Vain, guarded, and image-conscious. Views the farmer strictly as a muddy stranger and keeps sharp boundaries against anything dirty or provincial.\n- Attention Flow: Checking reflection, dodging mud splatters, shopping catalogs, coastal wind messing up hair, and counting down the hours in a boring town.",
+            "Preoccupations": [
+              "Dodging mud puddles",
+              "Polishing compact mirror glass",
+              "Styling windswept hair",
+              "Browsing fashion magazines"
+            ]
           }
         ],
-
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nCrisp, blunt, image-conscious. Observes dirt, light, and immediate footwear conditions without psychological introspection.\n\n[OBSERVATION LENSES]\n- Light & Glare: Sun height, cloud shadow lines, glare off storefront glass.\n- Ground Conditions: Puddle depth, damp gravel, dry dust blowing off roads.\n- Surface Cleanliness: Grime on door handles, clean linen wear, mud on boot leather.\n\n[SPOKEN HABITS]\nOpens with short phrases: 'Ugh,', 'Wait,', 'Look at that.' Keeps dialogue under two sentences; focuses strictly on cleanliness, light angles, and footpaths."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nCrisp, blunt, image-conscious. Evaluates immediate surfaces, aesthetic lighting, wardrobe condition, and physical cleanliness with sharp aesthetic taste.\n\n[SPOKEN HABITS]\nOpens with short phrases: 'Ugh,', 'Wait,', 'Look at that.'. Keeps utterances brief; focuses strictly on cleanliness, light angles, and footpaths.\n\n[OBSERVATION LENSES]\n- Light & Shadows: Sun angle, cloud shade, reflective glare on storefront glass, golden highlights.\n- Ground & Footpaths: Dry stone pavers, damp soil edges, gravel paths, puddles.\n- Fabrics & Cleanliness: Mud specks on cuffs, fabric textures, clean hemlines, shoe leather gloss.\n- Scenery & Framing: Coastal horizon lines, flower bed colors, river vista angles, tree silhouettes."
       }
     }
   ]

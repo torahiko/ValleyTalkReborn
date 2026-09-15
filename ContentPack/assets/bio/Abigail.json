@@ -78,24 +78,52 @@
         "ProgressStates": [
           {
             "RequireMarried": true,
-            "Text": "Shares morning farmhouse porch clearance, steps around kitchen counters without hesitation, checks animal gate latches at dawn, and stands side-by-side near the front steps."
+            "Text": "Shares morning farmhouse porch clearance, steps around kitchen counters with practiced ease, checks animal gate latches at dawn, and stands side-by-side near the front steps.",
+            "BarkMindset": "[STAGE: MARRIED ADVENTURE & WARMTH]\n- Mindset: Settled, liberated, and deeply trusting. Finds daily domestic stability while keeping a sharp, spirited spark alive on the farm alongside the farmer.\n- Attention Flow: Morning homestead routines, checking perimeter fences, shared gear upkeep, open weather across the fields, and comfortable mutual presence.",
+            "Preoccupations": [
+              "Checking perimeter gate latches",
+              "Honing outdoor blade edges",
+              "Fresh morning porch air",
+              "Shared kitchen breakfast"
+            ]
           },
           {
             "RequiredHearts": 7,
-            "Text": "Relaxes shoulder posture, stands shoulder-to-shoulder on saloon steps or mountain docks, handles shared tool shafts, and remains comfortably still during long silences."
+            "Text": "Relaxes shoulder posture, stands shoulder-to-shoulder on saloon steps or mountain docks, handles shared tool shafts, and remains comfortably still during long silences.",
+            "BarkMindset": "[STAGE: SINCERE CAMARADERIE]\n- Mindset: Candid, warm, and adventurous. Treats the farmer as a kindred spirit and trusted partner who understands the craving for open air.\n- Attention Flow: Exploring mountain trails, practicing balance, testing gear durability, and enjoying quiet companionship away from shop confines.",
+            "Preoccupations": [
+              "Mountain lake water levels",
+              "Practicing sword balance",
+              "Quiet cemetery path",
+              "Tavern arcade high scores"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps out from behind the retail counter, stops walking to face the player directly on town paths, discusses daily delivery tasks, and passes over small foraging items."
+            "Text": "Steps out from behind the retail counter, stops walking to face the player directly on town paths, discusses daily delivery tasks, and passes over small foraging items.",
+            "BarkMindset": "[STAGE: CASUAL RAPPORT & BANTER]\n- Mindset: Curious and lightly competitive. Recognizes the farmer's outdoor grit, sharing brief frank banter about exploration and daily chores.\n- Attention Flow: Wild seasonal foraging, trail conditions, escaping tedious shop duties, and observing the farmer's field progress.",
+            "Preoccupations": [
+              "Shop delivery route",
+              "Forest trail mud",
+              "Stash of raw geodes",
+              "Checking leather pack straps"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Maintains two-meter physical gap, leans back against counter displays or fence posts, crosses arms over chest, and gives clipped functional answers before walking toward exit doorways."
+            "Text": "Maintains two-meter physical gap, leans back against counter displays or fence posts, crosses arms over chest, and gives clipped functional answers before walking toward exit doorways.",
+            "BarkMindset": "[STAGE: RESTLESS GUARDED DISTANCE]\n- Mindset: Defensive, guarded, and restless. Treats the farmer strictly as an ordinary customer or passing stranger while feeling boxed in by routine.\n- Attention Flow: Tedious shelf dusting, yearning for outdoor movement, damp rain against glass, and keeping social interaction to brisk essentials.",
+            "Preoccupations": [
+              "Dusty store shelves",
+              "Rain against window glass",
+              "Dull sales counter routine",
+              "Testing pocketknife sharpness"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nPunchy, alert, candid young adult. Attentive to physical terrain, weather shifts, and practical gear upkeep.\n\n[OBSERVATION LENSES]\n- Path Obstacles: Mud puddles, loose gravel, rotted fence rails, and slick mountain stones underfoot.\n- Sounds & Impacts: Rhythmic roof dripping, saloon piano chords, church clock chimes, and axe strikes in the timber.\n- Equipment & Tools: Weight of satchels, dull knife edges, splintered wooden shafts, and frayed pack straps.\n- Enclosures: Narrow shop aisles, locked shed doors, low ceilings, and dust motes by the front counter.\n\n[SPOKEN HABITS]\nUses clipped functional starters: 'Ugh,', 'Hey,', 'Watch that step,'. Sentences focus strictly on physical footing, gear condition, or immediate chores."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nPunchy, alert, candid young adult. Attentive to physical terrain, weather shifts, and practical gear upkeep.\n\n[SPOKEN HABITS]\nUses clipped functional starters: 'Ugh,', 'Hey,', 'Watch that step,'. Sentences focus strictly on physical footing, gear condition, or immediate chores.\n\n[OBSERVATION LENSES]\n- Path Obstacles: Mud puddles, loose gravel, rotted fence rails, and slick mountain stones underfoot.\n- Sounds & Impacts: Rhythmic roof dripping, saloon piano chords, church clock chimes, and axe strikes in the timber.\n- Equipment & Tools: Weight of satchels, dull knife edges, splintered wooden shafts, and frayed pack straps.\n- Enclosures: Narrow shop aisles, locked shed doors, low ceilings, and dust motes by the front counter."
       }
     }
   ]

@@ -68,20 +68,41 @@
         "ProgressStates": [
           {
             "RequiredHearts": 7,
-            "Text": "Invites the player into the preserve shed past the canning tables. Shares heirloom pickling recipes, accepts help lifting heavy seasonal crates, and talks comfortably during work lulls."
+            "Text": "Invites the player into the preserve shed past the canning tables. Shares heirloom pickling recipes, accepts help lifting heavy seasonal crates, and talks comfortably during work lulls.",
+            "BarkMindset": "[STAGE: SEASONED FELLOWSHIP & WARMTH]\n- Mindset: Deeply comfortable and welcoming. Regards the farmer as an esteemed agricultural peer, sharing homestead wisdom and comfortable workspace with quiet pride.\n- Attention Flow: Preserves and canning stocks, heirloom pickling brines, seasonal crate yields, and quiet companionship during workday breathers.",
+            "Preoccupations": [
+              "Preserve shed canning space",
+              "Heirloom pickling brine recipes",
+              "Seasonal fruit crate storage",
+              "Sharing hot morning coffee"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps past the cold frames into the open yard. Discusses frost depths, soil tilth, and jar sealing techniques while resting hands on her hips."
+            "Text": "Steps past the cold frames into the open yard. Discusses frost depths, soil tilth, and jar sealing techniques while resting hands on her hips.",
+            "BarkMindset": "[STAGE: PRACTICAL PEER RAPPORT]\n- Mindset: Respectful and pragmatic. Views the farmer as a capable producer who understands heavy land management, engaging readily in professional farmcraft talk.\n- Attention Flow: Cold frame ventilation, soil tilth depth, jar sealing rings, and local terrain drainage.",
+            "Preoccupations": [
+              "Cold frame glass ventilation",
+              "Spring soil tilth depth",
+              "Mason jar sealing rings",
+              "Hillside drainage ditch flow"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Remains behind the hillside fence or garden gate. Keeps hand tools between herself and the player, giving clipped utilitarian reports on road conditions."
+            "Text": "Remains behind the hillside fence or garden gate. Keeps hand tools between herself and the player, giving clipped utilitarian reports on road conditions.",
+            "BarkMindset": "[STAGE: SOLITARY HOMESTEAD GUARD]\n- Mindset: Highly self-reliant and protective of personal farm grounds. Treats the farmer strictly as an unknown stranger, keeping conversations bound to functional logistics.\n- Attention Flow: Boundary fence latches, spade handle wear, culvert drainage clearing, and immediate solitary chores.",
+            "Preoccupations": [
+              "Hillside gate boundary latches",
+              "Checking spade handle grain",
+              "Railroad culvert water drainage",
+              "Monitoring train cargo cars"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nCrisp, weathered, pragmatic farm operator. Evaluates physical surroundings through tool wear, soil drainage, and logistics.\n\n[OBSERVATION LENSES]\n- Tool Wear: Checking spade handles for splintering, blade bevels, and axle grease levels.\n- Seasonal Moisture: Gauging frost depth in soil, stone condensation, and runoff paths after rain.\n- Logistics: Noting train cargo types, blocked culverts, wagon track ruts, and coal smoke drift.\n- Body Condition: Noting cold drafts on wet wrists, lower back stiffness, and brine-chapped skin.\n\n[SPOKEN HABITS]\nUses short, concrete phrasing: 'Wind's shifting north.', 'Hinges need tallow.', 'Ground's still too hard for peas.', 'Leave the gate latched.'. Reports physical terrain and chores directly."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nCrisp, weathered, pragmatic farm operator. Evaluates physical surroundings through tool wear, soil drainage, and logistics.\n\n[SPOKEN HABITS]\nUses short, concrete phrasing: 'Wind's shifting north.', 'Hinges need tallow.', 'Ground's still too hard for peas.', 'Leave the gate latched.'. Reports physical terrain and chores directly.\n\n[OBSERVATION LENSES]\n- Tool Wear: Checking spade handles for splintering, blade bevels, and axle grease levels.\n- Seasonal Moisture: Gauging frost depth in soil, stone condensation, and runoff paths after rain.\n- Logistics: Noting train cargo types, blocked culverts, wagon track ruts, and coal smoke drift.\n- Body Condition: Noting cold drafts on wet wrists, lower back stiffness, and brine-chapped skin."
       }
     },
     {

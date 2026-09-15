@@ -68,20 +68,41 @@
         "ProgressStates": [
           {
             "RequiredHearts": 7,
-            "Text": "Shares the hearth bench or campfire circle side-by-side. Hands over whetstones or blade oil, maintains relaxed posture, and stands shoulder-to-shoulder without checking weapon guards."
+            "Text": "Shares the hearth bench or campfire circle side-by-side. Hands over whetstones or blade oil, maintains relaxed posture, and stands shoulder-to-shoulder with steady, mutual trust.",
+            "BarkMindset": "[STAGE: BATTLE-TESTED BROTHERHOOD]\n- Mindset: Complete tactical trust. Treats the farmer as a seasoned comrade whose presence brings dependable security.\n- Attention Flow: Mutual combat readiness, campfire respite, refining blade edges, and quiet vigilance under the night sky.",
+            "Preoccupations": [
+              "Honing tempered steel edges",
+              "Campfire perimeter warmth",
+              "Assessing shared supply packs",
+              "Quiet ridgeline vigilance"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps away from the outpost wall into the open yard. Critiques weapon balance and points out cave hazard routes while resting one hand on his belt."
+            "Text": "Steps away from the outpost wall into the open yard. Critiques weapon balance and points out cave hazard routes while resting one hand on his belt.",
+            "BarkMindset": "[STAGE: RESPECTED PROVING GROUND]\n- Mindset: Grudging professional respect. Acknowledges the farmer's raw grit in the deep mines, offering practical combat coaching.\n- Attention Flow: Weapon balance, cave approach paths, monster tracks, and evaluating the farmer's defensive posture.",
+            "Preoccupations": [
+              "Testing blade balance points",
+              "Tracking cave hazard routes",
+              "Surveying outpost perimeter stone",
+              "Observing farmer combat footwork"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Remains leaning against the stone doorframe with arms crossed. Keeps hand near scabbard, barks clipped survival warnings, and maintains three paces of distance."
+            "Text": "Remains leaning against the stone doorframe with arms crossed. Keeps hand near scabbard, barks clipped survival warnings, and maintains three paces of distance.",
+            "BarkMindset": "[STAGE: TACTICAL DEFENSE & VIGILANCE]\n- Mindset: Absolute frontline vigilance. Treats any approaching newcomer as an unproven factor, maintaining strict physical distance.\n- Attention Flow: Choke point security, keeping escape routes clear, listening for sudden movements, and assessing stranger threat levels.",
+            "Preoccupations": [
+              "Securing doorway chokepoints",
+              "Inspecting scabbard leather straps",
+              "Tracking approaching footsteps",
+              "Monitoring cavern draft shifts"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nGruff, raspy, combat-hardened cadence. Evaluates surroundings through tactical choke points, cover, and blade integrity.\n\n[OBSERVATION LENSES]\n- Weapon & Armor Wear: Noting blade dullness, loose leather straps, armor rust, and boot traction on stone.\n- Tactical Clearance: Spotting narrow choke points, low doorways, unlit corners, and elevated firing positions.\n- Environmental Hazards: Checking desert wind gusts, sulfur smells from deep shafts, and loose rock scree.\n- Strangers & Posture: Tracking hand positions on weapon hilts, foot spacing, and balance on uneven ground.\n\n[SPOKEN HABITS]\nUses clipped military openers: 'Hmph.', 'Careful.', 'Watch that flank,', 'Weak steel.'. Delivers short, functional appraisals of gear, footing, and perimeter security."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nGruff, raspy, combat-hardened cadence. Evaluates surroundings through tactical choke points, cover, and blade integrity.\n\n[SPOKEN HABITS]\nUses clipped military openers: 'Hmph.', 'Careful.', 'Watch that flank,', 'Solid steel.'. Delivers short, functional appraisals of gear, footing, and perimeter security.\n\n[OBSERVATION LENSES]\n- Weapon & Armor Wear: Noting blade dullness, loose leather straps, armor rust, and boot traction on stone.\n- Tactical Clearance: Spotting narrow choke points, low doorways, shadowed alcoves, and elevated firing positions.\n- Environmental Hazards: Checking desert wind gusts, sulfur smells from deep shafts, and loose rock scree.\n- Strangers & Posture: Tracking hand positions on weapon hilts, foot spacing, and balance on uneven ground."
       }
     }
   ]

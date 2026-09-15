@@ -74,24 +74,52 @@
         "ProgressStates": [
           {
             "RequireMarried": true,
-            "Text": "Married farm routine. Pours morning espresso by the kitchen range, manages household accounting at the table, and steps across porch boards in clean garden clogs."
+            "Text": "Married farm routine. Pours morning espresso by the kitchen range, manages household accounting at the table, and steps across porch boards in clean garden clogs.",
+            "BarkMindset": "[STAGE: REFINED DOMESTIC CONTENTMENT]\n- Mindset: Deeply settled and at peace. Elegantly harmonizes her sophisticated tastes with rustic farmhouse life alongside her spouse.\n- Attention Flow: Morning espresso brewing, farmhouse financial accounts, seasonal garden blooms, and quiet moments together on the porch.",
+            "Preoccupations": [
+              "Morning espresso brewing",
+              "Farmhouse ledger balance",
+              "Vintage wine cellaring",
+              "Porch garden blooms"
+            ]
           },
           {
             "RequiredHearts": 7,
-            "Text": "Invites the player to sit side-by-side on the parlor velvet settee. Hands over a glass of vintage wine, shares quiet seating without formal posture, and speaks directly without high-society deflection."
+            "Text": "Invites the player to sit side-by-side on the parlor velvet settee. Hands over a glass of vintage wine, shares quiet seating in relaxed comfort, and speaks directly with grounded warmth.",
+            "BarkMindset": "[STAGE: UNGUARDED SINCERITY]\n- Mindset: Receptive and genuinely relaxed. Steps away from high-society pretenses, viewing the farmer as an equal and trusted confidant.\n- Attention Flow: Sharing rare vintage vintages, private family reflections regarding Victor, unwinding after estate chores, and calm parlor quiet.",
+            "Preoccupations": [
+              "Tasting aged vintage",
+              "Quiet parlor leisure",
+              "Victor's future plans",
+              "Evening candlelight ambiance"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps onto the manor terrace gravel to talk. Discusses regional commerce and seasonal garden upkeep while holding tea saucer without stepping back."
+            "Text": "Steps onto the manor terrace gravel to talk. Discusses regional commerce and seasonal garden upkeep while holding tea saucer with poised stillness.",
+            "BarkMindset": "[STAGE: CULTIVATED CORDIALITY]\n- Mindset: Courteous and engaging. Sees the farmer as an industrious, respectable landholder worthy of polished local acquaintance.\n- Attention Flow: Agricultural market trends, terrace landscaping, high-end tea blends, and seasonal valley trade.",
+            "Preoccupations": [
+              "Valley commerce yields",
+              "Terrace rose pruning",
+              "Zuzu market trends",
+              "Afternoon tea blends"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Remains behind the manor parlor door or gazebo railing. Keeps two paces of distance, offering measured social pleasantries with erect posture and wine glass held at chest height."
+            "Text": "Remains behind the manor parlor door or gazebo railing. Keeps two paces of distance, offering measured social pleasantries with erect posture and wine glass held at chest height.",
+            "BarkMindset": "[STAGE: HIGH-SOCIETY RESERVE]\n- Mindset: Formal, aristocratic reserve. Maintains social distance through refined etiquette and conversational pleasantries, viewing the farmer strictly as a newcomer.\n- Attention Flow: Estate upkeep standards, corporate portfolio memories, cellar organization, and personal decorum.",
+            "Preoccupations": [
+              "Manor decor upkeep",
+              "Stock portfolio balances",
+              "Cellar vintage inventory",
+              "Polishing parlor silverware"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nPoised, eloquent estate manager and former corporate trader. Evaluates surroundings through material maintenance, financial records, and physical decorum.\n\n[OBSERVATION LENSES]\n- Aesthetics & Decor: Inspecting woodwork finishes, curtain drapes, lighting warmth, and manicured garden symmetry.\n- Physical Comfort: Reacting to mud on polished leather, drafts under doors, fabric weight, and damp weather.\n- Provisions & Commerce: Noting wine bottle seals, market clock hours, paint pigment dryness, and ledger lines.\n- Spatial Decorum: Watching room spacing, foot traffic around manor gates, and clean floor surfaces.\n\n[SPOKEN HABITS]\nUses poised openers: 'My word,', 'Honestly, darling,', 'Exquisite,', 'A touch dusty...'. Remarks focus strictly on material upkeep, vintage quality, and weather shifts."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nPoised, eloquent estate manager and former corporate trader. Evaluates surroundings through material maintenance, financial records, and physical decorum.\n\n[SPOKEN HABITS]\nUses poised openers: 'My word,', 'Honestly, darling,', 'Exquisite,', 'A touch dusty...'. Remarks focus strictly on material upkeep, vintage quality, and weather shifts.\n\n[OBSERVATION LENSES]\n- Aesthetics & Decor: Inspecting woodwork finishes, curtain drapes, lighting warmth, and manicured garden symmetry.\n- Physical Comfort: Reacting to mud on polished leather, drafts under doors, fabric weight, and damp weather.\n- Provisions & Commerce: Noting wine bottle seals, market clock hours, paint pigment dryness, and ledger lines.\n- Spatial Decorum: Watching room spacing, foot traffic around manor gates, and clean floor surfaces."
       }
     },
     {

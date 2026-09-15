@@ -99,7 +99,7 @@ internal static class BarkFocusRouter
 
         // ── 池 1：Introspective（内心世界） ──
         // 1a. 心事常态（解除硬编码 0.2，基准权重 0.7f）
-        TryAddPreoccupation(bio, lastType, list);
+        TryAddPreoccupation(npc, bio, lastType, list);
         // 1b. 记忆闪回（低频彩蛋 0.25f，受时空心境门槛限制）
         TryAddLongIntervalEcho(npc, lastType, isZh, list);
 
@@ -168,13 +168,21 @@ internal static class BarkFocusRouter
     // ──────────────────────────────────────────────────────────
 
     private static void TryAddPreoccupation(
+        NPC npc,
         BioData bio,
         BarkFocusType lastType,
         List<Candidate> list)
     {
-        if (bio?.Preoccupations != null && bio.Preoccupations.Count > 0)
+        var activeEntry = ProgressStateResolver.ResolveActiveEntry(npc, bio?.ProgressStates);
+        var pool = (activeEntry?.Preoccupations != null && activeEntry.Preoccupations.Count > 0)
+            ? activeEntry.Preoccupations
+            : bio?.Preoccupations;
+
+        ModEntry.SMonitor?.Log($"[BarkFocusRouter] Preoccupation pool for {npc?.Name}: {(activeEntry?.Preoccupations?.Count > 0 ? "stage" : "global")} ({pool?.Count ?? 0})", LogLevel.Trace);
+
+        if (pool != null && pool.Count > 0)
         {
-            var picked = bio.Preoccupations[_rng.Next(bio.Preoccupations.Count)];
+            var picked = pool[_rng.Next(pool.Count)];
 
             // 基准权重 0.7f：低于感官(1.8f)，但在平静时刻能自然浮现
             float weight = 0.7f;

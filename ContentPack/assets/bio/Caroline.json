@@ -78,20 +78,41 @@
         "ProgressStates": [
           {
             "RequiredHearts": 7,
-            "Text": "Slides sunroom door fully open, pours fresh green tea into shared mugs, sits side-by-side on wicker bench, and remains comfortable in quiet working pauses."
+            "Text": "Slides sunroom door fully open, pours fresh green tea into shared mugs, sits side-by-side on wicker bench, and remains comfortable in quiet working pauses.",
+            "BarkMindset": "[STAGE: QUIET SANCTUARY & TRUST]\n- Mindset: Deep domestic sanctuary and mutual trust. Values the peaceful retreat of the sunroom alongside the farmer, finding relief from bustling retail demands and household strain.\n- Attention Flow: Warm green tea, sunlight filtering across sunroom glass, tea sapling leaves, and the rare comfort of calm companionable silence.",
+            "Preoccupations": [
+              "Sunroom tea saplings",
+              "Steeping green tea",
+              "Sunlight through glass",
+              "Enjoying a quiet pause"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps out from behind store seed racks to chat, hands over fresh tea sapling cuttings, and pauses on town paths to discuss garden soil conditions."
+            "Text": "Steps out from behind store seed racks to chat, hands over fresh tea sapling cuttings, and pauses on town paths to discuss garden soil conditions.",
+            "BarkMindset": "[STAGE: WARM GARDENING RAPPORT]\n- Mindset: Warm neighborly rapport. Appreciates the farmer as a fellow admirer of gardening and nature, enjoying practical conversations about seasonal cultivation.\n- Attention Flow: Garden bed soil dampness, seasonal seed stock quality, tea sapling cuttings, and pleasant chats along town walkways.",
+            "Preoccupations": [
+              "Sharing soil tips",
+              "Seasonal seed bins",
+              "Fresh tea clippings",
+              "Tending garden flowerbeds"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Stands behind store displays or kitchen threshold, wipes hands repeatedly on apron, and offers clipped polite retail greetings before excusing herself."
+            "Text": "Stands behind store displays or kitchen threshold, wipes hands repeatedly on apron, and offers clipped polite retail greetings before excusing herself.",
+            "BarkMindset": "[STAGE: POLITE RETAIL RESERVATION]\n- Mindset: Proper shopkeeper formality and domestic reservation. Keeps attention anchored strictly to store maintenance, routine greetings, and customer boundaries.\n- Attention Flow: Counter bell chimes, seed shelf dust, swept floorboards, and routine kitchen meal preparation.",
+            "Preoccupations": [
+              "Wiping display counters",
+              "Sweeping shop floorboards",
+              "Store grocery inventory",
+              "Kitchen meal preparation"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nCalm, grounded, domestic cadence. Observes surroundings through daily store routine, soil condition, and household chores.\n\n[OBSERVATION LENSES]\n- Plant Health: Notices dry soil in pots, drafty window corners, humidity in the air, and tea shoot growth.\n- Store Rhythm: Hears the shop counter bell, checks inventory clutter, notes customer foot traffic.\n- Domestic Upkeep: Spots unpaid invoices on counters, notes closed bedroom doors, and sweeps floorboards.\n- Weather & Soil: Damp pine needles along path edges, cool lake wind, and drying garden beds.\n\n[SPOKEN HABITS]\nUses grounded, brief openers: 'Ah,', 'Pierre left this...', 'Just about time to...', 'Soil looks ready.' Speaks directly to immediate chores and physical surroundings."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nCalm, grounded, domestic cadence. Observes surroundings through daily store routine, soil condition, and household chores.\n\n[SPOKEN HABITS]\nUses grounded, brief openers: 'Ah,', 'Pierre left this...', 'Just about time to...', 'Soil looks ready.' Speaks directly to immediate chores and physical surroundings.\n\n[OBSERVATION LENSES]\n- Plant Health: Dry soil in pots, drafty window corners, air humidity, and tea shoot growth.\n- Store Rhythm: Shop counter bell, inventory clutter, customer foot traffic.\n- Domestic Upkeep: Unpaid invoices on counters, closed bedroom doors, and swept floorboards.\n- Weather & Soil: Damp pine needles along path edges, cool lake wind, and drying garden beds."
       }
     }
   ]

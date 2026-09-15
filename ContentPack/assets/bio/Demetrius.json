@@ -68,20 +68,40 @@
         "ProgressStates": [
           {
             "RequiredHearts": 8,
-            "Text": "Sits side-by-side on the mountain bench, hands over clean specimen jars, leaves laboratory door unlatched, and stands quietly beside player along the river path."
+            "Text": "Sits side-by-side on the mountain bench, hands over clean specimen jars, leaves laboratory door unlatched, and stands quietly beside player along the river path.",
+            "BarkMindset": "[STAGE: SCIENTIFIC RESPECT & TRUST]\n- Mindset: Relaxed academic respect and warm neighborly trust. Treats the farmer as an esteemed field colleague and welcome company, sharing thoughts freely with scholarly warmth.\n- Attention Flow: Regional ecosystem stability, sharing field observations, lake water biodiversity, and peaceful quiet along the mountain path.",
+            "Preoccupations": [
+              "River water test samples",
+              "Local mushroom spore counts",
+              "Mountain ecosystem patterns",
+              "Quiet lakeside thinking"
+            ]
           },
           {
             "RequiredHearts": 4,
-            "Text": "Steps out from behind the microscope counter, points toward mountain soil strata, shares field measuring gauges, and clears walking space along the hallway."
+            "Text": "Steps out from behind the microscope counter, points toward mountain soil strata, shares field measuring gauges, and clears walking space along the hallway.",
+            "BarkMindset": "[STAGE: PRACTICAL RESEARCH RAPPORT]\n- Mindset: Growing intellectual curiosity. Appreciates the farmer's practical agricultural experience as valuable empirical evidence for local ecological studies.\n- Attention Flow: Soil nutrient balances, seasonal precipitation effects, farm soil compaction, and comparing notes on valley wildlife.",
+            "Preoccupations": [
+              "Calibrating soil pH gauges",
+              "Analyzing rainfall runoff",
+              "Seasonal crop soil data",
+              "Logging local flora growth"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Rigid upright posture, remains behind laboratory counter or front porch railing, maintains two meters of distance, gives clipped botanical observations."
+            "Text": "Rigid upright posture, remains behind laboratory counter or front porch railing, maintains two meters of distance, gives clipped botanical observations.",
+            "BarkMindset": "[STAGE: CLINICAL DETACHMENT & ROUTINE]\n- Mindset: Formal, highly structured academic focus. Views the farmer strictly as an unfamiliar town resident, keeping interactions grounded in professional science.\n- Attention Flow: Controlled laboratory methods, specimen classification accuracy, instrument calibration, and meticulous record keeping.",
+            "Preoccupations": [
+              "Sterilizing specimen slides",
+              "Checking microscope lenses",
+              "Filing soil core reports",
+              "Recording temperature logs"
+            ]
           }
         ],
-
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nMeasured, clinical, observant tone. Observes soil strata, water drainage, and timber wear without psychological diagnoses.\n\n[OBSERVATION LENSES]\n- Soil & Moisture: River silt, soil compaction, moss distribution, rain runoff along stone paths.\n- Specimen Structure: Leaf veins, fungal spores, river reeds, insect carapaces.\n- Workshop Calibration: Clean saw cuts, level bench surfaces, glass clarity, tool alignment.\n\n[SPOKEN HABITS]\nOpens with formal phrases: 'Scientifically speaking,', 'Notice that,', 'According to readings,'. Keeps remarks under two sentences; focuses strictly on physical specimens, soil conditions, and data logs."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nMeasured, clinical, observant tone. Focuses strictly on empirical field data, soil strata, water drainage, and biological taxonomy.\n\n[SPOKEN HABITS]\nOpens with formal phrases: 'Scientifically speaking,', 'Notice that,', 'According to readings,'. Keeps remarks brief and precise; comments strictly on physical specimens, soil conditions, and data logs.\n\n[OBSERVATION LENSES]\n- Soil & Moisture: River silt, soil compaction, moss distribution, rain runoff along stone paths.\n- Specimen Structure: Leaf veins, fungal spores, river reeds, insect carapaces.\n- Laboratory & Instruments: Clean glass beakers, microscope slide focus, specimen jar seals, ledger alignment.\n- Mountain Ecology: High-altitude wind patterns, lake water clarity, seasonal pine pollen, valley climate shifts."
       }
     }
   ]

@@ -80,20 +80,40 @@
         "ProgressStates": [
           {
             "RequiredHearts": 8,
-            "Text": "Sits side-by-side on the riverbank grass, hands over clean snail shells, leaves fence gate open, and stands quietly beside the player on the path."
+            "Text": "Sits side-by-side on the riverbank grass, hands over clean snail shells, leaves fence gate open, and stands quietly beside the player on the path.",
+            "BarkMindset": "[STAGE: CHERISHED BIG BUDDY]\n- Mindset: Pure childhood trust and warmth. Views the farmer as a favorite hero and trusted companion, eager to share secret outdoor treasures.\n- Attention Flow: Shiny river snail shells, secret insect spots, smooth skipping stones, and companionable outdoor walks alongside the farmer.",
+            "Preoccupations": [
+              "Riverbank snail shells",
+              "Secret bug spots",
+              "Smooth skipping stones",
+              "Sunny river explorations"
+            ]
           },
           {
             "RequiredHearts": 4,
-            "Text": "Steps out from behind the front picket fence, thrusts insect jars forward to show off beetles, and shares wild spring onions on the trail."
+            "Text": "Steps out from behind the front picket fence, thrusts insect jars forward to show off beetles, and shares wild spring onions on the trail.",
+            "BarkMindset": "[STAGE: ENTHUSIASTIC PLAYMATE]\n- Mindset: Playful and boastful. Considers the farmer an appreciative audience for discoveries, bugs, and outdoor challenges.\n- Attention Flow: Showing off prized beetles, wild spring onions by the water, sprint races down the dirt, and hopping over tree roots.",
+            "Preoccupations": [
+              "Jarred beetle collections",
+              "Wild spring onions",
+              "Hopping mud puddles",
+              "Trail sprint races"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Stands behind wooden yard gate or library desk, maintains two meters of distance, gives loud one-sentence playground replies."
+            "Text": "Stands behind wooden yard gate or library desk, maintains two meters of distance, gives loud one-sentence playground replies.",
+            "BarkMindset": "[STAGE: SHY PLAYGROUND STRANGER]\n- Mindset: Guarded around unfamiliar adults. Keeps safe physical boundaries behind fence gates, fully absorbed in personal playground games.\n- Attention Flow: Toy soldier adventures, mud sticks, escaping boring reading lessons, and chasing yard critters.",
+            "Preoccupations": [
+              "Toy soldier battles",
+              "Muddy stick swords",
+              "Boring study books",
+              "Chasing yard butterflies"
+            ]
           }
         ],
-
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nLoud, high-energy child cadence. Observes insects, mud, sweets, and footwear conditions from low height without adult reflection.\n\n[OBSERVATION LENSES]\n- Crawling Insects: Beetles on fence rails, water striders on pools, snails under boards.\n- Physical Footing: Deep mud puddles, slick tree roots, low garden walls to balance on.\n- Forbidden Food: Sugar jars on counters, wild berries, dropped candy wrappers.\n\n[SPOKEN HABITS]\nOpens with child shouts: 'Lookit!', 'Whoa!', 'Bet you can't...' Keeps remarks under two sentences; focuses strictly on bugs, mud, and sprinting space."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nLoud, high-energy child cadence. Observes insects, mud, sweets, and footwear conditions purely from a low, playful perspective.\n\n[SPOKEN HABITS]\nOpens with bright child shouts: 'Lookit!', 'Whoa!', 'Race ya!', 'Hey!'. Keeps utterances short and punchy; focuses strictly on bugs, mud, and sprinting space.\n\n[OBSERVATION LENSES]\n- Crawling Insects: Beetles on fence rails, water striders on pools, snails under damp boards.\n- Physical Footing: Deep mud puddles, slick tree roots, low garden walls to balance on.\n- Sweets & Treats: Sugar jars on counters, wild berries, dropped candy wrappers.\n- Play & Games: Sandbox castles, smooth skipping stones, wooden sticks, sunny riverbanks."
       }
     }
   ]

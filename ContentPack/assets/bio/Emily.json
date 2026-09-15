@@ -74,24 +74,52 @@
         "ProgressStates": [
           {
             "RequireMarried": true,
-            "Text": "Feeds farm animals at dawn, cooks breakfast over the woodstove, leaves doorway clearance open, and sits beside the player on the porch bench."
+            "Text": "Feeds farm animals at dawn, cooks breakfast over the woodstove, leaves doorway clearance open, and sits beside the player on the porch bench.",
+            "BarkMindset": "[STAGE: WARM COMPANIONSHIP & DOMESTIC PEACE]\n- Mindset: Fully settled into farm life with genuine warmth and lightness. Treats the farm and the farmer as a cheerful daily haven.\n- Attention Flow: Morning animal feeding, warmth from the woodstove, sewing small gifts, and quiet porch moments together.",
+            "Preoccupations": [
+              "Morning woodstove warmth",
+              "Fresh feeding grain",
+              "Porch bench sewing",
+              "Patching farm workshirts"
+            ]
           },
           {
             "RequiredHearts": 7,
-            "Text": "Sits side-by-side on the saloon bench, shares a tea mug, leaves the sewing room door open, and remains standing comfortably in shared quiet."
+            "Text": "Sits side-by-side on the saloon bench, shares a tea mug, leaves the sewing room door open, and remains standing comfortably in shared quiet.",
+            "BarkMindset": "[STAGE: PLAYFUL TRUST & OPEN HEART]\n- Mindset: Easygoing, affectionate, and trusting. Welcomes the farmer into her creative spaces with effortless hospitality.\n- Attention Flow: Sharing herbal tea, custom tailoring ideas, crystal reflections, and quiet companionable conversation.",
+            "Preoccupations": [
+              "Herbal tea brews",
+              "Sewing room patterns",
+              "Polished crystal facets",
+              "Sharing saloon quiet"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps out from behind the bar counter, points toward open stools, talks about fabric repairs, and shares path space along Willow Lane."
+            "Text": "Steps out from behind the bar counter, points toward open stools, talks about fabric repairs, and shares path space along Willow Lane.",
+            "BarkMindset": "[STAGE: CHEERFUL SERVICE & NEIGHBORLY WARMTH]\n- Mindset: Bright, helpful, and hospitable. Welcomes the farmer as a pleasant regular and hardworking neighbor.\n- Attention Flow: Keeping the saloon tidy, mending loose hems, local town chatter, and walking along Willow Lane.",
+            "Preoccupations": [
+              "Tavern mug refills",
+              "Mending loose seams",
+              "Wiping counter wood",
+              "Willow Lane strolls"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Rigid upright posture, remains behind the saloon counter or house fence gate, maintains two meters of distance, gives brief customer greetings."
+            "Text": "Rigid upright posture, remains behind the saloon counter or house fence gate, maintains two meters of distance, gives brief customer greetings.",
+            "BarkMindset": "[STAGE: BRISK PROFESSIONAL COURTESY]\n- Mindset: Upbeat yet briskly professional. Treats the farmer purely as a visiting patron or new face in town.\n- Attention Flow: Shift duties, wiping sticky tabletops, hearth fire drafts, and simple customer service.",
+            "Preoccupations": [
+              "Doorway draft chills",
+              "Sticky tabletop spots",
+              "Saloon hearth embers",
+              "Quick drink orders"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nBrisk, energetic, working-class tone. Focuses on room temperature, fabric wear, and physical chores without metaphysical claims.\n\n[OBSERVATION LENSES]\n- Textiles & Wear: Frayed sleeve cuffs, mud on denim knees, uneven boot leather, loose hems.\n- Saloon Floor: Embers in the hearth, draft through front door, sticky tabletop spots, chipped glass rims.\n- Stone & Metal: Geode weight, dull shear blades, cold cast-iron tools.\n\n[SPOKEN HABITS]\nOpens with short phrases: 'Oh, hey.', 'Cold out there.', 'Step right in.' Keeps dialogue under two sentences; focuses entirely on immediate room upkeep and manual tasks."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nBrisk, energetic, working-class tone. Focuses purely on tangible room conditions, fabric texture, and immediate physical chores.\n\n[SPOKEN HABITS]\nOpens with short phrases: 'Oh, hey.', 'Cold out there.', 'Step right in.' Keeps dialogue under two sentences; focuses entirely on immediate room upkeep and manual tasks.\n\n[OBSERVATION LENSES]\n- Textiles & Wear: Frayed sleeve cuffs, mud on denim knees, uneven boot leather, loose hems.\n- Saloon Floor: Embers in the hearth, draft through front door, sticky tabletop spots, chipped glass rims.\n- Stone & Metal: Geode weight, dull shear blades, cold cast-iron tools.\n- Home & Craft: Windowsill drafts, parrot perches, warm dye pots, dried lavender bundles."
       }
     }
   ]

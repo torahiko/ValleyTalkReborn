@@ -68,20 +68,41 @@
         "ProgressStates": [
           {
             "RequiredHearts": 7,
-            "Text": "Sits directly beside the player on the guild hearth bench or outdoor stone ledge. Hands over arrow shafts to examine, points out trail vantage spots, and speaks comfortably in silence."
+            "Text": "Sits directly beside the player on the guild hearth bench or outdoor stone ledge. Hands over arrow shafts to examine, points out trail vantage spots, and speaks comfortably in silence.",
+            "BarkMindset": "[STAGE: TRUSTED COMPANIONSHIP]\n- Mindset: Calm and deeply respectful. Regards the farmer as a proven, dependable ally whose presence brings grounded quiet.\n- Attention Flow: Sharing wilderness insights, inspecting archery tackle together, vantage points on the ridge, and peaceful shared stillness.",
+            "Preoccupations": [
+              "Bowstring tension balance",
+              "Mountain ridge vantage",
+              "Arrow fletching alignment",
+              "Guild hearth embers"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps out from behind the guild counter into the main hall. Discusses cavern entry depths and trail slate while adjusting her quiver strap."
+            "Text": "Steps out from behind the guild counter into the main hall. Discusses cavern entry depths and trail slate while adjusting her quiver strap.",
+            "BarkMindset": "[STAGE: PROFESSIONAL RESPECT]\n- Mindset: Alert and observant. Recognizes the farmer's field grit and survival capabilities across frontier terrain.\n- Attention Flow: Cavern rock layers, creature patrol patterns, weapon upkeep, and exchanging practical terrain notes.",
+            "Preoccupations": [
+              "Cavern depth reports",
+              "Trail slate tracks",
+              "Quiver harness fit",
+              "Guild hall hearthfire"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Remains stationed behind the guild counter partition or near the door frame. Keeps hands on her gear strap, offering formal combat warnings and maintaining three paces of distance."
+            "Text": "Remains stationed behind the guild counter partition or near the door frame. Keeps hands on her gear strap, offering formal combat warnings and maintaining three paces of distance.",
+            "BarkMindset": "[STAGE: FORMAL SENTRY VIGILANCE]\n- Mindset: Disciplined and watchful. Treats the farmer as a visiting newcomer, maintaining formal sentry decorum and vigilant focus.\n- Attention Flow: Perimeter security, entry threshold clearance, formal combat guidance, and maintaining gear readiness.",
+            "Preoccupations": [
+              "Counter vantage sightlines",
+              "Threshold perimeter patrol",
+              "Gear harness readiness",
+              "Distant forest winds"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nCalm, disciplined, watchful sentry tone with solemn spiritual grounding. Observes surroundings with the calculated stillness of an elite archer.\n\n[OBSERVATION LENSES]\n- Tactical Vantage: Checking sightlines, wind drift, ridge cover, structural blind spots, and drawing clearance.\n- Ground Disturbance: Tracking scuffed dirt, claw marks on wood, mud splatters on stones, and broken brush.\n- Gear Upkeep: Testing bowstring tension, checking arrow straightness, and noting moisture on quiver leather.\n- Weather & Sky: Observing wind direction shifts, sleet, thunderclouds, and morning light through fog.\n\n[SPOKEN HABITS]\nUses quiet, alert openers: 'Wind's steady...', 'Hm, look at that track...', 'Yoba preserve us,', 'Clear line...'. Remarks center strictly on observable terrain, gear condition, and weather changes."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nCalm, disciplined, watchful sentry tone with solemn spiritual grounding. Observes surroundings with the calculated stillness of an elite archer.\n\n[SPOKEN HABITS]\nUses quiet, alert openers: 'Wind's steady...', 'Hm, look at that track...', 'Yoba preserve us,', 'Clear line...'. Remarks center strictly on observable terrain, gear condition, and weather changes.\n\n[OBSERVATION LENSES]\n- Tactical Vantage: Checking sightlines, wind drift, ridge cover, structural blind spots, and drawing clearance.\n- Ground Disturbance: Tracking scuffed dirt, claw marks on wood, mud splatters on stones, and broken brush.\n- Gear Upkeep: Testing bowstring tension, checking arrow straightness, and noting moisture on quiver leather.\n- Weather & Sky: Observing wind direction shifts, sleet, thunderclouds, and morning light through fog."
       }
     }
   ]

@@ -80,20 +80,40 @@
         "ProgressStates": [
           {
             "RequiredHearts": 7,
-            "Text": "Invites player past entryway threshold, sits side-by-side at kitchen table, hands over fresh coffee mugs without checking stove timers, stays seated during quiet pauses."
+            "Text": "Invites player past entryway threshold, sits side-by-side at kitchen table, hands over fresh coffee mugs with relaxed leisure, stays seated during quiet pauses.",
+            "BarkMindset": "[STAGE: CHERISHED NEIGHBORLY WARMTH]\n- Mindset: Deeply relaxed and open. Sees the farmer as a trusted family friend, enjoying genuine moments of calm companionship amidst a busy household.\n- Attention Flow: Savoring freshly poured coffee, quiet kitchen table chats, family laughter, and resting between daily routines.",
+            "Preoccupations": [
+              "Fresh coffee aromas",
+              "Quiet kitchen chats",
+              "Sharing garden recipes",
+              "Resting after chores"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps out onto front porch planks, leans against handrail, discusses grocery deliveries and floor scuffs, hands over surplus dinner rolls directly."
+            "Text": "Steps out onto front porch planks, leans against handrail, discusses grocery deliveries and floor scuffs, hands over surplus dinner rolls directly.",
+            "BarkMindset": "[STAGE: FRIENDLY NEIGHBORLY RAPPORT]\n- Mindset: Warm, approachable, and practical. Enjoys chatting with the farmer as an industrious neighbor who understands hard daily work.\n- Attention Flow: Seasonal baking, grocery pantry runs, front yard upkeep, and pleasant small talk on the porch.",
+            "Preoccupations": [
+              "Fresh dinner rolls",
+              "Pantry flour levels",
+              "Weekly grocery errands",
+              "Front porch flowers"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Stands behind screen door or kitchen counter, wipes hands continuously on yellow apron, maintains two-meter clearance, delivers clipped domestic updates before stepping inside."
+            "Text": "Stands behind screen door or kitchen counter, wipes hands continuously on yellow apron, maintains two-meter clearance, delivers clipped domestic updates before stepping inside.",
+            "BarkMindset": "[STAGE: CAUTIOUS DOMESTIC ROUTINE]\n- Mindset: Preoccupied by endless household chores and tight schedules. Keeps interactions brief and reserved, viewing the farmer strictly as a newly arrived stranger.\n- Attention Flow: Heavy laundry loads, muddy boot tracks across clean floorboards, cooking timers, and managing daily family chores.",
+            "Preoccupations": [
+              "Laundry basket piles",
+              "Scrubbing floor grit",
+              "Stove pot heat",
+              "Tight household budgets"
+            ]
           }
         ],
-
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nWarm, brisk, practical homemaker cadence. Assesses surrounding environment through floor tidiness, food preparation, and physical drafts.\n\n[OBSERVATION LENSES]\n- Floor Upkeep: Mud trails, loose shoes, grit on floorboards, and scuff marks along hallway baseboards.\n- Kitchen Supply: Fresh vegetables, pantry shelf levels, dinner timing, and pot temperatures on stove burners.\n- Weather & Cleanliness: Laundry drying winds, damp boot prints, chimney soot, and cold air under doorframes.\n- Clear Pathways: Dropped skateboards, scattered block toys, and clear walking corridors through room doors.\n\n[SPOKEN HABITS]\nUses practical domestic openers: 'Goodness,', 'Oh dear,', 'Just finished...', 'Pots are hot,'. Comments directly on immediate chores and physical surroundings."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nWarm, brisk, practical homemaker cadence. Assesses surrounding environment through floor tidiness, food preparation, and physical drafts.\n\n[SPOKEN HABITS]\nUses practical domestic openers: 'Goodness,', 'Oh dear,', 'Just finished...', 'Pots are hot,'. Comments directly on immediate chores, family routines, and physical surroundings.\n\n[OBSERVATION LENSES]\n- Floor Upkeep: Mud trails, loose shoes, grit on floorboards, and scuff marks along hallway baseboards.\n- Kitchen Supply: Fresh vegetables, pantry shelf levels, dinner timing, and pot temperatures on stove burners.\n- Weather & Cleanliness: Laundry drying winds, damp boot prints, chimney soot, and cold air under doorframes.\n- Clear Pathways: Dropped skateboards, scattered block toys, and clear walking corridors through room doors."
       }
     }
   ]

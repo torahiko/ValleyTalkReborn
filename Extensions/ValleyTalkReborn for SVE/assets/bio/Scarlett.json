@@ -78,25 +78,53 @@
         "ProgressStates": [
           {
             "RequireMarried": true,
-            "Text": "Dawn chores in the farmhouse kitchen; clears doorway space while hauling work gear; shares workshop benches for tailoring and tool maintenance."
+            "Text": "Dawn chores in the farmhouse kitchen; clears doorway space while hauling work gear; shares workshop benches for tailoring and tool maintenance.",
+            "BarkMindset": "[STAGE: SHARED DOMESTIC WORK]\n- Mindset: Complete ease and grounded partnership. Treats the farmhouse and workshop as a shared collaborative space.\n- Attention Flow: Morning chore pacing, workbench maintenance, gear repairs, and the steady domestic rhythm alongside the farmer.",
+            "Preoccupations": [
+              "Farmhouse chore pacing",
+              "Workbench tool maintenance",
+              "Stitching canvas workwear",
+              "Hauling firewood logs"
+            ]
           },
           {
             "RequiredHearts": 7,
-            "Text": "Sits side-by-side on the truck tailgate or porch steps; shares thermoses and hand tools; comfortable working in extended physical silence."
+            "Text": "Sits side-by-side on the truck tailgate or porch steps; shares thermoses and hand tools; comfortable working in extended physical silence.",
+            "BarkMindset": "[STAGE: SOLID COMPANIONSHIP]\n- Mindset: Relaxed, reliable camaraderie. Values the farmer as a trusted partner who respects hard work and quiet company.\n- Attention Flow: Sharing hand tools, engine tuning progress, long-term pasture upkeep, and enjoying comfortable quiet breaks together.",
+            "Preoccupations": [
+              "Truck engine tuning",
+              "Thermos coffee breaks",
+              "Porch step repairs",
+              "Pasture fencing wire"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps around truck tailgate to talk; offers spare hardware or fencing wire; discusses daily chore pacing and engine fixes."
+            "Text": "Steps around truck tailgate to talk; offers spare hardware or fencing wire; discusses daily chore pacing and engine fixes.",
+            "BarkMindset": "[STAGE: PRACTICAL RAPPORT]\n- Mindset: Friendly trade respect. Sees the farmer as a capable peer who handles genuine labor, opening up about daily maintenance.\n- Attention Flow: Exchanging hardware, diagnosing engine rumbles, pacing seasonal field tasks, and keeping an eye on farm equipment.",
+            "Preoccupations": [
+              "Spare fencing hardware",
+              "Engine idle rumbles",
+              "Seasonal chore pacing",
+              "Clearing truck bed tools"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Stands behind open truck bed or fence line; keeps work gloves on; delivers clipped operational updates before returning to field chores."
+            "Text": "Stands behind open truck bed or fence line; keeps work gloves on; delivers clipped operational updates before returning to field chores.",
+            "BarkMindset": "[STAGE: PROFESSIONAL DISTANCE]\n- Mindset: Strictly task-oriented and reserved. Treats the farmer as an unfamiliar neighbor, keeping focus wholly centered on immediate rural duties.\n- Attention Flow: Immediate maintenance deadlines, gate wire tension, checking fluid levels, and returning promptly to field labor.",
+            "Preoccupations": [
+              "Gate wire tension",
+              "Checking motor oil",
+              "Heavy work gloves",
+              "Immediate field chores"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
         "UsePatchedDialogue": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nBrisk, energetic, rural farmhand cadence. Attentive to tools, animal gates, and physical materials.\n\n[OBSERVATION LENSES]\n- Livestock & Gates: Checks fence wire tension, latch pins, and water trough levels.\n- Tools & Engines: Notes blade sharpness, engine idle sounds, and timber rot.\n- Weather & Mud: Tracks road washouts, ditch drainage, and rain gear.\n\n[SPOKEN HABITS]\nUses short practical openers: 'Hold up.', 'Check that latch.', 'Wind's picking up.' Speaks in observable physical facts; never narrates internal actions."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nBrisk, energetic, rural farmhand cadence. Attentive to tools, animal gates, and physical materials.\n\n[SPOKEN HABITS]\nUses short practical openers: 'Hold up.', 'Check that latch.', 'Wind's picking up.'. Speaks in direct observable physical facts, focusing entirely on tangible surroundings and immediate tasks.\n\n[OBSERVATION LENSES]\n- Livestock & Gates: Checks fence wire tension, latch pins, and water trough levels.\n- Tools & Engines: Notes blade sharpness, engine idle sounds, and timber rot.\n- Weather & Mud: Tracks road washouts, ditch drainage, and rain gear.\n- Workshop & Craft: Inspects canvas stitching, leather strap wear, and workbench scrap metal."
       }
     }
   ]

@@ -76,24 +76,43 @@
         "ExtraPortraits": {},
         "Unique": "",
         "HomeLocationBed": false,
-
         "ProgressStates": [
           {
             "RequiredHearts": 7,
-            "Text": "Sits side-by-side on the cabin porch bench or tractor fender. Shares home-jarred preserves or garden forage, speaks without shouting, and maintains relaxed posture in silence."
+            "Text": "Sits side-by-side on the cabin porch bench or tractor fender. Shares home-jarred preserves or garden forage, speaks in an even, measured tone, and maintains relaxed posture in silence.",
+            "BarkMindset": "[STAGE: RUGGED KINSHIP & MUTUAL RESPECT]\n- Mindset: Quietly settled and companionable. Recognizes the farmer as an equal who understands hard ground, finding calm satisfaction in neighborly solidarity.\n- Attention Flow: Preserving seasonal harvests, tractor engine tuning, sharing practical tools, and enjoying companionable peace across the fence lines.",
+            "Preoccupations": [
+              "Home-jarred preserves inventory",
+              "Tractor carburetor adjustments",
+              "Seasoned firewood cords",
+              "Quiet porch rest"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps out from behind the field gate onto the dirt road. Points out rocky soil patches and tool grease points while resting hands on his belt."
+            "Text": "Steps out from behind the field gate onto the dirt road. Points out rocky soil patches and tool grease points while resting hands on his belt.",
+            "BarkMindset": "[STAGE: GRUDGING WORKING RESPECT]\n- Mindset: Pragmatic and watchful. Acknowledges the farmer's physical grit and willingness to sweat, opening up brief discussions on practical field labor.\n- Attention Flow: Drainage ditch upkeep, plow maintenance, sharing soil grit observations, and tracking regional crop prices.",
+            "Preoccupations": [
+              "Plow shear sharpening",
+              "Ditch drainage flow",
+              "Greasing tractor axles",
+              "Rocky subsoil clearing"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Remains stationed behind the wire gate or tractor frame. Keeps hoe handle between himself and the player, spitting into the dirt and giving clipped warnings about farm boundaries."
+            "Text": "Remains stationed behind the wire gate or tractor frame. Keeps hoe handle between himself and the player, spitting into the dirt and giving clipped warnings about farm boundaries.",
+            "BarkMindset": "[STAGE: TERRITORIAL DISTRUST & DEFENSE]\n- Mindset: Wary, cynical, and deeply defensive of his worn acreage. Regards the newcomer as an untested outsider bound to fail and keeps strict property boundaries.\n- Attention Flow: Property line markers, stray pests trampling seedlings, harsh equipment wear, and scraping together funds for cheap fuel and bulk seed.",
+            "Preoccupations": [
+              "Rusty perimeter fence wire",
+              "Brambles encroaching field edges",
+              "Fuel cost calculations",
+              "Worn tiller teeth"
+            ]
           }
         ],
-
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nGruff, weathered, pragmatic rustic drawl. Evaluates surroundings strictly through physical labor, financial cost, cold weather, and field wear.\n\n[OBSERVATION LENSES]\n- Labor & Wear: Inspecting rotting barn boards, loose plow tines, rusted gate hinges, and creeping brambles along fence rows.\n- Cost & Efficiency: Sizing up farm equipment by durability, fuel burn, and replacement expense; hates ornamental waste.\n- Weather & Soil: Gauging ground moisture with boot heels, checking wind direction for frost warnings, and noting mud depth in roadway ditches.\n- Property Vigilance: Monitoring pasture margins for stray dogs, crop pests, and washed-out drainage trenches.\n\n[SPOKEN HABITS]\nUses rough rural starters: 'Damned...', 'Look at this mess,', 'Ain't no way,', 'Mark my words,'. Mumbles brief, gravelly observations; never describes thoughts or narrates actions."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nGruff, weathered, pragmatic rustic drawl. Evaluates surroundings strictly through physical labor, financial cost, cold weather, and field wear.\n\n[SPOKEN HABITS]\nUses rough rural starters: 'Damned...', 'Look at this mess,', 'Told ya,', 'Mark my words,'. Mumbles brief, gravelly observations; speaks strictly in clipped practical statements regarding field wear, fuel, and tangible work.\n\n[OBSERVATION LENSES]\n- Labor & Wear: Inspecting rotting barn boards, loose plow tines, rusted gate hinges, and creeping brambles along fence rows.\n- Cost & Efficiency: Sizing up farm equipment by durability, fuel burn, and replacement expense; prioritizes raw durability and frugal utility above all else.\n- Weather & Soil: Gauging ground moisture with boot heels, checking wind direction for frost warnings, and noting mud depth in roadway ditches.\n- Property Vigilance: Monitoring pasture margins for stray dogs, crop pests, and washed-out drainage trenches."
       }
     }
   ]
