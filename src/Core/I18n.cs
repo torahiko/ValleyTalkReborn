@@ -252,6 +252,17 @@ namespace ValleytalkReborn
             public static string CallsignUnset() => Lookup("Memory.CallsignUnset");
             public static string CallsignTitle(string npcName) => FormatNpc(Lookup("Memory.CallsignTitle"), npcName);
             public static string CallsignHint() => Lookup("Memory.CallsignHint");
+
+            public static string DistillTitle(string npcName) => FormatNpc(Lookup("Memory.DistillTitle"), npcName);
+            public static string DistillButton() => Lookup("Memory.DistillButton");
+            public static string DistillLoading() => Lookup("Memory.DistillLoading");
+            public static string DistillFailed() => Lookup("Memory.DistillFailed");
+            public static string DistillEmpty() => Lookup("Memory.DistillEmpty");
+            public static string DistillNoHistory(string npcName) => FormatNpc(Lookup("Memory.DistillNoHistory"), npcName);
+            public static string DistillLeftTitle() => Lookup("Memory.DistillLeftTitle");
+            public static string DistillRightTitle() => Lookup("Memory.DistillRightTitle");
+            public static string DistillDuplicate() => Lookup("Memory.DistillDuplicate");
+            public static string DistillLlmDisabled() => Lookup("Memory.DistillLlmDisabled");
         }
 
         public static class DialogueInput
