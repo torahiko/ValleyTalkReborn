@@ -177,5 +177,20 @@
   "Memory.DistillLeftTitle": "AI 建议",
   "Memory.DistillRightTitle": "当前记忆",
   "Memory.DistillDuplicate": "该记忆已存在。",
-  "Memory.DistillLlmDisabled": "AI 服务未连接，请先检查 API 配置。"
+  "Memory.DistillLlmDisabled": "AI 服务未连接，请先检查 API 配置。",
+  "Memory.RuleTag": "[规则] ",
+  "Memory.MemoryTag": "[回忆] ",
+  "Memory.CategoryFactLabel": "生活回忆",
+  "Memory.CategoryBehaviorLabel": "互动规则",
+  "Memory.CategoryFactHint": "日常经历、偏好习惯。作为潜意识背景，不强迫执行。",
+  "Memory.CategoryBehaviorHint": "特定禁忌、行动红线。NPC 将启动强合规审查，严格遵守。",
+  "Memory.ArchiveButton": "归档箱 ({{count}}/{{max}})",
+  "Memory.ArchiveTitle": "{{npcName}} 的记忆归档箱",
+  "Memory.ArchiveEmpty": "归档箱是空的。超过 3 天的琐碎回忆会自动归档到这里。",
+  "Memory.ArchiveCount": "当前已归档: {{count}} / {{max}}",
+  "Memory.ArchiveRestoreButton": "恢复",
+  "Memory.ArchiveDeleteButton": "删除",
+  "Memory.ArchiveDeleteConfirm": "确定要彻底删除这条归档记忆吗？\n{{content}}",
+  "Memory.ArchiveRestoreDuplicate": "活跃记忆中已存在相同内容，未恢复。",
+  "Memory.ArchiveRestoreNotFound": "该条目已不存在（可能已被淘汰），列表已刷新。"
 }

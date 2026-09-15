@@ -79,7 +79,7 @@ public class LlmDialogueService
                 if (!string.IsNullOrEmpty(worldMemCtx))
                     prompts.SystemPrompt += "\n\n" + worldMemCtx;
 
-                // S3: EvolvedTraits（按玩家当前输入实时重排，变动频率：每轮对话）
+                // S3: EvolvedTraits（常驻心智底色，内容稳定不随输入重排；变动频率：约数天一次）
                 // 不能进 SystemPrompt：该段是 LlmClaude.cs 中零缓存的首段，每轮必变内容
                 // 放在这里会完全破坏前缀缓存。改为字段注入，由 GetCorePrompt() 内部读取。
                 prompts.PendingEvolvedTraitsBlock = EvolvedTraitManager.GetPromptBlock(character.Name, context);
