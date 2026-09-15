@@ -18,14 +18,22 @@ internal sealed class TileActionDetector : IEnvironmentDetector
     private static readonly Dictionary<string, (string En, string Zh)> ActionMap =
         new(StringComparer.OrdinalIgnoreCase)
     {
-        ["TV"]                = ("a television", "电视机"),
-        ["Billboard"]         = ("the town bulletin board", "小镇公告栏与求助任务板"),
-        ["Calendar"]          = ("a calendar", "日历挂历"),
-        ["Sink"]              = ("a sink", "水槽/洗手池"),
-        ["Mailbox"]           = ("the mailbox", "信箱"),
-        ["Kitchen"]           = ("a kitchen stove", "厨房灶台"),
-        ["Stove"]             = ("a kitchen stove", "厨房灶台"),
-        ["SpecialOrderBoard"] = ("the special orders board", "小镇委托板"),
+        // ── 1.6 反编译对齐设施 ──
+        ["Billboard"]     = ("the town bulletin board", "小镇公告栏与求助任务板"),
+        ["SpecialOrders"] = ("the special orders board", "小镇特别任务委托板"),
+        ["Kitchen"]       = ("a kitchen stove", "厨房灶台"),
+        ["Mailbox"]       = ("the mailbox", "信箱"),
+        ["Jukebox"]       = ("the jukebox", "点唱机"),
+        ["PrizeMachine"]  = ("the mayor's prize machine", "镇长家的抽奖机"),
+        ["Bookseller"]    = ("the bookseller's balloon cart", "书商的书摊热气球"),
+        ["DyePot"]        = ("the dye pots", "染料盆"),
+        ["Tailoring"]     = ("the sewing machine", "缝纫机工作台"),
+        ["Forge"]         = ("the volcano forge", "火山锻造台"),
+
+        // ── 子类 / 数据层安全兜底 ──
+        ["TV"]            = ("a television", "电视机"),
+        ["Calendar"]      = ("a calendar", "日历挂历"),
+        ["Sink"]          = ("a sink", "水槽/洗手池"),
     };
 
     /// <inheritdoc/>
