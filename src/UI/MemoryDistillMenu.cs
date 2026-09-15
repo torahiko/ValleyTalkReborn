@@ -13,33 +13,36 @@ using StardewModdingAPI;
 namespace ValleytalkReborn;
 
 /// <summary>
-/// 记忆提炼菜单：以 Loading 态异步驱动 MemoryExtractService.ExtractAsync，
-/// 转为 Ready 态后展示 AI 提炼出的候选记忆供玩家逐条入库（AddMemory / Source="Manual"），
-/// 同时显示该 NPC 既有记忆并支持编辑/删除。
-/// 一切 UI 变更只发生在主线程（update / receiveLeftClick / receiveScrollWheelAction / draw）；
-/// 服务结果经 update 轮询 _task.IsCompleted 应用，绝不在任务回调中触碰 UI（D3 决策）。
+/// 记忆提炼菜单：自适应视口尺寸与 UI 缩放，展示候选与既有记忆并支持编辑/删除。
 /// </summary>
 internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
 {
     private enum DistillState { Loading, Ready }
 
-    private const int MenuWidth = 1000;
-    private const int MenuHeight = 600;
-    private const int ColumnTop = 140;
     private const int RowH = 48;
-    private const int VisibleRows = 8;
-    private const int ColW = 440;
-    private const int PlusSize = 36;
-    private const int RowBtnSize = 40;
+    private const int PlusSize = 34;
+    private const int RowBtnSize = 38;
 
     private const int EditSourceX = 274;
     private const int EditSourceY = 284;
     private const int EditSourceSize = 16;
-    private const float EditSourceScale = 2.5f;
+    private const float EditSourceScale = 2.4f;
+
     private const int DeleteSourceX = 322;
     private const int DeleteSourceY = 498;
     private const int DeleteSourceSize = 12;
-    private const float DeleteSourceScale = 2.5f;
+    private const float DeleteSourceScale = 2.4f;
+
+    private const float CloseButtonBaseScale = 3.5f;
+
+    // 动态布局坐标
+    private int _contentTopY;
+    private int _headerY;
+    private int _colW;
+    private int _leftColX;
+    private int _rightColX;
+    private int _dividerX;
+    private int _visibleRows;
 
     private DistillState _state = DistillState.Loading;
     private readonly string _npcName;
@@ -48,37 +51,26 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
     private readonly CancellationTokenSource _cts = new();
     private Task<MemoryExtractResult> _task;
     private List<string> _candidates = new();
-    private HashSet<string> _usedCandidates = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _usedCandidates = new(StringComparer.OrdinalIgnoreCase);
     private List<MemoryEntry> _rightEntries = new();
     private int _manualCount;
+    private int _leftIndex;
     private int _rightIndex;
-    private List<Rectangle> _plusRects = new();
-    private List<ClickableTextureComponent> _editButtons = new();
-    private List<ClickableTextureComponent> _deleteButtons = new();
-    private readonly ClickableTextureComponent _closeButton;
-    private float _closeButtonHoverScale = 1f;
-    private const float CloseButtonBaseScale = 3.5f;
 
-    private int LeftColX => xPositionOnScreen + 40;
-    private int RightColX => xPositionOnScreen + 520;
-    private int DividerX => xPositionOnScreen + 500;
+    private readonly List<Rectangle> _plusRects = new();
+    private readonly List<ClickableTextureComponent> _editButtons = new();
+    private readonly List<ClickableTextureComponent> _deleteButtons = new();
+    private ClickableTextureComponent _closeButton;
+    private float _closeButtonHoverScale = 1f;
+    private string _hoveredTooltip = string.Empty;
 
     public MemoryDistillMenu(string npcName, IClickableMenu returnMenu)
     {
         _npcName = npcName;
         _returnMenu = returnMenu;
-
-        xPositionOnScreen = (Game1.uiViewport.Width - MenuWidth) / 2;
-        yPositionOnScreen = (Game1.uiViewport.Height - MenuHeight) / 2;
-        width = MenuWidth;
-        height = MenuHeight;
-
         _npcDisplayName = Game1.getCharacterFromName(npcName)?.displayName ?? npcName;
 
-        _closeButton = new ClickableTextureComponent(
-            new Rectangle(xPositionOnScreen + width - 60, yPositionOnScreen + 16, 44, 44),
-            Game1.mouseCursors, new Rectangle(337, 494, 12, 12), CloseButtonBaseScale);
-        _closeButton.hoverText = I18n.Memory.CloseButton();
+        UpdateLayout();
 
         // 快照已有 Manual 记忆作为去重基准
         List<string> existingManual = MemoryManager.Instance.GetMemories(_npcName)
@@ -93,7 +85,57 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
     }
 
     // ──────────────────────────────────────────────────────────────
-    // IClickableMenu
+    // 布局与自适应适配
+    // ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// 根据当前视口动态计算窗口大小、列宽与最大可见行数
+    /// </summary>
+    private void UpdateLayout()
+    {
+        // 自适应宽高：留出屏幕安全边距，并设定上下限
+        width = Math.Clamp(Game1.uiViewport.Width - 96, 760, 1100);
+        height = Math.Clamp(Game1.uiViewport.Height - 96, 480, 680);
+
+        xPositionOnScreen = (Game1.uiViewport.Width - width) / 2;
+        yPositionOnScreen = (Game1.uiViewport.Height - height) / 2;
+
+        if (_closeButton == null)
+        {
+            _closeButton = new ClickableTextureComponent(
+                new Rectangle(xPositionOnScreen + width - 56, yPositionOnScreen + 16, 44, 44),
+                Game1.mouseCursors, new Rectangle(337, 494, 12, 12), CloseButtonBaseScale);
+            _closeButton.hoverText = I18n.Memory.CloseButton();
+        }
+        else
+        {
+            _closeButton.bounds = new Rectangle(xPositionOnScreen + width - 56, yPositionOnScreen + 16, 44, 44);
+        }
+
+        _contentTopY = yPositionOnScreen + 125;
+        _headerY = _contentTopY - 32;
+
+        int sidePadding = 45;
+        int colGap = 36;
+        _colW = (width - sidePadding * 2 - colGap) / 2;
+        _leftColX = xPositionOnScreen + sidePadding;
+        _dividerX = _leftColX + _colW + colGap / 2;
+        _rightColX = _dividerX + colGap / 2;
+
+        int availableHeight = (yPositionOnScreen + height - 36) - _contentTopY;
+        _visibleRows = Math.Max(4, availableHeight / RowH);
+
+        RebuildButtons();
+    }
+
+    public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
+    {
+        base.gameWindowSizeChanged(oldBounds, newBounds);
+        UpdateLayout();
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // IClickableMenu 核心交互
     // ──────────────────────────────────────────────────────────────
 
     public override void update(GameTime time)
@@ -112,16 +154,19 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             return;
         }
 
-        // Loading 中除关闭外一律吞掉
         if (_state == DistillState.Loading)
             return;
 
         // 左栏：添加候选
-        for (int i = 0; i < _plusRects.Count && i < _candidates.Count; i++)
+        for (int i = 0; i < _plusRects.Count; i++)
         {
+            int idx = _leftIndex + i;
+            if (idx >= _candidates.Count)
+                break;
+
             if (_plusRects[i].Contains(x, y))
             {
-                AddCandidate(i);
+                AddCandidate(idx);
                 return;
             }
         }
@@ -161,19 +206,43 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
         if (_state != DistillState.Ready)
             return;
 
-        if (_rightEntries.Count <= VisibleRows)
-            return;
+        int mx = Game1.getMouseX();
 
-        int maxIndex = _rightEntries.Count - VisibleRows;
-        int newIndex = direction > 0
-            ? Math.Max(0, _rightIndex - 1)
-            : Math.Min(maxIndex, _rightIndex + 1);
-
-        if (newIndex != _rightIndex)
+        // 鼠标位于左栏：滚动候选
+        if (mx < _dividerX)
         {
-            _rightIndex = newIndex;
-            Game1.playSound("shwip");
-            RebuildButtons();
+            int maxLeft = Math.Max(0, _candidates.Count - _visibleRows);
+            if (maxLeft > 0)
+            {
+                int newIndex = direction > 0
+                    ? Math.Max(0, _leftIndex - 1)
+                    : Math.Min(maxLeft, _leftIndex + 1);
+
+                if (newIndex != _leftIndex)
+                {
+                    _leftIndex = newIndex;
+                    Game1.playSound("shwip");
+                    RebuildButtons();
+                }
+            }
+        }
+        // 鼠标位于右栏：滚动既有记忆
+        else
+        {
+            int maxRight = Math.Max(0, _rightEntries.Count - _visibleRows);
+            if (maxRight > 0)
+            {
+                int newIndex = direction > 0
+                    ? Math.Max(0, _rightIndex - 1)
+                    : Math.Min(maxRight, _rightIndex + 1);
+
+                if (newIndex != _rightIndex)
+                {
+                    _rightIndex = newIndex;
+                    Game1.playSound("shwip");
+                    RebuildButtons();
+                }
+            }
         }
     }
 
@@ -188,31 +257,28 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
         base.receiveKeyPress(key);
     }
 
+    // ──────────────────────────────────────────────────────────────
+    // 渲染
+    // ──────────────────────────────────────────────────────────────
+
     public override void draw(SpriteBatch b)
     {
         int mx = Game1.getMouseX();
         int my = Game1.getMouseY();
+        _hoveredTooltip = string.Empty;
 
-        b.Draw(Game1.fadeToBlackRect,
-            Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.4f);
-
-        IClickableMenu.drawTextureBox(b,
-            xPositionOnScreen - 16, yPositionOnScreen - 16,
-            width + 32, height + 32, Color.White);
-
-        IClickableMenu.drawTextureBox(b,
-            xPositionOnScreen - 8, yPositionOnScreen - 8,
-            width + 16, height + 16, Color.White);
-
+        // 遮罩与窗口背景
+        b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.4f);
         Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
 
+        // 顶部标题
         string title = I18n.Memory.DistillTitle(_npcDisplayName);
-        var titleSize = Game1.dialogueFont.MeasureString(title);
+        Vector2 titleSize = Game1.dialogueFont.MeasureString(title);
         b.DrawString(Game1.dialogueFont, title,
-            new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f, yPositionOnScreen + 20),
+            new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f, yPositionOnScreen + 24),
             Game1.textColor);
 
-        // 关闭按钮（悬停缩放）
+        // 关闭按钮
         UiHelper.UpdateButtonScale(ref _closeButtonHoverScale, _closeButton, mx, my);
         _closeButton.scale = CloseButtonBaseScale * _closeButtonHoverScale;
         _closeButton.draw(b);
@@ -220,10 +286,9 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
         if (_state == DistillState.Loading)
         {
             string loading = I18n.Memory.DistillLoading();
-            var size = Game1.smallFont.MeasureString(loading);
+            Vector2 size = Game1.smallFont.MeasureString(loading);
             b.DrawString(Game1.smallFont, loading,
-                new Vector2(xPositionOnScreen + (width - size.X) / 2f,
-                            yPositionOnScreen + MenuHeight / 2f - size.Y / 2f),
+                new Vector2(xPositionOnScreen + (width - size.X) / 2f, yPositionOnScreen + (height - size.Y) / 2f),
                 Game1.textColor);
         }
         else
@@ -231,32 +296,189 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             DrawReady(b, mx, my);
         }
 
+        // 浮动提示
+        if (!string.IsNullOrEmpty(_hoveredTooltip))
+        {
+            IClickableMenu.drawHoverText(b, _hoveredTooltip, Game1.smallFont);
+        }
+
         drawMouse(b);
     }
 
-    public void RefreshEntries()
+    private void DrawReady(SpriteBatch b, int mx, int my)
     {
-        _rightEntries = MemoryManager.Instance.GetMemories(_npcName);
-        _manualCount = MemoryManager.Instance.GetManualMemoryCount(_npcName);
-        _rightIndex = 0;
-        RebuildButtons();
-    }
+        // 栏目标题
+        b.DrawString(Game1.smallFont, I18n.Memory.DistillLeftTitle(),
+            new Vector2(_leftColX, _headerY), Game1.textColor);
+        b.DrawString(Game1.smallFont, I18n.Memory.DistillRightTitle(),
+            new Vector2(_rightColX, _headerY), Game1.textColor);
 
-    protected override void cleanupBeforeExit()
-    {
-        base.cleanupBeforeExit();
+        // 容量计数
+        string cap = $"{_manualCount} / {MemoryManager.MaxMemoriesPerNpc}";
+        Vector2 capSize = Game1.smallFont.MeasureString(cap);
+        b.DrawString(Game1.smallFont, cap,
+            new Vector2(_rightColX + _colW - capSize.X, _headerY), Color.Gray);
 
-        _cts.Cancel();
+        // 中间分割线（贯通上下）
+        int dividerHeight = (yPositionOnScreen + height - 40) - _headerY;
+        b.Draw(Game1.staminaRect, new Rectangle(_dividerX, _headerY, 2, dividerHeight), Color.Gray * 0.4f);
 
-        if (_returnMenu != null && Game1.activeClickableMenu == this)
-            Game1.activeClickableMenu = _returnMenu;
+        // 渲染左栏候选
+        bool full = _manualCount >= MemoryManager.MaxMemoriesPerNpc;
+        int visibleLeft = Math.Min(_visibleRows, Math.Max(0, _candidates.Count - _leftIndex));
+        float maxLeftTextWidth = _colW - (PlusSize + 14);
+
+        for (int i = 0; i < visibleLeft && i < _plusRects.Count; i++)
+        {
+            int idx = _leftIndex + i;
+            string cand = _candidates[idx];
+            Rectangle rect = _plusRects[i];
+            bool used = _usedCandidates.Contains(cand);
+            bool hover = rect.Contains(mx, my);
+
+            Color boxColor = (used || full) ? Color.Gray * 0.6f : (hover ? Color.Gold : Color.White);
+
+            // + 按钮底框
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
+                new Rectangle(432, 439, 9, 9),
+                rect.X, rect.Y, rect.Width, rect.Height,
+                boxColor, 3.8f, false);
+
+            // 绘制按钮内加号
+            Vector2 plusCharSize = Game1.smallFont.MeasureString("+");
+            b.DrawString(Game1.smallFont, "+",
+                new Vector2(rect.X + (rect.Width - plusCharSize.X) / 2f, rect.Y + (rect.Height - plusCharSize.Y) / 2f),
+                used ? Color.Gray : Game1.textColor);
+
+            // 候选文字及截断
+            Color textColor = used ? Game1.textColor * 0.45f : Game1.textColor;
+            string displayText = TruncateString(cand, Game1.smallFont, maxLeftTextWidth);
+
+            Vector2 textPos = new Vector2(_leftColX + PlusSize + 12, rect.Y + (RowH - Game1.smallFont.LineSpacing) / 2f);
+            b.DrawString(Game1.smallFont, displayText, textPos, textColor);
+
+            // 文本区域悬停检测（若被截断则提供 Tooltip）
+            Rectangle textBounds = new Rectangle((int)textPos.X, rect.Y, (int)maxLeftTextWidth, RowH);
+            if (textBounds.Contains(mx, my) && displayText != cand)
+            {
+                _hoveredTooltip = cand;
+            }
+        }
+
+        // 渲染右栏既有条目
+        int visibleRight = Math.Min(_visibleRows, Math.Max(0, _rightEntries.Count - _rightIndex));
+        float maxRightTextWidth = _colW - 95; // 预留编辑和删除两枚按钮的宽度
+
+        for (int i = 0; i < visibleRight; i++)
+        {
+            int idx = _rightIndex + i;
+            MemoryEntry entry = _rightEntries[idx];
+            int rowY = _contentTopY + i * RowH;
+
+            bool isAuto = entry.Source == "Auto";
+            string prefix = isAuto ? I18n.Memory.AutoPrefix() : "";
+            Color textColor = isAuto ? new Color(120, 140, 160) : Game1.textColor;
+            string fullText = $"{idx + 1}. {prefix}{entry.Content}";
+
+            string displayText = TruncateString(fullText, Game1.smallFont, maxRightTextWidth);
+            Vector2 textPos = new Vector2(_rightColX, rowY + (RowH - Game1.smallFont.LineSpacing) / 2f);
+            b.DrawString(Game1.smallFont, displayText, textPos, textColor);
+
+            if (i < _editButtons.Count) _editButtons[i].draw(b);
+            if (i < _deleteButtons.Count) _deleteButtons[i].draw(b);
+
+            // 悬停显示完整内容
+            Rectangle textBounds = new Rectangle((int)textPos.X, rowY, (int)maxRightTextWidth, RowH);
+            if (textBounds.Contains(mx, my) && displayText != fullText)
+            {
+                _hoveredTooltip = fullText;
+            }
+        }
     }
 
     // ──────────────────────────────────────────────────────────────
     // 内部方法
     // ──────────────────────────────────────────────────────────────
 
-    /// <summary>仅在 update 内被调用，且需确认本菜单仍为 active。</summary>
+    public void RefreshEntries()
+    {
+        _rightEntries = MemoryManager.Instance.GetMemories(_npcName);
+        _manualCount = MemoryManager.Instance.GetManualMemoryCount(_npcName);
+        _rightIndex = 0;
+        _leftIndex = 0;
+        RebuildButtons();
+    }
+
+    private void RebuildButtons()
+    {
+        _plusRects.Clear();
+        _editButtons.Clear();
+        _deleteButtons.Clear();
+
+        if (_state == DistillState.Ready)
+        {
+            int visibleLeft = Math.Min(_visibleRows, Math.Max(0, _candidates.Count - _leftIndex));
+            for (int i = 0; i < visibleLeft; i++)
+            {
+                int rowY = _contentTopY + i * RowH;
+                _plusRects.Add(new Rectangle(
+                    _leftColX,
+                    rowY + (RowH - PlusSize) / 2,
+                    PlusSize, PlusSize));
+            }
+        }
+
+        int visibleRight = Math.Min(_visibleRows, Math.Max(0, _rightEntries.Count - _rightIndex));
+        for (int i = 0; i < visibleRight; i++)
+        {
+            int rowY = _contentTopY + i * RowH;
+            int btnY = rowY + (RowH - RowBtnSize) / 2;
+
+            _editButtons.Add(new ClickableTextureComponent(
+                new Rectangle(_rightColX + _colW - 86, btnY, RowBtnSize, RowBtnSize),
+                Game1.mouseCursors,
+                new Rectangle(EditSourceX, EditSourceY, EditSourceSize, EditSourceSize),
+                EditSourceScale));
+
+            _deleteButtons.Add(new ClickableTextureComponent(
+                new Rectangle(_rightColX + _colW - 42, btnY, RowBtnSize, RowBtnSize),
+                Game1.mouseCursors,
+                new Rectangle(DeleteSourceX, DeleteSourceY, DeleteSourceSize, DeleteSourceSize),
+                DeleteSourceScale));
+        }
+    }
+
+    private static string TruncateString(string text, SpriteFont font, float maxWidth)
+    {
+        if (string.IsNullOrEmpty(text) || font.MeasureString(text).X <= maxWidth)
+            return text;
+
+        const string ellipsis = "...";
+        float targetWidth = maxWidth - font.MeasureString(ellipsis).X;
+        if (targetWidth <= 0)
+            return ellipsis;
+
+        int low = 0;
+        int high = text.Length;
+        int best = 0;
+
+        while (low <= high)
+        {
+            int mid = (low + high) / 2;
+            if (font.MeasureString(text.Substring(0, mid)).X <= targetWidth)
+            {
+                best = mid;
+                low = mid + 1;
+            }
+            else
+            {
+                high = mid - 1;
+            }
+        }
+
+        return text.Substring(0, best) + ellipsis;
+    }
+
     private void ApplyResult()
     {
         if (Game1.activeClickableMenu != this)
@@ -274,8 +496,8 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
         {
             case MemoryExtractStatus.Success:
                 _candidates = result.Candidates ?? new List<string>();
-                _state = DistillState.Ready;        // 先翻转状态……
-                RefreshEntries();                    // 再重建按钮（此时 RebuildButtons 才会填充 _plusRects）
+                _state = DistillState.Ready;
+                RefreshEntries();
                 Game1.playSound("smallSelect");
                 break;
 
@@ -385,109 +607,13 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
         exitThisMenu(playSound: false);
     }
 
-    private void RebuildButtons()
+    protected override void cleanupBeforeExit()
     {
-        _plusRects.Clear();
-        _editButtons.Clear();
-        _deleteButtons.Clear();
+        base.cleanupBeforeExit();
 
-        // 左栏 + 按钮（Ready 态才显示候选）
-        if (_state == DistillState.Ready)
-        {
-            for (int i = 0; i < _candidates.Count; i++)
-            {
-                _plusRects.Add(new Rectangle(
-                    LeftColX,
-                    ColumnTop + 20 + i * RowH,
-                    PlusSize, PlusSize));
-            }
-        }
+        _cts.Cancel();
 
-        // 右栏 edit / delete 按钮
-        int visibleRight = Math.Min(VisibleRows, Math.Max(0, _rightEntries.Count - _rightIndex));
-        for (int i = 0; i < visibleRight; i++)
-        {
-            int rowY = ColumnTop + 20 + i * RowH;
-
-            _editButtons.Add(new ClickableTextureComponent(
-                new Rectangle(RightColX + ColW - 95, rowY, RowBtnSize, RowBtnSize),
-                Game1.mouseCursors,
-                new Rectangle(EditSourceX, EditSourceY, EditSourceSize, EditSourceSize),
-                EditSourceScale));
-
-            _deleteButtons.Add(new ClickableTextureComponent(
-                new Rectangle(RightColX + ColW - 45, rowY, RowBtnSize, RowBtnSize),
-                Game1.mouseCursors,
-                new Rectangle(DeleteSourceX, DeleteSourceY, DeleteSourceSize, DeleteSourceSize),
-                DeleteSourceScale));
-        }
-    }
-
-    private void DrawReady(SpriteBatch b, int mx, int my)
-    {
-        // 列头
-        b.DrawString(Game1.smallFont, I18n.Memory.DistillLeftTitle(),
-            new Vector2(LeftColX, ColumnTop - 30), Game1.textColor);
-        b.DrawString(Game1.smallFont, I18n.Memory.DistillRightTitle(),
-            new Vector2(RightColX, ColumnTop - 30), Game1.textColor);
-
-        // 右栏容量行（Manual 口径，非总数）
-        string cap = $"{_manualCount} / {MemoryManager.MaxMemoriesPerNpc}";
-        var capSize = Game1.smallFont.MeasureString(cap);
-        b.DrawString(Game1.smallFont, cap,
-            new Vector2(RightColX + ColW - capSize.X, ColumnTop - 30), Color.Gray);
-
-        // 分隔竖线
-        b.Draw(Game1.staminaRect,
-            new Rectangle(DividerX, ColumnTop - 30, 1, MenuHeight - ColumnTop - 30),
-            Color.Gray * 0.5f);
-
-        // 左栏候选
-        bool full = _manualCount >= MemoryManager.MaxMemoriesPerNpc;
-        for (int i = 0; i < _candidates.Count && i < _plusRects.Count; i++)
-        {
-            Rectangle rect = _plusRects[i];
-            bool used = _usedCandidates.Contains(_candidates[i]);
-            bool hover = rect.Contains(mx, my);
-
-            Color boxColor;
-            if (used || full)
-                boxColor = Color.Gray * 0.6f;
-            else if (hover)
-                boxColor = Color.Gold;
-            else
-                boxColor = Color.White;
-
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
-                new Rectangle(432, 439, 9, 9),
-                rect.X, rect.Y, rect.Width, rect.Height,
-                boxColor, 4f, false);
-
-            Color textColor = used ? Game1.textColor * 0.5f : Game1.textColor;
-            b.DrawString(Game1.dialogueFont, _candidates[i],
-                new Vector2(LeftColX + 48, rect.Y + 6),
-                textColor);
-        }
-
-        // 右栏条目
-        int visibleRight = Math.Min(VisibleRows, Math.Max(0, _rightEntries.Count - _rightIndex));
-        for (int i = 0; i < visibleRight; i++)
-        {
-            int idx = _rightIndex + i;
-            MemoryEntry entry = _rightEntries[idx];
-            int rowY = ColumnTop + 20 + i * RowH;
-
-            bool isAuto = entry.Source == "Auto";
-            string prefix = isAuto ? I18n.Memory.AutoPrefix() : "";
-            Color textColor = isAuto ? new Color(120, 140, 160) : Game1.textColor;
-            string text = $"{idx + 1}. {prefix}{entry.Content}";
-
-            b.DrawString(Game1.dialogueFont, text,
-                new Vector2(RightColX, rowY),
-                textColor);
-
-            if (i < _editButtons.Count) _editButtons[i].draw(b);
-            if (i < _deleteButtons.Count) _deleteButtons[i].draw(b);
-        }
+        if (_returnMenu != null && Game1.activeClickableMenu == this)
+            Game1.activeClickableMenu = _returnMenu;
     }
 }
