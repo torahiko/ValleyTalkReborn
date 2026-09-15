@@ -730,6 +730,14 @@ internal class MemoryManager : IMemoryProvider
         return _memories.TryGetValue(npcName, out var list) ? list.Count : 0;
     }
 
+    /// <summary>Manual 池条目数（AddMemory 的容量判定口径；区别于 GetMemoryCount 的 Manual+Auto 总数）。</summary>
+    public int GetManualMemoryCount(string npcName)
+    {
+        EnsureLoaded();
+        if (!_memories.TryGetValue(npcName, out var list)) return 0;
+        return list.Count(m => m.Source == "Manual");
+    }
+
     // ──────────────────────────────────────────────────────────────
     // 🌟 Prompt 注入：手动规则（高优先级）+ 自动事实（低优先级）
     // 含情境触发判定（无色结构化标签）

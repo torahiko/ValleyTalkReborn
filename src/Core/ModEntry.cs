@@ -547,6 +547,35 @@ namespace ValleytalkReborn
                         Monitor.Log($"未找到约定 {memoryId} (NPC: {npcName})", LogLevel.Warn);
                 });
             });
+
+        helper.ConsoleCommands.Add("vt_extract_test", "测试记忆提取服务。用法: vt_extract_test <npcName>",
+            async (cmd, args) =>
+            {
+                string npcName = args.Length > 0 ? args[0] : "Abigail";
+
+                string npcDisplayName = npcName;
+                await MainThreadDispatcher.RunOnMainThreadAsync(() =>
+                {
+                    var npc = Game1.getCharacterFromName(npcName);
+                    if (npc != null && !string.IsNullOrWhiteSpace(npc.displayName))
+                        npcDisplayName = npc.displayName;
+                });
+
+                var existingManual = MemoryManager.Instance.GetMemories(npcName)
+                    .Where(m => m.Source == "Manual")
+                    .Select(m => m.Content)
+                    .ToList();
+
+                Monitor.Log($"[Test] Running MemoryExtractService for [{npcName}] (display: {npcDisplayName})...", LogLevel.Info);
+
+                var result = await MemoryExtractService.ExtractAsync(
+                    npcName,
+                    npcDisplayName,
+                    existingManual,
+                    System.Threading.CancellationToken.None);
+
+                Monitor.Log($"[Test] status={result.Status}; candidates={result.Candidates.Count}; error={result.ErrorDetail}", LogLevel.Info);
+            });
         }
 
         /// <summary>
