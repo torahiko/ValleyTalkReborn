@@ -667,11 +667,16 @@ internal class MemoryManager : IMemoryProvider
         if (list.Any(m => m.Id != id && string.Equals(m.Content, trimmed, StringComparison.OrdinalIgnoreCase)))
             return MemoryOperationResult.Duplicate;
 
-        entry.Content = trimmed;
-
-        // 🌟 玩家编辑过的自动记忆 → 升级为手动，不再被自动替换
         if (entry.Source == "Auto")
+        {
+            // 升级将占用 Manual 池名额，满员时拒绝（被编辑条目自身为 Auto，不计入 Manual 数）
+            int manualCount = list.Count(m => m.Source == "Manual");
+            if (manualCount >= MaxMemoriesPerNpc)
+                return MemoryOperationResult.CapacityFull;
             entry.Source = "Manual";
+        }
+
+        entry.Content = trimmed;
 
         if (category.HasValue)
             entry.Category = category.Value;

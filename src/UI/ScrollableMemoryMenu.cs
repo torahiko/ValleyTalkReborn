@@ -391,7 +391,10 @@ namespace ValleytalkReborn
 
         private void OpenAddMemoryDialog()
         {
-            if (ActiveEntries.Count >= MaxEntriesForTab)
+            int currentCount = _currentTab == 0
+                ? MemoryManager.Instance.GetManualMemoryCount(_npcName)
+                : ActiveEntries.Count;
+            if (currentCount >= MaxEntriesForTab)
             {
                 Game1.playSound("cancel");
 
@@ -567,7 +570,9 @@ namespace ValleytalkReborn
                 }
             }
 
-            string cap = $"{entries.Count} / {MaxEntriesForTab}";
+            string cap = _currentTab == 0
+                ? $"{MemoryManager.Instance.GetManualMemoryCount(_npcName)} / {MemoryManager.MaxMemoriesPerNpc}"
+                : $"{entries.Count} / {MaxEntriesForTab}";
 
             b.DrawString(Game1.smallFont, cap,
                 new Vector2(xPositionOnScreen + width - RightPadding - 120,
