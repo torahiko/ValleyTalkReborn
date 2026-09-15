@@ -45,8 +45,10 @@ namespace ValleytalkReborn
 
         // 按钮交互区
         private Rectangle _addButtonRect;         // 仅 Tab 1（世界记忆）
-        private Rectangle _manualAddRect;        // Tab 0 手动录入
-        private Rectangle _aiExtractButtonRect;  // Tab 0 AI 提炼
+        private Rectangle _manualAddRect;        // Tab 0 手动录入（居中）
+        private Rectangle _aiExtractButtonRect;  // Tab 0 AI 提炼（最左）
+        private Rectangle _archiveButtonRect;    // Tab 0 归档箱（最右）
+        private int _archivedCount;
 
         private readonly Rectangle[] _tabRects = new Rectangle[4];
         private Rectangle _callsignRect;
@@ -151,21 +153,48 @@ namespace ValleytalkReborn
                 _tabRects[i] = new Rectangle(tabBaseX + i * (tabW + TabGap), tabBaseY, tabW, TabHeight);
             }
 
-            // 2. 底部添加与提炼按钮布局（响应式计算）
+            // 2. 底部添加、提炼与归档按钮布局
             int btnY = yPositionOnScreen + height - 60;
 
             // Tab 1 世界记忆单按钮（居中）
             int singleBtnW = Math.Min(300, totalTabSpace);
             _addButtonRect = new Rectangle(xPositionOnScreen + (width - singleBtnW) / 2, btnY, singleBtnW, 48);
 
-            // Tab 0 双按钮（手动录入 + AI 提炼 并排自适应居中）
-            int btnGap = 20;
-            int dualBtnW = Math.Min(230, (totalTabSpace - btnGap) / 2);
-            int dualTotalW = dualBtnW * 2 + btnGap;
-            int dualStartX = xPositionOnScreen + (width - dualTotalW) / 2;
+            // Tab 0 三个按钮：最左：对话总结 | 中间：添加记忆 | 最右：归档箱
+            const int extractBtnW = 210;
+            const int addBtnW = 210;
+            const int archiveBtnW = 160;
 
-            _manualAddRect = new Rectangle(dualStartX, btnY, dualBtnW, 48);
-            _aiExtractButtonRect = new Rectangle(dualStartX + dualBtnW + btnGap, btnY, dualBtnW, 48);
+            if (totalTabSpace >= extractBtnW + addBtnW + archiveBtnW + 20)
+            {
+                _aiExtractButtonRect = new Rectangle(
+                    xPositionOnScreen + LeftPadding,
+                    btnY,
+                    extractBtnW, 48);
+
+                _manualAddRect = new Rectangle(
+                    xPositionOnScreen + (width - addBtnW) / 2,
+                    btnY,
+                    addBtnW, 48);
+
+                _archiveButtonRect = new Rectangle(
+                    xPositionOnScreen + width - RightPadding - archiveBtnW,
+                    btnY,
+                    archiveBtnW, 48);
+            }
+            else
+            {
+                // 响应式缩小宽度以防小窗口重叠
+                int gap = 8;
+                int avail = totalTabSpace - gap * 2;
+                int arcW = Math.Max(120, avail * 160 / 580);
+                int rem = avail - arcW;
+                int eachW = rem / 2;
+
+                _aiExtractButtonRect = new Rectangle(xPositionOnScreen + LeftPadding, btnY, eachW, 48);
+                _manualAddRect = new Rectangle(xPositionOnScreen + LeftPadding + eachW + gap, btnY, eachW, 48);
+                _archiveButtonRect = new Rectangle(xPositionOnScreen + LeftPadding + eachW * 2 + gap * 2, btnY, arcW, 48);
+            }
 
             _listTopY = yPositionOnScreen + TopPadding + (_currentTab == 0 ? TabHeight + 8 : 0);
 
@@ -220,6 +249,10 @@ namespace ValleytalkReborn
                 && Game1.keyboardDispatcher.Subscriber == null)
                 Game1.keyboardDispatcher.Subscriber = _bioTextBox;
 
+            _archivedCount = (_currentTab == 0 && !string.IsNullOrEmpty(_currentNpcName))
+                ? MemoryManager.Instance.GetArchivedCount(_currentNpcName)
+                : 0;
+
             ClampStartIndex();
             RefreshActionButtons();
             PositionScrollComponents();
@@ -229,8 +262,15 @@ namespace ValleytalkReborn
         {
             if (string.IsNullOrEmpty(_currentNpcName))
                 return new List<MemoryEntry>();
+
             var list = MemoryManager.Instance.GetMemories(_currentNpcName);
-            return list ?? new List<MemoryEntry>();
+            if (list == null)
+                return new List<MemoryEntry>();
+
+            // 规则条目（Behavior）始终置顶排布
+            return list
+                .OrderByDescending(e => e.Category == MemoryCategory.Behavior)
+                .ToList();
         }
 
         private List<MemoryEntry> SafeGetWorldEntries()
@@ -350,8 +390,11 @@ namespace ValleytalkReborn
         {
             int tabSnapshot = _currentTab;
 
+            // 限制在 320 像素以内，防止超长文本或无空格英文字符撑爆确认弹窗
+            string safeContent = UiHelper.TruncateString(entry.Content, Game1.dialogueFont, 320f);
+
             Game1.activeClickableMenu = new ConfirmationDialog(
-                I18n.Memory.DeleteConfirm(entry.Content),
+                I18n.Memory.DeleteConfirm(safeContent),
                 _ =>
                 {
                     if (tabSnapshot == 0)
@@ -456,6 +499,13 @@ namespace ValleytalkReborn
                     return;
                 }
 
+                // AI 提炼
+                if (_aiExtractButtonRect.Contains(x, y))
+                {
+                    TryOpenDistillMenu();
+                    return;
+                }
+
                 // 手动录入
                 if (_manualAddRect.Contains(x, y))
                 {
@@ -463,10 +513,18 @@ namespace ValleytalkReborn
                     return;
                 }
 
-                // AI 提炼
-                if (_aiExtractButtonRect.Contains(x, y))
+                // 归档箱
+                if (_archiveButtonRect.Contains(x, y))
                 {
-                    TryOpenDistillMenu();
+                    if (string.IsNullOrEmpty(_currentNpcName))
+                    {
+                        Game1.playSound("cancel");
+                        return;
+                    }
+
+                    Game1.playSound("bigSelect");
+                    ReleaseKeyboard();
+                    Game1.activeClickableMenu = new ArchivedMemoryMenu(_currentNpcName, this);
                     return;
                 }
 
@@ -763,7 +821,7 @@ namespace ValleytalkReborn
                 DrawTab3(b);
             }
 
-            // 添加/提炼按钮与容量计数（仅 Tab0 / Tab1）
+            // 添加/提炼/归档按钮与容量计数（仅 Tab0 / Tab1）
             if (_currentTab == 0 || _currentTab == 1)
                 DrawBottomButtons(b);
 
@@ -839,6 +897,17 @@ namespace ValleytalkReborn
                 return;
             }
 
+            // 1. 统一字体缩放 0.8f
+            const float fontScale = 0.8f;
+
+            // 2. 预留固定日期宽度，严格避开右侧按钮（RightPadding + 85px），保证日期垂直右对齐
+            float fixedDateWidth = Game1.smallFont.MeasureString("2026-12-31 00:00").X * fontScale;
+            float dateX = xPositionOnScreen + width - RightPadding - 85 - fixedDateWidth;
+
+            // 3. 内容起始 X 与最右限制（在日期左侧预留 16px 缓冲区间）
+            float contentStartX = xPositionOnScreen + LeftPadding;
+            float maxContentWidth = (dateX - 16) - contentStartX;
+
             for (int i = 0; i < visibleCount && _startIndex + i < entries.Count; i++)
             {
                 int idx = _startIndex + i;
@@ -852,16 +921,13 @@ namespace ValleytalkReborn
                 if (rowRect.Contains(Game1.getMouseX(), Game1.getMouseY()))
                     b.Draw(Game1.staminaRect, rowRect, new Color(70, 130, 180) * 0.18f);
 
-                // 🌟 认知分层标签渲染（CORE-MEM-103）：Tab0 规则金/回忆色，Tab1 保持 isAuto 前缀
-                bool isRule;
                 string prefix;
                 Color textColor;
                 if (_currentTab == 0)
                 {
-                    isRule = entry.Category == MemoryCategory.Behavior;
+                    bool isRule = entry.Category == MemoryCategory.Behavior;
                     prefix = isRule ? I18n.Memory.RuleTag() : I18n.Memory.MemoryTag();
-                    textColor = isRule ? new Color(255, 215, 0)
-                        : (entry.Source == "Auto" ? new Color(130, 150, 170) : Game1.textColor);
+                    textColor = entry.Source == "Auto" ? new Color(130, 150, 170) : Game1.textColor;
                 }
                 else
                 {
@@ -869,16 +935,22 @@ namespace ValleytalkReborn
                     prefix = isAuto ? I18n.Memory.AutoPrefix() : "";
                     textColor = isAuto ? new Color(120, 140, 160) : Game1.textColor;
                 }
-                string text = $"{idx + 1}. {prefix}{entry.Content}";
 
-                b.DrawString(Game1.dialogueFont, text,
-                    new Vector2(xPositionOnScreen + LeftPadding, rowY), textColor);
+                // 4. 无论多长，内容文本严格截止到日期前截断
+                string fullRawText = $"{idx + 1}. {prefix}{entry.Content}";
+                string text = UiHelper.TruncateString(fullRawText, Game1.dialogueFont, maxContentWidth, fontScale);
 
                 string dateText = entry.CreatedAt.ToString("yyyy-MM-dd HH:mm");
-                var dateSize = Game1.smallFont.MeasureString(dateText);
+
+                // 绘制记忆条目文本（缩放 0.8f，+4px 保证在 46px 行高内居中）
+                b.DrawString(Game1.dialogueFont, text,
+                    new Vector2(contentStartX, rowY + 4),
+                    textColor, 0f, Vector2.Zero, fontScale, SpriteEffects.None, 0.88f);
+
+                // 绘制日期（缩放 0.8f）
                 b.DrawString(Game1.smallFont, dateText,
-                    new Vector2(xPositionOnScreen + width - dateSize.X - RightPadding - 110, rowY + 4),
-                    Color.Gray);
+                    new Vector2(dateX, rowY + 6),
+                    Color.Gray, 0f, Vector2.Zero, fontScale, SpriteEffects.None, 0.88f);
 
                 if (i < _editButtons.Count) _editButtons[i].draw(b);
                 if (i < _deleteButtons.Count) _deleteButtons[i].draw(b);
@@ -1212,7 +1284,22 @@ namespace ValleytalkReborn
 
             if (_currentTab == 0)
             {
-                // 手动录入（左）
+                // AI 提炼（最左）
+                string distillText = I18n.Memory.DistillButton();
+                bool distillHover = _aiExtractButtonRect.Contains(mx, my);
+                IClickableMenu.drawTextureBox(b,
+                    _aiExtractButtonRect.X, _aiExtractButtonRect.Y,
+                    _aiExtractButtonRect.Width, _aiExtractButtonRect.Height,
+                    distillHover ? Color.Gold : Color.White);
+
+                var distillLabelSize = Game1.smallFont.MeasureString(distillText);
+                b.DrawString(Game1.smallFont, distillText,
+                    new Vector2(
+                        _aiExtractButtonRect.X + (_aiExtractButtonRect.Width - distillLabelSize.X) / 2f,
+                        _aiExtractButtonRect.Y + (_aiExtractButtonRect.Height - distillLabelSize.Y) / 2f),
+                    Game1.textColor);
+
+                // 手动录入（居中）
                 string manualText = I18n.Memory.AddButton();
                 bool manualHover = _manualAddRect.Contains(mx, my);
                 IClickableMenu.drawTextureBox(b,
@@ -1227,19 +1314,19 @@ namespace ValleytalkReborn
                         _manualAddRect.Y + (_manualAddRect.Height - manualLabelSize.Y) / 2f),
                     Game1.textColor);
 
-                // AI 提炼（右）
-                string distillText = I18n.Memory.DistillButton();
-                bool distillHover = _aiExtractButtonRect.Contains(mx, my);
+                // 归档箱（最右）
+                string archiveText = I18n.Memory.ArchiveButton(_archivedCount, MemoryManager.MaxArchivedMemoriesPerNpc);
+                bool archiveHover = _archiveButtonRect.Contains(mx, my);
                 IClickableMenu.drawTextureBox(b,
-                    _aiExtractButtonRect.X, _aiExtractButtonRect.Y,
-                    _aiExtractButtonRect.Width, _aiExtractButtonRect.Height,
-                    distillHover ? Color.Gold : Color.White);
+                    _archiveButtonRect.X, _archiveButtonRect.Y,
+                    _archiveButtonRect.Width, _archiveButtonRect.Height,
+                    archiveHover ? Color.Gold : Color.White);
 
-                var distillLabelSize = Game1.smallFont.MeasureString(distillText);
-                b.DrawString(Game1.smallFont, distillText,
+                var archiveLabelSize = Game1.smallFont.MeasureString(archiveText);
+                b.DrawString(Game1.smallFont, archiveText,
                     new Vector2(
-                        _aiExtractButtonRect.X + (_aiExtractButtonRect.Width - distillLabelSize.X) / 2f,
-                        _aiExtractButtonRect.Y + (_aiExtractButtonRect.Height - distillLabelSize.Y) / 2f),
+                        _archiveButtonRect.X + (_archiveButtonRect.Width - archiveLabelSize.X) / 2f,
+                        _archiveButtonRect.Y + (_archiveButtonRect.Height - archiveLabelSize.Y) / 2f),
                     Game1.textColor);
             }
             else
@@ -1254,6 +1341,7 @@ namespace ValleytalkReborn
                     _addButtonRect.Width, _addButtonRect.Height, addColor);
 
                 var addLabelSize = Game1.smallFont.MeasureString(addText);
+
                 b.DrawString(Game1.smallFont, addText,
                     new Vector2(
                         _addButtonRect.X + (_addButtonRect.Width - addLabelSize.X) / 2f,
@@ -1289,7 +1377,7 @@ namespace ValleytalkReborn
                 int y = _listTopY + 10 + i * LineHeight;
 
                 var del = new ClickableTextureComponent(
-                    new Rectangle(xPositionOnScreen + width - RightPadding - 30, y, ButtonSize, ButtonSize),
+                    new Rectangle(xPositionOnScreen + width - RightPadding - 30, y + 2, ButtonSize, ButtonSize),
                     Game1.mouseCursors, new Rectangle(322, 498, 12, 12), 2.5f);
                 del.hoverText = I18n.Memory.DeleteButtonHover();
                 _deleteButtons.Add(del);
