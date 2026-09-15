@@ -31,7 +31,7 @@
 // Phase 4: Simple Greeting Fast Path
 //   +- Exact match against greeting keywords ("hi", "hello")
 //   +- First conversation today (TalkedToToday == false)
-//   +- Skip if: stood-up pending, on date, jealousy, action requested, following
+//   +- Skip if: spouse/roommate, stood-up pending, on date, jealousy, action requested, following
 //   +- If matched: minimal context (no memories, no farm details)
 //
 // Phase 5: Context Switches
@@ -817,7 +817,7 @@ public static class ContextRouter
         bool talkedToday = HasTalkedToToday(npc);
 
         // Phase 4: 首次问候快速路径
-        if (!ShouldSuppressSimpleGreeting(flags))
+        if (!ShouldSuppressSimpleGreeting(npc, flags))
         {
             if (TryEvaluateAsSimpleGreeting(
                 cleanInput,
@@ -1150,9 +1150,20 @@ public static class ContextRouter
         return true;
     }
 
-    private static bool ShouldSuppressSimpleGreeting(ContextFlags flags)
+    private static bool ShouldSuppressSimpleGreeting(NPC npc, ContextFlags flags)
     {
-        return flags.HasStoodUpPending
+        // 伴侣与室友同住同作息，始终需要完整的家庭与生活上下文
+        bool isSpouseOrRoommate = false;
+        if (npc != null && Game1.player?.friendshipData != null)
+        {
+            if (Game1.player.friendshipData.TryGetValue(npc.Name, out var fs))
+            {
+                isSpouseOrRoommate = fs.IsMarried() || fs.IsRoommate();
+            }
+        }
+
+        return isSpouseOrRoommate
+            || flags.HasStoodUpPending
             || flags.IsOnDate
             || flags.IsJealousy
             || flags.IsInviteRequested
