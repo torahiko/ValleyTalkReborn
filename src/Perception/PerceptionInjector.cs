@@ -98,10 +98,34 @@ internal static class PerceptionInjector
     {
         if (prompts == null || string.IsNullOrEmpty(npcName)) return;
 
+        string streakBlock = BuildStreakBlock(npcName);
+        if (!string.IsNullOrEmpty(streakBlock))
+            prompts.SystemPrompt += "\n\n" + streakBlock;
+
         string text = BuildPerceptionText(npcName);
         if (string.IsNullOrEmpty(text)) return;
 
         prompts.SystemPrompt += "\n\n" + text;
+    }
+
+    /// <summary>
+    /// Builds the static streak context block (consecutive talk / gift / same-item gift).
+    /// Gated by ModConfig.EnableStreakContext. Returns "" when disabled or no streak data.
+    /// Zero state mutation — read-only pass over ConsecutiveTalkTracker data.
+    /// </summary>
+    public static string BuildStreakBlock(string npcName)
+    {
+        if (ModEntry.Config == null || !ModEntry.Config.EnableStreakContext) return string.Empty;
+
+        string body = ConsecutiveTalkTracker.BuildStreakContextBlock(npcName);
+        if (string.IsNullOrEmpty(body)) return string.Empty;
+
+        bool isZh = IsChineseLanguage;
+        string header = isZh
+            ? "[相处的坚持]（你们之间持续多日、无需当即回应的固定事实）"
+            : "[STEADFAST ROUTINES] (multi-day facts about your relationship; background, no immediate reaction needed)";
+
+        return header + "\n" + body;
     }
 
     public static string BuildGossipBlock(string npcName)
