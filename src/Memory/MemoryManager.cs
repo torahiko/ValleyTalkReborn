@@ -36,7 +36,7 @@ public class MemoryEntry
     public string TriggerLocation { get; set; } = "";
     public string TargetDayHint { get; set; } = "";   // Promise 专用：LLM 原文如 "Weekend"
     public bool IsFulfilled { get; set; } = false;    // Promise 专用
-    public int LastPromptedDay { get; set; } = -1;    // 激活去重用（MEM-06 消费）
+    public int LastPromptedDay { get; set; } = -1;    // 保留字段：旧档兼容；CORE-MEM-102 分层重写后不再读写
     public DateTime ArchivedAt { get; set; } = default; // 归档时刻；default=从未归档（CORE-MEM-101）
 }
 
@@ -66,6 +66,7 @@ internal class MemoryManager : IMemoryProvider
     public const int MaxAutoMemoriesPerNpc = 40; // Auto 池容量（Manual 池独立）
     public const int MaxCoreFactsInPrompt = 6;   // 核心事实段上限（MEM-06 新增）
     public const int MaxArchivedMemoriesPerNpc = 30; // 归档箱滚动上限（CORE-MEM-101）
+    public const int MaxHardRulesInPrompt = 3;    // 强锚点规则段上限（CORE-MEM-102）
 
     private const int EvictionImmuneImportance = 4; // Importance >= 此值免疫淘汰（未履约 Promise 也免疫）
 
@@ -952,295 +953,86 @@ internal class MemoryManager : IMemoryProvider
     // 🌟 Prompt 注入：全面契合第二人称日常交互心流
     // ──────────────────────────────────────────────────────────────
 
-    private static readonly Dictionary<string, string[]> LocationAliases = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["beach"] = new[] { "海边", "沙滩", "海滩" },
-        ["saloon"] = new[] { "酒吧", "星之果实餐吧", "餐吧" },
-        ["mine"] = new[] { "矿洞", "矿井", "矿" },
-        ["farm"] = new[] { "农场" },
-        ["town"] = new[] { "小镇", "镇上", "广场" },
-        ["forest"] = new[] { "森林", "树林", "秘密森林" },
-        ["mountain"] = new[] { "山上", "山", "湖边", "湖" },
-        ["hospital"] = new[] { "医院", "诊所" },
-        ["communitycenter"] = new[] { "社区中心" },
-        ["jojamart"] = new[] { "joja", "超市" },
-        ["seedshop"] = new[] { "皮埃尔", "种子店", "杂货店" },
-        ["trailer"] = new[] { "拖车" },
-        ["sciencehouse"] = new[] { "科学屋" },
-        ["adventurersguild"] = new[] { "冒险家公会" },
-        ["blacksmith"] = new[] { "铁匠铺" },
-        ["manorhouse"] = new[] { "庄园" },
-        ["archaeologyhouse"] = new[] { "博物馆", "考古" },
-        ["railroad"] = new[] { "铁路", "火车站" },
-        ["desert"] = new[] { "沙漠", "卡利科" },
-        ["island"] = new[] { "岛", "姜岛" },
-    };
-
+    // maxCount 参数保留以维持签名兼容；分层配额由 MaxHardRulesInPrompt / MaxCoreFactsInPrompt / MaxAutoInPrompt 决定（CORE-MEM-102）
     public string GetSmartMemoryContext(string npcName, int maxCount = MaxMemoriesInPrompt)
     {
         EnsureLoaded();
 
-        if (!_memories.TryGetValue(npcName, out var list) || list.Count == 0)
+        if (string.IsNullOrWhiteSpace(npcName) ||
+            !_memories.TryGetValue(npcName, out var list) || list.Count == 0)
             return "";
 
         bool isZh = IsChineseLanguage;
+        int today = CurrentGameDay();
 
-        // (1) 玩家手动记录的深层默契
-        var manualEntries = list
-            .Where(m => m.Source == "Manual")
+        var hardRules = list
+            .Where(m => m.Source == "Manual" && m.Category == MemoryCategory.Behavior)
             .OrderByDescending(m => m.CreatedAt)
-            .Take(maxCount)
+            .ThenByDescending(m => m.CreatedDay)
+            .Take(MaxHardRulesInPrompt)
             .ToList();
 
-        // (2) 长期重要事实
         var coreFacts = list
-            .Where(m => m.Source == "Auto" && m.Type == MemoryType.Fact && m.Importance >= 4)
+            .Where(m => m.Category == MemoryCategory.Fact && m.Importance >= EvictionImmuneImportance)
             .OrderByDescending(m => m.Importance)
             .ThenByDescending(m => m.CreatedDay)
+            .ThenByDescending(m => m.CreatedAt)
             .Take(MaxCoreFactsInPrompt)
             .ToList();
 
-        // (3) 今日待履约 Promise
-        var activePromises = GetActivePromises(npcName);
-        string currentLocation = Game1.player?.currentLocation?.Name ?? "";
-        int today = CurrentGameDay();
-
-        var todayPromises = new List<MemoryEntry>();
-        foreach (var p in activePromises)
-        {
-            if (DayHintMatches(p.TargetDayHint, p.CreatedDay) &&
-                LocationHintMatches(p.TriggerLocation, currentLocation))
-            {
-                todayPromises.Add(p);
-                if (p.LastPromptedDay != today)
-                {
-                    p.LastPromptedDay = today;
-                    ModEntry.SMonitor?.Log(
-                        $"[MemoryManager] Promise activated for [{npcName}]: \"{TrimForLog(p.Content)}\"",
-                        LogLevel.Info);
-                }
-            }
-        }
-
-        // (4) 近期琐事（排除核心事实 Id，Importance<=3）
-        var coreFactIds = new HashSet<string>(coreFacts.Select(f => f.Id));
-        var recentTrivia = list
-            .Where(m => m.Source == "Auto" && m.Type == MemoryType.Fact && m.Importance <= 3)
-            .Where(m => !coreFactIds.Contains(m.Id))
-            .OrderByDescending(m => m.CreatedAt)
+        var recentItems = list
+            .Where(m => m.Category == MemoryCategory.Fact &&
+                        m.Importance < EvictionImmuneImportance &&
+                        (today - m.CreatedDay) < 3)
+            .OrderByDescending(m => m.CreatedDay)
+            .ThenByDescending(m => m.CreatedAt)
             .Take(MaxAutoInPrompt)
             .ToList();
 
-        if (manualEntries.Count == 0 && coreFacts.Count == 0 &&
-            todayPromises.Count == 0 && recentTrivia.Count == 0)
+        if (hardRules.Count == 0 && coreFacts.Count == 0 && recentItems.Count == 0)
             return "";
 
         var sb = new System.Text.StringBuilder();
 
-        // ── (1) 你与农夫之间确凿的事实与默契 ──
-        if (manualEntries.Count > 0)
+        if (hardRules.Count > 0)
         {
             sb.AppendLine(isZh
-                ? "=== 你与农夫之间确凿的事实与默契 ==="
-                : "=== GROUNDED FACTS & MUTUAL UNDERSTANDINGS ===");
+                ? "=== 必须严格遵守的互动禁忌与防线 ==="
+                : "=== INTERACTION BOUNDARIES (STRICT) ===");
             sb.AppendLine(isZh
-                ? "这些是你心里最确信的事、你们当面定下的规矩或专属默契。你和农夫说话时自然带着这份心照不宣："
-                : "These are things you know for certain about the farmer and mutual understandings between you two. \n\nKeep them in mind naturally when talking:");
-            sb.AppendLine();
-
-            foreach (var e in manualEntries)
-                sb.AppendLine($"- {e.Content}");
-
+                ? "以下是不可违背的红线，在交谈中必须始终保持遵守："
+                : "Strict rules and boundaries you must never cross:");
+            foreach (var r in hardRules)
+                sb.AppendLine($"- {r.Content}");
             sb.AppendLine("=========================================");
             sb.AppendLine();
         }
 
-        // ── (2) 长期重要事实 ──
-        if (coreFacts.Count > 0)
+        if (coreFacts.Count > 0 || recentItems.Count > 0)
         {
+            sb.AppendLine("<shared_lore>");
             sb.AppendLine(isZh
-                ? "=== 关于农夫的重要事实与深层了解 ==="
-                : "=== KEY FACTS ABOUT THE FARMER ===");
-            sb.AppendLine(isZh
-                ? "关于农夫，你心里一直记着的要紧事（作为你平时的背景认知）："
-                : "Important background facts about the farmer that you keep in mind:");
-            sb.AppendLine();
-            foreach (var e in coreFacts)
-                sb.AppendLine($"- {e.Content}");
-            sb.AppendLine("=========================================");
-            sb.AppendLine();
-        }
+                ? "关于农夫的一些过往事实与近况（你心里有数即可，无需刻意在每句话中复述，仅在话赶话聊到时自然流露）："
+                : "Background facts and recent context about the farmer (keep in mind naturally, do not force into conversation unless relevant):");
 
-        // ── (3) 今日待履约约定 ──
-        if (todayPromises.Count > 0)
-        {
-            sb.AppendLine(isZh
-                ? "=== 你与农夫今天说好的事（待履约约定）==="
-                : "=== TODAY'S COMMITMENTS WITH THE FARMER ===");
-            sb.AppendLine(isZh
-                ? "你和农夫约好今天要做的事。如果当下话头合适，可以自然提一嘴："
-                : "Things you and the farmer planned or agreed to do today. Feel free to bring it up naturally if the moment fits:");
-            sb.AppendLine();
-            foreach (var p in todayPromises)
-                sb.AppendLine($"- [TODAY_PROMISE] {p.Content}");
-            sb.AppendLine("=========================================");
-            sb.AppendLine();
-        }
+            foreach (var f in coreFacts)
+                sb.AppendLine($"- {f.Content}");
 
-        // ── (4) 近期琐事记录 ──
-        if (recentTrivia.Count > 0)
-        {
-            sb.AppendLine(isZh
-                ? "=== 你最近留意到的小事与近况 ==="
-                : "=== RECENT DETAILS IN MIND ===");
-            sb.AppendLine(isZh
-                ? "这些是你最近留心到的小细节或听说的闲话琐事。不用刻意每句话都提，话赶话聊到时随口带一句就行。标记 [CONTEXT_RELEVANT] 的事与你此刻所在的地方正相关："
-                : "Small details or recent happenings you've caught wind of. No need to force them into conversation—just let them surface naturally if the moment fits. Items marked [CONTEXT_RELEVANT] tie into where you are right now:");
-            sb.AppendLine();
-
-            foreach (var e in recentTrivia)
+            foreach (var r in recentItems)
             {
-                bool isRelevant = IsContextuallyRelevant(e.Content, currentLocation);
-                if (isRelevant)
-                    sb.AppendLine($"- [CONTEXT_RELEVANT] {e.Content}");
-                else
-                    sb.AppendLine($"- {e.Content}");
+                int diff = Math.Max(0, today - r.CreatedDay);
+                string prefix = diff switch
+                {
+                    0 => isZh ? "[今天] " : "[Today] ",
+                    1 => isZh ? "[昨天] " : "[Yesterday] ",
+                    _ => isZh ? "[前天] " : "[2 days ago] "
+                };
+                sb.AppendLine($"- {prefix}{r.Content}");
             }
 
-            sb.AppendLine("=========================================");
+            sb.AppendLine("</shared_lore>");
         }
 
         return sb.ToString();
-    }
-
-    // ──────────────────────────────────────────────────────────────
-    // 🌟 情境匹配：简单的关键词 + 地点别名匹配
-    // ──────────────────────────────────────────────────────────────
-    private static bool IsContextuallyRelevant(string memoryContent, string currentLocation)
-    {
-        if (string.IsNullOrWhiteSpace(currentLocation) || string.IsNullOrWhiteSpace(memoryContent))
-            return false;
-
-        string lowerContent = memoryContent.ToLowerInvariant();
-        string lowerLocation = currentLocation.ToLowerInvariant();
-
-        if (lowerContent.Contains(lowerLocation))
-            return true;
-
-        foreach (var kvp in LocationAliases)
-        {
-            bool locationMatch = lowerLocation.Contains(kvp.Key);
-            if (locationMatch)
-            {
-                foreach (var alias in kvp.Value)
-                {
-                    if (lowerContent.Contains(alias))
-                        return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    // ──────────────────────────────────────────────────────────────
-    // 🌟 Promise 激活语法匹配
-    // ──────────────────────────────────────────────────────────────
-    private static bool ContainsAny(string source, params string[] keys)
-    {
-        foreach (var k in keys)
-        {
-            if (source.Contains(k, StringComparison.OrdinalIgnoreCase))
-                return true;
-        }
-        return false;
-    }
-
-    private static bool CrossContains(string a, string b)
-    {
-        if (string.IsNullOrWhiteSpace(a) || string.IsNullOrWhiteSpace(b))
-            return false;
-        return a.Contains(b, StringComparison.OrdinalIgnoreCase) || b.Contains(a, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool DayHintMatches(string hint, int createdDay)
-    {
-        if (string.IsNullOrWhiteSpace(hint))
-            return true;
-
-        string h = hint.Trim();
-        int today = CurrentGameDay();
-        int dow = (Game1.dayOfMonth - 1) % 7;
-
-        if (ContainsAny(h, "rain", "rainy", "雨"))
-            return Game1.isRaining || Game1.isLightning;
-
-        if (ContainsAny(h, "storm", "thunder", "雷", "暴风雨"))
-            return Game1.isLightning;
-
-        if (ContainsAny(h, "snow", "雪"))
-            return Game1.isSnowing;
-
-        if (ContainsAny(h, "festival", "节日", "庆典"))
-            return Utility.isFestivalDay(Game1.dayOfMonth, Game1.season);
-
-        if (ContainsAny(h, "today", "今天", "今日"))
-            return true;
-
-        if (ContainsAny(h, "tomorrow", "明天", "明日", "次日"))
-            return today >= createdDay + 1;
-
-        if (ContainsAny(h, "weekend", "周末"))
-            return dow == 5 || dow == 6;
-
-        if (ContainsAny(h, "monday", "周一", "星期一", "礼拜一")) return dow == 0;
-        if (ContainsAny(h, "tuesday", "周二", "星期二", "礼拜二")) return dow == 1;
-        if (ContainsAny(h, "wednesday", "周三", "星期三", "礼拜三")) return dow == 2;
-        if (ContainsAny(h, "thursday", "周四", "星期四", "礼拜四")) return dow == 3;
-        if (ContainsAny(h, "friday", "周五", "星期五", "礼拜五")) return dow == 4;
-        if (ContainsAny(h, "saturday", "周六", "星期六", "礼拜六")) return dow == 5;
-        if (ContainsAny(h, "sunday", "周日", "星期日", "星期天", "礼拜日", "礼拜天")) return dow == 6;
-
-        return true;
-    }
-
-    private static bool LocationHintMatches(string triggerLocation, string currentLocationName)
-    {
-        if (string.IsNullOrWhiteSpace(triggerLocation))
-            return true;
-        if (string.IsNullOrWhiteSpace(currentLocationName))
-            return false;
-
-        if (CrossContains(triggerLocation, currentLocationName))
-            return true;
-
-        foreach (var kvp in LocationAliases)
-        {
-            string key = kvp.Key;
-            string[] aliases = kvp.Value;
-
-            bool currentMatches = CrossContains(key, currentLocationName);
-            if (!currentMatches)
-            {
-                foreach (var alias in aliases)
-                {
-                    if (CrossContains(alias, currentLocationName))
-                    {
-                        currentMatches = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!currentMatches) continue;
-
-            if (CrossContains(key, triggerLocation)) return true;
-            foreach (var alias in aliases)
-            {
-                if (CrossContains(alias, triggerLocation)) return true;
-            }
-        }
-
-        return false;
     }
 }
