@@ -761,6 +761,10 @@ namespace ValleytalkReborn
                 return fallback;
             }
 
+            LlmTrafficLogger.LogOutgoing(cacheContext, modelName,
+                BuildEndpoint("chat/completions"),
+                systemPromptString, gameCacheString, npcCacheString, promptString, responseStart);
+
             promptString =
                 (gameCacheString ?? string.Empty) +
                 (npcCacheString ?? string.Empty) +
@@ -999,6 +1003,8 @@ namespace ValleytalkReborn
 
                                 string completeText = fullContentBuilder.ToString();
 
+                                LlmTrafficLogger.LogIncoming(cacheContext, completeText);
+
                                 if (toolCallsDict.Count > 0)
                                 {
                                     var toolResp = new LlmResponse(completeText, true);
@@ -1010,6 +1016,8 @@ namespace ValleytalkReborn
                                             JsonArguments = kvp.Value.Args.ToString()
                                         });
                                     }
+
+                                    LlmTrafficLogger.LogIncomingToolCalls(cacheContext, toolResp.ToolCalls);
                                     return toolResp;
                                 }
 
