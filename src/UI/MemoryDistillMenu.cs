@@ -375,9 +375,11 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             MemoryEntry entry = _rightEntries[idx];
             int rowY = _contentTopY + i * RowH;
 
-            bool isAuto = entry.Source == "Auto";
-            string prefix = isAuto ? I18n.Memory.AutoPrefix() : "";
-            Color textColor = isAuto ? new Color(120, 140, 160) : Game1.textColor;
+            // 🌟 认知分层标签渲染（CORE-MEM-103）
+            bool isRule = entry.Category == MemoryCategory.Behavior;
+            string prefix = isRule ? I18n.Memory.RuleTag() : I18n.Memory.MemoryTag();
+            Color textColor = isRule ? new Color(255, 215, 0)
+                : (entry.Source == "Auto" ? new Color(130, 150, 170) : Game1.textColor);
             string fullText = $"{idx + 1}. {prefix}{entry.Content}";
 
             string displayText = TruncateString(fullText, Game1.smallFont, maxRightTextWidth);
@@ -530,7 +532,7 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             return;
         }
 
-        MemoryOperationResult result = MemoryManager.Instance.AddMemory(_npcName, c);
+        MemoryOperationResult result = MemoryManager.Instance.AddMemory(_npcName, c, MemoryCategory.Fact);
 
         switch (result)
         {

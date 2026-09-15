@@ -852,10 +852,24 @@ namespace ValleytalkReborn
                 if (rowRect.Contains(Game1.getMouseX(), Game1.getMouseY()))
                     b.Draw(Game1.staminaRect, rowRect, new Color(70, 130, 180) * 0.18f);
 
-                bool isAuto = entry.Source == "Auto";
-                string prefix = isAuto ? I18n.Memory.AutoPrefix() : "";
+                // 🌟 认知分层标签渲染（CORE-MEM-103）：Tab0 规则金/回忆色，Tab1 保持 isAuto 前缀
+                bool isRule;
+                string prefix;
+                Color textColor;
+                if (_currentTab == 0)
+                {
+                    isRule = entry.Category == MemoryCategory.Behavior;
+                    prefix = isRule ? I18n.Memory.RuleTag() : I18n.Memory.MemoryTag();
+                    textColor = isRule ? new Color(255, 215, 0)
+                        : (entry.Source == "Auto" ? new Color(130, 150, 170) : Game1.textColor);
+                }
+                else
+                {
+                    bool isAuto = entry.Source == "Auto";
+                    prefix = isAuto ? I18n.Memory.AutoPrefix() : "";
+                    textColor = isAuto ? new Color(120, 140, 160) : Game1.textColor;
+                }
                 string text = $"{idx + 1}. {prefix}{entry.Content}";
-                Color textColor = isAuto ? new Color(120, 140, 160) : Game1.textColor;
 
                 b.DrawString(Game1.dialogueFont, text,
                     new Vector2(xPositionOnScreen + LeftPadding, rowY), textColor);

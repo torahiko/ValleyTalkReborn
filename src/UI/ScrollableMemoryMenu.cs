@@ -54,6 +54,8 @@ namespace ValleytalkReborn
         private Rectangle _addButtonRect;
         private Rectangle _manualAddRect;        // 仅 _currentTab == 0 生效
         private Rectangle _aiExtractButtonRect;  // 仅 _currentTab == 0 生效
+        private Rectangle _archiveButtonRect;    // 仅 _currentTab == 0 生效（CORE-MEM-104）
+        private int _archivedCount;              // 归档计数缓存（RefreshEntries 刷新，避免 draw 逐帧查询）
         private readonly ClickableTextureComponent _closeButton;
         private readonly List<ClickableTextureComponent> _deleteButtons = new();
         private readonly List<ClickableTextureComponent> _editButtons = new();
@@ -112,13 +114,17 @@ namespace ValleytalkReborn
                 300, 48);
 
             _manualAddRect = new Rectangle(
-                xPositionOnScreen + width / 2 - 245,
+                xPositionOnScreen + width - RightPadding - 150 - 10 - 210 - 10 - 210,
                 yPositionOnScreen + height - 60,
-                230, 48);
+                210, 48);
             _aiExtractButtonRect = new Rectangle(
-                xPositionOnScreen + width / 2 + 15,
+                _manualAddRect.Right + 10,
                 yPositionOnScreen + height - 60,
-                230, 48);
+                210, 48);
+            _archiveButtonRect = new Rectangle(
+                _aiExtractButtonRect.Right + 10,
+                yPositionOnScreen + height - 60,
+                150, 48);
 
             _upArrow = new ClickableTextureComponent(
                 new Rectangle(xPositionOnScreen + width - 48,
@@ -238,6 +244,11 @@ namespace ValleytalkReborn
             _startIndex = 0;
             RefreshActionButtons();
             SetScrollbarPosition();
+
+            // ── CORE-MEM-104：Tab0 刷新归档计数缓存（避免 draw 逐帧查询）──
+            _archivedCount = _currentTab == 0
+                ? MemoryManager.Instance.GetArchivedCount(_npcName)
+                : 0;
         }
 
         public override void receiveScrollWheelAction(int direction)
@@ -304,6 +315,14 @@ namespace ValleytalkReborn
                 if (_manualAddRect.Contains(x, y))
                 {
                     OpenAddMemoryDialog();
+                    return;
+                }
+
+                // ── CORE-MEM-104：打开归档箱 ──
+                if (_archiveButtonRect.Contains(x, y))
+                {
+                    Game1.playSound("bigSelect");
+                    Game1.activeClickableMenu = new ArchivedMemoryMenu(_npcName, this);
                     return;
                 }
             }
@@ -527,11 +546,24 @@ namespace ValleytalkReborn
                         b.Draw(Game1.staminaRect, rowRect, new Color(70, 130, 180) * 0.18f);
                     }
 
-                    // 🌟 区分手动/自动记忆
-                    bool isAuto = entry.Source == "Auto";
-                    string prefix = isAuto ? I18n.Memory.AutoPrefix() : "";
+                    // 🌟 认知分层标签渲染（CORE-MEM-103）：Tab0 规则金/回忆色，Tab1 保持 isAuto 前缀
+                    bool isRule;
+                    string prefix;
+                    Color textColor;
+                    if (_currentTab == 0)
+                    {
+                        isRule = entry.Category == MemoryCategory.Behavior;
+                        prefix = isRule ? I18n.Memory.RuleTag() : I18n.Memory.MemoryTag();
+                        textColor = isRule ? new Color(255, 215, 0)
+                            : (entry.Source == "Auto" ? new Color(130, 150, 170) : Game1.textColor);
+                    }
+                    else
+                    {
+                        bool isAuto = entry.Source == "Auto";
+                        prefix = isAuto ? I18n.Memory.AutoPrefix() : "";
+                        textColor = isAuto ? new Color(120, 140, 160) : Game1.textColor;
+                    }
                     string text = $"{idx + 1}. {prefix}{entry.Content}";
-                    Color textColor = isAuto ? new Color(120, 140, 160) : Game1.textColor;
 
                     b.DrawString(Game1.dialogueFont, text,
                         new Vector2(xPositionOnScreen + LeftPadding, rowY),
@@ -595,7 +627,7 @@ namespace ValleytalkReborn
                         _manualAddRect.Y + (_manualAddRect.Height - manualLabelSize.Y) / 2f),
                     Game1.textColor);
 
-                // AI 提炼（右）
+                // AI 提炼（中）
                 string distillText = I18n.Memory.DistillButton();
                 bool distillHover = _aiExtractButtonRect.Contains(mx, my);
                 IClickableMenu.drawTextureBox(b,
@@ -607,6 +639,20 @@ namespace ValleytalkReborn
                     new Vector2(
                         _aiExtractButtonRect.X + (_aiExtractButtonRect.Width - distillLabelSize.X) / 2f,
                         _aiExtractButtonRect.Y + (_aiExtractButtonRect.Height - distillLabelSize.Y) / 2f),
+                    Game1.textColor);
+
+                // 归档箱（右，CORE-MEM-104）
+                string archiveText = I18n.Memory.ArchiveButton(_archivedCount, MemoryManager.MaxArchivedMemoriesPerNpc);
+                bool archiveHover = _archiveButtonRect.Contains(mx, my);
+                IClickableMenu.drawTextureBox(b,
+                    _archiveButtonRect.X, _archiveButtonRect.Y,
+                    _archiveButtonRect.Width, _archiveButtonRect.Height,
+                    archiveHover ? Color.Gold : Color.White);
+                var archiveLabelSize = Game1.smallFont.MeasureString(archiveText);
+                b.DrawString(Game1.smallFont, archiveText,
+                    new Vector2(
+                        _archiveButtonRect.X + (_archiveButtonRect.Width - archiveLabelSize.X) / 2f,
+                        _archiveButtonRect.Y + (_archiveButtonRect.Height - archiveLabelSize.Y) / 2f),
                     Game1.textColor);
             }
             else
@@ -860,8 +906,13 @@ namespace ValleytalkReborn
         private readonly MemoryEntry _existingEntry;
         private readonly int _tab;
 
+        // ── CORE-MEM-103：类别切换状态（UI 会话内存态，不持久化；提交时经 AddMemory/EditMemory 落库）──
+        private MemoryCategory _category;
+        private Rectangle _factCapsuleRect;
+        private Rectangle _behaviorCapsuleRect;
+
         private const int MenuWidth = 600;
-        private const int MenuHeight = 280;
+        private const int MenuHeight = 344;
         private const int CharacterLimit = 60;
         private const int WarningThreshold = 50;
 
@@ -882,6 +933,10 @@ namespace ValleytalkReborn
             _existingEntry = existingEntry;
             _tab = tab;
 
+            _category = (existingEntry != null && existingEntry.Category == MemoryCategory.Behavior)
+                ? MemoryCategory.Behavior
+                : MemoryCategory.Fact;
+
             xPositionOnScreen = (Game1.uiViewport.Width - MenuWidth) / 2;
             yPositionOnScreen = (Game1.uiViewport.Height - MenuHeight) / 2;
             width = MenuWidth;
@@ -898,6 +953,11 @@ namespace ValleytalkReborn
                 TextColor = Game1.textColor,
                 Selected = true
             };
+
+            // ── CORE-MEM-103：类别切换胶囊（仅 _tab == 0 使用）──
+            int capsuleY = yPositionOnScreen + 100 + lineHeight + 76;
+            _factCapsuleRect = new Rectangle(xPositionOnScreen + 40, capsuleY, 250, 36);
+            _behaviorCapsuleRect = new Rectangle(xPositionOnScreen + 40 + 250 + 12, capsuleY, 250, 36);
 
             if (_existingEntry != null)
                 _inputBox.SetText(_existingEntry.Content);
@@ -963,8 +1023,8 @@ namespace ValleytalkReborn
             else
             {
                 result = _existingEntry != null
-                    ? MemoryManager.Instance.EditMemory(_npcName, _existingEntry.Id, trimmed)
-                    : MemoryManager.Instance.AddMemory(_npcName, trimmed);
+                    ? MemoryManager.Instance.EditMemory(_npcName, _existingEntry.Id, trimmed, _category)
+                    : MemoryManager.Instance.AddMemory(_npcName, trimmed, _category);
             }
 
             int maxLen = _tab == 1
@@ -1017,6 +1077,19 @@ namespace ValleytalkReborn
             {
                 Game1.keyboardDispatcher.Subscriber = _inputBox;
                 _inputBox.Selected = true;
+                return;
+            }
+
+            if (_tab == 0 && (_factCapsuleRect.Contains(x, y) || _behaviorCapsuleRect.Contains(x, y)))
+            {
+                var clicked = _behaviorCapsuleRect.Contains(x, y)
+                    ? MemoryCategory.Behavior
+                    : MemoryCategory.Fact;
+                if (clicked != _category)
+                {
+                    _category = clicked;
+                    Game1.playSound("smallSelect");
+                }
                 return;
             }
 
@@ -1092,6 +1165,46 @@ namespace ValleytalkReborn
                 Color.Gray);
 
             _inputBox.Draw(b);
+
+            // ── CORE-MEM-103：类别切换胶囊绘制（仅 Tab0）──
+            if (_tab == 0)
+            {
+                bool factSelected = _category == MemoryCategory.Fact;
+                bool behaviorSelected = _category == MemoryCategory.Behavior;
+
+                var factBg = factSelected ? new Color(110, 160, 205) : new Color(139, 90, 43);
+                var behaviorBg = behaviorSelected ? new Color(218, 165, 32) : new Color(139, 90, 43);
+
+                IClickableMenu.drawTextureBox(b,
+                    _factCapsuleRect.X, _factCapsuleRect.Y, _factCapsuleRect.Width, _factCapsuleRect.Height,
+                    factBg);
+                IClickableMenu.drawTextureBox(b,
+                    _behaviorCapsuleRect.X, _behaviorCapsuleRect.Y, _behaviorCapsuleRect.Width, _behaviorCapsuleRect.Height,
+                    behaviorBg);
+
+                string factLabel = (factSelected ? "● " : "○ ") + I18n.Memory.CategoryFactLabel();
+                string behaviorLabel = (behaviorSelected ? "● " : "○ ") + I18n.Memory.CategoryBehaviorLabel();
+
+                var factSize = Game1.smallFont.MeasureString(factLabel);
+                var behaviorSize = Game1.smallFont.MeasureString(behaviorLabel);
+
+                b.DrawString(Game1.smallFont, factLabel,
+                    new Vector2(_factCapsuleRect.X + (_factCapsuleRect.Width - factSize.X) / 2f,
+                                _factCapsuleRect.Y + (_factCapsuleRect.Height - factSize.Y) / 2f),
+                    factSelected ? Game1.textColor : Color.White);
+                b.DrawString(Game1.smallFont, behaviorLabel,
+                    new Vector2(_behaviorCapsuleRect.X + (_behaviorCapsuleRect.Width - behaviorSize.X) / 2f,
+                                _behaviorCapsuleRect.Y + (_behaviorCapsuleRect.Height - behaviorSize.Y) / 2f),
+                    behaviorSelected ? Game1.textColor : Color.White);
+
+                string hint2 = factSelected ? I18n.Memory.CategoryFactHint() : I18n.Memory.CategoryBehaviorHint();
+                var hintSize2 = Game1.smallFont.MeasureString(hint2);
+                int capsuleBottom = Math.Max(_factCapsuleRect.Bottom, _behaviorCapsuleRect.Bottom);
+                b.DrawString(Game1.smallFont, hint2,
+                    new Vector2(xPositionOnScreen + (width - hintSize2.X) / 2f,
+                                capsuleBottom + 8),
+                    Color.Gray);
+            }
 
             int mx = Game1.getMouseX();
             int my = Game1.getMouseY();

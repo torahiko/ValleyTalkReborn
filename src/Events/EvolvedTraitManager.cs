@@ -14,6 +14,7 @@ internal static class EvolvedTraitManager
     private static readonly object LockObject = new();
 
     public const int MaxTraitsPerNpc = 100;
+    private const int MaxTraitsInPrompt = 5;   // legacy traits 注入上限（CORE-MEM-105：稳定取最近 5 条，不随输入重排）
 
     // ── 常驻心智看板（MEM-02 新增）──
     private const string MindsetsSaveDataKey = "valleytalk.npc-mindsets";
@@ -297,7 +298,7 @@ internal static class EvolvedTraitManager
 
         sb.AppendLine("<farmer_impressions>");
 
-        foreach (string trait in traits)
+        foreach (string trait in traits.Skip(Math.Max(0, traits.Count - MaxTraitsInPrompt)))
         {
             if (!string.IsNullOrWhiteSpace(trait))
                 sb.AppendLine($"- {trait}");
@@ -311,120 +312,8 @@ internal static class EvolvedTraitManager
         string npcName,
         DialogueContext context)
     {
-        // ── MEM-02 分流：常驻心智存在时直接输出基线块 ──
-        if (HasMindset(npcName))
-        {
-            return GetMindsetBaselineBlock(npcName);
-        }
-
-        var traits = GetTraits(npcName);
-
-        if (traits.Count == 0)
-            return null;
-
-        bool isZh = IsChineseLanguage;
-        var contextKeywords = BuildContextKeywords(context, npcName)
-            .Where(k => !string.IsNullOrWhiteSpace(k))
-            .Select(k => k.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        var sorted = traits
-            .Select((trait, index) => new
-            {
-                Trait = trait,
-                Index = index,
-                Score = contextKeywords.Count(keyword =>
-                    trait.IndexOf(
-                        keyword,
-                        StringComparison.OrdinalIgnoreCase) >= 0)
-            })
-            .OrderByDescending(x => x.Score)
-            .ThenBy(x => x.Index)
-            .Take(5)
-            .Select(x => x.Trait)
-            .ToList();
-
-        var sb = new StringBuilder();
-
-        sb.AppendLine(isZh
-            ? "### 对农夫的长期印象（并非本次对话中发生的事，是你长期形成的背景认知，供当前对话参考。）"
-            : "### IMPRESSIONS OF THE FARMER (background impressions formed over time, not something that just happened)");
-
-        sb.AppendLine("<farmer_impressions>");
-
-        foreach (string trait in sorted)
-            sb.AppendLine($"- {trait}");
-
-        sb.AppendLine("</farmer_impressions>");
-        return sb.ToString();
-    }
-
-    private static List<string> BuildContextKeywords(DialogueContext context, string npcName)
-    {
-        var keywords = new List<string>();
-
-        if (context == null)
-            return keywords;
-
-        if (context.Accept != null)
-        {
-            keywords.AddRange(new[]
-            {
-                "gift", "礼物", "送", "present", "giving"
-            });
-        }
-
-        // 仅在对话目标确实是配偶时才加入婚姻关键词，
-        // 避免非配偶 NPC（克林特、马尔隆等）在多人婚姻存档中被强行拉取暧昧印象。
-        if (context.Married && Game1.player?.spouse == npcName)
-        {
-            keywords.AddRange(new[]
-            {
-                "marry", "married", "spouse", "wedding",
-                "婚", "爱", "love", "dear"
-            });
-        }
-
-        if (context.RoutingFlags?.IsOnDate == true)
-        {
-            keywords.AddRange(new[]
-            {
-                "date", "romance", "love",
-                "约会", "浪漫", "心动"
-            });
-        }
-
-        if (context.RoutingFlags?.IsJealousy == true)
-        {
-            keywords.AddRange(new[]
-            {
-                "jealous", "other",
-                "吃醋", "嫉妒", "其他人"
-            });
-        }
-
-        string lastPlayerLine = context.ChatHistory?
-            .LastOrDefault(x => x.IsPlayerLine)?
-            .Text ?? string.Empty;
-
-        if (!string.IsNullOrWhiteSpace(lastPlayerLine))
-        {
-            var words = lastPlayerLine
-                .Split(
-                    new[]
-                    {
-                        ' ', '，', ',', '。', '.', '！', '!',
-                        '？', '?', '\n', '\r', '、', '；', ';'
-                    },
-                    StringSplitOptions.RemoveEmptyEntries)
-                    .Where(word => word.Length > 2)
-                    .Take(8);
-
-            keywords.AddRange(words);
-        }
-
-        return keywords;
+        // ── CORE-MEM-105：常驻注入，不随对话上下文重排（Score 关键词过滤机制废除）──
+        return GetPromptBlock(npcName);
     }
 
     public static bool HasMindset(string npcName)

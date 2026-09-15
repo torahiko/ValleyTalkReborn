@@ -263,6 +263,35 @@ namespace ValleytalkReborn
             public static string DistillRightTitle() => Lookup("Memory.DistillRightTitle");
             public static string DistillDuplicate() => Lookup("Memory.DistillDuplicate");
             public static string DistillLlmDisabled() => Lookup("Memory.DistillLlmDisabled");
+            public static string RuleTag() => Lookup("Memory.RuleTag");
+            public static string MemoryTag() => Lookup("Memory.MemoryTag");
+            public static string CategoryFactLabel() => Lookup("Memory.CategoryFactLabel");
+            public static string CategoryBehaviorLabel() => Lookup("Memory.CategoryBehaviorLabel");
+            public static string CategoryFactHint() => Lookup("Memory.CategoryFactHint");
+            public static string CategoryBehaviorHint() => Lookup("Memory.CategoryBehaviorHint");
+            public static string ArchiveButton(int count, int max)
+                => Lookup("Memory.ArchiveButton")
+                    .Replace("{{count}}", count.ToString())
+                    .Replace("{{value}}", count.ToString())
+                    .Replace("{{max}}", max.ToString())
+                    .Replace("{{0}}", count.ToString());
+            public static string ArchiveTitle(string npcName) => FormatNpc(Lookup("Memory.ArchiveTitle"), npcName);
+            public static string ArchiveEmpty() => Lookup("Memory.ArchiveEmpty");
+            public static string ArchiveCount(int count, int max)
+                => Lookup("Memory.ArchiveCount")
+                    .Replace("{{count}}", count.ToString())
+                    .Replace("{{value}}", count.ToString())
+                    .Replace("{{max}}", max.ToString())
+                    .Replace("{{0}}", count.ToString());
+            public static string ArchiveRestoreButton() => Lookup("Memory.ArchiveRestoreButton");
+            public static string ArchiveDeleteButton() => Lookup("Memory.ArchiveDeleteButton");
+            public static string ArchiveDeleteConfirm(string content)
+                => Lookup("Memory.ArchiveDeleteConfirm")
+                    .Replace("{{content}}", content ?? string.Empty)
+                    .Replace("{{value}}", content ?? string.Empty)
+                    .Replace("{{0}}", content ?? string.Empty);
+            public static string ArchiveRestoreDuplicate() => Lookup("Memory.ArchiveRestoreDuplicate");
+            public static string ArchiveRestoreNotFound() => Lookup("Memory.ArchiveRestoreNotFound");
         }
 
         public static class DialogueInput
