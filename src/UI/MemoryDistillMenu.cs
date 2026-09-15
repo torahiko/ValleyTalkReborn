@@ -274,8 +274,8 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
         {
             case MemoryExtractStatus.Success:
                 _candidates = result.Candidates ?? new List<string>();
-                RefreshEntries();
-                _state = DistillState.Ready;
+                _state = DistillState.Ready;        // 先翻转状态……
+                RefreshEntries();                    // 再重建按钮（此时 RebuildButtons 才会填充 _plusRects）
                 Game1.playSound("smallSelect");
                 break;
 
@@ -444,7 +444,7 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
 
         // 左栏候选
         bool full = _manualCount >= MemoryManager.MaxMemoriesPerNpc;
-        for (int i = 0; i < _candidates.Count; i++)
+        for (int i = 0; i < _candidates.Count && i < _plusRects.Count; i++)
         {
             Rectangle rect = _plusRects[i];
             bool used = _usedCandidates.Contains(_candidates[i]);
@@ -486,8 +486,8 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
                 new Vector2(RightColX, rowY),
                 textColor);
 
-            _editButtons[i].draw(b);
-            _deleteButtons[i].draw(b);
+            if (i < _editButtons.Count) _editButtons[i].draw(b);
+            if (i < _deleteButtons.Count) _deleteButtons[i].draw(b);
         }
     }
 }
