@@ -526,6 +526,39 @@ namespace ValleytalkReborn
                 });
             });
 
+        // ── 归档箱查看控制台命令（CORE-MEM-101 新增）──
+        helper.ConsoleCommands.Add("vt_archive", "查看指定 NPC 的记忆归档箱。用法: vt_archive <npcName>",
+            async (cmd, args) =>
+            {
+                if (args.Length < 1)
+                {
+                    Monitor.Log("[用法] vt_archive <npcName>  例: vt_archive Abigail", LogLevel.Info);
+                    return;
+                }
+
+                string npcName = args[0];
+
+                await MainThreadDispatcher.RunOnMainThreadAsync(() =>
+                {
+                    var archived = MemoryManager.Instance.GetArchivedMemories(npcName);
+                    if (archived == null || archived.Count == 0)
+                    {
+                        Monitor.Log($"[{npcName}] 归档箱为空。", LogLevel.Info);
+                        return;
+                    }
+
+                    Monitor.Log($"[{npcName}] 归档箱 ({archived.Count} / {MemoryManager.MaxArchivedMemoriesPerNpc}):", LogLevel.Info);
+                    for (int i = 0; i < archived.Count; i++)
+                    {
+                        var m = archived[i];
+                        string time = m.ArchivedAt != default
+                            ? m.ArchivedAt.ToString("yyyy-MM-dd HH:mm")
+                            : m.CreatedAt.ToString("yyyy-MM-dd HH:mm");
+                        Monitor.Log($"{i + 1}. [{time}] {m.Content}", LogLevel.Info);
+                    }
+                });
+            });
+
         helper.ConsoleCommands.Add("vt_fulfill", "标记指定 Promise 为已履约。用法: vt_fulfill <npcName> <memoryId>",
             async (cmd, args) =>
             {

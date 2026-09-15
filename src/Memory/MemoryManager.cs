@@ -37,6 +37,7 @@ public class MemoryEntry
     public string TargetDayHint { get; set; } = "";   // Promise 专用：LLM 原文如 "Weekend"
     public bool IsFulfilled { get; set; } = false;    // Promise 专用
     public int LastPromptedDay { get; set; } = -1;    // 激活去重用（MEM-06 消费）
+    public DateTime ArchivedAt { get; set; } = default; // 归档时刻；default=从未归档（CORE-MEM-101）
 }
 
 public enum MemoryOperationResult
@@ -54,6 +55,8 @@ internal class MemoryManager : IMemoryProvider
 
     private const string SaveDataKey         = "valleytalk.npc-memories";
     private const string CallsignSaveDataKey = "valleytalk.npc-callsigns";
+    private const string ArchiveSaveDataKey = "valleytalk.npc-archived-memories";
+    private const string CategoryMigrationFlagKey = "valleytalk.memory-category-migrated";
 
     public const int MaxMemoryLength    = 120;   // 60 → 120：SmartTruncate 兜底
     public const int MaxCallsignLength  = 20;
@@ -62,11 +65,13 @@ internal class MemoryManager : IMemoryProvider
     public const int MaxAutoInPrompt    = 3;
     public const int MaxAutoMemoriesPerNpc = 40; // Auto 池容量（Manual 池独立）
     public const int MaxCoreFactsInPrompt = 6;   // 核心事实段上限（MEM-06 新增）
+    public const int MaxArchivedMemoriesPerNpc = 30; // 归档箱滚动上限（CORE-MEM-101）
 
     private const int EvictionImmuneImportance = 4; // Importance >= 此值免疫淘汰（未履约 Promise 也免疫）
 
     private Dictionary<string, List<MemoryEntry>> _memories = new();
     private Dictionary<string, string> _customCallsigns = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, List<MemoryEntry>> _archivedMemories = new(StringComparer.OrdinalIgnoreCase);
     private bool _isLoaded = false;
     private bool _loadFailed = false; // 加载失败时拒绝覆写 SaveData
 
@@ -104,6 +109,8 @@ internal class MemoryManager : IMemoryProvider
             _memories = new Dictionary<string, List<MemoryEntry>>();
             _customCallsigns?.Clear();
             _customCallsigns = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            _archivedMemories?.Clear();
+            _archivedMemories = new Dictionary<string, List<MemoryEntry>>(StringComparer.OrdinalIgnoreCase);
             _isLoaded = false;
         }
         catch (Exception ex)
@@ -147,6 +154,15 @@ internal class MemoryManager : IMemoryProvider
                 ? new Dictionary<string, string>(loadedCallsigns, StringComparer.OrdinalIgnoreCase)
                 : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
+            // ── 归档箱读取（CORE-MEM-101，key 不存在时静默回退空字典）──
+            var loadedArchived = ModEntry.SHelper.Data.ReadSaveData<Dictionary<string, List<MemoryEntry>>>(ArchiveSaveDataKey);
+            _archivedMemories = loadedArchived != null
+                ? new Dictionary<string, List<MemoryEntry>>(loadedArchived, StringComparer.OrdinalIgnoreCase)
+                : new Dictionary<string, List<MemoryEntry>>(StringComparer.OrdinalIgnoreCase);
+            _archivedMemories = _archivedMemories
+                .Where(kv => !string.IsNullOrWhiteSpace(kv.Key) && kv.Value != null)
+                .ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.OrdinalIgnoreCase);
+
             // ── 字段迁移（旧 schema 兼容）──
             foreach (var npcName in _memories.Keys.ToList())
             {
@@ -186,6 +202,34 @@ internal class MemoryManager : IMemoryProvider
             }
 
             _isLoaded = true;
+
+            // ── 一次性类别迁移（CORE-MEM-101）：旧默认参数遗留的 Behavior 条目 → Fact ──
+            if (ModEntry.SHelper.Data.ReadSaveData<string>(CategoryMigrationFlagKey) != "true")
+            {
+                int migratedCategories = 0;
+                foreach (var list in _memories.Values)
+                {
+                    if (list == null) continue;
+                    foreach (var entry in list)
+                    {
+                        if (entry != null && entry.Category == MemoryCategory.Behavior)
+                        {
+                            entry.Category = MemoryCategory.Fact;
+                            migratedCategories++;
+                        }
+                    }
+                }
+
+                ModEntry.SHelper.Data.WriteSaveData(CategoryMigrationFlagKey, "true");
+
+                if (migratedCategories > 0)
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[MemoryManager] One-time category migration: {migratedCategories} Behavior → Fact (legacy manual entries).",
+                        LogLevel.Info);
+                    Save();
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -219,6 +263,30 @@ internal class MemoryManager : IMemoryProvider
     public void SaveAll()
     {
         Save();
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // 归档箱持久化（CORE-MEM-101）
+    // ──────────────────────────────────────────────────────────────
+    private void SaveArchived()
+    {
+        if (_loadFailed)
+        {
+            ModEntry.SMonitor?.Log(
+                "[MemoryManager] Write refused: last load failed, refusing to overwrite SaveData.",
+                LogLevel.Error);
+            return;
+        }
+
+        try
+        {
+            if (!Context.IsWorldReady || ModEntry.SHelper == null) return;
+            ModEntry.SHelper.Data.WriteSaveData(ArchiveSaveDataKey, _archivedMemories);
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log($"[MemoryManager] SaveArchived failed: {ex.Message}", LogLevel.Warn);
+        }
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -310,7 +378,7 @@ internal class MemoryManager : IMemoryProvider
     // 手动添加（玩家操作）
     // ──────────────────────────────────────────────────────────────
     public MemoryOperationResult AddMemory(string npcName, string content,
-        MemoryCategory category = MemoryCategory.Behavior)
+        MemoryCategory category = MemoryCategory.Fact)
     {
         if (string.IsNullOrWhiteSpace(npcName) || string.IsNullOrWhiteSpace(content))
             return MemoryOperationResult.NotFound;
@@ -366,6 +434,15 @@ internal class MemoryManager : IMemoryProvider
         {
             ModEntry.SMonitor?.Log("[MemoryManager] AddAutoFact rejected: npcName or content empty.", LogLevel.Trace);
             return MemoryOperationResult.NotFound;
+        }
+
+        // ── CORE-MEM-101 铁律：自动通道无权建立规则，强制降级为回忆 ──
+        if (category != MemoryCategory.Fact)
+        {
+            ModEntry.SMonitor?.Log(
+                "[MemoryManager] AddAutoFact forced category to Fact; auto channel cannot create rules.",
+                LogLevel.Warn);
+            category = MemoryCategory.Fact;
         }
 
         EnsureLoaded();
@@ -534,7 +611,7 @@ internal class MemoryManager : IMemoryProvider
     }
 
     // ──────────────────────────────────────────────────────────────
-    // 每日维护：清理过期 Promise
+    // 每日维护：清理过期 Promise + 3 天滑动窗口归档（CORE-MEM-101）
     // ──────────────────────────────────────────────────────────────
     private void RunDailyMaintenance()
     {
@@ -544,6 +621,8 @@ internal class MemoryManager : IMemoryProvider
         if (today <= 0) return;
 
         int totalPurged = 0;
+        int totalArchived = 0;
+        int touchedNpcs = 0;
 
         foreach (var npcName in _memories.Keys.ToList())
         {
@@ -556,16 +635,47 @@ internal class MemoryManager : IMemoryProvider
                 !m.IsFulfilled &&
                 m.ExpireDay > 0 &&
                 m.ExpireDay < today);
-            int removed = before - list.Count;
-            totalPurged += removed;
+            totalPurged += before - list.Count;
+
+            var toArchive = list
+                .Where(m => m.Category != MemoryCategory.Behavior &&
+                            m.Importance < EvictionImmuneImportance &&
+                            (today - m.CreatedDay) >= 3 &&
+                            !(m.Type == MemoryType.Promise && !m.IsFulfilled))
+                .ToList();
+
+            if (toArchive.Count > 0)
+            {
+                if (!_archivedMemories.TryGetValue(npcName, out var archiveList))
+                {
+                    archiveList = new List<MemoryEntry>();
+                    _archivedMemories[npcName] = archiveList;
+                }
+
+                foreach (var entry in toArchive)
+                {
+                    entry.ArchivedAt = DateTime.Now;
+                    list.Remove(entry);
+                    archiveList.Insert(0, entry);
+                }
+
+                while (archiveList.Count > MaxArchivedMemoriesPerNpc)
+                    archiveList.RemoveAt(archiveList.Count - 1);
+
+                totalArchived += toArchive.Count;
+                touchedNpcs++;
+            }
 
             if (list.Count == 0) _memories.Remove(npcName);
         }
 
-        if (totalPurged > 0)
+        if (totalPurged + totalArchived > 0)
         {
             Save();
-            ModEntry.SMonitor?.Log($"[MemoryManager] DailyMaintenance: purged {totalPurged} expired promise(s).", LogLevel.Info);
+            SaveArchived();
+            ModEntry.SMonitor?.Log(
+                $"[MemoryManager] DailyMaintenance: purged {totalPurged} expired promise(s); archived {totalArchived} item(s) across {touchedNpcs} NPC(s).",
+                LogLevel.Info);
         }
     }
 
@@ -610,6 +720,110 @@ internal class MemoryManager : IMemoryProvider
         Save(npcName);
 
         ModEntry.SMonitor?.Log($"[MemoryManager] Promise fulfilled [{npcName}]: \"{TrimForLog(entry.Content)}\"", LogLevel.Info);
+        return true;
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // 归档箱 API（CORE-MEM-101）：浏览 / 计数 / 恢复 / 彻底删除
+    // ──────────────────────────────────────────────────────────────
+    public List<MemoryEntry> GetArchivedMemories(string npcName)
+    {
+        if (string.IsNullOrWhiteSpace(npcName)) return new List<MemoryEntry>();
+        EnsureLoaded();
+        return _archivedMemories.TryGetValue(npcName, out var list) && list != null
+            ? new List<MemoryEntry>(list)
+            : new List<MemoryEntry>();
+    }
+
+    public int GetArchivedCount(string npcName)
+    {
+        if (string.IsNullOrWhiteSpace(npcName)) return 0;
+        EnsureLoaded();
+        return _archivedMemories.TryGetValue(npcName, out var list) && list != null
+            ? list.Count
+            : 0;
+    }
+
+    public MemoryOperationResult RestoreMemory(string npcName, string entryId)
+    {
+        if (string.IsNullOrWhiteSpace(npcName) || string.IsNullOrWhiteSpace(entryId))
+            return MemoryOperationResult.NotFound;
+
+        EnsureLoaded();
+
+        if (_loadFailed)
+        {
+            ModEntry.SMonitor?.Log("[MemoryManager] RestoreMemory refused: last load failed, refusing to mutate state.", LogLevel.Error);
+            return MemoryOperationResult.CapacityFull;
+        }
+
+        if (!_archivedMemories.TryGetValue(npcName, out var archiveList) || archiveList == null)
+            return MemoryOperationResult.NotFound;
+
+        var entry = archiveList.FirstOrDefault(m => m.Id == entryId);
+        if (entry == null) return MemoryOperationResult.NotFound;
+
+        if (!_memories.TryGetValue(npcName, out var activeList))
+        {
+            activeList = new List<MemoryEntry>();
+            _memories[npcName] = activeList;
+        }
+
+        if (activeList.Any(m => string.Equals(m.Content, entry.Content, StringComparison.OrdinalIgnoreCase)))
+        {
+            ModEntry.SMonitor?.Log(
+                $"[MemoryManager] RestoreMemory duplicate for [{npcName}]: \"{TrimForLog(entry.Content)}\" stays archived.",
+                LogLevel.Debug);
+            return MemoryOperationResult.Duplicate;
+        }
+
+        if (entry.Source == "Manual" &&
+            activeList.Count(m => m.Source == "Manual") >= MaxMemoriesPerNpc)
+            return MemoryOperationResult.CapacityFull;
+
+        archiveList.Remove(entry);
+        if (archiveList.Count == 0) _archivedMemories.Remove(npcName);
+
+        entry.CreatedDay = CurrentGameDay();
+        entry.CreatedAt = DateTime.Now;
+        entry.ArchivedAt = default;
+        activeList.Insert(0, entry);
+
+        Save();
+        SaveArchived();
+
+        ModEntry.SMonitor?.Log(
+            $"[MemoryManager] Restored memory [{npcName}]: \"{TrimForLog(entry.Content)}\" (fresh 3-day window).",
+            LogLevel.Info);
+        return MemoryOperationResult.Success;
+    }
+
+    public bool DeleteArchivedMemory(string npcName, string entryId)
+    {
+        if (string.IsNullOrWhiteSpace(npcName) || string.IsNullOrWhiteSpace(entryId)) return false;
+
+        EnsureLoaded();
+
+        if (_loadFailed)
+        {
+            ModEntry.SMonitor?.Log("[MemoryManager] DeleteArchivedMemory refused: last load failed, refusing to mutate state.", LogLevel.Error);
+            return false;
+        }
+
+        if (!_archivedMemories.TryGetValue(npcName, out var archiveList) || archiveList == null)
+            return false;
+
+        var entry = archiveList.FirstOrDefault(m => m.Id == entryId);
+        if (entry == null) return false;
+
+        archiveList.Remove(entry);
+        if (archiveList.Count == 0) _archivedMemories.Remove(npcName);
+
+        SaveArchived();
+
+        ModEntry.SMonitor?.Log(
+            $"[MemoryManager] Deleted archived memory [{npcName}]: \"{TrimForLog(entry.Content)}\".",
+            LogLevel.Info);
         return true;
     }
 
