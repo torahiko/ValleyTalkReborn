@@ -187,10 +187,12 @@
   "Memory.ArchiveButton": "Archive ({{count}}/{{max}})",
   "Memory.ArchiveTitle": "{{npcName}}'s Memory Archive",
   "Memory.ArchiveEmpty": "The archive is empty. Minor memories older than 3 days land here automatically.",
-  "Memory.ArchiveCount": "Archived: {{count}} / {{max}}",
+  "Memory.ArchiveCount": "Archived Memories ({{count}} / {{max}})",
   "Memory.ArchiveRestoreButton": "Restore",
   "Memory.ArchiveDeleteButton": "Delete",
   "Memory.ArchiveDeleteConfirm": "Permanently delete this archived memory?\n{{content}}",
   "Memory.ArchiveRestoreDuplicate": "An identical memory already exists in the active list; not restored.",
-  "Memory.ArchiveRestoreNotFound": "This entry no longer exists (may have been rotated out). List refreshed."
+  "Memory.ArchiveRestoreNotFound": "This entry no longer exists (may have been rotated out). List refreshed.",
+  "Memory.ArchiveRuleHint": "Older entries are automatically replaced past {{max}} items. Click [Restore] to move an entry back to active memories.",
+  "Memory.ArchiveEndangeredTag": "[Expiring]"
 }
