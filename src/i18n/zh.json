@@ -187,10 +187,12 @@
   "Memory.ArchiveButton": "归档箱 ({{count}}/{{max}})",
   "Memory.ArchiveTitle": "{{npcName}} 的记忆归档箱",
   "Memory.ArchiveEmpty": "归档箱是空的。超过 3 天的琐碎回忆会自动归档到这里。",
-  "Memory.ArchiveCount": "当前已归档: {{count}} / {{max}}",
+  "Memory.ArchiveCount": "归档记录（{{count}} / {{max}}）",
   "Memory.ArchiveRestoreButton": "恢复",
   "Memory.ArchiveDeleteButton": "删除",
   "Memory.ArchiveDeleteConfirm": "确定要彻底删除这条归档记忆吗？\n{{content}}",
   "Memory.ArchiveRestoreDuplicate": "活跃记忆中已存在相同内容，未恢复。",
-  "Memory.ArchiveRestoreNotFound": "该条目已不存在（可能已被淘汰），列表已刷新。"
+  "Memory.ArchiveRestoreNotFound": "该条目已不存在（可能已被淘汰），列表已刷新。",
+  "Memory.ArchiveRuleHint": "超过 {{max}} 条时将自动替换最早的归档；若有想要留存的记忆，请点击【恢复】放回活跃列表。",
+  "Memory.ArchiveEndangeredTag": "[即将过期]"
 }

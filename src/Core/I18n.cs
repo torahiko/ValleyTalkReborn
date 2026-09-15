@@ -292,6 +292,12 @@ namespace ValleytalkReborn
                     .Replace("{{0}}", content ?? string.Empty);
             public static string ArchiveRestoreDuplicate() => Lookup("Memory.ArchiveRestoreDuplicate");
             public static string ArchiveRestoreNotFound() => Lookup("Memory.ArchiveRestoreNotFound");
+            public static string ArchiveRuleHint(int max)
+                => Lookup("Memory.ArchiveRuleHint")
+                    .Replace("{{max}}", max.ToString())
+                    .Replace("{{value}}", max.ToString())
+                    .Replace("{{0}}", max.ToString());
+            public static string ArchiveEndangeredTag() => Lookup("Memory.ArchiveEndangeredTag");
         }
 
         public static class DialogueInput

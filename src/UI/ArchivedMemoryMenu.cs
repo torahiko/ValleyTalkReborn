@@ -43,6 +43,7 @@ namespace ValleytalkReborn
         private const int ButtonHeight = 36;
         private const int ButtonGap = 10;
         private const int RightReserved = ButtonWidth + 12 + ButtonWidth; // 删除贴右 + 恢复在其左
+        private const int NearFullThreshold = MemoryManager.MaxArchivedMemoriesPerNpc - 2; // 28：计数接近饱和转浅橙（CORE-MEM-106）
 
         public ArchivedMemoryMenu(string npcName, IClickableMenu returnMenu)
             : base(
@@ -187,18 +188,18 @@ namespace ValleytalkReborn
                 return;
             }
 
-            // 行按钮（仅可见行）
+            // 行按钮（仅可见行；rects 按可视行下标索引，条目取绝对行号）
             int visibleCount = GetVisibleLineCount();
             for (int i = 0; i < visibleCount && _startIndex + i < _cachedEntries.Count; i++)
             {
-                if (_startIndex + i >= _restoreRects.Count) break;
+                if (i >= _restoreRects.Count) break;
 
-                if (_restoreRects[_startIndex + i].Contains(x, y))
+                if (_restoreRects[i].Contains(x, y))
                 {
                     HandleRestore(_startIndex + i);
                     return;
                 }
-                if (_deleteRects[_startIndex + i].Contains(x, y))
+                if (_deleteRects[i].Contains(x, y))
                 {
                     HandleDelete(_startIndex + i);
                     return;
@@ -299,11 +300,21 @@ namespace ValleytalkReborn
                 new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f, yPositionOnScreen + 24),
                 Game1.textColor);
 
-            // 右上角计数
+            // 右上角计数（接近饱和转浅橙提醒，CORE-MEM-106）
             string countText = I18n.Memory.ArchiveCount(_cachedEntries.Count, MemoryManager.MaxArchivedMemoriesPerNpc);
             var countSize = Game1.smallFont.MeasureString(countText);
+            Color countColor = _cachedEntries.Count >= NearFullThreshold
+                ? new Color(255, 185, 80)
+                : Color.Gray;
             b.DrawString(Game1.smallFont, countText,
                 new Vector2(xPositionOnScreen + width - RightPadding - countSize.X, yPositionOnScreen + 28),
+                countColor);
+
+            // 规则免责声明（CORE-MEM-106）：滚动淘汰规则显式告知
+            string ruleHint = I18n.Memory.ArchiveRuleHint(MemoryManager.MaxArchivedMemoriesPerNpc);
+            var ruleHintSize = Game1.smallFont.MeasureString(ruleHint);
+            b.DrawString(Game1.smallFont, ruleHint,
+                new Vector2(xPositionOnScreen + (width - ruleHintSize.X) / 2f, yPositionOnScreen + 68),
                 Color.Gray);
 
             _closeButton.draw(b);
@@ -352,9 +363,21 @@ namespace ValleytalkReborn
                     new Vector2(xPositionOnScreen + LeftPadding + 4, y + 4 + Game1.smallFont.LineSpacing),
                     Color.Gray);
 
-                // 文本按钮
-                var restoreRect = _restoreRects[i];
-                var deleteRect = _deleteRects[i];
+                // 濒危标记（CORE-MEM-106）：满额时列表末位（最旧，下一个被 FIFO 淘汰）红橙提示
+                if (_cachedEntries.Count >= MemoryManager.MaxArchivedMemoriesPerNpc &&
+                    i == _cachedEntries.Count - 1)
+                {
+                    string endangeredTag = I18n.Memory.ArchiveEndangeredTag();
+                    var endangeredSize = Game1.smallFont.MeasureString(endangeredTag);
+                    b.DrawString(Game1.smallFont, endangeredTag,
+                        new Vector2(xPositionOnScreen + LeftPadding + contentW - endangeredSize.X - 4,
+                                    y + 4 + Game1.smallFont.LineSpacing),
+                        new Color(230, 100, 70));
+                }
+
+                // 文本按钮（按可视行下标取：rects 列表按可视窗口构建，见 RefreshActionButtons）
+                var restoreRect = _restoreRects[vis];
+                var deleteRect = _deleteRects[vis];
 
                 IClickableMenu.drawTextureBox(b,
                     restoreRect.X, restoreRect.Y, restoreRect.Width, restoreRect.Height,
