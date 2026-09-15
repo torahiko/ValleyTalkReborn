@@ -187,6 +187,11 @@ namespace ValleytalkReborn
         public bool EnableNightlyConsolidation { get; set; } = true;
 
         /// <summary>
+        /// 静态连胜事实注入（连聊/连礼/同款礼物）：纯硬编码判定，与夜间整理（EnableNightlyConsolidation）完全无关。
+        /// </summary>
+        public bool EnableStreakContext { get; set; } = true;
+
+        /// <summary>
         /// 启用配偶自由日程与外出活动系统（CompanionScheduleManager）。
         /// 默认开启 (true)。
         /// </summary>

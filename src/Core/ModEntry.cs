@@ -1283,6 +1283,7 @@ namespace ValleytalkReborn
             RecentConversationTracker.Clear();
             SessionCache.Instance.ResetAll();
             EatSubscriber.Initialize();
+            ConsecutiveTalkTracker.Initialize();
 
             // ★ 存档加载完成后载入 NPC 关系
             NpcRelationRegistry.Instance.LoadAll(Helper, Monitor);
