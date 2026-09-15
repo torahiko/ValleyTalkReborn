@@ -152,39 +152,29 @@ internal sealed class EntityFeatureDetector : IEnvironmentDetector
             }
         }
 
-        // ── 3. 家具段 ──
-        if (location is DecoratableLocation decoratable)
+        // ── 3. 家具段（1.6 已下沉至 GameLocation，不再按子类过滤）──
+        if (location.furniture != null && location.furniture.Count > 0)
         {
-            foreach (var furniture in decoratable.furniture)
+            foreach (var furniture in location.furniture)
             {
                 if (furniture == null) continue;
                 var fTile = furniture.TileLocation;
                 if (Math.Abs(fTile.X - centerTile.X) > radiusTiles ||
                     Math.Abs(fTile.Y - centerTile.Y) > radiusTiles) continue;
-
                 int fType = furniture.furniture_type.Value;
-                if (fType == Furniture.painting ||
-                    fType == Furniture.rug ||
-                    fType == Furniture.window)
-                {
-                    continue;
-                }
-
+                if (fType == StardewValley.Objects.Furniture.painting ||
+                    fType == StardewValley.Objects.Furniture.rug ||
+                    fType == StardewValley.Objects.Furniture.window) continue;
                 string name = SanitizeObjectName(furniture.DisplayName);
                 if (string.IsNullOrWhiteSpace(name)) continue;
-
                 string internalName = furniture.Name ?? string.Empty;
                 string fItemId = furniture.ItemId ?? string.Empty;
-
                 bool isNoise = FurnitureNameBlacklist.Any(black =>
                     name.Contains(black, StringComparison.OrdinalIgnoreCase) ||
                     internalName.Contains(black, StringComparison.OrdinalIgnoreCase) ||
                     fItemId.Contains(black, StringComparison.OrdinalIgnoreCase));
-
                 if (isNoise) continue;
-
                 int priority = (Tier2_ActiveDevices.Contains(name) || Tier2_ActiveDevices.Contains(internalName)) ? 2 : 3;
-
                 buffer.Add(new ScanItem(name, fTile, priority, ScanItem.TypeFurniture));
             }
         }
