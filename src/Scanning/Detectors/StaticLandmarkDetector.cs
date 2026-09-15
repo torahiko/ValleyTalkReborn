@@ -54,6 +54,11 @@ internal sealed class StaticLandmarkDetector : IEnvironmentDetector
             new("the arcade corner", "街机角落", new Rectangle(18, 16, 4, 3)),
             new("the piano and instruments corner", "钢琴与乐器角", new Rectangle(14, 18, 4, 3)),
         },
+        ["JoshHouse"] = new()
+        {
+            new("a television", "电视机", new Rectangle(12, 13, 2, 2)),
+            new("the warm fireplace", "壁炉", new Rectangle(3, 14, 2, 2)),
+        },
     };
 
     /// <inheritdoc/>
