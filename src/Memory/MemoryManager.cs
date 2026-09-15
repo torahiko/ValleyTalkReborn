@@ -524,7 +524,6 @@ internal class MemoryManager : IMemoryProvider
 
             list.Remove(victim);
             candidates.Remove(victim);
-            // 同步 autoPool 引用（list 内的同一对象）
             autoPool.Remove(victim);
 
             int score = victim.Importance * 10 - (today - victim.CreatedDay);
@@ -669,7 +668,6 @@ internal class MemoryManager : IMemoryProvider
 
         if (entry.Source == "Auto")
         {
-            // 升级将占用 Manual 池名额，满员时拒绝（被编辑条目自身为 Auto，不计入 Manual 数）
             int manualCount = list.Count(m => m.Source == "Manual");
             if (manualCount >= MaxMemoriesPerNpc)
                 return MemoryOperationResult.CapacityFull;
@@ -708,18 +706,12 @@ internal class MemoryManager : IMemoryProvider
 
     private static readonly Random _memoryRng = new Random();
 
-    /// <summary>
-    /// 随机抽取一条该 NPC 的自动记忆碎片文本，供 Bark 记忆闪回（一缓）使用。
-    /// 优先取 Auto 条目（夜间提取的背景事实），无 Auto 时回退 Manual。
-    /// 无记忆时返回 null。
-    /// </summary>
     public string GetRandomMemoryFragment(string npcName)
     {
         EnsureLoaded();
         if (!_memories.TryGetValue(npcName, out var list) || list.Count == 0)
             return null;
 
-        // 优先 Auto 条目（夜间自动提取的事实碎片，更适合走神闪回）
         var autoPool = list.Where(m => m.Source == "Auto").ToList();
         var pool = autoPool.Count > 0 ? autoPool : list;
 
@@ -735,7 +727,6 @@ internal class MemoryManager : IMemoryProvider
         return _memories.TryGetValue(npcName, out var list) ? list.Count : 0;
     }
 
-    /// <summary>Manual 池条目数（AddMemory 的容量判定口径；区别于 GetMemoryCount 的 Manual+Auto 总数）。</summary>
     public int GetManualMemoryCount(string npcName)
     {
         EnsureLoaded();
@@ -744,11 +735,9 @@ internal class MemoryManager : IMemoryProvider
     }
 
     // ──────────────────────────────────────────────────────────────
-    // 🌟 Prompt 注入：手动规则（高优先级）+ 自动事实（低优先级）
-    // 含情境触发判定（无色结构化标签）
+    // 🌟 Prompt 注入：全面契合第二人称日常交互心流
     // ──────────────────────────────────────────────────────────────
 
-    /// <summary>地点别名表（英文 key → 中文别名）。</summary>
     private static readonly Dictionary<string, string[]> LocationAliases = new(StringComparer.OrdinalIgnoreCase)
     {
         ["beach"] = new[] { "海边", "沙滩", "海滩" },
@@ -772,6 +761,7 @@ internal class MemoryManager : IMemoryProvider
         ["desert"] = new[] { "沙漠", "卡利科" },
         ["island"] = new[] { "岛", "姜岛" },
     };
+
     public string GetSmartMemoryContext(string npcName, int maxCount = MaxMemoriesInPrompt)
     {
         EnsureLoaded();
@@ -781,7 +771,7 @@ internal class MemoryManager : IMemoryProvider
 
         bool isZh = IsChineseLanguage;
 
-        // (1) 玩家手动规则
+        // (1) 玩家手动记录的深层默契
         var manualEntries = list
             .Where(m => m.Source == "Manual")
             .OrderByDescending(m => m.CreatedAt)
@@ -808,7 +798,6 @@ internal class MemoryManager : IMemoryProvider
                 LocationHintMatches(p.TriggerLocation, currentLocation))
             {
                 todayPromises.Add(p);
-                // 内存副作用：标记去重（不落盘）
                 if (p.LastPromptedDay != today)
                 {
                     p.LastPromptedDay = today;
@@ -834,15 +823,15 @@ internal class MemoryManager : IMemoryProvider
 
         var sb = new System.Text.StringBuilder();
 
-        // ── (1) 手动规则（最高优先级）── 原文案逐字保留
+        // ── (1) 你与农夫之间确凿的事实与默契 ──
         if (manualEntries.Count > 0)
         {
             sb.AppendLine(isZh
-                ? "=== 玩家自定义规则与专属设定（最高优先级）==="
-                : "=== USER-DEFINED HIGH-PRIORITY RULES ===");
+                ? "=== 你与农夫之间确凿的事实与默契 ==="
+                : "=== GROUNDED FACTS & MUTUAL UNDERSTANDINGS ===");
             sb.AppendLine(isZh
-                ? "以下是玩家手动设置的规则，请优先遵守："
-                : "These are player-defined rules. Follow them with highest priority:");
+                ? "这些是你心里最确信的事、你们当面定下的规矩或专属默契。你和农夫说话时自然带着这份心照不宣："
+                : "These are things you know for certain about the farmer and mutual understandings between you two. \n\nKeep them in mind naturally when talking:");
             sb.AppendLine();
 
             foreach (var e in manualEntries)
@@ -856,8 +845,11 @@ internal class MemoryManager : IMemoryProvider
         if (coreFacts.Count > 0)
         {
             sb.AppendLine(isZh
-                ? "=== 长期重要事实（背景知识）==="
-                : "=== LONG-TERM IMPORTANT FACTS (background knowledge) ===");
+                ? "=== 关于农夫的重要事实与深层了解 ==="
+                : "=== KEY FACTS ABOUT THE FARMER ===");
+            sb.AppendLine(isZh
+                ? "关于农夫，你心里一直记着的要紧事（作为你平时的背景认知）："
+                : "Important background facts about the farmer that you keep in mind:");
             sb.AppendLine();
             foreach (var e in coreFacts)
                 sb.AppendLine($"- {e.Content}");
@@ -869,8 +861,11 @@ internal class MemoryManager : IMemoryProvider
         if (todayPromises.Count > 0)
         {
             sb.AppendLine(isZh
-                ? "=== 今日待履约约定（农场主与你之间的约定）==="
-                : "=== TODAY'S PROMISES (commitments between you and the farmer) ===");
+                ? "=== 你与农夫今天说好的事（待履约约定）==="
+                : "=== TODAY'S COMMITMENTS WITH THE FARMER ===");
+            sb.AppendLine(isZh
+                ? "你和农夫约好今天要做的事。如果当下话头合适，可以自然提一嘴："
+                : "Things you and the farmer planned or agreed to do today. Feel free to bring it up naturally if the moment fits:");
             sb.AppendLine();
             foreach (var p in todayPromises)
                 sb.AppendLine($"- [TODAY_PROMISE] {p.Content}");
@@ -882,11 +877,11 @@ internal class MemoryManager : IMemoryProvider
         if (recentTrivia.Count > 0)
         {
             sb.AppendLine(isZh
-                ? "=== 近期琐事记录（背景参考）==="
-                : "=== RECENT MINOR FACTS (background) ===");
+                ? "=== 你最近留意到的小事与近况 ==="
+                : "=== RECENT DETAILS IN MIND ===");
             sb.AppendLine(isZh
-                ? "以下是系统自动整理的背景信息，仅作参考。若与玩家手动规则冲突，以玩家手动规则为准。标记 [CONTEXT_RELEVANT] 的条目与当前场景相关："
-                : "Auto-recorded background facts for reference only. If conflicts with player rules, player rules take priority. Entries marked [CONTEXT_RELEVANT] are relevant to the current scene:");
+                ? "这些是你最近留心到的小细节或听说的闲话琐事。不用刻意每句话都提，话赶话聊到时随口带一句就行。标记 [CONTEXT_RELEVANT] 的事与你此刻所在的地方正相关："
+                : "Small details or recent happenings you've caught wind of. No need to force them into conversation—just let them surface naturally if the moment fits. Items marked [CONTEXT_RELEVANT] tie into where you are right now:");
             sb.AppendLine();
 
             foreach (var e in recentTrivia)
@@ -915,11 +910,9 @@ internal class MemoryManager : IMemoryProvider
         string lowerContent = memoryContent.ToLowerInvariant();
         string lowerLocation = currentLocation.ToLowerInvariant();
 
-        // 直接包含
         if (lowerContent.Contains(lowerLocation))
             return true;
 
-        // 地点别名匹配（引用 LocationAliases 字段）
         foreach (var kvp in LocationAliases)
         {
             bool locationMatch = lowerLocation.Contains(kvp.Key);
@@ -937,9 +930,8 @@ internal class MemoryManager : IMemoryProvider
     }
 
     // ──────────────────────────────────────────────────────────────
-    // 🌟 Promise 激活语法匹配（MEM-06 新增）
+    // 🌟 Promise 激活语法匹配
     // ──────────────────────────────────────────────────────────────
-
     private static bool ContainsAny(string source, params string[] keys)
     {
         foreach (var k in keys)
@@ -960,41 +952,33 @@ internal class MemoryManager : IMemoryProvider
     private static bool DayHintMatches(string hint, int createdDay)
     {
         if (string.IsNullOrWhiteSpace(hint))
-            return true; // 未标注 = 始终激活
+            return true;
 
         string h = hint.Trim();
         int today = CurrentGameDay();
-        int dow = (Game1.dayOfMonth - 1) % 7; // 0=Monday；dayOfMonth∈[1,28] 且 28%7==0，跨季跨年相位一致（游戏历不变量：1/8/15/22=周一）
+        int dow = (Game1.dayOfMonth - 1) % 7;
 
-        // ① 天气
         if (ContainsAny(h, "rain", "rainy", "雨"))
             return Game1.isRaining || Game1.isLightning;
 
-        // ② 雷暴
         if (ContainsAny(h, "storm", "thunder", "雷", "暴风雨"))
             return Game1.isLightning;
 
-        // ③ 雪
         if (ContainsAny(h, "snow", "雪"))
             return Game1.isSnowing;
 
-        // ④ 节日
         if (ContainsAny(h, "festival", "节日", "庆典"))
             return Utility.isFestivalDay(Game1.dayOfMonth, Game1.season);
 
-        // ⑤ 今天
         if (ContainsAny(h, "today", "今天", "今日"))
             return true;
 
-        // ⑥ 明天起
         if (ContainsAny(h, "tomorrow", "明天", "明日", "次日"))
             return today >= createdDay + 1;
 
-        // ⑦ 周末
         if (ContainsAny(h, "weekend", "周末"))
             return dow == 5 || dow == 6;
 
-        // ⑧ 星期
         if (ContainsAny(h, "monday", "周一", "星期一", "礼拜一")) return dow == 0;
         if (ContainsAny(h, "tuesday", "周二", "星期二", "礼拜二")) return dow == 1;
         if (ContainsAny(h, "wednesday", "周三", "星期三", "礼拜三")) return dow == 2;
@@ -1003,16 +987,15 @@ internal class MemoryManager : IMemoryProvider
         if (ContainsAny(h, "saturday", "周六", "星期六", "礼拜六")) return dow == 5;
         if (ContainsAny(h, "sunday", "周日", "星期日", "星期天", "礼拜日", "礼拜天")) return dow == 6;
 
-        // ⑨ 兜底：未识别语法一律激活
         return true;
     }
 
     private static bool LocationHintMatches(string triggerLocation, string currentLocationName)
     {
         if (string.IsNullOrWhiteSpace(triggerLocation))
-            return true; // 地点无关
+            return true;
         if (string.IsNullOrWhiteSpace(currentLocationName))
-            return false; // 无法定位则不激活
+            return false;
 
         if (CrossContains(triggerLocation, currentLocationName))
             return true;
@@ -1022,7 +1005,6 @@ internal class MemoryManager : IMemoryProvider
             string key = kvp.Key;
             string[] aliases = kvp.Value;
 
-            // 当前地点是否匹配 key 或任一 alias
             bool currentMatches = CrossContains(key, currentLocationName);
             if (!currentMatches)
             {
@@ -1038,7 +1020,6 @@ internal class MemoryManager : IMemoryProvider
 
             if (!currentMatches) continue;
 
-            // 触发地点是否匹配 key 或任一 alias（同一键条目内交叉命中）
             if (CrossContains(key, triggerLocation)) return true;
             foreach (var alias in aliases)
             {
