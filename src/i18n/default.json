@@ -170,5 +170,15 @@
   "Follower.ConfirmNo": "No", 
   "Follower.DateLeaveHeadText": "Alright, I'll head back for now.",
   "Follower.FollowLeaveHeadText": "I'll head back now. See you around.",
-  "Follower.TooFarAway": "{{name}} has wandered too far away..."
+  "Follower.TooFarAway": "{{name}} has wandered too far away...",
+  "Memory.DistillTitle": "Memory Distill - {{npcName}}",
+  "Memory.DistillButton": "AI Extract",
+  "Memory.DistillLoading": "Reviewing recent conversations...",
+  "Memory.DistillFailed": "Memory extraction failed. Please try again.",
+  "Memory.DistillEmpty": "No new key facts or commitments found.",
+  "Memory.DistillNoHistory": "No recent conversations with {{npcName}}.",
+  "Memory.DistillLeftTitle": "AI Suggestions",
+  "Memory.DistillRightTitle": "Current Memories",
+  "Memory.DistillDuplicate": "Already recorded.",
+  "Memory.DistillLlmDisabled": "AI service is not connected. Check your API settings first."
 }
