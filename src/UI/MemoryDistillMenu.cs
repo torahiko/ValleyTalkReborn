@@ -64,22 +64,35 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
     private float _closeButtonHoverScale = 1f;
     private string _hoveredTooltip = string.Empty;
 
-    public MemoryDistillMenu(string npcName, IClickableMenu returnMenu)
+    public MemoryDistillMenu(string npcName,
+                             IClickableMenu returnMenu,
+                             List<string> cachedCandidates = null,
+                             HashSet<string> usedCandidates = null)
     {
         _npcName = npcName;
         _returnMenu = returnMenu;
         _npcDisplayName = Game1.getCharacterFromName(npcName)?.displayName ?? npcName;
 
+        if (usedCandidates != null)
+            _usedCandidates = usedCandidates;
+
         UpdateLayout();
 
-        // 快照已有 Manual 记忆作为去重基准
-        List<string> existingManual = MemoryManager.Instance.GetMemories(_npcName)
-            .Where(m => m.Source == "Manual")
-            .Select(m => m.Content)
-            .Take(10)
-            .ToList();
+        if (cachedCandidates != null && cachedCandidates.Count > 0)
+        {
+            _candidates = cachedCandidates;
+            _state = DistillState.Ready;
+        }
+        else
+        {
+            List<string> existingManual = MemoryManager.Instance.GetMemories(_npcName)
+                .Where(m => m.Source == "Manual")
+                .Select(m => m.Content)
+                .Take(10)
+                .ToList();
 
-        _task = MemoryExtractService.ExtractAsync(_npcName, _npcDisplayName, existingManual, _cts.Token);
+            _task = MemoryExtractService.ExtractAsync(_npcName, _npcDisplayName, existingManual, _cts.Token);
+        }
 
         RefreshEntries();
     }
@@ -267,11 +280,21 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
         int my = Game1.getMouseY();
         _hoveredTooltip = string.Empty;
 
-        // 遮罩与窗口背景
+        // 1. 深度遮罩（采用与归档菜单一致的 0.75f 深度遮罩，彻底阻断游戏画面穿透）
+        // 1. 底层先绘制主菜单，再覆盖 40% 半透明遮罩
+        _returnMenu?.draw(b);
         b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.4f);
+
+        // 2. 补齐两层木框 + 实体对话框（托住标题和内容）
+        IClickableMenu.drawTextureBox(b,
+            xPositionOnScreen - 16, yPositionOnScreen - 16,
+            width + 32, height + 32, Color.White);
+        IClickableMenu.drawTextureBox(b,
+            xPositionOnScreen - 8, yPositionOnScreen - 8,
+            width + 16, height + 16, Color.White);
         Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
 
-        // 顶部标题
+        // 顶部标题（此时已稳稳居于实体羊皮纸底框正上方）
         string title = I18n.Memory.DistillTitle(_npcDisplayName);
         Vector2 titleSize = Game1.dialogueFont.MeasureString(title);
         b.DrawString(Game1.dialogueFont, title,
@@ -499,6 +522,8 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             case MemoryExtractStatus.Success:
                 _candidates = result.Candidates ?? new List<string>();
                 _state = DistillState.Ready;
+                if (_returnMenu is ScrollableMemoryMenu parentMenu)
+                    parentMenu.SetDistillCache(_candidates);
                 RefreshEntries();
                 Game1.playSound("smallSelect");
                 break;

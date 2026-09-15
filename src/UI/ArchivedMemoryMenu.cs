@@ -10,10 +10,6 @@ using System.Linq;
 
 namespace ValleytalkReborn
 {
-    /// <summary>
-    /// 归档箱浏览/恢复/彻底删除菜单（CORE-MEM-104）。纯 UI：数据经 MemoryManager 公共 API，
-    /// 零直接持久化；所有写库经 CORE-MEM-101 的 RestoreMemory / DeleteArchivedMemory 内部守卫。
-    /// </summary>
     internal class ArchivedMemoryMenu : IClickableMenu, IMemoryRefreshTarget
     {
         private readonly string _npcName;
@@ -21,6 +17,7 @@ namespace ValleytalkReborn
 
         private List<MemoryEntry> _cachedEntries = new();
         private int _startIndex;
+        private bool _scrolling;
 
         private ClickableTextureComponent _closeButton;
         private ClickableTextureComponent _upArrow;
@@ -28,7 +25,14 @@ namespace ValleytalkReborn
         private ClickableTextureComponent _scrollbar;
         private Rectangle _scrollbarRunner;
 
-        // 行文本按钮：74x36，删除贴 width - RightPadding - 74 - 12，恢复在其左 10px
+        private float _closeButtonHoverScale;
+        private float _upArrowHoverScale;
+        private float _downArrowHoverScale;
+
+        private readonly float _closeButtonBaseScale;
+        private readonly float _upArrowBaseScale;
+        private readonly float _downArrowBaseScale;
+
         private readonly List<Rectangle> _restoreRects = new();
         private readonly List<Rectangle> _deleteRects = new();
 
@@ -42,8 +46,8 @@ namespace ValleytalkReborn
         private const int ButtonWidth = 74;
         private const int ButtonHeight = 36;
         private const int ButtonGap = 10;
-        private const int RightReserved = ButtonWidth + 12 + ButtonWidth; // 删除贴右 + 恢复在其左
-        private const int NearFullThreshold = MemoryManager.MaxArchivedMemoriesPerNpc - 2; // 28：计数接近饱和转浅橙（CORE-MEM-106）
+        private const int RightReserved = ButtonWidth + 12 + ButtonWidth;
+        private const int NearFullThreshold = MemoryManager.MaxArchivedMemoriesPerNpc - 2;
 
         public ArchivedMemoryMenu(string npcName, IClickableMenu returnMenu)
             : base(
@@ -51,7 +55,7 @@ namespace ValleytalkReborn
                   (Game1.uiViewport.Height - MenuHeight) / 2,
                   MenuWidth,
                   MenuHeight,
-                  true)
+                  false)
         {
             _npcName = npcName;
             _returnMenu = returnMenu;
@@ -59,16 +63,20 @@ namespace ValleytalkReborn
             _closeButton = new ClickableTextureComponent(
                 new Rectangle(xPositionOnScreen + width - 60, yPositionOnScreen + 16, 44, 44),
                 Game1.mouseCursors, new Rectangle(337, 494, 12, 12), 3.5f);
+            _closeButtonBaseScale = 3.5f;
             _closeButton.hoverText = I18n.Memory.CloseButton();
 
             _upArrow = new ClickableTextureComponent(
                 new Rectangle(xPositionOnScreen + width - 48,
                               yPositionOnScreen + TopPadding, 44, 48),
                 Game1.mouseCursors, new Rectangle(421, 459, 11, 12), 4f);
+            _upArrowBaseScale = 4f;
+
             _downArrow = new ClickableTextureComponent(
                 new Rectangle(xPositionOnScreen + width - 48,
                               yPositionOnScreen + height - BottomPadding, 44, 48),
                 Game1.mouseCursors, new Rectangle(421, 472, 11, 12), 4f);
+            _downArrowBaseScale = 4f;
 
             _scrollbarRunner = new Rectangle(
                 xPositionOnScreen + width - 32,
@@ -137,13 +145,15 @@ namespace ValleytalkReborn
             {
                 _startIndex--;
                 Game1.playSound("shwip");
-                RefreshEntries();
+                SetScrollbarPosition();
+                RefreshActionButtons();
             }
             else if (direction < 0 && _startIndex < Math.Max(0, _cachedEntries.Count - maxLines))
             {
                 _startIndex++;
                 Game1.playSound("shwip");
-                RefreshEntries();
+                SetScrollbarPosition();
+                RefreshActionButtons();
             }
         }
 
@@ -158,29 +168,29 @@ namespace ValleytalkReborn
                 return;
             }
 
+            int maxLines = GetVisibleLineCount();
             if (_upArrow.containsPoint(x, y) && _startIndex > 0)
             {
                 _startIndex--;
                 Game1.playSound("shwip");
-                RefreshEntries();
+                SetScrollbarPosition();
+                RefreshActionButtons();
                 return;
             }
-            if (_downArrow.containsPoint(x, y) && _startIndex < Math.Max(0, _cachedEntries.Count - GetVisibleLineCount()))
+            if (_downArrow.containsPoint(x, y) && _startIndex < Math.Max(0, _cachedEntries.Count - maxLines))
             {
                 _startIndex++;
                 Game1.playSound("shwip");
-                RefreshEntries();
+                SetScrollbarPosition();
+                RefreshActionButtons();
                 return;
             }
 
-            // 拖动滚动条
-            if (_scrollbar.containsPoint(x, y) && _cachedEntries.Count > GetVisibleLineCount())
+            if (_cachedEntries.Count > maxLines && (_scrollbarRunner.Contains(x, y) || _scrollbar.containsPoint(x, y)))
             {
-                int yPos = Math.Max(_scrollbarRunner.Y,
-                    Math.Min(y, _scrollbarRunner.Bottom - _scrollbar.bounds.Height));
-                float pct = (float)(yPos - _scrollbarRunner.Y) /
-                            (_scrollbarRunner.Height - _scrollbar.bounds.Height);
-                int maxLines = GetVisibleLineCount();
+                _scrolling = true;
+                int yPos = Math.Max(_scrollbarRunner.Y, Math.Min(y, _scrollbarRunner.Bottom - _scrollbar.bounds.Height));
+                float pct = (float)(yPos - _scrollbarRunner.Y) / (_scrollbarRunner.Height - _scrollbar.bounds.Height);
                 _startIndex = (int)(pct * (_cachedEntries.Count - maxLines));
                 ClampStartIndex();
                 SetScrollbarPosition();
@@ -188,7 +198,6 @@ namespace ValleytalkReborn
                 return;
             }
 
-            // 行按钮（仅可见行；rects 按可视行下标索引，条目取绝对行号）
             int visibleCount = GetVisibleLineCount();
             for (int i = 0; i < visibleCount && _startIndex + i < _cachedEntries.Count; i++)
             {
@@ -207,9 +216,27 @@ namespace ValleytalkReborn
             }
         }
 
+        public override void leftClickHeld(int x, int y)
+        {
+            base.leftClickHeld(x, y);
+
+            int maxLines = GetVisibleLineCount();
+            if (_scrolling && _cachedEntries.Count > maxLines)
+            {
+                int yPos = Math.Max(_scrollbarRunner.Y, Math.Min(y, _scrollbarRunner.Bottom - _scrollbar.bounds.Height));
+                float pct = (float)(yPos - _scrollbarRunner.Y) / (_scrollbarRunner.Height - _scrollbar.bounds.Height);
+
+                _startIndex = (int)(pct * (_cachedEntries.Count - maxLines));
+                ClampStartIndex();
+                SetScrollbarPosition();
+                RefreshActionButtons();
+            }
+        }
+
         public override void releaseLeftClick(int x, int y)
         {
             base.releaseLeftClick(x, y);
+            _scrolling = false;
         }
 
         public override void receiveKeyPress(Keys key)
@@ -279,7 +306,6 @@ namespace ValleytalkReborn
         {
             base.draw(b);
 
-            // 背景遮罩（与 ScrollableMemoryMenu 同构）
             b.Draw(Game1.staminaRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, new Color(0, 0, 0) * 0.75f);
 
             IClickableMenu.drawTextureBox(b,
@@ -300,39 +326,50 @@ namespace ValleytalkReborn
                 new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f, yPositionOnScreen + 24),
                 Game1.textColor);
 
-            // 右上角计数（接近饱和转浅橙提醒，CORE-MEM-106）
+            // 🌟 归档记录指示器：置于列表窗口右上角（向下微调至 TopPadding - 14）
             string countText = I18n.Memory.ArchiveCount(_cachedEntries.Count, MemoryManager.MaxArchivedMemoriesPerNpc);
             var countSize = Game1.smallFont.MeasureString(countText);
             Color countColor = _cachedEntries.Count >= NearFullThreshold
                 ? new Color(255, 185, 80)
                 : Color.Gray;
             b.DrawString(Game1.smallFont, countText,
-                new Vector2(xPositionOnScreen + width - RightPadding - countSize.X, yPositionOnScreen + 28),
+                new Vector2(xPositionOnScreen + width - RightPadding - countSize.X, yPositionOnScreen + TopPadding - 14),
                 countColor);
 
-            // 规则免责声明（CORE-MEM-106）：滚动淘汰规则显式告知
+            // 淘汰规则提示：移至底部边缘上方（-64px），避免与底框材质重叠
             string ruleHint = I18n.Memory.ArchiveRuleHint(MemoryManager.MaxArchivedMemoriesPerNpc);
             var ruleHintSize = Game1.smallFont.MeasureString(ruleHint);
             b.DrawString(Game1.smallFont, ruleHint,
-                new Vector2(xPositionOnScreen + (width - ruleHintSize.X) / 2f, yPositionOnScreen + 68),
+                new Vector2(xPositionOnScreen + (width - ruleHintSize.X) / 2f, yPositionOnScreen + height - 64),
                 Color.Gray);
 
+            UiHelper.UpdateButtonScale(ref _closeButtonHoverScale, _closeButton, mx, my);
+            _closeButton.scale = _closeButtonBaseScale * _closeButtonHoverScale;
             _closeButton.draw(b);
 
             if (_cachedEntries.Count == 0)
             {
                 string emptyText = I18n.Memory.ArchiveEmpty();
-                var emptySize = Game1.dialogueFont.MeasureString(emptyText);
-                b.DrawString(Game1.dialogueFont, emptyText,
+                float fontScale = 0.65f; // 在这里调整字号缩放比例（1.0f 为原大）
+                var emptySize = Game1.dialogueFont.MeasureString(emptyText) * fontScale;
+
+                b.DrawString(
+                    Game1.dialogueFont,
+                    emptyText,
                     new Vector2(xPositionOnScreen + (width - emptySize.X) / 2f,
-                                yPositionOnScreen + TopPadding + 60),
-                    Color.Gray);
+                        yPositionOnScreen + TopPadding + 60),
+                    Color.Gray,
+                    0f,
+                    Vector2.Zero,
+                    fontScale,
+                    SpriteEffects.None,
+                    1f);
+
                 base.draw(b);
                 drawMouse(b);
                 return;
             }
 
-            // 行内容
             int contentW = width - LeftPadding - RightPadding - RightReserved - 16;
             int visible = GetVisibleLineCount();
             for (int vis = 0; vis < visible && _startIndex + vis < _cachedEntries.Count; vis++)
@@ -347,8 +384,7 @@ namespace ValleytalkReborn
 
                 bool isRule = entry.Category == MemoryCategory.Behavior;
                 string tag = isRule ? I18n.Memory.RuleTag() : I18n.Memory.MemoryTag();
-                Color contentColor = isRule ? new Color(255, 215, 0)
-                    : (entry.Source == "Auto" ? new Color(130, 150, 170) : Game1.textColor);
+                Color contentColor = entry.Source == "Auto" ? new Color(130, 150, 170) : Game1.textColor;
 
                 string content = $"{i + 1}. {tag}{entry.Content}";
                 content = TruncateString(content, Game1.smallFont, contentW);
@@ -363,7 +399,6 @@ namespace ValleytalkReborn
                     new Vector2(xPositionOnScreen + LeftPadding + 4, y + 4 + Game1.smallFont.LineSpacing),
                     Color.Gray);
 
-                // 濒危标记（CORE-MEM-106）：满额时列表末位（最旧，下一个被 FIFO 淘汰）红橙提示
                 if (_cachedEntries.Count >= MemoryManager.MaxArchivedMemoriesPerNpc &&
                     i == _cachedEntries.Count - 1)
                 {
@@ -375,7 +410,6 @@ namespace ValleytalkReborn
                         new Color(230, 100, 70));
                 }
 
-                // 文本按钮（按可视行下标取：rects 列表按可视窗口构建，见 RefreshActionButtons）
                 var restoreRect = _restoreRects[vis];
                 var deleteRect = _deleteRects[vis];
 
@@ -400,17 +434,26 @@ namespace ValleytalkReborn
                     Game1.textColor);
             }
 
-            // 滚动条
             if (_cachedEntries.Count > visible)
             {
-                IClickableMenu.drawTextureBox(b,
-                    _scrollbarRunner.X, _scrollbarRunner.Y, _scrollbarRunner.Width, _scrollbarRunner.Height,
-                    Color.DimGray * 0.5f);
+                UiHelper.UpdateButtonScale(ref _upArrowHoverScale, _upArrow, mx, my);
+                UiHelper.UpdateButtonScale(ref _downArrowHoverScale, _downArrow, mx, my);
+
+                _upArrow.scale = _upArrowBaseScale * _upArrowHoverScale;
+                _downArrow.scale = _downArrowBaseScale * _downArrowHoverScale;
+
+                _upArrow.draw(b);
+                _downArrow.draw(b);
+
+                IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
+                    new Rectangle(403, 383, 6, 6),
+                    _scrollbarRunner.X, _scrollbarRunner.Y,
+                    _scrollbarRunner.Width, _scrollbarRunner.Height,
+                    Color.White, 4f, false);
+
+                SetScrollbarPosition();
                 _scrollbar.draw(b);
             }
-
-            _upArrow.draw(b);
-            _downArrow.draw(b);
 
             base.draw(b);
             drawMouse(b);
