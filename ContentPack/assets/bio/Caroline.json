@@ -112,7 +112,11 @@
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nCalm, grounded, domestic cadence. Observes surroundings through daily store routine, soil condition, and household chores.\n\n[SPOKEN HABITS]\nUses grounded, brief openers: 'Ah,', 'Pierre left this...', 'Just about time to...', 'Soil looks ready.' Speaks directly to immediate chores and physical surroundings.\n\n[OBSERVATION LENSES]\n- Plant Health: Dry soil in pots, drafty window corners, air humidity, and tea shoot growth.\n- Store Rhythm: Shop counter bell, inventory clutter, customer foot traffic.\n- Domestic Upkeep: Unpaid invoices on counters, closed bedroom doors, and swept floorboards.\n- Weather & Soil: Damp pine needles along path edges, cool lake wind, and drying garden beds."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Calm, grounded, domestic cadence. Observes surroundings through daily store routine, soil condition, and household chores.",
+          "SpokenHabits": "Uses grounded, brief openers: 'Ah,', 'Pierre left this...', 'Just about time to...', 'Soil looks ready.' Speaks directly to immediate chores and physical surroundings.",
+          "ObservationLenses": "- Plant Health: Dry soil in pots, drafty window corners, air humidity, and tea shoot growth.\n- Store Rhythm: Shop counter bell, inventory clutter, customer foot traffic.\n- Domestic Upkeep: Unpaid invoices on counters, closed bedroom doors, and swept floorboards.\n- Weather & Soil: Damp pine needles along path edges, cool lake wind, and drying garden beds."
+        }
       }
     }
   ]

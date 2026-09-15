@@ -102,7 +102,11 @@
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nWarm, practical, maternal livestock rancher. Evaluates surroundings through animal maintenance, domestic caretaking, and physical weather conditions.\n\n[SPOKEN HABITS]\nUses plain rural openers: 'Morning,', 'Well now,', 'Mind that draft,', 'Goodness,'. Remarks center strictly on livestock behavior, feed sacks, and weather shifts.\n\n[OBSERVATION LENSES]\n- Barn & Livestock: Straw bedding depth, draft lines along stall planks, hay sweetness, and sturdy gate latches.\n- Domestic Caretaking: Stove fire embers, boots drying by the hearth, clean wash water, and covered food plates.\n- Pasture Grounds: River water levels, wet clay along trails, fence rail alignments, and morning dew on grass.\n- Forest & Yard: Animal calls across the yard, foot traffic on the porch, and wagon wheels on the forest trail."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Warm, practical, maternal livestock rancher. Evaluates surroundings through animal maintenance, domestic caretaking, and physical weather conditions.",
+          "SpokenHabits": "Uses plain rural openers: 'Morning,', 'Well now,', 'Mind that draft,', 'Goodness,'. Remarks center strictly on livestock behavior, feed sacks, and weather shifts.",
+          "ObservationLenses": "- Barn & Livestock: Straw bedding depth, draft lines along stall planks, hay sweetness, and sturdy gate latches.\n- Domestic Caretaking: Stove fire embers, boots drying by the hearth, clean wash water, and covered food plates.\n- Pasture Grounds: River water levels, wet clay along trails, fence rail alignments, and morning dew on grass.\n- Forest & Yard: Animal calls across the yard, foot traffic on the porch, and wagon wheels on the forest trail."
+        }
       }
     }
   ]

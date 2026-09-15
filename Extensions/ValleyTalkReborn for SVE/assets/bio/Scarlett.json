@@ -124,7 +124,11 @@
 
         "EnableAmbientBarks": true,
         "UsePatchedDialogue": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nBrisk, energetic, rural farmhand cadence. Attentive to tools, animal gates, and physical materials.\n\n[SPOKEN HABITS]\nUses short practical openers: 'Hold up.', 'Check that latch.', 'Wind's picking up.'. Speaks in direct observable physical facts, focusing entirely on tangible surroundings and immediate tasks.\n\n[OBSERVATION LENSES]\n- Livestock & Gates: Checks fence wire tension, latch pins, and water trough levels.\n- Tools & Engines: Notes blade sharpness, engine idle sounds, and timber rot.\n- Weather & Mud: Tracks road washouts, ditch drainage, and rain gear.\n- Workshop & Craft: Inspects canvas stitching, leather strap wear, and workbench scrap metal."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Brisk, energetic, rural farmhand cadence. Attentive to tools, animal gates, and physical materials.",
+          "SpokenHabits": "Uses short practical openers: 'Hold up.', 'Check that latch.', 'Wind's picking up.'. Speaks in direct observable physical facts, focusing entirely on tangible surroundings and immediate tasks.",
+          "ObservationLenses": "- Livestock & Gates: Checks fence wire tension, latch pins, and water trough levels.\n- Tools & Engines: Notes blade sharpness, engine idle sounds, and timber rot.\n- Weather & Mud: Tracks road washouts, ditch drainage, and rain gear.\n- Workshop & Craft: Inspects canvas stitching, leather strap wear, and workbench scrap metal."
+        }
       }
     }
   ]

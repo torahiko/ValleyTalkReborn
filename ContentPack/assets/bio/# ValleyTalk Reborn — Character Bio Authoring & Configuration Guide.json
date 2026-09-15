@@ -103,6 +103,12 @@ Not every NPC is action-forward. Introverted, contemplative, depressed, scholarl
 * All three fields use strictly positive framing.
 * `VoiceAndAttitude` and `SpokenHabits` are permanent. They do not change across progression stages.
 * `ObservationLenses` may be omitted if the character has no meaningful environmental focus. The engine handles absent fields cleanly.
+* If all three fields are missing or empty, the engine gate-skips that NPC's ambient self-talk (Bark) entirely.
+* If both `VoiceAndAttitude` and `SpokenHabits` are missing or empty, the engine injects no voice/persona lines for that NPC in A2A scenes (the participant can still converse), and it never injects an empty persona block.
+
+**Plain-prose field values only**
+
+Field values must contain body prose only. Do not paste section titles such as `[VOICE & ATTITUDE]` inside a field value — the engine generates those titles at render time, and a duplicated title inside the value would be injected into the prompt a second time.
 
 ### 2. The `ProgressStates` Mutually Exclusive Triad
 
@@ -132,6 +138,10 @@ The resolver evaluates active conditions using specificity weighting (Special Ev
 * **`RequirePlayerMarriedTo`** — Use this when an NPC's dialogue should change based on whom the player married. For example, Clint might have different lines if the player married Emily versus someone else. The value is the internal name of the NPC, such as `"Emily"` or `"Abigail"`.
 * **`RequireJojaMartClosed`** — Use this to reflect whether JojaMart is still open or has been shut down. Set `true` if the condition should apply when JojaMart is closed, or `false` if it should apply while JojaMart is still in business. Pierre is the typical example.
 * **`RequireJojaMember`** — Use this to track whether the player has purchased a Joja membership. Set `true` or `false` depending on which route should be acknowledged. Beyond Morris, this is also crucial for town merchants like Pierre whose livelihood is directly impacted by the player's allegiance.
+
+**AI-assisted authoring**
+
+The new three-field schema has no format contract: there is no ordering constraint, no sentinel spelling to replicate, and no tag pairing. When you hand this guide to an AI to generate a character card, it only needs to follow the semantic rules (positive framing, observable behavior) — not reproduce any markup syntax.
 
 ---
 

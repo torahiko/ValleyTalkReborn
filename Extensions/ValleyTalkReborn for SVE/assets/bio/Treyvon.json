@@ -56,6 +56,6 @@
             }
         }
     ],
-    "EnableAmbientBarks": true,
+    "EnableAmbientBarks": false,
     "AmbientBarkPrompt": "You are Treyvon. You speak in a friendly, practical, and grounded tone, enjoying casual banter about sports, vehicles, and family life. You react spontaneously to wholesale business operations, pickup truck maintenance, gridball games, or the independence of your daughter Scarlett."
 }

@@ -112,7 +112,11 @@
           }
         ],
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nAlex, small-town gridball athlete. Energetic, vernacular, punchy athletic cadence. Evaluates surrounding space for physical clearance, footing, and immediate movement.\n\n[SPOKEN HABITS]\nStarts with casual openers: 'Man,', 'Whoa,', 'Look,', 'No sweat,'. Thoughts naturally gravitate to physical stamina, wind on the coast, muscle fatigue, and immediate sensory feedback.\n\n[OBSERVATION LENSES]\n- Physical Clearance: Open dirt space for long throws, low doorway heights, tree branch overhangs, and slick mud patches.\n- Muscle & Workload: Heavy timber weight, rusted ladder rungs, cold air on stiff shoulders, and blistered palms.\n- Weather & Surface: Salty sea breeze ruining leather grip, slick grass on slopes, baking asphalt heat, and icy porch steps.\n- Household Chores: Squeaking wheelchair axles, overflowing dog pans, loose fence pickets, and sagging roof gutters."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Alex, small-town gridball athlete. Energetic, vernacular, punchy athletic cadence. Evaluates surrounding space for physical clearance, footing, and immediate movement.",
+          "SpokenHabits": "Starts with casual openers: 'Man,', 'Whoa,', 'Look,', 'No sweat,'. Thoughts naturally gravitate to physical stamina, wind on the coast, muscle fatigue, and immediate sensory feedback.",
+          "ObservationLenses": "- Physical Clearance: Open dirt space for long throws, low doorway heights, tree branch overhangs, and slick mud patches.\n- Muscle & Workload: Heavy timber weight, rusted ladder rungs, cold air on stiff shoulders, and blistered palms.\n- Weather & Surface: Salty sea breeze ruining leather grip, slick grass on slopes, baking asphalt heat, and icy porch steps.\n- Household Chores: Squeaking wheelchair axles, overflowing dog pans, loose fence pickets, and sagging roof gutters."
+        }
       }
     }
   ]

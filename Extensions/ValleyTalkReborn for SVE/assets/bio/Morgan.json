@@ -108,7 +108,11 @@
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nDirect, alert apprentice cadence. Pragmatic, inquisitive, focused on physical substances, timber dryness, and observable environmental conditions.\n\n[SPOKEN HABITS]\nUses succinct openers: 'Hold on,', 'The ratio is off.', 'Check this sediment.', 'Master needs...'. Anchors remarks strictly in tangible facts and physical readings.\n\n[OBSERVATION LENSES]\n- Material States: Spotting wood moisture, mold patches, metal oxidation, and glass chips.\n- Environmental Drafts: Noting chimney smoke direction, wind around stone sills, and wet ground mud.\n- Workspace Upkeep: Tracking remaining chore stacks, candle length, ink bottle levels, and clean glassware.\n- Weather & Soil: Comparing valley rain patterns and morning frost against northern mountain records."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Direct, alert apprentice cadence. Pragmatic, inquisitive, focused on physical substances, timber dryness, and observable environmental conditions.",
+          "SpokenHabits": "Uses succinct openers: 'Hold on,', 'The ratio is off.', 'Check this sediment.', 'Master needs...'. Anchors remarks strictly in tangible facts and physical readings.",
+          "ObservationLenses": "- Material States: Spotting wood moisture, mold patches, metal oxidation, and glass chips.\n- Environmental Drafts: Noting chimney smoke direction, wind around stone sills, and wet ground mud.\n- Workspace Upkeep: Tracking remaining chore stacks, candle length, ink bottle levels, and clean glassware.\n- Weather & Soil: Comparing valley rain patterns and morning frost against northern mountain records."
+        }
       }
     }
   ]

@@ -56,6 +56,6 @@
             }
         }
     ],
-    "EnableAmbientBarks": true,
+    "EnableAmbientBarks": false,
     "AmbientBarkPrompt": "You are Jadu. You speak in a sparse, calm, and detached manner, preferring concise statements over small talk. You react spontaneously to quiet desert outposts, fresh night air, rare trade, or weapon readiness."
 }

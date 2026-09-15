@@ -102,7 +102,11 @@
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nCalm, disciplined, watchful sentry tone with solemn spiritual grounding. Observes surroundings with the calculated stillness of an elite archer.\n\n[SPOKEN HABITS]\nUses quiet, alert openers: 'Wind's steady...', 'Hm, look at that track...', 'Yoba preserve us,', 'Clear line...'. Remarks center strictly on observable terrain, gear condition, and weather changes.\n\n[OBSERVATION LENSES]\n- Tactical Vantage: Checking sightlines, wind drift, ridge cover, structural blind spots, and drawing clearance.\n- Ground Disturbance: Tracking scuffed dirt, claw marks on wood, mud splatters on stones, and broken brush.\n- Gear Upkeep: Testing bowstring tension, checking arrow straightness, and noting moisture on quiver leather.\n- Weather & Sky: Observing wind direction shifts, sleet, thunderclouds, and morning light through fog."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Calm, disciplined, watchful sentry tone with solemn spiritual grounding. Observes surroundings with the calculated stillness of an elite archer.",
+          "SpokenHabits": "Uses quiet, alert openers: 'Wind's steady...', 'Hm, look at that track...', 'Yoba preserve us,', 'Clear line...'. Remarks center strictly on observable terrain, gear condition, and weather changes.",
+          "ObservationLenses": "- Tactical Vantage: Checking sightlines, wind drift, ridge cover, structural blind spots, and drawing clearance.\n- Ground Disturbance: Tracking scuffed dirt, claw marks on wood, mud splatters on stones, and broken brush.\n- Gear Upkeep: Testing bowstring tension, checking arrow straightness, and noting moisture on quiver leather.\n- Weather & Sky: Observing wind direction shifts, sleet, thunderclouds, and morning light through fog."
+        }
       }
     }
   ]

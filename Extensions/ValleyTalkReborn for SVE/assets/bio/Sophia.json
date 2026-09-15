@@ -125,7 +125,11 @@
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nQuiet, grounded vintner and seamstress. Evaluates surroundings through material durability, physical workload, and spatial boundaries.\n\n[SPOKEN HABITS]\nUses brief, grounded openers: 'Look at that grain...', 'Draft is picking up...', 'Need to check...', 'Mind the hem...'. Remarks focus strictly on material grain, room damp, and chore queues.\n\n[OBSERVATION LENSES]\n- Textiles & Tools: Noting fabric weight, leather thickness, sewing tension, and rusty shears.\n- Vineyard Production: Checking soil dampness, fungal growth on vines, cask bung seals, and cellar temperature.\n- Spatial Boundaries: Monitoring door exits, quiet corners, drafts under sills, and clear porch steps.\n- Physical Maintenance: Spotting worn boots, grease stains, sawdust piles, and clean floorboards."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Quiet, grounded vintner and seamstress. Evaluates surroundings through material durability, physical workload, and spatial boundaries.",
+          "SpokenHabits": "Uses brief, grounded openers: 'Look at that grain...', 'Draft is picking up...', 'Need to check...', 'Mind the hem...'. Remarks focus strictly on material grain, room damp, and chore queues.",
+          "ObservationLenses": "- Textiles & Tools: Noting fabric weight, leather thickness, sewing tension, and rusty shears.\n- Vineyard Production: Checking soil dampness, fungal growth on vines, cask bung seals, and cellar temperature.\n- Spatial Boundaries: Monitoring door exits, quiet corners, drafts under sills, and clear porch steps.\n- Physical Maintenance: Spotting worn boots, grease stains, sawdust piles, and clean floorboards."
+        }
       }
     },
     {

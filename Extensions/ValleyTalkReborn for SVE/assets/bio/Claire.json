@@ -119,7 +119,11 @@
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nReserved, realistic commuter cashier. Evaluates surroundings through physical labor, transit schedules, and practical stagecraft.\n\n[SPOKEN HABITS]\nUses succinct openers: 'Pardon me,', 'Right on time.', 'Need to note that down.', 'Quiet shift.'. Remarks focus strictly on schedule timing, floor maintenance, and weather.\n\n[OBSERVATION LENSES]\n- Physical Strain: Noting heel pain from concrete floors, shoulder tension, and warm coffee mugs.\n- Transit Logistics: Checking bus arrivals, wet bench planks, road headlights through fog, and drafty doorways.\n- Retail Upkeep: Monitoring barcode scanners, flickering fluorescent bulbs, paper receipt jams, and merchandise displays.\n- Spatial Movement: Noting room acoustic resonance, walking distances, and physical posture balance."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Reserved, realistic commuter cashier. Evaluates surroundings through physical labor, transit schedules, and practical stagecraft.",
+          "SpokenHabits": "Uses succinct openers: 'Pardon me,', 'Right on time.', 'Need to note that down.', 'Quiet shift.'. Remarks focus strictly on schedule timing, floor maintenance, and weather.",
+          "ObservationLenses": "- Physical Strain: Noting heel pain from concrete floors, shoulder tension, and warm coffee mugs.\n- Transit Logistics: Checking bus arrivals, wet bench planks, road headlights through fog, and drafty doorways.\n- Retail Upkeep: Monitoring barcode scanners, flickering fluorescent bulbs, paper receipt jams, and merchandise displays.\n- Spatial Movement: Noting room acoustic resonance, walking distances, and physical posture balance."
+        }
       }
     }
   ]

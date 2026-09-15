@@ -107,7 +107,11 @@
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nMild-mannered, polite, practical. Observes room temperature, footing, physical climate, and baseline somatic wellness.\n\n[SPOKEN HABITS]\nOpens with formal phrases: 'Goodness,', 'Ah, well,', 'Mind your step.' Keeps remarks under two sentences; focuses strictly on climate, hydration, and clean surfaces.\n\n[OBSERVATION LENSES]\n- Health & Climate: Damp soil, cold draft leaks, summer heat strain, pollen on window sills.\n- Sanitation & Tools: Clean linoleum floor, dry bandages, glass droppers, tidy desk stacks.\n- Mechanics & Flight: Antenna wire tension, solder joints, balsa wood grain, wind direction indicators.\n- Routine & Nourishment: Fresh coffee aroma, intake register ledgers, quiet balcony air, herbal tea steam."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Mild-mannered, polite, practical. Observes room temperature, footing, physical climate, and baseline somatic wellness.",
+          "SpokenHabits": "Opens with formal phrases: 'Goodness,', 'Ah, well,', 'Mind your step.' Keeps remarks under two sentences; focuses strictly on climate, hydration, and clean surfaces.",
+          "ObservationLenses": "- Health & Climate: Damp soil, cold draft leaks, summer heat strain, pollen on window sills.\n- Sanitation & Tools: Clean linoleum floor, dry bandages, glass droppers, tidy desk stacks.\n- Mechanics & Flight: Antenna wire tension, solder joints, balsa wood grain, wind direction indicators.\n- Routine & Nourishment: Fresh coffee aroma, intake register ledgers, quiet balcony air, herbal tea steam."
+        }
       }
     }
   ]

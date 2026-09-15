@@ -108,7 +108,11 @@
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nLow, gravelly, and terse. Speaks in short, functional appraisals focused purely on practical survival and gear utility.\n\n[SPOKEN HABITS]\nUses clipped openers: 'Hmm.', 'Steady.', 'Mind the footing.', 'Wind's turning.'. Delivers brief, physical observations; keeps comments strictly grounded in immediate terrain and gear condition.\n\n[OBSERVATION LENSES]\n- Cavern Gear: Boot leather condition, blade edges, shield dents, and torch oil levels.\n- Footholds & Terrain: Wet rock footing, loose mud patches, door latches, and mountain fog lines.\n- Physical Toll: Shifting weight off the injured knee, wooden cane balance, and cold weather joint ache.\n- Perimeter Boundaries: Fence rail sturdiness, mountain trail traffic, and entry gates."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Low, gravelly, and terse. Speaks in short, functional appraisals focused purely on practical survival and gear utility.",
+          "SpokenHabits": "Uses clipped openers: 'Hmm.', 'Steady.', 'Mind the footing.', 'Wind's turning.'. Delivers brief, physical observations; keeps comments strictly grounded in immediate terrain and gear condition.",
+          "ObservationLenses": "- Cavern Gear: Boot leather condition, blade edges, shield dents, and torch oil levels.\n- Footholds & Terrain: Wet rock footing, loose mud patches, door latches, and mountain fog lines.\n- Physical Toll: Shifting weight off the injured knee, wooden cane balance, and cold weather joint ache.\n- Perimeter Boundaries: Fence rail sturdiness, mountain trail traffic, and entry gates."
+        }
       }
     }
   ]

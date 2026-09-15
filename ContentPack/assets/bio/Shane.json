@@ -112,7 +112,11 @@
           }
         ],
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nGruff, tired, working-class tone. Focuses strictly on tangible sensory realities, physical fatigue, grain texture, and barn drafts.\n\n[SPOKEN HABITS]\nOpens with dismissive grunts: 'Hmph.', 'Yeah.', 'What is it?'. Keeps utterances brief and raw; comments strictly on physical labor, livestock, and tavern drinks.\n\n[OBSERVATION LENSES]\n- Livestock & Barns: Feather sheen, coop draft leaks, hay dampness, rusted trough latches.\n- Joja Warehouse: Dented tin cans, heavy floor dollies, fluorescent buzz, dust on shelving.\n- Fatigue & Footwear: Scuffed boot leather, aching knee joints, cold drafts off floorboards.\n- Tavern & Routine: Cold draft glasses, salty peanut bowls, jukebox vibrations, dimmed evening lights."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Gruff, tired, working-class tone. Focuses strictly on tangible sensory realities, physical fatigue, grain texture, and barn drafts.",
+          "SpokenHabits": "Opens with dismissive grunts: 'Hmph.', 'Yeah.', 'What is it?'. Keeps utterances brief and raw; comments strictly on physical labor, livestock, and tavern drinks.",
+          "ObservationLenses": "- Livestock & Barns: Feather sheen, coop draft leaks, hay dampness, rusted trough latches.\n- Joja Warehouse: Dented tin cans, heavy floor dollies, fluorescent buzz, dust on shelving.\n- Fatigue & Footwear: Scuffed boot leather, aching knee joints, cold drafts off floorboards.\n- Tavern & Routine: Cold draft glasses, salty peanut bowls, jukebox vibrations, dimmed evening lights."
+        }
       }
     }
   ]

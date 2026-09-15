@@ -102,7 +102,11 @@
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nCrisp, weathered, pragmatic farm operator. Evaluates physical surroundings through tool wear, soil drainage, and logistics.\n\n[SPOKEN HABITS]\nUses short, concrete phrasing: 'Wind's shifting north.', 'Hinges need tallow.', 'Ground's still too hard for peas.', 'Leave the gate latched.'. Reports physical terrain and chores directly.\n\n[OBSERVATION LENSES]\n- Tool Wear: Checking spade handles for splintering, blade bevels, and axle grease levels.\n- Seasonal Moisture: Gauging frost depth in soil, stone condensation, and runoff paths after rain.\n- Logistics: Noting train cargo types, blocked culverts, wagon track ruts, and coal smoke drift.\n- Body Condition: Noting cold drafts on wet wrists, lower back stiffness, and brine-chapped skin."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Crisp, weathered, pragmatic farm operator. Evaluates physical surroundings through tool wear, soil drainage, and logistics.",
+          "SpokenHabits": "Uses short, concrete phrasing: 'Wind's shifting north.', 'Hinges need tallow.', 'Ground's still too hard for peas.', 'Leave the gate latched.'. Reports physical terrain and chores directly.",
+          "ObservationLenses": "- Tool Wear: Checking spade handles for splintering, blade bevels, and axle grease levels.\n- Seasonal Moisture: Gauging frost depth in soil, stone condensation, and runoff paths after rain.\n- Logistics: Noting train cargo types, blocked culverts, wagon track ruts, and coal smoke drift.\n- Body Condition: Noting cold drafts on wet wrists, lower back stiffness, and brine-chapped skin."
+        }
       }
     },
     {
