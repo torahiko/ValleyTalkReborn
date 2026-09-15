@@ -89,14 +89,16 @@ internal sealed class A2APromptBuilder
         foreach (var npc in participants)
         {
             var ch = DialogueBuilder.Instance?.GetCharacter(npc);
-            string rawPersona = ch?.Bio?.AmbientBarkPrompt?.Trim();
+            var personaCfg = ch?.Bio?.AmbientBarkPrompt;
 
-            if (string.IsNullOrEmpty(rawPersona)) continue;
+            if (personaCfg == null || personaCfg.IsEmpty) continue;
 
-            // 过滤掉单人内心独白的观察视角，只保留语气口吻，避免机械代入观察项
-            string cleanedVoice = ExtractVoiceOnly(rawPersona);
+            // 结构化字段直接产出 A2A 视图，无需字符串截断
+            string cleanedVoice = personaCfg.BuildForA2A();
 
-            // 角色名替换：将口吻设定中包含的 NPC 英文名批量替换为本地化中文
+            // 观察透镜-only 卡：V/S 均空 → A2A 视图为空，跳过该参与者，避免注入空口吻行
+            if (string.IsNullOrWhiteSpace(cleanedVoice)) continue;
+
             if (isZh)
             {
                 cleanedVoice = NpcNameLocalizer.LocalizeNamesInText(cleanedVoice);
@@ -519,33 +521,6 @@ internal sealed class A2APromptBuilder
             : "- Coexistence: Lines may trail off, shift midway, or remain open-ended, reflecting genuine everyday life.");
 
         return sb.ToString();
-    }
-
-    /// <summary>
-    /// 截取 AmbientBarkPrompt 中的语气特征，剔除容易导致自说自话的观察项
-    /// </summary>
-    private static string ExtractVoiceOnly(string rawPrompt)
-    {
-        if (string.IsNullOrWhiteSpace(rawPrompt)) 
-            return string.Empty;
-
-        int obsIndex = rawPrompt.IndexOf("[OBSERVATION LENSES]", StringComparison.OrdinalIgnoreCase);
-        if (obsIndex > 0)
-        {
-            return rawPrompt.Substring(0, obsIndex)
-                .Replace("[VOICE & ATTITUDE]", "")
-                .Trim();
-        }
-
-        string customPrompt = rawPrompt.Trim();
-
-        const int MaxSafeChars = 1000;
-        if (customPrompt.Length > MaxSafeChars)
-        {
-            return customPrompt.Substring(0, MaxSafeChars) + "...";
-        }
-
-        return customPrompt;
     }
 
     /// <summary>
