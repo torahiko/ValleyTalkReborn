@@ -755,7 +755,8 @@ public class Prompts
         else if (hasNoPlayerInput && flags?.IsSimpleGreeting != true)
         {
             prompt.AppendLine("<interaction_state>");
-            prompt.AppendLine(Util.GetString(Character, "interactionApproaching"));
+            string approachingKey = isMarriedOrRoommate ? "interactionApproachingSpouse" : "interactionApproaching";
+            prompt.AppendLine(Util.GetString(Character, approachingKey));
             prompt.AppendLine("</interaction_state>\n");
         }
 
@@ -1193,6 +1194,12 @@ public class Prompts
     {
         var historyManager = DialogueHistoryManager.Instance;
         if (historyManager == null) return;
+        // 伴侣与室友朝夕相处，不存在访客式的“隔了几天没见”事实
+        if (Game1.getPlayerOrEventFarmer()?.friendshipData?.TryGetValue(Character.Name, out var fs) == true
+            && (fs.IsMarried() || fs.IsRoommate()))
+        {
+            return;
+        }
         var history = historyManager.GetRecentHistory(Character.Name, 1);
         if (history.Count == 0) return;
 
