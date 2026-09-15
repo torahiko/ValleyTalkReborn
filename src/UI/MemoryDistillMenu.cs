@@ -366,6 +366,9 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
         if (!string.IsNullOrEmpty(hudMessage))
             Game1.addHUDMessage(new HUDMessage(hudMessage, hudKind));
 
+        if (_returnMenu is IMemoryRefreshTarget refreshable)
+            refreshable.RefreshEntries();
+
         exitThisMenu(playSound: false);
     }
 
@@ -375,6 +378,10 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             _cts.Cancel();
 
         Game1.playSound("bigDeSelect");
+
+        if (_returnMenu is IMemoryRefreshTarget refreshable)
+            refreshable.RefreshEntries();
+
         exitThisMenu(playSound: false);
     }
 
