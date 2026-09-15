@@ -52,6 +52,8 @@ namespace ValleytalkReborn
                 : WorldMemoryManager.MaxEntries;
 
         private Rectangle _addButtonRect;
+        private Rectangle _manualAddRect;        // 仅 _currentTab == 0 生效
+        private Rectangle _aiExtractButtonRect;  // 仅 _currentTab == 0 生效
         private readonly ClickableTextureComponent _closeButton;
         private readonly List<ClickableTextureComponent> _deleteButtons = new();
         private readonly List<ClickableTextureComponent> _editButtons = new();
@@ -108,6 +110,15 @@ namespace ValleytalkReborn
                 xPositionOnScreen + width / 2 - 150,
                 yPositionOnScreen + height - 60,
                 300, 48);
+
+            _manualAddRect = new Rectangle(
+                xPositionOnScreen + width / 2 - 245,
+                yPositionOnScreen + height - 60,
+                230, 48);
+            _aiExtractButtonRect = new Rectangle(
+                xPositionOnScreen + width / 2 + 15,
+                yPositionOnScreen + height - 60,
+                230, 48);
 
             _upArrow = new ClickableTextureComponent(
                 new Rectangle(xPositionOnScreen + width - 48,
@@ -282,7 +293,21 @@ namespace ValleytalkReborn
                 return;
             }
 
-            if (_addButtonRect.Contains(x, y))
+            if (_currentTab == 0)
+            {
+                if (_aiExtractButtonRect.Contains(x, y))
+                {
+                    TryOpenDistillMenu();
+                    return;
+                }
+
+                if (_manualAddRect.Contains(x, y))
+                {
+                    OpenAddMemoryDialog();
+                    return;
+                }
+            }
+            else if (_addButtonRect.Contains(x, y))
             {
                 OpenAddMemoryDialog();
                 return;
@@ -377,6 +402,29 @@ namespace ValleytalkReborn
 
             Game1.playSound("bigSelect");
             Game1.activeClickableMenu = new AddMemoryInputMenu(_npcName, this, null, _currentTab);
+        }
+
+        /// <summary>打开 AI 提炼弹窗；LlmDisabled / 无历史时快速失败并提示。</summary>
+        private void TryOpenDistillMenu()
+        {
+            string displayName = Game1.getCharacterFromName(_npcName)?.displayName ?? _npcName;
+
+            if (DialogueBuilder.Instance?.LlmDisabled == true)
+            {
+                Game1.playSound("cancel");
+                Game1.addHUDMessage(new HUDMessage(I18n.Memory.DistillLlmDisabled(), 3));
+                return;
+            }
+
+            if (!DialogueHistoryManager.Instance.HasHistory(_npcName))
+            {
+                Game1.playSound("cancel");
+                Game1.addHUDMessage(new HUDMessage(I18n.Memory.DistillNoHistory(displayName), 0));
+                return;
+            }
+
+            Game1.playSound("bigSelect");
+            Game1.activeClickableMenu = new MemoryDistillMenu(_npcName, this);
         }
 
         private void ConfirmDeleteMemory(MemoryEntry entry)
@@ -526,24 +574,55 @@ namespace ValleytalkReborn
                             yPositionOnScreen + TopPadding - 20),
                 Color.Gray);
 
-            string addText = _currentTab == 0
-                ? I18n.Memory.AddButton()
-                : I18n.Memory.AddWorldButton();
+            if (_currentTab == 0)
+            {
+                // 手动添加（左）
+                string manualText = I18n.Memory.AddButton();
+                bool manualHover = _manualAddRect.Contains(mx, my);
+                IClickableMenu.drawTextureBox(b,
+                    _manualAddRect.X, _manualAddRect.Y,
+                    _manualAddRect.Width, _manualAddRect.Height,
+                    manualHover ? Color.Gold : Color.White);
+                var manualLabelSize = Game1.smallFont.MeasureString(manualText);
+                b.DrawString(Game1.smallFont, manualText,
+                    new Vector2(
+                        _manualAddRect.X + (_manualAddRect.Width - manualLabelSize.X) / 2f,
+                        _manualAddRect.Y + (_manualAddRect.Height - manualLabelSize.Y) / 2f),
+                    Game1.textColor);
 
-            bool addHover = _addButtonRect.Contains(mx, my);
-            Color addColor = addHover ? Color.Gold : Color.White;
+                // AI 提炼（右）
+                string distillText = I18n.Memory.DistillButton();
+                bool distillHover = _aiExtractButtonRect.Contains(mx, my);
+                IClickableMenu.drawTextureBox(b,
+                    _aiExtractButtonRect.X, _aiExtractButtonRect.Y,
+                    _aiExtractButtonRect.Width, _aiExtractButtonRect.Height,
+                    distillHover ? Color.Gold : Color.White);
+                var distillLabelSize = Game1.smallFont.MeasureString(distillText);
+                b.DrawString(Game1.smallFont, distillText,
+                    new Vector2(
+                        _aiExtractButtonRect.X + (_aiExtractButtonRect.Width - distillLabelSize.X) / 2f,
+                        _aiExtractButtonRect.Y + (_aiExtractButtonRect.Height - distillLabelSize.Y) / 2f),
+                    Game1.textColor);
+            }
+            else
+            {
+                string addText = I18n.Memory.AddWorldButton();
 
-            IClickableMenu.drawTextureBox(b,
-                _addButtonRect.X, _addButtonRect.Y,
-                _addButtonRect.Width, _addButtonRect.Height, addColor);
+                bool addHover = _addButtonRect.Contains(mx, my);
+                Color addColor = addHover ? Color.Gold : Color.White;
 
-            var addLabelSize = Game1.smallFont.MeasureString(addText);
+                IClickableMenu.drawTextureBox(b,
+                    _addButtonRect.X, _addButtonRect.Y,
+                    _addButtonRect.Width, _addButtonRect.Height, addColor);
 
-            b.DrawString(Game1.smallFont, addText,
-                new Vector2(
-                    _addButtonRect.X + (_addButtonRect.Width - addLabelSize.X) / 2f,
-                    _addButtonRect.Y + (_addButtonRect.Height - addLabelSize.Y) / 2f),
-                Game1.textColor);
+                var addLabelSize = Game1.smallFont.MeasureString(addText);
+
+                b.DrawString(Game1.smallFont, addText,
+                    new Vector2(
+                        _addButtonRect.X + (_addButtonRect.Width - addLabelSize.X) / 2f,
+                        _addButtonRect.Y + (_addButtonRect.Height - addLabelSize.Y) / 2f),
+                    Game1.textColor);
+            }
 
             UiHelper.UpdateButtonScale(ref _closeButtonHoverScale, _closeButton, mx, my);
             _closeButton.scale = _closeButtonBaseScale * _closeButtonHoverScale;
