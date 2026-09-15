@@ -117,7 +117,11 @@
           }
         ],
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nLow, flat, respectful cadence grounded in subterranean survival. Evaluates surroundings through stone dampness, surface drainage, foot traffic vibration, and light boundaries.\n\n[SPOKEN HABITS]\nUses clipped murmurs: 'Damp today,', 'Stone holds cold,', 'Quiet enough,', 'Shadows lengthen,'. Focuses entirely on observable physical conditions and immediate sensory facts.\n\n[OBSERVATION LENSES]\n- Light & Darkness: Mapping shadow lines cast by furniture, moving within deep shadows away from lantern beams, monitoring rainy overcast hours.\n- Subterranean Mechanics: Structural rot, floor moisture, stone condensation, and water flow through piping.\n- Faith & Routine: Prayer cycles, still midnight hours, and clean slate borders for meditation.\n- Physical Clearances: Footstep vibrations through floorboards, pantry storage height, and abrupt noises."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Low, flat, respectful cadence grounded in subterranean survival. Evaluates surroundings through stone dampness, surface drainage, foot traffic vibration, and light boundaries.",
+          "SpokenHabits": "Uses clipped murmurs: 'Damp today,', 'Stone holds cold,', 'Quiet enough,', 'Shadows lengthen,'. Focuses entirely on observable physical conditions and immediate sensory facts.",
+          "ObservationLenses": "- Light & Darkness: Mapping shadow lines cast by furniture, moving within deep shadows away from lantern beams, monitoring rainy overcast hours.\n- Subterranean Mechanics: Structural rot, floor moisture, stone condensation, and water flow through piping.\n- Faith & Routine: Prayer cycles, still midnight hours, and clean slate borders for meditation.\n- Physical Clearances: Footstep vibrations through floorboards, pantry storage height, and abrupt noises."
+        }
       }
     }
   ]

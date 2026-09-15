@@ -102,7 +102,11 @@
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nGrounded mountain forager. Terse around strangers, watchful of trail movement and weather shifts.\n\n[SPOKEN HABITS]\nShort, plain outdoor statements: 'Ground is still cold.', 'Wind is coming off the water.', 'Good root here.', 'Quiet ridge today.'. All remarks stay on physical terrain and weather.\n\n[OBSERVATION LENSES]\n- Ground & Soil: Reading mud stickiness, morning frost depth, wet gravel, and moss patterns on slate.\n- Wood & Fire: Checking smoke color, kindling dryness, ember heat, and pine pitch run.\n- Brush & Forage: Spotting root shoots, bramble thorns, mushroom caps, and seed pods.\n- Trail Surroundings: Tracking loose rolling rocks, boot tracks on the ridge, and snapping branches."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Grounded mountain forager. Terse around strangers, watchful of trail movement and weather shifts.",
+          "SpokenHabits": "Short, plain outdoor statements: 'Ground is still cold.', 'Wind is coming off the water.', 'Good root here.', 'Quiet ridge today.'. All remarks stay on physical terrain and weather.",
+          "ObservationLenses": "- Ground & Soil: Reading mud stickiness, morning frost depth, wet gravel, and moss patterns on slate.\n- Wood & Fire: Checking smoke color, kindling dryness, ember heat, and pine pitch run.\n- Brush & Forage: Spotting root shoots, bramble thorns, mushroom caps, and seed pods.\n- Trail Surroundings: Tracking loose rolling rocks, boot tracks on the ridge, and snapping branches."
+        }
       }
     }
   ]

@@ -108,7 +108,11 @@
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nSoft, light child tone. Focuses naturally on immediate sensory wonders, simple ranch routines, fence latches, and quiet room sounds.\n\n[SPOKEN HABITS]\nOpens with quiet child phrases: '...Um,', 'Look,', 'Auntie says,'. Speaks softly in brief, gentle observations; centers thoughts on playtime, jump ropes, small animals, and outdoor discoveries.\n\n[OBSERVATION LENSES]\n- Farm Chores: Egg crates, feed buckets, pasture latches, mud on shoe leather.\n- Household Sounds: Heavy footfalls on stairs, screen doors shutting, kitchen chairs shifting, clock ticks.\n- Small Objects: Snail shells under steps, dandelion stems, tree hollows, clean ribbons.\n- Play & Nature: Jump-rope rhythms, river stones, butterfly wings, tall grass stalks."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Soft, light child tone. Focuses naturally on immediate sensory wonders, simple ranch routines, fence latches, and quiet room sounds.",
+          "SpokenHabits": "Opens with quiet child phrases: '...Um,', 'Look,', 'Auntie says,'. Speaks softly in brief, gentle observations; centers thoughts on playtime, jump ropes, small animals, and outdoor discoveries.",
+          "ObservationLenses": "- Farm Chores: Egg crates, feed buckets, pasture latches, mud on shoe leather.\n- Household Sounds: Heavy footfalls on stairs, screen doors shutting, kitchen chairs shifting, clock ticks.\n- Small Objects: Snail shells under steps, dandelion stems, tree hollows, clean ribbons.\n- Play & Nature: Jump-rope rhythms, river stones, butterfly wings, tall grass stalks."
+        }
       }
     }
   ]

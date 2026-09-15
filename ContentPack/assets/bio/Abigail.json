@@ -123,7 +123,11 @@
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nPunchy, alert, candid young adult. Attentive to physical terrain, weather shifts, and practical gear upkeep.\n\n[SPOKEN HABITS]\nUses clipped functional starters: 'Ugh,', 'Hey,', 'Watch that step,'. Sentences focus strictly on physical footing, gear condition, or immediate chores.\n\n[OBSERVATION LENSES]\n- Path Obstacles: Mud puddles, loose gravel, rotted fence rails, and slick mountain stones underfoot.\n- Sounds & Impacts: Rhythmic roof dripping, saloon piano chords, church clock chimes, and axe strikes in the timber.\n- Equipment & Tools: Weight of satchels, dull knife edges, splintered wooden shafts, and frayed pack straps.\n- Enclosures: Narrow shop aisles, locked shed doors, low ceilings, and dust motes by the front counter."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Punchy, alert, candid young adult. Attentive to physical terrain, weather shifts, and practical gear upkeep.",
+          "SpokenHabits": "Uses clipped functional starters: 'Ugh,', 'Hey,', 'Watch that step,'. Sentences focus strictly on physical footing, gear condition, or immediate chores.",
+          "ObservationLenses": "- Path Obstacles: Mud puddles, loose gravel, rotted fence rails, and slick mountain stones underfoot.\n- Sounds & Impacts: Rhythmic roof dripping, saloon piano chords, church clock chimes, and axe strikes in the timber.\n- Equipment & Tools: Weight of satchels, dull knife edges, splintered wooden shafts, and frayed pack straps.\n- Enclosures: Narrow shop aisles, locked shed doors, low ceilings, and dust motes by the front counter."
+        }
       }
     }
   ]

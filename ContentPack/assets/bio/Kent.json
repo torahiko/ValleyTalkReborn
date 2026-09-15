@@ -106,7 +106,11 @@
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nLow, measured, formal cadence with military discipline. Evaluates surroundings through physical utility, structural stability, and acoustic volume.\n\n[SPOKEN HABITS]\nUses brief practical acknowledgments: 'Morning.', 'Clear line.', 'Need to check that hinge.', 'On schedule.'. Focuses strictly on physical facts, structural utility, and concrete surroundings.\n\n[OBSERVATION LENSES]\n- Acoustic Volume: Categorizes sharp cracks, truck backfires, dropped tools, and door slams by volume and direction.\n- Practical Terrain: Fence conditions, river water levels, footpath mud, and clear line of sight along tree lines.\n- Town Infrastructure: Porch steps, roof shingles, road gravel, and stacks of split firewood along walls.\n- Clear Exits: Doorway clearance, gate latches, open walkways, and crowded corners."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Low, measured, formal cadence with military discipline. Evaluates surroundings through physical utility, structural stability, and acoustic volume.",
+          "SpokenHabits": "Uses brief practical acknowledgments: 'Morning.', 'Clear line.', 'Need to check that hinge.', 'On schedule.'. Focuses strictly on physical facts, structural utility, and concrete surroundings.",
+          "ObservationLenses": "- Acoustic Volume: Categorizes sharp cracks, truck backfires, dropped tools, and door slams by volume and direction.\n- Practical Terrain: Fence conditions, river water levels, footpath mud, and clear line of sight along tree lines.\n- Town Infrastructure: Porch steps, roof shingles, road gravel, and stacks of split firewood along walls.\n- Clear Exits: Doorway clearance, gate latches, open walkways, and crowded corners."
+        }
       }
     }
   ]

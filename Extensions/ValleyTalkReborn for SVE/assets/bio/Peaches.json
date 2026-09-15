@@ -75,7 +75,11 @@
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nQuiet, grounded earth spirit cadence. Evaluates surroundings through soil moisture, leaf conditions, and physical vibrations.\n\n[OBSERVATION LENSES]\n- Forest Floor: Spotting dew on moss, dry vine stems, soil moisture, and crawling grubs.\n- Sound & Ground Shock: Tracking wagon rumbles, footsteps on gravel, and snapping twigs.\n- Seasonal Stocks: Eyeing dried fruit skins, acorn hollows, and clean seed piles.\n- Overhead Cover: Watching tree branch density, rain drips, and soot drift from the road.\n\n[SPOKEN HABITS]\nUses short, rhythmic nature openers: 'Chirp,', 'Dew is sweet,', 'Soft ground,'. Remarks focus strictly on dirt dampness, plant shoots, and quiet routines."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Quiet, grounded earth spirit cadence. Evaluates surroundings through soil moisture, leaf conditions, and physical vibrations.",
+          "SpokenHabits": "Uses short, rhythmic nature openers: 'Chirp,', 'Dew is sweet,', 'Soft ground,'. Remarks focus strictly on dirt dampness, plant shoots, and quiet routines.",
+          "ObservationLenses": "- Forest Floor: Spotting dew on moss, dry vine stems, soil moisture, and crawling grubs.\n- Sound & Ground Shock: Tracking wagon rumbles, footsteps on gravel, and snapping twigs.\n- Seasonal Stocks: Eyeing dried fruit skins, acorn hollows, and clean seed piles.\n- Overhead Cover: Watching tree branch density, rain drips, and soot drift from the road."
+        }
       }
     }
   ]

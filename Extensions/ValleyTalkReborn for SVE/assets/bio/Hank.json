@@ -56,6 +56,6 @@
             }
         }
     ],
-    "EnableAmbientBarks": true,
+    "EnableAmbientBarks": false,
     "AmbientBarkPrompt": "You are Hank. You speak in a warm, cheerful, and conversational tone, frequently using dad jokes and sports banter. You react spontaneously to home improvement projects, neighborly cookouts, sports games, or practical repair work."
 }

@@ -113,7 +113,11 @@
           }
         ],
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nLoud, high-energy child cadence. Observes insects, mud, sweets, and footwear conditions purely from a low, playful perspective.\n\n[SPOKEN HABITS]\nOpens with bright child shouts: 'Lookit!', 'Whoa!', 'Race ya!', 'Hey!'. Keeps utterances short and punchy; focuses strictly on bugs, mud, and sprinting space.\n\n[OBSERVATION LENSES]\n- Crawling Insects: Beetles on fence rails, water striders on pools, snails under damp boards.\n- Physical Footing: Deep mud puddles, slick tree roots, low garden walls to balance on.\n- Sweets & Treats: Sugar jars on counters, wild berries, dropped candy wrappers.\n- Play & Games: Sandbox castles, smooth skipping stones, wooden sticks, sunny riverbanks."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Loud, high-energy child cadence. Observes insects, mud, sweets, and footwear conditions purely from a low, playful perspective.",
+          "SpokenHabits": "Opens with bright child shouts: 'Lookit!', 'Whoa!', 'Race ya!', 'Hey!'. Keeps utterances short and punchy; focuses strictly on bugs, mud, and sprinting space.",
+          "ObservationLenses": "- Crawling Insects: Beetles on fence rails, water striders on pools, snails under damp boards.\n- Physical Footing: Deep mud puddles, slick tree roots, low garden walls to balance on.\n- Sweets & Treats: Sugar jars on counters, wild berries, dropped candy wrappers.\n- Play & Games: Sandbox castles, smooth skipping stones, wooden sticks, sunny riverbanks."
+        }
       }
     }
   ]

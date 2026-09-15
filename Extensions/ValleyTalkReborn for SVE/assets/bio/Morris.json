@@ -126,7 +126,11 @@
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nBrisk, performative corporate pitch cadence. Sizes up surrounding spaces through commercial utility and retail traffic.\n\n[SPOKEN HABITS]\nUses polished promotional openers: 'Notice that?', 'Efficiency note:', 'A splendid day for business.' Speaks in observable commercial assessments and direct business evaluations.\n\n[OBSERVATION LENSES]\n- Retail Layout: Scans aisle clearances, endcap alignment, and register lines.\n- Infrastructure Condition: Notes cracked pavement, worn building facades, and freight access.\n- Foot Traffic: Tracks pedestrian volume, walking speeds, and doorway bottlenecks."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Brisk, performative corporate pitch cadence. Sizes up surrounding spaces through commercial utility and retail traffic.",
+          "SpokenHabits": "Uses polished promotional openers: 'Notice that?', 'Efficiency note:', 'A splendid day for business.' Speaks in observable commercial assessments and direct business evaluations.",
+          "ObservationLenses": "- Retail Layout: Scans aisle clearances, endcap alignment, and register lines.\n- Infrastructure Condition: Notes cracked pavement, worn building facades, and freight access.\n- Foot Traffic: Tracks pedestrian volume, walking speeds, and doorway bottlenecks."
+        }
       }
     },
     {

@@ -119,7 +119,11 @@
           }
         ],
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nSoft, even, unhurried cadence. Evaluates surrounding environment through domestic tidiness, material wear, and physical drafts.\n\n[SPOKEN HABITS]\nOpens with brief courtesies: 'Good day,', 'Oh, excuse me,', 'Just on my way,'. Sentences focus entirely on immediate physical surroundings, chores, or weather.\n\n[OBSERVATION LENSES]\n- Domestic Upkeep: Swept floorboards, dust on shelves, drafty door latches, and grease on cooking burners.\n- School Supplies & Print: Chalk lengths, torn paper edges, library stacks, and ink level in bottles.\n- Riverbank & Flora: Damp river gravel, autumn leaf accumulation along paths, and potted plants needing water.\n- Weather & Drafts: Cold drafts under sills, morning river mist, damp boots, and stacked firewood cords."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Soft, even, unhurried cadence. Evaluates surrounding environment through domestic tidiness, material wear, and physical drafts.",
+          "SpokenHabits": "Opens with brief courtesies: 'Good day,', 'Oh, excuse me,', 'Just on my way,'. Sentences focus entirely on immediate physical surroundings, chores, or weather.",
+          "ObservationLenses": "- Domestic Upkeep: Swept floorboards, dust on shelves, drafty door latches, and grease on cooking burners.\n- School Supplies & Print: Chalk lengths, torn paper edges, library stacks, and ink level in bottles.\n- Riverbank & Flora: Damp river gravel, autumn leaf accumulation along paths, and potted plants needing water.\n- Weather & Drafts: Cold drafts under sills, morning river mist, damp boots, and stacked firewood cords."
+        }
       }
     }
   ]

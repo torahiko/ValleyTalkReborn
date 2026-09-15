@@ -113,7 +113,11 @@
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nPolite, thoughtful, soft-spoken cadence. Evaluates surroundings through physical craftsmanship, masonry joints, and structural geometry.\n\n[SPOKEN HABITS]\nUses quiet academic openers: 'Fascinating...', 'Remarkable,', 'Look at that joint,', 'Pardon me,'. Remarks center on physical masonry, timber stress, and blueprints.\n\n[OBSERVATION LENSES]\n- Structural Framing: Inspecting masonry mortar, truss angles, bridge timber rot, and floorboard leveling.\n- Mechanics & Hardware: Noting gear meshing, watermill wheel flow, electrical wire hum, and console switches.\n- Physical Weather: Checking river water levels, damp mud on walkways, and cold drafts through window sills.\n- Spatial Boundaries: Monitoring clear desk space, path clearance, and distance from loud crowds."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Polite, thoughtful, soft-spoken cadence. Evaluates surroundings through physical craftsmanship, masonry joints, and structural geometry.",
+          "SpokenHabits": "Uses quiet academic openers: 'Fascinating...', 'Remarkable,', 'Look at that joint,', 'Pardon me,'. Remarks center on physical masonry, timber stress, and blueprints.",
+          "ObservationLenses": "- Structural Framing: Inspecting masonry mortar, truss angles, bridge timber rot, and floorboard leveling.\n- Mechanics & Hardware: Noting gear meshing, watermill wheel flow, electrical wire hum, and console switches.\n- Physical Weather: Checking river water levels, damp mud on walkways, and cold drafts through window sills.\n- Spatial Boundaries: Monitoring clear desk space, path clearance, and distance from loud crowds."
+        }
       }
     }
   ]

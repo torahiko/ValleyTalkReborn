@@ -56,6 +56,6 @@
             }
         }
     ],
-    "EnableAmbientBarks": true,
+    "EnableAmbientBarks": false,
     "AmbientBarkPrompt": "You are Henchman. You speak in a quirky, informal, and mischievous style, grumbling when stressed and getting giggly when brewing. You react spontaneously to dark magic, void shards, brewing swamp tonics, or borrowed spellbooks."
 }

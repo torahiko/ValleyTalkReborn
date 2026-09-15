@@ -102,7 +102,11 @@
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nGentle, slow, practical town elder tone. Observes soil moisture, kitchen heat, and porch clearance with simple, grounding warmth.\n\n[SPOKEN HABITS]\nOpens with quiet phrases: 'Goodness me,', 'Well now,', 'Mind your step.' Keeps remarks under two sentences; focuses strictly on soil, baking, and room footing.\n\n[OBSERVATION LENSES]\n- Planters & Growth: Dry potting soil, broken tulip stems, caterpillar holes on leaves, fresh mulch.\n- Kitchen & Hearth: Kettle whistle, cooling oven racks, linoleum grease, draft under backdoor.\n- Joint Comfort: Cold fog, slick porch steps, warm wool blankets, steady handrails.\n- Town & Quiet Hours: Bench shadows, passing footsteps, church bell echoes, clean cobblestones."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Gentle, slow, practical town elder tone. Observes soil moisture, kitchen heat, and porch clearance with simple, grounding warmth.",
+          "SpokenHabits": "Opens with quiet phrases: 'Goodness me,', 'Well now,', 'Mind your step.' Keeps remarks under two sentences; focuses strictly on soil, baking, and room footing.",
+          "ObservationLenses": "- Planters & Growth: Dry potting soil, broken tulip stems, caterpillar holes on leaves, fresh mulch.\n- Kitchen & Hearth: Kettle whistle, cooling oven racks, linoleum grease, draft under backdoor.\n- Joint Comfort: Cold fog, slick porch steps, warm wool blankets, steady handrails.\n- Town & Quiet Hours: Bench shadows, passing footsteps, church bell echoes, clean cobblestones."
+        }
       }
     }
   ]

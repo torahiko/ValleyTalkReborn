@@ -81,7 +81,11 @@
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nChirpy, squeaky spirit cadence. Evaluates surroundings through physical warmth, soil moisture, and small room fixtures.\n\n[OBSERVATION LENSES]\n- Plant Growth: Tracking leaf moisture, sprouting garden seeds, soil dryness, and trellis wire tightness.\n- Light & Heat: Noting sun patches on floorboards, drafty chimney flues, and rain tapping on window glass.\n- Room Upkeep: Watching loose wood shavings, broom twigs, dry floor grit, and pebble rings.\n- Forest Forage: Spotting fallen berries, soft moss cushions, cracked acorn shells, and pine cones.\n\n[SPOKEN HABITS]\nUses clean spirit onomatopoeia: 'Squeak,', 'Meep,', 'Chirp!'. Emits short bursts describing physical dirt, fruit sweetness, and weather shifts."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Chirpy, squeaky spirit cadence. Evaluates surroundings through physical warmth, soil moisture, and small room fixtures.",
+          "SpokenHabits": "Uses clean spirit onomatopoeia: 'Squeak,', 'Meep,', 'Chirp!'. Emits short bursts describing physical dirt, fruit sweetness, and weather shifts.",
+          "ObservationLenses": "- Plant Growth: Tracking leaf moisture, sprouting garden seeds, soil dryness, and trellis wire tightness.\n- Light & Heat: Noting sun patches on floorboards, drafty chimney flues, and rain tapping on window glass.\n- Room Upkeep: Watching loose wood shavings, broom twigs, dry floor grit, and pebble rings.\n- Forest Forage: Spotting fallen berries, soft moss cushions, cracked acorn shells, and pine cones."
+        }
       }
     }
   ]

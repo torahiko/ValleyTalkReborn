@@ -107,7 +107,11 @@
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nFormal, measured, and plain-spoken. Observes coastal weather, practical tools, and tangible shoreline realities.\n\n[SPOKEN HABITS]\nOpens with formal phrases: 'Good morrow.', 'Hail.', 'Mind the path.'. Keeps lines under two sentences; focuses entirely on tools, drafts, and shoreline footing.\n\n[OBSERVATION LENSES]\n- Timber & Salt: Swollen door casings, salt crust on brass hinges, rotting deck boards.\n- Heating & Fuel: Oil level in glass basins, kindling piles, stove draft.\n- Writing Equipment: Bent steel nibs, damp parchment, river stone paperweights.\n- Tides & Shoreline: Wet sand footing, salt foam drifts, tide pool ripples, low-tide gull calls."
+        "AmbientBarkPrompt": {
+          "VoiceAndAttitude": "Formal, measured, and plain-spoken. Observes coastal weather, practical tools, and tangible shoreline realities.",
+          "SpokenHabits": "Opens with formal phrases: 'Good morrow.', 'Hail.', 'Mind the path.'. Keeps lines under two sentences; focuses entirely on tools, drafts, and shoreline footing.",
+          "ObservationLenses": "- Timber & Salt: Swollen door casings, salt crust on brass hinges, rotting deck boards.\n- Heating & Fuel: Oil level in glass basins, kindling piles, stove draft.\n- Writing Equipment: Bent steel nibs, damp parchment, river stone paperweights.\n- Tides & Shoreline: Wet sand footing, salt foam drifts, tide pool ripples, low-tide gull calls."
+        }
       }
     }
   ]
