@@ -94,9 +94,10 @@ public class BioData
     public bool IsKnownNpc { get; set; } = false;
 
     // ── 环境自言自语（Ambient Bark）系统 ──
-    // 这两个字段仅供 DynamicBarkManager 使用，（DialogueBuilder / Prompts）。
+    // 消费方：BarkPromptBuilder、A2APromptBuilder、AmbientBarkModule（雷达/跟随门禁）、
+    // NightlyConsolidationHook（夜间固化读取 ObservationLenses）。
     public bool EnableAmbientBarks { get; set; } = false;
-    public string AmbientBarkPrompt { get; set; } = null;
+    public AmbientBarkPrompt AmbientBarkPrompt { get; set; } = null;
 
     // ── 阶段性状态（Progress States）系统 ──
     // 通用的"互斥分档"状态描述：任何角色都可以配置多档状态文本，

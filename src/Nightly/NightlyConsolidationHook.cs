@@ -325,7 +325,7 @@ internal static class NightlyConsolidationHook
 
             string identity = ExtractBioSection(bio.Biography, "IDENTITY");
             string passions = ExtractBioSection(bio.Biography, "DAILY PASSIONS");
-            string lenses = ExtractBioSection(bio.AmbientBarkPrompt ?? string.Empty, "OBSERVATION LENSES");
+            string lenses = bio.AmbientBarkPrompt?.ObservationLenses ?? string.Empty;
             string stage = ProgressStateResolver.ResolveActiveState(
                 Game1.getCharacterFromName(npcName),
                 bio.ProgressStates);

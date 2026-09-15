@@ -32,7 +32,7 @@ internal sealed class BarkPromptBuilder
         var character = DialogueBuilder.Instance?.GetCharacter(npc);
         var bio = character?.Bio;
         if (character == null || bio == null || !bio.EnableAmbientBarks ||
-            string.IsNullOrWhiteSpace(bio.AmbientBarkPrompt) ||
+            bio.AmbientBarkPrompt == null || bio.AmbientBarkPrompt.IsEmpty ||
             !character.HasValidBio)   // ★ Bios 门禁（纵深防御）
             return null;
 
@@ -256,9 +256,12 @@ Example 3 (Paranoia & Appetite):
         var sb = new StringBuilder();
 
         // ── 1. 角色人设 ──
-        string rawPrompt = bio.AmbientBarkPrompt.Trim();
+        string rawPrompt = bio.AmbientBarkPrompt?.BuildFull()?.Trim() ?? string.Empty;
         if (isZh)
             rawPrompt = NpcNameLocalizer.LocalizeNamesInText(rawPrompt);
+
+        if (string.IsNullOrWhiteSpace(rawPrompt))
+            return string.Empty;
 
         rawPrompt = EnrichWithDynamicState(npc, bio, rawPrompt, isZh, out bool mindsetInjected);
 
