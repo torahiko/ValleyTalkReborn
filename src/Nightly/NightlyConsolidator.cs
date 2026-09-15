@@ -65,7 +65,8 @@ internal static class NightlyConsolidator
         string expectedFolder)
     {
         bool isZh = IsChineseLanguage;
-        string batchPrompt = BuildBatchPrompt(items, isZh);
+        bool extractFactsPromises = ModEntry.Config?.EnableNightlyFactsPromises == true;
+        string batchPrompt = BuildBatchPrompt(items, isZh, extractFactsPromises);
         string systemPrompt = BuildSystemPrompt(isZh);
 
         int n_predict = Math.Clamp(items.Count * 320 + 192, 512, 3072);
@@ -91,7 +92,8 @@ internal static class NightlyConsolidator
                     npcCacheString: string.Empty,
                     promptString: batchPrompt,
                     responseStart: "[",
-                    n_predict: n_predict
+                    n_predict: n_predict,
+                    cacheContext: LlmContextTypes.NoTools
                 ).WaitAsync(cts.Token);
 
                 if (!result.IsSuccess || string.IsNullOrWhiteSpace(result.Text))
@@ -167,7 +169,7 @@ internal static class NightlyConsolidator
             {
                 foreach (var r in results)
                 {
-                    ApplyNightlyResult(r);
+                    ApplyNightlyResult(r, extractFactsPromises);
                 }
             });
 
@@ -434,7 +436,7 @@ internal static class NightlyConsolidator
         return result;
     }
 
-    private static void ApplyNightlyResult(NightlyResult entry)
+    private static void ApplyNightlyResult(NightlyResult entry, bool extractFactsPromises)
     {
         if (entry == null) return;
 
@@ -453,29 +455,40 @@ internal static class NightlyConsolidator
                     entry.Mindset.Boundary ?? "");
             }
 
-            if (entry.Facts != null)
+            if (extractFactsPromises)
             {
-                foreach (var f in entry.Facts)
+                if (entry.Facts != null)
                 {
-                    var result = MemoryManager.Instance.AddAutoFact(entry.Npc, f.Content, f.Importance);
-                    if (result == MemoryOperationResult.Success) factsCount++;
-                    ModEntry.SMonitor?.Log(
-                        $"[NightlyConsolidator] Fact result for [{entry.Npc}]: \"{TruncateForLog(f.Content)}\" => {result}",
-                        result == MemoryOperationResult.Success ? LogLevel.Debug : LogLevel.Trace);
+                    foreach (var f in entry.Facts)
+                    {
+                        var result = MemoryManager.Instance.AddAutoFact(entry.Npc, f.Content, f.Importance);
+                        if (result == MemoryOperationResult.Success) factsCount++;
+                        ModEntry.SMonitor?.Log(
+                            $"[NightlyConsolidator] Fact result for [{entry.Npc}]: \"{TruncateForLog(f.Content)}\" => {result}",
+                            result == MemoryOperationResult.Success ? LogLevel.Debug : LogLevel.Trace);
+                    }
+                }
+
+                if (entry.Promises != null)
+                {
+                    foreach (var p in entry.Promises)
+                    {
+                        var result = MemoryManager.Instance.AddPromise(
+                            entry.Npc, p.Content, p.Importance, p.TargetDayHint, p.TargetLocation);
+                        if (result == MemoryOperationResult.Success) promisesCount++;
+                        ModEntry.SMonitor?.Log(
+                            $"[NightlyConsolidator] Promise result for [{entry.Npc}]: \"{TruncateForLog(p.Content)}\" => {result}",
+                            result == MemoryOperationResult.Success ? LogLevel.Debug : LogLevel.Trace);
+                    }
                 }
             }
-
-            if (entry.Promises != null)
+            else
             {
-                foreach (var p in entry.Promises)
-                {
-                    var result = MemoryManager.Instance.AddPromise(
-                        entry.Npc, p.Content, p.Importance, p.TargetDayHint, p.TargetLocation);
-                    if (result == MemoryOperationResult.Success) promisesCount++;
-                    ModEntry.SMonitor?.Log(
-                        $"[NightlyConsolidator] Promise result for [{entry.Npc}]: \"{TruncateForLog(p.Content)}\" => {result}",
-                        result == MemoryOperationResult.Success ? LogLevel.Debug : LogLevel.Trace);
-                }
+                int skippedFacts = entry.Facts?.Count ?? 0;
+                int skippedPromises = entry.Promises?.Count ?? 0;
+                ModEntry.SMonitor?.Log(
+                    $"[NightlyConsolidator] facts/promises suppressed by config; skipped {skippedFacts} facts, {skippedPromises} promises.",
+                    LogLevel.Trace);
             }
 
             if (!string.IsNullOrWhiteSpace(entry.MorningThought))
@@ -522,7 +535,8 @@ internal static class NightlyConsolidator
 
     private static string BuildBatchPrompt(
         List<NightlyWorkItem> items,
-        bool isZh)
+        bool isZh,
+        bool extractFactsPromises)
     {
         var sb = new System.Text.StringBuilder();
 
@@ -531,14 +545,20 @@ internal static class NightlyConsolidator
             sb.AppendLine("### 任务说明");
             sb.AppendLine("分析以下 NPC 的夜间记忆更新，提取三部分内容：");
             sb.AppendLine("1. 心智底色 mindset：NPC 对农夫的深层态度基线（仅在有明显变化时 update_stance=true）。");
-            sb.AppendLine("2. 事实与约定 facts/promises：客观事实、未来计划或明确约定。");
+            if (extractFactsPromises)
+            {
+                sb.AppendLine("2. 事实与约定 facts/promises：客观事实、未来计划或明确约定。");
+            }
             sb.AppendLine("3. 晨间心境 morning_thought：NPC 清晨第一人称内心独白（平淡日输出 null）。");
             sb.AppendLine();
             sb.AppendLine("### 提取规则");
             sb.AppendLine("- 透过角色棱镜（persona_lens）审视事件，禁流水账。");
             sb.AppendLine("- 平淡日 update_stance=false，mindset 整节省略。");
-            sb.AppendLine("- facts 客观并标重要度（1-5，默认 3）。");
-            sb.AppendLine("- promises 仅限明确约定，必须给出 target_day_hint（如 \"周末\"）与 target_location。");
+            if (extractFactsPromises)
+            {
+                sb.AppendLine("- facts 客观并标重要度（1-5，默认 3）。");
+                sb.AppendLine("- promises 仅限明确约定，必须给出 target_day_hint（如 \"周末\"）与 target_location。");
+            }
             sb.AppendLine("- morning_thought 第一人称，无事件输出 null。");
             sb.AppendLine();
             sb.AppendLine("### 安全规则");
@@ -554,13 +574,18 @@ internal static class NightlyConsolidator
         {
             sb.AppendLine("### TASK");
             sb.AppendLine("Analyze nightly memory updates for the NPCs below.");
-            sb.AppendLine("Extract mindset, facts/promises, and morning_thought.");
+            sb.AppendLine(extractFactsPromises
+                ? "Extract mindset, facts/promises, and morning_thought."
+                : "Extract mindset and morning_thought.");
             sb.AppendLine();
             sb.AppendLine("### EXTRACTION RULES");
             sb.AppendLine("- View events through the persona_lens; no mere chronology.");
             sb.AppendLine("- Boring days: update_stance=false, omit mindset section.");
-            sb.AppendLine("- facts: objective, with importance (1-5, default 3).");
-            sb.AppendLine("- promises: only explicit commitments; must include target_day_hint and target_location.");
+            if (extractFactsPromises)
+            {
+                sb.AppendLine("- facts: objective, with importance (1-5, default 3).");
+                sb.AppendLine("- promises: only explicit commitments; must include target_day_hint and target_location.");
+            }
             sb.AppendLine("- morning_thought: first-person inner monologue; output null if nothing to think about.");
             sb.AppendLine();
             sb.AppendLine("### SAFETY RULES");
