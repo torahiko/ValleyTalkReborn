@@ -186,10 +186,6 @@ namespace ValleytalkReborn
         public bool RecordVanillaDialogue { get; set; } = false;
         public bool EnableNightlyConsolidation { get; set; } = true;
 
-        /// <summary>夜间巩固是否继续提取事实与约定。默认 false：夜间仅演化心智底色与晨间独白；
-        /// 具体事实与约定改由玩家在记忆菜单"AI 提炼"交互主动生成。</summary>
-        public bool EnableNightlyFactsPromises { get; set; } = false;
-
         /// <summary>
         /// 启用配偶自由日程与外出活动系统（CompanionScheduleManager）。
         /// 默认开启 (true)。

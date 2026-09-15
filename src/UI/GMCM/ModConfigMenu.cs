@@ -415,21 +415,6 @@ namespace ValleytalkReborn
                 setValue: value => ModEntry.Config.EnableDateSystem = value
             );
 
-            // ── 记忆系统 ──
-            ConfigMenu.AddSectionTitle(
-                mod: ModManifest,
-                text: () => GetUIString("configSectionMemorySystem", "Memory System")
-            );
-
-            ConfigMenu.AddBoolOption(
-                mod: ModManifest,
-                name: () => GetUIString("configEnableNightlyFactsPromises", "Nightly: Extract Facts & Promises"),
-                tooltip: () => GetUIString("configEnableNightlyFactsPromisesTooltip",
-                    "Off by default. When off, nightly consolidation only evolves long-term mindset and morning thoughts; facts and promises are captured via the 'AI Extract' button in the NPC memory menu."),
-                getValue: () => ModEntry.Config.EnableNightlyFactsPromises,
-                setValue: value => ModEntry.Config.EnableNightlyFactsPromises = value
-            );
-
             // ── 快捷键设置 ──
             ConfigMenu.AddSectionTitle(
                 mod: ModManifest,
