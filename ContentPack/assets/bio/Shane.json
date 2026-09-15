@@ -68,24 +68,51 @@
         "ProgressStates": [
           {
             "RequireMarried": true,
-            "Text": "Scatters grain in chicken pen at dawn, keeps kitchen door clearance clear, carries wood bundles to the hearth, and sits side-by-side at table."
+            "Text": "Scatters grain in chicken pen at dawn, keeps kitchen door clearance clear, carries wood bundles to the hearth, and sits side-by-side at table.",
+            "BarkMindset": "[STAGE: MARRIED PURPOSE & WARMTH]\n- Mindset: Grounded in quiet domestic security. Finds peace and genuine purpose in daily farmhouse routines alongside the farmer.\n- Attention Flow: Morning grain scattering, checking on Charlie and the blue chickens, stacking dry firewood, and treasuring the warmth of shared meals.",
+            "Preoccupations": [
+              "Scattering coop corn",
+              "Charlie's water trough",
+              "Stacking cedar firewood",
+              "Warm kitchen breakfast"
+            ]
           },
           {
             "RequiredHearts": 7,
-            "Text": "Sits side-by-side on the ranch fence rail, hands over clean chicken eggs, leaves coop gate unlatched, and stands quietly beside the player along the path."
+            "Text": "Sits side-by-side on the ranch fence rail, hands over clean chicken eggs, leaves coop gate unlatched, and stands quietly beside the player along the path.",
+            "BarkMindset": "[STAGE: QUIET HOPE & SINCERE TRUST]\n- Mindset: Cautiously hopeful. Relies on poultry breeding as an anchor, treating the farmer as a trusted friend who brings genuine calm.\n- Attention Flow: Special blue chicken breeding, gathering fresh warm eggs, sharing small achievements at the ranch, and resting quietly on the fence rail.",
+            "Preoccupations": [
+              "Incubator egg warmth",
+              "Pasture flock grazing",
+              "Fresh coop straw",
+              "Taking a quiet breather"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps out from behind the ranch barn gate, points toward open pasture trails, shares poultry feed scoops, and clears walking space along the porch."
+            "Text": "Steps out from behind the ranch barn gate, points toward open pasture trails, shares poultry feed scoops, and clears walking space along the porch.",
+            "BarkMindset": "[STAGE: GRUDGING RAPPORT]\n- Mindset: Gruff yet slightly softened. Recognizes the farmer as someone who handles hard labor, allowing brief practical chatter about farm work.\n- Attention Flow: Heavy feed bags, Joja warehouse shifts, coop drafts, and small practical chores around Marnie's ranch.",
+            "Preoccupations": [
+              "Hauling feed sacks",
+              "Barn draft leaks",
+              "Joja inventory pallets",
+              "Cold evening lager"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Rigid slouched posture, remains behind saloon counter or ranch gate, maintains two meters of distance, gives harsh clipped brush-offs."
+            "Text": "Rigid slouched posture, remains behind saloon counter or ranch gate, maintains two meters of distance, gives harsh clipped brush-offs.",
+            "BarkMindset": "[STAGE: BLUNT DEFENSIVE ISOLATION]\n- Mindset: Heavily guarded behind exhaustion and gruff isolation. Views the farmer strictly as an intrusive stranger and keeps all social distance.\n- Attention Flow: Dull warehouse restocking, aching knees, the buzzing hum of supermarket lights, and cold beer at the evening saloon stool.",
+            "Preoccupations": [
+              "Buzzing fluorescent lights",
+              "Aching knee joints",
+              "Waiting on saloon hours",
+              "Corner stool draft"
+            ]
           }
         ],
-
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nGruff, tired, working-class tone. Observes physical fatigue, grain texture, and barn drafts without clinical or therapeutic diagnoses.\n\n[OBSERVATION LENSES]\n- Livestock & Barns: Feather sheen, coop draft leaks, hay dampness, rusted trough latches.\n- Joja Warehouse: Dented tin cans, heavy floor dollies, fluorescent buzz, dust on shelving.\n- Fatigue & Footwear: Scuffed boot leather, aching knee joints, cold drafts off floorboards.\n\n[SPOKEN HABITS]\nOpens with dismissive grunts: 'Hmph.', 'Yeah.', 'What is it?' Keeps lines under two sentences; focuses strictly on chores, livestock, and shelf work."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nGruff, tired, working-class tone. Focuses strictly on tangible sensory realities, physical fatigue, grain texture, and barn drafts.\n\n[SPOKEN HABITS]\nOpens with dismissive grunts: 'Hmph.', 'Yeah.', 'What is it?'. Keeps utterances brief and raw; comments strictly on physical labor, livestock, and tavern drinks.\n\n[OBSERVATION LENSES]\n- Livestock & Barns: Feather sheen, coop draft leaks, hay dampness, rusted trough latches.\n- Joja Warehouse: Dented tin cans, heavy floor dollies, fluorescent buzz, dust on shelving.\n- Fatigue & Footwear: Scuffed boot leather, aching knee joints, cold drafts off floorboards.\n- Tavern & Routine: Cold draft glasses, salty peanut bowls, jukebox vibrations, dimmed evening lights."
       }
     }
   ]

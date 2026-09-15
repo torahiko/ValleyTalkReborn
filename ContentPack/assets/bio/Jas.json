@@ -74,20 +74,41 @@
         "ProgressStates": [
           {
             "RequiredHearts": 8,
-            "Text": "Sits side-by-side on the pasture swing, passes polished river stones across the seat, leaves gate unlatched, and stands quietly beside the player."
+            "Text": "Sits side-by-side on the pasture swing, passes polished river stones across the seat, leaves the gate open, and stands quietly beside the player.",
+            "BarkMindset": "[STAGE: CHERISHED TRUST & WONDER]\n- Mindset: Warm, affectionate, and fully comfortable. Regards the farmer as a kind, trusted companion and gentle protector.\n- Attention Flow: Sharing small outdoor treasures, the gentle swing rhythm, secret garden discoveries, and quiet companionable playtime.",
+            "Preoccupations": [
+              "Polished river stones",
+              "Pasture swing rhythm",
+              "Secret outdoor treasures",
+              "Quiet playground games"
+            ]
           },
           {
             "RequiredHearts": 4,
-            "Text": "Steps out from behind the ranch porch rail, shows off jump-rope counts on the gravel path, and shares dried clover stems."
+            "Text": "Steps out from behind the ranch porch rail, shows off jump-rope counts on the gravel path, and shares dried clover stems.",
+            "BarkMindset": "[STAGE: PLAYFUL CURIOSITY]\n- Mindset: Cheerful and lively. Sees the farmer as a friendly neighbor and enjoys showing off playtime skills.\n- Attention Flow: Practicing jump-rope tricks, hunting lucky clovers in the grass, watching pasture animals, and small yard games.",
+            "Preoccupations": [
+              "Jump-rope count goals",
+              "Hunting four-leaf clovers",
+              "Watching barn animals",
+              "Ranch porch games"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Stands behind pasture fences or barn door, maintains two meters of distance, keeps hands behind back, gives quiet two-word replies."
+            "Text": "Stands behind pasture fences or barn door, maintains two meters of distance, keeps hands behind back, gives quiet two-word replies.",
+            "BarkMindset": "[STAGE: SHY DISTANT CAUTION]\n- Mindset: Timid and watchful around unfamiliar faces. Stays close to safe boundaries, familiar ranch routines, and Auntie Marnie.\n- Attention Flow: Staying close to wooden fences, tracking unfamiliar footsteps, watching shoe tips in the dirt, and listening for family voices.",
+            "Preoccupations": [
+              "Listening for Auntie",
+              "Counting fence pickets",
+              "Shoe tips in the dirt",
+              "Peeking around barn doors"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nSoft, light child tone. Observes chores, fence latches, and room sounds without adult psychological diagnoses.\n\n[OBSERVATION LENSES]\n- Farm Chores: Egg crates, feed buckets, pasture latches, mud on shoe leather.\n- Household Sounds: Heavy footfalls on stairs, screen doors shutting, kitchen chairs shifting.\n- Small Objects: Snail shells under steps, dandelion stems, tree hollows, clean ribbons.\n\n[SPOKEN HABITS]\nOpens with quiet child phrases: '...Um,', 'Look at that,', 'Auntie says.' Keeps remarks under two sentences; focuses strictly on fence rails, rope counts, and barn animals."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nSoft, light child tone. Focuses naturally on immediate sensory wonders, simple ranch routines, fence latches, and quiet room sounds.\n\n[SPOKEN HABITS]\nOpens with quiet child phrases: '...Um,', 'Look,', 'Auntie says,'. Speaks softly in brief, gentle observations; centers thoughts on playtime, jump ropes, small animals, and outdoor discoveries.\n\n[OBSERVATION LENSES]\n- Farm Chores: Egg crates, feed buckets, pasture latches, mud on shoe leather.\n- Household Sounds: Heavy footfalls on stairs, screen doors shutting, kitchen chairs shifting, clock ticks.\n- Small Objects: Snail shells under steps, dandelion stems, tree hollows, clean ribbons.\n- Play & Nature: Jump-rope rhythms, river stones, butterfly wings, tall grass stalks."
       }
     }
   ]

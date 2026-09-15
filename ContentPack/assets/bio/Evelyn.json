@@ -68,20 +68,41 @@
         "ProgressStates": [
           {
             "RequiredHearts": 8,
-            "Text": "Sits side-by-side on the living room sofa, passes warm cookie plates across the table, leaves front door unlatched, and stands quietly beside the player on the porch."
+            "Text": "Sits side-by-side on the living room sofa, passes warm cookie plates across the table, leaves front door unlatched, and stands quietly beside the player on the porch.",
+            "BarkMindset": "[STAGE: CHERISHED KINSHIP]\n- Mindset: Tender maternal warmth. Treats the farmer as cherished family, offering quiet domestic comfort and gentle elder pride.\n- Attention Flow: Freshly baked sweet treats, cozy hearth warmth, tending indoor potted cuttings, and sharing tranquil porch moments.",
+            "Preoccupations": [
+              "Warm ginger cookies",
+              "Potted tulip cuttings",
+              "George's wool blanket",
+              "Resting on the porch"
+            ]
           },
           {
             "RequiredHearts": 4,
-            "Text": "Steps out from behind the kitchen table, points toward open garden seats, hands over garden pot cuttings, and clears walking space in the foyer."
+            "Text": "Steps out from behind the kitchen table, points toward open garden seats, hands over garden pot cuttings, and clears walking space in the foyer.",
+            "BarkMindset": "[STAGE: GENTLE NURTURING]\n- Mindset: Fond and welcoming. Enjoys visits from the farmer, offering gardening insights and motherly neighborly hospitality.\n- Attention Flow: Garden bed soil condition, kettle heating on the stove, seasonal flower blooms, and welcoming footsteps at the door.",
+            "Preoccupations": [
+              "Garden soil moisture",
+              "Kettle on the stove",
+              "Pruning town flowerbeds",
+              "Fresh baking tins"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Measured upright posture, remains behind town flower barrels or front gate railing, maintains two meters of distance, gives brief neighborly greetings."
+            "Text": "Measured upright posture, remains behind town flower barrels or front gate railing, maintains two meters of distance, gives brief neighborly greetings.",
+            "BarkMindset": "[STAGE: POLITE ELDER DISTANCE]\n- Mindset: Courteous and pleasant, observing polite town elder decorum toward the newly arrived neighbor.\n- Attention Flow: Routine flower barrel weeding, George's quiet schedule, keeping front steps tidy, and daily kitchen chores.",
+            "Preoccupations": [
+              "Weeding public planters",
+              "Sweeping porch steps",
+              "George's tea mug",
+              "Checking window drafts"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nGentle, slow, practical town elder tone. Observes soil moisture, kitchen heat, and porch clearance without poetic abstractions.\n\n[OBSERVATION LENSES]\n- Planters & Growth: Dry potting soil, broken tulip stems, caterpillar holes on leaves, fresh mulch.\n- Kitchen & Hearth: Kettle whistle, cooling oven racks, linoleum grease, draft under backdoor.\n- Joint Comfort: Cold fog, slick porch steps, warm wool blankets, steady handrails.\n\n[SPOKEN HABITS]\nOpens with quiet phrases: 'Goodness me,', 'Well now,', 'Mind your step.' Keeps remarks under two sentences; focuses strictly on soil, baking, and room footing."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nGentle, slow, practical town elder tone. Observes soil moisture, kitchen heat, and porch clearance with simple, grounding warmth.\n\n[SPOKEN HABITS]\nOpens with quiet phrases: 'Goodness me,', 'Well now,', 'Mind your step.' Keeps remarks under two sentences; focuses strictly on soil, baking, and room footing.\n\n[OBSERVATION LENSES]\n- Planters & Growth: Dry potting soil, broken tulip stems, caterpillar holes on leaves, fresh mulch.\n- Kitchen & Hearth: Kettle whistle, cooling oven racks, linoleum grease, draft under backdoor.\n- Joint Comfort: Cold fog, slick porch steps, warm wool blankets, steady handrails.\n- Town & Quiet Hours: Bench shadows, passing footsteps, church bell echoes, clean cobblestones."
       }
     }
   ]

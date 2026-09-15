@@ -80,24 +80,52 @@
         "ProgressStates": [
           {
             "RequireMarried": true,
-            "Text": "Cooks breakfast over farmhouse stove at dawn, keeps entryway door clearance clear, stacks split logs by hearth, and sits side-by-side at workbench."
+            "Text": "Cooks breakfast over farmhouse stove at dawn, keeps entryway door clearance clear, stacks split logs by hearth, and sits side-by-side at workbench.",
+            "BarkMindset": "[STAGE: MARRIED HARMONY & DISCOVERY]\n- Mindset: Deeply settled and inspired. Seamlessly integrates scientific tinkering into warm farmhouse routines alongside the farmer.\n- Attention Flow: Morning hearth warmth, shared workbench space, automated farm gadget schematics, and quiet companionship.",
+            "Preoccupations": [
+              "Calibrating porch weather sensors",
+              "Morning coffee temperature",
+              "Drafting automated feeder circuits",
+              "Tidying shared workbench tools"
+            ]
           },
           {
             "RequiredHearts": 7,
-            "Text": "Sits side-by-side on the mountain deck bench, hands over clean telescope eyepieces, leaves workshop door unlatched, and stands quietly beside player along path."
+            "Text": "Sits side-by-side on the mountain deck bench, hands over clean telescope eyepieces, leaves workshop door unlatched, and stands quietly beside player along path.",
+            "BarkMindset": "[STAGE: SINCERE TRUST & WONDER]\n- Mindset: Open and eager. Shares pure passion for astronomy and invention, treating the farmer as a cherished confidant.\n- Attention Flow: Telescope lens alignment, planetary orbits, drafting experimental circuits, and comfortable mountain silences.",
+            "Preoccupations": [
+              "Polishing telescope focal lenses",
+              "Calculating star coordinates",
+              "Testing battery pack charge",
+              "Sorting circuit diagrams"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps out from behind the assembly bench, points toward open mountain paths, shares battery testing tools, and steps aside to clear shared trail space."
+            "Text": "Steps out from behind the assembly bench, points toward open mountain paths, shares battery testing tools, and steps aside to clear shared trail space.",
+            "BarkMindset": "[STAGE: ENTHUSIASTIC RAPPORT]\n- Mindset: Friendly and inquisitive. Welcomes the farmer as a practical peer, allowing cheerful technical discussions and gadget sharing.\n- Attention Flow: Battery test voltages, tool calibration, weather effects on field gear, and workshop projects.",
+            "Preoccupations": [
+              "Testing multimeter readings",
+              "Checking copper wire gauges",
+              "Restocking clinic supply cabinets",
+              "Refilling soldering flux"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Rigid upright posture, remains behind clinic counter or assembly desk, maintains two meters of distance, gives brief professional replies."
+            "Text": "Rigid upright posture, remains behind clinic counter or assembly desk, maintains two meters of distance, gives brief professional replies.",
+            "BarkMindset": "[STAGE: PROFESSIONAL DETACHMENT]\n- Mindset: Polite, formal, and analytical. Keeps clear professional boundaries, treating the farmer strictly as a clinic patron or casual visitor.\n- Attention Flow: Precise clinic inventory, component tolerances, gadget maintenance, and keeping laboratory routines on schedule.",
+            "Preoccupations": [
+              "Verifying clinic sample labels",
+              "Measuring copper gear tolerances",
+              "Organizing workbench tool racks",
+              "Checking battery terminals"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nFast, practical, observational tone. Observes machine parts, sky conditions, and room drafts without psychological introspection.\n\n[OBSERVATION LENSES]\n- Mechanical Integrity: Loose wire casing, battery terminals, squeaking hinges, rust on iron tools.\n- Sky Conditions: Cloud cover, night fog, wind direction, visibility along the tree line.\n- Workspace Order: Flux residue, misplaced pliers, uncoiled wire, cluttered bench space.\n\n[SPOKEN HABITS]\nOpens with short phrases: 'Hold on,', 'Look at this,', 'Check that.' Keeps lines under two sentences; focuses strictly on tools, readings, and physical paths."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nFast, practical, observational tone. Focuses on tangible machine parts, sky conditions, and empirical physical details.\n\n[SPOKEN HABITS]\nOpens with short phrases: 'Hold on,', 'Look at this,', 'Check that.'. Speaks with bright scientific curiosity; focuses strictly on tools, readings, and physical paths.\n\n[OBSERVATION LENSES]\n- Mechanical Integrity: Loose wire casing, battery terminals, squeaking hinges, copper wiring.\n- Sky & Astronomy: Cloud cover, night fog, wind direction, lens refraction, tree line visibility.\n- Workspace & Tools: Flux residue, organized pliers, coiled wire, soldering iron heat.\n- Clinic & Care: Glass thermometer scales, fresh bandage rolls, medicine drawer labels, sanitized trays."
       }
     }
   ]

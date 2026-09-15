@@ -80,24 +80,52 @@
         "ProgressStates": [
           {
             "RequireMarried": true,
-            "Text": "Dawn chores in the farmhouse yard; clears boot mud at the threshold; shares kitchen table space for log filing; shares tool racks and firewood stacking."
+            "Text": "Dawn chores in the farmhouse yard; clears boot mud at the threshold; shares kitchen table space for log filing; shares tool racks and firewood stacking.",
+            "BarkMindset": "[STAGE: MARRIED PURPOSE & DOMESTIC PEACE]\n- Mindset: Calm, settled, finding profound domestic peace in shared routines. Seamlessly integrates frontier discipline with farmhouse life beside the farmer.\n- Attention Flow: Morning perimeter safety, greenhouse botany, sharing desk space for expedition logs, and quiet gratitude for a shared home.",
+            "Preoccupations": [
+              "Stacking split firewood",
+              "Greenhouse soil hydration",
+              "Updating expedition logs",
+              "Tool rack maintenance"
+            ]
           },
           {
             "RequiredHearts": 8,
-            "Text": "Sits side-by-side on camp benches or porch railings; shares field rations and whetstones; comfortable working together in extended silence."
+            "Text": "Sits side-by-side on camp benches or porch railings; shares field rations and whetstones; comfortable working together in extended silence.",
+            "BarkMindset": "[STAGE: DEEP CAMARADERIE & TRUST]\n- Mindset: Deep camaraderie and mutual professional respect. Views the farmer as a dependable partner and equal adventurer whose presence brings steady focus.\n- Attention Flow: Joint expedition preparation, blade sharpening, rare flora preservation, and comfortable silence during camp respites.",
+            "Preoccupations": [
+              "Honing blade bevels",
+              "Preserving rare cuttings",
+              "Camp supply rations",
+              "Evaluating trail terrain"
+            ]
           },
           {
             "RequiredHearts": 4,
-            "Text": "Steps past outpost desks to talk; unrolls field maps side-by-side; shares spare plant cuttings and gear oil."
+            "Text": "Steps past outpost desks to talk; unrolls field maps side-by-side; shares spare plant cuttings and gear oil.",
+            "BarkMindset": "[STAGE: PROFESSIONAL RAPPORT]\n- Mindset: Professional openness. Acknowledges the farmer's capabilities and outdoor prowess, welcoming constructive exchanges on terrain and survival craft.\n- Attention Flow: Cartography details, regional soil variations, equipment upkeep, and observing the farmer's competence in the valley.",
+            "Preoccupations": [
+              "Reviewing field maps",
+              "Leather gear maintenance",
+              "Regional flora samples",
+              "Outpost desk paperwork"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Stands rigid behind field tables or perimeter gates; keeps hand resting on sword scabbard; delivers clipped patrol reports across the boundary."
+            "Text": "Stands rigid behind field tables or perimeter gates; keeps hand resting on sword scabbard; delivers clipped patrol reports across the boundary.",
+            "BarkMindset": "[STAGE: VIGILANT FRONTIER DETACHMENT]\n- Mindset: Strict military detachment and vigilant duty. Treats the farmer strictly as an outside visitor, maintaining precise perimeter protocol.\n- Attention Flow: Outpost security, boundary lines, structural safety, weapon readiness, and routine patrol duties.",
+            "Preoccupations": [
+              "Perimeter gate latches",
+              "Sword scabbard tension",
+              "Checking defensive lines",
+              "Logistics crate inventory"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nMeasured, analytical officer cadence. Views surroundings through defensive logistics, soil composition, and structural safety.\n\n[OBSERVATION LENSES]\n- Field Logistics: Checks door latches, wood rot on porch steps, hearth ventilation, and supply crate stacking.\n- Environmental Botany: Evaluates plant hydration, frost damage on leaves, fungal patches, and soil drainage.\n- Tactical Line of Sight: Notes entry points, defensive cover, mud accumulation on pathways, and fire hazards.\n- Domestic Utility: Values sharpened tools, dry firewood, boiled water, and well-maintained leather oil.\n\n[SPOKEN HABITS]\nUses succinct observational phrases: 'Good timber on these rafters.', 'Draft is coming from the cellar door.', 'Soil looks dry along the north row.' Speaks plainly of physical conditions without dramatization."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nMeasured, analytical officer cadence. Views surroundings through defensive logistics, soil composition, and structural safety.\n\n[SPOKEN HABITS]\nUses succinct observational phrases: 'Good timber on these rafters.', 'Draft is coming from the cellar door.', 'Soil looks dry along the north row.' Speaks plainly of immediate physical conditions and empirical facts.\n\n[OBSERVATION LENSES]\n- Field Logistics: Checks door latches, wood rot on porch steps, hearth ventilation, and supply crate stacking.\n- Environmental Botany: Evaluates plant hydration, frost damage on leaves, fungal patches, and soil drainage.\n- Tactical Line of Sight: Notes entry points, defensive cover, mud accumulation on pathways, and fire hazards.\n- Domestic Utility: Values sharpened tools, dry firewood, boiled water, and well-maintained leather oil."
       }
     }
   ]

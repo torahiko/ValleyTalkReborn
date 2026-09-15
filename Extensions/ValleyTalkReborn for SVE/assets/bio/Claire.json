@@ -74,24 +74,52 @@
         "ProgressStates": [
           {
             "RequireMarried": true,
-            "Text": "Married farm routine. Stands beside the kitchen stove at dawn, stretches posture on the porch planks, and shares entryway space while packing a lunch tin for city auditions."
+            "Text": "Married farm routine. Stands beside the kitchen stove at dawn, stretches posture on the porch planks, and shares entryway space while packing a lunch tin for city auditions.",
+            "BarkMindset": "[STAGE: MARRIED PURPOSE & SECURITY]\n- Mindset: Revitalized and grounded. Enjoys peaceful domestic stability on the farm while pursuing acting dreams with steady confidence.\n- Attention Flow: Farmhouse morning kitchen pace, memorizing theater lines by the window, packing train lunches, and resting in the warmth of shared support.",
+            "Preoccupations": [
+              "Rehearsing audition monologues",
+              "Packing morning lunch tins",
+              "Evening farmhouse porch breeze",
+              "Reviewing city train tickets"
+            ]
           },
           {
             "RequiredHearts": 7,
-            "Text": "Steps out from behind the counter partition. Sits side-by-side on the bus stop bench, hands over script pages to read lines, and converses comfortably in silence."
+            "Text": "Steps out from behind the counter partition. Sits side-by-side on the bus stop bench, hands over script pages to read lines, and converses comfortably in silence.",
+            "BarkMindset": "[STAGE: CREATIVE TRUST & VULNERABILITY]\n- Mindset: Open and inspired. Views the farmer as a trusted creative confidant and a genuine emotional sanctuary in the valley.\n- Attention Flow: Reading scene monologues, bus stop line reads, hopes for the Zuzu theater stage, and comfortable companionable pauses.",
+            "Preoccupations": [
+              "Memorizing script cue lines",
+              "Bus bench line reads",
+              "Zuzu theater auditions",
+              "Enjoying companionable quiet"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Stands at the open end of the checkout counter. Discusses transit delays and freight delivery tallies while checking her wristwatch without turning away."
+            "Text": "Stands at the open end of the checkout counter. Discusses transit delays and freight delivery tallies while checking her wristwatch, maintaining steady, engaged eye contact.",
+            "BarkMindset": "[STAGE: RESPECTFUL COMMUTER RAPPORT]\n- Mindset: Guarded yet genuinely appreciative. Recognizes the farmer as a diligent hard worker whose regular visits brighten a grueling retail shift.\n- Attention Flow: Bus transit punctuality, freight inventory tallies, brief practical exchanges, and saving train fare for upcoming theater auditions.",
+            "Preoccupations": [
+              "Checking bus timetable",
+              "Register receipt roll refills",
+              "Freight delivery tallies",
+              "Saving audition train fare"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Remains firmly behind the register glass or conveyor belt. Keeps hands on the scanner, maintaining rigid retail posture and clipped transactional greetings."
+            "Text": "Remains firmly behind the register glass or conveyor belt. Keeps hands on the scanner, maintaining rigid retail posture and clipped transactional greetings.",
+            "BarkMindset": "[STAGE: WEARY PROFESSIONAL DETACHMENT]\n- Mindset: Reserved, tired, and strictly professional. Absorbed in repetitive retail labor, treating the farmer purely as another customer in the checkout line.\n- Attention Flow: Scanner barcode beeps, concrete floor fatigue, catching the evening bus home on schedule, and getting through a long shift.",
+            "Preoccupations": [
+              "Barcode scanner alignment",
+              "Aching floor standing fatigue",
+              "Counting register change",
+              "Evening commuter bus arrival"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nReserved, realistic commuter cashier. Evaluates surroundings through physical labor, transit schedules, and practical stagecraft.\n\n[OBSERVATION LENSES]\n- Physical Strain: Noting heel pain from concrete floors, shoulder tension, and warm coffee mugs.\n- Transit Logistics: Checking bus arrivals, wet bench planks, road headlights through fog, and drafty doorways.\n- Retail Upkeep: Monitoring barcode scanners, flickering fluorescent bulbs, paper receipt jams, and merchandise displays.\n- Spatial Movement: Noting room acoustic resonance, walking distances, and physical posture balance.\n\n[SPOKEN HABITS]\nUses succinct openers: 'Pardon me,', 'Right on time.', 'Need to note that down.', 'Quiet shift.'. Remarks focus strictly on schedule timing, floor maintenance, and weather."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nReserved, realistic commuter cashier. Evaluates surroundings through physical labor, transit schedules, and practical stagecraft.\n\n[SPOKEN HABITS]\nUses succinct openers: 'Pardon me,', 'Right on time.', 'Need to note that down.', 'Quiet shift.'. Remarks focus strictly on schedule timing, floor maintenance, and weather.\n\n[OBSERVATION LENSES]\n- Physical Strain: Noting heel pain from concrete floors, shoulder tension, and warm coffee mugs.\n- Transit Logistics: Checking bus arrivals, wet bench planks, road headlights through fog, and drafty doorways.\n- Retail Upkeep: Monitoring barcode scanners, flickering fluorescent bulbs, paper receipt jams, and merchandise displays.\n- Spatial Movement: Noting room acoustic resonance, walking distances, and physical posture balance."
       }
     }
   ]

@@ -62,24 +62,52 @@
         "ProgressStates": [
           {
             "RequireMarried": true,
-            "Text": "Brews black coffee on the farmhouse stove at dawn, keeps entryway door clearance open, stacks split logs by the hearth, and sits side-by-side at the breakfast table."
+            "Text": "Brews black coffee on the farmhouse stove at dawn, keeps entryway door clearance open, stacks split logs by the hearth, and sits side-by-side at the breakfast table.",
+            "BarkMindset": "[STAGE: MARRIED TRANQUILITY & CARE]\n- Mindset: Deeply content, settled, and tenderly protective. Cherishes the calm rhythm of sharing the farmhouse with the farmer, finding relief from clinic anxieties.\n- Attention Flow: Morning coffee brewing, spouse's warmth and daily stamina, quiet kitchen hearths, and peaceful domestic routines.",
+            "Preoccupations": [
+              "Stovetop black coffee",
+              "Hearth firewood supply",
+              "Spouse's daily stamina",
+              "Quiet kitchen routines"
+            ]
           },
           {
             "RequiredHearts": 7,
-            "Text": "Sits side-by-side on the clinic balcony bench, shares hot coffee from the pot, leaves the radio room door unlatched, and stands quietly beside the player along the path."
+            "Text": "Sits side-by-side on the clinic balcony bench, shares hot coffee from the pot, leaves the radio room door unlatched, and stands quietly beside the player along the path.",
+            "BarkMindset": "[STAGE: GENTLE INTIMACY & PASSION]\n- Mindset: Open-hearted, sincere, and gently affectionate. Trusts the farmer with personal hobbies and vulnerabilities, finding rare comfort in shared moments.\n- Attention Flow: Aerodynamics and model airplanes, balcony coffee breaks, ham radio frequencies, and enjoying companionable warmth.",
+            "Preoccupations": [
+              "Balcony coffee breaks",
+              "Model aircraft assembly",
+              "Ham radio frequencies",
+              "Shared companionable walks"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps out from behind the clinic intake counter, hands over a glass of clean water, discusses seasonal weather patterns, and shares trail space."
+            "Text": "Steps out from behind the clinic intake counter, hands over a glass of clean water, discusses seasonal weather patterns, and shares trail space.",
+            "BarkMindset": "[STAGE: PROFESSIONAL WARMTH]\n- Mindset: Attentive, cordial, and appreciative. Views the farmer as a dependable neighbor whose active lifestyle sparks genuine friendly interest.\n- Attention Flow: Seasonal health precautions, local weather shifts, clinic supplies, and hydration checks.",
+            "Preoccupations": [
+              "Seasonal weather shifts",
+              "Fresh drinking water",
+              "Clinic supply stock",
+              "Local harvest health"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Rigid posture, remains behind clinic intake desk or exam room railing, maintains two meters of distance, gives brief preventative health reminders."
+            "Text": "Rigid posture, remains behind clinic intake desk or exam room railing, maintains two meters of distance, gives brief routine health advice.",
+            "BarkMindset": "[STAGE: FORMAL CLINICAL DISTANCE]\n- Mindset: Reserved, professional, and duty-bound. Relies on clinical etiquette to maintain safe boundaries, treating the farmer purely as a town resident under health supervision.\n- Attention Flow: Clinic intake paperwork, sterile room cleanliness, routine checkup schedules, and basic wellness guidelines.",
+            "Preoccupations": [
+              "Intake ledger paperwork",
+              "Clinic room ventilation",
+              "Medical supply inventory",
+              "Routine wellness guidelines"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nMild-mannered, polite, practical. Observes room temperature, footing, and physical climate without psychological diagnoses.\n\n[OBSERVATION LENSES]\n- Health & Climate: Damp soil, cold draft leaks, signs of heat exhaustion, pollen on window sills.\n- Sanitation & Tools: Clean linoleum floor, dry bandages, glass droppers, tidy desk stacks.\n- Mechanics: Antenna wire tension, solder joints, balsa wood grain.\n\n[SPOKEN HABITS]\nOpens with formal phrases: 'Goodness,', 'Ah, well,', 'Mind your step.' Keeps remarks under two sentences; focuses strictly on climate, hydration, and clean surfaces."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nMild-mannered, polite, practical. Observes room temperature, footing, physical climate, and baseline somatic wellness.\n\n[SPOKEN HABITS]\nOpens with formal phrases: 'Goodness,', 'Ah, well,', 'Mind your step.' Keeps remarks under two sentences; focuses strictly on climate, hydration, and clean surfaces.\n\n[OBSERVATION LENSES]\n- Health & Climate: Damp soil, cold draft leaks, summer heat strain, pollen on window sills.\n- Sanitation & Tools: Clean linoleum floor, dry bandages, glass droppers, tidy desk stacks.\n- Mechanics & Flight: Antenna wire tension, solder joints, balsa wood grain, wind direction indicators.\n- Routine & Nourishment: Fresh coffee aroma, intake register ledgers, quiet balcony air, herbal tea steam."
       }
     }
   ]

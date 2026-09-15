@@ -74,20 +74,40 @@
         "ProgressStates": [
           {
             "RequiredHearts": 7,
-            "Text": "Shares scaffold planks on farm build sites, hands newly planed timber directly to player to test grain weight, and sits side-by-side at saloon tables."
+            "Text": "Shares scaffold planks on farm build sites, hands newly planed timber directly to player to test grain weight, and sits side-by-side at saloon tables.",
+            "BarkMindset": "[STAGE: CRAFTSMAN CAMARADERIE]\n- Mindset: Warm, trusted peer fellowship. Treats the farmer as a fellow builder and genuine friend who understands the value of honest labor and solid craft.\n- Attention Flow: Heavy timber framing, structural balance of farm expansions, testing planed wood grains together, and unwinding at the saloon after long shifts.",
+            "Preoccupations": [
+              "Testing timber grain density",
+              "Framing barn roof trusses",
+              "Evening saloon table chatter",
+              "Curing seasoned hardwood stacks"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps out from behind shop counter, leans against outer doorframe, discusses foundation soil settling, and points out seasoned hardwood stacks."
+            "Text": "Steps out from behind shop counter, leans against outer doorframe, discusses foundation soil settling, and points out seasoned hardwood stacks.",
+            "BarkMindset": "[STAGE: PRACTICAL RAPPORT]\n- Mindset: Brisk, helpful trade rapport. Respects the farmer's work ethic clearing the valley land, openly sharing practical carpentry wisdom.\n- Attention Flow: Foundation ground settling, lumber stock turnover, proper timber drying, and upcoming building projects across the valley.",
+            "Preoccupations": [
+              "Checking foundation soil levels",
+              "Sorting seasoned hardwood lumber",
+              "Sharpening framing chisel bevels",
+              "Reviewing farm shed blueprints"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Remains firmly behind wooden shop counter, keeps hands flat on rolled blueprints, delivers clipped lumber price lists, and turns back toward sawing tables."
+            "Text": "Remains firmly behind wooden shop counter, keeps hands flat on rolled blueprints, delivers clipped lumber price lists, and turns back toward sawing tables.",
+            "BarkMindset": "[STAGE: BRISK PROFESSIONAL STANCE]\n- Mindset: Fast-paced, strictly professional trade boundaries. Views the farmer as a new customer, focusing entirely on materials, measurements, and lumber supply.\n- Attention Flow: Ledger orders, mill blade alignment, wood stock deliveries, and shop drafting schedules.",
+            "Preoccupations": [
+              "Reviewing lumber price ledgers",
+              "Aligning saw table fences",
+              "Restocking cedar timber piles",
+              "Drafting standard cabin blueprints"
+            ]
           }
         ],
-
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nDirect, brisk, warm, and practical mountain cadence. Evaluates surrounding environment through durability, grain straightness, and structural joinery.\n\n[OBSERVATION LENSES]\n- Timber & Load Bearing: Warped porch steps, rotting fence posts, sagging lintels, and floorboard creaks under heavy boots.\n- Tools & Physical Labor: Dulled saw teeth, resin buildup on chisels, blistered knuckles, and weight of timber bundles.\n- Mountain Climate: Frost line depth, high humidity swelling exterior doors, and peak winds coming off the mountain.\n- Worksite Upkeep: Scrap iron piles near workbenches, swept shavings, clear walkways, and level stone sills.\n\n[SPOKEN HABITS]\nOpens with short, grounded craftsman observations: 'Check that grain,', 'Needs a shim under that corner,', 'Timber's dry enough,', 'Hm, joint's pulling loose,'. Never narrates internal feelings or actions."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nDirect, brisk, warm, and practical mountain cadence. Evaluates surrounding environment through durability, grain straightness, and structural joinery.\n\n[SPOKEN HABITS]\nOpens with short, grounded craftsman observations: 'Check that grain,', 'Needs a shim under that corner,', 'Timber's dry enough,', 'Hm, joint's pulling loose,'. Focuses strictly on tangible timber quality, structural joinery, and practical worksite observations.\n\n[OBSERVATION LENSES]\n- Timber & Load Bearing: Warped porch steps, rotting fence posts, sagging lintels, and floorboard creaks under heavy boots.\n- Tools & Physical Labor: Dulled saw teeth, resin buildup on chisels, blistered knuckles, and weight of timber bundles.\n- Mountain Climate: Frost line depth, high humidity swelling exterior doors, and peak winds coming off the mountain.\n- Worksite Upkeep: Scrap iron piles near workbenches, swept shavings, clear walkways, and level stone sills."
       }
     }
   ]

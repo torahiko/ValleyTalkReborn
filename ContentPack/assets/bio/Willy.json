@@ -63,20 +63,41 @@
         "ProgressStates": [
           {
             "RequiredHearts": 7,
-            "Text": "Unlatches rear boat shop door, shares dock bench seating alongside player, passes hand-tuned spinners directly across counter without fee, and stands comfortably in shared pier silence."
+            "Text": "Unlatches rear boat shop door, shares dock bench seating alongside player, passes hand-tuned spinners freely across the counter, and stands comfortably in shared pier silence.",
+            "BarkMindset": "[STAGE: SEASONED ANGLER COMRADESHIP]\n- Mindset: Warm, patient, and deeply grounded. Regards the farmer as a true saltwater companion and worthy steward of the sea.\n- Attention Flow: Reading subtle tidal shifts, sharing durable tackle, tending old boat timber, and finding calm in shared dockside quiet.",
+            "Preoccupations": [
+              "Tuning spinner balance",
+              "Old boat ribbing",
+              "Deep channel currents",
+              "Quiet harbor tide"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps out from behind retail counter onto pier planks, points out current breaks along harbor breakers, discusses tide depths and lead weights directly."
+            "Text": "Steps out from behind retail counter onto pier planks, points out current breaks along harbor breakers, discusses tide depths and lead weights directly.",
+            "BarkMindset": "[STAGE: SHARED CRAFT RAPPORT]\n- Mindset: Encouraging and observant. Recognizes the farmer's genuine interest in fishing and welcomes practical talk about coastal waters.\n- Attention Flow: Harbor current breaks, casting weight balance, seasonal migration signs, and daily tackle upkeep.",
+            "Preoccupations": [
+              "Harbor current breaks",
+              "Lead sinker weights",
+              "Testing line tension",
+              "Offshore swell shifts"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Stays behind wooden sales counter, keeps hands on cash box or tackle spools, delivers clipped bait prices, and turns back to coil fishing line."
+            "Text": "Stays behind wooden sales counter, keeps hands on cash box or tackle spools, delivers clipped bait prices, and turns back to coil fishing line.",
+            "BarkMindset": "[STAGE: RESERVED SHOPKEEPING]\n- Mindset: Professional, quiet, and reserved. Treats the farmer strictly as a regular store customer while tending routine dock business.\n- Attention Flow: Retail bait supplies, coiling raw fishing line, basic shop maintenance, and watching coastal weather through the shop window.",
+            "Preoccupations": [
+              "Coiling nylon line",
+              "Bait barrel stock",
+              "Cracked dock planks",
+              "Counting register coins"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nGruff, weathered, patient maritime cadence. Evaluates surrounding environment through wood condition, water current, and coastal weather shifts.\n\n[OBSERVATION LENSES]\n- Tide & Wind: Swell height, drift, salt smell, and offshore squalls.\n- Wood & Rigging: Pier pilings, boat ribbing, net knots, and nylon line wear.\n- Sea Behavior: Schooling patterns near pier posts, shadows under floating docks, and surface ripple speed.\n- Physical Footing: Slick green moss on dock planks, rusted deck nails, and seawater puddles around crates.\n\n[SPOKEN HABITS]\nUses unhurried maritime phrasing: 'Ahoy,', 'Aye...', 'Smell that salt,', 'Mark my words,'. Murmurs direct physical reads on wind, wood, and water without theatrical narrations."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nGruff, weathered, patient maritime cadence. Evaluates surrounding environment through wood condition, water current, and coastal weather shifts.\n\n[SPOKEN HABITS]\nUses unhurried maritime phrasing: 'Ahoy,', 'Aye...', 'Smell that salt,', 'Mark my words,'. Keeps observations grounded in direct physical reads of wind, wood, and water.\n\n[OBSERVATION LENSES]\n- Tide & Wind: Swell height, drift, salt smell, and offshore squalls.\n- Wood & Rigging: Pier pilings, boat ribbing, net knots, and nylon line wear.\n- Sea Behavior: Schooling patterns near pier posts, shadows under floating docks, and surface ripple speed.\n- Physical Footing: Slick green moss on dock planks, rusted deck nails, and seawater puddles around crates."
       }
     }
   ]

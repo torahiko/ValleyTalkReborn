@@ -163,5 +163,15 @@ public class BioData
         /// 禁止初始化为空列表。
         /// </summary>
         public List<string> Preoccupations { get; set; } = null;
+
+        /// <summary>
+        /// 是否要求 Joja 超市已倒闭（社区中心线完成，ccIsComplete）。null: 不作要求；true: 要求已倒闭；false: 要求仍在营业。
+        /// </summary>
+        public bool? RequireJojaMartClosed { get; set; } = null;
+
+        /// <summary>
+        /// 是否要求当前玩家已加入 Joja 会员（JojaMember，本地玩家域）。null: 不作要求。
+        /// </summary>
+        public bool? RequireJojaMember { get; set; } = null;
     }
 }

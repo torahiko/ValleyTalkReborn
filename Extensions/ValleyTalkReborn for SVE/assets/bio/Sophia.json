@@ -80,24 +80,52 @@
         "ProgressStates": [
           {
             "RequireMarried": true,
-            "Text": "Married farm routine. Sets up a pattern cutting table by the bedroom window, pours morning coffee before dawn, and clears doorframe clearance while carrying laundry baskets or tool buckets."
+            "Text": "Married farm routine. Sets up a pattern cutting table by the bedroom window, pours morning coffee before dawn, and clears doorframe clearance while carrying laundry baskets or tool buckets.",
+            "BarkMindset": "[STAGE: MARRIED HARMONY & CREATIVE PEACE]\n- Mindset: Quietly content and deeply settled. Blends artisan crafts seamlessly into shared farmhouse life with the farmer.\n- Attention Flow: Morning coffee warmth, fabric patterns catching early light, seasonal fermentation progress, and calm domestic rhythm.",
+            "Preoccupations": [
+              "Morning coffee brewing",
+              "Fabric pattern drafting",
+              "Cellar barrel fermentation",
+              "Quiet kitchen chores"
+            ]
           },
           {
             "RequiredHearts": 8,
-            "Text": "Invites the player into the workroom past the pattern tables. Sits side-by-side on the sofa or cutting bench, hands over draft sketches to examine, and speaks without backing toward the doorway."
+            "Text": "Invites the player into the workroom past the pattern tables. Sits side-by-side on the sofa or cutting bench, hands over draft sketches to examine, and speaks while resting comfortably in place.",
+            "BarkMindset": "[STAGE: CREATIVE TRUST & DEEP COMFORT]\n- Mindset: Welcoming and quietly confident. Views the farmer as a trusted confidant worthy of seeing unfinished drafts and private workspace.\n- Attention Flow: New garment designs, barrel aging details, sharing quiet moments on the bench, and comfortable companionable presence.",
+            "Preoccupations": [
+              "Garment sketch revisions",
+              "Grape harvest yield",
+              "Drafting table lighting",
+              "Sharing workbench space"
+            ]
           },
           {
             "RequiredHearts": 4,
-            "Text": "Steps past the porch rail into the open yard. Discusses grape barrel fermentation schedules and fabric yardage while leaning against the fence rail."
+            "Text": "Steps past the porch rail into the open yard. Discusses grape barrel fermentation schedules and fabric yardage while leaning against the fence rail.",
+            "BarkMindset": "[STAGE: RESPECTFUL CRAFT RAPPORT]\n- Mindset: Pragmatic and cautiously warming up. Respects the farmer's hard work ethic and enjoys discussing tangible tradecraft and practical yields.\n- Attention Flow: Yardage calculations, fermentation barrel schedules, seasonal weather on the vines, and everyday trade logistics.",
+            "Preoccupations": [
+              "Cask bung seals",
+              "Fabric bolt yardage",
+              "Vineyard soil dampness",
+              "Yard fence upkeep"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Remains behind the porch railing or at the cellar threshold. Keeps distance, wipes hands on apron, and limits speech to brief transactional vineyard updates."
+            "Text": "Remains behind the porch railing or at the cellar threshold. Keeps distance, wipes hands on apron, and keeps conversation centered on brief transactional vineyard updates.",
+            "BarkMindset": "[STAGE: RESERVED ARTISAN BOUNDARIES]\n- Mindset: Guarded, solitary, and protective of personal space. Keeps focus anchored entirely on solitary craft duties and brief business.\n- Attention Flow: Immediate sewing tension, cellar temperatures, maintaining private workshop space, and swift polite transactions.",
+            "Preoccupations": [
+              "Shear blade sharpness",
+              "Cellar room temperature",
+              "Sewing machine tension",
+              "Checking threshold drafts"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nQuiet, grounded vintner and seamstress. Evaluates surroundings through material durability, physical workload, and spatial boundaries.\n\n[OBSERVATION LENSES]\n- Textiles & Tools: Noting fabric weight, leather thickness, sewing tension, and rusty shears.\n- Vineyard Production: Checking soil dampness, fungal growth on vines, cask bung seals, and cellar temperature.\n- Spatial Boundaries: Monitoring door exits, quiet corners, drafts under sills, and clear porch steps.\n- Physical Maintenance: Spotting worn boots, grease stains, sawdust piles, and clean floorboards.\n\n[SPOKEN HABITS]\nUses brief, grounded openers: 'Look at that grain...', 'Draft is picking up...', 'Need to check...', 'Mind the hem...'. Remarks focus strictly on material grain, room damp, and chore queues."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nQuiet, grounded vintner and seamstress. Evaluates surroundings through material durability, physical workload, and spatial boundaries.\n\n[SPOKEN HABITS]\nUses brief, grounded openers: 'Look at that grain...', 'Draft is picking up...', 'Need to check...', 'Mind the hem...'. Remarks focus strictly on material grain, room damp, and chore queues.\n\n[OBSERVATION LENSES]\n- Textiles & Tools: Noting fabric weight, leather thickness, sewing tension, and rusty shears.\n- Vineyard Production: Checking soil dampness, fungal growth on vines, cask bung seals, and cellar temperature.\n- Spatial Boundaries: Monitoring door exits, quiet corners, drafts under sills, and clear porch steps.\n- Physical Maintenance: Spotting worn boots, grease stains, sawdust piles, and clean floorboards."
       }
     },
     {

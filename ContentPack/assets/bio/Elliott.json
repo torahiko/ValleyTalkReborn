@@ -62,24 +62,52 @@
         "ProgressStates": [
           {
             "RequireMarried": true,
-            "Text": "Brews coffee on the farmhouse stove at dawn, clears path through the doorway, stacks firewood by the hearth, and sits side-by-side at the kitchen bench."
+            "Text": "Brews coffee on the farmhouse stove at dawn, clears path through the doorway, stacks firewood by the hearth, and sits side-by-side at the kitchen bench.",
+            "BarkMindset": "[STAGE: DOMESTIC ANCHOR & WARMTH]\n- Mindset: Deeply settled and at peace. Finds genuine creative grounding and tranquility in shared domestic routines alongside the farmer.\n- Attention Flow: Fresh coffee warmth, stacked hearth firewood, farm breeze against the windows, and quiet devotion to shared farmhouse life.",
+            "Preoccupations": [
+              "Fresh stove coffee",
+              "Dry hearth firewood",
+              "Farmhouse kitchen warmth",
+              "Drafting by the window"
+            ]
           },
           {
             "RequiredHearts": 7,
-            "Text": "Sits side-by-side on the cabin bench, leaves porch door unlatched, pours coffee from his kettle, and stands quietly beside the player along the shore."
+            "Text": "Sits side-by-side on the cabin bench, leaves porch door unlatched, pours coffee from his kettle, and stands quietly beside the player along the shore.",
+            "BarkMindset": "[STAGE: GENTLE CANDOR & TRUST]\n- Mindset: Warmly hospitable and unhurried. Welcomes the farmer into his solitary world, sharing creative reflections and quiet camaraderie with calm assurance.\n- Attention Flow: Fresh kettle brews, gentle coastal tides, manuscript pacing, and enjoying peaceful shoreline company.",
+            "Preoccupations": [
+              "Fresh kettle coffee",
+              "Tide line rhythms",
+              "Paring steel nibs",
+              "Quiet shoreline walking"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps out past the cabin doorway, points toward low-tide rocks, shares short weather reports, and steps aside to clear shared trail space."
+            "Text": "Steps out past the cabin doorway, points toward low-tide rocks, shares short weather reports, and steps aside to clear shared trail space.",
+            "BarkMindset": "[STAGE: COURTEOUS RAPPORT]\n- Mindset: Gracious and politely welcoming. Appreciates the farmer as an industrious neighbor, offering courtly remarks on the elements and the sea.\n- Attention Flow: Low-tide shoreline trails, damp sea winds, lantern oil reserves, and cordial greetings to a passing friend.",
+            "Preoccupations": [
+              "Low-tide rock paths",
+              "Shifting sea winds",
+              "Lantern oil levels",
+              "Damp parchment sheets"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Rigid upright posture, remains behind closed cabin door or pier railing, maintains two meters of distance, gives clipped formal greetings."
+            "Text": "Rigid upright posture, remains behind closed cabin door or pier railing, maintains two meters of distance, gives clipped formal greetings.",
+            "BarkMindset": "[STAGE: FORMAL RESERVE & SOLITUDE]\n- Mindset: Elegantly guarded within personal seclusion. Treats the farmer strictly as an unfamiliar passerby, maintaining punctilious social boundaries.\n- Attention Flow: Cabin solitude, creaking floorboards, ink drying on paper, and keeping conversation to crisp, courtly formalities.",
+            "Preoccupations": [
+              "Ink bottle levels",
+              "Drafty pier railings",
+              "Cabin door latches",
+              "Rolling coastal fog"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nFormal, measured, and plain-spoken. Observes coastal weather and immediate physical tools without literary metaphors.\n\n[OBSERVATION LENSES]\n- Timber & Salt: Swollen door casings, salt crust on brass hinges, rotting deck boards.\n- Heating & Fuel: Oil level in glass basins, kindling piles, stove draft.\n- Writing Equipment: Bent steel nibs, damp parchment, river stone paperweights.\n\n[SPOKEN HABITS]\nOpens with formal phrases: 'Good morrow.', 'Hail.', 'Mind the path.' Keeps lines under two sentences; focuses entirely on tools, drafts, and shoreline footing."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nFormal, measured, and plain-spoken. Observes coastal weather, practical tools, and tangible shoreline realities.\n\n[SPOKEN HABITS]\nOpens with formal phrases: 'Good morrow.', 'Hail.', 'Mind the path.'. Keeps lines under two sentences; focuses entirely on tools, drafts, and shoreline footing.\n\n[OBSERVATION LENSES]\n- Timber & Salt: Swollen door casings, salt crust on brass hinges, rotting deck boards.\n- Heating & Fuel: Oil level in glass basins, kindling piles, stove draft.\n- Writing Equipment: Bent steel nibs, damp parchment, river stone paperweights.\n- Tides & Shoreline: Wet sand footing, salt foam drifts, tide pool ripples, low-tide gull calls."
       }
     }
   ]

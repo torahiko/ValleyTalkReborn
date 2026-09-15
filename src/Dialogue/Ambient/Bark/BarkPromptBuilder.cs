@@ -106,11 +106,11 @@ internal sealed class BarkPromptBuilder
 
         string zhExample2 = JsonConvert.SerializeObject(new[]
         {
-            "今天这风吹得脑门有点疼。",
-            "那边的栅栏怎么又歪了一块……",
-            "改天得找个锤子敲一下。",
-            "衣服上什么时候蹭了块泥？",
-            "……啊，好困，昨晚没睡够。"
+            "今天这风吹得后颈有点凉。",
+            "刚才路口有个人走过去了，步子挺急的。",
+            "像是赶着去哪儿。",
+            "鞋帮上什么时候蹭了块灰。",
+            "……啊，好困，昨晚好像没睡踏实。"
         });
 
         string zhExample3 = JsonConvert.SerializeObject(new[]
@@ -134,11 +134,11 @@ internal sealed class BarkPromptBuilder
 
         string enExample2 = JsonConvert.SerializeObject(new[]
         {
-            "Wind's blowing straight into my eyes, damn it.",
-            "Wait, that fence post is crooked again. Swear I fixed that.",
-            "Gotta find the hammer sometime this week. Maybe Robin has one.",
-            "How'd I even get mud all over my sleeve?",
-            "...God I'm beat. Should not have stayed up so late."
+            "Wind's kicking up dust everywhere today.",
+            "Someone just hurried past the corner back there.",
+            "Looked like they were in a rush for once.",
+            "How'd I even get scuff marks on my boots?",
+            "...God I'm beat. Definitely didn't get enough sleep."
         });
 
         string enExample3 = JsonConvert.SerializeObject(new[]
@@ -260,7 +260,7 @@ Example 3 (Paranoia & Appetite):
         if (isZh)
             rawPrompt = NpcNameLocalizer.LocalizeNamesInText(rawPrompt);
 
-        rawPrompt = EnrichWithDynamicState(npc, rawPrompt, isZh);
+        rawPrompt = EnrichWithDynamicState(npc, bio, rawPrompt, isZh, out bool mindsetInjected);
 
         sb.AppendLine(isZh ? "### [你是谁]" : "### [WHO YOU ARE]");
         sb.AppendLine(rawPrompt);
@@ -294,7 +294,7 @@ Example 3 (Paranoia & Appetite):
         }
 
         // ── 5. 生成指令（无缝对齐是否有单一焦点）──
-        sb.AppendLine(BuildThinkingPrompt(isZh, isFreeDrift));
+        sb.AppendLine(BuildThinkingPrompt(isZh, isFreeDrift, mindsetInjected));
 
         return sb.ToString();
     }
@@ -478,7 +478,7 @@ Example 3 (Paranoia & Appetite):
     /// <summary>
     /// 构建"思考提示" - 彻底剥离二次摇号，根据单焦点状态提供无冲突的生成指令
     /// </summary>
-    private static string BuildThinkingPrompt(bool isZh, bool isFreeDrift)
+    private static string BuildThinkingPrompt(bool isZh, bool isFreeDrift, bool hasMindsetSection)
     {
         var sb = new StringBuilder();
         bool needLangConstraint = ShouldInjectLanguageConstraint(out string targetLangZh, out string targetLangEn);
@@ -504,7 +504,10 @@ Example 3 (Paranoia & Appetite):
         {
             sb.AppendLine("- 4~6 条，每条 15~25 个汉字");
             sb.AppendLine("- 可以连着想，可以突然跳开，可以想到一半就算了");
-            sb.AppendLine("- 用你自己的说话方式（看上面 [你是谁] 里的语言习惯）");
+            if (hasMindsetSection)
+                sb.AppendLine("- 念头自然源于上面的性格习惯与 [此刻的心境与认知]");
+            else
+                sb.AppendLine("- 用你自己的说话方式（看上面 [你是谁] 里的语言习惯）");
             if (isFestivalNow)
             {
                 sb.AppendLine("- 此时正身处节日集会，念头可围绕集会活动、食物、周围人潮、或是想早点回家休息等现场心境");
@@ -523,7 +526,10 @@ Example 3 (Paranoia & Appetite):
 
             sb.AppendLine($"- 4-6 lines, {lengthBullet}");
             sb.AppendLine("- Can flow together, jump around, or drop mid-thought");
-            sb.AppendLine("- Use your own speaking style (see [WHO YOU ARE] above)");
+            if (hasMindsetSection)
+                sb.AppendLine("- Thoughts naturally stem from your persona and the [CURRENT MINDSET & PERCEPTION] above");
+            else
+                sb.AppendLine("- Use your own speaking style (see [WHO YOU ARE] above)");
             if (isFestivalNow)
             {
                 sb.AppendLine("- You are at a festival; thoughts naturally drift to the events, food, crowds, or wanting to head home");
@@ -538,18 +544,32 @@ Example 3 (Paranoia & Appetite):
         return sb.ToString();
     }
 
-    private static string EnrichWithDynamicState(NPC npc, string basePrompt, bool isChinese)
+    private static string EnrichWithDynamicState(NPC npc, BioData bio, string basePrompt, bool isZh, out bool mindsetInjected)
     {
-        if (npc == null || string.IsNullOrWhiteSpace(basePrompt))
+        mindsetInjected = false;
+        if (npc == null || string.IsNullOrWhiteSpace(basePrompt) || bio == null)
             return basePrompt;
 
-        var bio = DialogueBuilder.Instance?.GetCharacter(npc)?.Bio;
-        string stateText = ProgressStateResolver.ResolveActiveState(npc, bio?.ProgressStates);
-
-        if (string.IsNullOrWhiteSpace(stateText))
+        var activeEntry = ProgressStateResolver.ResolveActiveEntry(npc, bio.ProgressStates);
+        if (activeEntry == null)
             return basePrompt;
 
-        return $"{basePrompt}\n\n[CURRENT STATE: {stateText}]";
+        // 内容先行：BarkMindset 优先；仅 BarkMindset 空白时用 Text 兜底
+        string mindsetContent = null;
+        if (!string.IsNullOrWhiteSpace(activeEntry.BarkMindset))
+            mindsetContent = activeEntry.BarkMindset.Trim();
+        else if (!string.IsNullOrWhiteSpace(activeEntry.Text))
+            mindsetContent = isZh ? $"当前生活状态：{activeEntry.Text.Trim()}" : $"Current State: {activeEntry.Text.Trim()}";
+
+        // 两者皆空白 → 返回原 basePrompt，禁止输出裸标题
+        if (string.IsNullOrWhiteSpace(mindsetContent))
+            return basePrompt;
+
+        if (isZh)
+            mindsetContent = NpcNameLocalizer.LocalizeNamesInText(mindsetContent);
+
+        mindsetInjected = true;
+        return $"{basePrompt}\n\n### {(isZh ? "[此刻的心境与认知]" : "[CURRENT MINDSET & PERCEPTION]")}\n{mindsetContent}";
     }
 
     /// <summary>

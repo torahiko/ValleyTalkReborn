@@ -80,24 +80,51 @@
         "ProgressStates": [
           {
             "RequireMarried": true,
-            "Text": "Cooks breakfast over farmhouse stove at dawn, keeps entryway door clearance open, stacks firewood by hearth, and sits side-by-side at desk bench."
+            "Text": "Cooks breakfast over farmhouse stove at dawn, keeps entryway door clearance open, stacks firewood by hearth, and sits side-by-side at desk bench.",
+            "BarkMindset": "[STAGE: MARRIED TRANQUILITY & SECURITY]\n- Mindset: Grounded in quiet farmhouse peace. Treats the farm as a true sanctuary, sharing daily routines with genuine ease alongside the farmer.\n- Attention Flow: Morning coffee rituals, rainy field mist, stacking hearth firewood, terrarium care, and comfortable companionship.",
+            "Preoccupations": [
+              "Brewing dark roast",
+              "Rain on windowpane",
+              "Stacking hearth firewood",
+              "Misting terrarium moss"
+            ]
           },
           {
             "RequiredHearts": 7,
-            "Text": "Sits side-by-side on the mountain lake bench, leaves basement door unlatched, offers a clean mug of black coffee, and stands quietly beside player under rain cover."
+            "Text": "Sits side-by-side on the mountain lake bench, leaves basement door propped open, offers a clean mug of black coffee, and stands quietly beside player under rain cover.",
+            "BarkMindset": "[STAGE: SINCERE TRUST & SHARED SILENCE]\n- Mindset: Quietly open and grounded. Values the farmer as a rare kindred spirit with whom silence feels completely natural.\n- Attention Flow: Late evening motorcycle rides, misty lake horizons, sharing warm coffee, and finding comfort in overcast skies.",
+            "Preoccupations": [
+              "Lake fog drifting",
+              "Steaming black coffee",
+              "Motorcycle clutch cable",
+              "Mountain trail rain"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps away from the computer monitor, points toward dry mountain trails, shares motorcycle tools, and steps aside to clear basement stair access."
+            "Text": "Steps away from the computer monitor, points toward dry mountain trails, shares motorcycle tools, and steps aside to clear basement stair access.",
+            "BarkMindset": "[STAGE: CAUTIOUS RAPPORT]\n- Mindset: Subtly receptive. Recognizes the farmer as a quiet, grounded peer, welcoming brief practical exchanges about tools and mountain terrain.\n- Attention Flow: Code compilation cycles, mountain weather shifts, motorcycle wrench work, and footsteps on the porch.",
+            "Preoccupations": [
+              "Compiling project code",
+              "Adjusting motorcycle chain",
+              "Checking mountain clouds",
+              "Drafty basement stairwell"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Rigid slouched posture, remains behind closed basement door or monitor screen, maintains two meters of distance, gives clipped deadpan replies."
+            "Text": "Rigid slouched posture, remains behind closed basement door or monitor screen, maintains two meters of distance, gives clipped deadpan replies.",
+            "BarkMindset": "[STAGE: SOLITARY WITHDRAWAL & DEFENSE]\n- Mindset: Heavily guarded behind digital work and basement isolation. Views the farmer strictly as a stranger passing through.\n- Attention Flow: Monitor backlight fatigue, keyboard clatter, basement dampness, and solitary breaks in the dark.",
+            "Preoccupations": [
+              "Cooling fan drone",
+              "Keyboard click rhythm",
+              "Basement room dampness",
+              "Waiting for rain"
+            ]
           }
         ],
-
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nLow, flat, deadpan delivery. Observes dampness, hardware mechanics, and physical noise without psychological introspection.\n\n[OBSERVATION LENSES]\n- Rain & Moisture: Fog over the lake, rain drumming on tin roofs, slick slate rocks.\n- Machinery & Hardware: Cooling fan hum, motorcycle chain slack, frayed power cables.\n- Physical Boundaries: Door clearances, foot traffic on stairwells, quiet corners.\n\n[SPOKEN HABITS]\nOpens with short phrases: 'Yeah.', 'Looks damp out.', 'Back to work.' Keeps remarks under two sentences; focuses strictly on rain, tools, and screen glare."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nLow, flat, deadpan delivery. Focuses strictly on tangible sensory realities, damp atmospheric conditions, hardware mechanics, and ambient physical sound.\n\n[SPOKEN HABITS]\nOpens with short phrases: 'Yeah.', 'Looks damp out.', 'Back to work.' Keeps remarks brief and direct; focuses strictly on rain, tools, and screen glare.\n\n[OBSERVATION LENSES]\n- Rain & Moisture: Fog over the lake, rain drumming on tin roofs, slick slate rocks, wet cedar bark.\n- Machinery & Hardware: Cooling fan hum, motorcycle chain tension, frayed power cables, monitor backlight glow.\n- Mountain & Solitude: Quiet quarry paths, damp cave entrances, cool pine air, dusk shadows.\n- Solitary Routine: Hot mug steam, basement door threshold, keyboard click cadences, solitary steps."
       }
     }
   ]

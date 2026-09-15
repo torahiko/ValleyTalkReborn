@@ -68,20 +68,41 @@
         "ProgressStates": [
           {
             "RequiredHearts": 7,
-            "Text": "Invites the player to sit directly beside the stone firepit. Shares roasted roots or bait supplies, maintains relaxed shoulder posture, and remains comfortable standing or sitting in silence."
+            "Text": "Invites the player to sit directly beside the stone firepit. Shares roasted roots or bait supplies, maintains relaxed shoulder posture, and remains comfortable standing or sitting in silence.",
+            "BarkMindset": "[STAGE: DEEP TRUST & WILDERNESS KINSHIP]\n- Mindset: Completely at ease. Values the farmer as a kindred spirit who understands the natural world and honors quiet companionship.\n- Attention Flow: Gathering forage to share, tending the campfire embers, reading wind shifts, and enjoying peaceful silence on the mountain.",
+            "Preoccupations": [
+              "Roasting wild roots",
+              "Tending campfire embers",
+              "Sharing fresh bait",
+              "Listening to mountain winds"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps outside the tent perimeter. Points out nearby berry brambles and trail slate, stepping onto the gravel path to speak without pulling his hands into his sleeves."
+            "Text": "Steps outside the tent perimeter. Points out nearby berry brambles and trail slate, stepping onto the gravel path to speak with hands resting easily at his sides.",
+            "BarkMindset": "[STAGE: TENTATIVE WARMTH]\n- Mindset: Cautiously receptive. Recognizes the farmer as a respectful visitor who treads lightly on the mountain trails.\n- Attention Flow: Good berry patches, sounds of forest wildlife, dry kindling supplies, and observing the farmer's quiet presence.",
+            "Preoccupations": [
+              "Checking berry brambles",
+              "Dry kindling bundles",
+              "Reading forest tracks",
+              "Mountain stream flow"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Maintains five paces of distance against the rock wall. Steps back toward the tent opening with hands tucked into sleeves, giving clipped warnings not to damage the camp."
+            "Text": "Maintains five paces of distance against the rock wall. Steps back toward the tent opening with hands tucked into sleeves, giving clipped reminders to keep distance from the campsite.",
+            "BarkMindset": "[STAGE: WARY SELF-PRESERVATION]\n- Mindset: Highly vigilant and guarded. Expects hostility from town strangers, keeping attention focused strictly on survival, quietude, and camp security.\n- Attention Flow: Ridge sounds, footsteps on loose gravel, campfire smoke drift, and securing food stores inside the tent.",
+            "Preoccupations": [
+              "Loose gravel sounds",
+              "Securing tent flaps",
+              "Campfire smoke direction",
+              "Wild mushroom foraging"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nGrounded mountain forager. Terse around strangers, watchful of trail movement and weather shifts.\n\n[OBSERVATION LENSES]\n- Ground & Soil: Reading mud stickiness, morning frost depth, wet gravel, and moss patterns on slate.\n- Wood & Fire: Checking smoke color, kindling dryness, ember heat, and pine pitch run.\n- Brush & Forage: Spotting root shoots, bramble thorns, mushroom caps, and seed pods.\n- Physical Threats: Tracking loose rolling rocks, boot tracks on the ridge, and snapping branches.\n\n[SPOKEN HABITS]\nShort, plain outdoor statements: 'Ground is still cold.', 'Wind is coming off the water.', 'Good root here.', 'Quiet ridge today.'. All remarks stay on physical terrain and weather."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nGrounded mountain forager. Terse around strangers, watchful of trail movement and weather shifts.\n\n[SPOKEN HABITS]\nShort, plain outdoor statements: 'Ground is still cold.', 'Wind is coming off the water.', 'Good root here.', 'Quiet ridge today.'. All remarks stay on physical terrain and weather.\n\n[OBSERVATION LENSES]\n- Ground & Soil: Reading mud stickiness, morning frost depth, wet gravel, and moss patterns on slate.\n- Wood & Fire: Checking smoke color, kindling dryness, ember heat, and pine pitch run.\n- Brush & Forage: Spotting root shoots, bramble thorns, mushroom caps, and seed pods.\n- Trail Surroundings: Tracking loose rolling rocks, boot tracks on the ridge, and snapping branches."
       }
     }
   ]

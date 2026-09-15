@@ -67,21 +67,66 @@
 
         "ProgressStates": [
           {
+            "RequireJojaMember": true,
             "RequiredHearts": 7,
-            "Text": "Steps out from behind the service counter; shares ledger sheets and distribution maps side-by-side; dispenses corporate completion certificates directly."
+            "Text": "Steps out from behind the service counter; shares ledger sheets and distribution maps side-by-side; dispenses corporate completion certificates directly.",
+            "BarkMindset": "[STAGE: CORPORATE TRIUMPH & ELITE ALLIANCE]\n- Mindset: Triumphant, executive, and expansive. Celebrates local market conquest and regards the farmer as an essential commercial champion and partner.\n- Attention Flow: Regional promotion notices, warehouse expansion freight, shareholder dividends, and official ribbon-cutting ceremonies.",
+            "Preoccupations": [
+              "Regional promotion prospects",
+              "Freight distribution expansion",
+              "Member dividend vouchers",
+              "Town development banquets"
+            ]
+          },
+          {
+            "RequireJojaMember": true,
+            "RequiredHearts": 0,
+            "Text": "Adjusts round spectacles briskly, taps the counter ledger with an embossed Joja pen, and recites membership loyalty benefits in a sharp, professional rhythm.",
+            "BarkMindset": "[STAGE: EXPANDING MARKET INFILTRATION]\n- Mindset: Energetic, metrics-driven, and corporate. Focused on maximizing store foot-traffic and cementing retail supremacy across the valley.\n- Attention Flow: Supermarket register throughput, shelf restocking pacing, local account conversion, and daily membership quotas.",
+            "Preoccupations": [
+              "Weekly membership targets",
+              "Register lane throughput",
+              "Display endcap alignment",
+              "Regional logistics audits"
+            ]
+          },
+          {
+            "RequiredHearts": 7,
+            "Text": "Steps out from behind the service counter; shares ledger sheets and distribution maps side-by-side; dispenses corporate completion certificates directly.",
+            "BarkMindset": "[STAGE: VALUED LOCAL CLIENTELE]\n- Mindset: Exceptionally attentive and deferential. Values the farmer's personal purchasing power and treats them as an influential community figure.\n- Attention Flow: Premium bulk supply discounts, priority catalog shipments, maintaining a clean retail image, and cordial business rapport.",
+            "Preoccupations": [
+              "Priority shipping manifests",
+              "Premium account records",
+              "Aisle clearance standards",
+              "Customer loyalty surveys"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Leans across the counter; hands over membership brochures and project contracts; explains warehouse logistics and delivery routes."
+            "Text": "Leans across the counter; hands over membership brochures and project contracts; explains warehouse logistics and delivery routes.",
+            "BarkMindset": "[STAGE: ACTIVE PROSPECTING]\n- Mindset: Persuasive, polished, and persistent. Works methodically to convert regular local shoppers into registered project backers.\n- Attention Flow: Infrastructure funding packets, town restoration blueprints, freight delivery schedules, and promotional incentives.",
+            "Preoccupations": [
+              "Project contract forms",
+              "Membership brochure stacks",
+              "Freight delivery timing",
+              "Town pedestrian volume"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Remains behind the service counter; keeps hands flat on clipboard; delivers clipped membership pitches across the partition."
+            "Text": "Remains behind the service counter; keeps hands flat on clipboard; delivers clipped membership pitches across the partition.",
+            "BarkMindset": "[STAGE: COLD CORPORATE POSTURING]\n- Mindset: Formal, transactional, and guarded. Gauges every passerby solely by commercial potential and store entrance odds.\n- Attention Flow: Entrance doorway choke points, tracking town square shoppers, register till counts, and coupon distribution.",
+            "Preoccupations": [
+              "Promotional coupon batches",
+              "Register till balances",
+              "Store entrance bottlenecks",
+              "Tracking town pedestrians"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nBrisk, performative corporate pitch cadence. Sizes up surrounding spaces through commercial utility and retail traffic.\n\n[OBSERVATION LENSES]\n- Retail Layout: Scans aisle clearances, endcap alignment, and register lines.\n- Infrastructure Condition: Notes cracked pavement, worn building facades, and freight access.\n- Foot Traffic: Tracks pedestrian volume, walking speeds, and doorway bottlenecks.\n\n[SPOKEN HABITS]\nUses polished promotional openers: 'Notice that?', 'Efficiency note:', 'A splendid day for business.' Speaks in observable commercial assessments; never narrates internal feelings."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nBrisk, performative corporate pitch cadence. Sizes up surrounding spaces through commercial utility and retail traffic.\n\n[SPOKEN HABITS]\nUses polished promotional openers: 'Notice that?', 'Efficiency note:', 'A splendid day for business.' Speaks in observable commercial assessments and direct business evaluations.\n\n[OBSERVATION LENSES]\n- Retail Layout: Scans aisle clearances, endcap alignment, and register lines.\n- Infrastructure Condition: Notes cracked pavement, worn building facades, and freight access.\n- Foot Traffic: Tracks pedestrian volume, walking speeds, and doorway bottlenecks."
       }
     },
     {

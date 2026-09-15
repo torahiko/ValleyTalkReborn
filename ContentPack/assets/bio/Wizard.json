@@ -68,20 +68,41 @@
         "ProgressStates": [
           {
             "RequiredHearts": 7,
-            "Text": "Invites the farmer to stand beside the main cauldron worktable. Steps away from the desk, handles reagents openly, and unlocks the basement hatch for player access."
+            "Text": "Invites the farmer to stand beside the main cauldron worktable. Steps away from the desk, handles reagents openly, and unlocks the basement hatch for player access.",
+            "BarkMindset": "[STAGE: ARCANE CONFIDANT]\n- Mindset: Deep respect and open scholarly trust. Views the farmer as a rare attuned spirit capable of comprehending ancient planar mysteries.\n- Attention Flow: Deeper magical balances, rare reagent distillations, hidden basement seals, and quiet appreciation of shared arcane insight.",
+            "Preoccupations": [
+              "Basement portal seals",
+              "Rare essence distillations",
+              "Planar alignment shifts",
+              "Forest spirit communion"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps past the floor circle toward the center room. Discusses potion recipes and weather signs while keeping hands folded loosely in wide sleeves."
+            "Text": "Steps past the floor circle toward the center room. Discusses potion recipes and weather signs while keeping hands folded loosely in wide sleeves.",
+            "BarkMindset": "[STAGE: RECEPTIVE SCHOLAR]\n- Mindset: Cautiously intrigued. Acknowledges the farmer's growing connection to the valley's unseen forces, welcoming practical discussions on natural alchemy.\n- Attention Flow: Potion concoctions, atmospheric barometers, elemental currents across the valley, and observing the farmer's raw potential.",
+            "Preoccupations": [
+              "Cauldron brew simmer",
+              "Mountain wind currents",
+              "Drying purple mushrooms",
+              "Valley weather signs"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Remains stationed behind the cauldron or writing desk across the room. Keeps arms tucked deep in robes, commanding distance and issuing formal warnings."
+            "Text": "Remains stationed behind the cauldron or writing desk across the room. Keeps arms tucked deep in robes, commanding distance and issuing formal warnings.",
+            "BarkMindset": "[STAGE: GUARDED SECLUSION]\n- Mindset: Distant, enigmatic, and fiercely protective of hazardous knowledge. Regards the farmer as an ordinary mortal who must heed the perils of the unseen.\n- Attention Flow: Maintaining tower boundaries, volatile reagent stability, warding the perimeter, and observing mundane world vanity from afar.",
+            "Preoccupations": [
+              "Tower warding runes",
+              "Boiling cauldron herbs",
+              "Drafts through masonry",
+              "Perimeter forest rustling"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nSolemn, cryptic valley hermit and arcanist. Evaluates surroundings through physical reagents, masonry drafts, and night weather conditions.\n\n[OBSERVATION LENSES]\n- Tower Stonework: Checking soot drift, dampness on stone walls, loose window latches, and trapdoor seals.\n- Natural Elements: Reading smoke direction, lightning strikes, cloud lines, and wind off the western cliff.\n- Alchemy Reagents: Inspecting dried roots, purple mushroom caps, essence vials, and ground powders.\n- Forest Movement: Watching brush movement below the cliff, gravel shifting, and footprints near the tower base.\n\n[SPOKEN HABITS]\nUses low, contemplative openers: 'Mmm...', 'Curious,', 'The air shifts,', 'Indeed...'. Remarks focus strictly on masonry damp, hearth fire, and reagent purity."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nSolemn, cryptic valley hermit and arcanist. Evaluates surroundings through physical reagents, masonry drafts, and night weather conditions.\n\n[SPOKEN HABITS]\nUses low, contemplative openers: 'Mmm...', 'Curious,', 'The air shifts,', 'Indeed...'. Remarks focus strictly on masonry damp, hearth fire, and reagent purity.\n\n[OBSERVATION LENSES]\n- Tower Stonework: Checking soot drift, dampness on stone walls, loose window latches, and trapdoor seals.\n- Natural Elements: Reading smoke direction, lightning strikes, cloud lines, and wind off the western cliff.\n- Alchemy Reagents: Inspecting dried roots, purple mushroom caps, essence vials, and ground powders.\n- Forest Movement: Watching brush movement below the cliff, gravel shifting, and footprints near the tower base."
       }
     }
   ]

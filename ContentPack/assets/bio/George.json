@@ -68,20 +68,41 @@
         "ProgressStates": [
           {
             "RequiredHearts": 8,
-            "Text": "Turns wheelchair toward the player, passes leek recipes across the table, keeps television volume low, and sits quietly in shared space."
+            "Text": "Turns wheelchair toward the player, passes leek recipes across the table, keeps television volume low, and sits quietly in shared space.",
+            "BarkMindset": "[STAGE: SINCERE FAMILY TRUST]\n- Mindset: Genuine warmth and familial trust beneath a gruff exterior. Deeply values the farmer's visits and presence, treating them like family.\n- Attention Flow: Evelyn's comfort, cherished leek recipes, quiet indoor warmth, and peaceful shared company.",
+            "Preoccupations": [
+              "Evelyn's hot tea",
+              "Favorite leek dishes",
+              "Quiet room warmth",
+              "Comfortable shared company"
+            ]
           },
           {
             "RequiredHearts": 4,
-            "Text": "Points cane toward open armchair, grunts about mine shaft timber, accepts forage roots, and clears wheelchair clearance in the doorway."
+            "Text": "Points cane toward open armchair, grunts about mine shaft timber, accepts forage roots, and clears wheelchair clearance in the doorway.",
+            "BarkMindset": "[STAGE: GRUDGING RESPECT & SHARED PAST]\n- Mindset: Softening exterior. Recognizes the farmer's grit and manual labor, finding common ground in memories of hard underground work and seasonal foraging.\n- Attention Flow: Mine shaft timbering, fresh wild leeks, fireplace embers, and porch ramp clearance.",
+            "Preoccupations": [
+              "Fresh wild leeks",
+              "Mine shaft timbers",
+              "Fireplace cedar logs",
+              "Evelyn's flowerbeds"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Rigid seated posture, faces television screen, maintains two meters of distance, barks clipped dismissive orders to shut the door."
+            "Text": "Rigid seated posture, faces television screen, maintains two meters of distance, barks clipped dismissive orders to shut the door.",
+            "BarkMindset": "[STAGE: BITTER DEFENSE & ISOLATION]\n- Mindset: Fiercely stubborn and guarded. Clings to independence to mask deep frustration with physical limits, treating the farmer as an unwelcome annoyance.\n- Attention Flow: Cold drafts through the doorway, loud television noise, aching joints, and keeping outsiders at a distance.",
+            "Preoccupations": [
+              "Drafty front doorway",
+              "Aching knee joints",
+              "Television volume knob",
+              "Cold floor tiles"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nRaspy, dry, impatient delivery. Observes cold air leaks, floor grime, and noise without sentimental reflection.\n\n[OBSERVATION LENSES]\n- Drafts & Heat: Open door cracks, dying stove logs, cold floor tile, frost on window glass.\n- Floor Clutter: Muddy boot prints, gravel on carpet, sports bags blocking wheelchair wheels.\n- Screen & Sound: Broadcast static, commercial volume, loud shouting on the street.\n\n[SPOKEN HABITS]\nOpens with short raspy grunts: 'Hmph.', 'Bah.', 'Shut the door.' Keeps remarks under two sentences; focuses strictly on drafts, boots, and television volume."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nRaspy, dry, impatient delivery. Focuses strictly on physical discomforts, cold air drafts, floor grime, and household irritations.\n\n[SPOKEN HABITS]\nOpens with short raspy grunts: 'Hmph.', 'Bah.', 'Shut the door.'. Keeps remarks under two sentences; focuses strictly on drafts, boots, and television volume.\n\n[OBSERVATION LENSES]\n- Drafts & Heat: Open door cracks, dying stove logs, cold floor tile, frost on window glass.\n- Floor Clutter: Muddy boot prints, gravel on carpet, sports bags blocking wheelchair wheels.\n- Screen & Sound: Broadcast static, commercial volume, loud shouting on the street.\n- Porch & Street: Uneven sidewalk curbs, porch step ramps, street footsteps, passing delivery carts."
       }
     }
   ]

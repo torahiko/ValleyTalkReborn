@@ -1086,23 +1086,54 @@ public class Prompts
         if (playerHasSpoken) return;
         if (Game1.random.NextDouble() < 0.5) return;
 
-        var nPreoccupations = Character.PossiblePreoccupations?.Count ?? 0;
-        if (nPreoccupations == 0) return;
+        // 3. 解析档位
+        var npc = Character?.StardewNpc;
+        var entry = ProgressStateResolver.ResolveActiveEntry(npc, Character.Bio?.ProgressStates);
+
+        // 4. 严格替换仅在阶段池实际配置时触发；未配置池的档位回退全局路径
+        bool useStage = entry?.Preoccupations != null && entry.Preoccupations.Count > 0;
+
+        // 5. 选池
+        List<string> pool;
+        string stageKey;
+        if (useStage)
+        {
+            pool = entry.Preoccupations;
+            stageKey = string.Join("|", entry.Preoccupations);
+        }
+        else
+        {
+            pool = Character.PossiblePreoccupations;
+            stageKey = "GLOBAL";
+        }
+        if (pool == null || pool.Count == 0) return;
 
         string preoccupation;
+        // 6. 复合缓存命中判定（Q1b）：日 + 非空 + 阶段键一致
         if (Game1.Date == Character.PreoccupationDate
-            && !string.IsNullOrEmpty(Character.Preoccupation))
+            && !string.IsNullOrEmpty(Character.Preoccupation)
+            && string.Equals(Character.PreoccupationStageKey, stageKey, StringComparison.Ordinal))
         {
             preoccupation = LoadLocalised(Character.Preoccupation);
         }
         else
         {
-            preoccupation = Character.PossiblePreoccupations[Game1.random.Next(nPreoccupations)];
-            preoccupation = LoadLocalised(preoccupation);
+            // 7. 选取与净化
+            string pick = pool[Game1.random.Next(pool.Count)];
+            // 空白条目 → 本次静默跳过：不注入、不登记、不写缓存（防空白心事行污染 Prompt）;
+            if (string.IsNullOrWhiteSpace(pick)) return;
+            preoccupation = LoadLocalised(pick);
+            // Q3a：zh 人名本地化仅作用于阶段池分支；全局池保持现状，零行为扩散
+            if (useStage && IsChineseLanguage)
+                preoccupation = NpcNameLocalizer.LocalizeNamesInText(preoccupation);
+
+            // 8. 原子写缓存
             Character.Preoccupation = preoccupation;
             Character.PreoccupationDate = Game1.Date;
+            Character.PreoccupationStageKey = stageKey;
         }
 
+        // 9. 注入（表达层级不变，逐字保留）
         bool isZh = IsChineseLanguage;
         _injectedPrivateThoughts.Add(preoccupation);
         prompt.AppendLine(Util.GetString(Character, "preoccupation", new { Name = Name, preoccupation = preoccupation }));

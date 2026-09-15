@@ -68,24 +68,52 @@
         "ProgressStates": [
           {
             "RequireMarried": true,
-            "Text": "Married farm routine. Sets drafting table beside the farmhouse window, sweeps mud off porch planks at sunrise, and clears doorway space while carrying toolboxes or firewood."
+            "Text": "Married farm routine. Sets drafting table beside the farmhouse window, sweeps mud off porch planks at sunrise, and clears doorway space while carrying toolboxes or firewood.",
+            "BarkMindset": "[STAGE: DOMESTIC HARMONY & SHARED PURPOSE]\n- Mindset: Deeply settled and content. Finds creative clarity and quiet joy in sharing the farmhouse life with the farmer, harmonizing his architectural passions with daily rural routines.\n- Attention Flow: Farmhouse draft angles, morning porch sweeping, sturdy timber framing, and the tranquil warmth of working beside his partner.",
+            "Preoccupations": [
+              "Drafting table window lighting",
+              "Farmhouse porch timber leveling",
+              "Morning firewood hearth bundles",
+              "Checking roof truss alignment"
+            ]
           },
           {
             "RequiredHearts": 7,
-            "Text": "Invites the player to sit at the drafting desk. Shares blueprint sheets and game controllers, maintains relaxed shoulder posture, and discusses timber framing without formal hesitation."
+            "Text": "Invites the player to sit at the drafting desk. Shares blueprint sheets and game controllers, maintains relaxed shoulder posture, and discusses timber framing with easy enthusiasm.",
+            "BarkMindset": "[STAGE: QUIET CONFIDENCE & FELLOWSHIP]\n- Mindset: Genuinely comfortable and open. Treats the farmer as an equal and a true confidant, willingly sharing his private hobbies and architectural ambitions.\n- Attention Flow: Video game mechanics, blueprint revisions, structural timber load points, and the ease of companionable conversation.",
+            "Preoccupations": [
+              "Blueprint dimension notes",
+              "Console gaming strategies",
+              "Timber frame load calculations",
+              "Quiet study conversation"
+            ]
           },
           {
             "RequiredHearts": 3,
-            "Text": "Steps past the manor gate to talk on the gravel path. Holds survey clipboard loosely at his side and discusses river masonry without tugging at his waistcoat."
+            "Text": "Steps past the manor gate to talk on the gravel path. Holds survey clipboard loosely at his side, standing comfortably in his waistcoat while discussing river masonry.",
+            "BarkMindset": "[STAGE: POLITE CURIOSITY & COMMON GROUND]\n- Mindset: Gently stepping beyond high-society reserve. Recognizes the farmer as an earnest neighbor, finding comfortable common ground in the physical craft of farming and town masonry.\n- Attention Flow: River embankment masonry, surveyor measurements, town bridge structural integrity, and thoughtful reflections on local craft.",
+            "Preoccupations": [
+              "River masonry mortar condition",
+              "Survey clipboard notes",
+              "Town bridge beam integrity",
+              "Gravel path walkway drainage"
+            ]
           },
           {
             "RequiredHearts": 0,
-            "Text": "Stationed on the manor steps or behind the parlor railing. Straightens tie, keeps two paces of distance, and limits conversation to formal civic pleasantries and architectural notes."
+            "Text": "Stationed on the manor steps or behind the parlor railing. Straightens tie, keeps two paces of distance, and limits conversation to formal civic pleasantries and architectural notes.",
+            "BarkMindset": "[STAGE: FORMAL CIVIC COURTESY]\n- Mindset: Guarded behind aristocratic manners and polite etiquette. Views the farmer strictly as a casual town acquaintance, keeping conversations safely anchored to formal topics.\n- Attention Flow: Architectural geometry of manor structures, tie and collar alignment, polite civic observations, and personal academic studies.",
+            "Preoccupations": [
+              "Manor railing geometric symmetry",
+              "Straightening silk necktie",
+              "Civic architecture history texts",
+              "Formal town etiquette pleasantries"
+            ]
           }
         ],
 
         "EnableAmbientBarks": true,
-        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nPolite, thoughtful, soft-spoken cadence. Evaluates surroundings through physical craftsmanship, masonry joints, and structural geometry.\n\n[OBSERVATION LENSES]\n- Structural Framing: Inspecting masonry mortar, truss angles, bridge timber rot, and floorboard leveling.\n- Mechanics & Hardware: Noting gear meshing, watermill wheel flow, electrical wire hum, and console switches.\n- Physical Weather: Checking river water levels, damp mud on walkways, and cold drafts through window sills.\n- Spatial Boundaries: Monitoring clear desk space, path clearance, and distance from loud crowds.\n\n[SPOKEN HABITS]\nUses quiet academic openers: 'Fascinating...', 'Remarkable,', 'Look at that joint,', 'Pardon me,'. Remarks center on physical masonry, timber stress, and blueprints."
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nPolite, thoughtful, soft-spoken cadence. Evaluates surroundings through physical craftsmanship, masonry joints, and structural geometry.\n\n[SPOKEN HABITS]\nUses quiet academic openers: 'Fascinating...', 'Remarkable,', 'Look at that joint,', 'Pardon me,'. Remarks center on physical masonry, timber stress, and blueprints.\n\n[OBSERVATION LENSES]\n- Structural Framing: Inspecting masonry mortar, truss angles, bridge timber rot, and floorboard leveling.\n- Mechanics & Hardware: Noting gear meshing, watermill wheel flow, electrical wire hum, and console switches.\n- Physical Weather: Checking river water levels, damp mud on walkways, and cold drafts through window sills.\n- Spatial Boundaries: Monitoring clear desk space, path clearance, and distance from loud crowds."
       }
     }
   ]

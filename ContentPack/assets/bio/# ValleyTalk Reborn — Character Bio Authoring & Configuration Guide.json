@@ -1,0 +1,168 @@
+# ValleyTalk Reborn — Character Bio Authoring & Configuration Guide
+
+This guide is for creators and modders who want to create, refactor, or expand NPC bio cards. The system uses **mutually exclusive dynamic mindset slots** and **stage-specific preoccupation pools** to preserve character progression arcs and prevent out-of-character drift — for example, early-game characters generating domestic married chatter.
+
+---
+
+## Core Design Philosophy
+
+### 1. Zero Negative Phrasing (The "Pink Elephant" Trap and Attention Weights)
+
+**How LLM attention works**
+
+Large Language Models calculate token relationships based on attention weights. When a prompt contains instructions like `never mentions marriage`, `avoids eye contact`, or `without hesitation`, the semantic weights of **"marriage"**, **"eye contact"**, and **"hesitation"** are boosted. Models frequently fixate on the forbidden concept and generate the exact behavior you intended to prevent.
+
+**The rule**
+
+Keep all prompts and bio descriptions completely free of negative constraint words (`never`, `not`, `avoid`, `without`, `do not`, `don't`, etc.).
+
+**Positive framing**
+
+Describe solely what the character's attention is actively occupied by, and what physical motions they are currently performing.
+
+* ❌ *Avoids holding static eye contact* — violates the rule: uses "avoid"
+* ✔️ *Glances away after two seconds of eye contact* — positive, observable action
+* ❌ *Never thinks about married farm chores in early stages* — injects late-game keywords
+* ✔️ *Focuses entirely on personal sprint timing and ball grip* — fills attention with early-stage focus
+
+### 2. Scriptwriting Over Novelistic Prose (Observable Reality)
+
+**What to avoid**
+
+Abstract psychological musings, subjective literary metaphors, and internal monologues — for example, *"A bitter ache ripples through his heart like autumn leaves falling into a cold pond."* LLMs cannot translate abstract metaphors into spoken cadence or physical posture.
+
+**What to focus on**
+
+Concrete physical markers that a camera could capture:
+
+* Aching back muscles, soot on leather gloves, ledger thickness on the counter edge, squeaking rusty hinges, the sound of approaching footsteps.
+* Tangible physical interaction anchors generation into grounded, conversational vernacular.
+
+---
+
+## Structural Contracts and Section Layout
+
+### 1. Section Order in `AmbientBarkPrompt`
+
+In the ambient bark configuration, the relative order of these three sections is strict:
+
+```text
+[VOICE & ATTITUDE]   -> Permanent baseline demeanor and vocal cadence
+[SPOKEN HABITS]      -> Conversational openers, filler phrases, sentence tempo
+[OBSERVATION LENSES] -> Physical sensory and environmental observation points
+
+```
+
+**Why order matters**
+
+The Actor-to-Actor (A2A) dialogue engine strips environmental sensory text before NPCs talk face-to-face by truncating content at `[OBSERVATION LENSES]`. If `[SPOKEN HABITS]` is placed after `[OBSERVATION LENSES]`, speech habits will be unintentionally removed during A2A conversations.
+
+### 2. The `ProgressStates` Mutually Exclusive Triad
+
+Each progression entry in `ProgressStates` must supply all three components:
+
+* **`Text`** — Third-person physical behavior used during face-to-face player dialogue and A2A encounters.
+* **`BarkMindset`** — The character's internal psychological defense and attention direction during ambient self-talk, formatted into `Mindset` and `Attention Flow`.
+* **`Preoccupations`** — Exactly 4 stage-specific preoccupation anchors. When active, these override global preoccupations, preventing early concerns from resurfacing later.
+
+### 3. Supported Progression Conditions
+
+The resolver evaluates active conditions using specificity weighting (Special Events > Marriage > Heart Milestones) to pick the single highest-priority entry:
+
+* `RequiredHearts` — Minimum friendship hearts. Defaults to `0` for baseline entries.
+* `RequireMarried` — Set to `true` when the NPC is married to the player.
+* `RequireBusRepaired` — Set to `true` or `false` to match desert transit availability (e.g., Pam).
+* `RequirePlayerMarriedTo` — Set to `"NPCName"` to check if the player married a specific NPC (e.g., Clint checking if the player married Emily).
+* `RequireJojaMartClosed` — Set to `true` or `false` to match Community Center completion status (e.g., Pierre).
+* `RequireJojaMember` — Set to `true` or `false` to track Morris's warehouse route.
+
+**A few conditions explained**
+
+* **`RequirePlayerMarriedTo`** — Use this when an NPC's dialogue should change based on who the player married. For example, Clint might have different lines if the player married Emily versus someone else. The value is the internal name of the NPC, such as `"Emily"` or `"Abigail"`.
+* **`RequireJojaMartClosed`** — Use this to reflect whether JojaMart is still open or has been shut down. Set `true` if the condition should apply when JojaMart is closed, or `false` if it should apply while JojaMart is still in business. Pierre is the typical example.
+* **`RequireJojaMember`** — Use this to track whether the player has purchased a Joja membership. Set `true` or `false` depending on which route should be acknowledged. Beyond Morris, this is also crucial for town merchants like Pierre whose livelihood is directly impacted by the player's allegiance.
+
+---
+
+## `Preoccupations` Authoring Guidelines
+
+Preoccupations serve as raw attention anchors sampled by both ambient self-talk and face-to-face dialogue.
+
+* **Concise topic phrases** — Keep entries between 2 to 4 words. Favor `V-ing + Noun` or simple noun phrases (e.g., `"Checking barn latches"`, `"Field crop growth"`).
+* **Global fallback pool** — Remember to keep a root-level `Preoccupations: [...]` list on the character card. When an NPC encounters an unmapped stage or a state without an explicit stage pool, the engine cleanly falls back to this global list.
+* **Omit fixed times and static poses**:
+* ❌ *Watching the afternoon flock graze* — baking in "afternoon" causes time hallucinations at night or in rain.
+* ❌ *Resting boots on the fence rail* — baking in a fixed pose conflicts when the NPC is walking or indoors.
+* ✔️ *Pasture flock grazing* / *Taking a quiet breather* — neutral concepts that fit any scene.
+
+
+
+---
+
+## Standard Starter Template
+
+> **Note**: This template focuses on the Bark & Progression layer. When authoring an entirely new custom NPC from scratch, ensure you also include the root bio fields (`Biography`, `Relationships`, `Traits`, and a root-level `Preoccupations` fallback array).
+
+```json
+{
+  "Changes": [
+    {
+      "Action": "EditData",
+      "Target": "ValleyTalkReborn/Bios/NPCName",
+      "Priority": "Early",
+      "Entries": {
+        "ProgressStates": [
+          {
+            "RequireMarried": true,
+            "Text": "Third-person physical actions in the farmhouse (use positive framing).",
+            "BarkMindset": "[STAGE: MARRIED LIFE]\n- Mindset: Domestic security, settled comfort, fully open to shared routines.\n- Attention Flow: Morning chores, crops, livestock movements, shared quiet life.",
+            "Preoccupations": [
+              "Stage item one",
+              "Stage item two",
+              "Stage item three",
+              "Stage item four"
+            ]
+          },
+          {
+            "RequiredHearts": 7,
+            "Text": "Third-person actions showing deep trust and relaxed physical posture.",
+            "BarkMindset": "[STAGE: SINCERE TRUST]\n- Mindset: Lowered personal guard, willing vulnerability, genuine mutual respect.\n- Attention Flow: Future aspirations, family responsibilities, companionable presence.",
+            "Preoccupations": [
+              "Stage item one",
+              "Stage item two",
+              "Stage item three",
+              "Stage item four"
+            ]
+          },
+          {
+            "RequiredHearts": 3,
+            "Text": "Third-person actions showing emerging acquaintance and softening barriers.",
+            "BarkMindset": "[STAGE: BUDDING RAPPORT]\n- Mindset: Practical curiosity, peer acknowledgment, cautious warmth.\n- Attention Flow: Shared work realities, local town gossip, noting the farmer nearby.",
+            "Preoccupations": [
+              "Stage item one",
+              "Stage item two",
+              "Stage item three",
+              "Stage item four"
+            ]
+          },
+          {
+            "RequiredHearts": 0,
+            "Text": "Third-person actions showing physical distance and emotional guarding (zero negative words).",
+            "BarkMindset": "[STAGE: EARLY GUARDED POSTURING]\n- Mindset: Core defense mechanism active, viewing the farmer as an unfamiliar stranger.\n- Attention Flow: Immediate personal tasks, physical fatigue, local boredom, self-preservation.",
+            "Preoccupations": [
+              "Stage item one",
+              "Stage item two",
+              "Stage item three",
+              "Stage item four"
+            ]
+          }
+        ],
+
+        "EnableAmbientBarks": true,
+        "AmbientBarkPrompt": "[VOICE & ATTITUDE]\nPermanent identity, vocal resonance, physical archetype, and social instincts.\n\n[SPOKEN HABITS]\nSentence pacing, fillers, greetings, and typical conversational tempo (strictly positive framing).\n\n[OBSERVATION LENSES]\n- Sensory Domain 1: Observable physical properties, wear, and structural details.\n- Sensory Domain 2: Materials, tools, environmental surfaces, and immediate workload.\n- Sensory Domain 3: Atmospheric conditions, regional weather effects, and footing.\n- Sensory Domain 4: Social spaces, routine tasks, and surrounding physical traffic."
+      }
+    }
+  ]
+}
+
+```
