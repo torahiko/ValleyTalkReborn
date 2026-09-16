@@ -371,6 +371,41 @@ internal class MemoryManager : IMemoryProvider
     public static string FormatCurrentGameDateLabel() =>
         Context.IsWorldReady ? FormatGameDateLabel(new StardewTime(Game1.Date, Game1.timeOfDay)) : "";
 
+    /// <summary>分层日历戳：Daily=[Y1 春 4日]；Weekly=[Y1 春 W1]（季内第 N 周）；Chronicle=[Y1 春季印记]。</summary>
+    public static string GenerateDateLabel(MemoryTier tier, StardewTime date)
+    {
+        string seasonName = IsChineseLanguage
+            ? date.Season switch
+            {
+                Season.Spring => "春",
+                Season.Summer => "夏",
+                Season.Fall => "秋",
+                Season.Winter => "冬",
+                _ => date.Season.ToString()
+            }
+            : date.Season switch
+            {
+                Season.Spring => "Spring",
+                Season.Summer => "Summer",
+                Season.Fall => "Fall",
+                Season.Winter => "Winter",
+                _ => date.Season.ToString()
+            };
+
+        int week = (date.DayOfMonth - 1) / 7 + 1;
+
+        return tier switch
+        {
+            MemoryTier.Weekly => IsChineseLanguage
+                ? $"[Y{date.Year} {seasonName} W{week}]"
+                : $"[Y{date.Year} {seasonName} W{week}]",
+            MemoryTier.Chronicle => IsChineseLanguage
+                ? $"[Y{date.Year} {seasonName}印记]"
+                : $"[Y{date.Year} {seasonName} imprint]",
+            _ => FormatGameDateLabel(date)
+        };
+    }
+
     /// <summary>同尺度差值：daysAgo = date.DaysSince(now)，返回 CurrentGameDay - daysAgo；未来日期钳制为今日。</summary>
     public static int StardewTimeToGameDay(StardewTime date)
     {
@@ -408,7 +443,22 @@ internal class MemoryManager : IMemoryProvider
         if (list.Any(m => m.Tier == tier && string.Equals(m.Content, trimmed, StringComparison.OrdinalIgnoreCase)))
             return MemoryOperationResult.Duplicate;
 
-        string label = string.IsNullOrWhiteSpace(dateLabel) ? FormatCurrentGameDateLabel() : dateLabel;
+        // T9-R1：分层日期标签规则收口——Weekly/Chronicle 由 tier 规则生成（覆盖调用方传入值）；Daily 用页面日期戳
+        string label;
+        if (tier == MemoryTier.Weekly || tier == MemoryTier.Chronicle)
+        {
+            label = GenerateDateLabel(tier, new StardewTime(Game1.Date, Game1.timeOfDay));
+            if (!string.IsNullOrWhiteSpace(dateLabel))
+                ModEntry.SMonitor?.Log(
+                    $"[MemoryManager] Timeline label overridden by tier rule ({tier}: '{label}' replaces '{dateLabel}').",
+                    LogLevel.Trace);
+        }
+        else
+        {
+            label = string.IsNullOrWhiteSpace(dateLabel)
+                ? GenerateDateLabel(tier, new StardewTime(Game1.Date, Game1.timeOfDay))
+                : dateLabel;
+        }
         int day = createdDay < 0 ? CurrentGameDay() : createdDay;
 
         var entry = new MemoryEntry
@@ -1187,6 +1237,9 @@ internal class MemoryManager : IMemoryProvider
             !_memories.TryGetValue(npcName, out var list) || list.Count == 0)
             return "";
 
+        // T10：inner_impressions 注入（每日固定随机种子，日内稳定）
+        string impressions = BuildInnerImpressions(npcName);
+
         bool isZh = IsChineseLanguage;
         int today = CurrentGameDay();
 
@@ -1214,7 +1267,8 @@ internal class MemoryManager : IMemoryProvider
             .Take(MaxAutoInPrompt)
             .ToList();
 
-        if (hardRules.Count == 0 && coreFacts.Count == 0 && recentItems.Count == 0)
+        // T10：短路条件修正——三段全空且无 impressions 才返回空串
+        if (hardRules.Count == 0 && coreFacts.Count == 0 && recentItems.Count == 0 && string.IsNullOrEmpty(impressions))
             return "";
 
         var sb = new System.Text.StringBuilder();
@@ -1258,6 +1312,56 @@ internal class MemoryManager : IMemoryProvider
             sb.AppendLine("</shared_lore>");
         }
 
+        // T10：尾部追加 inner_impressions 段（impressions 空则跳过）
+        if (!string.IsNullOrEmpty(impressions))
+        {
+            sb.AppendLine();
+            sb.Append(impressions);
+        }
+
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// 构建 &lt;inner_impressions&gt; 段（T10）：从时间线三层（Daily/Weekly/Chronicle）各随机抽 ≤5 条，
+    /// 以每日固定种子保证同一游戏日内抽取组合恒定（SystemPrompt 缓存稳定）。
+    /// 无时间线条目 → 空串。
+    /// </summary>
+    private string BuildInnerImpressions(string npcName)
+    {
+        EnsureLoaded();
+
+        if (!_timelineMemories.TryGetValue(npcName, out var list) || list.Count == 0)
+            return "";
+
+        // 每日固定随机种子：CurrentGameDay * 31 + npcName hash（日内稳定，跨天自动换组）
+        int seed = CurrentGameDay() * 31 + npcName.GetHashCode(StringComparison.Ordinal);
+        var rng = new Random(seed);
+
+        bool isZh = I18n.IsChinese;
+
+        // 三层独立抽取（顺序 Daily → Weekly → Chronicle）
+        var daily = list.Where(m => m.Tier == MemoryTier.Daily).OrderBy(_ => rng.Next()).Take(5).ToList();
+        var weekly = list.Where(m => m.Tier == MemoryTier.Weekly).OrderBy(_ => rng.Next()).Take(5).ToList();
+        var chronicle = list.Where(m => m.Tier == MemoryTier.Chronicle).OrderBy(_ => rng.Next()).Take(5).ToList();
+
+        if (daily.Count == 0 && weekly.Count == 0 && chronicle.Count == 0)
+            return "";
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("<inner_impressions>");
+        sb.AppendLine(isZh
+            ? "以下是你在心里对农夫存留的主观回忆与心流印记。它们是你亲历后的日记与升华，仅供你自然代入心境，不要在对话中背诵或复述："
+            : "Below are your subjective impressions and diary notes about the farmer. Let them color your mood naturally; never recite them verbatim:");
+
+        foreach (var m in daily)
+            sb.AppendLine(string.IsNullOrEmpty(m.DateLabel) ? $"- {m.Content}" : $"- {m.DateLabel} {m.Content}");
+        foreach (var m in weekly)
+            sb.AppendLine(string.IsNullOrEmpty(m.DateLabel) ? $"- {m.Content}" : $"- {m.DateLabel} {m.Content}");
+        foreach (var m in chronicle)
+            sb.AppendLine(string.IsNullOrEmpty(m.DateLabel) ? $"- {m.Content}" : $"- {m.DateLabel} {m.Content}");
+
+        sb.AppendLine("</inner_impressions>");
         return sb.ToString();
     }
 }

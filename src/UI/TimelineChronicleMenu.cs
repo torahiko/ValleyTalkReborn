@@ -41,15 +41,15 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     private const int CooldownSeconds = 30;
     private const int MinCondenseSelection = 2;
 
-    // 总结冷却
-    private static long _lastSummarizeTickMs = long.MinValue;
+    // 总结冷却（初始为 0 表示尚未触发过总结）
+    private static long _lastSummarizeTickMs = 0;
 
     private readonly string _npcName;
     private readonly string _npcDisplayName;
     private readonly IClickableMenu _returnMenu;
     private readonly IClickableMenu _ownerMenu;
 
-    private int _currentTab; // 0=今日对话, 1=Daily, 2=Weekly, 3=Chronicle
+    private int _currentTab; // 0=Chats, 1=Impressions, 2=Weekly, 3=Chronicle
     private int _daysAgo;
     private readonly List<DialogueHistoryEntry> _todayChatEntries = new();
     private List<MemoryEntry> _tierEntries = new();
@@ -70,6 +70,24 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     private string _hoveredTooltip = string.Empty;
 
     private StardewTime ViewDate => new StardewTime(Game1.Date, Game1.timeOfDay).AddDays(-_daysAgo);
+
+    /// <summary>
+    /// 是否允许向前翻页：受最大天数限制，且不能翻到第 1 年春 1 日之前（防止出现第 0 年）
+    /// </summary>
+    private bool CanPageLeft
+    {
+        get
+        {
+            if (_daysAgo >= MaxHistoryDays - 1) return false;
+            StardewTime prevDate = new StardewTime(Game1.Date, Game1.timeOfDay).AddDays(-(_daysAgo + 1));
+            return prevDate.Year >= 1;
+        }
+    }
+
+    /// <summary>
+    /// 是否允许向后翻页：不能翻到今天之后
+    /// </summary>
+    private bool CanPageRight => _daysAgo > 0;
 
     public TimelineChronicleMenu(string npcName, IClickableMenu returnMenu, IClickableMenu ownerMenu = null)
     {
@@ -300,7 +318,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
     private void PageLeft()
     {
-        if (_daysAgo >= MaxHistoryDays - 1)
+        if (!CanPageLeft)
         {
             Game1.playSound("cancel");
             return;
@@ -312,7 +330,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
     private void PageRight()
     {
-        if (_daysAgo <= 0)
+        if (!CanPageRight)
         {
             Game1.playSound("cancel");
             return;
@@ -379,9 +397,9 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
     private string GetActionButtonLabel() => _currentTab switch
     {
-        0 => I18n.IsChinese ? "总结当前页" : "Summarize Page",
-        1 => I18n.IsChinese ? "浓缩为每周" : "Condense to Weekly",
-        2 => I18n.IsChinese ? "浓缩为编年" : "Condense to Chronicle",
+        0 => I18n.Memory.DistillThisPage(),
+        1 => I18n.Memory.ConsolidateToWeekly(_selectedEntryIds.Count),
+        2 => I18n.Memory.ElevateToChronicle(_selectedEntryIds.Count),
         _ => string.Empty
     };
 
@@ -424,8 +442,8 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         // 翻页箭头（仅 Tab 0）
         if (_currentTab == 0)
         {
-            if (_leftArrowRect.Contains(x, y) && _daysAgo < MaxHistoryDays - 1) { PageLeft(); return; }
-            if (_rightArrowRect.Contains(x, y) && _daysAgo > 0) { PageRight(); return; }
+            if (_leftArrowRect.Contains(x, y) && CanPageLeft) { PageLeft(); return; }
+            if (_rightArrowRect.Contains(x, y) && CanPageRight) { PageRight(); return; }
         }
 
         // 居中动作按钮
@@ -510,14 +528,19 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         if (_currentTab == 0)
         {
             long now = Environment.TickCount64;
-            long elapsedMs = now - _lastSummarizeTickMs;
-            if (elapsedMs < CooldownSeconds * 1000L)
+
+            // 仅在之前触发过总结时才做冷却校验
+            if (_lastSummarizeTickMs > 0)
             {
-                int remaining = (int)((CooldownSeconds * 1000L - elapsedMs) / 1000L);
-                Game1.playSound("cancel");
-                Game1.addHUDMessage(new HUDMessage(
-                    I18n.IsChinese ? $"总结冷却中，请 {remaining} 秒后再试" : $"Summarize cooldown: {remaining}s", 3));
-                return;
+                long elapsedMs = now - _lastSummarizeTickMs;
+                if (elapsedMs < CooldownSeconds * 1000L)
+                {
+                    int remaining = Math.Max(1, (int)Math.Ceiling((CooldownSeconds * 1000L - elapsedMs) / 1000.0));
+                    Game1.playSound("cancel");
+                    Game1.addHUDMessage(new HUDMessage(
+                        I18n.IsChinese ? $"总结冷却中，请 {remaining} 秒后再试" : $"Summarize cooldown: {remaining}s", 3));
+                    return;
+                }
             }
 
             if (_todayChatEntries.Count == 0)
@@ -629,7 +652,14 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         _closeButton.scale = 3.5f * _closeButtonHoverScale;
         _closeButton.draw(b);
 
-        // 9. 浮动提示
+        // 9. 浮动提示（仅在按钮可用时响应 hover）
+        if (string.IsNullOrEmpty(_hoveredTooltip) && _currentTab == 0)
+        {
+            if (_leftArrowRect.Contains(mx, my) && CanPageLeft)
+                _hoveredTooltip = I18n.Memory.PrevDay();
+            else if (_rightArrowRect.Contains(mx, my) && CanPageRight)
+                _hoveredTooltip = I18n.Memory.NextDay();
+        }
         if (!string.IsNullOrEmpty(_hoveredTooltip))
             IClickableMenu.drawHoverText(b, _hoveredTooltip, Game1.smallFont);
 
@@ -641,10 +671,10 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         int tabWidth = (width - LeftPadding - RightPadding) / 4;
         string[] labels =
         {
-            I18n.IsChinese ? "今日对话" : "Today",
-            I18n.IsChinese ? "每日" : "Daily",
-            I18n.IsChinese ? "每周" : "Weekly",
-            I18n.IsChinese ? "编年" : "Chronicle"
+            I18n.Memory.TabChats(),
+            I18n.Memory.TabImpressions(),
+            I18n.Memory.TabWeekly(),
+            I18n.Memory.TabChronicle()
         };
 
         for (int t = 0; t < 4; t++)
@@ -675,7 +705,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     {
         // 顶部日期指示
         string dateText = _daysAgo == 0
-            ? (I18n.IsChinese ? $"今天 - {MemoryManager.FormatGameDateLabel(viewDate)}" : $"Today - {MemoryManager.FormatGameDateLabel(viewDate)}")
+            ? (I18n.IsChinese ? $"今天 - {MemoryManager.FormatGameDateLabel(viewDate)}" : $"Today: {MemoryManager.FormatGameDateLabel(viewDate)}")
             : MemoryManager.FormatGameDateLabel(viewDate);
         var dateSize = Game1.smallFont.MeasureString(dateText);
         b.DrawString(Game1.smallFont, dateText,
@@ -795,11 +825,8 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         // 1. 左右翻页箭头（Tab 0 独有）
         if (_currentTab == 0)
         {
-            bool canPageLeft = _daysAgo < MaxHistoryDays - 1;
-            bool canPageRight = _daysAgo > 0;
-
-            DrawArrowButton(b, _leftArrowRect, isLeft: true, enabled: canPageLeft, mx, my);
-            DrawArrowButton(b, _rightArrowRect, isLeft: false, enabled: canPageRight, mx, my);
+            DrawArrowButton(b, _leftArrowRect, isLeft: true, enabled: CanPageLeft, mx, my);
+            DrawArrowButton(b, _rightArrowRect, isLeft: false, enabled: CanPageRight, mx, my);
         }
 
         // 2. 居中动作按钮（Tab 0/1/2）

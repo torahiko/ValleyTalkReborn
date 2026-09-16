@@ -194,5 +194,14 @@
   "Memory.ArchiveRestoreDuplicate": "An identical memory already exists in the active list; not restored.",
   "Memory.ArchiveRestoreNotFound": "This entry no longer exists (may have been rotated out). List refreshed.",
   "Memory.ArchiveRuleHint": "Older entries are automatically replaced past {{max}} items.",
-  "Memory.ArchiveEndangeredTag": "[Expiring]"
+  "Memory.ArchiveEndangeredTag": "[Expiring]",
+  "Memory.TabChats": "Chats",
+  "Memory.TabImpressions": "Impressions",
+  "Memory.TabWeekly": "Weekly",
+  "Memory.TabChronicle": "Chronicle",
+  "Memory.DistillThisPage": "Distill This Page",
+  "Memory.ConsolidateToWeekly": "Consolidate ({{count}})",
+  "Memory.ElevateToChronicle": "Elevate ({{count}})",
+  "Memory.PrevDay": "Previous Day",
+  "Memory.NextDay": "Next Day"
 }
