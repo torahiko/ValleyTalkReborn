@@ -529,7 +529,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
             _lastSummarizeTickMs = now;
             Game1.playSound("bigSelect");
-            Game1.activeClickableMenu = new MemoryDistillMenu(_npcName, this, MemoryTier.Daily, dateFilter: ViewDate);
+            Game1.activeClickableMenu = new MemoryDistillMenu(_npcName, this, MemoryTier.Daily, dateFilter: ViewDate, timelineMode: true);
         }
         else if (_currentTab == 1 || _currentTab == 2)
         {
@@ -550,7 +550,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 CancellationToken.None);
 
             Game1.playSound("bigSelect");
-            Game1.activeClickableMenu = new MemoryDistillMenu(_npcName, this, targetTier, selectedEntries, condenseTask);
+            Game1.activeClickableMenu = new MemoryDistillMenu(_npcName, this, targetTier, selectedEntries, condenseTask, timelineMode: true);
         }
     }
 

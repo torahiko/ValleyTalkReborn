@@ -67,6 +67,9 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
     private float _closeButtonHoverScale = 1f;
     private string _hoveredTooltip = string.Empty;
 
+    // T6：双模式开关。false = Manual 事实池（默认），true = Timeline 时间线；时间线写入仅可显式 opt-in
+    private readonly bool _timelineMode;
+
     public MemoryDistillMenu(string npcName,
                              IClickableMenu returnMenu,
                              MemoryTier targetTier = MemoryTier.Daily,
@@ -74,7 +77,8 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
                              Task<MemoryExtractResult> customTask = null,
                              StardewTime? dateFilter = null,
                              List<string> cachedCandidates = null,
-                             HashSet<string> usedCandidates = null)
+                             HashSet<string> usedCandidates = null,
+                             bool timelineMode = false)
     {
         _npcName = npcName;
         _returnMenu = returnMenu;
@@ -82,6 +86,7 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
         _targetTier = targetTier;
         _sourceEntriesToRemove = sourceEntriesToRemove ?? new List<MemoryEntry>();
         _dateFilter = dateFilter;
+        _timelineMode = timelineMode;
 
         if (usedCandidates != null)
             _usedCandidates = usedCandidates;
@@ -100,12 +105,13 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
         }
         else
         {
-            List<string> existing = MemoryManager.Instance.GetTimelineMemories(_npcName, _targetTier)
-                .Select(m => m.Content)
-                .Take(10)
-                .ToList();
+            // T6：Manual 模式只取 Manual 池；Timeline 模式取当前 tier 时间线
+            List<string> existing = _timelineMode
+                ? MemoryManager.Instance.GetTimelineMemories(_npcName, _targetTier).Select(m => m.Content).Take(10).ToList()
+                : MemoryManager.Instance.GetMemories(_npcName).Where(m => m.Source == "Manual").Select(m => m.Content).Take(10).ToList();
 
-            _task = MemoryExtractService.ExtractAsync(_npcName, _npcDisplayName, existing, _dateFilter, _cts.Token);
+            _task = MemoryExtractService.ExtractAsync(_npcName, _npcDisplayName, existing,
+                _timelineMode ? _dateFilter : null, _cts.Token);
             _state = DistillState.Loading;
         }
 
@@ -223,7 +229,11 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             if (_editButtons[i].containsPoint(x, y))
             {
                 Game1.playSound("bigSelect");
-                Game1.activeClickableMenu = new AddMemoryInputMenu(_npcName, this, _rightEntries[idx], 0);
+                // T6：Timeline 模式走 EditTimelineMemory（修复 T3 遗留的 NotFound）；Manual 模式走既有胶囊路径
+                Game1.activeClickableMenu = _timelineMode
+                    ? new AddMemoryInputMenu(_npcName, this, _rightEntries[idx], 0,
+                        customSubmit: text => MemoryManager.Instance.EditTimelineMemory(_npcName, _rightEntries[idx].Id, text))
+                    : new AddMemoryInputMenu(_npcName, this, _rightEntries[idx], 0);
                 return;
             }
         }
@@ -352,9 +362,11 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             new Vector2(_rightColX, _headerY), Game1.textColor);
 
         // 容量计数
-        string cap = $"{_tierCount} / {MemoryManager.GetTierCapacity(_targetTier)}";
-        Vector2 capSize = Game1.smallFont.MeasureString(cap);
-        b.DrawString(Game1.smallFont, cap,
+        // T6：Timeline 模式显示 tier 容量；Manual 模式显示 Manual 池上限
+        int cap = _timelineMode ? MemoryManager.GetTierCapacity(_targetTier) : MemoryManager.MaxMemoriesPerNpc;
+        string capText = $"{_tierCount} / {cap}";
+        Vector2 capSize = Game1.smallFont.MeasureString(capText);
+        b.DrawString(Game1.smallFont, capText,
             new Vector2(_rightColX + _colW - capSize.X, _headerY), Color.Gray);
 
         // 中间分割线（贯通上下）
@@ -362,7 +374,7 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
         b.Draw(Game1.staminaRect, new Rectangle(_dividerX, _headerY, 2, dividerHeight), Color.Gray * 0.4f);
 
         // 渲染左栏候选
-        bool full = _tierCount >= MemoryManager.GetTierCapacity(_targetTier);
+        bool full = _tierCount >= (_timelineMode ? MemoryManager.GetTierCapacity(_targetTier) : MemoryManager.MaxMemoriesPerNpc);
         int visibleLeft = Math.Min(_visibleRows, Math.Max(0, _candidates.Count - _leftIndex));
         float maxLeftTextWidth = _colW - (PlusSize + 14);
 
@@ -442,8 +454,13 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
 
     public void RefreshEntries()
     {
-        _rightEntries = MemoryManager.Instance.GetTimelineMemories(_npcName, _targetTier);
-        _tierCount = _rightEntries.Count;
+        // T6：Manual 模式读事实池；Timeline 模式读当前 tier 时间线
+        _rightEntries = _timelineMode
+            ? MemoryManager.Instance.GetTimelineMemories(_npcName, _targetTier)
+            : MemoryManager.Instance.GetMemories(_npcName);
+        _tierCount = _timelineMode
+            ? _rightEntries.Count
+            : MemoryManager.Instance.GetManualMemoryCount(_npcName);
         _rightIndex = 0;
         _leftIndex = 0;
         RebuildButtons();
@@ -573,15 +590,22 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
         }
 
         // v2：dateLabel/createdDay 以入库时所在页面日期为准（dateFilter 有值 → 页面日期；否则今日）
-        string dateLabel = _dateFilter.HasValue
-            ? MemoryManager.FormatGameDateLabel(_dateFilter.Value)
-            : MemoryManager.FormatCurrentGameDateLabel();
-        int createdDay = _dateFilter.HasValue
-            ? MemoryManager.StardewTimeToGameDay(_dateFilter.Value)
-            : -1;
+        // T6：Manual 模式不盖章（AddMemory 无 tier/日期语义）
+        string dateLabel = null;
+        int createdDay = -1;
+        if (_timelineMode)
+        {
+            dateLabel = _dateFilter.HasValue
+                ? MemoryManager.FormatGameDateLabel(_dateFilter.Value)
+                : MemoryManager.FormatCurrentGameDateLabel();
+            createdDay = _dateFilter.HasValue
+                ? MemoryManager.StardewTimeToGameDay(_dateFilter.Value)
+                : -1;
+        }
 
-        MemoryOperationResult result = MemoryManager.Instance.AddTimelineMemory(
-            _npcName, c, _targetTier, dateLabel, createdDay);
+        MemoryOperationResult result = _timelineMode
+            ? MemoryManager.Instance.AddTimelineMemory(_npcName, c, _targetTier, dateLabel, createdDay)
+            : MemoryManager.Instance.AddMemory(_npcName, c, MemoryCategory.Fact);
 
         switch (result)
         {
@@ -589,7 +613,8 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
                 _usedCandidates.Add(c);
                 Game1.playSound("coin");
                 // v2：浓缩确认后直接删除源碎片（不再归档）；CapacityFull/Duplicate 不动源数据
-                if (_sourceEntriesToRemove.Count > 0)
+                // T6：源碎片语义仅属于 Timeline 模式（Manual 恒为空，双保险）
+                if (_timelineMode && _sourceEntriesToRemove.Count > 0)
                 {
                     MemoryManager.Instance.RemoveTimelineMemories(
                         _npcName, _sourceEntriesToRemove.Select(m => m.Id));
@@ -606,7 +631,8 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
 
             case MemoryOperationResult.CapacityFull:
                 Game1.playSound("cancel");
-                Game1.addHUDMessage(new HUDMessage(I18n.Memory.AddFailedFull(MemoryManager.GetTierCapacity(_targetTier)), 3));
+                Game1.addHUDMessage(new HUDMessage(I18n.Memory.AddFailedFull(
+                    _timelineMode ? MemoryManager.GetTierCapacity(_targetTier) : MemoryManager.MaxMemoriesPerNpc), 3));
                 break;
 
             case MemoryOperationResult.TooLong:
@@ -627,7 +653,11 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             I18n.Memory.DeleteConfirm(entry.Content),
             _ =>
             {
-                MemoryManager.Instance.RemoveTimelineMemory(_npcName, entry.Id);
+                // T6：双模式分流删除
+                if (_timelineMode)
+                    MemoryManager.Instance.RemoveTimelineMemory(_npcName, entry.Id);
+                else
+                    MemoryManager.Instance.RemoveMemory(_npcName, entry.Id);
                 Game1.playSound("trashcan");
                 RefreshEntries();
                 Game1.activeClickableMenu = this;

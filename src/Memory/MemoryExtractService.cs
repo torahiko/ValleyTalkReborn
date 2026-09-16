@@ -245,8 +245,9 @@ internal static class MemoryExtractService
     }
 
     /// <summary>
-    /// 从角色 Bios 的 AmbientBarkPrompt 组装两行式 persona 切片（定调用，禁止复述）。
-    /// 无卡 / Missing / Bark 空 → 空串。红线：只读 VoiceAndAttitude / ObservationLenses 两个短字段。
+    /// 从角色 Bios 的 BehavioralRules.Description 正则提取 VOICE/SPEECH PATTERNS/BIOGRAPHY 三段，
+    /// 叠加 ProgressStateResolver 给出的当前阶段文本，组装定调短切片。
+    /// 无卡 / Missing / BehavioralRules 缺失 → 空串。不读 Bio.Biography 独立字段（单一数据源）。
     /// </summary>
     internal static string BuildPersonaSlice(string npcName)
     {
@@ -259,43 +260,15 @@ internal static class MemoryExtractService
         var bio = character.Bio;
         if (bio == null || bio.Missing) return "";
 
-        var bark = bio.AmbientBarkPrompt;
-        if (bark == null || bark.IsEmpty) return "";
+        string desc = "";
+        if (bio.Traits.TryGetValue("BehavioralRules", out var rule) && !string.IsNullOrWhiteSpace(rule?.Description))
+            desc = rule.Description;
 
-        bool isZh = I18n.IsChinese;
-        var sb = new StringBuilder();
+        if (string.IsNullOrWhiteSpace(desc)) return "";
 
-        // voice 段（SmartTruncate 60）
-        string voice = "";
-        if (!string.IsNullOrWhiteSpace(bark.VoiceAndAttitude))
-        {
-            voice = MemoryManager.SmartTruncate(bark.VoiceAndAttitude.Trim(), 60);
-            if (!string.IsNullOrEmpty(voice))
-                sb.Append("[VOICE] ").AppendLine(voice);
-        }
+        var stageText = ProgressStateResolver.ResolveActiveEntry(npc, bio.ProgressStates)?.Text ?? "";
 
-        // lenses 段：按 '\n' 拆分 → Trim → 取前 3 非空 → 连接 → SmartTruncate(60)
-        if (!string.IsNullOrWhiteSpace(bark.ObservationLenses))
-        {
-            var lenses = bark.ObservationLenses
-                .Split('\n')
-                .Select(l => l.Trim())
-                .Where(l => !string.IsNullOrEmpty(l))
-                .Take(3)
-                .ToList();
-            if (lenses.Count > 0)
-            {
-                string joined = MemoryManager.SmartTruncate(
-                    string.Join(isZh ? "；" : "; ", lenses), 60);
-                if (!string.IsNullOrEmpty(joined))
-                {
-                    if (sb.Length > 0) sb.AppendLine();
-                    sb.Append("[FOCUS] ").Append(joined);
-                }
-            }
-        }
-
-        return sb.ToString();
+        return PersonaVoiceHelper.ExtractVoiceSnippet(desc, stageText);
     }
 
     internal static async Task<MemoryExtractResult> ExtractAsync(

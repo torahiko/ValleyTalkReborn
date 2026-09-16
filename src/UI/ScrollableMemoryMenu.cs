@@ -478,7 +478,7 @@ namespace ValleytalkReborn
             }
 
             Game1.playSound("bigSelect");
-            Game1.activeClickableMenu = new TimelineChronicleMenu(_npcName, this);
+            Game1.activeClickableMenu = new MemoryDistillMenu(_npcName, this);
         }
 
         private void ConfirmDeleteMemory(MemoryEntry entry)
