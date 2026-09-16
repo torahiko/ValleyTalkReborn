@@ -377,7 +377,7 @@ namespace ValleytalkReborn
 
             Game1.playSound("bigSelect");
             ReleaseKeyboard();
-            Game1.activeClickableMenu = new TimelineChronicleMenu(_currentNpcName, this);
+            Game1.activeClickableMenu = new MemoryDistillMenu(_currentNpcName, this);
         }
 
         private void OpenEditMemory(MemoryEntry e)
