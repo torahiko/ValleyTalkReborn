@@ -250,9 +250,9 @@ internal static class MemoryExtractService
     }
 
     /// <summary>
-    /// 从角色 Bios 的 BehavioralRules.Description 正则提取 VOICE/SPEECH PATTERNS/BIOGRAPHY 三段，
-    /// 叠加 ProgressStateResolver 给出的当前阶段文本，组装定调短切片。
-    /// 无卡 / Missing / BehavioralRules 缺失 → 空串。不读 Bio.Biography 独立字段（单一数据源）。
+    /// 从角色 Bios 的 BehavioralRules.Description 提取 [VOICE]/[SPEECH]，叠加 bio.Biography 独立字段供 [WHO]，
+    /// 再叠加 ProgressStateResolver 给出的当前阶段文本供 [STAGE]，组装定调短切片。
+    /// 无卡 / Missing / BehavioralRules 缺失 → 空串。Biography 独立字段供 [WHO]（用户裁决）；BehavioralRules 供 [VOICE]/[SPEECH]。
     /// </summary>
     internal static string BuildPersonaSlice(string npcName)
     {
@@ -273,7 +273,7 @@ internal static class MemoryExtractService
 
         var stageText = ProgressStateResolver.ResolveActiveEntry(npc, bio.ProgressStates)?.Text ?? "";
 
-        return PersonaVoiceHelper.ExtractVoiceSnippet(desc, stageText);
+        return PersonaVoiceHelper.ExtractVoiceSnippet(desc, bio.Biography, stageText);
     }
 
     internal static async Task<MemoryExtractResult> ExtractAsync(

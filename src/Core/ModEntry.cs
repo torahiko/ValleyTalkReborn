@@ -668,6 +668,16 @@ namespace ValleytalkReborn
                 return;
             }
 
+            if (e.Button == Config.OpenTimelineMenuKey
+                && Context.IsPlayerFree
+                && Game1.activeClickableMenu == null
+                && Game1.keyboardDispatcher?.Subscriber is not DialogueTextInputBox)
+            {
+                Helper.Input.Suppress(e.Button);
+                OpenTimelineChronicle();
+                return;
+            }
+
             if (Game1.keyboardDispatcher?.Subscriber is DialogueTextInputBox)
             {
                 bool isCtrlPressed =
@@ -732,6 +742,20 @@ namespace ValleytalkReborn
             Game1.playSound("bigSelect");
             Game1.activeClickableMenu = new IntegratedHubMenu(npcName, targetTab);
             SMonitor.Log($"[ModEntry] Hub opened (tab={targetTab}, npc={npcName ?? "none"})", LogLevel.Trace);
+        }
+
+        /// <summary>
+        /// 唤起时间线手账面板（FEAT-MEM-300-T4）。
+        /// NPC 定位完全由 TimelineChronicleMenu 构造函数内的 GetMostRecentChattedNpc()
+        /// 以全时间戳评分（年/季/日/时刻）自动完成，无需外部传参。
+        /// </summary>
+        internal static void OpenTimelineChronicle()
+        {
+            if (!Context.IsWorldReady || Game1.activeClickableMenu != null) return;
+
+            Game1.playSound("bigSelect");
+            Game1.activeClickableMenu = new TimelineChronicleMenu();
+            SMonitor.Log("[ModEntry] Timeline chronicle opened (auto-locked to most recent chatted NPC)", LogLevel.Trace);
         }
 
         private void OnDismissFollowerButtonPressed(object sender, ButtonPressedEventArgs e)

@@ -82,6 +82,8 @@
   "configDismissFollowerKeyTooltip": "Key used to stop the NPC currently following you, whether they're just tagging along or accompanying you on a date.",
   "configOpenHubMenuKey": "Open Management Hub",
   "configOpenHubMenuKeyTooltip": "Press to open the management hub (NPC memories, world memories, farmer profile, advanced settings). It opens on the NPC you spoke with most recently. Avoid keys already used by the game or other mods.",
+  "configOpenTimelineKey": "Open Timeline Chronicle",
+  "configOpenTimelineKeyTooltip": "Press to open the timeline chronicle (day-by-day chat history / layered memories). It automatically locks onto the NPC you chatted with most recently. Avoid keys already used by the game or other mods.",
   "Memory.AutoPrefix": "[Auto] ",
   "Memory.CallsignPrefix": "Call me: ",
   "Memory.CallsignUnset": "(Click to set)",

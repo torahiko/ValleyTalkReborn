@@ -13,7 +13,8 @@ namespace ValleytalkReborn;
 /// <summary>
 /// 时间线手账面板（FEAT-MEM-300-T4）：
 /// Tab0 按日翻页的对话记录查看（自适应气泡宽度、无截断多行展开）；
-/// Tab1-3 分层记忆（Daily/Weekly/Chronicle）自适应卡片勾选与浓缩。
+/// Tab1-3 分层记忆（Daily/Weekly/Chronicle）自适应卡片勾选与浓缩；
+/// 底栏支持动态上拉切换 NPC，并自动锁定最新聊天的 NPC。
 /// </summary>
 internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 {
@@ -22,7 +23,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     private const int LeftPadding = 48;
     private const int RightPadding = 48;
     private const int ItemSpacing = 10;
-    private const float TextFontScale = 0.82f; // 文本渲染缩放，兼顾清晰度与排版容量
+    private const float TextFontScale = 0.82f;
 
     // 原版 Checkbox 贴图切片 (mouseCursors)
     private const int CheckboxUncheckedSourceX = 227;
@@ -34,18 +35,18 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     // 原版图标贴图切片 (mouseCursors)
     private static readonly Rectangle LeftArrowSource = new(352, 495, 12, 11);
     private static readonly Rectangle RightArrowSource = new(365, 495, 12, 11);
-    private static readonly Rectangle DeleteIconSource = new(269, 471, 15, 15); // 原版红叉
-    private static readonly Rectangle EditIconSource = new(274, 412, 11, 11);   // 原版编辑铅笔
+    private static readonly Rectangle DeleteIconSource = new(269, 471, 15, 15);
+    private static readonly Rectangle EditIconSource = new(274, 412, 11, 11);
 
     private const int MaxHistoryDays = 7;
     private const int CooldownSeconds = 30;
     private const int MinCondenseSelection = 2;
 
-    // 总结冷却（初始为 0 表示尚未触发过总结）
     private static long _lastSummarizeTickMs = 0;
 
-    private readonly string _npcName;
-    private readonly string _npcDisplayName;
+    // 动态 NPC 状态
+    private string _npcName;
+    private string _npcDisplayName;
     private readonly IClickableMenu _returnMenu;
     private readonly IClickableMenu _ownerMenu;
 
@@ -64,16 +65,18 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     private int _tabBarY;
     private Rectangle _leftArrowRect;
     private Rectangle _rightArrowRect;
-    private Rectangle _actionButtonRect; // 底部居中按钮
+    private Rectangle _actionButtonRect;
+
+    // 底栏 NPC 上拉切换器
+    private Rectangle _npcDropdownRect;
+    private readonly DropupList _npcDropdown;
+
     private ClickableTextureComponent _closeButton;
     private float _closeButtonHoverScale = 1f;
     private string _hoveredTooltip = string.Empty;
 
     private StardewTime ViewDate => new StardewTime(Game1.Date, Game1.timeOfDay).AddDays(-_daysAgo);
 
-    /// <summary>
-    /// 是否允许向前翻页：受最大天数限制，且不能翻到第 1 年春 1 日之前（防止出现第 0 年）
-    /// </summary>
     private bool CanPageLeft
     {
         get
@@ -84,20 +87,139 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         }
     }
 
-    /// <summary>
-    /// 是否允许向后翻页：不能翻到今天之后
-    /// </summary>
     private bool CanPageRight => _daysAgo > 0;
 
-    public TimelineChronicleMenu(string npcName, IClickableMenu returnMenu, IClickableMenu ownerMenu = null)
+    public TimelineChronicleMenu(string npcName = null, IClickableMenu returnMenu = null, IClickableMenu ownerMenu = null, bool autoLockLatest = true)
     {
-        _npcName = npcName;
         _returnMenu = returnMenu;
-        _ownerMenu = ownerMenu;
-        _npcDisplayName = Game1.getCharacterFromName(npcName)?.displayName ?? npcName;
+        _ownerMenu = ownerMenu ?? returnMenu;
+
+        // 自动锁定到最新聊天的 NPC（若外部显式禁用或无聊天记录，则回退至传入的 npcName 或首个好友）
+        string latestNpc = GetMostRecentChattedNpc();
+        if (autoLockLatest && !string.IsNullOrWhiteSpace(latestNpc))
+            _npcName = latestNpc;
+        else
+            _npcName = !string.IsNullOrWhiteSpace(npcName) ? npcName : latestNpc;
+
+        if (string.IsNullOrWhiteSpace(_npcName))
+        {
+            _npcName = Game1.player?.friendshipData != null
+                ? Game1.player.friendshipData.Keys.FirstOrDefault() ?? ""
+                : "";
+        }
+
+        _npcDisplayName = Game1.getCharacterFromName(_npcName)?.displayName ?? _npcName;
+
+        _npcDropdown = new DropupList(Rectangle.Empty)
+        {
+            HeaderPrefix = I18n.IsChinese ? "角色: " : "NPC: ",
+            OnItemSelected = name => SelectNpc(name)
+        };
 
         UpdateLayout();
+        BuildNpcDropdownItems();
         RefreshEntries();
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // NPC 切换与定位逻辑
+    // ──────────────────────────────────────────────────────────────
+
+    private void SelectNpc(string newNpcName)
+    {
+        if (string.Equals(_npcName, newNpcName, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        _npcName = newNpcName;
+        _npcDisplayName = Game1.getCharacterFromName(newNpcName)?.displayName ?? newNpcName;
+        _daysAgo = 0;
+        _startIndex = 0;
+        _selectedEntryIds.Clear();
+
+        Game1.playSound("bigSelect");
+        _npcDropdown.SetSelectedId(_npcName);
+        UpdateActionButtonLayout();
+        RefreshEntries(); // 切换角色后自动按当前 Tab 刷新
+    }
+
+    private static string GetMostRecentChattedNpc()
+    {
+        string bestNpc = null;
+        long maxScore = -1;
+
+        var candidateNpcs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (Game1.player?.friendshipData != null)
+        {
+            foreach (var k in Game1.player.friendshipData.Keys)
+                candidateNpcs.Add(k);
+        }
+
+        string mgrRecent = DialogueHistoryManager.Instance.GetMostRecentNpc();
+        if (!string.IsNullOrEmpty(mgrRecent))
+            candidateNpcs.Add(mgrRecent);
+
+        foreach (var name in candidateNpcs)
+        {
+            var history = DialogueHistoryManager.Instance.GetHistory(name);
+            if (history == null || history.Count == 0) continue;
+
+            var last = history[^1];
+            long score = GetTimestampScore(last.Timestamp);
+            if (score > maxScore)
+            {
+                maxScore = score;
+                bestNpc = name;
+            }
+        }
+
+        return bestNpc ?? mgrRecent ?? candidateNpcs.FirstOrDefault() ?? "";
+    }
+
+    private static long GetTimestampScore(StardewTime t)
+    {
+        return ((long)t.Year * 112L + (int)t.Season * 28L + t.DayOfMonth) * 10000L + t.TimeOfDay;
+    }
+
+    private void BuildNpcDropdownItems()
+    {
+        var items = new List<(string Id, string Label)>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var candidateScores = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+
+        if (Game1.player?.friendshipData != null)
+        {
+            foreach (var k in Game1.player.friendshipData.Keys)
+                candidateScores[k] = -1;
+        }
+
+        string mgrRecent = DialogueHistoryManager.Instance.GetMostRecentNpc();
+        if (!string.IsNullOrEmpty(mgrRecent) && !candidateScores.ContainsKey(mgrRecent))
+            candidateScores[mgrRecent] = -1;
+
+        if (!string.IsNullOrWhiteSpace(_npcName) && !candidateScores.ContainsKey(_npcName))
+            candidateScores[_npcName] = -1;
+
+        foreach (var k in candidateScores.Keys.ToList())
+        {
+            var history = DialogueHistoryManager.Instance.GetHistory(k);
+            if (history != null && history.Count > 0)
+                candidateScores[k] = GetTimestampScore(history[^1].Timestamp);
+        }
+
+        var sortedNpcs = candidateScores.Keys
+            .OrderByDescending(k => candidateScores[k])
+            .ThenBy(k => Game1.getCharacterFromName(k)?.displayName ?? k, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        foreach (var k in sortedNpcs)
+        {
+            if (seen.Contains(k)) continue;
+            string label = Game1.getCharacterFromName(k)?.displayName ?? k;
+            items.Add((k, label));
+            seen.Add(k);
+        }
+
+        _npcDropdown.SetItems(items, _npcName);
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -147,9 +269,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         _ => MemoryTier.Chronicle
     };
 
-    /// <summary>
-    /// 对当前 Tab 的全部文本进行自适应折行与宽高预测量（无任何文字截断）
-    /// </summary>
     private void MeasureAllEntries()
     {
         _measuredEntries.Clear();
@@ -208,13 +327,12 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 var entry = _tierEntries[i];
                 string dateLabel = string.IsNullOrEmpty(entry.DateLabel) ? "--" : entry.DateLabel;
 
-                // 预留卡片内部右上角编辑/删除按钮空间
                 int maxTextPixelWidth = maxCardWidth - padX * 2;
                 string wrapped = Game1.parseText(entry.Content ?? string.Empty, Game1.dialogueFont, (int)(maxTextPixelWidth / TextFontScale));
                 Vector2 textSize = Game1.dialogueFont.MeasureString(wrapped) * TextFontScale;
                 Vector2 dateSize = Game1.smallFont.MeasureString(dateLabel);
 
-                float headerWidthNeeded = dateSize.X + 80; // 日期 + 按钮空间
+                float headerWidthNeeded = dateSize.X + 80;
                 float contentInnerWidth = Math.Max(textSize.X, headerWidthNeeded);
                 int cardWidth = (int)Math.Clamp(contentInnerWidth + padX * 2, minCardWidth, maxCardWidth);
                 int cardHeight = (int)(Math.Max(dateSize.Y, 28) + 6 + textSize.Y + padY * 2);
@@ -233,9 +351,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         }
     }
 
-    /// <summary>
-    /// 根据当前起始索引计算屏幕实际可见区域内的项布局矩形
-    /// </summary>
     private void RebuildVisibleLayout()
     {
         _visibleLayouts.Clear();
@@ -246,7 +361,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         {
             var m = _measuredEntries[i];
             if (currentY + m.Height > _contentTopY + visibleAreaHeight && _visibleLayouts.Count > 0)
-                break; // 空间不足以容纳下一项完整内容时截断渲染，保持视觉美观且不遮挡底栏
+                break;
 
             var layout = new VisibleEntryLayout
             {
@@ -259,20 +374,18 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
             if (_currentTab == 0)
             {
-                // Tab 0 对话气泡水平定位
                 int bubbleX;
                 if (m.SpeakerType == SpeakerType.Player)
-                    bubbleX = xPositionOnScreen + width - RightPadding - m.Width; // 农夫靠右
+                    bubbleX = xPositionOnScreen + width - RightPadding - m.Width;
                 else if (m.SpeakerType == SpeakerType.System)
-                    bubbleX = xPositionOnScreen + (width - m.Width) / 2;          // 场景居中
+                    bubbleX = xPositionOnScreen + (width - m.Width) / 2;
                 else
-                    bubbleX = xPositionOnScreen + LeftPadding;                   // NPC 靠左
+                    bubbleX = xPositionOnScreen + LeftPadding;
 
                 layout.BoxRect = new Rectangle(bubbleX, currentY, m.Width, m.Height);
             }
             else
             {
-                // Tab 1-3 记忆卡片水平定位
                 bool hasCheckbox = _currentTab == 1 || _currentTab == 2;
                 int startX = xPositionOnScreen + LeftPadding;
 
@@ -285,7 +398,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
                 layout.BoxRect = new Rectangle(startX, currentY, m.Width, m.Height);
 
-                // 编辑与删除按钮定位于卡片内右上角
                 int btnSize = 28;
                 int btnY = currentY + m.InnerPadding.Y - 2;
                 layout.DeleteRect = new Rectangle(startX + m.Width - m.InnerPadding.X - btnSize, btnY, btnSize, btnSize);
@@ -341,7 +453,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     }
 
     // ──────────────────────────────────────────────────────────────
-    // 布局与尺寸
+    // 布局计算
     // ──────────────────────────────────────────────────────────────
 
     private void UpdateLayout()
@@ -367,7 +479,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         _tabBarY = yPositionOnScreen + 60;
         _contentTopY = _tabBarY + TabBarHeight + 28;
 
-        // 两侧固定翻页箭头
         int btnY = yPositionOnScreen + height - BottomBarHeight - 12;
         _leftArrowRect = new Rectangle(xPositionOnScreen + LeftPadding, btnY, 44, BottomBarHeight);
         _rightArrowRect = new Rectangle(xPositionOnScreen + width - RightPadding - 44, btnY, 44, BottomBarHeight);
@@ -375,24 +486,32 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         UpdateActionButtonLayout();
     }
 
-    /// <summary>
-    /// 居中动作按钮：计算多语言宽度并水平绝对居中
-    /// </summary>
     private void UpdateActionButtonLayout()
     {
-        if (_currentTab < 0 || _currentTab > 2)
+        int btnY = yPositionOnScreen + height - BottomBarHeight - 12;
+        const int dropdownWidth = 190;
+        const int gap = 12;
+
+        if (_currentTab >= 0 && _currentTab <= 2)
+        {
+            string label = GetActionButtonLabel();
+            int textWidth = (int)Game1.smallFont.MeasureString(label).X;
+            int btnWidth = Math.Max(200, textWidth + 48);
+
+            int totalWidth = dropdownWidth + gap + btnWidth;
+            int startX = xPositionOnScreen + (width - totalWidth) / 2;
+
+            _npcDropdownRect = new Rectangle(startX, btnY, dropdownWidth, BottomBarHeight);
+            _actionButtonRect = new Rectangle(startX + dropdownWidth + gap, btnY, btnWidth, BottomBarHeight);
+        }
+        else
         {
             _actionButtonRect = Rectangle.Empty;
-            return;
+            int startX = xPositionOnScreen + (width - dropdownWidth) / 2;
+            _npcDropdownRect = new Rectangle(startX, btnY, dropdownWidth, BottomBarHeight);
         }
 
-        string label = GetActionButtonLabel();
-        int textWidth = (int)Game1.smallFont.MeasureString(label).X;
-        int btnWidth = Math.Max(220, textWidth + 56);
-        int btnY = yPositionOnScreen + height - BottomBarHeight - 12;
-        int btnX = xPositionOnScreen + (width - btnWidth) / 2;
-
-        _actionButtonRect = new Rectangle(btnX, btnY, btnWidth, BottomBarHeight);
+        _npcDropdown?.SetHeaderBounds(_npcDropdownRect);
     }
 
     private string GetActionButtonLabel() => _currentTab switch
@@ -407,6 +526,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     {
         base.gameWindowSizeChanged(oldBounds, newBounds);
         UpdateLayout();
+        BuildNpcDropdownItems();
         RefreshEntries();
     }
 
@@ -416,6 +536,10 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
     public override void receiveLeftClick(int x, int y, bool playSound = true)
     {
+        // 优先拦截上拉栏点击
+        if (_npcDropdown != null && _npcDropdown.ReceiveLeftClick(x, y))
+            return;
+
         if (_closeButton.containsPoint(x, y))
         {
             Close();
@@ -433,6 +557,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 {
                     _currentTab = t;
                     Game1.playSound("smallSelect");
+                    UpdateActionButtonLayout();
                     RefreshEntries();
                 }
                 return;
@@ -446,14 +571,14 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
             if (_rightArrowRect.Contains(x, y) && CanPageRight) { PageRight(); return; }
         }
 
-        // 居中动作按钮
+        // 动作按钮
         if (_currentTab >= 0 && _currentTab <= 2 && _actionButtonRect.Contains(x, y))
         {
             HandleActionButton();
             return;
         }
 
-        // 点击记忆卡片、勾选框或行级按钮（Tab 1/2/3）
+        // 列表卡片与行级按钮
         if (_currentTab >= 1 && _currentTab <= 3)
         {
             foreach (var item in _visibleLayouts)
@@ -461,14 +586,12 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 var entry = _tierEntries.FirstOrDefault(e => e.Id == item.Measured.Id);
                 if (entry == null) continue;
 
-                // 删除
                 if (item.DeleteRect.Contains(x, y))
                 {
                     ConfirmDelete(entry);
                     return;
                 }
 
-                // 编辑
                 if (item.EditRect.Contains(x, y))
                 {
                     Game1.activeClickableMenu = new AddMemoryInputMenu(
@@ -477,7 +600,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                     return;
                 }
 
-                // 勾选（仅 Tab 1/2）
                 if (_currentTab == 1 || _currentTab == 2)
                 {
                     if (item.CheckboxRect.Contains(x, y) || item.BoxRect.Contains(x, y))
@@ -529,7 +651,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         {
             long now = Environment.TickCount64;
 
-            // 仅在之前触发过总结时才做冷却校验
             if (_lastSummarizeTickMs > 0)
             {
                 long elapsedMs = now - _lastSummarizeTickMs;
@@ -579,6 +700,12 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
     public override void receiveScrollWheelAction(int direction)
     {
+        if (_npcDropdown != null && _npcDropdown.IsOpen)
+        {
+            _npcDropdown.ReceiveScrollWheel(direction);
+            return;
+        }
+
         int maxStart = CalculateMaxStartIndex();
         if (maxStart <= 0) return;
 
@@ -598,6 +725,11 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     {
         if (key == Keys.Escape)
         {
+            if (_npcDropdown != null && _npcDropdown.IsOpen)
+            {
+                _npcDropdown.Close();
+                return;
+            }
             Close();
             return;
         }
@@ -616,44 +748,38 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         _hoveredTooltip = string.Empty;
         StardewTime viewDate = ViewDate;
 
-        // 1. 底层背景与遮罩
         _returnMenu?.draw(b);
         b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.4f);
 
-        // 2. 双重外框与主对话底框
         IClickableMenu.drawTextureBox(b, xPositionOnScreen - 16, yPositionOnScreen - 16, width + 32, height + 32, Color.White);
         IClickableMenu.drawTextureBox(b, xPositionOnScreen - 8, yPositionOnScreen - 8, width + 16, height + 16, Color.White);
         Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
 
-        // 3. 标题（使用通用连字符 '-' 避免英文环境在中点 '·' 缺失抛出异常）
+        // 标题动态联动当前 NPC
         string title = I18n.IsChinese ? $"时间线手账 - {_npcDisplayName}" : $"Timeline Chronicle - {_npcDisplayName}";
         Vector2 titleSize = Game1.dialogueFont.MeasureString(title);
         b.DrawString(Game1.dialogueFont, title,
             new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f, yPositionOnScreen + 22),
             Game1.textColor);
 
-        // 4. Tab 栏
         DrawTabBar(b, mx, my);
 
-        // 5. 正文内容
         if (_currentTab == 0)
             DrawTodayChat(b, mx, my, viewDate);
         else
             DrawTierMemories(b, mx, my);
 
-        // 6. 底栏操作区
         DrawBottomBar(b, mx, my);
-
-        // 7. 滚动条
         DrawScrollbar(b);
 
-        // 8. 关闭按钮
         UiHelper.UpdateButtonScale(ref _closeButtonHoverScale, _closeButton, mx, my);
         _closeButton.scale = 3.5f * _closeButtonHoverScale;
         _closeButton.draw(b);
 
-        // 9. 浮动提示（仅在按钮可用时响应 hover）
-        if (string.IsNullOrEmpty(_hoveredTooltip) && _currentTab == 0)
+        // 下拉/上拉菜单浮层置顶渲染
+        _npcDropdown?.DrawPopup(b);
+
+        if (!_npcDropdown.IsOpen && string.IsNullOrEmpty(_hoveredTooltip) && _currentTab == 0)
         {
             if (_leftArrowRect.Contains(mx, my) && CanPageLeft)
                 _hoveredTooltip = I18n.Memory.PrevDay();
@@ -703,7 +829,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
     private void DrawTodayChat(SpriteBatch b, int mx, int my, StardewTime viewDate)
     {
-        // 顶部日期指示
         string dateText = _daysAgo == 0
             ? (I18n.IsChinese ? $"今天 - {MemoryManager.FormatGameDateLabel(viewDate)}" : $"Today: {MemoryManager.FormatGameDateLabel(viewDate)}")
             : MemoryManager.FormatGameDateLabel(viewDate);
@@ -722,24 +847,21 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
             return;
         }
 
-        // 自适应对话气泡渲染
         foreach (var item in _visibleLayouts)
         {
             var m = item.Measured;
             Color boxBg = m.SpeakerType switch
             {
-                SpeakerType.Player => new Color(230, 245, 235), // 农夫：柔和淡青
-                SpeakerType.System => new Color(235, 235, 238), // 系统场景：浅石灰
-                _ => new Color(255, 246, 232)                   // NPC：经典羊皮纸奶白
+                SpeakerType.Player => new Color(230, 245, 235),
+                SpeakerType.System => new Color(235, 235, 238),
+                _ => new Color(255, 246, 232)
             };
 
-            // 绘制气泡边框底盒
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
                 new Rectangle(432, 439, 9, 9),
                 item.BoxRect.X, item.BoxRect.Y, item.BoxRect.Width, item.BoxRect.Height,
                 boxBg, 3.5f, false);
 
-            // 说话者角色标签
             Color speakerColor = m.SpeakerType switch
             {
                 SpeakerType.Player => new Color(34, 110, 50),
@@ -750,7 +872,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
             Vector2 speakerPos = new Vector2(item.BoxRect.X + m.InnerPadding.X, item.BoxRect.Y + m.InnerPadding.Y);
             b.DrawString(Game1.smallFont, m.Speaker, speakerPos, speakerColor);
 
-            // 完整无裁切正文
             Vector2 textPos = new Vector2(
                 item.BoxRect.X + m.InnerPadding.X,
                 speakerPos.Y + Game1.smallFont.LineSpacing - 2);
@@ -778,7 +899,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
             bool selected = _selectedEntryIds.Contains(m.Id);
             bool hovered = item.BoxRect.Contains(mx, my);
 
-            // 1. 勾选框（Tab 1/2）
             if (_currentTab == 1 || _currentTab == 2)
             {
                 Rectangle src = selected
@@ -790,7 +910,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                     src, Color.White, 0f, Vector2.Zero, CheckboxScale, SpriteEffects.None, 0.86f);
             }
 
-            // 2. 自适应记忆卡片底盒（选中带有暖金底色）
             Color cardColor = selected
                 ? new Color(255, 235, 205)
                 : (hovered ? new Color(255, 248, 230) : new Color(252, 244, 234));
@@ -800,18 +919,18 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 item.BoxRect.X, item.BoxRect.Y, item.BoxRect.Width, item.BoxRect.Height,
                 cardColor, 3.5f, false);
 
-            // 3. 头部：日期标签
             Vector2 datePos = new Vector2(item.BoxRect.X + m.InnerPadding.X, item.BoxRect.Y + m.InnerPadding.Y);
             b.DrawString(Game1.smallFont, m.DateLabel, datePos, new Color(110, 80, 50));
 
-            // 4. 头部右侧：编辑与删除按钮（原生贴图图标）
             DrawIconButton(b, item.EditRect, EditIconSource, mx, my, iconScale: 1.8f);
             DrawIconButton(b, item.DeleteRect, DeleteIconSource, mx, my, iconScale: 1.4f);
 
-            if (item.EditRect.Contains(mx, my)) _hoveredTooltip = I18n.Memory.EditButtonHover();
-            if (item.DeleteRect.Contains(mx, my)) _hoveredTooltip = I18n.Memory.DeleteButtonHover();
+            if (!_npcDropdown.IsOpen)
+            {
+                if (item.EditRect.Contains(mx, my)) _hoveredTooltip = I18n.Memory.EditButtonHover();
+                if (item.DeleteRect.Contains(mx, my)) _hoveredTooltip = I18n.Memory.DeleteButtonHover();
+            }
 
-            // 5. 记忆完整正文（自适应多行折行，杜绝截断）
             Vector2 textPos = new Vector2(
                 item.BoxRect.X + m.InnerPadding.X,
                 datePos.Y + Math.Max(Game1.smallFont.LineSpacing, 26));
@@ -822,14 +941,16 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
     private void DrawBottomBar(SpriteBatch b, int mx, int my)
     {
-        // 1. 左右翻页箭头（Tab 0 独有）
         if (_currentTab == 0)
         {
             DrawArrowButton(b, _leftArrowRect, isLeft: true, enabled: CanPageLeft, mx, my);
             DrawArrowButton(b, _rightArrowRect, isLeft: false, enabled: CanPageRight, mx, my);
         }
 
-        // 2. 居中动作按钮（Tab 0/1/2）
+        // 1. 绘制 NPC 上拉选择器 Header
+        _npcDropdown?.DrawHeader(b);
+
+        // 2. 居中/右侧动作按钮（Tab 0/1/2）
         if (_currentTab >= 0 && _currentTab <= 2)
         {
             string label = GetActionButtonLabel();
@@ -902,10 +1023,8 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         int trackHeight = yPositionOnScreen + height - 16 - BottomBarHeight - trackTop;
         if (trackHeight <= 0) return;
 
-        // 轨道底槽
         b.Draw(Game1.staminaRect, new Rectangle(trackX, trackTop, 6, trackHeight), Color.Black * 0.22f);
 
-        // 动态滑块
         float visibleRatio = (float)_visibleLayouts.Count / _measuredEntries.Count;
         int thumbHeight = Math.Max(28, (int)(trackHeight * visibleRatio));
         int thumbY = trackTop + (int)((trackHeight - thumbHeight) * ((float)_startIndex / maxStart));
@@ -913,8 +1032,168 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     }
 
     // ──────────────────────────────────────────────────────────────
-    // 辅助数据结构
+    // 嵌套辅助组件：DropupList（上拉列表栏）
     // ──────────────────────────────────────────────────────────────
+
+    private sealed class DropupList
+    {
+        private Rectangle _headerRect;
+        private readonly int _itemHeight;
+        private readonly int _maxVisibleItems;
+
+        private List<(string Id, string Label)> _items = new();
+        private string _selectedId;
+        private bool _isOpen;
+        private int _scrollIndex;
+
+        public Action<string> OnItemSelected;
+        public string HeaderPrefix { get; set; }
+
+        public bool IsOpen => _isOpen;
+        public string SelectedId => _selectedId;
+
+        public DropupList(Rectangle headerRect, int itemHeight = 38, int maxVisibleItems = 7)
+        {
+            _headerRect = headerRect;
+            _itemHeight = itemHeight;
+            _maxVisibleItems = maxVisibleItems;
+        }
+
+        public void SetHeaderBounds(Rectangle rect) => _headerRect = rect;
+
+        public void SetItems(IReadOnlyList<(string Id, string Label)> items, string selectedId)
+        {
+            _items = new List<(string, string)>(items);
+            _selectedId = selectedId;
+            _scrollIndex = 0;
+        }
+
+        public void SetSelectedId(string selectedId) => _selectedId = selectedId;
+
+        public void ToggleOpen()
+        {
+            _isOpen = !_isOpen;
+            if (_isOpen)
+            {
+                int selectedIdx = _items.FindIndex(it => it.Id == _selectedId);
+                if (selectedIdx >= 0)
+                    _scrollIndex = Math.Clamp(selectedIdx - _maxVisibleItems / 2, 0, Math.Max(0, _items.Count - _maxVisibleItems));
+                else
+                    _scrollIndex = 0;
+            }
+        }
+
+        public void Close() => _isOpen = false;
+
+        public bool ReceiveLeftClick(int x, int y)
+        {
+            if (_headerRect.Contains(x, y))
+            {
+                ToggleOpen();
+                Game1.playSound("shwip");
+                return true;
+            }
+
+            if (!_isOpen) return false;
+
+            int visible = Math.Min(_maxVisibleItems, _items.Count - _scrollIndex);
+            for (int i = 0; i < visible; i++)
+            {
+                int iy = _headerRect.Y - (visible - i) * _itemHeight;
+                var ir = new Rectangle(_headerRect.X, iy, _headerRect.Width, _itemHeight);
+                if (ir.Contains(x, y))
+                {
+                    _selectedId = _items[_scrollIndex + i].Id;
+                    _isOpen = false;
+                    OnItemSelected?.Invoke(_selectedId);
+                    return true;
+                }
+            }
+
+            _isOpen = false;
+            return true;
+        }
+
+        public bool ReceiveScrollWheel(int direction)
+        {
+            if (!_isOpen || _items.Count <= _maxVisibleItems) return false;
+
+            if (direction > 0 && _scrollIndex > 0)
+                _scrollIndex--;
+            else if (direction < 0 && _scrollIndex < _items.Count - _maxVisibleItems)
+                _scrollIndex++;
+            else
+                return false;
+
+            return true;
+        }
+
+        public void DrawHeader(SpriteBatch b)
+        {
+            int mx = Game1.getMouseX(), my = Game1.getMouseY();
+            bool hover = _headerRect.Contains(mx, my);
+
+            Color headerBg = _isOpen ? new Color(210, 180, 140)
+                          : hover ? new Color(255, 235, 205)
+                          : new Color(139, 90, 43);
+
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
+                new Rectangle(432, 439, 9, 9),
+                _headerRect.X, _headerRect.Y, _headerRect.Width, _headerRect.Height,
+                headerBg, 4f, false);
+
+            string selLabel = _items.FirstOrDefault(it => it.Id == _selectedId).Label ?? "";
+            if (string.IsNullOrEmpty(selLabel)) selLabel = "—";
+            string label = (HeaderPrefix ?? "") + selLabel;
+
+            float maxTextW = _headerRect.Width - 36;
+            string displayLabel = UiHelper.TruncateString(label, Game1.smallFont, maxTextW);
+            var size = Game1.smallFont.MeasureString(displayLabel);
+
+            b.DrawString(Game1.smallFont, displayLabel,
+                new Vector2(_headerRect.X + 12, _headerRect.Y + (_headerRect.Height - size.Y) / 2f),
+                hover && !_isOpen ? Game1.textColor : Color.White);
+
+            SpriteEffects effect = _isOpen ? SpriteEffects.None : SpriteEffects.FlipVertically;
+            Vector2 arrowPos = new Vector2(_headerRect.Right - 26, _headerRect.Y + (_headerRect.Height - 22) / 2f);
+
+            b.Draw(Game1.mouseCursors, arrowPos,
+                new Rectangle(437, 450, 10, 11),
+                Color.White, 0f, Vector2.Zero, 2f, effect, 1f);
+        }
+
+        public void DrawPopup(SpriteBatch b)
+        {
+            if (!_isOpen) return;
+
+            int mx = Game1.getMouseX(), my = Game1.getMouseY();
+            int visible = Math.Min(_maxVisibleItems, _items.Count - _scrollIndex);
+
+            for (int i = 0; i < visible; i++)
+            {
+                int idx = _scrollIndex + i;
+                var item = _items[idx];
+                int iy = _headerRect.Y - (visible - i) * _itemHeight;
+                var ir = new Rectangle(_headerRect.X, iy, _headerRect.Width, _itemHeight);
+
+                bool selected = item.Id == _selectedId;
+                bool ihover = ir.Contains(mx, my);
+                Color bg = selected ? new Color(210, 180, 140)
+                         : ihover ? new Color(255, 235, 205)
+                         : Color.White;
+
+                IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
+                    new Rectangle(432, 439, 9, 9),
+                    ir.X, ir.Y, ir.Width, ir.Height, bg, 4f, false);
+
+                string truncatedLabel = UiHelper.TruncateString(item.Label, Game1.smallFont, ir.Width - 20);
+
+                b.DrawString(Game1.smallFont, truncatedLabel,
+                    new Vector2(ir.X + 8, ir.Y + (ir.Height - Game1.smallFont.LineSpacing) / 2f),
+                    selected ? Color.White : (ihover ? Game1.textColor : Color.Black));
+            }
+        }
+    }
 
     private class MeasuredEntry
     {
@@ -938,27 +1217,62 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         public Rectangle DeleteRect;
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // 关闭与清理
-    // ──────────────────────────────────────────────────────────────
-
     private void Close()
     {
         Game1.playSound("bigDeSelect");
         if (_returnMenu is IMemoryRefreshTarget refreshable)
             refreshable.RefreshEntries();
 
-        if (_ownerMenu == null)
+        var targetMenu = _ownerMenu ?? _returnMenu;
+        if (targetMenu == null)
+        {
             exitThisMenu();
+        }
         else if (Game1.activeClickableMenu == this)
-            Game1.activeClickableMenu = _ownerMenu;
+        {
+            Game1.activeClickableMenu = targetMenu;
+            RestoreMenuFocus(targetMenu);
+        }
     }
 
     protected override void cleanupBeforeExit()
     {
         base.cleanupBeforeExit();
 
-        if (_ownerMenu != null && Game1.activeClickableMenu == this)
-            Game1.activeClickableMenu = _ownerMenu;
+        var targetMenu = _ownerMenu ?? _returnMenu;
+        if (targetMenu != null && Game1.activeClickableMenu == this)
+        {
+            Game1.activeClickableMenu = targetMenu;
+            RestoreMenuFocus(targetMenu);
+        }
+    }
+
+    /// <summary>
+    /// 返回上级菜单时，若为输入菜单或其包装类，自动唤醒文本框输入焦点
+    /// </summary>
+    private static void RestoreMenuFocus(IClickableMenu menu)
+    {
+        if (menu is DialogueTextInputMenu textMenu)
+        {
+            textMenu.RestoreFocus();
+        }
+        else if (menu != null)
+        {
+            // 兼容 DialogueTextInputMenuWrapper 包装层
+            var method = menu.GetType().GetMethod("RestoreFocus", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            if (method != null)
+            {
+                method.Invoke(menu, null);
+            }
+            else
+            {
+                var field = menu.GetType().GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                    .FirstOrDefault(f => typeof(DialogueTextInputMenu).IsAssignableFrom(f.FieldType));
+                if (field?.GetValue(menu) is DialogueTextInputMenu innerTextMenu)
+                {
+                    innerTextMenu.RestoreFocus();
+                }
+            }
+        }
     }
 }
