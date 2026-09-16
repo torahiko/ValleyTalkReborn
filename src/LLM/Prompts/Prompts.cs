@@ -2,78 +2,6 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // PROMPT ASSEMBLY ARCHITECTURE
 // ═══════════════════════════════════════════════════════════════════════════
-//
-// This file is responsible for assembling the complete prompt structure sent to
-// the LLM for dialogue generation. It follows a carefully designed topology to:
-// 1. Balance cognitive attention flow (recent context weighted higher)
-// 2. Maximize KV-Cache hit rate (static content first, dynamic content last)
-// 3. Prevent attention hijacking (e.g., held items overpowering dialogue intent)
-//
-// ───────────────────────────────────────────────────────────────────────────
-// PROMPT TOPOLOGY (from top to bottom):
-// ───────────────────────────────────────────────────────────────────────────
-//
-// [SystemPrompt] <- Tier 1 & 2 Static Cache (assembled in LlmDialogueService)
-//   +- Base system prompt (character persona, translation rules)
-//   +- NPC personal memory (updated every few days)
-//   +- World memory (updated every few days)
-//   +- Gossip (daily rotation, single entry per day)
-//
-// [GameConstantContext] <- Tier 1 Static Cache
-//   +- Game mechanics summary (locations, seasons, crops)
-//   +- Farm state summary (barn animals, coop animals, buildings)
-//
-// [NpcConstantContext] <- Tier 1 Static Cache
-//   +- Biography
-//   +- Personality traits (filtered by current heart level)
-//   +- Progress states (quest status, marriage status)
-//   +- Relationships (daily rotation subset)
-//
-// --- [KV-Cache Boundary] ---
-//
-// [CorePrompt] <- Dynamic Context (changes every turn)
-//   +- Scene context (location, weather, time, nearby NPCs)
-//   +- Friendship level & marriage status
-//   +- Special events (stood up, date invitation, jealousy)
-//   +- Preoccupation (background thought, rarely injected)
-//   +- Player profile (appearance, held item, buffs)
-//   +- Eavesdrop block (overheard conversations)
-//   +- Spouse waiting block (late-night scenario)
-//   +- Echo block (recent interaction afterglow)
-//   +- CURRENT CONVERSATION (dialogue history, positioned at bottom)
-//   +- SESSION CONTINUITY (earlier exchanges today)
-//   +- PENDING TOPIC (pre-conversation lingering thought)
-//   +- MOVEMENT INSTRUCTION (embodied action, tightly coupled to conversation)
-//   +- Evolved traits block (personality facets dynamically weighted)
-//   +- Local perception block (gift, eat, nearby actions)
-//
-// [Instructions] <- Format constraints
-//   +- Core perspective rules (only output your own dialogue)
-//   +- Mood tag syntax ([MOOD:curious])
-//   +- Extra portrait syntax (if applicable)
-//
-// [Command] <- Action tag syntax & tool calling rules
-//   +- Emote bubbles ([ACTION:EMOTE:HAPPY])
-//   +- Movement tags ([ACTION:STEP:FORWARD], [ACTION:STEP:BACKWARD], [ACTION:STEP:LEFT], [ACTION:STEP:RIGHT])
-//
-// [ResponseStart] <- Final delimiter ("[In-Character Dialogue]:")
-//
-// ───────────────────────────────────────────────────────────────────────────
-// KEY DESIGN PRINCIPLES:
-// ───────────────────────────────────────────────────────────────────────────
-// 1. Recency Bias: Dialogue history positioned right before Instructions,
-//    ensuring the player's latest input is fresh in the LLM's "working memory"
-//
-// 2. Cache Preservation: SystemPrompt never modified after assembly,
-//    ensuring multi-turn conversations reuse cached KV states
-//
-// 3. Embodied Action Coupling: Movement instructions placed immediately
-//    after dialogue history, creating tight semantic coupling
-//
-// 4. Attention Isolation: Special events (stood-up, jealousy) use XML tags
-//    to create attention boundaries, preventing bleed into normal conversation
-//
-// ═══════════════════════════════════════════════════════════════════════════
 
 using System;
 using System.Collections.Generic;
@@ -95,11 +23,9 @@ public class Prompts
         InitializeInstanceFields(context, character);
     }
 
-    // ── 【新增】收集本轮注入的私有思绪（Memory 作用域，不序列化） ──
     private readonly List<string> _injectedPrivateThoughts = new List<string>();
     public IReadOnlyList<string> InjectedPrivateThoughts => _injectedPrivateThoughts;
 
-    // ── 【VT-PROMPTS-VERIFY-01】已发射块键台账（Memory 作用域，不序列化，幂等 Add） ──
     private readonly HashSet<string> _emittedBlockKeys = new HashSet<string>(StringComparer.Ordinal);
 
     private bool IsChineseLanguage =>
@@ -130,46 +56,26 @@ public class Prompts
         }
     }
 
-    // ── 【VT-PROMPTS-VERIFY-01】块发射台账与谓词 helpers ──
-
-    /// <summary>
-    /// 标记某个块键已被本次对话组装发射。幂等：重复调用等价于单次。
-    /// Memory 作用域，不序列化。
-    /// </summary>
     private void MarkEmitted(string blockKey)
     {
         _emittedBlockKeys.Add(blockKey);
     }
 
-    /// <summary>
-    /// 复现 GetCurrentConversation 两分支的标题行拼接（逐字符一致）：
-    /// "### " + Util.GetString(Character, "currentConversationHeading")
-    /// </summary>
     private string ComposeCurrentConversationHeading()
     {
         return "### " + Util.GetString(Character, "currentConversationHeading");
     }
 
-    /// <summary>
-    /// 复现 GetInstructions 的标题行拼接（逐字符一致）：
-    /// "## " + Util.GetString(Character, "instructionsHeading", new { Language = TargetLanguageName })
-    /// </summary>
     private string ComposeInstructionsHeading()
     {
         return "## " + Util.GetString(Character, "instructionsHeading", new { Language = TargetLanguageName });
     }
 
-    /// <summary>
-    /// 判定"当前对话"块是否应出现（内容与 GetCurrentConversation 的 if/else-if 门禁同源）。
-    /// </summary>
     private bool CurrentConversationHasContent()
     {
         return (Context?.ChatHistory?.Any() ?? false) || (Character?.SpokeJustNow() ?? false);
     }
 
-    /// <summary>
-    /// 判定移动指令是否应注入（合并 InjectMovementInstruction 现有前两行 early-return 语义，一字不差）。
-    /// </summary>
     private bool MovementInstructionApplicable()
     {
         return !(CurrentFlags?.IsOnDate == true)
@@ -197,33 +103,11 @@ public class Prompts
     private string _corePrompt;
     public string CorePrompt { get => _corePrompt ??= GetCorePrompt(); internal set => _corePrompt = value; }
 
-    // ── 动态注入占位：由 LlmDialogueService 在 CorePrompt 求值前赋值 ──
     public string PendingEvolvedTraitsBlock { get; set; }
     public string PendingLocalPerceptionBlock { get; set; }
-  
-    // ── 【新增】动态挂载模块字段（偷听、配偶等待、近期互动余韵） ──
-    /// <summary>
-    /// Eavesdrop context block - recent overheard conversations or ambient social context.
-    /// Injected by EavesdropInjector in LlmDialogueService before CorePrompt evaluation.
-    /// </summary>
     public string PendingEavesdropBlock { get; set; }
-  
-    /// <summary>
-    /// Spouse waiting event block - late-night waiting scenario for married NPCs.
-    /// Injected by SpouseWaitingEvent in LlmDialogueService before CorePrompt evaluation.
-    /// </summary>
     public string PendingSpouseWaitingBlock { get; set; }
-  
-    /// <summary>
-    /// Immediate echo block - recent interaction afterglow (shared meals, activities, etc.).
-    /// Injected by ImmediateEchoStore in LlmDialogueService before CorePrompt evaluation.
-    /// </summary>
     public string PendingEchoBlock { get; set; }
-
-    /// <summary>
-    /// 关系里程碑与修罗场冲突块（结婚倒计时、离婚申请日、花舞节修罗场）。
-    /// 在 CorePrompt 求值前由 LlmDialogueService 赋值。
-    /// </summary>
     public string PendingMilestoneBlock { get; set; }
 
     private string _command;
@@ -501,8 +385,6 @@ public class Prompts
         var flags = CurrentFlags;
         string npcName = Character?.Name ?? "";
 
-        // 🔧 互斥安全清洗：HasStoodUpPending 与 IsOnDate 不应同时为 true。
-        // 若发生碰撞，以正在约会为优先，重置爽约标记，防止 stood_up 语境污染约会对话。
         if (flags?.HasStoodUpPending == true && flags?.IsOnDate == true)
         {
             ModEntry.SMonitor?.Log(
@@ -519,7 +401,6 @@ public class Prompts
         if (flags?.IncludeMemories == true)
             DefaultOrOverride("EventHistory", GetEventHistory, prompt);
 
-        // ── stood_up: 纯事实，不预设情绪，不下"反应要求" ──
         if (flags?.HasStoodUpPending == true && ModEntry.Config.EnableDateSystem)
         {
             prompt.AppendLine("<emotional_conflict type=\"stood_up\">");
@@ -530,7 +411,6 @@ public class Prompts
             GetMicroEnvironment(prompt);
             InjectPendingTopic(prompt);
 
-            // ── 🔧 一次性动态模块注入（与完整分支保持同一"背景→即时"顺序） ──
             if (!string.IsNullOrEmpty(PendingEavesdropBlock))
             {
                 prompt.AppendLine(PendingEavesdropBlock);
@@ -546,21 +426,16 @@ public class Prompts
                 prompt.AppendLine(PendingEchoBlock);
                 prompt.AppendLine();
             }
-
-            // ── 💍 关系里程碑与冲突（结婚倒计时 / 离婚申请日 / 花舞节伴侣与吃醋） ──
             if (!string.IsNullOrEmpty(PendingMilestoneBlock))
             {
                 prompt.AppendLine(PendingMilestoneBlock);
                 prompt.AppendLine();
             }
-
-            // ── 🔧 补齐动态注入（与 date context 分支保持一致） ──
             if (!string.IsNullOrEmpty(PendingEvolvedTraitsBlock))
                 prompt.AppendLine("\n" + PendingEvolvedTraitsBlock);
             if (!string.IsNullOrEmpty(PendingLocalPerceptionBlock))
                 prompt.AppendLine("\n" + PendingLocalPerceptionBlock);
 
-            // ── 🔧 早返回分支同样需要注入约会协议，否则 LLM 无法输出 [UI:DATE_INVITE] ──
             AppendDateInvitationProtocol(prompt);
             AppendFollowInvitationProtocol(prompt);
 
@@ -569,7 +444,6 @@ public class Prompts
             return stoodUpPrompt;
         }
 
-        // ── date context ──
         if (ModEntry.Config.EnableDateSystem && !string.IsNullOrEmpty(npcName) && DateManager.Instance?.IsOnDate(npcName) == true)
         {
             var dateMode = DateManager.Instance.CurrentDateMode;
@@ -610,7 +484,6 @@ public class Prompts
 
             GetMicroEnvironment(prompt);
 
-            // ── 🔧 一次性动态模块注入（背景感知先于对话历史，与完整分支同一顺序） ──
             if (!string.IsNullOrEmpty(PendingEavesdropBlock))
             {
                 prompt.AppendLine(PendingEavesdropBlock);
@@ -626,8 +499,6 @@ public class Prompts
                 prompt.AppendLine(PendingEchoBlock);
                 prompt.AppendLine();
             }
-
-            // ── 💍 关系里程碑与冲突（结婚倒计时 / 离婚申请日 / 花舞节伴侣与吃醋） ──
             if (!string.IsNullOrEmpty(PendingMilestoneBlock))
             {
                 prompt.AppendLine(PendingMilestoneBlock);
@@ -642,7 +513,6 @@ public class Prompts
             if (!string.IsNullOrEmpty(PendingLocalPerceptionBlock))
                 prompt.AppendLine("\n" + PendingLocalPerceptionBlock);
 
-            // ── 🔧 早返回分支同样需要注入约会协议，否则 LLM 无法输出 [UI:DATE_INVITE] ──
             AppendDateInvitationProtocol(prompt);
             AppendFollowInvitationProtocol(prompt);
             AppendDateEndingProtocol(prompt);
@@ -652,7 +522,6 @@ public class Prompts
             return datePrompt;
         }
 
-        // ── simple greeting fast pass ──
         if (flags?.IsSimpleGreeting == true && flags?.IsMovementRequested != true && string.IsNullOrEmpty(PendingMilestoneBlock))
         {
             prompt.AppendLine("<greeting_fast_pass>");
@@ -665,7 +534,6 @@ public class Prompts
             InjectSessionContinuity(prompt);
             InjectPendingTopic(prompt);
 
-            // ── 🔧 一次性动态模块注入（在 PlayerProfile 之前） ──
             if (!string.IsNullOrEmpty(PendingEavesdropBlock))
             {
                 prompt.AppendLine(PendingEavesdropBlock);
@@ -681,8 +549,6 @@ public class Prompts
                 prompt.AppendLine(PendingEchoBlock);
                 prompt.AppendLine();
             }
-
-            // ── 🔧 补齐动态注入（在 PlayerProfile 之前） ──
             if (!string.IsNullOrEmpty(PendingEvolvedTraitsBlock))
                 prompt.AppendLine("\n" + PendingEvolvedTraitsBlock);
             if (!string.IsNullOrEmpty(PendingLocalPerceptionBlock))
@@ -695,7 +561,6 @@ public class Prompts
             if (!string.IsNullOrEmpty(simpleProfile))
                 prompt.AppendLine(simpleProfile);
 
-            // ── 🔧 早返回分支同样需要注入约会协议，否则 LLM 无法输出 [UI:DATE_INVITE] ──
             AppendDateInvitationProtocol(prompt);
 
             string greetingPrompt = prompt.ToString();
@@ -704,7 +569,6 @@ public class Prompts
             return greetingPrompt;
         }
 
-        // ── full context build ──
         prompt.AppendLine($"## {Util.GetString(Character, "coreInstructionHeading")}");
         GetMicroEnvironment(prompt);
         InjectGreetingContext(prompt);
@@ -760,10 +624,8 @@ public class Prompts
             prompt.AppendLine("</interaction_state>\n");
         }
 
-        // ── date invitation protocol (Consent Tag + Client UI Dispatch) ──
         AppendDateInvitationProtocol(prompt);
 
-        // ── jealousy trigger: 纯事实，不预设情绪 ──
         if (ModEntry.Config.EnableDateSystem && flags?.IsJealousy == true && DateManager.Instance != null)
         {
             prompt.AppendLine("<jealousy_trigger>");
@@ -786,18 +648,6 @@ public class Prompts
             prompt.AppendLine(playerProfile);
             prompt.AppendLine();
         }
-      
-        // ══════════════════════════════════════════════════════════════════════
-        // 🔧 [INJECTION SEQUENCE CORRECTION] 动态挂载模块统一注入（对话历史之前）
-        // ══════════════════════════════════════════════════════════════════════
-        // 注入顺序（从背景到即时）：
-        // 1. Eavesdrop（偷听上下文，短期背景）
-        // 2. SpouseWaiting（配偶等待事件，情境背景）
-        // 3. Echo（近期互动余韵，情感延续）
-        // 4. EvolvedTraits + LocalPerception（人格特质 + 现场目击，环境背景）
-        // → 然后对话历史（CurrentConversation）稳居底部，直接承接生成入口
-        // → 动作指令（movement_instruction）紧咬对话
-        // ══════════════════════════════════════════════════════════════════════
 
         if (!string.IsNullOrEmpty(PendingEavesdropBlock))
         {
@@ -817,43 +667,29 @@ public class Prompts
             prompt.AppendLine();
         }
 
-        // ── 💍 关系里程碑与冲突（结婚倒计时 / 离婚申请日 / 花舞节伴侣与吃醋） ──
         if (!string.IsNullOrEmpty(PendingMilestoneBlock))
         {
             prompt.AppendLine(PendingMilestoneBlock);
             prompt.AppendLine();
         }
 
-        // ── 🎯 特质与现场目击是环境背景，必须先于对话历史注入（防注意力劫持） ──
         if (!string.IsNullOrEmpty(PendingEvolvedTraitsBlock))
             prompt.AppendLine(PendingEvolvedTraitsBlock + "\n");
         if (!string.IsNullOrEmpty(PendingLocalPerceptionBlock))
             prompt.AppendLine(PendingLocalPerceptionBlock + "\n");
 
-        // ── 对话历史置底（绝对贴合生成入口，Recency Bias 最优） ──
         DefaultOrOverride("CurrentConversation", GetCurrentConversation, prompt);
         InjectSessionContinuity(prompt);
         InjectPendingTopic(prompt);
         InjectMovementInstruction(prompt);
 
-        // ══════════════════════════════════════════════════════════════════════
-        // ❌ [REMOVAL] 删除重复的 gossipSnapshots 注入（已在 SystemPrompt 中处理）
-        // ══════════════════════════════════════════════════════════════════════
-
         string finalPrompt = prompt.ToString();
         LogRoutingDebug(finalPrompt, "FULL_CONTEXT_BUILD");
-
-        // ── 🔍 拓扑验证日志（Debug 模式） ──
         LogTopologyVerification(finalPrompt, "FULL_CONTEXT_BUILD");
 
         return finalPrompt;
     }
 
-    /// <summary>
-    /// 统一的约会邀请协议注入器。
-    /// 在完整构建与所有早返回分支中调用，确保 LLM 无论走哪条路由都能看到
-    /// &lt;date_invitation_protocol&gt; 规则，从而正确输出 [UI:DATE_INVITE] 标签。
-    /// </summary>
     private void AppendDateInvitationProtocol(StringBuilder sb)
     {
         if (!ModEntry.Config.EnableDateSystem || CurrentFlags?.IsInviteRequested != true || CurrentFlags?.IsOnDate == true)
@@ -885,7 +721,6 @@ public class Prompts
 
     private void AppendFollowInvitationProtocol(StringBuilder sb)
     {
-        // 门禁 a: CurrentFlags 为 null 或非 Follow 请求或已在跟随状态 → 不注入
         if (CurrentFlags == null
             || CurrentFlags.RequestedAction != ActionTag.Follow
             || CurrentFlags.IsFollowing)
@@ -893,7 +728,6 @@ public class Prompts
 
         bool isZh = IsChineseLanguage;
 
-        // 门禁 b: 已有其他 NPC 跟随 → decline 块
         if (MovementManager.Instance != null
             && MovementManager.Instance.HasActiveFollow
             && MovementManager.Instance.CurrentFollowingNpc?.Name != Character?.Name)
@@ -909,7 +743,6 @@ public class Prompts
             return;
         }
 
-        // 门禁 c: 正常邀请协议（彻底移除末尾无意义的工具警示）
         sb.AppendLine("<follow_invitation_protocol>");
         sb.AppendLine(isZh
             ? "农夫正在邀请你与他同行。"
@@ -937,10 +770,6 @@ public class Prompts
         sb.AppendLine("</date_ending_protocol>\n");
     }
 
-    /// <summary>
-    /// Logs topology verification information in debug mode.
-    /// Helps diagnose prompt assembly order, dynamic injection sequence, and cache-friendly structure.
-    /// </summary>
     private void LogTopologyVerification(string finalPrompt, string routeType)
     {
         if (!ModEntry.Config?.Debug ?? true)
@@ -953,7 +782,6 @@ public class Prompts
             sb.AppendLine($"║ [Topology Verification] {Name} | Route: {routeType}");
             sb.AppendLine("╠═══════════════════════════════════════════════════════════");
 
-            // ── 1. 动态注入块检测 ──
             sb.AppendLine("║ [Dynamic Injection Status]");
             sb.AppendLine($"║   PendingEvolvedTraitsBlock: {(!string.IsNullOrEmpty(PendingEvolvedTraitsBlock) ? "✓ Injected" : "✗ Empty")}");
             sb.AppendLine($"║   PendingLocalPerceptionBlock: {(!string.IsNullOrEmpty(PendingLocalPerceptionBlock) ? "✓ Injected" : "✗ Empty")}");
@@ -962,24 +790,15 @@ public class Prompts
             sb.AppendLine($"║   PendingEchoBlock: {(!string.IsNullOrEmpty(PendingEchoBlock) ? "✓ Injected" : "✗ Empty")}");
             sb.AppendLine($"║   PendingMilestoneBlock: {(!string.IsNullOrEmpty(PendingMilestoneBlock) ? "✓ Injected" : "✗ Empty")}");
 
-            // ── 2. 拓扑结构验证 ──
             sb.AppendLine("║");
             sb.AppendLine("║ [Topology Structure]");
 
-            // 3.a 计算期望标题（复现拼接，精确匹配组装路径）
             string computedHeading = ComposeCurrentConversationHeading();
-
-            // 3.b 文本扫描命中
             bool found = finalPrompt.Contains(computedHeading);
-
-            // 3.c / 3.d override / ledger 兜底信号
             bool overrideUsed = PromptOverrides?.ContainsKey("CurrentConversation") ?? false;
             bool ledgerEmitted = _emittedBlockKeys.Contains("CurrentConversation");
-
-            // 3.e 期望出现（非 STOOD_UP 路由，且历史内容非空）
             bool expected = routeType != "STOOD_UP" && CurrentConversationHasContent();
 
-            // 3.f CurrentConversation 状态串（按序短路，只取第一个命中）
             string currentConversationStatus;
             if (found)
                 currentConversationStatus = "✓ Present";
@@ -994,17 +813,14 @@ public class Prompts
             else
                 currentConversationStatus = "✗ Missing";
 
-            // failure_path 1: heading key 空 → 文本扫描已降级 Warn
             if (!found && !overrideUsed && !ledgerEmitted && string.IsNullOrEmpty(Util.GetString(Character, "currentConversationHeading")))
             {
                 sb.AppendLine("║   ⚠ [Topology] heading key 为空，文本扫描已降级");
             }
 
             bool hasMovementInstruction = finalPrompt.Contains("<movement_instruction");
-            // 3.g Movement 期望值来源
             bool isMovementExpected = (routeType == "FULL_CONTEXT_BUILD") && MovementInstructionApplicable();
 
-            // 3.h InstructionsBlock：强制求值惰性属性，外层 try/catch 兜底
             string instructionsText = Instructions ?? "";
             bool hasInstructions = instructionsText.Contains(ComposeInstructionsHeading())
                                   || !string.IsNullOrWhiteSpace(instructionsText);
@@ -1013,8 +829,6 @@ public class Prompts
             sb.AppendLine($"║   MovementInstruction: {(hasMovementInstruction ? "✓ Present" : (isMovementExpected ? "✗ Missing" : "– Not Required"))}");
             sb.AppendLine($"║   InstructionsBlock: {(hasInstructions ? "✓ Present" : "✗ Missing")}");
 
-            // ── 3. 对话历史位置验证（关键：必须在 movement_instruction 之前） ──
-            // 3.i 仅当 found && hasMovementInstruction 时执行
             if (found && hasMovementInstruction)
             {
                 int conversationPos = finalPrompt.LastIndexOf(computedHeading, StringComparison.Ordinal);
@@ -1030,13 +844,11 @@ public class Prompts
                 }
             }
 
-            // failure_path 1: heading key 空 → 文本扫描已降级（独立 Warn 行，与拓扑日志同批输出）
             if (!found && !overrideUsed && !ledgerEmitted && string.IsNullOrEmpty(Util.GetString(Character, "currentConversationHeading")))
             {
                 sb.AppendLine("║   ⚠ [Topology] heading key 为空，文本扫描已降级");
             }
 
-            // ── 4. Turn 判定验证 ──
             sb.AppendLine("║");
             sb.AppendLine("║ [Turn Detection]");
             sb.AppendLine($"║   Context.IsActiveTurn: {Context?.IsActiveTurn.ToString() ?? "null"}");
@@ -1044,7 +856,6 @@ public class Prompts
             sb.AppendLine($"║   RoutingFlags.IsSimpleGreeting: {CurrentFlags?.IsSimpleGreeting.ToString() ?? "null"}");
             sb.AppendLine($"║   RoutingFlags.IncludeShortTermContext: {CurrentFlags?.IncludeShortTermContext.ToString() ?? "null"}");
 
-            // ── 5. 长度统计 ──
             sb.AppendLine("║");
             sb.AppendLine("║ [Length Statistics]");
             sb.AppendLine($"║   CorePrompt length: {finalPrompt.Length} chars (~{finalPrompt.Length / 4} tokens)");
@@ -1059,6 +870,7 @@ public class Prompts
             ModEntry.SMonitor?.Log($"[Prompts] Topology verification failed: {ex.Message}", StardewModdingAPI.LogLevel.Warn);
         }
     }
+
     private void LogRoutingDebug(string promptText, string routeType)
     {
         try
@@ -1080,21 +892,17 @@ public class Prompts
         catch { }
     }
 
-    // ── preoccupation: 删除"微妙浸润语气" ──
     private void GetPreoccupation(StringBuilder prompt)
     {
         bool playerHasSpoken = Context.ChatHistory.Any(x => x.IsPlayerLine);
         if (playerHasSpoken) return;
         if (Game1.random.NextDouble() < 0.5) return;
 
-        // 3. 解析档位
         var npc = Character?.StardewNpc;
         var entry = ProgressStateResolver.ResolveActiveEntry(npc, Character.Bio?.ProgressStates);
 
-        // 4. 严格替换仅在阶段池实际配置时触发；未配置池的档位回退全局路径
         bool useStage = entry?.Preoccupations != null && entry.Preoccupations.Count > 0;
 
-        // 5. 选池
         List<string> pool;
         string stageKey;
         if (useStage)
@@ -1110,7 +918,6 @@ public class Prompts
         if (pool == null || pool.Count == 0) return;
 
         string preoccupation;
-        // 6. 复合缓存命中判定（Q1b）：日 + 非空 + 阶段键一致
         if (Game1.Date == Character.PreoccupationDate
             && !string.IsNullOrEmpty(Character.Preoccupation)
             && string.Equals(Character.PreoccupationStageKey, stageKey, StringComparison.Ordinal))
@@ -1119,22 +926,17 @@ public class Prompts
         }
         else
         {
-            // 7. 选取与净化
             string pick = pool[Game1.random.Next(pool.Count)];
-            // 空白条目 → 本次静默跳过：不注入、不登记、不写缓存（防空白心事行污染 Prompt）;
             if (string.IsNullOrWhiteSpace(pick)) return;
             preoccupation = LoadLocalised(pick);
-            // Q3a：zh 人名本地化仅作用于阶段池分支；全局池保持现状，零行为扩散
             if (useStage && IsChineseLanguage)
                 preoccupation = NpcNameLocalizer.LocalizeNamesInText(preoccupation);
 
-            // 8. 原子写缓存
             Character.Preoccupation = preoccupation;
             Character.PreoccupationDate = Game1.Date;
             Character.PreoccupationStageKey = stageKey;
         }
 
-        // 9. 注入（表达层级不变，逐字保留）
         bool isZh = IsChineseLanguage;
         _injectedPrivateThoughts.Add(preoccupation);
         prompt.AppendLine(Util.GetString(Character, "preoccupation", new { Name = Name, preoccupation = preoccupation }));
@@ -1174,10 +976,8 @@ public class Prompts
         }
     }
 
-    // ── pending topic: 删除"自然渲染语气" ──
     private void InjectPendingTopic(StringBuilder prompt)
     {
-        // ConsumePendingTopic 内部已 Remove，天然防重复+跨角色隔离
         string pending = PendingTopicManager.Instance.ConsumePendingTopic(Character.Name);
         if (string.IsNullOrEmpty(pending)) return;
 
@@ -1201,7 +1001,6 @@ public class Prompts
     {
         var historyManager = DialogueHistoryManager.Instance;
         if (historyManager == null) return;
-        // 伴侣与室友朝夕相处，不存在访客式的“隔了几天没见”事实
         if (Game1.getPlayerOrEventFarmer()?.friendshipData?.TryGetValue(Character.Name, out var fs) == true
             && (fs.IsMarried() || fs.IsRoommate()))
         {
@@ -1234,7 +1033,6 @@ public class Prompts
         prompt.AppendLine("</greeting_context>\n");
     }
 
-    // ── session continuity: 删除"自然延续" ──
     private void InjectSessionContinuity(StringBuilder prompt)
     {
         var session = SessionCache.Instance.GetOrCreate(Character.Name);
@@ -1288,7 +1086,6 @@ public class Prompts
 
         if (!string.IsNullOrEmpty(session.EmotionalTone))
         {
-            // 修复：删除"自然延续"
             prompt.AppendLine(isZh
                 ? $"（你之前的情绪基调：{session.EmotionalTone}。保持与前序交流的一致性。）"
                 : $"(Your earlier emotional tone: {session.EmotionalTone} — maintain consistency with prior exchanges.)");
@@ -1296,21 +1093,18 @@ public class Prompts
         prompt.AppendLine();
     }
 
-    // ── movement instruction: 去考官化，纯事实 + 标签约束 ──
     private void InjectMovementInstruction(StringBuilder prompt)
     {
         if (!MovementInstructionApplicable()) return;
 
         bool isZh = IsChineseLanguage;
 
-        // ── VT-FOLLOW-T2: Follow invitation ──
         if (CurrentFlags.RequestedAction == ActionTag.Follow && !CurrentFlags.IsFollowing)
         {
             AppendFollowInvitationProtocol(prompt);
             return;
         }
 
-        // ── VT-FOLLOW-T2: Stop follow ──
         if (CurrentFlags.RequestedAction == ActionTag.StopFollow)
         {
             prompt.AppendLine("<movement_instruction mode=\"stop_follow\">");
@@ -1327,7 +1121,6 @@ public class Prompts
             return;
         }
 
-        // ── VT-FOLLOW-T2: Stay home ──
         if (CurrentFlags.RequestedAction == ActionTag.StayHome)
         {
             prompt.AppendLine("<movement_instruction mode=\"stay_home\">");
@@ -1344,7 +1137,6 @@ public class Prompts
             return;
         }
 
-        // ── VT-FOLLOW-T2: All-day follow ──
         if (CurrentFlags.RequestedAction == ActionTag.AllDayFollow)
         {
             prompt.AppendLine("<movement_instruction mode=\"all_day_follow\">");
@@ -1593,41 +1385,6 @@ public class Prompts
 
     private void GetGift(StringBuilder prompt)
     {
-        /*
-        // ── 【旧版送礼逻辑注释说明】 ──
-        // 1. 玩家送礼即时响应已由统一的 PerceptionInjector 接管（具有严格的单次注入即消费机制，防多轮复读）。
-        // 2. 原版 Context.Accept 是静态字段，在玩家不关闭对话框持续对话时不会自动清空，会导致多轮对话持续残留送礼指令。
-        if (Context.Accept != null)
-        {
-            var giftName = Context.Accept.DisplayName;
-            prompt.AppendLine(Util.GetString(Character, "giftIntro", new { Name = Name, giftName = giftName }));
-            switch (Context.GiftTaste)
-            {
-                case 0:
-                    prompt.AppendLine(Util.GetString(Character, "giftLoved", new { Name = Name }));
-                    break;
-                case 2:
-                    prompt.AppendLine(Util.GetString(Character, "giftLiked", new { Name = Name }));
-                    break;
-                case 4:
-                    prompt.AppendLine(Util.GetString(Character, "giftDislike", new { Name = Name }));
-                    break;
-                case 6:
-                    prompt.AppendLine(Util.GetString(Character, "giftHate", new { Name = Name }));
-                    break;
-                default:
-                    prompt.AppendLine(Util.GetString(Character, "giftNeutral", new { Name = Name }));
-                    break;
-            }
-            prompt.AppendLine(Util.GetString(Character, "giftMustIncludeReaction", new { Name = Name }));
-            if (Context.Birthday)
-            {
-                prompt.AppendLine(Util.GetString(Character, "giftBirthday", new { Name = Name }));
-            }
-            prompt.AppendLine(Util.GetString(Character, "giftOutro"));
-        }
-        else
-        */
         if (!string.IsNullOrEmpty(giveGift))
         {
             string giftName = giveGift;
@@ -1816,7 +1573,6 @@ public class Prompts
 
         commandPrompt.AppendLine(isZh ? "### [系统行为指令：肢体动作与表情]" : "### [SYSTEM TRIGGERS: EMOTES & PHYSICAL ACTIONS]");
 
-        // 统一且纯粹地映射游戏底层头顶表情资产：只讲格式与对应事实，不给角色预设行为与道德条框
         if (isZh)
         {
             commandPrompt.AppendLine("- 表情气泡标签（对应角色头顶动画）：");
@@ -1845,7 +1601,6 @@ public class Prompts
         commandPrompt.AppendLine("  [Dialogue Text] [ACTION:STEP:BACKWARD]");
         commandPrompt.AppendLine("  [Dialogue Text] [ACTION:EMOTE:HAPPY]");
 
-        // Skip language instruction when target is English or InvariantCulture (no meaningful constraint)
         string targetLang = TargetLanguageName;
         if (ModEntry.Config.ApplyTranslation
             && !string.Equals(targetLang, "Invariant Language (Invariant Country)", StringComparison.Ordinal)
@@ -1874,6 +1629,12 @@ public class Prompts
         instructions.AppendLine(isZh
             ? "- 【当面接话】农夫刚说的那句话就在你耳边。第一句必须直接回答或接住他刚才的话；答完之后，手头有事或想起别的事再顺着往下提。"
             : "- [IN-PERSON REPLY] The farmer's last words just reached your ears. Your very first sentence must directly address or answer what they just said. Only after answering can you naturally follow up with your own chores or thoughts.");
+
+        // ── 💡 注入亲疏坦率规则（以正向替换避免粉色大象，防止 AI 客服腔，兼顾生人与配偶） ──
+        instructions.AppendLine(isZh
+            ? "- 【亲疏坦率】情绪与边界随熟悉度自然分流。面对突兀、无用或不合心意的事物时展现生活本能：对生人保持明确边界与干脆拒收；对密友与配偶展现毫无防备的熟稔调侃、叹气或日常嗔怪。始终以真实的市井生活直觉回应。"
+            : "- [FAMILIAR DIRECTNESS] Match boundaries and emotional friction directly to familiarity. When handed odd, useless, or unwanted things, react with raw everyday instinct: acquaintances receive clean distance and blunt refusals; spouses and close friends receive comfortable eye-rolls, dry teasing, or casual nagging. Ground your words in lived-in honesty rather than polished polite padding.");
+
         instructions.AppendLine(isZh
             ? "- 若本次对话结束后你的情绪明显转变（如变得好奇/生气/高兴），在台词最末尾附加 [MOOD:curious] / [MOOD:annoyed] / [MOOD:happy] 等标签。"
             : "- If your emotional tone has clearly shifted after this exchange (e.g. curious/annoyed/happy), append [MOOD:curious] / [MOOD:annoyed] / [MOOD:happy] at the absolute end.");
@@ -1928,7 +1689,7 @@ public class Prompts
     }
 
     private IDialogueValue SelectExactDialogue()
-    {
+    { 
         return (Character.DialogueData
                     ?.AllEntries
                     .FirstOrDefault(x => x.Key == Context))?.Value;
