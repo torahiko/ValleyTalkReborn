@@ -344,27 +344,28 @@ internal class MemoryManager : IMemoryProvider
     /// <summary>游戏内日历戳。禁止读 Game1 世界状态。</summary>
     public static string FormatGameDateLabel(StardewTime date)
     {
-        string seasonName = IsChineseLanguage
-            ? date.Season switch
+        if (I18n.IsChinese)
+        {
+            string seasonName = date.Season switch
             {
                 Season.Spring => "春",
                 Season.Summer => "夏",
                 Season.Fall => "秋",
                 Season.Winter => "冬",
                 _ => date.Season.ToString()
-            }
-            : date.Season switch
-            {
-                Season.Spring => "Spring",
-                Season.Summer => "Summer",
-                Season.Fall => "Fall",
-                Season.Winter => "Winter",
-                _ => date.Season.ToString()
             };
+            return $"第 {date.Year} 年 {seasonName} {date.DayOfMonth} 日";
+        }
 
-        return IsChineseLanguage
-            ? $"[Y{date.Year} {seasonName} {date.DayOfMonth}日]"
-            : $"[Y{date.Year} {seasonName} d{date.DayOfMonth}]";
+        string enSeason = date.Season switch
+        {
+            Season.Spring => "Spring",
+            Season.Summer => "Summer",
+            Season.Fall => "Fall",
+            Season.Winter => "Winter",
+            _ => date.Season.ToString()
+        };
+        return $"{enSeason} {date.DayOfMonth}, Year {date.Year}";
     }
 
     /// <summary>当前游戏日戳；世界未就绪 → 空串。</summary>

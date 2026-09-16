@@ -249,7 +249,10 @@ public class AsyncBuilder
                     var menuToClose = _placeholderMenu;
                     ResetState();
                     _generationCooldownFrames = 5;
-                    var errMsg = Util.GetString("uiErrorGeneric") ?? "（请求发生异常，请检查设置。）";
+                    var errMsg = Util.GetString("uiErrorGeneric")
+                        ?? (LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh
+                            ? "（请求发生异常，请检查设置。）"
+                            : "(An error occurred, please check your settings.)");
                     if (npc != null)
                         Game1.activeClickableMenu = new DialogueBox(new Dialogue(npc, "", $"$s {errMsg}"));
                     else
@@ -316,17 +319,23 @@ public class AsyncBuilder
                     // 🌟【业务逻辑 100% 完整保留】：向周围 512 像素（8 格）内的旁观 NPC 广播偷听内容
                     if (npc.currentLocation != null && Game1.player != null)
                     {
-                        var farmerLabel = Util.GetString("generalFarmerLabel") ?? "农夫";
+                        bool isChinese = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+                        var defaultFarmerLabel = isChinese ? "农夫" : "Farmer";
+                        var farmerLabel = Util.GetString("generalFarmerLabel") ?? defaultFarmerLabel;
                         string speakerName = npc.displayName ?? npc.Name;
 
                         string eavesdropText;
-                        if (!string.IsNullOrWhiteSpace(lastPlayerChoice))
+                        if (isChinese)
                         {
-                            eavesdropText = $"[Eavesdrop] {farmerLabel}对{speakerName}说：\"{lastPlayerChoice}\"，{speakerName}回应：\"{cleanResponseText}\"";
+                            eavesdropText = !string.IsNullOrWhiteSpace(lastPlayerChoice)
+                                ? $"[Eavesdrop] {farmerLabel}对{speakerName}说：\"{lastPlayerChoice}\"，{speakerName}回应：\"{cleanResponseText}\""
+                                : $"[Eavesdrop] {farmerLabel}对{speakerName}说话，{speakerName}回应：\"{cleanResponseText}\"";
                         }
                         else
                         {
-                            eavesdropText = $"[Eavesdrop] {farmerLabel}对{speakerName}说话，{speakerName}回应：\"{cleanResponseText}\"";
+                            eavesdropText = !string.IsNullOrWhiteSpace(lastPlayerChoice)
+                                ? $"[Eavesdrop] {farmerLabel} said to {speakerName}: \"{lastPlayerChoice}\", {speakerName} replied: \"{cleanResponseText}\""
+                                : $"[Eavesdrop] {farmerLabel} talked to {speakerName}, {speakerName} replied: \"{cleanResponseText}\"";
                         }
 
                         foreach (var nearbyNpc in npc.currentLocation.characters)
@@ -370,7 +379,10 @@ public class AsyncBuilder
             {
                 ResetState();
                 _generationCooldownFrames = 5;
-                var netMsg = Util.GetString("uiErrorNetwork") ?? "（请求发生异常或超时，请检查网络与设置。）";
+                var netMsg = Util.GetString("uiErrorNetwork")
+                    ?? (LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh
+                        ? "（请求发生异常或超时，请检查网络与设置。）"
+                        : "(Request timed out or encountered an error, please check network and settings.)");
                 if (npc != null)
                     Game1.activeClickableMenu = new DialogueBox(new Dialogue(npc, "", $"$s {netMsg}"));
                 else

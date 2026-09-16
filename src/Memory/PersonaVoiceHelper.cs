@@ -68,10 +68,17 @@ internal static class PersonaVoiceHelper
         return sb.ToString();
     }
 
-    /// <summary>按 [TAG] 起始、到下一个 [ 或文末为止抽取段体；无匹配 → ""。</summary>
+    /// <summary>按 [TAG] 起始、到下一个行首 [ 或绝对文末为止抽取段体；标签必须独立成行，无匹配 → ""。</summary>
     private static string ExtractSection(string text, string tag)
     {
-        var match = Regex.Match(text, $"[{tag}](.*?)(?=\\n\\s*\\[|\\Z)", RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        if (string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(tag)) return "";
+
+        // T12：标签必须独立成行（行首 [TAG] 后仅允许行尾空白，随后换行）；段体吃至下一个行首 [ 或绝对文末（\z）
+        var match = Regex.Match(
+            text,
+            $"^\\s*\\[{Regex.Escape(tag)}\\][ \\t]*\\r?\\n(.*?)(?=^\\s*\\[|\\z)",
+            RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Singleline);
+
         return match.Success ? match.Groups[1].Value : "";
     }
 }

@@ -181,14 +181,7 @@ internal static class MemoryExtractService
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeoutCts.CancelAfter(TimeSpan.FromSeconds(Math.Clamp(ModEntry.Config.LlmTimeoutSeconds, 15, 120)));
 
-        if (ModEntry.Config.Debug)
-        {
-            ModEntry.SMonitor?.Log(
-                $"[MemoryExtractService] >>> Sending Condense Request for [{npcName}] ({tierName}) <<<\n" +
-                $"[System Prompt]:\n{sysPrompt}\n" +
-                $"[User Prompt]:\n{userPrompt}",
-                LogLevel.Debug);
-        }
+        // T12：Debug 全文打印收敛至 LlmTrafficLogger 唯一出口，此处不再重复打印
 
         // 7. 公共推理执行器（T8-R1 收敛）
         var (ok, resp, status, error) = await ExecuteInferenceAsync(sysPrompt, userPrompt, 160, expectedFolder, ct);
@@ -203,12 +196,7 @@ internal static class MemoryExtractService
             return result;
         }
 
-        if (ModEntry.Config.Debug)
-        {
-            ModEntry.SMonitor?.Log(
-                $"[MemoryExtractService] <<< Received Condense Response for [{npcName}] ({tierName}) <<<\n{resp.Text}",
-                LogLevel.Debug);
-        }
+        // T12：Debug 全文打印收敛至 LlmTrafficLogger 唯一出口，此处不再重复打印
 
         // 10. 提取 JSON 数组
         string raw = resp.Text;
@@ -375,11 +363,7 @@ internal static class MemoryExtractService
             var sb = new StringBuilder();
             if (isZh)
             {
-                sb.AppendLine("### 你的身份与口吻");
-                sb.AppendLine($"你就是【{characterName}】。以下是你平时的说话语气与下意识习惯：");
-                if (!string.IsNullOrEmpty(personaSlice))
-                    sb.AppendLine(personaSlice);
-                sb.AppendLine();
+                // T12：user 侧身份段已删除（persona 仅 sys 注入）；任务段升为 user prompt 首段
                 sb.AppendLine("### 任务：留下你的第一人称心流印记");
                 sb.AppendLine("回想刚才和农夫的一番对话，以【你自己的个性口吻】在心里留存 1~3 条鲜活的真实感想与印记（每条 30 字以内）。");
                 sb.AppendLine();
@@ -398,11 +382,7 @@ internal static class MemoryExtractService
             }
             else
             {
-                sb.AppendLine("### IDENTITY & VOICE");
-                sb.AppendLine($"You are {characterName}. Your habitual speech cadence and quirks:");
-                if (!string.IsNullOrEmpty(personaSlice))
-                    sb.AppendLine(personaSlice);
-                sb.AppendLine();
+                // T12：user 侧身份段已删除（persona 仅 sys 注入）；任务段升为 user prompt 首段
                 sb.AppendLine("### TASK: INNER FIRST-PERSON IMPRESSIONS");
                 sb.AppendLine("Thinking back to your conversation with the farmer, write down 1~3 concise inner thoughts that stuck with you (under 30 characters each).");
                 sb.AppendLine();
@@ -518,14 +498,7 @@ internal static class MemoryExtractService
         }
 
         // 7. Debug 请求日志
-        if (ModEntry.Config.Debug)
-        {
-            ModEntry.SMonitor?.Log(
-                $"[MemoryExtractService] >>> Sending LLM Request for [{characterName}] <<<\n" +
-                $"[System Prompt]:\n{sys}\n" +
-                $"[User Prompt]:\n{userPrompt}",
-                LogLevel.Debug);
-        }
+        // T12：Debug 全文打印收敛至 LlmTrafficLogger 唯一出口，此处不再重复打印
 
         // 8. 公共推理执行器（T8-R1 收敛：RunInference + 超时 + OCE + 跨档 + 空响应）
         var (ok, resp, status, error) = await ExecuteInferenceAsync(sys, userPrompt, nPredict, expectedFolder, ct);
@@ -540,13 +513,7 @@ internal static class MemoryExtractService
             return result;
         }
 
-        // 9. Debug 响应日志
-        if (ModEntry.Config.Debug)
-        {
-            ModEntry.SMonitor?.Log(
-                $"[MemoryExtractService] <<< Received LLM Response for [{characterName}] <<<\n{resp.Text}",
-                LogLevel.Debug);
-        }
+        // T12：Debug 全文打印收敛至 LlmTrafficLogger 唯一出口，此处不再重复打印
 
         // 11. 提取 JSON 数组
         string raw = resp.Text;
