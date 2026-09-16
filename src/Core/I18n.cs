@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
@@ -72,15 +72,12 @@ namespace ValleytalkReborn
 
             EnsureLocale();
 
-            // 1. 优先读取已成功加载的语言包字典（包括 ContentPack 与 i18n）
             if (_locale != null && _locale.TryGetValue(key, out var val) && !string.IsNullOrEmpty(val))
                 return val;
 
-            // 2. 回退到默认英文语言包
             if (_english != null && _english.TryGetValue(key, out val) && !string.IsNullOrEmpty(val))
                 return val;
 
-            // 3. 回退到 SMAPI Translation（若有配置）
             try
             {
                 if (ModEntry.SHelper?.Translation != null)
@@ -104,8 +101,8 @@ namespace ValleytalkReborn
                 if (string.IsNullOrWhiteSpace(folderPath)) return;
                 try
                 {
-                    string fullFolder = Path.IsPathRooted(folderPath) 
-                        ? folderPath 
+                    string fullFolder = Path.IsPathRooted(folderPath)
+                        ? folderPath
                         : Path.GetFullPath(Path.Combine(baseDir, folderPath));
 
                     if (locale == "default" || locale == "en")
@@ -125,13 +122,10 @@ namespace ValleytalkReborn
                 catch { }
             }
 
-            // 1. 扫描同级或子级的 ContentPack 目录（物理安全穿透）
             AddFileCandidates("../ContentPack/i18n");
             AddFileCandidates("../[CP] ValleyTalkReborn Base/i18n");
             AddFileCandidates("ContentPack/i18n");
             AddFileCandidates("[CP] ValleyTalkReborn Base/i18n");
-
-            // 2. 回退扫描当前主模组根目录下的 i18n
             AddFileCandidates("i18n");
 
             foreach (var filePath in candidates)
@@ -179,80 +173,174 @@ namespace ValleytalkReborn
         public static string ResponseStart() => Lookup("responseStart");
         public static string Get(string key) => Lookup(key);
 
+        // =========================================================================
+        // 1. TIMELINE CHRONICLE MENU (Isolated Scope)
+        // =========================================================================
+        public static class Timeline
+        {
+            public static string NpcDropdownPrefix() => Lookup("Timeline.NpcDropdownPrefix");
+            public static string SpeakerFarmer() => Lookup("Timeline.Speaker.Farmer");
+            public static string SpeakerScene() => Lookup("Timeline.Speaker.Scene");
+            public static string Title(string npcName) => FormatNpc(Lookup("Timeline.Title"), npcName);
+            public static string TodayDate(string date) => Lookup("Timeline.TodayDate").Replace("{{date}}", date ?? string.Empty);
+            public static string EmptyChats() => Lookup("Timeline.EmptyChats");
+            public static string EmptyTier() => Lookup("Timeline.EmptyTier");
+            public static string CooldownHud(int remaining) => Lookup("Timeline.CooldownHud").Replace("{{remaining}}", remaining.ToString());
+            public static string CondenseMinCount(int min) => Lookup("Timeline.CondenseMinCount").Replace("{{min}}", min.ToString());
+            public static string TabChats() => Lookup("Timeline.TabChats");
+            public static string TabImpressions() => Lookup("Timeline.TabImpressions");
+            public static string TabWeekly() => Lookup("Timeline.TabWeekly");
+            public static string TabChronicle() => Lookup("Timeline.TabChronicle");
+            public static string DistillThisPage() => Lookup("Timeline.DistillThisPage");
+            public static string ConsolidateToWeekly(int count) => Lookup("Timeline.ConsolidateToWeekly").Replace("{{count}}", count.ToString());
+            public static string ElevateToChronicle(int count) => Lookup("Timeline.ElevateToChronicle").Replace("{{count}}", count.ToString());
+            public static string PrevDay() => Lookup("Timeline.PrevDay");
+            public static string NextDay() => Lookup("Timeline.NextDay");
+        }
+
+        // =========================================================================
+        // 2. TIMELINE DISTILL CARD MENU (Isolated Scope)
+        // =========================================================================
+        public static class TimelineDistill
+        {
+            public static string TitleWeekly(string npcName) => FormatNpc(Lookup("TimelineDistill.TitleWeekly"), npcName);
+            public static string TitleChronicle(string npcName) => FormatNpc(Lookup("TimelineDistill.TitleChronicle"), npcName);
+            public static string TitleDaily(string npcName) => FormatNpc(Lookup("TimelineDistill.TitleDaily"), npcName);
+            public static string Capacity(int current, int max)
+                => Lookup("TimelineDistill.Capacity").Replace("{{current}}", current.ToString()).Replace("{{max}}", max.ToString());
+            public static string Loading() => Lookup("TimelineDistill.Loading");
+            public static string SourceHeader(int count) => Lookup("TimelineDistill.SourceHeader").Replace("{{count}}", count.ToString());
+            public static string DraftTag(int index) => Lookup("TimelineDistill.DraftTag").Replace("{{index}}", index.ToString());
+            public static string CollectButton() => Lookup("TimelineDistill.CollectButton");
+            public static string EditTooltip() => Lookup("TimelineDistill.EditTooltip");
+            public static string CollectedStamp() => Lookup("TimelineDistill.CollectedStamp");
+            public static string CollectSuccess() => Lookup("TimelineDistill.CollectSuccess");
+        }
+
+        // =========================================================================
+        // 3. INTEGRATED HUB SHELL (Isolated Scope)
+        // =========================================================================
+        public static class Hub
+        {
+            public static string Title() => Lookup("Hub.Title");
+            public static string SelectNpcLabel() => Lookup("Hub.SelectNpcLabel");
+            public static string TabNpcMemory() => Lookup("Hub.TabNpcMemory");
+            public static string TabWorldMemory() => Lookup("Hub.TabWorldMemory");
+            public static string TabProfile() => Lookup("Hub.TabProfile");
+            public static string TabAdvanced() => Lookup("Hub.TabAdvanced");
+        }
+
+        // =========================================================================
+        // 4. FARMER PROFILE DOMAIN (Shared between Hub Tab2 & PlayerProfileCustomMenu)
+        // =========================================================================
+        public static class Profile
+        {
+            public static string MenuTitle() => Lookup("Profile.MenuTitle");
+            public static string EnableProfile() => Lookup("Profile.EnableProfile");
+            public static string OrientationLabel() => Lookup("Profile.OrientationLabel");
+            public static string SelectOption() => Lookup("Profile.SelectOption");
+            public static string OrientationNone() => Lookup("Profile.Orientation.None");
+            public static string OrientationHeterosexual() => Lookup("Profile.Orientation.Heterosexual");
+            public static string OrientationHomosexual() => Lookup("Profile.Orientation.Homosexual");
+            public static string OrientationBisexual() => Lookup("Profile.Orientation.Bisexual");
+            public static string OrientationAsexual() => Lookup("Profile.Orientation.Asexual");
+            public static string RomanceSafetyLabel() => Lookup("Profile.RomanceSafetyLabel");
+            public static string SafetyOff() => Lookup("Profile.Safety.Off");
+            public static string SafetyLoose() => Lookup("Profile.Safety.Loose");
+            public static string SafetyModerate() => Lookup("Profile.Safety.Moderate");
+            public static string SafetyStrict() => Lookup("Profile.Safety.Strict");
+            public static string SafetyDesc() => Lookup("Profile.Safety.Desc");
+            public static string BioLabel() => Lookup("Profile.BioLabel");
+            public static string BioPlaceholder() => Lookup("Profile.BioPlaceholder");
+            public static string SaveButton() => Lookup("Profile.SaveButton");
+            public static string SavedHud() => Lookup("Profile.SavedHud");
+
+            // Backward compatibility (used by DialogueTextInputMenu.cs)
+            public static string ButtonHover() => Lookup("Profile.ButtonHover");
+        }
+
+        // =========================================================================
+        // 5. ADVANCED SETTINGS DOMAIN (Shared between Hub Tab3 & AdvancedSettingsMenu)
+        // =========================================================================
+        public static class AdvancedSettings
+        {
+            public static string MenuTitle() => Lookup("AdvancedSettings.MenuTitle");
+            public static string InfiniteChat() => Lookup("AdvancedSettings.InfiniteChat");
+            public static string InfiniteChatTooltip() => Lookup("AdvancedSettings.InfiniteChatTooltip");
+            public static string VanillaFirst() => Lookup("AdvancedSettings.VanillaFirst");
+            public static string VanillaFirstTooltip() => Lookup("AdvancedSettings.VanillaFirstTooltip");
+            public static string RecordVanillaDialogue() => Lookup("AdvancedSettings.RecordVanillaDialogue");
+            public static string RecordVanillaDialogueTooltip() => Lookup("AdvancedSettings.RecordVanillaDialogueTooltip");
+            public static string Disclaimer() => Lookup("AdvancedSettings.Disclaimer");
+
+            // Backward compatibility (used by DialogueTextInputMenu.cs)
+            public static string ButtonHover() => Lookup("AdvancedSettings.ButtonHover");
+        }
+
+        // =========================================================================
+        // 6. CORE MEMORY DOMAIN (Shared across All Memory Menus)
+        // =========================================================================
         public static class Memory
         {
-            public static string Title(string name, int count)
-                => FormatNpc(Lookup("Memory.Title"), name)
-                    .Replace("{{1}}", count.ToString())
-                    .Replace("{{Count}}", count.ToString())
-                    .Replace("{{count}}", count.ToString());
-
-            public static string Empty() => Lookup("Memory.Empty");
-            public static string AddButton() => Lookup("Memory.AddButton");
-            public static string AddWorldButton() => Lookup("Memory.AddWorldButton");
-
-            public static string EditTitle(string name) => FormatNpc(Lookup("Memory.EditTitle"), name);
-            public static string EditButtonHover() => Lookup("Memory.EditButtonHover");
-            public static string DeleteButtonHover() => Lookup("Memory.DeleteButtonHover");
-            public static string AddTitle(string name) => FormatNpc(Lookup("Memory.AddTitle"), name);
-            public static string AddHint(string npcName) => FormatNpc(Lookup("Memory.AddHint"), npcName);
-            public static string AddSuccess() => Lookup("Memory.AddSuccess");
-
-            public static string AddFailedFull(int max)
-                => Lookup("Memory.AddFailedFull")
-                    .Replace("{{0}}", max.ToString())
-                    .Replace("{{value}}", max.ToString())
-                    .Replace("{{Max}}", max.ToString())
-                    .Replace("{{max}}", max.ToString());
-
-            public static string AddFailedDuplicate() => Lookup("Memory.AddFailedDuplicate");
-
-            public static string AddFailedTooLong(int max)
-                => Lookup("Memory.AddFailedTooLong")
-                    .Replace("{{0}}", max.ToString())
-                    .Replace("{{value}}", max.ToString())
-                    .Replace("{{Max}}", max.ToString())
-                    .Replace("{{max}}", max.ToString());
-
-            public static string DeleteConfirm(string content)
-                => Lookup("Memory.DeleteConfirm")
-                    .Replace("{{0}}", content ?? string.Empty)
-                    .Replace("{{value}}", content ?? string.Empty)
-                    .Replace("{{Content}}", content ?? string.Empty)
-                    .Replace("{{content}}", content ?? string.Empty);
-
-            public static string DeleteSuccess() => Lookup("Memory.DeleteSuccess");
-            public static string ButtonHover(string name) => FormatNpc(Lookup("Memory.ButtonHover"), name);
-            public static string CloseButton() => Lookup("Memory.CloseButton");
-            public static string CancelButton() => Lookup("Memory.CancelButton");
-            public static string OKButton() => Lookup("Memory.OKButton");
-
-            public static string CharacterLimit(int max)
-                => Lookup("Memory.CharacterLimit")
-                    .Replace("{{0}}", max.ToString())
-                    .Replace("{{value}}", max.ToString())
-                    .Replace("{{Max}}", max.ToString())
-                    .Replace("{{max}}", max.ToString());
-
+            // Shell & Navigation for ScrollableMemoryMenu
             public static string MenuTitle() => Lookup("Memory.MenuTitle");
             public static string TabNpc(string name) => FormatNpc(Lookup("Memory.TabNpc"), name);
             public static string TabWorld() => Lookup("Memory.TabWorld");
+            public static string Empty() => Lookup("Memory.Empty");
             public static string WorldEmpty() => Lookup("Memory.WorldEmpty");
-            public static string WorldEditTitle() => Lookup("Memory.WorldEditTitle");
-            public static string WorldAddTitle() => Lookup("Memory.WorldAddTitle");
-            public static string WorldAddHint(int max)
-                => Lookup("Memory.WorldAddHint")
-                    .Replace("{{max}}", max.ToString())
-                    .Replace("{{Max}}", max.ToString())
-                    .Replace("{{value}}", max.ToString())
-                    .Replace("{{0}}", max.ToString());
 
+            // Buttons & Hovers
+            public static string AddButton() => Lookup("Memory.AddButton");
+            public static string AddWorldButton() => Lookup("Memory.AddWorldButton");
+            public static string CloseButton() => Lookup("Memory.CloseButton");
+            public static string EditButtonHover() => Lookup("Memory.EditButtonHover");
+            public static string DeleteButtonHover() => Lookup("Memory.DeleteButtonHover");
+
+            // Add/Edit Dialogs
+            public static string AddTitle(string name) => FormatNpc(Lookup("Memory.AddTitle"), name);
+            public static string EditTitle(string name) => FormatNpc(Lookup("Memory.EditTitle"), name);
+            public static string AddHint(string npcName) => FormatNpc(Lookup("Memory.AddHint"), npcName);
+            public static string WorldAddTitle() => Lookup("Memory.WorldAddTitle");
+            public static string WorldEditTitle() => Lookup("Memory.WorldEditTitle");
+            public static string WorldAddHint(int max) => Lookup("Memory.WorldAddHint").Replace("{{max}}", max.ToString());
+
+            // Tags & Categories
+            public static string RuleTag() => Lookup("Memory.RuleTag");
+            public static string MemoryTag() => Lookup("Memory.MemoryTag");
             public static string AutoPrefix() => Lookup("Memory.AutoPrefix");
+            public static string CategoryFactLabel() => Lookup("Memory.CategoryFactLabel");
+            public static string CategoryBehaviorLabel() => Lookup("Memory.CategoryBehaviorLabel");
+            public static string CategoryFactHint() => Lookup("Memory.CategoryFactHint");
+            public static string CategoryBehaviorHint() => Lookup("Memory.CategoryBehaviorHint");
+
+            // Result HUD Messages
+            public static string AddFailedFull(int max) => Lookup("Memory.AddFailedFull").Replace("{{max}}", max.ToString());
+            public static string AddFailedDuplicate() => Lookup("Memory.AddFailedDuplicate");
+            public static string AddFailedTooLong(int max) => Lookup("Memory.AddFailedTooLong").Replace("{{max}}", max.ToString());
+            public static string DeleteConfirm(string content) => Lookup("Memory.DeleteConfirm").Replace("{{content}}", content ?? string.Empty);
+
+            // Callsigns
             public static string CallsignPrefix() => Lookup("Memory.CallsignPrefix");
             public static string CallsignUnset() => Lookup("Memory.CallsignUnset");
             public static string CallsignTitle(string npcName) => FormatNpc(Lookup("Memory.CallsignTitle"), npcName);
             public static string CallsignHint() => Lookup("Memory.CallsignHint");
 
+            // Archive Box
+            public static string ArchiveButton(int count, int max)
+                => Lookup("Memory.ArchiveButton").Replace("{{count}}", count.ToString()).Replace("{{max}}", max.ToString());
+            public static string ArchiveTitle(string npcName) => FormatNpc(Lookup("Memory.ArchiveTitle"), npcName);
+            public static string ArchiveEmpty() => Lookup("Memory.ArchiveEmpty");
+            public static string ArchiveCount(int count, int max)
+                => Lookup("Memory.ArchiveCount").Replace("{{count}}", count.ToString()).Replace("{{max}}", max.ToString());
+            public static string ArchiveRestoreButton() => Lookup("Memory.ArchiveRestoreButton");
+            public static string ArchiveDeleteButton() => Lookup("Memory.ArchiveDeleteButton");
+            public static string ArchiveDeleteConfirm(string content) => Lookup("Memory.ArchiveDeleteConfirm").Replace("{{content}}", content ?? string.Empty);
+            public static string ArchiveRestoreDuplicate() => Lookup("Memory.ArchiveRestoreDuplicate");
+            public static string ArchiveRestoreNotFound() => Lookup("Memory.ArchiveRestoreNotFound");
+            public static string ArchiveRuleHint(int max) => Lookup("Memory.ArchiveRuleHint").Replace("{{max}}", max.ToString());
+            public static string ArchiveEndangeredTag() => Lookup("Memory.ArchiveEndangeredTag");
+
+            // 2-Column Distill Menu (MemoryDistillMenu.cs)
             public static string DistillTitle(string npcName) => FormatNpc(Lookup("Memory.DistillTitle"), npcName);
             public static string DistillButton() => Lookup("Memory.DistillButton");
             public static string DistillLoading() => Lookup("Memory.DistillLoading");
@@ -263,58 +351,9 @@ namespace ValleytalkReborn
             public static string DistillRightTitle() => Lookup("Memory.DistillRightTitle");
             public static string DistillDuplicate() => Lookup("Memory.DistillDuplicate");
             public static string DistillLlmDisabled() => Lookup("Memory.DistillLlmDisabled");
-            public static string RuleTag() => Lookup("Memory.RuleTag");
-            public static string MemoryTag() => Lookup("Memory.MemoryTag");
-            public static string CategoryFactLabel() => Lookup("Memory.CategoryFactLabel");
-            public static string CategoryBehaviorLabel() => Lookup("Memory.CategoryBehaviorLabel");
-            public static string CategoryFactHint() => Lookup("Memory.CategoryFactHint");
-            public static string CategoryBehaviorHint() => Lookup("Memory.CategoryBehaviorHint");
-            public static string ArchiveButton(int count, int max)
-                => Lookup("Memory.ArchiveButton")
-                    .Replace("{{count}}", count.ToString())
-                    .Replace("{{value}}", count.ToString())
-                    .Replace("{{max}}", max.ToString())
-                    .Replace("{{0}}", count.ToString());
-            public static string ArchiveTitle(string npcName) => FormatNpc(Lookup("Memory.ArchiveTitle"), npcName);
-            public static string ArchiveEmpty() => Lookup("Memory.ArchiveEmpty");
-            public static string ArchiveCount(int count, int max)
-                => Lookup("Memory.ArchiveCount")
-                    .Replace("{{count}}", count.ToString())
-                    .Replace("{{value}}", count.ToString())
-                    .Replace("{{max}}", max.ToString())
-                    .Replace("{{0}}", count.ToString());
-            public static string ArchiveRestoreButton() => Lookup("Memory.ArchiveRestoreButton");
-            public static string ArchiveDeleteButton() => Lookup("Memory.ArchiveDeleteButton");
-            public static string ArchiveDeleteConfirm(string content)
-                => Lookup("Memory.ArchiveDeleteConfirm")
-                    .Replace("{{content}}", content ?? string.Empty)
-                    .Replace("{{value}}", content ?? string.Empty)
-                    .Replace("{{0}}", content ?? string.Empty);
-            public static string ArchiveRestoreDuplicate() => Lookup("Memory.ArchiveRestoreDuplicate");
-            public static string ArchiveRestoreNotFound() => Lookup("Memory.ArchiveRestoreNotFound");
-            public static string ArchiveRuleHint(int max)
-                => Lookup("Memory.ArchiveRuleHint")
-                    .Replace("{{max}}", max.ToString())
-                    .Replace("{{value}}", max.ToString())
-                    .Replace("{{0}}", max.ToString());
-            public static string ArchiveEndangeredTag() => Lookup("Memory.ArchiveEndangeredTag");
-            public static string TabChats() => Lookup("Memory.TabChats");
-            public static string TabImpressions() => Lookup("Memory.TabImpressions");
-            public static string TabWeekly() => Lookup("Memory.TabWeekly");
-            public static string TabChronicle() => Lookup("Memory.TabChronicle");
-            public static string DistillThisPage() => Lookup("Memory.DistillThisPage");
-            public static string ConsolidateToWeekly(int count)
-                => Lookup("Memory.ConsolidateToWeekly")
-                    .Replace("{{count}}", count.ToString())
-                    .Replace("{{value}}", count.ToString())
-                    .Replace("{{0}}", count.ToString());
-            public static string ElevateToChronicle(int count)
-                => Lookup("Memory.ElevateToChronicle")
-                    .Replace("{{count}}", count.ToString())
-                    .Replace("{{value}}", count.ToString())
-                    .Replace("{{0}}", count.ToString());
-            public static string PrevDay() => Lookup("Memory.PrevDay");
-            public static string NextDay() => Lookup("Memory.NextDay");
+
+            // Backward compatibility (used by DialogueTextInputMenu.cs)
+            public static string ButtonHover(string name) => FormatNpc(Lookup("Memory.ButtonHover"), name);
         }
 
         public static class DialogueInput
@@ -331,34 +370,6 @@ namespace ValleytalkReborn
 
             public static string HistoryTitle(string npcName) => FormatNpc(Lookup("DialogueInput.HistoryTitle"), npcName);
             public static string HistoryEmpty(string npcName) => FormatNpc(Lookup("DialogueInput.HistoryEmpty"), npcName);
-        }
-
-        public static class Profile
-        {
-            public static string ButtonHover() => Lookup("Profile.ButtonHover");
-            public static string Title() => Lookup("Profile.Title");
-            public static string EnableProfile() => Lookup("Profile.EnableProfile");
-            public static string PersonalityTraits() => Lookup("Profile.PersonalityTraits");
-            public static string FarmSpecialty() => Lookup("Profile.FarmSpecialty");
-            public static string SocialStyle() => Lookup("Profile.SocialStyle");
-            public static string SexualOrientation() => Lookup("Profile.SexualOrientation");
-            public static string RomanceSafetyMode() => Lookup("Profile.RomanceSafetyMode");
-            public static string CustomBio() => Lookup("Profile.CustomBio");
-            public static string TraitsMaxReached() => Lookup("Profile.TraitsMaxReached");
-            public static string SaveButton() => Lookup("Profile.SaveButton");
-            public static string SaveSuccess() => Lookup("Profile.SaveSuccess");
-            public static string CloseButton() => Lookup("Profile.CloseButton");
-            public static string SelectOption() => Lookup("Profile.SelectOption");
-            public static string SafetyStrict() => Lookup("Profile.SafetyStrict");
-            public static string SafetyModerate() => Lookup("Profile.SafetyModerate");
-            public static string SafetyLoose() => Lookup("Profile.SafetyLoose");
-            public static string SafetyOff() => Lookup("Profile.SafetyOff");
-            public static string SafetyDescription() => Lookup("Profile.SafetyDescription");
-        }
-
-        public static class AdvancedSettings
-        {
-            public static string ButtonHover() => Lookup("AdvancedSettings.ButtonHover");
         }
 
         public static class Follower

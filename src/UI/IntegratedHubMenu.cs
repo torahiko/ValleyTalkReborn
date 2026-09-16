@@ -124,7 +124,7 @@ namespace ValleytalkReborn
             _currentNpcName = initialNpcName;
             _npcDropdown = new DropdownList(Rectangle.Empty)
             {
-                HeaderPrefix = T("Hub.SelectNpcLabel", "NPC: "),
+                HeaderPrefix = I18n.Hub.SelectNpcLabel(),
                 OnItemSelected = name => SelectNpc(name)
             };
 
@@ -646,7 +646,7 @@ namespace ValleytalkReborn
                 bioText = bioText.Substring(0, 300);
 
             PlayerProfileManager.SaveCustomBio(bioText);
-            Game1.addHUDMessage(new HUDMessage(T("PProfile.UI.ProfileSaved", "Profile saved!"), 2));
+            Game1.addHUDMessage(new HUDMessage(I18n.Profile.SavedHud(), 2));
         }
 
         private void HandleListRowClicks(int x, int y)
@@ -783,17 +783,17 @@ namespace ValleytalkReborn
             Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
 
             // 标题
-            string title = T("Hub.Title", "Management Hub");
+            string title = I18n.Hub.Title();
             var titleSize = Game1.dialogueFont.MeasureString(title);
             b.DrawString(Game1.dialogueFont, title,
                 new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f, yPositionOnScreen + 12),
                 Game1.textColor);
 
             // 四个自适应 Tab
-            DrawTab(b, _tabRects[0], T("Hub.TabNpcMemory", "NPC Memories"), _currentTab == 0, mx, my);
-            DrawTab(b, _tabRects[1], T("Hub.TabWorldMemory", "World Memories"), _currentTab == 1, mx, my);
-            DrawTab(b, _tabRects[2], T("Hub.TabProfile", "Farmer Profile"), _currentTab == 2, mx, my);
-            DrawTab(b, _tabRects[3], T("Hub.TabAdvanced", "Advanced Settings"), _currentTab == 3, mx, my);
+            DrawTab(b, _tabRects[0], I18n.Hub.TabNpcMemory(), _currentTab == 0, mx, my);
+            DrawTab(b, _tabRects[1], I18n.Hub.TabWorldMemory(), _currentTab == 1, mx, my);
+            DrawTab(b, _tabRects[2], I18n.Hub.TabProfile(), _currentTab == 2, mx, my);
+            DrawTab(b, _tabRects[3], I18n.Hub.TabAdvanced(), _currentTab == 3, mx, my);
 
             // 分隔线
             b.Draw(Game1.staminaRect,
@@ -980,21 +980,21 @@ namespace ValleytalkReborn
 
         private string[] GetSafetyModeLabels() => new[]
         {
-            T("PProfile.Safety.Off", "1: Unrestricted"),
-            T("PProfile.Safety.Loose", "2: Relaxed"),
-            T("PProfile.Safety.Moderate", "3: Hearts Matter"),
-            T("PProfile.Safety.Strict", "4: Committed Only")
+            I18n.Profile.SafetyOff(),
+            I18n.Profile.SafetyLoose(),
+            I18n.Profile.SafetyModerate(),
+            I18n.Profile.SafetyStrict()
         };
 
         private void InitializeTab2()
         {
             _orientationItems = new List<(string, string)>
             {
-                ("", T("PProfile.UI.None", "(None)")),
-                ("Heterosexual", T("PProfile.Orientation.Heterosexual", "Straight")),
-                ("Homosexual", T("PProfile.Orientation.Homosexual", "Gay/Lesbian")),
-                ("Bisexual", T("PProfile.Orientation.Bisexual", "Bisexual")),
-                ("Asexual", T("PProfile.Orientation.Asexual", "Asexual")),
+                ("", I18n.Profile.OrientationNone()),
+                ("Heterosexual", I18n.Profile.OrientationHeterosexual()),
+                ("Homosexual", I18n.Profile.OrientationHomosexual()),
+                ("Bisexual", I18n.Profile.OrientationBisexual()),
+                ("Asexual", I18n.Profile.OrientationAsexual()),
             };
 
             string current = ModEntry.Config.PlayerSexualOrientation ?? "";
@@ -1061,8 +1061,7 @@ namespace ValleytalkReborn
 
             int maxDescW = contentW - 20;
             int wrapW = (int)(maxDescW / 0.85f);
-            string desc = Game1.parseText(T("PProfile.Safety.Desc",
-                "Sets how far romantic dialogue can go (the AI will try to follow this, but it isn't guaranteed 100% of the time).\n- Unrestricted: Flirty dialogue can happen with anyone.\n- Relaxed: Casual banter when the context fits.\n- Hearts Matter: Subtle romance only once friendship is high enough.\n- Committed Only: Romance is reserved for your dating partner or spouse."),
+            string desc = Game1.parseText(I18n.Profile.SafetyDesc(),
                 Game1.smallFont, wrapW);
 
             string[] descLines = desc.Split('\n');
@@ -1098,7 +1097,7 @@ namespace ValleytalkReborn
                 : new Rectangle(227, 425, 9, 9);
             b.Draw(Game1.mouseCursors, new Vector2(_enableProfileCheckboxRect.X, _enableProfileCheckboxRect.Y),
                 enableSrc, Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 1f);
-            b.DrawString(Game1.smallFont, T("PProfile.UI.EnableProfile", "Enable Farmer Profile"),
+            b.DrawString(Game1.smallFont, I18n.Profile.EnableProfile(),
                 new Vector2(_enableProfileCheckboxRect.X + 44, _enableProfileCheckboxRect.Y + 4),
                 Game1.textColor);
 
@@ -1106,12 +1105,12 @@ namespace ValleytalkReborn
                 return;
 
             // b) 性取向标签
-            b.DrawString(Game1.smallFont, T("PProfile.UI.SexualOrientation", "Orientation:"),
+            b.DrawString(Game1.smallFont, I18n.Profile.OrientationLabel(),
                 new Vector2(_orientationLabelRect.X, _orientationLabelRect.Y + 6),
                 Game1.textColor);
 
             // c) 恋爱尺度标题
-            b.DrawString(Game1.smallFont, T("PProfile.UI.RomanceSafetyMode", "Romance Boundaries:"),
+            b.DrawString(Game1.smallFont, I18n.Profile.RomanceSafetyLabel(),
                 new Vector2(_safetyLabelRect.X, _safetyLabelRect.Y + 2),
                 Game1.textColor);
 
@@ -1153,8 +1152,7 @@ namespace ValleytalkReborn
             // 规则描述：位于指示器下方，0.85 缩放且水平居中排布
             int maxDescW = width - LeftPadding - RightPadding - 20;
             int wrapW = (int)(maxDescW / 0.85f);
-            string desc = Game1.parseText(T("PProfile.Safety.Desc",
-                "Sets how far romantic dialogue can go (the AI will try to follow this, but it isn't guaranteed 100% of the time).\n- Unrestricted: Flirty dialogue can happen with anyone.\n- Relaxed: Casual banter when the context fits.\n- Hearts Matter: Subtle romance only once friendship is high enough.\n- Committed Only: Romance is reserved for your dating partner or spouse."),
+            string desc = Game1.parseText(I18n.Profile.SafetyDesc(),
                 Game1.smallFont, wrapW);
 
             string[] descLines = desc.Split('\n');
@@ -1171,7 +1169,7 @@ namespace ValleytalkReborn
             }
 
             // d) Bio 自定义文本框
-            b.DrawString(Game1.smallFont, T("PProfile.UI.CustomBio", "About You:"),
+            b.DrawString(Game1.smallFont, I18n.Profile.BioLabel(),
                 new Vector2(_bioLabelRect.X, _bioLabelRect.Y + 4),
                 Game1.textColor);
 
@@ -1184,8 +1182,7 @@ namespace ValleytalkReborn
             // 占位提示
             if (string.IsNullOrWhiteSpace(_bioTextBox.Text))
             {
-                string placeholder = Game1.parseText(T("PProfile.UI.BioPlaceholder",
-                    "e.g. Ex-Joja accountant, loves hot coffee, hates the rain."),
+                string placeholder = Game1.parseText(I18n.Profile.BioPlaceholder(),
                     Game1.smallFont, _bioBoxRect.Width - 28);
                 b.DrawString(Game1.smallFont, placeholder,
                     new Vector2(_bioBoxRect.X + 8, _bioBoxRect.Y + 8), Color.Gray * 0.7f);
@@ -1204,7 +1201,7 @@ namespace ValleytalkReborn
             Color saveBg = saveHover ? Color.Wheat : Color.White;
             IClickableMenu.drawTextureBox(b, _saveButtonRect.X, _saveButtonRect.Y,
                 _saveButtonRect.Width, _saveButtonRect.Height, saveBg);
-            string saveText = T("PProfile.UI.Save", "Save");
+            string saveText = I18n.Profile.SaveButton();
             var saveSize = Game1.dialogueFont.MeasureString(saveText);
             b.DrawString(Game1.dialogueFont, saveText,
                 new Vector2(_saveButtonRect.X + (_saveButtonRect.Width - saveSize.X) / 2f,
@@ -1223,25 +1220,24 @@ namespace ValleytalkReborn
 
             // 1. 无限对话选项行
             DrawSettingRow(b, _tab3RowInfinite, _tab3CheckboxInfinite, ModEntry.Config.EnableInfiniteChat,
-                T("AdvancedSettings.InfiniteChat", "Unlimited Conversations"),
-                T("AdvancedSettings.InfiniteChatTooltip", "Removes the daily limit on conversations with NPCs."),
+                I18n.AdvancedSettings.InfiniteChat(),
+                I18n.AdvancedSettings.InfiniteChatTooltip(),
                 mx, my);
 
             // 2. 原版优先选项行
             DrawSettingRow(b, _tab3RowVanillaFirst, _tab3CheckboxVanillaFirst, ModEntry.Config.EnableVanillaFirst,
-                T("AdvancedSettings.VanillaFirst", "Prioritize Vanilla Dialogue"),
-                T("AdvancedSettings.VanillaFirstTooltip", "Wait until all native in-game dialogue is exhausted before triggering AI dialogue."),
+                I18n.AdvancedSettings.VanillaFirst(),
+                I18n.AdvancedSettings.VanillaFirstTooltip(),
                 mx, my);
 
             // 3. 记录原版对话选项行
             DrawSettingRow(b, _tab3RowRecordVanilla, _tab3CheckboxRecordVanilla, ModEntry.Config.RecordVanillaDialogue,
-                T("AdvancedSettings.RecordVanillaDialogue", "Record Vanilla Dialogue"),
-                T("AdvancedSettings.RecordVanillaDialogueTooltip", "Inject vanilla lines into AI context. Turn off to prevent repetitive loops."),
+                I18n.AdvancedSettings.RecordVanillaDialogue(),
+                I18n.AdvancedSettings.RecordVanillaDialogueTooltip(),
                 mx, my);
 
             // 置底居中的 Disclaimer
-            string disclaimer = Game1.parseText(T("AdvancedSettings.Disclaimer",
-                "Experimental feature. Due to AI generation mechanisms, dialogue may have unpredictable behavior."),
+            string disclaimer = Game1.parseText(I18n.AdvancedSettings.Disclaimer(),
                 Game1.smallFont, width - LeftPadding - RightPadding - 40);
 
             var disclaimerSize = Game1.smallFont.MeasureString(disclaimer);
@@ -1450,13 +1446,6 @@ namespace ValleytalkReborn
 
             if (_bioTextBox != null && Game1.keyboardDispatcher.Subscriber == _bioTextBox)
                 Game1.keyboardDispatcher.Subscriber = null;
-        }
-
-        // ── i18n 转发 ───────────────────────────────────────────────────
-
-        private static string T(string key, string fallback, object tokens = null)
-        {
-            return ModConfigMenu.GetUIString(key, fallback, tokens);
         }
 
         // ── 嵌套组件：NPC 下拉列表 ──────────────────────────────────────

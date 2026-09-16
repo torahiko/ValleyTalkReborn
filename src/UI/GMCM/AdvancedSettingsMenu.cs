@@ -151,9 +151,7 @@ namespace ValleytalkReborn
             );
 
             // Title.
-            string title = ModEntry.SHelper.Translation
-                .Get("AdvancedSettings.Title")
-                .Default("Advanced Settings");
+            string title = I18n.AdvancedSettings.MenuTitle();
 
             var titleSize = Game1.dialogueFont.MeasureString(title);
 
@@ -189,9 +187,7 @@ namespace ValleytalkReborn
                 1f
             );
 
-            string label = ModEntry.SHelper.Translation
-                .Get("AdvancedSettings.InfiniteChat")
-                .Default("Enable Infinite Chat");
+            string label = I18n.AdvancedSettings.InfiniteChat();
 
             b.DrawString(
                 Game1.smallFont,
@@ -217,9 +213,7 @@ namespace ValleytalkReborn
                 1f
             );
 
-            string vanillaFirstLabel = ModEntry.SHelper.Translation
-                .Get("AdvancedSettings.VanillaFirst")
-                .Default("Prioritize Vanilla Dialogue");
+            string vanillaFirstLabel = I18n.AdvancedSettings.VanillaFirst();
 
             b.DrawString(
                 Game1.smallFont,
@@ -245,9 +239,7 @@ namespace ValleytalkReborn
                 1f
             );
 
-            string recordVanillaLabel = ModEntry.SHelper.Translation
-                .Get("AdvancedSettings.RecordVanillaDialogue")
-                .Default("Record Vanilla Dialogue to Memory");
+            string recordVanillaLabel = I18n.AdvancedSettings.RecordVanillaDialogue();
 
             b.DrawString(
                 Game1.smallFont,
@@ -257,9 +249,7 @@ namespace ValleytalkReborn
             );
 
             // Disclaimer.
-            string disclaimer = ModEntry.SHelper.Translation
-                .Get("AdvancedSettings.Disclaimer")
-                .Default("Due to AI prediction mechanisms, this feature may have unpredictable behavior. Save often.");
+            string disclaimer = I18n.AdvancedSettings.Disclaimer();
 
             var disclaimerSize = Game1.smallFont.MeasureString(disclaimer);
 
@@ -276,25 +266,19 @@ namespace ValleytalkReborn
             // Hover tooltips.
             if (_checkboxRect.Contains(mouseX, mouseY))
             {
-                string tooltip = ModEntry.SHelper.Translation
-                    .Get("AdvancedSettings.InfiniteChatTooltip")
-                    .Default("Allows unlimited chat sessions without time limits.");
+                string tooltip = I18n.AdvancedSettings.InfiniteChatTooltip();
 
                 IClickableMenu.drawHoverText(b, tooltip, Game1.smallFont);
             }
             else if (_vanillaFirstCheckboxRect.Contains(mouseX, mouseY))
             {
-                string vanillaFirstTooltip = ModEntry.SHelper.Translation
-                    .Get("AdvancedSettings.VanillaFirstTooltip")
-                    .Default("Wait until all native in-game dialogue is exhausted before triggering AI dialogue.");
+                string vanillaFirstTooltip = I18n.AdvancedSettings.VanillaFirstTooltip();
 
                 IClickableMenu.drawHoverText(b, vanillaFirstTooltip, Game1.smallFont);
             }
             else if (_recordVanillaCheckboxRect.Contains(mouseX, mouseY))
             {
-                string tooltip = ModEntry.SHelper.Translation
-                    .Get("AdvancedSettings.RecordVanillaDialogueTooltip")
-                    .Default("Inject vanilla lines into AI memory. Turn OFF to prevent the AI from obsessing over repetitive game dialogue.");
+                string tooltip = I18n.AdvancedSettings.RecordVanillaDialogueTooltip();
 
                 IClickableMenu.drawHoverText(b, tooltip, Game1.smallFont);
             }

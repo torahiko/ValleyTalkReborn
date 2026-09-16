@@ -305,8 +305,7 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
         {
             _usedCandidates.Add(text);
             Game1.playSound("coin");
-            Game1.addHUDMessage(new HUDMessage(
-                I18n.IsChinese ? "已收录至时间线手账！" : "Added to Timeline Chronicle!", 1));
+            Game1.addHUDMessage(new HUDMessage(I18n.TimelineDistill.CollectSuccess(), 1));
 
             // 若由浓缩产生，收录后顺带安全销毁源碎片
             if (_sourceEntriesToRemove.Count > 0)
@@ -379,9 +378,9 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
         // 标题与副标题
         string title = _sourceEntriesToRemove.Count > 0
             ? (_targetTier == MemoryTier.Weekly
-                ? (I18n.IsChinese ? $"周记融炼 - {_npcDisplayName}" : $"Weekly Condensation - {_npcDisplayName}")
-                : (I18n.IsChinese ? $"大事记升华 - {_npcDisplayName}" : $"Chronicle Elevation - {_npcDisplayName}"))
-            : (I18n.IsChinese ? $"手账印象提炼 - {_npcDisplayName}" : $"Impression Distillation - {_npcDisplayName}");
+                ? I18n.TimelineDistill.TitleWeekly(_npcDisplayName)
+                : I18n.TimelineDistill.TitleChronicle(_npcDisplayName))
+            : I18n.TimelineDistill.TitleDaily(_npcDisplayName);
 
         Vector2 titleSize = Game1.dialogueFont.MeasureString(title);
         b.DrawString(Game1.dialogueFont, title,
@@ -390,8 +389,9 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
 
         int currentCap = MemoryManager.Instance.GetTimelineMemories(_npcName, _targetTier).Count;
         int maxCap = MemoryManager.GetTierCapacity(_targetTier);
-        string capText = I18n.IsChinese ? $"目标层级容量: {currentCap} / {maxCap}" : $"Tier Capacity: {currentCap} / {maxCap}";
-        b.DrawString(Game1.smallFont, capText, new Vector2(_bodyX, _contentTopY - 26), Color.DimGray);
+        string capText = I18n.TimelineDistill.Capacity(currentCap, maxCap);
+        // 向上挪移指示器位置至 _contentTopY - 36，避免侵入词条卡片内容区
+        b.DrawString(Game1.smallFont, capText, new Vector2(_bodyX, _contentTopY - 36), Color.DimGray);
 
         // 关闭按钮
         UiHelper.UpdateButtonScale(ref _closeButtonHoverScale, _closeButton, mx, my);
@@ -400,7 +400,7 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
 
         if (_state == DistillState.Loading)
         {
-            string loading = I18n.IsChinese ? "正在翻阅回忆，构思草稿..." : "Recalling moments and drafting...";
+            string loading = I18n.TimelineDistill.Loading();
             var size = Game1.dialogueFont.MeasureString(loading);
             b.DrawString(Game1.dialogueFont, loading,
                 new Vector2(xPositionOnScreen + (width - size.X) / 2f, yPositionOnScreen + (height - size.Y) / 2f),
@@ -437,9 +437,7 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
                 curBox.X, curBox.Y, curBox.Width, curBox.Height,
                 new Color(245, 235, 220), 3f, false);
 
-            string srcHeader = I18n.IsChinese
-                ? $"🗂️ 正在融炼的源记忆碎片 ({_sourceEntriesToRemove.Count} 条):"
-                : $"🗂️ Source memories being condensed ({_sourceEntriesToRemove.Count}):";
+            string srcHeader = I18n.TimelineDistill.SourceHeader(_sourceEntriesToRemove.Count);
             b.DrawString(Game1.smallFont, srcHeader, new Vector2(curBox.X + 14, curBox.Y + 8), new Color(110, 70, 30));
 
             int lineY = curBox.Y + 30;
@@ -473,7 +471,7 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
                 cardColor, 3.5f, false);
 
             // 卡片 Header：标签
-            string draftTag = I18n.IsChinese ? $"草稿 #{layout.Index + 1}" : $"Draft #{layout.Index + 1}";
+            string draftTag = I18n.TimelineDistill.DraftTag(layout.Index + 1);
             b.DrawString(Game1.smallFont, draftTag,
                 new Vector2(cardRect.X + CardPaddingX, cardRect.Y + CardPaddingY),
                 new Color(130, 85, 45));
@@ -485,7 +483,7 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
             if (!isUsed)
             {
                 // 收录按钮
-                string addText = I18n.IsChinese ? "收录入手账" : "Collect";
+                string addText = I18n.TimelineDistill.CollectButton();
                 int addW = (int)Game1.smallFont.MeasureString(addText).X + 24;
                 layout.AddBtnRect = new Rectangle(btnRightX - addW, btnY, addW, 28);
                 bool addHover = layout.AddBtnRect.Contains(mx, my);
@@ -517,13 +515,13 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
                 b.Draw(Game1.mouseCursors, iconPos, EditIconSource, editHover ? Color.White : Color.DimGray, 0f, Vector2.Zero, iconScale, SpriteEffects.None, 0.86f);
 
                 if (layout.EditBtnRect.Contains(mx, my))
-                    _hoveredTooltip = I18n.IsChinese ? "在收录前微调文字" : "Edit before collecting";
+                    _hoveredTooltip = I18n.TimelineDistill.EditTooltip();
             }
             else
             {
                 layout.AddBtnRect = Rectangle.Empty;
                 layout.EditBtnRect = Rectangle.Empty;
-                string stamped = I18n.IsChinese ? "✓ 已收录" : "✓ Collected";
+                string stamped = I18n.TimelineDistill.CollectedStamp();
                 var stampSize = Game1.smallFont.MeasureString(stamped);
                 b.DrawString(Game1.smallFont, stamped,
                     new Vector2(btnRightX - stampSize.X, btnY + 4),

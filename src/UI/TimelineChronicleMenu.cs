@@ -112,7 +112,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
         _npcDropdown = new DropupList(Rectangle.Empty)
         {
-            HeaderPrefix = I18n.IsChinese ? "角色: " : "NPC: ",
+            HeaderPrefix = I18n.Timeline.NpcDropdownPrefix(),
             OnItemSelected = name => SelectNpc(name)
         };
 
@@ -286,8 +286,8 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 var entry = _todayChatEntries[i];
                 string speaker = entry.SpeakerType switch
                 {
-                    SpeakerType.Player => I18n.IsChinese ? "农夫" : "Farmer",
-                    SpeakerType.System => I18n.IsChinese ? "[场景]" : "[Scene]",
+                    SpeakerType.Player => I18n.Timeline.SpeakerFarmer(),
+                    SpeakerType.System => I18n.Timeline.SpeakerScene(),
                     _ => _npcDisplayName
                 };
 
@@ -516,9 +516,9 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
     private string GetActionButtonLabel() => _currentTab switch
     {
-        0 => I18n.Memory.DistillThisPage(),
-        1 => I18n.Memory.ConsolidateToWeekly(_selectedEntryIds.Count),
-        2 => I18n.Memory.ElevateToChronicle(_selectedEntryIds.Count),
+        0 => I18n.Timeline.DistillThisPage(),
+        1 => I18n.Timeline.ConsolidateToWeekly(_selectedEntryIds.Count),
+        2 => I18n.Timeline.ElevateToChronicle(_selectedEntryIds.Count),
         _ => string.Empty
     };
 
@@ -658,8 +658,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 {
                     int remaining = Math.Max(1, (int)Math.Ceiling((CooldownSeconds * 1000L - elapsedMs) / 1000.0));
                     Game1.playSound("cancel");
-                    Game1.addHUDMessage(new HUDMessage(
-                        I18n.IsChinese ? $"总结冷却中，请 {remaining} 秒后再试" : $"Summarize cooldown: {remaining}s", 3));
+                    Game1.addHUDMessage(new HUDMessage(I18n.Timeline.CooldownHud(remaining), 3));
                     return;
                 }
             }
@@ -680,8 +679,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
             if (_selectedEntryIds.Count < MinCondenseSelection)
             {
                 Game1.playSound("cancel");
-                Game1.addHUDMessage(new HUDMessage(
-                    I18n.IsChinese ? "请至少勾选 2 条记忆进行浓缩" : "Select at least 2 entries to condense", 3));
+                Game1.addHUDMessage(new HUDMessage(I18n.Timeline.CondenseMinCount(MinCondenseSelection), 3));
                 return;
             }
 
@@ -756,7 +754,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
 
         // 标题动态联动当前 NPC
-        string title = I18n.IsChinese ? $"时间线手账 - {_npcDisplayName}" : $"Timeline Chronicle - {_npcDisplayName}";
+        string title = I18n.Timeline.Title(_npcDisplayName);
         Vector2 titleSize = Game1.dialogueFont.MeasureString(title);
         b.DrawString(Game1.dialogueFont, title,
             new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f, yPositionOnScreen + 22),
@@ -782,9 +780,9 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         if (!_npcDropdown.IsOpen && string.IsNullOrEmpty(_hoveredTooltip) && _currentTab == 0)
         {
             if (_leftArrowRect.Contains(mx, my) && CanPageLeft)
-                _hoveredTooltip = I18n.Memory.PrevDay();
+                _hoveredTooltip = I18n.Timeline.PrevDay();
             else if (_rightArrowRect.Contains(mx, my) && CanPageRight)
-                _hoveredTooltip = I18n.Memory.NextDay();
+                _hoveredTooltip = I18n.Timeline.NextDay();
         }
         if (!string.IsNullOrEmpty(_hoveredTooltip))
             IClickableMenu.drawHoverText(b, _hoveredTooltip, Game1.smallFont);
@@ -797,10 +795,10 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         int tabWidth = (width - LeftPadding - RightPadding) / 4;
         string[] labels =
         {
-            I18n.Memory.TabChats(),
-            I18n.Memory.TabImpressions(),
-            I18n.Memory.TabWeekly(),
-            I18n.Memory.TabChronicle()
+            I18n.Timeline.TabChats(),
+            I18n.Timeline.TabImpressions(),
+            I18n.Timeline.TabWeekly(),
+            I18n.Timeline.TabChronicle()
         };
 
         for (int t = 0; t < 4; t++)
@@ -830,7 +828,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     private void DrawTodayChat(SpriteBatch b, int mx, int my, StardewTime viewDate)
     {
         string dateText = _daysAgo == 0
-            ? (I18n.IsChinese ? $"今天 - {MemoryManager.FormatGameDateLabel(viewDate)}" : $"Today: {MemoryManager.FormatGameDateLabel(viewDate)}")
+            ? I18n.Timeline.TodayDate(MemoryManager.FormatGameDateLabel(viewDate))
             : MemoryManager.FormatGameDateLabel(viewDate);
         var dateSize = Game1.smallFont.MeasureString(dateText);
         b.DrawString(Game1.smallFont, dateText,
@@ -839,7 +837,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
         if (_todayChatEntries.Count == 0)
         {
-            string empty = I18n.IsChinese ? "这一天还没有和 TA 的对话记录" : "No conversations with them on this day";
+            string empty = I18n.Timeline.EmptyChats();
             var size = Game1.dialogueFont.MeasureString(empty);
             b.DrawString(Game1.dialogueFont, empty,
                 new Vector2(xPositionOnScreen + (width - size.X) / 2f, _contentTopY + 40),
@@ -885,7 +883,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     {
         if (_tierEntries.Count == 0)
         {
-            string empty = I18n.IsChinese ? "这一层还没有记忆" : "No memories at this tier yet";
+            string empty = I18n.Timeline.EmptyTier();
             var size = Game1.dialogueFont.MeasureString(empty);
             b.DrawString(Game1.dialogueFont, empty,
                 new Vector2(xPositionOnScreen + (width - size.X) / 2f, _contentTopY + 40),
