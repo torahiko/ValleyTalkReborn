@@ -19,6 +19,13 @@ public enum MemoryCategory
     Fact
 }
 
+public enum MemoryTier
+{
+    Daily = 0,
+    Weekly = 1,
+    Chronicle = 2
+}
+
 public class MemoryEntry
 {
     public string Id { get; set; } = Guid.NewGuid().ToString();
@@ -38,6 +45,10 @@ public class MemoryEntry
     public bool IsFulfilled { get; set; } = false;    // Promise 专用
     public int LastPromptedDay { get; set; } = -1;    // 保留字段：旧档兼容；CORE-MEM-102 分层重写后不再读写
     public DateTime ArchivedAt { get; set; } = default; // 归档时刻；default=从未归档（CORE-MEM-101）
+
+    // ── Timeline 分层（FEAT-MEM-300-T1）──
+    public MemoryTier Tier { get; set; } = MemoryTier.Daily;
+    public string DateLabel { get; set; } = "";   // 游戏内日历戳，如 "[Y1 春 7日]"，以入库时所在页面日期为准
 }
 
 public enum MemoryOperationResult
@@ -57,6 +68,7 @@ internal class MemoryManager : IMemoryProvider
     private const string CallsignSaveDataKey = "valleytalk.npc-callsigns";
     private const string ArchiveSaveDataKey = "valleytalk.npc-archived-memories";
     private const string CategoryMigrationFlagKey = "valleytalk.memory-category-migrated";
+    private const string TimelineSaveDataKey = "valleytalk.npc-timeline-memories";
 
     public const int MaxMemoryLength    = 120;   // 60 → 120：SmartTruncate 兜底
     public const int MaxCallsignLength  = 20;
@@ -67,12 +79,16 @@ internal class MemoryManager : IMemoryProvider
     public const int MaxCoreFactsInPrompt = 6;   // 核心事实段上限（MEM-06 新增）
     public const int MaxArchivedMemoriesPerNpc = 30; // 归档箱滚动上限（CORE-MEM-101）
     public const int MaxHardRulesInPrompt = 3;    // 强锚点规则段上限（CORE-MEM-102）
+    public const int MaxDailyTimelineMemories = 30;
+    public const int MaxWeeklyTimelineMemories = 10;
+    public const int MaxChronicleTimelineMemories = 10;
 
     private const int EvictionImmuneImportance = 4; // Importance >= 此值免疫淘汰（未履约 Promise 也免疫）
 
     private Dictionary<string, List<MemoryEntry>> _memories = new();
     private Dictionary<string, string> _customCallsigns = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, List<MemoryEntry>> _archivedMemories = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, List<MemoryEntry>> _timelineMemories = new(StringComparer.OrdinalIgnoreCase);
     private bool _isLoaded = false;
     private bool _loadFailed = false; // 加载失败时拒绝覆写 SaveData
 
@@ -161,6 +177,15 @@ internal class MemoryManager : IMemoryProvider
                 ? new Dictionary<string, List<MemoryEntry>>(loadedArchived, StringComparer.OrdinalIgnoreCase)
                 : new Dictionary<string, List<MemoryEntry>>(StringComparer.OrdinalIgnoreCase);
             _archivedMemories = _archivedMemories
+                .Where(kv => !string.IsNullOrWhiteSpace(kv.Key) && kv.Value != null)
+                .ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.OrdinalIgnoreCase);
+
+            // ── Timeline 读取（FEAT-MEM-300-T1，key 不存在时静默回退空字典）──
+            var loadedTimeline = ModEntry.SHelper.Data.ReadSaveData<Dictionary<string, List<MemoryEntry>>>(TimelineSaveDataKey);
+            _timelineMemories = loadedTimeline != null
+                ? new Dictionary<string, List<MemoryEntry>>(loadedTimeline, StringComparer.OrdinalIgnoreCase)
+                : new Dictionary<string, List<MemoryEntry>>(StringComparer.OrdinalIgnoreCase);
+            _timelineMemories = _timelineMemories
                 .Where(kv => !string.IsNullOrWhiteSpace(kv.Key) && kv.Value != null)
                 .ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.OrdinalIgnoreCase);
 
@@ -287,6 +312,206 @@ internal class MemoryManager : IMemoryProvider
         catch (Exception ex)
         {
             ModEntry.SMonitor?.Log($"[MemoryManager] SaveArchived failed: {ex.Message}", LogLevel.Warn);
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Timeline 分层存储（FEAT-MEM-300-T1）— 独立于 Manual/Auto/归档箱
+    // ──────────────────────────────────────────────────────────────
+
+    /// <summary>获取指定 NPC 指定 tier 的时间线条目，按 CreatedDay/CreatedAt 降序。空白 npcName → 空表。</summary>
+    public List<MemoryEntry> GetTimelineMemories(string npcName, MemoryTier tier)
+    {
+        if (string.IsNullOrWhiteSpace(npcName)) return new List<MemoryEntry>();
+        EnsureLoaded();
+        if (!_timelineMemories.TryGetValue(npcName, out var list)) return new List<MemoryEntry>();
+        return list
+            .Where(m => m.Tier == tier)
+            .OrderByDescending(m => m.CreatedDay)
+            .ThenByDescending(m => m.CreatedAt)
+            .ToList();
+    }
+
+    /// <summary>Tier 容量上限：Daily 30 / Weekly 10 / Chronicle 10。</summary>
+    public static int GetTierCapacity(MemoryTier tier) => tier switch
+    {
+        MemoryTier.Daily => MaxDailyTimelineMemories,
+        MemoryTier.Weekly => MaxWeeklyTimelineMemories,
+        MemoryTier.Chronicle => MaxChronicleTimelineMemories,
+        _ => 10
+    };
+
+    /// <summary>游戏内日历戳。禁止读 Game1 世界状态。</summary>
+    public static string FormatGameDateLabel(StardewTime date)
+    {
+        string seasonName = IsChineseLanguage
+            ? date.Season switch
+            {
+                Season.Spring => "春",
+                Season.Summer => "夏",
+                Season.Fall => "秋",
+                Season.Winter => "冬",
+                _ => date.Season.ToString()
+            }
+            : date.Season switch
+            {
+                Season.Spring => "Spring",
+                Season.Summer => "Summer",
+                Season.Fall => "Fall",
+                Season.Winter => "Winter",
+                _ => date.Season.ToString()
+            };
+
+        return IsChineseLanguage
+            ? $"[Y{date.Year} {seasonName} {date.DayOfMonth}日]"
+            : $"[Y{date.Year} {seasonName} d{date.DayOfMonth}]";
+    }
+
+    /// <summary>当前游戏日戳；世界未就绪 → 空串。</summary>
+    public static string FormatCurrentGameDateLabel() =>
+        Context.IsWorldReady ? FormatGameDateLabel(new StardewTime(Game1.Date, Game1.timeOfDay)) : "";
+
+    /// <summary>同尺度差值：daysAgo = date.DaysSince(now)，返回 CurrentGameDay - daysAgo；未来日期钳制为今日。</summary>
+    public static int StardewTimeToGameDay(StardewTime date)
+    {
+        if (!Context.IsWorldReady) return 0;
+        int daysAgo = (int)Math.Round(Math.Max(0, date.DaysSince(new StardewTime(Game1.Date, Game1.timeOfDay))));
+        return Math.Max(0, CurrentGameDay() - daysAgo);
+    }
+
+    public MemoryOperationResult AddTimelineMemory(string npcName, string content, MemoryTier tier,
+        string dateLabel = null, int createdDay = -1)
+    {
+        if (string.IsNullOrWhiteSpace(npcName) || string.IsNullOrWhiteSpace(content))
+            return MemoryOperationResult.NotFound;
+
+        EnsureLoaded();
+
+        if (_loadFailed)
+        {
+            ModEntry.SMonitor?.Log("[MemoryManager] AddTimelineMemory refused: last load failed, refusing to mutate state.", LogLevel.Error);
+            return MemoryOperationResult.CapacityFull;
+        }
+
+        if (!_timelineMemories.TryGetValue(npcName, out var list))
+        {
+            list = new List<MemoryEntry>();
+            _timelineMemories[npcName] = list;
+        }
+
+        int tierCount = list.Count(m => m.Tier == tier);
+        if (tierCount >= GetTierCapacity(tier))
+            return MemoryOperationResult.CapacityFull;
+
+        var trimmed = SmartTruncate(content.Trim(), MaxMemoryLength);
+
+        if (list.Any(m => m.Tier == tier && string.Equals(m.Content, trimmed, StringComparison.OrdinalIgnoreCase)))
+            return MemoryOperationResult.Duplicate;
+
+        string label = string.IsNullOrWhiteSpace(dateLabel) ? FormatCurrentGameDateLabel() : dateLabel;
+        int day = createdDay < 0 ? CurrentGameDay() : createdDay;
+
+        var entry = new MemoryEntry
+        {
+            NpcName = npcName,
+            Content = trimmed,
+            CreatedAt = DateTime.Now,
+            CreatedDay = day,
+            Source = "Timeline",
+            Category = MemoryCategory.Fact,
+            Type = MemoryType.Fact,
+            Tier = tier,
+            DateLabel = label,
+            Importance = tier == MemoryTier.Chronicle ? 5 : tier == MemoryTier.Weekly ? 4 : 3
+        };
+
+        list.Insert(0, entry);
+        SaveTimeline();
+
+        ModEntry.SMonitor?.Log($"[MemoryManager] +Timeline [{tier}] [{npcName}]: {TrimForLog(trimmed)}", LogLevel.Info);
+        return MemoryOperationResult.Success;
+    }
+
+    public MemoryOperationResult EditTimelineMemory(string npcName, string entryId, string newContent)
+    {
+        if (string.IsNullOrWhiteSpace(npcName) || string.IsNullOrWhiteSpace(entryId))
+            return MemoryOperationResult.NotFound;
+
+        if (!_timelineMemories.TryGetValue(npcName, out var list))
+            return MemoryOperationResult.NotFound;
+
+        var entry = list.FirstOrDefault(m => m.Id == entryId);
+        if (entry == null) return MemoryOperationResult.NotFound;
+
+        if (string.IsNullOrWhiteSpace(newContent))
+            return MemoryOperationResult.NotFound;
+
+        var trimmed = SmartTruncate(newContent.Trim(), MaxMemoryLength);
+
+        if (list.Any(m => m.Id != entryId && m.Tier == entry.Tier && string.Equals(m.Content, trimmed, StringComparison.OrdinalIgnoreCase)))
+            return MemoryOperationResult.Duplicate;
+
+        entry.Content = trimmed;
+        SaveTimeline();
+        return MemoryOperationResult.Success;
+    }
+
+    public bool RemoveTimelineMemory(string npcName, string entryId)
+    {
+        if (string.IsNullOrWhiteSpace(npcName) || string.IsNullOrWhiteSpace(entryId)) return false;
+
+        if (!_timelineMemories.TryGetValue(npcName, out var list)) return false;
+
+        var entry = list.FirstOrDefault(m => m.Id == entryId);
+        if (entry == null) return false;
+
+        list.Remove(entry);
+        if (list.Count == 0) _timelineMemories.Remove(npcName);
+
+        SaveTimeline();
+        return true;
+    }
+
+    public int RemoveTimelineMemories(string npcName, IEnumerable<string> entryIds)
+    {
+        if (string.IsNullOrWhiteSpace(npcName) || entryIds == null) return 0;
+
+        if (!_timelineMemories.TryGetValue(npcName, out var list) || list.Count == 0) return 0;
+
+        var idSet = new HashSet<string>(entryIds.Where(id => !string.IsNullOrWhiteSpace(id)));
+        if (idSet.Count == 0) return 0;
+
+        int before = list.Count;
+        list.RemoveAll(m => idSet.Contains(m.Id));
+        int removed = before - list.Count;
+
+        if (removed == 0) return 0;
+
+        if (list.Count == 0) _timelineMemories.Remove(npcName);
+
+        SaveTimeline();
+        ModEntry.SMonitor?.Log($"[MemoryManager] Removed {removed} timeline item(s) for [{npcName}].", LogLevel.Info);
+        return removed;
+    }
+
+    private void SaveTimeline()
+    {
+        if (_loadFailed)
+        {
+            ModEntry.SMonitor?.Log(
+                "[MemoryManager] Write refused: last load failed, refusing to overwrite SaveData.",
+                LogLevel.Error);
+            return;
+        }
+
+        try
+        {
+            if (!Context.IsWorldReady || ModEntry.SHelper == null) return;
+            ModEntry.SHelper.Data.WriteSaveData(TimelineSaveDataKey, _timelineMemories);
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log($"[MemoryManager] SaveTimeline failed: {ex.Message}", LogLevel.Warn);
         }
     }
 
