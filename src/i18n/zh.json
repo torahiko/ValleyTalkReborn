@@ -82,6 +82,8 @@
   "configDismissFollowerKeyTooltip": "按下后让当前跟随你的NPC停止跟随（无论是一起同行还是约会）。",
   "configOpenHubMenuKey": "打开综合管理面板",
   "configOpenHubMenuKeyTooltip": "按下此键打开综合管理面板（NPC记忆 / 世界设定 / 农夫档案 / 高级设置）。默认自动定位到你最近对话过的NPC。请避免设置成游戏或其他模组已占用的按键。",
+  "configOpenTimelineKey": "打开时间线手账",
+  "configOpenTimelineKeyTooltip": "按下此键打开时间线手账（按日对话记录 / 分层记忆）。会自动定位到你最近聊过天的NPC。请避免设置成游戏或其他模组已占用的按键。",
   "Memory.AutoPrefix": "[自动] ",
   "Memory.CallsignPrefix": "称呼我为：",
   "Memory.CallsignUnset": "（点击设置）",

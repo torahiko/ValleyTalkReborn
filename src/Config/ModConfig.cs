@@ -130,9 +130,19 @@ namespace ValleytalkReborn
         public SButton DismissFollowerKey { get; set; } = SButton.G;
         /// <summary>唤起四合一综合管理面板（NPC记忆 / 世界记忆 / 农夫档案 / 高级设置），默认定位最近对话 NPC。</summary>
         public SButton OpenHubMenuKey { get; set; } = SButton.K;
+        /// <summary>唤起时间线手账面板（按日对话记录 + 分层记忆），自动定位最近聊天的 NPC。</summary>
+        public SButton OpenTimelineMenuKey { get; set; } = SButton.J;
         public bool SuppressConnectionCheck { get; set; } = false;
         public bool EnableMemoryCompression { get; set; } = true;
         public int MemoryRecentCount { get; set; } = 10;
+
+        /// <summary>
+        /// "What's Been Said So Far" 块的 Prompt 渲染条数上限（取 ChatHistory 尾部窗口）。
+        /// 仅影响渲染，不影响 context.ChatHistory 数据链。
+        /// 路由判定 IncludeShortTermContext == false 时（话题重置 / Turn 0 首次开场 / 简单问候），
+        /// 窗口自动收窄为 1（仅保留最后一行：农夫本轮输入或礼物/递物种子行）。
+        /// </summary>
+        public int PromptHistoryWindow { get; set; } = 6;
 
         public string DisableCharacters
         {
@@ -263,6 +273,7 @@ namespace ValleytalkReborn
             BarkQueueSize = Clamp(BarkQueueSize, 1, 20);
             A2AMaxParticipants = Clamp(A2AMaxParticipants, 2, 4);
             BarkDwellScans = Clamp(BarkDwellScans, 1, 10);
+            PromptHistoryWindow = Clamp(PromptHistoryWindow, 1, 20);
 
             // ── 高级模型参数边界校验 ──
             Temperature = Math.Clamp(Temperature, 0.0f, 2.0f);

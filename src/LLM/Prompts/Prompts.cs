@@ -1150,9 +1150,16 @@ public class Prompts
             prompt.AppendLine(ComposeCurrentConversationHeading());
             MarkEmitted("CurrentConversation");
             prompt.AppendLine(Util.GetString(Character, "currentConversationIntro", new { Name = Name }));
-            for (int i = 0; i < Context.ChatHistory.Count; i++)
+            bool shortCtxAllowed = CurrentFlags?.IncludeShortTermContext != false;
+            int configured = Math.Clamp(ModEntry.Config?.PromptHistoryWindow ?? 6, 1, 20);
+            int window = Math.Clamp(
+                shortCtxAllowed ? configured : 1,
+                1, Math.Max(1, Context.ChatHistory.Count));
+            var visible = Context.ChatHistory.Count > window
+                ? Context.ChatHistory.GetRange(Context.ChatHistory.Count - window, window)
+                : Context.ChatHistory;
+            foreach (var elem in visible)
             {
-                var elem = Context.ChatHistory[i];
                 string timePrefix = string.IsNullOrEmpty(elem.FuzzyTime) ? "" : $"[{elem.FuzzyTime}] ";
                 prompt.AppendLine(elem.IsPlayerLine
                     ? $"- {timePrefix}{Util.GetString(Character, "generalFarmerLabel")}: {elem.Text}"

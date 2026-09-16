@@ -455,6 +455,15 @@ namespace ValleytalkReborn
                 setValue: value => ModEntry.Config.OpenHubMenuKey = value
             );
 
+            ConfigMenu.AddKeybind(
+                mod: ModManifest,
+                name: () => GetUIString("configOpenTimelineKey", "Open Timeline Chronicle"),
+                tooltip: () => GetUIString("configOpenTimelineKeyTooltip",
+                    "Press to open the timeline chronicle (day-by-day chat history / layered memories). It automatically locks onto the NPC you chatted with most recently. Avoid keys already used by the game or other mods."),
+                getValue: () => ModEntry.Config.OpenTimelineMenuKey,
+                setValue: value => ModEntry.Config.OpenTimelineMenuKey = value
+            );
+
             // =========================================================================
             // ── 二级子页面：高级参数（Page: "advanced"）────────────────────────────
             // =========================================================================
