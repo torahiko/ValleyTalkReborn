@@ -96,23 +96,21 @@ namespace ValleytalkReborn
             xPositionOnScreen = (Game1.uiViewport.Width - _menuWidth) / 2;
             yPositionOnScreen = (Game1.uiViewport.Height - _menuHeight) / 2;
 
-            // --- Load i18n translations with PProfile. prefix ---
-            string noneOption = ModEntry.SHelper.Translation.Get("PProfile.UI.None").Default("(None)");
-            _orientationOptions.Add(noneOption);
-            foreach (var key in _orientationKeys)
-            {
-                string i18nKey = "PProfile.Orientation." + key;
-                _orientationOptions.Add(ModEntry.SHelper.Translation.Get(i18nKey).Default(key));
-            }
+            // --- Load i18n translations ---
+            _orientationOptions.Add(I18n.Profile.OrientationNone());
+            _orientationOptions.Add(I18n.Profile.OrientationHeterosexual());
+            _orientationOptions.Add(I18n.Profile.OrientationHomosexual());
+            _orientationOptions.Add(I18n.Profile.OrientationBisexual());
+            _orientationOptions.Add(I18n.Profile.OrientationAsexual());
 
             _sliderLabels = new string[] {
-                ModEntry.SHelper.Translation.Get("PProfile.Safety.Off").Default("1: Off"),
-                ModEntry.SHelper.Translation.Get("PProfile.Safety.Loose").Default("2: Loose"),
-                ModEntry.SHelper.Translation.Get("PProfile.Safety.Moderate").Default("3: Moderate"),
-                ModEntry.SHelper.Translation.Get("PProfile.Safety.Strict").Default("4: Strict")
+                I18n.Profile.SafetyOff(),
+                I18n.Profile.SafetyLoose(),
+                I18n.Profile.SafetyModerate(),
+                I18n.Profile.SafetyStrict()
             };
-            _safetyDesc = ModEntry.SHelper.Translation.Get("PProfile.Safety.Desc").Default("Protects you from unwanted romantic or flirtatious dialogue.\n- Off: Unrestricted.\n- Loose: Contextually appropriate.\n- Moderate: High-friendship NPCs subtle affection.\n- Strict: ONLY partners/spouses.");
-            _bioPlaceholder = ModEntry.SHelper.Translation.Get("PProfile.UI.BioPlaceholder").Default("e.g: Former Joja accountant who loves hot coffee and hates rain. Recently moved to Stardew Valley to find a new purpose in life.");
+            _safetyDesc = I18n.Profile.SafetyDesc();
+            _bioPlaceholder = I18n.Profile.BioPlaceholder();
 
             // 1. Calculate column layout
             CalculateColumnLayout();
@@ -151,17 +149,10 @@ namespace ValleytalkReborn
             _leftMargin = xPositionOnScreen + 40;
             float maxWidth = 0f;
 
-            string enableLabel = ModEntry.SHelper.Translation.Get("PProfile.UI.EnableProfile").Default("Enable Player Profile");
-            maxWidth = Math.Max(maxWidth, Game1.smallFont.MeasureString(enableLabel).X);
-
-            string orientationLabel = ModEntry.SHelper.Translation.Get("PProfile.UI.SexualOrientation").Default("Sexual Orientation:");
-            maxWidth = Math.Max(maxWidth, Game1.smallFont.MeasureString(orientationLabel).X);
-
-            string safetyLabel = ModEntry.SHelper.Translation.Get("PProfile.UI.RomanceSafetyMode").Default("Romance Settings:");
-            maxWidth = Math.Max(maxWidth, Game1.smallFont.MeasureString(safetyLabel).X);
-
-            string bioLabel = ModEntry.SHelper.Translation.Get("PProfile.UI.CustomBio").Default("Custom Bio:");
-            maxWidth = Math.Max(maxWidth, Game1.smallFont.MeasureString(bioLabel).X);
+            maxWidth = Math.Max(maxWidth, Game1.smallFont.MeasureString(I18n.Profile.EnableProfile()).X);
+            maxWidth = Math.Max(maxWidth, Game1.smallFont.MeasureString(I18n.Profile.OrientationLabel()).X);
+            maxWidth = Math.Max(maxWidth, Game1.smallFont.MeasureString(I18n.Profile.RomanceSafetyLabel()).X);
+            maxWidth = Math.Max(maxWidth, Game1.smallFont.MeasureString(I18n.Profile.BioLabel()).X);
 
             _maxLabelWidth = (int)Math.Ceiling(maxWidth);
             _rightColumnX = _leftMargin + _maxLabelWidth + 30;
@@ -298,7 +289,7 @@ namespace ValleytalkReborn
                 SaveToConfig();
 
                 // 弹出左下角 HUD 轻提示（不占用 activeClickableMenu）
-                string msg = ModEntry.SHelper.Translation.Get("PProfile.UI.ProfileSaved").Default("Profile saved!");
+                string msg = I18n.Profile.SavedHud();
                 Game1.addHUDMessage(new HUDMessage(msg, 2));
                 // 注：如果编译器对 true 报错，请改为 new HUDMessage(msg, 2)
 
@@ -518,7 +509,7 @@ namespace ValleytalkReborn
             b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.5f);
             IClickableMenu.drawTextureBox(b, xPositionOnScreen, yPositionOnScreen, _menuWidth, _menuHeight, Color.White);
 
-            string title = ModEntry.SHelper.Translation.Get("PProfile.UI.Title").Default("Farmer Profile & Persona");
+            string title = I18n.Profile.MenuTitle();
             var titleSize = Game1.dialogueFont.MeasureString(title);
             b.DrawString(Game1.dialogueFont, title,
                 new Vector2(xPositionOnScreen + (_menuWidth - titleSize.X) / 2, yPositionOnScreen + 20),
@@ -537,23 +528,23 @@ namespace ValleytalkReborn
             b.GraphicsDevice.ScissorRectangle = _scissorRect;
 
             DrawCheckbox(b, _enableProfileCheckboxRect, ModEntry.Config.EnablePlayerProfile);
-            string enableLabel = ModEntry.SHelper.Translation.Get("PProfile.UI.EnableProfile").Default("Enable Player Profile");
+            string enableLabel = I18n.Profile.EnableProfile();
             b.DrawString(Game1.smallFont, enableLabel,
                 new Vector2(_rightColumnX + CheckboxSize + 12, scrollY + 6), Game1.textColor);
             scrollY += RowHeight + 12;
 
             if (ModEntry.Config.EnablePlayerProfile)
             {
-                string selectText = ModEntry.SHelper.Translation.Get("PProfile.UI.Select").Default("Select...");
+                string selectText = I18n.Profile.SelectOption();
 
                 // --- Sexual Orientation ---
-                string orientationLabel = ModEntry.SHelper.Translation.Get("PProfile.UI.SexualOrientation").Default("Sexual Orientation:");
+                string orientationLabel = I18n.Profile.OrientationLabel();
                 b.DrawString(Game1.smallFont, orientationLabel, new Vector2(_leftMargin, scrollY), Game1.textColor);
                 DrawDropdown(b, _orientationDropdownRect, _orientationIndex >= 0 ? _orientationOptions[_orientationIndex] : selectText, _orientationDropdownOpen);
                 scrollY += DropdownHeight + 20;
 
                 // --- Safety Slider ---
-                string safetyLabel = ModEntry.SHelper.Translation.Get("PProfile.UI.RomanceSafetyMode").Default("Romance Settings:");
+                string safetyLabel = I18n.Profile.RomanceSafetyLabel();
                 b.DrawString(Game1.smallFont, safetyLabel, new Vector2(_leftMargin, scrollY), Game1.textColor);
 
                 int trackWidth = Math.Min(220, _dropdownWidth);
@@ -574,7 +565,7 @@ namespace ValleytalkReborn
                 scrollY += (int)Game1.smallFont.MeasureString(parsedDesc).Y + 20;
 
                 // --- Bio ---
-                string bioLabel = ModEntry.SHelper.Translation.Get("PProfile.UI.CustomBio").Default("Custom Bio:");
+                string bioLabel = I18n.Profile.BioLabel();
                 b.DrawString(Game1.smallFont, bioLabel, new Vector2(_leftMargin, scrollY), Game1.textColor);
                 IClickableMenu.drawTextureBox(b, _bioTextBoxRect.X - 4, _bioTextBoxRect.Y - 4, _bioTextBoxRect.Width + 8, _bioTextBoxRect.Height + 8, Color.White);
                 _bioTextBox.Draw(b);
@@ -655,8 +646,8 @@ namespace ValleytalkReborn
         {
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(433, 451, 3, 3), rect.X, rect.Y, rect.Width - 40, rect.Height, Color.White, 4f, false);
 
-            string noneText = ModEntry.SHelper.Translation.Get("PProfile.UI.None").Default("(None)");
-            string selectText = ModEntry.SHelper.Translation.Get("PProfile.UI.Select").Default("Select...");
+            string noneText = I18n.Profile.OrientationNone();
+            string selectText = I18n.Profile.SelectOption();
             Color textColor = (displayText == selectText || displayText == noneText) ? Color.Gray : Game1.textColor;
 
             b.DrawString(Game1.smallFont, displayText, new Vector2(rect.X + 16, rect.Y + (rect.Height - Game1.smallFont.MeasureString(displayText).Y) / 2), textColor);
@@ -675,7 +666,7 @@ namespace ValleytalkReborn
         private void DrawSaveButton(SpriteBatch b, int y)
         {
             IClickableMenu.drawTextureBox(b, xPositionOnScreen + _menuWidth / 2 - 80, y, 160, 44, Color.White);
-            string saveText = ModEntry.SHelper.Translation.Get("PProfile.UI.Save").Default("Save");
+            string saveText = I18n.Profile.SaveButton();
             var saveTextSize = Game1.dialogueFont.MeasureString(saveText);
             b.DrawString(Game1.dialogueFont, saveText,
                 new Vector2(xPositionOnScreen + _menuWidth / 2 - saveTextSize.X / 2, y + 10),
