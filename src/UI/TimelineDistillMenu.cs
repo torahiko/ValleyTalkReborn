@@ -291,12 +291,27 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
             return;
         }
 
-        string dateLabel = _dateFilter.HasValue
-            ? MemoryManager.FormatGameDateLabel(_dateFilter.Value)
-            : MemoryManager.FormatCurrentGameDateLabel();
-        int createdDay = _dateFilter.HasValue
-            ? MemoryManager.StardewTimeToGameDay(_dateFilter.Value)
-            : -1;
+        // FIX-TIMELINE-DATE-01：浓缩模式优先从源碎片中继承真实的 CreatedDay，防止隔年浓缩跳变至当前系统年份。
+        int createdDay;
+        if (_dateFilter.HasValue)
+        {
+            createdDay = MemoryManager.StardewTimeToGameDay(_dateFilter.Value);
+        }
+        else if (_sourceEntriesToRemove.Count > 0)
+        {
+            // 取所有参与浓缩碎片的最新一天作为归档基准
+            createdDay = _sourceEntriesToRemove.Max(m => m.CreatedDay);
+        }
+        else
+        {
+            createdDay = -1;
+        }
+
+        StardewTime targetTime = createdDay > 0
+            ? MemoryManager.GameDayToStardewTime(createdDay)
+            : new StardewTime(Game1.Date, Game1.timeOfDay);
+
+        string dateLabel = MemoryManager.GenerateDateLabel(_targetTier, targetTime);
 
         var result = MemoryManager.Instance.AddTimelineMemory(_npcName, text, _targetTier, dateLabel, createdDay);
 
@@ -390,8 +405,8 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
         int currentCap = MemoryManager.Instance.GetTimelineMemories(_npcName, _targetTier).Count;
         int maxCap = MemoryManager.GetTierCapacity(_targetTier);
         string capText = I18n.TimelineDistill.Capacity(currentCap, maxCap);
-        // 向上挪移指示器位置至 _contentTopY - 36，避免侵入词条卡片内容区
-        b.DrawString(Game1.smallFont, capText, new Vector2(_bodyX, _contentTopY - 36), Color.DimGray);
+        // 向上挪移指示器位置至 _contentTopY - 45，避免侵入词条卡片内容区
+        b.DrawString(Game1.smallFont, capText, new Vector2(_bodyX, _contentTopY - 45), Color.DimGray);
 
         // 关闭按钮
         UiHelper.UpdateButtonScale(ref _closeButtonHoverScale, _closeButton, mx, my);

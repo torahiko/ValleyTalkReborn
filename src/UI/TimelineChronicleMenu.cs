@@ -325,7 +325,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
             for (int i = 0; i < _tierEntries.Count; i++)
             {
                 var entry = _tierEntries[i];
-                string dateLabel = string.IsNullOrEmpty(entry.DateLabel) ? "--" : entry.DateLabel;
+                string dateLabel = MemoryManager.GetDisplayDateLabel(entry);
 
                 int maxTextPixelWidth = maxCardWidth - padX * 2;
                 string wrapped = Game1.parseText(entry.Content ?? string.Empty, Game1.dialogueFont, (int)(maxTextPixelWidth / TextFontScale));
