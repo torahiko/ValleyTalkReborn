@@ -605,6 +605,7 @@ namespace ValleytalkReborn
                     npcName,
                     npcDisplayName,
                     existingManual,
+                    null,
                     System.Threading.CancellationToken.None);
 
                 Monitor.Log($"[Test] status={result.Status}; candidates={result.Candidates.Count}; error={result.ErrorDetail}", LogLevel.Info);

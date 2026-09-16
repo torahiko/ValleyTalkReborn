@@ -53,7 +53,10 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
     private List<string> _candidates = new();
     private readonly HashSet<string> _usedCandidates = new(StringComparer.OrdinalIgnoreCase);
     private List<MemoryEntry> _rightEntries = new();
-    private int _manualCount;
+    private readonly MemoryTier _targetTier = MemoryTier.Daily;
+    private readonly List<MemoryEntry> _sourceEntriesToRemove;   // v2：浓缩确认后直接删除的源碎片（不再归档）
+    private readonly StardewTime? _dateFilter;                   // v2：当前页日期（仅 Tab0 总结路径有值）
+    private int _tierCount;
     private int _leftIndex;
     private int _rightIndex;
 
@@ -66,12 +69,19 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
 
     public MemoryDistillMenu(string npcName,
                              IClickableMenu returnMenu,
+                             MemoryTier targetTier = MemoryTier.Daily,
+                             List<MemoryEntry> sourceEntriesToRemove = null,
+                             Task<MemoryExtractResult> customTask = null,
+                             StardewTime? dateFilter = null,
                              List<string> cachedCandidates = null,
                              HashSet<string> usedCandidates = null)
     {
         _npcName = npcName;
         _returnMenu = returnMenu;
         _npcDisplayName = Game1.getCharacterFromName(npcName)?.displayName ?? npcName;
+        _targetTier = targetTier;
+        _sourceEntriesToRemove = sourceEntriesToRemove ?? new List<MemoryEntry>();
+        _dateFilter = dateFilter;
 
         if (usedCandidates != null)
             _usedCandidates = usedCandidates;
@@ -83,15 +93,20 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             _candidates = cachedCandidates;
             _state = DistillState.Ready;
         }
+        else if (customTask != null)
+        {
+            _task = customTask;
+            _state = DistillState.Loading;
+        }
         else
         {
-            List<string> existingManual = MemoryManager.Instance.GetMemories(_npcName)
-                .Where(m => m.Source == "Manual")
+            List<string> existing = MemoryManager.Instance.GetTimelineMemories(_npcName, _targetTier)
                 .Select(m => m.Content)
                 .Take(10)
                 .ToList();
 
-            _task = MemoryExtractService.ExtractAsync(_npcName, _npcDisplayName, existingManual, _cts.Token);
+            _task = MemoryExtractService.ExtractAsync(_npcName, _npcDisplayName, existing, _dateFilter, _cts.Token);
+            _state = DistillState.Loading;
         }
 
         RefreshEntries();
@@ -337,7 +352,7 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             new Vector2(_rightColX, _headerY), Game1.textColor);
 
         // 容量计数
-        string cap = $"{_manualCount} / {MemoryManager.MaxMemoriesPerNpc}";
+        string cap = $"{_tierCount} / {MemoryManager.GetTierCapacity(_targetTier)}";
         Vector2 capSize = Game1.smallFont.MeasureString(cap);
         b.DrawString(Game1.smallFont, cap,
             new Vector2(_rightColX + _colW - capSize.X, _headerY), Color.Gray);
@@ -347,7 +362,7 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
         b.Draw(Game1.staminaRect, new Rectangle(_dividerX, _headerY, 2, dividerHeight), Color.Gray * 0.4f);
 
         // 渲染左栏候选
-        bool full = _manualCount >= MemoryManager.MaxMemoriesPerNpc;
+        bool full = _tierCount >= MemoryManager.GetTierCapacity(_targetTier);
         int visibleLeft = Math.Min(_visibleRows, Math.Max(0, _candidates.Count - _leftIndex));
         float maxLeftTextWidth = _colW - (PlusSize + 14);
 
@@ -427,8 +442,8 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
 
     public void RefreshEntries()
     {
-        _rightEntries = MemoryManager.Instance.GetMemories(_npcName);
-        _manualCount = MemoryManager.Instance.GetManualMemoryCount(_npcName);
+        _rightEntries = MemoryManager.Instance.GetTimelineMemories(_npcName, _targetTier);
+        _tierCount = _rightEntries.Count;
         _rightIndex = 0;
         _leftIndex = 0;
         RebuildButtons();
@@ -557,13 +572,29 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             return;
         }
 
-        MemoryOperationResult result = MemoryManager.Instance.AddMemory(_npcName, c, MemoryCategory.Fact);
+        // v2：dateLabel/createdDay 以入库时所在页面日期为准（dateFilter 有值 → 页面日期；否则今日）
+        string dateLabel = _dateFilter.HasValue
+            ? MemoryManager.FormatGameDateLabel(_dateFilter.Value)
+            : MemoryManager.FormatCurrentGameDateLabel();
+        int createdDay = _dateFilter.HasValue
+            ? MemoryManager.StardewTimeToGameDay(_dateFilter.Value)
+            : -1;
+
+        MemoryOperationResult result = MemoryManager.Instance.AddTimelineMemory(
+            _npcName, c, _targetTier, dateLabel, createdDay);
 
         switch (result)
         {
             case MemoryOperationResult.Success:
                 _usedCandidates.Add(c);
                 Game1.playSound("coin");
+                // v2：浓缩确认后直接删除源碎片（不再归档）；CapacityFull/Duplicate 不动源数据
+                if (_sourceEntriesToRemove.Count > 0)
+                {
+                    MemoryManager.Instance.RemoveTimelineMemories(
+                        _npcName, _sourceEntriesToRemove.Select(m => m.Id));
+                    _sourceEntriesToRemove.Clear();
+                }
                 RefreshEntries();
                 break;
 
@@ -575,7 +606,7 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
 
             case MemoryOperationResult.CapacityFull:
                 Game1.playSound("cancel");
-                Game1.addHUDMessage(new HUDMessage(I18n.Memory.AddFailedFull(MemoryManager.MaxMemoriesPerNpc), 3));
+                Game1.addHUDMessage(new HUDMessage(I18n.Memory.AddFailedFull(MemoryManager.GetTierCapacity(_targetTier)), 3));
                 break;
 
             case MemoryOperationResult.TooLong:
@@ -596,7 +627,7 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             I18n.Memory.DeleteConfirm(entry.Content),
             _ =>
             {
-                MemoryManager.Instance.RemoveMemory(_npcName, entry.Id);
+                MemoryManager.Instance.RemoveTimelineMemory(_npcName, entry.Id);
                 Game1.playSound("trashcan");
                 RefreshEntries();
                 Game1.activeClickableMenu = this;

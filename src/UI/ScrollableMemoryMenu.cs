@@ -478,7 +478,7 @@ namespace ValleytalkReborn
             }
 
             Game1.playSound("bigSelect");
-            Game1.activeClickableMenu = new MemoryDistillMenu(_npcName, this, _distillCandidates, _distillUsed);
+            Game1.activeClickableMenu = new TimelineChronicleMenu(_npcName, this);
         }
 
         private void ConfirmDeleteMemory(MemoryEntry entry)
@@ -946,6 +946,7 @@ namespace ValleytalkReborn
         private readonly ClickableTextureComponent _cancelButton;
         private readonly MemoryEntry _existingEntry;
         private readonly int _tab;
+        private readonly Func<string, MemoryOperationResult> _customSubmit;
 
         private MemoryCategory _category;
         private Rectangle _factCapsuleRect;
@@ -966,12 +967,14 @@ namespace ValleytalkReborn
             string npcName,
             IClickableMenu returnMenu,
             MemoryEntry existingEntry = null,
-            int tab = 0)
+            int tab = 0,
+            Func<string, MemoryOperationResult> customSubmit = null)
         {
             _npcName = npcName;
             _returnMenu = returnMenu;
             _existingEntry = existingEntry;
             _tab = tab;
+            _customSubmit = customSubmit;
 
             _category = (existingEntry != null && existingEntry.Category == MemoryCategory.Behavior)
                 ? MemoryCategory.Behavior
@@ -1068,6 +1071,35 @@ namespace ValleytalkReborn
                 ? WorldMemoryManager.MaxEntries
                 : MemoryManager.MaxMemoriesPerNpc;
 
+            // 自定义提交（如 Timeline 浓缩确认）：复用既有结果 HUD，不触碰 _tab 分支
+            if (_customSubmit != null)
+            {
+                var r = _customSubmit(trimmed);
+                switch (r)
+                {
+                    case MemoryOperationResult.Success:
+                        Game1.playSound("coin");
+                        ReturnToMemoryMenu(true);
+                        return;
+
+                    case MemoryOperationResult.CapacityFull:
+                        ShowErrorHud(I18n.Memory.AddFailedFull(maxCount));
+                        return;
+
+                    case MemoryOperationResult.TooLong:
+                        ShowErrorHud(I18n.Memory.AddFailedTooLong(maxLen));
+                        return;
+
+                    case MemoryOperationResult.Duplicate:
+                        ShowErrorHud(I18n.Memory.AddFailedDuplicate());
+                        return;
+
+                    default:
+                        ShowErrorHud(I18n.Memory.DistillFailed());
+                        return;
+                }
+            }
+
             switch (result)
             {
                 case MemoryOperationResult.Success:
@@ -1113,7 +1145,7 @@ namespace ValleytalkReborn
                 return;
             }
 
-            if (_tab == 0 && (_factCapsuleRect.Contains(x, y) || _behaviorCapsuleRect.Contains(x, y)))
+            if (_tab == 0 && _customSubmit == null && (_factCapsuleRect.Contains(x, y) || _behaviorCapsuleRect.Contains(x, y)))
             {
                 var clicked = _behaviorCapsuleRect.Contains(x, y)
                     ? MemoryCategory.Behavior
@@ -1202,7 +1234,7 @@ namespace ValleytalkReborn
             int mx = Game1.getMouseX();
             int my = Game1.getMouseY();
 
-            if (_tab == 0)
+            if (_tab == 0 && _customSubmit == null)
             {
                 bool factSelected = _category == MemoryCategory.Fact;
                 bool behaviorSelected = _category == MemoryCategory.Behavior;
