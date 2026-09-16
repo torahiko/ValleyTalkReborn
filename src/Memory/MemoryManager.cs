@@ -341,6 +341,33 @@ internal class MemoryManager : IMemoryProvider
         _ => 10
     };
 
+    /// <summary>
+    /// 将游戏总天数 (Game1.Date.TotalDays) 还原为 StardewTime。
+    /// 星露谷每年 112 天，每季 28 天，TotalDays 从 1 开始。
+    /// </summary>
+    public static StardewTime GameDayToStardewTime(int totalDays)
+    {
+        if (totalDays <= 0) totalDays = CurrentGameDay();
+        int year = (totalDays - 1) / 112 + 1;
+        int dayOfSeason = (totalDays - 1) % 28 + 1;
+        Season season = (Season)(((totalDays - 1) / 28) % 4);
+        return new StardewTime(year, season, dayOfSeason, 600);
+    }
+
+    /// <summary>
+    /// 获取条目的动态显示日历标签（优先基于 CreatedDay 动态还原，彻底解决旧存档格式不同步）。
+    /// </summary>
+    public static string GetDisplayDateLabel(MemoryEntry entry)
+    {
+        if (entry == null) return "--";
+        if (entry.CreatedDay > 0)
+        {
+            var time = GameDayToStardewTime(entry.CreatedDay);
+            return GenerateDateLabel(entry.Tier, time);
+        }
+        return string.IsNullOrEmpty(entry.DateLabel) ? "--" : entry.DateLabel;
+    }
+
     /// <summary>游戏内日历戳。禁止读 Game1 世界状态。</summary>
     public static string FormatGameDateLabel(StardewTime date)
     {
@@ -372,10 +399,11 @@ internal class MemoryManager : IMemoryProvider
     public static string FormatCurrentGameDateLabel() =>
         Context.IsWorldReady ? FormatGameDateLabel(new StardewTime(Game1.Date, Game1.timeOfDay)) : "";
 
-    /// <summary>分层日历戳：Daily=[Y1 春 4日]；Weekly=[Y1 春 W1]（季内第 N 周）；Chronicle=[Y1 春季印记]。</summary>
+    /// <summary>分层日历戳：统一中英文年份表达，与对话记录顶栏风格（FormatGameDateLabel）保持完全一致。</summary>
     public static string GenerateDateLabel(MemoryTier tier, StardewTime date)
     {
-        string seasonName = IsChineseLanguage
+        bool isZh = I18n.IsChinese;
+        string seasonName = isZh
             ? date.Season switch
             {
                 Season.Spring => "春",
@@ -397,12 +425,13 @@ internal class MemoryManager : IMemoryProvider
 
         return tier switch
         {
-            MemoryTier.Weekly => IsChineseLanguage
-                ? $"[Y{date.Year} {seasonName} W{week}]"
-                : $"[Y{date.Year} {seasonName} W{week}]",
-            MemoryTier.Chronicle => IsChineseLanguage
-                ? $"[Y{date.Year} {seasonName}印记]"
-                : $"[Y{date.Year} {seasonName} imprint]",
+            MemoryTier.Daily => FormatGameDateLabel(date),
+            MemoryTier.Weekly => isZh
+                ? $"第 {date.Year} 年 {seasonName} 第 {week} 周"
+                : $"Year {date.Year} {seasonName} Week {week}",
+            MemoryTier.Chronicle => isZh
+                ? $"第 {date.Year} 年 {seasonName}季印记"
+                : $"Year {date.Year} {seasonName} Imprint",
             _ => FormatGameDateLabel(date)
         };
     }
@@ -444,11 +473,15 @@ internal class MemoryManager : IMemoryProvider
         if (list.Any(m => m.Tier == tier && string.Equals(m.Content, trimmed, StringComparison.OrdinalIgnoreCase)))
             return MemoryOperationResult.Duplicate;
 
-        // T9-R1：分层日期标签规则收口——Weekly/Chronicle 由 tier 规则生成（覆盖调用方传入值）；Daily 用页面日期戳
+        // T9-R1：分层日期标签规则收口——Weekly/Chronicle 由 tier 规则生成（覆盖调用方传入值）；Daily 用页面日期戳。
+        // FIX-TIMELINE-DATE-01：基于 createdDay 换算 entryTime，防止跨年浓缩时年份漂移至当前系统年份。
+        int day = createdDay < 0 ? CurrentGameDay() : createdDay;
+        StardewTime entryTime = GameDayToStardewTime(day);
+
         string label;
         if (tier == MemoryTier.Weekly || tier == MemoryTier.Chronicle)
         {
-            label = GenerateDateLabel(tier, new StardewTime(Game1.Date, Game1.timeOfDay));
+            label = GenerateDateLabel(tier, entryTime);
             if (!string.IsNullOrWhiteSpace(dateLabel))
                 ModEntry.SMonitor?.Log(
                     $"[MemoryManager] Timeline label overridden by tier rule ({tier}: '{label}' replaces '{dateLabel}').",
@@ -457,10 +490,9 @@ internal class MemoryManager : IMemoryProvider
         else
         {
             label = string.IsNullOrWhiteSpace(dateLabel)
-                ? GenerateDateLabel(tier, new StardewTime(Game1.Date, Game1.timeOfDay))
+                ? GenerateDateLabel(tier, entryTime)
                 : dateLabel;
         }
-        int day = createdDay < 0 ? CurrentGameDay() : createdDay;
 
         var entry = new MemoryEntry
         {
