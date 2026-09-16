@@ -46,7 +46,7 @@ namespace ValleytalkReborn
             if (response.responseKey == $"{SldConstants.DialogueKeyPrefix}Silent")
             {
                 bool isZh = LocalizedContentManager.CurrentLanguageCode.ToString().StartsWith("zh", StringComparison.OrdinalIgnoreCase);
-                string silentText = isZh ? "*保持沉默，什么也没说*" : "*remains silent*";
+                string silentText = isZh ? "*保持沉默，什么也没说*" : "remains silent";
                 DialogueHistoryManager.Instance.RecordPlayerDialogue(__instance.speaker.Name, silentText);
 
                 // 🌟【精准修复 1】：显式清理对话菜单并恢复玩家行动，防止悬挂导致用户再次点击空栈崩溃

@@ -298,6 +298,23 @@ namespace ValleytalkReborn
                     .Replace("{{value}}", max.ToString())
                     .Replace("{{0}}", max.ToString());
             public static string ArchiveEndangeredTag() => Lookup("Memory.ArchiveEndangeredTag");
+            public static string TabChats() => Lookup("Memory.TabChats");
+            public static string TabImpressions() => Lookup("Memory.TabImpressions");
+            public static string TabWeekly() => Lookup("Memory.TabWeekly");
+            public static string TabChronicle() => Lookup("Memory.TabChronicle");
+            public static string DistillThisPage() => Lookup("Memory.DistillThisPage");
+            public static string ConsolidateToWeekly(int count)
+                => Lookup("Memory.ConsolidateToWeekly")
+                    .Replace("{{count}}", count.ToString())
+                    .Replace("{{value}}", count.ToString())
+                    .Replace("{{0}}", count.ToString());
+            public static string ElevateToChronicle(int count)
+                => Lookup("Memory.ElevateToChronicle")
+                    .Replace("{{count}}", count.ToString())
+                    .Replace("{{value}}", count.ToString())
+                    .Replace("{{0}}", count.ToString());
+            public static string PrevDay() => Lookup("Memory.PrevDay");
+            public static string NextDay() => Lookup("Memory.NextDay");
         }
 
         public static class DialogueInput

@@ -194,5 +194,14 @@
   "Memory.ArchiveRestoreDuplicate": "活跃记忆中已存在相同内容，未恢复。",
   "Memory.ArchiveRestoreNotFound": "该条目已不存在（可能已被淘汰），列表已刷新。",
   "Memory.ArchiveRuleHint": "超过 {{max}} 条时将自动替换最早的归档。",
-  "Memory.ArchiveEndangeredTag": "[即将过期]"
+  "Memory.ArchiveEndangeredTag": "[即将过期]",
+  "Memory.TabChats": "对话",
+  "Memory.TabImpressions": "心流印记",
+  "Memory.TabWeekly": "周度纪要",
+  "Memory.TabChronicle": "季·年编年",
+  "Memory.DistillThisPage": "提炼此页心流",
+  "Memory.ConsolidateToWeekly": "沉淀为周记 ({{count}})",
+  "Memory.ElevateToChronicle": "升华为编年 ({{count}})",
+  "Memory.PrevDay": "前一日",
+  "Memory.NextDay": "后一日"
 }

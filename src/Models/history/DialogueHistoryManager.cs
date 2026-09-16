@@ -112,16 +112,37 @@ namespace ValleytalkReborn
 
         public void RecordGiftGiven(string npcName, string giftName, int taste)
         {
-            string tasteLabel = taste switch
-            {
-                0 => "Love",
-                2 => "Like",
-                4 => "Dislike",
-                6 => "Hate",
-                _ => "Neutral"
-            };
+            // 仅当游戏语言为中文（简中/繁中）时使用中文，其余所有语言回退英文
+            bool isChinese = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
 
-            string text = $"Given gift: {giftName} (Reaction: {tasteLabel})";
+            string tasteLabel;
+            string text;
+
+            if (isChinese)
+            {
+                tasteLabel = taste switch
+                {
+                    0 => "最爱",
+                    2 => "喜欢",
+                    4 => "不喜欢",
+                    6 => "讨厌",
+                    _ => "一般"
+                };
+                text = $"送出礼物：{giftName}（反应：{tasteLabel}）";
+            }
+            else
+            {
+                tasteLabel = taste switch
+                {
+                    0 => "Love",
+                    2 => "Like",
+                    4 => "Dislike",
+                    6 => "Hate",
+                    _ => "Neutral"
+                };
+                text = $"Given gift: {giftName} (Reaction: {tasteLabel})";
+            }
+
             var entry = new DialogueHistoryEntry("System", text, SpeakerType.System, "gift")
             {
                 GiftName = giftName,
@@ -129,22 +150,6 @@ namespace ValleytalkReborn
             };
 
             _pendingGifts[npcName] = entry;
-            AddEntry(npcName, entry);
-        }
-
-        public void RecordGiftReaction(string npcName, string reactionText)
-        {
-            var sanitized = SanitizeForStorage(reactionText);
-            if (string.IsNullOrWhiteSpace(sanitized)) return;
-            var entry = new DialogueHistoryEntry(npcName, sanitized, SpeakerType.NPC, "gift");
-            AddEntry(npcName, entry);
-            _pendingGifts.Remove(npcName);
-        }
-
-        public void RecordSystemEvent(string npcName, string text, string dialogueType = "system")
-        {
-            if (string.IsNullOrWhiteSpace(text)) return;
-            var entry = new DialogueHistoryEntry("System", text, SpeakerType.System, dialogueType);
             AddEntry(npcName, entry);
         }
 
