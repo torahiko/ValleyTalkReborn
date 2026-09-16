@@ -214,6 +214,26 @@ namespace ValleytalkReborn
         public bool EnableDateSystem { get; set; } = false;
 
         /// <summary>
+        /// 时间线自动总结：每日 8 点判定，昨日互动 >=3 自动写日记。默认开启。
+        /// </summary>
+        public bool AutoSummarizeDaily { get; set; } = true;
+
+        /// <summary>
+        /// 时间线自动总结：每周一，近 7 天日记 >=3 自动浓缩周报。默认开启。
+        /// </summary>
+        public bool AutoSummarizeWeekly { get; set; } = true;
+
+        /// <summary>
+        /// 时间线自动总结：每季 1 日，上季周报 >=2 自动浓缩季报。默认开启。
+        /// </summary>
+        public bool AutoSummarizeSeason { get; set; } = true;
+
+        /// <summary>
+        /// 时间线自动总结：每年春 1，上年季报 >=2 自动浓缩年报。默认开启。
+        /// </summary>
+        public bool AutoSummarizeYearly { get; set; } = true;
+
+        /// <summary>
         /// 是否严格遵循第三方模组作者的 permitAiUse 声明。
         /// 默认开启 (true)：未声明允许 AI 的第三方 NPC 将保持游戏原生对话，不接入大模型。
         /// 关闭 (false)：玩家在本地自愿决定对所有自定义 NPC 启用 AI 对话。

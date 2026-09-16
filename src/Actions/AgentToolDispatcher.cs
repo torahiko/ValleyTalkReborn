@@ -31,6 +31,13 @@ internal static class AgentToolDispatcher
         }
     }
 
+    /// <summary>线程安全投递一个主线程回调；由 ModEntry.OnUpdateTicked 的 ProcessMainThreadQueue 消费。</summary>
+    public static void EnqueueMainThread(Action action)
+    {
+        if (action == null) return;
+        _mainThreadActions.Enqueue(action);
+    }
+
     public static bool DispatchToolCall(NPC npc, string functionName, string jsonArguments)
     {
         ModEntry.SMonitor?.Log($"[AgentToolDispatcher] Tool calling has been fully removed; rejected: '{functionName}'.", LogLevel.Debug);

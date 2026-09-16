@@ -325,6 +325,7 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
             // 若由浓缩产生，收录后顺带安全销毁源碎片
             if (_sourceEntriesToRemove.Count > 0)
             {
+                MemoryManager.Instance.ArchiveTimelineMemories(_npcName, _sourceEntriesToRemove, "Distilled");
                 MemoryManager.Instance.RemoveTimelineMemories(_npcName, _sourceEntriesToRemove.Select(m => m.Id));
                 _sourceEntriesToRemove.Clear();
             }

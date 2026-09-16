@@ -23,7 +23,9 @@ public enum MemoryTier
 {
     Daily = 0,
     Weekly = 1,
-    Chronicle = 2
+    Season = 2,       // 为 Chronicle 的同值别名（兼容既有存档）
+    Chronicle = 2,
+    Yearly = 3        // 新增
 }
 
 public class MemoryEntry
@@ -49,6 +51,7 @@ public class MemoryEntry
     // ── Timeline 分层（FEAT-MEM-300-T1）──
     public MemoryTier Tier { get; set; } = MemoryTier.Daily;
     public string DateLabel { get; set; } = "";   // 游戏内日历戳，如 "[Y1 春 7日]"，以入库时所在页面日期为准
+    public string ArchiveReason { get; set; } = ""; // 归档原因："Distilled" | "ManualDeleted" | ""（未归档）
 }
 
 public enum MemoryOperationResult
@@ -82,6 +85,7 @@ internal class MemoryManager : IMemoryProvider
     public const int MaxDailyTimelineMemories = 30;
     public const int MaxWeeklyTimelineMemories = 10;
     public const int MaxChronicleTimelineMemories = 10;
+    public const int MaxYearlyTimelineMemories = 5;
 
     private const int EvictionImmuneImportance = 4; // Importance >= 此值免疫淘汰（未履约 Promise 也免疫）
 
@@ -332,12 +336,13 @@ internal class MemoryManager : IMemoryProvider
             .ToList();
     }
 
-    /// <summary>Tier 容量上限：Daily 30 / Weekly 10 / Chronicle 10。</summary>
+    /// <summary>Tier 容量上限：Daily 30 / Weekly 10 / Chronicle 10 / Yearly 5。</summary>
     public static int GetTierCapacity(MemoryTier tier) => tier switch
     {
         MemoryTier.Daily => MaxDailyTimelineMemories,
         MemoryTier.Weekly => MaxWeeklyTimelineMemories,
         MemoryTier.Chronicle => MaxChronicleTimelineMemories,
+        MemoryTier.Yearly => MaxYearlyTimelineMemories,
         _ => 10
     };
 
@@ -432,6 +437,9 @@ internal class MemoryManager : IMemoryProvider
             MemoryTier.Chronicle => isZh
                 ? $"第 {date.Year} 年 {seasonName}季印记"
                 : $"Year {date.Year} {seasonName} Imprint",
+            MemoryTier.Yearly => isZh
+                ? $"第 {date.Year} 年年度编年"
+                : $"Year {date.Year} Annual Chronicle",
             _ => FormatGameDateLabel(date)
         };
     }
@@ -479,7 +487,7 @@ internal class MemoryManager : IMemoryProvider
         StardewTime entryTime = GameDayToStardewTime(day);
 
         string label;
-        if (tier == MemoryTier.Weekly || tier == MemoryTier.Chronicle)
+        if (tier == MemoryTier.Weekly || tier == MemoryTier.Chronicle || tier == MemoryTier.Yearly)
         {
             label = GenerateDateLabel(tier, entryTime);
             if (!string.IsNullOrWhiteSpace(dateLabel))
@@ -505,7 +513,7 @@ internal class MemoryManager : IMemoryProvider
             Type = MemoryType.Fact,
             Tier = tier,
             DateLabel = label,
-            Importance = tier == MemoryTier.Chronicle ? 5 : tier == MemoryTier.Weekly ? 4 : 3
+            Importance = tier == MemoryTier.Yearly ? 5 : tier == MemoryTier.Chronicle ? 5 : tier == MemoryTier.Weekly ? 4 : 3
         };
 
         list.Insert(0, entry);
@@ -596,6 +604,53 @@ internal class MemoryManager : IMemoryProvider
         {
             ModEntry.SMonitor?.Log($"[MemoryManager] SaveTimeline failed: {ex.Message}", LogLevel.Warn);
         }
+    }
+
+    /// <summary>将时间线条目只入归档箱（不删除时间线条目，由调用方显式 RemoveTimelineMemories）。</summary>
+    public MemoryOperationResult ArchiveTimelineMemories(string npcName, IReadOnlyList<MemoryEntry> entries, string archiveReason)
+    {
+        if (string.IsNullOrWhiteSpace(npcName) || entries == null)
+        {
+            ModEntry.SMonitor?.Log("[MemoryManager] ArchiveTimelineMemories: npcName empty or entries null.", LogLevel.Trace);
+            return MemoryOperationResult.NotFound;
+        }
+
+        EnsureLoaded();
+
+        if (_loadFailed)
+        {
+            ModEntry.SMonitor?.Log("[MemoryManager] ArchiveTimelineMemories refused: last load failed, refusing to mutate state.", LogLevel.Error);
+            return MemoryOperationResult.CapacityFull;
+        }
+
+        var list = entries.Where(e => e != null && !string.IsNullOrWhiteSpace(e.Id)).ToList();
+        if (list.Count == 0)
+        {
+            ModEntry.SMonitor?.Log("[MemoryManager] ArchiveTimelineMemories: no valid entries.", LogLevel.Trace);
+            return MemoryOperationResult.NotFound;
+        }
+
+        if (!_archivedMemories.TryGetValue(npcName, out var archiveList))
+        {
+            archiveList = new List<MemoryEntry>();
+            _archivedMemories[npcName] = archiveList;
+        }
+
+        foreach (var entry in list)
+        {
+            entry.ArchivedAt = DateTime.Now;
+            entry.ArchiveReason = archiveReason ?? "";
+            archiveList.Insert(0, entry);
+        }
+
+        while (archiveList.Count > MaxArchivedMemoriesPerNpc)
+            archiveList.RemoveAt(archiveList.Count - 1);
+
+        SaveArchived();
+        ModEntry.SMonitor?.Log(
+            $"[MemoryManager] Archived {list.Count} timeline memories for [{npcName}] (reason: {archiveReason}).",
+            LogLevel.Info);
+        return MemoryOperationResult.Success;
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -1072,6 +1127,43 @@ internal class MemoryManager : IMemoryProvider
         var entry = archiveList.FirstOrDefault(m => m.Id == entryId);
         if (entry == null) return MemoryOperationResult.NotFound;
 
+        if (string.Equals(entry.Source, "Timeline", StringComparison.Ordinal))
+        {
+            // 时间线还原路径：回到 _timelineMemories 原 tier，保留日期戳（不做 3 天新鲜化）。
+            if (!_timelineMemories.TryGetValue(npcName, out var timelineList))
+            {
+                timelineList = new List<MemoryEntry>();
+                _timelineMemories[npcName] = timelineList;
+            }
+
+            if (timelineList.Any(m => m.Tier == entry.Tier && string.Equals(m.Content, entry.Content, StringComparison.OrdinalIgnoreCase)))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[MemoryManager] RestoreMemory timeline duplicate for [{npcName}]: \"{TrimForLog(entry.Content)}\" stays archived.",
+                    LogLevel.Debug);
+                return MemoryOperationResult.Duplicate;
+            }
+
+            if (timelineList.Count(m => m.Tier == entry.Tier) >= GetTierCapacity(entry.Tier))
+                return MemoryOperationResult.CapacityFull;
+
+            archiveList.Remove(entry);
+            if (archiveList.Count == 0) _archivedMemories.Remove(npcName);
+
+            entry.ArchivedAt = default;
+            entry.ArchiveReason = "";
+            timelineList.Insert(0, entry);
+
+            SaveTimeline();
+            SaveArchived();
+
+            ModEntry.SMonitor?.Log(
+                $"[MemoryManager] Restored timeline memory [{npcName}] [{entry.Tier}]: \"{TrimForLog(entry.Content)}\".",
+                LogLevel.Info);
+            return MemoryOperationResult.Success;
+        }
+
+        // Manual/Auto 池还原路径（逐字节不变）。
         if (!_memories.TryGetValue(npcName, out var activeList))
         {
             activeList = new List<MemoryEntry>();
