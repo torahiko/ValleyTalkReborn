@@ -262,6 +262,7 @@ namespace ValleytalkReborn
             DateManager.Instance.Initialize(helper);
             InvitationManager.Instance.Initialize(helper);
             MemoryManager.Instance.Initialize(helper);
+            TimelineAutoSummaryScheduler.Instance.Initialize(helper);
             WorldMemoryManager.Instance.Initialize(helper);
             MovementManager.Instance.Initialize(helper);
             RelationshipMilestoneManager.Instance.Initialize(Helper, Monitor);
@@ -984,6 +985,15 @@ namespace ValleytalkReborn
                 catch (Exception ex)
                 {
                     Log.Error($"[ValleyTalkReborn] Error cleaning MemoryManager: {ex.Message}");
+                }
+
+                try
+                {
+                    TimelineAutoSummaryScheduler.Instance?.Cleanup();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[ValleyTalkReborn] Error cleaning TimelineAutoSummaryScheduler: {ex.Message}");
                 }
 
                 // ★ 清理 PendingTopicManager（跨存档卫生，修复 A1-1/A3-1）

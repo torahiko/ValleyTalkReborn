@@ -415,6 +415,48 @@ namespace ValleytalkReborn
                 setValue: value => ModEntry.Config.EnableDateSystem = value
             );
 
+            // ── 时间线自动总结 ──
+            ConfigMenu.AddSectionTitle(
+                mod: ModManifest,
+                text: () => GetUIString("configSectionAutoSummarize", "Timeline Auto-Summary")
+            );
+
+            ConfigMenu.AddBoolOption(
+                mod: ModManifest,
+                name: () => GetUIString("configAutoSummarizeDaily", "Auto-write Daily Diary"),
+                tooltip: () => GetUIString("configAutoSummarizeDailyTooltip",
+                    "Every day at 8:00, if yesterday's interactions >= 3, automatically write a diary entry."),
+                getValue: () => ModEntry.Config.AutoSummarizeDaily,
+                setValue: value => ModEntry.Config.AutoSummarizeDaily = value
+            );
+
+            ConfigMenu.AddBoolOption(
+                mod: ModManifest,
+                name: () => GetUIString("configAutoSummarizeWeekly", "Auto-summarize Weekly Report"),
+                tooltip: () => GetUIString("configAutoSummarizeWeeklyTooltip",
+                    "Every Monday, if the past 7 days have >= 3 diary entries, automatically condense into a weekly report."),
+                getValue: () => ModEntry.Config.AutoSummarizeWeekly,
+                setValue: value => ModEntry.Config.AutoSummarizeWeekly = value
+            );
+
+            ConfigMenu.AddBoolOption(
+                mod: ModManifest,
+                name: () => GetUIString("configAutoSummarizeSeason", "Auto-summarize Season Report"),
+                tooltip: () => GetUIString("configAutoSummarizeSeasonTooltip",
+                    "On the 1st of each season, if last season has >= 2 weekly reports, automatically condense into a season report."),
+                getValue: () => ModEntry.Config.AutoSummarizeSeason,
+                setValue: value => ModEntry.Config.AutoSummarizeSeason = value
+            );
+
+            ConfigMenu.AddBoolOption(
+                mod: ModManifest,
+                name: () => GetUIString("configAutoSummarizeYearly", "Auto-summarize Yearly Report"),
+                tooltip: () => GetUIString("configAutoSummarizeYearlyTooltip",
+                    "On Spring 1 each year, if last year has >= 2 season reports, automatically condense into a yearly report."),
+                getValue: () => ModEntry.Config.AutoSummarizeYearly,
+                setValue: value => ModEntry.Config.AutoSummarizeYearly = value
+            );
+
             // ── 快捷键设置 ──
             ConfigMenu.AddSectionTitle(
                 mod: ModManifest,

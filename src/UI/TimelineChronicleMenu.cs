@@ -627,6 +627,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
             I18n.Memory.DeleteConfirm(entry.Content),
             _ =>
             {
+                MemoryManager.Instance.ArchiveTimelineMemories(_npcName, new[] { entry }, "ManualDeleted");
                 MemoryManager.Instance.RemoveTimelineMemory(_npcName, entry.Id);
                 Game1.playSound("trashcan");
                 RefreshEntries();
