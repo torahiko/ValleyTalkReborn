@@ -23,7 +23,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     private const int LeftPadding = 48;
     private const int RightPadding = 48;
     private const int ItemSpacing = 10;
-    private const float TextFontScale = 0.82f;
+    private const float TextFontScale = 0.7f;
 
     // 原版 Checkbox 贴图切片 (mouseCursors)
     private const int CheckboxUncheckedSourceX = 227;
@@ -673,7 +673,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
             _lastSummarizeTickMs = now;
             Game1.playSound("bigSelect");
-            Game1.activeClickableMenu = new MemoryDistillMenu(_npcName, this, MemoryTier.Daily, dateFilter: ViewDate, timelineMode: true);
+            Game1.activeClickableMenu = new TimelineDistillMenu(_npcName, this, MemoryTier.Daily, dateFilter: ViewDate);
         }
         else if (_currentTab == 1 || _currentTab == 2)
         {
@@ -694,7 +694,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 CancellationToken.None);
 
             Game1.playSound("bigSelect");
-            Game1.activeClickableMenu = new MemoryDistillMenu(_npcName, this, targetTier, selectedEntries, condenseTask, timelineMode: true);
+            Game1.activeClickableMenu = new TimelineDistillMenu(_npcName, this, targetTier, selectedEntries, condenseTask);
         }
     }
 
