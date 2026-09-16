@@ -67,7 +67,10 @@ namespace ValleytalkReborn
                 if (Game1.player.friendshipData.TryGetValue(__instance.Name, out var caFriendship)) caFriendship.TalkedToToday = true;
 
                 var displayName = __instance.displayName ?? __instance.Name ?? "NPC";
-                var prompt = Util.GetString(character, "uiStartConversation", new { Name = displayName }) ?? $"What do you want to say to {displayName}?";
+                var defaultPrompt = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh
+                    ? $"你想对 {displayName} 说什么？"
+                    : $"What do you want to say to {displayName}?";
+                var prompt = Util.GetString(character, "uiStartConversation", new { Name = displayName }) ?? defaultPrompt;
 
                 TextInputManager.RequestTextInput(prompt, __instance);
 
@@ -219,8 +222,12 @@ namespace ValleytalkReborn
                                         // 2. 偷听广播给 512 像素内的路人 NPC（供 EavesdropInjector 使用）
                                         if (__instance.currentLocation != null && Game1.player != null)
                                         {
-                                            var farmerLabel = Util.GetString("generalFarmerLabel") ?? "农夫";
-                                            var eavesdropText = $"{farmerLabel}与{__instance.displayName}交谈，{__instance.displayName}说道：\"{cleanedText}\"";
+                                            bool isChinese = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+                                            var defaultFarmerLabel = isChinese ? "农夫" : "Farmer";
+                                            var farmerLabel = Util.GetString("generalFarmerLabel") ?? defaultFarmerLabel;
+                                            var eavesdropText = isChinese
+                                                ? $"{farmerLabel}与{__instance.displayName}交谈，{__instance.displayName}说道：\"{cleanedText}\""
+                                                : $"{farmerLabel} talked to {__instance.displayName}, {__instance.displayName} said: \"{cleanedText}\"";
 
                                             foreach (var nearbyNpc in __instance.currentLocation.characters)
                                             {

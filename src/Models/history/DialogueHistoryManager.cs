@@ -112,7 +112,7 @@ namespace ValleytalkReborn
 
         public void RecordGiftGiven(string npcName, string giftName, int taste)
         {
-            // 仅当游戏语言为中文（简中/繁中）时使用中文，其余所有语言回退英文
+            // 仅中文走中文分支，其余所有语言回落英文
             bool isChinese = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
 
             string tasteLabel;
@@ -150,6 +150,22 @@ namespace ValleytalkReborn
             };
 
             _pendingGifts[npcName] = entry;
+            AddEntry(npcName, entry);
+        }
+
+        public void RecordGiftReaction(string npcName, string reactionText)
+        {
+            var sanitized = SanitizeForStorage(reactionText);
+            if (string.IsNullOrWhiteSpace(sanitized)) return;
+            var entry = new DialogueHistoryEntry(npcName, sanitized, SpeakerType.NPC, "gift");
+            AddEntry(npcName, entry);
+            _pendingGifts.Remove(npcName);
+        }
+
+        public void RecordSystemEvent(string npcName, string text, string dialogueType = "system")
+        {
+            if (string.IsNullOrWhiteSpace(text)) return;
+            var entry = new DialogueHistoryEntry("System", text, SpeakerType.System, dialogueType);
             AddEntry(npcName, entry);
         }
 
