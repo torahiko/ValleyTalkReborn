@@ -47,7 +47,9 @@ namespace ValleytalkReborn
 
         private readonly List<Rectangle> _restoreRects = new();
         private readonly List<Rectangle> _deleteRects = new();
-        private readonly Rectangle _clearButtonRect;
+        private readonly ClickableTextureComponent _clearButton;
+        private float _clearButtonHoverScale;
+        private readonly float _clearButtonBaseScale;
 
         // 布局参数精修：适度拓宽并增高，给予内容充足的呼吸空间
         private const int MenuWidth = 860;
@@ -133,12 +135,10 @@ namespace ValleytalkReborn
                 Game1.mouseCursors, new Rectangle(435, 463, 6, 10), 3.5f);
 
             // 一键清空按钮（顶栏计数左侧）
-            const int clearBtnW = 64;
-            const int clearBtnH = 28;
-            _clearButtonRect = new Rectangle(
-                xPositionOnScreen + width - RightScrollArea - clearBtnW,
-                yPositionOnScreen + TopPadding - 22,
-                clearBtnW, clearBtnH);
+            _clearButton = new ClickableTextureComponent(
+                new Rectangle(xPositionOnScreen + width - RightScrollArea - 64, yPositionOnScreen + TopPadding - 22, 64, 28),
+                Game1.mouseCursors, new Rectangle(337, 494, 12, 12), 3.5f);
+            _clearButtonBaseScale = 3.5f;
 
             RefreshEntries();
         }
@@ -222,7 +222,7 @@ namespace ValleytalkReborn
                 return;
             }
 
-            if (_clearButtonRect.Contains(x, y) && _cachedEntries.Count > 0)
+            if (_clearButton.containsPoint(x, y) && _cachedEntries.Count > 0)
             {
                 int countSnapshot = _cachedEntries.Count;
                 Game1.playSound("bigSelect");
@@ -402,15 +402,20 @@ namespace ValleytalkReborn
 
             // 归档记录计数指示器（右上侧排版）
             bool clearEnabled = _cachedEntries.Count > 0;
-            bool clearHover = _clearButtonRect.Contains(mx, my) && clearEnabled;
-            IClickableMenu.drawTextureBox(b,
-                _clearButtonRect.X, _clearButtonRect.Y, _clearButtonRect.Width, _clearButtonRect.Height,
-                clearHover ? Color.Gold : Color.White);
+            float clearTarget = clearEnabled && _clearButton.containsPoint(mx, my) ? 1.15f : 1.0f;
+            _clearButtonHoverScale += (clearTarget - _clearButtonHoverScale) * 0.2f;
+            _clearButton.scale = _clearButtonBaseScale * _clearButtonHoverScale;
+            Rectangle clearRect = _clearButton.bounds;
+            int clearW = (int)(clearRect.Width * _clearButtonHoverScale);
+            int clearH = (int)(clearRect.Height * _clearButtonHoverScale);
+            int clearX = clearRect.X - (clearW - clearRect.Width) / 2;
+            int clearY = clearRect.Y - (clearH - clearRect.Height) / 2;
+            IClickableMenu.drawTextureBox(b, clearX, clearY, clearW, clearH, Color.White);
             string clearLabel = I18n.Memory.ArchiveClearButton();
             var clearLabelSize = Game1.smallFont.MeasureString(clearLabel);
             b.DrawString(Game1.smallFont, clearLabel,
-                new Vector2(_clearButtonRect.X + (_clearButtonRect.Width - clearLabelSize.X) / 2f,
-                            _clearButtonRect.Y + (_clearButtonRect.Height - clearLabelSize.Y) / 2f),
+                new Vector2(clearX + (clearW - clearLabelSize.X) / 2f,
+                            clearY + (clearH - clearLabelSize.Y) / 2f),
                 clearEnabled ? Game1.textColor : Game1.textColor * 0.4f);
 
             string countText = I18n.Memory.ArchiveCount(_cachedEntries.Count, _capacity);
@@ -419,7 +424,7 @@ namespace ValleytalkReborn
                 ? new Color(255, 175, 70)
                 : Color.Gray;
             b.DrawString(Game1.smallFont, countText,
-                new Vector2(_clearButtonRect.X - 10 - countSize.X, yPositionOnScreen + TopPadding - 16),
+                new Vector2(_clearButton.bounds.X - 10 - countSize.X, yPositionOnScreen + TopPadding - 16),
                 countColor);
 
             // 底部淘汰规则提示
