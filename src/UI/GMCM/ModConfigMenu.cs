@@ -133,6 +133,8 @@ namespace ValleytalkReborn
 
                     ModEntry.CleanupOnConfigToggle();
 
+                    Llm.RecreateHttpClient();
+
                     // ★ 保存后即时生效：刷新第三方授权名单与 DialogueBuilder 配置引用
                     ModEntry.CheckContentPacks();
                     DialogueBuilder.Instance.Config = ModEntry.Config;
@@ -294,6 +296,28 @@ namespace ValleytalkReborn
                     fieldId: "ServerAddress"
                 );
             }
+
+            ConfigMenu.AddTextOption(
+                mod: ModManifest,
+                name: () => GetUIString("configProxyMode", "Proxy Mode"),
+                tooltip: () => GetUIString("configProxyModeTooltip", "Choose how the mod connects to LLM APIs. System uses OS settings, Direct bypasses any proxy, Custom lets you specify a proxy URL."),
+                getValue: () => ModEntry.Config.ProxyMode.ToString(),
+                setValue: value =>
+                {
+                    if (Enum.TryParse<ProxyMode>(value, out var parsed))
+                        ModEntry.Config.ProxyMode = parsed;
+                },
+                allowedValues: new[] { "System", "Direct", "Custom" },
+                formatAllowedValue: val => GetUIString($"configProxyMode_{val}", val)
+            );
+
+            ConfigMenu.AddTextOption(
+                mod: ModManifest,
+                name: () => GetUIString("configCustomProxyUrl", "Custom Proxy URL"),
+                tooltip: () => GetUIString("configCustomProxyUrlTooltip", "Used when Proxy Mode is set to Custom. Enter a full URL including scheme, e.g. http://127.0.0.1:7890 or socks5://127.0.0.1:1080."),
+                getValue: () => ModEntry.Config.CustomProxyUrl,
+                setValue: value => ModEntry.Config.CustomProxyUrl = value?.Trim() ?? string.Empty
+            );
 
             ConfigMenu.AddPageLink(
                 mod: ModManifest,

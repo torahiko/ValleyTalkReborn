@@ -12,11 +12,6 @@ namespace ValleytalkReborn;
 
 internal class LlmLlamaCpp : Llm
 {
-    private static readonly HttpClient SharedHttpClient = new HttpClient
-    {
-        Timeout = TimeSpan.FromMinutes(1)
-    };
-
     public LlmLlamaCpp(string url, string promptFormat)
     {
         this.url = UrlHelper.EnsureScheme(url);

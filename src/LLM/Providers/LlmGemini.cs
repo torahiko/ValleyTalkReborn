@@ -16,8 +16,6 @@ internal class LlmGemini : Llm, IGetModelNames
     private readonly string apiKey;
     private readonly string modelName;
 
-    private static readonly HttpClient SharedHttpClient = new HttpClient();
-
     public LlmGemini(string apiKey, string modelName = null)
     {
         this.apiKey = apiKey;
