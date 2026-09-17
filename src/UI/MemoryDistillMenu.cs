@@ -9,6 +9,7 @@ using Microsoft.Xna.Framework.Input;
 using StardewValley;
 using StardewValley.Menus;
 using StardewModdingAPI;
+using ValleytalkReborn.UI;
 
 namespace ValleytalkReborn;
 
@@ -21,17 +22,7 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
 
     private const int RowH = 48;
     private const int PlusSize = 34;
-    private const int RowBtnSize = 38;
-
-    private const int EditSourceX = 274;
-    private const int EditSourceY = 284;
-    private const int EditSourceSize = 16;
-    private const float EditSourceScale = 2.4f;
-
-    private const int DeleteSourceX = 322;
-    private const int DeleteSourceY = 498;
-    private const int DeleteSourceSize = 12;
-    private const float DeleteSourceScale = 2.4f;
+    private const int ButtonSize = 32;
 
     private const float CloseButtonBaseScale = 3.5f;
 
@@ -436,8 +427,29 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             Vector2 textPos = new Vector2(_rightColX, rowY + (RowH - Game1.smallFont.LineSpacing) / 2f);
             b.DrawString(Game1.smallFont, displayText, textPos, textColor);
 
-            if (i < _editButtons.Count) _editButtons[i].draw(b);
-            if (i < _deleteButtons.Count) _deleteButtons[i].draw(b);
+            bool isLeftMouseDown = Mouse.GetState().LeftButton == ButtonState.Pressed;
+
+            // 绘制编辑按钮
+            if (i < _editButtons.Count)
+            {
+                var btn = _editButtons[i];
+                bool isPressed = isLeftMouseDown && btn.containsPoint(mx, my);
+                IconSource.DrawButton(b, btn, isPressed);
+
+                if (btn.containsPoint(mx, my))
+                    _hoveredTooltip = btn.hoverText;
+            }
+
+            // 绘制删除按钮
+            if (i < _deleteButtons.Count)
+            {
+                var btn = _deleteButtons[i];
+                bool isPressed = isLeftMouseDown && btn.containsPoint(mx, my);
+                IconSource.DrawButton(b, btn, isPressed);
+
+                if (btn.containsPoint(mx, my))
+                    _hoveredTooltip = btn.hoverText;
+            }
 
             // 悬停显示完整内容
             Rectangle textBounds = new Rectangle((int)textPos.X, rowY, (int)maxRightTextWidth, RowH);
@@ -489,19 +501,29 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
         for (int i = 0; i < visibleRight; i++)
         {
             int rowY = _contentTopY + i * RowH;
-            int btnY = rowY + (RowH - RowBtnSize) / 2;
+            int btnY = rowY + (RowH - ButtonSize) / 2; // (48 - 32) / 2 = 8px 垂直居中
 
-            _editButtons.Add(new ClickableTextureComponent(
-                new Rectangle(_rightColX + _colW - 86, btnY, RowBtnSize, RowBtnSize),
-                Game1.mouseCursors,
-                new Rectangle(EditSourceX, EditSourceY, EditSourceSize, EditSourceSize),
-                EditSourceScale));
+            // 编辑按钮（FullSpritesheet 木质铅笔）
+            var edit = new ClickableTextureComponent(
+                new Rectangle(_rightColX + _colW - 74, btnY, ButtonSize, ButtonSize),
+                ModEntry.CustomIcons,
+                IconSource.Edit(IconTheme.Wood, IconState.Normal),
+                2f)
+            {
+                hoverText = I18n.Memory.EditButtonHover()
+            };
+            _editButtons.Add(edit);
 
-            _deleteButtons.Add(new ClickableTextureComponent(
-                new Rectangle(_rightColX + _colW - 42, btnY, RowBtnSize, RowBtnSize),
-                Game1.mouseCursors,
-                new Rectangle(DeleteSourceX, DeleteSourceY, DeleteSourceSize, DeleteSourceSize),
-                DeleteSourceScale));
+            // 删除按钮（FullSpritesheet 木质垃圾桶）
+            var del = new ClickableTextureComponent(
+                new Rectangle(_rightColX + _colW - 36, btnY, ButtonSize, ButtonSize),
+                ModEntry.CustomIcons,
+                IconSource.Trash(IconTheme.Wood, IconState.Normal),
+                2f)
+            {
+                hoverText = I18n.Memory.DeleteButtonHover()
+            };
+            _deleteButtons.Add(del);
         }
     }
 
