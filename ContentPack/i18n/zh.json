@@ -120,7 +120,7 @@
   "recentEventsIntro": "鹈鹕镇近期发生的值得注意的事件:",
   "recentEventsMarried": "农夫最近刚刚举办了婚礼。",
   "recentEventsMovieInvited": "农夫最近邀请了你一起去看电影。",
-  "responseStart": "接着这儿往下说：",
+  "responseStart": "【注意：必须推进对话，严禁重复上一句已输出过的台词、动作或同义句。哪怕农夫只是沉默，也必须顺着当前环境或手头的事情展开新细节。】\n接着这儿往下说："
   "sceneFestivalActive": "- 节日活动: 正在参加【{{Festival}}】，现场很热闹。",
   "sceneFestivalToday": "- 节日活动: 今天是【{{Festival}}】，小镇正在筹备中。",
   "sceneHeading": "### 场景感知",

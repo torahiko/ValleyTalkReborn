@@ -120,7 +120,7 @@
   "recentEventsIntro": "Notable things that happened around Pelican Town lately:",
   "recentEventsMarried": "The farmer recently got married.",
   "recentEventsMovieInvited": "The farmer invited you to the movies recently.",
-  "responseStart": "Pick it up right from here:",
+  "responseStart": "[NOTE: Advance the conversation. Do not repeat, rephrase, or echo lines already said in previous turns. Even if the farmer remains silent or offers nothing new, introduce fresh details from your immediate chores or surroundings.]\nPick it up right from here:"
   "sceneFestivalActive": "- Active Event: Out at the {{Festival}} right now; the whole square is buzzing.",
   "sceneFestivalToday": "- Upcoming Event: Today is the {{Festival}}; folks are getting things set up.",
   "sceneHeading": "### WHAT'S AROUND YOU",
