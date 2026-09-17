@@ -192,6 +192,18 @@ namespace ValleytalkReborn
             public static string TabWeekly() => Lookup("Timeline.TabWeekly");
             public static string TabChronicle() => Lookup("Timeline.TabChronicle");
             public static string DistillThisPage() => Lookup("Timeline.DistillThisPage");
+            // ── 与 Memory.* 解耦的时间线专属文案（此前与 ScrollableMemoryMenu/IntegratedHubMenu 共用）──
+            public static string CloseButton() => Lookup("Timeline.CloseButton");
+            public static string DeleteConfirm(string content) => Lookup("Timeline.DeleteConfirm").Replace("{{content}}", content ?? string.Empty);
+            public static string DistillLlmDisabled() => Lookup("Timeline.DistillLlmDisabled");
+            public static string DistillNoHistory(string npcName) => Lookup("Timeline.DistillNoHistory").Replace("{{npcName}}", npcName ?? string.Empty);
+            public static string EditButtonHover() => Lookup("Timeline.EditButtonHover");
+            public static string DeleteButtonHover() => Lookup("Timeline.DeleteButtonHover");
+            public static string ArchiveButton(int count, int max)
+                => Lookup("Timeline.ArchiveButton").Replace("{{count}}", count.ToString()).Replace("{{max}}", max.ToString());
+            public static string ArchiveTitle(string npcName) => FormatNpc(Lookup("Timeline.ArchiveTitle"), npcName);
+            public static string ArchiveEmpty() => Lookup("Timeline.ArchiveEmpty");
+            public static string ArchiveRuleHint(int max) => Lookup("Timeline.ArchiveRuleHint").Replace("{{max}}", max.ToString());
             public static string ConsolidateToWeekly(int count) => Lookup("Timeline.ConsolidateToWeekly").Replace("{{count}}", count.ToString());
             public static string ElevateToChronicle(int count) => Lookup("Timeline.ElevateToChronicle").Replace("{{count}}", count.ToString());
             public static string PrevDay() => Lookup("Timeline.PrevDay");
@@ -339,9 +351,6 @@ namespace ValleytalkReborn
             public static string ArchiveRestoreNotFound() => Lookup("Memory.ArchiveRestoreNotFound");
             public static string ArchiveRuleHint(int max) => Lookup("Memory.ArchiveRuleHint").Replace("{{max}}", max.ToString());
             // ── 时间线归档箱（FEAT-AUTO-T6 解耦：与 Manual/Auto 归档箱文案不共用）──
-            public static string ArchiveTitleTimeline(string npcName) => FormatNpc(Lookup("Memory.ArchiveTitleTimeline"), npcName);
-            public static string ArchiveEmptyTimeline() => Lookup("Memory.ArchiveEmptyTimeline");
-            public static string ArchiveRuleHintTimeline(int max) => Lookup("Memory.ArchiveRuleHintTimeline").Replace("{{max}}", max.ToString());
             public static string ArchiveClearButton() => Lookup("Memory.ArchiveClearButton");
             public static string ArchiveClearConfirm(int count) => Lookup("Memory.ArchiveClearConfirm").Replace("{{count}}", count.ToString());
             public static string ArchiveEndangeredTag() => Lookup("Memory.ArchiveEndangeredTag");

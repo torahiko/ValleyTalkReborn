@@ -476,7 +476,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
             _closeButton = new ClickableTextureComponent(
                 new Rectangle(xPositionOnScreen + width - 56, yPositionOnScreen + 16, 44, 44),
                 Game1.mouseCursors, new Rectangle(337, 494, 12, 12), 3.5f);
-            _closeButton.hoverText = I18n.Memory.CloseButton();
+            _closeButton.hoverText = I18n.Timeline.CloseButton();
         }
         else
         {
@@ -506,20 +506,20 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
             int textWidth = (int)Game1.smallFont.MeasureString(label).X;
             int btnWidth = Math.Max(200, textWidth + 48);
 
-            int totalWidth = archiveBtnW + gap + dropdownWidth + gap + btnWidth;
+            int totalWidth = dropdownWidth + gap + btnWidth + gap + archiveBtnW;
             int startX = xPositionOnScreen + (width - totalWidth) / 2;
 
-            _archiveButtonRect = new Rectangle(startX, btnY, archiveBtnW, BottomBarHeight);
-            _npcDropdownRect = new Rectangle(startX + archiveBtnW + gap, btnY, dropdownWidth, BottomBarHeight);
-            _actionButtonRect = new Rectangle(startX + archiveBtnW + gap + dropdownWidth + gap, btnY, btnWidth, BottomBarHeight);
+            _npcDropdownRect = new Rectangle(startX, btnY, dropdownWidth, BottomBarHeight);
+            _actionButtonRect = new Rectangle(startX + dropdownWidth + gap, btnY, btnWidth, BottomBarHeight);
+            _archiveButtonRect = new Rectangle(startX + dropdownWidth + gap + btnWidth + gap, btnY, archiveBtnW, BottomBarHeight);
         }
         else
         {
             _actionButtonRect = Rectangle.Empty;
-            int totalWidth = archiveBtnW + gap + dropdownWidth;
+            int totalWidth = dropdownWidth + gap + archiveBtnW;
             int startX = xPositionOnScreen + (width - totalWidth) / 2;
-            _archiveButtonRect = new Rectangle(startX, btnY, archiveBtnW, BottomBarHeight);
-            _npcDropdownRect = new Rectangle(startX + archiveBtnW + gap, btnY, dropdownWidth, BottomBarHeight);
+            _npcDropdownRect = new Rectangle(startX, btnY, dropdownWidth, BottomBarHeight);
+            _archiveButtonRect = new Rectangle(startX + dropdownWidth + gap, btnY, archiveBtnW, BottomBarHeight);
         }
 
         _npcDropdown?.SetHeaderBounds(_npcDropdownRect);
@@ -591,9 +591,9 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 id => MemoryManager.Instance.RestoreTimelineMemory(_npcName, id),
                 id => MemoryManager.Instance.DeleteArchivedTimelineMemory(_npcName, id),
                 MemoryManager.MaxArchivedTimelineMemoriesPerNpc,
-                () => I18n.Memory.ArchiveTitleTimeline(_npcName),
-                () => I18n.Memory.ArchiveEmptyTimeline(),
-                () => I18n.Memory.ArchiveRuleHintTimeline(MemoryManager.MaxArchivedTimelineMemoriesPerNpc),
+                () => I18n.Timeline.ArchiveTitle(_npcName),
+                () => I18n.Timeline.ArchiveEmpty(),
+                () => I18n.Timeline.ArchiveRuleHint(MemoryManager.MaxArchivedTimelineMemoriesPerNpc),
                 () => MemoryManager.Instance.ClearArchivedTimelineMemories(_npcName));
             return;
         }
@@ -651,7 +651,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     private void ConfirmDelete(MemoryEntry entry)
     {
         Game1.activeClickableMenu = new ConfirmationDialog(
-            I18n.Memory.DeleteConfirm(entry.Content),
+            I18n.Timeline.DeleteConfirm(entry.Content),
             _ =>
             {
                 MemoryManager.Instance.ArchiveTimelineMemories(_npcName, new[] { entry }, "ManualDeleted");
@@ -671,7 +671,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         if (DialogueBuilder.Instance?.LlmDisabled == true)
         {
             Game1.playSound("cancel");
-            Game1.addHUDMessage(new HUDMessage(I18n.Memory.DistillLlmDisabled(), 3));
+            Game1.addHUDMessage(new HUDMessage(I18n.Timeline.DistillLlmDisabled(), 3));
             return;
         }
 
@@ -694,7 +694,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
             if (_todayChatEntries.Count == 0)
             {
                 Game1.playSound("cancel");
-                Game1.addHUDMessage(new HUDMessage(I18n.Memory.DistillNoHistory(_npcDisplayName), 0));
+                Game1.addHUDMessage(new HUDMessage(I18n.Timeline.DistillNoHistory(_npcDisplayName), 0));
                 return;
             }
 
@@ -953,8 +953,8 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
             if (!_npcDropdown.IsOpen)
             {
-                if (item.EditRect.Contains(mx, my)) _hoveredTooltip = I18n.Memory.EditButtonHover();
-                if (item.DeleteRect.Contains(mx, my)) _hoveredTooltip = I18n.Memory.DeleteButtonHover();
+                if (item.EditRect.Contains(mx, my)) _hoveredTooltip = I18n.Timeline.EditButtonHover();
+                if (item.DeleteRect.Contains(mx, my)) _hoveredTooltip = I18n.Timeline.DeleteButtonHover();
             }
 
             Vector2 textPos = new Vector2(
@@ -966,53 +966,57 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     }
 
     private void DrawBottomBar(SpriteBatch b, int mx, int my)
+{
+    if (_currentTab == 0)
     {
-        if (_currentTab == 0)
-        {
-            DrawArrowButton(b, _leftArrowRect, isLeft: true, enabled: CanPageLeft, mx, my);
-            DrawArrowButton(b, _rightArrowRect, isLeft: false, enabled: CanPageRight, mx, my);
-        }
-
-        // 归档箱按钮（NPC 下拉左侧，样式与 ScrollableMemoryMenu 底栏按钮一致）
-        if (_archiveButtonRect != Rectangle.Empty)
-        {
-            string archiveText = I18n.Memory.ArchiveButton(_archivedTimelineCount, MemoryManager.MaxArchivedTimelineMemoriesPerNpc);
-            bool archiveHover = _archiveButtonRect.Contains(mx, my);
-            IClickableMenu.drawTextureBox(b,
-                _archiveButtonRect.X, _archiveButtonRect.Y,
-                _archiveButtonRect.Width, _archiveButtonRect.Height,
-                archiveHover ? Color.Gold : Color.White);
-            var archiveLabelSize = Game1.smallFont.MeasureString(archiveText);
-            b.DrawString(Game1.smallFont, archiveText,
-                new Vector2(
-                    _archiveButtonRect.X + (_archiveButtonRect.Width - archiveLabelSize.X) / 2f,
-                    _archiveButtonRect.Y + (_archiveButtonRect.Height - archiveLabelSize.Y) / 2f),
-                Game1.textColor);
-        }
-
-        // 1. 绘制 NPC 上拉选择器 Header
-        _npcDropdown?.DrawHeader(b);
-
-        // 2. 居中/右侧动作按钮（Tab 0/1/2）
-        if (_currentTab >= 0 && _currentTab <= 2)
-        {
-            string label = GetActionButtonLabel();
-            bool hover = _actionButtonRect.Contains(mx, my);
-            Color bg = hover ? new Color(255, 235, 205) : new Color(139, 90, 43);
-
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
-                new Rectangle(432, 439, 9, 9),
-                _actionButtonRect.X, _actionButtonRect.Y, _actionButtonRect.Width, _actionButtonRect.Height,
-                bg, 4f, false);
-
-            var labelSize = Game1.smallFont.MeasureString(label);
-            Vector2 textPos = new Vector2(
-                _actionButtonRect.X + (_actionButtonRect.Width - labelSize.X) / 2f,
-                _actionButtonRect.Y + (_actionButtonRect.Height - labelSize.Y) / 2f);
-
-            b.DrawString(Game1.smallFont, label, textPos, hover ? Game1.textColor : Color.White);
-        }
+        DrawArrowButton(b, _leftArrowRect, isLeft: true, enabled: CanPageLeft, mx, my);
+        DrawArrowButton(b, _rightArrowRect, isLeft: false, enabled: CanPageRight, mx, my);
     }
+
+    // 1. 绘制 NPC 上拉选择器 Header
+    _npcDropdown?.DrawHeader(b);
+
+    // 2. 总结/动作按钮（Tab 0/1/2）
+    if (_currentTab >= 0 && _currentTab <= 2)
+    {
+        string label = GetActionButtonLabel();
+        bool hover = _actionButtonRect.Contains(mx, my);
+        Color bg = hover ? new Color(255, 235, 205) : new Color(139, 90, 43);
+
+        IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
+            new Rectangle(432, 439, 9, 9),
+            _actionButtonRect.X, _actionButtonRect.Y, _actionButtonRect.Width, _actionButtonRect.Height,
+            bg, 4f, false);
+
+        var labelSize = Game1.smallFont.MeasureString(label);
+        Vector2 textPos = new Vector2(
+            _actionButtonRect.X + (_actionButtonRect.Width - labelSize.X) / 2f,
+            _actionButtonRect.Y + (_actionButtonRect.Height - labelSize.Y) / 2f);
+
+        b.DrawString(Game1.smallFont, label, textPos, hover ? Game1.textColor : Color.White);
+    }
+
+    // 3. 归档箱按钮（已统一样式：mouseCursors 木质贴图 + 悬浮米白渐变）
+    if (_archiveButtonRect != Rectangle.Empty)
+    {
+        string archiveText = I18n.Timeline.ArchiveButton(_archivedTimelineCount, MemoryManager.MaxArchivedTimelineMemoriesPerNpc);
+        bool archiveHover = _archiveButtonRect.Contains(mx, my);
+        Color archiveBg = archiveHover ? new Color(255, 235, 205) : new Color(139, 90, 43);
+
+        IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
+            new Rectangle(432, 439, 9, 9),
+            _archiveButtonRect.X, _archiveButtonRect.Y,
+            _archiveButtonRect.Width, _archiveButtonRect.Height,
+            archiveBg, 4f, false);
+
+        var archiveLabelSize = Game1.smallFont.MeasureString(archiveText);
+        Vector2 archiveTextPos = new Vector2(
+            _archiveButtonRect.X + (_archiveButtonRect.Width - archiveLabelSize.X) / 2f,
+            _archiveButtonRect.Y + (_archiveButtonRect.Height - archiveLabelSize.Y) / 2f);
+
+        b.DrawString(Game1.smallFont, archiveText, archiveTextPos, archiveHover ? Game1.textColor : Color.White);
+    }
+}
 
     private static void DrawArrowButton(SpriteBatch b, Rectangle rect, bool isLeft, bool enabled, int mx, int my)
     {
