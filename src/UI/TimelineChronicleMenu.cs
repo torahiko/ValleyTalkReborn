@@ -67,6 +67,10 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     private Rectangle _rightArrowRect;
     private Rectangle _actionButtonRect;
 
+    // 底栏归档箱按钮（FEAT-AUTO-T6，独立于 Manual/Auto 归档箱）
+    private Rectangle _archiveButtonRect;
+    private int _archivedTimelineCount;
+
     // 底栏 NPC 上拉切换器
     private Rectangle _npcDropdownRect;
     private readonly DropupList _npcDropdown;
@@ -241,6 +245,9 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
         UpdateActionButtonLayout();
         RebuildVisibleLayout();
+
+        // 时间线归档箱计数（独立于 Manual/Auto 归档箱）
+        _archivedTimelineCount = MemoryManager.Instance.GetArchivedTimelineCount(_npcName);
     }
 
     private void RefreshPagedChat()
@@ -489,6 +496,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     private void UpdateActionButtonLayout()
     {
         int btnY = yPositionOnScreen + height - BottomBarHeight - 12;
+        const int archiveBtnW = 160;
         const int dropdownWidth = 190;
         const int gap = 12;
 
@@ -498,17 +506,20 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
             int textWidth = (int)Game1.smallFont.MeasureString(label).X;
             int btnWidth = Math.Max(200, textWidth + 48);
 
-            int totalWidth = dropdownWidth + gap + btnWidth;
+            int totalWidth = archiveBtnW + gap + dropdownWidth + gap + btnWidth;
             int startX = xPositionOnScreen + (width - totalWidth) / 2;
 
-            _npcDropdownRect = new Rectangle(startX, btnY, dropdownWidth, BottomBarHeight);
-            _actionButtonRect = new Rectangle(startX + dropdownWidth + gap, btnY, btnWidth, BottomBarHeight);
+            _archiveButtonRect = new Rectangle(startX, btnY, archiveBtnW, BottomBarHeight);
+            _npcDropdownRect = new Rectangle(startX + archiveBtnW + gap, btnY, dropdownWidth, BottomBarHeight);
+            _actionButtonRect = new Rectangle(startX + archiveBtnW + gap + dropdownWidth + gap, btnY, btnWidth, BottomBarHeight);
         }
         else
         {
             _actionButtonRect = Rectangle.Empty;
-            int startX = xPositionOnScreen + (width - dropdownWidth) / 2;
-            _npcDropdownRect = new Rectangle(startX, btnY, dropdownWidth, BottomBarHeight);
+            int totalWidth = archiveBtnW + gap + dropdownWidth;
+            int startX = xPositionOnScreen + (width - totalWidth) / 2;
+            _archiveButtonRect = new Rectangle(startX, btnY, archiveBtnW, BottomBarHeight);
+            _npcDropdownRect = new Rectangle(startX + archiveBtnW + gap, btnY, dropdownWidth, BottomBarHeight);
         }
 
         _npcDropdown?.SetHeaderBounds(_npcDropdownRect);
@@ -569,6 +580,18 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         {
             if (_leftArrowRect.Contains(x, y) && CanPageLeft) { PageLeft(); return; }
             if (_rightArrowRect.Contains(x, y) && CanPageRight) { PageRight(); return; }
+        }
+
+        // 归档箱按钮（优先于动作按钮，防止矩形相邻时误吞点击）
+        if (_archiveButtonRect != Rectangle.Empty && _archiveButtonRect.Contains(x, y))
+        {
+            Game1.playSound("bigSelect");
+            Game1.activeClickableMenu = new ArchivedMemoryMenu(_npcName, this,
+                () => MemoryManager.Instance.GetArchivedTimelineMemories(_npcName),
+                id => MemoryManager.Instance.RestoreTimelineMemory(_npcName, id),
+                id => MemoryManager.Instance.DeleteArchivedTimelineMemory(_npcName, id),
+                MemoryManager.MaxArchivedTimelineMemoriesPerNpc);
+            return;
         }
 
         // 动作按钮
@@ -944,6 +967,23 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         {
             DrawArrowButton(b, _leftArrowRect, isLeft: true, enabled: CanPageLeft, mx, my);
             DrawArrowButton(b, _rightArrowRect, isLeft: false, enabled: CanPageRight, mx, my);
+        }
+
+        // 归档箱按钮（NPC 下拉左侧，样式与 ScrollableMemoryMenu 底栏按钮一致）
+        if (_archiveButtonRect != Rectangle.Empty)
+        {
+            string archiveText = I18n.Memory.ArchiveButton(_archivedTimelineCount, MemoryManager.MaxArchivedTimelineMemoriesPerNpc);
+            bool archiveHover = _archiveButtonRect.Contains(mx, my);
+            IClickableMenu.drawTextureBox(b,
+                _archiveButtonRect.X, _archiveButtonRect.Y,
+                _archiveButtonRect.Width, _archiveButtonRect.Height,
+                archiveHover ? Color.Gold : Color.White);
+            var archiveLabelSize = Game1.smallFont.MeasureString(archiveText);
+            b.DrawString(Game1.smallFont, archiveText,
+                new Vector2(
+                    _archiveButtonRect.X + (_archiveButtonRect.Width - archiveLabelSize.X) / 2f,
+                    _archiveButtonRect.Y + (_archiveButtonRect.Height - archiveLabelSize.Y) / 2f),
+                Game1.textColor);
         }
 
         // 1. 绘制 NPC 上拉选择器 Header

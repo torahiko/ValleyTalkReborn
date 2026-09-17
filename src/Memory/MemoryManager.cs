@@ -70,6 +70,7 @@ internal class MemoryManager : IMemoryProvider
     private const string SaveDataKey         = "valleytalk.npc-memories";
     private const string CallsignSaveDataKey = "valleytalk.npc-callsigns";
     private const string ArchiveSaveDataKey = "valleytalk.npc-archived-memories";
+    private const string TimelineArchiveSaveDataKey = "valleytalk.npc-timeline-archived-memories";
     private const string CategoryMigrationFlagKey = "valleytalk.memory-category-migrated";
     private const string TimelineSaveDataKey = "valleytalk.npc-timeline-memories";
 
@@ -86,12 +87,14 @@ internal class MemoryManager : IMemoryProvider
     public const int MaxWeeklyTimelineMemories = 10;
     public const int MaxChronicleTimelineMemories = 10;
     public const int MaxYearlyTimelineMemories = 5;
+    public const int MaxArchivedTimelineMemoriesPerNpc = 30; // 时间线归档箱滚动上限（FEAT-AUTO-T6）
 
     private const int EvictionImmuneImportance = 4; // Importance >= 此值免疫淘汰（未履约 Promise 也免疫）
 
     private Dictionary<string, List<MemoryEntry>> _memories = new();
     private Dictionary<string, string> _customCallsigns = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, List<MemoryEntry>> _archivedMemories = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, List<MemoryEntry>> _archivedTimelineMemories = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, List<MemoryEntry>> _timelineMemories = new(StringComparer.OrdinalIgnoreCase);
     private bool _isLoaded = false;
     private bool _loadFailed = false; // 加载失败时拒绝覆写 SaveData
@@ -132,6 +135,8 @@ internal class MemoryManager : IMemoryProvider
             _customCallsigns = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             _archivedMemories?.Clear();
             _archivedMemories = new Dictionary<string, List<MemoryEntry>>(StringComparer.OrdinalIgnoreCase);
+            _archivedTimelineMemories?.Clear();
+            _archivedTimelineMemories = new Dictionary<string, List<MemoryEntry>>(StringComparer.OrdinalIgnoreCase);
             _isLoaded = false;
         }
         catch (Exception ex)
@@ -183,6 +188,49 @@ internal class MemoryManager : IMemoryProvider
             _archivedMemories = _archivedMemories
                 .Where(kv => !string.IsNullOrWhiteSpace(kv.Key) && kv.Value != null)
                 .ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.OrdinalIgnoreCase);
+
+            // ── 时间线归档箱读取（FEAT-AUTO-T6，key 不存在时静默回退空字典）──
+            var loadedTimelineArchived = ModEntry.SHelper.Data.ReadSaveData<Dictionary<string, List<MemoryEntry>>>(TimelineArchiveSaveDataKey);
+            _archivedTimelineMemories = loadedTimelineArchived != null
+                ? new Dictionary<string, List<MemoryEntry>>(loadedTimelineArchived, StringComparer.OrdinalIgnoreCase)
+                : new Dictionary<string, List<MemoryEntry>>(StringComparer.OrdinalIgnoreCase);
+            _archivedTimelineMemories = _archivedTimelineMemories
+                .Where(kv => !string.IsNullOrWhiteSpace(kv.Key) && kv.Value != null)
+                .ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.OrdinalIgnoreCase);
+
+            // ── 迁移：把共享箱中 Source=="Timeline" 的条目一次性搬入时间线归档箱（幂等，二次 Load 空转）──
+            int migratedTimelineCount = 0;
+            foreach (var npcName in _archivedMemories.Keys.ToList())
+            {
+                var sharedList = _archivedMemories[npcName];
+                if (sharedList == null) continue;
+
+                var timelineItems = sharedList
+                    .Where(e => e != null && string.Equals(e.Source, "Timeline", StringComparison.Ordinal))
+                    .ToList();
+                if (timelineItems.Count == 0) continue;
+
+                if (!_archivedTimelineMemories.TryGetValue(npcName, out var timelineArchiveList))
+                {
+                    timelineArchiveList = new List<MemoryEntry>();
+                    _archivedTimelineMemories[npcName] = timelineArchiveList;
+                }
+
+                foreach (var entry in timelineItems)
+                {
+                    sharedList.Remove(entry);
+                    timelineArchiveList.Insert(0, entry);
+                    migratedTimelineCount++;
+                }
+
+                if (sharedList.Count == 0) _archivedMemories.Remove(npcName);
+            }
+            if (migratedTimelineCount > 0)
+            {
+                SaveArchived();
+                SaveArchivedTimeline();
+                ModEntry.SMonitor?.Log($"[MemoryManager] Migrated {migratedTimelineCount} timeline entries into the dedicated timeline archive box.", LogLevel.Info);
+            }
 
             // ── Timeline 读取（FEAT-MEM-300-T1，key 不存在时静默回退空字典）──
             var loadedTimeline = ModEntry.SHelper.Data.ReadSaveData<Dictionary<string, List<MemoryEntry>>>(TimelineSaveDataKey);
@@ -316,6 +364,30 @@ internal class MemoryManager : IMemoryProvider
         catch (Exception ex)
         {
             ModEntry.SMonitor?.Log($"[MemoryManager] SaveArchived failed: {ex.Message}", LogLevel.Warn);
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // 时间线归档箱持久化（FEAT-AUTO-T6，独立于共享 Manual/Auto 归档箱）
+    // ──────────────────────────────────────────────────────────────
+    private void SaveArchivedTimeline()
+    {
+        if (_loadFailed)
+        {
+            ModEntry.SMonitor?.Log(
+                "[MemoryManager] Write refused: last load failed, refusing to overwrite SaveData.",
+                LogLevel.Error);
+            return;
+        }
+
+        try
+        {
+            if (!Context.IsWorldReady || ModEntry.SHelper == null) return;
+            ModEntry.SHelper.Data.WriteSaveData(TimelineArchiveSaveDataKey, _archivedTimelineMemories);
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log($"[MemoryManager] SaveArchivedTimeline failed: {ex.Message}", LogLevel.Warn);
         }
     }
 
@@ -630,10 +702,10 @@ internal class MemoryManager : IMemoryProvider
             return MemoryOperationResult.NotFound;
         }
 
-        if (!_archivedMemories.TryGetValue(npcName, out var archiveList))
+        if (!_archivedTimelineMemories.TryGetValue(npcName, out var archiveList))
         {
             archiveList = new List<MemoryEntry>();
-            _archivedMemories[npcName] = archiveList;
+            _archivedTimelineMemories[npcName] = archiveList;
         }
 
         foreach (var entry in list)
@@ -643,10 +715,10 @@ internal class MemoryManager : IMemoryProvider
             archiveList.Insert(0, entry);
         }
 
-        while (archiveList.Count > MaxArchivedMemoriesPerNpc)
+        while (archiveList.Count > MaxArchivedTimelineMemoriesPerNpc)
             archiveList.RemoveAt(archiveList.Count - 1);
 
-        SaveArchived();
+        SaveArchivedTimeline();
         ModEntry.SMonitor?.Log(
             $"[MemoryManager] Archived {list.Count} timeline memories for [{npcName}] (reason: {archiveReason}).",
             LogLevel.Info);
@@ -1088,8 +1160,9 @@ internal class MemoryManager : IMemoryProvider
     }
 
     // ──────────────────────────────────────────────────────────────
-    // 归档箱 API（CORE-MEM-101）：浏览 / 计数 / 恢复 / 彻底删除
+    // 归档箱 API（CORE-MEM-101）：Manual/Auto 归档箱的浏览 / 计数 / 恢复 / 彻底删除（不含时间线归档）
     // ──────────────────────────────────────────────────────────────
+    /// <summary>获取 Manual/Auto 归档箱条目（不含时间线归档）。</summary>
     public List<MemoryEntry> GetArchivedMemories(string npcName)
     {
         if (string.IsNullOrWhiteSpace(npcName)) return new List<MemoryEntry>();
@@ -1099,6 +1172,7 @@ internal class MemoryManager : IMemoryProvider
             : new List<MemoryEntry>();
     }
 
+    /// <summary>Manual/Auto 归档箱条目计数（不含时间线归档）。</summary>
     public int GetArchivedCount(string npcName)
     {
         if (string.IsNullOrWhiteSpace(npcName)) return 0;
@@ -1108,6 +1182,7 @@ internal class MemoryManager : IMemoryProvider
             : 0;
     }
 
+    /// <summary>从 Manual/Auto 归档箱还原条目（不含时间线归档，时间线归档请用 RestoreTimelineMemory）。</summary>
     public MemoryOperationResult RestoreMemory(string npcName, string entryId)
     {
         if (string.IsNullOrWhiteSpace(npcName) || string.IsNullOrWhiteSpace(entryId))
@@ -1127,43 +1202,7 @@ internal class MemoryManager : IMemoryProvider
         var entry = archiveList.FirstOrDefault(m => m.Id == entryId);
         if (entry == null) return MemoryOperationResult.NotFound;
 
-        if (string.Equals(entry.Source, "Timeline", StringComparison.Ordinal))
-        {
-            // 时间线还原路径：回到 _timelineMemories 原 tier，保留日期戳（不做 3 天新鲜化）。
-            if (!_timelineMemories.TryGetValue(npcName, out var timelineList))
-            {
-                timelineList = new List<MemoryEntry>();
-                _timelineMemories[npcName] = timelineList;
-            }
-
-            if (timelineList.Any(m => m.Tier == entry.Tier && string.Equals(m.Content, entry.Content, StringComparison.OrdinalIgnoreCase)))
-            {
-                ModEntry.SMonitor?.Log(
-                    $"[MemoryManager] RestoreMemory timeline duplicate for [{npcName}]: \"{TrimForLog(entry.Content)}\" stays archived.",
-                    LogLevel.Debug);
-                return MemoryOperationResult.Duplicate;
-            }
-
-            if (timelineList.Count(m => m.Tier == entry.Tier) >= GetTierCapacity(entry.Tier))
-                return MemoryOperationResult.CapacityFull;
-
-            archiveList.Remove(entry);
-            if (archiveList.Count == 0) _archivedMemories.Remove(npcName);
-
-            entry.ArchivedAt = default;
-            entry.ArchiveReason = "";
-            timelineList.Insert(0, entry);
-
-            SaveTimeline();
-            SaveArchived();
-
-            ModEntry.SMonitor?.Log(
-                $"[MemoryManager] Restored timeline memory [{npcName}] [{entry.Tier}]: \"{TrimForLog(entry.Content)}\".",
-                LogLevel.Info);
-            return MemoryOperationResult.Success;
-        }
-
-        // Manual/Auto 池还原路径（逐字节不变）。
+        // Manual/Auto 池还原路径。
         if (!_memories.TryGetValue(npcName, out var activeList))
         {
             activeList = new List<MemoryEntry>();
@@ -1199,6 +1238,7 @@ internal class MemoryManager : IMemoryProvider
         return MemoryOperationResult.Success;
     }
 
+    /// <summary>彻底删除 Manual/Auto 归档箱条目（不含时间线归档，时间线归档请用 DeleteArchivedTimelineMemory）。</summary>
     public bool DeleteArchivedMemory(string npcName, string entryId)
     {
         if (string.IsNullOrWhiteSpace(npcName) || string.IsNullOrWhiteSpace(entryId)) return false;
@@ -1224,6 +1264,112 @@ internal class MemoryManager : IMemoryProvider
 
         ModEntry.SMonitor?.Log(
             $"[MemoryManager] Deleted archived memory [{npcName}]: \"{TrimForLog(entry.Content)}\".",
+            LogLevel.Info);
+        return true;
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // 时间线归档箱 API（FEAT-AUTO-T6）：浏览 / 计数 / 恢复 / 彻底删除（独立于 Manual/Auto 归档箱）
+    // ──────────────────────────────────────────────────────────────
+    /// <summary>获取时间线归档箱条目（Source=="Timeline"）。</summary>
+    public List<MemoryEntry> GetArchivedTimelineMemories(string npcName)
+    {
+        if (string.IsNullOrWhiteSpace(npcName)) return new List<MemoryEntry>();
+        EnsureLoaded();
+        return _archivedTimelineMemories.TryGetValue(npcName, out var list) && list != null
+            ? new List<MemoryEntry>(list)
+            : new List<MemoryEntry>();
+    }
+
+    /// <summary>时间线归档箱条目计数。</summary>
+    public int GetArchivedTimelineCount(string npcName)
+    {
+        if (string.IsNullOrWhiteSpace(npcName)) return 0;
+        EnsureLoaded();
+        return _archivedTimelineMemories.TryGetValue(npcName, out var list) && list != null
+            ? list.Count
+            : 0;
+    }
+
+    /// <summary>从时间线归档箱还原条目（回到原 tier，保留原日期标签，不做 3 天新鲜化）。</summary>
+    public MemoryOperationResult RestoreTimelineMemory(string npcName, string entryId)
+    {
+        if (string.IsNullOrWhiteSpace(npcName) || string.IsNullOrWhiteSpace(entryId))
+            return MemoryOperationResult.NotFound;
+
+        EnsureLoaded();
+
+        if (_loadFailed)
+        {
+            ModEntry.SMonitor?.Log("[MemoryManager] RestoreTimelineMemory refused: last load failed, refusing to mutate state.", LogLevel.Error);
+            return MemoryOperationResult.CapacityFull;
+        }
+
+        if (!_archivedTimelineMemories.TryGetValue(npcName, out var archiveList) || archiveList == null)
+            return MemoryOperationResult.NotFound;
+
+        var entry = archiveList.FirstOrDefault(m => m.Id == entryId);
+        if (entry == null) return MemoryOperationResult.NotFound;
+
+        if (!_timelineMemories.TryGetValue(npcName, out var timelineList))
+        {
+            timelineList = new List<MemoryEntry>();
+            _timelineMemories[npcName] = timelineList;
+        }
+
+        if (timelineList.Any(m => m.Tier == entry.Tier && string.Equals(m.Content, entry.Content, StringComparison.OrdinalIgnoreCase)))
+        {
+            ModEntry.SMonitor?.Log(
+                $"[MemoryManager] RestoreTimelineMemory duplicate for [{npcName}]: \"{TrimForLog(entry.Content)}\" stays archived.",
+                LogLevel.Debug);
+            return MemoryOperationResult.Duplicate;
+        }
+
+        if (timelineList.Count(m => m.Tier == entry.Tier) >= GetTierCapacity(entry.Tier))
+            return MemoryOperationResult.CapacityFull;
+
+        archiveList.Remove(entry);
+        if (archiveList.Count == 0) _archivedTimelineMemories.Remove(npcName);
+
+        entry.ArchivedAt = default;
+        entry.ArchiveReason = "";
+        timelineList.Insert(0, entry);
+
+        SaveTimeline();
+        SaveArchivedTimeline();
+
+        ModEntry.SMonitor?.Log(
+            $"[MemoryManager] Restored timeline memory [{npcName}] [{entry.Tier}]: \"{TrimForLog(entry.Content)}\".",
+            LogLevel.Info);
+        return MemoryOperationResult.Success;
+    }
+
+    /// <summary>彻底删除时间线归档箱条目（不可恢复，不落入 Manual/Auto 箱）。</summary>
+    public bool DeleteArchivedTimelineMemory(string npcName, string entryId)
+    {
+        if (string.IsNullOrWhiteSpace(npcName) || string.IsNullOrWhiteSpace(entryId)) return false;
+
+        EnsureLoaded();
+
+        if (_loadFailed)
+        {
+            ModEntry.SMonitor?.Log("[MemoryManager] DeleteArchivedTimelineMemory refused: last load failed, refusing to mutate state.", LogLevel.Error);
+            return false;
+        }
+
+        if (!_archivedTimelineMemories.TryGetValue(npcName, out var archiveList) || archiveList == null)
+            return false;
+
+        var entry = archiveList.FirstOrDefault(m => m.Id == entryId);
+        if (entry == null) return false;
+
+        archiveList.Remove(entry);
+        if (archiveList.Count == 0) _archivedTimelineMemories.Remove(npcName);
+
+        SaveArchivedTimeline();
+
+        ModEntry.SMonitor?.Log(
+            $"[MemoryManager] Deleted archived timeline memory [{npcName}]: \"{TrimForLog(entry.Content)}\".",
             LogLevel.Info);
         return true;
     }

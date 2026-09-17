@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Characters;
+using ValleytalkReborn.Movement;
 
 namespace ValleytalkReborn
 {
@@ -603,9 +604,7 @@ namespace ValleytalkReborn
             }
             else
             {
-                // 普通跟随（时长 120 游戏分钟 → 换算为截止时刻，封顶 2600）
-                int rawEnd = Utility.ModifyTime(Game1.timeOfDay, 120);
-                int endTime = Math.Min(rawEnd, 2600);
+                int endTime = FollowMovementTracker.NightForcedUnbindTime;
                 MovementManager.Instance.StartRegularFollow(npc, endTime);
                 ModEntry.SMonitor?.Log($"[DialogueBuilder] Regular follow started: {npc.Name}, endTime={endTime}", LogLevel.Info);
             }

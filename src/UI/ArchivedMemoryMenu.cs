@@ -15,6 +15,13 @@ namespace ValleytalkReborn
         private readonly string _npcName;
         private readonly IClickableMenu _returnMenu;
 
+        // 数据源注入（使同一菜单可服务 Manual/Auto 归档箱与时间线归档箱）
+        private readonly Func<IReadOnlyList<MemoryEntry>> _listSource = null!;
+        private readonly Func<string, MemoryOperationResult> _restoreAction = null!;
+        private readonly Func<string, bool> _deleteAction = null!;
+        private readonly int _capacity = 0;
+        private int NearFullThreshold => _capacity - 2;
+
         private List<MemoryEntry> _cachedEntries = new();
         private int _startIndex;
         private bool _scrolling;
@@ -48,9 +55,21 @@ namespace ValleytalkReborn
         private const int ButtonWidth = 72;
         private const int ButtonHeight = 32;
         private const int ButtonGap = 8;
-        private const int NearFullThreshold = MemoryManager.MaxArchivedMemoriesPerNpc - 2;
 
         public ArchivedMemoryMenu(string npcName, IClickableMenu returnMenu)
+            : this(npcName, returnMenu,
+                  () => MemoryManager.Instance.GetArchivedMemories(npcName),
+                  id => MemoryManager.Instance.RestoreMemory(npcName, id),
+                  id => MemoryManager.Instance.DeleteArchivedMemory(npcName, id),
+                  MemoryManager.MaxArchivedMemoriesPerNpc)
+        {
+        }
+
+        internal ArchivedMemoryMenu(string npcName, IClickableMenu returnMenu,
+            Func<IReadOnlyList<MemoryEntry>> listSource,
+            Func<string, MemoryOperationResult> restoreAction,
+            Func<string, bool> deleteAction,
+            int capacity)
             : base(
                   (Game1.uiViewport.Width - MenuWidth) / 2,
                   (Game1.uiViewport.Height - MenuHeight) / 2,
@@ -60,6 +79,12 @@ namespace ValleytalkReborn
         {
             _npcName = npcName;
             _returnMenu = returnMenu;
+
+            // 注入数据源（必须先于 RefreshEntries() 赋值，否则构造期 NRE，两侧归档箱都无法唤起）
+            _listSource = listSource ?? throw new ArgumentNullException(nameof(listSource));
+            _restoreAction = restoreAction ?? throw new ArgumentNullException(nameof(restoreAction));
+            _deleteAction = deleteAction ?? throw new ArgumentNullException(nameof(deleteAction));
+            _capacity = capacity;
 
             // 右上角关闭按钮
             _closeButton = new ClickableTextureComponent(
@@ -94,7 +119,7 @@ namespace ValleytalkReborn
 
         public void RefreshEntries()
         {
-            _cachedEntries = MemoryManager.Instance.GetArchivedMemories(_npcName);
+            _cachedEntries = _listSource().ToList();
             ClampStartIndex();
             SetScrollbarPosition();
             RefreshActionButtons();
@@ -262,7 +287,7 @@ namespace ValleytalkReborn
         private void HandleRestore(int i)
         {
             MemoryEntry entry = _cachedEntries[i];
-            var result = MemoryManager.Instance.RestoreMemory(_npcName, entry.Id);
+            var result = _restoreAction(entry.Id);
             switch (result)
             {
                 case MemoryOperationResult.Success:
@@ -294,7 +319,7 @@ namespace ValleytalkReborn
                 I18n.Memory.ArchiveDeleteConfirm(safeContent),
                 _ =>
                 {
-                    MemoryManager.Instance.DeleteArchivedMemory(_npcName, entry.Id);
+                    _deleteAction(entry.Id);
                     Game1.playSound("trashcan");
                     RefreshEntries();
                     Game1.activeClickableMenu = this;
@@ -330,7 +355,7 @@ namespace ValleytalkReborn
                 Game1.textColor);
 
             // 归档记录计数指示器（右上侧排版）
-            string countText = I18n.Memory.ArchiveCount(_cachedEntries.Count, MemoryManager.MaxArchivedMemoriesPerNpc);
+            string countText = I18n.Memory.ArchiveCount(_cachedEntries.Count, _capacity);
             var countSize = Game1.smallFont.MeasureString(countText);
             Color countColor = _cachedEntries.Count >= NearFullThreshold
                 ? new Color(255, 175, 70)
@@ -340,7 +365,7 @@ namespace ValleytalkReborn
                 countColor);
 
             // 底部淘汰规则提示
-            string ruleHint = I18n.Memory.ArchiveRuleHint(MemoryManager.MaxArchivedMemoriesPerNpc);
+            string ruleHint = I18n.Memory.ArchiveRuleHint(_capacity);
             var ruleHintSize = Game1.smallFont.MeasureString(ruleHint);
             b.DrawString(Game1.smallFont, ruleHint,
                 new Vector2(xPositionOnScreen + (width - ruleHintSize.X) / 2f, yPositionOnScreen + height - 60),
@@ -420,7 +445,7 @@ namespace ValleytalkReborn
                     new Vector2(textStartX, rowY + 32),
                     Color.Gray * 0.85f);
 
-                if (_cachedEntries.Count >= MemoryManager.MaxArchivedMemoriesPerNpc &&
+                if (_cachedEntries.Count >= _capacity &&
                     i == _cachedEntries.Count - 1)
                 {
                     float timeWidth = Game1.smallFont.MeasureString(time).X;

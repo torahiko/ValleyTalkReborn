@@ -243,6 +243,8 @@ namespace ValleytalkReborn.Movement
             PendingQueue.Cancel(npc.Name);
             StepTracker.Cancel(npc.Name);
 
+            ClearNpcMovement(npc);
+
             FollowTracker.StartRegularFollow(npc, endTime);
         }
 
@@ -321,11 +323,7 @@ namespace ValleytalkReborn.Movement
             {
                 if (Game1.player == null) return;
 
-                GotoTracker.Cancel(npc.Name, invokeFailCallback: false);
-
-                FollowTracker.Unbind(silent: true);
-
-                FollowTracker.StartRegularFollow(npc, MovementPathfinding.SafeAddGameTime(Game1.timeOfDay, 60));
+                StartRegularFollow(npc, FollowMovementTracker.NightForcedUnbindTime);
 
                 CompanionScheduleManager.Instance.ClearScheduleForOverride("FollowStarted", npc.Name);
                 return;
