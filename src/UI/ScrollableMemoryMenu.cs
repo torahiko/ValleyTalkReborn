@@ -7,6 +7,7 @@ using StardewModdingAPI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ValleytalkReborn.UI;
 
 namespace ValleytalkReborn
 {
@@ -111,7 +112,7 @@ namespace ValleytalkReborn
         private const int TopPadding = 110;
         private const int BottomPadding = 75;
         private const int LineHeight = 46;
-        private const int ButtonSize = 40;
+        private const int ButtonSize = 32; // 16x16 的 2 倍点对点整数缩放
         private const int LeftPadding = 40;
         private const int RightPadding = 40;
 
@@ -218,17 +219,24 @@ namespace ValleytalkReborn
 
             for (int i = 0; i < visibleCount && _startIndex + i < entries.Count; i++)
             {
-                int y = yPositionOnScreen + TopPadding + 10 + i * LineHeight;
+                // 行垂直居中偏移计算: (LineHeight 46 - ButtonSize 32) / 2 = 7
+                int y = yPositionOnScreen + TopPadding + 10 + i * LineHeight + 7;
 
+                // 删除按钮：使用 FullSpritesheet 上的关闭/X 图标
                 var del = new ClickableTextureComponent(
-                    new Rectangle(xPositionOnScreen + width - RightPadding - 30, y + 2, ButtonSize, ButtonSize),
-                    Game1.mouseCursors, new Rectangle(322, 498, 12, 12), 2.5f);
+                    new Rectangle(xPositionOnScreen + width - RightPadding - 32, y, ButtonSize, ButtonSize),
+                    ModEntry.CustomIcons,
+                    IconSource.Trash(IconTheme.Wood, IconState.Normal),
+                    2f);
                 del.hoverText = I18n.Memory.DeleteButtonHover();
                 _deleteButtons.Add(del);
 
+                // 编辑按钮：使用 FullSpritesheet 上的铅笔图标
                 var edit = new ClickableTextureComponent(
-                    new Rectangle(xPositionOnScreen + width - RightPadding - 80, y, ButtonSize, ButtonSize),
-                    Game1.mouseCursors, new Rectangle(274, 284, 16, 16), 2.5f);
+                    new Rectangle(xPositionOnScreen + width - RightPadding - 72, y, ButtonSize, ButtonSize),
+                    ModEntry.CustomIcons,
+                    IconSource.Edit(IconTheme.Wood, IconState.Normal),
+                    2f);
                 edit.hoverText = I18n.Memory.EditButtonHover();
                 _editButtons.Add(edit);
             }
@@ -579,6 +587,8 @@ namespace ValleytalkReborn
                 float contentStartX = xPositionOnScreen + LeftPadding;
                 float maxContentWidth = (dateX - 16) - contentStartX;
 
+                bool isLeftMouseDown = Mouse.GetState().LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
+
                 for (int i = 0; i < visibleCount && _startIndex + i < entries.Count; i++)
                 {
                     int idx   = _startIndex + i;
@@ -626,8 +636,35 @@ namespace ValleytalkReborn
                         new Vector2(dateX, rowY + 6),
                         Color.Gray, 0f, Vector2.Zero, fontScale, SpriteEffects.None, 0.88f);
 
-                    if (i < _editButtons.Count)   _editButtons[i].draw(b);
-                    if (i < _deleteButtons.Count) _deleteButtons[i].draw(b);
+                    // 绘制编辑按钮（带点击凹陷与 1px 下沉动效）
+                    if (i < _editButtons.Count)
+                    {
+                        var btn = _editButtons[i];
+                        bool isPressed = isLeftMouseDown && btn.containsPoint(mx, my);
+                        IconSource.DrawButton(
+                            b,
+                            ModEntry.CustomIcons,
+                            btn.bounds,
+                            col: 15, baseRow: 1,
+                            theme: IconTheme.Wood,
+                            isPressed: isPressed,
+                            layerDepth: 0.89f);
+                    }
+                    
+                    // 绘制删除按钮（带点击凹陷与 1px 下沉动效）
+                    if (i < _deleteButtons.Count)
+                    {
+                        var btn = _deleteButtons[i];
+                        bool isPressed = isLeftMouseDown && btn.containsPoint(mx, my);
+                        IconSource.DrawButton(
+                            b,
+                            ModEntry.CustomIcons,
+                            btn.bounds,
+                            col: 6, baseRow: 1, // ★ 修改为垃圾桶坐标（第 1 行，第 6 列）
+                            theme: IconTheme.Wood,
+                            isPressed: isPressed,
+                            layerDepth: 0.89f);
+                    }
                 }
 
                 if (entries.Count > visibleCount && Game1.activeClickableMenu == this)
@@ -728,6 +765,22 @@ namespace ValleytalkReborn
             _closeButton.draw(b);
 
             base.draw(b);
+
+            // 悬停气泡提示渲染
+            for (int i = 0; i < _deleteButtons.Count; i++)
+            {
+                if (_deleteButtons[i].containsPoint(mx, my))
+                {
+                    IClickableMenu.drawHoverText(b, _deleteButtons[i].hoverText, Game1.smallFont);
+                    break;
+                }
+                if (i < _editButtons.Count && _editButtons[i].containsPoint(mx, my))
+                {
+                    IClickableMenu.drawHoverText(b, _editButtons[i].hoverText, Game1.smallFont);
+                    break;
+                }
+            }
+
             drawMouse(b);
         }
 
@@ -997,7 +1050,7 @@ namespace ValleytalkReborn
                 Extent = new Vector2(width - 80, 60),
                 Font = Game1.dialogueFont,
                 TextColor = Game1.textColor,
-                Selected = true
+                Selected  = true
             };
 
             int capsuleY = yPositionOnScreen + 100 + lineHeight + 76;

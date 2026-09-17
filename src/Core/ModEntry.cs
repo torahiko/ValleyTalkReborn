@@ -1,5 +1,6 @@
 using System;
 using HarmonyLib;
+using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using System.Collections.Generic;
@@ -16,6 +17,11 @@ namespace ValleytalkReborn
         public static IMonitor SMonitor;
         public static IModHelper SHelper { get; private set; }
         public static ModConfig Config;
+
+        /// <summary>
+        /// 嵌入的 UI 贴图资源（FullSpritesheet.png）
+        /// </summary>
+        public static Texture2D CustomIcons { get; private set; }
 
         /// <summary>
         /// A2A 输出验证转发器（供 MainThreadOutputQueue 使用）。
@@ -1217,6 +1223,17 @@ namespace ValleytalkReborn
                     Log.Error($"[ValleyTalkReborn] Error disposing cancel button plugin: {ex.Message}");
                 }
 
+                try
+                {
+                    // ★ 显式释放非托管显存纹理，防止反复返回标题造成显存泄漏
+                    CustomIcons?.Dispose();
+                    CustomIcons = null;
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[ValleyTalkReborn] Error disposing CustomIcons: {ex.Message}");
+                }
+
                 Log.Cleanup();
                 _isInitialized = false;
 
@@ -1277,9 +1294,27 @@ namespace ValleytalkReborn
 
         private void OnGameLaunched(object sender, GameLaunchedEventArgs e)
         {
+            // ★ 确保在游戏图形设备 100% 就绪后加载纹理
+            ReloadCustomIcons();
+
             ModConfigMenu.Register(this);
             SpouseQueryService.Instance.ResolveApis();
             _dialogueCoordinator?.Subscribe();
+        }
+
+        /// <summary>
+        /// 加载/重新加载嵌入的 UI 贴图资源。幂等：已持有未释放的纹理时直接跳过。
+        /// </summary>
+        private static void ReloadCustomIcons()
+        {
+            if (CustomIcons != null && !CustomIcons.IsDisposed)
+                return;
+
+            CustomIcons = LoadEmbeddedTexture("ValleytalkReborn.UI.assets.Button.png");
+            if (CustomIcons == null)
+            {
+                SMonitor?.Log("未能加载嵌入式 UI 贴图: ValleytalkReborn.UI.assets.Button.png", LogLevel.Error);
+            }
         }
 
         /// <summary>
@@ -1384,6 +1419,43 @@ namespace ValleytalkReborn
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
         {
             AgentToolDispatcher.ProcessMainThreadQueue();
+        }
+
+        /// <summary>
+        /// 从当前程序集的嵌入资源中加载贴图
+        /// </summary>
+        private static Texture2D LoadEmbeddedTexture(string resourceName)
+        {
+            try
+            {
+                // 1. GraphicsDevice null 守卫
+                if (Game1.graphics?.GraphicsDevice == null)
+                {
+                    SMonitor?.Log($"[UI] GraphicsDevice 尚未就绪，无法加载纹理: {resourceName}", LogLevel.Warn);
+                    return null;
+                }
+
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                using System.IO.Stream stream = assembly.GetManifestResourceStream(resourceName);
+
+                // 2. 名字匹配失败时，列出所有资源名供一秒排查
+                if (stream == null)
+                {
+                    SMonitor?.Log($"[UI] 嵌入资源未找到: {resourceName}。当前程序集内的资源列表：", LogLevel.Error);
+                    foreach (var name in assembly.GetManifestResourceNames())
+                    {
+                        SMonitor?.Log($"  -> {name}", LogLevel.Trace);
+                    }
+                    return null;
+                }
+
+                return Texture2D.FromStream(Game1.graphics.GraphicsDevice, stream);
+            }
+            catch (Exception ex)
+            {
+                SMonitor?.Log($"[UI] 加载嵌入纹理异常: {ex.Message}", LogLevel.Error);
+                return null;
+            }
         }
     }
 }

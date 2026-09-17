@@ -16,7 +16,7 @@ namespace ValleytalkReborn
         private readonly Action<Farmer> _onConfirm;
         private readonly Action<Farmer> _onCancel;
 
-        private readonly ClickableTextureComponent _yesButton;
+        private readonly ClickableTextureComponent _yesButton; 
         private readonly ClickableTextureComponent _noButton;
 
         private const int DialogWidth = 800;
