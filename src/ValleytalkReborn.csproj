@@ -44,4 +44,9 @@
   <ItemGroup>
     <ContentPacks Include="../ContentPack" FolderName="[CP] ValleyTalkReborn Base" Version="$(Version)" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="UI\assets\FullSpritesheet.png" />
+    <EmbeddedResource Include="UI\assets\Button.png" />
+  </ItemGroup>
 </Project>
