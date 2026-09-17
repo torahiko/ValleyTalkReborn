@@ -7,12 +7,13 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using StardewValley;
 using StardewValley.Menus;
+using ValleytalkReborn.UI;
 
 namespace ValleytalkReborn;
 
 /// <summary>
 /// 时间线手账面板（FEAT-MEM-300-T4）：
-/// Tab0 按日翻页的对话记录查看（自适应气泡宽度、无截断多行展开）；
+/// Tab0 按日翻页的对话记录查看（自适应气泡宽度、无截断多行展开、农夫/NPC 像素行走图头像对齐）；
 /// Tab1-3 分层记忆（Daily/Weekly/Chronicle）自适应卡片勾选与浓缩；
 /// 底栏支持动态上拉切换 NPC，并自动锁定最新聊天的 NPC。
 /// </summary>
@@ -25,6 +26,10 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     private const int ItemSpacing = 10;
     private const float TextFontScale = 0.7f;
 
+    // 头像排版常量（40x40 像素标准框）
+    private const int AvatarSize = 40;
+    private const int AvatarGap = 10;
+
     // 原版 Checkbox 贴图切片 (mouseCursors)
     private const int CheckboxUncheckedSourceX = 227;
     private const int CheckboxCheckedSourceX = 236;
@@ -35,8 +40,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     // 原版图标贴图切片 (mouseCursors)
     private static readonly Rectangle LeftArrowSource = new(352, 495, 12, 11);
     private static readonly Rectangle RightArrowSource = new(365, 495, 12, 11);
-    private static readonly Rectangle DeleteIconSource = new(269, 471, 15, 15);
-    private static readonly Rectangle EditIconSource = new(274, 412, 11, 11);
 
     private const int MaxHistoryDays = 7;
     private const int CooldownSeconds = 30;
@@ -49,6 +52,10 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     private string _npcDisplayName;
     private readonly IClickableMenu _returnMenu;
     private readonly IClickableMenu _ownerMenu;
+
+    // NPC 行走图缓存（仅在打开手账与切换角色时运算一次）
+    private Texture2D _currentNpcSprite;
+    private Rectangle _currentNpcSourceRect;
 
     private int _currentTab; // 0=Chats, 1=Impressions, 2=Weekly, 3=Chronicle
     private int _daysAgo;
@@ -98,7 +105,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         _returnMenu = returnMenu;
         _ownerMenu = ownerMenu ?? returnMenu;
 
-        // 自动锁定到最新聊天的 NPC（若外部显式禁用或无聊天记录，则回退至传入的 npcName 或首个好友）
         string latestNpc = GetMostRecentChattedNpc();
         if (autoLockLatest && !string.IsNullOrWhiteSpace(latestNpc))
             _npcName = latestNpc;
@@ -122,11 +128,12 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
         UpdateLayout();
         BuildNpcDropdownItems();
+        UpdateNpcSpriteCache();
         RefreshEntries();
     }
 
     // ──────────────────────────────────────────────────────────────
-    // NPC 切换与定位逻辑
+    // NPC 切换与行走图定位逻辑
     // ──────────────────────────────────────────────────────────────
 
     private void SelectNpc(string newNpcName)
@@ -143,7 +150,109 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         Game1.playSound("bigSelect");
         _npcDropdown.SetSelectedId(_npcName);
         UpdateActionButtonLayout();
-        RefreshEntries(); // 切换角色后自动按当前 Tab 刷新
+        UpdateNpcSpriteCache();
+        RefreshEntries();
+    }
+
+    /// <summary>
+    /// 加载并计算 NPC 行走图正脸头部切片（支持自动识别头顶留白，避免截断下巴）
+    /// </summary>
+    private void UpdateNpcSpriteCache()
+    {
+        _currentNpcSprite = GetOrLoadNpcSprite(_npcName);
+
+        if (_currentNpcSprite != null)
+        {
+            NPC npc = Game1.getCharacterFromName(_npcName);
+
+            // 1. 获取单帧宽度（原版 16，高清美化可能为 32 或 64）
+            int frameWidth = 16;
+            if (npc?.Sprite != null && npc.Sprite.SpriteWidth > 0)
+            {
+                frameWidth = npc.Sprite.SpriteWidth;
+            }
+            else if (_currentNpcSprite.Width >= 64)
+            {
+                frameWidth = _currentNpcSprite.Width / 4;
+            }
+            else if (_currentNpcSprite.Width >= 32)
+            {
+                frameWidth = _currentNpcSprite.Width / 2;
+            }
+            else
+            {
+                frameWidth = _currentNpcSprite.Width;
+            }
+
+            int frameHeight = (npc?.Sprite != null && npc.Sprite.SpriteHeight > 0)
+                ? npc.Sprite.SpriteHeight
+                : Math.Min(_currentNpcSprite.Height, frameWidth * 2);
+
+            // 2. 动态扫描第 0 帧头顶真实非透明像素起始行（解决女性/较矮角色只露半个头的问题）
+            int topY = FindSpriteTopY(_currentNpcSprite, frameWidth, frameHeight);
+
+            // 3. 从真实头顶开始向下截取一个正方形头部区域
+            int headHeight = Math.Min(frameWidth, _currentNpcSprite.Height - topY);
+            _currentNpcSourceRect = new Rectangle(0, topY, frameWidth, headHeight);
+        }
+        else
+        {
+            _currentNpcSourceRect = Rectangle.Empty;
+        }
+    }
+
+    /// <summary>
+    /// 扫描行走图第 0 帧垂直方向上的第一个可见像素行，解决不同角色高度不同导致的裁剪截断
+    /// </summary>
+    private static int FindSpriteTopY(Texture2D texture, int frameWidth, int frameHeight)
+    {
+        try
+        {
+            int checkWidth = Math.Min(frameWidth, texture.Width);
+            int checkHeight = Math.Min(frameHeight, texture.Height);
+            Color[] pixels = new Color[checkWidth * checkHeight];
+            texture.GetData(0, new Rectangle(0, 0, checkWidth, checkHeight), pixels, 0, pixels.Length);
+
+            for (int y = 0; y < checkHeight; y++)
+            {
+                for (int x = 0; x < checkWidth; x++)
+                {
+                    if (pixels[y * checkWidth + x].A > 20)
+                    {
+                        return y;
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // 异常兜底
+        }
+        return 0;
+    }
+
+    private static Texture2D GetOrLoadNpcSprite(string npcName)
+    {
+        if (string.IsNullOrWhiteSpace(npcName)) return null;
+
+        NPC npc = Game1.getCharacterFromName(npcName);
+
+        try
+        {
+            if (npc?.Sprite?.Texture != null)
+                return npc.Sprite.Texture;
+        }
+        catch { }
+
+        string assetName = npc?.getTextureName() ?? npcName;
+        try
+        {
+            return Game1.content.Load<Texture2D>($"Characters\\{assetName}");
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private static string GetMostRecentChattedNpc()
@@ -246,7 +355,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         UpdateActionButtonLayout();
         RebuildVisibleLayout();
 
-        // 时间线归档箱计数（独立于 Manual/Auto 归档箱）
         _archivedTimelineCount = MemoryManager.Instance.GetArchivedTimelineCount(_npcName);
     }
 
@@ -283,10 +391,9 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
         if (_currentTab == 0)
         {
-            int maxBubbleWidth = Math.Max(260, (int)(availableWidth * 0.85f));
-            int minBubbleWidth = 140;
             int padX = 14;
             int padY = 10;
+            int minBubbleWidth = 140;
 
             for (int i = 0; i < _todayChatEntries.Count; i++)
             {
@@ -298,6 +405,11 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                     _ => _npcDisplayName
                 };
 
+                int reservedForAvatar = entry.SpeakerType == SpeakerType.System ? 0 : (AvatarSize + AvatarGap);
+                int maxBubbleWidth = entry.SpeakerType == SpeakerType.System
+                    ? Math.Max(260, (int)(availableWidth * 0.85f))
+                    : Math.Max(220, availableWidth - reservedForAvatar);
+
                 int maxTextPixelWidth = maxBubbleWidth - padX * 2;
                 string wrapped = Game1.parseText(entry.Text ?? string.Empty, Game1.dialogueFont, (int)(maxTextPixelWidth / TextFontScale));
                 Vector2 textSize = Game1.dialogueFont.MeasureString(wrapped) * TextFontScale;
@@ -307,6 +419,10 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 int bubbleWidth = (int)Math.Clamp(contentInnerWidth + padX * 2, minBubbleWidth, maxBubbleWidth);
                 int bubbleHeight = (int)(speakerSize.Y + 4 + textSize.Y + padY * 2);
 
+                int entryHeight = entry.SpeakerType == SpeakerType.System
+                    ? bubbleHeight
+                    : Math.Max(bubbleHeight, AvatarSize);
+
                 _measuredEntries.Add(new MeasuredEntry
                 {
                     Index = i,
@@ -315,7 +431,8 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                     SpeakerType = entry.SpeakerType,
                     WrappedText = wrapped,
                     Width = bubbleWidth,
-                    Height = bubbleHeight,
+                    Height = entryHeight,
+                    BubbleHeight = bubbleHeight,
                     InnerPadding = new Point(padX, padY)
                 });
             }
@@ -352,6 +469,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                     WrappedText = wrapped,
                     Width = cardWidth,
                     Height = cardHeight,
+                    BubbleHeight = cardHeight,
                     InnerPadding = new Point(padX, padY)
                 });
             }
@@ -374,6 +492,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
             {
                 Measured = m,
                 BoxRect = Rectangle.Empty,
+                AvatarRect = Rectangle.Empty,
                 CheckboxRect = Rectangle.Empty,
                 EditRect = Rectangle.Empty,
                 DeleteRect = Rectangle.Empty
@@ -381,15 +500,29 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
             if (_currentTab == 0)
             {
-                int bubbleX;
-                if (m.SpeakerType == SpeakerType.Player)
-                    bubbleX = xPositionOnScreen + width - RightPadding - m.Width;
-                else if (m.SpeakerType == SpeakerType.System)
-                    bubbleX = xPositionOnScreen + (width - m.Width) / 2;
-                else
-                    bubbleX = xPositionOnScreen + LeftPadding;
+                int bubbleY = currentY + (m.Height - m.BubbleHeight) / 2;
+                int avatarY = currentY + (m.Height - AvatarSize) / 2;
 
-                layout.BoxRect = new Rectangle(bubbleX, currentY, m.Width, m.Height);
+                if (m.SpeakerType == SpeakerType.Player)
+                {
+                    int avatarX = xPositionOnScreen + width - RightPadding - AvatarSize;
+                    int bubbleX = avatarX - AvatarGap - m.Width;
+                    layout.AvatarRect = new Rectangle(avatarX, avatarY, AvatarSize, AvatarSize);
+                    layout.BoxRect = new Rectangle(bubbleX, bubbleY, m.Width, m.BubbleHeight);
+                }
+                else if (m.SpeakerType == SpeakerType.System)
+                {
+                    int bubbleX = xPositionOnScreen + (width - m.Width) / 2;
+                    layout.AvatarRect = Rectangle.Empty;
+                    layout.BoxRect = new Rectangle(bubbleX, bubbleY, m.Width, m.BubbleHeight);
+                }
+                else
+                {
+                    int avatarX = xPositionOnScreen + LeftPadding;
+                    int bubbleX = avatarX + AvatarSize + AvatarGap;
+                    layout.AvatarRect = new Rectangle(avatarX, avatarY, AvatarSize, AvatarSize);
+                    layout.BoxRect = new Rectangle(bubbleX, bubbleY, m.Width, m.BubbleHeight);
+                }
             }
             else
             {
@@ -405,10 +538,10 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
                 layout.BoxRect = new Rectangle(startX, currentY, m.Width, m.Height);
 
-                int btnSize = 28;
+                const int btnSize = 32;
                 int btnY = currentY + m.InnerPadding.Y - 2;
                 layout.DeleteRect = new Rectangle(startX + m.Width - m.InnerPadding.X - btnSize, btnY, btnSize, btnSize);
-                layout.EditRect = new Rectangle(layout.DeleteRect.X - btnSize - 6, btnY, btnSize, btnSize);
+                layout.EditRect = new Rectangle(layout.DeleteRect.X - btnSize - 8, btnY, btnSize, btnSize);
             }
 
             _visibleLayouts.Add(layout);
@@ -547,7 +680,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
     public override void receiveLeftClick(int x, int y, bool playSound = true)
     {
-        // 优先拦截上拉栏点击
         if (_npcDropdown != null && _npcDropdown.ReceiveLeftClick(x, y))
             return;
 
@@ -557,7 +689,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
             return;
         }
 
-        // Tab 切换
         int tabWidth = (width - LeftPadding - RightPadding) / 4;
         for (int t = 0; t < 4; t++)
         {
@@ -575,14 +706,12 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
             }
         }
 
-        // 翻页箭头（仅 Tab 0）
         if (_currentTab == 0)
         {
             if (_leftArrowRect.Contains(x, y) && CanPageLeft) { PageLeft(); return; }
             if (_rightArrowRect.Contains(x, y) && CanPageRight) { PageRight(); return; }
         }
 
-        // 归档箱按钮（优先于动作按钮，防止矩形相邻时误吞点击）
         if (_archiveButtonRect != Rectangle.Empty && _archiveButtonRect.Contains(x, y))
         {
             Game1.playSound("bigSelect");
@@ -598,14 +727,12 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
             return;
         }
 
-        // 动作按钮
         if (_currentTab >= 0 && _currentTab <= 2 && _actionButtonRect.Contains(x, y))
         {
             HandleActionButton();
             return;
         }
 
-        // 列表卡片与行级按钮
         if (_currentTab >= 1 && _currentTab <= 3)
         {
             foreach (var item in _visibleLayouts)
@@ -781,7 +908,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         IClickableMenu.drawTextureBox(b, xPositionOnScreen - 8, yPositionOnScreen - 8, width + 16, height + 16, Color.White);
         Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
 
-        // 标题动态联动当前 NPC
         string title = I18n.Timeline.Title(_npcDisplayName);
         Vector2 titleSize = Game1.dialogueFont.MeasureString(title);
         b.DrawString(Game1.dialogueFont, title,
@@ -802,7 +928,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         _closeButton.scale = 3.5f * _closeButtonHoverScale;
         _closeButton.draw(b);
 
-        // 下拉/上拉菜单浮层置顶渲染
         _npcDropdown?.DrawPopup(b);
 
         if (!_npcDropdown.IsOpen && string.IsNullOrEmpty(_hoveredTooltip) && _currentTab == 0)
@@ -876,6 +1001,42 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         foreach (var item in _visibleLayouts)
         {
             var m = item.Measured;
+
+            // 1. 头像渲染
+            if (!item.AvatarRect.IsEmpty)
+            {
+                bool isPlayer = m.SpeakerType == SpeakerType.Player;
+                bool npcSpriteReady = _currentNpcSprite != null && !_currentNpcSourceRect.IsEmpty;
+                bool playerReady = Game1.player?.FarmerRenderer != null;
+                bool canDrawAvatar = isPlayer ? playerReady : npcSpriteReady;
+
+                if (canDrawAvatar)
+                {
+                    // 木质底衬
+                    IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
+                        new Rectangle(432, 439, 9, 9),
+                        item.AvatarRect.X - 2, item.AvatarRect.Y - 2,
+                        item.AvatarRect.Width + 4, item.AvatarRect.Height + 4,
+                        Color.White, 2.5f, false);
+
+                    if (isPlayer)
+                    {
+                        DrawFarmerAvatar(b, item.AvatarRect);
+                    }
+                    else
+                    {
+                        // 绘制 NPC 行走图正脸（按扫描到的真实头顶向下等比裁切，完整显示下巴与面容）
+                        b.Draw(
+                            _currentNpcSprite,
+                            item.AvatarRect,
+                            _currentNpcSourceRect,
+                            Color.White,
+                            0f, Vector2.Zero, SpriteEffects.None, 0.89f);
+                    }
+                }
+            }
+
+            // 2. 气泡框
             Color boxBg = m.SpeakerType switch
             {
                 SpeakerType.Player => new Color(230, 245, 235),
@@ -895,6 +1056,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 _ => new Color(130, 65, 20)
             };
 
+            // 3. 标签与文本
             Vector2 speakerPos = new Vector2(item.BoxRect.X + m.InnerPadding.X, item.BoxRect.Y + m.InnerPadding.Y);
             b.DrawString(Game1.smallFont, m.Speaker, speakerPos, speakerColor);
 
@@ -904,6 +1066,39 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
             Color textColor = m.SpeakerType == SpeakerType.System ? Color.DimGray : Game1.textColor;
             b.DrawString(Game1.dialogueFont, m.WrappedText, textPos, textColor, 0f, Vector2.Zero, TextFontScale, SpriteEffects.None, 0.88f);
+        }
+    }
+
+    /// <summary>
+    /// 绘制农夫真实外观（发型、肤色、帽子精准发际线对齐）
+    /// </summary>
+    private static void DrawFarmerAvatar(SpriteBatch b, Rectangle destRect)
+    {
+        if (Game1.player?.FarmerRenderer == null) return;
+
+        float scale = (float)destRect.Width / 16f; // 40 / 16 = 2.5f
+        Vector2 basePos = new Vector2(destRect.X, destRect.Y);
+
+        // 1. 基础小肖像（发型、肤色、配饰）
+        Game1.player.FarmerRenderer.drawMiniPortrat(
+            b,
+            basePos,
+            0.89f,
+            scale,
+            2, // 朝正下方
+            Game1.player,
+            1f);
+
+        // 2. 叠加当前帽子
+        if (Game1.player.hat.Value != null)
+        {
+            float hatScale = scale / 4f;
+
+            // 偏移校正：
+            // X: -2f * scale 使 20 像素宽的帽子相对 16 像素的脸正中对齐
+            // Y: -5f * scale 为原版基准帽檐偏移，使帽檐落在额头上，不再下压遮挡眼部
+            Vector2 hatPos = basePos + new Vector2(-2f * scale, -5f * scale);
+            Game1.player.hat.Value.draw(b, hatPos, hatScale, 1f, 0.895f, 2);
         }
     }
 
@@ -948,13 +1143,34 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
             Vector2 datePos = new Vector2(item.BoxRect.X + m.InnerPadding.X, item.BoxRect.Y + m.InnerPadding.Y);
             b.DrawString(Game1.smallFont, m.DateLabel, datePos, new Color(110, 80, 50));
 
-            DrawIconButton(b, item.EditRect, EditIconSource, mx, my, iconScale: 1.8f);
-            DrawIconButton(b, item.DeleteRect, DeleteIconSource, mx, my, iconScale: 1.4f);
+            bool isLeftMouseDown = Mouse.GetState().LeftButton == ButtonState.Pressed;
+
+            bool editHover = item.EditRect.Contains(mx, my);
+            bool editPressed = isLeftMouseDown && editHover;
+            IconSource.DrawButton(
+                b,
+                ModEntry.CustomIcons,
+                item.EditRect,
+                col: 15, baseRow: 1,
+                theme: IconTheme.Wood,
+                isPressed: editPressed,
+                layerDepth: 0.89f);
+
+            bool delHover = item.DeleteRect.Contains(mx, my);
+            bool delPressed = isLeftMouseDown && delHover;
+            IconSource.DrawButton(
+                b,
+                ModEntry.CustomIcons,
+                item.DeleteRect,
+                col: 6, baseRow: 1,
+                theme: IconTheme.Wood,
+                isPressed: delPressed,
+                layerDepth: 0.89f);
 
             if (!_npcDropdown.IsOpen)
             {
-                if (item.EditRect.Contains(mx, my)) _hoveredTooltip = I18n.Timeline.EditButtonHover();
-                if (item.DeleteRect.Contains(mx, my)) _hoveredTooltip = I18n.Timeline.DeleteButtonHover();
+                if (editHover) _hoveredTooltip = I18n.Timeline.EditButtonHover();
+                if (delHover) _hoveredTooltip = I18n.Timeline.DeleteButtonHover();
             }
 
             Vector2 textPos = new Vector2(
@@ -966,57 +1182,54 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     }
 
     private void DrawBottomBar(SpriteBatch b, int mx, int my)
-{
-    if (_currentTab == 0)
     {
-        DrawArrowButton(b, _leftArrowRect, isLeft: true, enabled: CanPageLeft, mx, my);
-        DrawArrowButton(b, _rightArrowRect, isLeft: false, enabled: CanPageRight, mx, my);
+        if (_currentTab == 0)
+        {
+            DrawArrowButton(b, _leftArrowRect, isLeft: true, enabled: CanPageLeft, mx, my);
+            DrawArrowButton(b, _rightArrowRect, isLeft: false, enabled: CanPageRight, mx, my);
+        }
+
+        _npcDropdown?.DrawHeader(b);
+
+        if (_currentTab >= 0 && _currentTab <= 2)
+        {
+            string label = GetActionButtonLabel();
+            bool hover = _actionButtonRect.Contains(mx, my);
+            Color bg = hover ? new Color(255, 235, 205) : new Color(139, 90, 43);
+
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
+                new Rectangle(432, 439, 9, 9),
+                _actionButtonRect.X, _actionButtonRect.Y, _actionButtonRect.Width, _actionButtonRect.Height,
+                bg, 4f, false);
+
+            var labelSize = Game1.smallFont.MeasureString(label);
+            Vector2 textPos = new Vector2(
+                _actionButtonRect.X + (_actionButtonRect.Width - labelSize.X) / 2f,
+                _actionButtonRect.Y + (_actionButtonRect.Height - labelSize.Y) / 2f);
+
+            b.DrawString(Game1.smallFont, label, textPos, hover ? Game1.textColor : Color.White);
+        }
+
+        if (_archiveButtonRect != Rectangle.Empty)
+        {
+            string archiveText = I18n.Timeline.ArchiveButton(_archivedTimelineCount, MemoryManager.MaxArchivedTimelineMemoriesPerNpc);
+            bool archiveHover = _archiveButtonRect.Contains(mx, my);
+            Color archiveBg = archiveHover ? new Color(255, 235, 205) : new Color(139, 90, 43);
+
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
+                new Rectangle(432, 439, 9, 9),
+                _archiveButtonRect.X, _archiveButtonRect.Y,
+                _archiveButtonRect.Width, _archiveButtonRect.Height,
+                archiveBg, 4f, false);
+
+            var archiveLabelSize = Game1.smallFont.MeasureString(archiveText);
+            Vector2 archiveTextPos = new Vector2(
+                _archiveButtonRect.X + (_archiveButtonRect.Width - archiveLabelSize.X) / 2f,
+                _archiveButtonRect.Y + (_archiveButtonRect.Height - archiveLabelSize.Y) / 2f);
+
+            b.DrawString(Game1.smallFont, archiveText, archiveTextPos, archiveHover ? Game1.textColor : Color.White);
+        }
     }
-
-    // 1. 绘制 NPC 上拉选择器 Header
-    _npcDropdown?.DrawHeader(b);
-
-    // 2. 总结/动作按钮（Tab 0/1/2）
-    if (_currentTab >= 0 && _currentTab <= 2)
-    {
-        string label = GetActionButtonLabel();
-        bool hover = _actionButtonRect.Contains(mx, my);
-        Color bg = hover ? new Color(255, 235, 205) : new Color(139, 90, 43);
-
-        IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
-            new Rectangle(432, 439, 9, 9),
-            _actionButtonRect.X, _actionButtonRect.Y, _actionButtonRect.Width, _actionButtonRect.Height,
-            bg, 4f, false);
-
-        var labelSize = Game1.smallFont.MeasureString(label); 
-        Vector2 textPos = new Vector2(
-            _actionButtonRect.X + (_actionButtonRect.Width - labelSize.X) / 2f,
-            _actionButtonRect.Y + (_actionButtonRect.Height - labelSize.Y) / 2f);
-
-        b.DrawString(Game1.smallFont, label, textPos, hover ? Game1.textColor : Color.White);
-    }
-
-    // 3. 归档箱按钮（已统一样式：mouseCursors 木质贴图 + 悬浮米白渐变）
-    if (_archiveButtonRect != Rectangle.Empty)
-    {
-        string archiveText = I18n.Timeline.ArchiveButton(_archivedTimelineCount, MemoryManager.MaxArchivedTimelineMemoriesPerNpc);
-        bool archiveHover = _archiveButtonRect.Contains(mx, my);
-        Color archiveBg = archiveHover ? new Color(255, 235, 205) : new Color(139, 90, 43);
-
-        IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
-            new Rectangle(432, 439, 9, 9),
-            _archiveButtonRect.X, _archiveButtonRect.Y,
-            _archiveButtonRect.Width, _archiveButtonRect.Height,
-            archiveBg, 4f, false);
-
-        var archiveLabelSize = Game1.smallFont.MeasureString(archiveText);
-        Vector2 archiveTextPos = new Vector2(
-            _archiveButtonRect.X + (_archiveButtonRect.Width - archiveLabelSize.X) / 2f,
-            _archiveButtonRect.Y + (_archiveButtonRect.Height - archiveLabelSize.Y) / 2f);
-
-        b.DrawString(Game1.smallFont, archiveText, archiveTextPos, archiveHover ? Game1.textColor : Color.White);
-    }
-}
 
     private static void DrawArrowButton(SpriteBatch b, Rectangle rect, bool isLeft, bool enabled, int mx, int my)
     {
@@ -1039,25 +1252,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
         Color tint = enabled ? (hover ? Color.White : Color.Wheat) : Color.Gray * 0.5f;
         b.Draw(Game1.mouseCursors, iconPos, src, tint, 0f, Vector2.Zero, arrowScale, SpriteEffects.None, 0.86f);
-    }
-
-    private static void DrawIconButton(SpriteBatch b, Rectangle rect, Rectangle srcRect, int mx, int my, float iconScale)
-    {
-        bool hover = rect.Contains(mx, my);
-        Color boxColor = hover ? new Color(255, 235, 205) : Color.White;
-
-        IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
-            new Rectangle(432, 439, 9, 9),
-            rect.X, rect.Y, rect.Width, rect.Height, boxColor, 2f, false);
-
-        int iconW = (int)(srcRect.Width * iconScale);
-        int iconH = (int)(srcRect.Height * iconScale);
-        Vector2 iconPos = new Vector2(
-            rect.X + (rect.Width - iconW) / 2f,
-            rect.Y + (rect.Height - iconH) / 2f);
-
-        Color tint = hover ? Color.White : new Color(220, 220, 220);
-        b.Draw(Game1.mouseCursors, iconPos, srcRect, tint, 0f, Vector2.Zero, iconScale, SpriteEffects.None, 0.86f);
     }
 
     private void DrawScrollbar(SpriteBatch b)
@@ -1252,6 +1446,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         public string WrappedText;
         public int Width;
         public int Height;
+        public int BubbleHeight;
         public Point InnerPadding;
     }
 
@@ -1259,6 +1454,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     {
         public MeasuredEntry Measured;
         public Rectangle BoxRect;
+        public Rectangle AvatarRect;
         public Rectangle CheckboxRect;
         public Rectangle EditRect;
         public Rectangle DeleteRect;
@@ -1294,9 +1490,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         }
     }
 
-    /// <summary>
-    /// 返回上级菜单时，若为输入菜单或其包装类，自动唤醒文本框输入焦点
-    /// </summary>
     private static void RestoreMenuFocus(IClickableMenu menu)
     {
         if (menu is DialogueTextInputMenu textMenu)
@@ -1305,7 +1498,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         }
         else if (menu != null)
         {
-            // 兼容 DialogueTextInputMenuWrapper 包装层
             var method = menu.GetType().GetMethod("RestoreFocus", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
             if (method != null)
             {

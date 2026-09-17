@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using StardewValley;
 using StardewValley.Menus;
+using ValleytalkReborn.UI;
 
 namespace ValleytalkReborn;
 
@@ -25,9 +26,6 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
     private const int CardPaddingX = 18;
     private const int CardPaddingY = 14;
     private const int CardSpacing = 14;
-
-    // 图标切片 (mouseCursors)
-    private static readonly Rectangle EditIconSource = new(274, 412, 11, 11);
 
     private readonly string _npcName;
     private readonly string _npcDisplayName;
@@ -514,23 +512,21 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
                                 layout.AddBtnRect.Y + (layout.AddBtnRect.Height - addSize.Y) / 2f),
                     addHover ? Game1.textColor : Color.White);
 
-                // 微调按钮 (铅笔)
-                layout.EditBtnRect = new Rectangle(layout.AddBtnRect.X - 34, btnY, 28, 28);
+                // 微调按钮 (铅笔) — 32×32 图标组件，自带按压下沉与切片切换动效
+                layout.EditBtnRect = new Rectangle(layout.AddBtnRect.X - 38, btnY - 2, 32, 32);
                 bool editHover = layout.EditBtnRect.Contains(mx, my);
+                bool editPressed = Mouse.GetState().LeftButton == ButtonState.Pressed && editHover;
 
-                IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-                    layout.EditBtnRect.X, layout.EditBtnRect.Y, layout.EditBtnRect.Width, layout.EditBtnRect.Height,
-                    editHover ? new Color(255, 235, 205) : Color.White, 2f, false);
+                IconSource.DrawButton(
+                    b,
+                    ModEntry.CustomIcons,
+                    layout.EditBtnRect,
+                    col: 15, baseRow: 1,
+                    theme: IconTheme.Wood,
+                    isPressed: editPressed,
+                    layerDepth: 0.89f);
 
-                float iconScale = 1.6f;
-                int iconW = (int)(EditIconSource.Width * iconScale);
-                int iconH = (int)(EditIconSource.Height * iconScale);
-                Vector2 iconPos = new Vector2(
-                    layout.EditBtnRect.X + (layout.EditBtnRect.Width - iconW) / 2f,
-                    layout.EditBtnRect.Y + (layout.EditBtnRect.Height - iconH) / 2f);
-                b.Draw(Game1.mouseCursors, iconPos, EditIconSource, editHover ? Color.White : Color.DimGray, 0f, Vector2.Zero, iconScale, SpriteEffects.None, 0.86f);
-
-                if (layout.EditBtnRect.Contains(mx, my))
+                if (editHover)
                     _hoveredTooltip = I18n.TimelineDistill.EditTooltip();
             }
             else

@@ -7,6 +7,7 @@ using StardewValley.Menus;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ValleytalkReborn.UI;
 
 namespace ValleytalkReborn
 {
@@ -23,7 +24,7 @@ namespace ValleytalkReborn
         private const int TopPadding = 110;
         private const int BottomPadding = 75;
         private const int LineHeight = 46;
-        private const int ButtonSize = 40;
+        private const int ButtonSize = 32;
         private const int LeftPadding = 40;
         private const int RightPadding = 40;
 
@@ -840,6 +841,24 @@ namespace ValleytalkReborn
             if (_currentTab == 0)
                 _npcDropdown.Draw(b);
 
+            // 编辑/删除按钮 Tooltip（Tab0 / Tab1）
+            if (_currentTab == 0 || _currentTab == 1)
+            {
+                for (int i = 0; i < _deleteButtons.Count; i++)
+                {
+                    if (_deleteButtons[i].containsPoint(mx, my))
+                    {
+                        IClickableMenu.drawHoverText(b, _deleteButtons[i].hoverText, Game1.smallFont);
+                        break;
+                    }
+                    if (i < _editButtons.Count && _editButtons[i].containsPoint(mx, my))
+                    {
+                        IClickableMenu.drawHoverText(b, _editButtons[i].hoverText, Game1.smallFont);
+                        break;
+                    }
+                }
+            }
+
             base.draw(b);
             drawMouse(b);
         }
@@ -888,6 +907,8 @@ namespace ValleytalkReborn
 
         private void DrawEntries(SpriteBatch b)
         {
+            int mx = Game1.getMouseX();
+            int my = Game1.getMouseY();
             var entries = ActiveEntries;
             int visibleCount = GetVisibleLineCount();
 
@@ -958,8 +979,23 @@ namespace ValleytalkReborn
                     new Vector2(dateX, rowY + 6),
                     Color.Gray, 0f, Vector2.Zero, fontScale, SpriteEffects.None, 0.88f);
 
-                if (i < _editButtons.Count) _editButtons[i].draw(b);
-                if (i < _deleteButtons.Count) _deleteButtons[i].draw(b);
+                bool isLeftMouseDown = Mouse.GetState().LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
+
+                // 绘制编辑按钮（自动处理按压切片偏移与 1px 物理下沉动效）
+                if (i < _editButtons.Count)
+                {
+                    var btn = _editButtons[i];
+                    bool isPressed = isLeftMouseDown && btn.containsPoint(mx, my);
+                    IconSource.DrawButton(b, btn, isPressed);
+                }
+
+                // 绘制删除按钮（自动处理按压切片偏移与 1px 物理下沉动效）
+                if (i < _deleteButtons.Count)
+                {
+                    var btn = _deleteButtons[i];
+                    bool isPressed = isLeftMouseDown && btn.containsPoint(mx, my);
+                    IconSource.DrawButton(b, btn, isPressed);
+                }
             }
 
             if (entries.Count > visibleCount)
@@ -1376,18 +1412,29 @@ namespace ValleytalkReborn
 
             for (int i = 0; i < visibleCount && _startIndex + i < entries.Count; i++)
             {
-                int y = _listTopY + 10 + i * LineHeight;
+                // 行垂直居中偏移计算: (LineHeight 46 - ButtonSize 32) / 2 = 7
+                int y = _listTopY + 10 + i * LineHeight + 7;
 
+                // 删除按钮（使用 FullSpritesheet 上的木质垃圾桶图标）
                 var del = new ClickableTextureComponent(
-                    new Rectangle(xPositionOnScreen + width - RightPadding - 30, y + 2, ButtonSize, ButtonSize),
-                    Game1.mouseCursors, new Rectangle(322, 498, 12, 12), 2.5f);
-                del.hoverText = I18n.Memory.DeleteButtonHover();
+                    new Rectangle(xPositionOnScreen + width - RightPadding - 32, y, ButtonSize, ButtonSize),
+                    ModEntry.CustomIcons,
+                    IconSource.Trash(IconTheme.Wood, IconState.Normal),
+                    2f)
+                {
+                    hoverText = I18n.Memory.DeleteButtonHover()
+                };
                 _deleteButtons.Add(del);
 
+                // 编辑按钮（使用 FullSpritesheet 上的木质铅笔图标）
                 var edit = new ClickableTextureComponent(
-                    new Rectangle(xPositionOnScreen + width - RightPadding - 80, y, ButtonSize, ButtonSize),
-                    Game1.mouseCursors, new Rectangle(274, 284, 16, 16), 2.5f);
-                edit.hoverText = I18n.Memory.EditButtonHover();
+                    new Rectangle(xPositionOnScreen + width - RightPadding - 72, y, ButtonSize, ButtonSize),
+                    ModEntry.CustomIcons,
+                    IconSource.Edit(IconTheme.Wood, IconState.Normal),
+                    2f)
+                {
+                    hoverText = I18n.Memory.EditButtonHover()
+                };
                 _editButtons.Add(edit);
             }
         }
