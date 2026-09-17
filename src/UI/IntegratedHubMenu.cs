@@ -398,9 +398,15 @@ namespace ValleytalkReborn
                 _ =>
                 {
                     if (tabSnapshot == 0)
+                    {
+                        // 先写入归档箱，标记原因为 ManualDeleted，再从活跃记忆池中移除
+                        MemoryManager.Instance.ArchiveMemory(_currentNpcName, entry, "ManualDeleted");
                         MemoryManager.Instance.RemoveMemory(_currentNpcName, entry.Id);
+                    }
                     else
+                    {
                         WorldMemoryManager.Instance.RemoveEntry(entry.Id);
+                    }
 
                     Game1.playSound("trashcan");
                     RefreshEntries();

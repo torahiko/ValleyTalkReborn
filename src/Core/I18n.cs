@@ -352,6 +352,16 @@ namespace ValleytalkReborn
             public static string ArchiveRuleHint(int max) => Lookup("Memory.ArchiveRuleHint").Replace("{{max}}", max.ToString());
             // ── 时间线归档箱（FEAT-AUTO-T6 解耦：与 Manual/Auto 归档箱文案不共用）──
             public static string ArchiveClearButton() => Lookup("Memory.ArchiveClearButton");
+
+            // 新增：实体按钮悬停提示文案（带回退保护）
+            public static string ArchiveClearHover()
+            {
+                var text = Lookup("Memory.ArchiveClearHover");
+                return (string.IsNullOrEmpty(text) || text == "Memory.ArchiveClearHover")
+                    ? ArchiveClearButton()
+                    : text;
+            }
+
             public static string ArchiveClearConfirm(int count) => Lookup("Memory.ArchiveClearConfirm").Replace("{{count}}", count.ToString());
             public static string ArchiveEndangeredTag() => Lookup("Memory.ArchiveEndangeredTag");
 
