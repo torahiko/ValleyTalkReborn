@@ -6,6 +6,7 @@ using StardewModdingAPI;
 namespace ValleytalkReborn
 {
     public enum SafetyModeLevel { Off, Loose, Moderate, Strict }
+    public enum ProxyMode { System, Direct, Custom }
 
     public class ProviderProfile
     {
@@ -119,6 +120,8 @@ namespace ValleytalkReborn
 
         public string PromptFormat { get; set; } = "[INST] {system}\\n{prompt}[/INST]\\n{response_start}";
         public int QueryTimeout { get; set; } = 60;
+        public ProxyMode ProxyMode { get; set; } = ProxyMode.System;
+        public string CustomProxyUrl { get; set; } = "http://127.0.0.1:7890";
         public bool ApplyTranslation { get; set; } = false;
         public int GeneralFrequency { get; set; } = 4;
         public int MarriageFrequency { get; set; } = 4;

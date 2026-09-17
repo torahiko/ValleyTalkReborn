@@ -16,11 +16,6 @@ internal class LlmClaude : Llm, IGetModelNames
     private readonly string apiKey;
     private readonly string modelName;
 
-    private static readonly HttpClient SharedHttpClient = new HttpClient 
-    { 
-        Timeout = TimeSpan.FromMinutes(1) 
-    };
-
     class PromptElement
     {
 #pragma warning disable IDE1006 // Naming Styles
@@ -132,8 +127,22 @@ internal class LlmClaude : Llm, IGetModelNames
                     { "anthropic-version", "2023-06-01" },
                     { "anthropic-beta", "prompt-caching-2024-07-31" }
                 };
-                
-                responseString = await NetworkHelper.MakeRequestWithCustomHeadersAsync(fullUrl, inputString, headers);
+
+                if (AndroidHelper.IsAndroid)
+                {
+                    responseString = await NetworkHelper.MakeRequestWithCustomHeadersAsync(fullUrl, inputString, headers);
+                }
+                else
+                {
+                    using var req = new HttpRequestMessage(HttpMethod.Post, fullUrl);
+                    req.Content = new StringContent(inputString, Encoding.UTF8, "application/json");
+                    foreach (var kvp in headers)
+                        req.Headers.Add(kvp.Key, kvp.Value);
+
+                    using var resp = await SharedHttpClient.SendAsync(req);
+                    apiResponseCode = (int)resp.StatusCode;
+                    responseString = await resp.Content.ReadAsStringAsync();
+                }
                 var responseJson = JObject.Parse(responseString);
 
                 if (responseJson == null)

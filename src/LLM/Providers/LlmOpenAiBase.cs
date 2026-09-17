@@ -53,11 +53,6 @@ namespace ValleytalkReborn
 
         public override bool SupportsStreamingWithTools => true;
 
-        private static readonly HttpClient SharedHttpClient = new HttpClient
-        {
-            Timeout = TimeSpan.FromMinutes(2)
-        };
-
         private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> StrictHostStage
             = new System.Collections.Concurrent.ConcurrentDictionary<string, byte>();
 

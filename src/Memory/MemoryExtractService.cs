@@ -179,7 +179,7 @@ internal static class MemoryExtractService
                 + safetySentence;
 
             if (isZh)
-            {
+            {  
                 sb.AppendLine("### 待沉淀的四季印记");
                 for (int i = 0; i < sources.Count; i++) sb.AppendLine($"- {sources[i]}");
                 sb.AppendLine();

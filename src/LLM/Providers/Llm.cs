@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
@@ -28,7 +30,82 @@ internal static class LlmContextTypes
 internal abstract class Llm
 {
     internal static Llm Instance { get; private set; } = new LlmDummy();
-    
+
+    private static HttpClient _sharedHttpClient;
+    private static readonly object _clientLock = new object();
+
+    /// <summary>
+    /// 共享 HttpClient 单例。快路径使用 Volatile.Read 避免每次加锁。
+    /// 由 CreateHttpClient 按当前配置构建，RecreateHttpClient 在配置变更后重建。
+    /// </summary>
+    protected static HttpClient SharedHttpClient
+    {
+        get
+        {
+            var client = System.Threading.Volatile.Read(ref _sharedHttpClient);
+            if (client != null) return client;
+            lock (_clientLock)
+            {
+                return _sharedHttpClient ??= CreateHttpClient();
+            }
+        }
+    }
+
+    /// <summary>
+    /// 按当前 ModEntry.Config 重建共享 HttpClient。
+    /// 禁止 Dispose 旧实例——进行中请求仍持有旧引用，Dispose 会使其抛 ObjectDisposedException；
+    /// 旧实例交由 GC 回收。在主线程（GMCM save 回调）调用。
+    /// </summary>
+    internal static void RecreateHttpClient()
+    {
+        lock (_clientLock)
+        {
+            _sharedHttpClient = CreateHttpClient();
+        }
+    }
+
+    private static HttpClient CreateHttpClient()
+    {
+        var handler = new SocketsHttpHandler();
+        var config = ModEntry.Config;
+
+        switch (config?.ProxyMode ?? ProxyMode.System)
+        {
+            case ProxyMode.Direct:
+                handler.UseProxy = false;
+                break;
+            case ProxyMode.Custom:
+            {
+                string url = config.CustomProxyUrl?.Trim();
+                if (!string.IsNullOrEmpty(url) && !url.Contains("://"))
+                    url = "http://" + url;
+                if (!string.IsNullOrEmpty(url) &&
+                    Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
+                    (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == "socks5"))
+                {
+                    handler.Proxy = new WebProxy(uri);
+                    handler.UseProxy = true;
+                }
+                else
+                {
+                    ModEntry.SMonitor?.Log($"[Llm] 自定义代理地址无效: {url}，回退至系统代理。", StardewModdingAPI.LogLevel.Warn);
+                }
+                break;
+            }
+            case ProxyMode.System:
+            default:
+                // System 语义：完全不触碰 handler，SocketsHttpHandler 默认使用 HttpClient.DefaultProxy。
+                break;
+        }
+
+        int timeoutSeconds = Math.Clamp(config?.QueryTimeout ?? 60, 5, 600);
+        ModEntry.SMonitor?.Log($"[Llm] HttpClient created: proxyMode={config?.ProxyMode ?? ProxyMode.System}, proxy={(handler.Proxy?.ToString() ?? "system-default")}, timeout={timeoutSeconds}s", StardewModdingAPI.LogLevel.Debug);
+        return new HttpClient(handler)
+        {
+            Timeout = TimeSpan.FromSeconds(timeoutSeconds)
+        };
+    }
+
     internal static void SetLlm(Type llmType, string url = "", string promptFormat = "", string apiKey = "", string modelName = null)
     {
         var paramsDict = new Dictionary<string, string>
