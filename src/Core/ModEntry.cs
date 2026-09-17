@@ -659,24 +659,55 @@ namespace ValleytalkReborn
                 }
             }
 
-            if (e.Button == Config.OpenHubMenuKey
-                && Context.IsPlayerFree
-                && Game1.activeClickableMenu == null
-                && Game1.keyboardDispatcher?.Subscriber is not DialogueTextInputBox)
+            // ── Hub 综合中心菜单热键（支持按一次打开，再按一次关闭）──
+            if (e.Button == Config.OpenHubMenuKey)
             {
-                Helper.Input.Suppress(e.Button);
-                OpenHubMenu(0);
-                return;
+                // 打字时不触发热键关闭，防止按键输入冲突
+                if (Game1.keyboardDispatcher?.Subscriber is DialogueTextInputBox)
+                    return;
+
+                // 1. 如果当前已经处于相关界面（Hub 主页、记忆面板或归档箱），按快捷键关闭
+                if (Game1.activeClickableMenu is IntegratedHubMenu
+                    || Game1.activeClickableMenu is ScrollableMemoryMenu
+                    || Game1.activeClickableMenu is ArchivedMemoryMenu)
+                {
+                    Helper.Input.Suppress(e.Button);
+                    Game1.playSound("bigDeSelect");
+                    Game1.exitActiveMenu();
+                    return;
+                }
+
+                // 2. 如果当前没有打开任何菜单且玩家处于自由状态，则正常开启
+                if (Context.IsPlayerFree && Game1.activeClickableMenu == null)
+                {
+                    Helper.Input.Suppress(e.Button);
+                    OpenHubMenu(0);
+                    return;
+                }
             }
 
-            if (e.Button == Config.OpenTimelineMenuKey
-                && Context.IsPlayerFree
-                && Game1.activeClickableMenu == null
-                && Game1.keyboardDispatcher?.Subscriber is not DialogueTextInputBox)
+            // ── 时间线手账菜单热键（支持按一次打开，再按一次关闭）──
+            if (e.Button == Config.OpenTimelineMenuKey)
             {
-                Helper.Input.Suppress(e.Button);
-                OpenTimelineChronicle();
-                return;
+                if (Game1.keyboardDispatcher?.Subscriber is DialogueTextInputBox)
+                    return;
+
+                // 1. 如果当前打开的是手账界面，按快捷键关闭
+                if (Game1.activeClickableMenu is TimelineChronicleMenu)
+                {
+                    Helper.Input.Suppress(e.Button);
+                    Game1.playSound("bigDeSelect");
+                    Game1.exitActiveMenu();
+                    return;
+                }
+
+                // 2. 正常开启
+                if (Context.IsPlayerFree && Game1.activeClickableMenu == null)
+                {
+                    Helper.Input.Suppress(e.Button);
+                    OpenTimelineChronicle();
+                    return;
+                }
             }
 
             if (Game1.keyboardDispatcher?.Subscriber is DialogueTextInputBox)
@@ -846,15 +877,7 @@ namespace ValleytalkReborn
 
             Helper.Input.Suppress(Config.DismissFollowerKey);
 
-            // 忙碌守卫
-            if (MovementManager.Instance.IsNpcMoving(target) || target.controller != null)
-            {
-                Game1.addHUDMessage(new HUDMessage(
-                    I18n.Follower.BusyHud(target.displayName), 3));
-                return;
-            }
-
-            // 好感度门槛
+            // 好感度门槛（前置到忙碌守卫之前）
             bool isExempt = SpouseQueryService.Instance.IsMarried(target.Name);
             int hearts = 0;
             if (Game1.player.friendshipData.TryGetValue(target.Name, out var fs) && fs != null)
@@ -869,6 +892,15 @@ namespace ValleytalkReborn
                     I18n.Follower.NotFamiliar(target.displayName));
                 try { target.doEmote(28); } catch { }
                 try { Game1.playSound("cancel"); } catch { }
+                return;
+            }
+
+            // 状态互斥守卫（约会跟随或跨图导航中则拒绝）
+            var mm = MovementManager.Instance;
+            if (mm.HasActiveDateFollow || MultiMapNavigator.Instance.IsNavigating(target))
+            {
+                Game1.addHUDMessage(new HUDMessage(
+                    I18n.Follower.BusyHud(target.displayName), 3));
                 return;
             }
 

@@ -28,6 +28,8 @@ namespace ValleytalkReborn.Movement
         private int _followEndTime;
         private bool _isDateFollow;
 
+        internal const int NightForcedUnbindTime = 2200;
+
         // ─── Follow state machine ───
         private FollowState _followState = FollowState.Halted;
 
@@ -211,13 +213,13 @@ namespace ValleytalkReborn.Movement
                 return;
             }
 
-            if (!_isDateFollow && Game1.timeOfDay >= _followEndTime)
+            if (!_isDateFollow && _followEndTime > 0 && Game1.timeOfDay >= _followEndTime)
             {
                 Unbind();
                 return;
             }
 
-            if (Game1.timeOfDay >= 2200)
+            if (Game1.timeOfDay >= NightForcedUnbindTime)
             {
                 Unbind();
 
