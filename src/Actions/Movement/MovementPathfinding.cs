@@ -37,12 +37,14 @@ namespace ValleytalkReborn
                 return false;
 
             // Physics collision check (buildings, furniture, NPCs, etc.).
+            // pathfinding:true exempts vs-player and vs-other-NPC collisions,
+            // matching PathFindController.findPath semantics exactly.
             var box = new Rectangle(
                 tx * 64 + 2,
                 ty * 64 + 2,
                 60,
                 60);
-            if (loc.isCollidingPosition(box, Game1.viewport, false, 0, false, character))
+            if (loc.isCollidingPosition(box, Game1.viewport, false, 0, false, character, pathfinding: true))
                 return false;
 
             return true;
