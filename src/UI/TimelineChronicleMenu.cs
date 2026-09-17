@@ -590,7 +590,11 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 () => MemoryManager.Instance.GetArchivedTimelineMemories(_npcName),
                 id => MemoryManager.Instance.RestoreTimelineMemory(_npcName, id),
                 id => MemoryManager.Instance.DeleteArchivedTimelineMemory(_npcName, id),
-                MemoryManager.MaxArchivedTimelineMemoriesPerNpc);
+                MemoryManager.MaxArchivedTimelineMemoriesPerNpc,
+                () => I18n.Memory.ArchiveTitleTimeline(_npcName),
+                () => I18n.Memory.ArchiveEmptyTimeline(),
+                () => I18n.Memory.ArchiveRuleHintTimeline(MemoryManager.MaxArchivedTimelineMemoriesPerNpc),
+                () => MemoryManager.Instance.ClearArchivedTimelineMemories(_npcName));
             return;
         }
 

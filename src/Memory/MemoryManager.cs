@@ -1227,6 +1227,7 @@ internal class MemoryManager : IMemoryProvider
         entry.CreatedDay = CurrentGameDay();
         entry.CreatedAt = DateTime.Now;
         entry.ArchivedAt = default;
+        entry.ArchiveReason = "";
         activeList.Insert(0, entry);
 
         Save();
@@ -1268,9 +1269,87 @@ internal class MemoryManager : IMemoryProvider
         return true;
     }
 
+    /// <summary>
+    /// 将 Manual/Auto 池单条记忆移入共享归档箱（删除沉淀；只入箱不删除活跃条目，由调用方继续 RemoveMemory）。
+    /// </summary>
+    public MemoryOperationResult ArchiveMemory(string npcName, MemoryEntry entry, string archiveReason)
+    {
+        if (string.IsNullOrWhiteSpace(npcName) || entry == null || string.IsNullOrWhiteSpace(entry.Id))
+            return MemoryOperationResult.NotFound;
+
+        EnsureLoaded();
+
+        if (_loadFailed)
+        {
+            ModEntry.SMonitor?.Log("[MemoryManager] ArchiveMemory refused: last load failed, refusing to mutate state.", LogLevel.Error);
+            return MemoryOperationResult.CapacityFull;
+        }
+
+        if (!_archivedMemories.TryGetValue(npcName, out var archiveList))
+        {
+            archiveList = new List<MemoryEntry>();
+            _archivedMemories[npcName] = archiveList;
+        }
+
+        entry.ArchivedAt = DateTime.Now;
+        entry.ArchiveReason = archiveReason ?? "";
+        archiveList.Insert(0, entry);
+
+        while (archiveList.Count > MaxArchivedMemoriesPerNpc)
+            archiveList.RemoveAt(archiveList.Count - 1);
+
+        SaveArchived();
+        ModEntry.SMonitor?.Log($"[MemoryManager] Archived manual memory [{npcName}] (reason: {archiveReason}): \"{TrimForLog(entry.Content)}\"", LogLevel.Info);
+        return MemoryOperationResult.Success;
+    }
+
+    /// <summary>一键清空 Manual/Auto 归档箱，返回清除条数。</summary>
+    public int ClearArchivedMemories(string npcName)
+    {
+        if (string.IsNullOrWhiteSpace(npcName)) return 0;
+
+        EnsureLoaded();
+
+        if (_loadFailed)
+        {
+            ModEntry.SMonitor?.Log("[MemoryManager] ClearArchivedMemories refused: last load failed, refusing to mutate state.", LogLevel.Error);
+            return 0;
+        }
+
+        if (!_archivedMemories.TryGetValue(npcName, out var list) || list == null) return 0;
+
+        int cleared = list.Count;
+        _archivedMemories.Remove(npcName);
+        SaveArchived();
+        ModEntry.SMonitor?.Log($"[MemoryManager] Cleared {cleared} archived memories for [{npcName}].", LogLevel.Info);
+        return cleared;
+    }
+
     // ──────────────────────────────────────────────────────────────
     // 时间线归档箱 API（FEAT-AUTO-T6）：浏览 / 计数 / 恢复 / 彻底删除（独立于 Manual/Auto 归档箱）
     // ──────────────────────────────────────────────────────────────
+    /// <summary>一键清空时间线归档箱，返回清除条数。</summary>
+    public int ClearArchivedTimelineMemories(string npcName)
+    {
+        if (string.IsNullOrWhiteSpace(npcName)) return 0;
+
+        EnsureLoaded();
+
+        if (_loadFailed)
+        {
+            ModEntry.SMonitor?.Log("[MemoryManager] ClearArchivedTimelineMemories refused: last load failed, refusing to mutate state.", LogLevel.Error);
+            return 0;
+        }
+
+        if (!_archivedTimelineMemories.TryGetValue(npcName, out var list) || list == null) return 0;
+
+        int cleared = list.Count;
+        _archivedTimelineMemories.Remove(npcName);
+        SaveArchivedTimeline();
+        ModEntry.SMonitor?.Log($"[MemoryManager] Cleared {cleared} archived timeline memories for [{npcName}].", LogLevel.Info);
+        return cleared;
+    }
+
     /// <summary>获取时间线归档箱条目（Source=="Timeline"）。</summary>
     public List<MemoryEntry> GetArchivedTimelineMemories(string npcName)
     {
