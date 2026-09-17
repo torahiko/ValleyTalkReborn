@@ -210,6 +210,7 @@
   "Timeline.ArchiveRuleHint": "Timeline entries never auto-archive; distilled or manually deleted entries are stored here. Over {{max}} entries, the oldest archive is replaced.",
   "Memory.ArchiveClearButton": "Clear",
   "Memory.ArchiveClearConfirm": "Clear all {{count}} archived entries?\nThis cannot be undone.",
+  "Memory.ArchiveClearHover": "Clear all archived memories",
   "Memory.ArchiveCount": "{{count}} / {{max}}",
   "Memory.ArchiveRestoreButton": "Restore",
   "Memory.ArchiveDeleteButton": "Delete",

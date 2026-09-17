@@ -988,7 +988,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
             _actionButtonRect.X, _actionButtonRect.Y, _actionButtonRect.Width, _actionButtonRect.Height,
             bg, 4f, false);
 
-        var labelSize = Game1.smallFont.MeasureString(label);
+        var labelSize = Game1.smallFont.MeasureString(label); 
         Vector2 textPos = new Vector2(
             _actionButtonRect.X + (_actionButtonRect.Width - labelSize.X) / 2f,
             _actionButtonRect.Y + (_actionButtonRect.Height - labelSize.Y) / 2f);

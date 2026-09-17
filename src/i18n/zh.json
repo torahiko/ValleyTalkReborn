@@ -217,6 +217,7 @@
   "Timeline.ArchiveRuleHint": "手账记录不会自动归档；此箱收纳被提炼沉淀或手动删除的条目，超过 {{max}} 条时最早的归档将被替换。",
   "Memory.ArchiveClearButton": "清空",
   "Memory.ArchiveClearConfirm": "确定要清空全部 {{count}} 条归档记录吗？\n此操作不可恢复。",
+  "Memory.ArchiveClearHover": "清空所有归档记录",
   "Memory.ArchiveEndangeredTag": "[即将过期]",
   "Memory.TabChats": "对话",
   "Memory.TabImpressions": "心流印记",
