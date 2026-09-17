@@ -53,7 +53,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     private readonly IClickableMenu _returnMenu;
     private readonly IClickableMenu _ownerMenu;
 
-    // NPC 行走图缓存（仅在打开手账与切换角色时运算一次）
+    // NPC 行走图缓存（切换角色时更新）
     private Texture2D _currentNpcSprite;
     private Rectangle _currentNpcSourceRect;
 
@@ -165,7 +165,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         {
             NPC npc = Game1.getCharacterFromName(_npcName);
 
-            // 1. 获取单帧宽度（原版 16，高清美化可能为 32 或 64）
             int frameWidth = 16;
             if (npc?.Sprite != null && npc.Sprite.SpriteWidth > 0)
             {
@@ -188,10 +187,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 ? npc.Sprite.SpriteHeight
                 : Math.Min(_currentNpcSprite.Height, frameWidth * 2);
 
-            // 2. 动态扫描第 0 帧头顶真实非透明像素起始行（解决女性/较矮角色只露半个头的问题）
             int topY = FindSpriteTopY(_currentNpcSprite, frameWidth, frameHeight);
-
-            // 3. 从真实头顶开始向下截取一个正方形头部区域
             int headHeight = Math.Min(frameWidth, _currentNpcSprite.Height - topY);
             _currentNpcSourceRect = new Rectangle(0, topY, frameWidth, headHeight);
         }
@@ -201,9 +197,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         }
     }
 
-    /// <summary>
-    /// 扫描行走图第 0 帧垂直方向上的第一个可见像素行，解决不同角色高度不同导致的裁剪截断
-    /// </summary>
     private static int FindSpriteTopY(Texture2D texture, int frameWidth, int frameHeight)
     {
         try
@@ -224,10 +217,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 }
             }
         }
-        catch
-        {
-            // 异常兜底
-        }
+        catch { }
         return 0;
     }
 
@@ -1025,7 +1015,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                     }
                     else
                     {
-                        // 绘制 NPC 行走图正脸（按扫描到的真实头顶向下等比裁切，完整显示下巴与面容）
+                        // 绘制 NPC 行走图正脸
                         b.Draw(
                             _currentNpcSprite,
                             item.AvatarRect,
@@ -1070,16 +1060,17 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     }
 
     /// <summary>
-    /// 绘制农夫真实外观（发型、肤色、帽子精准发际线对齐）
+    /// 原生绘制农夫真实外观（包含真实发型、肤色、眼睛与帽子，1:1 对齐像素框）
     /// </summary>
     private static void DrawFarmerAvatar(SpriteBatch b, Rectangle destRect)
     {
         if (Game1.player?.FarmerRenderer == null) return;
 
-        float scale = (float)destRect.Width / 16f; // 40 / 16 = 2.5f
+        // 农夫头部标准 16x16，缩放到 40px: scale = 40 / 16 = 2.5f
+        float scale = (float)destRect.Width / 16f;
         Vector2 basePos = new Vector2(destRect.X, destRect.Y);
 
-        // 1. 基础小肖像（发型、肤色、配饰）
+        // 1. 原生绘制农夫脸型、发型、眼睛、肤色、配饰（官方 ChatBox 同款标准接口）
         Game1.player.FarmerRenderer.drawMiniPortrat(
             b,
             basePos,
@@ -1089,14 +1080,16 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
             Game1.player,
             1f);
 
-        // 2. 叠加当前帽子
+        // 2. 叠戴当前帽子（如果有）
         if (Game1.player.hat.Value != null)
         {
+            // 原版 Hat.draw 内部强制乘以了 4f（pixelZoom）
+            // 外部必须传入 scale / 4f，真实缩放倍率才正好等于 2.5f，绝不产生巨大化溢出
             float hatScale = scale / 4f;
 
-            // 偏移校正：
-            // X: -2f * scale 使 20 像素宽的帽子相对 16 像素的脸正中对齐
-            // Y: -5f * scale 为原版基准帽檐偏移，使帽檐落在额头上，不再下压遮挡眼部
+            // Hat 贴图为 20x20，头像为 16x16
+            // 水平对齐：X 偏移 -2 像素
+            // 垂直对齐：Y 偏移 -5 像素，使帽檐与发际线精准贴合
             Vector2 hatPos = basePos + new Vector2(-2f * scale, -5f * scale);
             Game1.player.hat.Value.draw(b, hatPos, hatScale, 1f, 0.895f, 2);
         }
