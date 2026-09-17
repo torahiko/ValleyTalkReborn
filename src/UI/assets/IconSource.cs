@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewValley;
+using StardewValley.Menus;
 
 namespace ValleytalkReborn.UI;
 
@@ -68,6 +69,9 @@ public static class IconSource
 
     public static Rectangle Refresh(IconTheme theme = IconTheme.Wood, IconState state = IconState.Normal)
         => Get(7, 0, theme, state);  // 刷新
+    
+    public static Rectangle Restore(IconTheme theme = IconTheme.Wood, IconState state = IconState.Normal)
+        => Get(6, 0, theme, state);  // 还原
 
     /// <summary>
     /// 专用的通用带点击下沉动效的绘制方法
@@ -95,6 +99,43 @@ public static class IconSource
 
         b.Draw(
             texture,
+            drawPos,
+            srcRect,
+            Color.White,
+            0f,
+            Vector2.Zero,
+            scale,
+            SpriteEffects.None,
+            layerDepth
+        );
+    }
+
+    /// <summary>
+    /// 直接基于组件自身 sourceRect 绘制按钮（自动处理按压切片偏移与下沉动效）。
+    /// 后续更换图标只需修改 RefreshActionButtons 中的 IconSource.* 调用，本方法无需变动。
+    /// </summary>
+    public static void DrawButton(
+        SpriteBatch b,
+        ClickableTextureComponent btn,
+        bool isPressed,
+        float layerDepth = 0.89f)
+    {
+        if (btn == null || btn.texture == null) return;
+
+        Rectangle srcRect = btn.sourceRect;
+
+        // 按下态自动向下偏移 2 行（32 源像素），与 IconState.Pressed 的切片布局一致
+        if (isPressed)
+        {
+            srcRect = new Rectangle(srcRect.X, srcRect.Y + Size * (int)IconState.Pressed, srcRect.Width, srcRect.Height);
+        }
+
+        float scale = (float)btn.bounds.Width / Size;
+        float yOffset = isPressed ? 1f * scale : 0f;
+        Vector2 drawPos = new Vector2(btn.bounds.X, btn.bounds.Y + yOffset);
+
+        b.Draw(
+            btn.texture,
             drawPos,
             srcRect,
             Color.White,

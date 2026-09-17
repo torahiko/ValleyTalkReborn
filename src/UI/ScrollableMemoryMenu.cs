@@ -641,29 +641,15 @@ namespace ValleytalkReborn
                     {
                         var btn = _editButtons[i];
                         bool isPressed = isLeftMouseDown && btn.containsPoint(mx, my);
-                        IconSource.DrawButton(
-                            b,
-                            ModEntry.CustomIcons,
-                            btn.bounds,
-                            col: 15, baseRow: 1,
-                            theme: IconTheme.Wood,
-                            isPressed: isPressed,
-                            layerDepth: 0.89f);
+                        IconSource.DrawButton(b, btn, isPressed);
                     }
-                    
+
                     // 绘制删除按钮（带点击凹陷与 1px 下沉动效）
                     if (i < _deleteButtons.Count)
                     {
                         var btn = _deleteButtons[i];
                         bool isPressed = isLeftMouseDown && btn.containsPoint(mx, my);
-                        IconSource.DrawButton(
-                            b,
-                            ModEntry.CustomIcons,
-                            btn.bounds,
-                            col: 6, baseRow: 1, // ★ 修改为垃圾桶坐标（第 1 行，第 6 列）
-                            theme: IconTheme.Wood,
-                            isPressed: isPressed,
-                            layerDepth: 0.89f);
+                        IconSource.DrawButton(b, btn, isPressed);
                     }
                 }
 
