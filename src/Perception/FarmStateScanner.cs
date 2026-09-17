@@ -10,24 +10,12 @@ namespace ValleytalkReborn;
 
 internal static class FarmStateScanner
 {
-    // ── 按天缓存：确保同一天内注入 GameConstantContext 的农场文本字符级不变 ──
-    // 原因：这段文本最终会被塞进 Prompts.GameConstantContext，对应 Llm.RunInference 的
-    // gameCacheString 参数。在 LlmClaude.cs 中该参数会被标记为 Anthropic 的
-    // cache_control: { type: "ephemeral" } 缓存分段（严格按前缀字符匹配）。
-    // 若文本随游戏 tick 抖动（尤其是动物饥饿值/抚摸状态这类实时字段），
-    // 哪怕只差一个字符也会导致该分段及其后所有内容全部 cache miss，
-    // 多付约 25% 的写入成本，且损失命中时 90% 的价格折扣。
     private static string _cachedSummaryZh;
     private static string _cachedSummaryEn;
     private static int _cachedYear = -1;
     private static string _cachedSeason;
     private static int _cachedDay = -1;
 
-    /// <summary>
-    /// 扫描全农场生态，构建指标化经营状态概况。
-    /// 同一游戏日内多次调用返回完全相同的字符串（按天缓存），跨天自动失效重扫。
-    /// isZh 为 false 时（包含所有小语种）自动回落为英文输出。
-    /// </summary>
     public static string BuildFarmSummary(bool isZh)
     {
         EnsureCacheFreshness();
@@ -50,10 +38,6 @@ internal static class FarmStateScanner
         _cachedDay = Game1.dayOfMonth;
     }
 
-    /// <summary>
-    /// 供外部（如天亮/收割等事件钩子）在需要即时刷新时强制失效缓存。
-    /// 目前无调用方，按天粒度已足够；如后续要在关键事件后立即反映变化可调用此方法。
-    /// </summary>
     public static void InvalidateCache()
     {
         _cachedYear = -1;
@@ -68,10 +52,10 @@ internal static class FarmStateScanner
         var sb = new StringBuilder();
 
         // ── 1. 扫描农场室外作物 ──
-        var (readyCrops, growingCrops, deadCrops, topReadyCropNames, topGrowingCropNames) = ScanCropsInLocation(farm);
+        var (readyCrops, growingCrops, deadCrops, topReadyCropNames, topGrowingCropNames, topDeadCropNames) = ScanCropsInLocation(farm);
 
         // ── 2. 扫描果树（室外） ──
-        var (fruitTreeProducing, fruitTreeTypes, topFruits, fruitTreeGrowing) = ScanFruitTreesInLocation(farm);
+        var (fruitTreeProducing, fruitTreeGrowing, fruitTreeResting, topProducingFruits, topGrowingFruits, topRestingFruits) = ScanFruitTreesInLocation(farm);
 
         // ── 3. 扫描温室 ──
         var ghLocation = Game1.getLocationFromName("Greenhouse");
@@ -85,7 +69,7 @@ internal static class FarmStateScanner
 
         if (isGreenhouseUnlocked && ghLocation != null)
         {
-            (ghReadyCrops, ghGrowingCrops, _, ghTopReady, ghTopGrowing) = ScanCropsInLocation(ghLocation);
+            (ghReadyCrops, ghGrowingCrops, _, ghTopReady, ghTopGrowing, _) = ScanCropsInLocation(ghLocation);
         }
 
         // ── 4. 扫描动物 ──
@@ -121,7 +105,7 @@ internal static class FarmStateScanner
             }
         }
 
-        // ── 6. 格式化输出（全部采用模糊感知描述，杜绝精准报数） ──
+        // ── 6. 格式化输出 ──
         if (isZh)
         {
             sb.AppendLine("### [农场经营状态]");
@@ -140,28 +124,36 @@ internal static class FarmStateScanner
 
             if (deadCrops > 0)
             {
-                sb.AppendLine($"- 农田异常: 发现了{GetDeadCropFuzzy(deadCrops, isZh: true)}枯萎死去的作物。");
+                string sample = topDeadCropNames.Count > 0 ? $"（包含枯萎的: {string.Join("、", topDeadCropNames)} 等）" : "";
+                sb.AppendLine($"- 农田异常: 发现了{GetDeadCropFuzzy(deadCrops, isZh: true)}枯萎死去的作物{sample}。");
             }
 
             // 果树展示
             if (fruitTreeProducing > 0)
             {
                 string producingTrees = GetFruitTreeQuantityFuzzy(fruitTreeProducing, isZh: true);
-                if (fruitTreeTypes > 3)
+                if (topProducingFruits.Count > 3)
                 {
-                    string sample = topFruits.Count > 0 ? $"（主要包括: {string.Join("、", topFruits)} 等）" : "";
+                    string sample = $"（主要包括: {string.Join("、", topProducingFruits)} 等）";
                     sb.AppendLine($"- 果园状态: 果树品种丰富，有{producingTrees}果树挂果待摘，涵盖多种不同品种{sample}。");
                 }
                 else
                 {
-                    string sample = topFruits.Count > 0 ? $"（包含: {string.Join("、", topFruits)}）" : "";
+                    string sample = topProducingFruits.Count > 0 ? $"（包含: {string.Join("、", topProducingFruits)}）" : "";
                     sb.AppendLine($"- 果园状态: 有{producingTrees}果树果实累累{sample}。");
                 }
             }
             else if (fruitTreeGrowing > 0)
             {
                 string growingTrees = GetFruitTreeQuantityFuzzy(fruitTreeGrowing, isZh: true);
-                sb.AppendLine($"- 果园状态: 有{growingTrees}幼年果树正在生长中。");
+                string sample = topGrowingFruits.Count > 0 ? $"（包含: {string.Join("、", topGrowingFruits)} 等）" : "";
+                sb.AppendLine($"- 果园状态: 有{growingTrees}幼年果树正在生长中{sample}。");
+            }
+            else if (fruitTreeResting > 0)
+            {
+                string restingTrees = GetFruitTreeQuantityFuzzy(fruitTreeResting, isZh: true);
+                string sample = topRestingFruits.Count > 0 ? $"（包含: {string.Join("、", topRestingFruits)} 等）" : "";
+                sb.AppendLine($"- 果园状态: 种植了{restingTrees}成年果树{sample}，目前非挂果期。");
             }
 
             // 温室展示
@@ -204,7 +196,6 @@ internal static class FarmStateScanner
         }
         else
         {
-            // 英文模板（其他非中文语言自动回落至此）
             sb.AppendLine("### [FARM OPERATION STATUS]");
             sb.AppendLine("<farm_state>");
 
@@ -221,31 +212,37 @@ internal static class FarmStateScanner
 
             if (deadCrops > 0)
             {
-                sb.AppendLine($"- Field Warning: {GetDeadCropFuzzy(deadCrops, isZh: false)} withered crops spotted.");
+                string sample = topDeadCropNames.Count > 0 ? $" (including withered: {string.Join(", ", topDeadCropNames)})" : "";
+                sb.AppendLine($"- Field Warning: {GetDeadCropFuzzy(deadCrops, isZh: false)} withered crops spotted{sample}.");
             }
 
-            // Fruit Trees
             if (fruitTreeProducing > 0)
             {
                 string producingTrees = GetFruitTreeQuantityFuzzy(fruitTreeProducing, isZh: false);
-                if (fruitTreeTypes > 3)
+                if (topProducingFruits.Count > 3)
                 {
-                    string sample = topFruits.Count > 0 ? $" (mainly: {string.Join(", ", topFruits)}, etc.)" : "";
+                    string sample = $" (mainly: {string.Join(", ", topProducingFruits)}, etc.)";
                     sb.AppendLine($"- Orchard: Diverse orchard with {producingTrees} trees bearing ripe fruit across multiple varieties{sample}.");
                 }
                 else
                 {
-                    string sample = topFruits.Count > 0 ? $" (including: {string.Join(", ", topFruits)})" : "";
+                    string sample = topProducingFruits.Count > 0 ? $" (including: {string.Join(", ", topProducingFruits)})" : "";
                     sb.AppendLine($"- Orchard: {producingTrees} fruit trees are bearing ripe fruit{sample}.");
                 }
             }
             else if (fruitTreeGrowing > 0)
             {
                 string growingTrees = GetFruitTreeQuantityFuzzy(fruitTreeGrowing, isZh: false);
-                sb.AppendLine($"- Orchard: {growingTrees} young fruit trees are growing.");
+                string sample = topGrowingFruits.Count > 0 ? $" (including: {string.Join(", ", topGrowingFruits)})" : "";
+                sb.AppendLine($"- Orchard: {growingTrees} young fruit trees are growing{sample}.");
+            }
+            else if (fruitTreeResting > 0)
+            {
+                string restingTrees = GetFruitTreeQuantityFuzzy(fruitTreeResting, isZh: false);
+                string sample = topRestingFruits.Count > 0 ? $" (including: {string.Join(", ", topRestingFruits)})" : "";
+                sb.AppendLine($"- Orchard: {restingTrees} mature fruit trees planted{sample}, currently out of season.");
             }
 
-            // Greenhouse
             if (isGreenhouseUnlocked)
             {
                 if (ghReadyCrops > 0)
@@ -287,101 +284,100 @@ internal static class FarmStateScanner
         return sb.Length > 30 ? sb.ToString() : null;
     }
 
-    // ── 模糊化感知映射辅助方法（全数量去面板化） ──
-
     private static string GetCropQuantityFuzzy(int count, bool isZh)
-{
-    if (isZh)
     {
-        if (count < 10) return "零星几株";
-        if (count < 30) return "一小片";
-        if (count < 80) return "成片";
-        if (count < 200) return "一大片";
-        return "漫野成片";
+        if (isZh)
+        {
+            if (count < 10) return "零星几株";
+            if (count < 30) return "一小片";
+            if (count < 80) return "成片";
+            if (count < 200) return "一大片";
+            return "漫野成片";
+        }
+        else
+        {
+            if (count < 10) return "a few";
+            if (count < 30) return "a small patch of";
+            if (count < 80) return "a sizable patch of";
+            if (count < 200) return "a large field of";
+            return "sprawling fields of";
+        }
     }
-    else
-    {
-        if (count < 10) return "a few";
-        if (count < 30) return "a small patch of";
-        if (count < 80) return "a sizable patch of";
-        if (count < 200) return "a large field of";
-        return "sprawling fields of";
-    }
-}
 
-private static string GetDeadCropFuzzy(int count, bool isZh)
-{
-    if (isZh)
+    private static string GetDeadCropFuzzy(int count, bool isZh)
     {
-        if (count < 5) return "零星几株";
-        if (count < 20) return "一小片";
-        return "成片枯萎";
+        if (isZh)
+        {
+            if (count < 5) return "零星几株";
+            if (count < 20) return "一小片";
+            return "成片枯萎";
+        }
+        else
+        {
+            if (count < 5) return "a few";
+            if (count < 20) return "a small patch of";
+            return "swaths of";
+        }
     }
-    else
-    {
-        if (count < 5) return "a few";
-        if (count < 20) return "a small patch of";
-        return "swaths of";
-    }
-}
 
-private static string GetFruitTreeQuantityFuzzy(int count, bool isZh)
-{
-    if (isZh)
+    private static string GetFruitTreeQuantityFuzzy(int count, bool isZh)
     {
-        if (count <= 2) return "一两棵";
-        if (count <= 6) return "几棵";
-        if (count <= 15) return "一小片果林";
-        return "一大片果园";
+        if (isZh)
+        {
+            if (count <= 2) return "一两棵";
+            if (count <= 6) return "几棵";
+            if (count <= 15) return "一小片果林";
+            return "一大片果园";
+        }
+        else
+        {
+            if (count <= 2) return "a couple of";
+            if (count <= 6) return "a few";
+            if (count <= 15) return "a small grove of";
+            return "a sprawling orchard of";
+        }
     }
-    else
-    {
-        if (count <= 2) return "a couple of";
-        if (count <= 6) return "a few";
-        if (count <= 15) return "a small grove of";
-        return "a sprawling orchard of";
-    }
-}
 
-private static string GetAnimalQuantityFuzzy(int count, bool isZh)
-{
-    if (isZh)
+    private static string GetAnimalQuantityFuzzy(int count, bool isZh)
     {
-        if (count <= 2) return "一两只";
-        if (count <= 6) return "几只";
-        if (count <= 15) return "一小群";
-        if (count <= 30) return "一大群";
-        return "成群结队";
+        if (isZh)
+        {
+            if (count <= 2) return "一两只";
+            if (count <= 6) return "几只";
+            if (count <= 15) return "一小群";
+            if (count <= 30) return "一大群";
+            return "成群结队";
+        }
+        else
+        {
+            if (count <= 2) return "a couple of";
+            if (count <= 6) return "a few";
+            if (count <= 15) return "a small herd of";
+            if (count <= 30) return "a large herd of";
+            return "a massive herd of";
+        }
     }
-    else
-    {
-        if (count <= 2) return "a couple of";
-        if (count <= 6) return "a few";
-        if (count <= 15) return "a small herd of";
-        if (count <= 30) return "a large herd of";
-        return "a massive herd of";
-    }
-}
 
-private static string GetFishPondOccupantsFuzzy(int currentOccupants, int maxOccupants, bool isZh)
-{
-    if (isZh)
+    private static string GetFishPondOccupantsFuzzy(int currentOccupants, int maxOccupants, bool isZh)
     {
-        if (currentOccupants >= 8 || currentOccupants >= maxOccupants) return "满满一塘";
-        if (currentOccupants <= 2) return "零星几尾";
-        return "数尾";
+        if (isZh)
+        {
+            if (currentOccupants >= 8 || currentOccupants >= maxOccupants) return "满满一塘";
+            if (currentOccupants <= 2) return "零星几尾";
+            return "数尾";
+        }
+        else
+        {
+            if (currentOccupants >= 8 || currentOccupants >= maxOccupants) return "a pond teeming with";
+            if (currentOccupants <= 2) return "a couple of";
+            return "a small school of";
+        }
     }
-    else
-    {
-        if (currentOccupants >= 8 || currentOccupants >= maxOccupants) return "a pond teeming with";
-        if (currentOccupants <= 2) return "a couple of";
-        return "a small school of";
-    }
-}
 
-    private static (int readyCount, int growingCount, int deadCount, List<string> topReady, List<string> topGrowing) ScanCropsInLocation(GameLocation location)
+    private static (int readyCount, int growingCount, int deadCount, List<string> topReady, List<string> topGrowing, List<string> topDead)
+        ScanCropsInLocation(GameLocation location)
     {
-        if (location == null) return (0, 0, 0, new List<string>(), new List<string>());
+        if (location == null) return (0, 0, 0, new List<string>(), new List<string>(), new List<string>());
 
         int readyCount = 0;
         int growingCount = 0;
@@ -389,19 +385,36 @@ private static string GetFishPondOccupantsFuzzy(int currentOccupants, int maxOcc
 
         var readyMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         var growingMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var deadMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var pair in location.terrainFeatures.Pairs)
         {
             if (pair.Value is HoeDirt dirt && dirt.crop != null)
             {
+                // 解析作物产物 ID（兼容野生种子与空值回退）
+                string harvestId = dirt.crop.indexOfHarvest.Value;
+                if (string.IsNullOrWhiteSpace(harvestId))
+                {
+                    harvestId = dirt.crop.GetData()?.HarvestItemId;
+                }
+                if (dirt.crop.isWildSeedCrop() && !string.IsNullOrWhiteSpace(dirt.crop.whichForageCrop.Value))
+                {
+                    harvestId = dirt.crop.whichForageCrop.Value;
+                }
+
+                string cropName = SafeGetDisplayName(harvestId);
+
                 if (dirt.crop.dead.Value)
                 {
                     deadCount++;
+                    if (!string.IsNullOrWhiteSpace(cropName))
+                    {
+                        deadMap[cropName] = deadMap.GetValueOrDefault(cropName, 0) + 1;
+                    }
                     continue;
                 }
 
                 bool isReady = dirt.crop.currentPhase.Value >= dirt.crop.phaseDays.Count - 1;
-                string cropName = SafeGetDisplayName(dirt.crop.indexOfHarvest.Value);
 
                 if (isReady)
                 {
@@ -424,90 +437,114 @@ private static string GetFishPondOccupantsFuzzy(int currentOccupants, int maxOcc
 
         var topReady = readyMap.OrderByDescending(kv => kv.Value).Take(3).Select(kv => kv.Key).ToList();
         var topGrowing = growingMap.OrderByDescending(kv => kv.Value).Take(3).Select(kv => kv.Key).ToList();
+        var topDead = deadMap.OrderByDescending(kv => kv.Value).Take(3).Select(kv => kv.Key).ToList();
 
-        return (readyCount, growingCount, deadCount, topReady, topGrowing);
+        return (readyCount, growingCount, deadCount, topReady, topGrowing, topDead);
     }
 
-    private static (int producingTreeCount, int fruitTypeCount, List<string> topFruits, int growingCount) ScanFruitTreesInLocation(GameLocation location)
+    private static (int producingCount, int growingCount, int restingCount, List<string> topProducing, List<string> topGrowing, List<string> topResting)
+        ScanFruitTreesInLocation(GameLocation location)
     {
-        if (location == null) return (0, 0, new List<string>(), 0);
+        if (location == null) return (0, 0, 0, new List<string>(), new List<string>(), new List<string>());
 
-        int producingTreeCount = 0;
+        int producingCount = 0;
         int growingCount = 0;
-        var fruitCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        int restingCount = 0;
+
+        var producingMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var growingMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var restingMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var pair in location.terrainFeatures.Pairs)
         {
             if (pair.Value is FruitTree tree)
             {
-                if (tree.fruit != null && tree.fruit.Count > 0)
+                // 1. 优先从当前挂果实体获取名称
+                string fruitName = null;
+                if (tree.fruit != null && tree.fruit.Count > 0 && tree.fruit[0] != null)
                 {
-                    producingTreeCount++;
+                    fruitName = SafeGetDisplayName(tree.fruit[0].QualifiedItemId);
+                }
 
-                    Item fruit = tree.fruit[0];
-                    if (IsValidItem(fruit))
+                // 2. 若未挂果，通过 1.6 的 FruitTreeData 获取该树种的果实名称
+                if (string.IsNullOrWhiteSpace(fruitName))
+                {
+                    var data = tree.GetData();
+                    var fruitData = data?.Fruit?.FirstOrDefault();
+                    if (fruitData != null && !string.IsNullOrWhiteSpace(fruitData.ItemId))
                     {
-                        string fruitName = fruit.DisplayName;
-                        if (!string.IsNullOrWhiteSpace(fruitName))
-                        {
-                            fruitCounts[fruitName] = fruitCounts.GetValueOrDefault(fruitName, 0) + 1;
-                        }
+                        fruitName = SafeGetDisplayName(fruitData.ItemId);
                     }
                 }
-                else if (tree.growthStage.Value < FruitTree.treeStage)
+
+                // 1.6 挂果判定：直接依据 tree.fruit 列表
+                bool hasFruit = tree.fruit != null && tree.fruit.Count > 0;
+                bool isGrowing = tree.growthStage.Value < FruitTree.treeStage;
+
+                if (hasFruit)
+                {
+                    producingCount++;
+                    if (!string.IsNullOrWhiteSpace(fruitName))
+                    {
+                        producingMap[fruitName] = producingMap.GetValueOrDefault(fruitName, 0) + 1;
+                    }
+                }
+                else if (isGrowing)
                 {
                     growingCount++;
+                    if (!string.IsNullOrWhiteSpace(fruitName))
+                    {
+                        growingMap[fruitName] = growingMap.GetValueOrDefault(fruitName, 0) + 1;
+                    }
+                }
+                else
+                {
+                    // 成年果树但当前非产果期/已被采摘
+                    restingCount++;
+                    if (!string.IsNullOrWhiteSpace(fruitName))
+                    {
+                        restingMap[fruitName] = restingMap.GetValueOrDefault(fruitName, 0) + 1;
+                    }
                 }
             }
         }
 
-        int fruitTypeCount = fruitCounts.Count;
+        var topProducing = producingMap.OrderByDescending(kv => kv.Value).Take(3).Select(kv => kv.Key).ToList();
+        var topGrowing = growingMap.OrderByDescending(kv => kv.Value).Take(3).Select(kv => kv.Key).ToList();
+        var topResting = restingMap.OrderByDescending(kv => kv.Value).Take(3).Select(kv => kv.Key).ToList();
 
-        var topFruits = fruitCounts
-            .OrderByDescending(kv => kv.Value)
-            .Take(3)
-            .Select(kv => kv.Key)
-            .ToList();
-
-        return (producingTreeCount, fruitTypeCount, topFruits, growingCount);
+        return (producingCount, growingCount, restingCount, topProducing, topGrowing, topResting);
     }
 
-    private static bool IsValidItem(Item item)
-    {
-        if (item == null) return false;
-
-        if (item.GetType().Name.Contains("Error", StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-
-        if (!string.IsNullOrEmpty(item.QualifiedItemId) && item.QualifiedItemId.Contains("Error", StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-
-        var parsedData = ItemRegistry.GetData(item.QualifiedItemId);
-        if (parsedData == null)
-        {
-            return false;
-        }
-
-        return true;
-    }
-
+    /// <summary>
+    /// 星露谷 1.6 原生只读元数据获取，免实体实例化且原生拦截 Error 物品
+    /// </summary>
     private static string SafeGetDisplayName(string itemId)
     {
         if (string.IsNullOrWhiteSpace(itemId)) return null;
 
         try
         {
-            Item item = ItemRegistry.Create(itemId);
-            if (!IsValidItem(item))
+            var parsedData = ItemRegistry.GetData(itemId);
+            if (parsedData == null || parsedData.IsErrorItem)
             {
                 return null;
             }
 
-            return item.DisplayName;
+            if (!string.IsNullOrEmpty(parsedData.QualifiedItemId) &&
+                parsedData.QualifiedItemId.Contains("Error", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            string displayName = parsedData.DisplayName;
+            if (string.IsNullOrWhiteSpace(displayName) ||
+                displayName.Contains("Error", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            return displayName;
         }
         catch
         {
