@@ -493,7 +493,10 @@ namespace ValleytalkReborn
                 _ =>
                 {
                     if (tabSnapshot == 0)
+                    {
+                        MemoryManager.Instance.ArchiveMemory(_npcName, entry, "ManualDeleted");
                         MemoryManager.Instance.RemoveMemory(_npcName, entry.Id);
+                    }
                     else
                         WorldMemoryManager.Instance.RemoveEntry(entry.Id);
 

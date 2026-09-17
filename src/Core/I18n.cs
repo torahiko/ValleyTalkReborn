@@ -338,6 +338,12 @@ namespace ValleytalkReborn
             public static string ArchiveRestoreDuplicate() => Lookup("Memory.ArchiveRestoreDuplicate");
             public static string ArchiveRestoreNotFound() => Lookup("Memory.ArchiveRestoreNotFound");
             public static string ArchiveRuleHint(int max) => Lookup("Memory.ArchiveRuleHint").Replace("{{max}}", max.ToString());
+            // ── 时间线归档箱（FEAT-AUTO-T6 解耦：与 Manual/Auto 归档箱文案不共用）──
+            public static string ArchiveTitleTimeline(string npcName) => FormatNpc(Lookup("Memory.ArchiveTitleTimeline"), npcName);
+            public static string ArchiveEmptyTimeline() => Lookup("Memory.ArchiveEmptyTimeline");
+            public static string ArchiveRuleHintTimeline(int max) => Lookup("Memory.ArchiveRuleHintTimeline").Replace("{{max}}", max.ToString());
+            public static string ArchiveClearButton() => Lookup("Memory.ArchiveClearButton");
+            public static string ArchiveClearConfirm(int count) => Lookup("Memory.ArchiveClearConfirm").Replace("{{count}}", count.ToString());
             public static string ArchiveEndangeredTag() => Lookup("Memory.ArchiveEndangeredTag");
 
             // 2-Column Distill Menu (MemoryDistillMenu.cs)
