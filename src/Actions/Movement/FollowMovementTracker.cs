@@ -36,25 +36,25 @@ namespace ValleytalkReborn.Movement
         // ─── Path target stabilization ───
         private Vector2 _committedTarget;
         private int _retargetCooldown;
-        private const int RETARGET_COOLDOWN = 12;
+        private const int RETARGET_COOLDOWN = 30;
 
         // ─── Two-gear speed thresholds ───
-        private const float SPRINT_DIST  = 10f;
+        private const float SPRINT_DIST  = 8f;
         private const float NORMAL_DIST  = 4f;
         private const int   SPEED_SPRINT = 3;
-        private const int   SPEED_NORMAL = 2;
+        private const int   SPEED_NORMAL = 3;
         private bool _isSprinting = false;
 
         // ─── State transition distance thresholds ───
-        private const float DIST_START_PATH              = 4.5f;
-        private const float DIST_STOP_PATH               = 2.5f;
+        private const float DIST_START_PATH              = 5.5f;
+        private const float DIST_STOP_PATH               = 1.75f;
         private const float DIST_ABORT_WANDER            = 6.5f;
         private const float DIST_IDLE_APPROACH           = 2.0f;
         private const float DIST_PLAYER_STOPPED_APPROACH = 3.5f;
 
         // ─── Startup delay ───
         private int _startDelayTimer = 0;
-        private const int START_DELAY_FRAMES = 8;
+        private const int START_DELAY_FRAMES = 4;
 
         // ─── Brake inertia ───
         private bool _isBraking = false;
@@ -88,6 +88,11 @@ namespace ValleytalkReborn.Movement
         private Vector2 _lastNpcTileInPathing;
         private int _npcStuckTicks;
         private const int STUCK_TICKS_THRESHOLD = 40;
+
+        // ─── Wall-phasing recovery throttle (memory-only) ───
+        private int _wallCheckCooldown;
+        private const int WALL_CHECK_INTERVAL        = 30;   // ticks between wall checks
+        private const int RECOVERY_COOLDOWN_TICKS    = 90;   // ticks to wait after a recovery teleport
 
         // ─── Callbacks ───
         internal Action<NPC> OnFollowStartedCallback { get; set; }
@@ -193,6 +198,7 @@ namespace ValleytalkReborn.Movement
             _playerIdleTimer    = 0;
             _idleGazeTimer      = 0;
             _committedTarget    = Vector2.Zero;
+            _wallCheckCooldown  = 0;
         }
 
         public void Tick(UpdateTickedEventArgs e)
@@ -292,16 +298,19 @@ namespace ValleytalkReborn.Movement
                 case FollowState.Wandering: TickWandering(dist); break;
             }
 
-            // Wall-phasing safety: validate NPC position every frame
-            if (_followingNpc != null && _followingNpc.currentLocation != null)
+            // Wall-phasing safety: validate NPC position (throttled).
+            if (_wallCheckCooldown > 0)
             {
-                if (!MovementPathfinding.IsTileWalkable(_followingNpc.currentLocation, _followingNpc.Tile, _followingNpc))
-                {
-                    MovementPathfinding.TryRecoverStartingTile(_followingNpc, _followingNpc.currentLocation);
-                    ModEntry.SMonitor?.Log(
-                        $"[FollowMovementTracker] {_followingNpc.Name} detected out-of-bounds/wall-phasing, forced recovery.",
-                        LogLevel.Warn);
-                }
+                _wallCheckCooldown--;
+            }
+            else if (_followingNpc != null && _followingNpc.currentLocation != null
+                     && !MovementPathfinding.IsTileWalkable(_followingNpc.currentLocation, _followingNpc.Tile, _followingNpc))
+            {
+                MovementPathfinding.TryRecoverStartingTile(_followingNpc, _followingNpc.currentLocation);
+                _wallCheckCooldown = RECOVERY_COOLDOWN_TICKS;
+                ModEntry.SMonitor?.Log(
+                    $"[FollowMovementTracker] {_followingNpc.Name} detected out-of-bounds/wall-phasing, forced recovery.",
+                    LogLevel.Warn);
             }
         }
 
@@ -359,6 +368,7 @@ namespace ValleytalkReborn.Movement
             _idleGazeTimer      = 0;
             _committedTarget    = Vector2.Zero;
             _lastPlayerTile     = Game1.player?.Tile ?? Vector2.Zero;
+            _wallCheckCooldown  = 0;
         }
 
         // ─── Private helpers ───
@@ -504,7 +514,7 @@ namespace ValleytalkReborn.Movement
                 _followingNpc.controller == null ||
                 MovementPathfinding.IsPathDead(_followingNpc.controller) ||
                 MovementPathfinding.IsPathDone(_followingNpc.controller) ||
-                (Vector2.Distance(_committedTarget, Game1.player.Tile) > 1.5f && dist > DIST_START_PATH);
+                (Vector2.Distance(_committedTarget, Game1.player.Tile) > 2.5f && dist > DIST_START_PATH);
 
             if (needRetarget)
             {
@@ -682,7 +692,7 @@ namespace ValleytalkReborn.Movement
             }
 
             _followPathFailCount++;
-            _followPathFailCooldown = Math.Min(120, 30 * _followPathFailCount);
+            _followPathFailCooldown = Math.Min(60, 20 * _followPathFailCount);
 
             _clearNpcMovement(_followingNpc);
 

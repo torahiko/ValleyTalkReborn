@@ -1,6 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
+using System;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
@@ -15,11 +14,6 @@ namespace ValleytalkReborn.Movement
     /// </summary>
     internal sealed class ScheduleRestorer
     {
-        // ─── Schedule reflection cache ───
-        private static bool      _scheduleReflectionCached;
-        private static MethodInfo _getScheduleMethod;
-        private static FieldInfo  _scheduleField;
-
         private readonly Action<NPC, Vector2, Action, Action> _moveToTile;
         private readonly Func<NPC, bool> _isCurrentlyFollowingDate;
 
@@ -45,6 +39,8 @@ namespace ValleytalkReborn.Movement
         /// <summary>
         /// Restores the NPC's original schedule after follow/goto ends.
         /// Only restores if CompanionScheduleManager has NOT scheduled a custom follow for today.
+        /// Drives NPC departure by filling queuedSchedulePaths; the game's own per-frame
+        /// checkSchedule then consumes the queue (no reflection, no checkSchedule call needed).
         /// </summary>
         public void TryRestoreSchedule(NPC npc)
         {
@@ -69,53 +65,75 @@ namespace ValleytalkReborn.Movement
                     LogLevel.Trace);
             }
 
+            if (TryCollectPendingStops(npc, out int nextStopTime))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[ScheduleRestorer] Schedule restored for {npc.Name}: next stop @{nextStopTime}.",
+                    LogLevel.Info);
+            }
+            else
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[ScheduleRestorer] {npc.Name} no pending schedule stop at {Game1.timeOfDay}.",
+                    LogLevel.Debug);
+            }
+        }
+
+        /// <summary>
+        /// Collects all schedule stops at or after the current time-of-day, sorted ascending,
+        /// and loads them into npc.queuedSchedulePaths so the game drives the NPC along its
+        /// remaining daily route. Returns false (nextStopTime = -1) when no stops remain.
+        /// </summary>
+        private static bool TryCollectPendingStops(NPC npc, out int nextStopTime)
+        {
+            nextStopTime = -1;
+
             try
             {
-                CacheScheduleReflection();
-
-                if (_getScheduleMethod == null || _scheduleField == null)
-                    return;
-
-                var schedule = _getScheduleMethod.Invoke(npc, new object[] { Game1.dayOfMonth })
-                    as Dictionary<int, SchedulePathDescription>;
-
-                if (schedule == null || schedule.Count == 0)
-                    return;
-
-                _scheduleField.SetValue(npc, schedule);
-
-                npc.followSchedule = true;
-                npc.checkSchedule(Game1.timeOfDay);
-
-                ModEntry.SMonitor?.Log(
-                    $"[ScheduleRestorer] Schedule restored for {npc.Name}.",
-                    LogLevel.Debug);
+                if (npc.Schedule == null || npc.Schedule.Count == 0)
+                    npc.TryLoadSchedule();
             }
             catch (Exception ex)
             {
                 ModEntry.SMonitor?.Log(
-                    $"[ScheduleRestorer] Schedule restore failed: {ex.Message}",
+                    $"[ScheduleRestorer] {npc.Name} schedule load failed: {ex.Message}",
                     LogLevel.Warn);
             }
-        }
 
-        private static void CacheScheduleReflection()
-        {
-            if (_scheduleReflectionCached) return;
+            if (npc.Schedule == null || npc.Schedule.Count == 0)
+                return false;
 
-            _getScheduleMethod = typeof(NPC).GetMethod(
-                "getSchedule",
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            int now = Game1.timeOfDay;
 
-            _scheduleField =
-                typeof(NPC).GetField(
-                    "_schedule",
-                    BindingFlags.Instance | BindingFlags.NonPublic)
-                ?? typeof(NPC).GetField(
-                    "<Schedule>k__BackingField",
-                    BindingFlags.Instance | BindingFlags.NonPublic);
+            // Collect stops at/after now, ascending by time.
+            var pending = npc.Schedule
+                .Where(kv => kv.Key >= now)
+                .OrderBy(kv => kv.Key)
+                .ToList();
 
-            _scheduleReflectionCached = true;
+            if (pending.Count == 0)
+                return false;
+
+            npc.queuedSchedulePaths.Clear();
+            foreach (var kv in pending)
+            {
+                // Defensive re-filter: skip any stale entry that slipped past the query.
+                if (kv.Key < now)
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[ScheduleRestorer] {npc.Name} skipping stale schedule stop @{kv.Key} (now={now}).",
+                        LogLevel.Trace);
+                    continue;
+                }
+                npc.queuedSchedulePaths.Add(kv.Value);
+            }
+
+            if (npc.queuedSchedulePaths.Count == 0)
+                return false;
+
+            npc.followSchedule = true;
+            nextStopTime = pending[0].Key;
+            return true;
         }
 
         /// <summary>
@@ -148,6 +166,10 @@ namespace ValleytalkReborn.Movement
 
             if (nearestWarp == null || nearestDist > 30f)
             {
+                ModEntry.SMonitor?.Log(
+                    $"[ScheduleRestorer] {npc.Name} no warp within 30 tiles, direct schedule restore.",
+                    LogLevel.Debug);
+
                 TryRestoreSchedule(npc);
                 return;
             }
