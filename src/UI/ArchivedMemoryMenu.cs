@@ -336,14 +336,14 @@ namespace ValleytalkReborn
                 ? new Color(255, 175, 70)
                 : Color.Gray;
             b.DrawString(Game1.smallFont, countText,
-                new Vector2(xPositionOnScreen + width - RightScrollArea - countSize.X, yPositionOnScreen + TopPadding - 16),
+                new Vector2(xPositionOnScreen + width - RightScrollArea - countSize.X, yPositionOnScreen + TopPadding - 10),
                 countColor);
 
             // 底部淘汰规则提示
             string ruleHint = I18n.Memory.ArchiveRuleHint(MemoryManager.MaxArchivedMemoriesPerNpc);
             var ruleHintSize = Game1.smallFont.MeasureString(ruleHint);
             b.DrawString(Game1.smallFont, ruleHint,
-                new Vector2(xPositionOnScreen + (width - ruleHintSize.X) / 2f, yPositionOnScreen + height - 52),
+                new Vector2(xPositionOnScreen + (width - ruleHintSize.X) / 2f, yPositionOnScreen + height - 60),
                 Color.Gray * 0.85f);
 
             // 关闭按钮
