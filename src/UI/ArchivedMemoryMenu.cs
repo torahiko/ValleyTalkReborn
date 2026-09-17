@@ -7,6 +7,7 @@ using StardewModdingAPI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ValleytalkReborn.UI;
 
 namespace ValleytalkReborn
 {
@@ -44,8 +45,8 @@ namespace ValleytalkReborn
         private readonly float _upArrowBaseScale;
         private readonly float _downArrowBaseScale;
 
-        private readonly List<Rectangle> _restoreRects = new();
-        private readonly List<Rectangle> _deleteRects = new();
+        private readonly List<ClickableTextureComponent> _restoreButtons = new();
+        private readonly List<ClickableTextureComponent> _deleteButtons = new();
 
         // 与 Timeline 同款木质风格清空按钮
         private Rectangle _clearButtonRect;
@@ -59,8 +60,7 @@ namespace ValleytalkReborn
         private const int LeftPadding = 36;
         private const int RightScrollArea = 52;
 
-        private const int ButtonWidth = 72;
-        private const int ButtonHeight = 32;
+        private const int ButtonSize = 32;
         private const int ButtonGap = 8;
 
         public ArchivedMemoryMenu(string npcName, IClickableMenu returnMenu)
@@ -154,20 +154,39 @@ namespace ValleytalkReborn
 
         private void RefreshActionButtons()
         {
-            _restoreRects.Clear();
-            _deleteRects.Clear();
+            _restoreButtons.Clear();
+            _deleteButtons.Clear();
 
             int visibleCount = GetVisibleLineCount();
-            int delX = xPositionOnScreen + width - RightScrollArea - ButtonWidth;
-            int restoreX = delX - ButtonGap - ButtonWidth;
+            int delX = xPositionOnScreen + width - RightScrollArea - ButtonSize;
+            int restoreX = delX - ButtonGap - ButtonSize;
 
             for (int i = 0; i < visibleCount && _startIndex + i < _cachedEntries.Count; i++)
             {
                 int rowY = yPositionOnScreen + TopPadding + 6 + i * LineHeight;
-                int btnY = rowY + (LineHeight - 4 - ButtonHeight) / 2;
+                int btnY = rowY + (LineHeight - 4 - ButtonSize) / 2; // 垂直严格居中
 
-                _deleteRects.Add(new Rectangle(delX, btnY, ButtonWidth, ButtonHeight));
-                _restoreRects.Add(new Rectangle(restoreX, btnY, ButtonWidth, ButtonHeight));
+                // 还原按钮（使用贴图集中的 Restore 旋转撤回箭头）
+                var restoreBtn = new ClickableTextureComponent(
+                    new Rectangle(restoreX, btnY, ButtonSize, ButtonSize),
+                    ModEntry.CustomIcons,
+                    IconSource.Restore(IconTheme.Wood, IconState.Normal),
+                    2f)
+                {
+                    hoverText = I18n.Memory.ArchiveRestoreButton()
+                };
+                _restoreButtons.Add(restoreBtn);
+
+                // 删除按钮（使用贴图集中的 Trash 垃圾桶）
+                var delBtn = new ClickableTextureComponent(
+                    new Rectangle(delX, btnY, ButtonSize, ButtonSize),
+                    ModEntry.CustomIcons,
+                    IconSource.Trash(IconTheme.Wood, IconState.Normal),
+                    2f)
+                {
+                    hoverText = I18n.Memory.ArchiveDeleteButton()
+                };
+                _deleteButtons.Add(delBtn);
             }
         }
 
@@ -283,14 +302,12 @@ namespace ValleytalkReborn
             int visibleCount = GetVisibleLineCount();
             for (int i = 0; i < visibleCount && _startIndex + i < _cachedEntries.Count; i++)
             {
-                if (i >= _restoreRects.Count) break;
-
-                if (_restoreRects[i].Contains(x, y))
+                if (i < _restoreButtons.Count && _restoreButtons[i].containsPoint(x, y))
                 {
                     HandleRestore(_startIndex + i);
                     return;
                 }
-                if (_deleteRects[i].Contains(x, y))
+                if (i < _deleteButtons.Count && _deleteButtons[i].containsPoint(x, y))
                 {
                     HandleDelete(_startIndex + i);
                     return;
@@ -472,11 +489,13 @@ namespace ValleytalkReborn
             else
             {
                 int visible = GetVisibleLineCount();
-                int delX = xPositionOnScreen + width - RightScrollArea - ButtonWidth;
-                int restoreX = delX - ButtonGap - ButtonWidth;
+                int delX = xPositionOnScreen + width - RightScrollArea - ButtonSize;
+                int restoreX = delX - ButtonGap - ButtonSize;
 
                 float textStartX = xPositionOnScreen + LeftPadding + 8;
                 float maxTextWidth = (restoreX - 16) - textStartX;
+
+                bool isLeftMouseDown = Mouse.GetState().LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
 
                 for (int vis = 0; vis < visible && _startIndex + vis < _cachedEntries.Count; vis++)
                 {
@@ -523,31 +542,20 @@ namespace ValleytalkReborn
                             new Color(235, 95, 75));
                     }
 
-                    // 右侧操作按钮
-                    var restoreRect = _restoreRects[vis];
-                    var deleteRect = _deleteRects[vis];
+                    // 右侧操作按钮（统一图标组件绘制，自带按压下沉与切片切换动效）
+                    if (vis < _restoreButtons.Count)
+                    {
+                        var btn = _restoreButtons[vis];
+                        bool isPressed = isLeftMouseDown && btn.containsPoint(mx, my);
+                        IconSource.DrawButton(b, btn, isPressed);
+                    }
 
-                    bool rHover = restoreRect.Contains(mx, my);
-                    IClickableMenu.drawTextureBox(b,
-                        restoreRect.X, restoreRect.Y, restoreRect.Width, restoreRect.Height,
-                        rHover ? Color.Gold : Color.White);
-                    string restoreLabel = I18n.Memory.ArchiveRestoreButton();
-                    var restoreLabelSize = Game1.smallFont.MeasureString(restoreLabel);
-                    b.DrawString(Game1.smallFont, restoreLabel,
-                        new Vector2(restoreRect.X + (restoreRect.Width - restoreLabelSize.X) / 2f,
-                                    restoreRect.Y + (restoreRect.Height - restoreLabelSize.Y) / 2f),
-                        rHover ? Game1.textColor : Game1.textColor * 0.9f);
-
-                    bool dHover = deleteRect.Contains(mx, my);
-                    IClickableMenu.drawTextureBox(b,
-                        deleteRect.X, deleteRect.Y, deleteRect.Width, deleteRect.Height,
-                        dHover ? Color.Gold : Color.White);
-                    string deleteLabel = I18n.Memory.ArchiveDeleteButton();
-                    var deleteLabelSize = Game1.smallFont.MeasureString(deleteLabel);
-                    b.DrawString(Game1.smallFont, deleteLabel,
-                        new Vector2(deleteRect.X + (deleteRect.Width - deleteLabelSize.X) / 2f,
-                                    deleteRect.Y + (deleteRect.Height - deleteLabelSize.Y) / 2f),
-                        dHover ? Game1.textColor : Game1.textColor * 0.9f);
+                    if (vis < _deleteButtons.Count)
+                    {
+                        var btn = _deleteButtons[vis];
+                        bool isPressed = isLeftMouseDown && btn.containsPoint(mx, my);
+                        IconSource.DrawButton(b, btn, isPressed);
+                    }
                 }
 
                 // 滚动条与上下翻页
@@ -577,6 +585,21 @@ namespace ValleytalkReborn
             if (_closeButton.containsPoint(mx, my))
             {
                 IClickableMenu.drawHoverText(b, _closeButton.hoverText, Game1.smallFont);
+            }
+
+            // 还原/删除按钮 Tooltip
+            for (int i = 0; i < _restoreButtons.Count; i++)
+            {
+                if (_restoreButtons[i].containsPoint(mx, my))
+                {
+                    IClickableMenu.drawHoverText(b, _restoreButtons[i].hoverText, Game1.smallFont);
+                    break;
+                }
+                if (i < _deleteButtons.Count && _deleteButtons[i].containsPoint(mx, my))
+                {
+                    IClickableMenu.drawHoverText(b, _deleteButtons[i].hoverText, Game1.smallFont);
+                    break;
+                }
             }
 
             base.draw(b);
