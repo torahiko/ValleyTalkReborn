@@ -20,6 +20,9 @@ namespace ValleytalkReborn
         private readonly Dictionary<string, DialogueHistoryEntry> _lastEntry = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, DialogueHistoryEntry> _pendingGifts = new(StringComparer.OrdinalIgnoreCase);
 
+        // ── 方案 A：物理写入时序缓存指针 ──
+        private string _lastActiveNpc = "";
+
         // ── 并发压缩守卫（MEM-08 N5 修复）──
         private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte>
             CompressionInFlight = new(System.StringComparer.OrdinalIgnoreCase);
@@ -228,6 +231,8 @@ namespace ValleytalkReborn
                 _history.Remove(npcName);
                 _lastEntry.Remove(npcName);
                 _pendingGifts.Remove(npcName);
+                if (string.Equals(_lastActiveNpc, npcName, StringComparison.OrdinalIgnoreCase))
+                    _lastActiveNpc = "";
             }
             DialogueMemoryCompressor.ClearCache(npcName);
         }
@@ -239,6 +244,7 @@ namespace ValleytalkReborn
                 _history.Clear();
                 _lastEntry.Clear();
                 _pendingGifts.Clear();
+                _lastActiveNpc = "";
             }
         }
 
@@ -246,7 +252,22 @@ namespace ValleytalkReborn
         {
             lock (_historyLock)
             {
-                return _lastEntry.OrderByDescending(x => x.Value.Timestamp.TimeOfDay).FirstOrDefault().Key ?? "";
+                // 方案 A：物理写入时序的绝对最新 NPC，O(1)，无平局漂移
+                if (!string.IsNullOrEmpty(_lastActiveNpc))
+                    return _lastActiveNpc;
+
+                // 回退：按游戏内时间戳打分（兼容首次加载旧存档等无缓存指针的场景）
+                StardewTime bestTime = default;
+                string best = "";
+                foreach (var (npc, entry) in _lastEntry)
+                {
+                    if (entry.Timestamp.CompareTo(bestTime) > 0)
+                    {
+                        bestTime = entry.Timestamp;
+                        best = npc;
+                    }
+                }
+                return best;
             }
         }
 
@@ -290,6 +311,7 @@ namespace ValleytalkReborn
 
                 list.Add(entry);
                 _lastEntry[npcName] = entry;
+                _lastActiveNpc = npcName;
 
                 if (list.Count > MaxEntriesPerNpc)
                 {
@@ -357,6 +379,7 @@ namespace ValleytalkReborn
 
                     _history.Clear();
                     _lastEntry.Clear();
+                    _lastActiveNpc = "";
 
                     foreach (var (npcName, serializableEntries) in data)
                     {
@@ -365,6 +388,17 @@ namespace ValleytalkReborn
                         {
                             _history[npcName] = entries;
                             _lastEntry[npcName] = entries[^1];
+                        }
+                    }
+
+                    // 恢复物理写入时序缓存指针：取所有 NPC 最新条目中时间戳最大者
+                    StardewTime loadedBestTime = default;
+                    foreach (var (npc, entry) in _lastEntry)
+                    {
+                        if (entry.Timestamp.CompareTo(loadedBestTime) > 0)
+                        {
+                            loadedBestTime = entry.Timestamp;
+                            _lastActiveNpc = npc;
                         }
                     }
 
@@ -407,6 +441,7 @@ namespace ValleytalkReborn
                 _history.Clear();
                 _lastEntry.Clear();
                 _pendingGifts.Clear();
+                _lastActiveNpc = "";
             }
 
             ModEntry.SMonitor?.Log("[DialogueHistoryManager] Cleaned up successfully.", LogLevel.Debug);
@@ -483,6 +518,7 @@ namespace ValleytalkReborn
         public Season Season { get; set; }
         public int Day { get; set; }
         public int TimeOfDay { get; set; }
+        public long UtcTimestampMs { get; set; }
         public string GiftName { get; set; }
         public int GiftTaste { get; set; } = -1;
 
@@ -499,6 +535,7 @@ namespace ValleytalkReborn
                 Season = entry.Timestamp.Season,
                 Day = entry.Timestamp.DayOfMonth,
                 TimeOfDay = entry.Timestamp.TimeOfDay,
+                UtcTimestampMs = entry.UtcTimestampMs,
                 GiftName = entry.GiftName,
                 GiftTaste = entry.GiftTaste
             };
@@ -510,7 +547,8 @@ namespace ValleytalkReborn
             var entry = new DialogueHistoryEntry(SpeakerName, Text, SpeakerType, time, DialogueType)
             {
                 GiftName = GiftName,
-                GiftTaste = GiftTaste
+                GiftTaste = GiftTaste,
+                UtcTimestampMs = UtcTimestampMs
             };
             return entry;
         }

@@ -79,6 +79,12 @@ namespace ValleytalkReborn
         public StardewTime Timestamp { get; set; }
 
         /// <summary>
+        /// Physical write-order timestamp (UTC ms). Stable tiebreaker when multiple
+        /// NPCs share the same in-game timeOfDay, eliminating HashSet iteration drift.
+        /// </summary>
+        public long UtcTimestampMs { get; set; } = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+        /// <summary>
         /// For gift entries: the gift object name
         /// </summary>
         public string GiftName { get; set; }
