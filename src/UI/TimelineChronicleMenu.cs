@@ -105,11 +105,15 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         _returnMenu = returnMenu;
         _ownerMenu = ownerMenu ?? returnMenu;
 
-        string latestNpc = GetMostRecentChattedNpc();
-        if (autoLockLatest && !string.IsNullOrWhiteSpace(latestNpc))
-            _npcName = latestNpc;
-        else
-            _npcName = !string.IsNullOrWhiteSpace(npcName) ? npcName : latestNpc;
+        // 优先使用显式传入的 npcName；未指定时且 autoLockLatest 为 true 时才自动查找最新聊天的 NPC
+        if (!string.IsNullOrWhiteSpace(npcName))
+        {
+            _npcName = npcName;
+        }
+        else if (autoLockLatest)
+        {
+            _npcName = GetMostRecentChattedNpc();
+        }
 
         if (string.IsNullOrWhiteSpace(_npcName))
         {
@@ -247,8 +251,14 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
     private static string GetMostRecentChattedNpc()
     {
+        // 方案 A：优先使用物理写入时序缓存指针（O(1)，无平局漂移）
+        string mgrRecent = DialogueHistoryManager.Instance.GetMostRecentNpc();
+        if (!string.IsNullOrEmpty(mgrRecent))
+            return mgrRecent;
+
+        // 回退：遍历候选 NPC，按 (游戏时间戳, UTC 毫秒) 元组打分消除平局漂移
         string bestNpc = null;
-        long maxScore = -1;
+        (long score, long utc) maxScore = (-1, -1);
 
         var candidateNpcs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (Game1.player?.friendshipData != null)
@@ -257,10 +267,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 candidateNpcs.Add(k);
         }
 
-        string mgrRecent = DialogueHistoryManager.Instance.GetMostRecentNpc();
-        if (!string.IsNullOrEmpty(mgrRecent))
-            candidateNpcs.Add(mgrRecent);
-
         foreach (var name in candidateNpcs)
         {
             var history = DialogueHistoryManager.Instance.GetHistory(name);
@@ -268,14 +274,15 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
             var last = history[^1];
             long score = GetTimestampScore(last.Timestamp);
-            if (score > maxScore)
+            long utc = last.UtcTimestampMs;
+            if ((score, utc).CompareTo(maxScore) > 0)
             {
-                maxScore = score;
+                maxScore = (score, utc);
                 bestNpc = name;
             }
         }
 
-        return bestNpc ?? mgrRecent ?? candidateNpcs.FirstOrDefault() ?? "";
+        return bestNpc ?? candidateNpcs.FirstOrDefault() ?? "";
     }
 
     private static long GetTimestampScore(StardewTime t)

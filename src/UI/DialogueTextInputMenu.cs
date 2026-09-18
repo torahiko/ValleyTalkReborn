@@ -492,7 +492,7 @@ namespace ValleytalkReborn
                 Game1.playSound("bigSelect");
                 Game1.keyboardDispatcher.Subscriber = null;
                 var target = _menuToRestore ?? this;
-                Game1.activeClickableMenu = new TimelineChronicleMenu(_npcName, target, target);
+                Game1.activeClickableMenu = new TimelineChronicleMenu(_npcName, target, target, autoLockLatest: false);
             }
             else if (_memoryButton.containsPoint(x, y))
             {

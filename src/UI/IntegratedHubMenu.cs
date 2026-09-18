@@ -122,7 +122,20 @@ namespace ValleytalkReborn
                 new Rectangle(_scrollbarRunner.X - 6, _scrollbarRunner.Y, 24, 40),
                 Game1.mouseCursors, new Rectangle(435, 463, 6, 10), 4f);
 
-            _currentNpcName = initialNpcName;
+            // 1. 优先使用传入的 NPC；若为空，回退到最近聊天 NPC 指针；仍无记录则兜底取好感度第一位
+            if (!string.IsNullOrWhiteSpace(initialNpcName))
+            {
+                _currentNpcName = initialNpcName;
+            }
+            else
+            {
+                _currentNpcName = DialogueHistoryManager.Instance.GetMostRecentNpc();
+                if (string.IsNullOrWhiteSpace(_currentNpcName))
+                {
+                    _currentNpcName = Game1.player?.friendshipData?.Keys.FirstOrDefault() ?? "";
+                }
+            }
+
             _npcDropdown = new DropdownList(Rectangle.Empty)
             {
                 HeaderPrefix = I18n.Hub.SelectNpcLabel(),
@@ -307,6 +320,7 @@ namespace ValleytalkReborn
             var items = new List<(string Id, string Label)>();
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+            // 1. 当前选中的 NPC 必在首位
             if (!string.IsNullOrWhiteSpace(_currentNpcName))
             {
                 string label = Game1.getCharacterFromName(_currentNpcName)?.displayName ?? _currentNpcName;
@@ -314,14 +328,23 @@ namespace ValleytalkReborn
                 seen.Add(_currentNpcName);
             }
 
-            var keys = Game1.player.friendshipData.Keys
+            // 2. 将最近聊天的 NPC（如果不是当前选中的话）优先排在第二位
+            string recent = DialogueHistoryManager.Instance.GetMostRecentNpc();
+            if (!string.IsNullOrEmpty(recent) && seen.Add(recent))
+            {
+                string label = Game1.getCharacterFromName(recent)?.displayName ?? recent;
+                items.Add((recent, label));
+            }
+
+            // 3. 其余好感度 NPC 保持字母排序
+            var remaining = Game1.player.friendshipData.Keys
                 .Where(k => !seen.Contains(k))
                 .OrderBy(k => k, StringComparer.OrdinalIgnoreCase);
-            foreach (var k in keys)
+
+            foreach (var k in remaining)
             {
                 string label = Game1.getCharacterFromName(k)?.displayName ?? k;
                 items.Add((k, label));
-                seen.Add(k);
             }
 
             _npcDropdown.SetItems(items, _currentNpcName);
