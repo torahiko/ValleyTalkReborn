@@ -16,10 +16,10 @@ namespace ValleytalkReborn
     /// </summary>
     internal static class CustomFontManager
     {
-        // FONT-03: 全局字号整体加大一号，避免偏小偏细
-        public const float SizeTitle = 25f;     // 顶栏 NPC 大标题（原 22f）
-        public const float SizeRegular = 18.5f; // Tab 标签、按钮、小节标题、单行/多行框文本（原 17f）
-        public const float SizeSmall = 15.5f;   // 底部提示、说明、标签项（原 14f）
+        // 字号调整为整数，避免光栅化产生亚像素模糊
+        public const float SizeTitle = 24f;     // 顶栏 NPC 大标题
+        public const float SizeRegular = 18f;   // Tab 标签、按钮、小节标题、单行/多行框文本
+        public const float SizeSmall = 15f;     // 底部提示、说明、标签项
 
         // 作用域: Config 常量
         private const string FontLatinFileName = "GoogleSans-Medium.ttf";
@@ -47,7 +47,8 @@ namespace ValleytalkReborn
                 {
                     TextureWidth = 1024,
                     TextureHeight = 1024,
-                    FontResolutionFactor = 1.0f
+                    // 提升超采样率至 2.0f，保证在高缩放或微小偏移下的文字清晰度
+                    FontResolutionFactor = 2.0f
                 });
 
                 string cjkPath = Path.Combine(helper.DirectoryPath, "assets", "fonts", FontCjkFileName);
@@ -109,35 +110,77 @@ namespace ValleytalkReborn
             }
         }
 
-        public static Vector2 MeasureString(string text, float fontSize = SizeRegular)
+        public static Vector2 MeasureString(string text, float fontSize = SizeRegular, float scale = 1f)
         {
             if (string.IsNullOrEmpty(text))
                 return Vector2.Zero;
 
             DynamicSpriteFont font = GetFont(fontSize);
             if (font == null)
-                return Game1.smallFont.MeasureString(text);
+                return Game1.smallFont.MeasureString(text) * scale;
 
-            // FontStashSharp 的 MeasureString 返回 Microsoft.Xna.Framework.Vector2，无需类型转换
-            return font.MeasureString(text);
+            return font.MeasureString(text, new Vector2(scale, scale));
         }
 
-        public static void DrawString(SpriteBatch b, string text, Vector2 position, Color color, float fontSize = SizeRegular)
+        /// <summary>
+        /// 按最大宽度截断文本（带省略号），使用 CustomFontManager 测量。
+        /// 用于替代 UiHelper.TruncateString 中需要 SpriteFont 的重载。
+        /// 未装载时回退 Game1.smallFont 测量，绝不抛异常。
+        /// </summary>
+        public static string TruncateString(string text, float fontSize, float maxWidth, float scale = 1f)
+        {
+            if (string.IsNullOrEmpty(text))
+                return text;
+
+            Func<string, float> measure;
+            DynamicSpriteFont font = GetFont(fontSize);
+            if (font != null)
+                measure = s => font.MeasureString(s, new Vector2(scale, scale)).X;
+            else
+                measure = s => Game1.smallFont.MeasureString(s).X * scale;
+
+            if (measure(text) <= maxWidth)
+                return text;
+
+            const string ellipsis = "...";
+            float targetWidth = maxWidth - measure(ellipsis);
+            if (targetWidth <= 0)
+                return ellipsis;
+
+            int low = 0, high = text.Length, best = 0;
+            while (low <= high)
+            {
+                int mid = (low + high) / 2;
+                if (measure(text.Substring(0, mid)) <= targetWidth)
+                {
+                    best = mid;
+                    low = mid + 1;
+                }
+                else
+                    high = mid - 1;
+            }
+            return text.Substring(0, best) + ellipsis;
+        }
+
+        public static void DrawString(SpriteBatch b, string text, Vector2 position, Color color, float fontSize = SizeRegular, float scale = 1f)
         {
             if (string.IsNullOrEmpty(text))
                 return;
 
+            // 强制对齐到整像素点，防止居中计算的小数坐标导致采样双线性模糊
+            position = new Vector2(MathF.Floor(position.X), MathF.Floor(position.Y));
+
             DynamicSpriteFont font = GetFont(fontSize);
             if (font == null)
             {
-                b.DrawString(Game1.smallFont, text, position, color);
+                b.DrawString(Game1.smallFont, text, position, color, 0f, Vector2.Zero, scale, SpriteEffects.None, 1f);
                 return;
             }
 
             try
             {
                 _renderer.Batch = b;
-                font.DrawText(_renderer, text, position, color);
+                font.DrawText(_renderer, text, position, color, 0f, Vector2.Zero, new Vector2(scale, scale));
             }
             catch (Exception ex)
             {
@@ -146,7 +189,7 @@ namespace ValleytalkReborn
                     Log.Warning($"[FontManager] DrawText 运行期异常，已回退原版字体: {ex.Message}");
                     _fallbackLogged = true;
                 }
-                b.DrawString(Game1.smallFont, text, position, color);
+                b.DrawString(Game1.smallFont, text, position, color, 0f, Vector2.Zero, scale, SpriteEffects.None, 1f);
             }
         }
 

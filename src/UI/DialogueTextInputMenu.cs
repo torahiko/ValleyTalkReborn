@@ -269,32 +269,24 @@ namespace ValleytalkReborn
                 true
             );
 
-            var titleSize = Game1.dialogueFont.MeasureString(_title);
+            var titleSize = CustomFontManager.MeasureString(_title, CustomFontManager.SizeTitle);
 
             Vector2 titlePos = new Vector2(
                 _menuPosition.X + (_currentMenuWidth - titleSize.X) / 2f,
                 _menuPosition.Y + TopPadding + (HeaderHeight - titleSize.Y) / 2f
             );
 
-            spriteBatch.DrawString(
-                Game1.dialogueFont,
-                _title,
-                titlePos,
-                Game1.textColor
-            );
+            CustomFontManager.DrawString(spriteBatch, _title, titlePos, Game1.textColor, CustomFontManager.SizeTitle);
 
             _inputTextBox.Draw(spriteBatch);
 
             string instruction = I18n.DialogueInput.Instruction();
-            spriteBatch.DrawString(
-                Game1.smallFont,
-                instruction,
+            CustomFontManager.DrawString(spriteBatch, instruction,
                 new Vector2(
-                    _menuPosition.X + (_currentMenuWidth - Game1.smallFont.MeasureString(instruction).X) / 2,
+                    _menuPosition.X + (_currentMenuWidth - CustomFontManager.MeasureString(instruction, CustomFontManager.SizeSmall).X) / 2,
                     _inputTextBox.Position.Y + _inputTextBox.Extent.Y + Margin * 1.2f
                 ),
-                Color.Gray
-            );
+                Color.Gray, CustomFontManager.SizeSmall);
 
             int mouseX = Game1.getMouseX();
             int mouseY = Game1.getMouseY();
@@ -315,10 +307,11 @@ namespace ValleytalkReborn
             _viewHistory.scale = _viewHistoryBaseScale * _viewHistoryHoverScale;
             _viewHistory.draw(spriteBatch);
 
+            // FONT-03: 悬浮提示使用矢量新字体渲染
             if (_clearHistory.containsPoint(mouseX, mouseY))
-                IClickableMenu.drawHoverText(spriteBatch, _clearHistory.hoverText, Game1.smallFont);
+                DrawHoverTextCustom(spriteBatch, _clearHistory.hoverText);
             else if (_viewHistory.containsPoint(mouseX, mouseY))
-                IClickableMenu.drawHoverText(spriteBatch, _viewHistory.hoverText, Game1.smallFont);
+                DrawHoverTextCustom(spriteBatch, _viewHistory.hoverText);
 
             base.draw(spriteBatch);
 
@@ -343,6 +336,37 @@ namespace ValleytalkReborn
             bool hover = button.containsPoint(mouseX, mouseY);
             float target = hover ? 1.15f : 1.0f;
             currentScale += (target - currentScale) * 0.2f;
+        }
+
+        /// <summary>
+        /// 悬浮提示的自定义矢量渲染：保留原版鼠标跟随位置与贴边 clamping，仅将文字替换为 CustomFontManager。
+        /// </summary>
+        private static void DrawHoverTextCustom(SpriteBatch b, string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return;
+            var sz = CustomFontManager.MeasureString(text, 17f);
+            int boxW = (int)sz.X + 24;
+            int boxH = (int)sz.Y + 24;
+            int x = Game1.getOldMouseX() + 32;
+            int y = Game1.getOldMouseY() + 32;
+            var safe = Utility.getSafeArea();
+            if (x + boxW > safe.Right)
+                x = safe.Right - boxW;
+            if (y + boxH > safe.Bottom)
+            {
+                x += 16;
+                if (x + boxW > safe.Right)
+                    x = safe.Right - boxW;
+                y = safe.Bottom - boxH;
+            }
+            if (x < safe.Left)
+                x = safe.Left;
+            if (y < safe.Top)
+                y = safe.Top;
+            IClickableMenu.drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
+                x, y, boxW, boxH, Color.White, 1f, false);
+            CustomFontManager.DrawString(b, text, new Vector2(x + 12, y + 12), Game1.textColor, 17f);
         }
 
         public override void receiveLeftClick(int x, int y, bool playSound = true)

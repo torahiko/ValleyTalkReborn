@@ -22,7 +22,7 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
 {
     private enum DistillState { Loading, Ready, Failed }
 
-    private const float TextFontScale = 0.8f;
+    private const float TextFontScale = 1f;
     private const int CardPaddingX = 18;
     private const int CardPaddingY = 14;
     private const int CardSpacing = 14;
@@ -131,7 +131,7 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
             {
                 string line = $"• {src.Content}";
                 string wrapped = Game1.parseText(line, Game1.smallFont, textW);
-                textTotalH += (int)Game1.smallFont.MeasureString(wrapped).Y + 4;
+                textTotalH += (int)CustomFontManager.MeasureString(wrapped, CustomFontManager.SizeRegular).Y + 4;
             }
 
             int boxH = 26 + textTotalH + sourcePadY * 2;
@@ -150,7 +150,7 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
         {
             string cand = _candidates[i];
             string wrapped = Game1.parseText(cand ?? string.Empty, Game1.dialogueFont, (int)(maxTextPixelWidth / TextFontScale));
-            Vector2 textSize = Game1.dialogueFont.MeasureString(wrapped) * TextFontScale;
+            Vector2 textSize = CustomFontManager.MeasureString(wrapped, CustomFontManager.SizeRegular, TextFontScale);
 
             const int headerH = 34;
             int cardH = (int)(headerH + textSize.Y + CardPaddingY * 2);
@@ -396,16 +396,16 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
                 : I18n.TimelineDistill.TitleChronicle(_npcDisplayName))
             : I18n.TimelineDistill.TitleDaily(_npcDisplayName);
 
-        Vector2 titleSize = Game1.dialogueFont.MeasureString(title);
-        b.DrawString(Game1.dialogueFont, title,
+        Vector2 titleSize = CustomFontManager.MeasureString(title, CustomFontManager.SizeTitle);
+        CustomFontManager.DrawString(b, title,
             new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f, yPositionOnScreen + 22),
-            Game1.textColor);
+            Game1.textColor, CustomFontManager.SizeTitle);
 
         int currentCap = MemoryManager.Instance.GetTimelineMemories(_npcName, _targetTier).Count;
         int maxCap = MemoryManager.GetTierCapacity(_targetTier);
         string capText = I18n.TimelineDistill.Capacity(currentCap, maxCap);
         // 向上挪移指示器位置至 _contentTopY - 45，避免侵入词条卡片内容区
-        b.DrawString(Game1.smallFont, capText, new Vector2(_bodyX, _contentTopY - 45), Color.DimGray);
+        CustomFontManager.DrawString(b, capText, new Vector2(_bodyX, _contentTopY - 45), Color.DimGray, CustomFontManager.SizeSmall);
 
         // 关闭按钮
         UiHelper.UpdateButtonScale(ref _closeButtonHoverScale, _closeButton, mx, my);
@@ -415,10 +415,10 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
         if (_state == DistillState.Loading)
         {
             string loading = I18n.TimelineDistill.Loading();
-            var size = Game1.dialogueFont.MeasureString(loading);
-            b.DrawString(Game1.dialogueFont, loading,
+            var size = CustomFontManager.MeasureString(loading, CustomFontManager.SizeRegular);
+            CustomFontManager.DrawString(b, loading,
                 new Vector2(xPositionOnScreen + (width - size.X) / 2f, yPositionOnScreen + (height - size.Y) / 2f),
-                Game1.textColor);
+                Game1.textColor, CustomFontManager.SizeRegular);
         }
         else
         {
@@ -452,15 +452,15 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
                 new Color(245, 235, 220), 3f, false);
 
             string srcHeader = I18n.TimelineDistill.SourceHeader(_sourceEntriesToRemove.Count);
-            b.DrawString(Game1.smallFont, srcHeader, new Vector2(curBox.X + 14, curBox.Y + 8), new Color(110, 70, 30));
+            CustomFontManager.DrawString(b, srcHeader, new Vector2(curBox.X + 14, curBox.Y + 8), new Color(110, 70, 30), CustomFontManager.SizeRegular);
 
             int lineY = curBox.Y + 30;
             int textW = _bodyWidth - 32;
             foreach (var src in _sourceEntriesToRemove)
             {
                 string wrapped = Game1.parseText($"• {src.Content}", Game1.smallFont, textW);
-                b.DrawString(Game1.smallFont, wrapped, new Vector2(curBox.X + 16, lineY), Color.DimGray);
-                lineY += (int)Game1.smallFont.MeasureString(wrapped).Y + 4;
+                CustomFontManager.DrawString(b, wrapped, new Vector2(curBox.X + 16, lineY), Color.DimGray, CustomFontManager.SizeRegular);
+                lineY += (int)CustomFontManager.MeasureString(wrapped, CustomFontManager.SizeRegular).Y + 4;
             }
         }
 
@@ -486,9 +486,9 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
 
             // 卡片 Header：标签
             string draftTag = I18n.TimelineDistill.DraftTag(layout.Index + 1);
-            b.DrawString(Game1.smallFont, draftTag,
+            CustomFontManager.DrawString(b, draftTag,
                 new Vector2(cardRect.X + CardPaddingX, cardRect.Y + CardPaddingY),
-                new Color(130, 85, 45));
+                new Color(130, 85, 45), CustomFontManager.SizeRegular);
 
             // 卡片 Header 右侧按钮：微调 & 收录
             int btnRightX = cardRect.Right - CardPaddingX;
@@ -498,7 +498,7 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
             {
                 // 收录按钮
                 string addText = I18n.TimelineDistill.CollectButton();
-                int addW = (int)Game1.smallFont.MeasureString(addText).X + 24;
+                int addW = (int)CustomFontManager.MeasureString(addText, CustomFontManager.SizeRegular).X + 24;
                 layout.AddBtnRect = new Rectangle(btnRightX - addW, btnY, addW, 28);
                 bool addHover = layout.AddBtnRect.Contains(mx, my);
 
@@ -506,11 +506,11 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
                     layout.AddBtnRect.X, layout.AddBtnRect.Y, layout.AddBtnRect.Width, layout.AddBtnRect.Height,
                     addHover ? new Color(255, 235, 205) : new Color(139, 90, 43), 3f, false);
 
-                var addSize = Game1.smallFont.MeasureString(addText);
-                b.DrawString(Game1.smallFont, addText,
+                var addSize = CustomFontManager.MeasureString(addText, CustomFontManager.SizeRegular);
+                CustomFontManager.DrawString(b, addText,
                     new Vector2(layout.AddBtnRect.X + (layout.AddBtnRect.Width - addSize.X) / 2f,
                                 layout.AddBtnRect.Y + (layout.AddBtnRect.Height - addSize.Y) / 2f),
-                    addHover ? Game1.textColor : Color.White);
+                    addHover ? Game1.textColor : Color.White, CustomFontManager.SizeRegular);
 
                 // 微调按钮 (铅笔) — 32×32 图标组件，自带按压下沉与切片切换动效
                 layout.EditBtnRect = new Rectangle(layout.AddBtnRect.X - 38, btnY - 2, 32, 32);
@@ -534,16 +534,16 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
                 layout.AddBtnRect = Rectangle.Empty;
                 layout.EditBtnRect = Rectangle.Empty;
                 string stamped = I18n.TimelineDistill.CollectedStamp();
-                var stampSize = Game1.smallFont.MeasureString(stamped);
-                b.DrawString(Game1.smallFont, stamped,
+                var stampSize = CustomFontManager.MeasureString(stamped, CustomFontManager.SizeRegular);
+                CustomFontManager.DrawString(b, stamped,
                     new Vector2(btnRightX - stampSize.X, btnY + 4),
-                    new Color(40, 140, 60));
+                    new Color(40, 140, 60), CustomFontManager.SizeRegular);
             }
 
             // 卡片内容文字（完全不截断自适应展开）
             Vector2 textPos = new Vector2(cardRect.X + CardPaddingX, cardRect.Y + CardPaddingY + 28);
             Color contentColor = isUsed ? Color.Gray * 0.7f : Game1.textColor;
-            b.DrawString(Game1.dialogueFont, layout.WrappedText, textPos, contentColor, 0f, Vector2.Zero, TextFontScale, SpriteEffects.None, 0.88f);
+            CustomFontManager.DrawString(b, layout.WrappedText, textPos, contentColor, CustomFontManager.SizeRegular, TextFontScale);
         }
 
         b.End();

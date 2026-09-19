@@ -175,15 +175,15 @@ namespace ValleytalkReborn
             string title = I18n.Memory.CallsignTitle(_npcName);
             string hint = I18n.Memory.CallsignHint();
 
-            var titleSize = Game1.dialogueFont.MeasureString(title);
-            b.DrawString(Game1.dialogueFont, title,
+            var titleSize = CustomFontManager.MeasureString(title, CustomFontManager.SizeTitle);
+            CustomFontManager.DrawString(b, title,
                 new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f, yPositionOnScreen + 18),
-                Game1.textColor);
+                Game1.textColor, CustomFontManager.SizeTitle);
 
-            var hintSize = Game1.smallFont.MeasureString(hint);
-            b.DrawString(Game1.smallFont, hint,
+            var hintSize = CustomFontManager.MeasureString(hint, CustomFontManager.SizeSmall);
+            CustomFontManager.DrawString(b, hint,
                 new Vector2(xPositionOnScreen + (width - hintSize.X) / 2f, yPositionOnScreen + 58),
-                Color.Gray);
+                Color.Gray, CustomFontManager.SizeSmall);
 
             _inputBox.Draw(b);
 
@@ -476,20 +476,20 @@ namespace ValleytalkReborn
                     ? I18n.Memory.EditTitle(_npcName)
                     : I18n.Memory.AddTitle(_npcName));
 
-            var titleSize = Game1.dialogueFont.MeasureString(title);
+            var titleSize = CustomFontManager.MeasureString(title, CustomFontManager.SizeTitle);
 
-            b.DrawString(Game1.dialogueFont, title,
+            CustomFontManager.DrawString(b, title,
                 new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f,
                             yPositionOnScreen + 20),
-                Game1.textColor);
+                Game1.textColor, CustomFontManager.SizeTitle);
 
             string hint = _tab == 1
                 ? I18n.Memory.WorldAddHint(WorldMemoryManager.MaxEntryLength)
                 : I18n.Memory.AddHint(_npcName);
 
-            var hintSize = Game1.smallFont.MeasureString(hint);
+            var hintSize = CustomFontManager.MeasureString(hint, CustomFontManager.SizeSmall);
 
-            b.DrawString(Game1.smallFont, hint,
+            CustomFontManager.DrawString(b, hint,
                 new Vector2(xPositionOnScreen + (width - hintSize.X) / 2f,
                             yPositionOnScreen + 20 + Game1.dialogueFont.LineSpacing),
                 Color.Gray);
@@ -530,28 +530,28 @@ namespace ValleytalkReborn
                 string factLabel = I18n.Memory.CategoryFactLabel();
                 string behaviorLabel = I18n.Memory.CategoryBehaviorLabel();
 
-                var factSize = Game1.smallFont.MeasureString(factLabel);
-                var behaviorSize = Game1.smallFont.MeasureString(behaviorLabel);
+                var factSize = CustomFontManager.MeasureString(factLabel, CustomFontManager.SizeSmall);
+                var behaviorSize = CustomFontManager.MeasureString(behaviorLabel, CustomFontManager.SizeSmall);
 
                 Color factTextColor = GetCapsuleTextColor(factSelected, factHover);
                 Color behaviorTextColor = GetCapsuleTextColor(behaviorSelected, behaviorHover);
 
-                b.DrawString(Game1.smallFont, factLabel,
+                CustomFontManager.DrawString(b, factLabel,
                     new Vector2(_factCapsuleRect.X + (_factCapsuleRect.Width - factSize.X) / 2f,
                                 _factCapsuleRect.Y + (_factCapsuleRect.Height - factSize.Y) / 2f),
-                    factTextColor);
-                b.DrawString(Game1.smallFont, behaviorLabel,
+                    factTextColor, CustomFontManager.SizeSmall);
+                CustomFontManager.DrawString(b, behaviorLabel,
                     new Vector2(_behaviorCapsuleRect.X + (_behaviorCapsuleRect.Width - behaviorSize.X) / 2f,
                                 _behaviorCapsuleRect.Y + (_behaviorCapsuleRect.Height - behaviorSize.Y) / 2f),
-                    behaviorTextColor);
+                    behaviorTextColor, CustomFontManager.SizeSmall);
 
                 string hint2 = factSelected ? I18n.Memory.CategoryFactHint() : I18n.Memory.CategoryBehaviorHint();
-                var hintSize2 = Game1.smallFont.MeasureString(hint2);
+                var hintSize2 = CustomFontManager.MeasureString(hint2, CustomFontManager.SizeSmall);
                 int capsuleBottom = Math.Max(_factCapsuleRect.Bottom, _behaviorCapsuleRect.Bottom);
-                b.DrawString(Game1.smallFont, hint2,
+                CustomFontManager.DrawString(b, hint2,
                     new Vector2(xPositionOnScreen + (width - hintSize2.X) / 2f,
                                 capsuleBottom + 8),
-                    Color.Gray);
+                    Color.Gray, CustomFontManager.SizeSmall);
             }
 
             UiHelper.UpdateButtonScale(ref _okButtonHoverScale, _okButton, mx, my);

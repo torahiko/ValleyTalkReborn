@@ -385,7 +385,8 @@ namespace ValleytalkReborn
         private void HandleDelete(int i)
         {
             MemoryEntry entry = _cachedEntries[i];
-            string safeContent = UiHelper.TruncateString(entry.Content, Game1.dialogueFont, 320f);
+            // 弹窗确认提示采用常规正文字号进行宽度测量与截断
+            string safeContent = CustomFontManager.TruncateString(entry.Content, CustomFontManager.SizeRegular, 320f);
             Game1.activeClickableMenu = new ConfirmationDialog(
                 I18n.Memory.ArchiveDeleteConfirm(safeContent),
                 _ =>
@@ -418,24 +419,24 @@ namespace ValleytalkReborn
                 width + 16, height + 16, Color.White);
             Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
 
-            // 标题
+            // 标题（24f 整数大标题）
             string title = _titleSource();
-            var titleSize = Game1.dialogueFont.MeasureString(title);
-            b.DrawString(Game1.dialogueFont, title,
+            var titleSize = CustomFontManager.MeasureString(title, CustomFontManager.SizeTitle);
+            CustomFontManager.DrawString(b, title,
                 new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f, yPositionOnScreen + 20),
-                Game1.textColor);
+                Game1.textColor, CustomFontManager.SizeTitle);
 
-            // 归档记录容量文本
+            // 归档记录容量文本（15f 整数小字）
             string countText = I18n.Memory.ArchiveCount(_cachedEntries.Count, _capacity);
-            var countSize = Game1.smallFont.MeasureString(countText);
+            var countSize = CustomFontManager.MeasureString(countText, CustomFontManager.SizeSmall);
             Color countColor = _cachedEntries.Count >= NearFullThreshold
                 ? new Color(255, 175, 70)
                 : Color.Gray;
 
-            b.DrawString(Game1.smallFont, countText,
+            CustomFontManager.DrawString(b, countText,
                 new Vector2(_clearButtonRect.X - 12 - countSize.X,
-                            _clearButtonRect.Y + (_clearButtonRect.Height - countSize.Y) / 2f - 4f),
-                countColor);
+                            _clearButtonRect.Y + (_clearButtonRect.Height - countSize.Y) / 2f),
+                countColor, CustomFontManager.SizeSmall);
 
             // ─── 清空按钮（常态统一为木质样式，悬停一律高亮） ───
             bool clearHover = _clearButtonRect.Contains(mx, my);
@@ -448,19 +449,19 @@ namespace ValleytalkReborn
                 clearBg, 4f, false);
 
             string clearLabel = I18n.Memory.ArchiveClearButton();
-            var clearLabelSize = Game1.smallFont.MeasureString(clearLabel);
+            var clearLabelSize = CustomFontManager.MeasureString(clearLabel, CustomFontManager.SizeRegular);
             Vector2 clearTextPos = new Vector2(
                 _clearButtonRect.X + (_clearButtonRect.Width - clearLabelSize.X) / 2f,
                 _clearButtonRect.Y + (_clearButtonRect.Height - clearLabelSize.Y) / 2f);
 
-            b.DrawString(Game1.smallFont, clearLabel, clearTextPos, clearHover ? Game1.textColor : Color.White);
+            CustomFontManager.DrawString(b, clearLabel, clearTextPos, clearHover ? Game1.textColor : Color.White, CustomFontManager.SizeRegular);
 
-            // 底部淘汰规则提示
+            // 底部淘汰规则提示（15f 整数小字）
             string ruleHint = _ruleHintSource();
-            var ruleHintSize = Game1.smallFont.MeasureString(ruleHint);
-            b.DrawString(Game1.smallFont, ruleHint,
-                new Vector2(xPositionOnScreen + (width - ruleHintSize.X) / 2f, yPositionOnScreen + height - 60),
-                Color.Gray * 0.85f);
+            var ruleHintSize = CustomFontManager.MeasureString(ruleHint, CustomFontManager.SizeSmall);
+            CustomFontManager.DrawString(b, ruleHint,
+                new Vector2(xPositionOnScreen + (width - ruleHintSize.X) / 2f, yPositionOnScreen + height - 56),
+                Color.Gray * 0.85f, CustomFontManager.SizeSmall);
 
             // 关闭按钮
             UiHelper.UpdateButtonScale(ref _closeButtonHoverScale, _closeButton, mx, my);
@@ -471,20 +472,15 @@ namespace ValleytalkReborn
             if (_cachedEntries.Count == 0)
             {
                 string emptyText = _emptySource();
-                float fontScale = 0.75f;
-                var emptySize = Game1.dialogueFont.MeasureString(emptyText) * fontScale;
+                var emptySize = CustomFontManager.MeasureString(emptyText, CustomFontManager.SizeRegular);
 
-                b.DrawString(
-                    Game1.dialogueFont,
+                CustomFontManager.DrawString(
+                    b,
                     emptyText,
                     new Vector2(xPositionOnScreen + (width - emptySize.X) / 2f,
                                 yPositionOnScreen + TopPadding + 80),
                     Color.Gray,
-                    0f,
-                    Vector2.Zero,
-                    fontScale,
-                    SpriteEffects.None,
-                    1f);
+                    CustomFontManager.SizeRegular);
             }
             else
             {
@@ -517,32 +513,32 @@ namespace ValleytalkReborn
                     string tag = isRule ? I18n.Memory.RuleTag() : I18n.Memory.MemoryTag();
                     Color contentColor = entry.Source == "Auto" ? new Color(130, 150, 170) : Game1.textColor;
 
-                    // 第一行：记忆文本
+                    // 第一行：记忆文本（18f 规整正文）
                     string content = $"{i + 1}. {tag}{entry.Content}";
-                    content = UiHelper.TruncateString(content, Game1.smallFont, maxTextWidth);
-                    b.DrawString(Game1.smallFont, content,
-                        new Vector2(textStartX, rowY + 7),
-                        contentColor);
+                    content = CustomFontManager.TruncateString(content, CustomFontManager.SizeRegular, maxTextWidth);
+                    CustomFontManager.DrawString(b, content,
+                        new Vector2(textStartX, rowY + 6),
+                        contentColor, CustomFontManager.SizeRegular);
 
-                    // 第二行：时间戳与预警
+                    // 第二行：时间戳与预警（15f 规整小字）
                     string time = entry.ArchivedAt != default
                         ? entry.ArchivedAt.ToString("yyyy-MM-dd HH:mm")
                         : entry.CreatedAt.ToString("yyyy-MM-dd HH:mm");
 
-                    b.DrawString(Game1.smallFont, time,
-                        new Vector2(textStartX, rowY + 32),
-                        Color.Gray * 0.85f);
+                    CustomFontManager.DrawString(b, time,
+                        new Vector2(textStartX, rowY + 34),
+                        Color.Gray * 0.85f, CustomFontManager.SizeSmall);
 
                     if (_cachedEntries.Count >= _capacity && i == _cachedEntries.Count - 1)
                     {
-                        float timeWidth = Game1.smallFont.MeasureString(time).X;
+                        float timeWidth = CustomFontManager.MeasureString(time, CustomFontManager.SizeSmall).X;
                         string endangeredTag = $"  •  {I18n.Memory.ArchiveEndangeredTag()}";
-                        b.DrawString(Game1.smallFont, endangeredTag,
-                            new Vector2(textStartX + timeWidth, rowY + 32),
-                            new Color(235, 95, 75));
+                        CustomFontManager.DrawString(b, endangeredTag,
+                            new Vector2(textStartX + timeWidth, rowY + 34),
+                            new Color(235, 95, 75), CustomFontManager.SizeSmall);
                     }
 
-                    // 右侧操作按钮（统一图标组件绘制，自带按压下沉与切片切换动效）
+                    // 右侧操作按钮
                     if (vis < _restoreButtons.Count)
                     {
                         var btn = _restoreButtons[vis];
@@ -584,7 +580,7 @@ namespace ValleytalkReborn
             // 关闭按钮 Tooltip
             if (_closeButton.containsPoint(mx, my))
             {
-                IClickableMenu.drawHoverText(b, _closeButton.hoverText, Game1.smallFont);
+                DrawHoverTextCustom(b, _closeButton.hoverText);
             }
 
             // 还原/删除按钮 Tooltip
@@ -592,18 +588,47 @@ namespace ValleytalkReborn
             {
                 if (_restoreButtons[i].containsPoint(mx, my))
                 {
-                    IClickableMenu.drawHoverText(b, _restoreButtons[i].hoverText, Game1.smallFont);
+                    DrawHoverTextCustom(b, _restoreButtons[i].hoverText);
                     break;
                 }
                 if (i < _deleteButtons.Count && _deleteButtons[i].containsPoint(mx, my))
                 {
-                    IClickableMenu.drawHoverText(b, _deleteButtons[i].hoverText, Game1.smallFont);
+                    DrawHoverTextCustom(b, _deleteButtons[i].hoverText);
                     break;
                 }
             }
 
             base.draw(b);
             drawMouse(b);
+        }
+
+        /// <summary>
+        /// 悬浮提示的自定义矢量渲染：使用整数字阶 SizeRegular (18f)
+        /// </summary>
+        private static void DrawHoverTextCustom(SpriteBatch b, string text)
+        {
+            var sz = CustomFontManager.MeasureString(text, CustomFontManager.SizeRegular);
+            int boxW = (int)sz.X + 24;
+            int boxH = (int)sz.Y + 24;
+            int x = Game1.getOldMouseX() + 32;
+            int y = Game1.getOldMouseY() + 32;
+            var safe = Utility.getSafeArea();
+            if (x + boxW > safe.Right)
+                x = safe.Right - boxW;
+            if (y + boxH > safe.Bottom)
+            {
+                x += 16;
+                if (x + boxW > safe.Right)
+                    x = safe.Right - boxW;
+                y = safe.Bottom - boxH;
+            }
+            if (x < safe.Left)
+                x = safe.Left;
+            if (y < safe.Top)
+                y = safe.Top;
+            IClickableMenu.drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
+                x, y, boxW, boxH, Color.White, 1f, false);
+            CustomFontManager.DrawString(b, text, new Vector2(x + 12, y + 12), Game1.textColor, CustomFontManager.SizeRegular);
         }
     }
 }

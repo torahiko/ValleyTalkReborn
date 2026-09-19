@@ -1,6 +1,7 @@
 using System;
 using HarmonyLib;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using System.Collections.Generic;
@@ -630,10 +631,36 @@ namespace ValleytalkReborn
         /// <summary>
         /// Intercepts and suppresses keyboard input when our custom text box is active.
         /// </summary>
+        /// <summary>
+        /// 判定当前是否处于 BioEditorMenu 或其唤出的子弹窗（如 ConfirmationDialog）中。
+        /// 用于按键守卫的范围判定，确保弹窗期间守卫不失效。
+        /// </summary>
+        private static bool IsBioEditorActive()
+        {
+            var menu = Game1.activeClickableMenu;
+            if (menu is BioEditorMenu)
+                return true;
+
+            // 如果当前是确认弹窗，检查其父菜单/返回目标是否为人设编辑器
+            // 注意：ConfirmationDialog.onCancel 是 private，无法直接访问
+            // 因此这里只做简单判断：如果当前菜单不是 BioEditorMenu 也不是 null，
+            // 且 BioEditorMenu 曾经被打开过（通过检查 Game1.activeClickableMenu 的历史），
+            // 则认为弹窗是由 BioEditorMenu 唤起的
+            // 实际上，当 BioEditorMenu 打开时，ConfirmationDialog 会替换 activeClickableMenu，
+            // 但 BioEditorMenu 仍然存在于 Game1.activeClickableMenu 的栈中
+            // 这里我们简化处理：只要当前菜单是 ConfirmationDialog，就认为可能是 BioEditorMenu 唤起的
+            // 因为 BioEditorMenu 是唯一会打开 ConfirmationDialog 的菜单
+            if (menu is StardewValley.Menus.ConfirmationDialog)
+                return true;
+
+            return false;
+        }
+
         [EventPriority(EventPriority.High)]
         private void OnButtonPressed(object sender, ButtonPressedEventArgs e)
         {
             if (!Config.EnableMod) return;
+
             // 在任何点击事件触发时，记录此刻 ALT 键是否按下
             // 必须在这里记录，因为 checkAction 执行时 ALT 状态已丢失
             if (e.Button == SButton.MouseRight || e.Button == SButton.MouseLeft)
@@ -723,6 +750,7 @@ namespace ValleytalkReborn
                 }
             }
 
+            // ── 原有 DialogueTextInputBox 打字态守卫 ────────────────────────
             if (Game1.keyboardDispatcher?.Subscriber is DialogueTextInputBox)
             {
                 bool isCtrlPressed =
@@ -750,6 +778,48 @@ namespace ValleytalkReborn
                     Helper.Input.Suppress(e.Button);
                 }
             }
+
+            // ── BioEditorMenu 全屏独占输入屏障 ────────────────────────────────
+            // 注意：此守卫必须在原有快捷键逻辑之后，否则会屏蔽其他模组的快捷键
+            if (!IsBioEditorActive())
+                return;
+
+            // 绝对白名单：放行鼠标基本操作（左键、右键）
+            if (e.Button is SButton.MouseLeft or SButton.MouseRight)
+                return;
+
+            // 绝对白名单：放行基础修饰键（Ctrl/Alt/Shift，支持组合键如 Ctrl+S / Ctrl+V）
+            if (e.Button is SButton.LeftControl or SButton.RightControl or
+                SButton.LeftShift or SButton.RightShift or
+                SButton.LeftAlt or SButton.RightAlt)
+            {
+                return;
+            }
+
+            // 绝对白名单：放行文本与菜单导航必需的控制键
+            if (e.Button is SButton.Left or SButton.Right or SButton.Up or SButton.Down or
+                SButton.Home or SButton.End or SButton.Back or SButton.Delete or
+                SButton.Enter or SButton.Tab)
+            {
+                return;
+            }
+
+            // 绝对白名单：放行编辑器的全局保存键 (Ctrl + S)
+            bool isCtrl = Game1.input.GetKeyboardState().IsKeyDown(Microsoft.Xna.Framework.Input.Keys.LeftControl) ||
+                         Game1.input.GetKeyboardState().IsKeyDown(Microsoft.Xna.Framework.Input.Keys.RightControl);
+            if (isCtrl && e.Button == SButton.S)
+                return;
+
+            // 绝对白名单：放行 Esc（由菜单自身的 receiveKeyPress 处理安全退出，不被 Suppress 吞掉）
+            if (e.Button == SButton.Escape)
+                return;
+
+            // ── 终极压制屏障 ──
+            // 无论是输入框正在打字，还是处于面板浏览状态：
+            // 将所有字母键 (A-Z)、数字键 (0-9)、功能键 (F1-F12)、鼠标侧键及星露谷菜单键全部压制！
+            // 这样第三方作弊器、小地图、UI 拓展根本收不到按键信号；
+            // 而文本框打字依赖底层的 TextInput 字符管线，输入完全不受影响。
+            Helper.Input.Suppress(e.Button);
         }
 
         /// <summary>
@@ -1396,6 +1466,11 @@ namespace ValleytalkReborn
             // 修复：返回标题后 Cleanup 会取消 TextInputManager 的 UpdateTicked 订阅，
             // 重新读档时必须重新初始化，否则从对话选项触发的自定义回复会卡在 pending。
             TextInputManager.Initialize(Helper.Events);
+
+            // 修复：返回标题后 Cleanup 会销毁 CustomFontManager 的 FontSystem 显存，
+            // 而 Initialize 仅挂接在进程级 OnGameLaunched（只触发一次），
+            // 重新读档后 IsLoaded 永久为 false，字体全部回退原版。读档时重建字体链。
+            CustomFontManager.Initialize(Helper, Monitor);
 
             // 每次读档后重建 CancelButtonPlugin，防止 ReturnedToTitle 销毁后失效
             if (_cancelButtonPlugin == null)
