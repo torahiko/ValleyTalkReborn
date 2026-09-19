@@ -80,18 +80,34 @@ namespace ValleytalkReborn
         private Rectangle _bioBoxRect;
         private Rectangle _saveButtonRect;
 
-        // ── Tab2 分段条（玩家档案 / NPC 档案）────────────────────────────
-        private const int SubTabBarH = 32;              // 分段条高
-        private const int SubTabContentOffset = 42;     // 内容区下移量（分段条 32 + 间距 10）
-        private int _profileSubTab = 0;                 // 0=玩家档案(现状), 1=NPC档案（Memory 作用域，菜单重建归零）
+        // ── Tab2 分段条与宫格状态 ───────────────────────────────────────
+        private const int SubTabBarH = 34;
+        private const int SubTabContentOffset = 44;
+        private int _profileSubTab = 0; // 0=玩家档案, 1=NPC档案宫格
         private Rectangle _subTabPlayerRect;
         private Rectangle _subTabNpcRect;
-        private DropdownList _npcBioDropdown;          // NPC 档案页下拉，数据源同 _npcDropdown
-        private Rectangle _openFullBioEditorBtnRect;
-        private Rectangle _resetNpcBioBtnRect;
-        private string _bioSummaryIdentity = "";
-        private string _bioSummaryHabit = "";
-        private bool _wasObscured;                      // 返回刷新检测：上一帧是否被编辑器遮挡
+        private bool _wasObscured;
+
+        // NPC 档案宫格卡片实体与分页
+        private sealed class NpcCardInfo
+        {
+            public string Name;
+            public string DisplayName;
+            public Texture2D Portrait;
+            public Rectangle SmileSourceRect;
+            public bool HasCustomOverlay;
+        }
+
+        private List<NpcCardInfo> _allNpcCards = new List<NpcCardInfo>();
+        private List<NpcCardInfo> _displayNpcCards = new List<NpcCardInfo>();
+        private int _npcGridPage = 0;
+        private bool _filterCustomOnly = false;
+        private Rectangle _filterCheckboxRect;
+        private Rectangle _prevPageBtnRect;
+        private Rectangle _nextPageBtnRect;
+        private readonly List<(NpcCardInfo Card, Rectangle Bounds, Rectangle ResetBtnBounds)> _visibleCardSlots = new();
+
+        private string _hoveredGlobalTooltip = null;
 
         // ── Tab3（高级设置）状态 ────────────────────────────────────────
         private Rectangle _tab3RowInfinite;
@@ -105,20 +121,17 @@ namespace ValleytalkReborn
 
         public IntegratedHubMenu(string initialNpcName, int initialTab)
         {
-            // 响应式宽高适配
-            width = Math.Max(680, Math.Min(1000, Game1.uiViewport.Width - 80));
-            height = Math.Max(500, Math.Min(680, Game1.uiViewport.Height - 80));
+            width = Math.Max(700, Math.Min(1000, Game1.uiViewport.Width - 80));
+            height = Math.Max(520, Math.Min(680, Game1.uiViewport.Height - 80));
             xPositionOnScreen = (Game1.uiViewport.Width - width) / 2;
             yPositionOnScreen = (Game1.uiViewport.Height - height) / 2;
 
-            // 关闭按钮
             _closeButton = new ClickableTextureComponent(
                 new Rectangle(xPositionOnScreen + width - 60, yPositionOnScreen + 16, 44, 44),
                 Game1.mouseCursors, new Rectangle(337, 494, 12, 12), 3.5f);
             _closeButtonBaseScale = 3.5f;
             _closeButton.hoverText = I18n.Memory.CloseButton();
 
-            // 滚动控件
             _upArrow = new ClickableTextureComponent(
                 new Rectangle(xPositionOnScreen + width - 48, yPositionOnScreen + TopPadding, 44, 48),
                 Game1.mouseCursors, new Rectangle(421, 459, 11, 12), 4f);
@@ -137,7 +150,6 @@ namespace ValleytalkReborn
                 new Rectangle(_scrollbarRunner.X - 6, _scrollbarRunner.Y, 24, 40),
                 Game1.mouseCursors, new Rectangle(435, 463, 6, 10), 4f);
 
-            // 1. 优先使用传入的 NPC；若为空，回退到最近聊天 NPC 指针；仍无记录则兜底取好感度第一位
             if (!string.IsNullOrWhiteSpace(initialNpcName))
             {
                 _currentNpcName = initialNpcName;
@@ -157,7 +169,6 @@ namespace ValleytalkReborn
                 OnItemSelected = name => SelectNpc(name)
             };
 
-            // 计算所有自适应坐标
             RecalculateAllLayout();
             BuildNpcDropdownItems();
 
@@ -174,7 +185,6 @@ namespace ValleytalkReborn
             int tabBaseX = xPositionOnScreen + LeftPadding;
             int tabBaseY = yPositionOnScreen + TabBarY;
 
-            // 1. 4个 Tab 宽度动态等分撑满
             int totalTabSpace = width - LeftPadding - RightPadding;
             int tabW = (totalTabSpace - (TabGap * 3)) / 4;
             for (int i = 0; i < 4; i++)
@@ -182,38 +192,22 @@ namespace ValleytalkReborn
                 _tabRects[i] = new Rectangle(tabBaseX + i * (tabW + TabGap), tabBaseY, tabW, TabHeight);
             }
 
-            // 2. 底部添加、提炼与归档按钮布局
             int btnY = yPositionOnScreen + height - 60;
-
-            // Tab 1 世界记忆单按钮（居中）
             int singleBtnW = Math.Min(300, totalTabSpace);
             _addButtonRect = new Rectangle(xPositionOnScreen + (width - singleBtnW) / 2, btnY, singleBtnW, 48);
 
-            // Tab 0 三个按钮：最左：对话总结 | 中间：添加记忆 | 最右：归档箱
             const int extractBtnW = 210;
             const int addBtnW = 210;
             const int archiveBtnW = 160;
 
             if (totalTabSpace >= extractBtnW + addBtnW + archiveBtnW + 20)
             {
-                _aiExtractButtonRect = new Rectangle(
-                    xPositionOnScreen + LeftPadding,
-                    btnY,
-                    extractBtnW, 48);
-
-                _manualAddRect = new Rectangle(
-                    xPositionOnScreen + (width - addBtnW) / 2,
-                    btnY,
-                    addBtnW, 48);
-
-                _archiveButtonRect = new Rectangle(
-                    xPositionOnScreen + width - RightPadding - archiveBtnW,
-                    btnY,
-                    archiveBtnW, 48);
+                _aiExtractButtonRect = new Rectangle(xPositionOnScreen + LeftPadding, btnY, extractBtnW, 48);
+                _manualAddRect = new Rectangle(xPositionOnScreen + (width - addBtnW) / 2, btnY, addBtnW, 48);
+                _archiveButtonRect = new Rectangle(xPositionOnScreen + width - RightPadding - archiveBtnW, btnY, archiveBtnW, 48);
             }
             else
             {
-                // 响应式缩小宽度以防小窗口重叠
                 int gap = 8;
                 int avail = totalTabSpace - gap * 2;
                 int arcW = Math.Max(120, avail * 160 / 580);
@@ -227,13 +221,11 @@ namespace ValleytalkReborn
 
             _listTopY = yPositionOnScreen + TopPadding + (_currentTab == 0 ? TabHeight + 8 : 0);
 
-            // 3. Tab0 子标题：左侧 NPC 下拉与右侧称谓按钮 1:1 对等排布
             int halfW = (totalTabSpace - 16) / 2;
             var dropdownRect = new Rectangle(tabBaseX, yPositionOnScreen + TopPadding, halfW, TabHeight);
             _callsignRect = new Rectangle(tabBaseX + halfW + 16, yPositionOnScreen + TopPadding, halfW, TabHeight);
             _npcDropdown?.SetHeaderBounds(dropdownRect);
 
-            // 4. Tab3 高级设置行
             int leftColX = xPositionOnScreen + LeftPadding;
             int tab3Y = yPositionOnScreen + TopPadding + 8;
             int rowW = width - LeftPadding - RightPadding;
@@ -249,7 +241,6 @@ namespace ValleytalkReborn
             _tab3RowRecordEvent = new Rectangle(leftColX - 8, tab3Y + 204 - 6, rowW, 58);
             _tab3CheckboxRecordEvent = new Rectangle(leftColX, tab3Y + 204, 36, 36);
 
-            // 5. Tab2 布局重算
             if (_tab2Initialized)
                 RecalculateTab2Layout();
         }
@@ -277,6 +268,9 @@ namespace ValleytalkReborn
             if (_currentTab == 2 && !_tab2Initialized)
                 InitializeTab2();
 
+            if (_currentTab == 2 && _profileSubTab == 1)
+                RefreshNpcCards();
+
             if (_currentTab == 2 && _bioTextBox != null && _bioTextBox.Selected
                 && Game1.keyboardDispatcher.Subscriber == null)
                 Game1.keyboardDispatcher.Subscriber = _bioTextBox;
@@ -299,7 +293,6 @@ namespace ValleytalkReborn
             if (list == null)
                 return new List<MemoryEntry>();
 
-            // 规则条目（Behavior）始终置顶排布
             return list
                 .OrderByDescending(e => e.Category == MemoryCategory.Behavior)
                 .ToList();
@@ -338,7 +331,6 @@ namespace ValleytalkReborn
             var items = new List<(string Id, string Label)>();
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            // 1. 当前选中的 NPC 必在首位
             if (!string.IsNullOrWhiteSpace(_currentNpcName))
             {
                 string label = Game1.getCharacterFromName(_currentNpcName)?.displayName ?? _currentNpcName;
@@ -346,7 +338,6 @@ namespace ValleytalkReborn
                 seen.Add(_currentNpcName);
             }
 
-            // 2. 将最近聊天的 NPC（如果不是当前选中的话）优先排在第二位
             string recent = DialogueHistoryManager.Instance.GetMostRecentNpc();
             if (!string.IsNullOrEmpty(recent) && seen.Add(recent))
             {
@@ -354,7 +345,6 @@ namespace ValleytalkReborn
                 items.Add((recent, label));
             }
 
-            // 3. 其余好感度 NPC 保持字母排序
             var remaining = Game1.player.friendshipData.Keys
                 .Where(k => !seen.Contains(k))
                 .OrderBy(k => k, StringComparer.OrdinalIgnoreCase);
@@ -392,7 +382,6 @@ namespace ValleytalkReborn
             Game1.activeClickableMenu = new AddMemoryInputMenu(_currentNpcName, this, null, _currentTab);
         }
 
-        /// <summary>打开当前选中 NPC 的 AI 提炼面板。</summary>
         private void TryOpenDistillMenu()
         {
             if (string.IsNullOrWhiteSpace(_currentNpcName))
@@ -431,8 +420,6 @@ namespace ValleytalkReborn
         private void ConfirmDeleteMemory(MemoryEntry entry)
         {
             int tabSnapshot = _currentTab;
-
-            // 限制在 320 像素以内，防止超长文本或无空格英文字符撑爆确认弹窗
             string safeContent = UiHelper.TruncateString(entry.Content, Game1.dialogueFont, 320f);
 
             Game1.activeClickableMenu = new ConfirmationDialog(
@@ -441,7 +428,6 @@ namespace ValleytalkReborn
                 {
                     if (tabSnapshot == 0)
                     {
-                        // 先写入归档箱，标记原因为 ManualDeleted，再从活跃记忆池中移除
                         MemoryManager.Instance.ArchiveMemory(_currentNpcName, entry, "ManualDeleted");
                         MemoryManager.Instance.RemoveMemory(_currentNpcName, entry.Id);
                     }
@@ -474,6 +460,25 @@ namespace ValleytalkReborn
 
             if (_currentTab == 2)
             {
+                if (_profileSubTab == 1)
+                {
+                    // NPC 档案宫格页支持滚轮直接翻页
+                    int totalPages = GetNpcTotalPages();
+                    if (direction < 0 && _npcGridPage < totalPages - 1)
+                    {
+                        _npcGridPage++;
+                        Game1.playSound("shwip");
+                        RecalculateNpcGridLayout();
+                    }
+                    else if (direction > 0 && _npcGridPage > 0)
+                    {
+                        _npcGridPage--;
+                        Game1.playSound("shwip");
+                        RecalculateNpcGridLayout();
+                    }
+                    return;
+                }
+
                 if (_orientationDropdown.IsOpen)
                 {
                     _orientationDropdown.ReceiveScrollWheel(direction);
@@ -547,21 +552,18 @@ namespace ValleytalkReborn
                     return;
                 }
 
-                // AI 提炼
                 if (_aiExtractButtonRect.Contains(x, y))
                 {
                     TryOpenDistillMenu();
                     return;
                 }
 
-                // 手动录入
                 if (_manualAddRect.Contains(x, y))
                 {
                     OpenAddMemory();
                     return;
                 }
 
-                // 归档箱
                 if (_archiveButtonRect.Contains(x, y))
                 {
                     if (string.IsNullOrEmpty(_currentNpcName))
@@ -600,7 +602,6 @@ namespace ValleytalkReborn
 
         private void HandleTab2Click(int x, int y)
         {
-            // 分段条点击
             if (_subTabPlayerRect.Contains(x, y))
             {
                 if (_profileSubTab != 0)
@@ -616,7 +617,7 @@ namespace ValleytalkReborn
                 {
                     _profileSubTab = 1;
                     Game1.playSound("smallSelect");
-                    RefreshNpcBioSummary();
+                    RefreshNpcCards();
                 }
                 return;
             }
@@ -846,6 +847,7 @@ namespace ValleytalkReborn
 
         public override void draw(SpriteBatch b)
         {
+            _hoveredGlobalTooltip = null;
             int mx = Game1.getMouseX();
             int my = Game1.getMouseY();
 
@@ -853,7 +855,7 @@ namespace ValleytalkReborn
             b.Draw(Game1.fadeToBlackRect,
                 Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.45f);
 
-            // 外部装饰边框
+            // 双层精致木质边框
             IClickableMenu.drawTextureBox(b,
                 xPositionOnScreen - 16, yPositionOnScreen - 16,
                 width + 32, height + 32, Color.White);
@@ -904,22 +906,16 @@ namespace ValleytalkReborn
                 DrawTab3(b);
             }
 
-            // 添加/提炼/归档按钮与容量计数（仅 Tab0 / Tab1）
             if (_currentTab == 0 || _currentTab == 1)
                 DrawBottomButtons(b);
 
-            // 关闭按钮
             UiHelper.UpdateButtonScale(ref _closeButtonHoverScale, _closeButton, mx, my);
             _closeButton.scale = _closeButtonBaseScale * _closeButtonHoverScale;
             _closeButton.draw(b);
 
-            // 下拉叠层置顶绘制（Tab0 / Tab2 NPC 档案页）
             if (_currentTab == 0)
                 _npcDropdown.Draw(b);
-            if (_currentTab == 2 && _profileSubTab == 1 && _npcBioDropdown != null)
-                _npcBioDropdown.Draw(b);
 
-            // 编辑/删除按钮 Tooltip（Tab0 / Tab1）
             if (_currentTab == 0 || _currentTab == 1)
             {
                 for (int i = 0; i < _deleteButtons.Count; i++)
@@ -935,6 +931,11 @@ namespace ValleytalkReborn
                         break;
                     }
                 }
+            }
+
+            if (!string.IsNullOrEmpty(_hoveredGlobalTooltip))
+            {
+                IClickableMenu.drawHoverText(b, _hoveredGlobalTooltip, Game1.smallFont);
             }
 
             base.draw(b);
@@ -1002,14 +1003,9 @@ namespace ValleytalkReborn
                 return;
             }
 
-            // 1. 统一字体缩放 0.8f
             const float fontScale = 0.8f;
-
-            // 2. 预留固定日期宽度，严格避开右侧按钮（RightPadding + 85px），保证日期垂直右对齐
             float fixedDateWidth = Game1.smallFont.MeasureString("2026-12-31 00:00").X * fontScale;
             float dateX = xPositionOnScreen + width - RightPadding - 85 - fixedDateWidth;
-
-            // 3. 内容起始 X 与最右限制（在日期左侧预留 16px 缓冲区间）
             float contentStartX = xPositionOnScreen + LeftPadding;
             float maxContentWidth = (dateX - 16) - contentStartX;
 
@@ -1041,25 +1037,20 @@ namespace ValleytalkReborn
                     textColor = isAuto ? new Color(120, 140, 160) : Game1.textColor;
                 }
 
-                // 4. 无论多长，内容文本严格截止到日期前截断
                 string fullRawText = $"{idx + 1}. {prefix}{entry.Content}";
                 string text = UiHelper.TruncateString(fullRawText, Game1.dialogueFont, maxContentWidth, fontScale);
-
                 string dateText = entry.CreatedAt.ToString("yyyy-MM-dd HH:mm");
 
-                // 绘制记忆条目文本（缩放 0.8f，+4px 保证在 46px 行高内居中）
                 b.DrawString(Game1.dialogueFont, text,
                     new Vector2(contentStartX, rowY + 4),
                     textColor, 0f, Vector2.Zero, fontScale, SpriteEffects.None, 0.88f);
 
-                // 绘制日期（缩放 0.8f）
                 b.DrawString(Game1.smallFont, dateText,
                     new Vector2(dateX, rowY + 6),
                     Color.Gray, 0f, Vector2.Zero, fontScale, SpriteEffects.None, 0.88f);
 
                 bool isLeftMouseDown = Mouse.GetState().LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
 
-                // 绘制编辑按钮（自动处理按压切片偏移与 1px 物理下沉动效）
                 if (i < _editButtons.Count)
                 {
                     var btn = _editButtons[i];
@@ -1067,7 +1058,6 @@ namespace ValleytalkReborn
                     IconSource.DrawButton(b, btn, isPressed);
                 }
 
-                // 绘制删除按钮（自动处理按压切片偏移与 1px 物理下沉动效）
                 if (i < _deleteButtons.Count)
                 {
                     var btn = _deleteButtons[i];
@@ -1096,8 +1086,6 @@ namespace ValleytalkReborn
             }
         }
 
-        // ── 返回刷新检测：从编辑器返回后重建布局 + 刷新摘要 ────────────
-
         public override void update(GameTime time)
         {
             base.update(time);
@@ -1107,12 +1095,12 @@ namespace ValleytalkReborn
             {
                 RecalculateTab2Layout();
                 if (_profileSubTab == 1)
-                    RefreshNpcBioSummary();
+                    RefreshNpcCards();
             }
             _wasObscured = obscured;
         }
 
-        // ── Tab2（农夫档案）══════════════════════════════════════════════
+        // ── Tab2（档案设置）══════════════════════════════════════════════
 
         private string[] GetSafetyModeLabels() => new[]
         {
@@ -1159,18 +1147,8 @@ namespace ValleytalkReborn
             };
             _bioTextBox.SetText(PlayerProfileManager.GetCustomBio() ?? string.Empty);
 
-            // NPC 档案页下拉：数据源与 _npcDropdown 共享，独立实例
-            _npcBioDropdown = new DropdownList(Rectangle.Empty)
-            {
-                OnItemSelected = id =>
-                {
-                    _currentNpcName = id;
-                    Game1.playSound("select");
-                    RefreshNpcBioSummary();
-                }
-            };
-
             RecalculateTab2Layout();
+            RefreshNpcCards();
             _tab2Initialized = true;
         }
 
@@ -1182,46 +1160,40 @@ namespace ValleytalkReborn
             _tab2RightColW = (xPositionOnScreen + width - RightPadding) - _tab2RightColX;
 
             int subTabY = yPositionOnScreen + TopPadding;
-            int subTabW = (contentW - 12) / 2;
+            int subTabW = 160;
             _subTabPlayerRect = new Rectangle(leftColX, subTabY, subTabW, SubTabBarH);
             _subTabNpcRect = new Rectangle(leftColX + subTabW + 12, subTabY, subTabW, SubTabBarH);
 
-            // 既有 Tab2 控件整体下移 SubTabContentOffset，为分段条腾出空间
-            int y = yPositionOnScreen + TopPadding + SubTabContentOffset + 6;
+            // 右上角筛选框位置（与分段条并排）
+            _filterCheckboxRect = new Rectangle(leftColX + contentW - 170, subTabY + 2, 28, 28);
 
-            // 1. 启用开关
+            // 玩家档案页控件布局
+            int y = yPositionOnScreen + TopPadding + SubTabContentOffset + 6;
             _enableProfileCheckboxRect = new Rectangle(leftColX, y, 36, 36);
 
-            // 2. 性取向
             int orientationY = y + 40;
             _orientationLabelRect = new Rectangle(leftColX, orientationY, 130, TabHeight);
             _orientationDropdownRect = new Rectangle(_tab2RightColX, orientationY, _tab2RightColW, TabHeight);
             _orientationDropdown?.SetHeaderBounds(_orientationDropdownRect);
 
-            // 3. 恋爱尺度标题（独立一行）
             int safetyLabelY = orientationY + TabHeight + 8;
             _safetyLabelRect = new Rectangle(leftColX, safetyLabelY, contentW, 26);
 
-            // 4. 滑动条本身在窗口水平正中央居中
             int safetySliderY = safetyLabelY + 28;
             int trackW = Math.Min(260, contentW - 80);
             int trackX = xPositionOnScreen + (width - trackW) / 2;
             _safetySliderRect = new Rectangle(trackX, safetySliderY, trackW, 24);
 
-            // 5. 档位指示器（居中在滑块下方）+ 描述文本（居中在指示器下方）
             int modeTextY = safetySliderY + 24 + 6;
             int descStartY = modeTextY + 24 + 4;
 
             int maxDescW = contentW - 20;
             int wrapW = (int)(maxDescW / 0.85f);
-            string desc = Game1.parseText(I18n.Profile.SafetyDesc(),
-                Game1.smallFont, wrapW);
-
+            string desc = Game1.parseText(I18n.Profile.SafetyDesc(), Game1.smallFont, wrapW);
             string[] descLines = desc.Split('\n');
             int lineSpacing = (int)(Game1.smallFont.LineSpacing * 0.82f);
             int descHeight = descLines.Length * lineSpacing;
 
-            // 6. 自定义 Bio
             int bioY = descStartY + descHeight + 10;
             _saveButtonRect = new Rectangle(xPositionOnScreen + width / 2 - 80, yPositionOnScreen + height - 60, 160, 44);
 
@@ -1237,56 +1209,7 @@ namespace ValleytalkReborn
                 _bioTextBox.Extent = new Vector2(_tab2RightColW, bioBoxH);
             }
 
-            // NPC 档案页布局
-            int npcPageTop = yPositionOnScreen + TopPadding + SubTabContentOffset;
-            // NPC 下拉框（复用 _npcDropdown 数据源，独立实例）
-            BuildNpcDropdownItems();
-            SyncNpcBioDropdownFromMain();
-            _npcBioDropdown?.SetHeaderBounds(new Rectangle(leftColX, npcPageTop, contentW, TabHeight));
-
-            // 底部两按钮
-            int btnRowY = yPositionOnScreen + height - 56;
-            _openFullBioEditorBtnRect = new Rectangle(leftColX, btnRowY, Math.Min(240, contentW / 2 - 6), 36);
-            _resetNpcBioBtnRect = new Rectangle(leftColX + contentW - Math.Min(160, contentW / 2 - 6), btnRowY,
-                Math.Min(160, contentW / 2 - 6), 36);
-        }
-
-        /// <summary>将 NPC 档案页下拉同步为与 _npcDropdown 同数据源（friendshipData，当前 NPC 优先）。</summary>
-        private void SyncNpcBioDropdownFromMain()
-        {
-            if (_npcBioDropdown == null) return;
-
-            var items = new List<(string Id, string Label)>();
-            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            // 1. 当前选中 NPC 必在首位
-            if (!string.IsNullOrWhiteSpace(_currentNpcName) && seen.Add(_currentNpcName))
-            {
-                string label = Game1.getCharacterFromName(_currentNpcName)?.displayName ?? _currentNpcName;
-                items.Add((_currentNpcName, label));
-            }
-
-            // 2. 最近聊天 NPC
-            string recent = DialogueHistoryManager.Instance.GetMostRecentNpc();
-            if (!string.IsNullOrEmpty(recent) && seen.Add(recent))
-            {
-                string label = Game1.getCharacterFromName(recent)?.displayName ?? recent;
-                items.Add((recent, label));
-            }
-
-            // 3. 其余友好 NPC 字母排序
-            if (Game1.player?.friendshipData != null)
-            {
-                foreach (var k in Game1.player.friendshipData.Keys
-                    .Where(k => !seen.Contains(k))
-                    .OrderBy(k => k, StringComparer.OrdinalIgnoreCase))
-                {
-                    string label = Game1.getCharacterFromName(k)?.displayName ?? k;
-                    items.Add((k, label));
-                }
-            }
-
-            _npcBioDropdown.SetItems(items, _currentNpcName);
+            RecalculateNpcGridLayout();
         }
 
         private void DrawTab2(SpriteBatch b)
@@ -1294,23 +1217,18 @@ namespace ValleytalkReborn
             int mx = Game1.getMouseX();
             int my = Game1.getMouseY();
 
-            // 分段条
             DrawTab2SubTab(b, _subTabPlayerRect, "玩家档案", _profileSubTab == 0, mx, my);
             DrawTab2SubTab(b, _subTabNpcRect, "NPC 档案", _profileSubTab == 1, mx, my);
 
             if (_profileSubTab == 1)
             {
-                DrawTab2NpcPage(b);
+                DrawTab2NpcGridPage(b);
                 return;
             }
 
-            // —— 以下为玩家档案（subTab 0），既有逻辑，坐标已由 RecalculateTab2Layout 下移 ——
-
-            // a) 启用开关
+            // ── 玩家档案 ──
             bool enabled = ModEntry.Config.EnablePlayerProfile;
-            Rectangle enableSrc = enabled
-                ? new Rectangle(236, 425, 9, 9)
-                : new Rectangle(227, 425, 9, 9);
+            Rectangle enableSrc = enabled ? new Rectangle(236, 425, 9, 9) : new Rectangle(227, 425, 9, 9);
             b.Draw(Game1.mouseCursors, new Vector2(_enableProfileCheckboxRect.X, _enableProfileCheckboxRect.Y),
                 enableSrc, Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 1f);
             b.DrawString(Game1.smallFont, I18n.Profile.EnableProfile(),
@@ -1320,57 +1238,43 @@ namespace ValleytalkReborn
             if (!enabled)
                 return;
 
-            // b) 性取向标签
             b.DrawString(Game1.smallFont, I18n.Profile.OrientationLabel(),
-                new Vector2(_orientationLabelRect.X, _orientationLabelRect.Y + 6),
-                Game1.textColor);
+                new Vector2(_orientationLabelRect.X, _orientationLabelRect.Y + 6), Game1.textColor);
 
-            // c) 恋爱尺度标题
             b.DrawString(Game1.smallFont, I18n.Profile.RomanceSafetyLabel(),
-                new Vector2(_safetyLabelRect.X, _safetyLabelRect.Y + 2),
-                Game1.textColor);
+                new Vector2(_safetyLabelRect.X, _safetyLabelRect.Y + 2), Game1.textColor);
 
             int trackX = _safetySliderRect.X;
             int trackW = _safetySliderRect.Width;
             int trackY = _safetySliderRect.Y;
 
-            // 轨道底槽
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6),
                 trackX, trackY, trackW, 24, Color.White, 4f, false);
 
-            // 细长竖线刻度
             for (int t = 0; t < 4; t++)
             {
                 int tickX = trackX + (int)(t * ((float)trackW / 3f));
                 b.Draw(Game1.mouseCursors,
                     new Rectangle(tickX - 2, trackY + 4, 4, 16),
-                    new Rectangle(240, 428, 12, 12),
-                    new Color(180, 180, 180));
+                    new Rectangle(240, 428, 12, 12), new Color(180, 180, 180));
             }
 
-            // 滑动手柄
             int thumbX = trackX + (int)(_safetyModeIndex * ((float)trackW / 3f)) - 12;
             b.Draw(Game1.mouseCursors,
                 new Rectangle(thumbX, trackY - 8, 24, 40),
-                new Rectangle(435, 463, 6, 10),
-                Color.White);
+                new Rectangle(435, 463, 6, 10), Color.White);
 
-            // 档位指示器：位于滑动条下方并完全水平居中
             string[] safetyLabels = GetSafetyModeLabels();
             string currentLabel = safetyLabels[_safetyModeIndex];
             var labelSize = Game1.smallFont.MeasureString(currentLabel);
             float labelX = xPositionOnScreen + (width - labelSize.X) / 2f;
             int labelY = trackY + 24 + 6;
 
-            b.DrawString(Game1.smallFont, currentLabel,
-                new Vector2(labelX, labelY), Game1.textColor);
+            b.DrawString(Game1.smallFont, currentLabel, new Vector2(labelX, labelY), Game1.textColor);
 
-            // 规则描述：位于指示器下方，0.85 缩放且水平居中排布
             int maxDescW = width - LeftPadding - RightPadding - 20;
             int wrapW = (int)(maxDescW / 0.85f);
-            string desc = Game1.parseText(I18n.Profile.SafetyDesc(),
-                Game1.smallFont, wrapW);
-
+            string desc = Game1.parseText(I18n.Profile.SafetyDesc(), Game1.smallFont, wrapW);
             string[] descLines = desc.Split('\n');
             int lineSpacing = (int)(Game1.smallFont.LineSpacing * 0.82f);
             int descStartY = labelY + 24 + 4;
@@ -1384,10 +1288,8 @@ namespace ValleytalkReborn
                 b.DrawString(Game1.smallFont, line, new Vector2(lineX, lineY), Color.DimGray, 0f, Vector2.Zero, 0.85f, SpriteEffects.None, 1f);
             }
 
-            // d) Bio 自定义文本框
             b.DrawString(Game1.smallFont, I18n.Profile.BioLabel(),
-                new Vector2(_bioLabelRect.X, _bioLabelRect.Y + 4),
-                Game1.textColor);
+                new Vector2(_bioLabelRect.X, _bioLabelRect.Y + 4), Game1.textColor);
 
             IClickableMenu.drawTextureBox(b, _bioBoxRect.X - 4, _bioBoxRect.Y - 4, _bioBoxRect.Width + 8, _bioBoxRect.Height + 8, Color.White);
 
@@ -1395,28 +1297,21 @@ namespace ValleytalkReborn
             _bioTextBox.Update(Game1.currentGameTime);
             _bioTextBox.Draw(b);
 
-            // 占位提示
             if (string.IsNullOrWhiteSpace(_bioTextBox.Text))
             {
-                string placeholder = Game1.parseText(I18n.Profile.BioPlaceholder(),
-                    Game1.smallFont, _bioBoxRect.Width - 28);
-                b.DrawString(Game1.smallFont, placeholder,
-                    new Vector2(_bioBoxRect.X + 8, _bioBoxRect.Y + 8), Color.Gray * 0.7f);
+                string placeholder = Game1.parseText(I18n.Profile.BioPlaceholder(), Game1.smallFont, _bioBoxRect.Width - 28);
+                b.DrawString(Game1.smallFont, placeholder, new Vector2(_bioBoxRect.X + 8, _bioBoxRect.Y + 8), Color.Gray * 0.7f);
             }
 
-            // 字数统计
             string counterText = $"{_bioTextBox.Text?.Length ?? 0}/300";
             var counterSize = Game1.smallFont.MeasureString(counterText);
             Color counterColor = (_bioTextBox.Text?.Length ?? 0) >= 300 ? Color.Red : Color.Gray * 0.8f;
             b.DrawString(Game1.smallFont, counterText,
-                new Vector2(_bioBoxRect.Right - counterSize.X - 8, _bioBoxRect.Bottom - counterSize.Y - 6),
-                counterColor);
+                new Vector2(_bioBoxRect.Right - counterSize.X - 8, _bioBoxRect.Bottom - counterSize.Y - 6), counterColor);
 
-            // e) 保存按钮
             bool saveHover = _saveButtonRect.Contains(mx, my);
             Color saveBg = saveHover ? Color.Wheat : Color.White;
-            IClickableMenu.drawTextureBox(b, _saveButtonRect.X, _saveButtonRect.Y,
-                _saveButtonRect.Width, _saveButtonRect.Height, saveBg);
+            IClickableMenu.drawTextureBox(b, _saveButtonRect.X, _saveButtonRect.Y, _saveButtonRect.Width, _saveButtonRect.Height, saveBg);
             string saveText = I18n.Profile.SaveButton();
             var saveSize = Game1.dialogueFont.MeasureString(saveText);
             b.DrawString(Game1.dialogueFont, saveText,
@@ -1426,8 +1321,6 @@ namespace ValleytalkReborn
 
             _orientationDropdown.Draw(b);
         }
-
-        // ── Tab2 分段条绘制 ──────────────────────────────────────────────
 
         private void DrawTab2SubTab(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my)
         {
@@ -1446,160 +1339,560 @@ namespace ValleytalkReborn
                 isActive ? Game1.textColor : Color.White * 0.95f);
         }
 
-        // ── Tab2 NPC 档案页 ──────────────────────────────────────────────
+        // ── Tab2 NPC 宫格卡片重构核心 ──────────────────────────────────────
+
+        /// <summary>
+        /// 获取星露谷标准肖像“微笑”表情的源矩形切片。
+        /// 星露谷 64x64 立绘双列排布：第0帧=正常，第1帧(64,0)=微笑开心。
+        /// </summary>
+        private static Rectangle GetSmilingPortraitSource(Texture2D portrait)
+        {
+            if (portrait == null) return Rectangle.Empty;
+
+            // 标准 128px 宽双列立绘：第 1 帧微笑
+            if (portrait.Width >= 128 && portrait.Height >= 64)
+            {
+                return new Rectangle(64, 0, 64, 64);
+            }
+            // 单列立绘变种：第 1 帧微笑位于正下方
+            if (portrait.Width >= 64 && portrait.Height >= 128)
+            {
+                return new Rectangle(0, 64, 64, 64);
+            }
+            // 兜底截取首帧
+            return new Rectangle(0, 0, Math.Min(64, portrait.Width), Math.Min(64, portrait.Height));
+        }
+
+        private static readonly Dictionary<string, Texture2D> _portraitCache = new(StringComparer.OrdinalIgnoreCase);
+
+        private Texture2D SafeLoadPortrait(string npcName)
+        {
+            if (string.IsNullOrWhiteSpace(npcName)) return null;
+
+            if (_portraitCache.TryGetValue(npcName, out var tex) && tex != null && !tex.IsDisposed)
+                return tex;
+
+            Texture2D loaded = null;
+            var character = Game1.getCharacterFromName(npcName);
+            if (character?.Portrait != null && !character.Portrait.IsDisposed)
+            {
+                loaded = character.Portrait;
+            }
+            else
+            {
+                try
+                {
+                    loaded = Game1.content.Load<Texture2D>("Portraits\\" + npcName);
+                }
+                catch
+                {
+                    // 无法加载头像时静默捕获，卡片中将优雅降级绘制
+                }
+            }
+
+            _portraitCache[npcName] = loaded;
+            return loaded;
+        }
+
+        private void RefreshNpcCards()
+{
+    _allNpcCards.Clear();
+    var friendshipData = Game1.player?.friendshipData;
+
+    // 1. 系统/过场演出用假人/特殊剧情专用角色黑名单
+    var excludedNpcs = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "Grandpa",   // 爷爷
+        "Governor",  // 州长
+        "Gil",       // 吉尔
+        "Bouncer",   // 赌场保镖
+        "Birdie",    // 伯迪
+        "Henchman",  // 仆从
+        "MarlonFudge"// 1.6 矿洞/特殊剧情马龙
+    };
+
+    // 辅助判定：是否为剧情演出或无效假人
+    bool IsInvalidOrEventNpc(string internalName, NPC npc)
+    {
+        if (string.IsNullOrWhiteSpace(internalName)) return true;
+
+        // 命中硬编码黑名单
+        if (excludedNpcs.Contains(internalName))
+            return true;
+
+        // 剧情演出假人常见命名模式：包含下划线、Event、Fake、Dummy 等
+        if (internalName.Contains("_") || 
+            internalName.Contains("Event", StringComparison.OrdinalIgnoreCase) ||
+            internalName.Contains("Fake", StringComparison.OrdinalIgnoreCase) ||
+            internalName.Contains("Dummy", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        // 关键：针对 Marlon 的变体（如 MarlonFudge, MarlonFestival 等）坚决剔除，
+        // 只有纯正的 "Marlon" 才是本体
+        bool isTrueMarlon = internalName.Equals("Marlon", StringComparison.OrdinalIgnoreCase);
+        if (internalName.StartsWith("Marlon", StringComparison.OrdinalIgnoreCase) && !isTrueMarlon)
+            return true;
+
+        bool inFriendship = friendshipData != null && friendshipData.ContainsKey(internalName);
+
+        // 如果获取到了运行时的 NPC 实例进一步校验
+        if (npc != null)
+        {
+            // 通过当前过场的 actors 列表判定是否为过场临时演员
+            if (Game1.CurrentEvent != null && Game1.CurrentEvent.actors != null && Game1.CurrentEvent.actors.Contains(npc))
+                return true;
+
+            // 修复核心：原版马龙不可社交(CanSocialize=false)且不在好感度中，但他是探险家公会核心NPC，必须放行！
+            if (!isTrueMarlon && !npc.CanSocialize && !inFriendship)
+                return true;
+        }
+        else
+        {
+            // 无运行时实例且不在好感度表中时：除了正统 Marlon 外，其他均视作无效
+            if (!isTrueMarlon && !inFriendship)
+                return true;
+        }
+
+        return false;
+    }
+
+    // 收集所有候选角色名字
+    var rawCandidates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    // 1) 优先从好感度列表（最可信）提取
+    if (friendshipData != null)
+    {
+        foreach (var k in friendshipData.Keys)
+        {
+            if (!IsInvalidOrEventNpc(k, Game1.getCharacterFromName(k)))
+                rawCandidates.Add(k);
+        }
+    }
+
+    // 2) 从 CharacterData 基础表补充
+    if (Game1.characterData != null)
+    {
+        foreach (var kvp in Game1.characterData)
+        {
+            string name = kvp.Key;
+            if (!IsInvalidOrEventNpc(name, Game1.getCharacterFromName(name)))
+                rawCandidates.Add(name);
+        }
+    }
+
+    // 3) 从场景活跃角色补充
+    foreach (var npc in Utility.getAllCharacters())
+    {
+        if (npc != null && (npc.IsVillager || npc.Name.Equals("Marlon", StringComparison.OrdinalIgnoreCase)) && !IsInvalidOrEventNpc(npc.Name, npc))
+        {
+            rawCandidates.Add(npc.Name);
+        }
+    }
+
+    // 4) 确保正统马龙必须在候选列表内
+    if (!rawCandidates.Contains("Marlon"))
+    {
+        rawCandidates.Add("Marlon");
+    }
+
+    // 2. 核心去重：按照 DisplayName 去重，防止任何模组克隆人导致双马龙
+    var resolvedCards = new Dictionary<string, NpcCardInfo>(StringComparer.OrdinalIgnoreCase);
+
+    foreach (var name in rawCandidates)
+    {
+        var portrait = SafeLoadPortrait(name);
+        if (portrait == null || portrait.IsDisposed)
+            continue;
+
+        var smileRect = GetSmilingPortraitSource(portrait);
+        if (smileRect.IsEmpty || smileRect.Width <= 0 || smileRect.Height <= 0)
+            continue;
+
+        string dispName = Game1.getCharacterFromName(name)?.displayName;
+        if (string.IsNullOrWhiteSpace(dispName)) dispName = name;
+
+        bool hasCustom = ModEntry.BioStorage != null && ModEntry.BioStorage.HasCustomOverlay(name);
+        bool hasFriendship = friendshipData != null && friendshipData.ContainsKey(name);
+
+        var card = new NpcCardInfo
+        {
+            Name = name,
+            DisplayName = dispName,
+            Portrait = portrait,
+            SmileSourceRect = smileRect,
+            HasCustomOverlay = hasCustom
+        };
+
+        // 如果遭遇同名 NPC（例如有两个“马龙”或两个“Marlon”），仲裁保留最正规的本体
+        if (resolvedCards.TryGetValue(dispName, out var existing))
+        {
+            bool isCurrentTrue = name.Equals("Marlon", StringComparison.OrdinalIgnoreCase);
+            bool isExistingTrue = existing.Name.Equals("Marlon", StringComparison.OrdinalIgnoreCase);
+
+            if (isCurrentTrue && !isExistingTrue)
+            {
+                resolvedCards[dispName] = card;
+            }
+            else if (!isCurrentTrue && isExistingTrue)
+            {
+                // 保留原有的正统马龙，跳过当前克隆人
+                continue;
+            }
+            else
+            {
+                // 其他普通角色按 好感度 > 名称短 去重
+                bool existingHasFriendship = friendshipData != null && friendshipData.ContainsKey(existing.Name);
+                if ((hasFriendship && !existingHasFriendship) || 
+                    (hasFriendship == existingHasFriendship && name.Length < existing.Name.Length))
+                {
+                    resolvedCards[dispName] = card;
+                }
+            }
+        }
+        else
+        {
+            resolvedCards[dispName] = card;
+        }
+    }
+
+    _allNpcCards = resolvedCards.Values
+        .OrderByDescending(x => x.HasCustomOverlay)
+        .ThenBy(x => x.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+        .ToList();
+
+    ApplyNpcFilter();
+}
+
+        private void ApplyNpcFilter()
+        {
+            if (_filterCustomOnly)
+            {
+                _displayNpcCards = _allNpcCards.Where(x => x.HasCustomOverlay).ToList();
+            }
+            else
+            {
+                _displayNpcCards = new List<NpcCardInfo>(_allNpcCards);
+            }
+
+            int totalPages = GetNpcTotalPages();
+            if (_npcGridPage >= totalPages)
+                _npcGridPage = Math.Max(0, totalPages - 1);
+
+            RecalculateNpcGridLayout();
+        }
+
+        private int GetNpcCols() => 5;
+        private int GetNpcRows() => 2;
+
+        private int GetNpcItemsPerPage() => GetNpcCols() * GetNpcRows();
+
+        private int GetNpcTotalPages()
+        {
+            int perPage = Math.Max(1, GetNpcItemsPerPage());
+            return Math.Max(1, (int)Math.Ceiling((float)_displayNpcCards.Count / perPage));
+        }
+
+        private void RecalculateNpcGridLayout()
+        {
+            _visibleCardSlots.Clear();
+
+            int leftColX = xPositionOnScreen + LeftPadding;
+            int contentW = width - LeftPadding - RightPadding;
+            int startY = yPositionOnScreen + TopPadding + SubTabContentOffset;
+
+            // 底部翻页控制器的高度预留
+            const int bottomPagingBarH = 40;
+            const int bottomMargin = 8;
+            int bottomLimitY = yPositionOnScreen + height - BottomPadding;
+            int availH = bottomLimitY - startY - bottomPagingBarH - bottomMargin;
+
+            int cols = GetNpcCols(); // 5
+            int rows = GetNpcRows(); // 2
+            int perPage = cols * rows; // 10
+
+            const int gapX = 12;
+            const int gapY = 12;
+
+            // 均分计算卡片宽高，不再做高度截断，让其撑满垂直与水平空间
+            int cardW = (contentW - (cols - 1) * gapX) / cols;
+            int cardH = Math.Max(120, (availH - (rows - 1) * gapY) / rows);
+
+            int startIndex = _npcGridPage * perPage;
+            int count = Math.Min(perPage, _displayNpcCards.Count - startIndex);
+
+            for (int i = 0; i < count; i++)
+            {
+                var card = _displayNpcCards[startIndex + i];
+                int r = i / cols;
+                int c = i % cols;
+
+                int cx = leftColX + c * (cardW + gapX);
+                int cy = startY + r * (cardH + gapY);
+                var cardRect = new Rectangle(cx, cy, cardW, cardH);
+
+                var resetRect = card.HasCustomOverlay
+                    ? new Rectangle(cardRect.Left + 6, cardRect.Top + 6, 22, 22)
+                    : Rectangle.Empty;
+
+                _visibleCardSlots.Add((card, cardRect, resetRect));
+            }
+
+            // 底部翻页控件对齐到面板底部
+            int pagingY = bottomLimitY - bottomPagingBarH;
+            int midX = xPositionOnScreen + width / 2;
+            _prevPageBtnRect = new Rectangle(midX - 130, pagingY, 44, 36);
+            _nextPageBtnRect = new Rectangle(midX + 86, pagingY, 44, 36);
+        }
 
         private void HandleTab2NpcPageClick(int x, int y)
         {
-            if (!string.IsNullOrEmpty(_currentNpcName))
+            // 1. 过滤开关
+            if (_filterCheckboxRect.Contains(x, y))
             {
-                if (_npcBioDropdown != null && _npcBioDropdown.IsOpen && _npcBioDropdown.ReceiveLeftClick(x, y))
-                    return;
-                if (_npcBioDropdown != null && _npcBioDropdown.HeaderBounds.Contains(x, y))
+                _filterCustomOnly = !_filterCustomOnly;
+                _npcGridPage = 0;
+                Game1.playSound("drumkit6");
+                ApplyNpcFilter();
+                return;
+            }
+
+            // 2. 翻页
+            int totalPages = GetNpcTotalPages();
+            if (_prevPageBtnRect.Contains(x, y) && _npcGridPage > 0)
+            {
+                _npcGridPage--;
+                Game1.playSound("shwip");
+                RecalculateNpcGridLayout();
+                return;
+            }
+            if (_nextPageBtnRect.Contains(x, y) && _npcGridPage < totalPages - 1)
+            {
+                _npcGridPage++;
+                Game1.playSound("shwip");
+                RecalculateNpcGridLayout();
+                return;
+            }
+
+            // 3. 点击卡片或重置按钮
+            foreach (var slot in _visibleCardSlots)
+            {
+                if (slot.Card.HasCustomOverlay && slot.ResetBtnBounds.Contains(x, y))
                 {
-                    _npcBioDropdown.ToggleOpen();
-                    Game1.playSound("select");
+                    TryResetNpcBio(slot.Card.Name);
                     return;
                 }
-                if (_openFullBioEditorBtnRect.Contains(x, y))
+
+                if (slot.Bounds.Contains(x, y))
                 {
+                    _currentNpcName = slot.Card.Name;
                     Game1.playSound("bigSelect");
-                    Game1.activeClickableMenu = new BioEditorMenu(_currentNpcName, this);
-                    return;
-                }
-                if (_resetNpcBioBtnRect.Contains(x, y))
-                {
-                    TryResetNpcBio();
+                    Game1.activeClickableMenu = new BioEditorMenu(slot.Card.Name, this);
                     return;
                 }
             }
         }
 
-        private void TryResetNpcBio()
+        private void TryResetNpcBio(string npcName)
         {
-            if (string.IsNullOrEmpty(_currentNpcName))
+            if (string.IsNullOrEmpty(npcName) || ModEntry.BioStorage == null)
                 return;
-            if (!ModEntry.BioStorage!.HasCustomOverlay(_currentNpcName))
+
+            if (!ModEntry.BioStorage.HasCustomOverlay(npcName))
             {
                 Game1.playSound("cancel");
                 return;
             }
-            string npc = _currentNpcName;
+
+            string target = npcName;
+            string disp = Game1.getCharacterFromName(target)?.displayName ?? target;
+
             Game1.activeClickableMenu = new ConfirmationDialog(
-                $"删除 {npc} 的自定义人设覆盖并恢复默认？",
+                $"删除 {disp} 的自定义人设覆盖并恢复默认基准？",
                 _ =>
                 {
                     Game1.activeClickableMenu = this;
-                    if (!ModEntry.BioStorage!.ResetOverlay(npc, out string err))
+                    if (!ModEntry.BioStorage.ResetOverlay(target, out string err))
                     {
                         Game1.addHUDMessage(new HUDMessage($"还原失败: {err}", HUDMessage.error_type));
                         return;
                     }
-                    RefreshNpcBioSummary();
                     Game1.playSound("throw");
+                    RefreshNpcCards();
                 },
                 _ => Game1.activeClickableMenu = this);
         }
 
-        /// <summary>读取 LoadEditableBio 生成摘要（仅在分段切换/NPC 切换/从编辑器返回时调用，不在 draw 每帧计算）。</summary>
-        private void RefreshNpcBioSummary()
+        // 参考 TimelineChronicleMenu 的原版箭头贴图切片 (mouseCursors)
+        private static readonly Rectangle LeftArrowSource = new(352, 495, 12, 11);
+        private static readonly Rectangle RightArrowSource = new(365, 495, 12, 11);
+
+        private static void DrawArrowButton(SpriteBatch b, Rectangle rect, bool isLeft, bool enabled, int mx, int my)
         {
-            if (string.IsNullOrEmpty(_currentNpcName) || ModEntry.BioStorage == null)
-            {
-                _bioSummaryIdentity = "";
-                _bioSummaryHabit = "";
-                return;
-            }
+            bool hover = enabled && rect.Contains(mx, my);
+            Color bg = enabled
+                ? (hover ? new Color(255, 235, 205) : new Color(139, 90, 43))
+                : Color.Gray * 0.5f;
 
-            var bio = ModEntry.BioStorage.LoadEditableBio(_currentNpcName);
-            if (bio == null || bio.Missing)
-            {
-                _bioSummaryIdentity = bio == null ? "" : "无基线人设";
-                _bioSummaryHabit = "—";
-                return;
-            }
-
-            string bioText = bio.Biography ?? string.Empty;
-            int nl = bioText.IndexOf('\n');
-            string first = nl >= 0 ? bioText.Substring(0, nl).Trim() : bioText.Trim();
-            _bioSummaryIdentity = first.Length > 60 ? first.Substring(0, 60) + "…" : (first.Length > 0 ? first : "(无 Biography)");
-
-            string habits = bio.EnableAmbientBarks ? (bio.AmbientBarkPrompt?.SpokenHabits ?? string.Empty) : string.Empty;
-            if (string.IsNullOrWhiteSpace(habits)) habits = "—";
-            else
-            {
-                int hnl = habits.IndexOf('\n');
-                if (hnl >= 0) habits = habits.Substring(0, hnl).Trim();
-                if (habits.Length > 40) habits = habits.Substring(0, 40) + "…";
-            }
-            _bioSummaryHabit = habits;
-        }
-
-        private void DrawTab2NpcPage(SpriteBatch b)
-        {
-            int mx = Game1.getMouseX();
-            int my = Game1.getMouseY();
-            int leftColX = xPositionOnScreen + LeftPadding;
-            int contentW = width - LeftPadding - RightPadding;
-
-            // NPC 下拉
-            if (_npcBioDropdown != null)
-            {
-                b.DrawString(Game1.smallFont, "选择 NPC",
-                    new Vector2(leftColX, _npcBioDropdown.HeaderBounds.Y - 20),
-                    Game1.textColor);
-                _npcBioDropdown.Draw(b);
-            }
-
-            bool hasNpc = !string.IsNullOrEmpty(_currentNpcName);
-
-            // 摘要卡（3 行）
-            int summaryTop = (hasNpc && _npcBioDropdown != null)
-                ? _npcBioDropdown.HeaderBounds.Bottom + 8
-                : yPositionOnScreen + TopPadding + SubTabContentOffset;
-
-            IClickableMenu.drawTextureBox(b,
-                leftColX, summaryTop, contentW, 90, Color.White);
-
-            string status = hasNpc && ModEntry.BioStorage != null && ModEntry.BioStorage.HasCustomOverlay(_currentNpcName)
-                ? "自定义覆盖生效中" : "默认基准人设";
-            Color statusColor = status.Contains("自定义") ? new Color(60, 140, 60) : Color.Gray;
-
-            var lines = new[]
-            {
-                $"身份摘要: {_bioSummaryIdentity}",
-                $"口头禅: {_bioSummaryHabit}",
-                $"状态: {status}"
-            };
-            int ly = summaryTop + 8;
-            foreach (var line in lines)
-            {
-                b.DrawString(Game1.smallFont, line, new Vector2(leftColX + 8, ly), line.Contains("状态") ? statusColor : Game1.textColor);
-                ly += (int)(Game1.smallFont.LineSpacing * 0.9f) + 6;
-            }
-
-            // 空 NPC 提示
-            if (!hasNpc)
-            {
-                b.DrawString(Game1.smallFont, "请先选择 NPC",
-                    new Vector2(leftColX, summaryTop + 110), Color.Gray);
-                return;
-            }
-
-            // 底部两按钮
-            DrawNpcPageButton(b, _openFullBioEditorBtnRect, "⚙ 打开完整人设编辑器", mx, my);
-            DrawNpcPageButton(b, _resetNpcBioBtnRect, "↺ 还原默认", mx, my);
-        }
-
-        private void DrawNpcPageButton(SpriteBatch b, Rectangle rect, string label, int mx, int my)
-        {
-            Color bg = rect.Contains(mx, my) ? new Color(255, 235, 205) : new Color(210, 180, 140);
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
                 new Rectangle(432, 439, 9, 9),
                 rect.X, rect.Y, rect.Width, rect.Height, bg, 4f, false);
-            var size = Game1.smallFont.MeasureString(label);
-            b.DrawString(Game1.smallFont, label,
-                new Vector2(rect.X + (rect.Width - size.X) / 2f, rect.Y + (rect.Height - size.Y) / 2f),
+
+            Rectangle src = isLeft ? LeftArrowSource : RightArrowSource;
+            float arrowScale = 2.4f;
+            int iconW = (int)(src.Width * arrowScale);
+            int iconH = (int)(src.Height * arrowScale);
+            Vector2 iconPos = new Vector2(
+                rect.X + (rect.Width - iconW) / 2f,
+                rect.Y + (rect.Height - iconH) / 2f);
+
+            Color tint = enabled ? (hover ? Color.White : Color.Wheat) : Color.Gray * 0.5f;
+            b.Draw(Game1.mouseCursors, iconPos, src, tint, 0f, Vector2.Zero, arrowScale, SpriteEffects.None, 0.86f);
+        }
+
+        private void DrawTab2NpcGridPage(SpriteBatch b)
+        {
+            int mx = Game1.getMouseX();
+            int my = Game1.getMouseY();
+
+            // ── 顶部右侧筛选控制 ──
+            bool filterHover = _filterCheckboxRect.Contains(mx, my);
+            Rectangle chkSrc = _filterCustomOnly ? new Rectangle(236, 425, 9, 9) : new Rectangle(227, 425, 9, 9);
+            b.Draw(Game1.mouseCursors, new Vector2(_filterCheckboxRect.X, _filterCheckboxRect.Y),
+                chkSrc, Color.White, 0f, Vector2.Zero, 3f, SpriteEffects.None, 1f);
+
+            b.DrawString(Game1.smallFont, "仅看已自定义",
+                new Vector2(_filterCheckboxRect.X + 32, _filterCheckboxRect.Y + 2),
+                filterHover ? Game1.textColor : Color.DimGray);
+
+            if (filterHover)
+            {
+                _hoveredGlobalTooltip = "只显示已经配置过自定义人设覆盖的 NPC";
+            }
+
+            // ── 宫格卡片绘制 ──
+            if (_visibleCardSlots.Count == 0)
+            {
+                string emptyText = _filterCustomOnly ? "暂无任何自定义覆盖的 NPC" : "未发现任何 NPC 档案";
+                var sz = Game1.dialogueFont.MeasureString(emptyText);
+                b.DrawString(Game1.dialogueFont, emptyText,
+                    new Vector2(xPositionOnScreen + (width - sz.X) / 2f, yPositionOnScreen + 260), Color.Gray);
+            }
+
+            foreach (var slot in _visibleCardSlots)
+            {
+                var card = slot.Card;
+                var rect = slot.Bounds;
+                bool isHovered = rect.Contains(mx, my);
+
+                // 卡片外框背景
+                Color cardBg = isHovered ? new Color(255, 245, 220) : Color.White;
+                IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
+                    new Rectangle(432, 439, 9, 9),
+                    rect.X, rect.Y, rect.Width, rect.Height, cardBg, 4f, false);
+
+                // 悬浮高亮效果
+                if (isHovered)
+                {
+                    b.Draw(Game1.staminaRect, rect, new Color(255, 215, 0) * 0.12f);
+                    _hoveredGlobalTooltip = $"{card.DisplayName} - 点击打开人设编辑器";
+                }
+
+                // ── 1. 大比例头像框（占据卡片主要宽度与高度） ──
+                // 卡片宽度通常在 115~135px 之间，设置头像框为 92~104px 左右，充满方块
+                int portraitBoxSize = Math.Clamp(rect.Width - 28, 86, 106);
+                int portraitX = rect.X + (rect.Width - portraitBoxSize) / 2;
+                int portraitY = rect.Y + 12;
+                var portraitBoxRect = new Rectangle(portraitX, portraitY, portraitBoxSize, portraitBoxSize);
+
+                // 头像木纹/内凹边框
+                IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
+                    new Rectangle(403, 383, 6, 6),
+                    portraitBoxRect.X - 4, portraitBoxRect.Y - 4,
+                    portraitBoxRect.Width + 8, portraitBoxRect.Height + 8,
+                    new Color(225, 210, 185), 3f, false);
+
+                // 绘制“微笑”肖像
+                if (card.Portrait != null && !card.SmileSourceRect.IsEmpty)
+                {
+                    b.Draw(card.Portrait, portraitBoxRect, card.SmileSourceRect, Color.White);
+                }
+                else
+                {
+                    string placeholder = card.DisplayName.Length > 0 ? card.DisplayName.Substring(0, 1) : "?";
+                    var psz = Game1.dialogueFont.MeasureString(placeholder);
+                    b.DrawString(Game1.dialogueFont, placeholder,
+                        new Vector2(portraitBoxRect.X + (portraitBoxRect.Width - psz.X) / 2f,
+                                    portraitBoxRect.Y + (portraitBoxRect.Height - psz.Y) / 2f),
+                        Color.Gray);
+                }
+
+                // ── 2. NPC 名称（垂直居中在头像底边与卡片底部之间） ──
+                string dispName = UiHelper.TruncateString(card.DisplayName, Game1.dialogueFont, rect.Width - 14, 0.82f);
+                var nameSz = Game1.dialogueFont.MeasureString(dispName) * 0.82f;
+                // 垂直居中在头像底边与卡片底部之间
+                float nameAreaH = rect.Bottom - portraitBoxRect.Bottom;
+                float nameY = portraitBoxRect.Bottom + (nameAreaH - nameSz.Y) / 2f - 2;
+
+                b.DrawString(Game1.dialogueFont, dispName,
+                    new Vector2(rect.X + (rect.Width - nameSz.X) / 2f, nameY),
+                    isHovered ? new Color(130, 45, 10) : Game1.textColor,
+                    0f, Vector2.Zero, 0.82f, SpriteEffects.None, 1f);
+
+                // ── 3. 角标样式状态标签（右上角浮动胶囊） ──
+                // 仅在自定义时显示高亮星标角标；默认基准时不再显示，避免破坏构图
+                if (card.HasCustomOverlay)
+                {
+                    string badgeText = "★ 自定义";
+                    Color badgeBg = new Color(34, 139, 34); // 森绿
+                    var badgeSz = Game1.smallFont.MeasureString(badgeText) * 0.65f;
+                    int bw = (int)badgeSz.X + 8;
+                    int bh = (int)badgeSz.Y + 2;
+                    int bx = rect.Right - bw - 6;
+                    int by = rect.Top + 6;
+
+                    b.Draw(Game1.staminaRect, new Rectangle(bx, by, bw, bh), badgeBg * 0.95f);
+                    b.DrawString(Game1.smallFont, badgeText, new Vector2(bx + 4, by + 1), Color.White, 0f, Vector2.Zero, 0.65f, SpriteEffects.None, 1f);
+                }
+
+                // ── 4. 自定义还原按钮 ↺（左上角浮动） ──
+                if (card.HasCustomOverlay)
+                {
+                    bool resetHover = slot.ResetBtnBounds.Contains(mx, my);
+                    if (resetHover)
+                    {
+                        _hoveredGlobalTooltip = $"还原 {card.DisplayName} 为默认人设";
+                    }
+
+                    Color resetBg = resetHover ? new Color(255, 90, 90) : new Color(200, 180, 150);
+                    IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
+                        new Rectangle(432, 439, 9, 9),
+                        slot.ResetBtnBounds.X, slot.ResetBtnBounds.Y,
+                        slot.ResetBtnBounds.Width, slot.ResetBtnBounds.Height,
+                        resetBg, 2f, false);
+
+                    b.DrawString(Game1.smallFont, "↺",
+                        new Vector2(slot.ResetBtnBounds.X + 4, slot.ResetBtnBounds.Y + 1),
+                        resetHover ? Color.White : Color.Black, 0f, Vector2.Zero, 0.8f, SpriteEffects.None, 1f);
+                }
+            }
+
+            // ── 底部翻页控制器 ──
+            int totalPages = GetNpcTotalPages();
+            int curPage = _npcGridPage + 1;
+
+            bool prevEnabled = _npcGridPage > 0;
+            bool nextEnabled = _npcGridPage < totalPages - 1;
+
+            // 使用 Timeline 同款原生像素箭头渲染
+            DrawArrowButton(b, _prevPageBtnRect, isLeft: true, enabled: prevEnabled, mx, my);
+
+            string pageInfo = $"第 {curPage} / {totalPages} 页 (共 {_displayNpcCards.Count} 人)";
+            var pageInfoSz = Game1.smallFont.MeasureString(pageInfo);
+            b.DrawString(Game1.smallFont, pageInfo,
+                new Vector2(xPositionOnScreen + (width - pageInfoSz.X) / 2f, _prevPageBtnRect.Y + (_prevPageBtnRect.Height - pageInfoSz.Y) / 2f),
                 Game1.textColor);
+
+            DrawArrowButton(b, _nextPageBtnRect, isLeft: false, enabled: nextEnabled, mx, my);
         }
 
         // ── Tab3（高级设置）══════════════════════════════════════════════
@@ -1609,31 +1902,22 @@ namespace ValleytalkReborn
             int mx = Game1.getMouseX();
             int my = Game1.getMouseY();
 
-            // 1. 无限对话选项行
             DrawSettingRow(b, _tab3RowInfinite, _tab3CheckboxInfinite, ModEntry.Config.EnableInfiniteChat,
                 I18n.AdvancedSettings.InfiniteChat(),
-                I18n.AdvancedSettings.InfiniteChatTooltip(),
-                mx, my);
+                I18n.AdvancedSettings.InfiniteChatTooltip(), mx, my);
 
-            // 2. 原版优先选项行
             DrawSettingRow(b, _tab3RowVanillaFirst, _tab3CheckboxVanillaFirst, ModEntry.Config.EnableVanillaFirst,
                 I18n.AdvancedSettings.VanillaFirst(),
-                I18n.AdvancedSettings.VanillaFirstTooltip(),
-                mx, my);
+                I18n.AdvancedSettings.VanillaFirstTooltip(), mx, my);
 
-            // 3. 记录原版对话选项行
             DrawSettingRow(b, _tab3RowRecordVanilla, _tab3CheckboxRecordVanilla, ModEntry.Config.RecordVanillaDialogue,
                 I18n.AdvancedSettings.RecordVanillaDialogue(),
-                I18n.AdvancedSettings.RecordVanillaDialogueTooltip(),
-                mx, my);
+                I18n.AdvancedSettings.RecordVanillaDialogueTooltip(), mx, my);
 
-            // 4. 记录事件与过场对话选项行
             DrawSettingRow(b, _tab3RowRecordEvent, _tab3CheckboxRecordEvent, ModEntry.Config.RecordEventDialogue,
                 I18n.AdvancedSettings.RecordEventDialogue(),
-                I18n.AdvancedSettings.RecordEventDialogueTooltip(),
-                mx, my);
+                I18n.AdvancedSettings.RecordEventDialogueTooltip(), mx, my);
 
-            // 置底居中的 Disclaimer
             string disclaimer = Game1.parseText(I18n.AdvancedSettings.Disclaimer(),
                 Game1.smallFont, width - LeftPadding - RightPadding - 40);
 
@@ -1677,7 +1961,6 @@ namespace ValleytalkReborn
 
             if (_currentTab == 0)
             {
-                // AI 提炼（最左）
                 string distillText = I18n.Memory.DistillButton();
                 bool distillHover = _aiExtractButtonRect.Contains(mx, my);
                 IClickableMenu.drawTextureBox(b,
@@ -1692,7 +1975,6 @@ namespace ValleytalkReborn
                         _aiExtractButtonRect.Y + (_aiExtractButtonRect.Height - distillLabelSize.Y) / 2f),
                     Game1.textColor);
 
-                // 手动录入（居中）
                 string manualText = I18n.Memory.AddButton();
                 bool manualHover = _manualAddRect.Contains(mx, my);
                 IClickableMenu.drawTextureBox(b,
@@ -1707,7 +1989,6 @@ namespace ValleytalkReborn
                         _manualAddRect.Y + (_manualAddRect.Height - manualLabelSize.Y) / 2f),
                     Game1.textColor);
 
-                // 归档箱（最右）
                 string archiveText = I18n.Memory.ArchiveButton(_archivedCount, MemoryManager.MaxArchivedMemoriesPerNpc);
                 bool archiveHover = _archiveButtonRect.Contains(mx, my);
                 IClickableMenu.drawTextureBox(b,
@@ -1724,7 +2005,6 @@ namespace ValleytalkReborn
             }
             else
             {
-                // 世界记忆：单添加按钮
                 string addText = I18n.Memory.AddWorldButton();
                 bool addHover = _addButtonRect.Contains(mx, my);
                 Color addColor = addHover ? Color.Gold : Color.White;
@@ -1742,7 +2022,6 @@ namespace ValleytalkReborn
                     Game1.textColor);
             }
 
-            // 容量计数显示（Tab 0 统计 Manual 上限，Tab 1 统计世界记忆上限）
             string cap = _currentTab == 0
                 ? $"{MemoryManager.Instance.GetManualMemoryCount(_currentNpcName)} / {MemoryManager.MaxMemoriesPerNpc}"
                 : $"{ActiveEntries.Count} / {MaxEntriesForTab}";
@@ -1767,10 +2046,8 @@ namespace ValleytalkReborn
 
             for (int i = 0; i < visibleCount && _startIndex + i < entries.Count; i++)
             {
-                // 行垂直居中偏移计算: (LineHeight 46 - ButtonSize 32) / 2 = 7
                 int y = _listTopY + 10 + i * LineHeight + 7;
 
-                // 删除按钮（使用 FullSpritesheet 上的木质垃圾桶图标）
                 var del = new ClickableTextureComponent(
                     new Rectangle(xPositionOnScreen + width - RightPadding - 32, y, ButtonSize, ButtonSize),
                     ModEntry.CustomIcons,
@@ -1781,7 +2058,6 @@ namespace ValleytalkReborn
                 };
                 _deleteButtons.Add(del);
 
-                // 编辑按钮（使用 FullSpritesheet 上的木质铅笔图标）
                 var edit = new ClickableTextureComponent(
                     new Rectangle(xPositionOnScreen + width - RightPadding - 72, y, ButtonSize, ButtonSize),
                     ModEntry.CustomIcons,
@@ -1832,8 +2108,8 @@ namespace ValleytalkReborn
 
         public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
         {
-            width = Math.Max(680, Math.Min(1000, Game1.uiViewport.Width - 80));
-            height = Math.Max(500, Math.Min(680, Game1.uiViewport.Height - 80));
+            width = Math.Max(700, Math.Min(1000, Game1.uiViewport.Width - 80));
+            height = Math.Max(520, Math.Min(680, Game1.uiViewport.Height - 80));
             xPositionOnScreen = (Game1.uiViewport.Width - width) / 2;
             yPositionOnScreen = (Game1.uiViewport.Height - height) / 2;
 

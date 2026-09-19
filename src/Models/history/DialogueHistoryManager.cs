@@ -16,7 +16,9 @@ namespace ValleytalkReborn
     {
         public static DialogueHistoryManager Instance { get; } = new DialogueHistoryManager();
 
-        private readonly Dictionary<string, List<DialogueHistoryEntry>> _history = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, List<DialogueHistoryEntry>>
+            _history = new(StringComparer.OrdinalIgnoreCase);
+
         private readonly Dictionary<string, DialogueHistoryEntry> _lastEntry = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, DialogueHistoryEntry> _pendingGifts = new(StringComparer.OrdinalIgnoreCase);
 
@@ -97,7 +99,7 @@ namespace ValleytalkReborn
         {
             var sanitized = SanitizeForStorage(text);
             if (string.IsNullOrWhiteSpace(sanitized)) return;
-            
+
             string trimmed = sanitized.Trim();
             if (trimmed == "..." || trimmed == "…" || trimmed == "......" || trimmed == "。。。。")
             {
@@ -234,6 +236,49 @@ namespace ValleytalkReborn
                 if (string.Equals(_lastActiveNpc, npcName, StringComparison.OrdinalIgnoreCase))
                     _lastActiveNpc = "";
             }
+
+            DialogueMemoryCompressor.ClearCache(npcName);
+        }
+
+        /// <summary>
+        /// 清除该 NPC 当日对话记录、保留更早历史，并同步去重指针与活跃指针。
+        /// </summary>
+        public void ClearTodayHistory(string npcName)
+        {
+            lock (_historyLock)
+            {
+                if (!_history.TryGetValue(npcName, out var list) || list.Count == 0) return;
+
+                int curYear = Game1.Date.Year;
+                var curSeason = (Season)Game1.Date.Season;
+                int curDay = Game1.Date.DayOfMonth;
+
+                list.RemoveAll(e =>
+                    e.Timestamp.Year == curYear && e.Timestamp.Season == curSeason && e.Timestamp.DayOfMonth == curDay);
+
+                if (list.Count > 0)
+                {
+                    _lastEntry[npcName] = list[^1];
+                }
+                else
+                {
+                    _history.Remove(npcName);
+                    _lastEntry.Remove(npcName); 
+                }
+
+                if (_pendingGifts.TryGetValue(npcName, out var pg) && pg.Timestamp.Year == curYear
+                                                                   && pg.Timestamp.Season == curSeason &&
+                                                                   pg.Timestamp.DayOfMonth == curDay)
+                {
+                    _pendingGifts.Remove(npcName);
+                }
+
+                if (list.Count == 0 && string.Equals(_lastActiveNpc, npcName, StringComparison.OrdinalIgnoreCase))
+                {
+                    _lastActiveNpc = "";
+                }
+            }
+
             DialogueMemoryCompressor.ClearCache(npcName);
         }
 
@@ -246,6 +291,8 @@ namespace ValleytalkReborn
                 _pendingGifts.Clear();
                 _lastActiveNpc = "";
             }
+
+            DialogueMemoryCompressor.ClearAllCache();
         }
 
         public string GetMostRecentNpc()
@@ -267,6 +314,7 @@ namespace ValleytalkReborn
                         best = npc;
                     }
                 }
+
                 return best;
             }
         }
@@ -343,12 +391,16 @@ namespace ValleytalkReborn
                     if (Context.IsMainPlayer)
                     {
                         ModEntry.SHelper.Data.WriteSaveData(SaveKey, snapshot);
-                        ModEntry.SMonitor?.Log($"[DialogueHistoryManager] [Host] Saved history for {snapshot.Count} NPCs.", LogLevel.Debug);
+                        ModEntry.SMonitor?.Log(
+                            $"[DialogueHistoryManager] [Host] Saved history for {snapshot.Count} NPCs.",
+                            LogLevel.Debug);
                     }
                     else
                     {
                         ModEntry.SHelper.Data.WriteJsonFile(GetMultiplayerFilePath(), snapshot);
-                        ModEntry.SMonitor?.Log($"[DialogueHistoryManager] [Farmhand] Saved local history to {GetMultiplayerFilePath()}.", LogLevel.Debug);
+                        ModEntry.SMonitor?.Log(
+                            $"[DialogueHistoryManager] [Farmhand] Saved local history to {GetMultiplayerFilePath()}.",
+                            LogLevel.Debug);
                     }
                 }
                 catch (Exception ex)
@@ -372,7 +424,8 @@ namespace ValleytalkReborn
                     }
                     else
                     {
-                        data = ModEntry.SHelper.Data.ReadJsonFile<Dictionary<string, List<SerializableEntry>>>(GetMultiplayerFilePath());
+                        data = ModEntry.SHelper.Data.ReadJsonFile<Dictionary<string, List<SerializableEntry>>>(
+                            GetMultiplayerFilePath());
                     }
 
                     if (data == null) return;
@@ -402,7 +455,9 @@ namespace ValleytalkReborn
                         }
                     }
 
-                    ModEntry.SMonitor?.Log($"[DialogueHistoryManager] Loaded history for {_history.Count} NPCs (IsMainPlayer={Context.IsMainPlayer}).", LogLevel.Debug);
+                    ModEntry.SMonitor?.Log(
+                        $"[DialogueHistoryManager] Loaded history for {_history.Count} NPCs (IsMainPlayer={Context.IsMainPlayer}).",
+                        LogLevel.Debug);
                 }
                 catch (Exception ex)
                 {
@@ -421,6 +476,7 @@ namespace ValleytalkReborn
                     snapshot[npcName] = list.Select(SerializableEntry.FromEntry).ToList();
                 }
             }
+
             return snapshot;
         }
 

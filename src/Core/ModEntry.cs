@@ -682,7 +682,6 @@ namespace ValleytalkReborn
 
                 // 1. 如果当前已经处于相关界面（Hub 主页、记忆面板或归档箱），按快捷键关闭
                 if (Game1.activeClickableMenu is IntegratedHubMenu
-                    || Game1.activeClickableMenu is ScrollableMemoryMenu
                     || Game1.activeClickableMenu is ArchivedMemoryMenu)
                 {
                     Helper.Input.Suppress(e.Button);
@@ -1318,10 +1317,11 @@ namespace ValleytalkReborn
             if (CustomIcons != null && !CustomIcons.IsDisposed)
                 return;
 
-            CustomIcons = LoadEmbeddedTexture("ValleytalkReborn.UI.assets.Button.png");
+            string embeddedName = "ValleytalkReborn.UI.assets.textures.Button.png";
+            CustomIcons = LoadEmbeddedTexture(embeddedName);
             if (CustomIcons == null)
             {
-                SMonitor?.Log("未能加载嵌入式 UI 贴图: ValleytalkReborn.UI.assets.Button.png", LogLevel.Error);
+                SMonitor?.Log($"未能加载嵌入式 UI 贴图: {embeddedName}", LogLevel.Error);
             }
         }
 

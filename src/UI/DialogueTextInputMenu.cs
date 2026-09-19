@@ -4,7 +4,6 @@ using Microsoft.Xna.Framework.Input;
 using StardewValley;
 using StardewValley.Menus;
 using System;
-using System.Collections.Generic;
 
 namespace ValleytalkReborn
 {
@@ -18,9 +17,6 @@ namespace ValleytalkReborn
         private readonly ClickableTextureComponent _cancelButton;
         private readonly ClickableTextureComponent _clearHistory;
         private readonly ClickableTextureComponent _viewHistory;
-        private readonly ClickableTextureComponent _memoryButton;
-        private readonly ClickableTextureComponent _profileButton;
-        private readonly ClickableTextureComponent _advancedSettingsButton;
         private readonly TextSubmittedDelegate _onTextSubmitted;
         private readonly string _npcName;
 
@@ -46,17 +42,11 @@ namespace ValleytalkReborn
         private float _cancelButtonHoverScale = 1f;
         private float _clearHistoryHoverScale = 1f;
         private float _viewHistoryHoverScale = 1f;
-        private float _memoryButtonHoverScale = 1f;
-        private float _profileButtonHoverScale = 1f;
-        private float _advancedSettingsButtonHoverScale = 1f;
 
         private readonly float _okButtonBaseScale = 1f;
         private readonly float _cancelButtonBaseScale = 1f;
         private readonly float _clearHistoryBaseScale = 3f;
         private readonly float _viewHistoryBaseScale = 3.5f;
-        private readonly float _memoryButtonBaseScale = 3.5f;
-        private readonly float _profileButtonBaseScale = 3.5f;
-        private readonly float _advancedSettingsButtonBaseScale = 3.5f;
 
         public Rectangle MenuBounds => _menuBounds;
 
@@ -158,51 +148,6 @@ namespace ValleytalkReborn
                 hoverText = I18n.DialogueInput.ViewHistoryHover(_npcName)
             };
 
-            _memoryButton = new ClickableTextureComponent(
-                new Rectangle(
-                    (int)_menuPosition.X + 4 * Margin + 2 * ButtonSize,
-                    (int)_menuPosition.Y + _currentMenuHeight - 2 * Margin - ButtonSize,
-                    ButtonSize,
-                    ButtonSize
-                ),
-                Game1.objectSpriteSheet,
-                Game1.getSourceRectForStandardTileSheet(Game1.objectSpriteSheet, 434, 16, 16),
-                3.5f
-            )
-            {
-                hoverText = I18n.Memory.ButtonHover(_npcName)
-            };
-
-            _profileButton = new ClickableTextureComponent(
-                new Rectangle(
-                    (int)_menuPosition.X + 5 * Margin + 3 * ButtonSize,
-                    (int)_menuPosition.Y + _currentMenuHeight - 2 * Margin - ButtonSize,
-                    ButtonSize,
-                    ButtonSize
-                ),
-                Game1.objectSpriteSheet,
-                Game1.getSourceRectForStandardTileSheet(Game1.objectSpriteSheet, 102, 16, 16),
-                3.5f
-            )
-            {
-                hoverText = I18n.Profile.ButtonHover()
-            };
-
-            _advancedSettingsButton = new ClickableTextureComponent(
-                new Rectangle(
-                    (int)_menuPosition.X + 6 * Margin + 4 * ButtonSize,
-                    (int)_menuPosition.Y + _currentMenuHeight - 2 * Margin - ButtonSize,
-                    ButtonSize,
-                    ButtonSize
-                ),
-                Game1.objectSpriteSheet,
-                Game1.getSourceRectForStandardTileSheet(Game1.objectSpriteSheet, 373, 16, 16),
-                3.5f
-            )
-            {
-                hoverText = I18n.AdvancedSettings.ButtonHover()
-            };
-
             Recenter();
         }
 
@@ -298,27 +243,6 @@ namespace ValleytalkReborn
                 ButtonSize,
                 ButtonSize
             );
-
-            _memoryButton.bounds = new Rectangle(
-                (int)_menuPosition.X + 4 * Margin + 2 * ButtonSize,
-                (int)_menuPosition.Y + _currentMenuHeight - 2 * Margin - ButtonSize,
-                ButtonSize,
-                ButtonSize
-            );
-
-            _profileButton.bounds = new Rectangle(
-                (int)_menuPosition.X + 5 * Margin + 3 * ButtonSize,
-                (int)_menuPosition.Y + _currentMenuHeight - 2 * Margin - ButtonSize,
-                ButtonSize,
-                ButtonSize
-            );
-
-            _advancedSettingsButton.bounds = new Rectangle(
-                (int)_menuPosition.X + 6 * Margin + 4 * ButtonSize,
-                (int)_menuPosition.Y + _currentMenuHeight - 2 * Margin - ButtonSize,
-                ButtonSize,
-                ButtonSize
-            );
         }
 
         public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
@@ -347,7 +271,6 @@ namespace ValleytalkReborn
 
             var titleSize = Game1.dialogueFont.MeasureString(_title);
 
-            // 在充足的预留空间与槽位内绝对居中，安全包裹在边框内
             Vector2 titlePos = new Vector2(
                 _menuPosition.X + (_currentMenuWidth - titleSize.X) / 2f,
                 _menuPosition.Y + TopPadding + (HeaderHeight - titleSize.Y) / 2f
@@ -392,28 +315,10 @@ namespace ValleytalkReborn
             _viewHistory.scale = _viewHistoryBaseScale * _viewHistoryHoverScale;
             _viewHistory.draw(spriteBatch);
 
-            UpdateButtonScale(ref _memoryButtonHoverScale, _memoryButton, mouseX, mouseY);
-            _memoryButton.scale = _memoryButtonBaseScale * _memoryButtonHoverScale;
-            _memoryButton.draw(spriteBatch);
-
-            UpdateButtonScale(ref _profileButtonHoverScale, _profileButton, mouseX, mouseY);
-            _profileButton.scale = _profileButtonBaseScale * _profileButtonHoverScale;
-            _profileButton.draw(spriteBatch);
-
-            UpdateButtonScale(ref _advancedSettingsButtonHoverScale, _advancedSettingsButton, mouseX, mouseY);
-            _advancedSettingsButton.scale = _advancedSettingsButtonBaseScale * _advancedSettingsButtonHoverScale;
-            _advancedSettingsButton.draw(spriteBatch);
-
             if (_clearHistory.containsPoint(mouseX, mouseY))
                 IClickableMenu.drawHoverText(spriteBatch, _clearHistory.hoverText, Game1.smallFont);
             else if (_viewHistory.containsPoint(mouseX, mouseY))
                 IClickableMenu.drawHoverText(spriteBatch, _viewHistory.hoverText, Game1.smallFont);
-            else if (_memoryButton.containsPoint(mouseX, mouseY))
-                IClickableMenu.drawHoverText(spriteBatch, _memoryButton.hoverText, Game1.smallFont);
-            else if (_advancedSettingsButton.containsPoint(mouseX, mouseY))
-                IClickableMenu.drawHoverText(spriteBatch, _advancedSettingsButton.hoverText, Game1.smallFont);
-            else if (_profileButton.containsPoint(mouseX, mouseY))
-                IClickableMenu.drawHoverText(spriteBatch, _profileButton.hoverText, Game1.smallFont);
 
             base.draw(spriteBatch);
 
@@ -462,30 +367,33 @@ namespace ValleytalkReborn
             }
             else if (_clearHistory.containsPoint(x, y))
             {
-                if (Game1.input.GetKeyboardState().IsKeyDown(Keys.LeftShift))
+                Game1.keyboardDispatcher.Subscriber = null;
+                Game1.activeClickableMenu = new ClearHistoryScopeMenu(_npcName, this, scope =>
                 {
-                    ShowConfirmation(
-                        I18n.DialogueInput.ClearAllConfirm(),
-                        () =>
-                        {
-                            Game1.playSound("trashcan");
-                            ClearHistory();
-                        },
-                        () => { }
-                    );
-                }
-                else
-                {
-                    ShowConfirmation(
-                        I18n.DialogueInput.ClearOneConfirm(_npcName),
-                        () =>
-                        {
-                            Game1.playSound("trashcan");
+                    Game1.playSound("trashcan");
+                    string dispName = Game1.getCharacterFromName(_npcName)?.displayName ?? _npcName;
+                    switch (scope)
+                    {
+                        case ClearHistoryScopeMenu.ClearScope.Today:
+                            DialogueHistoryManager.Instance.ClearTodayHistory(_npcName);
+                            SessionCache.Instance.Reset(_npcName);
+                            RecentConversationTracker.Clear(_npcName);
+                            DialogueBuilder.Instance?.ClearContext(_npcName);
+                            Game1.addHUDMessage(new HUDMessage(
+                                I18n.DialogueInput.ClearScopeHudToday(dispName), HUDMessage.achievement_type));
+                            break;
+                        case ClearHistoryScopeMenu.ClearScope.CurrentNpcAll:
                             ClearHistory(_npcName);
-                        },
-                        () => { }
-                    );
-                }
+                            Game1.addHUDMessage(new HUDMessage(
+                                I18n.DialogueInput.ClearScopeHudCurrentNpcAll(dispName), HUDMessage.achievement_type));
+                            break;
+                        case ClearHistoryScopeMenu.ClearScope.GlobalAll:
+                            ClearHistory();
+                            Game1.addHUDMessage(new HUDMessage(
+                                I18n.DialogueInput.ClearScopeHudGlobalAll(), HUDMessage.achievement_type));
+                            break;
+                    }
+                });
             }
             else if (_viewHistory.containsPoint(x, y))
             {
@@ -493,25 +401,6 @@ namespace ValleytalkReborn
                 Game1.keyboardDispatcher.Subscriber = null;
                 var target = _menuToRestore ?? this;
                 Game1.activeClickableMenu = new TimelineChronicleMenu(_npcName, target, target, autoLockLatest: false);
-            }
-            else if (_memoryButton.containsPoint(x, y))
-            {
-                Game1.playSound("bigSelect");
-                Game1.keyboardDispatcher.Subscriber = null;
-                Game1.activeClickableMenu = new ScrollableMemoryMenu(_npcName, _menuToRestore ?? this);
-            }
-            else if (_advancedSettingsButton.containsPoint(x, y))
-            {
-                Game1.playSound("bigSelect");
-                Game1.keyboardDispatcher.Subscriber = null;
-                Game1.activeClickableMenu = new AdvancedSettingsMenu(this);
-            }
-            else if (_profileButton.containsPoint(x, y))
-            {
-                Game1.playSound("bigSelect");
-                Game1.keyboardDispatcher.Subscriber = null;
-                // 🌟 关键修改：将当前的包装器/菜单作为 ownerMenu 传给 Profile 菜单
-                Game1.activeClickableMenu = new PlayerProfileCustomMenu(_npcName, _menuToRestore ?? this);
             }
             else if (_inputTextBox.ContainsPoint(x, y))
             {
@@ -534,10 +423,6 @@ namespace ValleytalkReborn
             ReceiveKeyPress(key);
         }
 
-        
-        // ⚠️ 不要在此处转发 Ctrl+Key！KeyboardDispatcher 已通过
-        //IKeyboardSubscriber 路由。重复转发会导致粘贴/剪切/复制执行两次。
-       //参照 AddMemoryInputMenu.receiveKeyPress 的正确写法。
         public void ReceiveKeyPress(Keys key)
         {
             if (key == Keys.Escape)
@@ -547,9 +432,6 @@ namespace ValleytalkReborn
                 return;
             }
 
-            // Guard: Ctrl 组合键（C/V/X/A）由 KeyboardDispatcher 通过
-            // IKeyboardSubscriber.RecieveSpecialInput 直接路由，此处不可重复转发。
-            // 仅在没有 Ctrl 修饰时才转发导航/编辑键。
             if (!DialogueTextInputBox.IsControlKeyDown())
             {
                 if (
@@ -572,29 +454,9 @@ namespace ValleytalkReborn
             base.cleanupBeforeExit();
         }
 
-        private void ShowConfirmation(string message, Action onConfirm, Action onCancel)
-        {
-            Game1.keyboardDispatcher.Subscriber = null;
-            Game1.activeClickableMenu = new ConfirmationDialog(
-                message,
-                _ =>
-                {
-                    onConfirm();
-                    RestorePreviousMenu();
-                },
-                _ =>
-                {
-                    onCancel();
-                    RestorePreviousMenu();
-                }
-            );
-        }
-
         private void ClearHistory()
         {
             DialogueHistoryManager.Instance.ClearAllHistory();
-
-            // Clear in-memory session caches so NPCs truly forget the conversation
             SessionCache.Instance.ResetAll();
             RecentConversationTracker.Clear();
             DialogueBuilder.Instance?.ClearAllContexts();
@@ -603,12 +465,9 @@ namespace ValleytalkReborn
         private void ClearHistory(string npcName)
         {
             DialogueHistoryManager.Instance.ClearHistory(npcName);
-
-            // Clear in-memory session caches so NPCs truly forget the conversation
             SessionCache.Instance.Reset(npcName);
             RecentConversationTracker.Clear(npcName);
             DialogueBuilder.Instance?.ClearContext(npcName);
         }
     }
-
 }

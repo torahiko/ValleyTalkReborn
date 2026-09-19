@@ -82,6 +82,7 @@ namespace ValleytalkReborn
             {
                 return cached.Summary;
             }
+
             return "";
         }
 
@@ -126,30 +127,31 @@ namespace ValleytalkReborn
                         : (entry.SpeakerType == SpeakerType.System ? "***" : npcName);
                     dialogueText.AppendLine($"- {speaker}: {entry.Text}");
                 }
+
                 dialogueText.AppendLine();
             }
 
             // Build compression prompt
             string systemPrompt = "You are a dialogue summarizer for a Stardew Valley NPC mod. " +
-                "Your task is to concisely summarize the key points of past conversations between the player and an NPC. " +
-                "Focus on: relationship developments, important topics discussed, gifts given, promises made, and emotional tone. " +
-                "Write the summary in the same language as the dialogue. " +
-                "Keep it under 200 words. Format as a single paragraph.";
+                                  "Your task is to concisely summarize the key points of past conversations between the player and an NPC. " +
+                                  "Focus on: relationship developments, important topics discussed, gifts given, promises made, and emotional tone. " +
+                                  "Write the summary in the same language as the dialogue. " +
+                                  "Keep it under 200 words. Format as a single paragraph.";
 
             string compressionPrompt = $"Here are past conversations with {npcName}:\n\n{dialogueText}\n" +
-                $"Please provide a concise summary of these conversations with {npcName}:";
+                                       $"Please provide a concise summary of these conversations with {npcName}:";
 
             try
             {
                 var result = await Llm.Instance.RunInference(
                     systemPrompt,
-                    "",     // gameCacheString
-                    "",     // npcCacheString
+                    "", // gameCacheString
+                    "", // npcCacheString
                     compressionPrompt,
-                    "",     // responseStart
-                    512,    // n_predict: limit output tokens
-                    "",     // cacheContext
-                    false   // allowRetry: don't retry compression failures
+                    "", // responseStart
+                    512, // n_predict: limit output tokens
+                    "", // cacheContext
+                    false // allowRetry: don't retry compression failures
                 );
 
                 if (result.IsSuccess && !string.IsNullOrWhiteSpace(result.Text))

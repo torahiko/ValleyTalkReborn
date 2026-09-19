@@ -36,6 +36,15 @@
       <Link>assets/%(RecursiveDir)%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <!-- FONT-01-r2: 显式包含 UI/assets/fonts/ 下的字体与许可文件 -->
+    <None Update="UI\assets\fonts\*.ttf">
+      <Link>assets\fonts\%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="UI\assets\fonts\*.txt">
+      <Link>assets\fonts\%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Remove="Actions\Movement\MovementManager.cs.new" />
     <None Remove="Actions\Movement\MovementManager.cs.bak" />
     <None Remove="Dialogue\Ambient\Bark\BarkPromptBuilder.cs.bak" />
@@ -47,6 +56,6 @@
 
   <ItemGroup>
     <None Remove="UI\assets\FullSpritesheet.png" />
-    <EmbeddedResource Include="UI\assets\Button.png" />
+    <EmbeddedResource Include="UI\assets\textures\Button.png" />
   </ItemGroup>
 </Project>
