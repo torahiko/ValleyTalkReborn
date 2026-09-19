@@ -24,7 +24,7 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
     private const int PlusSize = 34;
     private const int ButtonSize = 32;
 
-    private const float CloseButtonBaseScale = 3.5f;
+    private const float CloseButtonBaseScale = 4f;
 
     // 动态布局坐标
     private int _contentTopY;
@@ -312,10 +312,10 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
 
         // 顶部标题（此时已稳稳居于实体羊皮纸底框正上方）
         string title = I18n.Memory.DistillTitle(_npcDisplayName);
-        Vector2 titleSize = Game1.dialogueFont.MeasureString(title);
-        b.DrawString(Game1.dialogueFont, title,
+        Vector2 titleSize = CustomFontManager.MeasureString(title, CustomFontManager.SizeTitle);
+        CustomFontManager.DrawString(b, title,
             new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f, yPositionOnScreen + 24),
-            Game1.textColor);
+            Game1.textColor, CustomFontManager.SizeTitle);
 
         // 关闭按钮
         UiHelper.UpdateButtonScale(ref _closeButtonHoverScale, _closeButton, mx, my);
@@ -325,10 +325,10 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
         if (_state == DistillState.Loading)
         {
             string loading = I18n.Memory.DistillLoading();
-            Vector2 size = Game1.smallFont.MeasureString(loading);
-            b.DrawString(Game1.smallFont, loading,
+            Vector2 size = CustomFontManager.MeasureString(loading, CustomFontManager.SizeRegular);
+            CustomFontManager.DrawString(b, loading,
                 new Vector2(xPositionOnScreen + (width - size.X) / 2f, yPositionOnScreen + (height - size.Y) / 2f),
-                Game1.textColor);
+                Game1.textColor, CustomFontManager.SizeRegular);
         }
         else
         {
@@ -347,18 +347,18 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
     private void DrawReady(SpriteBatch b, int mx, int my)
     {
         // 栏目标题
-        b.DrawString(Game1.smallFont, I18n.Memory.DistillLeftTitle(),
-            new Vector2(_leftColX, _headerY), Game1.textColor);
-        b.DrawString(Game1.smallFont, I18n.Memory.DistillRightTitle(),
-            new Vector2(_rightColX, _headerY), Game1.textColor);
+        CustomFontManager.DrawString(b, I18n.Memory.DistillLeftTitle(),
+            new Vector2(_leftColX, _headerY), Game1.textColor, CustomFontManager.SizeRegular);
+        CustomFontManager.DrawString(b, I18n.Memory.DistillRightTitle(),
+            new Vector2(_rightColX, _headerY), Game1.textColor, CustomFontManager.SizeRegular);
 
         // 容量计数
         // T6：Timeline 模式显示 tier 容量；Manual 模式显示 Manual 池上限
         int cap = _timelineMode ? MemoryManager.GetTierCapacity(_targetTier) : MemoryManager.MaxMemoriesPerNpc;
         string capText = $"{_tierCount} / {cap}";
-        Vector2 capSize = Game1.smallFont.MeasureString(capText);
-        b.DrawString(Game1.smallFont, capText,
-            new Vector2(_rightColX + _colW - capSize.X, _headerY), Color.Gray);
+        Vector2 capSize = CustomFontManager.MeasureString(capText, CustomFontManager.SizeSmall);
+        CustomFontManager.DrawString(b, capText,
+            new Vector2(_rightColX + _colW - capSize.X, _headerY), Color.Gray, CustomFontManager.SizeSmall);
 
         // 中间分割线（贯通上下）
         int dividerHeight = (yPositionOnScreen + height - 40) - _headerY;
@@ -386,17 +386,17 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
                 boxColor, 3.8f, false);
 
             // 绘制按钮内加号
-            Vector2 plusCharSize = Game1.smallFont.MeasureString("+");
-            b.DrawString(Game1.smallFont, "+",
+            Vector2 plusCharSize = CustomFontManager.MeasureString("+", CustomFontManager.SizeRegular);
+            CustomFontManager.DrawString(b, "+",
                 new Vector2(rect.X + (rect.Width - plusCharSize.X) / 2f, rect.Y + (rect.Height - plusCharSize.Y) / 2f),
-                used ? Color.Gray : Game1.textColor);
+                used ? Color.Gray : Game1.textColor, CustomFontManager.SizeRegular);
 
             // 候选文字及截断
             Color textColor = used ? Game1.textColor * 0.45f : Game1.textColor;
-            string displayText = TruncateString(cand, Game1.smallFont, maxLeftTextWidth);
+            string displayText = CustomFontManager.TruncateString(cand, CustomFontManager.SizeRegular, maxLeftTextWidth);
 
-            Vector2 textPos = new Vector2(_leftColX + PlusSize + 12, rect.Y + (RowH - Game1.smallFont.LineSpacing) / 2f);
-            b.DrawString(Game1.smallFont, displayText, textPos, textColor);
+            Vector2 textPos = new Vector2(_leftColX + PlusSize + 12, rect.Y + (RowH - CustomFontManager.MeasureString("A", CustomFontManager.SizeRegular).Y) / 2f);
+            CustomFontManager.DrawString(b, displayText, textPos, textColor, CustomFontManager.SizeRegular);
 
             // 文本区域悬停检测（若被截断则提供 Tooltip）
             Rectangle textBounds = new Rectangle((int)textPos.X, rect.Y, (int)maxLeftTextWidth, RowH);
@@ -423,9 +423,9 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
                 : (entry.Source == "Auto" ? new Color(130, 150, 170) : Game1.textColor);
             string fullText = $"{idx + 1}. {prefix}{entry.Content}";
 
-            string displayText = TruncateString(fullText, Game1.smallFont, maxRightTextWidth);
-            Vector2 textPos = new Vector2(_rightColX, rowY + (RowH - Game1.smallFont.LineSpacing) / 2f);
-            b.DrawString(Game1.smallFont, displayText, textPos, textColor);
+            string displayText = CustomFontManager.TruncateString(fullText, CustomFontManager.SizeRegular, maxRightTextWidth);
+            Vector2 textPos = new Vector2(_rightColX, rowY + (RowH - CustomFontManager.MeasureString("A", CustomFontManager.SizeRegular).Y) / 2f);
+            CustomFontManager.DrawString(b, displayText, textPos, textColor, CustomFontManager.SizeRegular);
 
             bool isLeftMouseDown = Mouse.GetState().LeftButton == ButtonState.Pressed;
 
@@ -525,37 +525,6 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             };
             _deleteButtons.Add(del);
         }
-    }
-
-    private static string TruncateString(string text, SpriteFont font, float maxWidth)
-    {
-        if (string.IsNullOrEmpty(text) || font.MeasureString(text).X <= maxWidth)
-            return text;
-
-        const string ellipsis = "...";
-        float targetWidth = maxWidth - font.MeasureString(ellipsis).X;
-        if (targetWidth <= 0)
-            return ellipsis;
-
-        int low = 0;
-        int high = text.Length;
-        int best = 0;
-
-        while (low <= high)
-        {
-            int mid = (low + high) / 2;
-            if (font.MeasureString(text.Substring(0, mid)).X <= targetWidth)
-            {
-                best = mid;
-                low = mid + 1;
-            }
-            else
-            {
-                high = mid - 1;
-            }
-        }
-
-        return text.Substring(0, best) + ellipsis;
     }
 
     private void ApplyResult()

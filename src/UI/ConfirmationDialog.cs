@@ -139,17 +139,17 @@ namespace ValleytalkReborn
             Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
 
             string wrappedMessage = Game1.parseText(_message, Game1.dialogueFont, width - 128);
-            var msgSize = Game1.dialogueFont.MeasureString(wrappedMessage);
+            var msgSize = CustomFontManager.MeasureString(wrappedMessage, CustomFontManager.SizeTitle);
 
             float textX = xPositionOnScreen + (width - msgSize.X) / 2;
             float textY = yPositionOnScreen + (height - msgSize.Y) / 2 - 10;
 
-            b.DrawString(
-                Game1.dialogueFont,
+            CustomFontManager.DrawString(
+                b,
                 wrappedMessage,
                 new Vector2(textX, textY),
-                Game1.textColor
-            );
+                Game1.textColor,
+                CustomFontManager.SizeTitle);
 
             int mouseX = Game1.getMouseX();
             int mouseY = Game1.getMouseY();

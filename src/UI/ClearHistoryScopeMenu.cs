@@ -157,15 +157,14 @@ namespace ValleytalkReborn
             Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
 
             string title = I18n.DialogueInput.ClearScopeTitle();
-            var titleSize = Game1.dialogueFont.MeasureString(title);
-            b.DrawString(Game1.dialogueFont, title,
+            var titleSize = CustomFontManager.MeasureString(title, CustomFontManager.SizeTitle);
+            CustomFontManager.DrawString(b, title,
                 new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f, yPositionOnScreen + 36),
-                Game1.textColor);
+                Game1.textColor, CustomFontManager.SizeTitle);
 
-            string hint = I18n.DialogueInput.ClearScopeHint();
-            b.DrawString(Game1.smallFont, hint,
+            CustomFontManager.DrawString(b, I18n.DialogueInput.ClearScopeHint(),
                 new Vector2(_dropdownHeaderRect.X, yPositionOnScreen + 95),
-                Color.Gray);
+                Color.Gray, CustomFontManager.SizeSmall);
 
             int mx = Game1.getMouseX();
             int my = Game1.getMouseY();
@@ -193,11 +192,11 @@ namespace ValleytalkReborn
 
             // Current item text (white, vertically centered)
             string currentLabel = GetScopeLabel(_selectedScope);
-            var labelSize = Game1.smallFont.MeasureString(currentLabel);
-            b.DrawString(Game1.smallFont, currentLabel,
+            var labelSize = CustomFontManager.MeasureString(currentLabel, CustomFontManager.SizeRegular);
+            CustomFontManager.DrawString(b, currentLabel,
                 new Vector2(_dropdownHeaderRect.X + 12,
                     _dropdownHeaderRect.Y + (_dropdownHeaderRect.Height - labelSize.Y) / 2f),
-                Color.White);
+                Color.White, CustomFontManager.SizeRegular);
 
             // Arrow texture
             var arrowRect = new Rectangle(_dropdownHeaderRect.Right - 30,
@@ -234,11 +233,11 @@ namespace ValleytalkReborn
                     else
                         textColor = Color.Black;
 
-                    var itemLabelSize = Game1.smallFont.MeasureString(item.Label);
-                    b.DrawString(Game1.smallFont, item.Label,
+                    var itemLabelSize = CustomFontManager.MeasureString(item.Label, CustomFontManager.SizeRegular);
+                    CustomFontManager.DrawString(b, item.Label,
                         new Vector2(item.Rect.X + 12,
                             item.Rect.Y + (item.Rect.Height - itemLabelSize.Y) / 2f),
-                        textColor);
+                        textColor, CustomFontManager.SizeRegular);
                 }
             }
 

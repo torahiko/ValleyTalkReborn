@@ -24,7 +24,10 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     private const int LeftPadding = 48;
     private const int RightPadding = 48;
     private const int ItemSpacing = 10;
-    private const float TextFontScale = 0.7f;
+    private const float TextFontScale = 1.0f;
+
+    // 气泡中说话人名称字号（正文为 CustomFontManager.SizeRegular 18f）
+    private const float SpeakerNameFontSize = 20f;
 
     // 头像排版常量（40x40 像素标准框）
     private const int AvatarSize = 40;
@@ -408,9 +411,10 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                     : Math.Max(220, availableWidth - reservedForAvatar);
 
                 int maxTextPixelWidth = maxBubbleWidth - padX * 2;
-                string wrapped = Game1.parseText(entry.Text ?? string.Empty, Game1.dialogueFont, (int)(maxTextPixelWidth / TextFontScale));
-                Vector2 textSize = Game1.dialogueFont.MeasureString(wrapped) * TextFontScale;
-                Vector2 speakerSize = Game1.smallFont.MeasureString(speaker);
+                string wrapped = Game1.parseText(entry.Text ?? string.Empty, Game1.smallFont, maxTextPixelWidth);
+                Vector2 textSize = CustomFontManager.MeasureString(wrapped, CustomFontManager.SizeRegular);
+                // 说话人名称使用稍大的字号进行测量
+                Vector2 speakerSize = CustomFontManager.MeasureString(speaker, SpeakerNameFontSize);
 
                 float contentInnerWidth = Math.Max(textSize.X, speakerSize.X);
                 int bubbleWidth = (int)Math.Clamp(contentInnerWidth + padX * 2, minBubbleWidth, maxBubbleWidth);
@@ -449,9 +453,9 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 string dateLabel = MemoryManager.GetDisplayDateLabel(entry);
 
                 int maxTextPixelWidth = maxCardWidth - padX * 2;
-                string wrapped = Game1.parseText(entry.Content ?? string.Empty, Game1.dialogueFont, (int)(maxTextPixelWidth / TextFontScale));
-                Vector2 textSize = Game1.dialogueFont.MeasureString(wrapped) * TextFontScale;
-                Vector2 dateSize = Game1.smallFont.MeasureString(dateLabel);
+                string wrapped = Game1.parseText(entry.Content ?? string.Empty, Game1.smallFont, maxTextPixelWidth);
+                Vector2 textSize = CustomFontManager.MeasureString(wrapped, CustomFontManager.SizeRegular);
+                Vector2 dateSize = CustomFontManager.MeasureString(dateLabel, CustomFontManager.SizeRegular);
 
                 float headerWidthNeeded = dateSize.X + 80;
                 float contentInnerWidth = Math.Max(textSize.X, headerWidthNeeded);
@@ -633,7 +637,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         if (_currentTab >= 0 && _currentTab <= 2)
         {
             string label = GetActionButtonLabel();
-            int textWidth = (int)Game1.smallFont.MeasureString(label).X;
+            int textWidth = (int)CustomFontManager.MeasureString(label, CustomFontManager.SizeRegular).X;
             int btnWidth = Math.Max(200, textWidth + 48);
 
             int totalWidth = dropdownWidth + gap + btnWidth + gap + archiveBtnW;
@@ -906,10 +910,10 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
 
         string title = I18n.Timeline.Title(_npcDisplayName);
-        Vector2 titleSize = Game1.dialogueFont.MeasureString(title);
-        b.DrawString(Game1.dialogueFont, title,
+        Vector2 titleSize = CustomFontManager.MeasureString(title, CustomFontManager.SizeTitle);
+        CustomFontManager.DrawString(b, title,
             new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f, yPositionOnScreen + 22),
-            Game1.textColor);
+            Game1.textColor, CustomFontManager.SizeTitle);
 
         DrawTabBar(b, mx, my);
 
@@ -965,10 +969,10 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 new Rectangle(432, 439, 9, 9),
                 rect.X, rect.Y, rect.Width, rect.Height, bg, 4f, false);
 
-            var labelSize = Game1.smallFont.MeasureString(labels[t]);
-            b.DrawString(Game1.smallFont, labels[t],
+            var labelSize = CustomFontManager.MeasureString(labels[t], CustomFontManager.SizeRegular);
+            CustomFontManager.DrawString(b, labels[t],
                 new Vector2(rect.X + (rect.Width - labelSize.X) / 2f, rect.Y + (rect.Height - labelSize.Y) / 2f),
-                active ? Game1.textColor : (hover ? Color.Wheat : Color.White));
+                active ? Game1.textColor : (hover ? Color.Wheat : Color.White), CustomFontManager.SizeRegular);
         }
 
         int lineY = _tabBarY + TabBarHeight + 4;
@@ -980,18 +984,18 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         string dateText = _daysAgo == 0
             ? I18n.Timeline.TodayDate(MemoryManager.FormatGameDateLabel(viewDate))
             : MemoryManager.FormatGameDateLabel(viewDate);
-        var dateSize = Game1.smallFont.MeasureString(dateText);
-        b.DrawString(Game1.smallFont, dateText,
+        var dateSize = CustomFontManager.MeasureString(dateText, CustomFontManager.SizeRegular);
+        CustomFontManager.DrawString(b, dateText,
             new Vector2(xPositionOnScreen + (width - dateSize.X) / 2f, _contentTopY - 22),
-            Color.Gray);
+            Color.Gray, CustomFontManager.SizeRegular);
 
         if (_todayChatEntries.Count == 0)
         {
             string empty = I18n.Timeline.EmptyChats();
-            var size = Game1.dialogueFont.MeasureString(empty);
-            b.DrawString(Game1.dialogueFont, empty,
+            var size = CustomFontManager.MeasureString(empty, CustomFontManager.SizeRegular);
+            CustomFontManager.DrawString(b, empty,
                 new Vector2(xPositionOnScreen + (width - size.X) / 2f, _contentTopY + 40),
-                Color.Gray);
+                Color.Gray, CustomFontManager.SizeRegular);
             return;
         }
 
@@ -1053,16 +1057,18 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 _ => new Color(130, 65, 20)
             };
 
-            // 3. 标签与文本
+            // 3. 标签与文本（名字使用 SpeakerNameFontSize 放大绘制）
             Vector2 speakerPos = new Vector2(item.BoxRect.X + m.InnerPadding.X, item.BoxRect.Y + m.InnerPadding.Y);
-            b.DrawString(Game1.smallFont, m.Speaker, speakerPos, speakerColor);
+            CustomFontManager.DrawString(b, m.Speaker, speakerPos, speakerColor, SpeakerNameFontSize);
 
+            // 正文垂直起始位置根据名字高度动态下移
+            float speakerH = CustomFontManager.MeasureString(m.Speaker, SpeakerNameFontSize).Y;
             Vector2 textPos = new Vector2(
                 item.BoxRect.X + m.InnerPadding.X,
-                speakerPos.Y + Game1.smallFont.LineSpacing - 2);
+                speakerPos.Y + speakerH + 2);
 
             Color textColor = m.SpeakerType == SpeakerType.System ? Color.DimGray : Game1.textColor;
-            b.DrawString(Game1.dialogueFont, m.WrappedText, textPos, textColor, 0f, Vector2.Zero, TextFontScale, SpriteEffects.None, 0.88f);
+            CustomFontManager.DrawString(b, m.WrappedText, textPos, textColor, CustomFontManager.SizeRegular);
         }
     }
 
@@ -1107,10 +1113,10 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         if (_tierEntries.Count == 0)
         {
             string empty = I18n.Timeline.EmptyTier();
-            var size = Game1.dialogueFont.MeasureString(empty);
-            b.DrawString(Game1.dialogueFont, empty,
+            var size = CustomFontManager.MeasureString(empty, CustomFontManager.SizeRegular);
+            CustomFontManager.DrawString(b, empty,
                 new Vector2(xPositionOnScreen + (width - size.X) / 2f, _contentTopY + 40),
-                Color.Gray);
+                Color.Gray, CustomFontManager.SizeRegular);
             return;
         }
 
@@ -1141,7 +1147,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 cardColor, 3.5f, false);
 
             Vector2 datePos = new Vector2(item.BoxRect.X + m.InnerPadding.X, item.BoxRect.Y + m.InnerPadding.Y);
-            b.DrawString(Game1.smallFont, m.DateLabel, datePos, new Color(110, 80, 50));
+            CustomFontManager.DrawString(b, m.DateLabel, datePos, new Color(110, 80, 50), CustomFontManager.SizeRegular);
 
             bool isLeftMouseDown = Mouse.GetState().LeftButton == ButtonState.Pressed;
 
@@ -1175,9 +1181,9 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
             Vector2 textPos = new Vector2(
                 item.BoxRect.X + m.InnerPadding.X,
-                datePos.Y + Math.Max(Game1.smallFont.LineSpacing, 26));
+                datePos.Y + Math.Max(CustomFontManager.MeasureString("A", CustomFontManager.SizeRegular).Y, 26));
 
-            b.DrawString(Game1.dialogueFont, m.WrappedText, textPos, Game1.textColor, 0f, Vector2.Zero, TextFontScale, SpriteEffects.None, 0.88f);
+            CustomFontManager.DrawString(b, m.WrappedText, textPos, Game1.textColor, CustomFontManager.SizeRegular);
         }
     }
 
@@ -1202,12 +1208,12 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 _actionButtonRect.X, _actionButtonRect.Y, _actionButtonRect.Width, _actionButtonRect.Height,
                 bg, 4f, false);
 
-            var labelSize = Game1.smallFont.MeasureString(label);
+            var labelSize = CustomFontManager.MeasureString(label, CustomFontManager.SizeRegular);
             Vector2 textPos = new Vector2(
                 _actionButtonRect.X + (_actionButtonRect.Width - labelSize.X) / 2f,
                 _actionButtonRect.Y + (_actionButtonRect.Height - labelSize.Y) / 2f);
 
-            b.DrawString(Game1.smallFont, label, textPos, hover ? Game1.textColor : Color.White);
+            CustomFontManager.DrawString(b, label, textPos, hover ? Game1.textColor : Color.White, CustomFontManager.SizeRegular);
         }
 
         if (_archiveButtonRect != Rectangle.Empty)
@@ -1222,12 +1228,12 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 _archiveButtonRect.Width, _archiveButtonRect.Height,
                 archiveBg, 4f, false);
 
-            var archiveLabelSize = Game1.smallFont.MeasureString(archiveText);
+            var archiveLabelSize = CustomFontManager.MeasureString(archiveText, CustomFontManager.SizeRegular);
             Vector2 archiveTextPos = new Vector2(
                 _archiveButtonRect.X + (_archiveButtonRect.Width - archiveLabelSize.X) / 2f,
                 _archiveButtonRect.Y + (_archiveButtonRect.Height - archiveLabelSize.Y) / 2f);
 
-            b.DrawString(Game1.smallFont, archiveText, archiveTextPos, archiveHover ? Game1.textColor : Color.White);
+            CustomFontManager.DrawString(b, archiveText, archiveTextPos, archiveHover ? Game1.textColor : Color.White, CustomFontManager.SizeRegular);
         }
     }
 
@@ -1388,12 +1394,12 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
             string label = (HeaderPrefix ?? "") + selLabel;
 
             float maxTextW = _headerRect.Width - 36;
-            string displayLabel = UiHelper.TruncateString(label, Game1.smallFont, maxTextW);
-            var size = Game1.smallFont.MeasureString(displayLabel);
+            string displayLabel = CustomFontManager.TruncateString(label, CustomFontManager.SizeRegular, maxTextW);
+            var size = CustomFontManager.MeasureString(displayLabel, CustomFontManager.SizeRegular);
 
-            b.DrawString(Game1.smallFont, displayLabel,
+            CustomFontManager.DrawString(b, displayLabel,
                 new Vector2(_headerRect.X + 12, _headerRect.Y + (_headerRect.Height - size.Y) / 2f),
-                hover && !_isOpen ? Game1.textColor : Color.White);
+                hover && !_isOpen ? Game1.textColor : Color.White, CustomFontManager.SizeRegular);
 
             SpriteEffects effect = _isOpen ? SpriteEffects.None : SpriteEffects.FlipVertically;
             Vector2 arrowPos = new Vector2(_headerRect.Right - 26, _headerRect.Y + (_headerRect.Height - 22) / 2f);
@@ -1427,11 +1433,11 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                     new Rectangle(432, 439, 9, 9),
                     ir.X, ir.Y, ir.Width, ir.Height, bg, 4f, false);
 
-                string truncatedLabel = UiHelper.TruncateString(item.Label, Game1.smallFont, ir.Width - 20);
+                string truncatedLabel = CustomFontManager.TruncateString(item.Label, CustomFontManager.SizeRegular, ir.Width - 20);
 
-                b.DrawString(Game1.smallFont, truncatedLabel,
-                    new Vector2(ir.X + 8, ir.Y + (ir.Height - Game1.smallFont.LineSpacing) / 2f),
-                    selected ? Color.White : (ihover ? Game1.textColor : Color.Black));
+                CustomFontManager.DrawString(b, truncatedLabel,
+                    new Vector2(ir.X + 8, ir.Y + (ir.Height - CustomFontManager.MeasureString("A", CustomFontManager.SizeRegular).Y) / 2f),
+                    selected ? Color.White : (ihover ? Game1.textColor : Color.Black), CustomFontManager.SizeRegular);
             }
         }
     }

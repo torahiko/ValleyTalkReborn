@@ -106,8 +106,8 @@ namespace ValleytalkReborn
 
             bool isZh = IsZhLanguage;
             int cardW = width - 80;
-            // 预留右侧时间胶囊空间与内边距
-            int wrapWidth = (int)((cardW - 170) / 0.85f);
+            // 预留右侧时间胶囊空间与内边距（FONT-03：不再按 0.85 scale 反推，直接按 CFM 实测宽度折行）
+            int wrapWidth = cardW - 190;
 
             for (int i = 0; i < pageItems.Count; i++)
             {
@@ -122,7 +122,7 @@ namespace ValleytalkReborn
                     ? (isZh ? info.ContextDescriptionZh : info.ContextDescriptionEn)
                     : (isZh ? $"[不可用: {lockedReason}]" : $"[Locked: {lockedReason}]");
 
-                string wrappedDesc = Game1.parseText(rawDescription, Game1.smallFont, wrapWidth);
+                string wrappedDesc = WrapTextCfm(rawDescription, wrapWidth);
 
                 _currentPagedCards.Add(new CardViewData
                 {
@@ -406,11 +406,11 @@ namespace ValleytalkReborn
 
             // 4. 标题居中绘制（向上提升，预留呼吸感）
             string title = isZh ? $"选择今晚与 {_targetNpc.displayName} 赴约的地点" : $"Date with {_targetNpc.displayName}";
-            Vector2 titleSize = Game1.dialogueFont.MeasureString(title);
+            Vector2 titleSize = CustomFontManager.MeasureString(title, CustomFontManager.SizeTitle);
             Vector2 titlePos = new Vector2(
                 xPositionOnScreen + (width - titleSize.X) / 2f,
                 yPositionOnScreen + 16);
-            b.DrawString(Game1.dialogueFont, title, titlePos, Game1.textColor);
+            CustomFontManager.DrawString(b, title, titlePos, Game1.textColor, CustomFontManager.SizeTitle);
 
             // 5. 标题下方精致分割线
             b.Draw(Game1.staminaRect,
@@ -442,17 +442,17 @@ namespace ValleytalkReborn
                     card.bounds.X, card.bounds.Y, card.bounds.Width, card.bounds.Height,
                     cardBgColor, 4f, false);
 
-                // 地点名称：0.80f 缩放规整绘制，消除与下方文字的垂直冲突
+                // 地点名称（FONT-03：原 dialogueFont + 0.80f scale → SizeRegular，删除 scale）
                 string displayName = isZh ? view.Info.DisplayNameZh : view.Info.DisplayNameEn;
                 Color nameColor = view.IsAvailable
                     ? (isHovered ? new Color(120, 40, 10) : Game1.textColor)
                     : Color.DimGray;
 
-                b.DrawString(Game1.dialogueFont, displayName,
+                CustomFontManager.DrawString(b, displayName,
                     new Vector2(card.bounds.X + 18, card.bounds.Y + 12),
-                    nameColor, 0f, Vector2.Zero, 0.80f, SpriteEffects.None, 1f);
+                    nameColor, CustomFontManager.SizeRegular);
 
-                // 右侧时间徽章胶囊
+                // 右侧时间徽章胶囊（tinyFont 保持不变）
                 if (view.IsAvailable)
                 {
                     int badgeW = 116;
@@ -471,14 +471,14 @@ namespace ValleytalkReborn
                         new Color(175, 75, 25));
                 }
 
-                // 描述文本：0.85f 紧凑渲染
+                // 描述文本（FONT-03：原 smallFont + 0.85f scale → SizeSmall，删除 scale 参数）
                 Color descColor = view.IsAvailable
                     ? Color.DarkSlateGray
                     : new Color(160, 45, 45);
 
-                b.DrawString(Game1.smallFont, view.DescriptionText,
+                CustomFontManager.DrawString(b, view.DescriptionText,
                     new Vector2(card.bounds.X + 20, card.bounds.Y + 46),
-                    descColor, 0f, Vector2.Zero, 0.85f, SpriteEffects.None, 1f);
+                    descColor, CustomFontManager.SizeSmall);
             }
 
             // 7. 底部导航与页码指示器
@@ -501,10 +501,11 @@ namespace ValleytalkReborn
             if (maxPage > 0)
             {
                 string pageStr = $"{_currentPage + 1} / {maxPage + 1}";
-                Vector2 textSize = Game1.smallFont.MeasureString(pageStr);
-                b.DrawString(Game1.smallFont, pageStr,
+                // FONT-03：页码指示器（原 smallFont → SizeSmall）
+                Vector2 textSize = CustomFontManager.MeasureString(pageStr, CustomFontManager.SizeSmall);
+                CustomFontManager.DrawString(b, pageStr,
                     new Vector2(xPositionOnScreen + (width - textSize.X) / 2f, yPositionOnScreen + height - 48),
-                    Game1.textColor * 0.9f);
+                    Game1.textColor * 0.9f, CustomFontManager.SizeSmall);
             }
 
             // 8. 关闭按钮（置顶绘制）
@@ -513,6 +514,68 @@ namespace ValleytalkReborn
             _closeButton.draw(b);
 
             drawMouse(b);
+        }
+
+        /// <summary>
+        /// 基于 CustomFontManager 的按像素宽度折行（替代 Game1.parseText，
+        /// 使描述框的折行宽度与新字体实测尺寸一致，避免回退 smallFont 导致的参差）。
+        /// </summary>
+        private static string WrapTextCfm(string text, int maxWidth)
+        {
+            if (string.IsNullOrEmpty(text))
+                return text;
+
+            var sb = new System.Text.StringBuilder();
+
+            string[] paragraphs = text.Split('\n');
+            for (int p = 0; p < paragraphs.Length; p++)
+            {
+                string paragraph = paragraphs[p];
+                if (paragraph.Length == 0)
+                {
+                    if (p > 0)
+                        sb.Append('\n');
+                    continue;
+                }
+
+                int startIndex = 0;
+                bool firstLine = true;
+                while (startIndex < paragraph.Length)
+                {
+                    string remaining = paragraph.Substring(startIndex);
+                    if (CustomFontManager.MeasureString(remaining, CustomFontManager.SizeSmall).X <= maxWidth)
+                    {
+                        if (!firstLine) sb.Append('\n');
+                        sb.Append(remaining);
+                        break;
+                    }
+
+                    int low = 1, high = remaining.Length, bestFit = 1;
+                    while (low <= high)
+                    {
+                        int mid = (low + high) / 2;
+                        if (CustomFontManager.MeasureString(remaining.Substring(0, mid), CustomFontManager.SizeSmall).X <= maxWidth)
+                        {
+                            bestFit = mid;
+                            low = mid + 1;
+                        }
+                        else
+                        {
+                            high = mid - 1;
+                        }
+                    }
+
+                    if (!firstLine) sb.Append('\n');
+                    sb.Append(remaining.Substring(0, bestFit));
+                    firstLine = false;
+                    startIndex += bestFit;
+                }
+
+                if (p < paragraphs.Length - 1)
+                    sb.Append('\n');
+            }
+
+            return sb.ToString();
         }
     }
 }
