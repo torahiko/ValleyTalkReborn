@@ -283,6 +283,8 @@ namespace ValleytalkReborn
             public static string VanillaFirstTooltip() => Lookup("AdvancedSettings.VanillaFirstTooltip");
             public static string RecordVanillaDialogue() => Lookup("AdvancedSettings.RecordVanillaDialogue");
             public static string RecordVanillaDialogueTooltip() => Lookup("AdvancedSettings.RecordVanillaDialogueTooltip");
+            public static string RecordEventDialogue() => Lookup("AdvancedSettings.RecordEventDialogue");
+            public static string RecordEventDialogueTooltip() => Lookup("AdvancedSettings.RecordEventDialogueTooltip");
             public static string Disclaimer() => Lookup("AdvancedSettings.Disclaimer");
 
             // Backward compatibility (used by DialogueTextInputMenu.cs)

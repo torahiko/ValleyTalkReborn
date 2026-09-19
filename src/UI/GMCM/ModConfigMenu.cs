@@ -337,6 +337,15 @@ namespace ValleytalkReborn
                 setValue: value => ModEntry.Config.ApplyTranslation = value
             );
 
+            ConfigMenu.AddBoolOption(
+                mod: ModManifest,
+                name: () => GetUIString("configRecordEventDialogue", "Record Event & Cutscene Dialogue"),
+                tooltip: () => GetUIString("configRecordEventDialogueTooltip",
+                    "Record NPC dialogue and farmer choices during events and cutscenes into the history."),
+                getValue: () => ModEntry.Config.RecordEventDialogue,
+                setValue: value => ModEntry.Config.RecordEventDialogue = value
+            );
+
             ConfigMenu.AddTextOption(
                 mod: ModManifest,
                 name: () => GetUIString("configFrequencyGeneral", "Frequency of general lines"),

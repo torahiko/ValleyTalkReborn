@@ -84,9 +84,11 @@ namespace ValleytalkReborn
         private Rectangle _tab3RowInfinite;
         private Rectangle _tab3RowVanillaFirst;
         private Rectangle _tab3RowRecordVanilla;
+        private Rectangle _tab3RowRecordEvent;
         private Rectangle _tab3CheckboxInfinite;
         private Rectangle _tab3CheckboxVanillaFirst;
         private Rectangle _tab3CheckboxRecordVanilla;
+        private Rectangle _tab3CheckboxRecordEvent;
 
         public IntegratedHubMenu(string initialNpcName, int initialTab)
         {
@@ -230,6 +232,9 @@ namespace ValleytalkReborn
 
             _tab3RowRecordVanilla = new Rectangle(leftColX - 8, tab3Y + 136 - 6, rowW, 58);
             _tab3CheckboxRecordVanilla = new Rectangle(leftColX, tab3Y + 136, 36, 36);
+
+            _tab3RowRecordEvent = new Rectangle(leftColX - 8, tab3Y + 204 - 6, rowW, 58);
+            _tab3CheckboxRecordEvent = new Rectangle(leftColX, tab3Y + 204, 36, 36);
 
             // 5. Tab2 布局重算
             if (_tab2Initialized)
@@ -649,6 +654,14 @@ namespace ValleytalkReborn
             {
                 ModEntry.Config.RecordVanillaDialogue = !ModEntry.Config.RecordVanillaDialogue;
                 Game1.playSound(ModEntry.Config.RecordVanillaDialogue ? "coin" : "drumkit6");
+                ModEntry.SHelper.WriteConfig(ModEntry.Config);
+                return;
+            }
+
+            if (_tab3RowRecordEvent.Contains(x, y))
+            {
+                ModEntry.Config.RecordEventDialogue = !ModEntry.Config.RecordEventDialogue;
+                Game1.playSound(ModEntry.Config.RecordEventDialogue ? "coin" : "drumkit6");
                 ModEntry.SHelper.WriteConfig(ModEntry.Config);
                 return;
             }
@@ -1299,6 +1312,12 @@ namespace ValleytalkReborn
             DrawSettingRow(b, _tab3RowRecordVanilla, _tab3CheckboxRecordVanilla, ModEntry.Config.RecordVanillaDialogue,
                 I18n.AdvancedSettings.RecordVanillaDialogue(),
                 I18n.AdvancedSettings.RecordVanillaDialogueTooltip(),
+                mx, my);
+
+            // 4. 记录事件与过场对话选项行
+            DrawSettingRow(b, _tab3RowRecordEvent, _tab3CheckboxRecordEvent, ModEntry.Config.RecordEventDialogue,
+                I18n.AdvancedSettings.RecordEventDialogue(),
+                I18n.AdvancedSettings.RecordEventDialogueTooltip(),
                 mx, my);
 
             // 置底居中的 Disclaimer

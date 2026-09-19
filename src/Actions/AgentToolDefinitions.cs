@@ -10,5 +10,5 @@ internal static class AgentToolDefinitions
 {
     public static JArray GetOpenAiToolsArray() => new JArray();
     public static JArray GetAnthropicToolsArray() => new JArray();
-    public static JArray GetGeminiToolsArray() => new JArray();
+    public static JArray GetGeminiToolsArray() => new JArray(); 
 }

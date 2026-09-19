@@ -1366,6 +1366,7 @@ namespace ValleytalkReborn
         private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
         {
             LastSpokenNPC = null;
+            Event_AnswerDialogue_Patch.LastEventSpeakerNpc = null;
 
             // 修复：返回标题后 Cleanup 会销毁 _dialogueCoordinator，
             // 重新读档时必须重建并订阅，否则 A2A 雷达与 AmbientBark 状态机将永久停摆。
@@ -1401,6 +1402,7 @@ namespace ValleytalkReborn
             //NPC_CurrentDialogue_Patch.ClearDedupState();
             NPC_CheckForNewCurrentDialogue_Patch.ClearDedupState();
             SessionCache.Instance.ResetAll();
+            Event_AnswerDialogue_Patch.LastEventSpeakerNpc = null;
         }
 
         /// <summary>

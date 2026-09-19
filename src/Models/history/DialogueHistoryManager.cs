@@ -93,7 +93,7 @@ namespace ValleytalkReborn
             AddEntry(npcName, entry);
         }
 
-        public void RecordPlayerDialogue(string npcName, string text)
+        public void RecordPlayerDialogue(string npcName, string text, string dialogueType = "conversation")
         {
             var sanitized = SanitizeForStorage(text);
             if (string.IsNullOrWhiteSpace(sanitized)) return;
@@ -108,7 +108,7 @@ namespace ValleytalkReborn
                 "Player",
                 sanitized,
                 SpeakerType.Player,
-                "conversation"
+                dialogueType
             );
             AddEntry(npcName, entry);
         }
