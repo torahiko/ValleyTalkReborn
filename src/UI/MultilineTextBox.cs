@@ -25,8 +25,12 @@ internal sealed class MultilineTextBox : IKeyboardSubscriber
     private int _scrollOffset;
     private double _cursorTimer;
     private bool _cursorVisible;
+    private Rectangle _bounds;
 
-    public Rectangle Bounds { get; }
+    public Rectangle Bounds => _bounds;
+
+    /// <summary>由 Layout 统一设定绘制区域；禁止在 Draw 内新建实例。</summary>
+    public void SetBounds(Rectangle r) => _bounds = r;
 
     /// <summary>文本内容，以 '\n' 分隔；全部写入，仅受 maxLines 上限防御。</summary>
     public string Text
@@ -60,11 +64,11 @@ internal sealed class MultilineTextBox : IKeyboardSubscriber
 
     public bool Selected { get; set; }
 
-    public event Action? TextChanged;
+    public event Action TextChanged;
 
     public MultilineTextBox(Rectangle bounds, int maxLines = 256)
     {
-        Bounds = bounds;
+        _bounds = bounds;
         _maxLines = Math.Max(1, maxLines);
         _lines = new List<string> { string.Empty };
         _cursorLine = 0;

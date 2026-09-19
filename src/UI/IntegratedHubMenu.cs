@@ -86,7 +86,7 @@ namespace ValleytalkReborn
         private int _profileSubTab = 0;                 // 0=玩家档案(现状), 1=NPC档案（Memory 作用域，菜单重建归零）
         private Rectangle _subTabPlayerRect;
         private Rectangle _subTabNpcRect;
-        private DropdownList? _npcBioDropdown;          // NPC 档案页下拉，数据源同 _npcDropdown
+        private DropdownList _npcBioDropdown;          // NPC 档案页下拉，数据源同 _npcDropdown
         private Rectangle _openFullBioEditorBtnRect;
         private Rectangle _resetNpcBioBtnRect;
         private string _bioSummaryIdentity = "";

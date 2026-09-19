@@ -62,7 +62,7 @@ public sealed class BioStorageService
             baseBio.Missing = true;
         }
 
-        BioData? ov = TryDeserializeOverlay(npcName);
+        BioData ov = TryDeserializeOverlay(npcName);
         return ov ?? baseBio;
     }
 
@@ -82,7 +82,7 @@ public sealed class BioStorageService
             string json = JsonConvert.SerializeObject(editedBio, Formatting.Indented);
 
             // 验签：反序列化不能为空
-            BioData? verify = JsonConvert.DeserializeObject<BioData>(json);
+            BioData verify = JsonConvert.DeserializeObject<BioData>(json);
             if (verify == null)
             {
                 errorMessage = "序列化校验为空";
@@ -143,7 +143,7 @@ public sealed class BioStorageService
     /// 从资产名反推 NPC 名：若以 Bios 前缀开头（忽略大小写），截取其后的部分（去掉可能的 ".json"），
     /// 再做 RemoveDotSuffixes；空串返回 null。
     /// </summary>
-    internal static string? TryGetNpcNameFromAssetName(IAssetName name)
+    internal static string TryGetNpcNameFromAssetName(IAssetName name)
     {
         string fullName = name.Name;
         string prefix = VtConstants.BiosPath;
@@ -179,7 +179,7 @@ public sealed class BioStorageService
         return sanitized;
     }
 
-    private static BioData? TryDeserializeOverlay(string npcName)
+    private static BioData TryDeserializeOverlay(string npcName)
     {
         string path = OverlayPathFor(npcName);
         if (!File.Exists(path))
@@ -188,7 +188,7 @@ public sealed class BioStorageService
         try
         {
             string json = File.ReadAllText(path);
-            BioData? data = JsonConvert.DeserializeObject<BioData>(json);
+            BioData data = JsonConvert.DeserializeObject<BioData>(json);
             if (data != null)
                 return data;
 
@@ -208,21 +208,21 @@ public sealed class BioStorageService
         return JsonConvert.DeserializeObject<BioData>(json) ?? new BioData();
     }
 
-    private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)
+    private void OnAssetRequested(object sender, AssetRequestedEventArgs e)
     {
-        string? npc = TryGetNpcNameFromAssetName(e.NameWithoutLocale);
+        string npc = TryGetNpcNameFromAssetName(e.NameWithoutLocale);
         if (npc == null)
             return;
 
         if (!HasCustomOverlay(npc))
-            return;
+            return; 
 
         try
         {
             // Edit 回调在 CP 内容包补丁之后执行（SMAPI C# 编辑提供器语义），是覆盖层晚于基线生效的机制依据。
             e.Edit(editor =>
             {
-                BioData? ov = TryDeserializeOverlay(npc);
+                BioData ov = TryDeserializeOverlay(npc);
                 if (ov != null && editor is IAssetData<BioData> d)
                     d.ReplaceWith(ov);
                 ModEntry.SMonitor?.Log($"[BioStorage] overlay applied: {npc}", LogLevel.Trace);
