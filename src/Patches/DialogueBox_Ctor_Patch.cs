@@ -39,7 +39,17 @@ namespace ValleytalkReborn
             var currentEvent = Game1.currentLocation?.currentEvent;
             if (currentEvent != null)
             {
-                DialogueHistoryManager.Instance.RecordNpcDialogue(npc.Name, combinedText, "event");
+                if (ModEntry.Config.RecordEventDialogue)
+                {
+                    DialogueHistoryManager.Instance.RecordNpcDialogue(npc.Name, combinedText, "event");
+                    Event_AnswerDialogue_Patch.LastEventSpeakerNpc = npc.Name;
+                }
+                else
+                {
+                    ModEntry.SMonitor?.Log(
+                        "[DialogueBoxCtor] RecordEventDialogue=off — skipped event record.",
+                        LogLevel.Trace);
+                }
             }
             else
             {

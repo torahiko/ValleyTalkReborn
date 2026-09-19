@@ -197,6 +197,12 @@ namespace ValleytalkReborn
         /// 开启 = 原版台词入历史库供 AI 续聊（可能话题粘滞）；关闭（推荐/默认）= 仅优先展示给玩家，不入库、不偷听广播、不注入 Prompt。
         /// </summary>
         public bool RecordVanillaDialogue { get; set; } = false;
+
+        /// <summary>
+        /// 开启=记录剧情事件中的 NPC 对白与农夫选项；默认 true 以保持
+        /// 现有"无条件记录事件对白"行为（注意与 RecordVanillaDialogue 默认 false 的不对称是有意的）。
+        /// </summary>
+        public bool RecordEventDialogue { get; set; } = true;
         public bool EnableNightlyConsolidation { get; set; } = true;
 
         /// <summary>

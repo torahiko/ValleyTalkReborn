@@ -26,6 +26,7 @@ namespace ValleytalkReborn
         private readonly Rectangle _checkboxRect;
         private readonly Rectangle _vanillaFirstCheckboxRect;
         private readonly Rectangle _recordVanillaCheckboxRect;
+        private readonly Rectangle _recordEventCheckboxRect;
 
         public AdvancedSettingsMenu(DialogueTextInputMenu ownerMenu)
             : base(
@@ -50,6 +51,7 @@ namespace ValleytalkReborn
             _checkboxRect = new Rectangle(xPositionOnScreen + 64, yPositionOnScreen + 120, 36, 36);
             _vanillaFirstCheckboxRect = new Rectangle(xPositionOnScreen + 64, yPositionOnScreen + 180, 36, 36);
             _recordVanillaCheckboxRect = new Rectangle(xPositionOnScreen + 64, yPositionOnScreen + 240, 36, 36);
+            _recordEventCheckboxRect = new Rectangle(xPositionOnScreen + 64, yPositionOnScreen + 300, 36, 36);
         }
 
         /// <summary>
@@ -102,6 +104,13 @@ namespace ValleytalkReborn
             {
                 ModEntry.Config.RecordVanillaDialogue = !ModEntry.Config.RecordVanillaDialogue;
                 Game1.playSound(ModEntry.Config.RecordVanillaDialogue ? "coin" : "drumkit6");
+                ModEntry.SHelper.WriteConfig(ModEntry.Config);
+            }
+
+            if (_recordEventCheckboxRect.Contains(x, y))
+            {
+                ModEntry.Config.RecordEventDialogue = !ModEntry.Config.RecordEventDialogue;
+                Game1.playSound(ModEntry.Config.RecordEventDialogue ? "coin" : "drumkit6");
                 ModEntry.SHelper.WriteConfig(ModEntry.Config);
             }
         }
@@ -248,6 +257,32 @@ namespace ValleytalkReborn
                 Game1.textColor
             );
 
+            // Record-Event-Dialogue checkbox.
+            Rectangle recordEventSource = ModEntry.Config.RecordEventDialogue
+                ? new Rectangle(236, 425, 9, 9)
+                : new Rectangle(227, 425, 9, 9);
+
+            b.Draw(
+                Game1.mouseCursors,
+                new Vector2(_recordEventCheckboxRect.X, _recordEventCheckboxRect.Y),
+                recordEventSource,
+                Color.White,
+                0f,
+                Vector2.Zero,
+                4f,
+                SpriteEffects.None,
+                1f
+            );
+
+            string recordEventLabel = I18n.AdvancedSettings.RecordEventDialogue();
+
+            b.DrawString(
+                Game1.smallFont,
+                recordEventLabel,
+                new Vector2(_recordEventCheckboxRect.X + 44, _recordEventCheckboxRect.Y + 4),
+                Game1.textColor
+            );
+
             // Disclaimer.
             string disclaimer = I18n.AdvancedSettings.Disclaimer();
 
@@ -279,6 +314,12 @@ namespace ValleytalkReborn
             else if (_recordVanillaCheckboxRect.Contains(mouseX, mouseY))
             {
                 string tooltip = I18n.AdvancedSettings.RecordVanillaDialogueTooltip();
+
+                IClickableMenu.drawHoverText(b, tooltip, Game1.smallFont);
+            }
+            else if (_recordEventCheckboxRect.Contains(mouseX, mouseY))
+            {
+                string tooltip = I18n.AdvancedSettings.RecordEventDialogueTooltip();
 
                 IClickableMenu.drawHoverText(b, tooltip, Game1.smallFont);
             }
