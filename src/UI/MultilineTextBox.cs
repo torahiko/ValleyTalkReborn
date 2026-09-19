@@ -221,7 +221,7 @@ internal sealed class MultilineTextBox : IKeyboardSubscriber
             Bounds.X, Bounds.Y, Bounds.Width, Bounds.Height,
             Color.White);
 
-        float lineHeight = Game1.smallFont.MeasureString("A").Y;
+        float lineHeight = CustomFontManager.MeasureString("A", 18.5f).Y;
         int contentX = Bounds.X + PaddingX;
         int contentY = Bounds.Y + PaddingY;
         int contentW = Bounds.Width - PaddingX * 2;
@@ -235,9 +235,9 @@ internal sealed class MultilineTextBox : IKeyboardSubscriber
             int lineIndex = _scrollOffset + i;
             if (lineIndex >= _lines.Count)
                 break;
-            b.DrawString(Game1.smallFont, _lines[lineIndex],
+            CustomFontManager.DrawString(b, _lines[lineIndex],
                 new Vector2(contentX, contentY + i * lineHeight),
-                Game1.textColor);
+                Game1.textColor, 18.5f);
         }
 
         // 光标
@@ -247,7 +247,7 @@ internal sealed class MultilineTextBox : IKeyboardSubscriber
             if (caretLine >= 0 && caretLine < visibleLines)
             {
                 string before = _cursorCol > 0 ? _lines[_cursorLine].Substring(0, _cursorCol) : string.Empty;
-                float caretX = contentX + Game1.smallFont.MeasureString(before).X;
+                float caretX = contentX + CustomFontManager.MeasureString(before, 18.5f).X;
                 float caretY = contentY + caretLine * lineHeight;
                 int caretHeight = (int)lineHeight;
                 b.Draw(Game1.staminaRect,
@@ -344,7 +344,7 @@ internal sealed class MultilineTextBox : IKeyboardSubscriber
 
     private int VisibleLineCount()
     {
-        float lineHeight = Game1.smallFont.MeasureString("A").Y;
+        float lineHeight = CustomFontManager.MeasureString("A", 18.5f).Y;
         return Math.Max(1, (Bounds.Height - PaddingY * 2) / (int)Math.Max(1, lineHeight));
     }
 }

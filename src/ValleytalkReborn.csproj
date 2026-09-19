@@ -15,9 +15,13 @@
     <PathMap>$(MSBuildProjectDirectory)=/_</PathMap>
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
+    <!-- 强制将 NuGet 依赖 DLL（FontStashSharp.* 等）复制到输出/Mods 目录，
+         否则 SMAPI 运行时因找不到依赖而报 "DLL couldn't be loaded" -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FontStashSharp.MonoGame" Version="1.3.9" />
     <PackageReference Include="newtonsoft.json" Version="13.0.5-beta1" />
     <PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.4.0" />
     <PackageReference Include="TextCopy" Version="6.2.1" />
