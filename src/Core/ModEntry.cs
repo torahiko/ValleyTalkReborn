@@ -8,6 +8,7 @@ using System.Linq;
 using System.Globalization;
 using StardewValley;
 using ValleytalkReborn.Plugins;
+using ValleytalkReborn.Services;
 using Microsoft.Xna.Framework;
 
 namespace ValleytalkReborn
@@ -111,6 +112,9 @@ namespace ValleytalkReborn
         /// Cancel button plugin instance.
         /// </summary>
         private static CancelButtonPlugin _cancelButtonPlugin;
+
+        /// <summary>静态人设覆盖层存储服务（单例，跨存档存活，不进存档）。</summary>
+        internal static BioStorageService? BioStorage;
 
         private int _lastDialogueCloseTick = -9999;
 
@@ -252,6 +256,10 @@ namespace ValleytalkReborn
         {
             SHelper = helper;
             SMonitor = Monitor;
+
+            // ★ 静态人设覆盖层存储服务（单例；覆盖层为本地文件，不进存档、不联机同步）
+            BioStorage = new BioStorageService(Helper, Monitor);
+            BioStorage.RegisterAssetProviders();
 
             // ★ 统一配偶查询服务（多婚/原版配偶判定、住所定位）
             SpouseQueryService.Instance.Initialize(helper);
