@@ -339,6 +339,15 @@ namespace ValleytalkReborn
 
             ConfigMenu.AddBoolOption(
                 mod: ModManifest,
+                name: () => GetUIString("configEnableSuggestedResponses", "Enable Suggested Responses"),
+                tooltip: () => GetUIString("configEnableSuggestedResponsesTooltip",
+                    "When enabled, AI generates 2-3 dialogue reply choices. Disable to save tokens and use pure typing."),
+                getValue: () => ModEntry.Config.EnableSuggestedResponses,
+                setValue: value => ModEntry.Config.EnableSuggestedResponses = value
+            );
+
+            ConfigMenu.AddBoolOption(
+                mod: ModManifest,
                 name: () => GetUIString("configRecordEventDialogue", "Record Event & Cutscene Dialogue"),
                 tooltip: () => GetUIString("configRecordEventDialogueTooltip",
                     "Record NPC dialogue and farmer choices during events and cutscenes into the history."),

@@ -127,6 +127,8 @@ namespace ValleytalkReborn
         public int MarriageFrequency { get; set; } = 4;
         public int GiftFrequency { get; set; } = 4;
         public string TypedResponses { get; set; } = "With Generated";
+        /// <summary>开启时 AI 在台词后生成 2~3 个快速回复选项；关闭后仅保留"保持沉默"与手动输入，省 Token、降低小模型幻觉。</summary>
+        public bool EnableSuggestedResponses { get; set; } = true;
         public SButton InitiateTypedDialogueKey { get; set; } = SButton.LeftAlt;
         public SButton QuickReplyKey { get; set; } = SButton.Enter;
         /// <summary>面对面快捷招募 NPC / 主动取消 NPC 跟随的双向热键。</summary>

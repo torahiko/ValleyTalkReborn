@@ -101,6 +101,8 @@
   "configSectionAmbientDialogue": "Ambient & NPC Interactions",
   "configEnableBark": "Enable Ambient Chatter",
   "configEnableBarkTooltip": "NPCs will occasionally think out loud or comment on their surroundings and daily life in overhead speech bubbles as you pass by. (Uses a small amount of tokens)",
+  "configEnableSuggestedResponses": "Enable Suggested Responses",
+  "configEnableSuggestedResponsesTooltip": "When enabled, AI generates 2-3 dialogue reply choices. Disable to save tokens and prevent small model hallucinations. The dialogue box will only keep 'Stay silent' and custom typing options.",
   "configRecordEventDialogue": "Record Event & Cutscene Dialogue",
   "configRecordEventDialogueTooltip": "Record NPC dialogue and farmer choices during events and cutscenes into the history.",
   "configEnableA2A": "Enable NPC-to-NPC Banter",
