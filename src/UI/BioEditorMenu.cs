@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -8,1902 +9,1626 @@ using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Menus;
 
-namespace ValleytalkReborn;
-
-/// <summary>
-/// 静态人设编辑器菜单：五 Tab 外壳，本票仅实现 Tab1（身份心理 / Unique / HomeLocationBed）。
-/// 编辑副本为内存 _bio；仅 SaveOverlay 时落盘；不写存档、不联机同步。
-/// 整体替换方式打开（Game1.activeClickableMenu 赋值），关闭时恢复 returnMenu。
-/// </summary>
-internal sealed class BioEditorMenu : IClickableMenu
+namespace ValleytalkReborn
 {
-    // ── 布局常量 ──────────────────────────────────────────────────────
-    private const int HeaderH = 56;
-    private const int TabBarH = 44;
-    private const int FooterH = 52;
-    private const int PadX = 20;
-    private const int ListRowH = 32;
-
-    private static readonly string[] TabTitles = new[]
+    /// <summary>
+    /// 简单的复选框辅助类（用于替代原版 OptionsCheckbox）
+    /// </summary>
+    internal sealed class SimpleCheckbox
     {
-        "1.身份心理",
-        "2.言行举止",
-        "3.好感演变",
-        "4.社交关系",
-        "5.环境感知",
-    };
+        public Rectangle bounds;
+        public bool isChecked;
+        public string label;
 
-    // ── 状态（全部 Memory 作用域，随菜单生命周期） ─────────────────────
-    private readonly string _npcName;
-    private readonly IClickableMenu _returnMenu;
-    private BioData _bio;
-    private bool _hasOverlay;
-    private bool _dirty;
-    private int _activeTab; // 0..4
-
-    // ── Tab1 控件 ─────────────────────────────────────────────────────
-    private MultilineTextBox _biographyBox;
-    private TextBox _uniqueBox;
-    private OptionsCheckbox _homeBedCheckbox;
-
-    // 仅当 _bio.Missing 或 Biography 为空时，Tab1 显示的"插入身份模板"按钮
-    private Rectangle _scaffoldRect;
-
-    private static readonly string BiographyScaffold =
-        "[IDENTITY]\n- Identity: You are {NPC}.\n- Social Anchor: \n- Living Situation: \n\n" +
-        "[PSYCHOLOGICAL CONFLICTS]\n- ";
-
-    // ── Tab2 控件（言行举止） ──────────────────────────────────────────
-    private MultilineTextBox _behaviorBox;          // Traits["BehavioralRules"].Description
-    private MultilineTextBox _dialogueExamplesBox;  // Traits["DialogueExamples"].Description
-    private Rectangle _behaviorScaffoldRect;
-
-    private static readonly string BehaviorScaffold =
-        "[VOICE]\n- Tone: \n- Cadence: \n\n[SPEECH PATTERNS]\n- \n\n[MANNERISMS]\n- \n\n" +
-        "[IMMEDIATE REFLEXES]\n- \n\n[CONTEXT OVERRIDE]\n- ";
-
-    // ── Tab3 控件（好感演变 / 档位列表） ──────────────────────────────
-    private int _stageIdx = -1;                       // 选中档位下标（-1 = 未选）
-    private MultilineTextBox _stageTextBox;           // 选中档 Text
-    private MultilineTextBox _stageBarkBox;           // 选中档 BarkMindset
-    private TextBox _stagePreoccBox;                  // 选中档 Preoccupations（逗号分隔单行）
-
-    // 门禁编辑态（仅当用户触碰门禁编辑时写入；ApplyGateEditors 提交）
-    private bool _gateEditMode;
-    private int _gateHearts;           // 心数候选（循环 0/3/7/8）
-    private bool _gateMarried;         // 已婚候选
-    private string _gateSpouse = "";   // 婚配对象内部名候选（空 = unset）
-    private TextBox _gateSpouseBox;    // 婚配对象内部名编辑框
-    private int _gateJojaMember;       // 三态：0=不限制(null) 1=要求true 2=要求false
-    private int _gateJojaClosed;       // 三态：0=不限制(null) 1=要求true 2=要求false
-
-    private static readonly string BarkMindsetScaffold = "[STAGE: ]\n- Mindset: \n- Attention Flow: ";
-
-    private readonly Rectangle[] _stageRowRects = new Rectangle[8]; // 档位行 + [新建档位]
-    private Rectangle _newStageRect;
-    private Rectangle _gateToggleRect;   // [编辑门禁] 切换钮
-    private Rectangle _gateHeartsRect;   // 心数循环钮
-    private Rectangle _gateMarriedRect;  // 已婚 CheckBox
-    private Rectangle _gateSpouseRect;   // 婚配对象单行框
-    private Rectangle _gateMemberRect;   // Joja 会员三态钮
-    private Rectangle _gateClosedRect;   // Joja 倒闭三态钮
-
-    // ── Tab4 控件（社交关系） ──────────────────────────────────────────
-    private int _relSelectedIndex = -1;                 // 选中关系下标（_relCandidates）
-    private List<string> _relCandidates = new List<string>();
-    private string _relSelectedNpc = "";                // 当前选中关系 NPC 内部名
-    private TextBox _relHeadingBox;                     // 关系 Heading
-    private MultilineTextBox _relDescBox;               // 关系 Description
-    private Rectangle _relPrevRect;                     // ◀
-    private Rectangle _relNextRect;                     // ▶
-    private Rectangle _relAddRect;                      // [添加关系]
-    private Rectangle _relDelRect;                      // [删除关系]
-    private Rectangle _relListRect;                     // 当前关系名展示区
-
-    // ── Tab5 控件（环境感知） ──────────────────────────────────────────
-    private OptionsCheckbox _enableBarkCheckbox;        // EnableAmbientBarks
-    private MultilineTextBox _voiceBox;                 // AmbientBarkPrompt.VoiceAndAttitude
-    private MultilineTextBox _habitsBox;                // AmbientBarkPrompt.SpokenHabits
-    private MultilineTextBox _lensesBox;                // AmbientBarkPrompt.ObservationLenses
-    private TextBox _globalPreoccBox;                   // 全局 Preoccupations 逗号单行
-    private Rectangle _scrapeRect;                      // [↺ 从游戏原版对白中抓取 3 组范例]
-
-    // 各 Tab 多行框的绘制区域（由 Layout() 统一计算，Draw 内仅 SetBounds + Draw，禁止 new）
-    private Rectangle _behaviorDrawRect;
-    private Rectangle _dialogueExamplesDrawRect;
-    private Rectangle _stageTextDrawRect;
-    private Rectangle _stageBarkDrawRect;
-    private Rectangle _relDescDrawRect;
-    private Rectangle _voiceDrawRect;
-    private Rectangle _habitsDrawRect;
-    private Rectangle _lensesDrawRect;
-
-    private readonly Rectangle[] _tabRects = new Rectangle[5];
-    private Rectangle _cancelRect;
-    private Rectangle _saveRect;
-    private Rectangle _resetRect;
-
-    // 脏标记提示的绘制计时
-    private double _saveFlashTimer;
-
-    public BioEditorMenu(string npcName, IClickableMenu returnMenu)
-        : base(
-              (Game1.uiViewport.Width - Math.Clamp(Game1.uiViewport.Width - 160, 760, 1040)) / 2,
-              (Game1.uiViewport.Height - Math.Clamp(Game1.uiViewport.Height - 120, 480, 640)) / 2,
-              Math.Clamp(Game1.uiViewport.Width - 160, 760, 1040),
-              Math.Clamp(Game1.uiViewport.Height - 120, 480, 640),
-              showUpperRightCloseButton: false)
-    {
-        _npcName = npcName;
-        _returnMenu = returnMenu;
-
-        _bio = ModEntry.BioStorage!.LoadEditableBio(npcName);
-        _hasOverlay = ModEntry.BioStorage.HasCustomOverlay(npcName);
-        _activeTab = 0;
-
-        _biographyBox = new MultilineTextBox(Rectangle.Empty, maxLines: 512);
-
-        // Tab2 控件（言行举止）
-        _behaviorBox = new MultilineTextBox(Rectangle.Empty, maxLines: 512);
-        _dialogueExamplesBox = new MultilineTextBox(Rectangle.Empty, maxLines: 512);
-
-        // Tab3 控件（档位列表）
-        _stageTextBox = new MultilineTextBox(Rectangle.Empty, maxLines: 512);
-        _stageBarkBox = new MultilineTextBox(Rectangle.Empty, maxLines: 512);
-
-        // Tab4 控件（社交关系）
-        _relDescBox = new MultilineTextBox(Rectangle.Empty, maxLines: 512);
-
-        // Tab5 控件（环境感知）
-        _voiceBox = new MultilineTextBox(Rectangle.Empty, maxLines: 512);
-        _habitsBox = new MultilineTextBox(Rectangle.Empty, maxLines: 512);
-        _lensesBox = new MultilineTextBox(Rectangle.Empty, maxLines: 512);
-
-        // 原生 TextBox：LooseSprites/textBox 贴图（回退 mouseCursors），smallFont
-        Texture2D uniqueTexture = LoadTextBoxTexture();
-        _uniqueBox = new TextBox(uniqueTexture, uniqueTexture, Game1.smallFont, Game1.textColor);
-        _stagePreoccBox = new TextBox(uniqueTexture, null, Game1.smallFont, Game1.textColor);
-        _gateSpouseBox = new TextBox(uniqueTexture, null, Game1.smallFont, Game1.textColor);
-        _relHeadingBox = new TextBox(uniqueTexture, null, Game1.smallFont, Game1.textColor);
-        _globalPreoccBox = new TextBox(uniqueTexture, null, Game1.smallFont, Game1.textColor);
-        _homeBedCheckbox = new OptionsCheckbox("床位固定 HomeLocationBed", -1, 0, 0);
-        _enableBarkCheckbox = new OptionsCheckbox("启用碎碎念 AmbientBarks", -1, 0, 0);
-
-        Layout();
-
-        // 初始化 Tab1 控件初值
-        _biographyBox.Text = _bio.Biography ?? string.Empty;
-        _uniqueBox.Text = _bio.Unique ?? string.Empty;
-        _uniqueBox.Selected = false;
-        _homeBedCheckbox.isChecked = _bio.HomeLocationBed;
-
-        // 初始化 Tab5 控件初值
-        _enableBarkCheckbox.isChecked = _bio.EnableAmbientBarks;
-        _globalPreoccBox.Text = JoinPreocc(_bio.Preoccupations);
-        SyncTab5BarkBoxes();
-
-        // 初始化 Tab4 候选列表
-        BuildRelCandidates();
-        if (_relCandidates.Count > 0)
-            SelectRelationship(0);
-    }
-
-    // ── 布局 ──────────────────────────────────────────────────────────
-
-    private void Layout()
-    {
-        int contentTop = yPositionOnScreen + HeaderH;
-        int contentLeft = xPositionOnScreen + PadX;
-        int contentW = width - PadX * 2;
-
-        // Tab 栏
-        int tabGap = 6;
-        int tabW = (contentW - tabGap * (TabTitles.Length - 1)) / TabTitles.Length;
-        int tabY = yPositionOnScreen + HeaderH + 4;
-        for (int i = 0; i < TabTitles.Length; i++)
+        public SimpleCheckbox(string label, int unused, int x, int y)
         {
-            _tabRects[i] = new Rectangle(
-                contentLeft + i * (tabW + tabGap),
-                tabY,
-                tabW,
-                TabBarH - 4);
+            this.label = label;
+            this.bounds = new Rectangle(x, y, 28, 28);
         }
 
-        // 页脚按钮
-        int footerY = yPositionOnScreen + height - FooterH + 6;
-        int btnH = FooterH - 12;
-        int btnW = Math.Min(200, contentW / 3);
-
-        _cancelRect = new Rectangle(contentLeft, footerY, btnW, btnH);
-        _saveRect = new Rectangle(xPositionOnScreen + (width - btnW) / 2, footerY, btnW, btnH);
-        _resetRect = new Rectangle(xPositionOnScreen + width - PadX - btnW, footerY, btnW, btnH);
-
-        // Tab1 内容区
-        int bodyTop = tabY + TabBarH - 4 + 8;
-        int bodyBottom = yPositionOnScreen + height - FooterH - 4;
-        int bodyH = bodyBottom - bodyTop;
-        int bodyLeft = contentLeft;
-        int bodyW = contentW;
-
-        if (bodyH > 80)
+        public void receiveLeftClick(int x, int y)
         {
-            int bioH = Math.Max(120, (int)(bodyH * 0.55f));
-
-            // 保留旧实例的已编辑内容与焦点状态，避免 Tab 切换导致数据丢失
-            var oldBio = _biographyBox;
-            string preservedText = oldBio.Text;
-            bool preservedSelected = oldBio.Selected;
-
-            _biographyBox = new MultilineTextBox(
-                new Rectangle(bodyLeft, bodyTop, bodyW, bioH),
-                maxLines: 512);
-            _biographyBox.Text = preservedText;
-            _biographyBox.Selected = preservedSelected;
-
-            int uniqueY = bodyTop + bioH + ListRowH + 8;
-            int uniqueH = 40;
-            _uniqueBox.X = bodyLeft;
-            _uniqueBox.Y = uniqueY;
-            _uniqueBox.Width = bodyW;
-            _uniqueBox.Height = uniqueH;
-
-            _homeBedCheckbox.bounds = new Rectangle(bodyLeft, uniqueY + uniqueH + 10, 36, 36);
-
-            // 模板按钮：位于 Biography 框右下角上方，尺寸在绘制时按当前文本测量
-            int scW = 150;
-            int scH = 28;
-            _scaffoldRect = new Rectangle(
-                bodyLeft + bodyW - scW,
-                bodyTop - scH - 4,
-                scW, scH);
-        }
-
-        // ── Tab2 内容区（言行举止：两个编辑块纵向排布，各约一半） ────────
-        if (bodyH > 80)
-        {
-            int halfH = (bodyH - ListRowH) / 2;
-            int behaviorH = Math.Max(60, halfH);
-            int dialogueH = Math.Max(60, bodyH - behaviorH - ListRowH);
-
-            // 行为规则块
-            var oldBehavior = _behaviorBox;
-            _behaviorBox = new MultilineTextBox(
-                new Rectangle(bodyLeft, bodyTop, bodyW, behaviorH), maxLines: 512);
-            _behaviorBox.Text = oldBehavior.Text;
-            _behaviorBox.Selected = oldBehavior.Selected;
-
-            // 对白范例块
-            int dialogueTop = bodyTop + behaviorH + ListRowH;
-            var oldDialogue = _dialogueExamplesBox;
-            _dialogueExamplesBox = new MultilineTextBox(
-                new Rectangle(bodyLeft, dialogueTop, bodyW, dialogueH), maxLines: 512);
-            _dialogueExamplesBox.Text = oldDialogue.Text;
-            _dialogueExamplesBox.Selected = oldDialogue.Selected;
-
-            // 行为规则模板按钮（位于该框右上角外侧）
-            _behaviorScaffoldRect = new Rectangle(
-                bodyLeft + bodyW - 150,
-                bodyTop - 28 - 4,
-                150, 28);
-        }
-
-        // ── Tab3 内容区（好感演变：上半档位列表 + 下半选中档编辑器） ────
-        if (bodyH > 120)
-        {
-            int listH = Math.Min(bodyH / 2, _stageRowRects.Length * ListRowH);
-            int rowY = bodyTop;
-            for (int i = 0; i < _stageRowRects.Length; i++)
+            if (bounds.Contains(x, y))
             {
-                _stageRowRects[i] = new Rectangle(bodyLeft, rowY + i * ListRowH, bodyW, ListRowH);
-            }
-            _newStageRect = new Rectangle(bodyLeft, rowY + _stageRowRects.Length * ListRowH, bodyW, ListRowH);
-
-            int editorTop = rowY + listH + 8;
-            int editorH = bodyBottom - editorTop;
-            if (editorH > 80)
-            {
-                int gateRowH = 36;
-                int textH = Math.Max(40, (editorH - gateRowH * 2 - ListRowH) / 2);
-
-                _stageTextBox.SetBounds(new Rectangle(bodyLeft, editorTop, bodyW, textH));
-
-                // 门禁编辑区
-                int gateY = editorTop + textH + 4;
-                _gateToggleRect = new Rectangle(bodyLeft, gateY, 110, gateRowH - 6);
-                _gateHeartsRect = new Rectangle(bodyLeft + 116, gateY, 60, gateRowH - 6);
-                _gateMarriedRect = new Rectangle(bodyLeft + 182, gateY, 90, gateRowH - 6);
-                _gateSpouseRect = new Rectangle(bodyLeft + 278, gateY, bodyW - 278, gateRowH - 6);
-
-                int gate2Y = gateY + gateRowH;
-                _gateMemberRect = new Rectangle(bodyLeft, gate2Y, 130, gateRowH - 6);
-                _gateClosedRect = new Rectangle(bodyLeft + 136, gate2Y, 130, gateRowH - 6);
-
-                // BarkMindset 块
-                int barkY = gate2Y + gateRowH + 4;
-                int barkH = Math.Max(30, (bodyBottom - barkY) / 2);
-                _stageBarkBox.SetBounds(new Rectangle(bodyLeft, barkY, bodyW, barkH));
-
-                // Preoccupations 单行框
-                int preoccY = barkY + barkH + 4;
-                _stagePreoccBox.X = bodyLeft;
-                _stagePreoccBox.Y = preoccY;
-                _stagePreoccBox.Width = bodyW;
-                _stagePreoccBox.Height = 36;
-
-                // 运行时绘制区（依赖 gateEditMode，由每次切换/布局时重算）
-                ComputeTab3DrawRects(bodyLeft, bodyW);
+                isChecked = !isChecked;
+                Game1.playSound("select");
             }
         }
 
-        // Tab2 多行框绘制区（行为规则 / 对白范例）
-        if (bodyH > 80)
+        public void draw(SpriteBatch b, int unused1, int unused2, IClickableMenu parent)
         {
-            int behaviorH = Math.Max(120, (int)(bodyH * 0.45f));
-            _behaviorDrawRect = new Rectangle(bodyLeft, bodyTop, bodyW, behaviorH);
-            int dialogueTop = bodyTop + behaviorH + ListRowH + 8;
-            int dialogueH = Math.Max(80, bodyBottom - dialogueTop - 20);
-            _dialogueExamplesDrawRect = new Rectangle(bodyLeft, dialogueTop, bodyW, dialogueH);
-        }
+            int mx = Game1.getMouseX();
+            int my = Game1.getMouseY();
+            Rectangle src = isChecked ? new Rectangle(236, 425, 9, 9) : new Rectangle(227, 425, 9, 9);
+            b.Draw(Game1.mouseCursors, new Vector2(bounds.X, bounds.Y), src, Color.White, 0f, Vector2.Zero, 3.5f, SpriteEffects.None, 1f);
 
-        // Tab4 多行框绘制区（Description）
-        if (bodyH > 120)
-        {
-            int descBoxH = Math.Max(60, (yPositionOnScreen + height - FooterH) - (bodyTop + 130));
-            _relDescDrawRect = new Rectangle(bodyLeft, bodyTop + 96, bodyW, descBoxH);
-        }
-
-        // Tab5 多行框绘制区（Bark 三框，各 ~50px）
-        if (bodyH > 120)
-        {
-            int barkBoxH = 50;
-            int voiceY = bodyTop + 48;
-            _voiceDrawRect = new Rectangle(bodyLeft, voiceY, bodyW, barkBoxH);
-            _habitsDrawRect = new Rectangle(bodyLeft, voiceY + barkBoxH + 24, bodyW, barkBoxH);
-            _lensesDrawRect = new Rectangle(bodyLeft, voiceY + (barkBoxH + 24) * 2, bodyW, barkBoxH);
-        }
-
-        // ── Tab4 内容区（社交关系：导航 + Heading/Description 编辑） ──────
-        if (bodyH > 120)
-        {
-            int navH = 32;
-            int navY = bodyTop;
-            int arrowW = 40;
-            _relPrevRect = new Rectangle(bodyLeft, navY, arrowW, navH);
-            _relNextRect = new Rectangle(bodyLeft + bodyW - arrowW, navY, arrowW, navH);
-            _relListRect = new Rectangle(bodyLeft + arrowW + 4, navY, bodyW - 2 * (arrowW + 4), navH);
-
-            int btnY = navY + navH + 4;
-            int relBtnW = Math.Min(110, (bodyW - 4) / 2);
-            _relAddRect = new Rectangle(bodyLeft, btnY, relBtnW, 28);
-            _relDelRect = new Rectangle(bodyLeft + relBtnW + 4, btnY, relBtnW, 28);
-
-            int headingY = btnY + 28 + ListRowH + 20;
-            int editorW = bodyW;
-            _relHeadingBox = _relHeadingBox ?? new TextBox(Game1.mouseCursors, null, Game1.smallFont, Game1.textColor);
-        }
-
-        // ── Tab5 内容区（环境感知：Bark 三框 + 开关 + 全局池 + 抓取） ────
-        if (bodyH > 120)
-        {
-            int y = bodyTop + 40;
-            _scrapeRect = new Rectangle(bodyLeft, y, Math.Min(280, bodyW), 28);
+            if (!string.IsNullOrEmpty(label))
+                b.DrawString(Game1.smallFont, label, new Vector2(bounds.X + 36, bounds.Y + 6), Game1.textColor);
         }
     }
 
-    /// <summary>Tab3 运行时绘制区：依赖 gateEditMode，每次切换门禁/布局时由调用方触发。</summary>
-    private void ComputeTab3DrawRects(int bodyLeft, int bodyW)
+    /// <summary>
+    /// 角色人设沉浸式编辑器（现代化重构版）：
+    /// 专为玩家设计的直观可视化布局、标签化关注池、所见即所得门禁与 NPC 快捷过滤。
+    /// </summary>
+    internal sealed class BioEditorMenu : IClickableMenu
     {
-        if (_stageIdx < 0 || _stageIdx >= _bio.ProgressStates.Count)
+        // ── 布局尺寸常量 ──────────────────────────────────────────────────
+        private const int HeaderH = 68;
+        private const int TabBarH = 38;
+        private const int FooterH = 56;
+        private const int ContentPadding = 24;
+
+        private static readonly string[] TabTitles = new[]
         {
-            _stageTextDrawRect = Rectangle.Empty;
-            _stageBarkDrawRect = Rectangle.Empty;
-            return;
-        }
-        int textY = (_gateEditMode ? _gateClosedRect.Bottom : _gateToggleRect.Bottom) + 8;
-        int textLabelH = (int)Game1.smallFont.MeasureString("阶段态度 Text").Y;
-        int editorW = (xPositionOnScreen + width - PadX) - bodyLeft;
-        int textH = Math.Max(60, (yPositionOnScreen + height - FooterH) - (textY + textLabelH + 2 + 160));
-        _stageTextDrawRect = new Rectangle(bodyLeft, textY + textLabelH + 2, editorW, textH);
+            "1. 身份背景",
+            "2. 言行举止",
+            "3. 好感演变",
+            "4. 社交关系",
+            "5. 环境感知",
+        };
 
-        int barkY = _stageTextDrawRect.Bottom + 6;
-        int barkLabelH = (int)Game1.smallFont.MeasureString("碎碎念心智 BarkMindset").Y;
-        int barkH = Math.Max(40, (yPositionOnScreen + height - FooterH) - (barkY + barkLabelH + 2 + 60));
-        _stageBarkDrawRect = new Rectangle(bodyLeft, barkY + barkLabelH + 2, editorW, barkH);
-    }
+        // ── 核心状态 ──────────────────────────────────────────────────────
+        private readonly string _npcName;
+        private readonly IClickableMenu _returnMenu;
+        private BioData _bio;
+        private bool _hasOverlay;
+        private bool _dirty;
+        private int _activeTab;
+        private string _hoverText;
 
-    // ── 主线程回写（先比较后赋值，避免每帧分配） ──────────────────────
+        private Texture2D _npcPortrait;
+        private Rectangle _portraitSmileRect;
 
-    public override void update(GameTime time)
-    {
-        base.update(time);
+        // 通用组件
+        private ClickableTextureComponent _closeButton;
+        private readonly Rectangle[] _tabRects = new Rectangle[5];
+        private Rectangle _cancelRect;
+        private Rectangle _saveRect;
+        private Rectangle _resetRect;
 
-        _saveFlashTimer += time.ElapsedGameTime.TotalMilliseconds;
+        // ── Tab 1 控件（身份心理） ────────────────────────────────────────
+        private MultilineTextBox _biographyBox;
+        private TextBox _uniqueBox;
+        private SimpleCheckbox _homeBedCheckbox;
+        private Rectangle _scaffoldBtnRect;
+        private Rectangle _uniqueCardRect;
+        private Rectangle _homeBedCardRect;
 
-        if (_activeTab == 0)
+        private static readonly string BiographyScaffold =
+            "[IDENTITY]\n- Identity: You are {NPC}.\n- Social Anchor: \n- Living Situation: \n\n" +
+            "[PSYCHOLOGICAL CONFLICTS]\n- ";
+
+        // ── Tab 2 控件（言行举止） ────────────────────────────────────────
+        private MultilineTextBox _behaviorBox;
+        private MultilineTextBox _dialogueExamplesBox;
+        private Rectangle _behaviorScaffoldRect;
+        private Rectangle _insertBreakRect;
+        private Rectangle _insertChoiceRect;
+        private Rectangle _tab2LeftColRect;
+        private Rectangle _tab2RightColRect;
+
+        // ── Tab 3 控件（好感演变） ────────────────────────────────────────
+        private int _stageIdx = -1;
+        private MultilineTextBox _stageTextBox;
+        private MultilineTextBox _stageBarkBox;
+        private TagListEditor _stageTagEditor;
+        private NumberStepper _heartsStepper;
+
+        private Rectangle _stageLeftColRect;
+        private Rectangle _stageRightColRect;
+        private readonly Rectangle[] _stageRowRects = new Rectangle[8];
+        private Rectangle _newStageRect;
+        private Rectangle _deleteStageRect;
+        private Rectangle _gateMarriedPillRect;
+        private Rectangle _gateJojaClosedPillRect;
+        private Rectangle _gateJojaMemberPillRect;
+
+        // ── Tab 4 控件（社交关系） ────────────────────────────────────────
+        private int _relSelectedIndex = -1;
+        private readonly List<string> _allNpcs = new();
+        private readonly List<string> _filteredNpcs = new();
+        private string _relSelectedNpc = "";
+        private int _relListScrollOffset = 0;
+        private TextBox _relSearchBox;
+        private TextBox _relHeadingBox;
+        private MultilineTextBox _relDescBox;
+
+        private Rectangle _relLeftColRect;
+        private Rectangle _relRightColRect;
+        private Rectangle _relAddRect;
+        private Rectangle _relDelRect;
+        private readonly List<(Rectangle Rect, int Index)> _relVisibleItemRects = new();
+
+        // ── Tab 5 控件（环境感知） ────────────────────────────────────────
+        private SimpleCheckbox _enableBarkCheckbox;
+        private TagListEditor _globalTagEditor;
+        private MultilineTextBox _voiceBox;
+        private MultilineTextBox _habitsBox;
+        private MultilineTextBox _lensesBox;
+        private Rectangle _scrapeRect;
+        private Rectangle _tab5LeftColRect;
+        private Rectangle _tab5RightColRect;
+
+        // ── 构造函数 ──────────────────────────────────────────────────────
+        public BioEditorMenu(string npcName, IClickableMenu returnMenu)
+            : base(
+                (Game1.uiViewport.Width - Math.Clamp(Game1.uiViewport.Width - 100, 920, 1160)) / 2,
+                (Game1.uiViewport.Height - Math.Clamp(Game1.uiViewport.Height - 80, 600, 750)) / 2,
+                Math.Clamp(Game1.uiViewport.Width - 100, 920, 1160),
+                Math.Clamp(Game1.uiViewport.Height - 80, 600, 750),
+                showUpperRightCloseButton: false)
         {
-            _biographyBox.Update(time);
-            string bio = _biographyBox.Text;
-            if (bio != _bio.Biography)
+            _npcName = npcName;
+            _returnMenu = returnMenu;
+
+            _bio = ModEntry.BioStorage!.LoadEditableBio(npcName);
+            _hasOverlay = ModEntry.BioStorage.HasCustomOverlay(npcName);
+            _activeTab = 0;
+
+            LoadNpcPortrait();
+
+            // 初始化文本框组件
+            _biographyBox = new MultilineTextBox(Rectangle.Empty, maxLines: 512);
+            _behaviorBox = new MultilineTextBox(Rectangle.Empty, maxLines: 512);
+            _dialogueExamplesBox = new MultilineTextBox(Rectangle.Empty, maxLines: 512);
+            _stageTextBox = new MultilineTextBox(Rectangle.Empty, maxLines: 512);
+            _stageBarkBox = new MultilineTextBox(Rectangle.Empty, maxLines: 512);
+            _relDescBox = new MultilineTextBox(Rectangle.Empty, maxLines: 512);
+            _voiceBox = new MultilineTextBox(Rectangle.Empty, maxLines: 512);
+            _habitsBox = new MultilineTextBox(Rectangle.Empty, maxLines: 512);
+            _lensesBox = new MultilineTextBox(Rectangle.Empty, maxLines: 512);
+
+            Texture2D boxTex = LoadTextBoxTexture();
+            _uniqueBox = new TextBox(boxTex, null, Game1.smallFont, Game1.textColor);
+            _relSearchBox = new TextBox(boxTex, null, Game1.smallFont, Game1.textColor);
+            _relHeadingBox = new TextBox(boxTex, null, Game1.smallFont, Game1.textColor);
+
+            _homeBedCheckbox = new SimpleCheckbox("床位固定 (HomeLocationBed)", -1, 0, 0);
+            _enableBarkCheckbox = new SimpleCheckbox("启用日常碎碎念 (AmbientBarks)", -1, 0, 0);
+
+            // 标签胶囊编辑器与门禁步进器初始化
+            _stageTagEditor = new TagListEditor(Rectangle.Empty);
+            _stageTagEditor.OnChanged += () =>
             {
-                _bio.Biography = bio;
-                MarkDirty();
-            }
-            if (_uniqueBox.Text != (_bio.Unique ?? string.Empty))
-            {
-                _bio.Unique = _uniqueBox.Text;
-                MarkDirty();
-            }
-            if (_homeBedCheckbox.isChecked != _bio.HomeLocationBed)
-            {
-                _bio.HomeLocationBed = _homeBedCheckbox.isChecked;
-                MarkDirty();
-            }
-        }
-        else if (_activeTab == 1)
-        {
-            UpdateTab2(time);
-        }
-        else if (_activeTab == 2)
-        {
-            UpdateTab3(time);
-        }
-        else if (_activeTab == 3)
-        {
-            UpdateTab4();
-        }
-        else if (_activeTab == 4)
-        {
-            UpdateTab5(time);
-        }
-    }
-
-    // ── Tab2 回写（言行举止） ──────────────────────────────────────────
-
-    private void UpdateTab2(GameTime time)
-    {
-        _behaviorBox.Update(time);
-        _dialogueExamplesBox.Update(time);
-
-        // 惰性写入：先取现值比较，仅在实际差异时创建条目 + 写入
-        string behaviorText = _behaviorBox.Text ?? string.Empty;
-        if (_bio.Traits.TryGetValue("BehavioralRules", out var behavior) && behavior != null)
-        {
-            if (behavior.Description != behaviorText)
-            {
-                behavior.Description = behaviorText;
-                MarkDirty();
-            }
-        }
-        else if (!string.IsNullOrEmpty(behaviorText))
-        {
-            EnsureTraitEntry("BehavioralRules", "Behavioral Rules").Description = behaviorText;
-            MarkDirty();
-        }
-
-        string examplesText = _dialogueExamplesBox.Text ?? string.Empty;
-        if (_bio.Traits.TryGetValue("DialogueExamples", out var examples) && examples != null)
-        {
-            if (examples.Description != examplesText)
-            {
-                examples.Description = examplesText;
-                MarkDirty();
-            }
-        }
-        else if (!string.IsNullOrEmpty(examplesText))
-        {
-            EnsureTraitEntry("DialogueExamples", "Dialogue Examples").Description = examplesText;
-            MarkDirty();
-        }
-    }
-
-    /// <summary>确保 Traits 中存在指定键的 ListEntry；无则创建（RequiredHearts=0）。</summary>
-    private BioData.ListEntry EnsureTraitEntry(string key, string defaultHeading)
-    {
-        if (!_bio.Traits.TryGetValue(key, out var entry) || entry == null)
-        {
-            entry = new BioData.ListEntry
-            {
-                id = key,
-                Heading = defaultHeading,
-                Description = string.Empty,
-                RequiredHearts = 0
+                if (_stageIdx >= 0 && _stageIdx < _bio.ProgressStates.Count)
+                {
+                    _bio.ProgressStates[_stageIdx].Preoccupations = _stageTagEditor.Tags.Count > 0 ? _stageTagEditor.Tags.ToList() : null;
+                    MarkDirty();
+                }
             };
-            _bio.Traits[key] = entry;
-        }
-        return entry;
-    }
 
-    // ── Tab3 回写（好感演变） ──────────────────────────────────────────
-
-    private void UpdateTab3(GameTime time)
-    {
-        if (_stageIdx < 0 || _stageIdx >= _bio.ProgressStates.Count)
-            return;
-
-        var stage = _bio.ProgressStates[_stageIdx];
-
-        _stageTextBox.Update(time);
-        _stageBarkBox.Update(time);
-
-        if ((stage.Text ?? "") != _stageTextBox.Text)
-        {
-            stage.Text = _stageTextBox.Text;
-            MarkDirty();
-        }
-        if ((stage.BarkMindset ?? "") != _stageBarkBox.Text)
-        {
-            stage.BarkMindset = _stageBarkBox.Text;
-            MarkDirty();
-        }
-
-        // Preoccupations 逗号行 → List（空则置 null）
-        string preoccText = _stagePreoccBox.Text ?? string.Empty;
-        var parsed = new List<string>();
-        foreach (var raw in preoccText.Split(new[] { ',', '，' }, StringSplitOptions.RemoveEmptyEntries))
-        {
-            var t = raw.Trim();
-            if (!string.IsNullOrEmpty(t))
-                parsed.Add(t);
-        }
-        bool changed = false;
-        if (parsed.Count == 0)
-        {
-            if (stage.Preoccupations != null)
+            _globalTagEditor = new TagListEditor(Rectangle.Empty);
+            _globalTagEditor.OnChanged += () =>
             {
-                stage.Preoccupations = null;
-                changed = true;
+                _bio.Preoccupations = _globalTagEditor.Tags.Count > 0 ? _globalTagEditor.Tags.ToList() : null;
+                MarkDirty();
+            };
+
+            _heartsStepper = new NumberStepper(Rectangle.Empty, 0, 0, 14, 2, " 心");
+            _heartsStepper.OnChanged += val =>
+            {
+                if (_stageIdx >= 0 && _stageIdx < _bio.ProgressStates.Count)
+                {
+                    _bio.ProgressStates[_stageIdx].RequiredHearts = val;
+                    MarkDirty();
+                }
+            };
+
+            _closeButton = new ClickableTextureComponent(
+                new Rectangle(xPositionOnScreen + width - 52, yPositionOnScreen + 16, 36, 36),
+                Game1.mouseCursors, new Rectangle(337, 494, 12, 12), 3f);
+
+            // 装载初始数据
+            _biographyBox.Text = _bio.Biography ?? string.Empty;
+            _uniqueBox.Text = _bio.Unique ?? string.Empty;
+            _homeBedCheckbox.isChecked = _bio.HomeLocationBed;
+
+            _enableBarkCheckbox.isChecked = _bio.EnableAmbientBarks;
+            _globalTagEditor.SetTags(_bio.Preoccupations);
+            SyncTab5BarkBoxes();
+
+            InitNpcList();
+            if (_filteredNpcs.Count > 0)
+                SelectRelationship(0);
+
+            if (_bio.ProgressStates.Count > 0)
+                SelectStage(0);
+
+            Layout();
+        }
+
+        private void LoadNpcPortrait()
+        {
+            try
+            {
+                var character = Game1.getCharacterFromName(_npcName);
+                _npcPortrait = (character?.Portrait != null && !character.Portrait.IsDisposed)
+                    ? character.Portrait
+                    : Game1.content.Load<Texture2D>("Portraits\\" + _npcName);
+
+                if (_npcPortrait != null)
+                {
+                    if (_npcPortrait.Width >= 128 && _npcPortrait.Height >= 64)
+                        _portraitSmileRect = new Rectangle(64, 0, 64, 64);
+                    else if (_npcPortrait.Width >= 64 && _npcPortrait.Height >= 128)
+                        _portraitSmileRect = new Rectangle(0, 64, 64, 64);
+                    else
+                        _portraitSmileRect = new Rectangle(0, 0, Math.Min(64, _npcPortrait.Width), Math.Min(64, _npcPortrait.Height));
+                }
+            }
+            catch
+            {
+                _npcPortrait = null;
+                _portraitSmileRect = Rectangle.Empty;
             }
         }
-        else
+
+        // ── 界面几何布局重构 ──────────────────────────────────────────────
+        private void Layout()
         {
-            if (stage.Preoccupations == null
-                || stage.Preoccupations.Count != parsed.Count
-                || !ListsEqual(stage.Preoccupations, parsed))
+            _closeButton.bounds = new Rectangle(xPositionOnScreen + width - 52, yPositionOnScreen + 16, 36, 36);
+
+            int contentLeft = xPositionOnScreen + ContentPadding;
+            int contentW = width - ContentPadding * 2;
+
+            // 1. Tab 栏
+            int tabGap = 8;
+            int tabW = (contentW - tabGap * (TabTitles.Length - 1)) / TabTitles.Length;
+            int tabY = yPositionOnScreen + HeaderH + 4;
+            for (int i = 0; i < TabTitles.Length; i++)
+                _tabRects[i] = new Rectangle(contentLeft + i * (tabW + tabGap), tabY, tabW, TabBarH);
+
+            // 2. 底部功能栏
+            int footerY = yPositionOnScreen + height - FooterH + 10;
+            int btnH = 38;
+            int btnW = Math.Clamp(contentW / 4, 150, 220);
+
+            _cancelRect = new Rectangle(contentLeft, footerY, btnW, btnH);
+            _resetRect = new Rectangle(contentLeft + btnW + 16, footerY, btnW, btnH);
+            _saveRect = new Rectangle(xPositionOnScreen + width - ContentPadding - btnW, footerY, btnW, btnH);
+
+            // 3. 内容区总空间
+            int bodyTop = tabY + TabBarH + 12;
+            int bodyBottom = footerY - 14;
+            int bodyH = bodyBottom - bodyTop;
+
+            // ── Tab 1 布局（身份心理） ──
+            if (_activeTab == 0)
             {
-                stage.Preoccupations = parsed;
-                changed = true;
+                int cardH = 72;
+                int bioH = bodyH - cardH - 36;
+                _biographyBox.SetBounds(new Rectangle(contentLeft, bodyTop + 28, contentW, bioH));
+                _scaffoldBtnRect = new Rectangle(contentLeft + contentW - 140, bodyTop, 140, 26);
+
+                int cardY = _biographyBox.Bounds.Bottom + 12;
+                int cardW = (contentW - 16) / 2;
+                _uniqueCardRect = new Rectangle(contentLeft, cardY, cardW, cardH);
+                _homeBedCardRect = new Rectangle(contentLeft + cardW + 16, cardY, cardW, cardH);
+
+                _uniqueBox.X = _uniqueCardRect.X + 12;
+                _uniqueBox.Y = _uniqueCardRect.Y + 32;
+                _uniqueBox.Width = _uniqueCardRect.Width - 24;
+                _uniqueBox.Height = 30;
+
+                _homeBedCheckbox.bounds = new Rectangle(_homeBedCardRect.X + 16, _homeBedCardRect.Y + 30, 28, 28);
+            }
+
+            // ── Tab 2 布局（言行举止） ──
+            if (_activeTab == 1)
+            {
+                int colW = (contentW - 16) / 2;
+                _tab2LeftColRect = new Rectangle(contentLeft, bodyTop, colW, bodyH);
+                _tab2RightColRect = new Rectangle(contentLeft + colW + 16, bodyTop, colW, bodyH);
+
+                // 顶部预留 36px 给标题与按钮，底部预留 28px 给说明文字，留给输入框的可用高度为 bodyH - 64
+                int headerOffset = 36;
+                int boxH = bodyH - headerOffset - 28;
+
+                // 左列：插入规则模板按钮
+                _behaviorScaffoldRect = new Rectangle(_tab2LeftColRect.Right - 130, bodyTop + 2, 130, 26);
+                _behaviorBox.SetBounds(new Rectangle(_tab2LeftColRect.X, bodyTop + headerOffset, colW, boxH));
+
+                // 右列：对白编辑快捷按钮（微调紧凑，防止窄屏下遮挡标题）
+                int toolBtnW = 95;
+                _insertChoiceRect = new Rectangle(_tab2RightColRect.Right - toolBtnW, bodyTop + 2, toolBtnW, 26);
+                _insertBreakRect = new Rectangle(_insertChoiceRect.Left - toolBtnW - 6, bodyTop + 2, toolBtnW, 26);
+
+                _dialogueExamplesBox.SetBounds(new Rectangle(_tab2RightColRect.X, bodyTop + headerOffset, colW, boxH));
+            }
+
+            // ── Tab 3 布局（好感演变：彻底拉开文本与输入框间隙） ──
+            if (_activeTab == 2)
+            {
+                int leftColW = 240;
+                int rightColW = contentW - leftColW - 16;
+                _stageLeftColRect = new Rectangle(contentLeft, bodyTop, leftColW, bodyH);
+                _stageRightColRect = new Rectangle(contentLeft + leftColW + 16, bodyTop, rightColW, bodyH);
+
+                int rowH = 38;
+                for (int i = 0; i < _stageRowRects.Length; i++)
+                    _stageRowRects[i] = new Rectangle(_stageLeftColRect.X, _stageLeftColRect.Y + 32 + i * (rowH + 4), leftColW, rowH);
+
+                int nextY = _stageLeftColRect.Y + 32 + Math.Min(_bio.ProgressStates.Count, 8) * (rowH + 4);
+                _newStageRect = new Rectangle(_stageLeftColRect.X, nextY, leftColW, 34);
+
+                int rightX = _stageRightColRect.X;
+                int rightY = _stageRightColRect.Y;
+
+                // 门禁药丸栏高度预留
+                _heartsStepper.SetBounds(new Rectangle(rightX + 90, rightY, 110, 28));
+                _gateMarriedPillRect = new Rectangle(rightX + 208, rightY, 100, 28);
+                _gateJojaClosedPillRect = new Rectangle(rightX + 316, rightY, 110, 28);
+                _gateJojaMemberPillRect = new Rectangle(rightX + 434, rightY, 110, 28);
+                _deleteStageRect = new Rectangle(rightX + rightColW - 100, rightY, 100, 28);
+
+                // 关键修复：向下推开 38px 给标题行，彻底避开边框外扩
+                int editorStartY = rightY + 38;
+                int bottomSpace = 85; // 预留给下方关注池
+                int textAreasH = bodyBottom - editorStartY - bottomSpace;
+
+                // 均分两个文本框，每个文本框顶部预留安全距离给中文字体
+                int singleBoxH = (textAreasH - 64) / 2;
+
+                int box1Y = editorStartY + 28;
+                _stageTextBox.SetBounds(new Rectangle(rightX, box1Y, rightColW, singleBoxH));
+
+                int box2Y = _stageTextBox.Bounds.Bottom + 34;
+                _stageBarkBox.SetBounds(new Rectangle(rightX, box2Y, rightColW, singleBoxH));
+
+                _stageTagEditor.SetBounds(new Rectangle(rightX, bodyBottom - 64, rightColW, 60));
+            }
+
+            // ── Tab 4 布局（社交关系：彻底解决标题与框体贴合） ──
+            if (_activeTab == 3)
+            {
+                int leftColW = 250;
+                int rightColW = contentW - leftColW - 16;
+                _relLeftColRect = new Rectangle(contentLeft, bodyTop, leftColW, bodyH);
+                _relRightColRect = new Rectangle(contentLeft + leftColW + 16, bodyTop, rightColW, bodyH);
+
+                // 搜索栏
+                _relSearchBox.X = _relLeftColRect.X;
+                _relSearchBox.Y = _relLeftColRect.Y + 28;
+                _relSearchBox.Width = _relLeftColRect.Width;
+                _relSearchBox.Height = 28;
+
+                int relBtnW = (leftColW - 8) / 2;
+                _relAddRect = new Rectangle(_relLeftColRect.X, _relLeftColRect.Bottom - 34, relBtnW, 34);
+                _relDelRect = new Rectangle(_relLeftColRect.X + relBtnW + 8, _relLeftColRect.Bottom - 34, relBtnW, 34);
+
+                int rightX = _relRightColRect.X;
+
+                // 关键修复：单行框从 bodyTop + 68 开始，为上方顶层大标题和副标题留够充足空间
+                _relHeadingBox.X = rightX;
+                _relHeadingBox.Y = bodyTop + 68;
+                _relHeadingBox.Width = rightColW;
+                _relHeadingBox.Height = 32;
+
+                // 多行描述框从单行框底边 + 42px 开始，给中间的提示文字留足 34px 空间
+                int descTop = _relHeadingBox.Y + _relHeadingBox.Height + 42;
+                int descH = bodyBottom - descTop - 28;
+                _relDescBox.SetBounds(new Rectangle(rightX, descTop, rightColW, descH));
+
+                RecalculateTab4List();
+            }
+
+            // ── Tab 5 布局（环境感知） ──
+            if (_activeTab == 4)
+            {
+                int leftColW = 340;
+                int rightColW = contentW - leftColW - 16;
+                _tab5LeftColRect = new Rectangle(contentLeft, bodyTop, leftColW, bodyH);
+                _tab5RightColRect = new Rectangle(contentLeft + leftColW + 16, bodyTop, rightColW, bodyH);
+
+                _enableBarkCheckbox.bounds = new Rectangle(_tab5LeftColRect.X + 8, _tab5LeftColRect.Y + 28, 28, 28);
+                _scrapeRect = new Rectangle(_tab5LeftColRect.X, _tab5LeftColRect.Y + 74, leftColW, 34);
+
+                _globalTagEditor.SetBounds(new Rectangle(_tab5LeftColRect.X, _tab5LeftColRect.Y + 160, leftColW, bodyBottom - (_tab5LeftColRect.Y + 160)));
+
+                int rightX = _tab5RightColRect.X;
+                int rightY = _tab5RightColRect.Y;
+                int sectionH = (bodyH - 52) / 3;
+
+                _voiceBox.SetBounds(new Rectangle(rightX, rightY + 22, rightColW, sectionH - 24));
+                _habitsBox.SetBounds(new Rectangle(rightX, rightY + sectionH + 22, rightColW, sectionH - 24));
+                _lensesBox.SetBounds(new Rectangle(rightX, rightY + sectionH * 2 + 22, rightColW, sectionH - 24));
             }
         }
-        if (changed)
-            MarkDirty();
-    }
 
-    private static bool ListsEqual(List<string> a, List<string> b)
-    {
-        for (int i = 0; i < a.Count; i++)
-            if (a[i] != b[i]) return false;
-        return true;
-    }
-
-    /// <summary>选中档位（基于列表顺序，不重排）。</summary>
-    private void SelectStage(int idx)
-    {
-        if (idx < 0 || idx >= _bio.ProgressStates.Count)
-            return;
-        ApplyGateEditors();
-        _stageIdx = idx;
-        var stage = _bio.ProgressStates[idx];
-        _stageTextBox.Text = stage.Text ?? string.Empty;
-        _stageBarkBox.Text = stage.BarkMindset ?? string.Empty;
-        _stagePreoccBox.Text = stage.Preoccupations != null ? string.Join(", ", stage.Preoccupations) : string.Empty;
-        SyncGateEditors();
-        // 选中档变更影响编辑器绘制区
-        int bodyLeft = xPositionOnScreen + PadX;
-        ComputeTab3DrawRects(bodyLeft, (xPositionOnScreen + width - PadX) - bodyLeft);
-    }
-
-    /// <summary>确保当前选中档存在（仅当用户实际编辑时调用）。</summary>
-    private BioData.ProgressStateEntry EnsureStageEntry()
-    {
-        if (_stageIdx >= 0 && _stageIdx < _bio.ProgressStates.Count)
-            return _bio.ProgressStates[_stageIdx];
-        var entry = new BioData.ProgressStateEntry { RequiredHearts = _gateHearts };
-        _bio.ProgressStates.Add(entry);
-        _stageIdx = _bio.ProgressStates.Count - 1;
-        return entry;
-    }
-
-    private void SyncGateEditors()
-    {
-        if (_stageIdx < 0 || _stageIdx >= _bio.ProgressStates.Count)
-            return;
-        var p = _bio.ProgressStates[_stageIdx];
-        _gateHearts = p.RequiredHearts;
-        _gateMarried = p.RequireMarried;
-        _gateSpouse = p.RequirePlayerMarriedTo ?? string.Empty;
-        _gateSpouseBox.Text = _gateSpouse;
-        _gateJojaMember = p.RequireJojaMember.HasValue ? (p.RequireJojaMember.Value ? 1 : 2) : 0;
-        _gateJojaClosed = p.RequireJojaMartClosed.HasValue ? (p.RequireJojaMartClosed.Value ? 1 : 2) : 0;
-    }
-
-    private void ApplyGateEditors()
-    {
-        if (!_gateEditMode || _stageIdx < 0 || _stageIdx >= _bio.ProgressStates.Count)
-            return;
-        var p = _bio.ProgressStates[_stageIdx];
-        p.RequiredHearts = _gateHearts;
-        p.RequireMarried = _gateMarried;
-        p.RequirePlayerMarriedTo = string.IsNullOrWhiteSpace(_gateSpouseBox.Text) ? null : _gateSpouseBox.Text.Trim();
-        p.RequireJojaMember = _gateJojaMember == 0 ? (bool?)null : (_gateJojaMember == 1);
-        p.RequireJojaMartClosed = _gateJojaClosed == 0 ? (bool?)null : (_gateJojaClosed == 1);
-        MarkDirty();
-    }
-
-    /// <summary>绿点：逐项 AND 求值当前状态是否满足该档全部门禁。</summary>
-    private bool GateSatisfiedNow(BioData.ProgressStateEntry p)
-    {
-        try
+        // ── 社交关系列表与精准过滤搜索 ────────────────────────────────────────
+        private void InitNpcList()
         {
-            // 心数
-            int hearts = 0;
-            var player = Game1.player;
-            if (player?.friendshipData != null
-                && player.friendshipData.TryGetValue(_npcName, out var fs) && fs != null)
-                hearts = fs.Points / 250;
-            if (hearts < p.RequiredHearts) return false;
+            _allNpcs.Clear();
+            var friendshipData = Game1.player?.friendshipData;
 
-            // 婚姻
-            if (p.RequireMarried && !ProgressStateResolver.IsMarriedToPlayer(_npcName)) return false;
+            // 1. 系统/过场演出用假人/特殊剧情专用角色黑名单（参考 IntegratedHubMenu）
+            var excludedNpcs = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "Grandpa",   // 爷爷
+                "Governor",  // 州长
+                "Gil",       // 吉尔
+                "Bouncer",   // 赌场保镖
+                "Birdie",    // 伯迪
+                "Henchman",  // 仆从
+                "MarlonFudge"// 1.6 矿洞/特殊剧情马龙克隆体
+            };
 
-            // 指定配偶
-            if (!string.IsNullOrWhiteSpace(p.RequirePlayerMarriedTo)
-                && !ProgressStateResolver.IsMarriedToPlayer(p.RequirePlayerMarriedTo)) return false;
+            // 辅助判定：是否为剧情演出或无效假人
+            bool IsInvalidOrEventNpc(string internalName, NPC npc)
+            {
+                if (string.IsNullOrWhiteSpace(internalName)) return true;
 
-            // Joja 会员（本地玩家旗标）
-            if (p.RequireJojaMember.HasValue && p.RequireJojaMember.Value != ProgressStateResolver.CheckJojaMember())
+                // 排除当前正在编辑的 NPC 本人
+                if (string.Equals(internalName, _npcName, StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+                // 命中硬编码黑名单
+                if (excludedNpcs.Contains(internalName))
+                    return true;
+
+                // 剧情演出假人常见命名模式：包含下划线、Event、Fake、Dummy 等
+                if (internalName.Contains("_") ||
+                    internalName.Contains("Event", StringComparison.OrdinalIgnoreCase) ||
+                    internalName.Contains("Fake", StringComparison.OrdinalIgnoreCase) ||
+                    internalName.Contains("Dummy", StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+                // 针对 Marlon 的克隆变体（如 MarlonFudge, MarlonFestival 等）坚决剔除，纯正的 "Marlon" 才是本体
+                bool isTrueMarlon = internalName.Equals("Marlon", StringComparison.OrdinalIgnoreCase);
+                if (internalName.StartsWith("Marlon", StringComparison.OrdinalIgnoreCase) && !isTrueMarlon)
+                    return true;
+
+                bool inFriendship = friendshipData != null && friendshipData.ContainsKey(internalName);
+
+                // 如果获取到了运行时的 NPC 实例进一步校验
+                if (npc != null)
+                {
+                    // 通过当前过场的 actors 列表判定是否为过场临时演员
+                    if (Game1.CurrentEvent != null && Game1.CurrentEvent.actors != null && Game1.CurrentEvent.actors.Contains(npc))
+                        return true;
+
+                    // 原版马龙不可社交(CanSocialize=false)且不在好感度中，但他是核心NPC，必须放行；其他不可社交且无好感度的直接剔除
+                    if (!isTrueMarlon && !npc.CanSocialize && !inFriendship)
+                        return true;
+                }
+                else
+                {
+                    // 无运行时实例且不在好感度表中时：除了正统 Marlon 外，其他均视作无效
+                    if (!isTrueMarlon && !inFriendship)
+                        return true;
+                }
+
                 return false;
+            }
 
-            // Joja 倒闭（世界级旗标）
-            if (p.RequireJojaMartClosed.HasValue
-                && p.RequireJojaMartClosed.Value != ProgressStateResolver.CheckJojaMartClosed())
-                return false;
+            // 收集所有候选角色名字
+            var rawCandidates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    /// <summary>Tab3 点击处理：档位列表选择 / 新建 / 编辑器控件。返回 true 表示已处理。</summary>
-    private bool HandleTab3Click(int x, int y)
-    {
-        // 档位列表行选择
-        int visibleStages = Math.Min(_bio.ProgressStates.Count, _stageRowRects.Length);
-        for (int i = 0; i < visibleStages; i++)
-        {
-            if (_stageRowRects[i].Contains(x, y))
+            // 1) 优先从好感度列表（最可信）提取
+            if (friendshipData != null)
             {
-                SelectStage(i);
-                Game1.playSound("smallSelect");
-                return true;
+                foreach (var k in friendshipData.Keys)
+                {
+                    if (!IsInvalidOrEventNpc(k, Game1.getCharacterFromName(k)))
+                        rawCandidates.Add(k);
+                }
+            }
+
+            // 2) 从 CharacterData 基础表补充（支持拓展模组 NPC）
+            if (Game1.characterData != null)
+            {
+                foreach (var kvp in Game1.characterData)
+                {
+                    string name = kvp.Key;
+                    if (!IsInvalidOrEventNpc(name, Game1.getCharacterFromName(name)))
+                        rawCandidates.Add(name);
+                }
+            }
+
+            // 3) 从场景活跃角色补充
+            foreach (var npc in Utility.getAllCharacters())
+            {
+                if (npc != null && (npc.IsVillager || npc.Name.Equals("Marlon", StringComparison.OrdinalIgnoreCase)) && !IsInvalidOrEventNpc(npc.Name, npc))
+                {
+                    rawCandidates.Add(npc.Name);
+                }
+            }
+
+            // 4) 确保当前已存在的自定义关系角色（若有配置）不会被漏掉
+            if (_bio.Relationships != null)
+            {
+                foreach (var configuredKey in _bio.Relationships.Keys)
+                {
+                    if (!string.Equals(configuredKey, _npcName, StringComparison.OrdinalIgnoreCase))
+                        rawCandidates.Add(configuredKey);
+                }
+            }
+
+            // 2. 核心去重：按 DisplayName 去重，防止任何模组克隆人导致双重名单
+            var resolvedNpcs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var name in rawCandidates)
+            {
+                string dispName = Game1.getCharacterFromName(name)?.displayName;
+                if (string.IsNullOrWhiteSpace(dispName)) dispName = name;
+
+                if (resolvedNpcs.TryGetValue(dispName, out var existingInternalName))
+                {
+                    bool isCurrentTrueMarlon = name.Equals("Marlon", StringComparison.OrdinalIgnoreCase);
+                    bool isExistingTrueMarlon = existingInternalName.Equals("Marlon", StringComparison.OrdinalIgnoreCase);
+
+                    if (isCurrentTrueMarlon && !isExistingTrueMarlon)
+                    {
+                        resolvedNpcs[dispName] = name;
+                    }
+                    else if (!isCurrentTrueMarlon && isExistingTrueMarlon)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        bool existingHasFriendship = friendshipData != null && friendshipData.ContainsKey(existingInternalName);
+                        bool currentHasFriendship = friendshipData != null && friendshipData.ContainsKey(name);
+                        if ((currentHasFriendship && !existingHasFriendship) ||
+                            (currentHasFriendship == existingHasFriendship && name.Length < existingInternalName.Length))
+                        {
+                            resolvedNpcs[dispName] = name;
+                        }
+                    }
+                }
+                else
+                {
+                    resolvedNpcs[dispName] = name;
+                }
+            }
+
+            _allNpcs.AddRange(resolvedNpcs.Values);
+            FilterNpcList();
+        }
+
+        private void FilterNpcList()
+        {
+            _filteredNpcs.Clear();
+            string query = _relSearchBox?.Text?.Trim() ?? "";
+
+            // 优先排序已配置的角色
+            var sorted = _allNpcs.OrderByDescending(n => _bio.Relationships.ContainsKey(n))
+                                 .ThenBy(n => Game1.getCharacterFromName(n)?.displayName ?? n);
+
+            foreach (var name in sorted)
+            {
+                string disp = Game1.getCharacterFromName(name)?.displayName ?? name;
+                if (string.IsNullOrEmpty(query) ||
+                    disp.Contains(query, StringComparison.CurrentCultureIgnoreCase) ||
+                    name.Contains(query, StringComparison.OrdinalIgnoreCase))
+                {
+                    _filteredNpcs.Add(name);
+                }
+            }
+            RecalculateTab4List();
+        }
+
+        private void RecalculateTab4List()
+        {
+            _relVisibleItemRects.Clear();
+            int listTop = _relLeftColRect.Y + 68;
+            int listAvailH = _relLeftColRect.Height - 68 - 46;
+            int rowH = 36;
+            int maxVisible = Math.Max(1, listAvailH / rowH);
+
+            _relListScrollOffset = Math.Clamp(_relListScrollOffset, 0, Math.Max(0, _filteredNpcs.Count - maxVisible));
+
+            for (int i = 0; i < maxVisible && _relListScrollOffset + i < _filteredNpcs.Count; i++)
+            {
+                int idx = _relListScrollOffset + i;
+                var r = new Rectangle(_relLeftColRect.X, listTop + i * rowH, _relLeftColRect.Width, rowH - 4);
+                _relVisibleItemRects.Add((r, idx));
             }
         }
 
-        // 新建档位
-        bool hasRoom = _bio.ProgressStates.Count < _stageRowRects.Length;
-        if (hasRoom && _newStageRect.Contains(x, y))
+        // ── 帧更新 ────────────────────────────────────────────────────────
+        public override void update(GameTime time)
         {
-            ApplyGateEditors();
-            var entry = new BioData.ProgressStateEntry { RequiredHearts = _gateHearts };
-            _bio.ProgressStates.Add(entry);
-            SelectStage(_bio.ProgressStates.Count - 1);
-            Game1.playSound("newRecipe");
-            return true;
-        }
+            base.update(time);
+            _hoverText = null;
 
-        if (_stageIdx < 0 || _stageIdx >= _bio.ProgressStates.Count)
-        {
-            Game1.keyboardDispatcher.Subscriber = null;
-            _stageTextBox.Selected = false;
-            _stageBarkBox.Selected = false;
-            return false;
-        }
-
-        var stage = _bio.ProgressStates[_stageIdx];
-
-        // 阶段态度 Text 框
-        if (_stageTextBox.Bounds.Contains(x, y))
-        {
-            _stageTextBox.Selected = true;
-            _stageBarkBox.Selected = false;
-            Game1.keyboardDispatcher.Subscriber = _stageTextBox;
-            return true;
-        }
-        // BarkMindset 框
-        if (_stageBarkBox.Bounds.Contains(x, y))
-        {
-            // 新建档首次聚焦时自动填模板
-            if (string.IsNullOrWhiteSpace(_stageBarkBox.Text) && string.IsNullOrWhiteSpace(stage.BarkMindset))
-                _stageBarkBox.Text = BarkMindsetScaffold;
-            _stageBarkBox.Selected = true;
-            _stageTextBox.Selected = false;
-            Game1.keyboardDispatcher.Subscriber = _stageBarkBox;
-            return true;
-        }
-        // Preoccupations 框
-        if (new Rectangle(_stagePreoccBox.X, _stagePreoccBox.Y, _stagePreoccBox.Width, _stagePreoccBox.Height).Contains(x, y))
-        {
-            _stagePreoccBox.SelectMe();
-            _stageTextBox.Selected = false;
-            _stageBarkBox.Selected = false;
-            Game1.keyboardDispatcher.Subscriber = _stagePreoccBox;
-            return true;
-        }
-
-        // 门禁编辑区
-        if (_gateToggleRect.Contains(x, y))
-        {
-            _gateEditMode = !_gateEditMode;
-            if (!_gateEditMode)
-                ApplyGateEditors(); // 退出编辑模式 → 确认写入
-            else
-                SyncGateEditors();  // 进入编辑模式 → 从档位同步到编辑器
-            // 门禁形态切换影响 Tab3 编辑器绘制区，重算
-            int bodyLeft = xPositionOnScreen + PadX;
-            ComputeTab3DrawRects(bodyLeft, (xPositionOnScreen + width - PadX) - bodyLeft);
-            Game1.playSound("drumkit6");
-            return true;
-        }
-
-        if (_gateEditMode)
-        {
-            if (_gateHeartsRect.Contains(x, y))
+            if (_activeTab == 0)
             {
-                _gateHearts = _gateHearts switch { 0 => 3, 3 => 7, 7 => 8, _ => 0 };
-                Game1.playSound("drumkit6");
-                return true;
+                _biographyBox.Update(time);
+                if (_biographyBox.Text != _bio.Biography) { _bio.Biography = _biographyBox.Text; MarkDirty(); }
+                if (_uniqueBox.Text != (_bio.Unique ?? string.Empty)) { _bio.Unique = _uniqueBox.Text; MarkDirty(); }
+                if (_homeBedCheckbox.isChecked != _bio.HomeLocationBed) { _bio.HomeLocationBed = _homeBedCheckbox.isChecked; MarkDirty(); }
             }
-            if (_gateMarriedRect.Contains(x, y))
+            else if (_activeTab == 1)
             {
-                _gateMarried = !_gateMarried;
-                Game1.playSound("drumkit6");
-                return true;
+                _behaviorBox.Update(time);
+                _dialogueExamplesBox.Update(time);
+
+                string bText = _behaviorBox.Text ?? string.Empty;
+                if (_bio.Traits.TryGetValue("BehavioralRules", out var bEntry) && bEntry != null)
+                {
+                    if (bEntry.Description != bText) { bEntry.Description = bText; MarkDirty(); }
+                }
+                else if (!string.IsNullOrEmpty(bText))
+                {
+                    EnsureTraitEntry("BehavioralRules", "Tone & Mannerisms Constraints").Description = bText;
+                    MarkDirty();
+                }
+
+                string dText = _dialogueExamplesBox.Text ?? string.Empty;
+                if (_bio.Traits.TryGetValue("DialogueExamples", out var dEntry) && dEntry != null)
+                {
+                    if (dEntry.Description != dText) { dEntry.Description = dText; MarkDirty(); }
+                }
+                else if (!string.IsNullOrEmpty(dText))
+                {
+                    EnsureTraitEntry("DialogueExamples", "Dialogue Examples").Description = dText;
+                    MarkDirty();
+                }
             }
-            if (_gateSpouseRect.Contains(x, y))
+            else if (_activeTab == 2)
             {
-                _gateSpouseBox.SelectMe();
-                _stageTextBox.Selected = false;
-                _stageBarkBox.Selected = false;
-                Game1.keyboardDispatcher.Subscriber = _gateSpouseBox;
-                return true;
+                if (_stageIdx >= 0 && _stageIdx < _bio.ProgressStates.Count)
+                {
+                    var s = _bio.ProgressStates[_stageIdx];
+                    _stageTextBox.Update(time);
+                    _stageBarkBox.Update(time);
+
+                    if ((s.Text ?? "") != _stageTextBox.Text) { s.Text = _stageTextBox.Text; MarkDirty(); }
+                    if ((s.BarkMindset ?? "") != _stageBarkBox.Text) { s.BarkMindset = _stageBarkBox.Text; MarkDirty(); }
+                }
             }
-            if (_gateMemberRect.Contains(x, y))
+            else if (_activeTab == 3)
             {
-                _gateJojaMember = (_gateJojaMember + 1) % 3; // 0=不限制 1=true 2=false
-                Game1.playSound("drumkit6");
-                return true;
+                if (!string.IsNullOrEmpty(_relSelectedNpc))
+                {
+                    string heading = _relHeadingBox.Text ?? string.Empty;
+                    string desc = _relDescBox.Text ?? string.Empty;
+
+                    if (_bio.Relationships.TryGetValue(_relSelectedNpc, out var rel) && rel != null)
+                    {
+                        if (rel.Heading != heading) { rel.Heading = heading; MarkDirty(); }
+                        if (rel.Description != desc) { rel.Description = desc; MarkDirty(); }
+                    }
+                    else if (!string.IsNullOrEmpty(heading) || !string.IsNullOrEmpty(desc))
+                    {
+                        var entry = EnsureRelationshipEntry(_relSelectedNpc);
+                        entry.Heading = heading;
+                        entry.Description = desc;
+                        MarkDirty();
+                    }
+                }
             }
-            if (_gateClosedRect.Contains(x, y))
+            else if (_activeTab == 4)
             {
-                _gateJojaClosed = (_gateJojaClosed + 1) % 3;
-                Game1.playSound("drumkit6");
-                return true;
+                _voiceBox.Update(time);
+                _habitsBox.Update(time);
+                _lensesBox.Update(time);
+
+                string v = _voiceBox.Text ?? string.Empty;
+                string h = _habitsBox.Text ?? string.Empty;
+                string l = _lensesBox.Text ?? string.Empty;
+
+                bool barkChanged = false;
+                if (_bio.AmbientBarkPrompt != null)
+                {
+                    if (_bio.AmbientBarkPrompt.VoiceAndAttitude != v) { _bio.AmbientBarkPrompt.VoiceAndAttitude = v; barkChanged = true; }
+                    if (_bio.AmbientBarkPrompt.SpokenHabits != h) { _bio.AmbientBarkPrompt.SpokenHabits = h; barkChanged = true; }
+                    if (_bio.AmbientBarkPrompt.ObservationLenses != l) { _bio.AmbientBarkPrompt.ObservationLenses = l; barkChanged = true; }
+                }
+                else if (!string.IsNullOrEmpty(v) || !string.IsNullOrEmpty(h) || !string.IsNullOrEmpty(l))
+                {
+                    var p = EnsureAmbientBarkPrompt();
+                    p.VoiceAndAttitude = v;
+                    p.SpokenHabits = h;
+                    p.ObservationLenses = l;
+                    barkChanged = true;
+                }
+                if (barkChanged) MarkDirty();
+
+                if (_enableBarkCheckbox.isChecked != _bio.EnableAmbientBarks)
+                {
+                    _bio.EnableAmbientBarks = _enableBarkCheckbox.isChecked;
+                    MarkDirty();
+                }
             }
         }
 
-        Game1.keyboardDispatcher.Subscriber = null;
-        _stageTextBox.Selected = false;
-        _stageBarkBox.Selected = false;
-        return false;
-    }
-
-    public override void performHoverAction(int x, int y)
-    {
-        // 无悬停交互需求（保留接口）
-    }
-
-    public override void receiveLeftClick(int x, int y, bool playSound = true)
-    {
-        // Tab 切换
-        for (int i = 0; i < _tabRects.Length; i++)
+        // ── 交互输入分发 ──────────────────────────────────────────────────
+        public override void receiveLeftClick(int x, int y, bool playSound = true)
         {
-            if (_tabRects[i].Contains(x, y))
+            if (_closeButton.containsPoint(x, y))
             {
-                SwitchTab(i);
+                Game1.playSound("bigDeSelect");
+                TryCancel();
                 return;
             }
+
+            // Tab 切换
+            for (int i = 0; i < _tabRects.Length; i++)
+            {
+                if (_tabRects[i].Contains(x, y))
+                {
+                    SwitchTab(i);
+                    return;
+                }
+            }
+
+            // 底部操作
+            if (_saveRect.Contains(x, y)) { SaveAndClose(); return; }
+            if (_cancelRect.Contains(x, y)) { TryCancel(); return; }
+            if (_resetRect.Contains(x, y)) { TryReset(); return; }
+
+            // 各 Tab 分发
+            if (_activeTab == 0) HandleTab1Click(x, y);
+            else if (_activeTab == 1) HandleTab2Click(x, y);
+            else if (_activeTab == 2) HandleTab3Click(x, y);
+            else if (_activeTab == 3) HandleTab4Click(x, y);
+            else if (_activeTab == 4) HandleTab5Click(x, y);
         }
 
-        if (_activeTab == 0)
+        private void HandleTab1Click(int x, int y)
         {
-            // Biography 框
-            if (_biographyBox.Bounds.Contains(x, y))
-            {
-                FocusBox(_biographyBox);
-                _biographyBox.Selected = true;
-                Game1.keyboardDispatcher.Subscriber = _biographyBox;
-                return;
-            }
-
-            // 模板按钮：仅 Biography 为空时生效
-            if (ShouldShowScaffold() && _scaffoldRect.Contains(x, y))
-            {
-                InsertScaffold();
-                return;
-            }
-
-            // Unique 框
-            if (new Rectangle(_uniqueBox.X, _uniqueBox.Y, _uniqueBox.Width, _uniqueBox.Height).Contains(x, y))
-            {
-                _biographyBox.Selected = false;
-                _uniqueBox.SelectMe();
-                _uniqueBox.Hover(x, y);
-                Game1.keyboardDispatcher.Subscriber = _uniqueBox;
-                return;
-            }
-
-            // HomeBed 复选框
-            if (_homeBedCheckbox.bounds.Contains(x, y))
-            {
-                _homeBedCheckbox.receiveLeftClick(x, y);
-                return;
-            }
+            if (_biographyBox.Bounds.Contains(x, y)) { FocusBox(_biographyBox); return; }
+            if (_scaffoldBtnRect.Contains(x, y)) { InsertScaffold(); return; }
+            if (new Rectangle(_uniqueBox.X, _uniqueBox.Y, _uniqueBox.Width, _uniqueBox.Height).Contains(x, y)) { FocusTextBox(_uniqueBox); return; }
+            if (_homeBedCheckbox.bounds.Contains(x, y)) { _homeBedCheckbox.receiveLeftClick(x, y); return; }
+            UnfocusAll();
         }
-        else if (_activeTab == 1)
+
+        private void HandleTab2Click(int x, int y)
         {
-            // 行为规则框
-            if (_behaviorBox.Bounds.Contains(x, y))
+            if (_behaviorBox.Bounds.Contains(x, y)) { FocusBox(_behaviorBox); return; }
+            if (_dialogueExamplesBox.Bounds.Contains(x, y)) { FocusBox(_dialogueExamplesBox); return; }
+
+            if (_behaviorScaffoldRect.Contains(x, y))
             {
-                _dialogueExamplesBox.Selected = false;
-                _behaviorBox.Selected = true;
-                Game1.keyboardDispatcher.Subscriber = _behaviorBox;
-                return;
-            }
-            // 行为规则模板按钮
-            if (string.IsNullOrWhiteSpace(_behaviorBox.Text) && _behaviorScaffoldRect.Contains(x, y))
-            {
-                _behaviorBox.Text = BehaviorScaffold;
+                _behaviorBox.Text =
+                    "[VOICE]\n- Tone: \n- Cadence: \n\n[SPEECH PATTERNS]\n- \n\n[MANNERISMS]\n- \n\n" +
+                    "[IMMEDIATE REFLEXES]\n- \n\n[CONTEXT OVERRIDE]\n- ";
                 MarkDirty();
                 Game1.playSound("coin");
                 return;
             }
-            // 对白范例框
-            if (_dialogueExamplesBox.Bounds.Contains(x, y))
+
+            // 快捷插入对白分段符与选项
+            if (_insertBreakRect.Contains(x, y))
             {
-                _behaviorBox.Selected = false;
-                _dialogueExamplesBox.Selected = true;
-                Game1.keyboardDispatcher.Subscriber = _dialogueExamplesBox;
+                _dialogueExamplesBox.Text = (_dialogueExamplesBox.Text ?? "") + "#$b#";
+                MarkDirty();
+                Game1.playSound("shiny4");
                 return;
             }
-            // 失去焦点
-            Game1.keyboardDispatcher.Subscriber = null;
-            _behaviorBox.Selected = false;
-            _dialogueExamplesBox.Selected = false;
-        }
-        else if (_activeTab == 2)
-        {
-            if (HandleTab3Click(x, y))
-                return;
-        }
-        else if (_activeTab == 3)
-        {
-            if (HandleTab4Click(x, y))
-                return;
-        }
-        else if (_activeTab == 4)
-        {
-            if (HandleTab5Click(x, y))
-                return;
-        }
-
-        // 页脚按钮
-        if (_saveRect.Contains(x, y))
-        {
-            SaveAndClose();
-            return;
-        }
-        if (_cancelRect.Contains(x, y))
-        {
-            TryCancel();
-            return;
-        }
-        if (_resetRect.Contains(x, y))
-        {
-            TryReset();
-            return;
-        }
-
-        // 点击空白区：取消聚焦所有文本框
-        Game1.keyboardDispatcher.Subscriber = null;
-        _biographyBox.Selected = false;
-        _uniqueBox.Selected = false;
-    }
-
-    public override void receiveScrollWheelAction(int direction)
-    {
-        if (_activeTab == 0 && _biographyBox.Selected)
-        {
-            _biographyBox.Scroll(direction);
-        }
-        else if (_activeTab == 1)
-        {
-            if (_behaviorBox.Selected) _behaviorBox.Scroll(direction);
-            else if (_dialogueExamplesBox.Selected) _dialogueExamplesBox.Scroll(direction);
-        }
-        else if (_activeTab == 2)
-        {
-            if (_stageTextBox.Selected) _stageTextBox.Scroll(direction);
-            else if (_stageBarkBox.Selected) _stageBarkBox.Scroll(direction);
-        }
-        else if (_activeTab == 3)
-        {
-            if (_relDescBox.Selected) _relDescBox.Scroll(direction);
-        }
-        else if (_activeTab == 4)
-        {
-            if (_voiceBox.Selected) _voiceBox.Scroll(direction);
-            else if (_habitsBox.Selected) _habitsBox.Scroll(direction);
-            else if (_lensesBox.Selected) _lensesBox.Scroll(direction);
-        }
-    }
-
-    public override void receiveKeyPress(Keys key)
-    {
-        // ESC 始终触发取消确认流程
-        if (key == Keys.Escape)
-        {
-            TryCancel();
-            return;
-        }
-
-        // 唯一输入路径 = KeyboardDispatcher（字符/功能键均由 dispatcher 注入 subscriber）；
-        // 此处不再转发，避免与 dispatcher 双处理。
-        base.receiveKeyPress(key);
-    }
-
-    protected override void cleanupBeforeExit()
-    {
-        base.cleanupBeforeExit();
-        // 无条件清理键盘订阅与全部框焦点，避免退出后打字进入残留输入
-        Game1.keyboardDispatcher.Subscriber = null;
-        _biographyBox.Selected = false;
-        _uniqueBox.Selected = false;
-        _behaviorBox.Selected = false;
-        _dialogueExamplesBox.Selected = false;
-        _stageTextBox.Selected = false;
-        _stageBarkBox.Selected = false;
-        _relDescBox.Selected = false;
-        _voiceBox.Selected = false;
-        _habitsBox.Selected = false;
-        _lensesBox.Selected = false;
-    }
-
-    // ── 私有操作 ──────────────────────────────────────────────────────
-
-    private void SwitchTab(int tab)
-    {
-        if (_activeTab == tab)
-            return;
-        // 当前 Tab 绑定已由 update() 持续回写，无需额外处理
-        _activeTab = tab;
-        Game1.playSound("smallSelect");
-        Layout();
-    }
-
-    private void FocusBox(MultilineTextBox box)
-    {
-        _uniqueBox.Selected = false;
-        Game1.keyboardDispatcher.Subscriber = box;
-    }
-
-    private void SaveAndClose()
-    {
-        ShowLintSummary();
-
-        if (!ModEntry.BioStorage!.SaveOverlay(_npcName, _bio, out string errorMessage))
-        {
-            Game1.addHUDMessage(new HUDMessage($"人设保存失败: {errorMessage}", HUDMessage.error_type));
-            return;
-        }
-        Game1.playSound("achievement");
-        ExitAndReturn();
-    }
-
-    /// <summary>
-    /// 保存前体检：逐项记录问题日志并以 HUD 提示数量（不阻断保存）。
-    /// BioLinter 尚未合入（VT-BIO-07）时跳过，保留接线占位。
-    /// </summary>
-    private void ShowLintSummary()
-    {
-#if false // TODO VT-BIO-07: 合入 BioLinter 后移除此 guard 并恢复调用
-        var issues = BioLinter.Lint(_bio);
-        foreach (var issue in issues)
-        {
-            ModEntry.SMonitor?.Log($"[BioLinter] {issue.Code}: {issue.Message}", LogLevel.Info);
-        }
-        if (issues.Count > 0)
-        {
-            Game1.addHUDMessage(new HUDMessage(
-                $"体检提示 {issues.Count} 项（已记录日志，不阻断保存）",
-                HUDMessage.newQuest_type));
-        }
-#endif
-    }
-
-    private bool ShouldShowScaffold()
-    {
-        return _bio.Missing || string.IsNullOrWhiteSpace(_bio.Biography);
-    }
-
-    private void InsertScaffold()
-    {
-        string template = BiographyScaffold.Replace("{NPC}", _npcName);
-        _biographyBox.Text = template;
-        MarkDirty();
-        Game1.playSound("coin");
-    }
-
-    private void ExitAndReturn()
-    {
-        if (_returnMenu != null)
-        {
-            Game1.activeClickableMenu = _returnMenu;
-        }
-        else
-        {
-            Game1.exitActiveMenu();
-        }
-    }
-
-    private void TryCancel()
-    {
-        if (!_dirty)
-        {
-            ExitAndReturn();
-            return;
-        }
-
-        Game1.activeClickableMenu = new ConfirmationDialog(
-            "放弃未保存的修改？",
-            _ =>
+            if (_insertChoiceRect.Contains(x, y))
             {
-                Game1.activeClickableMenu = this;
-                ExitAndReturn();
-            },
-            _ =>
-            {
-                Game1.activeClickableMenu = this;
-            });
-    }
+                _dialogueExamplesBox.Text = (_dialogueExamplesBox.Text ?? "").TrimEnd() + "\n% 选项文本内容";
+                MarkDirty();
+                Game1.playSound("shiny4");
+                return;
+            }
 
-    private void TryReset()
-    {
-        if (!_hasOverlay)
-        {
-            Game1.playSound("cancel");
-            return;
+            UnfocusAll();
         }
 
-        Game1.activeClickableMenu = new ConfirmationDialog(
-            "恢复默认人设并删除覆盖文件？",
-            _ =>
+        private void HandleTab3Click(int x, int y)
+        {
+            int visibleStages = Math.Min(_bio.ProgressStates.Count, 8);
+            for (int i = 0; i < visibleStages; i++)
             {
-                Game1.activeClickableMenu = this;
-                if (!ModEntry.BioStorage!.ResetOverlay(_npcName, out string errReset))
+                if (_stageRowRects[i].Contains(x, y))
                 {
-                    Game1.addHUDMessage(new HUDMessage($"还原失败: {errReset}", HUDMessage.error_type));
+                    SelectStage(i);
+                    Game1.playSound("smallSelect");
                     return;
                 }
-                _bio = ModEntry.BioStorage!.LoadEditableBio(_npcName);
-                _dirty = false;
-                _hasOverlay = false;
-                // 重绑 Tab1 控件
-                _biographyBox.Text = _bio.Biography ?? string.Empty;
-                _uniqueBox.Text = _bio.Unique ?? string.Empty;
-                _homeBedCheckbox.isChecked = _bio.HomeLocationBed;
-                Game1.playSound("throw");
-            },
-            _ =>
-            {
-                Game1.activeClickableMenu = this;
-            });
-    }
-
-    private void MarkDirty()
-    {
-        _dirty = true;
-    }
-
-    // ── 绘制 ──────────────────────────────────────────────────────────
-
-    public override void draw(SpriteBatch b)
-    {
-        int mx = Game1.getMouseX();
-        int my = Game1.getMouseY();
-
-        // 背景遮罩
-        b.Draw(Game1.fadeToBlackRect,
-            Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.45f);
-
-        // 主面板
-        Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
-
-        int contentLeft = xPositionOnScreen + PadX;
-        int contentW = width - PadX * 2;
-
-        // 标题
-        string title = $"角色人设配置: {_npcName}";
-        if (_dirty)
-            title += " *";
-        var titleSize = Game1.dialogueFont.MeasureString(title);
-        b.DrawString(Game1.dialogueFont, title,
-            new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f, yPositionOnScreen + 12),
-            Game1.textColor);
-
-        // Tab 栏
-        for (int i = 0; i < _tabRects.Length; i++)
-        {
-            DrawTab(b, _tabRects[i], TabTitles[i], _activeTab == i, mx, my);
-        }
-
-        // 分隔线
-        int sepY = yPositionOnScreen + HeaderH + TabBarH + 4;
-        b.Draw(Game1.staminaRect,
-            new Rectangle(contentLeft, sepY, contentW, 2),
-            Color.Gray * 0.4f);
-
-        // Tab 内容
-        if (_activeTab == 0)
-        {
-            DrawTab1(b, mx, my);
-        }
-        else if (_activeTab == 1)
-        {
-            DrawTab2(b, mx, my);
-        }
-        else if (_activeTab == 2)
-        {
-            DrawTab3(b, mx, my);
-        }
-        else if (_activeTab == 3)
-        {
-            DrawTab4(b, mx, my);
-        }
-        else if (_activeTab == 4)
-        {
-            DrawTab5(b, mx, my);
-        }
-        else
-        {
-            DrawPlaceholder(b, _activeTab);
-        }
-
-        // 页脚按钮
-        DrawButton(b, _cancelRect, "取消", mx, my);
-        DrawButton(b, _saveRect, "保存并应用", mx, my);
-        DrawButton(b, _resetRect, "还原默认", mx, my);
-
-        base.draw(b);
-        drawMouse(b);
-    }
-
-    private void DrawTab(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my)
-    {
-        Color bg = isActive ? new Color(210, 180, 140)
-                 : rect.Contains(mx, my) ? new Color(255, 235, 205)
-                 : new Color(139, 90, 43);
-
-        IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
-            new Rectangle(432, 439, 9, 9),
-            rect.X, rect.Y, rect.Width, rect.Height, bg, 4f, false);
-
-        var labelSize = Game1.smallFont.MeasureString(label);
-        b.DrawString(Game1.smallFont, label,
-            new Vector2(rect.X + (rect.Width - labelSize.X) / 2f,
-                        rect.Y + (rect.Height - labelSize.Y) / 2f),
-            isActive ? Game1.textColor : Color.White * 0.95f);
-    }
-
-    private void DrawTab1(SpriteBatch b, int mx, int my)
-    {
-        int bodyTop = _tabRects[0].Y + _tabRects[0].Height + 12;
-        int bodyLeft = xPositionOnScreen + PadX;
-
-        // Biography 标签
-        string bioLabel = "身份与心理设定（保留 [IDENTITY]/[CORE CONFLICT] 等分节标记）";
-        b.DrawString(Game1.smallFont, bioLabel,
-            new Vector2(bodyLeft, bodyTop),
-            Game1.textColor);
-        int labelH = (int)Game1.smallFont.MeasureString(bioLabel).Y;
-
-        // Biography 框（若 Layout 尚未同步 bounds 则使用已有 bounds）
-        _biographyBox.Draw(b);
-
-        // 空人设时显示"插入身份模板"按钮
-        if (ShouldShowScaffold())
-        {
-            DrawButton(b, _scaffoldRect, "插入身份模板", mx, my);
-        }
-
-        // Unique 标签
-        int uniqueLabelY = _biographyBox.Bounds.Y + _biographyBox.Bounds.Height + 6;
-        b.DrawString(Game1.smallFont, "特征标记 Unique",
-            new Vector2(bodyLeft, uniqueLabelY),
-            Game1.textColor);
-
-        // Unique 原生框
-        DrawVanillaTextBox(b);
-
-        // HomeBed 复选框（bounds 存绝对坐标，draw 偏移传 0,0）
-        _homeBedCheckbox.draw(b, 0, 0, this);
-
-        // 只读状态行
-        int statusY = yPositionOnScreen + height - FooterH - 24;
-        string status = _hasOverlay ? "自定义覆盖生效中" : "默认基准人设";
-        Color statusColor = _hasOverlay ? new Color(60, 140, 60) : Color.Gray;
-        if (_bio.Missing)
-        {
-            status = "该 NPC 无基线人设，编辑后保存即创建";
-            statusColor = new Color(200, 140, 40);
-        }
-        b.DrawString(Game1.smallFont, status,
-            new Vector2(bodyLeft, Math.Max(uniqueLabelY + 80, statusY)),
-            statusColor);
-    }
-
-    // ── Tab2 绘制（言行举止） ──────────────────────────────────────────
-
-    private void DrawTab2(SpriteBatch b, int mx, int my)
-    {
-        int bodyTop = _tabRects[0].Y + _tabRects[0].Height + 12;
-        int bodyLeft = xPositionOnScreen + PadX;
-
-        // 行为规则标签
-        string label1 = "行为规则（保留 [VOICE]/[IMMEDIATE REFLEXES] 等分节）";
-        b.DrawString(Game1.smallFont, label1, new Vector2(bodyLeft, bodyTop), Game1.textColor);
-
-        // 行为规则模板按钮
-        if (string.IsNullOrWhiteSpace(_behaviorBox.Text))
-        {
-            DrawButton(b, _behaviorScaffoldRect, "插入规则模板", mx, my);
-        }
-
-        // 行为规则框
-        _behaviorBox.Draw(b);
-
-        // 对白范例标签
-        int dialogueTop = _dialogueExamplesBox.Bounds.Y;
-        string label2 = "对白范例（含 #$b#/$s/% 应答等指令符，谨慎编辑）";
-        b.DrawString(Game1.smallFont, label2,
-            new Vector2(bodyLeft, dialogueTop - Game1.smallFont.MeasureString(label2).Y - 4),
-            Game1.textColor);
-
-        // 对白范例框
-        _dialogueExamplesBox.Draw(b);
-    }
-
-    // ── Tab3 绘制（好感演变 / 档位列表） ──────────────────────────────
-
-    private void DrawTab3(SpriteBatch b, int mx, int my)
-    {
-        int bodyTop = _tabRects[0].Y + _tabRects[0].Height + 12;
-        int bodyLeft = xPositionOnScreen + PadX;
-
-        // 上半：档位列表
-        int visibleStages = Math.Min(_bio.ProgressStates.Count, _stageRowRects.Length);
-        for (int i = 0; i < visibleStages; i++)
-        {
-            DrawStageRow(b, i, mx, my);
-        }
-        if (_bio.ProgressStates.Count > _stageRowRects.Length)
-        {
-            string hint = $"共 {_bio.ProgressStates.Count} 档，编辑请先选中";
-            b.DrawString(Game1.smallFont, hint,
-                new Vector2(bodyLeft, _stageRowRects[_stageRowRects.Length - 1].Bottom + 2),
-                Color.Gray);
-        }
-        // 新建档位行
-        if (_bio.ProgressStates.Count < _stageRowRects.Length)
-        {
-            DrawButton(b, _newStageRect, "+ 新建档位", mx, my);
-        }
-
-        // 下半：选中档编辑器
-        if (_stageIdx < 0 || _stageIdx >= _bio.ProgressStates.Count)
-        {
-            b.DrawString(Game1.smallFont, "请从上方选择一个档位进行编辑",
-                new Vector2(bodyLeft, _newStageRect.Bottom + 12), Color.Gray);
-            return;
-        }
-
-        int editorTop = _newStageRect.Bottom + 8;
-        var stage = _bio.ProgressStates[_stageIdx];
-
-        // 门禁徽标行（只读摘要）
-        string gateSummary = BuildGateSummary(stage);
-        b.DrawString(Game1.smallFont, $"门禁: {gateSummary}",
-            new Vector2(bodyLeft, editorTop), Game1.textColor);
-        DrawButton(b, _gateToggleRect, _gateEditMode ? "完成门禁" : "编辑门禁", mx, my);
-
-        if (_gateEditMode)
-        {
-            int gateY = _gateToggleRect.Y;
-            DrawButton(b, _gateHeartsRect, $"心≥{_gateHearts}", mx, my);
-
-            // 已婚 CheckBox
-            Color marriedBg = _gateMarried ? new Color(120, 200, 120) : new Color(210, 180, 140);
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
-                new Rectangle(432, 439, 9, 9),
-                _gateMarriedRect.X, _gateMarriedRect.Y, _gateMarriedRect.Width, _gateMarriedRect.Height,
-                marriedBg, 4f, false);
-            b.DrawString(Game1.smallFont, "已婚",
-                new Vector2(_gateMarriedRect.X + 6, _gateMarriedRect.Y + 6), Game1.textColor);
-
-            // 婚配对象框
-            DrawSingleLineBox(b, _gateSpouseBox, "婚配对象(内部名)", mx, my);
-
-            // Joja 会员三态
-            string[] jojaMemberLabels = { "Joja会员:不限", "Joja会员:是", "Joja会员:否" };
-            DrawButton(b, _gateMemberRect, jojaMemberLabels[_gateJojaMember], mx, my);
-
-            // Joja 倒闭三态
-            string[] jojaClosedLabels = { "Joja倒闭:不限", "Joja倒闭:是", "Joja倒闭:否" };
-            DrawButton(b, _gateClosedRect, jojaClosedLabels[_gateJojaClosed], mx, my);
-        }
-
-        // 阶段态度 Text（仅同步绘制区，不新建实例）
-        _stageTextBox.SetBounds(_stageTextDrawRect);
-        _stageTextBox.Draw(b);
-
-        // BarkMindset
-        _stageBarkBox.SetBounds(_stageBarkDrawRect);
-        _stageBarkBox.Draw(b);
-
-        // Preoccupations
-        int preoccY = _stageBarkBox.Bounds.Bottom + 6;
-        b.DrawString(Game1.smallFont, "阶段关注池（逗号分隔，留空=沿用全局池）",
-            new Vector2(bodyLeft, preoccY), Game1.textColor);
-        int preoccLabelH = (int)Game1.smallFont.MeasureString("阶段关注池").Y;
-        _stagePreoccBox.X = bodyLeft;
-        _stagePreoccBox.Y = preoccY + preoccLabelH + 2;
-        _stagePreoccBox.Width = _stageTextBox.Bounds.Width;
-        _stagePreoccBox.Height = 32;
-        DrawSingleLineBox(b, _stagePreoccBox, null, mx, my);
-    }
-
-    private void DrawStageRow(SpriteBatch b, int i, int mx, int my)
-    {
-        var rect = _stageRowRects[i];
-        bool selected = (i == _stageIdx);
-        bool satisfied = GateSatisfiedNow(_bio.ProgressStates[i]);
-        Color bg = selected ? new Color(210, 180, 140)
-                 : rect.Contains(mx, my) ? new Color(255, 235, 205)
-                 : new Color(139, 90, 43);
-
-        IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
-            new Rectangle(432, 439, 9, 9),
-            rect.X, rect.Y, rect.Width, rect.Height, bg, 4f, false);
-
-        // 绿点
-        Color dot = satisfied ? new Color(80, 200, 80) : new Color(180, 180, 180);
-        b.Draw(Game1.staminaRect, new Rectangle(rect.X + 6, rect.Y + 12, 8, 8), dot);
-
-        // 行文本：档{序号} {门禁徽标} {Text 首行截断24}
-        string firstLine = _bio.ProgressStates[i].Text ?? string.Empty;
-        int nl = firstLine.IndexOf('\n');
-        if (nl >= 0) firstLine = firstLine.Substring(0, nl);
-        if (firstLine.Length > 24) firstLine = firstLine.Substring(0, 24) + "…";
-        string gate = BuildGateSummary(_bio.ProgressStates[i]);
-        string text = $"档{i + 1} [{gate}] {firstLine}";
-        b.DrawString(Game1.smallFont, text,
-            new Vector2(rect.X + 20, rect.Y + (rect.Height - Game1.smallFont.MeasureString(text).Y) / 2f),
-            Game1.textColor);
-    }
-
-    private static string BuildGateSummary(BioData.ProgressStateEntry p)
-    {
-        var parts = new System.Collections.Generic.List<string>();
-        if (p.RequireMarried) parts.Add("已婚");
-        if (!string.IsNullOrWhiteSpace(p.RequirePlayerMarriedTo)) parts.Add($"婚配{p.RequirePlayerMarriedTo}");
-        if (p.RequireJojaMartClosed == true) parts.Add("Joja倒闭");
-        if (p.RequireJojaMember == true) parts.Add("Joja会员");
-        if (parts.Count > 0) return string.Join("/", parts);
-        return $"≥{p.RequiredHearts}心";
-    }
-
-    private static void DrawSingleLineBox(SpriteBatch b, TextBox box, string label, int mx, int my)
-    {
-        IClickableMenu.drawTextureBox(b, box.X, box.Y, box.Width, box.Height, Color.White);
-        if (!string.IsNullOrEmpty(box.Text))
-        {
-            b.DrawString(Game1.smallFont, box.Text,
-                new Vector2(box.X + 8, box.Y + 8), Game1.textColor);
-        }
-        if (box.Selected)
-        {
-            float cx = box.X + 8 + Game1.smallFont.MeasureString(box.Text ?? string.Empty).X;
-            b.Draw(Game1.staminaRect, new Rectangle((int)cx, box.Y + 6, 2, 24), Game1.textColor);
-        }
-    }
-
-    // ── Tab4 逻辑（社交关系） ──────────────────────────────────────────
-
-    private void BuildRelCandidates()
-    {
-        _relCandidates.Clear();
-        if (Game1.player?.friendshipData != null)
-        {
-            foreach (var name in Game1.player.friendshipData.Keys)
-            {
-                if (!string.Equals(name, _npcName, StringComparison.OrdinalIgnoreCase))
-                    _relCandidates.Add(name);
             }
-        }
-        _relCandidates.Sort(StringComparer.OrdinalIgnoreCase);
-    }
 
-    private void SelectRelationship(int index)
-    {
-        if (_relCandidates.Count == 0)
-        {
-            _relSelectedIndex = -1;
-            _relSelectedNpc = "";
-            _relHeadingBox.Text = "";
-            _relDescBox.Text = "";
-            return;
-        }
-        index = Math.Clamp(index, 0, _relCandidates.Count - 1);
-        _relSelectedIndex = index;
-        _relSelectedNpc = _relCandidates[index];
-        if (_bio.Relationships.TryGetValue(_relSelectedNpc, out var entry) && entry != null)
-        {
-            _relHeadingBox.Text = entry.Heading ?? string.Empty;
-            _relDescBox.Text = entry.Description ?? string.Empty;
-        }
-        else
-        {
-            _relHeadingBox.Text = string.Empty;
-            _relDescBox.Text = string.Empty;
-        }
-    }
-
-    private void UpdateTab4()
-    {
-        if (string.IsNullOrEmpty(_relSelectedNpc))
-            return;
-
-        string headingText = _relHeadingBox.Text ?? string.Empty;
-        string descText = _relDescBox.Text ?? string.Empty;
-
-        // 惰性写入：先取现值比较，仅在实际差异时创建条目 + 写入
-        if (_bio.Relationships.TryGetValue(_relSelectedNpc, out var entry) && entry != null)
-        {
-            bool changed = false;
-            if (entry.Heading != headingText) { entry.Heading = headingText; changed = true; }
-            if (entry.Description != descText) { entry.Description = descText; changed = true; }
-            if (changed) MarkDirty();
-        }
-        else if (!string.IsNullOrEmpty(headingText) || !string.IsNullOrEmpty(descText))
-        {
-            var newEntry = EnsureRelationshipEntry(_relSelectedNpc);
-            newEntry.Heading = headingText;
-            newEntry.Description = descText;
-            MarkDirty();
-        }
-    }
-
-    private BioData.ListEntry EnsureRelationshipEntry(string npcName)
-    {
-        if (_bio.Relationships == null)
-            _bio.Relationships = new Dictionary<string, BioData.ListEntry>();
-        if (!_bio.Relationships.TryGetValue(npcName, out var entry) || entry == null)
-        {
-            entry = new BioData.ListEntry
+            if (_bio.ProgressStates.Count < 8 && _newStageRect.Contains(x, y))
             {
-                id = npcName,
-                Heading = string.Empty,
-                Description = string.Empty,
-                RequiredHearts = 0
-            };
-            _bio.Relationships[npcName] = entry;
-        }
-        return entry;
-    }
-
-    private bool HandleTab4Click(int x, int y)
-    {
-        if (_relPrevRect.Contains(x, y))
-        {
-            SelectRelationship(_relSelectedIndex - 1);
-            Game1.playSound("smallSelect");
-            return true;
-        }
-        if (_relNextRect.Contains(x, y))
-        {
-            SelectRelationship(_relSelectedIndex + 1);
-            Game1.playSound("smallSelect");
-            return true;
-        }
-        if (_relHeadingBox != null && new Rectangle(_relHeadingBox.X, _relHeadingBox.Y, _relHeadingBox.Width, _relHeadingBox.Height).Contains(x, y))
-        {
-            _relHeadingBox.SelectMe();
-            _relDescBox.Selected = false;
-            Game1.keyboardDispatcher.Subscriber = _relHeadingBox;
-            return true;
-        }
-        if (_relDescBox.Bounds.Contains(x, y))
-        {
-            _relHeadingBox.Selected = false;
-            _relDescBox.Selected = true;
-            Game1.keyboardDispatcher.Subscriber = _relDescBox;
-            return true;
-        }
-        if (_relAddRect.Contains(x, y))
-        {
-            Game1.activeClickableMenu = new ConfirmationDialog(
-                $"添加一条 {_npcName} 的关系条目？（请先确认目标 NPC 内部名）",
-                _ =>
-                {
-                    Game1.activeClickableMenu = this;
-                    AddRelationshipPrompt();
-                },
-                _ => Game1.activeClickableMenu = this);
-            return true;
-        }
-        if (_relDelRect.Contains(x, y) && !string.IsNullOrEmpty(_relSelectedNpc))
-        {
-            string target = _relSelectedNpc;
-            Game1.activeClickableMenu = new ConfirmationDialog(
-                $"删除 {_npcName} → {target} 的关系条目？",
-                _ =>
-                {
-                    Game1.activeClickableMenu = this;
-                    _bio.Relationships.Remove(target);
-                    MarkDirty();
-                    BuildRelCandidates();
-                    SelectRelationship(Math.Min(_relSelectedIndex, _relCandidates.Count - 1));
-                },
-                _ => Game1.activeClickableMenu = this);
-            return true;
-        }
-        Game1.keyboardDispatcher.Subscriber = null;
-        _relHeadingBox.Selected = false;
-        _relDescBox.Selected = false;
-        return false;
-    }
-
-    private void AddRelationshipPrompt()
-    {
-        // 添加到候选列表末尾（使用 displayName 回退的内部名占位，用户可后续编辑）
-        string target = _relSelectedNpc;
-        if (string.IsNullOrWhiteSpace(target)) return;
-        if (!_relCandidates.Contains(target))
-        {
-            _relCandidates.Add(target);
-            _bio.Relationships[target] = new BioData.ListEntry
-            {
-                id = target, Heading = string.Empty, Description = string.Empty, RequiredHearts = 0
-            };
-            SelectRelationship(_relCandidates.Count - 1);
-            MarkDirty();
-        }
-    }
-
-    // ── Tab5 逻辑（环境感知） ──────────────────────────────────────────
-
-    private void SyncTab5BarkBoxes()
-    {
-        var prompt = _bio.AmbientBarkPrompt;
-        _voiceBox.Text = prompt?.VoiceAndAttitude ?? string.Empty;
-        _habitsBox.Text = prompt?.SpokenHabits ?? string.Empty;
-        _lensesBox.Text = prompt?.ObservationLenses ?? string.Empty;
-    }
-
-    private AmbientBarkPrompt EnsureAmbientBarkPrompt()
-    {
-        if (_bio.AmbientBarkPrompt == null)
-            _bio.AmbientBarkPrompt = new AmbientBarkPrompt();
-        return _bio.AmbientBarkPrompt;
-    }
-
-    private void UpdateTab5(GameTime time)
-    {
-        _voiceBox.Update(time);
-        _habitsBox.Update(time);
-        _lensesBox.Update(time);
-
-        string voiceText = _voiceBox.Text ?? string.Empty;
-        string habitsText = _habitsBox.Text ?? string.Empty;
-        string lensesText = _lensesBox.Text ?? string.Empty;
-
-        // 惰性创建：仅当三框任一存在实际差异时才创建 AmbientBarkPrompt
-        bool barkChanged = false;
-        if (_bio.AmbientBarkPrompt != null)
-        {
-            if (_bio.AmbientBarkPrompt.VoiceAndAttitude != voiceText) { _bio.AmbientBarkPrompt.VoiceAndAttitude = voiceText; barkChanged = true; }
-            if (_bio.AmbientBarkPrompt.SpokenHabits != habitsText) { _bio.AmbientBarkPrompt.SpokenHabits = habitsText; barkChanged = true; }
-            if (_bio.AmbientBarkPrompt.ObservationLenses != lensesText) { _bio.AmbientBarkPrompt.ObservationLenses = lensesText; barkChanged = true; }
-        }
-        else if (!string.IsNullOrEmpty(voiceText) || !string.IsNullOrEmpty(habitsText) || !string.IsNullOrEmpty(lensesText))
-        {
-            var prompt = EnsureAmbientBarkPrompt();
-            prompt.VoiceAndAttitude = voiceText;
-            prompt.SpokenHabits = habitsText;
-            prompt.ObservationLenses = lensesText;
-            barkChanged = true;
-        }
-
-        bool changed = barkChanged;
-        if (_enableBarkCheckbox.isChecked != _bio.EnableAmbientBarks)
-        {
-            _bio.EnableAmbientBarks = _enableBarkCheckbox.isChecked;
-            changed = true;
-        }
-
-        // 全局 Preoccupations 逗号行 → List（空 → new List<string>()，顶层池允许显式清空）
-        string preoccText = _globalPreoccBox.Text ?? string.Empty;
-        var parsed = new List<string>();
-        foreach (var raw in preoccText.Split(new[] { ',', '，' }, StringSplitOptions.RemoveEmptyEntries))
-        {
-            var t = raw.Trim();
-            if (!string.IsNullOrEmpty(t) && !parsed.Contains(t))
-                parsed.Add(t);
-        }
-        const int MaxPreocc = 12;
-        bool truncated = false;
-        while (parsed.Count > MaxPreocc) { parsed.RemoveAt(parsed.Count - 1); truncated = true; }
-        if (truncated)
-        {
-            _globalPreoccBox.Text = string.Join(", ", parsed);
-            Game1.addHUDMessage(new HUDMessage($"全局关注池已截断至上限 {MaxPreocc} 项", HUDMessage.error_type));
-        }
-        if (!ListStringEqual(_bio.Preoccupations, parsed))
-        {
-            _bio.Preoccupations = parsed;
-            changed = true;
-        }
-        if (changed) MarkDirty();
-    }
-
-    private static bool ListStringEqual(List<string> a, List<string> b)
-    {
-        if (a == null && b == null) return true;
-        if (a == null || b == null) return false;
-        if (a.Count != b.Count) return false;
-        for (int i = 0; i < a.Count; i++)
-            if (a[i] != b[i]) return false;
-        return true;
-    }
-
-    private static string JoinPreocc(List<string> list) => list == null ? "" : string.Join(", ", list);
-
-    private bool HandleTab5Click(int x, int y)
-    {
-        if (_voiceBox.Bounds.Contains(x, y))
-        {
-            _voiceBox.Selected = true;
-            _habitsBox.Selected = false;
-            _lensesBox.Selected = false;
-            Game1.keyboardDispatcher.Subscriber = _voiceBox;
-            return true;
-        }
-        if (_habitsBox.Bounds.Contains(x, y))
-        {
-            _voiceBox.Selected = false;
-            _habitsBox.Selected = true;
-            _lensesBox.Selected = false;
-            Game1.keyboardDispatcher.Subscriber = _habitsBox;
-            return true;
-        }
-        if (_lensesBox.Bounds.Contains(x, y))
-        {
-            _voiceBox.Selected = false;
-            _habitsBox.Selected = false;
-            _lensesBox.Selected = true;
-            Game1.keyboardDispatcher.Subscriber = _lensesBox;
-            return true;
-        }
-        if (_enableBarkCheckbox.bounds.Contains(x, y))
-        {
-            _enableBarkCheckbox.receiveLeftClick(x, y);
-            return true;
-        }
-        if (new Rectangle(_globalPreoccBox.X, _globalPreoccBox.Y, _globalPreoccBox.Width, _globalPreoccBox.Height).Contains(x, y))
-        {
-            _globalPreoccBox.SelectMe();
-            Game1.keyboardDispatcher.Subscriber = _globalPreoccBox;
-            return true;
-        }
-        if (_scrapeRect.Contains(x, y))
-        {
-            ScrapeExamples();
-            return true;
-        }
-        Game1.keyboardDispatcher.Subscriber = null;
-        _voiceBox.Selected = false;
-        _habitsBox.Selected = false;
-        _lensesBox.Selected = false;
-        return false;
-    }
-
-    /// <summary>从游戏原版对白抓取范例，追加至 Traits["DialogueExamples"].Description（幂等、不重复、不动既有）。</summary>
-    private void ScrapeExamples()
-    {
-        try
-        {
-            var lines = DialogueScraper.FetchCleanDialogueExamples(_npcName, 3);
-            if (lines == null || lines.Count == 0)
-            {
-                Game1.addHUDMessage(new HUDMessage("未抓取到可用对白", HUDMessage.error_type));
+                _bio.ProgressStates.Add(new BioData.ProgressStateEntry { RequiredHearts = 0 });
+                SelectStage(_bio.ProgressStates.Count - 1);
+                MarkDirty();
+                Game1.playSound("newRecipe");
+                Layout();
                 return;
             }
-            var entry = EnsureTraitEntry("DialogueExamples", "Dialogue Examples");
-            var sb = new StringBuilder(entry.Description ?? "");
-            int added = 0;
-            foreach (var line in lines)
+
+            if (_stageIdx < 0 || _stageIdx >= _bio.ProgressStates.Count) return;
+            var currentStage = _bio.ProgressStates[_stageIdx];
+
+            // 门禁控件
+            if (_heartsStepper.ReceiveLeftClick(x, y)) return;
+
+            if (_gateMarriedPillRect.Contains(x, y))
             {
-                if (string.IsNullOrWhiteSpace(line)) continue;
-                if (sb.ToString().Contains(line, StringComparison.OrdinalIgnoreCase)) continue; // 幂等
-                if (sb.Length > 4000) // 上限保护
-                {
-                    Game1.addHUDMessage(new HUDMessage("对白范例已达上限，停止追加", HUDMessage.error_type));
-                    break;
-                }
-                if (sb.Length > 0) sb.AppendLine();
-                sb.Append("- ").Append(line.Trim());
-                added++;
+                currentStage.RequireMarried = !currentStage.RequireMarried;
+                MarkDirty();
+                Game1.playSound("drumkit6");
+                return;
             }
-            entry.Description = sb.ToString().TrimStart();
-            if (added > 0) MarkDirty();
-            Game1.playSound("newArtifact");
-            Game1.addHUDMessage(new HUDMessage(
-                $"已追加 {added} 条对白范例（在 Tab2 对白范例区查看/编辑）",
-                HUDMessage.newQuest_type));
+            if (_gateJojaClosedPillRect.Contains(x, y))
+            {
+                currentStage.RequireJojaMartClosed = currentStage.RequireJojaMartClosed.HasValue
+                    ? (currentStage.RequireJojaMartClosed.Value ? false : (bool?)null)
+                    : true;
+                MarkDirty();
+                Game1.playSound("drumkit6");
+                return;
+            }
+            if (_gateJojaMemberPillRect.Contains(x, y))
+            {
+                currentStage.RequireJojaMember = currentStage.RequireJojaMember.HasValue
+                    ? (currentStage.RequireJojaMember.Value ? false : (bool?)null)
+                    : true;
+                MarkDirty();
+                Game1.playSound("drumkit6");
+                return;
+            }
+
+            if (_deleteStageRect.Contains(x, y))
+            {
+                Game1.activeClickableMenu = new ConfirmationDialog(
+                    $"确定删除好感档位 {_stageIdx + 1}？",
+                    _ =>
+                    {
+                        Game1.activeClickableMenu = this;
+                        _bio.ProgressStates.RemoveAt(_stageIdx);
+                        _stageIdx = Math.Min(_stageIdx, _bio.ProgressStates.Count - 1);
+                        if (_stageIdx >= 0) SelectStage(_stageIdx);
+                        MarkDirty();
+                        Layout();
+                    },
+                    _ => Game1.activeClickableMenu = this);
+                return;
+            }
+
+            if (_stageTagEditor.ReceiveLeftClick(x, y)) return;
+            if (_stageTextBox.Bounds.Contains(x, y)) { FocusBox(_stageTextBox); return; }
+            if (_stageBarkBox.Bounds.Contains(x, y)) { FocusBox(_stageBarkBox); return; }
+
+            UnfocusAll();
         }
-        catch (Exception ex)
+
+        private void HandleTab4Click(int x, int y)
         {
-            ModEntry.SMonitor?.Log($"[BioEditor] 抓取对白失败({_npcName}): {ex.Message}", LogLevel.Warn);
-            Game1.addHUDMessage(new HUDMessage("抓取对白失败", HUDMessage.error_type));
+            if (new Rectangle(_relSearchBox.X, _relSearchBox.Y, _relSearchBox.Width, _relSearchBox.Height).Contains(x, y))
+            {
+                FocusTextBox(_relSearchBox);
+                return;
+            }
+
+            foreach (var (rect, idx) in _relVisibleItemRects)
+            {
+                if (rect.Contains(x, y))
+                {
+                    SelectRelationship(idx);
+                    Game1.playSound("smallSelect");
+                    return;
+                }
+            }
+
+            if (new Rectangle(_relHeadingBox.X, _relHeadingBox.Y, _relHeadingBox.Width, _relHeadingBox.Height).Contains(x, y))
+            {
+                FocusTextBox(_relHeadingBox);
+                return;
+            }
+            if (_relDescBox.Bounds.Contains(x, y)) { FocusBox(_relDescBox); return; }
+
+            if (_relAddRect.Contains(x, y) && !string.IsNullOrEmpty(_relSelectedNpc))
+            {
+                EnsureRelationshipEntry(_relSelectedNpc);
+                MarkDirty();
+                FilterNpcList();
+                Game1.playSound("coin");
+                return;
+            }
+            if (_relDelRect.Contains(x, y) && !string.IsNullOrEmpty(_relSelectedNpc))
+            {
+                string target = _relSelectedNpc;
+                Game1.activeClickableMenu = new ConfirmationDialog(
+                    $"删除 {_npcName} → {target} 的独立人设关系？",
+                    _ =>
+                    {
+                        Game1.activeClickableMenu = this;
+                        _bio.Relationships.Remove(target);
+                        MarkDirty();
+                        FilterNpcList();
+                        SelectRelationship(_relSelectedIndex);
+                    },
+                    _ => Game1.activeClickableMenu = this);
+                return;
+            }
+
+            UnfocusAll();
         }
-    }
 
-    // ── Tab4 绘制（社交关系） ──────────────────────────────────────────
-
-    private void DrawTab4(SpriteBatch b, int mx, int my)
-    {
-        int bodyTop = _tabRects[0].Y + _tabRects[0].Height + 12;
-        int bodyLeft = xPositionOnScreen + PadX;
-        int editorW = (xPositionOnScreen + width - PadX) - bodyLeft;
-
-        // ◀ 当前关系名 ▶ 导航
-        DrawButton(b, _relPrevRect, "◀", mx, my);
-        string current = string.IsNullOrEmpty(_relSelectedNpc)
-            ? "(无)"
-            : $"{_relSelectedNpc} ({_relSelectedIndex + 1}/{_relCandidates.Count})";
-        IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
-            new Rectangle(432, 439, 9, 9),
-            _relListRect.X, _relListRect.Y, _relListRect.Width, _relListRect.Height, Color.White, 4f, false);
-        var curSize = Game1.smallFont.MeasureString(current);
-        b.DrawString(Game1.smallFont, current,
-            new Vector2(_relListRect.X + (_relListRect.Width - curSize.X) / 2f,
-                        _relListRect.Y + (_relListRect.Height - curSize.Y) / 2f),
-            Game1.textColor);
-        DrawButton(b, _relNextRect, "▶", mx, my);
-
-        // 添加/删除按钮
-        DrawButton(b, _relAddRect, "添加关系", mx, my);
-        DrawButton(b, _relDelRect, "删除关系", mx, my);
-
-        // RequiredHearts 只读徽标
-        if (!string.IsNullOrEmpty(_relSelectedNpc)
-            && _bio.Relationships.TryGetValue(_relSelectedNpc, out var relEntry) && relEntry != null)
+        private void HandleTab5Click(int x, int y)
         {
-            string badge = $"RequiredHearts: {relEntry.RequiredHearts}";
-            b.DrawString(Game1.smallFont, badge,
-                new Vector2(bodyLeft, _relAddRect.Bottom + 4), Color.Gray);
+            if (_enableBarkCheckbox.bounds.Contains(x, y)) { _enableBarkCheckbox.receiveLeftClick(x, y); return; }
+            if (_scrapeRect.Contains(x, y)) { ScrapeExamples(); return; }
+            if (_globalTagEditor.ReceiveLeftClick(x, y)) return;
+            if (_voiceBox.Bounds.Contains(x, y)) { FocusBox(_voiceBox); return; }
+            if (_habitsBox.Bounds.Contains(x, y)) { FocusBox(_habitsBox); return; }
+            if (_lensesBox.Bounds.Contains(x, y)) { FocusBox(_lensesBox); return; }
+
+            UnfocusAll();
         }
 
-        // Heading 标签 + 框
-        int headingY = _relDelRect.Bottom + ListRowH;
-        b.DrawString(Game1.smallFont, "Heading", new Vector2(bodyLeft, headingY), Game1.textColor);
-        int hlh = (int)Game1.smallFont.MeasureString("Heading").Y;
-        _relHeadingBox.X = bodyLeft;
-        _relHeadingBox.Y = headingY + hlh + 2;
-        _relHeadingBox.Width = editorW;
-        _relHeadingBox.Height = 32;
-        DrawSingleLineBox(b, _relHeadingBox, null, mx, my);
-
-        // Description 标签 + 框
-        int descY = _relHeadingBox.Y + _relHeadingBox.Height + 8;
-        b.DrawString(Game1.smallFont, "Description", new Vector2(bodyLeft, descY), Game1.textColor);
-        _relDescBox.SetBounds(_relDescDrawRect);
-        _relDescBox.Draw(b);
-
-        // 底部交叉设定提示行
-        string note = "部分关系可能由其他角色卡交叉注入（如 Morris→Lewis），如需改动请编辑对应 NPC。";
-        b.DrawString(Game1.smallFont, note,
-            new Vector2(bodyLeft, (yPositionOnScreen + height - FooterH) - 24), Color.Gray);
-    }
-
-    // ── Tab5 绘制（环境感知） ──────────────────────────────────────────
-
-    private void DrawTab5(SpriteBatch b, int mx, int my)
-    {
-        int bodyTop = _tabRects[0].Y + _tabRects[0].Height + 12;
-        int bodyLeft = xPositionOnScreen + PadX;
-        int editorW = (xPositionOnScreen + width - PadX) - bodyLeft;
-
-        // EnableAmbientBarks 开关
-        b.DrawString(Game1.smallFont, _enableBarkCheckbox.label ?? "",
-            new Vector2(bodyLeft, bodyTop), Game1.textColor);
-        _enableBarkCheckbox.bounds = new Rectangle(bodyLeft + 240, bodyTop, 36, 36);
-        _enableBarkCheckbox.draw(b, 0, 0, this);
-
-        int curY = bodyTop + 40;
-
-        // 抓取按钮
-        DrawButton(b, _scrapeRect, "↺ 从原版对白抓取 3 组范例", mx, my);
-        curY = _scrapeRect.Bottom + 8;
-
-        // Voice & Attitude
-        DrawTab5Box(b, "口吻 Voice & Attitude", _voiceBox, _voiceDrawRect, mx, my);
-        // Spoken Habits
-        DrawTab5Box(b, "口头习惯 Spoken Habits", _habitsBox, _habitsDrawRect, mx, my);
-        // Observation Lenses
-        DrawTab5Box(b, "观察透镜 Observation Lenses", _lensesBox, _lensesDrawRect, mx, my);
-
-        // 全局关注池
-        string preoccLabel = "全局关注池（逗号分隔，上限 12）";
-        b.DrawString(Game1.smallFont, preoccLabel, new Vector2(bodyLeft, curY), Game1.textColor);
-        int plh = (int)Game1.smallFont.MeasureString(preoccLabel).Y;
-        _globalPreoccBox.X = bodyLeft;
-        _globalPreoccBox.Y = curY + plh + 2;
-        _globalPreoccBox.Width = editorW;
-        _globalPreoccBox.Height = 32;
-        DrawSingleLineBox(b, _globalPreoccBox, null, mx, my);
-    }
-
-    private void DrawTab5Box(SpriteBatch b, string label, MultilineTextBox box, Rectangle rect, int mx, int my)
-    {
-        b.DrawString(Game1.smallFont, label, new Vector2(rect.X, rect.Y - 20), Game1.textColor);
-        box.SetBounds(rect);
-        box.Draw(b);
-    }
-
-    private static Texture2D LoadTextBoxTexture()
-    {
-        try
+        public override void receiveKeyPress(Keys key)
         {
-            var tex = Game1.content.Load<Texture2D>("LooseSprites\\textBox");
-            if (tex != null)
-                return tex;
+            // 支持 Ctrl + S 快速保存
+            if (key == Keys.S && (Keyboard.GetState().IsKeyDown(Keys.LeftControl) || Keyboard.GetState().IsKeyDown(Keys.RightControl)))
+            {
+                SaveAndClose();
+                return;
+            }
+
+            if (key == Keys.Escape)
+            {
+                TryCancel();
+                return;
+            }
+
+            // 搜索框输入联动
+            if (_activeTab == 3 && _relSearchBox.Selected)
+            {
+                base.receiveKeyPress(key);
+                FilterNpcList();
+                return;
+            }
+
+            base.receiveKeyPress(key);
         }
-        catch
+
+        public override void receiveScrollWheelAction(int direction)
         {
-            // 回退到 mouseCursors
+            int mx = Game1.getMouseX(), my = Game1.getMouseY();
+
+            if (_activeTab == 0 && _biographyBox.Bounds.Contains(mx, my)) { _biographyBox.Scroll(direction); return; }
+            if (_activeTab == 1)
+            {
+                if (_behaviorBox.Bounds.Contains(mx, my)) { _behaviorBox.Scroll(direction); return; }
+                if (_dialogueExamplesBox.Bounds.Contains(mx, my)) { _dialogueExamplesBox.Scroll(direction); return; }
+            }
+            if (_activeTab == 2)
+            {
+                if (_stageTextBox.Bounds.Contains(mx, my)) { _stageTextBox.Scroll(direction); return; }
+                if (_stageBarkBox.Bounds.Contains(mx, my)) { _stageBarkBox.Scroll(direction); return; }
+            }
+            if (_activeTab == 3)
+            {
+                if (_relLeftColRect.Contains(mx, my))
+                {
+                    _relListScrollOffset = Math.Clamp(_relListScrollOffset - (direction > 0 ? 1 : -1), 0, Math.Max(0, _filteredNpcs.Count - 6));
+                    RecalculateTab4List();
+                    return;
+                }
+                if (_relDescBox.Bounds.Contains(mx, my)) { _relDescBox.Scroll(direction); return; }
+            }
+            if (_activeTab == 4)
+            {
+                if (_voiceBox.Bounds.Contains(mx, my)) { _voiceBox.Scroll(direction); return; }
+                if (_habitsBox.Bounds.Contains(mx, my)) { _habitsBox.Scroll(direction); return; }
+                if (_lensesBox.Bounds.Contains(mx, my)) { _lensesBox.Scroll(direction); return; }
+            }
         }
-        return Game1.mouseCursors;
-    }
 
-    private void DrawVanillaTextBox(SpriteBatch b)
-    {
-        // 原生 TextBox 自绘（底板 + 文本 + 光标）
-        _uniqueBox.Draw(b, true);
-    }
+        public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
+        {
+            width = Math.Clamp(Game1.uiViewport.Width - 100, 920, 1160);
+            height = Math.Clamp(Game1.uiViewport.Height - 80, 600, 750);
+            xPositionOnScreen = (Game1.uiViewport.Width - width) / 2;
+            yPositionOnScreen = (Game1.uiViewport.Height - height) / 2;
+            Layout();
+        }
 
-    private void DrawPlaceholder(SpriteBatch b, int tab)
-    {
-        string msg = $"第 {tab + 1} 栏（{TabTitles[tab]}）建设中";
-        var size = Game1.smallFont.MeasureString(msg);
-        b.DrawString(Game1.smallFont, msg,
-            new Vector2(xPositionOnScreen + (width - size.X) / 2f,
-                        yPositionOnScreen + HeaderH + TabBarH + 40),
-            Color.Gray);
-    }
+        // ── 渲染管线 ──────────────────────────────────────────────────────
+        public override void draw(SpriteBatch b)
+        {
+            int mx = Game1.getMouseX();
+            int my = Game1.getMouseY();
 
-    private void DrawButton(SpriteBatch b, Rectangle rect, string label, int mx, int my)
-    {
-        Color bg = rect.Contains(mx, my) ? new Color(255, 235, 205) : new Color(210, 180, 140);
-        IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
-            new Rectangle(432, 439, 9, 9),
-            rect.X, rect.Y, rect.Width, rect.Height, bg, 4f, false);
+            b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.5f);
 
-        var size = Game1.smallFont.MeasureString(label);
-        b.DrawString(Game1.smallFont, label,
-            new Vector2(rect.X + (rect.Width - size.X) / 2f,
-                        rect.Y + (rect.Height - size.Y) / 2f),
-            Game1.textColor);
+            // 1. 唯一外层经典木框
+            IClickableMenu.drawTextureBox(b, xPositionOnScreen - 8, yPositionOnScreen - 8, width + 16, height + 16, Color.White);
+
+            // 2. 内部羊皮纸平铺底板（纯底色，不带任何多余的粗边框和重叠饰角）
+            b.Draw(
+                Game1.menuTexture,
+                new Rectangle(xPositionOnScreen, yPositionOnScreen, width, height),
+                new Rectangle(64, 128, 64, 64),
+                new Color(245, 230, 205)
+            );
+
+            DrawHeader(b); 
+
+            for (int i = 0; i < _tabRects.Length; i++)
+                DrawTabButton(b, _tabRects[i], TabTitles[i], _activeTab == i, mx, my);
+
+            int sepY = yPositionOnScreen + HeaderH + TabBarH + 6;
+            b.Draw(Game1.staminaRect, new Rectangle(xPositionOnScreen + ContentPadding, sepY, width - ContentPadding * 2, 2), Color.Gray * 0.35f);
+
+            if (_activeTab == 0) DrawTab1(b, mx, my);
+            else if (_activeTab == 1) DrawTab2(b, mx, my);
+            else if (_activeTab == 2) DrawTab3(b, mx, my);
+            else if (_activeTab == 3) DrawTab4(b, mx, my);
+            else if (_activeTab == 4) DrawTab5(b, mx, my);
+
+            DrawActionButton(b, _cancelRect, "返回 / 取消 (Esc)", mx, my, isDanger: false);
+            DrawActionButton(b, _resetRect, "恢复原版基准", mx, my, isDanger: true, isEnabled: _hasOverlay);
+            DrawActionButton(b, _saveRect, "✔ 保存修改 (Ctrl+S)", mx, my, isPrimary: true);
+
+            _closeButton.draw(b);
+
+            // 悬停提示绘制在最顶层
+            if (!string.IsNullOrEmpty(_hoverText))
+                IClickableMenu.drawHoverText(b, _hoverText, Game1.smallFont);
+
+            drawMouse(b);
+        }
+
+        private void DrawHeader(SpriteBatch b)
+        {
+            int headX = xPositionOnScreen + ContentPadding;
+            int headY = yPositionOnScreen + 14;
+
+            const int pSize = 44;
+            var portraitRect = new Rectangle(headX, headY, pSize, pSize);
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6),
+                portraitRect.X - 2, portraitRect.Y - 2, portraitRect.Width + 4, portraitRect.Height + 4,
+                new Color(225, 210, 185), 2f, false);
+
+            if (_npcPortrait != null && !_portraitSmileRect.IsEmpty)
+                b.Draw(_npcPortrait, portraitRect, _portraitSmileRect, Color.White);
+            else
+                b.DrawString(Game1.dialogueFont, _npcName.Substring(0, 1), new Vector2(portraitRect.X + 14, portraitRect.Y + 4), Color.Gray);
+
+            string disp = Game1.getCharacterFromName(_npcName)?.displayName ?? _npcName;
+            b.DrawString(Game1.dialogueFont, $"{disp} ({_npcName}) · 人设工作台", new Vector2(headX + pSize + 12, headY + 2), Game1.textColor);
+
+            string status = _dirty ? "● 存在未保存改动" : (_hasOverlay ? "★ 自定义覆盖生效中" : "默认人设基准");
+            Color statusCol = _dirty ? new Color(220, 90, 20) : (_hasOverlay ? new Color(30, 140, 40) : Color.DimGray);
+            b.DrawString(Game1.smallFont, status, new Vector2(headX + pSize + 14, headY + 28), statusCol);
+        }
+
+        // ── 各 Tab 具体渲染 ───────────────────────────────────────────────
+        private void DrawTab1(SpriteBatch b, int mx, int my)
+        {
+            int left = xPositionOnScreen + ContentPadding;
+            b.DrawString(Game1.smallFont, "身份设定与心理矛盾（保留 [IDENTITY] 与 [PSYCHOLOGICAL CONFLICTS] 分节符）",
+                new Vector2(left, _biographyBox.Bounds.Y - 22), Game1.textColor);
+
+            DrawActionButton(b, _scaffoldBtnRect, "插入身份模板", mx, my, false);
+            _biographyBox.Draw(b);
+
+            // 移除了多余的 DrawCard(_uniqueCardRect)，DrawSingleLineBox 内部已自带白框
+            b.DrawString(Game1.smallFont, "特殊行为/身份标记 (Unique)", new Vector2(_uniqueCardRect.X, _uniqueCardRect.Y + 6), Game1.textColor);
+            DrawSingleLineBox(b, _uniqueBox);
+            if (_uniqueBox.X <= mx && mx <= _uniqueBox.X + _uniqueBox.Width && _uniqueBox.Y <= my && my <= _uniqueBox.Y + _uniqueBox.Height)
+                _hoverText = "用于限定 NPC 的特殊行为或状态（如 'behind the counter', 'holding a football'）。";
+
+            // 就寝行为偏好
+            b.DrawString(Game1.smallFont, "就寝行为偏好", new Vector2(_homeBedCardRect.X, _homeBedCardRect.Y + 6), Game1.textColor);
+            _homeBedCheckbox.draw(b, 0, 0, this);
+            if (_homeBedCheckbox.bounds.Contains(mx, my))
+                _hoverText = "勾选后，NPC 在深夜对话时会偏向使用专属卧房就寝语境。";
+        }
+
+        private void DrawTab2(SpriteBatch b, int mx, int my)
+        {
+            // 左列：标题与按钮垂直居中在 36px 区域内
+            b.DrawString(Game1.smallFont, "行为规则 (BehavioralRules)",
+                new Vector2(_tab2LeftColRect.X, _tab2LeftColRect.Y + 6), Game1.textColor);
+            DrawActionButton(b, _behaviorScaffoldRect, "插入规则模板", mx, my, false);
+            _behaviorBox.Draw(b);
+
+            // 右列：精简标题，避免与右侧小工具栏按钮撞车
+            b.DrawString(Game1.smallFont, "对白范例 (Dialogue)",
+                new Vector2(_tab2RightColRect.X, _tab2RightColRect.Y + 6), Game1.textColor);
+            DrawActionButton(b, _insertBreakRect, "+ 分段符", mx, my, false);
+            DrawActionButton(b, _insertChoiceRect, "+ 玩家选项", mx, my, false);
+
+            if (_insertBreakRect.Contains(mx, my)) _hoverText = "插入 #$b#：在原版对话框中翻页。";
+            if (_insertChoiceRect.Contains(mx, my)) _hoverText = "插入 % 选项：提供玩家可点击的分支回答。";
+
+            _dialogueExamplesBox.Draw(b);
+
+            // 底部说明文字：位置固定在文本框下方 4 像素处，垂直居中在 28px 留白区域中
+            b.DrawString(Game1.smallFont, "提示：支持原版表情符 ($0 / $s) 与换行分段；选项以 % 开头。",
+                new Vector2(_tab2RightColRect.X, _dialogueExamplesBox.Bounds.Bottom + 4), Color.DimGray, 0f, Vector2.Zero, 0.88f, SpriteEffects.None, 1f);
+        }
+
+        private void DrawTab3(SpriteBatch b, int mx, int my)
+        {
+            // 左列：好感档位列表
+            DrawCard(b, _stageLeftColRect);
+            b.DrawString(Game1.smallFont, $"好感演变档位 ({_bio.ProgressStates.Count}/8)",
+                new Vector2(_stageLeftColRect.X + 10, _stageLeftColRect.Y + 8), Game1.textColor);
+
+            int visibleStages = Math.Min(_bio.ProgressStates.Count, 8);
+            for (int i = 0; i < visibleStages; i++)
+            {
+                var r = _stageRowRects[i];
+                bool isSel = (i == _stageIdx);
+                bool isHover = r.Contains(mx, my);
+
+                Color bg = isSel ? new Color(215, 185, 140) : (isHover ? new Color(255, 235, 205) : Color.White);
+                IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9), r.X, r.Y, r.Width, r.Height, bg, 2f, false);
+
+                string gateSummary = BuildGateSummary(_bio.ProgressStates[i]);
+                b.DrawString(Game1.smallFont, $"档位 {i + 1}  [{gateSummary}]", new Vector2(r.X + 12, r.Y + 8), isSel ? Game1.textColor : Color.Black);
+            }
+
+            if (_bio.ProgressStates.Count < 8)
+                DrawActionButton(b, _newStageRect, "+ 新建好感档位", mx, my, false);
+
+            if (_stageIdx < 0 || _stageIdx >= _bio.ProgressStates.Count)
+            {
+                b.DrawString(Game1.smallFont, "从左侧列表选择或添加一个好感档位开始编辑。",
+                    new Vector2(_stageRightColRect.X + 20, _stageRightColRect.Y + 40), Color.Gray);
+                return;
+            }
+
+            var stage = _bio.ProgressStates[_stageIdx];
+
+            // 门禁药丸控制条
+            b.DrawString(Game1.smallFont, "激活门禁:", new Vector2(_stageRightColRect.X, _stageRightColRect.Y + 6), Game1.textColor);
+            _heartsStepper.Draw(b);
+
+            DrawPillButton(b, _gateMarriedPillRect, stage.RequireMarried ? "已婚" : "不限婚姻", stage.RequireMarried, mx, my);
+
+            string jojaClosedText = stage.RequireJojaMartClosed.HasValue ? (stage.RequireJojaMartClosed.Value ? "超市:倒闭" : "超市:营业") : "超市:不限";
+            DrawPillButton(b, _gateJojaClosedPillRect, jojaClosedText, stage.RequireJojaMartClosed.HasValue, mx, my);
+
+            string jojaMemberText = stage.RequireJojaMember.HasValue ? (stage.RequireJojaMember.Value ? "会员:加入" : "会员:未入") : "会员:不限";
+            DrawPillButton(b, _gateJojaMemberPillRect, jojaMemberText, stage.RequireJojaMember.HasValue, mx, my);
+
+            DrawActionButton(b, _deleteStageRect, "删除此档", mx, my, isDanger: true);
+
+            // 心智与碎碎念
+            // 标题文字与输入框顶边留足 26px 距离，绝不贴边
+            b.DrawString(Game1.smallFont, "阶段态度演变 (Text)",
+                new Vector2(_stageTextBox.Bounds.X, _stageTextBox.Bounds.Y - 26), Game1.textColor);
+            _stageTextBox.Draw(b);
+
+            b.DrawString(Game1.smallFont, "碎碎念心智 (BarkMindset: 规定此时的心态与注意力)",
+                new Vector2(_stageBarkBox.Bounds.X, _stageBarkBox.Bounds.Y - 26), Game1.textColor);
+            _stageBarkBox.Draw(b);
+
+            b.DrawString(Game1.smallFont, "阶段专属关注池 (Preoccupations: 优先提及的事物)",
+                new Vector2(_stageRightColRect.X, _stageBarkBox.Bounds.Bottom + 12), Game1.textColor);
+            _stageTagEditor.Draw(b);
+        }
+
+        private void DrawTab4(SpriteBatch b, int mx, int my)
+        {
+            // 左列：NPC 检索列表
+            DrawCard(b, _relLeftColRect);
+            b.DrawString(Game1.smallFont, "目标角色列表 (★已定制)", new Vector2(_relLeftColRect.X + 8, _relLeftColRect.Y + 6), Game1.textColor);
+            DrawSingleLineBox(b, _relSearchBox);
+            if (string.IsNullOrEmpty(_relSearchBox.Text))
+                b.DrawString(Game1.smallFont, "搜索角色...", new Vector2(_relSearchBox.X + 6, _relSearchBox.Y + 4), Color.Gray * 0.7f);
+
+            foreach (var (r, idx) in _relVisibleItemRects)
+            {
+                var name = _filteredNpcs[idx];
+                bool isSel = (idx == _relSelectedIndex);
+                bool isHover = r.Contains(mx, my);
+                bool hasConfig = _bio.Relationships.ContainsKey(name);
+
+                Color bg = isSel ? new Color(215, 185, 140) : (isHover ? new Color(255, 235, 205) : Color.White);
+                IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9), r.X, r.Y, r.Width, r.Height, bg, 2f, false);
+
+                string disp = Game1.getCharacterFromName(name)?.displayName ?? name;
+                if (hasConfig) disp += " ★";
+                b.DrawString(Game1.smallFont, disp, new Vector2(r.X + 10, r.Y + 6), isSel ? Game1.textColor : (hasConfig ? new Color(160, 60, 0) : Color.Black));
+            }
+
+            DrawActionButton(b, _relAddRect, "+ 定制关系", mx, my, false);
+            DrawActionButton(b, _relDelRect, "- 清除", mx, my, isDanger: true);
+
+            // 右列：详情编辑
+            if (string.IsNullOrEmpty(_relSelectedNpc))
+            {
+                b.DrawString(Game1.smallFont, "从左侧列表选择目标角色。", new Vector2(_relRightColRect.X + 20, _relRightColRect.Y + 40), Color.Gray);
+                return;
+            }
+
+            string targetDisp = Game1.getCharacterFromName(_relSelectedNpc)?.displayName ?? _relSelectedNpc;
+            b.DrawString(Game1.dialogueFont, $"{_npcName} 对 {targetDisp} 的单向社交关系",
+                new Vector2(_relRightColRect.X, _relRightColRect.Y), Game1.textColor);
+
+            // 关系称谓标题：画在单行输入框上方 28px 处
+            b.DrawString(Game1.smallFont, "关系称谓与定位 (Heading: 如 'Wife', 'Business Rival')",
+                new Vector2(_relHeadingBox.X, _relHeadingBox.Y - 28), Game1.textColor);
+            DrawSingleLineBox(b, _relHeadingBox);
+
+            // 详细描述标题：画在多行输入框上方 28px 处，彻底与下方的多行框边框脱离
+            b.DrawString(Game1.smallFont, "深层心理与互动细节 (Description)",
+                new Vector2(_relDescBox.Bounds.X, _relDescBox.Bounds.Y - 28), Game1.textColor);
+            _relDescBox.Draw(b);
+
+            b.DrawString(Game1.smallFont, "提示：如需双方互动感知，请在两人的编辑器中分别配置相互的关系定位。",
+                new Vector2(_relRightColRect.X, _relDescBox.Bounds.Bottom + 6), Color.DimGray, 0f, Vector2.Zero, 0.88f, SpriteEffects.None, 1f);
+        }
+
+        private void DrawTab5(SpriteBatch b, int mx, int my)
+        {
+            // 左列：碎碎念总控与全局关注池
+            DrawCard(b, _tab5LeftColRect);
+            b.DrawString(Game1.smallFont, "日常碎碎念总控", new Vector2(_tab5LeftColRect.X + 10, _tab5LeftColRect.Y + 8), Game1.textColor);
+            _enableBarkCheckbox.draw(b, 0, 0, this);
+
+            DrawActionButton(b, _scrapeRect, "↺ 从原版对白智能抓取范例", mx, my, false);
+
+            b.DrawString(Game1.smallFont, "全局常态关注池 (Preoccupations)",
+                new Vector2(_tab5LeftColRect.X + 4, _tab5LeftColRect.Y + 130), Game1.textColor);
+            _globalTagEditor.Draw(b);
+
+            // 右列：提示词三大核心组件
+            b.DrawString(Game1.smallFont, "口吻与态度 (Voice & Attitude)", new Vector2(_voiceBox.Bounds.X, _voiceBox.Bounds.Y - 20), Game1.textColor);
+            _voiceBox.Draw(b);
+            if (_voiceBox.Bounds.Contains(mx, my)) _hoverText = "限定碎碎念的基本语调、说话长短与即时情绪基调。";
+
+            b.DrawString(Game1.smallFont, "口头习惯 (Spoken Habits)", new Vector2(_habitsBox.Bounds.X, _habitsBox.Bounds.Y - 20), Game1.textColor);
+            _habitsBox.Draw(b);
+            if (_habitsBox.Bounds.Contains(mx, my)) _hoverText = "NPC 的口头禅、叹气声、常用起手式（如 'Well,', 'Sigh...'）。";
+
+            b.DrawString(Game1.smallFont, "观察透镜 (Observation Lenses)", new Vector2(_lensesBox.Bounds.X, _lensesBox.Bounds.Y - 20), Game1.textColor);
+            _lensesBox.Draw(b);
+            if (_lensesBox.Bounds.Contains(mx, my)) _hoverText = "NPC 打量周围世界时的特殊视角（例如铁匠关注矿物与工具锈蚀，农夫关注作物与雨水）。";
+        }
+
+        // ── 基础绘制与微型组件 ────────────────────────────────────────────
+        private void DrawTabButton(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my)
+        {
+            bool isHover = rect.Contains(mx, my);
+            Color bg = isActive ? new Color(215, 185, 140) : (isHover ? new Color(255, 235, 205) : new Color(145, 95, 45));
+
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
+                rect.X, rect.Y, rect.Width, rect.Height, bg, 4f, false);
+
+            var sz = Game1.smallFont.MeasureString(label);
+            b.DrawString(Game1.smallFont, label,
+                new Vector2(rect.X + (rect.Width - sz.X) / 2f, rect.Y + (rect.Height - sz.Y) / 2f),
+                isActive ? Game1.textColor : Color.White * 0.95f);
+        }
+
+        private void DrawActionButton(SpriteBatch b, Rectangle rect, string label, int mx, int my,
+            bool isDanger = false, bool isPrimary = false, bool isEnabled = true)
+        {
+            bool isHover = isEnabled && rect.Contains(mx, my);
+            Color bg;
+            if (!isEnabled) bg = Color.LightGray * 0.6f;
+            else if (isPrimary) bg = isHover ? Color.Gold : new Color(255, 220, 130);
+            else if (isDanger) bg = isHover ? new Color(255, 115, 115) : new Color(245, 170, 170);
+            else bg = isHover ? new Color(255, 235, 205) : new Color(215, 185, 140);
+
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
+                rect.X, rect.Y, rect.Width, rect.Height, bg, 3f, false);
+
+            var sz = Game1.smallFont.MeasureString(label);
+            Color textCol = !isEnabled ? Color.Gray : (isHover ? Color.Black : Game1.textColor);
+            b.DrawString(Game1.smallFont, label,
+                new Vector2(rect.X + (rect.Width - sz.X) / 2f, rect.Y + (rect.Height - sz.Y) / 2f), textCol);
+        }
+
+        private static void DrawPillButton(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my)
+        {
+            bool isHover = rect.Contains(mx, my);
+            Color bg = isActive ? (isHover ? Color.Gold : new Color(255, 220, 130)) : (isHover ? new Color(255, 235, 205) : Color.White);
+
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
+                rect.X, rect.Y, rect.Width, rect.Height, bg, 2f, false);
+
+            var sz = Game1.smallFont.MeasureString(label);
+            b.DrawString(Game1.smallFont, label,
+                new Vector2(rect.X + (rect.Width - sz.X) / 2f, rect.Y + (rect.Height - sz.Y) / 2f),
+                isActive ? Game1.textColor : Color.DimGray);
+        }
+
+        private static void DrawCard(SpriteBatch b, Rectangle rect)
+        {
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6),
+                rect.X, rect.Y, rect.Width, rect.Height, new Color(230, 215, 190) * 0.6f, 2f, false);
+        }
+
+        private static void DrawSingleLineBox(SpriteBatch b, TextBox box)
+        {
+            var boxRect = new Rectangle(box.X, box.Y, box.Width, box.Height);
+
+            // 1. 星露谷原版内凹羊皮纸槽纹理 (6x6 精细 9 宫格切片，边框极细且自带复古像素阴影)
+            // 选中时微亮微黄，未选中时融入背景羊皮纸
+            Color slotColor = box.Selected ? new Color(255, 248, 220) : new Color(228, 212, 184) * 0.9f;
+
+            IClickableMenu.drawTextureBox(
+                b,
+                Game1.mouseCursors,
+                new Rectangle(403, 383, 6, 6), // 专门用于窄卡片与微型槽的超细原版切片
+                boxRect.X,
+                boxRect.Y,
+                boxRect.Width,
+                boxRect.Height,
+                slotColor,
+                2f,   // 缩放控制在 2f，边缘只有极细的 2 像素阴影
+                false
+            );
+
+            // 2. 聚焦时追加一层柔和的金色高亮细轮廓
+            if (box.Selected)
+            {
+                IClickableMenu.drawTextureBox(
+                    b,
+                    Game1.mouseCursors,
+                    new Rectangle(432, 439, 9, 9),
+                    boxRect.X - 1,
+                    boxRect.Y - 1,
+                    boxRect.Width + 2,
+                    boxRect.Height + 2,
+                    Color.Gold * 0.45f,
+                    2f,
+                    false
+                );
+            }
+
+            // 3. 文字垂直居中排布（避免被上下边框切到字）
+            string text = box.Text ?? string.Empty;
+            Vector2 textSize = Game1.smallFont.MeasureString(text);
+            float textX = boxRect.X + 10;
+            float textY = boxRect.Y + (boxRect.Height - textSize.Y) / 2f - 1;
+
+            if (!string.IsNullOrEmpty(text))
+            {
+                b.DrawString(Game1.smallFont, text, new Vector2(textX, textY), Game1.textColor);
+            }
+
+            // 4. 原生像素闪烁光标
+            if (box.Selected)
+            {
+                float cx = textX + textSize.X + 1;
+                int cursorH = (int)Math.Min(22, boxRect.Height - 10);
+                float cursorY = boxRect.Y + (boxRect.Height - cursorH) / 2f;
+
+                if ((int)(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 500) % 2 == 0)
+                {
+                    b.Draw(Game1.staminaRect, new Rectangle((int)cx, (int)cursorY, 2, cursorH), Game1.textColor);
+                }
+            }
+        }
+
+        // ── 业务回写辅助 ──────────────────────────────────────────────────
+        private void FocusBox(MultilineTextBox box)
+        {
+            UnfocusAll();
+            box.Selected = true;
+            Game1.keyboardDispatcher.Subscriber = box;
+        }
+
+        private void FocusTextBox(TextBox box)
+        {
+            UnfocusAll();
+            box.Selected = true;
+            Game1.keyboardDispatcher.Subscriber = box;
+        }
+
+        private void UnfocusAll()
+        {
+            Game1.keyboardDispatcher.Subscriber = null;
+            _biographyBox.Selected = false;
+            _uniqueBox.Selected = false;
+            _behaviorBox.Selected = false;
+            _dialogueExamplesBox.Selected = false;
+            _stageTextBox.Selected = false;
+            _stageBarkBox.Selected = false;
+            _relSearchBox.Selected = false;
+            _relHeadingBox.Selected = false;
+            _relDescBox.Selected = false;
+            _voiceBox.Selected = false;
+            _habitsBox.Selected = false;
+            _lensesBox.Selected = false;
+            _stageTagEditor.CommitInput();
+            _globalTagEditor.CommitInput();
+        }
+
+        private void SwitchTab(int tab)
+        {
+            if (_activeTab == tab) return;
+            UnfocusAll();
+            _activeTab = tab;
+            Game1.playSound("smallSelect");
+            Layout();
+        }
+
+        private void MarkDirty() => _dirty = true;
+
+        private void SelectStage(int idx)
+        {
+            if (idx < 0 || idx >= _bio.ProgressStates.Count) return;
+            _stageIdx = idx;
+            var s = _bio.ProgressStates[idx];
+            _stageTextBox.Text = s.Text ?? string.Empty;
+            _stageBarkBox.Text = s.BarkMindset ?? string.Empty;
+            _stageTagEditor.SetTags(s.Preoccupations);
+            _heartsStepper.Value = s.RequiredHearts;
+        }
+
+        private static string BuildGateSummary(BioData.ProgressStateEntry p)
+        {
+            var parts = new List<string>();
+            if (p.RequiredHearts > 0) parts.Add($"≥{p.RequiredHearts}♥");
+            if (p.RequireMarried) parts.Add("已婚");
+            if (p.RequireJojaMartClosed == true) parts.Add("超市倒闭");
+            if (p.RequireJojaMember == true) parts.Add("会员");
+            return parts.Count > 0 ? string.Join("/", parts) : "无门禁";
+        }
+
+        private void SelectRelationship(int index)
+        {
+            if (_filteredNpcs.Count == 0) return;
+            index = Math.Clamp(index, 0, _filteredNpcs.Count - 1);
+            _relSelectedIndex = index;
+            _relSelectedNpc = _filteredNpcs[index];
+
+            if (_bio.Relationships.TryGetValue(_relSelectedNpc, out var r) && r != null)
+            {
+                _relHeadingBox.Text = r.Heading ?? string.Empty;
+                _relDescBox.Text = r.Description ?? string.Empty;
+            }
+            else
+            {
+                _relHeadingBox.Text = string.Empty;
+                _relDescBox.Text = string.Empty;
+            }
+        }
+
+        private BioData.ListEntry EnsureRelationshipEntry(string npcName)
+        {
+            if (_bio.Relationships == null)
+                _bio.Relationships = new Dictionary<string, BioData.ListEntry>();
+            if (!_bio.Relationships.TryGetValue(npcName, out var entry) || entry == null)
+            {
+                entry = new BioData.ListEntry { id = npcName, Heading = string.Empty, Description = string.Empty, RequiredHearts = 0 };
+                _bio.Relationships[npcName] = entry;
+            }
+            return entry;
+        }
+
+        private BioData.ListEntry EnsureTraitEntry(string key, string defaultHeading)
+        {
+            if (!_bio.Traits.TryGetValue(key, out var entry) || entry == null)
+            {
+                entry = new BioData.ListEntry { id = key, Heading = defaultHeading, Description = string.Empty, RequiredHearts = 0 };
+                _bio.Traits[key] = entry;
+            }
+            return entry;
+        }
+
+        private AmbientBarkPrompt EnsureAmbientBarkPrompt()
+        {
+            _bio.AmbientBarkPrompt ??= new AmbientBarkPrompt();
+            return _bio.AmbientBarkPrompt;
+        }
+
+        private void SyncTab5BarkBoxes()
+        {
+            var p = _bio.AmbientBarkPrompt;
+            _voiceBox.Text = p?.VoiceAndAttitude ?? string.Empty;
+            _habitsBox.Text = p?.SpokenHabits ?? string.Empty;
+            _lensesBox.Text = p?.ObservationLenses ?? string.Empty;
+        }
+
+        private void ScrapeExamples()
+        {
+            try
+            {
+                var lines = DialogueScraper.FetchCleanDialogueExamples(_npcName, 3);
+                if (lines == null || lines.Count == 0)
+                {
+                    Game1.addHUDMessage(new HUDMessage("未抓取到原版对白", HUDMessage.error_type));
+                    return;
+                }
+                var entry = EnsureTraitEntry("DialogueExamples", "Dialogue Examples");
+                var sb = new StringBuilder(entry.Description ?? "");
+                int added = 0;
+                foreach (var line in lines)
+                {
+                    if (string.IsNullOrWhiteSpace(line)) continue;
+                    if (sb.ToString().Contains(line, StringComparison.OrdinalIgnoreCase)) continue;
+                    if (sb.Length > 4000) break;
+                    if (sb.Length > 0) sb.AppendLine();
+                    sb.Append("- ").Append(line.Trim());
+                    added++;
+                }
+                entry.Description = sb.ToString().TrimStart();
+                if (added > 0) MarkDirty();
+                Game1.playSound("newArtifact");
+                Game1.addHUDMessage(new HUDMessage($"已成功抓取 {added} 条原版对白至言行模块", HUDMessage.newQuest_type));
+            }
+            catch (Exception ex)
+            {
+                ModEntry.SMonitor?.Log($"抓取对白失败: {ex.Message}", LogLevel.Warn);
+                Game1.addHUDMessage(new HUDMessage("抓取对白失败", HUDMessage.error_type));
+            }
+        }
+
+        private void InsertScaffold()
+        {
+            _biographyBox.Text = BiographyScaffold.Replace("{NPC}", _npcName);
+            MarkDirty();
+            Game1.playSound("coin");
+        }
+
+        private void SaveAndClose()
+        {
+            if (!ModEntry.BioStorage!.SaveOverlay(_npcName, _bio, out string err))
+            {
+                Game1.addHUDMessage(new HUDMessage($"保存失败: {err}", HUDMessage.error_type));
+                return;
+            }
+            Game1.playSound("achievement");
+            ExitAndReturn();
+        }
+
+        private void TryCancel()
+        {
+            if (!_dirty)
+            {
+                ExitAndReturn();
+                return;
+            }
+            Game1.activeClickableMenu = new ConfirmationDialog(
+                "放弃未保存的所有修改？",
+                _ => { Game1.activeClickableMenu = this; ExitAndReturn(); },
+                _ => { Game1.activeClickableMenu = this; });
+        }
+
+        private void TryReset()
+        {
+            if (!_hasOverlay)
+            {
+                Game1.playSound("cancel");
+                return;
+            }
+            Game1.activeClickableMenu = new ConfirmationDialog(
+                $"确定将 {_npcName} 还原为默认人设，并删除自定义覆盖？",
+                _ =>
+                {
+                    Game1.activeClickableMenu = this;
+                    if (!ModEntry.BioStorage!.ResetOverlay(_npcName, out string err))
+                    {
+                        Game1.addHUDMessage(new HUDMessage($"还原失败: {err}", HUDMessage.error_type));
+                        return;
+                    }
+                    _bio = ModEntry.BioStorage!.LoadEditableBio(_npcName);
+                    _dirty = false;
+                    _hasOverlay = false;
+                    _biographyBox.Text = _bio.Biography ?? string.Empty;
+                    _uniqueBox.Text = _bio.Unique ?? string.Empty;
+                    _homeBedCheckbox.isChecked = _bio.HomeLocationBed;
+                    _globalTagEditor.SetTags(_bio.Preoccupations);
+                    Game1.playSound("throw");
+                },
+                _ => Game1.activeClickableMenu = this);
+        }
+
+        private void ExitAndReturn()
+        {
+            if (_returnMenu != null) Game1.activeClickableMenu = _returnMenu;
+            else Game1.exitActiveMenu();
+        }
+
+        protected override void cleanupBeforeExit()
+        {
+            base.cleanupBeforeExit();
+            UnfocusAll();
+        }
+
+        private static Texture2D LoadTextBoxTexture()
+        {
+            try { return Game1.content.Load<Texture2D>("LooseSprites\\textBox") ?? Game1.mouseCursors; }
+            catch { return Game1.mouseCursors; }
+        }
     }
 }

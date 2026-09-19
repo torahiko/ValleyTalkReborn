@@ -576,8 +576,6 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             case MemoryExtractStatus.Success:
                 _candidates = result.Candidates ?? new List<string>();
                 _state = DistillState.Ready;
-                if (_returnMenu is ScrollableMemoryMenu parentMenu)
-                    parentMenu.SetDistillCache(_candidates);
                 RefreshEntries();
                 Game1.playSound("smallSelect");
                 break;
