@@ -114,7 +114,7 @@ namespace ValleytalkReborn
         private static CancelButtonPlugin _cancelButtonPlugin;
 
         /// <summary>静态人设覆盖层存储服务（单例，跨存档存活，不进存档）。</summary>
-        internal static BioStorageService? BioStorage;
+        internal static BioStorageService BioStorage;
 
         private int _lastDialogueCloseTick = -9999;
 

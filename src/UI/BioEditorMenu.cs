@@ -35,7 +35,7 @@ internal sealed class BioEditorMenu : IClickableMenu
 
     // ── 状态（全部 Memory 作用域，随菜单生命周期） ─────────────────────
     private readonly string _npcName;
-    private readonly IClickableMenu? _returnMenu;
+    private readonly IClickableMenu _returnMenu;
     private BioData _bio;
     private bool _hasOverlay;
     private bool _dirty;
@@ -108,6 +108,16 @@ internal sealed class BioEditorMenu : IClickableMenu
     private TextBox _globalPreoccBox;                   // 全局 Preoccupations 逗号单行
     private Rectangle _scrapeRect;                      // [↺ 从游戏原版对白中抓取 3 组范例]
 
+    // 各 Tab 多行框的绘制区域（由 Layout() 统一计算，Draw 内仅 SetBounds + Draw，禁止 new）
+    private Rectangle _behaviorDrawRect;
+    private Rectangle _dialogueExamplesDrawRect;
+    private Rectangle _stageTextDrawRect;
+    private Rectangle _stageBarkDrawRect;
+    private Rectangle _relDescDrawRect;
+    private Rectangle _voiceDrawRect;
+    private Rectangle _habitsDrawRect;
+    private Rectangle _lensesDrawRect;
+
     private readonly Rectangle[] _tabRects = new Rectangle[5];
     private Rectangle _cancelRect;
     private Rectangle _saveRect;
@@ -116,7 +126,7 @@ internal sealed class BioEditorMenu : IClickableMenu
     // 脏标记提示的绘制计时
     private double _saveFlashTimer;
 
-    public BioEditorMenu(string npcName, IClickableMenu? returnMenu)
+    public BioEditorMenu(string npcName, IClickableMenu returnMenu)
         : base(
               (Game1.uiViewport.Width - Math.Clamp(Game1.uiViewport.Width - 160, 760, 1040)) / 2,
               (Game1.uiViewport.Height - Math.Clamp(Game1.uiViewport.Height - 120, 480, 640)) / 2,
@@ -150,7 +160,7 @@ internal sealed class BioEditorMenu : IClickableMenu
         _lensesBox = new MultilineTextBox(Rectangle.Empty, maxLines: 512);
 
         // 原生 TextBox：LooseSprites/textBox 贴图（回退 mouseCursors），smallFont
-        Texture2D? uniqueTexture = LoadTextBoxTexture();
+        Texture2D uniqueTexture = LoadTextBoxTexture();
         _uniqueBox = new TextBox(uniqueTexture, uniqueTexture, Game1.smallFont, Game1.textColor);
         _stagePreoccBox = new TextBox(uniqueTexture, null, Game1.smallFont, Game1.textColor);
         _gateSpouseBox = new TextBox(uniqueTexture, null, Game1.smallFont, Game1.textColor);
@@ -295,11 +305,7 @@ internal sealed class BioEditorMenu : IClickableMenu
                 int gateRowH = 36;
                 int textH = Math.Max(40, (editorH - gateRowH * 2 - ListRowH) / 2);
 
-                var oldStageText = _stageTextBox;
-                _stageTextBox = new MultilineTextBox(
-                    new Rectangle(bodyLeft, editorTop, bodyW, textH), maxLines: 512);
-                _stageTextBox.Text = oldStageText.Text;
-                _stageTextBox.Selected = oldStageText.Selected;
+                _stageTextBox.SetBounds(new Rectangle(bodyLeft, editorTop, bodyW, textH));
 
                 // 门禁编辑区
                 int gateY = editorTop + textH + 4;
@@ -315,11 +321,7 @@ internal sealed class BioEditorMenu : IClickableMenu
                 // BarkMindset 块
                 int barkY = gate2Y + gateRowH + 4;
                 int barkH = Math.Max(30, (bodyBottom - barkY) / 2);
-                var oldBark = _stageBarkBox;
-                _stageBarkBox = new MultilineTextBox(
-                    new Rectangle(bodyLeft, barkY, bodyW, barkH), maxLines: 512);
-                _stageBarkBox.Text = oldBark.Text;
-                _stageBarkBox.Selected = oldBark.Selected;
+                _stageBarkBox.SetBounds(new Rectangle(bodyLeft, barkY, bodyW, barkH));
 
                 // Preoccupations 单行框
                 int preoccY = barkY + barkH + 4;
@@ -327,7 +329,37 @@ internal sealed class BioEditorMenu : IClickableMenu
                 _stagePreoccBox.Y = preoccY;
                 _stagePreoccBox.Width = bodyW;
                 _stagePreoccBox.Height = 36;
+
+                // 运行时绘制区（依赖 gateEditMode，由每次切换/布局时重算）
+                ComputeTab3DrawRects(bodyLeft, bodyW);
             }
+        }
+
+        // Tab2 多行框绘制区（行为规则 / 对白范例）
+        if (bodyH > 80)
+        {
+            int behaviorH = Math.Max(120, (int)(bodyH * 0.45f));
+            _behaviorDrawRect = new Rectangle(bodyLeft, bodyTop, bodyW, behaviorH);
+            int dialogueTop = bodyTop + behaviorH + ListRowH + 8;
+            int dialogueH = Math.Max(80, bodyBottom - dialogueTop - 20);
+            _dialogueExamplesDrawRect = new Rectangle(bodyLeft, dialogueTop, bodyW, dialogueH);
+        }
+
+        // Tab4 多行框绘制区（Description）
+        if (bodyH > 120)
+        {
+            int descBoxH = Math.Max(60, (yPositionOnScreen + height - FooterH) - (bodyTop + 130));
+            _relDescDrawRect = new Rectangle(bodyLeft, bodyTop + 96, bodyW, descBoxH);
+        }
+
+        // Tab5 多行框绘制区（Bark 三框，各 ~50px）
+        if (bodyH > 120)
+        {
+            int barkBoxH = 50;
+            int voiceY = bodyTop + 48;
+            _voiceDrawRect = new Rectangle(bodyLeft, voiceY, bodyW, barkBoxH);
+            _habitsDrawRect = new Rectangle(bodyLeft, voiceY + barkBoxH + 24, bodyW, barkBoxH);
+            _lensesDrawRect = new Rectangle(bodyLeft, voiceY + (barkBoxH + 24) * 2, bodyW, barkBoxH);
         }
 
         // ── Tab4 内容区（社交关系：导航 + Heading/Description 编辑） ──────
@@ -356,6 +388,27 @@ internal sealed class BioEditorMenu : IClickableMenu
             int y = bodyTop + 40;
             _scrapeRect = new Rectangle(bodyLeft, y, Math.Min(280, bodyW), 28);
         }
+    }
+
+    /// <summary>Tab3 运行时绘制区：依赖 gateEditMode，每次切换门禁/布局时由调用方触发。</summary>
+    private void ComputeTab3DrawRects(int bodyLeft, int bodyW)
+    {
+        if (_stageIdx < 0 || _stageIdx >= _bio.ProgressStates.Count)
+        {
+            _stageTextDrawRect = Rectangle.Empty;
+            _stageBarkDrawRect = Rectangle.Empty;
+            return;
+        }
+        int textY = (_gateEditMode ? _gateClosedRect.Bottom : _gateToggleRect.Bottom) + 8;
+        int textLabelH = (int)Game1.smallFont.MeasureString("阶段态度 Text").Y;
+        int editorW = (xPositionOnScreen + width - PadX) - bodyLeft;
+        int textH = Math.Max(60, (yPositionOnScreen + height - FooterH) - (textY + textLabelH + 2 + 160));
+        _stageTextDrawRect = new Rectangle(bodyLeft, textY + textLabelH + 2, editorW, textH);
+
+        int barkY = _stageTextDrawRect.Bottom + 6;
+        int barkLabelH = (int)Game1.smallFont.MeasureString("碎碎念心智 BarkMindset").Y;
+        int barkH = Math.Max(40, (yPositionOnScreen + height - FooterH) - (barkY + barkLabelH + 2 + 60));
+        _stageBarkDrawRect = new Rectangle(bodyLeft, barkY + barkLabelH + 2, editorW, barkH);
     }
 
     // ── 主线程回写（先比较后赋值，避免每帧分配） ──────────────────────
@@ -411,17 +464,34 @@ internal sealed class BioEditorMenu : IClickableMenu
         _behaviorBox.Update(time);
         _dialogueExamplesBox.Update(time);
 
-        var behavior = EnsureTraitEntry("BehavioralRules", "Behavioral Rules");
-        if (behavior.Description != _behaviorBox.Text)
+        // 惰性写入：先取现值比较，仅在实际差异时创建条目 + 写入
+        string behaviorText = _behaviorBox.Text ?? string.Empty;
+        if (_bio.Traits.TryGetValue("BehavioralRules", out var behavior) && behavior != null)
         {
-            behavior.Description = _behaviorBox.Text;
+            if (behavior.Description != behaviorText)
+            {
+                behavior.Description = behaviorText;
+                MarkDirty();
+            }
+        }
+        else if (!string.IsNullOrEmpty(behaviorText))
+        {
+            EnsureTraitEntry("BehavioralRules", "Behavioral Rules").Description = behaviorText;
             MarkDirty();
         }
 
-        var examples = EnsureTraitEntry("DialogueExamples", "Dialogue Examples");
-        if (examples.Description != _dialogueExamplesBox.Text)
+        string examplesText = _dialogueExamplesBox.Text ?? string.Empty;
+        if (_bio.Traits.TryGetValue("DialogueExamples", out var examples) && examples != null)
         {
-            examples.Description = _dialogueExamplesBox.Text;
+            if (examples.Description != examplesText)
+            {
+                examples.Description = examplesText;
+                MarkDirty();
+            }
+        }
+        else if (!string.IsNullOrEmpty(examplesText))
+        {
+            EnsureTraitEntry("DialogueExamples", "Dialogue Examples").Description = examplesText;
             MarkDirty();
         }
     }
@@ -455,12 +525,12 @@ internal sealed class BioEditorMenu : IClickableMenu
         _stageTextBox.Update(time);
         _stageBarkBox.Update(time);
 
-        if (stage.Text != _stageTextBox.Text)
+        if ((stage.Text ?? "") != _stageTextBox.Text)
         {
             stage.Text = _stageTextBox.Text;
             MarkDirty();
         }
-        if (stage.BarkMindset != _stageBarkBox.Text)
+        if ((stage.BarkMindset ?? "") != _stageBarkBox.Text)
         {
             stage.BarkMindset = _stageBarkBox.Text;
             MarkDirty();
@@ -517,6 +587,9 @@ internal sealed class BioEditorMenu : IClickableMenu
         _stageBarkBox.Text = stage.BarkMindset ?? string.Empty;
         _stagePreoccBox.Text = stage.Preoccupations != null ? string.Join(", ", stage.Preoccupations) : string.Empty;
         SyncGateEditors();
+        // 选中档变更影响编辑器绘制区
+        int bodyLeft = xPositionOnScreen + PadX;
+        ComputeTab3DrawRects(bodyLeft, (xPositionOnScreen + width - PadX) - bodyLeft);
     }
 
     /// <summary>确保当前选中档存在（仅当用户实际编辑时调用）。</summary>
@@ -667,6 +740,9 @@ internal sealed class BioEditorMenu : IClickableMenu
                 ApplyGateEditors(); // 退出编辑模式 → 确认写入
             else
                 SyncGateEditors();  // 进入编辑模式 → 从档位同步到编辑器
+            // 门禁形态切换影响 Tab3 编辑器绘制区，重算
+            int bodyLeft = xPositionOnScreen + PadX;
+            ComputeTab3DrawRects(bodyLeft, (xPositionOnScreen + width - PadX) - bodyLeft);
             Game1.playSound("drumkit6");
             return true;
         }
@@ -880,13 +956,18 @@ internal sealed class BioEditorMenu : IClickableMenu
     protected override void cleanupBeforeExit()
     {
         base.cleanupBeforeExit();
-        if (Game1.keyboardDispatcher.Subscriber == _biographyBox
-            || Game1.keyboardDispatcher.Subscriber == _uniqueBox)
-        {
-            Game1.keyboardDispatcher.Subscriber = null;
-        }
+        // 无条件清理键盘订阅与全部框焦点，避免退出后打字进入残留输入
+        Game1.keyboardDispatcher.Subscriber = null;
         _biographyBox.Selected = false;
         _uniqueBox.Selected = false;
+        _behaviorBox.Selected = false;
+        _dialogueExamplesBox.Selected = false;
+        _stageTextBox.Selected = false;
+        _stageBarkBox.Selected = false;
+        _relDescBox.Selected = false;
+        _voiceBox.Selected = false;
+        _habitsBox.Selected = false;
+        _lensesBox.Selected = false;
     }
 
     // ── 私有操作 ──────────────────────────────────────────────────────
@@ -1262,27 +1343,12 @@ internal sealed class BioEditorMenu : IClickableMenu
             DrawButton(b, _gateClosedRect, jojaClosedLabels[_gateJojaClosed], mx, my);
         }
 
-        // 阶段态度 Text（重建框以更新位置/尺寸，保留内容与焦点）
-        int textY = (_gateEditMode ? _gateClosedRect.Bottom : _gateToggleRect.Bottom) + 8;
-        b.DrawString(Game1.smallFont, "阶段态度 Text", new Vector2(bodyLeft, textY), Game1.textColor);
-        int textLabelH = (int)Game1.smallFont.MeasureString("阶段态度 Text").Y;
-        int editorW = (xPositionOnScreen + width - PadX) - bodyLeft;
-        int textH = Math.Max(60, (yPositionOnScreen + height - FooterH) - (textY + textLabelH + 2 + 160));
-        var oldStageText = _stageTextBox;
-        _stageTextBox = new MultilineTextBox(new Rectangle(bodyLeft, textY + textLabelH + 2, editorW, textH), maxLines: 512);
-        _stageTextBox.Text = oldStageText.Text;
-        _stageTextBox.Selected = oldStageText.Selected;
+        // 阶段态度 Text（仅同步绘制区，不新建实例）
+        _stageTextBox.SetBounds(_stageTextDrawRect);
         _stageTextBox.Draw(b);
 
         // BarkMindset
-        int barkY = _stageTextBox.Bounds.Bottom + 6;
-        b.DrawString(Game1.smallFont, "碎碎念心智 BarkMindset", new Vector2(bodyLeft, barkY), Game1.textColor);
-        int barkLabelH = (int)Game1.smallFont.MeasureString("碎碎念心智 BarkMindset").Y;
-        int barkH = Math.Max(40, (yPositionOnScreen + height - FooterH) - (barkY + barkLabelH + 2 + 60));
-        var oldBark = _stageBarkBox;
-        _stageBarkBox = new MultilineTextBox(new Rectangle(bodyLeft, barkY + barkLabelH + 2, editorW, barkH), maxLines: 512);
-        _stageBarkBox.Text = oldBark.Text;
-        _stageBarkBox.Selected = oldBark.Selected;
+        _stageBarkBox.SetBounds(_stageBarkDrawRect);
         _stageBarkBox.Draw(b);
 
         // Preoccupations
@@ -1337,7 +1403,7 @@ internal sealed class BioEditorMenu : IClickableMenu
         return $"≥{p.RequiredHearts}心";
     }
 
-    private static void DrawSingleLineBox(SpriteBatch b, TextBox box, string? label, int mx, int my)
+    private static void DrawSingleLineBox(SpriteBatch b, TextBox box, string label, int mx, int my)
     {
         IClickableMenu.drawTextureBox(b, box.X, box.Y, box.Width, box.Height, Color.White);
         if (!string.IsNullOrEmpty(box.Text))
@@ -1397,18 +1463,23 @@ internal sealed class BioEditorMenu : IClickableMenu
     {
         if (string.IsNullOrEmpty(_relSelectedNpc))
             return;
-        // 首次实际编辑时惰性创建关系条目
-        if (!_bio.Relationships.ContainsKey(_relSelectedNpc))
-            EnsureRelationshipEntry(_relSelectedNpc);
-        var entry = _bio.Relationships[_relSelectedNpc];
-        if (entry.Heading != _relHeadingBox.Text)
+
+        string headingText = _relHeadingBox.Text ?? string.Empty;
+        string descText = _relDescBox.Text ?? string.Empty;
+
+        // 惰性写入：先取现值比较，仅在实际差异时创建条目 + 写入
+        if (_bio.Relationships.TryGetValue(_relSelectedNpc, out var entry) && entry != null)
         {
-            entry.Heading = _relHeadingBox.Text;
-            MarkDirty();
+            bool changed = false;
+            if (entry.Heading != headingText) { entry.Heading = headingText; changed = true; }
+            if (entry.Description != descText) { entry.Description = descText; changed = true; }
+            if (changed) MarkDirty();
         }
-        if (entry.Description != _relDescBox.Text)
+        else if (!string.IsNullOrEmpty(headingText) || !string.IsNullOrEmpty(descText))
         {
-            entry.Description = _relDescBox.Text;
+            var newEntry = EnsureRelationshipEntry(_relSelectedNpc);
+            newEntry.Heading = headingText;
+            newEntry.Description = descText;
             MarkDirty();
         }
     }
@@ -1533,11 +1604,28 @@ internal sealed class BioEditorMenu : IClickableMenu
         _habitsBox.Update(time);
         _lensesBox.Update(time);
 
-        var prompt = EnsureAmbientBarkPrompt();
-        bool changed = false;
-        if (prompt.VoiceAndAttitude != _voiceBox.Text) { prompt.VoiceAndAttitude = _voiceBox.Text; changed = true; }
-        if (prompt.SpokenHabits != _habitsBox.Text) { prompt.SpokenHabits = _habitsBox.Text; changed = true; }
-        if (prompt.ObservationLenses != _lensesBox.Text) { prompt.ObservationLenses = _lensesBox.Text; changed = true; }
+        string voiceText = _voiceBox.Text ?? string.Empty;
+        string habitsText = _habitsBox.Text ?? string.Empty;
+        string lensesText = _lensesBox.Text ?? string.Empty;
+
+        // 惰性创建：仅当三框任一存在实际差异时才创建 AmbientBarkPrompt
+        bool barkChanged = false;
+        if (_bio.AmbientBarkPrompt != null)
+        {
+            if (_bio.AmbientBarkPrompt.VoiceAndAttitude != voiceText) { _bio.AmbientBarkPrompt.VoiceAndAttitude = voiceText; barkChanged = true; }
+            if (_bio.AmbientBarkPrompt.SpokenHabits != habitsText) { _bio.AmbientBarkPrompt.SpokenHabits = habitsText; barkChanged = true; }
+            if (_bio.AmbientBarkPrompt.ObservationLenses != lensesText) { _bio.AmbientBarkPrompt.ObservationLenses = lensesText; barkChanged = true; }
+        }
+        else if (!string.IsNullOrEmpty(voiceText) || !string.IsNullOrEmpty(habitsText) || !string.IsNullOrEmpty(lensesText))
+        {
+            var prompt = EnsureAmbientBarkPrompt();
+            prompt.VoiceAndAttitude = voiceText;
+            prompt.SpokenHabits = habitsText;
+            prompt.ObservationLenses = lensesText;
+            barkChanged = true;
+        }
+
+        bool changed = barkChanged;
         if (_enableBarkCheckbox.isChecked != _bio.EnableAmbientBarks)
         {
             _bio.EnableAmbientBarks = _enableBarkCheckbox.isChecked;
@@ -1579,7 +1667,7 @@ internal sealed class BioEditorMenu : IClickableMenu
         return true;
     }
 
-    private static string JoinPreocc(List<string>? list) => list == null ? "" : string.Join(", ", list);
+    private static string JoinPreocc(List<string> list) => list == null ? "" : string.Join(", ", list);
 
     private bool HandleTab5Click(int x, int y)
     {
@@ -1720,13 +1808,7 @@ internal sealed class BioEditorMenu : IClickableMenu
         // Description 标签 + 框
         int descY = _relHeadingBox.Y + _relHeadingBox.Height + 8;
         b.DrawString(Game1.smallFont, "Description", new Vector2(bodyLeft, descY), Game1.textColor);
-        int dlh = (int)Game1.smallFont.MeasureString("Description").Y;
-        var oldRel = _relDescBox;
-        _relDescBox = new MultilineTextBox(
-            new Rectangle(bodyLeft, descY + dlh + 2, editorW, Math.Max(60, (yPositionOnScreen + height - FooterH) - (descY + dlh + 2 + 40))),
-            maxLines: 512);
-        _relDescBox.Text = oldRel.Text;
-        _relDescBox.Selected = oldRel.Selected;
+        _relDescBox.SetBounds(_relDescDrawRect);
         _relDescBox.Draw(b);
 
         // 底部交叉设定提示行
@@ -1747,7 +1829,7 @@ internal sealed class BioEditorMenu : IClickableMenu
         b.DrawString(Game1.smallFont, _enableBarkCheckbox.label ?? "",
             new Vector2(bodyLeft, bodyTop), Game1.textColor);
         _enableBarkCheckbox.bounds = new Rectangle(bodyLeft + 240, bodyTop, 36, 36);
-        _enableBarkCheckbox.draw(b, _enableBarkCheckbox.bounds.X, _enableBarkCheckbox.bounds.Y, this);
+        _enableBarkCheckbox.draw(b, 0, 0, this);
 
         int curY = bodyTop + 40;
 
@@ -1756,11 +1838,11 @@ internal sealed class BioEditorMenu : IClickableMenu
         curY = _scrapeRect.Bottom + 8;
 
         // Voice & Attitude
-        curY = DrawTab5Box(b, "口吻 Voice & Attitude", _voiceBox, bodyLeft, curY, editorW, 50, mx, my);
+        DrawTab5Box(b, "口吻 Voice & Attitude", _voiceBox, _voiceDrawRect, mx, my);
         // Spoken Habits
-        curY = DrawTab5Box(b, "口头习惯 Spoken Habits", _habitsBox, bodyLeft, curY, editorW, 50, mx, my);
+        DrawTab5Box(b, "口头习惯 Spoken Habits", _habitsBox, _habitsDrawRect, mx, my);
         // Observation Lenses
-        curY = DrawTab5Box(b, "观察透镜 Observation Lenses", _lensesBox, bodyLeft, curY, editorW, 50, mx, my);
+        DrawTab5Box(b, "观察透镜 Observation Lenses", _lensesBox, _lensesDrawRect, mx, my);
 
         // 全局关注池
         string preoccLabel = "全局关注池（逗号分隔，上限 12）";
@@ -1773,16 +1855,11 @@ internal sealed class BioEditorMenu : IClickableMenu
         DrawSingleLineBox(b, _globalPreoccBox, null, mx, my);
     }
 
-    private int DrawTab5Box(SpriteBatch b, string label, MultilineTextBox box, int x, int y, int w, int h, int mx, int my)
+    private void DrawTab5Box(SpriteBatch b, string label, MultilineTextBox box, Rectangle rect, int mx, int my)
     {
-        b.DrawString(Game1.smallFont, label, new Vector2(x, y), Game1.textColor);
-        int lh = (int)Game1.smallFont.MeasureString(label).Y;
-        var old = box;
-        box = new MultilineTextBox(new Rectangle(x, y + lh + 2, w, h), maxLines: 512);
-        box.Text = old.Text;
-        box.Selected = old.Selected;
+        b.DrawString(Game1.smallFont, label, new Vector2(rect.X, rect.Y - 20), Game1.textColor);
+        box.SetBounds(rect);
         box.Draw(b);
-        return y + lh + 2 + h + 6;
     }
 
     private static Texture2D LoadTextBoxTexture()
