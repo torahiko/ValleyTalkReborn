@@ -219,7 +219,7 @@ internal sealed class AmbientBarkStateStore
 
         ModEntry.SMonitor?.Log(
             $"[AmbientBark] Hard reset: {npcName} (cleared all states including memory)",
-            StardewModdingAPI.LogLevel.Debug);
+            StardewModdingAPI.LogLevel.Trace);
     }
 
     /// <summary>

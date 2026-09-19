@@ -446,7 +446,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
         if (!npcInCurrentLocation)
         {
             ModEntry.SMonitor?.Log(
-                $"[AmbientBark] NotifyPlayerInteracted: {npcName} 不在当前地图或不存在，跳过状态清理但施加冷却",
+                $"[AmbientBark] NotifyPlayerInteracted: {npcName} is not on the current map or does not exist; skipping state cleanup but applying cooldown",
                 LogLevel.Trace);
 
             var stateOutOfMap = _stateStore.GetOrCreate(npcName);
@@ -474,7 +474,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
                     ImmediateEchoStore.RecordBark(npcName, unplayedTail, locationName);
 
                     ModEntry.SMonitor?.Log(
-                        $"[AmbientBark] 玩家交互打断：已将 {npcName} 队列中未播放的 {unplayedTail.Count} 条台词转入潜意识",
+                        $"[AmbientBark] Player interaction interruption: Moved {unplayedTail.Count} unplayed lines for {npcName} from the queue to the subconscious",
                         LogLevel.Debug);
                 }
 
@@ -487,7 +487,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
             }
 
             ModEntry.SMonitor?.Log(
-                $"[AmbientBark] 玩家已与 {npcName} 交互，已中断 Bark 并锁定冷静期 {cooldownSeconds}s",
+                $"[AmbientBark] Player interacted with {npcName}; bark interrupted and cooldown locked for {cooldownSeconds}s",
                 LogLevel.Debug);
         }
         else
@@ -499,7 +499,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
             }
 
             ModEntry.SMonitor?.Log(
-                $"[AmbientBark] {npcName} 首次交互，已创建 State 并施加 {cooldownSeconds}s 冷却",
+                $"[AmbientBark] {npcName} first interaction: State created and {cooldownSeconds}s cooldown applied",
                 LogLevel.Trace);
         }
     }
