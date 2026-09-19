@@ -59,7 +59,7 @@ namespace ValleytalkReborn
             for (int i = 0; i < _tags.Count; i++)
             {
                 string tag = _tags[i];
-                Vector2 sz = Game1.smallFont.MeasureString(tag);
+                Vector2 sz = CustomFontManager.MeasureString(tag, 18.5f);
                 int tagW = (int)sz.X + 26; // 留出文字和 [x] 的位置
 
                 if (curX + tagW > _bounds.Right)
@@ -153,11 +153,11 @@ namespace ValleytalkReborn
                 IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6),
                     r.X, r.Y, r.Width, r.Height, isHover ? new Color(245, 230, 210) : new Color(230, 220, 200), 2f, false);
 
-                b.DrawString(Game1.smallFont, _tags[idx], new Vector2(r.X + 6, r.Y + 4), Game1.textColor);
+                CustomFontManager.DrawString(b, _tags[idx], new Vector2(r.X + 6, r.Y + 4), Game1.textColor, 18.5f);
 
-                // 删除 'x'
+                // 删除 '×'
                 bool delHover = delR.Contains(mx, my);
-                b.DrawString(Game1.smallFont, "×", new Vector2(delR.X + 2, delR.Y - 1), delHover ? Color.Red : Color.DimGray);
+                CustomFontManager.DrawString(b, "×", new Vector2(delR.X + 2, delR.Y - 1), delHover ? Color.Red : Color.DimGray, 18.5f);
             }
 
             if (_isAdding)
@@ -182,7 +182,7 @@ namespace ValleytalkReborn
                 bool addHover = _addBtnRect.Contains(mx, my);
                 IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
                     _addBtnRect.X, _addBtnRect.Y, _addBtnRect.Width, _addBtnRect.Height, addHover ? new Color(255, 235, 205) : new Color(215, 195, 160), 2f, false);
-                b.DrawString(Game1.smallFont, "+ 新增", new Vector2(_addBtnRect.X + 10, _addBtnRect.Y + 4), Game1.textColor);
+                CustomFontManager.DrawString(b, "+ 新增", new Vector2(_addBtnRect.X + 10, _addBtnRect.Y + 4), Game1.textColor, 18.5f);
             }
         }
     }

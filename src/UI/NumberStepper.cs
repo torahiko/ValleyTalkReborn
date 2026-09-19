@@ -83,18 +83,18 @@ namespace ValleytalkReborn
             bool lHover = _leftBtn.Contains(mx, my);
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
                 _leftBtn.X, _leftBtn.Y, _leftBtn.Width, _leftBtn.Height, lHover ? new Color(255, 235, 205) : new Color(220, 200, 175), 2f, false);
-            b.DrawString(Game1.smallFont, "<", new Vector2(_leftBtn.X + 9, _leftBtn.Y + 4), Value > Min ? Game1.textColor : Color.Gray);
+            CustomFontManager.DrawString(b, "<", new Vector2(_leftBtn.X + 9, _leftBtn.Y + 4), Value > Min ? Game1.textColor : Color.Gray, 18.5f);
 
             // 加按钮
             bool rHover = _rightBtn.Contains(mx, my);
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
                 _rightBtn.X, _rightBtn.Y, _rightBtn.Width, _rightBtn.Height, rHover ? new Color(255, 235, 205) : new Color(220, 200, 175), 2f, false);
-            b.DrawString(Game1.smallFont, ">", new Vector2(_rightBtn.X + 9, _rightBtn.Y + 4), Value < Max ? Game1.textColor : Color.Gray);
+            CustomFontManager.DrawString(b, ">", new Vector2(_rightBtn.X + 9, _rightBtn.Y + 4), Value < Max ? Game1.textColor : Color.Gray, 18.5f);
 
             // 中间数值
             string label = $"{Value}{Suffix}";
-            Vector2 sz = Game1.smallFont.MeasureString(label);
-            b.DrawString(Game1.smallFont, label, new Vector2(_bounds.X + (_bounds.Width - sz.X) / 2f, _bounds.Y + 5), Game1.textColor);
+            Vector2 sz = CustomFontManager.MeasureString(label, 18.5f);
+            CustomFontManager.DrawString(b, label, new Vector2(_bounds.X + (_bounds.Width - sz.X) / 2f, _bounds.Y + 5), Game1.textColor, 18.5f);
         }
     }
 }

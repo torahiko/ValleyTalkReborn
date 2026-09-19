@@ -1241,6 +1241,16 @@ namespace ValleytalkReborn
                     Log.Error($"[ValleyTalkReborn] Error disposing CustomIcons: {ex.Message}");
                 }
 
+                // FONT-01-r2: 释放自定义字体链（须在 Log.Cleanup 之前，否则无法日志）
+                try
+                {
+                    CustomFontManager.Cleanup();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[ValleyTalkReborn] Error disposing CustomFontManager: {ex.Message}");
+                }
+
                 Log.Cleanup();
                 _isInitialized = false;
 
@@ -1307,6 +1317,9 @@ namespace ValleytalkReborn
             ModConfigMenu.Register(this);
             SpouseQueryService.Instance.ResolveApis();
             _dialogueCoordinator?.Subscribe();
+
+            // FONT-01-r2: 装载自定义字体链（GraphicsDevice 已就绪，主线程安全）
+            CustomFontManager.Initialize(Helper, Monitor);
         }
 
         /// <summary>
