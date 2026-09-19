@@ -461,7 +461,7 @@ namespace ValleytalkReborn
                 MassGiftTracker.Initialize();
                 ConsecutiveTalkTracker.Initialize();
                 ExtremeActivityTracker.Initialize();
-                DailyHeadlineGenerator.Initialize();
+                DailyHeadlinedGenerator.Initialize();
 
                 TrashCanTracker.Initialize(_harmony);
 
@@ -1120,7 +1120,7 @@ namespace ValleytalkReborn
                     MassGiftTracker.Cleanup();
                     ConsecutiveTalkTracker.Cleanup();
                     ExtremeActivityTracker.Cleanup();
-                    DailyHeadlineGenerator.Cleanup();
+                    DailyHeadlinedGenerator.Cleanup();
 
                     PerceptionManager.Instance?.Cleanup();
                     PlayerStateScanner.ResetOnSaveExit();
