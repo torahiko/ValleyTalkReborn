@@ -59,7 +59,8 @@ namespace ValleytalkReborn
                     return true;
 
                 // 补齐打字交互通知：防止玩家敲字期间 NPC 自言自语
-                ModEntry.Coordinator?.AmbientBark?.NotifyPlayerInteracted(__instance.Name, cooldownSeconds: 30);
+                if (ModEntry.Config.EnableAmbientBarks)
+                    ModEntry.Coordinator?.AmbientBark?.NotifyPlayerInteracted(__instance.Name, cooldownSeconds: 30);
 
                 DialogueBuilder.Instance.ClearContext(__instance.Name);
                 var character = DialogueBuilder.Instance.GetCharacter(__instance);
@@ -114,9 +115,9 @@ namespace ValleytalkReborn
             }
 
             // ══════════════════════════════════════════════
-            // ★★★ 第二道防线：将"已交谈"拦截前置 ★★★
-            // 在检查原版对话之前，先判断是否已聊过天且未开启无限对话
-            // ══════════════════════════════════════════════
+// ★★★ 第二道防线：将"已交谈"拦截前置 ★★★
+// 在检查原版对话之前，先判断是否已聊过天且未开启无限对话
+// ══════════════════════════════════════════════
             if (fsc.TalkedToToday && !ModEntry.Config.EnableInfiniteChat)
             {
                 bool isRomantic = fsc.IsMarried() || fsc.IsDating() || fsc.IsEngaged();
@@ -135,36 +136,8 @@ namespace ValleytalkReborn
                 }
                 else
                 {
-                    // 非恋爱关系且今天已聊过：只显示头顶气泡，不弹对话框
-                    bool isChinese = StardewValley.LocalizedContentManager.CurrentLanguageCode == StardewValley.LocalizedContentManager.LanguageCode.zh;
-                    int timeOfDay = StardewValley.Game1.timeOfDay;
-
-                    string[] pool;
-
-                    if (timeOfDay < 1200)
-                    {
-                        pool = isChinese
-                            ? new[] { "早上好。", "嗯...", "你好。" }
-                            : new[] { "Good morning.", "Hello.", "Greetings." };
-                    }
-                    else if (timeOfDay < 1800)
-                    {
-                        pool = isChinese
-                            ? new[] { "下午好。", "嗯...", "你好。" }
-                            : new[] { "Good afternoon.", "Hello.", "Greetings." };
-                    }
-                    else
-                    {
-                        pool = isChinese
-                            ? new[] { "晚上好。", "嗯...", "你好。" }
-                            : new[] { "Good evening.", "Hello.", "Greetings." };
-                    }
-
-                    string greeting = pool[StardewValley.Game1.random.Next(pool.Length)];
-
-                    __instance.showTextAboveHead(greeting);
-                    __result = true;
-                    return false;
+                    // 非恋爱关系且今天已聊过：直接放行原版逻辑（原版会转向玩家看一眼，不弹对话框）
+                    return true;
                 }
             }
 
