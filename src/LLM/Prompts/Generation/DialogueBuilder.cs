@@ -271,7 +271,7 @@ namespace ValleytalkReborn
                 }
             }
 
-            string formattedLine = FormatLine(theLine, allowDateUI, allowFollowUI);
+            string formattedLine = FormatLine(theLine, allowDateUI, allowFollowUI, speakerName: instance.Name);
             return $"{(dontSkipNext ? "" : "skip#")}{formattedLine}";
         }
 
@@ -343,7 +343,7 @@ namespace ValleytalkReborn
                 theLine, 
                 allowFallbackEmotes: !context.RoutingFlags.IsSimpleGreeting);
             
-            string formattedLine = FormatLine(theLine);
+            string formattedLine = FormatLine(theLine, speakerName: instance.Name);
             var newDialogue = new Dialogue(instance, $"Accept_{gift.Name}", formattedLine);
             return newDialogue;
         }
@@ -400,7 +400,7 @@ namespace ValleytalkReborn
                 theLine,
                 allowFallbackEmotes: !context.RoutingFlags.IsSimpleGreeting);
 
-            string formattedLine = FormatLine(theLine);
+            string formattedLine = FormatLine(theLine, speakerName: instance.Name);
             return new Dialogue(instance, $"Handover_{verdict}", formattedLine);
         }
 
@@ -455,7 +455,7 @@ namespace ValleytalkReborn
                 theLine, 
                 allowFallbackEmotes: !context.RoutingFlags.IsSimpleGreeting);
 
-            string formattedLine = FormatLine(theLine);
+            string formattedLine = FormatLine(theLine, speakerName: instance.Name);
             return new Dialogue(instance, dialogueKey, formattedLine);
         }
         
@@ -466,7 +466,87 @@ namespace ValleytalkReborn
             if (context.RoutingFlags.IsPathBlocked) return;
         }
 
-        private string FormatLine(string[] theLine, bool allowDateUI = false, bool allowFollowUI = false)
+        // ── 🌟 [PROMPT LEAK DEFENSE] 提示词元指令泄漏特征词库 ──
+        // 与 Prompts.cs 注入的系统级指令措辞（EN/ZH 双语分支）一一对应。
+        // ⚠ 维护约定：修改 Prompts.cs 中的标签措辞时必须同步本词库。
+        // 说明：合法 [ACTION:*] 标签已由 EmbodiedActionParser.ParseEmotesAndFaceOnly
+        //       在进入 FormatLine 前全部剥离，此处残留者必为泄漏/畸形标签，整行剔除不构成误伤。
+        private static readonly string[] PromptLeakPatterns = new[]
+        {
+            // EN 分支（isZh == false）
+            "Emote bubble tags",   // "- Emote bubble tags (head animation triggers):"
+            "Turn tags:",          // "- Turn tags: [ACTION:FACE:FARMER] ..."
+            "Movement tags:",      // "- Movement tags: [ACTION:STEP:FORWARD] ..."
+            "OUTPUT FORMAT",       // "OUTPUT FORMAT — Action tags MUST be placed ..."
+            "[SYSTEM TRIGGERS",    // "### [SYSTEM TRIGGERS: EMOTES & PHYSICAL ACTIONS]"
+            // ZH 分支（isZh == true）
+            "表情气泡标签",         // "- 表情气泡标签（对应角色头顶动画）："
+            "转向标签",             // "- 转向标签: [ACTION:FACE:FARMER] ..."
+            "位移标签",             // "- 位移标签: [ACTION:STEP:FORWARD] ..."
+            "格式规则",             // "格式规则 — 动作标签置于台词的最末尾："
+            "系统行为指令",         // "### [系统行为指令：肢体动作与表情]"
+            // 双语通用：模型复述的原始标签 token / 角色卡段落标记
+            "[CORE PERSPECTIVE]",
+            "[IN-PERSON REPLY]",
+            "[FAMILIAR DIRECTNESS]",
+            "system_action_reference",   // 结构化隔离容器标记（若泄漏必原样出现，含开/闭标签）
+            "NEVER output, mention",     // 容器内禁述指令（EN）
+            "禁止在台词中输出",           // 容器内禁述指令（ZH）
+            "ACTION:EMOTE:",
+            "ACTION:FACE:",
+            "ACTION:STEP:",
+        };
+
+        /// <summary>
+        /// 扫描并清洗 NPC 台词中混入的 System Prompt 元指令泄漏（Prompt Leak 防御）。
+        /// 两级递进：行级剥离（剔除脏行、保留有效对白）→ 整段熔断（清洗后无有效语义则降级占位符）。
+        /// 已知取舍：泄漏与台词混于同一物理行时整行剔除（宁误杀不漏放）。
+        /// </summary>
+        private static string SanitizeAndValidateNpcSpeech(string rawSpeech, string npcName)
+        {
+            if (string.IsNullOrWhiteSpace(rawSpeech))
+                return "...";
+
+            // 1. 快速通道：未命中任何泄漏特征则原样放行（正常台词零改动、零误伤）
+            bool hasLeak = PromptLeakPatterns.Any(p =>
+                rawSpeech.Contains(p, StringComparison.OrdinalIgnoreCase));
+            if (!hasLeak)
+                return rawSpeech;
+
+            string preview = rawSpeech.Length > 300 ? rawSpeech.Substring(0, 300) + "…" : rawSpeech;
+            ModEntry.SMonitor?.Log(
+                $"[DialogueBuilder] 检测到 {npcName} 台词中存在元指令泄漏特征，执行清洗拦截: {preview}",
+                LogLevel.Warn);
+
+            // 2. 行级剥离：剔除包含元指令特征的脏行，保留后续有效对白
+            var lines = rawSpeech.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+            var cleanLines = new List<string>();
+
+            foreach (var line in lines)
+            {
+                if (string.IsNullOrWhiteSpace(line)) continue;
+
+                bool dirty = PromptLeakPatterns.Any(p =>
+                    line.Contains(p, StringComparison.OrdinalIgnoreCase));
+                if (!dirty)
+                    cleanLines.Add(line);
+            }
+
+            string result = string.Join("\n", cleanLines).Trim();
+
+            // 3. 熔断判定：清洗后无有效语义文本则降级为占位符，彻底阻断其进入对话框与历史记录
+            if (string.IsNullOrWhiteSpace(result) || result.Length < 2)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[DialogueBuilder] {npcName} 台词清洗后无有效语义文本，已熔断降级为默认占位符。",
+                    LogLevel.Warn);
+                return "...";
+            }
+
+            return result;
+        }
+
+        private string FormatLine(string[] theLine, bool allowDateUI = false, bool allowFollowUI = false, string speakerName = "NPC")
         {
             if (theLine == null || theLine.Length == 0)
             {
@@ -482,6 +562,10 @@ namespace ValleytalkReborn
                     "",
                     System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
             }
+
+            // 🌟【PROMPT LEAK DEFENSE】分页与截断前，先清洗元指令泄漏并熔断拦截，
+            // 确保截断预算只花在有效对白上，且泄漏内容绝不进入对话框与历史记录。
+            theLine[0] = SanitizeAndValidateNpcSpeech(theLine[0], speakerName);
 
             // 🌟【强力防抽风 1】：NPC 台词分页与超长字符限制
             bool willAppendResponses = !(ModEntry.Config.TypedResponses == "Never" && !allowDateUI && !allowFollowUI);
@@ -538,12 +622,15 @@ namespace ValleytalkReborn
             sb.Append($"#$r -999999 0 {SldConstants.DialogueKeyPrefix}Silent#{Util.GetString("outputStaySilent")}");
 
             // 🌟【强力防抽风 2】：限制快捷建议选项数量，最多只展示前 3 个，避免选项填满甚至超出屏幕
-            int maxSuggestions = Math.Min(theLine.Length, 4); // 取 1 到 3
-            for (int i = 1; i < maxSuggestions; i++)
+            if (ModEntry.Config.EnableSuggestedResponses)
             {
-                if (string.IsNullOrWhiteSpace(theLine[i])) continue;
-                sb.Append($"#$r -999998 0 {SldConstants.DialogueKeyPrefix}Next#");
-                sb.Append(theLine[i]);
+                int maxSuggestions = Math.Min(theLine.Length, 4); // 取 1 到 3
+                for (int i = 1; i < maxSuggestions; i++)
+                {
+                    if (string.IsNullOrWhiteSpace(theLine[i])) continue;
+                    sb.Append($"#$r -999998 0 {SldConstants.DialogueKeyPrefix}Next#");
+                    sb.Append(theLine[i]);
+                }
             }
             if (ModEntry.Config.TypedResponses != "Never")
             {

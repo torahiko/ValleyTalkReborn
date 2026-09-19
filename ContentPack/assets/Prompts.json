@@ -94,6 +94,7 @@
         "instructionsFarmersName": "{{i18n:instructionsFarmersName}}",
         "instructionsHeading": "{{i18n:instructionsHeading}}",
         "instructionsIntro": "{{i18n:instructionsIntro}}",
+        "instructionsNoResponses": "{{i18n:instructionsNoResponses}}",
         "instructionsResponses": "{{i18n:instructionsResponses}}",
         "instructionsSingleLine": "{{i18n:instructionsSingleLine}}",
         "instructionsTranslate": "{{i18n:instructionsTranslate}}",

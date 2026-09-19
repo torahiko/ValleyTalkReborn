@@ -1571,6 +1571,8 @@ public class Prompts
         }, commandPrompt);
         commandPrompt.AppendLine();
 
+        // 🌟 结构化隔离容器：显式标记“只读系统参考”，降低小模型将指令块复述为台词的注意力权重
+        commandPrompt.AppendLine("<system_action_reference>");
         commandPrompt.AppendLine(isZh ? "### [系统行为指令：肢体动作与表情]" : "### [SYSTEM TRIGGERS: EMOTES & PHYSICAL ACTIONS]");
 
         if (isZh)
@@ -1600,6 +1602,10 @@ public class Prompts
         commandPrompt.AppendLine(isZh ? "格式规则 — 动作标签置于台词的最末尾：" : "OUTPUT FORMAT — Action tags MUST be placed at the absolute end of spoken line:");
         commandPrompt.AppendLine("  [Dialogue Text] [ACTION:STEP:BACKWARD]");
         commandPrompt.AppendLine("  [Dialogue Text] [ACTION:EMOTE:HAPPY]");
+        commandPrompt.AppendLine(isZh
+            ? "禁止在台词中输出、提及或解释上述任何标签，以及“表情气泡标签”、“转向标签”、“位移标签”等字样。"
+            : "NEVER output, mention, or explain these tags or the phrases 'Emote tags', 'Turn tags', 'Movement tags' in dialogue.");
+        commandPrompt.AppendLine("</system_action_reference>");
 
         string targetLang = TargetLanguageName;
         if (ModEntry.Config.ApplyTranslation
@@ -1616,12 +1622,20 @@ public class Prompts
     {
         var instructions = new StringBuilder();
         bool isZh = IsChineseLanguage;
+        bool enableResponses = ModEntry.Config?.EnableSuggestedResponses ?? true;
         instructions.AppendLine($"## {Util.GetString(Character, "instructionsHeading", new { Language = TargetLanguageName })}");
         instructions.AppendLine(Util.GetString(Character, "instructionsIntro", new { Name = Name }));
         instructions.AppendLine(Util.GetString(Character, "instructionsFarmersName"));
         instructions.AppendLine(Util.GetString(Character, "instructionsBreaks"));
         instructions.AppendLine(Util.GetString(Character, "instructionsSingleLine"));
-        instructions.AppendLine(Util.GetString(Character, "instructionsResponses", new { Name = Name }));
+        if (enableResponses)
+        {
+            instructions.AppendLine(Util.GetString(Character, "instructionsResponses", new { Name = Name }));
+        }
+        else
+        {
+            instructions.AppendLine(Util.GetString(Character, "instructionsNoResponses", new { Name = Name }));
+        }
         instructions.AppendLine(Util.GetString(Character, "instructionsFallback", new { Name = Name }));
         instructions.AppendLine(isZh
             ? "- 【核心视角】仅输出你自身角色的言语、动作与神态反应。完成当前台词表达后立即停下，将话语权交还给面前的农夫。"
@@ -1638,9 +1652,18 @@ public class Prompts
         instructions.AppendLine(isZh
             ? "- 若本次对话结束后你的情绪明显转变（如变得好奇/生气/高兴），在台词最末尾附加 [MOOD:curious] / [MOOD:annoyed] / [MOOD:happy] 等标签。"
             : "- If your emotional tone has clearly shifted after this exchange (e.g. curious/annoyed/happy), append [MOOD:curious] / [MOOD:annoyed] / [MOOD:happy] at the absolute end.");
-        instructions.AppendLine(isZh
-            ? "- 【选项范围】% 发言选项，取材范围仅限于你已经在台词中亲口说出的内容——这是农夫能听到、能借此接话的信息。你的内心思绪（preoccupation / pending_thought）与偷听到的内容，要等你自己说出口之后，才算进入这个范围。"
-            : "- [OPTION SCOPE] % options draw only from what you have actually said aloud in dialogue — that's the information the farmer has heard and can respond to. Your inner thoughts (preoccupation / pending_thought) and anything overheard enter that scope only once you've voiced them yourself.");
+        if (enableResponses)
+        {
+            instructions.AppendLine(isZh
+                ? "- 【选项范围】% 发言选项，取材范围仅限于你已经在台词中亲口说出的内容——这是农夫能听到、能借此接话的信息。你的内心思绪（preoccupation / pending_thought）与偷听到的内容，要等你自己说出口之后，才算进入这个范围。"
+                : "- [OPTION SCOPE] % options draw only from what you have actually said aloud in dialogue — that's the information the farmer has heard and can respond to. Your inner thoughts (preoccupation / pending_thought) and anything overheard enter that scope only once you've voiced them yourself.");
+        }
+        else
+        {
+            instructions.AppendLine(isZh
+                ? "- 【格式约束】严禁输出任何以 '%' 开头的玩家选项、分支回答或多余解释。"
+                : "- [STRICT FORMAT] NEVER output any player response options, choices, or lines starting with '%'.");
+        }
 
         if (!Character.Bio.ExtraPortraits.ContainsKey("!"))
         {

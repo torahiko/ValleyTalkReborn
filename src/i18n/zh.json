@@ -101,6 +101,8 @@
   "configSectionAmbientDialogue": "环境与NPC互动",
   "configEnableBark": "启用环境自语",
   "configEnableBarkTooltip": "NPC会根据周围环境和自身生活状态，不时喃喃自语或发出感慨，以对话气泡的形式呈现。（会消耗少量token）",
+  "configEnableSuggestedResponses": "生成预设回复选项",
+  "configEnableSuggestedResponsesTooltip": "开启时，AI 会在台词后生成 2~3 个快速回复选项。关闭后不再生成选项（可节省 Token 并减轻小模型幻觉），对话框仅保留\"保持沉默\"和自定义输入。",
   "configRecordEventDialogue": "记录事件与过场对话",
   "configRecordEventDialogueTooltip": "在剧情事件与过场动画中，将 NPC 对白与农夫选项记录进历史。",
   "configEnableA2A": "启用NPC互动闲聊",
