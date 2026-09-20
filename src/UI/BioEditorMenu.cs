@@ -79,9 +79,7 @@ namespace ValleytalkReborn
         // ── 核心状态 ──────────────────────────────────────────────────────
         private readonly string _npcName;
         private readonly IClickableMenu _returnMenu;
-        private BioData _bio;
-        private bool _hasOverlay;
-        private bool _dirty;
+        private readonly BioEditorViewModel _vm;
         private int _activeTab;
         private string _hoverText;
 
@@ -103,9 +101,6 @@ namespace ValleytalkReborn
         private Rectangle _uniqueCardRect;
         private Rectangle _homeBedCardRect;
 
-        private static readonly string BiographyScaffold =
-            "[IDENTITY]\n- Identity: You are {NPC}.\n- Social Anchor: \n- Living Situation: \n\n" +
-            "[PSYCHOLOGICAL CONFLICTS]\n- ";
 
         // ── Tab 2 控件（言行举止） ────────────────────────────────────────
         private DialogueTextInputBox _behaviorBox;
@@ -117,7 +112,6 @@ namespace ValleytalkReborn
         private Rectangle _tab2RightColRect;
 
         // ── Tab 3 控件（好感演变） ────────────────────────────────────────
-        private int _stageIdx = -1;
         private DialogueTextInputBox _stageTextBox;
         private DialogueTextInputBox _stageBarkBox;
         private TagListEditor _stageTagEditor;
@@ -133,10 +127,6 @@ namespace ValleytalkReborn
         private Rectangle _gateJojaMemberPillRect;
 
         // ── Tab 4 控件（社交关系） ────────────────────────────────────────
-        private int _relSelectedIndex = -1;
-        private readonly List<string> _allNpcs = new();
-        private readonly List<string> _filteredNpcs = new();
-        private string _relSelectedNpc = "";
         private int _relListScrollOffset = 0;
         private TextBox _relSearchBox;
         private TextBox _relHeadingBox;
@@ -172,8 +162,7 @@ namespace ValleytalkReborn
             _npcName = npcName;
             _returnMenu = returnMenu;
 
-            _bio = ModEntry.BioStorage!.LoadEditableBio(npcName);
-            _hasOverlay = ModEntry.BioStorage.HasCustomOverlay(npcName);
+            _vm = new BioEditorViewModel(npcName, ModEntry.BioStorage!);
             _activeTab = 0;
 
             LoadNpcPortrait();
@@ -199,47 +188,42 @@ namespace ValleytalkReborn
             _stageTagEditor = new TagListEditor(Rectangle.Empty);
             _stageTagEditor.OnChanged += () =>
             {
-                if (_stageIdx >= 0 && _stageIdx < _bio.ProgressStates.Count)
-                {
-                    _bio.ProgressStates[_stageIdx].Preoccupations = _stageTagEditor.Tags.Count > 0 ? _stageTagEditor.Tags.ToList() : null;
-                    MarkDirty();
-                }
+                _vm.SetStagePreoccupations(_stageTagEditor.Tags.Count > 0 ? _stageTagEditor.Tags.ToList() : null);
             };
 
             _globalTagEditor = new TagListEditor(Rectangle.Empty);
             _globalTagEditor.OnChanged += () =>
             {
-                _bio.Preoccupations = _globalTagEditor.Tags.Count > 0 ? _globalTagEditor.Tags.ToList() : null;
-                MarkDirty();
+                _vm.SyncGlobalPreoccupations(_globalTagEditor.Tags.Count > 0 ? _globalTagEditor.Tags.ToList() : null);
             };
 
             _heartsStepper = new NumberStepper(Rectangle.Empty, 0, 0, 14, 2, " 心");
             _heartsStepper.OnChanged += val =>
             {
-                if (_stageIdx >= 0 && _stageIdx < _bio.ProgressStates.Count)
-                {
-                    _bio.ProgressStates[_stageIdx].RequiredHearts = val;
-                    MarkDirty();
-                }
+                _vm.SetStageHearts(val);
             };
 
             _closeButton = new ClickableTextureComponent(
                 new Rectangle(xPositionOnScreen + width - 52, yPositionOnScreen + 16, 36, 36),
                 Game1.mouseCursors, new Rectangle(337, 494, 12, 12), 3f);
 
-            _biographyBox.SetText(_bio.Biography ?? string.Empty);
-            _uniqueBox.Text = _bio.Unique ?? string.Empty;
-            _homeBedCheckbox.isChecked = _bio.HomeLocationBed;
+            _biographyBox.SetText(_vm.GetBiography());
+            _uniqueBox.Text = _vm.GetUnique();
+            _homeBedCheckbox.isChecked = _vm.GetHomeLocationBed();
 
-            _enableBarkCheckbox.isChecked = _bio.EnableAmbientBarks;
-            _globalTagEditor.SetTags(_bio.Preoccupations);
+            _enableBarkCheckbox.isChecked = _vm.Bio.EnableAmbientBarks;
+            _globalTagEditor.SetTags(_vm.Bio.Preoccupations);
             SyncTab5BarkBoxes();
 
-            InitNpcList();
-            if (_filteredNpcs.Count > 0)
-                SelectRelationship(0);
+            _vm.InitNpcCatalog();
+            _vm.RecomputeFilteredNpcs(_relSearchBox.Text);
+            if (_vm.FilteredNpcs.Count > 0)
+            {
+                _vm.SelectRelationship(0);
+                SelectRelationshipView(_vm.SelectedRelationshipNpc);
+            }
 
-            if (_bio.ProgressStates.Count > 0)
+            if (_vm.Bio.ProgressStates.Count > 0)
                 SelectStage(0);
 
             Layout();
@@ -365,7 +349,7 @@ namespace ValleytalkReborn
                 for (int i = 0; i < _stageRowRects.Length; i++)
                     _stageRowRects[i] = new Rectangle(_stageLeftColRect.X, _stageLeftColRect.Y + 34 + i * (rowH + 4), leftColW, rowH);
 
-                int nextY = _stageLeftColRect.Y + 34 + Math.Min(_bio.ProgressStates.Count, 8) * (rowH + 4);
+                int nextY = _stageLeftColRect.Y + 34 + Math.Min(_vm.Bio.ProgressStates.Count, 8) * (rowH + 4);
                 _newStageRect = new Rectangle(_stageLeftColRect.X, nextY, leftColW, 34);
 
                 int rightX = _stageRightColRect.X;
@@ -466,84 +450,6 @@ namespace ValleytalkReborn
         }
 
         // ── 社交关系列表与精准过滤搜索 ────────────────────────────────────────
-        private void InitNpcList()
-        {
-            _allNpcs.Clear();
-            var friendshipData = Game1.player?.friendshipData;
-
-            var rawCandidates = NpcCandidateQueryService.CollectRawCandidates(_npcName);
-
-            if (_bio.Relationships != null)
-            {
-                foreach (var configuredKey in _bio.Relationships.Keys)
-                {
-                    if (!string.Equals(configuredKey, _npcName, StringComparison.OrdinalIgnoreCase))
-                        rawCandidates.Add(configuredKey);
-                }
-            }
-
-            var resolvedNpcs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var name in rawCandidates)
-            {
-                string dispName = Game1.getCharacterFromName(name)?.displayName;
-                if (string.IsNullOrWhiteSpace(dispName)) dispName = name;
-
-                if (resolvedNpcs.TryGetValue(dispName, out var existingInternalName))
-                {
-                    bool isCurrentTrueMarlon = name.Equals("Marlon", StringComparison.OrdinalIgnoreCase);
-                    bool isExistingTrueMarlon = existingInternalName.Equals("Marlon", StringComparison.OrdinalIgnoreCase);
-
-                    if (isCurrentTrueMarlon && !isExistingTrueMarlon)
-                    {
-                        resolvedNpcs[dispName] = name;
-                    }
-                    else if (!isCurrentTrueMarlon && isExistingTrueMarlon)
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        bool existingHasFriendship = friendshipData != null && friendshipData.ContainsKey(existingInternalName);
-                        bool currentHasFriendship = friendshipData != null && friendshipData.ContainsKey(name);
-                        if ((currentHasFriendship && !existingHasFriendship) ||
-                            (currentHasFriendship == existingHasFriendship && name.Length < existingInternalName.Length))
-                        {
-                            resolvedNpcs[dispName] = name;
-                        }
-                    }
-                }
-                else
-                {
-                    resolvedNpcs[dispName] = name;
-                }
-            }
-
-            _allNpcs.AddRange(resolvedNpcs.Values);
-            FilterNpcList();
-        }
-
-        private void FilterNpcList()
-        {
-            _filteredNpcs.Clear();
-            string query = _relSearchBox?.Text?.Trim() ?? "";
-
-            var sorted = _allNpcs.OrderByDescending(n => _bio.Relationships.ContainsKey(n))
-                                 .ThenBy(n => Game1.getCharacterFromName(n)?.displayName ?? n);
-
-            foreach (var name in sorted)
-            {
-                string disp = Game1.getCharacterFromName(name)?.displayName ?? name;
-                if (string.IsNullOrEmpty(query) ||
-                    disp.Contains(query, StringComparison.CurrentCultureIgnoreCase) ||
-                    name.Contains(query, StringComparison.OrdinalIgnoreCase))
-                {
-                    _filteredNpcs.Add(name);
-                }
-            }
-            RecalculateTab4List();
-        }
-
         private void RecalculateTab4List()
         {
             _relVisibleItemRects.Clear();
@@ -552,9 +458,9 @@ namespace ValleytalkReborn
             int rowH = 36;
             int maxVisible = Math.Max(1, listAvailH / rowH);
 
-            _relListScrollOffset = Math.Clamp(_relListScrollOffset, 0, Math.Max(0, _filteredNpcs.Count - maxVisible));
+            _relListScrollOffset = Math.Clamp(_relListScrollOffset, 0, Math.Max(0, _vm.FilteredNpcs.Count - maxVisible));
 
-            for (int i = 0; i < maxVisible && _relListScrollOffset + i < _filteredNpcs.Count; i++)
+            for (int i = 0; i < maxVisible && _relListScrollOffset + i < _vm.FilteredNpcs.Count; i++)
             {
                 int idx = _relListScrollOffset + i;
                 var r = new Rectangle(_relLeftColRect.X, listTop + i * rowH, _relLeftColRect.Width, rowH - 4);
@@ -571,102 +477,34 @@ namespace ValleytalkReborn
             if (_activeTab == 0)
             {
                 _biographyBox.Update(time);
-                if (_biographyBox.Text != _bio.Biography) { _bio.Biography = _biographyBox.Text; MarkDirty(); }
-                if (_uniqueBox.Text != (_bio.Unique ?? string.Empty)) { _bio.Unique = _uniqueBox.Text; MarkDirty(); }
-                if (_homeBedCheckbox.isChecked != _bio.HomeLocationBed) { _bio.HomeLocationBed = _homeBedCheckbox.isChecked; MarkDirty(); }
+                _vm.SetBiography(_biographyBox.Text);
+                _vm.SetUnique(_uniqueBox.Text);
+                _vm.SetHomeLocationBed(_homeBedCheckbox.isChecked);
             }
             else if (_activeTab == 1)
             {
                 _behaviorBox.Update(time);
                 _dialogueExamplesBox.Update(time);
-
-                string bText = _behaviorBox.Text ?? string.Empty;
-                if (_bio.Traits.TryGetValue("BehavioralRules", out var bEntry) && bEntry != null)
-                {
-                    if (bEntry.Description != bText) { bEntry.Description = bText; MarkDirty(); }
-                }
-                else if (!string.IsNullOrEmpty(bText))
-                {
-                    EnsureTraitEntry("BehavioralRules", "Tone & Mannerisms Constraints").Description = bText;
-                    MarkDirty();
-                }
-
-                string dText = _dialogueExamplesBox.Text ?? string.Empty;
-                if (_bio.Traits.TryGetValue("DialogueExamples", out var dEntry) && dEntry != null)
-                {
-                    if (dEntry.Description != dText) { dEntry.Description = dText; MarkDirty(); }
-                }
-                else if (!string.IsNullOrEmpty(dText))
-                {
-                    EnsureTraitEntry("DialogueExamples", "Dialogue Examples").Description = dText;
-                    MarkDirty();
-                }
+                _vm.SyncTraitDescription("BehavioralRules", "Tone & Mannerisms Constraints", _behaviorBox.Text ?? string.Empty);
+                _vm.SyncTraitDescription("DialogueExamples", "Dialogue Examples", _dialogueExamplesBox.Text ?? string.Empty);
             }
             else if (_activeTab == 2)
             {
-                if (_stageIdx >= 0 && _stageIdx < _bio.ProgressStates.Count)
-                {
-                    var s = _bio.ProgressStates[_stageIdx];
-                    _stageTextBox.Update(time);
-                    _stageBarkBox.Update(time);
-
-                    if ((s.Text ?? "") != _stageTextBox.Text) { s.Text = _stageTextBox.Text; MarkDirty(); }
-                    if ((s.BarkMindset ?? "") != _stageBarkBox.Text) { s.BarkMindset = _stageBarkBox.Text; MarkDirty(); }
-                }
+                _stageTextBox.Update(time);
+                _stageBarkBox.Update(time);
+                _vm.SyncStageEditor(_stageTextBox.Text, _stageBarkBox.Text);
             }
             else if (_activeTab == 3)
             {
-                if (!string.IsNullOrEmpty(_relSelectedNpc))
-                {
-                    string heading = _relHeadingBox.Text ?? string.Empty;
-                    string desc = _relDescBox.Text ?? string.Empty;
-
-                    if (_bio.Relationships.TryGetValue(_relSelectedNpc, out var rel) && rel != null)
-                    {
-                        if (rel.Heading != heading) { rel.Heading = heading; MarkDirty(); }
-                        if (rel.Description != desc) { rel.Description = desc; MarkDirty(); }
-                    }
-                    else if (!string.IsNullOrEmpty(heading) || !string.IsNullOrEmpty(desc))
-                    {
-                        var entry = EnsureRelationshipEntry(_relSelectedNpc);
-                        entry.Heading = heading;
-                        entry.Description = desc;
-                        MarkDirty();
-                    }
-                }
+                _vm.SyncRelationshipEditor(_vm.SelectedRelationshipNpc, _relHeadingBox.Text ?? string.Empty, _relDescBox.Text ?? string.Empty);
             }
             else if (_activeTab == 4)
             {
                 _voiceBox.Update(time);
                 _habitsBox.Update(time);
                 _lensesBox.Update(time);
-
-                string v = _voiceBox.Text ?? string.Empty;
-                string h = _habitsBox.Text ?? string.Empty;
-                string l = _lensesBox.Text ?? string.Empty;
-
-                bool barkChanged = false;
-                if (_bio.AmbientBarkPrompt != null)
-                {
-                    if (_bio.AmbientBarkPrompt.VoiceAndAttitude != v) { _bio.AmbientBarkPrompt.VoiceAndAttitude = v; barkChanged = true; }
-                    if (_bio.AmbientBarkPrompt.SpokenHabits != h) { _bio.AmbientBarkPrompt.SpokenHabits = h; barkChanged = true; }
-                    if (_bio.AmbientBarkPrompt.ObservationLenses != l) { _bio.AmbientBarkPrompt.ObservationLenses = l; barkChanged = true; }
-                }
-                else if (!string.IsNullOrEmpty(v) || !string.IsNullOrEmpty(h) || !string.IsNullOrEmpty(l))
-                {
-                    var p = EnsureAmbientBarkPrompt();
-                    p.VoiceAndAttitude = v;
-                    p.SpokenHabits = h;
-                    p.ObservationLenses = l;
-                    barkChanged = true;
-                }
-                if (barkChanged) MarkDirty();
-
-                if (_enableBarkCheckbox.isChecked != _bio.EnableAmbientBarks)
-                {
-                    _bio.EnableAmbientBarks = _enableBarkCheckbox.isChecked;
-                    MarkDirty();
-                }
+                _vm.SyncAmbientBarks(_voiceBox.Text ?? string.Empty, _habitsBox.Text ?? string.Empty, _lensesBox.Text ?? string.Empty);
+                _vm.SetEnableAmbientBarks(_enableBarkCheckbox.isChecked);
             }
         }
 
@@ -716,25 +554,27 @@ namespace ValleytalkReborn
 
             if (_behaviorScaffoldRect.Contains(x, y))
             {
-                _behaviorBox.SetText(
-                    "[VOICE]\n- Tone: \n- Cadence: \n\n[SPEECH PATTERNS]\n- \n\n[MANNERISMS]\n- \n\n" +
-                    "[IMMEDIATE REFLEXES]\n- \n\n[CONTEXT OVERRIDE]\n- ");
-                MarkDirty();
+                string scaffold = "[VOICE]\n- Tone: \n- Cadence: \n\n[SPEECH PATTERNS]\n- \n\n[MANNERISMS]\n- \n\n" +
+                    "[IMMEDIATE REFLEXES]\n- \n\n[CONTEXT OVERRIDE]\n- ";
+                _vm.SyncTraitDescription("BehavioralRules", "Tone & Mannerisms Constraints", scaffold);
+                _behaviorBox.SetText(scaffold);
                 Game1.playSound("coin");
                 return;
             }
 
             if (_insertBreakRect.Contains(x, y))
             {
-                _dialogueExamplesBox.SetText((_dialogueExamplesBox.Text ?? "") + "#$b#");
-                MarkDirty();
+                string next = BioEditorViewModel.ApplyDialogueBreakInsert(_dialogueExamplesBox.Text);
+                _dialogueExamplesBox.SetText(next);
+                _vm.SyncTraitDescription("DialogueExamples", "Dialogue Examples", next);
                 Game1.playSound("shiny4");
                 return;
             }
             if (_insertChoiceRect.Contains(x, y))
             {
-                _dialogueExamplesBox.SetText((_dialogueExamplesBox.Text ?? "").TrimEnd() + "\n% 选项文本内容");
-                MarkDirty();
+                string next = BioEditorViewModel.ApplyDialogueChoiceInsert(_dialogueExamplesBox.Text);
+                _dialogueExamplesBox.SetText(next);
+                _vm.SyncTraitDescription("DialogueExamples", "Dialogue Examples", next);
                 Game1.playSound("shiny4");
                 return;
             }
@@ -744,7 +584,7 @@ namespace ValleytalkReborn
 
         private void HandleTab3Click(int x, int y)
         {
-            int visibleStages = Math.Min(_bio.ProgressStates.Count, 8);
+            int visibleStages = Math.Min(_vm.Bio.ProgressStates.Count, 8);
             for (int i = 0; i < visibleStages; i++)
             {
                 if (_stageRowRects[i].Contains(x, y))
@@ -755,57 +595,36 @@ namespace ValleytalkReborn
                 }
             }
 
-            if (_bio.ProgressStates.Count < 8 && _newStageRect.Contains(x, y))
+            if (_vm.CanAddStage && _newStageRect.Contains(x, y))
             {
-                _bio.ProgressStates.Add(new BioData.ProgressStateEntry { RequiredHearts = 0 });
-                SelectStage(_bio.ProgressStates.Count - 1);
-                MarkDirty();
+                _vm.AddStage();
+                SelectStage(_vm.SelectedStageIndex);
                 Game1.playSound("newRecipe");
                 Layout();
                 return;
             }
 
-            if (_stageIdx < 0 || _stageIdx >= _bio.ProgressStates.Count) return;
-            var currentStage = _bio.ProgressStates[_stageIdx];
+            if (_vm.SelectedStageIndex < 0 || _vm.SelectedStageIndex >= _vm.Bio.ProgressStates.Count) return;
 
             if (_heartsStepper.ReceiveLeftClick(x, y)) return;
 
             if (_gateMarriedPillRect.Contains(x, y))
             {
-                currentStage.RequireMarried = !currentStage.RequireMarried;
-                MarkDirty();
+                _vm.CycleRequireMarried();
                 Game1.playSound("drumkit6");
                 return;
             }
 
             if (_gateJojaClosedPillRect.Contains(x, y))
             {
-                currentStage.RequireJojaMartClosed = currentStage.RequireJojaMartClosed.HasValue
-                    ? (currentStage.RequireJojaMartClosed.Value ? false : (bool?)null)
-                    : true;
-
-                if (currentStage.RequireJojaMartClosed == true && currentStage.RequireJojaMember == true)
-                {
-                    currentStage.RequireJojaMember = null;
-                }
-
-                MarkDirty();
+                _vm.CycleJojaMartClosed();
                 Game1.playSound("drumkit6");
                 return;
             }
 
             if (_gateJojaMemberPillRect.Contains(x, y))
             {
-                currentStage.RequireJojaMember = currentStage.RequireJojaMember.HasValue
-                    ? (currentStage.RequireJojaMember.Value ? false : (bool?)null)
-                    : true;
-
-                if (currentStage.RequireJojaMember == true && currentStage.RequireJojaMartClosed == true)
-                {
-                    currentStage.RequireJojaMember = null;
-                }
-
-                MarkDirty();
+                _vm.CycleJojaMember();
                 Game1.playSound("drumkit6");
                 return;
             }
@@ -813,14 +632,12 @@ namespace ValleytalkReborn
             if (_deleteStageRect.Contains(x, y))
             {
                 Game1.activeClickableMenu = new ConfirmationDialog(
-                    $"确定删除好感档位 {_stageIdx + 1}？",
+                    $"确定删除好感档位 {_vm.SelectedStageIndex + 1}？",
                     _ =>
                     {
                         Game1.activeClickableMenu = this;
-                        _bio.ProgressStates.RemoveAt(_stageIdx);
-                        _stageIdx = Math.Min(_stageIdx, _bio.ProgressStates.Count - 1);
-                        if (_stageIdx >= 0) SelectStage(_stageIdx);
-                        MarkDirty();
+                        _vm.DeleteSelectedStage();
+                        if (_vm.SelectedStageIndex >= 0) SelectStage(_vm.SelectedStageIndex);
                         Layout();
                     },
                     _ => Game1.activeClickableMenu = this);
@@ -846,7 +663,8 @@ namespace ValleytalkReborn
             {
                 if (rect.Contains(x, y))
                 {
-                    SelectRelationship(idx);
+                    _vm.SelectRelationship(idx);
+                    SelectRelationshipView(_vm.SelectedRelationshipNpc);
                     Game1.playSound("smallSelect");
                     return;
                 }
@@ -859,26 +677,27 @@ namespace ValleytalkReborn
             }
             if (ContainsPoint(_relDescBox, x, y)) { FocusDialogueBox(_relDescBox, x, y); return; }
 
-            if (_relAddRect.Contains(x, y) && !string.IsNullOrEmpty(_relSelectedNpc))
+            if (_relAddRect.Contains(x, y) && !string.IsNullOrEmpty(_vm.SelectedRelationshipNpc))
             {
-                EnsureRelationshipEntry(_relSelectedNpc);
-                MarkDirty();
-                FilterNpcList();
+                _vm.EnsureRelationship(_vm.SelectedRelationshipNpc);
+                _vm.RecomputeFilteredNpcs(_relSearchBox.Text);
+                RecalculateTab4List();
                 Game1.playSound("coin");
                 return;
             }
-            if (_relDelRect.Contains(x, y) && !string.IsNullOrEmpty(_relSelectedNpc))
+            if (_relDelRect.Contains(x, y) && !string.IsNullOrEmpty(_vm.SelectedRelationshipNpc))
             {
-                string target = _relSelectedNpc;
+                string target = _vm.SelectedRelationshipNpc;
                 Game1.activeClickableMenu = new ConfirmationDialog(
                     $"删除 {_npcName} → {target} 的独立人设关系？",
                     _ =>
                     {
                         Game1.activeClickableMenu = this;
-                        _bio.Relationships.Remove(target);
-                        MarkDirty();
-                        FilterNpcList();
-                        SelectRelationship(_relSelectedIndex);
+                        _vm.RemoveRelationship(target);
+                        _vm.RecomputeFilteredNpcs(_relSearchBox.Text);
+                        RecalculateTab4List();
+                        _vm.SelectRelationship(_vm.SelectedRelationshipIndex);
+                        SelectRelationshipView(_vm.SelectedRelationshipNpc);
                     },
                     _ => Game1.activeClickableMenu = this);
                 return;
@@ -890,7 +709,7 @@ namespace ValleytalkReborn
         private void HandleTab5Click(int x, int y)
         {
             if (_enableBarkCheckbox.bounds.Contains(x, y)) { _enableBarkCheckbox.receiveLeftClick(x, y); return; }
-            if (_scrapeRect.Contains(x, y)) { ScrapeExamples(); return; }
+            if (_scrapeRect.Contains(x, y)) { ScrapeExamplesFromVm(); return; }
             if (_globalTagEditor.ReceiveLeftClick(x, y)) return;
             if (ContainsPoint(_voiceBox, x, y)) { FocusDialogueBox(_voiceBox, x, y); return; }
             if (ContainsPoint(_habitsBox, x, y)) { FocusDialogueBox(_habitsBox, x, y); return; }
@@ -946,7 +765,8 @@ namespace ValleytalkReborn
                 if (_activeTab == 3 && _relSearchBox.Selected)
                 {
                     base.receiveKeyPress(key);
-                    FilterNpcList();
+                    _vm.RecomputeFilteredNpcs(_relSearchBox.Text);
+                    RecalculateTab4List();
                     return;
                 }
 
@@ -991,7 +811,7 @@ namespace ValleytalkReborn
             {
                 if (_relLeftColRect.Contains(mx, my))
                 {
-                    _relListScrollOffset = Math.Clamp(_relListScrollOffset - (direction > 0 ? 1 : -1), 0, Math.Max(0, _filteredNpcs.Count - 6));
+                    _relListScrollOffset = Math.Clamp(_relListScrollOffset - (direction > 0 ? 1 : -1), 0, Math.Max(0, _vm.FilteredNpcs.Count - 6));
                     RecalculateTab4List();
                     return;
                 }
@@ -1051,7 +871,7 @@ namespace ValleytalkReborn
             // 底部操作按钮（顺序已调整：取消 -> 保存 -> 恢复默认）
             DrawActionButton(b, _cancelRect, "返回 / 取消 (Esc)", mx, my, isDanger: false);
             DrawActionButton(b, _saveRect, "✔ 保存修改 (Ctrl+S)", mx, my, isPrimary: true);
-            DrawActionButton(b, _resetRect, "恢复原版基准", mx, my, isDanger: true, isEnabled: _hasOverlay);
+            DrawActionButton(b, _resetRect, "恢复原版基准", mx, my, isDanger: true, isEnabled: _vm.HasOverlay);
 
             _closeButton.draw(b);
 
@@ -1134,8 +954,8 @@ namespace ValleytalkReborn
             CustomFontManager.DrawStringBold(b, $"{disp} ({_npcName}) · 人设工作台", new Vector2(headX + pSize + 12, headY + 2), Game1.textColor, TitleFontSize);
 
             // 状态标签：走 Medium 15f
-            string status = _dirty ? "● 存在未保存改动" : (_hasOverlay ? "★ 自定义覆盖生效中" : "默认人设基准");
-            Color statusCol = _dirty ? new Color(220, 90, 20) : (_hasOverlay ? new Color(30, 140, 40) : Color.DimGray);
+            string status = _vm.IsDirty ? "● 存在未保存改动" : (_vm.HasOverlay ? "★ 自定义覆盖生效中" : "默认人设基准");
+            Color statusCol = _vm.IsDirty ? new Color(220, 90, 20) : (_vm.HasOverlay ? new Color(30, 140, 40) : Color.DimGray);
             CustomFontManager.DrawString(b, status, new Vector2(headX + pSize + 14, headY + 30), statusCol, TipFontSize);
         }
 
@@ -1192,14 +1012,14 @@ namespace ValleytalkReborn
         private void DrawTab3(SpriteBatch b, int mx, int my)
         {
             DrawCard(b, _stageLeftColRect);
-            CustomFontManager.DrawString(b, $"好感演变档位 ({_bio.ProgressStates.Count}/8)",
+            CustomFontManager.DrawString(b, $"好感演变档位 ({_vm.Bio.ProgressStates.Count}/8)",
                 new Vector2(_stageLeftColRect.X + 12, _stageLeftColRect.Y + 8), Game1.textColor, SectionHeaderSize);
 
-            int visibleStages = Math.Min(_bio.ProgressStates.Count, 8);
+            int visibleStages = Math.Min(_vm.Bio.ProgressStates.Count, 8);
             for (int i = 0; i < visibleStages; i++)
             {
                 var r = _stageRowRects[i];
-                bool isSel = (i == _stageIdx);
+                bool isSel = (i == _vm.SelectedStageIndex);
                 bool isHover = r.Contains(mx, my);
 
                 Color bg = isSel ? new Color(215, 185, 140) : (isHover ? new Color(255, 235, 205) : Color.White);
@@ -1207,22 +1027,22 @@ namespace ValleytalkReborn
                 b.Draw(Game1.staminaRect, new Rectangle(r.X + 1, r.Y + 1, r.Width - 2, r.Height - 2), bg);
                 IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9), r.X, r.Y, r.Width, r.Height, isSel ? new Color(180, 130, 80) : Color.Wheat, 2f, false);
 
-                string gateSummary = BuildGateSummary(_bio.ProgressStates[i]);
+                string gateSummary = _vm.BuildGateSummary(i);
                 // 列表项统一走 Medium 18f
                 CustomFontManager.DrawString(b, $"档位 {i + 1}  [{gateSummary}]", new Vector2(r.X + 12, r.Y + 8), isSel ? Game1.textColor : Color.Black, ContentFontSize);
             }
 
-            if (_bio.ProgressStates.Count < 8)
+            if (_vm.CanAddStage)
                 DrawActionButton(b, _newStageRect, "+ 新建好感档位", mx, my, false);
 
-            if (_stageIdx < 0 || _stageIdx >= _bio.ProgressStates.Count)
+            if (_vm.SelectedStageIndex < 0 || _vm.SelectedStageIndex >= _vm.Bio.ProgressStates.Count)
             {
                 CustomFontManager.DrawString(b, "从左侧列表选择或添加一个好感档位开始编辑。",
                     new Vector2(_stageRightColRect.X + 20, _stageRightColRect.Y + 40), Color.Gray, ContentFontSize);
                 return;
             }
 
-            var stage = _bio.ProgressStates[_stageIdx];
+            var stage = _vm.Bio.ProgressStates[_vm.SelectedStageIndex];
 
             CustomFontManager.DrawString(b, "激活门禁:", new Vector2(_stageRightColRect.X, _stageRightColRect.Y + 6), Game1.textColor, SectionHeaderSize);
             _heartsStepper.Draw(b);
@@ -1285,10 +1105,10 @@ namespace ValleytalkReborn
 
             foreach (var (r, idx) in _relVisibleItemRects)
             {
-                var name = _filteredNpcs[idx];
-                bool isSel = (idx == _relSelectedIndex);
+                var name = _vm.FilteredNpcs[idx];
+                bool isSel = (idx == _vm.SelectedRelationshipIndex);
                 bool isHover = r.Contains(mx, my);
-                bool hasConfig = _bio.Relationships.ContainsKey(name);
+                bool hasConfig = _vm.Bio.Relationships.ContainsKey(name);
 
                 Color bg = isSel ? new Color(215, 185, 140) : (isHover ? new Color(255, 235, 205) : Color.White);
 
@@ -1305,13 +1125,13 @@ namespace ValleytalkReborn
             DrawActionButton(b, _relAddRect, "+ 定制关系", mx, my, false);
             DrawActionButton(b, _relDelRect, "- 清除", mx, my, isDanger: true);
 
-            if (string.IsNullOrEmpty(_relSelectedNpc))
+            if (string.IsNullOrEmpty(_vm.SelectedRelationshipNpc))
             {
                 CustomFontManager.DrawString(b, "从左侧列表选择目标角色。", new Vector2(_relRightColRect.X + 20, _relRightColRect.Y + 40), Color.Gray, ContentFontSize);
                 return;
             }
 
-            string targetDisp = Game1.getCharacterFromName(_relSelectedNpc)?.displayName ?? _relSelectedNpc;
+            string targetDisp = Game1.getCharacterFromName(_vm.SelectedRelationshipNpc)?.displayName ?? _vm.SelectedRelationshipNpc;
             // 目标角色名：走 Medium 24f (或通过常规字号呈现，不使用厚重粗体)
             CustomFontManager.DrawString(b, $"{_npcName} 对 {targetDisp} 的单向社交关系",
                 new Vector2(_relHeadingBox.X, _relRightColRect.Y + 4), Game1.textColor, TitleFontSize);
@@ -1555,140 +1375,81 @@ namespace ValleytalkReborn
             Layout();
         }
 
-        private void MarkDirty() => _dirty = true;
 
         private void SelectStage(int idx)
         {
-            if (idx < 0 || idx >= _bio.ProgressStates.Count) return;
-            _stageIdx = idx;
-            var s = _bio.ProgressStates[idx];
+            if (idx < 0 || idx >= _vm.Bio.ProgressStates.Count) return;
+            _vm.SelectStage(idx);
+            var s = _vm.Bio.ProgressStates[idx];
             _stageTextBox.SetText(s.Text ?? string.Empty);
             _stageBarkBox.SetText(s.BarkMindset ?? string.Empty);
             _stageTagEditor.SetTags(s.Preoccupations);
             _heartsStepper.Value = s.RequiredHearts;
         }
 
-        private static string BuildGateSummary(BioData.ProgressStateEntry p)
+        private void SelectRelationshipView(string npc)
         {
-            var parts = new List<string>();
-            if (p.RequiredHearts > 0) parts.Add($"≥{p.RequiredHearts}♥");
-            if (p.RequireMarried) parts.Add("已婚");
-            if (p.RequireJojaMartClosed == true) parts.Add("超市倒闭");
-            if (p.RequireJojaMember == true) parts.Add("会员");
-            return parts.Count > 0 ? string.Join("/", parts) : "无门禁";
+            if (_vm.FilteredNpcs.Count == 0) return;
+            _relHeadingBox.Text = _vm.GetRelationshipHeadingOrNull(npc) ?? string.Empty;
+            _relDescBox.SetText(_vm.GetRelationshipDescriptionOrNull(npc) ?? string.Empty);
         }
 
-        private void SelectRelationship(int index)
-        {
-            if (_filteredNpcs.Count == 0) return;
-            index = Math.Clamp(index, 0, _filteredNpcs.Count - 1);
-            _relSelectedIndex = index;
-            _relSelectedNpc = _filteredNpcs[index];
 
-            if (_bio.Relationships.TryGetValue(_relSelectedNpc, out var r) && r != null)
-            {
-                _relHeadingBox.Text = r.Heading ?? string.Empty;
-                _relDescBox.SetText(r.Description ?? string.Empty);
-            }
-            else
-            {
-                _relHeadingBox.Text = string.Empty;
-                _relDescBox.SetText(string.Empty);
-            }
-        }
 
-        private BioData.ListEntry EnsureRelationshipEntry(string npcName)
-        {
-            if (_bio.Relationships == null)
-                _bio.Relationships = new Dictionary<string, BioData.ListEntry>();
-            if (!_bio.Relationships.TryGetValue(npcName, out var entry) || entry == null)
-            {
-                entry = new BioData.ListEntry { id = npcName, Heading = string.Empty, Description = string.Empty, RequiredHearts = 0 };
-                _bio.Relationships[npcName] = entry;
-            }
-            return entry;
-        }
-
-        private BioData.ListEntry EnsureTraitEntry(string key, string defaultHeading)
-        {
-            if (!_bio.Traits.TryGetValue(key, out var entry) || entry == null)
-            {
-                entry = new BioData.ListEntry { id = key, Heading = defaultHeading, Description = string.Empty, RequiredHearts = 0 };
-                _bio.Traits[key] = entry;
-            }
-            return entry;
-        }
-
-        private AmbientBarkPrompt EnsureAmbientBarkPrompt()
-        {
-            _bio.AmbientBarkPrompt ??= new AmbientBarkPrompt();
-            return _bio.AmbientBarkPrompt;
-        }
 
         private void SyncTab5BarkBoxes()
         {
-            var p = _bio.AmbientBarkPrompt;
-            _voiceBox.SetText(p?.VoiceAndAttitude ?? string.Empty);
-            _habitsBox.SetText(p?.SpokenHabits ?? string.Empty);
-            _lensesBox.SetText(p?.ObservationLenses ?? string.Empty);
+            _voiceBox.SetText(_vm.GetAmbientVoice());
+            _habitsBox.SetText(_vm.GetAmbientHabits());
+            _lensesBox.SetText(_vm.GetAmbientLenses());
         }
 
-        private void ScrapeExamples()
+        private void ScrapeExamplesFromVm()
         {
-            try
+            var outcome = _vm.ScrapeDialogueExamples(out int added, out string scrapeErr);
+            switch (outcome)
             {
-                var lines = DialogueScraper.FetchCleanDialogueExamples(_npcName, 3);
-                if (lines == null || lines.Count == 0)
-                {
+                case BioEditorViewModel.ScrapeOutcome.NoLines:
                     Game1.addHUDMessage(new HUDMessage("未抓取到原版对白", HUDMessage.error_type));
                     return;
-                }
-                var entry = EnsureTraitEntry("DialogueExamples", "Dialogue Examples");
-                var sb = new StringBuilder(entry.Description ?? "");
-                int added = 0;
-                foreach (var line in lines)
-                {
-                    if (string.IsNullOrWhiteSpace(line)) continue;
-                    if (sb.ToString().Contains(line, StringComparison.OrdinalIgnoreCase)) continue;
-                    if (sb.Length > 4000) break;
-                    if (sb.Length > 0) sb.AppendLine();
-                    sb.Append("- ").Append(line.Trim());
-                    added++;
-                }
-                entry.Description = sb.ToString().TrimStart();
-                _dialogueExamplesBox.SetText(entry.Description);
-                if (added > 0) MarkDirty();
-                Game1.playSound("newArtifact");
-                Game1.addHUDMessage(new HUDMessage($"已成功抓取 {added} 条原版对白至言行模块", HUDMessage.newQuest_type));
-            }
-            catch (Exception ex)
-            {
-                ModEntry.SMonitor?.Log($"抓取对白失败: {ex.Message}", LogLevel.Warn);
-                Game1.addHUDMessage(new HUDMessage("抓取对白失败", HUDMessage.error_type));
+                case BioEditorViewModel.ScrapeOutcome.Failed:
+                    Game1.addHUDMessage(new HUDMessage("抓取对白失败", HUDMessage.error_type));
+                    return;
+                case BioEditorViewModel.ScrapeOutcome.Success:
+                default:
+                    _dialogueExamplesBox.SetText(_vm.GetTraitDescriptionOrNull("DialogueExamples") ?? string.Empty);
+                    if (added > 0)
+                    {
+                        Game1.playSound("newArtifact");
+                        Game1.addHUDMessage(new HUDMessage($"已成功抓取 {added} 条原版对白至言行模块", HUDMessage.newQuest_type));
+                    }
+                    else
+                    {
+                        Game1.playSound("cancel");
+                        Game1.addHUDMessage(new HUDMessage("未发现新增对白（可能已全部收录或对白池为空）", HUDMessage.error_type));
+                    }
+                    return;
             }
         }
 
         private void InsertScaffold()
         {
-            _biographyBox.SetText(BiographyScaffold.Replace("{NPC}", _npcName));
-            MarkDirty();
+            string scaffold = _vm.BuildBiographyScaffold();
+            _biographyBox.SetText(scaffold);
+            _vm.SetBiography(scaffold);
             Game1.playSound("coin");
         }
 
         private void SaveAndClose()
         {
-            if (!ModEntry.BioStorage!.SaveOverlay(_npcName, _bio, out string err))
-            {
-                Game1.addHUDMessage(new HUDMessage($"保存失败: {err}", HUDMessage.error_type));
-                return;
-            }
+            if (!_vm.TrySave(out string err)) { Game1.addHUDMessage(new HUDMessage($"保存失败: {err}", HUDMessage.error_type)); return; }
             Game1.playSound("achievement");
             ExitAndReturn();
         }
 
         private void TryCancel()
         {
-            if (!_dirty)
+            if (!_vm.IsDirty)
             {
                 ExitAndReturn();
                 return;
@@ -1699,9 +1460,54 @@ namespace ValleytalkReborn
                 _ => { Game1.activeClickableMenu = this; });
         }
 
+        /// <summary>全量同步所有控件自 VM（OQ-2 裁决落地）。TryReset 成功后调用，在下一帧 update() 之前完成重装载，杜绝旧文本回写新 BioData 的污染路径。</summary>
+        private void SyncAllControlsFromVm()
+        {
+            // Tab 1
+            _biographyBox.SetText(_vm.GetBiography());
+            _uniqueBox.Text = _vm.GetUnique();
+            _homeBedCheckbox.isChecked = _vm.GetHomeLocationBed();
+
+            // Tab 2
+            _behaviorBox.SetText(_vm.GetTraitDescriptionOrNull("BehavioralRules") ?? string.Empty);
+            _dialogueExamplesBox.SetText(_vm.GetTraitDescriptionOrNull("DialogueExamples") ?? string.Empty);
+
+            // Tab 3
+            if (_vm.Bio.ProgressStates.Count > 0)
+                SelectStage(0);
+            else
+            {
+                _stageTextBox.SetText(string.Empty);
+                _stageBarkBox.SetText(string.Empty);
+                _stageTagEditor.SetTags(null);
+                _heartsStepper.Value = 0;
+            }
+
+            // Tab 4
+            _vm.RecomputeFilteredNpcs(_relSearchBox.Text);
+            RecalculateTab4List();
+            if (_vm.FilteredNpcs.Count > 0)
+            {
+                _vm.SelectRelationship(_vm.SelectedRelationshipIndex >= 0 ? _vm.SelectedRelationshipIndex : 0);
+                SelectRelationshipView(_vm.SelectedRelationshipNpc);
+            }
+            else
+            {
+                _relHeadingBox.Text = string.Empty;
+                _relDescBox.SetText(string.Empty);
+            }
+
+            // Tab 5
+            _enableBarkCheckbox.isChecked = _vm.GetEnableAmbientBarks();
+            _globalTagEditor.SetTags(_vm.Bio.Preoccupations);
+            SyncTab5BarkBoxes();
+
+            Layout();
+        }
+
         private void TryReset()
         {
-            if (!_hasOverlay)
+            if (!_vm.HasOverlay)
             {
                 Game1.playSound("cancel");
                 return;
@@ -1711,18 +1517,12 @@ namespace ValleytalkReborn
                 _ =>
                 {
                     Game1.activeClickableMenu = this;
-                    if (!ModEntry.BioStorage!.ResetOverlay(_npcName, out string err))
+                    if (!_vm.TryReset(out string err))
                     {
                         Game1.addHUDMessage(new HUDMessage($"还原失败: {err}", HUDMessage.error_type));
                         return;
                     }
-                    _bio = ModEntry.BioStorage!.LoadEditableBio(_npcName);
-                    _dirty = false;
-                    _hasOverlay = false;
-                    _biographyBox.SetText(_bio.Biography ?? string.Empty);
-                    _uniqueBox.Text = _bio.Unique ?? string.Empty;
-                    _homeBedCheckbox.isChecked = _bio.HomeLocationBed;
-                    _globalTagEditor.SetTags(_bio.Preoccupations);
+                    SyncAllControlsFromVm();
                     Game1.playSound("throw");
                 },
                 _ => Game1.activeClickableMenu = this);
