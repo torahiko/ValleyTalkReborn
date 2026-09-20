@@ -117,6 +117,11 @@ namespace ValleytalkReborn
         /// <summary>静态人设覆盖层存储服务（单例，跨存档存活，不进存档）。</summary>
         internal static BioStorageService BioStorage;
 
+        /// <summary>世界覆盖层存储服务组（约会地点 / NPC 关系 / 兴趣点偏好；跨存档存活，不进存档）。</summary>
+        internal static DateLocationOverlayService DateLocationOverlay;
+        internal static NpcRelationOverlayService NpcRelationOverlay;
+        internal static PoiPreferenceOverlayService PoiPreferenceOverlay;
+
         private int _lastDialogueCloseTick = -9999;
 
         /// <summary>最近一次对话的 NPC（内部名 Name 用于记忆键）。跨存档必须在 OnSaveLoaded/Cleanup 置空。</summary>
@@ -263,6 +268,13 @@ namespace ValleytalkReborn
             // ★ 静态人设覆盖层存储服务（单例；覆盖层为本地文件，不进存档、不联机同步）
             BioStorage = new BioStorageService(Helper, Monitor);
             BioStorage.RegisterAssetProviders();
+
+            DateLocationOverlay = new DateLocationOverlayService(Helper, Monitor);
+            NpcRelationOverlay = new NpcRelationOverlayService(Helper, Monitor);
+            PoiPreferenceOverlay = new PoiPreferenceOverlayService(Helper, Monitor);
+            DateLocationOverlay.RegisterAssetProviders();
+            NpcRelationOverlay.RegisterAssetProviders();
+            PoiPreferenceOverlay.RegisterAssetProviders();
 
             // ★ 统一配偶查询服务（多婚/原版配偶判定、住所定位）
             SpouseQueryService.Instance.Initialize(helper);
