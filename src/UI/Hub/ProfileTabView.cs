@@ -12,13 +12,11 @@ using ValleytalkReborn.Services;
 namespace ValleytalkReborn.UI;
 
 /// <summary>
-/// Tab2 农夫档案：玩家档案 + NPC 宫格子页。
-/// 含性取向/安全滑块/bio 输入/保存，以及 NPC 宫格浏览/筛选/还原/跳转 BioEditor。
+/// Tab2 农夫档案：玩家档案（精细化居中排版、大容量签名框、多语言自适应引用线、支持纵向平滑滚动） + NPC 宫格子页。
 /// </summary>
 internal sealed class ProfileTabView : HubTabViewBase
 {
     private const int SubTabBarH = 34;
-    private const int SubTabContentOffset = 44;
     private const int TopPadding = 110;
     private const int BottomPadding = 75;
     private const int LeftPadding = 40;
@@ -33,19 +31,32 @@ internal sealed class ProfileTabView : HubTabViewBase
     private List<(string Id, string Label)> _orientationItems;
     private DropdownList _orientationDropdown;
     private DialogueTextInputBox _bioTextBox;
+
+    // ── 玩家档案滚动视窗状态 ──
+    private Rectangle _playerViewportRect;
+    private Rectangle _scrollbarTrackRect;
+    private int _scrollOffset = 0;
+    private int _totalContentHeight = 0;
+    private bool _isDraggingScrollbar = false;
+
+    // ── 玩家档案内容控件虚拟区域 ──
     private Rectangle _enableProfileCheckboxRect;
     private Rectangle _orientationLabelRect;
     private Rectangle _orientationDropdownRect;
     private Rectangle _safetyLabelRect;
     private Rectangle _safetySliderRect;
+    private Rectangle _safetyQuoteLineRect;
+    private List<string> _safetyDescLines = new();
     private Rectangle _bioLabelRect;
     private Rectangle _bioBoxRect;
     private Rectangle _saveButtonRect;
 
+    // ── 子页签（加长并居中） ──
     private int _profileSubTab = 0;
     private Rectangle _subTabPlayerRect;
     private Rectangle _subTabNpcRect;
 
+    // ── NPC 宫格相关 ──
     private int _npcGridPage;
     private bool _filterCustomOnly;
     private Rectangle _filterCheckboxRect;
@@ -72,6 +83,7 @@ internal sealed class ProfileTabView : HubTabViewBase
 
     public override void OnDeactivated()
     {
+        _isDraggingScrollbar = false;
         if (_bioTextBox != null && Game1.keyboardDispatcher.Subscriber == _bioTextBox)
             Game1.keyboardDispatcher.Subscriber = null;
         _orientationDropdown?.Close();
@@ -94,6 +106,17 @@ internal sealed class ProfileTabView : HubTabViewBase
     public override void Update(GameTime time)
     {
         base.Update(time);
+
+        if (_isDraggingScrollbar && Mouse.GetState().LeftButton == ButtonState.Released)
+        {
+            _isDraggingScrollbar = false;
+        }
+
+        if (_profileSubTab == 0 && _bioTextBox != null)
+        {
+            _bioTextBox.Position = new Vector2(_bioBoxRect.X, _bioBoxRect.Y - _scrollOffset);
+            _bioTextBox.Update(time);
+        }
     }
 
     public override bool ReceiveLeftClick(int x, int y)
@@ -106,6 +129,7 @@ internal sealed class ProfileTabView : HubTabViewBase
             if (_profileSubTab != 0)
             {
                 _profileSubTab = 0;
+                _isDraggingScrollbar = false;
                 Game1.playSound("smallSelect");
             }
             return true;
@@ -115,6 +139,7 @@ internal sealed class ProfileTabView : HubTabViewBase
             if (_profileSubTab != 1)
             {
                 _profileSubTab = 1;
+                _isDraggingScrollbar = false;
                 _orientationDropdown?.Close();
                 if (_bioTextBox != null && Game1.keyboardDispatcher.Subscriber == _bioTextBox)
                     Game1.keyboardDispatcher.Subscriber = null;
@@ -127,50 +152,88 @@ internal sealed class ProfileTabView : HubTabViewBase
         if (_profileSubTab == 1)
             return HandleTab2NpcPageClick(x, y);
 
-        if (_enableProfileCheckboxRect.Contains(x, y))
+        // ── 玩家档案页交互 ──
+
+        // 保存按钮
+        if (_saveButtonRect.Contains(x, y))
         {
-            ModEntry.Config.EnablePlayerProfile = !ModEntry.Config.EnablePlayerProfile;
-            Game1.playSound("select");
+            SaveTab2();
             return true;
         }
 
-        if (!ModEntry.Config.EnablePlayerProfile)
-            return false;
-
-        if (_orientationDropdown != null && _orientationDropdown.HeaderBounds.Contains(x, y))
+        // 滚动条拖拽判定
+        int maxScroll = Math.Max(0, _totalContentHeight - _playerViewportRect.Height);
+        if (maxScroll > 0 && _scrollbarTrackRect.Contains(x, y))
         {
-            _orientationDropdown.ToggleOpen();
-            Game1.playSound("shwip");
+            _isDraggingScrollbar = true;
+            _orientationDropdown?.Close();
+            UpdateScrollFromMouse(y);
             return true;
         }
 
-        if (_safetySliderRect.Contains(x, y))
+        // 视口控件交互判定
+        if (_playerViewportRect.Contains(x, y))
         {
-            int trackX = _safetySliderRect.X;
-            int trackW = _safetySliderRect.Width;
-            int relativeX = Math.Clamp(x - trackX, 0, trackW);
-            _safetyModeIndex = Math.Min(3, (int)(((float)relativeX / trackW) * 4));
-            Game1.playSound("select");
-            return true;
-        }
+            int off = _scrollOffset;
 
-        if (_bioBoxRect.Contains(x, y))
-        {
-            _bioTextBox.Selected = true;
-            Game1.keyboardDispatcher.Subscriber = _bioTextBox;
-            _bioTextBox.ReceiveLeftClick(x, y);
-            return true;
+            // 启用档案复选框
+            var actualChkHit = new Rectangle(_enableProfileCheckboxRect.X, _enableProfileCheckboxRect.Y - off, _enableProfileCheckboxRect.Width + 300, _enableProfileCheckboxRect.Height);
+            if (actualChkHit.Contains(x, y))
+            {
+                ModEntry.Config.EnablePlayerProfile = !ModEntry.Config.EnablePlayerProfile;
+                Game1.playSound("select");
+                RecalculateTab2Layout();
+                return true;
+            }
+
+            if (!ModEntry.Config.EnablePlayerProfile)
+                return false;
+
+            // 性取向下拉菜单 Header（居中区域）
+            var actualDropHit = new Rectangle(_orientationDropdownRect.X, _orientationDropdownRect.Y - off, _orientationDropdownRect.Width, _orientationDropdownRect.Height);
+            if (_orientationDropdown != null && actualDropHit.Contains(x, y))
+            {
+                _orientationDropdown.ToggleOpen();
+                Game1.playSound("shwip");
+                return true;
+            }
+
+            // 安全滑块（居中区域）
+            var actualSliderHit = new Rectangle(_safetySliderRect.X, _safetySliderRect.Y - off, _safetySliderRect.Width, _safetySliderRect.Height);
+            if (actualSliderHit.Contains(x, y))
+            {
+                int trackX = actualSliderHit.X;
+                int trackW = actualSliderHit.Width;
+                int relativeX = Math.Clamp(x - trackX, 0, trackW);
+                int newIdx = Math.Min(3, (int)(((float)relativeX / trackW) * 4));
+                if (newIdx != _safetyModeIndex)
+                {
+                    _safetyModeIndex = newIdx;
+                    Game1.playSound("select");
+                    RecalculateTab2Layout();
+                }
+                return true;
+            }
+
+            // Bio 文本框
+            var actualBioHit = new Rectangle(_bioBoxRect.X, _bioBoxRect.Y - off, _bioBoxRect.Width, _bioBoxRect.Height);
+            if (actualBioHit.Contains(x, y))
+            {
+                _bioTextBox.Selected = true;
+                Game1.keyboardDispatcher.Subscriber = _bioTextBox;
+                _bioTextBox.ReceiveLeftClick(x, y);
+                return true;
+            }
+            else
+            {
+                if (_bioTextBox != null && Game1.keyboardDispatcher.Subscriber == _bioTextBox)
+                    Game1.keyboardDispatcher.Subscriber = null;
+            }
         }
         else
         {
             if (_bioTextBox != null && Game1.keyboardDispatcher.Subscriber == _bioTextBox)
                 Game1.keyboardDispatcher.Subscriber = null;
-        }
-
-        if (_saveButtonRect.Contains(x, y))
-        {
-            SaveTab2();
-            return true;
         }
 
         return false;
@@ -203,7 +266,29 @@ internal sealed class ProfileTabView : HubTabViewBase
             _orientationDropdown.ReceiveScrollWheel(direction);
             return true;
         }
-        _bioTextBox?.ReceiveScrollWheel(direction);
+
+        var actualBioBox = new Rectangle(_bioBoxRect.X, _bioBoxRect.Y - _scrollOffset, _bioBoxRect.Width, _bioBoxRect.Height);
+        int mx = Game1.getMouseX();
+        int my = Game1.getMouseY();
+        if (actualBioBox.Contains(mx, my))
+        {
+            _bioTextBox?.ReceiveScrollWheel(direction);
+            return true;
+        }
+
+        int maxScroll = Math.Max(0, _totalContentHeight - _playerViewportRect.Height);
+        if (maxScroll > 0)
+        {
+            int newScroll = Math.Clamp(_scrollOffset - (direction > 0 ? 44 : -44), 0, maxScroll);
+            if (newScroll != _scrollOffset)
+            {
+                _scrollOffset = newScroll;
+                _orientationDropdown?.Close();
+                Game1.playSound("shwip");
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -233,29 +318,43 @@ internal sealed class ProfileTabView : HubTabViewBase
 
     public override void LeftClickHeld(int x, int y)
     {
-        if (_orientationDropdown != null && !_orientationDropdown.IsOpen && _safetySliderRect.Contains(x, y))
+        if (_isDraggingScrollbar)
         {
-            int trackX = _safetySliderRect.X;
-            int trackW = _safetySliderRect.Width;
-            int relativeX = Math.Clamp(x - trackX, 0, trackW);
-            int idx = Math.Min(3, (int)(((float)relativeX / trackW) * 4));
-            if (idx != _safetyModeIndex)
+            UpdateScrollFromMouse(y);
+            return;
+        }
+
+        if (_orientationDropdown != null && !_orientationDropdown.IsOpen)
+        {
+            var actualSliderHit = new Rectangle(_safetySliderRect.X, _safetySliderRect.Y - _scrollOffset, _safetySliderRect.Width, _safetySliderRect.Height);
+            if (actualSliderHit.Contains(x, y))
             {
-                _safetyModeIndex = idx;
-                Game1.playSound("shwip");
+                int trackX = actualSliderHit.X;
+                int trackW = actualSliderHit.Width;
+                int relativeX = Math.Clamp(x - trackX, 0, trackW);
+                int idx = Math.Min(3, (int)(((float)relativeX / trackW) * 4));
+                if (idx != _safetyModeIndex)
+                {
+                    _safetyModeIndex = idx;
+                    Game1.playSound("shwip");
+                    RecalculateTab2Layout();
+                }
             }
         }
     }
 
     public override void Draw(SpriteBatch b, int mx, int my)
     {
+        SetHoveredTooltip("");
         DrawTab2(b, mx, my);
     }
 
     public override void DrawOverlay(SpriteBatch b)
     {
-        if (_profileSubTab == 0)
-            _orientationDropdown?.Draw(b);
+        if (_profileSubTab == 0 && _orientationDropdown != null && _orientationDropdown.IsOpen)
+        {
+            _orientationDropdown.Draw(b);
+        }
     }
 
     public override void RefreshFromHub()
@@ -320,50 +419,220 @@ internal sealed class ProfileTabView : HubTabViewBase
         int leftColX = MenuBounds.X + LeftPadding;
         int contentW = MenuBounds.Width - LeftPadding - RightPadding;
 
+        // ── 1. 子页签按钮显著加长并强制居中 ──
         int subTabY = MenuBounds.Y + TopPadding;
-        int subTabW = 160;
-        _subTabPlayerRect = new Rectangle(leftColX, subTabY, subTabW, SubTabBarH);
-        _subTabNpcRect = new Rectangle(leftColX + subTabW + 12, subTabY, subTabW, SubTabBarH);
+        int subTabW = 240; // 按钮加长至 240px
+        int tabGap = 16;
+        int totalSubTabsW = subTabW * 2 + tabGap;
+        int subTabsStartX = MenuBounds.X + (MenuBounds.Width - totalSubTabsW) / 2; // 整体居中
+
+        _subTabPlayerRect = new Rectangle(subTabsStartX, subTabY, subTabW, SubTabBarH);
+        _subTabNpcRect = new Rectangle(subTabsStartX + subTabW + tabGap, subTabY, subTabW, SubTabBarH);
 
         _filterCheckboxRect = new Rectangle(leftColX + contentW - 170, subTabY + 2, 28, 28);
 
-        int bioBoxW = Math.Min(contentW - 32, 680);
-        int bioBoxX = MenuBounds.X + (MenuBounds.Width - bioBoxW) / 2;
+        // ── 底部保存按钮（独立吸底，气派居中） ──
+        int saveW = 190;
+        int saveH = 42;
+        _saveButtonRect = new Rectangle(MenuBounds.X + (MenuBounds.Width - saveW) / 2, MenuBounds.Y + MenuBounds.Height - 64, saveW, saveH);
 
-        int currentY = MenuBounds.Y + TopPadding + SubTabContentOffset + 4;
-        _enableProfileCheckboxRect = new Rectangle(bioBoxX, currentY, 27, 27);
+        // ── 玩家档案视口（横向满宽） ──
+        int viewportTopY = subTabY + SubTabBarH + 20;
+        int viewportBottomY = _saveButtonRect.Y - 16;
+        int scrollbarW = 6;
+        int scrollbarRightPad = 10;
 
-        currentY += 40;
-        const int dropdownH = 38;
-        _orientationLabelRect = new Rectangle(bioBoxX, currentY, bioBoxW, 22);
-        currentY += 24;
-        _orientationDropdownRect = new Rectangle(bioBoxX, currentY, bioBoxW, dropdownH);
-        _orientationDropdown?.SetHeaderBounds(_orientationDropdownRect);
+        _playerViewportRect = new Rectangle(leftColX, viewportTopY, contentW - scrollbarW - scrollbarRightPad, Math.Max(180, viewportBottomY - viewportTopY));
 
-        currentY += dropdownH + 12;
-        _safetyLabelRect = new Rectangle(bioBoxX, currentY, bioBoxW, 22);
-        currentY += 24;
+        int trackX = _playerViewportRect.Right + scrollbarRightPad - 2;
+        int trackY = _playerViewportRect.Y + 4;
+        int trackH = _playerViewportRect.Height - 8;
+        _scrollbarTrackRect = new Rectangle(trackX, trackY, scrollbarW, trackH);
 
-        int trackW = Math.Min(260, contentW - 80);
-        int trackX = MenuBounds.X + (MenuBounds.Width - trackW) / 2;
-        _safetySliderRect = new Rectangle(trackX, currentY, trackW, 22);
+        // ── 内部控件自适应排版 ──
+        int innerX = _playerViewportRect.X + 4;
+        int innerW = _playerViewportRect.Width - 8;
+        int curY = _playerViewportRect.Y;
 
-        _saveButtonRect = new Rectangle(MenuBounds.X + MenuBounds.Width / 2 - 80, MenuBounds.Y + MenuBounds.Height - 56, 160, 42);
+        _enableProfileCheckboxRect = new Rectangle(innerX, curY, 27, 27);
+        curY += 46;
 
-        int bioY = currentY + 22 + 4 + 22 + 2 + 24 + 24;
-        int bioBoxH = Math.Max(70, (_saveButtonRect.Y - 12) - bioY);
+        if (ModEntry.Config.EnablePlayerProfile)
+        {
+            // ── 2. 性取向下拉菜单尺寸减少 50%，强制水平居中 ──
+            const int dropdownH = 38;
+            int dropdownW = Math.Min(460, (int)(innerW * 0.65f));
+            int dropdownX = _playerViewportRect.X + (_playerViewportRect.Width - dropdownW) / 2; // 强制水平居中
 
-        _bioLabelRect = new Rectangle(bioBoxX, bioY - 24, bioBoxW, 22);
-        _bioBoxRect = new Rectangle(bioBoxX, bioY, bioBoxW, bioBoxH);
+            _orientationLabelRect = new Rectangle(dropdownX, curY, dropdownW, 22);
+            curY += 28;
+
+            _orientationDropdownRect = new Rectangle(dropdownX, curY, dropdownW, dropdownH);
+            curY += dropdownH + 28;
+
+            // ── 3. 安全滑块尺寸减少 50%，强制水平居中 ──
+            int sliderW = Math.Min(240, innerW / 2); // 尺寸减少约 50%
+            int sliderX = _playerViewportRect.X + (_playerViewportRect.Width - sliderW) / 2; // 强制水平居中
+
+            _safetyLabelRect = new Rectangle(sliderX, curY, sliderW, 22);
+            curY += 28;
+
+            _safetySliderRect = new Rectangle(sliderX, curY, sliderW, 24);
+            curY += 34;
+
+            // 档位名称占位
+            curY += 28;
+
+            // ── 多语言自适应“琥珀金引用线”区域 ──
+            string rawDesc = I18n.Profile.SafetyDesc();
+            float descMaxWidth = innerW - 28;
+            _safetyDescLines = WrapTextForDisplay(rawDesc, descMaxWidth, HubUi.RegularFontSize);
+
+            int lineH = (int)MathF.Ceiling(CustomFontManager.MeasureString("Ag", HubUi.RegularFontSize).Y) + 5;
+            int descTotalTextH = Math.Max(lineH, _safetyDescLines.Count * lineH);
+
+            _safetyQuoteLineRect = new Rectangle(innerX, curY, innerW, descTotalTextH + 8);
+            curY += _safetyQuoteLineRect.Height + 28;
+
+            // ── 4. Bio 签名文本框（高度增加 50%：150px -> 225px） ──
+            _bioLabelRect = new Rectangle(innerX, curY, innerW, 22);
+            curY += 28;
+
+            int bioBoxH = 225; // 高度继续增加 50%
+            _bioBoxRect = new Rectangle(innerX, curY, innerW, bioBoxH);
+            curY += bioBoxH + 24;
+        }
+        else
+        {
+            curY += 40;
+        }
+
+        _totalContentHeight = curY - _playerViewportRect.Y;
+
+        int maxScroll = Math.Max(0, _totalContentHeight - _playerViewportRect.Height);
+        _scrollOffset = Math.Clamp(_scrollOffset, 0, maxScroll);
 
         if (_bioTextBox != null)
         {
-            _bioTextBox.Position = new Vector2(_bioBoxRect.X, _bioBoxRect.Y);
+            _bioTextBox.Position = new Vector2(_bioBoxRect.X, _bioBoxRect.Y - _scrollOffset);
             _bioTextBox.Extent = new Vector2(_bioBoxRect.Width, _bioBoxRect.Height);
             _bioTextBox.InvalidateLayout();
         }
 
+        var actualDropdown = new Rectangle(_orientationDropdownRect.X, _orientationDropdownRect.Y - _scrollOffset, _orientationDropdownRect.Width, _orientationDropdownRect.Height);
+        _orientationDropdown?.SetHeaderBounds(actualDropdown);
+
         RecalculateNpcGridLayout();
+    }
+
+    private static List<string> WrapTextForDisplay(string text, float maxWidth, float fontSize)
+    {
+        var lines = new List<string>();
+        if (string.IsNullOrWhiteSpace(text))
+            return lines;
+
+        maxWidth = Math.Max(40f, maxWidth);
+        string normalized = text.Replace("\r\n", "\n").Replace('\r', '\n');
+        string[] paragraphs = normalized.Split('\n');
+
+        foreach (var para in paragraphs)
+        {
+            if (string.IsNullOrEmpty(para))
+            {
+                lines.Add("");
+                continue;
+            }
+
+            if (CustomFontManager.MeasureString(para, fontSize).X <= maxWidth)
+            {
+                lines.Add(para);
+                continue;
+            }
+
+            if (para.Contains(' '))
+            {
+                string[] words = para.Split(' ');
+                string curLine = "";
+
+                foreach (var word in words)
+                {
+                    string testLine = string.IsNullOrEmpty(curLine) ? word : curLine + " " + word;
+                    if (CustomFontManager.MeasureString(testLine, fontSize).X <= maxWidth)
+                    {
+                        curLine = testLine;
+                    }
+                    else
+                    {
+                        if (!string.IsNullOrEmpty(curLine))
+                        {
+                            lines.Add(curLine);
+                            curLine = "";
+                        }
+
+                        if (CustomFontManager.MeasureString(word, fontSize).X > maxWidth)
+                        {
+                            string wordPart = "";
+                            for (int c = 0; c < word.Length; c++)
+                            {
+                                string testPart = wordPart + word[c];
+                                if (CustomFontManager.MeasureString(testPart, fontSize).X <= maxWidth)
+                                {
+                                    wordPart = testPart;
+                                }
+                                else
+                                {
+                                    lines.Add(wordPart);
+                                    wordPart = word[c].ToString();
+                                }
+                            }
+                            curLine = wordPart;
+                        }
+                        else
+                        {
+                            curLine = word;
+                        }
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(curLine))
+                    lines.Add(curLine);
+            }
+            else
+            {
+                string curLine = "";
+                for (int c = 0; c < para.Length; c++)
+                {
+                    string testLine = curLine + para[c];
+                    if (CustomFontManager.MeasureString(testLine, fontSize).X <= maxWidth)
+                    {
+                        curLine = testLine;
+                    }
+                    else
+                    {
+                        lines.Add(curLine);
+                        curLine = para[c].ToString();
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(curLine))
+                    lines.Add(curLine);
+            }
+        }
+
+        return lines;
+    }
+
+    private void UpdateScrollFromMouse(int mouseY)
+    {
+        int maxScroll = Math.Max(0, _totalContentHeight - _playerViewportRect.Height);
+        if (maxScroll <= 0 || _scrollbarTrackRect.Height <= 0) return;
+
+        float visibleRatio = Math.Clamp((float)_playerViewportRect.Height / _totalContentHeight, 0.15f, 1f);
+        int thumbH = Math.Max(24, (int)(_scrollbarTrackRect.Height * visibleRatio));
+        if (_scrollbarTrackRect.Height <= thumbH) return;
+
+        float progress = Math.Clamp((float)(mouseY - _scrollbarTrackRect.Y - thumbH / 2) / (_scrollbarTrackRect.Height - thumbH), 0f, 1f);
+        _scrollOffset = (int)Math.Round(progress * maxScroll);
     }
 
     private void SaveTab2()
@@ -402,29 +671,80 @@ internal sealed class ProfileTabView : HubTabViewBase
             return;
         }
 
+        // 1. 剪裁视口，渲染通透无框内容
+        Rectangle prevScissor = b.GraphicsDevice.ScissorRectangle;
+        RasterizerState prevRasterizer = b.GraphicsDevice.RasterizerState;
+
+        b.End();
+        Rectangle scissor = Rectangle.Intersect(_playerViewportRect, b.GraphicsDevice.Viewport.Bounds);
+        b.GraphicsDevice.ScissorRectangle = scissor;
+
+        RasterizerState scissorState = new RasterizerState
+        {
+            ScissorTestEnable = true,
+            CullMode = CullMode.None
+        };
+
+        b.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.None, scissorState);
+
+        DrawPlayerProfileContent(b, mx, my);
+
+        b.End();
+        b.GraphicsDevice.ScissorRectangle = prevScissor;
+        b.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.None, prevRasterizer);
+
+        // 2. 绘制右侧专属滚动条
+        int maxScroll = Math.Max(0, _totalContentHeight - _playerViewportRect.Height);
+        if (maxScroll > 0)
+        {
+            DrawScrollbarVisual(b, _scrollbarTrackRect, _playerViewportRect.Height, _totalContentHeight, _scrollOffset, _isDraggingScrollbar, mx, my);
+        }
+
+        // 3. 底部固定保存按钮
+        DrawSaveButton(b, mx, my);
+    }
+
+    private void DrawPlayerProfileContent(SpriteBatch b, int mx, int my)
+    {
+        int off = _scrollOffset;
+
         bool enabled = ModEntry.Config.EnablePlayerProfile;
         Rectangle enableSrc = enabled ? new Rectangle(236, 425, 9, 9) : new Rectangle(227, 425, 9, 9);
-        b.Draw(Game1.mouseCursors, new Vector2(_enableProfileCheckboxRect.X, _enableProfileCheckboxRect.Y),
-            enableSrc, Color.White, 0f, Vector2.Zero, 3f, SpriteEffects.None, 1f);
+        var chkPos = new Vector2(_enableProfileCheckboxRect.X, _enableProfileCheckboxRect.Y - off);
+        b.Draw(Game1.mouseCursors, chkPos, enableSrc, Color.White, 0f, Vector2.Zero, 3f, SpriteEffects.None, 1f);
 
         CustomFontManager.DrawStringBold(b, I18n.Profile.EnableProfile(),
-            new Vector2(_enableProfileCheckboxRect.X + 36, _enableProfileCheckboxRect.Y + (_enableProfileCheckboxRect.Height - CustomFontManager.MeasureStringBold("A", HubUi.RegularFontSize).Y) / 2f),
-            Game1.textColor, HubUi.RegularFontSize);
+            new Vector2(chkPos.X + 36, chkPos.Y + (_enableProfileCheckboxRect.Height - CustomFontManager.MeasureStringBold("A", HubUi.RegularFontSize).Y) / 2f),
+            RulesTheme.TextPrimary, HubUi.RegularFontSize);
 
         if (!enabled)
+        {
+            string hint = "勾选上方选项以启用个性化档案，并在与村民的交互中生效。";
+            CustomFontManager.DrawString(b, hint, new Vector2(chkPos.X, chkPos.Y + 40), RulesTheme.TextMuted, HubUi.RegularFontSize);
             return;
+        }
 
-        CustomFontManager.DrawStringBold(b, I18n.Profile.OrientationLabel(),
-            new Vector2(_orientationLabelRect.X, _orientationLabelRect.Y), Game1.textColor, HubUi.RegularFontSize);
+        // 性取向配置（居中）
+        var orientLabelPos = new Vector2(_orientationLabelRect.X, _orientationLabelRect.Y - off);
+        CustomFontManager.DrawStringBold(b, I18n.Profile.OrientationLabel(), orientLabelPos, RulesTheme.TextPrimary, HubUi.RegularFontSize);
 
-        CustomFontManager.DrawStringBold(b, I18n.Profile.RomanceSafetyLabel(),
-            new Vector2(_safetyLabelRect.X, _safetyLabelRect.Y), Game1.textColor, HubUi.RegularFontSize);
+        var actualDropdownRect = new Rectangle(_orientationDropdownRect.X, _orientationDropdownRect.Y - off, _orientationDropdownRect.Width, _orientationDropdownRect.Height);
+        _orientationDropdown?.SetHeaderBounds(actualDropdownRect);
+        if (_orientationDropdown != null && !_orientationDropdown.IsOpen)
+        {
+            _orientationDropdown.Draw(b);
+        }
 
+        // 浪漫安全模式标题（居中）
+        var safetyLabelPos = new Vector2(_safetyLabelRect.X, _safetyLabelRect.Y - off);
+        CustomFontManager.DrawStringBold(b, I18n.Profile.RomanceSafetyLabel(), safetyLabelPos, RulesTheme.TextPrimary, HubUi.RegularFontSize);
+
+        // 安全滑块本体（减半居中）
         int trackX = _safetySliderRect.X;
         int trackW = _safetySliderRect.Width;
-        int trackY = _safetySliderRect.Y;
+        int trackY = _safetySliderRect.Y - off;
 
-        b.Draw(Game1.staminaRect, new Rectangle(trackX + 2, trackY + 2, trackW - 4, 20), new Color(245, 230, 205));
+        b.Draw(Game1.staminaRect, new Rectangle(trackX + 2, trackY + 2, trackW - 4, 20), RulesTheme.SurfaceSunken);
         IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6),
             trackX, trackY, trackW, 24, Color.White, 4f, false);
 
@@ -441,55 +761,98 @@ internal sealed class ProfileTabView : HubTabViewBase
             new Rectangle(thumbX, trackY - 8, 24, 40),
             new Rectangle(435, 463, 6, 10), Color.White);
 
+        // 当前档位名称（琥珀金居中高亮）
         string[] safetyLabels = GetSafetyModeLabels();
-        string currentLabel = safetyLabels[_safetyModeIndex];
+        string currentLabel = $"★  {safetyLabels[_safetyModeIndex]}";
         var labelSize = CustomFontManager.MeasureStringBold(currentLabel, HubUi.RegularFontSize);
-        float labelX = MenuBounds.X + (MenuBounds.Width - labelSize.X) / 2f;
-        int labelY = trackY + 22 + 4;
+        float labelX = trackX + (trackW - labelSize.X) / 2f;
+        int labelY = trackY + 28;
 
-        CustomFontManager.DrawStringBold(b, currentLabel, new Vector2(labelX, labelY), Game1.textColor, HubUi.RegularFontSize);
+        CustomFontManager.DrawStringBold(b, currentLabel, new Vector2(labelX, labelY), RulesTheme.AccentAmber, HubUi.RegularFontSize);
 
-        int maxDescW = MenuBounds.Width - LeftPadding - RightPadding - 20;
-        string desc = Game1.parseText(I18n.Profile.SafetyDesc(), Game1.smallFont, maxDescW);
-        string[] descLines = desc.Split('\n');
-        int lineSpacing = (int)CustomFontManager.MeasureString("A", HubUi.RegularFontSize).Y + 2;
-        int descStartY = labelY + 22 + 2;
+        // ── 说明文本逐行居中渲染 ──
+        int quoteY = _safetyQuoteLineRect.Y - off;
+        int lineSpacing = (int)MathF.Ceiling(CustomFontManager.MeasureString("Ag", HubUi.RegularFontSize).Y) + 5;
 
-        for (int i = 0; i < descLines.Length; i++)
+        for (int i = 0; i < _safetyDescLines.Count; i++)
         {
-            string line = descLines[i];
+            string line = _safetyDescLines[i];
             float lineW = CustomFontManager.MeasureString(line, HubUi.RegularFontSize).X;
-            float lineX = MenuBounds.X + (MenuBounds.Width - lineW) / 2f;
-            float lineY = descStartY + i * lineSpacing;
-            CustomFontManager.DrawString(b, line, new Vector2(lineX, lineY), Color.DimGray, HubUi.RegularFontSize);
+            float lineX = _playerViewportRect.X + (_playerViewportRect.Width - lineW) / 2f;
+            CustomFontManager.DrawString(b, line, new Vector2(lineX, quoteY + i * lineSpacing), RulesTheme.TextSecondary, HubUi.RegularFontSize);
         }
 
-        CustomFontManager.DrawStringBold(b, I18n.Profile.BioLabel(),
-            new Vector2(_bioLabelRect.X + 2, _bioLabelRect.Y), Game1.textColor, HubUi.RegularFontSize);
+        // Bio 文本框（225px 饱满大高度）
+        var bioLabelPos = new Vector2(_bioLabelRect.X, _bioLabelRect.Y - off);
+        CustomFontManager.DrawStringBold(b, I18n.Profile.BioLabel(), bioLabelPos, RulesTheme.TextPrimary, HubUi.RegularFontSize);
 
-        _bioTextBox.Position = new Vector2(_bioBoxRect.X, _bioBoxRect.Y);
-        _bioTextBox.Update(Game1.currentGameTime);
+        var bioDrawBox = new Rectangle(_bioBoxRect.X, _bioBoxRect.Y - off, _bioBoxRect.Width, _bioBoxRect.Height);
+        _bioTextBox.Position = new Vector2(bioDrawBox.X, bioDrawBox.Y);
         _bioTextBox.Draw(b);
 
         if (string.IsNullOrWhiteSpace(_bioTextBox.Text))
         {
-            var sz = CustomFontManager.MeasureString(I18n.Profile.BioPlaceholder(), HubUi.RegularFontSize);
             CustomFontManager.DrawString(b, I18n.Profile.BioPlaceholder(),
-                new Vector2(_bioBoxRect.X + 16, _bioBoxRect.Y + (_bioBoxRect.Height - sz.Y) / 2f),
-                Color.Gray, HubUi.RegularFontSize);
+                new Vector2(bioDrawBox.X + 16, bioDrawBox.Y + 14),
+                RulesTheme.TextMuted, HubUi.RegularFontSize);
+        }
+    }
+
+    private static void DrawScrollbarVisual(SpriteBatch b, Rectangle trackRect, int visibleHeight, int totalHeight, int scrollOffset, bool isDragging, int mx, int my)
+    {
+        if (totalHeight <= visibleHeight || trackRect.Height <= 0) return;
+
+        b.Draw(Game1.staminaRect, trackRect, RulesTheme.SurfaceSunken * 0.8f);
+        b.Draw(Game1.staminaRect, new Rectangle(trackRect.X, trackRect.Y, 1, trackRect.Height), RulesTheme.BorderSoft * 0.5f);
+
+        int maxScroll = totalHeight - visibleHeight;
+        float visibleRatio = Math.Clamp((float)visibleHeight / totalHeight, 0.15f, 1f);
+        int thumbH = Math.Max(24, (int)(trackRect.Height * visibleRatio));
+        int thumbY = trackRect.Y + (int)((trackRect.Height - thumbH) * ((float)scrollOffset / maxScroll));
+        var thumbRect = new Rectangle(trackRect.X - 1, thumbY, trackRect.Width + 2, thumbH);
+
+        bool thumbHover = thumbRect.Contains(mx, my);
+        Color thumbBg = isDragging ? RulesTheme.BorderBold
+                      : (thumbHover ? RulesTheme.AccentGold : RulesTheme.BorderMid);
+
+        b.Draw(Game1.staminaRect, thumbRect, thumbBg);
+        IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6),
+            thumbRect.X, thumbRect.Y, thumbRect.Width, thumbRect.Height, RulesTheme.BorderBold, 1f, false);
+    }
+
+    private void DrawSaveButton(SpriteBatch b, int mx, int my)
+    {
+        bool isMouseDown = Mouse.GetState().LeftButton == ButtonState.Pressed;
+        bool saveHover = _saveButtonRect.Contains(mx, my);
+        bool savePressed = saveHover && isMouseDown;
+        int pressOffset = savePressed ? 1 : 0;
+
+        Color saveBg = savePressed ? RulesTheme.SurfaceSunken
+                     : saveHover ? RulesTheme.SurfaceHover
+                     : RulesTheme.SurfaceActive;
+
+        Color saveBorder = savePressed ? RulesTheme.BorderBold
+                         : saveHover ? RulesTheme.BorderBold
+                         : RulesTheme.BorderMid;
+
+        if (!savePressed)
+        {
+            b.Draw(Game1.staminaRect,
+                new Rectangle(_saveButtonRect.X + 1, _saveButtonRect.Y + 2, _saveButtonRect.Width, _saveButtonRect.Height),
+                RulesTheme.Shadow);
         }
 
-        bool saveHover = _saveButtonRect.Contains(mx, my);
-        Color saveBg = saveHover ? new Color(255, 235, 205) : new Color(139, 90, 43);
-        b.Draw(Game1.staminaRect, new Rectangle(_saveButtonRect.X + 2, _saveButtonRect.Y + 2, _saveButtonRect.Width - 4, _saveButtonRect.Height - 4), saveBg);
+        var drawRect = new Rectangle(_saveButtonRect.X, _saveButtonRect.Y + pressOffset, _saveButtonRect.Width, _saveButtonRect.Height);
+
+        b.Draw(Game1.staminaRect, new Rectangle(drawRect.X + 1, drawRect.Y + 1, drawRect.Width - 2, drawRect.Height - 2), saveBg);
         IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-            _saveButtonRect.X, _saveButtonRect.Y, _saveButtonRect.Width, _saveButtonRect.Height, saveBg, 4f, false);
+            drawRect.X, drawRect.Y, drawRect.Width, drawRect.Height, saveBorder, 2f, false);
 
         string saveText = I18n.Profile.SaveButton();
         var saveSize = CustomFontManager.MeasureStringBold(saveText, HubUi.TabFontSize);
         CustomFontManager.DrawStringBold(b, saveText,
-            new Vector2(_saveButtonRect.X + (_saveButtonRect.Width - saveSize.X) / 2f, _saveButtonRect.Y + (_saveButtonRect.Height - saveSize.Y) / 2f),
-            saveHover ? Game1.textColor : Color.White, HubUi.TabFontSize);
+            new Vector2(drawRect.X + (drawRect.Width - saveSize.X) / 2f, drawRect.Y + (drawRect.Height - saveSize.Y) / 2f),
+            RulesTheme.TextPrimary, HubUi.TabFontSize);
     }
 
     private void DrawTab2SubTab(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my)
@@ -518,8 +881,8 @@ internal sealed class ProfileTabView : HubTabViewBase
 
     private bool HandleTab2NpcPageClick(int x, int y)
     {
-        bool hasFilter = _displayNpcCards.Count > 0;
-        if (hasFilter && _filterCheckboxRect.Contains(x, y))
+        var filterClickArea = new Rectangle(_filterCheckboxRect.X, _filterCheckboxRect.Y - 2, _filterCheckboxRect.Width + 140, _filterCheckboxRect.Height + 4);
+        if (filterClickArea.Contains(x, y))
         {
             _filterCustomOnly = !_filterCustomOnly;
             _npcGridPage = 0;
@@ -653,7 +1016,7 @@ internal sealed class ProfileTabView : HubTabViewBase
     private const int NpcRows = 2;
     private const int NpcItemsPerPage = NpcCols * NpcRows;
 
-    private int GetNpcTotalPages() => (_displayNpcCards.Count + NpcItemsPerPage - 1) / NpcItemsPerPage;
+    private int GetNpcTotalPages() => Math.Max(1, (_displayNpcCards.Count + NpcItemsPerPage - 1) / NpcItemsPerPage);
 
     private void RecalculateNpcGridLayout()
     {
@@ -661,7 +1024,7 @@ internal sealed class ProfileTabView : HubTabViewBase
 
         int leftColX = MenuBounds.X + LeftPadding;
         int contentW = MenuBounds.Width - LeftPadding - RightPadding;
-        int startY = MenuBounds.Y + TopPadding + SubTabContentOffset;
+        int startY = MenuBounds.Y + TopPadding + 44;
 
         const int bottomPagingBarH = 40;
         const int bottomMargin = 8;
@@ -709,7 +1072,9 @@ internal sealed class ProfileTabView : HubTabViewBase
         int mx = Game1.getMouseX();
         int my = Game1.getMouseY();
 
-        bool filterHover = _filterCheckboxRect.Contains(mx, my);
+        var filterHoverArea = new Rectangle(_filterCheckboxRect.X, _filterCheckboxRect.Y - 2, _filterCheckboxRect.Width + 140, _filterCheckboxRect.Height + 4);
+        bool filterHover = filterHoverArea.Contains(mx, my);
+
         Rectangle chkSrc = _filterCustomOnly ? new Rectangle(236, 425, 9, 9) : new Rectangle(227, 425, 9, 9);
         b.Draw(Game1.mouseCursors, new Vector2(_filterCheckboxRect.X, _filterCheckboxRect.Y),
             chkSrc, Color.White, 0f, Vector2.Zero, 3f, SpriteEffects.None, 1f);
