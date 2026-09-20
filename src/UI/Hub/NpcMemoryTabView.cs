@@ -287,7 +287,7 @@ internal sealed class NpcMemoryTabView : MemoryListTabViewBase
         StartIndex = 0;
         Game1.playSound("bigSelect");
         Hub.RefreshEntries();
-        BuildNpcDropdownItems();
+        // F11: 不重建下拉项（原始 SelectNpc 无此调用）
     }
 
     private void BuildNpcDropdownItems()

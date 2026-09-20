@@ -11,30 +11,23 @@ namespace ValleytalkReborn
 {
     /// <summary>
     /// 自定义字体管理器：基于 FontStashSharp，采用"西文优先 + CJK 回退"双字体 Fallback 链。
-    /// Fallback 由 FontSystem.AddFont 的添加顺序天然实现，本模块对字符种类完全无感知。
-    /// 作用域: Memory（IsLoaded / _fallbackLogged）、Config（字体文件名常量）。
+    /// 内置 1px 微量墨晕/加粗补偿，防止细笔画与符号在低像素网格下被吞。
     /// </summary>
     internal static class CustomFontManager
     {
-        // 字号调整为整数，避免光栅化产生亚像素模糊
         public const float SizeTitle = 24f;     // 顶栏 NPC 大标题
         public const float SizeRegular = 18f;   // Tab 标签、按钮、小节标题、单行/多行框文本
         public const float SizeSmall = 15f;     // 底部提示、说明、标签项
 
-        // 作用域: Config 常量
-        private const string FontLatinFileName = "GoogleSans-Medium.ttf";
+        private const string FontLatinFileName = "RobotoSlab-Medium.ttf";
         private const string FontCjkFileName = "HarmonyOS_Sans_SC_Medium.ttf";
-        private const string FontLatinBoldFileName = "GoogleSans-Bold.ttf";
+        private const string FontLatinBoldFileName = "RobotoSlab-Bold.ttf";
         private const string FontCjkBoldFileName = "HarmonyOS_Sans_SC_Bold.ttf";
 
-        // 作用域: Memory，仅 Cleanup() 释放
-        private static FontSystem _fontSystem;       // Medium（常规）
-        private static FontSystem _boldFontSystem;   // Bold（粗体）
+        private static FontSystem _fontSystem;
+        private static FontSystem _boldFontSystem;
 
-        // 每次绘制前由 DrawString 注入，绘制后不持有
         private static readonly SpriteBatchFontRenderer _renderer = new SpriteBatchFontRenderer();
-
-        // 作用域: Memory，运行期 DrawText 回退日志节流
         private static bool _fallbackLogged;
 
         public static bool IsLoaded { get; private set; }
@@ -51,8 +44,8 @@ namespace ValleytalkReborn
                 {
                     TextureWidth = 1024,
                     TextureHeight = 1024,
-                    // 提升超采样率至 2.0f，保证在高缩放或微小偏移下的文字清晰度
-                    FontResolutionFactor = 2.0f
+                    // 改为 1.0f：1:1 严格对齐物理像素，杜绝二次下采样吃掉 # 等细笔画
+                    FontResolutionFactor = 1.0f
                 });
 
                 string cjkPath = Path.Combine(helper.DirectoryPath, "assets", "fonts", FontCjkFileName);
@@ -64,33 +57,16 @@ namespace ValleytalkReborn
                     return;
                 }
 
-                // 第一优先：西文 / 数字 / ASCII 标点
                 string latinPath = Path.Combine(helper.DirectoryPath, "assets", "fonts", FontLatinFileName);
                 bool latinPresent = File.Exists(latinPath);
                 if (latinPresent)
                 {
                     _fontSystem.AddFont(File.ReadAllBytes(latinPath));
                 }
-                else
-                {
-                    monitor.Log("[FontManager] 缺少西文字体 GoogleSans-Medium，西文降级由 HarmonyOS 渲染", LogLevel.Warn);
-                }
 
-                // 第二优先：CJK / 中文标点 / 符号回退
                 _fontSystem.AddFont(File.ReadAllBytes(cjkPath));
-
                 IsLoaded = true;
 
-                if (latinPresent)
-                {
-                    Log.Information("[FontManager] 字体链装载成功: GoogleSans(Medium) -> HarmonyOS Sans SC(Medium)");
-                }
-                else
-                {
-                    Log.Information("[FontManager] 字体链装载成功: HarmonyOS Sans SC(Medium) 单字体模式");
-                }
-
-                // 装载 Bold 字体链（独立 FontSystem，西文优先 + CJK 回退）
                 InitializeBoldChain(helper, monitor);
             }
             catch (Exception ex)
@@ -111,18 +87,13 @@ namespace ValleytalkReborn
                 {
                     TextureWidth = 1024,
                     TextureHeight = 1024,
-                    FontResolutionFactor = 2.0f
+                    FontResolutionFactor = 1.0f
                 });
 
                 string latinBoldPath = Path.Combine(helper.DirectoryPath, "assets", "fonts", FontLatinBoldFileName);
-                bool latinBoldPresent = File.Exists(latinBoldPath);
-                if (latinBoldPresent)
+                if (File.Exists(latinBoldPath))
                 {
                     _boldFontSystem.AddFont(File.ReadAllBytes(latinBoldPath));
-                }
-                else
-                {
-                    Log.Warning("[FontManager] 缺少西文字体 GoogleSans-Bold，西文降级由 HarmonyOS Bold 渲染");
                 }
 
                 string cjkBoldPath = Path.Combine(helper.DirectoryPath, "assets", "fonts", FontCjkBoldFileName);
@@ -132,21 +103,10 @@ namespace ValleytalkReborn
                 }
                 else if (File.Exists(cjkPath))
                 {
-                    // 无 Bold 中文时回退到 Medium 中文
-                    Log.Warning("[FontManager] 缺少 CJK 粗体 HarmonyOS Sans SC Bold，回退 Medium 中文");
                     _boldFontSystem.AddFont(File.ReadAllBytes(cjkPath));
-                }
-                else
-                {
-                    Log.Warning("[FontManager] 缺少 CJK 粗体且无 Medium 回退，Bold 链仅西文生效");
                 }
 
                 IsBoldLoaded = true;
-
-                string modeLabel = latinBoldPresent && File.Exists(cjkBoldPath)
-                    ? "GoogleSans(Bold) -> HarmonyOS Sans SC(Bold)"
-                    : "降级模式";
-                Log.Information($"[FontManager] 粗体字体链装载成功: {modeLabel}");
             }
             catch (Exception ex)
             {
@@ -185,11 +145,6 @@ namespace ValleytalkReborn
             return font.MeasureString(text, new Vector2(scale, scale));
         }
 
-        /// <summary>
-        /// 按最大宽度截断文本（带省略号），使用 CustomFontManager 测量。
-        /// 用于替代 UiHelper.TruncateString 中需要 SpriteFont 的重载。
-        /// 未装载时回退 Game1.smallFont 测量，绝不抛异常。
-        /// </summary>
         public static string TruncateString(string text, float fontSize, float maxWidth, float scale = 1f)
         {
             if (string.IsNullOrEmpty(text))
@@ -230,8 +185,8 @@ namespace ValleytalkReborn
             if (string.IsNullOrEmpty(text))
                 return;
 
-            // 强制对齐到整像素点，防止居中计算的小数坐标导致采样双线性模糊
-            position = new Vector2(MathF.Floor(position.X), MathF.Floor(position.Y));
+            // 严格对齐整像素
+            position = new Vector2(MathF.Round(position.X), MathF.Round(position.Y));
 
             DynamicSpriteFont font = GetFont(fontSize);
             if (font == null)
@@ -243,6 +198,14 @@ namespace ValleytalkReborn
             try
             {
                 _renderer.Batch = b;
+
+                // 核心：微量墨晕（向右和向下微偏移 1px 补充骨肉感，防止细笔画断裂）
+                // 采用本体颜色的 35% 透明度，自然饱满又不显粗暴描边
+                Color bleedColor = color * 0.35f;
+                font.DrawText(_renderer, text, new Vector2(position.X + 1, position.Y), bleedColor, 0f, Vector2.Zero, new Vector2(scale, scale));
+                font.DrawText(_renderer, text, new Vector2(position.X, position.Y + 1), bleedColor, 0f, Vector2.Zero, new Vector2(scale, scale));
+
+                // 绘制主体
                 font.DrawText(_renderer, text, position, color, 0f, Vector2.Zero, new Vector2(scale, scale));
             }
             catch (Exception ex)
@@ -269,8 +232,6 @@ namespace ValleytalkReborn
                     Log.Error($"[FontManager] GetBoldFont({fontSize}) 失败: {ex.Message}");
                 }
             }
-
-            // 优雅回退：Bold 不可用时优先用 Medium 顶上，依然保持现代矢量字效
             return GetFont(fontSize);
         }
 
@@ -291,7 +252,7 @@ namespace ValleytalkReborn
             if (string.IsNullOrEmpty(text))
                 return;
 
-            position = new Vector2(MathF.Floor(position.X), MathF.Floor(position.Y));
+            position = new Vector2(MathF.Round(position.X), MathF.Round(position.Y));
 
             DynamicSpriteFont font = GetBoldFont(fontSize);
             if (font == null)
@@ -303,6 +264,12 @@ namespace ValleytalkReborn
             try
             {
                 _renderer.Batch = b;
+
+                // Bold 标题同样叠加微墨晕
+                Color bleedColor = color * 0.35f;
+                font.DrawText(_renderer, text, new Vector2(position.X + 1, position.Y), bleedColor, 0f, Vector2.Zero, new Vector2(scale, scale));
+                font.DrawText(_renderer, text, new Vector2(position.X, position.Y + 1), bleedColor, 0f, Vector2.Zero, new Vector2(scale, scale));
+
                 font.DrawText(_renderer, text, position, color, 0f, Vector2.Zero, new Vector2(scale, scale));
             }
             catch (Exception ex)
@@ -347,11 +314,6 @@ namespace ValleytalkReborn
             }
         }
 
-        /// <summary>
-        /// IFontStashRenderer 实现：仅做"字形 → SpriteBatch.Draw"的纯转发，
-        /// 绝不调用 Batch.Begin/End，绝不持有纹理引用。
-        /// 所有类型均为 Microsoft.Xna.Framework.*，与 SpriteBatch 原生匹配。
-        /// </summary>
         private sealed class SpriteBatchFontRenderer : IFontStashRenderer
         {
             public SpriteBatch Batch;
