@@ -10,7 +10,7 @@ using System.Text;
 namespace ValleytalkReborn
 {
     /// <summary>
-    /// 对话/输入文本框：支持自适应字阶、CustomFontManager 原生接入、精准折行、滚动及光标定位。
+    /// 对话/输入文本框：支持自适应字阶、CustomFontManager 原生接入、精准折行、滚动、光标定位及右下角字数指示器。
     /// 内置羊皮纸风格底槽与聚焦高亮外框。
     /// </summary>
     public class DialogueTextInputBox : IKeyboardSubscriber
@@ -41,7 +41,17 @@ namespace ValleytalkReborn
         public Color TextColor { get; set; } = Game1.textColor;
 
         /// <summary>
-        /// 是否由文本框自身绘制底板槽与聚焦光晕外框（默认开启，解决在部分菜单中背景消失的问题）
+        /// 是否允许换行符（为 false 时拦截回车键录入，杜绝发送瞬间闪现换行）
+        /// </summary>
+        public bool AllowNewlines { get; set; } = true;
+
+        /// <summary>
+        /// 是否显示右下角字符数指示器（如 0/300）
+        /// </summary>
+        public bool ShowCharacterCount { get; set; } = true;
+
+        /// <summary>
+        /// 是否由文本框自身绘制底板槽与聚焦光晕外框
         /// </summary>
         public bool DrawFrame { get; set; } = true;
 
@@ -54,6 +64,11 @@ namespace ValleytalkReborn
         /// CustomFontManager 的渲染字号
         /// </summary>
         public float CustomFontSize { get; set; } = 18f;
+
+        /// <summary>
+        /// 右下角指示器字号（放大一圈，提升辨识度）
+        /// </summary>
+        public float CounterFontSize { get; set; } = 19f;
 
         private SpriteFont _font = Game1.smallFont;
         public SpriteFont Font
@@ -111,7 +126,7 @@ namespace ValleytalkReborn
         private List<string> _cachedWrappedLines;
         private bool _isTextDirty = true;
 
-        private const int CounterPadding = 8;
+        private const int CounterPadding = 10;
         private DateTime _lastSubmitTime = DateTime.MinValue;
 
         ///////////////////////////////////////////////////////////////////
@@ -256,10 +271,10 @@ namespace ValleytalkReborn
                 return;
             }
 
-            // 允许 Enter 键换行
             if (inputChar == '\r' || inputChar == '\n')
             {
-                InsertText("\n");
+                if (AllowNewlines)
+                    InsertText("\n");
                 return;
             }
 
@@ -279,6 +294,13 @@ namespace ValleytalkReborn
 
         private void InsertText(string str)
         {
+            if (!AllowNewlines && (str.Contains('\r') || str.Contains('\n')))
+            {
+                str = str.Replace("\r", "").Replace("\n", "");
+                if (string.IsNullOrEmpty(str))
+                    return;
+            }
+
             if (Text.Length + str.Length <= _characterLimit)
             {
                 Text = Text.Insert(_caretPosition, str);
@@ -295,12 +317,13 @@ namespace ValleytalkReborn
         {
             if (command == '\r' || command == '\n')
             {
-                InsertText("\n");
+                if (AllowNewlines)
+                    InsertText("\n");
                 return;
             }
 
             Keys key = (Keys)command;
-            if (key == Keys.Enter)
+            if (key == Keys.Enter && AllowNewlines)
             {
                 InsertText("\n");
             }
@@ -369,7 +392,8 @@ namespace ValleytalkReborn
                     break;
 
                 case Keys.Enter:
-                    InsertText("\n");
+                    if (AllowNewlines)
+                        InsertText("\n");
                     break;
             }
         }
@@ -414,15 +438,13 @@ namespace ValleytalkReborn
             int bw = (int)Extent.X;
             int bh = (int)Extent.Y;
 
-            // 1. 如果开启了绘制外框，渲染和 BioEditor 同款的羊皮纸槽与发光边框
+            // 1. 底板槽与聚焦光晕外框（若 DrawFrame 为 false 则不绘制，交由外层菜单统一渲染边框）
             if (DrawFrame)
             {
-                // 底板槽纹理
                 Color slotColor = Selected ? new Color(255, 250, 235) : new Color(238, 222, 198) * 0.92f;
                 IClickableMenu.drawTextureBox(spriteBatch, Game1.mouseCursors, new Rectangle(403, 383, 6, 6),
                     bx, by, bw, bh, slotColor, 2f, false);
 
-                // 聚焦时光晕
                 if (Selected)
                 {
                     IClickableMenu.drawTextureBox(spriteBatch, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
@@ -432,20 +454,21 @@ namespace ValleytalkReborn
 
             float lineHeight = GetLineHeight();
 
-            // 内边距规划：左右各留 12px，上下留 10px
-            int padX = 12;
-            int padY = 10;
+            int padX = 14;
+            int padY = 12;
+
+            // 底部预留安全边距，防止文本内容压在右下角大号指示器上
+            int bottomReserved = ShowCharacterCount ? 24 : padY;
 
             var textArea = new Rectangle(
                 bx + padX,
                 by + padY,
                 Math.Max(1, bw - padX * 2),
-                Math.Max((int)lineHeight, bh - padY * 2)
+                Math.Max((int)lineHeight, bh - padY - bottomReserved)
             );
 
             _visibleLineCount = Math.Max(1, (int)(textArea.Height / lineHeight));
 
-            // 检测是否需要滚动
             int totalVisualLines = GetTotalVisualLines();
             _needsScrolling = totalVisualLines > _visibleLineCount;
 
@@ -455,6 +478,7 @@ namespace ValleytalkReborn
                 DrawWrappedTextWithScroll(spriteBatch, Text, textArea, TextColor);
             }
 
+            // 绘制滚动箭头
             if (_needsScrolling)
             {
                 DrawScrollArrows(spriteBatch);
@@ -464,6 +488,12 @@ namespace ValleytalkReborn
             if (Selected)
             {
                 DrawCaret(spriteBatch, textArea);
+            }
+
+            // 绘制右下角字符数指示器
+            if (ShowCharacterCount && _characterLimit > 0)
+            {
+                DrawCharacterCounter(spriteBatch, bx, by, bw, bh);
             }
         }
 
@@ -546,14 +576,54 @@ namespace ValleytalkReborn
             }
         }
 
+        /// <summary>
+        /// 绘制右下角字符数指示器（支持放大字号）
+        /// </summary>
+        private void DrawCharacterCounter(SpriteBatch spriteBatch, int bx, int by, int bw, int bh)
+        {
+            string counterText = $"{Text.Length}/{_characterLimit}";
+
+            Vector2 counterSize = UseCustomFont
+                ? CustomFontManager.MeasureString(counterText, CounterFontSize)
+                : Font.MeasureString(counterText) * (EffectiveScale * 1.2f);
+
+            Color counterColor;
+            if (Text.Length >= _characterLimit)
+            {
+                counterColor = new Color(225, 75, 60);
+            }
+            else if (Text.Length >= _warningThreshold)
+            {
+                counterColor = new Color(235, 140, 40);
+            }
+            else
+            {
+                counterColor = new Color(130, 105, 80, 200); // 融入星露谷复古色系的浅褐灰色
+            }
+
+            float rightOffset = _needsScrolling ? 36f : (CounterPadding + 4);
+            Vector2 counterPos = new Vector2(
+                bx + bw - counterSize.X - rightOffset,
+                by + bh - counterSize.Y - CounterPadding + 2
+            );
+
+            if (UseCustomFont)
+            {
+                CustomFontManager.DrawString(spriteBatch, counterText, counterPos, counterColor, CounterFontSize);
+            }
+            else
+            {
+                spriteBatch.DrawString(Font, counterText, counterPos, counterColor, 0f, Vector2.Zero, EffectiveScale * 1.2f, SpriteEffects.None, 1f);
+            }
+        }
+
         ///////////////////////////////////////////////////////////////////
-        // 核心换行算法
+        // 核心折行算法
         ///////////////////////////////////////////////////////////////////
 
         private int GetWrapWidth()
         {
-            // 基础内边距消耗 24px；当需要滚动时，留出右侧 28px 给滚动箭头
-            int reserved = _needsScrolling ? 48 : 24;
+            int reserved = _needsScrolling ? 48 : 28;
             return Math.Max(10, (int)Extent.X - reserved);
         }
 

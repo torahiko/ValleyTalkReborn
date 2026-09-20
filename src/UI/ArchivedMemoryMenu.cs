@@ -607,12 +607,22 @@ namespace ValleytalkReborn
         /// </summary>
         private static void DrawHoverTextCustom(SpriteBatch b, string text)
         {
+            if (string.IsNullOrEmpty(text)) return;
+
             var sz = CustomFontManager.MeasureString(text, CustomFontManager.SizeRegular);
-            int boxW = (int)sz.X + 24;
-            int boxH = (int)sz.Y + 24;
-            int x = Game1.getOldMouseX() + 32;
-            int y = Game1.getOldMouseY() + 32;
+
+            // ── 宽裕舒展的内边距，彻底告别压迫感 ──
+            const int padX = 20; 
+            const int padY = 12; 
+
+            int boxW = (int)MathF.Ceiling(sz.X) + padX * 2;
+            int boxH = (int)MathF.Ceiling(sz.Y) + padY * 2;
+
+            int x = Game1.getOldMouseX() + 24;
+            int y = Game1.getOldMouseY() + 24;
             var safe = Utility.getSafeArea();
+
+            // 屏幕边缘自动翻折避让
             if (x + boxW > safe.Right)
                 x = safe.Right - boxW;
             if (y + boxH > safe.Bottom)
@@ -626,9 +636,20 @@ namespace ValleytalkReborn
                 x = safe.Left;
             if (y < safe.Top)
                 y = safe.Top;
+
+            // 1. 原版像素软阴影（0.65f 比例）
             IClickableMenu.drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
-                x, y, boxW, boxH, Color.White, 1f, false);
-            CustomFontManager.DrawString(b, text, new Vector2(x + 12, y + 12), Game1.textColor, CustomFontManager.SizeRegular);
+                x + 4, y + 4, boxW, boxH, Color.Black * 0.28f, 0.65f, false);
+
+            // 2. 星露谷原版暖白/浅亮羊皮纸底框（解决厚重感，保留细腻像素边角）
+            IClickableMenu.drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
+                x, y, boxW, boxH, new Color(255, 255, 250), 0.65f, false);
+
+            // 3. 提示文字（根据测算文本高度精准垂直居中）
+            float textY = y + (boxH - sz.Y) / 2f - 1;
+            CustomFontManager.DrawString(b, text, 
+                new Vector2(x + padX, textY), 
+                Game1.textColor, CustomFontManager.SizeRegular);
         }
     }
 }

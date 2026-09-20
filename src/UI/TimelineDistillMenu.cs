@@ -22,8 +22,8 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
 {
     private enum DistillState { Loading, Ready, Failed }
 
-    private const float TextFontScale = 1f;
-    private const int CardPaddingX = 18;
+    private const float TextFontScale = 1.0f;
+    private const int CardPaddingX = 20;
     private const int CardPaddingY = 14;
     private const int CardSpacing = 14;
 
@@ -109,7 +109,7 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
 
         _bodyX = xPositionOnScreen + 48;
         _bodyWidth = width - 96;
-        _contentTopY = yPositionOnScreen + 100;
+        _contentTopY = yPositionOnScreen + 104;
         _visibleHeight = (yPositionOnScreen + height - 36) - _contentTopY;
 
         MeasureAll();
@@ -123,18 +123,18 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
         // 1. 若为浓缩模式，计算“源碎片溯源框”
         if (_sourceEntriesToRemove.Count > 0)
         {
-            int sourcePadY = 10;
-            int textW = _bodyWidth - 32;
+            int sourcePadY = 12;
+            int textW = _bodyWidth - 36;
             int textTotalH = 0;
 
             foreach (var src in _sourceEntriesToRemove)
             {
                 string line = $"• {src.Content}";
                 string wrapped = Game1.parseText(line, Game1.smallFont, textW);
-                textTotalH += (int)CustomFontManager.MeasureString(wrapped, CustomFontManager.SizeRegular).Y + 4;
+                textTotalH += (int)CustomFontManager.MeasureString(wrapped, CustomFontManager.SizeRegular).Y + 6;
             }
 
-            int boxH = 26 + textTotalH + sourcePadY * 2;
+            int boxH = 30 + textTotalH + sourcePadY * 2;
             _sourceBoxRect = new Rectangle(_bodyX, _contentTopY + curY, _bodyWidth, boxH);
             curY += boxH + 16;
         }
@@ -149,10 +149,11 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
         for (int i = 0; i < _candidates.Count; i++)
         {
             string cand = _candidates[i];
-            string wrapped = Game1.parseText(cand ?? string.Empty, Game1.dialogueFont, (int)(maxTextPixelWidth / TextFontScale));
-            Vector2 textSize = CustomFontManager.MeasureString(wrapped, CustomFontManager.SizeRegular, TextFontScale);
+            // 统一使用 CustomFontManager.SizeRegular 宽度基准测算折行，防止不同字体引擎产生换行误差
+            string wrapped = Game1.parseText(cand ?? string.Empty, Game1.smallFont, maxTextPixelWidth);
+            Vector2 textSize = CustomFontManager.MeasureString(wrapped, CustomFontManager.SizeRegular);
 
-            const int headerH = 34;
+            const int headerH = 36;
             int cardH = (int)(headerH + textSize.Y + CardPaddingY * 2);
 
             _cardLayouts.Add(new CandidateCardLayout
@@ -297,7 +298,6 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
         }
         else if (_sourceEntriesToRemove.Count > 0)
         {
-            // 取所有参与浓缩碎片的最新一天作为归档基准
             createdDay = _sourceEntriesToRemove.Max(m => m.CreatedDay);
         }
         else
@@ -313,14 +313,12 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
 
         var result = MemoryManager.Instance.AddTimelineMemory(_npcName, text, _targetTier, dateLabel, createdDay);
 
-        // M1：细化结果处理
         if (result == MemoryOperationResult.Success)
         {
             _usedCandidates.Add(text);
             Game1.playSound("coin");
             Game1.addHUDMessage(new HUDMessage(I18n.TimelineDistill.CollectSuccess(), 1));
 
-            // 若由浓缩产生，收录后顺带安全销毁源碎片
             if (_sourceEntriesToRemove.Count > 0)
             {
                 MemoryManager.Instance.ArchiveTimelineMemories(_npcName, _sourceEntriesToRemove, "Distilled");
@@ -389,7 +387,7 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
         IClickableMenu.drawTextureBox(b, xPositionOnScreen - 8, yPositionOnScreen - 8, width + 16, height + 16, Color.White);
         Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
 
-        // 标题与副标题
+        // 标题与副标题（统一整数字阶标准）
         string title = _sourceEntriesToRemove.Count > 0
             ? (_targetTier == MemoryTier.Weekly
                 ? I18n.TimelineDistill.TitleWeekly(_npcDisplayName)
@@ -404,8 +402,7 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
         int currentCap = MemoryManager.Instance.GetTimelineMemories(_npcName, _targetTier).Count;
         int maxCap = MemoryManager.GetTierCapacity(_targetTier);
         string capText = I18n.TimelineDistill.Capacity(currentCap, maxCap);
-        // 向上挪移指示器位置至 _contentTopY - 45，避免侵入词条卡片内容区
-        CustomFontManager.DrawString(b, capText, new Vector2(_bodyX, _contentTopY - 45), Color.DimGray, CustomFontManager.SizeSmall);
+        CustomFontManager.DrawString(b, capText, new Vector2(_bodyX, _contentTopY - 38), Color.DimGray, CustomFontManager.SizeSmall);
 
         // 关闭按钮
         UiHelper.UpdateButtonScale(ref _closeButtonHoverScale, _closeButton, mx, my);
@@ -452,15 +449,15 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
                 new Color(245, 235, 220), 3f, false);
 
             string srcHeader = I18n.TimelineDistill.SourceHeader(_sourceEntriesToRemove.Count);
-            CustomFontManager.DrawString(b, srcHeader, new Vector2(curBox.X + 14, curBox.Y + 8), new Color(110, 70, 30), CustomFontManager.SizeRegular);
+            CustomFontManager.DrawString(b, srcHeader, new Vector2(curBox.X + 16, curBox.Y + 10), new Color(110, 70, 30), CustomFontManager.SizeRegular);
 
-            int lineY = curBox.Y + 30;
-            int textW = _bodyWidth - 32;
+            int lineY = curBox.Y + 34;
+            int textW = _bodyWidth - 36;
             foreach (var src in _sourceEntriesToRemove)
             {
                 string wrapped = Game1.parseText($"• {src.Content}", Game1.smallFont, textW);
-                CustomFontManager.DrawString(b, wrapped, new Vector2(curBox.X + 16, lineY), Color.DimGray, CustomFontManager.SizeRegular);
-                lineY += (int)CustomFontManager.MeasureString(wrapped, CustomFontManager.SizeRegular).Y + 4;
+                CustomFontManager.DrawString(b, wrapped, new Vector2(curBox.X + 18, lineY), Color.DimGray, CustomFontManager.SizeRegular);
+                lineY += (int)CustomFontManager.MeasureString(wrapped, CustomFontManager.SizeRegular).Y + 6;
             }
         }
 
@@ -487,18 +484,18 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
             // 卡片 Header：标签
             string draftTag = I18n.TimelineDistill.DraftTag(layout.Index + 1);
             CustomFontManager.DrawString(b, draftTag,
-                new Vector2(cardRect.X + CardPaddingX, cardRect.Y + CardPaddingY),
+                new Vector2(cardRect.X + CardPaddingX, cardRect.Y + CardPaddingY + 2),
                 new Color(130, 85, 45), CustomFontManager.SizeRegular);
 
             // 卡片 Header 右侧按钮：微调 & 收录
             int btnRightX = cardRect.Right - CardPaddingX;
-            int btnY = cardRect.Y + CardPaddingY - 2;
+            int btnY = cardRect.Y + CardPaddingY;
 
             if (!isUsed)
             {
                 // 收录按钮
                 string addText = I18n.TimelineDistill.CollectButton();
-                int addW = (int)CustomFontManager.MeasureString(addText, CustomFontManager.SizeRegular).X + 24;
+                int addW = (int)CustomFontManager.MeasureString(addText, CustomFontManager.SizeRegular).X + 26;
                 layout.AddBtnRect = new Rectangle(btnRightX - addW, btnY, addW, 28);
                 bool addHover = layout.AddBtnRect.Contains(mx, my);
 
@@ -512,8 +509,8 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
                                 layout.AddBtnRect.Y + (layout.AddBtnRect.Height - addSize.Y) / 2f),
                     addHover ? Game1.textColor : Color.White, CustomFontManager.SizeRegular);
 
-                // 微调按钮 (铅笔) — 32×32 图标组件，自带按压下沉与切片切换动效
-                layout.EditBtnRect = new Rectangle(layout.AddBtnRect.X - 38, btnY - 2, 32, 32);
+                // 微调按钮 (铅笔)
+                layout.EditBtnRect = new Rectangle(layout.AddBtnRect.X - 36, btnY - 2, 32, 32);
                 bool editHover = layout.EditBtnRect.Contains(mx, my);
                 bool editPressed = Mouse.GetState().LeftButton == ButtonState.Pressed && editHover;
 
@@ -540,8 +537,8 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
                     new Color(40, 140, 60), CustomFontManager.SizeRegular);
             }
 
-            // 卡片内容文字（完全不截断自适应展开）
-            Vector2 textPos = new Vector2(cardRect.X + CardPaddingX, cardRect.Y + CardPaddingY + 28);
+            // 卡片内容文字：留出 32px 的表头呼吸空间，完全不截断展开
+            Vector2 textPos = new Vector2(cardRect.X + CardPaddingX, cardRect.Y + CardPaddingY + 32);
             Color contentColor = isUsed ? Color.Gray * 0.7f : Game1.textColor;
             CustomFontManager.DrawString(b, layout.WrappedText, textPos, contentColor, CustomFontManager.SizeRegular, TextFontScale);
         }

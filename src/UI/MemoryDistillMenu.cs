@@ -15,6 +15,7 @@ namespace ValleytalkReborn;
 
 /// <summary>
 /// 记忆提炼菜单：自适应视口尺寸与 UI 缩放，展示候选与既有记忆并支持编辑/删除。
+/// 全面应用 CustomFontManager 矢量整数字阶与高品质对齐排版。
 /// </summary>
 internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
 {
@@ -24,7 +25,7 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
     private const int PlusSize = 34;
     private const int ButtonSize = 32;
 
-    private const float CloseButtonBaseScale = 4f;
+    private const float CloseButtonBaseScale = 3.5f;
 
     // 动态布局坐标
     private int _contentTopY;
@@ -118,7 +119,6 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
     /// </summary>
     private void UpdateLayout()
     {
-        // 自适应宽高：留出屏幕安全边距，并设定上下限
         width = Math.Clamp(Game1.uiViewport.Width - 96, 760, 1100);
         height = Math.Clamp(Game1.uiViewport.Height - 96, 480, 680);
 
@@ -137,7 +137,7 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             _closeButton.bounds = new Rectangle(xPositionOnScreen + width - 56, yPositionOnScreen + 16, 44, 44);
         }
 
-        _contentTopY = yPositionOnScreen + 125;
+        _contentTopY = yPositionOnScreen + 122;
         _headerY = _contentTopY - 32;
 
         int sidePadding = 45;
@@ -220,7 +220,6 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             if (_editButtons[i].containsPoint(x, y))
             {
                 Game1.playSound("bigSelect");
-                // T6：Timeline 模式走 EditTimelineMemory（修复 T3 遗留的 NotFound）；Manual 模式走既有胶囊路径
                 Game1.activeClickableMenu = _timelineMode
                     ? new AddMemoryInputMenu(_npcName, this, _rightEntries[idx], 0,
                         customSubmit: text => MemoryManager.Instance.EditTimelineMemory(_npcName, _rightEntries[idx].Id, text))
@@ -296,12 +295,11 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
         int my = Game1.getMouseY();
         _hoveredTooltip = string.Empty;
 
-        // 1. 深度遮罩（采用与归档菜单一致的 0.75f 深度遮罩，彻底阻断游戏画面穿透）
-        // 1. 底层先绘制主菜单，再覆盖 40% 半透明遮罩
+        // 1. 底层先绘制主菜单，再覆盖半透明遮罩
         _returnMenu?.draw(b);
-        b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.4f);
+        b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.45f);
 
-        // 2. 补齐两层木框 + 实体对话框（托住标题和内容）
+        // 2. 双层木框 + 对话框底衬
         IClickableMenu.drawTextureBox(b,
             xPositionOnScreen - 16, yPositionOnScreen - 16,
             width + 32, height + 32, Color.White);
@@ -310,11 +308,11 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             width + 16, height + 16, Color.White);
         Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
 
-        // 顶部标题（此时已稳稳居于实体羊皮纸底框正上方）
+        // 顶部大标题（规范 24f）
         string title = I18n.Memory.DistillTitle(_npcDisplayName);
         Vector2 titleSize = CustomFontManager.MeasureString(title, CustomFontManager.SizeTitle);
         CustomFontManager.DrawString(b, title,
-            new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f, yPositionOnScreen + 24),
+            new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f, yPositionOnScreen + 22),
             Game1.textColor, CustomFontManager.SizeTitle);
 
         // 关闭按钮
@@ -335,10 +333,10 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             DrawReady(b, mx, my);
         }
 
-        // 浮动提示
+        // 高品质矢量悬浮提示
         if (!string.IsNullOrEmpty(_hoveredTooltip))
         {
-            IClickableMenu.drawHoverText(b, _hoveredTooltip, Game1.smallFont);
+            DrawHoverTextCustom(b, _hoveredTooltip);
         }
 
         drawMouse(b);
@@ -346,28 +344,27 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
 
     private void DrawReady(SpriteBatch b, int mx, int my)
     {
-        // 栏目标题
+        // 栏目标题（18f 规整规范）
         CustomFontManager.DrawString(b, I18n.Memory.DistillLeftTitle(),
             new Vector2(_leftColX, _headerY), Game1.textColor, CustomFontManager.SizeRegular);
         CustomFontManager.DrawString(b, I18n.Memory.DistillRightTitle(),
             new Vector2(_rightColX, _headerY), Game1.textColor, CustomFontManager.SizeRegular);
 
-        // 容量计数
-        // T6：Timeline 模式显示 tier 容量；Manual 模式显示 Manual 池上限
+        // 容量计数（15f 小字，垂直平齐对齐）
         int cap = _timelineMode ? MemoryManager.GetTierCapacity(_targetTier) : MemoryManager.MaxMemoriesPerNpc;
         string capText = $"{_tierCount} / {cap}";
         Vector2 capSize = CustomFontManager.MeasureString(capText, CustomFontManager.SizeSmall);
         CustomFontManager.DrawString(b, capText,
-            new Vector2(_rightColX + _colW - capSize.X, _headerY), Color.Gray, CustomFontManager.SizeSmall);
+            new Vector2(_rightColX + _colW - capSize.X, _headerY + 2f), Color.Gray, CustomFontManager.SizeSmall);
 
-        // 中间分割线（贯通上下）
+        // 中间分割线
         int dividerHeight = (yPositionOnScreen + height - 40) - _headerY;
-        b.Draw(Game1.staminaRect, new Rectangle(_dividerX, _headerY, 2, dividerHeight), Color.Gray * 0.4f);
+        b.Draw(Game1.staminaRect, new Rectangle(_dividerX, _headerY, 2, dividerHeight), Color.Gray * 0.35f);
 
         // 渲染左栏候选
         bool full = _tierCount >= (_timelineMode ? MemoryManager.GetTierCapacity(_targetTier) : MemoryManager.MaxMemoriesPerNpc);
         int visibleLeft = Math.Min(_visibleRows, Math.Max(0, _candidates.Count - _leftIndex));
-        float maxLeftTextWidth = _colW - (PlusSize + 14);
+        float maxLeftTextWidth = _colW - (PlusSize + 16);
 
         for (int i = 0; i < visibleLeft && i < _plusRects.Count; i++)
         {
@@ -385,20 +382,21 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
                 rect.X, rect.Y, rect.Width, rect.Height,
                 boxColor, 3.8f, false);
 
-            // 绘制按钮内加号
+            // 绘制按钮内加号（精确居中）
             Vector2 plusCharSize = CustomFontManager.MeasureString("+", CustomFontManager.SizeRegular);
             CustomFontManager.DrawString(b, "+",
                 new Vector2(rect.X + (rect.Width - plusCharSize.X) / 2f, rect.Y + (rect.Height - plusCharSize.Y) / 2f),
                 used ? Color.Gray : Game1.textColor, CustomFontManager.SizeRegular);
 
             // 候选文字及截断
-            Color textColor = used ? Game1.textColor * 0.45f : Game1.textColor;
+            Color textColor = used ? Color.Gray * 0.8f : Game1.textColor;
             string displayText = CustomFontManager.TruncateString(cand, CustomFontManager.SizeRegular, maxLeftTextWidth);
 
-            Vector2 textPos = new Vector2(_leftColX + PlusSize + 12, rect.Y + (RowH - CustomFontManager.MeasureString("A", CustomFontManager.SizeRegular).Y) / 2f);
+            float textY = rect.Y + (RowH - CustomFontManager.MeasureString("A", CustomFontManager.SizeRegular).Y) / 2f - 1f;
+            Vector2 textPos = new Vector2(_leftColX + PlusSize + 14, textY);
             CustomFontManager.DrawString(b, displayText, textPos, textColor, CustomFontManager.SizeRegular);
 
-            // 文本区域悬停检测（若被截断则提供 Tooltip）
+            // 文本区域悬停检测
             Rectangle textBounds = new Rectangle((int)textPos.X, rect.Y, (int)maxLeftTextWidth, RowH);
             if (textBounds.Contains(mx, my) && displayText != cand)
             {
@@ -408,7 +406,7 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
 
         // 渲染右栏既有条目
         int visibleRight = Math.Min(_visibleRows, Math.Max(0, _rightEntries.Count - _rightIndex));
-        float maxRightTextWidth = _colW - 95; // 预留编辑和删除两枚按钮的宽度
+        float maxRightTextWidth = _colW - 96;
 
         for (int i = 0; i < visibleRight; i++)
         {
@@ -416,15 +414,16 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             MemoryEntry entry = _rightEntries[idx];
             int rowY = _contentTopY + i * RowH;
 
-            // 🌟 认知分层标签渲染（CORE-MEM-103）
+            // 认知分层标签与色彩
             bool isRule = entry.Category == MemoryCategory.Behavior;
             string prefix = isRule ? I18n.Memory.RuleTag() : I18n.Memory.MemoryTag();
-            Color textColor = isRule ? new Color(255, 215, 0)
-                : (entry.Source == "Auto" ? new Color(130, 150, 170) : Game1.textColor);
+            Color textColor = isRule ? new Color(175, 110, 15)
+                : (entry.Source == "Auto" ? new Color(115, 135, 155) : Game1.textColor);
             string fullText = $"{idx + 1}. {prefix}{entry.Content}";
 
             string displayText = CustomFontManager.TruncateString(fullText, CustomFontManager.SizeRegular, maxRightTextWidth);
-            Vector2 textPos = new Vector2(_rightColX, rowY + (RowH - CustomFontManager.MeasureString("A", CustomFontManager.SizeRegular).Y) / 2f);
+            float textY = rowY + (RowH - CustomFontManager.MeasureString("A", CustomFontManager.SizeRegular).Y) / 2f;
+            Vector2 textPos = new Vector2(_rightColX, textY);
             CustomFontManager.DrawString(b, displayText, textPos, textColor, CustomFontManager.SizeRegular);
 
             bool isLeftMouseDown = Mouse.GetState().LeftButton == ButtonState.Pressed;
@@ -466,7 +465,6 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
 
     public void RefreshEntries()
     {
-        // T6：Manual 模式读事实池；Timeline 模式读当前 tier 时间线
         _rightEntries = _timelineMode
             ? MemoryManager.Instance.GetTimelineMemories(_npcName, _targetTier)
             : MemoryManager.Instance.GetMemories(_npcName);
@@ -501,9 +499,8 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
         for (int i = 0; i < visibleRight; i++)
         {
             int rowY = _contentTopY + i * RowH;
-            int btnY = rowY + (RowH - ButtonSize) / 2; // (48 - 32) / 2 = 8px 垂直居中
+            int btnY = rowY + (RowH - ButtonSize) / 2;
 
-            // 编辑按钮（FullSpritesheet 木质铅笔）
             var edit = new ClickableTextureComponent(
                 new Rectangle(_rightColX + _colW - 74, btnY, ButtonSize, ButtonSize),
                 ModEntry.CustomIcons,
@@ -514,7 +511,6 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             };
             _editButtons.Add(edit);
 
-            // 删除按钮（FullSpritesheet 木质垃圾桶）
             var del = new ClickableTextureComponent(
                 new Rectangle(_rightColX + _colW - 36, btnY, ButtonSize, ButtonSize),
                 ModEntry.CustomIcons,
@@ -578,8 +574,6 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             return;
         }
 
-        // v2：dateLabel/createdDay 以入库时所在页面日期为准（dateFilter 有值 → 页面日期；否则今日）
-        // T6：Manual 模式不盖章（AddMemory 无 tier/日期语义）
         string dateLabel = null;
         int createdDay = -1;
         if (_timelineMode)
@@ -601,8 +595,6 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
             case MemoryOperationResult.Success:
                 _usedCandidates.Add(c);
                 Game1.playSound("coin");
-                // v2：浓缩确认后直接删除源碎片（不再归档）；CapacityFull/Duplicate 不动源数据
-                // T6：源碎片语义仅属于 Timeline 模式（Manual 恒为空，双保险）
                 if (_timelineMode && _sourceEntriesToRemove.Count > 0)
                 {
                     MemoryManager.Instance.RemoveTimelineMemories(
@@ -638,11 +630,11 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
 
     private void ConfirmDelete(MemoryEntry entry)
     {
+        string safeContent = CustomFontManager.TruncateString(entry.Content, CustomFontManager.SizeRegular, 320f);
         Game1.activeClickableMenu = new ConfirmationDialog(
-            I18n.Memory.DeleteConfirm(entry.Content),
+            I18n.Memory.DeleteConfirm(safeContent),
             _ =>
             {
-                // T6：双模式分流删除
                 if (_timelineMode)
                     MemoryManager.Instance.RemoveTimelineMemory(_npcName, entry.Id);
                 else
@@ -692,5 +684,55 @@ internal class MemoryDistillMenu : IClickableMenu, IMemoryRefreshTarget
 
         if (_returnMenu != null && Game1.activeClickableMenu == this)
             Game1.activeClickableMenu = _returnMenu;
+    }
+
+    /// <summary>
+    /// 自定义矢量提示框绘制（杜绝系统 smallFont 模糊与屏幕溢出）
+    /// </summary>
+    private static void DrawHoverTextCustom(SpriteBatch b, string text)
+    {
+        if (string.IsNullOrEmpty(text)) return;
+
+        var sz = CustomFontManager.MeasureString(text, CustomFontManager.SizeRegular);
+
+        // ── 宽裕适中的内外边距，告别局促压迫感 ──
+        const int padX = 20; 
+        const int padY = 12; 
+
+        int boxW = (int)MathF.Ceiling(sz.X) + padX * 2;
+        int boxH = (int)MathF.Ceiling(sz.Y) + padY * 2;
+
+        int x = Game1.getOldMouseX() + 24;
+        int y = Game1.getOldMouseY() + 24;
+        var safe = Utility.getSafeArea();
+
+        // 屏幕边缘自动翻折避让
+        if (x + boxW > safe.Right)
+            x = safe.Right - boxW;
+        if (y + boxH > safe.Bottom)
+        {
+            x += 16;
+            if (x + boxW > safe.Right)
+                x = safe.Right - boxW;
+            y = safe.Bottom - boxH;
+        }
+        if (x < safe.Left)
+            x = safe.Left;
+        if (y < safe.Top)
+            y = safe.Top;
+
+        // 1. 原版像素软阴影（比例设为 0.65f，边框细腻不笨重）
+        IClickableMenu.drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
+            x + 4, y + 4, boxW, boxH, Color.Black * 0.28f, 0.65f, false);
+
+        // 2. 星露谷原版浅亮/暖白羊皮纸底框（解决 1f 下厚重挤压文字的问题）
+        IClickableMenu.drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
+            x, y, boxW, boxH, new Color(255, 255, 250), 0.65f, false);
+
+        // 3. 提示文字精准垂直居中
+        float textY = y + (boxH - sz.Y) / 2f - 1;
+        CustomFontManager.DrawString(b, text, 
+            new Vector2(x + padX, textY), 
+            Game1.textColor, CustomFontManager.SizeRegular);
     }
 }
