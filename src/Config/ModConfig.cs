@@ -287,6 +287,14 @@ namespace ValleytalkReborn
                 {
                     profile.ServerAddress = "https://openrouter.ai/api/v1";
                 }
+                else if (string.Equals(currentProvider, "Ollama", StringComparison.OrdinalIgnoreCase))
+                {
+                    profile.ServerAddress = ProviderDefaults.OllamaDefaultUrl;
+                }
+                else if (string.Equals(currentProvider, "LMStudio", StringComparison.OrdinalIgnoreCase))
+                {
+                    profile.ServerAddress = ProviderDefaults.LmStudioDefaultUrl;
+                }
 
                 ProviderProfiles[currentProvider] = profile;
             }

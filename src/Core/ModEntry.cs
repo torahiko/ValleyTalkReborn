@@ -148,6 +148,8 @@ namespace ValleytalkReborn
                         { "DeepSeek", typeof(LlmDeepSeek) },
                         { "VolcEngine", typeof(LlmVolcEngine) },
                         { "OpenAiCompatible", typeof(LlmOAICompatible) },
+                        { "Ollama", typeof(LlmOAICompatible) },
+                        { "LMStudio", typeof(LlmOAICompatible) },
 
                         // ★ 别名容错映射：防止历史配置或手滑输入引发 KeyNotFoundException 崩溃
                         { "LlmOAICompatible", typeof(LlmOAICompatible) },
@@ -452,7 +454,8 @@ namespace ValleytalkReborn
                 return;
             }
 
-            Llm.SetLlm(llmType, modelName: Config.ModelName, apiKey: Config.ApiKey, url: Config.ServerAddress,
+            Llm.SetLlm(llmType, modelName: Config.ModelName, apiKey: Config.ApiKey,
+                url: ProviderDefaults.ResolveServerAddress(Config.Provider, Config.ServerAddress),
                 promptFormat: Config.PromptFormat);
 
             CheckContentPacks();

@@ -109,10 +109,25 @@ internal static class UrlHelper
         return "https://" + url;
     }
 
-    private static bool IsLocalHost(string host)
+    internal static bool IsLocalHost(string host)
     {
         return string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase)
             || string.Equals(host, "127.0.0.1", StringComparison.OrdinalIgnoreCase)
             || string.Equals(host, "[::1]", StringComparison.OrdinalIgnoreCase);
+    }
+
+    internal static bool IsLoopbackUrl(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return false;
+        }
+
+        if (Uri.TryCreate(EnsureScheme(url.Trim()), UriKind.Absolute, out Uri uri))
+        {
+            return IsLocalHost(uri.Host);
+        }
+
+        return false;
     }
 }

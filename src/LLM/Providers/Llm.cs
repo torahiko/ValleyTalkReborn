@@ -128,13 +128,31 @@ internal abstract class Llm
         });
     }
 
+    private static bool IsLocalTarget()
+    {
+        var config = ModEntry.Config;
+        if (config == null) return false;
+        if (Instance is LlmLlamaCpp) return true;
+        if (ProviderDefaults.IsLocalProvider(config.Provider)) return true;
+        return UrlHelper.IsLoopbackUrl(config.ServerAddress);
+    }
+
     private static async Task<bool> CheckConnection(string apiKey, string modelName)
     {
         if (ModEntry.Config.SuppressConnectionCheck)
             return false;
 
-        // 【新增防线】如果 API Key 或 Model Name 为空，直接判定连接不可用，拦截无效的网络测试请求
-        if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(modelName))
+        bool isLocal = IsLocalTarget();
+
+        // 【新增防线】如果 API Key 或 Model Name 为空，直接判定连接不可用，拦截无效的网络测试请求。
+        // 本地目标（Ollama / LMStudio / 回环地址 / LlamaCpp）放行空 Key；LlamaCpp 同时放行空模型名。
+        if (isLocal && string.IsNullOrWhiteSpace(apiKey))
+        {
+            ModEntry.SMonitor.Log("[Llm] Local LLM target detected, skipping API-key requirement.", StardewModdingAPI.LogLevel.Debug);
+        }
+
+        if ((!isLocal && string.IsNullOrWhiteSpace(apiKey))
+            || (string.IsNullOrWhiteSpace(modelName) && !(Instance is LlmLlamaCpp)))
         {
             ModEntry.SMonitor.Log($"[ValleytalkReborn] API Key 或模型名称未填写，暂停模型连接测试。", StardewModdingAPI.LogLevel.Warn);
             return true; // Connection failed/disabled
