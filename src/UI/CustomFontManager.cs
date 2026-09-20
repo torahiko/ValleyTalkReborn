@@ -24,9 +24,12 @@ namespace ValleytalkReborn
         // 作用域: Config 常量
         private const string FontLatinFileName = "GoogleSans-Medium.ttf";
         private const string FontCjkFileName = "HarmonyOS_Sans_SC_Medium.ttf";
+        private const string FontLatinBoldFileName = "GoogleSans-Bold.ttf";
+        private const string FontCjkBoldFileName = "HarmonyOS_Sans_SC_Bold.ttf";
 
         // 作用域: Memory，仅 Cleanup() 释放
-        private static FontSystem _fontSystem;
+        private static FontSystem _fontSystem;       // Medium（常规）
+        private static FontSystem _boldFontSystem;   // Bold（粗体）
 
         // 每次绘制前由 DrawString 注入，绘制后不持有
         private static readonly SpriteBatchFontRenderer _renderer = new SpriteBatchFontRenderer();
@@ -35,6 +38,7 @@ namespace ValleytalkReborn
         private static bool _fallbackLogged;
 
         public static bool IsLoaded { get; private set; }
+        public static bool IsBoldLoaded { get; private set; }
 
         public static void Initialize(IModHelper helper, IMonitor monitor)
         {
@@ -85,12 +89,71 @@ namespace ValleytalkReborn
                 {
                     Log.Information("[FontManager] 字体链装载成功: HarmonyOS Sans SC(Medium) 单字体模式");
                 }
+
+                // 装载 Bold 字体链（独立 FontSystem，西文优先 + CJK 回退）
+                InitializeBoldChain(helper, monitor);
             }
             catch (Exception ex)
             {
                 Log.Error($"[FontManager] 字体链装载失败，整体回退原版字体: {ex.Message}");
                 _fontSystem?.Dispose();
                 _fontSystem = null;
+            }
+        }
+
+        private static void InitializeBoldChain(IModHelper helper, IMonitor monitor)
+        {
+            try
+            {
+                string cjkPath = Path.Combine(helper.DirectoryPath, "assets", "fonts", FontCjkFileName);
+
+                _boldFontSystem = new FontSystem(new FontSystemSettings
+                {
+                    TextureWidth = 1024,
+                    TextureHeight = 1024,
+                    FontResolutionFactor = 2.0f
+                });
+
+                string latinBoldPath = Path.Combine(helper.DirectoryPath, "assets", "fonts", FontLatinBoldFileName);
+                bool latinBoldPresent = File.Exists(latinBoldPath);
+                if (latinBoldPresent)
+                {
+                    _boldFontSystem.AddFont(File.ReadAllBytes(latinBoldPath));
+                }
+                else
+                {
+                    Log.Warning("[FontManager] 缺少西文字体 GoogleSans-Bold，西文降级由 HarmonyOS Bold 渲染");
+                }
+
+                string cjkBoldPath = Path.Combine(helper.DirectoryPath, "assets", "fonts", FontCjkBoldFileName);
+                if (File.Exists(cjkBoldPath))
+                {
+                    _boldFontSystem.AddFont(File.ReadAllBytes(cjkBoldPath));
+                }
+                else if (File.Exists(cjkPath))
+                {
+                    // 无 Bold 中文时回退到 Medium 中文
+                    Log.Warning("[FontManager] 缺少 CJK 粗体 HarmonyOS Sans SC Bold，回退 Medium 中文");
+                    _boldFontSystem.AddFont(File.ReadAllBytes(cjkPath));
+                }
+                else
+                {
+                    Log.Warning("[FontManager] 缺少 CJK 粗体且无 Medium 回退，Bold 链仅西文生效");
+                }
+
+                IsBoldLoaded = true;
+
+                string modeLabel = latinBoldPresent && File.Exists(cjkBoldPath)
+                    ? "GoogleSans(Bold) -> HarmonyOS Sans SC(Bold)"
+                    : "降级模式";
+                Log.Information($"[FontManager] 粗体字体链装载成功: {modeLabel}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"[FontManager] Bold 字体链装载失败: {ex.Message}");
+                _boldFontSystem?.Dispose();
+                _boldFontSystem = null;
+                IsBoldLoaded = false;
             }
         }
 
@@ -193,6 +256,66 @@ namespace ValleytalkReborn
             }
         }
 
+        private static DynamicSpriteFont GetBoldFont(float fontSize)
+        {
+            if (IsBoldLoaded && _boldFontSystem != null)
+            {
+                try
+                {
+                    return _boldFontSystem.GetFont(fontSize);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[FontManager] GetBoldFont({fontSize}) 失败: {ex.Message}");
+                }
+            }
+
+            // 优雅回退：Bold 不可用时优先用 Medium 顶上，依然保持现代矢量字效
+            return GetFont(fontSize);
+        }
+
+        public static Vector2 MeasureStringBold(string text, float fontSize = SizeTitle, float scale = 1f)
+        {
+            if (string.IsNullOrEmpty(text))
+                return Vector2.Zero;
+
+            DynamicSpriteFont font = GetBoldFont(fontSize);
+            if (font == null)
+                return Game1.dialogueFont.MeasureString(text) * scale;
+
+            return font.MeasureString(text, new Vector2(scale, scale));
+        }
+
+        public static void DrawStringBold(SpriteBatch b, string text, Vector2 position, Color color, float fontSize = SizeTitle, float scale = 1f)
+        {
+            if (string.IsNullOrEmpty(text))
+                return;
+
+            position = new Vector2(MathF.Floor(position.X), MathF.Floor(position.Y));
+
+            DynamicSpriteFont font = GetBoldFont(fontSize);
+            if (font == null)
+            {
+                b.DrawString(Game1.dialogueFont, text, position, color, 0f, Vector2.Zero, scale, SpriteEffects.None, 1f);
+                return;
+            }
+
+            try
+            {
+                _renderer.Batch = b;
+                font.DrawText(_renderer, text, position, color, 0f, Vector2.Zero, new Vector2(scale, scale));
+            }
+            catch (Exception ex)
+            {
+                if (!_fallbackLogged)
+                {
+                    Log.Warning($"[FontManager] DrawText(Bold) 运行期异常，已回退原版字体: {ex.Message}");
+                    _fallbackLogged = true;
+                }
+                b.DrawString(Game1.dialogueFont, text, position, color, 0f, Vector2.Zero, scale, SpriteEffects.None, 1f);
+            }
+        }
+
         public static void Cleanup()
         {
             try
@@ -207,6 +330,20 @@ namespace ValleytalkReborn
             {
                 _fontSystem = null;
                 IsLoaded = false;
+            }
+
+            try
+            {
+                _boldFontSystem?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"[FontManager] Dispose(Bold) 异常: {ex.Message}");
+            }
+            finally
+            {
+                _boldFontSystem = null;
+                IsBoldLoaded = false;
             }
         }
 

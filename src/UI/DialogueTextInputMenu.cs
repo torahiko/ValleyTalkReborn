@@ -11,6 +11,13 @@ namespace ValleytalkReborn
     {
         public delegate void TextSubmittedDelegate(string input);
 
+        // 统一字号阶梯（调整为清晰的偶数字号，避免字体光栅化发虚）
+        private const float TitleFontSize = 30f;       // Bold 粗体大标题（沉稳有力）
+        private const float SubtitleFontSize = 14f;    // 顶部小徽标/副标题字号
+        private const float TextBoxFontSize = 26f;     // 文本框正文字号（偶数字号，字形锐利清晰不发虚）
+        private const float CounterFontSize = 20f;     // 文本框右下角指示器字号
+        private const float InstructionFontSize = 18f; // 底部操作提示字号
+
         private readonly string _title;
         private readonly DialogueTextInputBox _inputTextBox;
         private readonly ClickableTextureComponent _okButton;
@@ -22,22 +29,22 @@ namespace ValleytalkReborn
 
         private const int MenuWidth = 1200;
         private const int MenuHeight = 640;
-        private const int TopPadding = 80; // 顶部预留出足够的对话框内边距
-        private const int HeaderHeight = 96; // 扩展标题槽位高度，容纳各种语言的单行字高
-        private const int TextBoxHeight = 240;
+        
+        // 布局参数：将 TopPadding 提升至 116，彻底避开 drawDialogueBox 顶部的厚木框，标题与副标题顺畅下沉
+        private const int TopPadding = 116;
+        private const int HeaderHeight = 64;
         private const int ButtonSize = 64;
         private const int Margin = 24;
 
-        // Responsive runtime dimensions.
+        // 响应式尺寸
         private int _currentMenuWidth;
         private int _currentMenuHeight;
         private Vector2 _menuPosition;
         private Rectangle _menuBounds;
 
-        // If this menu is wrapped, restore the wrapper instead of this menu.
         private IClickableMenu _menuToRestore;
 
-        // Button hover animation fields.
+        // 按钮悬浮缩放动画
         private float _okButtonHoverScale = 1f;
         private float _cancelButtonHoverScale = 1f;
         private float _clearHistoryHoverScale = 1f;
@@ -58,59 +65,32 @@ namespace ValleytalkReborn
                 : I18n.DialogueInput.DefaultTitleWithNpc(_npcName));
             _onTextSubmitted = callback;
 
-            // Initialize responsive sizes before using them.
-            _currentMenuWidth = Math.Min(MenuWidth, Game1.uiViewport.Width - 64);
-            _currentMenuHeight = Math.Min(MenuHeight, Game1.uiViewport.Height - 64);
-            var totalHeight = TopPadding + HeaderHeight + TextBoxHeight + ButtonSize * 2 + Margin * 2;
-
-            _menuPosition = new Vector2(
-                Math.Max(0, (Game1.uiViewport.Width - _currentMenuWidth) / 2),
-                Math.Max(0, (Game1.uiViewport.Height - totalHeight) / 2)
-            );
-
-            _menuBounds = new Rectangle(
-                (int)_menuPosition.X,
-                (int)_menuPosition.Y,
-                _currentMenuWidth,
-                _currentMenuHeight
-            );
-
-            float textBoxWidth = Math.Max(64, _currentMenuWidth - 4 * Margin);
-
             _inputTextBox = new DialogueTextInputBox(300)
             {
-                Position = new Vector2(_menuPosition.X + Margin * 2, _menuPosition.Y + TopPadding + HeaderHeight + 16),
-                Extent = new Vector2(textBoxWidth, TextBoxHeight),
-                Font = Game1.dialogueFont,
+                AllowNewlines = false,
+                UseCustomFont = true,
+                CustomFontSize = TextBoxFontSize, // 26f 整数锐利字号
+                CounterFontSize = CounterFontSize,
+                DrawFrame = true,
                 TextColor = Game1.textColor,
                 Selected = true
             };
+
             _inputTextBox.OnSubmit += sender =>
             {
                 Game1.playSound("coin");
                 Submit(sender.Text);
             };
-            Game1.keyboardDispatcher.Subscriber = _inputTextBox;
 
             _okButton = new ClickableTextureComponent(
-                new Rectangle(
-                    (int)_menuPosition.X + _currentMenuWidth - 2 * Margin - ButtonSize,
-                    (int)_menuPosition.Y + _currentMenuHeight - 2 * Margin - ButtonSize,
-                    ButtonSize,
-                    ButtonSize
-                ),
+                Rectangle.Empty,
                 Game1.mouseCursors,
                 Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 46, -1, -1),
                 1f
             );
 
             _cancelButton = new ClickableTextureComponent(
-                new Rectangle(
-                    (int)_menuPosition.X + _currentMenuWidth - 3 * Margin - 2 * ButtonSize,
-                    (int)_menuPosition.Y + _currentMenuHeight - 2 * Margin - ButtonSize,
-                    ButtonSize,
-                    ButtonSize
-                ),
+                Rectangle.Empty,
                 Game1.mouseCursors,
                 Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 47, -1, -1),
                 1f
@@ -119,12 +99,7 @@ namespace ValleytalkReborn
             var springTownTilesheet = Game1.content.Load<Texture2D>("Maps\\spring_town");
 
             _clearHistory = new ClickableTextureComponent(
-                new Rectangle(
-                    (int)_menuPosition.X + 2 * Margin,
-                    (int)_menuPosition.Y + _currentMenuHeight - 2 * Margin - ButtonSize,
-                    ButtonSize,
-                    ButtonSize
-                ),
+                Rectangle.Empty,
                 springTownTilesheet,
                 new Rectangle(224, 26, 16, 22),
                 3f
@@ -133,15 +108,11 @@ namespace ValleytalkReborn
                 hoverText = I18n.DialogueInput.ClearHistoryHover(_npcName)
             };
 
+            // 蓝色书籍切片
             _viewHistory = new ClickableTextureComponent(
-                new Rectangle(
-                    (int)_menuPosition.X + 3 * Margin + ButtonSize,
-                    (int)_menuPosition.Y + _currentMenuHeight - 2 * Margin - ButtonSize + 5,
-                    ButtonSize,
-                    ButtonSize
-                ),
-                Game1.mouseCursors,
-                new Rectangle(189, 423, 15, 13),
+                Rectangle.Empty,
+                Game1.objectSpriteSheet,
+                Game1.getSourceRectForStandardTileSheet(Game1.objectSpriteSheet, 102, 16, 16),
                 3.5f
             )
             {
@@ -149,6 +120,7 @@ namespace ValleytalkReborn
             };
 
             Recenter();
+            RestoreFocus();
         }
 
         public void SetMenuToRestore(IClickableMenu menu)
@@ -158,6 +130,7 @@ namespace ValleytalkReborn
 
         public void RestoreFocus()
         {
+            _inputTextBox.Selected = true;
             Game1.keyboardDispatcher.Subscriber = _inputTextBox;
         }
 
@@ -170,76 +143,74 @@ namespace ValleytalkReborn
         public void Close()
         {
             if (Game1.keyboardDispatcher.Subscriber == _inputTextBox)
-            {
                 Game1.keyboardDispatcher.Subscriber = null;
-            }
 
             if (Game1.activeClickableMenu == this)
-            {
                 Game1.activeClickableMenu = null;
-            }
         }
 
         public void Submit(string text)
         {
-            _onTextSubmitted?.Invoke(text);
+            _onTextSubmitted?.Invoke(text?.TrimEnd('\r', '\n') ?? "");
         }
 
         public void Recenter()
         {
-            _currentMenuWidth = Math.Min(MenuWidth, Game1.uiViewport.Width - 64);
-            _currentMenuHeight = Math.Min(MenuHeight, Game1.uiViewport.Height - 64);
-            var totalHeight = TopPadding + HeaderHeight + TextBoxHeight + ButtonSize * 2 + Margin * 2;
+            _currentMenuWidth = Math.Clamp(Game1.uiViewport.Width - 64, 800, MenuWidth);
+            _currentMenuHeight = Math.Clamp(Game1.uiViewport.Height - 64, 540, MenuHeight);
 
-            _menuPosition = new Vector2(
-                Math.Max(0, (Game1.uiViewport.Width - _currentMenuWidth) / 2),
-                Math.Max(0, (Game1.uiViewport.Height - totalHeight) / 2)
-            );
+            // 严格对齐屏幕物理像素中心
+            xPositionOnScreen = (Game1.uiViewport.Width - _currentMenuWidth) / 2;
+            yPositionOnScreen = (Game1.uiViewport.Height - _currentMenuHeight) / 2;
 
-            _menuBounds = new Rectangle(
-                (int)_menuPosition.X,
-                (int)_menuPosition.Y,
-                _currentMenuWidth,
-                _currentMenuHeight
-            );
-
-            xPositionOnScreen = _menuBounds.X;
-            yPositionOnScreen = _menuBounds.Y;
+            _menuPosition = new Vector2(xPositionOnScreen, yPositionOnScreen);
+            _menuBounds = new Rectangle(xPositionOnScreen, yPositionOnScreen, _currentMenuWidth, _currentMenuHeight);
             width = _currentMenuWidth;
             height = _currentMenuHeight;
 
-            float textBoxWidth = Math.Max(64, _currentMenuWidth - 4 * Margin);
-            _inputTextBox.Position = new Vector2(
-                _menuPosition.X + Margin * 2,
-                _menuPosition.Y + TopPadding + HeaderHeight + 16
-            );
-            _inputTextBox.Extent = new Vector2(textBoxWidth, TextBoxHeight);
+            // 1. 文本框顶部 Y 坐标（完全顺延避开下移后的标题区）
+            int contentTopY = yPositionOnScreen + TopPadding + HeaderHeight + 4;
+            float textBoxWidth = _currentMenuWidth - 4 * Margin;
+
+            // 2. 底部按钮 Y 坐标
+            int bottomButtonsY = yPositionOnScreen + _currentMenuHeight - Margin - ButtonSize - 13;
+
+            // 3. 底部提示语字高
+            int instructionH = (int)Math.Ceiling(CustomFontManager.MeasureString("A", InstructionFontSize).Y);
+
+            // 4. 文本框纵向完全拉伸
+            int textBoxHeight = bottomButtonsY - 12 - instructionH - 10 - contentTopY;
+
+            _inputTextBox.Position = new Vector2(xPositionOnScreen + Margin * 2, contentTopY);
+            _inputTextBox.Extent = new Vector2(textBoxWidth, Math.Max(120, textBoxHeight));
             _inputTextBox.InvalidateLayout();
 
+            // 底部操作按钮布局
             _okButton.bounds = new Rectangle(
-                (int)_menuPosition.X + _currentMenuWidth - 2 * Margin - ButtonSize,
-                (int)_menuPosition.Y + _currentMenuHeight - 2 * Margin - ButtonSize,
+                xPositionOnScreen + _currentMenuWidth - 2 * Margin - ButtonSize,
+                bottomButtonsY,
                 ButtonSize,
                 ButtonSize
             );
 
             _cancelButton.bounds = new Rectangle(
-                (int)_menuPosition.X + _currentMenuWidth - 3 * Margin - 2 * ButtonSize,
-                (int)_menuPosition.Y + _currentMenuHeight - 2 * Margin - ButtonSize,
+                _okButton.bounds.X - Margin - ButtonSize,
+                bottomButtonsY,
                 ButtonSize,
                 ButtonSize
             );
 
             _clearHistory.bounds = new Rectangle(
-                (int)_menuPosition.X + 2 * Margin,
-                (int)_menuPosition.Y + _currentMenuHeight - 2 * Margin - ButtonSize,
+                xPositionOnScreen + 2 * Margin,
+                bottomButtonsY,
                 ButtonSize,
                 ButtonSize
             );
 
+            // 蓝色书与垃圾桶视觉中心线对齐
             _viewHistory.bounds = new Rectangle(
-                (int)_menuPosition.X + 3 * Margin + ButtonSize,
-                (int)_menuPosition.Y + _currentMenuHeight - 2 * Margin - ButtonSize + 5,
+                _clearHistory.bounds.X + ButtonSize + Margin,
+                bottomButtonsY + 5,
                 ButtonSize,
                 ButtonSize
             );
@@ -254,12 +225,14 @@ namespace ValleytalkReborn
         public override void draw(SpriteBatch spriteBatch)
         {
             _inputTextBox.Update(Game1.currentGameTime);
+
             spriteBatch.Draw(
                 Game1.fadeToBlackRect,
                 Game1.graphics.GraphicsDevice.Viewport.Bounds,
                 Color.Black * 0.4f
             );
 
+            // 星露谷原版主菜单大底框
             Game1.drawDialogueBox(
                 _menuBounds.X,
                 _menuBounds.Y,
@@ -269,25 +242,37 @@ namespace ValleytalkReborn
                 true
             );
 
-            var titleSize = CustomFontManager.MeasureString(_title, CustomFontManager.SizeTitle);
-
-            Vector2 titlePos = new Vector2(
-                _menuPosition.X + (_currentMenuWidth - titleSize.X) / 2f,
-                _menuPosition.Y + TopPadding + (HeaderHeight - titleSize.Y) / 2f
+            // 1. 顶部小徽标/副标题（TALKING WITH XXXX）向下平移，完全脱离木框遮挡
+            string displaySubtitle = !string.IsNullOrEmpty(_npcName) ? $"TALKING WITH {_npcName.ToUpper()}" : "DIALOGUE INPUT";
+            var subSize = CustomFontManager.MeasureString(displaySubtitle, SubtitleFontSize);
+            Vector2 subPos = new Vector2(
+                MathF.Round(xPositionOnScreen + (_currentMenuWidth - subSize.X) / 2f),
+                MathF.Round(yPositionOnScreen + TopPadding)
             );
+            CustomFontManager.DrawString(spriteBatch, displaySubtitle, subPos, new Color(135, 98, 62), SubtitleFontSize);
 
-            CustomFontManager.DrawString(spriteBatch, _title, titlePos, Game1.textColor, CustomFontManager.SizeTitle);
+            // 2. 主标题绘制（伴随整体自然下沉，并使用整数点位消除阴影发虚）
+            var titleSize = CustomFontManager.MeasureStringBold(_title, TitleFontSize);
+            Vector2 titlePos = new Vector2(
+                MathF.Round(xPositionOnScreen + (_currentMenuWidth - titleSize.X) / 2f),
+                MathF.Round(subPos.Y + subSize.Y + 4f)
+            );
+            CustomFontManager.DrawStringBold(spriteBatch, _title, titlePos + new Vector2(0, 1f), new Color(225, 200, 160) * 0.85f, TitleFontSize);
+            CustomFontManager.DrawStringBold(spriteBatch, _title, titlePos, Game1.textColor, TitleFontSize);
 
+            // 3. 文本框渲染
             _inputTextBox.Draw(spriteBatch);
 
+            // 4. 底部提示语
             string instruction = I18n.DialogueInput.Instruction();
-            CustomFontManager.DrawString(spriteBatch, instruction,
-                new Vector2(
-                    _menuPosition.X + (_currentMenuWidth - CustomFontManager.MeasureString(instruction, CustomFontManager.SizeSmall).X) / 2,
-                    _inputTextBox.Position.Y + _inputTextBox.Extent.Y + Margin * 1.2f
-                ),
-                Color.Gray, CustomFontManager.SizeSmall);
+            var instructionSize = CustomFontManager.MeasureString(instruction, InstructionFontSize);
+            Vector2 instructionPos = new Vector2(
+                MathF.Round(xPositionOnScreen + (_currentMenuWidth - instructionSize.X) / 2f),
+                MathF.Round(_inputTextBox.Position.Y + _inputTextBox.Extent.Y + 10f)
+            );
+            CustomFontManager.DrawString(spriteBatch, instruction, instructionPos, Color.Gray * 0.9f, InstructionFontSize);
 
+            // 5. 按钮绘制与动效
             int mouseX = Game1.getMouseX();
             int mouseY = Game1.getMouseY();
 
@@ -307,7 +292,7 @@ namespace ValleytalkReborn
             _viewHistory.scale = _viewHistoryBaseScale * _viewHistoryHoverScale;
             _viewHistory.draw(spriteBatch);
 
-            // FONT-03: 悬浮提示使用矢量新字体渲染
+            // 6. 悬停提示
             if (_clearHistory.containsPoint(mouseX, mouseY))
                 DrawHoverTextCustom(spriteBatch, _clearHistory.hoverText);
             else if (_viewHistory.containsPoint(mouseX, mouseY))
@@ -338,35 +323,48 @@ namespace ValleytalkReborn
             currentScale += (target - currentScale) * 0.2f;
         }
 
-        /// <summary>
-        /// 悬浮提示的自定义矢量渲染：保留原版鼠标跟随位置与贴边 clamping，仅将文字替换为 CustomFontManager。
-        /// </summary>
         private static void DrawHoverTextCustom(SpriteBatch b, string text)
         {
             if (string.IsNullOrEmpty(text))
                 return;
-            var sz = CustomFontManager.MeasureString(text, 17f);
-            int boxW = (int)sz.X + 24;
-            int boxH = (int)sz.Y + 24;
-            int x = Game1.getOldMouseX() + 32;
-            int y = Game1.getOldMouseY() + 32;
+
+            var sz = CustomFontManager.MeasureString(text, CustomFontManager.SizeRegular);
+
+            // ── 扩大呼吸感与内边距 ──
+            const int padX = 20;
+            const int padY = 12;
+
+            int boxW = (int)MathF.Ceiling(sz.X) + padX * 2;
+            int boxH = (int)MathF.Ceiling(sz.Y) + padY * 2;
+
+            int x = Game1.getOldMouseX() + 24;
+            int y = Game1.getOldMouseY() + 24;
             var safe = Utility.getSafeArea();
-            if (x + boxW > safe.Right)
-                x = safe.Right - boxW;
+
+            // 屏幕边缘自动翻折避让
+            if (x + boxW > safe.Right) x = safe.Right - boxW;
             if (y + boxH > safe.Bottom)
             {
                 x += 16;
-                if (x + boxW > safe.Right)
-                    x = safe.Right - boxW;
+                if (x + boxW > safe.Right) x = safe.Right - boxW;
                 y = safe.Bottom - boxH;
             }
-            if (x < safe.Left)
-                x = safe.Left;
-            if (y < safe.Top)
-                y = safe.Top;
+            if (x < safe.Left) x = safe.Left;
+            if (y < safe.Top) y = safe.Top;
+
+            // 1. 原版像素软阴影（0.65f 比例，精致不笨重）
             IClickableMenu.drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
-                x, y, boxW, boxH, Color.White, 1f, false);
-            CustomFontManager.DrawString(b, text, new Vector2(x + 12, y + 12), Game1.textColor, 17f);
+                x + 4, y + 4, boxW, boxH, Color.Black * 0.28f, 0.65f, false);
+
+            // 2. 星露谷原版暖白/浅亮羊皮纸底框（解决 1f 比例下边角过厚吃字的问题）
+            IClickableMenu.drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
+                x, y, boxW, boxH, new Color(255, 255, 250), 0.65f, false);
+
+            // 3. 提示文字精准垂直居中
+            float textY = y + (boxH - sz.Y) / 2f - 1;
+            CustomFontManager.DrawString(b, text,
+                new Vector2(x + padX, textY),
+                Game1.textColor, CustomFontManager.SizeRegular);
         }
 
         public override void receiveLeftClick(int x, int y, bool playSound = true)
@@ -426,9 +424,9 @@ namespace ValleytalkReborn
                 var target = _menuToRestore ?? this;
                 Game1.activeClickableMenu = new TimelineChronicleMenu(_npcName, target, target, autoLockLatest: false);
             }
-            else if (_inputTextBox.ContainsPoint(x, y))
+            else
             {
-                Game1.keyboardDispatcher.Subscriber = _inputTextBox;
+                RestoreFocus();
             }
         }
 
@@ -456,16 +454,20 @@ namespace ValleytalkReborn
                 return;
             }
 
+            if (Game1.options.doesInputListContain(Game1.options.menuButton, key))
+                return;
+
+            if (key == Keys.Enter)
+            {
+                Game1.playSound("coin");
+                Submit(_inputTextBox.Text);
+                return;
+            }
+
             if (!DialogueTextInputBox.IsControlKeyDown())
             {
-                if (
-                    key == Keys.Left ||
-                    key == Keys.Right ||
-                    key == Keys.Home ||
-                    key == Keys.End ||
-                    key == Keys.Delete ||
-                    key == Keys.Back
-                )
+                if (key == Keys.Left || key == Keys.Right || key == Keys.Home ||
+                    key == Keys.End || key == Keys.Delete || key == Keys.Back)
                 {
                     _inputTextBox.RecieveSpecialInput(key);
                 }

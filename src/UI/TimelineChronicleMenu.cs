@@ -24,10 +24,18 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     private const int LeftPadding = 48;
     private const int RightPadding = 48;
     private const int ItemSpacing = 10;
-    private const float TextFontScale = 1.0f;
 
-    // 气泡中说话人名称字号（正文为 CustomFontManager.SizeRegular 18f）
-    private const float SpeakerNameFontSize = 20f;
+    // 字体字号统一常量（全部为整数字号，杜绝亚像素采样发虚）
+    // 粗体 (Bold)：主标题、Tab、操作按钮、气泡说话人
+    private const float TitleFontSize = CustomFontManager.SizeTitle;       // 24f Bold
+    private const float TabFontSize = CustomFontManager.SizeRegular;       // 18f Bold
+    private const float ButtonFontSize = CustomFontManager.SizeRegular;    // 18f Bold
+    private const float SpeakerNameFontSize = 20f;                         // 20f Bold（气泡姓名突出）
+
+    // 常规 (Medium)：对话正文、记忆正文、日期标签、辅助信息
+    private const float ChatContentFontSize = 20f;                         // 20f Medium（对话记录正文）
+    private const float MemoryContentFontSize = CustomFontManager.SizeRegular; // 18f Medium
+    private const float SubtitleFontSize = CustomFontManager.SizeRegular;  // 18f Medium
 
     // 头像排版常量（40x40 像素标准框）
     private const int AvatarSize = 40;
@@ -77,7 +85,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     private Rectangle _rightArrowRect;
     private Rectangle _actionButtonRect;
 
-    // 底栏归档箱按钮（FEAT-AUTO-T6，独立于 Manual/Auto 归档箱）
+    // 底栏归档箱按钮（FEAT-AUTO-T6）
     private Rectangle _archiveButtonRect;
     private int _archivedTimelineCount;
 
@@ -108,7 +116,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         _returnMenu = returnMenu;
         _ownerMenu = ownerMenu ?? returnMenu;
 
-        // 优先使用显式传入的 npcName；未指定时且 autoLockLatest 为 true 时才自动查找最新聊天的 NPC
         if (!string.IsNullOrWhiteSpace(npcName))
         {
             _npcName = npcName;
@@ -161,9 +168,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         RefreshEntries();
     }
 
-    /// <summary>
-    /// 加载并计算 NPC 行走图正脸头部切片（支持自动识别头顶留白，避免截断下巴）
-    /// </summary>
     private void UpdateNpcSpriteCache()
     {
         _currentNpcSprite = GetOrLoadNpcSprite(_npcName);
@@ -254,12 +258,10 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
     private static string GetMostRecentChattedNpc()
     {
-        // 方案 A：优先使用物理写入时序缓存指针（O(1)，无平局漂移）
         string mgrRecent = DialogueHistoryManager.Instance.GetMostRecentNpc();
         if (!string.IsNullOrEmpty(mgrRecent))
             return mgrRecent;
 
-        // 回退：遍历候选 NPC，按 (游戏时间戳, UTC 毫秒) 元组打分消除平局漂移
         string bestNpc = null;
         (long score, long utc) maxScore = (-1, -1);
 
@@ -392,8 +394,8 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         if (_currentTab == 0)
         {
             int padX = 14;
-            int padY = 10;
-            int minBubbleWidth = 140;
+            int padY = 12;
+            int minBubbleWidth = 150;
 
             for (int i = 0; i < _todayChatEntries.Count; i++)
             {
@@ -412,13 +414,14 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
                 int maxTextPixelWidth = maxBubbleWidth - padX * 2;
                 string wrapped = Game1.parseText(entry.Text ?? string.Empty, Game1.smallFont, maxTextPixelWidth);
-                Vector2 textSize = CustomFontManager.MeasureString(wrapped, CustomFontManager.SizeRegular);
-                // 说话人名称使用稍大的字号进行测量
-                Vector2 speakerSize = CustomFontManager.MeasureString(speaker, SpeakerNameFontSize);
+
+                // 正文使用 Medium 测量，说话人使用 Bold 测量
+                Vector2 textSize = CustomFontManager.MeasureString(wrapped, ChatContentFontSize);
+                Vector2 speakerSize = CustomFontManager.MeasureStringBold(speaker, SpeakerNameFontSize);
 
                 float contentInnerWidth = Math.Max(textSize.X, speakerSize.X);
                 int bubbleWidth = (int)Math.Clamp(contentInnerWidth + padX * 2, minBubbleWidth, maxBubbleWidth);
-                int bubbleHeight = (int)(speakerSize.Y + 4 + textSize.Y + padY * 2);
+                int bubbleHeight = (int)(speakerSize.Y + 6 + textSize.Y + padY * 2);
 
                 int entryHeight = entry.SpeakerType == SpeakerType.System
                     ? bubbleHeight
@@ -454,8 +457,8 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
                 int maxTextPixelWidth = maxCardWidth - padX * 2;
                 string wrapped = Game1.parseText(entry.Content ?? string.Empty, Game1.smallFont, maxTextPixelWidth);
-                Vector2 textSize = CustomFontManager.MeasureString(wrapped, CustomFontManager.SizeRegular);
-                Vector2 dateSize = CustomFontManager.MeasureString(dateLabel, CustomFontManager.SizeRegular);
+                Vector2 textSize = CustomFontManager.MeasureString(wrapped, MemoryContentFontSize);
+                Vector2 dateSize = CustomFontManager.MeasureStringBold(dateLabel, TabFontSize);
 
                 float headerWidthNeeded = dateSize.X + 80;
                 float contentInnerWidth = Math.Max(textSize.X, headerWidthNeeded);
@@ -637,7 +640,8 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         if (_currentTab >= 0 && _currentTab <= 2)
         {
             string label = GetActionButtonLabel();
-            int textWidth = (int)CustomFontManager.MeasureString(label, CustomFontManager.SizeRegular).X;
+            // 按钮文字测量使用 Bold 字体
+            int textWidth = (int)CustomFontManager.MeasureStringBold(label, ButtonFontSize).X;
             int btnWidth = Math.Max(200, textWidth + 48);
 
             int totalWidth = dropdownWidth + gap + btnWidth + gap + archiveBtnW;
@@ -892,8 +896,23 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
     }
 
     // ──────────────────────────────────────────────────────────────
-    // 渲染绘制
+    // 渲染绘制与字体排版精修
     // ──────────────────────────────────────────────────────────────
+
+    private static void DrawStyledBubbleBox(SpriteBatch b, Rectangle rect, Color bgColor, Color borderColor, bool withShadow = true)
+    {
+        if (withShadow)
+        {
+            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 2, rect.Y + 2, rect.Width, rect.Height), Color.Black * 0.12f);
+        }
+
+        b.Draw(Game1.staminaRect, new Rectangle(rect.X + 2, rect.Y + 2, rect.Width - 4, rect.Height - 4), bgColor);
+
+        IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
+            new Rectangle(432, 439, 9, 9),
+            rect.X, rect.Y, rect.Width, rect.Height,
+            borderColor, 3.0f, false);
+    }
 
     public override void draw(SpriteBatch b)
     {
@@ -909,11 +928,12 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         IClickableMenu.drawTextureBox(b, xPositionOnScreen - 8, yPositionOnScreen - 8, width + 16, height + 16, Color.White);
         Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
 
+        // 顶栏主标题：走 Bold 字体
         string title = I18n.Timeline.Title(_npcDisplayName);
-        Vector2 titleSize = CustomFontManager.MeasureString(title, CustomFontManager.SizeTitle);
-        CustomFontManager.DrawString(b, title,
-            new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f, yPositionOnScreen + 22),
-            Game1.textColor, CustomFontManager.SizeTitle);
+        Vector2 titleSize = CustomFontManager.MeasureStringBold(title, TitleFontSize);
+        CustomFontManager.DrawStringBold(b, title,
+            new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f, yPositionOnScreen + 20),
+            Game1.textColor, TitleFontSize);
 
         DrawTabBar(b, mx, my);
 
@@ -969,10 +989,11 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 new Rectangle(432, 439, 9, 9),
                 rect.X, rect.Y, rect.Width, rect.Height, bg, 4f, false);
 
-            var labelSize = CustomFontManager.MeasureString(labels[t], CustomFontManager.SizeRegular);
-            CustomFontManager.DrawString(b, labels[t],
+            // 分页 Tab 标题：走 Bold 字体，增强切换导航感
+            var labelSize = CustomFontManager.MeasureStringBold(labels[t], TabFontSize);
+            CustomFontManager.DrawStringBold(b, labels[t],
                 new Vector2(rect.X + (rect.Width - labelSize.X) / 2f, rect.Y + (rect.Height - labelSize.Y) / 2f),
-                active ? Game1.textColor : (hover ? Color.Wheat : Color.White), CustomFontManager.SizeRegular);
+                active ? Game1.textColor : (hover ? Color.Wheat : Color.White), TabFontSize);
         }
 
         int lineY = _tabBarY + TabBarHeight + 4;
@@ -981,21 +1002,22 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
     private void DrawTodayChat(SpriteBatch b, int mx, int my, StardewTime viewDate)
     {
+        // 顶部日期副标题：走 Medium 字体，柔和呈现
         string dateText = _daysAgo == 0
             ? I18n.Timeline.TodayDate(MemoryManager.FormatGameDateLabel(viewDate))
             : MemoryManager.FormatGameDateLabel(viewDate);
-        var dateSize = CustomFontManager.MeasureString(dateText, CustomFontManager.SizeRegular);
+        var dateSize = CustomFontManager.MeasureString(dateText, SubtitleFontSize);
         CustomFontManager.DrawString(b, dateText,
             new Vector2(xPositionOnScreen + (width - dateSize.X) / 2f, _contentTopY - 22),
-            Color.Gray, CustomFontManager.SizeRegular);
+            new Color(130, 110, 90), SubtitleFontSize);
 
         if (_todayChatEntries.Count == 0)
         {
             string empty = I18n.Timeline.EmptyChats();
-            var size = CustomFontManager.MeasureString(empty, CustomFontManager.SizeRegular);
+            var size = CustomFontManager.MeasureString(empty, SubtitleFontSize);
             CustomFontManager.DrawString(b, empty,
                 new Vector2(xPositionOnScreen + (width - size.X) / 2f, _contentTopY + 40),
-                Color.Gray, CustomFontManager.SizeRegular);
+                Color.Gray, SubtitleFontSize);
             return;
         }
 
@@ -1003,7 +1025,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         {
             var m = item.Measured;
 
-            // 1. 头像渲染
+            // 1. 头像框精修渲染
             if (!item.AvatarRect.IsEmpty)
             {
                 bool isPlayer = m.SpeakerType == SpeakerType.Player;
@@ -1013,12 +1035,14 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
                 if (canDrawAvatar)
                 {
-                    // 木质底衬
+                    Rectangle avBox = new Rectangle(item.AvatarRect.X - 3, item.AvatarRect.Y - 3, item.AvatarRect.Width + 6, item.AvatarRect.Height + 6);
+                    b.Draw(Game1.staminaRect, new Rectangle(avBox.X + 2, avBox.Y + 2, avBox.Width, avBox.Height), Color.Black * 0.15f);
+                    b.Draw(Game1.staminaRect, avBox, new Color(248, 236, 212));
+                    
                     IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
                         new Rectangle(432, 439, 9, 9),
-                        item.AvatarRect.X - 2, item.AvatarRect.Y - 2,
-                        item.AvatarRect.Width + 4, item.AvatarRect.Height + 4,
-                        Color.White, 2.5f, false);
+                        avBox.X, avBox.Y, avBox.Width, avBox.Height,
+                        new Color(190, 150, 110), 3.0f, false);
 
                     if (isPlayer)
                     {
@@ -1026,7 +1050,6 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                     }
                     else
                     {
-                        // 绘制 NPC 行走图正脸
                         b.Draw(
                             _currentNpcSprite,
                             item.AvatarRect,
@@ -1037,72 +1060,59 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 }
             }
 
-            // 2. 气泡框
-            Color boxBg = m.SpeakerType switch
+            // 2. 气泡配色方案（统一为羊皮纸原木暖调）
+            Color boxBg;
+            Color boxBorder;
+            Color speakerColor;
+
+            if (m.SpeakerType == SpeakerType.System)
             {
-                SpeakerType.Player => new Color(230, 245, 235),
-                SpeakerType.System => new Color(235, 235, 238),
-                _ => new Color(255, 246, 232)
-            };
-
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
-                new Rectangle(432, 439, 9, 9),
-                item.BoxRect.X, item.BoxRect.Y, item.BoxRect.Width, item.BoxRect.Height,
-                boxBg, 3.5f, false);
-
-            Color speakerColor = m.SpeakerType switch
+                boxBg = new Color(244, 242, 238);
+                boxBorder = new Color(210, 205, 198);
+                speakerColor = new Color(110, 105, 100);
+            }
+            else
             {
-                SpeakerType.Player => new Color(34, 110, 50),
-                SpeakerType.System => Color.DimGray,
-                _ => new Color(130, 65, 20)
-            };
+                boxBg = new Color(254, 247, 235);
+                boxBorder = new Color(225, 200, 168);
+                speakerColor = new Color(145, 75, 25);
+            }
 
-            // 3. 标签与文本（名字使用 SpeakerNameFontSize 放大绘制）
+            DrawStyledBubbleBox(b, item.BoxRect, boxBg, boxBorder, withShadow: true);
+
+            // 3. 说话人姓名：走 Bold 字体更醒目；正文：走 Medium 字体更平滑耐读
             Vector2 speakerPos = new Vector2(item.BoxRect.X + m.InnerPadding.X, item.BoxRect.Y + m.InnerPadding.Y);
-            CustomFontManager.DrawString(b, m.Speaker, speakerPos, speakerColor, SpeakerNameFontSize);
+            CustomFontManager.DrawStringBold(b, m.Speaker, speakerPos, speakerColor, SpeakerNameFontSize);
 
-            // 正文垂直起始位置根据名字高度动态下移
-            float speakerH = CustomFontManager.MeasureString(m.Speaker, SpeakerNameFontSize).Y;
+            float speakerH = CustomFontManager.MeasureStringBold(m.Speaker, SpeakerNameFontSize).Y;
             Vector2 textPos = new Vector2(
                 item.BoxRect.X + m.InnerPadding.X,
-                speakerPos.Y + speakerH + 2);
+                speakerPos.Y + speakerH + 3);
 
-            Color textColor = m.SpeakerType == SpeakerType.System ? Color.DimGray : Game1.textColor;
-            CustomFontManager.DrawString(b, m.WrappedText, textPos, textColor, CustomFontManager.SizeRegular);
+            Color textColor = m.SpeakerType == SpeakerType.System ? new Color(90, 85, 80) : Game1.textColor;
+            CustomFontManager.DrawString(b, m.WrappedText, textPos, textColor, ChatContentFontSize);
         }
     }
 
-    /// <summary>
-    /// 原生绘制农夫真实外观（包含真实发型、肤色、眼睛与帽子，1:1 对齐像素框）
-    /// </summary>
     private static void DrawFarmerAvatar(SpriteBatch b, Rectangle destRect)
     {
         if (Game1.player?.FarmerRenderer == null) return;
 
-        // 农夫头部标准 16x16，缩放到 40px: scale = 40 / 16 = 2.5f
         float scale = (float)destRect.Width / 16f;
         Vector2 basePos = new Vector2(destRect.X, destRect.Y);
 
-        // 1. 原生绘制农夫脸型、发型、眼睛、肤色、配饰（官方 ChatBox 同款标准接口）
         Game1.player.FarmerRenderer.drawMiniPortrat(
             b,
             basePos,
             0.89f,
             scale,
-            2, // 朝正下方
+            2,
             Game1.player,
             1f);
 
-        // 2. 叠戴当前帽子（如果有）
         if (Game1.player.hat.Value != null)
         {
-            // 原版 Hat.draw 内部强制乘以了 4f（pixelZoom）
-            // 外部必须传入 scale / 4f，真实缩放倍率才正好等于 2.5f，绝不产生巨大化溢出
             float hatScale = scale / 4f;
-
-            // Hat 贴图为 20x20，头像为 16x16
-            // 水平对齐：X 偏移 -2 像素
-            // 垂直对齐：Y 偏移 -5 像素，使帽檐与发际线精准贴合
             Vector2 hatPos = basePos + new Vector2(-2f * scale, -5f * scale);
             Game1.player.hat.Value.draw(b, hatPos, hatScale, 1f, 0.895f, 2);
         }
@@ -1113,10 +1123,10 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
         if (_tierEntries.Count == 0)
         {
             string empty = I18n.Timeline.EmptyTier();
-            var size = CustomFontManager.MeasureString(empty, CustomFontManager.SizeRegular);
+            var size = CustomFontManager.MeasureString(empty, SubtitleFontSize);
             CustomFontManager.DrawString(b, empty,
                 new Vector2(xPositionOnScreen + (width - size.X) / 2f, _contentTopY + 40),
-                Color.Gray, CustomFontManager.SizeRegular);
+                Color.Gray, SubtitleFontSize);
             return;
         }
 
@@ -1137,17 +1147,19 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                     src, Color.White, 0f, Vector2.Zero, CheckboxScale, SpriteEffects.None, 0.86f);
             }
 
-            Color cardColor = selected
-                ? new Color(255, 235, 205)
-                : (hovered ? new Color(255, 248, 230) : new Color(252, 244, 234));
+            Color cardBg = selected
+                ? new Color(255, 236, 208)
+                : (hovered ? new Color(255, 250, 240) : new Color(253, 246, 238));
 
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
-                new Rectangle(432, 439, 9, 9),
-                item.BoxRect.X, item.BoxRect.Y, item.BoxRect.Width, item.BoxRect.Height,
-                cardColor, 3.5f, false);
+            Color cardBorder = selected
+                ? new Color(210, 160, 100)
+                : (hovered ? new Color(220, 190, 150) : new Color(210, 185, 155));
 
+            DrawStyledBubbleBox(b, item.BoxRect, cardBg, cardBorder, withShadow: true);
+
+            // 卡片日期标题：走 Bold 字体
             Vector2 datePos = new Vector2(item.BoxRect.X + m.InnerPadding.X, item.BoxRect.Y + m.InnerPadding.Y);
-            CustomFontManager.DrawString(b, m.DateLabel, datePos, new Color(110, 80, 50), CustomFontManager.SizeRegular);
+            CustomFontManager.DrawStringBold(b, m.DateLabel, datePos, new Color(125, 85, 45), TabFontSize);
 
             bool isLeftMouseDown = Mouse.GetState().LeftButton == ButtonState.Pressed;
 
@@ -1179,11 +1191,12 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 if (delHover) _hoveredTooltip = I18n.Timeline.DeleteButtonHover();
             }
 
+            // 记忆正文：走 Medium 字体
             Vector2 textPos = new Vector2(
                 item.BoxRect.X + m.InnerPadding.X,
-                datePos.Y + Math.Max(CustomFontManager.MeasureString("A", CustomFontManager.SizeRegular).Y, 26));
+                datePos.Y + Math.Max(CustomFontManager.MeasureStringBold("A", TabFontSize).Y, 26));
 
-            CustomFontManager.DrawString(b, m.WrappedText, textPos, Game1.textColor, CustomFontManager.SizeRegular);
+            CustomFontManager.DrawString(b, m.WrappedText, textPos, Game1.textColor, MemoryContentFontSize);
         }
     }
 
@@ -1197,6 +1210,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
         _npcDropdown?.DrawHeader(b);
 
+        // 操作主按钮：走 Bold 字体
         if (_currentTab >= 0 && _currentTab <= 2)
         {
             string label = GetActionButtonLabel();
@@ -1208,14 +1222,15 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 _actionButtonRect.X, _actionButtonRect.Y, _actionButtonRect.Width, _actionButtonRect.Height,
                 bg, 4f, false);
 
-            var labelSize = CustomFontManager.MeasureString(label, CustomFontManager.SizeRegular);
+            var labelSize = CustomFontManager.MeasureStringBold(label, ButtonFontSize);
             Vector2 textPos = new Vector2(
                 _actionButtonRect.X + (_actionButtonRect.Width - labelSize.X) / 2f,
                 _actionButtonRect.Y + (_actionButtonRect.Height - labelSize.Y) / 2f);
 
-            CustomFontManager.DrawString(b, label, textPos, hover ? Game1.textColor : Color.White, CustomFontManager.SizeRegular);
+            CustomFontManager.DrawStringBold(b, label, textPos, hover ? Game1.textColor : Color.White, ButtonFontSize);
         }
 
+        // 归档按钮：走 Bold 字体
         if (_archiveButtonRect != Rectangle.Empty)
         {
             string archiveText = I18n.Timeline.ArchiveButton(_archivedTimelineCount, MemoryManager.MaxArchivedTimelineMemoriesPerNpc);
@@ -1228,12 +1243,12 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 _archiveButtonRect.Width, _archiveButtonRect.Height,
                 archiveBg, 4f, false);
 
-            var archiveLabelSize = CustomFontManager.MeasureString(archiveText, CustomFontManager.SizeRegular);
+            var archiveLabelSize = CustomFontManager.MeasureStringBold(archiveText, ButtonFontSize);
             Vector2 archiveTextPos = new Vector2(
                 _archiveButtonRect.X + (_archiveButtonRect.Width - archiveLabelSize.X) / 2f,
                 _archiveButtonRect.Y + (_archiveButtonRect.Height - archiveLabelSize.Y) / 2f);
 
-            CustomFontManager.DrawString(b, archiveText, archiveTextPos, archiveHover ? Game1.textColor : Color.White, CustomFontManager.SizeRegular);
+            CustomFontManager.DrawStringBold(b, archiveText, archiveTextPos, archiveHover ? Game1.textColor : Color.White, ButtonFontSize);
         }
     }
 
@@ -1394,12 +1409,13 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
             string label = (HeaderPrefix ?? "") + selLabel;
 
             float maxTextW = _headerRect.Width - 36;
-            string displayLabel = CustomFontManager.TruncateString(label, CustomFontManager.SizeRegular, maxTextW);
-            var size = CustomFontManager.MeasureString(displayLabel, CustomFontManager.SizeRegular);
+            string displayLabel = CustomFontManager.TruncateString(label, ButtonFontSize, maxTextW);
+            // 下拉栏头部按钮：走 Bold 字体
+            var size = CustomFontManager.MeasureStringBold(displayLabel, ButtonFontSize);
 
-            CustomFontManager.DrawString(b, displayLabel,
+            CustomFontManager.DrawStringBold(b, displayLabel,
                 new Vector2(_headerRect.X + 12, _headerRect.Y + (_headerRect.Height - size.Y) / 2f),
-                hover && !_isOpen ? Game1.textColor : Color.White, CustomFontManager.SizeRegular);
+                hover && !_isOpen ? Game1.textColor : Color.White, ButtonFontSize);
 
             SpriteEffects effect = _isOpen ? SpriteEffects.None : SpriteEffects.FlipVertically;
             Vector2 arrowPos = new Vector2(_headerRect.Right - 26, _headerRect.Y + (_headerRect.Height - 22) / 2f);
@@ -1433,11 +1449,21 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                     new Rectangle(432, 439, 9, 9),
                     ir.X, ir.Y, ir.Width, ir.Height, bg, 4f, false);
 
-                string truncatedLabel = CustomFontManager.TruncateString(item.Label, CustomFontManager.SizeRegular, ir.Width - 20);
+                string truncatedLabel = CustomFontManager.TruncateString(item.Label, ButtonFontSize, ir.Width - 20);
 
-                CustomFontManager.DrawString(b, truncatedLabel,
-                    new Vector2(ir.X + 8, ir.Y + (ir.Height - CustomFontManager.MeasureString("A", CustomFontManager.SizeRegular).Y) / 2f),
-                    selected ? Color.White : (ihover ? Game1.textColor : Color.Black), CustomFontManager.SizeRegular);
+                // 选中或悬停的条目用 Bold 提亮，普通项走常规 Medium
+                if (selected || ihover)
+                {
+                    CustomFontManager.DrawStringBold(b, truncatedLabel,
+                        new Vector2(ir.X + 8, ir.Y + (ir.Height - CustomFontManager.MeasureStringBold("A", ButtonFontSize).Y) / 2f),
+                        selected ? Color.White : Game1.textColor, ButtonFontSize);
+                }
+                else
+                {
+                    CustomFontManager.DrawString(b, truncatedLabel,
+                        new Vector2(ir.X + 8, ir.Y + (ir.Height - CustomFontManager.MeasureString("A", ButtonFontSize).Y) / 2f),
+                        Color.Black, ButtonFontSize);
+                }
             }
         }
     }

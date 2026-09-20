@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Input;
 using StardewValley;
 using StardewValley.Menus;
 using System;
+using ValleytalkReborn.UI;
 
 namespace ValleytalkReborn
 {
@@ -62,8 +63,9 @@ namespace ValleytalkReborn
 
         private float _okButtonHoverScale = 1f;
         private float _cancelButtonHoverScale = 1f;
-        private const int MenuWidth = 560;
-        private const int MenuHeight = 240;
+        private const int MenuWidth = 600;
+        private const int MenuHeight = 280;
+        private const int TopPadding = 56;
 
         public SetCallsignInputMenu(string npcName, IClickableMenu returnMenu)
         {
@@ -77,10 +79,14 @@ namespace ValleytalkReborn
 
             _inputBox = new DialogueTextInputBox(MemoryManager.MaxCallsignLength, 15)
             {
-                Position = new Vector2(xPositionOnScreen + 40, yPositionOnScreen + 100),
-                Extent = new Vector2(width - 80, 50),
-                Font = Game1.dialogueFont,
-                TextColor = Game1.textColor,
+                Position = new Vector2(xPositionOnScreen + 44, yPositionOnScreen + 118),
+                Extent = new Vector2(width - 88, 52),
+                UseCustomFont = true,
+                CustomFontSize = CustomFontManager.SizeRegular,
+                CounterFontSize = CustomFontManager.SizeSmall,
+                DrawFrame = true,
+                ShowCharacterCount = true,
+                AllowNewlines = false,
                 Selected = true
             };
 
@@ -91,16 +97,16 @@ namespace ValleytalkReborn
             _inputBox.OnSubmit += sender => Submit(sender.Text);
             Game1.keyboardDispatcher.Subscriber = _inputBox;
 
-            int btnY = yPositionOnScreen + height - 70;
+            int btnY = yPositionOnScreen + height - 76;
             _okButton = new ClickableTextureComponent(
-                new Rectangle(xPositionOnScreen + width - 2 * 24 - 54, btnY, 54, 54),
+                new Rectangle(xPositionOnScreen + width - 44 - 54, btnY, 54, 54),
                 Game1.mouseCursors,
-                new Rectangle(128, 256, 64, 64), 0.85f);
+                Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 46, -1, -1), 0.85f);
 
             _cancelButton = new ClickableTextureComponent(
-                new Rectangle(xPositionOnScreen + width - 3 * 24 - 2 * 54, btnY, 54, 54),
+                new Rectangle(xPositionOnScreen + width - 44 - 54 * 2 - 16, btnY, 54, 54),
                 Game1.mouseCursors,
-                new Rectangle(192, 256, 64, 64), 0.85f);
+                Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 47, -1, -1), 0.85f);
 
             exitFunction = () =>
             {
@@ -170,20 +176,27 @@ namespace ValleytalkReborn
             _inputBox.Update(Game1.currentGameTime);
 
             b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.4f);
-            IClickableMenu.drawTextureBox(b, xPositionOnScreen, yPositionOnScreen, width, height, Color.White);
 
-            string title = I18n.Memory.CallsignTitle(_npcName);
-            string hint = I18n.Memory.CallsignHint();
+            // 星露谷原版对话底框
+            Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
 
-            var titleSize = CustomFontManager.MeasureString(title, CustomFontManager.SizeTitle);
-            CustomFontManager.DrawString(b, title,
-                new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f, yPositionOnScreen + 18),
-                Game1.textColor, CustomFontManager.SizeTitle);
+            string dispName = Game1.getCharacterFromName(_npcName)?.displayName ?? _npcName;
+            string subtitle = !string.IsNullOrEmpty(dispName) ? $"CALLSIGN • {dispName.ToUpper()}" : "CALLSIGN";
+            var subSize = CustomFontManager.MeasureString(subtitle, 13f);
+            Vector2 subPos = new Vector2(
+                MathF.Round(xPositionOnScreen + (width - subSize.X) / 2f),
+                yPositionOnScreen + TopPadding
+            );
+            CustomFontManager.DrawString(b, subtitle, subPos, new Color(135, 98, 62), 13f);
 
-            var hintSize = CustomFontManager.MeasureString(hint, CustomFontManager.SizeSmall);
-            CustomFontManager.DrawString(b, hint,
-                new Vector2(xPositionOnScreen + (width - hintSize.X) / 2f, yPositionOnScreen + 58),
-                Color.Gray, CustomFontManager.SizeSmall);
+            string title = I18n.Memory.CallsignTitle(dispName);
+            var titleSize = CustomFontManager.MeasureStringBold(title, CustomFontManager.SizeTitle);
+            Vector2 titlePos = new Vector2(
+                MathF.Round(xPositionOnScreen + (width - titleSize.X) / 2f),
+                subPos.Y + subSize.Y + 2f
+            );
+            CustomFontManager.DrawStringBold(b, title, titlePos + new Vector2(0, 1f), new Color(225, 200, 160) * 0.85f, CustomFontManager.SizeTitle);
+            CustomFontManager.DrawStringBold(b, title, titlePos, Game1.textColor, CustomFontManager.SizeTitle);
 
             _inputBox.Draw(b);
 
@@ -217,8 +230,10 @@ namespace ValleytalkReborn
         private Rectangle _factCapsuleRect;
         private Rectangle _behaviorCapsuleRect;
 
-        private const int MenuWidth = 600;
-        private const int MenuHeight = 344;
+        // ── 调宽放高，给红木内衬留出充足安全空间 ──
+        private const int MenuWidth = 720;
+        private const int MenuHeight = 460;
+        private const int TopPadding = 125; 
         private const int CharacterLimit = 60;
         private const int WarningThreshold = 50;
 
@@ -250,21 +265,33 @@ namespace ValleytalkReborn
             width = MenuWidth;
             height = MenuHeight;
 
-            int lineHeight = Game1.dialogueFont.LineSpacing;
+            // 内部可用区域的水平 Padding
+            const int inputPadX = 56;
+            
+            // 文本框位置：随 TopPadding 同步整体下移 20px
+            int inputY = yPositionOnScreen + TopPadding + 54;
+            const int inputH = 80;
 
             _inputBox = new DialogueTextInputBox(CharacterLimit, WarningThreshold)
             {
-                Position = new Vector2(xPositionOnScreen + 40,
-                                       yPositionOnScreen + 100 + lineHeight),
-                Extent = new Vector2(width - 80, 60),
-                Font = Game1.dialogueFont,
+                Position = new Vector2(xPositionOnScreen + inputPadX, inputY),
+                Extent = new Vector2(width - inputPadX * 2, inputH),
+                UseCustomFont = true,
+                CustomFontSize = CustomFontManager.SizeRegular + 2f,
+                CounterFontSize = CustomFontManager.SizeSmall + 2f,
+                DrawFrame = true,
+                ShowCharacterCount = true,
+                AllowNewlines = true,
                 TextColor = Game1.textColor,
                 Selected = true
             };
 
-            int capsuleY = yPositionOnScreen + 100 + lineHeight + 76;
-            _factCapsuleRect = new Rectangle(xPositionOnScreen + 40, capsuleY, 250, 36);
-            _behaviorCapsuleRect = new Rectangle(xPositionOnScreen + 40 + 250 + 12, capsuleY, 250, 36);
+            // 分类胶囊按钮排版：跟随 inputY 下移 20px
+            int capsuleY = inputY + inputH + 16;
+            int totalSegW = width - inputPadX * 2;
+            int segItemW = (totalSegW - 14) / 2;
+            _factCapsuleRect = new Rectangle(xPositionOnScreen + inputPadX, capsuleY, segItemW, 38);
+            _behaviorCapsuleRect = new Rectangle(xPositionOnScreen + inputPadX + segItemW + 14, capsuleY, segItemW, 38);
 
             if (_existingEntry != null)
                 _inputBox.SetText(_existingEntry.Content);
@@ -272,19 +299,20 @@ namespace ValleytalkReborn
             _inputBox.OnSubmit += sender => Submit(sender.Text);
             Game1.keyboardDispatcher.Subscriber = _inputBox;
 
-            int btnY = yPositionOnScreen + height - 80 + lineHeight;
+            // 底部按钮坐标保持原位不变
+            int btnY = yPositionOnScreen + height - 76;
 
             _okButton = new ClickableTextureComponent(
-                new Rectangle(xPositionOnScreen + width - 3 * 24 - 2 * 64, btnY, 64, 64),
+                new Rectangle(xPositionOnScreen + width - inputPadX - 52, btnY, 52, 52),
                 Game1.mouseCursors,
-                new Rectangle(128, 256, 64, 64), 1f);
-            _okButtonBaseScale = 1f;
+                Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 46, -1, -1), 0.85f);
+            _okButtonBaseScale = 0.85f;
 
             _cancelButton = new ClickableTextureComponent(
-                new Rectangle(xPositionOnScreen + width - 2 * 24 - 64, btnY, 64, 64),
+                new Rectangle(xPositionOnScreen + width - inputPadX - 52 * 2 - 16, btnY, 52, 52),
                 Game1.mouseCursors,
-                new Rectangle(192, 256, 64, 64), 1f);
-            _cancelButtonBaseScale = 1f;
+                Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 47, -1, -1), 0.85f);
+            _cancelButtonBaseScale = 0.85f;
         }
 
         private void ReturnToMemoryMenu(bool refresh)
@@ -336,7 +364,6 @@ namespace ValleytalkReborn
                 ? WorldMemoryManager.MaxEntries
                 : MemoryManager.MaxMemoriesPerNpc;
 
-            // 自定义提交（如 Timeline 浓缩确认）：复用既有结果 HUD，不触碰 _tab 分支
             if (_customSubmit != null)
             {
                 var r = _customSubmit(trimmed);
@@ -445,7 +472,7 @@ namespace ValleytalkReborn
                     return;
                 }
 
-                if (key == Keys.Enter)
+                if (key == Keys.Enter && !DialogueTextInputBox.IsControlKeyDown())
                 {
                     Submit(_inputBox.Text);
                     return;
@@ -467,91 +494,56 @@ namespace ValleytalkReborn
             b.Draw(Game1.fadeToBlackRect,
                 Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.4f);
 
-            IClickableMenu.drawTextureBox(b,
-                xPositionOnScreen, yPositionOnScreen, width, height, Color.White);
+            // 1. 原版主菜单底框
+            Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
 
+            // 2. 本地化名字
+            string dispName = Game1.getCharacterFromName(_npcName)?.displayName ?? _npcName;
+
+            // 3. 顶部副标题（从 84 移到 104，整体下移 20px）
+            string subtitle = _tab == 1 
+                ? "WORLD MEMORY" 
+                : (!string.IsNullOrEmpty(dispName) ? $"MEMORY • {dispName.ToUpper()}" : "NPC MEMORY");
+            var subSize = CustomFontManager.MeasureString(subtitle, 13f);
+            Vector2 subPos = new Vector2(
+                MathF.Round(xPositionOnScreen + (width - subSize.X) / 2f),
+                yPositionOnScreen + TopPadding
+            );
+            CustomFontManager.DrawString(b, subtitle, subPos, new Color(135, 98, 62), 13f);
+
+            // 4. 主标题（跟随副标题同步下移）
             string title = _tab == 1
                 ? (_existingEntry != null ? I18n.Memory.WorldEditTitle() : I18n.Memory.WorldAddTitle())
                 : (_existingEntry != null
-                    ? I18n.Memory.EditTitle(_npcName)
-                    : I18n.Memory.AddTitle(_npcName));
+                    ? I18n.Memory.EditTitle(dispName)
+                    : I18n.Memory.AddTitle(dispName));
 
-            var titleSize = CustomFontManager.MeasureString(title, CustomFontManager.SizeTitle);
+            var titleSize = CustomFontManager.MeasureStringBold(title, CustomFontManager.SizeTitle);
+            Vector2 titlePos = new Vector2(
+                MathF.Round(xPositionOnScreen + (width - titleSize.X) / 2f),
+                subPos.Y + subSize.Y + 2f
+            );
+            CustomFontManager.DrawStringBold(b, title, titlePos + new Vector2(0, 1f), new Color(225, 200, 160) * 0.85f, CustomFontManager.SizeTitle);
+            CustomFontManager.DrawStringBold(b, title, titlePos, Game1.textColor, CustomFontManager.SizeTitle);
 
-            CustomFontManager.DrawString(b, title,
-                new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f,
-                            yPositionOnScreen + 20),
-                Game1.textColor, CustomFontManager.SizeTitle);
-
-            string hint = _tab == 1
-                ? I18n.Memory.WorldAddHint(WorldMemoryManager.MaxEntryLength)
-                : I18n.Memory.AddHint(_npcName);
-
-            var hintSize = CustomFontManager.MeasureString(hint, CustomFontManager.SizeSmall);
-
-            CustomFontManager.DrawString(b, hint,
-                new Vector2(xPositionOnScreen + (width - hintSize.X) / 2f,
-                            yPositionOnScreen + 20 + Game1.dialogueFont.LineSpacing),
-                Color.Gray);
-
+            // 5. 文本框渲染
             _inputBox.Draw(b);
 
             int mx = Game1.getMouseX();
             int my = Game1.getMouseY();
 
+            // 6. 类别分段选择器
             if (_tab == 0 && _customSubmit == null)
             {
-                bool factSelected = _category == MemoryCategory.Fact;
-                bool behaviorSelected = _category == MemoryCategory.Behavior;
+                DrawCleanSegment(b, _factCapsuleRect, I18n.Memory.CategoryFactLabel(), _category == MemoryCategory.Fact, mx, my);
+                DrawCleanSegment(b, _behaviorCapsuleRect, I18n.Memory.CategoryBehaviorLabel(), _category == MemoryCategory.Behavior, mx, my);
 
-                bool factHover = _factCapsuleRect.Contains(mx, my);
-                bool behaviorHover = _behaviorCapsuleRect.Contains(mx, my);
-
-                Color GetCapsuleBg(bool isSelected, bool isHover) =>
-                    isSelected
-                        ? (isHover ? new Color(255, 225, 120) : new Color(245, 205, 90))
-                        : (isHover ? new Color(175, 125, 75) : new Color(139, 90, 43));
-
-                Color GetCapsuleTextColor(bool isSelected, bool isHover) =>
-                    isSelected
-                        ? Game1.textColor
-                        : (isHover ? Color.White : Color.White * 0.85f);
-
-                Color factBg = GetCapsuleBg(factSelected, factHover);
-                Color behaviorBg = GetCapsuleBg(behaviorSelected, behaviorHover);
-
-                IClickableMenu.drawTextureBox(b,
-                    _factCapsuleRect.X, _factCapsuleRect.Y, _factCapsuleRect.Width, _factCapsuleRect.Height,
-                    factBg);
-                IClickableMenu.drawTextureBox(b,
-                    _behaviorCapsuleRect.X, _behaviorCapsuleRect.Y, _behaviorCapsuleRect.Width, _behaviorCapsuleRect.Height,
-                    behaviorBg);
-
-                string factLabel = I18n.Memory.CategoryFactLabel();
-                string behaviorLabel = I18n.Memory.CategoryBehaviorLabel();
-
-                var factSize = CustomFontManager.MeasureString(factLabel, CustomFontManager.SizeSmall);
-                var behaviorSize = CustomFontManager.MeasureString(behaviorLabel, CustomFontManager.SizeSmall);
-
-                Color factTextColor = GetCapsuleTextColor(factSelected, factHover);
-                Color behaviorTextColor = GetCapsuleTextColor(behaviorSelected, behaviorHover);
-
-                CustomFontManager.DrawString(b, factLabel,
-                    new Vector2(_factCapsuleRect.X + (_factCapsuleRect.Width - factSize.X) / 2f,
-                                _factCapsuleRect.Y + (_factCapsuleRect.Height - factSize.Y) / 2f),
-                    factTextColor, CustomFontManager.SizeSmall);
-                CustomFontManager.DrawString(b, behaviorLabel,
-                    new Vector2(_behaviorCapsuleRect.X + (_behaviorCapsuleRect.Width - behaviorSize.X) / 2f,
-                                _behaviorCapsuleRect.Y + (_behaviorCapsuleRect.Height - behaviorSize.Y) / 2f),
-                    behaviorTextColor, CustomFontManager.SizeSmall);
-
-                string hint2 = factSelected ? I18n.Memory.CategoryFactHint() : I18n.Memory.CategoryBehaviorHint();
-                var hintSize2 = CustomFontManager.MeasureString(hint2, CustomFontManager.SizeSmall);
+                string hint2 = _category == MemoryCategory.Fact ? I18n.Memory.CategoryFactHint() : I18n.Memory.CategoryBehaviorHint();
                 int capsuleBottom = Math.Max(_factCapsuleRect.Bottom, _behaviorCapsuleRect.Bottom);
+
                 CustomFontManager.DrawString(b, hint2,
-                    new Vector2(xPositionOnScreen + (width - hintSize2.X) / 2f,
-                                capsuleBottom + 8),
-                    Color.Gray, CustomFontManager.SizeSmall);
+                    new Vector2(xPositionOnScreen + 56, capsuleBottom + 10),
+                    new Color(135, 110, 85), CustomFontManager.SizeSmall);
             }
 
             UiHelper.UpdateButtonScale(ref _okButtonHoverScale, _okButton, mx, my);
@@ -564,6 +556,49 @@ namespace ValleytalkReborn
             _cancelButton.draw(b);
 
             drawMouse(b);
+        }
+
+        private static void DrawCleanSegment(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my)
+        {
+            bool isHover = rect.Contains(mx, my);
+
+            Color innerBg = isActive
+                ? new Color(255, 252, 244)
+                : (isHover ? new Color(248, 243, 235) : new Color(230, 218, 198) * 0.45f);
+
+            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 2, rect.Y + 2, rect.Width - 4, rect.Height - 4), innerBg);
+
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
+                new Rectangle(403, 383, 6, 6),
+                rect.X, rect.Y, rect.Width, rect.Height,
+                isActive ? Color.White : Color.White * 0.7f, 2f, false);
+
+            if (isActive)
+            {
+                IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
+                    new Rectangle(432, 439, 9, 9),
+                    rect.X - 1, rect.Y - 1, rect.Width + 2, rect.Height + 2,
+                    Color.Gold * 0.45f, 2f, false);
+            }
+
+            var labelSize = CustomFontManager.MeasureStringBold(label, CustomFontManager.SizeRegular);
+            Vector2 textPos = new Vector2(
+                rect.X + (rect.Width - labelSize.X) / 2f,
+                rect.Y + (rect.Height - labelSize.Y) / 2f
+            );
+
+            Color textColor = isActive
+                ? Game1.textColor
+                : (isHover ? Game1.textColor * 0.9f : new Color(135, 110, 85));
+
+            if (isActive)
+            {
+                CustomFontManager.DrawStringBold(b, label, textPos, textColor, CustomFontManager.SizeRegular);
+            }
+            else
+            {
+                CustomFontManager.DrawString(b, label, textPos, textColor, CustomFontManager.SizeRegular);
+            }
         }
 
         protected override void cleanupBeforeExit()
