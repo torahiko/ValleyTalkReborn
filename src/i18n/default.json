@@ -193,6 +193,7 @@
   "Hub.TabWorldMemory": "World Memories",
   "Hub.TabProfile": "Farmer Profile",
   "Hub.TabAdvanced": "Advanced Settings",
+  "Hub.TabWorldSettings": "World Settings",
   "Hub.SelectNpcLabel": "NPC: ",
   "Hub.EmptyNpcList": "No villagers available yet. Talk to or befriend a villager first.", 
   "Hub.KeybindsTitle": "Current Keybinds",
@@ -309,5 +310,9 @@
   "Profile.EnableProfile": "Enable Profile",
   "Profile.SelectOption": "(Click to select)",
   "Profile.SaveButton": "Save",
-  "AdvancedSettings.MenuTitle": "Advanced Settings"
+  "AdvancedSettings.MenuTitle": "Advanced Settings",
+  "WorldSettings.DateAmbience": "Date & Ambience",
+  "WorldSettings.RelationNetwork": "Relation Network",
+  "WorldSettings.LocationFestival": "Locations & Festivals",
+  "WorldSettings.PoiTuning": "POI Tuning"
 }

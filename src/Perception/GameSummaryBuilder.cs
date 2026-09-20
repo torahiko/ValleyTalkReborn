@@ -6,6 +6,8 @@ using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using ValleytalkReborn;
+using ValleytalkReborn.Services;
+using ValleytalkReborn.Services.Overlays;
 
 namespace ValleytalkReborn;
 
@@ -41,9 +43,9 @@ public sealed class BuildContext
     /// </summary>
     public static BuildContext FromGameState(ContextFlags flags, string locationName, Dictionary<string, string> regionMap)
     {
-        // 节日当天或前一天才注入节日日历
         bool festivalRelevant = EnvironmentScanner.GetTodayFestivalName() != null
-            || IsNextDayFestival();
+            || IsNextDayFestival()
+            || WorldSummaryOverlayService.CustomFestivalRelevant();
 
         // 把地点名映射到 Region
         string region = ResolveRegion(locationName, regionMap);
@@ -195,6 +197,14 @@ internal class GameSummaryBuilder
                         break;
                     case "Locations":
                         BuildLocations(builder, sectionObject, ctx);
+                        break;
+                    case "Festivals":
+                        BuildGeneral(builder, sectionObject);
+                        if (TryGetCustomFestivalLines(out var todayLine, out var eveLine))
+                        {
+                            if (!string.IsNullOrEmpty(todayLine)) builder.AppendLine(todayLine);
+                            if (!string.IsNullOrEmpty(eveLine)) builder.AppendLine(eveLine);
+                        }
                         break;
                     default:
                         BuildGeneral(builder, sectionObject);
@@ -493,7 +503,33 @@ internal class GameSummaryBuilder
         foreach (var item in itemsList.Entries.Values)
             builder.AppendLine($"- **{item.Name}** - {item.Description}");
     }
-
+    private static bool TryGetCustomFestivalLines(out string todayLine, out string eveLine)
+    {
+        todayLine = "";
+        eveLine = "";
+        try
+        {
+            if (ModEntry.WorldSummaryOverlay == null) return false;
+            string season = Game1.season.ToString();
+            int day = Game1.dayOfMonth;
+            bool any = false;
+            CustomFestivalEntry? today = WorldSummaryOverlayService.FindCustomFestival($"{season}{day}");
+            if (today != null)
+            {
+                string name = WorldSummaryOverlayService.ResolveFestivalLanguage(today.Names);
+                string desc = WorldSummaryOverlayService.ResolveFestivalLanguage(today.Descriptions);
+                if (!string.IsNullOrEmpty(name)) { todayLine = $"[TODAY'S SPECIAL EVENT / FESTIVAL: {name}] {desc}"; any = true; }
+            }
+            CustomFestivalEntry? eve = WorldSummaryOverlayService.FindCustomFestival(WorldSummaryOverlayService.BuildEveKey(season, day));
+            if (eve != null)
+            {
+                string name = WorldSummaryOverlayService.ResolveFestivalLanguage(eve.Names);
+                if (!string.IsNullOrEmpty(name)) { eveLine = $"[UPCOMING TOMORROW: {name}]"; any = true; }
+            }
+            return any;
+        }
+        catch (Exception ex) { ModEntry.SMonitor.Log($"[GameSummaryBuilder] 自创节日注入异常: {ex.Message}", LogLevel.Error); return false; }
+    }
     internal Dictionary<string, string> GetLocationRegions()
     {
         return GameSummaryDict.LocationRegions ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);

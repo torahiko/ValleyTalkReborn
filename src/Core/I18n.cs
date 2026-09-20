@@ -286,6 +286,7 @@ namespace ValleytalkReborn
             public static string TabWorldMemory() => Lookup("Hub.TabWorldMemory");
             public static string TabProfile() => Lookup("Hub.TabProfile");
             public static string TabAdvanced() => Lookup("Hub.TabAdvanced");
+            public static string TabWorldSettings() => Lookup("Hub.TabWorldSettings");
             public static string ScopeAll() => Lookup("Hub.ScopeAll");
             public static string ScopeGlobal() => Lookup("Hub.ScopeGlobal");
             public static string ScopeNpc() => Lookup("Hub.ScopeNpc");
@@ -341,6 +342,17 @@ namespace ValleytalkReborn
 
             // Backward compatibility (used by DialogueTextInputMenu.cs)
             public static string ButtonHover() => Lookup("AdvancedSettings.ButtonHover");
+        }
+
+        // =========================================================================
+        // 6b. WORLD SETTINGS DOMAIN (Hub Tab4 sub-pages, T4/T5/T6c/T7)
+        // =========================================================================
+        public static class WorldSettings
+        {
+            public static string DateAmbience() => Lookup("WorldSettings.DateAmbience");
+            public static string RelationNetwork() => Lookup("WorldSettings.RelationNetwork");
+            public static string LocationFestival() => Lookup("WorldSettings.LocationFestival");
+            public static string PoiTuning() => Lookup("WorldSettings.PoiTuning");
         }
 
         // =========================================================================

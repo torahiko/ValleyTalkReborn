@@ -193,6 +193,7 @@
   "Hub.TabWorldMemory": "世界设定",
   "Hub.TabProfile": "农夫档案",
   "Hub.TabAdvanced": "高级设置",
+  "Hub.TabWorldSettings": "世界设定",
   "Hub.SelectNpcLabel": "NPC：",
   "Hub.EmptyNpcList": "暂无可选村民。请先与村民对话或建立好感度。",
   "Hub.KeybindsTitle": "当前按键一览",
@@ -308,5 +309,9 @@
   "Profile.EnableProfile": "启用人设档案",
   "Profile.SelectOption": "（点击选择）",
   "Profile.SaveButton": "保存档案",
-  "AdvancedSettings.MenuTitle": "高级设置"
+  "AdvancedSettings.MenuTitle": "高级设置",
+  "WorldSettings.DateAmbience": "日期与氛围",
+  "WorldSettings.RelationNetwork": "关系网络",
+  "WorldSettings.LocationFestival": "地点与节日",
+  "WorldSettings.PoiTuning": "兴趣点调校"
 }
