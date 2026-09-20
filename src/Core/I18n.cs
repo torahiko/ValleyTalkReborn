@@ -369,6 +369,33 @@ namespace ValleytalkReborn
             public static string DeleteThis() => Lookup("WorldSettings.DateAmbience.DeleteThis");
             public static string NewCustom() => Lookup("WorldSettings.DateAmbience.NewCustom");
             public static string Saved() => Lookup("WorldSettings.DateAmbience.Saved");
+
+            // T5 客观社交关系网子页
+            public static string NpcA() => Lookup("WorldSettings.RelationNetwork.NpcA");
+            public static string NpcB() => Lookup("WorldSettings.RelationNetwork.NpcB");
+            public static string Description() => Lookup("WorldSettings.RelationNetwork.Description");
+            public static string SaveRelation() => Lookup("WorldSettings.RelationNetwork.Save");
+            public static string RevertRelation() => Lookup("WorldSettings.RelationNetwork.Revert");
+            public static string DeleteRelation() => Lookup("WorldSettings.RelationNetwork.Delete");
+            public static string NewRelation() => Lookup("WorldSettings.RelationNetwork.New");
+            public static string SavedRelation() => Lookup("WorldSettings.RelationNetwork.Saved");
+            public static string NeedTwoNpcs() => Lookup("WorldSettings.RelationNetwork.NeedTwoNpcs");
+
+            // T6c 地点与节日编撰子页
+            public static string LocationDescription() => Lookup("WorldSettings.LocationFestival.LocationDescription");
+            public static string Festival() => Lookup("WorldSettings.LocationFestival.Festival");
+            public static string Season() => Lookup("WorldSettings.LocationFestival.Season");
+            public static string Day() => Lookup("WorldSettings.LocationFestival.Day");
+            public static string FestivalNameZh() => Lookup("WorldSettings.LocationFestival.NameZh");
+            public static string FestivalNameEn() => Lookup("WorldSettings.LocationFestival.NameEn");
+            public static string FestivalDescZh() => Lookup("WorldSettings.LocationFestival.DescZh");
+            public static string FestivalDescEn() => Lookup("WorldSettings.LocationFestival.DescEn");
+            public static string SaveFestival() => Lookup("WorldSettings.LocationFestival.Save");
+            public static string RevertThisLoc() => Lookup("WorldSettings.LocationFestival.RevertThisLoc");
+            public static string DeleteFestival() => Lookup("WorldSettings.LocationFestival.Delete");
+            public static string NewCustomFestival() => Lookup("WorldSettings.LocationFestival.NewCustom");
+            public static string SavedLoc() => Lookup("WorldSettings.LocationFestival.Saved");
+            public static string VanillaCoexistWarning() => Lookup("WorldSettings.LocationFestival.VanillaCoexistWarning");
         }
 
         // =========================================================================
