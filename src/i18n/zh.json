@@ -350,5 +350,19 @@
   "WorldSettings.LocationFestival.Delete": "删除",
   "WorldSettings.LocationFestival.NewCustom": "新建自创",
   "WorldSettings.LocationFestival.Saved": "已保存",
-  "WorldSettings.LocationFestival.VanillaCoexistWarning": "当日已有原版节日，自创纪念日将叠加显示"
+  "WorldSettings.LocationFestival.VanillaCoexistWarning": "当日已有原版节日，自创纪念日将叠加显示",
+  "WorldSettings.PoiTuning.Capture": "抓取站立点",
+  "WorldSettings.PoiTuning.Captured": "已抓取",
+  "WorldSettings.PoiTuning.NoTileCaptured": "尚未抓取坐标",
+  "WorldSettings.PoiTuning.NewPoi": "新建 POI",
+  "WorldSettings.PoiTuning.Delete": "删除 POI",
+  "WorldSettings.PoiTuning.Teleport": "传送踩点",
+  "WorldSettings.PoiTuning.WeightsPerNpc": "权重（每 NPC）",
+  "WorldSettings.PoiTuning.SelectNpcFirst": "（请先选中 NPC）",
+  "WorldSettings.PoiTuning.NewDescZh": "描述（中文）",
+  "WorldSettings.PoiTuning.NewDescEn": "描述（英文）",
+  "WorldSettings.PoiTuning.Save": "保存权重",
+  "WorldSettings.PoiTuning.RevertNpc": "还原此 NPC",
+  "WorldSettings.PoiTuning.Saved": "已保存",
+  "WorldSettings.PoiTuning.VanillaCoexistWarning": "该位置已有原版 POI，自定义条目将叠加存在"
 }

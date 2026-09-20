@@ -396,6 +396,22 @@ namespace ValleytalkReborn
             public static string NewCustomFestival() => Lookup("WorldSettings.LocationFestival.NewCustom");
             public static string SavedLoc() => Lookup("WorldSettings.LocationFestival.Saved");
             public static string VanillaCoexistWarning() => Lookup("WorldSettings.LocationFestival.VanillaCoexistWarning");
+
+            // T7 兴趣点调谐子页
+            public static string Capture() => Lookup("WorldSettings.PoiTuning.Capture");
+            public static string Captured() => Lookup("WorldSettings.PoiTuning.Captured");
+            public static string NoTileCaptured() => Lookup("WorldSettings.PoiTuning.NoTileCaptured");
+            public static string NewPoi() => Lookup("WorldSettings.PoiTuning.NewPoi");
+            public static string DeletePoi() => Lookup("WorldSettings.PoiTuning.Delete");
+            public static string Teleport() => Lookup("WorldSettings.PoiTuning.Teleport");
+            public static string WeightsPerNpc() => Lookup("WorldSettings.PoiTuning.WeightsPerNpc");
+            public static string SelectNpcFirst() => Lookup("WorldSettings.PoiTuning.SelectNpcFirst");
+            public static string NewDescZh() => Lookup("WorldSettings.PoiTuning.NewDescZh");
+            public static string NewDescEn() => Lookup("WorldSettings.PoiTuning.NewDescEn");
+            public static string SaveWeights() => Lookup("WorldSettings.PoiTuning.Save");
+            public static string RevertNpc() => Lookup("WorldSettings.PoiTuning.RevertNpc");
+            public static string SavedPoi() => Lookup("WorldSettings.PoiTuning.Saved");
+            public static string VanillaPoiCoexist() => Lookup("WorldSettings.PoiTuning.VanillaCoexistWarning");
         }
 
         // =========================================================================

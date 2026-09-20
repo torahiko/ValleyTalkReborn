@@ -28,7 +28,7 @@ internal sealed class RulesTabView : IHubTabView
     private Rectangle _saveAndExitBtnRect;
 
     // ── 左栏状态（Scope） ──
-    private record ScopeItem(string Id, string DisplayName, Texture2D? Sprite, Rectangle SourceRect);
+    private record ScopeItem(string Id, string DisplayName, Texture2D? Sprite, Rectangle SourceRect, Rectangle? IconRect = null);
     private readonly List<ScopeItem> _scopeItems = new();
     private int _selectedScopeIndex = 0;
     private int _leftScrollOffset = 0;
@@ -64,8 +64,10 @@ internal sealed class RulesTabView : IHubTabView
     {
         _scopeItems.Clear();
 
-        _scopeItems.Add(new ScopeItem("__ALL__", I18n.Hub.ScopeAll(), null, Rectangle.Empty));
-        _scopeItems.Add(new ScopeItem("WORLD", I18n.Hub.ScopeGlobal(), null, Rectangle.Empty));
+        _scopeItems.Add(new ScopeItem("__ALL__", I18n.Hub.ScopeAll(), null, Rectangle.Empty,
+            IconSource.Star(IconTheme.Wood, IconState.Normal)));
+        _scopeItems.Add(new ScopeItem("WORLD", I18n.Hub.ScopeGlobal(), null, Rectangle.Empty,
+            IconSource.House(IconTheme.Wood, IconState.Normal)));
 
         var candidates = NpcCandidateQueryService.GetCleanedCandidates();
         foreach (var c in candidates)
@@ -823,11 +825,18 @@ internal sealed class RulesTabView : IHubTabView
 
         if (item.Sprite != null && !item.SourceRect.IsEmpty)
         {
+            // NPC 头像
             b.Draw(item.Sprite, avatarRect, item.SourceRect, Color.White);
+        }
+        else if (item.IconRect is Rectangle iconSrc)
+        {
+            // 作用域图标（全部规则 = 星星，小镇共识 = 小镇）——始终原色显示，不随选中/悬停变灰
+            b.Draw(ModEntry.CustomIcons, avatarRect, iconSrc, Color.White);
         }
         else
         {
-            string symbol = item.Id == "__ALL__" ? "✱" : "❖";
+            // 兜底：未知项仍画符号
+            string symbol = "❖";
             var symSz = CustomFontManager.MeasureString(symbol, CustomFontManager.SizeSmall);
             CustomFontManager.DrawString(b, symbol,
                 new Vector2(avatarRect.X + (avatarSize - symSz.X) / 2f, avatarRect.Y + (avatarSize - symSz.Y) / 2f - 1),

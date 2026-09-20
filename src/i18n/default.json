@@ -351,5 +351,19 @@
   "WorldSettings.LocationFestival.Delete": "Delete",
   "WorldSettings.LocationFestival.NewCustom": "New Custom",
   "WorldSettings.LocationFestival.Saved": "Saved",
-  "WorldSettings.LocationFestival.VanillaCoexistWarning": "A vanilla festival already exists this day; the custom one will coexist"
+  "WorldSettings.LocationFestival.VanillaCoexistWarning": "A vanilla festival already exists this day; the custom one will coexist",
+  "WorldSettings.PoiTuning.Capture": "Capture Tile",
+  "WorldSettings.PoiTuning.Captured": "Captured",
+  "WorldSettings.PoiTuning.NoTileCaptured": "No tile captured",
+  "WorldSettings.PoiTuning.NewPoi": "New POI",
+  "WorldSettings.PoiTuning.Delete": "Delete POI",
+  "WorldSettings.PoiTuning.Teleport": "Teleport",
+  "WorldSettings.PoiTuning.WeightsPerNpc": "Weights (per NPC)",
+  "WorldSettings.PoiTuning.SelectNpcFirst": "(Select an NPC first)",
+  "WorldSettings.PoiTuning.NewDescZh": "Description (Chinese)",
+  "WorldSettings.PoiTuning.NewDescEn": "Description (English)",
+  "WorldSettings.PoiTuning.Save": "Save",
+  "WorldSettings.PoiTuning.RevertNpc": "Revert NPC",
+  "WorldSettings.PoiTuning.Saved": "Saved",
+  "WorldSettings.PoiTuning.VanillaCoexistWarning": "A vanilla POI already exists; the custom one will coexist"
 }
