@@ -15,6 +15,15 @@ namespace ValleytalkReborn.Services;
 /// </summary>
 public sealed class BioStorageService
 {
+    public enum BioScope { Global, Local }
+
+    private static string GlobalBaseDir =>
+        Path.Combine(Constants.SavesPath, "_ValleyTalkReborn_Global");
+    private static string LocalBaseDir =>
+        Constants.CurrentSavePath is null
+            ? null
+            : Path.Combine(Constants.CurrentSavePath, "ValleyTalkReborn_Local");
+
     private readonly IModHelper helper;
     private readonly IMonitor monitor;
     private bool _subscribed;
@@ -40,12 +49,19 @@ public sealed class BioStorageService
 
         this.helper.Events.Content.AssetRequested += OnAssetRequested;
         _subscribed = true;
+
+        MigrateLegacyOverlays(this.monitor);
     }
 
-    /// <summary>指定 NPC 是否已存在磁盘覆盖层。</summary>
+    /// <summary>指定 NPC 是否已存在磁盘覆盖层（Local 优先，Global 次之）。</summary>
     public bool HasCustomOverlay(string npcName)
     {
-        return File.Exists(OverlayPathFor(npcName));
+        if (File.Exists(OverlayPathFor(npcName, BioScope.Global)))
+            return true;
+        string localDir = LocalBaseDir;
+        if (localDir != null && File.Exists(OverlayPathFor(npcName, BioScope.Local)))
+            return true;
+        return false;
     }
 
     /// <summary>
@@ -96,15 +112,39 @@ public sealed class BioStorageService
     }
 
     /// <summary>
-    /// 保存覆盖层：创建目录 → 序列化 → 反序列化校验 → 原子写（.tmp + Move）→ 失效资产缓存。
-    /// 任意异常不部分写入，return false 且 errorMessage 明确。
+    /// 判定指定 NPC 当前活跃的覆盖层作用域。
+    /// Local 文件存在 → Local；否则 Global 文件存在 → Global；均不存在 → activeScope 占位 Global，return false。
     /// </summary>
-    public bool SaveOverlay(string npcName, BioData editedBio, out string errorMessage)
+    public bool TryGetActiveScope(string npcName, out BioScope activeScope)
+    {
+        if (LocalBaseDir != null && File.Exists(OverlayPathFor(npcName, BioScope.Local)))
+        {
+            activeScope = BioScope.Local;
+            return true;
+        }
+        if (File.Exists(OverlayPathFor(npcName, BioScope.Global)))
+        {
+            activeScope = BioScope.Global;
+            return true;
+        }
+        activeScope = BioScope.Global;
+        return false;
+    }
+
+    /// <summary>
+    /// 保存覆盖层到 targetScope：创建目录 → 序列化 → 反序列化校验 → 原子写（.tmp + Move）→
+    /// 失效资产缓存 → 对称清理另一作用域同名文件（失败仅 Warn 不中断）。
+    /// 任意异常不部分写入；失败时 best-effort 删除残留 .tmp，return false 且 errorMessage 明确。
+    /// </summary>
+    public bool SaveOverlay(string npcName, BioData editedBio, BioScope targetScope, out string errorMessage)
     {
         errorMessage = string.Empty;
+        string path = string.Empty;
+        string tmp = string.Empty;
         try
         {
-            string dir = Path.GetDirectoryName(OverlayPathFor(npcName))!;
+            path = OverlayPathFor(npcName, targetScope);
+            string dir = Path.GetDirectoryName(path)!;
             if (!Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
 
@@ -120,17 +160,33 @@ public sealed class BioStorageService
             }
 
             // 原子写：写 .tmp 后覆盖移动，避免中断产生半写文件。
-            string path = OverlayPathFor(npcName);
-            string tmp = path + ".tmp";
+            tmp = path + ".tmp";
             File.WriteAllText(tmp, json);
             File.Move(tmp, path, overwrite: true);
 
             InvalidateBioAsset(npcName);
+
+            // 对称清理：删除另一作用域的同名文件，保证同一 NPC 仅单一作用域持有覆盖层。
+            string otherScopePath = targetScope == BioScope.Global
+                ? ResolveLocalPathOrNull(npcName)
+                : OverlayPathFor(npcName, BioScope.Global);
+            if (otherScopePath != null && File.Exists(otherScopePath))
+            {
+                try { File.Delete(otherScopePath); }
+                catch (Exception ex)
+                {
+                    this.monitor.Log($"[BioStorage] 对称清理另一作用域文件失败({npcName}, {targetScope}): {ex.Message}", LogLevel.Warn);
+                }
+            }
+
             this.monitor.Log($"[BioStorage] 已保存覆盖层并失效资产缓存: {npcName}", LogLevel.Info);
             return true;
         }
         catch (Exception ex)
         {
+            // 失败时 best-effort 删除残留 .tmp，避免污染磁盘。
+            try { if (File.Exists(tmp)) File.Delete(tmp); } catch { }
+
             errorMessage = ex.Message;
             this.monitor.Log($"[BioStorage] 覆盖层保存失败({npcName}): {ex.Message}", LogLevel.Error);
             return false;
@@ -138,20 +194,41 @@ public sealed class BioStorageService
     }
 
     /// <summary>
-    /// 删除覆盖层。删除成功或本不存在 → 失效资产缓存 + return true；
-    /// 删除抛异常 → errorMessage 明确 + return false（此时覆盖层仍在盘上，不谎报成功）。
+    /// 解析 Local 作用域路径；LocalBaseDir==null（载档前）时返回 null，由调用方跳过。
+    /// 单独抽出以避免 OverlayPathFor(scope=Local) 在 LocalBaseDir==null 时抛异常。
+    /// </summary>
+    private static string ResolveLocalPathOrNull(string npcName)
+    {
+        string localDir = LocalBaseDir;
+        return localDir is null ? null : OverlayPathFor(npcName, BioScope.Local);
+    }
+
+    /// <summary>
+    /// 删除覆盖层：依次尝试 Local（若 LocalBaseDir != null）、Global、遗留 Mod 目录三路径。
+    /// 任一存在且删除成功 → InvalidateBioAsset + return true；
+    /// 全部不存在 → InvalidateBioAsset + return true（幂等）；
+    /// 删除抛异常 → errorMessage 明确 + return false（不谎报成功）。
     /// </summary>
     public bool ResetOverlay(string npcName, out string errorMessage)
     {
         errorMessage = string.Empty;
-        string path = OverlayPathFor(npcName);
         try
         {
-            if (File.Exists(path))
+            bool anyExisted = false;
+            string legacyPath = Path.Combine(ModEntry.SHelper.DirectoryPath, "saves", "custom_bios", SanitizeFileName(npcName) + ".json");
+            string[] candidates = { ResolveLocalPathOrNull(npcName), OverlayPathFor(npcName, BioScope.Global), legacyPath };
+
+            foreach (string path in candidates)
+            {
+                if (path == null || !File.Exists(path))
+                    continue;
+
                 File.Delete(path);
+                anyExisted = true;
+            }
 
             InvalidateBioAsset(npcName);
-            this.monitor.Log($"[BioStorage] 已删除覆盖层并失效资产缓存: {npcName}", LogLevel.Info);
+            this.monitor.Log($"[BioStorage] 已重置覆盖层并失效资产缓存: {npcName} ({(anyExisted ? "已删除文件" : "本就不存在，幂等")})", LogLevel.Info);
             return true;
         }
         catch (Exception ex)
@@ -159,6 +236,118 @@ public sealed class BioStorageService
             errorMessage = ex.Message;
             this.monitor.Log($"[BioStorage] 覆盖层删除失败({npcName}): {ex.Message}", LogLevel.Error);
             return false;
+        }
+    }
+
+    /// <summary>
+    /// 导出覆盖层 JSON 到 Global/exports 目录（文件名带时间戳，避免覆盖）。
+    /// 导出文件无需原子性；成功 monitor.Log(LogLevel.Info) 完整路径；异常 return false。
+    /// </summary>
+    public bool ExportBio(string npcName, BioData data, out string exportPath, out string errorMessage)
+    {
+        exportPath = string.Empty;
+        errorMessage = string.Empty;
+        try
+        {
+            string exportDir = Path.Combine(GlobalBaseDir, "exports");
+            if (!Directory.Exists(exportDir))
+                Directory.CreateDirectory(exportDir);
+
+            string fileName = $"{SanitizeFileName(npcName)}_Bio_{DateTime.Now:yyyyMMdd_HHmmss}.json";
+            string fullPath = Path.Combine(exportDir, fileName);
+
+            string json = JsonConvert.SerializeObject(data, Formatting.Indented);
+            File.WriteAllText(fullPath, json);
+
+            exportPath = fullPath;
+            this.monitor.Log($"[BioStorage] 已导出覆盖层: {fullPath}", LogLevel.Info);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            this.monitor.Log($"[BioStorage] 覆盖层导出失败({npcName}): {ex.Message}", LogLevel.Error);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 仅解析导入的 JSON 文本为 BioData（不落盘）。
+    /// 空白输入 → "导入数据为空"；反序列化 null → "反序列化失败"；异常 → ex.Message。
+    /// BioData 模型不含 NPC 名字段，无法做粘贴目标校验，由调用方自行选择目标 NPC，此处不做。
+    /// </summary>
+    public bool TryParseImportedBio(string jsonText, out BioData importedData, out string errorMessage)
+    {
+        importedData = null;
+        errorMessage = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(jsonText))
+        {
+            errorMessage = "导入数据为空";
+            return false;
+        }
+
+        try
+        {
+            importedData = JsonConvert.DeserializeObject<BioData>(jsonText);
+            if (importedData == null)
+            {
+                errorMessage = "反序列化失败";
+                return false;
+            }
+            return true;
+        }
+        catch (Exception ex)
+        {
+            importedData = null;
+            errorMessage = ex.Message;
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 幂等一次性迁移：将遗留 Mod 目录（ModDir/saves/custom_bios/）下的 *.json 覆盖层复制到
+    /// Global/custom_bios/。目标已存在 → 跳过并 Log(Debug)；单文件失败 → Log(Warn) 并继续；
+    /// 永不删除源文件。由 RegisterAssetProviders() 订阅成功分支末尾调用。
+    /// </summary>
+    private static void MigrateLegacyOverlays(IMonitor monitor)
+    {
+        try
+        {
+            string legacyDir = Path.Combine(ModEntry.SHelper.DirectoryPath, "saves", "custom_bios");
+            if (!Directory.Exists(legacyDir))
+                return;
+
+            string[] files = Directory.GetFiles(legacyDir, "*.json");
+            if (files.Length == 0)
+                return;
+
+            string targetDir = Path.Combine(GlobalBaseDir, "custom_bios");
+            if (!Directory.Exists(targetDir))
+                Directory.CreateDirectory(targetDir);
+
+            foreach (string src in files)
+            {
+                string dest = Path.Combine(targetDir, Path.GetFileName(src));
+                if (File.Exists(dest))
+                {
+                    monitor?.Log($"[BioStorage] 迁移跳过（目标已存在）: {Path.GetFileName(src)}", LogLevel.Debug);
+                    continue;
+                }
+
+                try
+                {
+                    File.Copy(src, dest, overwrite: false);
+                }
+                catch (Exception ex)
+                {
+                    monitor?.Log($"[BioStorage] 迁移单文件失败({Path.GetFileName(src)}): {ex.Message}", LogLevel.Warn);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            monitor?.Log($"[BioStorage] 迁移过程异常: {ex.Message}", LogLevel.Warn);
         }
     }
 
@@ -190,9 +379,19 @@ public sealed class BioStorageService
         return remainder;
     }
 
-    private static string OverlayPathFor(string npcName)
+    /// <summary>
+    /// 计算指定 NPC 在指定作用域下的覆盖层 JSON 路径。
+    /// scope==Local 且 LocalBaseDir==null（载档前）→ 抛 InvalidOperationException，禁止静默落 Global。
+    /// </summary>
+    internal static string OverlayPathFor(string npcName, BioScope scope)
     {
-        return Path.Combine(ModEntry.SHelper.DirectoryPath, "saves", "custom_bios", SanitizeFileName(npcName) + ".json");
+        string baseDir = scope switch
+        {
+            BioScope.Global => GlobalBaseDir,
+            BioScope.Local => LocalBaseDir ?? throw new InvalidOperationException("no save loaded"),
+            _ => GlobalBaseDir
+        };
+        return Path.Combine(baseDir, "custom_bios", SanitizeFileName(npcName) + ".json");
     }
 
     private static string SanitizeFileName(string npcName)
@@ -208,9 +407,16 @@ public sealed class BioStorageService
         return sanitized;
     }
 
-    private static BioData TryDeserializeOverlay(string npcName)
+    /// <summary>
+    /// 从活跃作用域反序列化覆盖层：TryGetActiveScope 判定作用域（Local 优先），损坏回退 null + Warn。
+    /// 无覆盖层 → return null。
+    /// </summary>
+    private BioData TryDeserializeOverlay(string npcName)
     {
-        string path = OverlayPathFor(npcName);
+        if (!TryGetActiveScope(npcName, out BioScope activeScope))
+            return null;
+
+        string path = OverlayPathFor(npcName, activeScope);
         if (!File.Exists(path))
             return null;
 
