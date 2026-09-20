@@ -21,6 +21,7 @@ internal sealed class BioEditorViewModel
     private BioData _bio;
     private bool _dirty;
     private bool _hasOverlay;
+    private BioStorageService.BioScope _targetScope; // Memory 作用域，随菜单消亡
 
     /// <summary>Tab 1 传记脚手架常量（逐字符原样自 BioEditorMenu.L106-108 搬迁）。</summary>
     private static readonly string BiographyScaffold =
@@ -34,6 +35,7 @@ internal sealed class BioEditorViewModel
         _storage = storage;
         _bio = storage.LoadEditableBio(npcName);
         _hasOverlay = storage.HasCustomOverlay(npcName);
+        _targetScope = storage.TryGetActiveScope(npcName, out var s) ? s : BioStorageService.BioScope.Global;
     }
 
     /********** 核心状态（Memory 作用域） **********/
@@ -41,6 +43,10 @@ internal sealed class BioEditorViewModel
     public BioData Bio => _bio;
     public bool IsDirty => _dirty;
     public bool HasOverlay => _hasOverlay;
+    public BioStorageService.BioScope TargetScope => _targetScope;
+
+    /// <summary>切换保存目标作用域（仅 Memory，不持久化；关闭菜单后下次打开按 TryGetActiveScope 推断）。</summary>
+    public void SetTargetScope(BioStorageService.BioScope scope) { _targetScope = scope; }
 
     /// <summary>标记已修改。已收敛为 private（T7）。</summary>
     private void MarkDirty()
@@ -101,12 +107,29 @@ internal sealed class BioEditorViewModel
     /********** 持久化 **********/
     public bool TrySave(out string error)
     {
-        if (!_storage.SaveOverlay(_npcName, _bio, out string err))
+        if (!_storage.SaveOverlay(_npcName, _bio, _targetScope, out string err))
         {
             error = err;
             return false;
         }
         _dirty = false;
+        error = null;
+        return true;
+    }
+
+    /// <summary>
+    /// 从剪贴板 JSON 整体替换 _bio（不落盘）。成功则 MarkDirty；
+    /// 调用方随后必须调 SyncAllControlsFromVm 重装载控件，避免旧文本回写新 BioData。
+    /// </summary>
+    public bool TryImportBio(string jsonText, out string error)
+    {
+        if (!_storage.TryParseImportedBio(jsonText, out BioData imported, out string err))
+        {
+            error = err;
+            return false;
+        }
+        _bio = imported;
+        MarkDirty();
         error = null;
         return true;
     }

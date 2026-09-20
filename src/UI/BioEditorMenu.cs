@@ -149,6 +149,22 @@ namespace ValleytalkReborn
         private Rectangle _tab5LeftColRect;
         private Rectangle _tab5RightColRect;
 
+        // ── VT-UI-02 作用域胶囊 / 导入导出 / 复制全部按钮 ──
+        private Rectangle _scopeCapsuleRect;
+        private Rectangle _importRect;
+        private Rectangle _exportRect;
+        private Rectangle _copyBiographyRect;
+        private Rectangle _copyBehaviorRect;
+        private Rectangle _copyDialogueExamplesRect;
+        private Rectangle _copyStageTextRect;
+        private Rectangle _copyStageBarkRect;
+        private Rectangle _copyRelDescRect;
+        private Rectangle _copyVoiceRect;
+        private Rectangle _copyHabitsRect;
+        private Rectangle _copyLensesRect;
+        private const int CopyBtnW = 100;
+        private const int CopyBtnH = 24;
+
         // ── 构造函数 ──────────────────────────────────────────────────────
         public BioEditorMenu(string npcName, IClickableMenu returnMenu)
             : base(
@@ -271,6 +287,14 @@ namespace ValleytalkReborn
         {
             _closeButton.bounds = new Rectangle(xPositionOnScreen + width - 52, yPositionOnScreen + 16, 36, 36);
 
+            // 顶栏右侧：作用域胶囊 + 导入 + 导出（位于关闭按钮左侧，间距 8px）
+            int hdrBtnY = yPositionOnScreen + 36;
+            int hdrBtnH = 24;
+            int rightEdge = _closeButton.bounds.Left - 8;
+            _exportRect = new Rectangle(rightEdge - 70, hdrBtnY, 70, hdrBtnH);
+            _importRect = new Rectangle(_exportRect.Left - 8 - 60, hdrBtnY, 60, hdrBtnH);
+            _scopeCapsuleRect = new Rectangle(_importRect.Left - 8 - 110, hdrBtnY, 110, hdrBtnH);
+
             int contentLeft = xPositionOnScreen + ContentPadding;
             int contentW = width - ContentPadding * 2;
 
@@ -320,6 +344,8 @@ namespace ValleytalkReborn
                 _uniqueBox.Height = 30;
 
                 _homeBedCheckbox.bounds = new Rectangle(_homeBedCardRect.X + 16, _homeBedCardRect.Y + 26, 28, 28);
+
+                _copyBiographyRect = new Rectangle(_scaffoldBtnRect.Left - 8 - CopyBtnW, (int)_biographyBox.Position.Y - 24, CopyBtnW, CopyBtnH);
             }
 
             // ── Tab 2 布局 ──
@@ -340,6 +366,9 @@ namespace ValleytalkReborn
                 _insertChoiceRect = new Rectangle(_tab2RightColRect.Right - toolBtnW, bodyTop + 2, toolBtnW, 26);
                 _insertBreakRect = new Rectangle(_insertChoiceRect.Left - toolBtnW - 6, bodyTop + 2, toolBtnW, 26);
                 SetBoxBounds(_dialogueExamplesBox, _tab2RightColRect.X, bodyTop + topBarH, colW, boxH);
+
+                _copyBehaviorRect = new Rectangle(_behaviorScaffoldRect.Left - 8 - CopyBtnW, (int)_behaviorBox.Position.Y - 24, CopyBtnW, CopyBtnH);
+                _copyDialogueExamplesRect = new Rectangle(_insertBreakRect.Left - 6 - CopyBtnW, (int)_dialogueExamplesBox.Position.Y - 24, CopyBtnW, CopyBtnH);
             }
 
             // ── Tab 3 布局 ──
@@ -379,6 +408,9 @@ namespace ValleytalkReborn
                 flowY = (int)_stageBarkBox.Position.Y + (int)_stageBarkBox.Extent.Y + 14;
 
                 _stageTagEditor.SetBounds(new Rectangle(rightX, flowY + labelH, rightColW, tagEditorH));
+
+                _copyStageTextRect = new Rectangle(rightX + rightColW - CopyBtnW, (int)_stageTextBox.Position.Y - 22, CopyBtnW, CopyBtnH);
+                _copyStageBarkRect = new Rectangle(rightX + rightColW - CopyBtnW, (int)_stageBarkBox.Position.Y - 22, CopyBtnW, CopyBtnH);
             }
 
             // ── Tab 4 布局 ──
@@ -413,6 +445,8 @@ namespace ValleytalkReborn
                 SetBoxBounds(_relDescBox, rightX, flowY + labelH, rightColW, Math.Max(90, descH));
 
                 RecalculateTab4List();
+
+                _copyRelDescRect = new Rectangle(rightX + rightColW - CopyBtnW, (int)_relDescBox.Position.Y - 22, CopyBtnW, CopyBtnH);
             }
 
             // ── Tab 5 布局 ──
@@ -444,6 +478,10 @@ namespace ValleytalkReborn
                     else if (i == 1) SetBoxBounds(_habitsBox, rightX, boxY, rightColW, boxH);
                     else SetBoxBounds(_lensesBox, rightX, boxY, rightColW, boxH);
                 }
+
+                _copyVoiceRect = new Rectangle(rightX + rightColW - CopyBtnW, (int)_voiceBox.Position.Y - 22, CopyBtnW, CopyBtnH);
+                _copyHabitsRect = new Rectangle(rightX + rightColW - CopyBtnW, (int)_habitsBox.Position.Y - 22, CopyBtnW, CopyBtnH);
+                _copyLensesRect = new Rectangle(rightX + rightColW - CopyBtnW, (int)_lensesBox.Position.Y - 22, CopyBtnW, CopyBtnH);
             }
         }
 
@@ -537,6 +575,14 @@ namespace ValleytalkReborn
             if (_resetPageRect.Contains(x, y)) { TryResetCurrentPage(); return; }
             if (_resetAllRect.Contains(x, y)) { TryResetAll(); return; }
 
+            // 新按钮：作用域胶囊 / 导入 / 导出。文本框持有焦点时跳过，防止输入时误触。
+            if (!AnyTextBoxHasFocus())
+            {
+                if (_scopeCapsuleRect.Contains(x, y)) { ToggleTargetScope(); return; }
+                if (_importRect.Contains(x, y)) { ImportFromClipboard(); return; }
+                if (_exportRect.Contains(x, y)) { ExportBio(); return; }
+            }
+
             if (_activeTab == 0) HandleTab1Click(x, y);
             else if (_activeTab == 1) HandleTab2Click(x, y);
             else if (_activeTab == 2) HandleTab3Click(x, y);
@@ -550,6 +596,7 @@ namespace ValleytalkReborn
             if (_scaffoldBtnRect.Contains(x, y)) { InsertScaffold(); return; }
             if (new Rectangle(_uniqueBox.X, _uniqueBox.Y, _uniqueBox.Width, _uniqueBox.Height).Contains(x, y)) { FocusTextBox(_uniqueBox); return; }
             if (_homeBedCheckbox.bounds.Contains(x, y)) { _homeBedCheckbox.receiveLeftClick(x, y); return; }
+            if (!AnyTextBoxHasFocus() && _copyBiographyRect.Contains(x, y)) { CopyBoxToClipboard("biography"); return; }
             UnfocusAll();
         }
 
@@ -584,6 +631,9 @@ namespace ValleytalkReborn
                 Game1.playSound("shiny4");
                 return;
             }
+
+            if (!AnyTextBoxHasFocus() && _copyBehaviorRect.Contains(x, y)) { CopyBoxToClipboard("behavior"); return; }
+            if (!AnyTextBoxHasFocus() && _copyDialogueExamplesRect.Contains(x, y)) { CopyBoxToClipboard("dialogueExamples"); return; }
 
             UnfocusAll();
         }
@@ -654,6 +704,9 @@ namespace ValleytalkReborn
             if (ContainsPoint(_stageTextBox, x, y)) { FocusDialogueBox(_stageTextBox, x, y); return; }
             if (ContainsPoint(_stageBarkBox, x, y)) { FocusDialogueBox(_stageBarkBox, x, y); return; }
 
+            if (!AnyTextBoxHasFocus() && _copyStageTextRect.Contains(x, y)) { CopyBoxToClipboard("stageText"); return; }
+            if (!AnyTextBoxHasFocus() && _copyStageBarkRect.Contains(x, y)) { CopyBoxToClipboard("stageBark"); return; }
+
             UnfocusAll();
         }
 
@@ -715,6 +768,8 @@ namespace ValleytalkReborn
                 return;
             }
 
+            if (!AnyTextBoxHasFocus() && _copyRelDescRect.Contains(x, y)) { CopyBoxToClipboard("relDesc"); return; }
+
             UnfocusAll();
         }
 
@@ -726,6 +781,10 @@ namespace ValleytalkReborn
             if (ContainsPoint(_voiceBox, x, y)) { FocusDialogueBox(_voiceBox, x, y); return; }
             if (ContainsPoint(_habitsBox, x, y)) { FocusDialogueBox(_habitsBox, x, y); return; }
             if (ContainsPoint(_lensesBox, x, y)) { FocusDialogueBox(_lensesBox, x, y); return; }
+
+            if (!AnyTextBoxHasFocus() && _copyVoiceRect.Contains(x, y)) { CopyBoxToClipboard("voice"); return; }
+            if (!AnyTextBoxHasFocus() && _copyHabitsRect.Contains(x, y)) { CopyBoxToClipboard("habits"); return; }
+            if (!AnyTextBoxHasFocus() && _copyLensesRect.Contains(x, y)) { CopyBoxToClipboard("lenses"); return; }
 
             UnfocusAll();
         }
@@ -867,7 +926,7 @@ namespace ValleytalkReborn
                 new Color(245, 230, 205)
             );
 
-            DrawHeader(b);
+            DrawHeader(b, mx, my);
 
             for (int i = 0; i < _tabRects.Length; i++)
                 DrawTabButton(b, _tabRects[i], TabTitles[i], _activeTab == i, mx, my);
@@ -942,14 +1001,14 @@ namespace ValleytalkReborn
                 Game1.textColor, TipFontSize);
         }
 
-        private void DrawHeader(SpriteBatch b)
+        private void DrawHeader(SpriteBatch b, int mx, int my)
         {
             int headX = xPositionOnScreen + ContentPadding;
             int headY = yPositionOnScreen + 14;
 
             const int pSize = 44;
             var portraitRect = new Rectangle(headX, headY, pSize, pSize);
-            
+
             b.Draw(Game1.staminaRect, new Rectangle(portraitRect.X - 1, portraitRect.Y - 1, portraitRect.Width + 2, portraitRect.Height + 2), new Color(225, 210, 185));
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6),
                 portraitRect.X - 2, portraitRect.Y - 2, portraitRect.Width + 4, portraitRect.Height + 4,
@@ -971,6 +1030,12 @@ namespace ValleytalkReborn
             string status = _vm.IsDirty ? "● 存在未保存改动" : (_vm.HasOverlay ? "★ 自定义覆盖生效中" : "默认人设基准");
             Color statusCol = _vm.IsDirty ? new Color(220, 90, 20) : (_vm.HasOverlay ? new Color(30, 140, 40) : Color.DimGray);
             CustomFontManager.DrawString(b, status, new Vector2(headX + pSize + 14, headY + 30), statusCol, TipFontSize);
+
+            // 顶栏右侧：作用域胶囊 + 导入 + 导出（文案纯中文，无 emoji）
+            string scopeLabel = _vm.TargetScope == BioStorageService.BioScope.Local ? "本存档独占" : "全局生效";
+            DrawActionButton(b, _scopeCapsuleRect, scopeLabel, mx, my, isPrimary: true);
+            DrawActionButton(b, _importRect, "导入", mx, my, isPrimary: false);
+            DrawActionButton(b, _exportRect, "导出", mx, my, isPrimary: false);
         }
 
         // ── 各 Tab 具体渲染 ───────────────────────────────────────────────
@@ -981,6 +1046,7 @@ namespace ValleytalkReborn
                 new Vector2(_biographyBox.Position.X, _biographyBox.Position.Y - 24), Game1.textColor, SectionHeaderSize);
 
             DrawActionButton(b, _scaffoldBtnRect, "插入身份模板", mx, my, false);
+            DrawActionButton(b, _copyBiographyRect, "复制全部", mx, my, false);
             DrawStyledDialogueBox(b, _biographyBox);
 
             // 卡片 1: Unique
@@ -1006,12 +1072,14 @@ namespace ValleytalkReborn
             CustomFontManager.DrawString(b, "行为规则 (BehavioralRules)",
                 new Vector2(_behaviorBox.Position.X, _behaviorBox.Position.Y - 24), Game1.textColor, SectionHeaderSize);
             DrawActionButton(b, _behaviorScaffoldRect, "插入规则模板", mx, my, false);
+            DrawActionButton(b, _copyBehaviorRect, "复制全部", mx, my, false);
             DrawStyledDialogueBox(b, _behaviorBox);
 
             CustomFontManager.DrawString(b, "对白范例 (Dialogue)",
                 new Vector2(_dialogueExamplesBox.Position.X, _dialogueExamplesBox.Position.Y - 24), Game1.textColor, SectionHeaderSize);
             DrawActionButton(b, _insertBreakRect, "+ 分段符", mx, my, false);
             DrawActionButton(b, _insertChoiceRect, "+ 玩家选项", mx, my, false);
+            DrawActionButton(b, _copyDialogueExamplesRect, "复制全部", mx, my, false);
 
             if (_insertBreakRect.Contains(mx, my)) _hoverText = "插入 #$b#：在原版对话框中翻页。";
             if (_insertChoiceRect.Contains(mx, my)) _hoverText = "插入 % 选项：提供玩家可点击的分支回答。";
@@ -1097,10 +1165,12 @@ namespace ValleytalkReborn
 
             CustomFontManager.DrawString(b, "阶段态度演变 (Text)",
                 new Vector2(_stageTextBox.Position.X, _stageTextBox.Position.Y - 22), Game1.textColor, SectionHeaderSize);
+            DrawActionButton(b, _copyStageTextRect, "复制全部", mx, my, false);
             DrawStyledDialogueBox(b, _stageTextBox);
 
             CustomFontManager.DrawString(b, "碎碎念心智 (BarkMindset: 规定此时的心态与注意力)",
                 new Vector2(_stageBarkBox.Position.X, _stageBarkBox.Position.Y - 22), Game1.textColor, SectionHeaderSize);
+            DrawActionButton(b, _copyStageBarkRect, "复制全部", mx, my, false);
             DrawStyledDialogueBox(b, _stageBarkBox);
 
             CustomFontManager.DrawString(b, "阶段专属关注池 (Preoccupations: 优先提及的事物)",
@@ -1156,6 +1226,7 @@ namespace ValleytalkReborn
 
             CustomFontManager.DrawString(b, "深层心理与互动细节 (Description)",
                 new Vector2(_relDescBox.Position.X, _relDescBox.Position.Y - 22), Game1.textColor, SectionHeaderSize);
+            DrawActionButton(b, _copyRelDescRect, "复制全部", mx, my, false);
             DrawStyledDialogueBox(b, _relDescBox);
 
             CustomFontManager.DrawString(b, "提示：如需双方互动感知，请在两人的编辑器中分别配置相互的关系定位。",
@@ -1177,16 +1248,19 @@ namespace ValleytalkReborn
 
             CustomFontManager.DrawString(b, "口吻与态度 (Voice & Attitude)",
                 new Vector2(_voiceBox.Position.X, _voiceBox.Position.Y - 22), Game1.textColor, SectionHeaderSize);
+            DrawActionButton(b, _copyVoiceRect, "复制全部", mx, my, false);
             DrawStyledDialogueBox(b, _voiceBox);
             if (ContainsPoint(_voiceBox, mx, my)) _hoverText = "限定碎碎念的基本语调、说话长短与即时情绪基调。";
 
             CustomFontManager.DrawString(b, "口头习惯 (Spoken Habits)",
                 new Vector2(_habitsBox.Position.X, _habitsBox.Position.Y - 22), Game1.textColor, SectionHeaderSize);
+            DrawActionButton(b, _copyHabitsRect, "复制全部", mx, my, false);
             DrawStyledDialogueBox(b, _habitsBox);
             if (ContainsPoint(_habitsBox, mx, my)) _hoverText = "NPC 的口头禅、叹气声、常用起手式（如 'Well,', 'Sigh...'）。";
 
             CustomFontManager.DrawString(b, "观察透镜 (Observation Lenses)",
                 new Vector2(_lensesBox.Position.X, _lensesBox.Position.Y - 22), Game1.textColor, SectionHeaderSize);
+            DrawActionButton(b, _copyLensesRect, "复制全部", mx, my, false);
             DrawStyledDialogueBox(b, _lensesBox);
             if (ContainsPoint(_lensesBox, mx, my)) _hoverText = "NPC 打量周围世界时的特殊视角（例如铁匠关注矿物与工具锈蚀，农夫关注作物与雨水）。";
         }
@@ -1460,6 +1534,108 @@ namespace ValleytalkReborn
             Game1.playSound("achievement");
             ExitAndReturn();
         }
+
+        /// <summary>切换作用域胶囊：Global ↔ Local。TargetScope 仅 Memory，不持久化。</summary>
+        private void ToggleTargetScope()
+        {
+            BioStorageService.BioScope next = _vm.TargetScope == BioStorageService.BioScope.Local
+                ? BioStorageService.BioScope.Global
+                : BioStorageService.BioScope.Local;
+            _vm.SetTargetScope(next);
+            Game1.playSound("smallSelect");
+            ModEntry.SMonitor?.Log($"[BioEditor] 作用域切换为: {next}", LogLevel.Info);
+        }
+
+        /// <summary>从剪贴板导入人设 JSON（仅解析不落盘，成功后全量重载控件）。TextCopy 6.2.1 提供同步 GetText()。</summary>
+        private void ImportFromClipboard()
+        {
+            string clip;
+            try
+            {
+                // TextCopy 6.2.1 具备同步 GetText()（DialogueTextInputBox 已在用），主线程直接调用。
+                clip = TextCopy.ClipboardService.GetText();
+            }
+            catch (Exception ex)
+            {
+                Game1.playSound("cancel");
+                Game1.addHUDMessage(new HUDMessage($"导入失败: {ex.Message}", HUDMessage.error_type));
+                return;
+            }
+
+            if (_vm.TryImportBio(clip, out string err))
+            {
+                SyncAllControlsFromVm();
+                Game1.playSound("coin");
+                Game1.addHUDMessage(new HUDMessage("已从剪贴板导入人设（未保存，保存时按当前作用域落盘）", HUDMessage.newQuest_type));
+            }
+            else
+            {
+                Game1.playSound("cancel");
+                Game1.addHUDMessage(new HUDMessage($"导入失败: {err}", HUDMessage.error_type));
+            }
+        }
+
+        /// <summary>导出当前人设 JSON 到 Global/exports（带时间戳文件名）。</summary>
+        private void ExportBio()
+        {
+            if (_vm.Bio == null)
+            {
+                Game1.playSound("cancel");
+                Game1.addHUDMessage(new HUDMessage("导出失败: 无可导出数据", HUDMessage.error_type));
+                return;
+            }
+
+            if (ModEntry.BioStorage!.ExportBio(_vm.NpcName, _vm.Bio, out string path, out string err))
+            {
+                Game1.playSound("coin");
+                Game1.addHUDMessage(new HUDMessage($"已导出: {path}", HUDMessage.newQuest_type));
+                ModEntry.SMonitor?.Log($"[BioEditor] 已导出覆盖层: {path}", LogLevel.Info);
+            }
+            else
+            {
+                Game1.playSound("cancel");
+                Game1.addHUDMessage(new HUDMessage($"导出失败: {err}", HUDMessage.error_type));
+            }
+        }
+
+        /// <summary>统一复制指定框的全部文本至剪贴板（以 boxKey 查找框，避免 9 份重复逻辑）。</summary>
+        private void CopyBoxToClipboard(string boxKey)
+        {
+            DialogueTextInputBox box = boxKey switch
+            {
+                "biography" => _biographyBox,
+                "behavior" => _behaviorBox,
+                "dialogueExamples" => _dialogueExamplesBox,
+                "stageText" => _stageTextBox,
+                "stageBark" => _stageBarkBox,
+                "relDesc" => _relDescBox,
+                "voice" => _voiceBox,
+                "habits" => _habitsBox,
+                "lenses" => _lensesBox,
+                _ => null
+            };
+            if (box == null)
+                return;
+
+            try
+            {
+                // TextCopy 6.2.1 具备同步 SetText()（DialogueTextInputBox 已在用），主线程直接调用。
+                TextCopy.ClipboardService.SetText(box.Text ?? string.Empty);
+                Game1.playSound("coin");
+                Game1.addHUDMessage(new HUDMessage("已复制全部文本至剪贴板，可在外部精修后 Ctrl+V 贴回", HUDMessage.newQuest_type));
+            }
+            catch (Exception ex)
+            {
+                Game1.playSound("cancel");
+                Game1.addHUDMessage(new HUDMessage($"复制失败: {ex.Message}", HUDMessage.error_type));
+            }
+        }
+
+        /// <summary>任一可聚焦文本框（含单行 TextBox）当前是否持有焦点。新按钮命中时据此跳过，防止输入时误触。</summary>
+        private bool AnyTextBoxHasFocus() =>
+            _biographyBox.Selected || _uniqueBox.Selected || _behaviorBox.Selected || _dialogueExamplesBox.Selected ||
+            _stageTextBox.Selected || _stageBarkBox.Selected || _relSearchBox.Selected || _relHeadingBox.Selected ||
+            _relDescBox.Selected || _voiceBox.Selected || _habitsBox.Selected || _lensesBox.Selected;
 
         private void TryCancel()
         {
