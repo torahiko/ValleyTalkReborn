@@ -69,15 +69,10 @@ public class LlmDialogueService
                 // [基础 systemPrompt] ← GetSystemPrompt() 已在属性初始化中，纯静态，保持最前
 
                 // S1: NPC 个人记忆（变动频率：每次记忆摘要更新后，约数天一次）
+                // RULE-MERGE：GetSmartMemoryContext 现已包含规则段（严格规则 + NPC 事实 + 全局世界观）
                 var memoryCtx = MemoryManager.Instance.GetSmartMemoryContext(character.Name);
                 if (!string.IsNullOrEmpty(memoryCtx))
                     prompts.SystemPrompt += "\n\n" + memoryCtx;
-
-                // S2: 大世界记忆（变动频率：类似，数天一次）
-                WorldMemoryManager.Instance.EnsureLoaded();
-                var worldMemCtx = WorldMemoryManager.Instance.GetPromptText();
-                if (!string.IsNullOrEmpty(worldMemCtx))
-                    prompts.SystemPrompt += "\n\n" + worldMemCtx;
 
                 // S3: EvolvedTraits（常驻心智底色，内容稳定不随输入重排；变动频率：约数天一次）
                 // 不能进 SystemPrompt：该段是 LlmClaude.cs 中零缓存的首段，每轮必变内容
