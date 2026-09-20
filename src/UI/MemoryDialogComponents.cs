@@ -1,3 +1,4 @@
+#nullable enable
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -20,25 +21,25 @@ namespace ValleytalkReborn
     {
         public static void UpdateButtonScale(ref float scale, ClickableTextureComponent btn, int mx, int my)
         {
-            float target = btn.containsPoint(mx, my) ? 1.15f : 1.0f;
+            float target = btn.containsPoint(mx, my) ? 1.15f : 1.0f; 
             scale += (target - scale) * 0.2f;
         }
 
         public static string TruncateString(string text, SpriteFont font, float maxWidth, float scale = 1f)
         {
             if (string.IsNullOrEmpty(text) || font.MeasureString(text).X * scale <= maxWidth)
-                return text;
+                return text; 
 
             const string ellipsis = "...";
             float targetWidth = maxWidth - (font.MeasureString(ellipsis).X * scale);
-            if (targetWidth <= 0)
+            if (targetWidth <= 0) 
                 return ellipsis;
 
             int low = 0;
             int high = text.Length;
             int best = 0;
 
-            while (low <= high)
+            while (low <= high) 
             {
                 int mid = (low + high) / 2;
                 if (font.MeasureString(text.Substring(0, mid)).X * scale <= targetWidth)
@@ -262,20 +263,20 @@ namespace ValleytalkReborn
     {
         private readonly IntegratedHubMenu? _hub;
         private readonly IClickableMenu? _returnMenu;
-        private DialogueTextInputBox _inputBox;
-        private ClickableTextureComponent _okButton;
-        private ClickableTextureComponent _cancelButton;
+        private DialogueTextInputBox _inputBox = null!;
+        private ClickableTextureComponent _okButton = null!;
+        private ClickableTextureComponent _cancelButton = null!;
         private readonly MemoryEntry? _existingEntry;
         private readonly bool _isNew;
 
         // 模式 A：完整规则表单（scope/duration/category）
-        private string _scopeNpcName;
+        private string _scopeNpcName = "";
         private int _durationDays;
         private MemoryCategory _category;
         private Rectangle _factCapsuleRect;
         private Rectangle _behaviorCapsuleRect;
         private Rectangle _scopeDropdownRect;
-        private DropdownList _scopeDropdown;
+        private DropdownList _scopeDropdown = null!;
         private int _durationMode;
         private Rectangle _durTodayRect;
         private Rectangle _durCustomRect;
@@ -741,7 +742,7 @@ namespace ValleytalkReborn
 
             var labelSize = CustomFontManager.MeasureStringBold(label, CustomFontManager.SizeRegular);
             Vector2 textPos = new Vector2(
-                rect.X + (rect.Width - labelSize.X) / 2f,
+                rect.X + (rect.Width - labelSize.X) / 2f, 
                 rect.Y + (rect.Height - labelSize.Y) / 2f
             );
 
@@ -755,7 +756,7 @@ namespace ValleytalkReborn
                 CustomFontManager.DrawString(b, label, textPos, textColor, CustomFontManager.SizeRegular);
         }
 
-        protected override void cleanupBeforeExit()
+        protected override void cleanupBeforeExit() 
         {
             base.cleanupBeforeExit();
 

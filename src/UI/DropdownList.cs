@@ -237,7 +237,7 @@ namespace ValleytalkReborn.UI
             }
 
             // 3. 滚动条指示器
-            if (_items.Count > _maxVisibleItems)
+            if (_items.Count > _maxVisibleItems) 
             {
                 int trackX = popupRect.Right - 8;
                 int trackY = popupRect.Y + 4;

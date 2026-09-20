@@ -51,6 +51,13 @@ namespace ValleytalkReborn
         protected string apiKey;
         protected string modelName;
 
+        /// <summary>
+        /// 本地无 Key 端点（Ollama / LMStudio / 回环）使用占位 Bearer，避免 HttpClient 拒绝空授权头；
+        /// 云端保留真实 Key。纯函数，无副作用。
+        /// </summary>
+        protected static string EffectiveBearer(string apiKey) =>
+            string.IsNullOrWhiteSpace(apiKey) ? "Bearer local" : "Bearer " + apiKey;
+
         public override bool SupportsStreamingWithTools => true;
 
         private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> StrictHostStage
@@ -60,9 +67,14 @@ namespace ValleytalkReborn
 
         protected async Task<string[]> CoreGetModelNamesAsync()
         {
-            if (string.IsNullOrWhiteSpace(apiKey))
+            // 本地无 Key 端点放行模型列表拉取；云端空 Key 仍拦截，避免无效请求。
+            if (string.IsNullOrWhiteSpace(apiKey) && !UrlHelper.IsLoopbackUrl(url))
             {
                 return Array.Empty<string>();
+            }
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                Log.Debug("[LlmOpenAiBase] Local endpoint, fetching models without API key.");
             }
 
             try
@@ -73,7 +85,7 @@ namespace ValleytalkReborn
                 {
                     var headers = new Dictionary<string, string>
                     {
-                        { "Authorization", "Bearer " + apiKey }
+                        { "Authorization", EffectiveBearer(apiKey) }
                     };
 
                     string responseString =
@@ -88,7 +100,7 @@ namespace ValleytalkReborn
                 {
                     using (var request = new HttpRequestMessage(HttpMethod.Get, modelsUrl))
                     {
-                        request.Headers.Add("Authorization", "Bearer " + apiKey);
+                        request.Headers.Add("Authorization", EffectiveBearer(apiKey));
 
                         using (var response = await SharedHttpClient.SendAsync(request))
                         {
@@ -576,7 +588,7 @@ namespace ValleytalkReborn
                     {
                         var headers = new Dictionary<string, string>
                         {
-                            { "Authorization", "Bearer " + apiKey }
+                            { "Authorization", EffectiveBearer(apiKey) }
                         };
 
                         responseString = await NetworkHelper.MakeRequestWithCustomHeadersAsync(
@@ -590,7 +602,7 @@ namespace ValleytalkReborn
                     {
                         using (var request = new HttpRequestMessage(HttpMethod.Post, endpointUrl))
                         {
-                            request.Headers.Add("Authorization", "Bearer " + apiKey);
+                            request.Headers.Add("Authorization", EffectiveBearer(apiKey));
                             request.Content = new StringContent(jsonData, Encoding.UTF8, "application/json");
 
                             using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(ModEntry.Config.QueryTimeout)))
@@ -828,7 +840,7 @@ namespace ValleytalkReborn
 
                 using (var request = new HttpRequestMessage(HttpMethod.Post, endpointUrl))
                 {
-                    request.Headers.Add("Authorization", "Bearer " + apiKey);
+                    request.Headers.Add("Authorization", EffectiveBearer(apiKey));
                     request.Headers.Add("Accept", "text/event-stream");
                     request.Content = new StringContent(jsonData, Encoding.UTF8, "application/json");
 
