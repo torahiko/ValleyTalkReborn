@@ -7,6 +7,7 @@ using StardewValley.Menus;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ValleytalkReborn.Services;
 using ValleytalkReborn.UI;
 
 namespace ValleytalkReborn
@@ -115,6 +116,16 @@ namespace ValleytalkReborn
 
         private string _hoveredGlobalTooltip = null;
 
+        private readonly IHubTabView?[] _tabViews = new IHubTabView?[4];
+
+        // 暴露给 View 的属性
+        public string CurrentNpcName
+        {
+            get => _currentNpcName;
+            set => _currentNpcName = value;
+        }
+        public int CurrentTab => _currentTab;
+
         // ── Tab3（高级设置）状态 ────────────────────────────────────────
         private Rectangle _tab3RowInfinite;
         private Rectangle _tab3RowVanillaFirst;
@@ -169,14 +180,11 @@ namespace ValleytalkReborn
                 }
             }
 
-            _npcDropdown = new DropdownList(Rectangle.Empty)
-            {
-                HeaderPrefix = I18n.Hub.SelectNpcLabel(),
-                OnItemSelected = name => SelectNpc(name)
-            };
+            _tabViews[3] = new AdvancedSettingsTabView(this);
+            _tabViews[1] = new WorldMemoryTabView(this);
+            _tabViews[0] = new NpcMemoryTabView(this);
 
             RecalculateAllLayout();
-            BuildNpcDropdownItems();
 
             exitFunction = () => Game1.playSound("bigDeSelect");
 
@@ -262,14 +270,7 @@ namespace ValleytalkReborn
 
         public void RefreshEntries()
         {
-            _cachedEntries = _currentTab switch
-            {
-                0 => SafeGetMemories(),
-                1 => SafeGetWorldEntries(),
-                _ => new List<MemoryEntry>()
-            };
-
-            _listTopY = yPositionOnScreen + TopPadding + (_currentTab == 0 ? TabHeight + 8 : 0);
+            _cachedEntries = new List<MemoryEntry>();
 
             if (_currentTab == 2 && !_tab2Initialized)
                 InitializeTab2();
@@ -281,13 +282,10 @@ namespace ValleytalkReborn
                 && Game1.keyboardDispatcher.Subscriber == null)
                 Game1.keyboardDispatcher.Subscriber = _bioTextBox;
 
-            _archivedCount = (_currentTab == 0 && !string.IsNullOrEmpty(_currentNpcName))
-                ? MemoryManager.Instance.GetArchivedCount(_currentNpcName)
-                : 0;
-
-            ClampStartIndex();
-            RefreshActionButtons();
-            PositionScrollComponents();
+            if (_currentTab == 0)
+                _tabViews[0]!.RefreshFromHub();
+            else if (_currentTab == 1)
+                _tabViews[1]!.RefreshFromHub();
         }
 
         private List<MemoryEntry> SafeGetMemories()
@@ -320,11 +318,14 @@ namespace ValleytalkReborn
             _npcDropdown?.Close();
             _orientationDropdown?.Close();
 
+            _tabViews[_currentTab]?.OnDeactivated();
+
             _currentTab = tab;
-            _startIndex = 0;
             Game1.playSound("smallSelect");
             RecalculateAllLayout();
             RefreshEntries();
+
+            _tabViews[tab]?.OnActivated();
         }
 
         private void SelectNpc(string internalName)
@@ -455,7 +456,7 @@ namespace ValleytalkReborn
                 });
         }
 
-        private void ReleaseKeyboard()
+        internal void ReleaseKeyboard()
         {
             if (_bioTextBox != null && Game1.keyboardDispatcher.Subscriber == _bioTextBox)
                 Game1.keyboardDispatcher.Subscriber = null;
@@ -525,10 +526,6 @@ namespace ValleytalkReborn
         {
             base.receiveLeftClick(x, y, playSound);
 
-            // 1. 全局最优先拦截下拉框交互
-            if (_currentTab == 0 && _npcDropdown != null && _npcDropdown.ReceiveLeftClick(x, y))
-                return;
-
             if (_currentTab == 2 && _profileSubTab == 0 && _orientationDropdown != null && _orientationDropdown.ReceiveLeftClick(x, y))
                 return;
 
@@ -550,58 +547,11 @@ namespace ValleytalkReborn
 
             if (_currentTab == 0)
             {
-                if (_npcDropdown.HeaderBounds.Contains(x, y))
-                {
-                    _npcDropdown.ToggleOpen();
-                    Game1.playSound("shwip");
-                    return;
-                }
-
-                if (_callsignRect.Contains(x, y) && !string.IsNullOrEmpty(_currentNpcName))
-                {
-                    Game1.playSound("bigSelect");
-                    ReleaseKeyboard();
-                    Game1.activeClickableMenu = new SetCallsignInputMenu(_currentNpcName, this);
-                    return;
-                }
-
-                if (_aiExtractButtonRect.Contains(x, y))
-                {
-                    TryOpenDistillMenu();
-                    return;
-                }
-
-                if (_manualAddRect.Contains(x, y))
-                {
-                    OpenAddMemory();
-                    return;
-                }
-
-                if (_archiveButtonRect.Contains(x, y))
-                {
-                    if (string.IsNullOrEmpty(_currentNpcName))
-                    {
-                        Game1.playSound("cancel");
-                        return;
-                    }
-
-                    Game1.playSound("bigSelect");
-                    ReleaseKeyboard();
-                    Game1.activeClickableMenu = new ArchivedMemoryMenu(_currentNpcName, this);
-                    return;
-                }
-
-                HandleListRowClicks(x, y);
+                if (_tabViews[0]!.ReceiveLeftClick(x, y)) return;
             }
             else if (_currentTab == 1)
             {
-                if (_addButtonRect.Contains(x, y))
-                {
-                    OpenAddMemory();
-                    return;
-                }
-
-                HandleListRowClicks(x, y);
+                if (_tabViews[1]!.ReceiveLeftClick(x, y)) return;
             }
             else if (_currentTab == 2)
             {
@@ -609,7 +559,7 @@ namespace ValleytalkReborn
             }
             else if (_currentTab == 3)
             {
-                HandleTab3Click(x, y);
+                if (_tabViews[3]!.ReceiveLeftClick(x, y)) return;
             }
         }
 
@@ -910,25 +860,13 @@ namespace ValleytalkReborn
                 Color.Gray * 0.4f);
 
             if (_currentTab == 0)
-            {
-                DrawCallsignButton(b);
-                DrawEntries(b);
-            }
+                _tabViews[0]!.Draw(b, mx, my);
             else if (_currentTab == 1)
-            {
-                DrawEntries(b);
-            }
+                _tabViews[1]!.Draw(b, mx, my);
             else if (_currentTab == 2)
-            {
                 DrawTab2(b);
-            }
             else
-            {
-                DrawTab3(b);
-            }
-
-            if (_currentTab == 0 || _currentTab == 1)
-                DrawBottomButtons(b);
+                _tabViews[3]!.Draw(b, mx, my);
 
             UiHelper.UpdateButtonScale(ref _closeButtonHoverScale, _closeButton, mx, my);
             _closeButton.scale = _closeButtonBaseScale * _closeButtonHoverScale;
@@ -940,22 +878,8 @@ namespace ValleytalkReborn
             else if (_currentTab == 2 && _profileSubTab == 0)
                 _orientationDropdown?.Draw(b);
 
-            if (_currentTab == 0 || _currentTab == 1)
-            {
-                for (int i = 0; i < _deleteButtons.Count; i++)
-                {
-                    if (_deleteButtons[i].containsPoint(mx, my))
-                    {
-                        DrawHoverTextCustom(b, _deleteButtons[i].hoverText);
-                        break;
-                    }
-                    if (i < _editButtons.Count && _editButtons[i].containsPoint(mx, my))
-                    {
-                        DrawHoverTextCustom(b, _editButtons[i].hoverText);
-                        break;
-                    }
-                }
-            }
+            // Tab 页顶层弹层
+            _tabViews[_currentTab]?.DrawOverlay(b);
 
             if (!string.IsNullOrEmpty(_hoveredGlobalTooltip))
             {

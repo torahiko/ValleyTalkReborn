@@ -9,7 +9,7 @@
           "Intro": false,
           "FarmerBackground": false,
           "Locations": true,
-          "Seasons": false,
+          "Seasons": true,
           "Festivals": true,
           "Villagers": false,
           "Outro": false

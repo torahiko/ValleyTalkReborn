@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework.Input;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Menus;
+using ValleytalkReborn.Services;
 
 namespace ValleytalkReborn
 {
@@ -470,73 +471,7 @@ namespace ValleytalkReborn
             _allNpcs.Clear();
             var friendshipData = Game1.player?.friendshipData;
 
-            var excludedNpcs = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                "Grandpa", "Governor", "Gil", "Bouncer", "Birdie", "Henchman", "MarlonFudge"
-            };
-
-            bool IsInvalidOrEventNpc(string internalName, NPC npc)
-            {
-                if (string.IsNullOrWhiteSpace(internalName)) return true;
-                if (string.Equals(internalName, _npcName, StringComparison.OrdinalIgnoreCase)) return true;
-                if (excludedNpcs.Contains(internalName)) return true;
-
-                if (internalName.Contains("_") ||
-                    internalName.Contains("Event", StringComparison.OrdinalIgnoreCase) ||
-                    internalName.Contains("Fake", StringComparison.OrdinalIgnoreCase) ||
-                    internalName.Contains("Dummy", StringComparison.OrdinalIgnoreCase))
-                    return true;
-
-                bool isTrueMarlon = internalName.Equals("Marlon", StringComparison.OrdinalIgnoreCase);
-                if (internalName.StartsWith("Marlon", StringComparison.OrdinalIgnoreCase) && !isTrueMarlon)
-                    return true;
-
-                bool inFriendship = friendshipData != null && friendshipData.ContainsKey(internalName);
-
-                if (npc != null)
-                {
-                    if (Game1.CurrentEvent != null && Game1.CurrentEvent.actors != null && Game1.CurrentEvent.actors.Contains(npc))
-                        return true;
-                    if (!isTrueMarlon && !npc.CanSocialize && !inFriendship)
-                        return true;
-                }
-                else
-                {
-                    if (!isTrueMarlon && !inFriendship)
-                        return true;
-                }
-
-                return false;
-            }
-
-            var rawCandidates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            if (friendshipData != null)
-            {
-                foreach (var k in friendshipData.Keys)
-                {
-                    if (!IsInvalidOrEventNpc(k, Game1.getCharacterFromName(k)))
-                        rawCandidates.Add(k);
-                }
-            }
-
-            if (Game1.characterData != null)
-            {
-                foreach (var kvp in Game1.characterData)
-                {
-                    string name = kvp.Key;
-                    if (!IsInvalidOrEventNpc(name, Game1.getCharacterFromName(name)))
-                        rawCandidates.Add(name);
-                }
-            }
-
-            foreach (var npc in Utility.getAllCharacters())
-            {
-                if (npc != null && (npc.IsVillager || npc.Name.Equals("Marlon", StringComparison.OrdinalIgnoreCase)) && !IsInvalidOrEventNpc(npc.Name, npc))
-                {
-                    rawCandidates.Add(npc.Name);
-                }
-            }
+            var rawCandidates = NpcCandidateQueryService.CollectRawCandidates(_npcName);
 
             if (_bio.Relationships != null)
             {
