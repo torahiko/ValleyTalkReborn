@@ -49,6 +49,7 @@ namespace ValleytalkReborn
     /// <summary>
     /// 角色人设沉浸式编辑器：
     /// 仅主标题、Tab、主动作按钮使用 Bold 字体，其余正文与栏目标题通通采用 Medium 字体，视觉层次清爽轻盈。
+    /// 统一按钮高度 26px；Tab 3/4/5 复制按钮已换行至标签右侧。
     /// </summary>
     internal sealed class BioEditorMenu : IClickableMenu
     {
@@ -66,6 +67,12 @@ namespace ValleytalkReborn
         private const float SectionHeaderSize = CustomFontManager.SizeRegular; // 18f (Medium: 栏目标题回归自然)
         private const float ContentFontSize = CustomFontManager.SizeRegular;   // 18f (Medium: 输入框与正文)
         private const float TipFontSize = CustomFontManager.SizeSmall;         // 15f (Medium: 提示与说明)
+
+        // 统一复制/工具按钮规格（全 Tab 通用）
+        private const int CopyBtnW = 100;
+        private const int CopyBtnH = 26;   // ★ 统一高度
+        private const int RowBtnH = 26;    // ★ 栏目标题行按钮统一高度
+        private const int LabelRowGap = 6; // ★ 标签行与输入框的固定间距
 
         private static readonly string[] TabTitles = new[]
         {
@@ -101,7 +108,7 @@ namespace ValleytalkReborn
         private Rectangle _scaffoldBtnRect;
         private Rectangle _uniqueCardRect;
         private Rectangle _homeBedCardRect;
-
+        private Rectangle _copyBiographyRect;
 
         // ── Tab 2 控件（言行举止） ────────────────────────────────────────
         private DialogueTextInputBox _behaviorBox;
@@ -111,6 +118,8 @@ namespace ValleytalkReborn
         private Rectangle _insertChoiceRect;
         private Rectangle _tab2LeftColRect;
         private Rectangle _tab2RightColRect;
+        private Rectangle _copyBehaviorRect;
+        private Rectangle _copyDialogueExamplesRect;
 
         // ── Tab 3 控件（好感演变） ────────────────────────────────────────
         private DialogueTextInputBox _stageTextBox;
@@ -126,6 +135,8 @@ namespace ValleytalkReborn
         private Rectangle _gateMarriedPillRect;
         private Rectangle _gateJojaClosedPillRect;
         private Rectangle _gateJojaMemberPillRect;
+        private Rectangle _copyStageTextRect;
+        private Rectangle _copyStageBarkRect;
 
         // ── Tab 4 控件（社交关系） ────────────────────────────────────────
         private int _relListScrollOffset = 0;
@@ -138,6 +149,7 @@ namespace ValleytalkReborn
         private Rectangle _relAddRect;
         private Rectangle _relDelRect;
         private readonly List<(Rectangle Rect, int Index)> _relVisibleItemRects = new();
+        private Rectangle _copyRelDescRect;
 
         // ── Tab 5 控件（环境感知） ────────────────────────────────────────
         private SimpleCheckbox _enableBarkCheckbox;
@@ -148,22 +160,14 @@ namespace ValleytalkReborn
         private Rectangle _scrapeRect;
         private Rectangle _tab5LeftColRect;
         private Rectangle _tab5RightColRect;
-
-        // ── VT-UI-02 作用域胶囊 / 导入导出 / 复制全部按钮 ──
-        private Rectangle _scopeCapsuleRect;
-        private Rectangle _importRect;
-        private Rectangle _exportRect;
-        private Rectangle _copyBiographyRect;
-        private Rectangle _copyBehaviorRect;
-        private Rectangle _copyDialogueExamplesRect;
-        private Rectangle _copyStageTextRect;
-        private Rectangle _copyStageBarkRect;
-        private Rectangle _copyRelDescRect;
         private Rectangle _copyVoiceRect;
         private Rectangle _copyHabitsRect;
         private Rectangle _copyLensesRect;
-        private const int CopyBtnW = 100;
-        private const int CopyBtnH = 24;
+
+        // ── VT-UI-02 作用域胶囊 / 导入导出 ──
+        private Rectangle _scopeCapsuleRect;
+        private Rectangle _importRect;
+        private Rectangle _exportRect;
 
         // ── 构造函数 ──────────────────────────────────────────────────────
         public BioEditorMenu(string npcName, IClickableMenu returnMenu)
@@ -310,11 +314,9 @@ namespace ValleytalkReborn
             int btnH = 38;
             int btnW = Math.Clamp((contentW - 36) / 4, 140, 200);
 
-            // 左侧：保存与取消安全区
             _cancelRect = new Rectangle(contentLeft, footerY, btnW, btnH);
             _saveRect = new Rectangle(contentLeft + btnW + 12, footerY, btnW, btnH);
 
-            // 右侧：恢复基准操作区（当前页在内侧，全部恢复在最右侧）
             _resetAllRect = new Rectangle(xPositionOnScreen + width - ContentPadding - btnW, footerY, btnW, btnH);
             _resetPageRect = new Rectangle(_resetAllRect.X - btnW - 12, footerY, btnW, btnH);
 
@@ -328,7 +330,7 @@ namespace ValleytalkReborn
             {
                 int cardH = 68;
                 int topLabelH = 26;
-                _scaffoldBtnRect = new Rectangle(contentLeft + contentW - 140, bodyTop, 140, 26);
+                _scaffoldBtnRect = new Rectangle(contentLeft + contentW - 140, bodyTop, 140, RowBtnH);
 
                 int bioH = bodyH - cardH - topLabelH - 24;
                 SetBoxBounds(_biographyBox, contentLeft, bodyTop + topLabelH + 4, contentW, bioH);
@@ -345,7 +347,11 @@ namespace ValleytalkReborn
 
                 _homeBedCheckbox.bounds = new Rectangle(_homeBedCardRect.X + 16, _homeBedCardRect.Y + 26, 28, 28);
 
-                _copyBiographyRect = new Rectangle(_scaffoldBtnRect.Left - 8 - CopyBtnW, (int)_biographyBox.Position.Y - 24, CopyBtnW, CopyBtnH);
+                // ★ 复制按钮：与「插入身份模板」按钮同一行、居中对齐
+                _copyBiographyRect = new Rectangle(
+                    _scaffoldBtnRect.Left - 8 - CopyBtnW,
+                    _scaffoldBtnRect.Y + (_scaffoldBtnRect.Height - CopyBtnH) / 2,
+                    CopyBtnW, CopyBtnH);
             }
 
             // ── Tab 2 布局 ──
@@ -359,16 +365,23 @@ namespace ValleytalkReborn
                 int bottomTipH = 24;
                 int boxH = bodyH - topBarH - bottomTipH - 12;
 
-                _behaviorScaffoldRect = new Rectangle(_tab2LeftColRect.Right - 130, bodyTop + 2, 130, 26);
+                _behaviorScaffoldRect = new Rectangle(_tab2LeftColRect.Right - 130, bodyTop + 2, 130, RowBtnH);
                 SetBoxBounds(_behaviorBox, _tab2LeftColRect.X, bodyTop + topBarH, colW, boxH);
 
                 int toolBtnW = 95;
-                _insertChoiceRect = new Rectangle(_tab2RightColRect.Right - toolBtnW, bodyTop + 2, toolBtnW, 26);
-                _insertBreakRect = new Rectangle(_insertChoiceRect.Left - toolBtnW - 6, bodyTop + 2, toolBtnW, 26);
+                _insertChoiceRect = new Rectangle(_tab2RightColRect.Right - toolBtnW, bodyTop + 2, toolBtnW, RowBtnH);
+                _insertBreakRect = new Rectangle(_insertChoiceRect.Left - toolBtnW - 6, bodyTop + 2, toolBtnW, RowBtnH);
                 SetBoxBounds(_dialogueExamplesBox, _tab2RightColRect.X, bodyTop + topBarH, colW, boxH);
 
-                _copyBehaviorRect = new Rectangle(_behaviorScaffoldRect.Left - 8 - CopyBtnW, (int)_behaviorBox.Position.Y - 24, CopyBtnW, CopyBtnH);
-                _copyDialogueExamplesRect = new Rectangle(_insertBreakRect.Left - 6 - CopyBtnW, (int)_dialogueExamplesBox.Position.Y - 24, CopyBtnW, CopyBtnH);
+                _copyBehaviorRect = new Rectangle(
+                    _behaviorScaffoldRect.Left - 8 - CopyBtnW,
+                    _behaviorScaffoldRect.Y + (_behaviorScaffoldRect.Height - CopyBtnH) / 2,
+                    CopyBtnW, CopyBtnH);
+
+                _copyDialogueExamplesRect = new Rectangle(
+                    _insertBreakRect.Left - 6 - CopyBtnW,
+                    _insertBreakRect.Y + (_insertBreakRect.Height - CopyBtnH) / 2,
+                    CopyBtnW, CopyBtnH);
             }
 
             // ── Tab 3 布局 ──
@@ -397,20 +410,21 @@ namespace ValleytalkReborn
 
                 int flowY = rightY + 38;
                 int tagEditorH = 56;
-                int labelH = 22;
+                int labelH = 26;   // ★ 与 RowBtnH 一致
                 int availTextH = (bodyBottom - flowY) - tagEditorH - (labelH * 3) - 30;
                 int singleBoxH = Math.Max(70, availTextH / 2);
 
-                SetBoxBounds(_stageTextBox, rightX, flowY + labelH, rightColW, singleBoxH);
+                SetBoxBounds(_stageTextBox, rightX, flowY + labelH + LabelRowGap, rightColW, singleBoxH);
                 flowY = (int)_stageTextBox.Position.Y + (int)_stageTextBox.Extent.Y + 14;
 
-                SetBoxBounds(_stageBarkBox, rightX, flowY + labelH, rightColW, singleBoxH);
+                SetBoxBounds(_stageBarkBox, rightX, flowY + labelH + LabelRowGap, rightColW, singleBoxH);
                 flowY = (int)_stageBarkBox.Position.Y + (int)_stageBarkBox.Extent.Y + 14;
 
-                _stageTagEditor.SetBounds(new Rectangle(rightX, flowY + labelH, rightColW, tagEditorH));
+                _stageTagEditor.SetBounds(new Rectangle(rightX, flowY + labelH + LabelRowGap, rightColW, tagEditorH));
 
-                _copyStageTextRect = new Rectangle(rightX + rightColW - CopyBtnW, (int)_stageTextBox.Position.Y - 22, CopyBtnW, CopyBtnH);
-                _copyStageBarkRect = new Rectangle(rightX + rightColW - CopyBtnW, (int)_stageBarkBox.Position.Y - 22, CopyBtnW, CopyBtnH);
+                // ★ 复制按钮：紧贴标签文字右侧，不再贴右端
+                _copyStageTextRect = MakeLabelRightCopyRect("阶段态度演变 (Text)", rightX, (int)_stageTextBox.Position.Y - labelH - LabelRowGap);
+                _copyStageBarkRect = MakeLabelRightCopyRect("碎碎念心智 (BarkMindset: 规定此时的心态与注意力)", rightX, (int)_stageBarkBox.Position.Y - labelH - LabelRowGap);
             }
 
             // ── Tab 4 布局 ──
@@ -432,21 +446,21 @@ namespace ValleytalkReborn
 
                 int rightX = _relRightColRect.X;
                 int flowY = bodyTop + 36;
-                int labelH = 22;
+                int labelH = 26;
 
                 _relHeadingBox.X = rightX;
-                _relHeadingBox.Y = flowY + labelH;
+                _relHeadingBox.Y = flowY + labelH + LabelRowGap;
                 _relHeadingBox.Width = rightColW;
                 _relHeadingBox.Height = 32;
                 flowY = _relHeadingBox.Y + _relHeadingBox.Height + 16;
 
                 int bottomTipH = 26;
-                int descH = bodyBottom - flowY - labelH - bottomTipH - 6;
-                SetBoxBounds(_relDescBox, rightX, flowY + labelH, rightColW, Math.Max(90, descH));
+                int descH = bodyBottom - flowY - labelH - bottomTipH - LabelRowGap - 6;
+                SetBoxBounds(_relDescBox, rightX, flowY + labelH + LabelRowGap, rightColW, Math.Max(90, descH));
 
                 RecalculateTab4List();
 
-                _copyRelDescRect = new Rectangle(rightX + rightColW - CopyBtnW, (int)_relDescBox.Position.Y - 22, CopyBtnW, CopyBtnH);
+                _copyRelDescRect = MakeLabelRightCopyRect("深层心理与互动细节 (Description)", rightX, (int)_relDescBox.Position.Y - labelH - LabelRowGap);
             }
 
             // ── Tab 5 布局 ──
@@ -466,23 +480,32 @@ namespace ValleytalkReborn
                 int rightX = _tab5RightColRect.X;
                 int rightY = _tab5RightColRect.Y;
                 int sectionH = (bodyH - 16) / 3;
-                int labelH = 22;
+                int labelH = 26;
 
                 for (int i = 0; i < 3; i++)
                 {
                     int blockTop = rightY + i * sectionH;
-                    int boxY = blockTop + labelH;
-                    int boxH = sectionH - labelH - 12;
+                    int boxY = blockTop + labelH + LabelRowGap;
+                    int boxH = sectionH - labelH - LabelRowGap - 12;
 
                     if (i == 0) SetBoxBounds(_voiceBox, rightX, boxY, rightColW, boxH);
                     else if (i == 1) SetBoxBounds(_habitsBox, rightX, boxY, rightColW, boxH);
                     else SetBoxBounds(_lensesBox, rightX, boxY, rightColW, boxH);
                 }
 
-                _copyVoiceRect = new Rectangle(rightX + rightColW - CopyBtnW, (int)_voiceBox.Position.Y - 22, CopyBtnW, CopyBtnH);
-                _copyHabitsRect = new Rectangle(rightX + rightColW - CopyBtnW, (int)_habitsBox.Position.Y - 22, CopyBtnW, CopyBtnH);
-                _copyLensesRect = new Rectangle(rightX + rightColW - CopyBtnW, (int)_lensesBox.Position.Y - 22, CopyBtnW, CopyBtnH);
+                _copyVoiceRect = MakeLabelRightCopyRect("口吻与态度 (Voice & Attitude)", rightX, (int)_voiceBox.Position.Y - labelH - LabelRowGap);
+                _copyHabitsRect = MakeLabelRightCopyRect("口头习惯 (Spoken Habits)", rightX, (int)_habitsBox.Position.Y - labelH - LabelRowGap);
+                _copyLensesRect = MakeLabelRightCopyRect("观察透镜 (Observation Lenses)", rightX, (int)_lensesBox.Position.Y - labelH - LabelRowGap);
             }
+        }
+
+        /// <summary>依据栏目标题文本长度，把「复制全部」紧贴标签右侧摆放（同标签行基线居中）。</summary>
+        private static Rectangle MakeLabelRightCopyRect(string labelText, int labelX, int labelY)
+        {
+            float labelW = CustomFontManager.MeasureString(labelText, SectionHeaderSize).X;
+            int x = labelX + (int)MathF.Ceiling(labelW) + 10;
+            int y = labelY + (RowBtnH - CopyBtnH) / 2;
+            return new Rectangle(x, y, CopyBtnW, CopyBtnH);
         }
 
         private static void SetBoxBounds(DialogueTextInputBox box, float x, float y, float w, float h)
@@ -790,79 +813,78 @@ namespace ValleytalkReborn
         }
 
         public override void receiveKeyPress(Keys key)
-{
-    // 1. Tag 编辑器正在输入时优先处理
-    if (_activeTab == 2 && _stageTagEditor != null && _stageTagEditor.IsAdding)
-    {
-        if (_stageTagEditor.ReceiveKeyPress(key))
-            return;
-    }
-    if (_activeTab == 4 && _globalTagEditor != null && _globalTagEditor.IsAdding)
-    {
-        if (_globalTagEditor.ReceiveKeyPress(key))
-            return;
-    }
-
-    DialogueTextInputBox activeBox = GetActiveDialogueBox();
-
-    bool isAnyTextFocused = Game1.keyboardDispatcher.Subscriber != null
-                            || activeBox != null
-                            || (_activeTab == 0 && _uniqueBox.Selected)
-                            || (_activeTab == 3 && (_relSearchBox.Selected || _relHeadingBox.Selected));
-
-    // 2. 文本框/输入控件处于激活输入状态
-    if (isAnyTextFocused)
-    {
-        if (key == Keys.Escape)
         {
-            // 第一次按 ESC：退出输入框焦点
-            UnfocusAll();
-            Game1.playSound("bigDeSelect");
-            return;
-        }
-
-        if (activeBox != null && !DialogueTextInputBox.IsControlKeyDown())
-        {
-            if (key == Keys.Left || key == Keys.Right || key == Keys.Home ||
-                key == Keys.End || key == Keys.Delete || key == Keys.Back)
+            // 1. Tag 编辑器正在输入时优先处理
+            if (_activeTab == 2 && _stageTagEditor != null && _stageTagEditor.IsAdding)
             {
-                activeBox.RecieveSpecialInput(key);
+                if (_stageTagEditor.ReceiveKeyPress(key))
+                    return;
+            }
+            if (_activeTab == 4 && _globalTagEditor != null && _globalTagEditor.IsAdding)
+            {
+                if (_globalTagEditor.ReceiveKeyPress(key))
+                    return;
+            }
+
+            DialogueTextInputBox activeBox = GetActiveDialogueBox();
+
+            bool isAnyTextFocused = Game1.keyboardDispatcher.Subscriber != null
+                                    || activeBox != null
+                                    || (_activeTab == 0 && _uniqueBox.Selected)
+                                    || (_activeTab == 3 && (_relSearchBox.Selected || _relHeadingBox.Selected));
+
+            // 2. 文本框/输入控件处于激活输入状态
+            if (isAnyTextFocused)
+            {
+                if (key == Keys.Escape)
+                {
+                    UnfocusAll();
+                    Game1.playSound("bigDeSelect");
+                    return;
+                }
+
+                if (activeBox != null && !DialogueTextInputBox.IsControlKeyDown())
+                {
+                    if (key == Keys.Left || key == Keys.Right || key == Keys.Home ||
+                        key == Keys.End || key == Keys.Delete || key == Keys.Back)
+                    {
+                        activeBox.RecieveSpecialInput(key);
+                        return;
+                    }
+                }
+
+                if (_activeTab == 3 && _relSearchBox.Selected)
+                {
+                    base.receiveKeyPress(key);
+                    _vm.RecomputeFilteredNpcs(_relSearchBox.Text);
+                    RecalculateTab4List();
+                    return;
+                }
+
+                base.receiveKeyPress(key);
                 return;
             }
+
+            // 3. 全局快捷键：保存 (Ctrl+S)
+            if (key == Keys.S && (Keyboard.GetState().IsKeyDown(Keys.LeftControl) || Keyboard.GetState().IsKeyDown(Keys.RightControl)))
+            {
+                SaveAndClose();
+                return;
+            }
+
+            // 4. 未聚焦任何输入框时，按 ESC 直接退出 / 提示保存取消
+            if (key == Keys.Escape)
+            {
+                TryCancel();
+                return;
+            }
+
+            // 5. 阻止菜单键（如 'E' 键）意外关闭本编辑器；若有其他按键透传给 base
+            if (!Game1.options.doesInputListContain(Game1.options.menuButton, key))
+            {
+                base.receiveKeyPress(key);
+            }
         }
-
-        if (_activeTab == 3 && _relSearchBox.Selected)
-        {
-            base.receiveKeyPress(key);
-            _vm.RecomputeFilteredNpcs(_relSearchBox.Text);
-            RecalculateTab4List();
-            return;
-        }
-
-        base.receiveKeyPress(key);
-        return;
-    }
-
-    // 3. 全局快捷键：保存 (Ctrl+S)
-    if (key == Keys.S && (Keyboard.GetState().IsKeyDown(Keys.LeftControl) || Keyboard.GetState().IsKeyDown(Keys.RightControl)))
-    {
-        SaveAndClose();
-        return;
-    }
-
-    // 4. 未聚焦任何输入框时，按 ESC 直接退出 / 提示保存取消
-    if (key == Keys.Escape)
-    {
-        TryCancel();
-        return;
-    }
-
-    // 5. 阻止菜单键（如 'E' 键）意外关闭本编辑器；若有其他按键透传给 base
-    if (!Game1.options.doesInputListContain(Game1.options.menuButton, key))
-    {
-        base.receiveKeyPress(key);
-    }
-}
 
         public override void receiveScrollWheelAction(int direction)
         {
@@ -960,7 +982,6 @@ namespace ValleytalkReborn
 
             var sz = CustomFontManager.MeasureString(text, TipFontSize);
 
-            // ── 宽裕适中的内外边距 ──
             const int padX = 20;
             const int padY = 12;
 
@@ -971,7 +992,6 @@ namespace ValleytalkReborn
             int y = Game1.getOldMouseY() + 24;
             var safe = Utility.getSafeArea();
 
-            // 边界碰撞防溢出
             if (x + boxW > safe.Right)
                 x = safe.Right - boxW;
             if (y + boxH > safe.Bottom)
@@ -986,15 +1006,12 @@ namespace ValleytalkReborn
             if (y < safe.Top)
                 y = safe.Top;
 
-            // 1. 原版像素软阴影
             IClickableMenu.drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
                 x + 4, y + 4, boxW, boxH, Color.Black * 0.28f, 0.65f, false);
 
-            // 2. 星露谷原版暖白/浅亮羊皮纸底框（无白缝，原生像素勾边）
             IClickableMenu.drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
                 x, y, boxW, boxH, new Color(255, 255, 250), 0.65f, false);
 
-            // 3. 提示文字（使用本类定义的 TipFontSize 统一规范）
             float textY = y + (boxH - sz.Y) / 2f - 1;
             CustomFontManager.DrawString(b, text,
                 new Vector2(x + padX, textY),
@@ -1023,15 +1040,12 @@ namespace ValleytalkReborn
             }
 
             string disp = Game1.getCharacterFromName(_npcName)?.displayName ?? _npcName;
-            // 顶栏主标题：走 Bold 24f
             CustomFontManager.DrawStringBold(b, $"{disp} ({_npcName}) · 人设工作台", new Vector2(headX + pSize + 12, headY + 2), Game1.textColor, TitleFontSize);
 
-            // 状态标签：走 Medium 15f
             string status = _vm.IsDirty ? "● 存在未保存改动" : (_vm.HasOverlay ? "★ 自定义覆盖生效中" : "默认人设基准");
             Color statusCol = _vm.IsDirty ? new Color(220, 90, 20) : (_vm.HasOverlay ? new Color(30, 140, 40) : Color.DimGray);
             CustomFontManager.DrawString(b, status, new Vector2(headX + pSize + 14, headY + 30), statusCol, TipFontSize);
 
-            // 顶栏右侧：作用域胶囊 + 导入 + 导出（文案纯中文，无 emoji）
             string scopeLabel = _vm.TargetScope == BioStorageService.BioScope.Local ? "本存档独占" : "全局生效";
             DrawActionButton(b, _scopeCapsuleRect, scopeLabel, mx, my, isPrimary: true);
             DrawActionButton(b, _importRect, "导入", mx, my, isPrimary: false);
@@ -1041,15 +1055,13 @@ namespace ValleytalkReborn
         // ── 各 Tab 具体渲染 ───────────────────────────────────────────────
         private void DrawTab1(SpriteBatch b, int mx, int my)
         {
-            // 栏目标题：走 Medium 18f，告别沉重感
             CustomFontManager.DrawString(b, "身份设定与心理矛盾（保留 [IDENTITY] 与 [PSYCHOLOGICAL CONFLICTS] 分节符）",
-                new Vector2(_biographyBox.Position.X, _biographyBox.Position.Y - 24), Game1.textColor, SectionHeaderSize);
+                new Vector2(_biographyBox.Position.X, _biographyBox.Position.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
 
             DrawActionButton(b, _scaffoldBtnRect, "插入身份模板", mx, my, false);
             DrawActionButton(b, _copyBiographyRect, "复制全部", mx, my, false);
             DrawStyledDialogueBox(b, _biographyBox);
 
-            // 卡片 1: Unique
             DrawCard(b, _uniqueCardRect);
             CustomFontManager.DrawString(b, "特殊行为/身份标记 (Unique)",
                 new Vector2(_uniqueBox.X, _uniqueCardRect.Y + 6), Game1.textColor, SectionHeaderSize);
@@ -1057,7 +1069,6 @@ namespace ValleytalkReborn
             if (_uniqueBox.X <= mx && mx <= _uniqueBox.X + _uniqueBox.Width && _uniqueBox.Y <= my && my <= _uniqueBox.Y + _uniqueBox.Height)
                 _hoverText = "用于限定 NPC 的特殊行为或状态（如 'behind the counter', 'holding a football'）。";
 
-            // 卡片 2: HomeBed
             DrawCard(b, _homeBedCardRect);
             CustomFontManager.DrawString(b, "就寝行为偏好",
                 new Vector2(_homeBedCardRect.X + 16, _homeBedCardRect.Y + 6), Game1.textColor, SectionHeaderSize);
@@ -1068,15 +1079,14 @@ namespace ValleytalkReborn
 
         private void DrawTab2(SpriteBatch b, int mx, int my)
         {
-            // 栏目标题：走 Medium 18f
             CustomFontManager.DrawString(b, "行为规则 (BehavioralRules)",
-                new Vector2(_behaviorBox.Position.X, _behaviorBox.Position.Y - 24), Game1.textColor, SectionHeaderSize);
+                new Vector2(_behaviorBox.Position.X, _behaviorBox.Position.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
             DrawActionButton(b, _behaviorScaffoldRect, "插入规则模板", mx, my, false);
             DrawActionButton(b, _copyBehaviorRect, "复制全部", mx, my, false);
             DrawStyledDialogueBox(b, _behaviorBox);
 
             CustomFontManager.DrawString(b, "对白范例 (Dialogue)",
-                new Vector2(_dialogueExamplesBox.Position.X, _dialogueExamplesBox.Position.Y - 24), Game1.textColor, SectionHeaderSize);
+                new Vector2(_dialogueExamplesBox.Position.X, _dialogueExamplesBox.Position.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
             DrawActionButton(b, _insertBreakRect, "+ 分段符", mx, my, false);
             DrawActionButton(b, _insertChoiceRect, "+ 玩家选项", mx, my, false);
             DrawActionButton(b, _copyDialogueExamplesRect, "复制全部", mx, my, false);
@@ -1086,7 +1096,6 @@ namespace ValleytalkReborn
 
             DrawStyledDialogueBox(b, _dialogueExamplesBox);
 
-            // 底部提示文字：走 Medium 15f
             CustomFontManager.DrawString(b, "提示：支持原版表情符 ($0 / $s) 与换行分段；选项以 % 开头。",
                 new Vector2(_dialogueExamplesBox.Position.X, _dialogueExamplesBox.Position.Y + _dialogueExamplesBox.Extent.Y + 6), Color.DimGray, TipFontSize);
         }
@@ -1105,12 +1114,11 @@ namespace ValleytalkReborn
                 bool isHover = r.Contains(mx, my);
 
                 Color bg = isSel ? new Color(215, 185, 140) : (isHover ? new Color(255, 235, 205) : Color.White);
-                
+
                 b.Draw(Game1.staminaRect, new Rectangle(r.X + 1, r.Y + 1, r.Width - 2, r.Height - 2), bg);
                 IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9), r.X, r.Y, r.Width, r.Height, isSel ? new Color(180, 130, 80) : Color.Wheat, 2f, false);
 
                 string gateSummary = _vm.BuildGateSummary(i);
-                // 列表项统一走 Medium 18f
                 CustomFontManager.DrawString(b, $"档位 {i + 1}  [{gateSummary}]", new Vector2(r.X + 12, r.Y + 8), isSel ? Game1.textColor : Color.Black, ContentFontSize);
             }
 
@@ -1163,18 +1171,19 @@ namespace ValleytalkReborn
 
             DrawActionButton(b, _deleteStageRect, "删除此档", mx, my, isDanger: true);
 
+            // ★ Tab3 复制按钮已移至标签右侧
             CustomFontManager.DrawString(b, "阶段态度演变 (Text)",
-                new Vector2(_stageTextBox.Position.X, _stageTextBox.Position.Y - 22), Game1.textColor, SectionHeaderSize);
+                new Vector2(_stageTextBox.Position.X, _stageTextBox.Position.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
             DrawActionButton(b, _copyStageTextRect, "复制全部", mx, my, false);
             DrawStyledDialogueBox(b, _stageTextBox);
 
             CustomFontManager.DrawString(b, "碎碎念心智 (BarkMindset: 规定此时的心态与注意力)",
-                new Vector2(_stageBarkBox.Position.X, _stageBarkBox.Position.Y - 22), Game1.textColor, SectionHeaderSize);
+                new Vector2(_stageBarkBox.Position.X, _stageBarkBox.Position.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
             DrawActionButton(b, _copyStageBarkRect, "复制全部", mx, my, false);
             DrawStyledDialogueBox(b, _stageBarkBox);
 
             CustomFontManager.DrawString(b, "阶段专属关注池 (Preoccupations: 优先提及的事物)",
-                new Vector2(_stageRightColRect.X, _stageTagEditor.Bounds.Y - 22), Game1.textColor, SectionHeaderSize);
+                new Vector2(_stageRightColRect.X, _stageTagEditor.Bounds.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
             _stageTagEditor.Draw(b);
         }
 
@@ -1216,16 +1225,15 @@ namespace ValleytalkReborn
             }
 
             string targetDisp = Game1.getCharacterFromName(_vm.SelectedRelationshipNpc)?.displayName ?? _vm.SelectedRelationshipNpc;
-            // 目标角色名：走 Medium 24f (或通过常规字号呈现，不使用厚重粗体)
             CustomFontManager.DrawString(b, $"{_npcName} 对 {targetDisp} 的单向社交关系",
                 new Vector2(_relHeadingBox.X, _relRightColRect.Y + 4), Game1.textColor, TitleFontSize);
 
             CustomFontManager.DrawString(b, "关系称谓与定位 (Heading: 如 'Wife', 'Business Rival')",
-                new Vector2(_relHeadingBox.X, _relHeadingBox.Y - 22), Game1.textColor, SectionHeaderSize);
+                new Vector2(_relHeadingBox.X, _relHeadingBox.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
             DrawSingleLineBox(b, _relHeadingBox);
 
             CustomFontManager.DrawString(b, "深层心理与互动细节 (Description)",
-                new Vector2(_relDescBox.Position.X, _relDescBox.Position.Y - 22), Game1.textColor, SectionHeaderSize);
+                new Vector2(_relDescBox.Position.X, _relDescBox.Position.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
             DrawActionButton(b, _copyRelDescRect, "复制全部", mx, my, false);
             DrawStyledDialogueBox(b, _relDescBox);
 
@@ -1243,23 +1251,24 @@ namespace ValleytalkReborn
             DrawActionButton(b, _scrapeRect, "↺ 从原版对白智能抓取范例", mx, my, false);
 
             CustomFontManager.DrawString(b, "全局常态关注池 (Preoccupations)",
-                new Vector2(_globalTagEditor.Bounds.X, _globalTagEditor.Bounds.Y - 22), Game1.textColor, SectionHeaderSize);
+                new Vector2(_globalTagEditor.Bounds.X, _globalTagEditor.Bounds.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
             _globalTagEditor.Draw(b);
 
+            // ★ Tab5 复制按钮已移至标签右侧
             CustomFontManager.DrawString(b, "口吻与态度 (Voice & Attitude)",
-                new Vector2(_voiceBox.Position.X, _voiceBox.Position.Y - 22), Game1.textColor, SectionHeaderSize);
+                new Vector2(_voiceBox.Position.X, _voiceBox.Position.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
             DrawActionButton(b, _copyVoiceRect, "复制全部", mx, my, false);
             DrawStyledDialogueBox(b, _voiceBox);
             if (ContainsPoint(_voiceBox, mx, my)) _hoverText = "限定碎碎念的基本语调、说话长短与即时情绪基调。";
 
             CustomFontManager.DrawString(b, "口头习惯 (Spoken Habits)",
-                new Vector2(_habitsBox.Position.X, _habitsBox.Position.Y - 22), Game1.textColor, SectionHeaderSize);
+                new Vector2(_habitsBox.Position.X, _habitsBox.Position.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
             DrawActionButton(b, _copyHabitsRect, "复制全部", mx, my, false);
             DrawStyledDialogueBox(b, _habitsBox);
             if (ContainsPoint(_habitsBox, mx, my)) _hoverText = "NPC 的口头禅、叹气声、常用起手式（如 'Well,', 'Sigh...'）。";
 
             CustomFontManager.DrawString(b, "观察透镜 (Observation Lenses)",
-                new Vector2(_lensesBox.Position.X, _lensesBox.Position.Y - 22), Game1.textColor, SectionHeaderSize);
+                new Vector2(_lensesBox.Position.X, _lensesBox.Position.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
             DrawActionButton(b, _copyLensesRect, "复制全部", mx, my, false);
             DrawStyledDialogueBox(b, _lensesBox);
             if (ContainsPoint(_lensesBox, mx, my)) _hoverText = "NPC 打量周围世界时的特殊视角（例如铁匠关注矿物与工具锈蚀，农夫关注作物与雨水）。";
@@ -1310,55 +1319,101 @@ namespace ValleytalkReborn
         private void DrawTabButton(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my)
         {
             bool isHover = rect.Contains(mx, my);
+            bool isPressed = isHover && IsLeftMouseDown();
+
             Color bg = isActive ? new Color(210, 180, 140) : (isHover ? new Color(255, 235, 205) : new Color(139, 90, 43));
 
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 2, rect.Y + 2, rect.Width - 4, rect.Height - 4), bg);
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-                rect.X, rect.Y, rect.Width, rect.Height, bg, 4f, false);
+            int pressOffset = isPressed ? 1 : 0;
+            if (isPressed) bg = Color.Lerp(bg, Color.Black, 0.14f);
 
-            // Tab 标签：走 Bold 18f
+            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 2 + pressOffset, rect.Y + 2 + pressOffset, rect.Width - 4, rect.Height - 4), bg);
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
+                rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height, bg, 4f, false);
+
+            // Tab 标签：走 Bold 18f，颜色保持原逻辑（大 tab 标题不改白字）
             var sz = CustomFontManager.MeasureStringBold(label, TabFontSize);
             CustomFontManager.DrawStringBold(b, label,
-                new Vector2(rect.X + (rect.Width - sz.X) / 2f, rect.Y + (rect.Height - sz.Y) / 2f),
+                new Vector2(rect.X + pressOffset + (rect.Width - sz.X) / 2f, rect.Y + pressOffset + (rect.Height - sz.Y) / 2f),
                 isActive ? Game1.textColor : (isHover ? Color.Wheat : Color.White), TabFontSize);
+        }
+
+        /// <summary>探测鼠标左键当前是否处于按下状态，用于按钮“下沉/弹起”的点击动效。</summary>
+        private static bool IsLeftMouseDown()
+        {
+            try
+            {
+                return Game1.input.GetMouseState().LeftButton == ButtonState.Pressed;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private void DrawActionButton(SpriteBatch b, Rectangle rect, string label, int mx, int my,
             bool isDanger = false, bool isPrimary = false, bool isEnabled = true)
         {
             bool isHover = isEnabled && rect.Contains(mx, my);
+            bool isPressed = isHover && IsLeftMouseDown();
+
             Color bg;
             if (!isEnabled) bg = Color.LightGray * 0.6f;
             else if (isPrimary) bg = isHover ? Color.Gold : new Color(255, 220, 130);
             else if (isDanger) bg = isHover ? new Color(255, 115, 115) : new Color(245, 170, 170);
             else bg = isHover ? new Color(255, 235, 205) : new Color(215, 185, 140);
 
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 2, rect.Y + 2, rect.Width, rect.Height), Color.Black * 0.12f);
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1, rect.Y + 1, rect.Width - 2, rect.Height - 2), bg);
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-                rect.X, rect.Y, rect.Width, rect.Height, isPrimary ? new Color(210, 160, 60) : new Color(180, 140, 95), 3f, false);
+            int pressOffset = isPressed ? 1 : 0;
+            if (isPressed) bg = Color.Lerp(bg, Color.Black, 0.14f);
 
-            // 动作按钮：走 Bold 18f
+            if (!isPressed)
+                b.Draw(Game1.staminaRect, new Rectangle(rect.X + 2, rect.Y + 2, rect.Width, rect.Height), Color.Black * 0.15f);
+
+            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1 + pressOffset, rect.Y + 1 + pressOffset, rect.Width - 2, rect.Height - 2), bg);
+
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
+                rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height,
+                isPrimary ? new Color(210, 160, 60) : new Color(180, 140, 95), 3f, false);
+
+            // 白色文字 + 1px 深色描边阴影
             var sz = CustomFontManager.MeasureStringBold(label, ButtonFontSize);
-            Color textCol = !isEnabled ? Color.Gray : (isHover ? Color.Black : Game1.textColor);
-            CustomFontManager.DrawStringBold(b, label,
-                new Vector2(rect.X + (rect.Width - sz.X) / 2f, rect.Y + (rect.Height - sz.Y) / 2f), textCol, ButtonFontSize);
+            Vector2 textPos = new Vector2(
+                rect.X + pressOffset + (rect.Width - sz.X) / 2f,
+                rect.Y + pressOffset + (rect.Height - sz.Y) / 2f);
+
+            if (isEnabled)
+            {
+                CustomFontManager.DrawStringBold(b, label, textPos + new Vector2(1f, 1f), Color.Black * 0.55f, ButtonFontSize);
+                CustomFontManager.DrawStringBold(b, label, textPos, Color.White, ButtonFontSize);
+            }
+            else
+            {
+                CustomFontManager.DrawStringBold(b, label, textPos, new Color(110, 110, 110), ButtonFontSize);
+            }
         }
 
         private static void DrawPillButton(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my)
         {
             bool isHover = rect.Contains(mx, my);
+            bool isPressed = isHover && IsLeftMouseDown();
+
             Color bg = isActive ? (isHover ? Color.Gold : new Color(255, 220, 130)) : (isHover ? new Color(255, 235, 205) : Color.White);
 
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1, rect.Y + 1, rect.Width - 2, rect.Height - 2), bg);
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-                rect.X, rect.Y, rect.Width, rect.Height, isActive ? new Color(200, 150, 50) : Color.Wheat, 2f, false);
+            int pressOffset = isPressed ? 1 : 0;
+            if (isPressed) bg = Color.Lerp(bg, Color.Black, 0.14f);
 
-            // 药丸门禁标签：走 Medium 18f，避免界面散落过多加粗色块
+            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1 + pressOffset, rect.Y + 1 + pressOffset, rect.Width - 2, rect.Height - 2), bg);
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
+                rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height,
+                isActive ? new Color(200, 150, 50) : Color.Wheat, 2f, false);
+
             var sz = CustomFontManager.MeasureString(label, ContentFontSize);
-            CustomFontManager.DrawString(b, label,
-                new Vector2(rect.X + (rect.Width - sz.X) / 2f, rect.Y + (rect.Height - sz.Y) / 2f),
-                isActive ? Game1.textColor : Color.DimGray, ContentFontSize);
+            Vector2 textPos = new Vector2(
+                rect.X + pressOffset + (rect.Width - sz.X) / 2f,
+                rect.Y + pressOffset + (rect.Height - sz.Y) / 2f);
+
+            // 白字 + 深色描边
+            CustomFontManager.DrawString(b, label, textPos + new Vector2(1f, 1f), Color.Black * 0.55f, ContentFontSize);
+            CustomFontManager.DrawString(b, label, textPos, Color.White, ContentFontSize);
         }
 
         private static void DrawCard(SpriteBatch b, Rectangle rect)
@@ -1463,7 +1518,6 @@ namespace ValleytalkReborn
             Layout();
         }
 
-
         private void SelectStage(int idx)
         {
             if (idx < 0 || idx >= _vm.Bio.ProgressStates.Count) return;
@@ -1481,9 +1535,6 @@ namespace ValleytalkReborn
             _relHeadingBox.Text = _vm.GetRelationshipHeadingOrNull(npc) ?? string.Empty;
             _relDescBox.SetText(_vm.GetRelationshipDescriptionOrNull(npc) ?? string.Empty);
         }
-
-
-
 
         private void SyncTab5BarkBoxes()
         {
@@ -1535,7 +1586,6 @@ namespace ValleytalkReborn
             ExitAndReturn();
         }
 
-        /// <summary>切换作用域胶囊：Global ↔ Local。TargetScope 仅 Memory，不持久化。</summary>
         private void ToggleTargetScope()
         {
             BioStorageService.BioScope next = _vm.TargetScope == BioStorageService.BioScope.Local
@@ -1546,13 +1596,11 @@ namespace ValleytalkReborn
             ModEntry.SMonitor?.Log($"[BioEditor] 作用域切换为: {next}", LogLevel.Info);
         }
 
-        /// <summary>从剪贴板导入人设 JSON（仅解析不落盘，成功后全量重载控件）。TextCopy 6.2.1 提供同步 GetText()。</summary>
         private void ImportFromClipboard()
         {
             string clip;
             try
             {
-                // TextCopy 6.2.1 具备同步 GetText()（DialogueTextInputBox 已在用），主线程直接调用。
                 clip = TextCopy.ClipboardService.GetText();
             }
             catch (Exception ex)
@@ -1575,7 +1623,6 @@ namespace ValleytalkReborn
             }
         }
 
-        /// <summary>导出当前人设 JSON 到 Global/exports（带时间戳文件名）。</summary>
         private void ExportBio()
         {
             if (_vm.Bio == null)
@@ -1598,7 +1645,6 @@ namespace ValleytalkReborn
             }
         }
 
-        /// <summary>统一复制指定框的全部文本至剪贴板（以 boxKey 查找框，避免 9 份重复逻辑）。</summary>
         private void CopyBoxToClipboard(string boxKey)
         {
             DialogueTextInputBox box = boxKey switch
@@ -1619,7 +1665,6 @@ namespace ValleytalkReborn
 
             try
             {
-                // TextCopy 6.2.1 具备同步 SetText()（DialogueTextInputBox 已在用），主线程直接调用。
                 TextCopy.ClipboardService.SetText(box.Text ?? string.Empty);
                 Game1.playSound("coin");
                 Game1.addHUDMessage(new HUDMessage("已复制全部文本至剪贴板，可在外部精修后 Ctrl+V 贴回", HUDMessage.newQuest_type));
@@ -1631,7 +1676,6 @@ namespace ValleytalkReborn
             }
         }
 
-        /// <summary>任一可聚焦文本框（含单行 TextBox）当前是否持有焦点。新按钮命中时据此跳过，防止输入时误触。</summary>
         private bool AnyTextBoxHasFocus() =>
             _biographyBox.Selected || _uniqueBox.Selected || _behaviorBox.Selected || _dialogueExamplesBox.Selected ||
             _stageTextBox.Selected || _stageBarkBox.Selected || _relSearchBox.Selected || _relHeadingBox.Selected ||
@@ -1650,7 +1694,6 @@ namespace ValleytalkReborn
                 _ => { Game1.activeClickableMenu = this; });
         }
 
-        /// <summary>全量同步所有控件自 VM（OQ-2 裁决落地）。TryReset 成功后调用，在下一帧 update() 之前完成重装载，杜绝旧文本回写新 BioData 的污染路径。</summary>
         private void SyncAllControlsFromVm()
         {
             // Tab 1
@@ -1711,7 +1754,6 @@ namespace ValleytalkReborn
                 _ => Game1.activeClickableMenu = this);
         }
 
-        /// <summary>将当前活动 Tab 的控件同步为 VM 数据（单页重置后调用）。</summary>
         private void SyncActiveTabControls()
         {
             switch (_activeTab)
@@ -1789,7 +1831,6 @@ namespace ValleytalkReborn
         {
             if (_returnMenu != null)
             {
-                // 如果返回的菜单支持刷新接口，则立刻执行刷新
                 if (_returnMenu is IMemoryRefreshTarget refreshTarget)
                 {
                     refreshTarget.RefreshEntries();
