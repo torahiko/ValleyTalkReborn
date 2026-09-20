@@ -81,7 +81,7 @@ internal abstract class OverlayStorageServiceBase<TFile> where TFile : class, ne
     /// 保存覆盖层：创建目录 → 序列化 → 反序列化校验 → 原子写（.tmp + Move）→ Info 日志。
     /// 任意异常不部分写入；失败时 best-effort 删除残留 .tmp，return false 且 errorMessage 明确。
     /// </summary>
-    public bool Save(TFile file, out string errorMessage)
+    public virtual bool Save(TFile file, out string errorMessage)
     {
         errorMessage = string.Empty;
         string tmp = OverlayFilePath + ".tmp";
@@ -124,7 +124,7 @@ internal abstract class OverlayStorageServiceBase<TFile> where TFile : class, ne
     /// 删除覆盖层：存在则删除；删除抛异常 → errorMessage + Log Error + return false（不谎报成功）；
     /// 不存在也 return true（幂等）。
     /// </summary>
-    public bool DeleteOverlay(out string errorMessage)
+    public virtual bool DeleteOverlay(out string errorMessage)
     {
         errorMessage = string.Empty;
         try
