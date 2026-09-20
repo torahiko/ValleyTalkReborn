@@ -113,15 +113,15 @@ internal sealed class NpcRelationOverlayService : OverlayStorageServiceBase<NpcR
                         string key = MakeKey(entry.NpcA, entry.NpcB);
                         if (entry.Disabled)
                         {
-                            // 墓碑：移除同键条目
+                            // 墓碑：移除同键条目（MakeKey 输出组件保留输入大小写，收敛手工编辑的同对异写）
                             d.Data.Relations.RemoveAll(r =>
-                                MakeKey(r.NpcA, r.NpcB).Equals(key, StringComparison.Ordinal));
+                                MakeKey(r.NpcA, r.NpcB).Equals(key, StringComparison.OrdinalIgnoreCase));
                             continue;
                         }
 
-                        // upsert：先移除同键再追加，保持列表追加语义
+                        // upsert：先移除同键再追加，保持列表追加语义（MakeKey 输出组件保留输入大小写，收敛手工编辑的同对异写）
                         d.Data.Relations.RemoveAll(r =>
-                            MakeKey(r.NpcA, r.NpcB).Equals(key, StringComparison.Ordinal));
+                            MakeKey(r.NpcA, r.NpcB).Equals(key, StringComparison.OrdinalIgnoreCase));
                         d.Data.Relations.Add(entry);
                     }
 
@@ -135,8 +135,8 @@ internal sealed class NpcRelationOverlayService : OverlayStorageServiceBase<NpcR
         }
     }
 
-    // 照抄 NpcRelationRegistry.MakeKey 的字母序归一化。
-    private static string MakeKey(string a, string b) =>
+    // 唯一权威键归一化，UI 与合并流共用（照抄 NpcRelationRegistry.MakeKey 的字母序归一化）。
+    internal static string MakeKey(string a, string b) =>
         string.Compare(a, b, StringComparison.OrdinalIgnoreCase) <= 0
             ? $"{a}|{b}"
             : $"{b}|{a}";

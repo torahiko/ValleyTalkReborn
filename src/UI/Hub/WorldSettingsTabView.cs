@@ -33,12 +33,14 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
     private readonly Rectangle[] _subPageRects = new Rectangle[4];
     private Rectangle _rightContentArea;
 
-    // 子页实例（与枚举序对齐）。仅 DateAmbience（T4）接线；其余三槽留待 T5/T6c/T7。
+    // 子页实例（与枚举序对齐）。DateAmbience（T4）+ RelationNetwork（T5）+ LocationFestival（T6c）已接线；PoiTuning（T7）留待。
     private readonly WorldSubPageBase?[] _pages = new WorldSubPageBase?[4];
 
     public WorldSettingsTabView(IntegratedHubMenu hub) : base(hub)
     {
         _pages[(int)WorldSettingsSubPage.DateAmbience] = new DateAmbiencePage(hub);
+        _pages[(int)WorldSettingsSubPage.RelationNetwork] = new RelationNetworkPage(hub);
+        _pages[(int)WorldSettingsSubPage.LocationFestival] = new LocationFestivalPage(hub);
     }
 
     public override void OnActivated()
