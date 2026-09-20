@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,12 +31,12 @@ public sealed class BuildContext
     /// 当前 NPC 所在地点的 Region（如 "Pelican Town"、"Mountain"）。
     /// null = 未知区域；防止全量倾倒撑爆 Token。
     /// </summary>
-    public string CurrentRegion { get; init; } = null;
+    public string? CurrentRegion { get; init; } = null;
 
     /// <summary>
     /// 当前具体的地图内部名（如 "Town"、"SeedShop"、"Saloon" 等）
     /// </summary>
-    public string CurrentLocationName { get; init; } = null;
+    public string? CurrentLocationName { get; init; } = null;
 
     /// <summary>
     /// 根据运行时状态自动构造上下文。
@@ -48,7 +49,7 @@ public sealed class BuildContext
             || WorldSummaryOverlayService.CustomFestivalRelevant();
 
         // 把地点名映射到 Region
-        string region = ResolveRegion(locationName, regionMap);
+        string? region = ResolveRegion(locationName, regionMap);
 
         return new BuildContext
         {
@@ -71,40 +72,40 @@ public sealed class BuildContext
     /// 把地点名映射到 Region 字符串。
     /// 包含双向别名容错与 Custom_ 前缀自动兼容。
     /// </summary>
-    private static string ResolveRegion(string locationName, Dictionary<string, string> regionMap)
+    private static string? ResolveRegion(string locationName, Dictionary<string, string> regionMap)
     {
         if (string.IsNullOrWhiteSpace(locationName)) return null;
         if (regionMap == null) return null;
 
         // 1. 直接精确查找
-        if (regionMap.TryGetValue(locationName, out string region))
+        if (regionMap.TryGetValue(locationName, out string? region))
             return region;
 
         // 2. 剥离 Custom_ 前缀再次尝试
         if (locationName.StartsWith("Custom_", StringComparison.OrdinalIgnoreCase))
         {
             string stripped = locationName.Substring("Custom_".Length);
-            if (regionMap.TryGetValue(stripped, out string rStripped))
+            if (regionMap.TryGetValue(stripped, out string? rStripped))
                 return rStripped;
         }
         // 3. 补充 Custom_ 前缀再次尝试
         else
         {
             string added = "Custom_" + locationName;
-            if (regionMap.TryGetValue(added, out string rAdded))
+            if (regionMap.TryGetValue(added, out string? rAdded))
                 return rAdded;
         }
 
         // 4. 原版特殊场景别名容错
-        if (locationName.Equals("Tent", StringComparison.OrdinalIgnoreCase) && regionMap.TryGetValue("LinusTent", out string rTent))
+        if (locationName.Equals("Tent", StringComparison.OrdinalIgnoreCase) && regionMap.TryGetValue("LinusTent", out string? rTent))
             return rTent;
-        if (locationName.Equals("LinusTent", StringComparison.OrdinalIgnoreCase) && regionMap.TryGetValue("Tent", out string rTent2))
+        if (locationName.Equals("LinusTent", StringComparison.OrdinalIgnoreCase) && regionMap.TryGetValue("Tent", out string? rTent2))
             return rTent2;
-        if (locationName.StartsWith("BathHouse_Mens", StringComparison.OrdinalIgnoreCase) && regionMap.TryGetValue("BathHouse_MensLocker", out string rMens))
+        if (locationName.StartsWith("BathHouse_Mens", StringComparison.OrdinalIgnoreCase) && regionMap.TryGetValue("BathHouse_MensLocker", out string? rMens))
             return rMens;
-        if (locationName.StartsWith("BathHouse_Womens", StringComparison.OrdinalIgnoreCase) && regionMap.TryGetValue("BathHouse_WomensLocker", out string rWomens))
+        if (locationName.StartsWith("BathHouse_Womens", StringComparison.OrdinalIgnoreCase) && regionMap.TryGetValue("BathHouse_WomensLocker", out string? rWomens))
             return rWomens;
-        if (locationName.Equals("IslandFieldOffice", StringComparison.OrdinalIgnoreCase) && regionMap.TryGetValue("FieldOffice", out string rOffice))
+        if (locationName.Equals("IslandFieldOffice", StringComparison.OrdinalIgnoreCase) && regionMap.TryGetValue("FieldOffice", out string? rOffice))
             return rOffice;
 
         return null;
@@ -117,7 +118,7 @@ public sealed class BuildContext
 
 internal class GameSummaryBuilder
 {
-    private GameSummary _gameSummaryDict;
+    private GameSummary? _gameSummaryDict = new();
 
     private GameSummary GameSummaryDict
     {
@@ -152,7 +153,7 @@ internal class GameSummaryBuilder
     /// <summary>
     /// 构建世界观摘要字符串。
     /// </summary>
-    internal string Build(BuildContext ctx = null)
+    internal string Build(BuildContext? ctx = null)
     {
         ctx ??= new BuildContext
         {
@@ -542,9 +543,9 @@ internal class GameSummaryBuilder
 
 public class GeneralObject
 {
-    public string id { get; set; }
-    public string Name { get; set; }
-    public string Description { get; set; }
+    public string id { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Description { get; set; } = "";
 }
 
 public interface IGameSummarySection
@@ -559,43 +560,43 @@ public interface IGameSummarySection<T> : IGameSummarySection
 
 public class GeneralList : IGameSummarySection<GeneralObject>
 {
-    public string Text { get; set; }
-    public Dictionary<string, GeneralObject> Entries { get; set; }
+    public string Text { get; set; } = "";
+    public Dictionary<string, GeneralObject> Entries { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
 public class LocationObject : GeneralObject
 {
-    public string Region { get; set; }
+    public string Region { get; set; } = "";
 }
 
 public class LocationList : IGameSummarySection<LocationObject>
 {
-    public string Text { get; set; }
-    public Dictionary<string, LocationObject> Entries { get; set; }
+    public string Text { get; set; } = "";
+    public Dictionary<string, LocationObject> Entries { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
 public class SeasonObject : GeneralObject
 {
-    public List<string> Crops { get; set; }
-    public List<string> Forage { get; set; }
+    public List<string> Crops { get; set; } = new();
+    public List<string> Forage { get; set; } = new();
 }
 
 public class SeasonList : IGameSummarySection<SeasonObject>
 {
-    public string Text { get; set; }
-    public Dictionary<string, SeasonObject> Entries { get; set; }
+    public string Text { get; set; } = "";
+    public Dictionary<string, SeasonObject> Entries { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
 internal class GameSummary
 {
-    public Dictionary<string, bool> SectionOrder { get; set; }
-    public GeneralList Intro { get; set; }
-    public GeneralList FarmerBackground { get; set; }
-    public GeneralList Villagers { get; set; }
-    public SeasonList Seasons { get; set; }
-    public LocationList Locations { get; set; }
-    public GeneralList Festivals { get; set; }
-    public GeneralList Outro { get; set; }
+    public Dictionary<string, bool> SectionOrder { get; set; } = new();
+    public GeneralList Intro { get; set; } = new();
+    public GeneralList FarmerBackground { get; set; } = new();
+    public GeneralList Villagers { get; set; } = new();
+    public SeasonList Seasons { get; set; } = new();
+    public LocationList Locations { get; set; } = new();
+    public GeneralList Festivals { get; set; } = new();
+    public GeneralList Outro { get; set; } = new();
 
-    public Dictionary<string, string> LocationRegions { get; set; }
+    public Dictionary<string, string> LocationRegions { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }

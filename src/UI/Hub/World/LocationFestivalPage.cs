@@ -570,8 +570,8 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
             _festStatus = I18n.WorldSettings.VanillaCoexistWarning();
 
         CustomFestivalEntry entry;
-        bool existed = ov.Festivals.TryGetValue(key, out var existing);
-        if (existed) entry = existing;
+        if (ov.Festivals.TryGetValue(key, out var existing) && existing != null)
+            entry = existing;
         else
         {
             entry = new CustomFestivalEntry();

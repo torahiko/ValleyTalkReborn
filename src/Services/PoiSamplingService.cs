@@ -59,7 +59,7 @@ internal static class PoiSamplingService
             Stack<Microsoft.Xna.Framework.Point> path;
             try
             {
-                path = PathFindController.findPathForNPCSchedules(playerTile, target, loc, -1);
+                path = PathFindController.findPathForNPCSchedules(playerTile, target, loc, -1, Game1.player);
             }
             catch (Exception ex)
             {

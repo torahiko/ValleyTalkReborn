@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Newtonsoft.Json;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Menus;
@@ -50,6 +51,7 @@ namespace ValleytalkReborn
     /// 角色人设沉浸式编辑器：
     /// 仅主标题、Tab、主动作按钮使用 Bold 字体，其余正文与栏目标题通通采用 Medium 字体，视觉层次清爽轻盈。
     /// 统一按钮高度 26px；Tab 3/4/5 复制按钮已换行至标签右侧。
+    /// 导出改为直接复制 JSON 到剪贴板；动作按钮文字为炭黑；卡片边框为暖金棕。
     /// </summary>
     internal sealed class BioEditorMenu : IClickableMenu
     {
@@ -73,6 +75,10 @@ namespace ValleytalkReborn
         private const int CopyBtnH = 26;   // ★ 统一高度
         private const int RowBtnH = 26;    // ★ 栏目标题行按钮统一高度
         private const int LabelRowGap = 6; // ★ 标签行与输入框的固定间距
+
+        // ★ 按钮文字炭黑（非纯黑，稍带暖调，避免冷灰刺眼）
+        private static readonly Color CharcoalBlack = new Color(35, 32, 28);
+        private static readonly Color DisabledCharcoal = new Color(120, 115, 105);
 
         private static readonly string[] TabTitles = new[]
         {
@@ -1374,21 +1380,14 @@ namespace ValleytalkReborn
                 rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height,
                 isPrimary ? new Color(210, 160, 60) : new Color(180, 140, 95), 3f, false);
 
-            // 白色文字 + 1px 深色描边阴影
+            // ★ 炭黑文字（启用态）；禁用态用暖灰
             var sz = CustomFontManager.MeasureStringBold(label, ButtonFontSize);
             Vector2 textPos = new Vector2(
                 rect.X + pressOffset + (rect.Width - sz.X) / 2f,
                 rect.Y + pressOffset + (rect.Height - sz.Y) / 2f);
 
-            if (isEnabled)
-            {
-                CustomFontManager.DrawStringBold(b, label, textPos + new Vector2(1f, 1f), Color.Black * 0.55f, ButtonFontSize);
-                CustomFontManager.DrawStringBold(b, label, textPos, Color.White, ButtonFontSize);
-            }
-            else
-            {
-                CustomFontManager.DrawStringBold(b, label, textPos, new Color(110, 110, 110), ButtonFontSize);
-            }
+            CustomFontManager.DrawStringBold(b, label, textPos,
+                isEnabled ? CharcoalBlack : DisabledCharcoal, ButtonFontSize);
         }
 
         private static void DrawPillButton(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my)
@@ -1411,50 +1410,70 @@ namespace ValleytalkReborn
                 rect.X + pressOffset + (rect.Width - sz.X) / 2f,
                 rect.Y + pressOffset + (rect.Height - sz.Y) / 2f);
 
-            // 白字 + 深色描边
-            CustomFontManager.DrawString(b, label, textPos + new Vector2(1f, 1f), Color.Black * 0.55f, ContentFontSize);
-            CustomFontManager.DrawString(b, label, textPos, Color.White, ContentFontSize);
+            // ★ 炭黑文字
+            CustomFontManager.DrawString(b, label, textPos, CharcoalBlack, ContentFontSize);
         }
 
+        /// <summary>卡片：暖羊皮纸填充 + 星露谷式暖金棕边框（替代原灰调）。</summary>
         private static void DrawCard(SpriteBatch b, Rectangle rect)
         {
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1, rect.Y + 1, rect.Width - 2, rect.Height - 2), new Color(236, 222, 198) * 0.7f);
+            b.Draw(Game1.staminaRect,
+                new Rectangle(rect.X + 1, rect.Y + 1, rect.Width - 2, rect.Height - 2),
+                new Color(242, 226, 196) * 0.75f);
+
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6),
-                rect.X, rect.Y, rect.Width, rect.Height, new Color(210, 190, 160) * 0.8f, 2f, false);
+                rect.X, rect.Y, rect.Width, rect.Height,
+                new Color(223, 122, 4) * 0.7f, 2f, false);
         }
 
-        private static void DrawSingleLineBox(SpriteBatch b, TextBox box)
+        private static void DrawSingleLineBox(SpriteBatch b, TextBox box) 
         {
             var boxRect = new Rectangle(box.X, box.Y, box.Width, box.Height);
-            Color slotColor = box.Selected ? new Color(255, 250, 230) : new Color(235, 222, 198);
 
-            b.Draw(Game1.staminaRect, new Rectangle(boxRect.X + 1, boxRect.Y + 1, boxRect.Width - 2, boxRect.Height - 2), slotColor);
+            // 统一为 2f 整像素网格与 4px 压边安全边距（绝无白缝）
+            const float frameScale = 2f;
+            const int fillInset = 4;
 
-            IClickableMenu.drawTextureBox(
-                b,
-                Game1.mouseCursors,
-                new Rectangle(403, 383, 6, 6),
-                boxRect.X,
-                boxRect.Y,
-                boxRect.Width,
-                boxRect.Height,
-                new Color(195, 175, 145),
-                2f,
-                false
-            );
+            // 1. 内衬底色：未激活为淡雅微灰米色，激活为明亮羊皮纸
+            Color innerBgColor = box.Selected
+                ? new Color(255, 252, 245)
+                : new Color(245, 240, 230);
 
+            b.Draw(
+                Game1.staminaRect,
+                new Rectangle(boxRect.X + fillInset, boxRect.Y + fillInset, Math.Max(0, boxRect.Width - fillInset * 2), Math.Max(0, boxRect.Height - fillInset * 2)),
+                innerBgColor);
+
+            // 2. 边框：与大文本框 DialogueTextInputBox 保持绝对统一
             if (box.Selected)
             {
+                // 激活时：纯正深红木框 rgb(85, 40, 28)
                 IClickableMenu.drawTextureBox(
                     b,
                     Game1.mouseCursors,
                     new Rectangle(432, 439, 9, 9),
-                    boxRect.X - 1,
-                    boxRect.Y - 1,
-                    boxRect.Width + 2,
-                    boxRect.Height + 2,
-                    Color.Gold * 0.55f,
-                    2f,
+                    boxRect.X,
+                    boxRect.Y,
+                    boxRect.Width,
+                    boxRect.Height,
+                    Color.White,
+                    frameScale,
+                    false
+                );
+            }
+            else
+            {
+                // 未激活时：淡雅柔和浅木 rgb(228, 212, 190)
+                IClickableMenu.drawTextureBox(
+                    b,
+                    Game1.mouseCursors,
+                    new Rectangle(432, 439, 9, 9),
+                    boxRect.X,
+                    boxRect.Y,
+                    boxRect.Width,
+                    boxRect.Height,
+                    new Color(228, 212, 190),
+                    frameScale,
                     false
                 );
             }
@@ -1469,6 +1488,7 @@ namespace ValleytalkReborn
                 CustomFontManager.DrawString(b, text, new Vector2(textX, textY), Game1.textColor, ContentFontSize);
             }
 
+            // 3. 闪烁光标
             if (box.Selected)
             {
                 float cx = textX + textSize.X + 1;
@@ -1623,6 +1643,10 @@ namespace ValleytalkReborn
             }
         }
 
+        /// <summary>
+        /// 导出当前人设：不再落地到文件，直接序列化为 JSON 复制到系统剪贴板，
+        /// 便于在主菜单/编辑器外粘贴、备份或跨存档传递。
+        /// </summary>
         private void ExportBio()
         {
             if (_vm.Bio == null)
@@ -1632,16 +1656,23 @@ namespace ValleytalkReborn
                 return;
             }
 
-            if (ModEntry.BioStorage!.ExportBio(_vm.NpcName, _vm.Bio, out string path, out string err))
+            try
             {
+                string json = JsonConvert.SerializeObject(_vm.Bio, Formatting.Indented);
+                TextCopy.ClipboardService.SetText(json);
+
                 Game1.playSound("coin");
-                Game1.addHUDMessage(new HUDMessage($"已导出: {path}", HUDMessage.newQuest_type));
-                ModEntry.SMonitor?.Log($"[BioEditor] 已导出覆盖层: {path}", LogLevel.Info);
+                Game1.addHUDMessage(new HUDMessage(
+                    $"已将 {_vm.NpcName} 的人设 JSON 复制到剪贴板，可直接粘贴备份",
+                    HUDMessage.newQuest_type));
+                ModEntry.SMonitor?.Log(
+                    $"[BioEditor] 已复制 {_vm.NpcName} 人设 JSON 到剪贴板（{json.Length} 字符）",
+                    LogLevel.Info);
             }
-            else
+            catch (Exception ex)
             {
                 Game1.playSound("cancel");
-                Game1.addHUDMessage(new HUDMessage($"导出失败: {err}", HUDMessage.error_type));
+                Game1.addHUDMessage(new HUDMessage($"导出失败: {ex.Message}", HUDMessage.error_type));
             }
         }
 
