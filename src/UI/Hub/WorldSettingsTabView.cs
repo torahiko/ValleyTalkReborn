@@ -2,6 +2,7 @@
 using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using StardewValley;
 using StardewValley.Menus;
 
@@ -32,12 +33,29 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
     private readonly Rectangle[] _subPageRects = new Rectangle[4];
     private Rectangle _rightContentArea;
 
-    public WorldSettingsTabView(IntegratedHubMenu hub) : base(hub) { }
+    // 子页实例（与枚举序对齐）。仅 DateAmbience（T4）接线；其余三槽留待 T5/T6c/T7。
+    private readonly WorldSubPageBase?[] _pages = new WorldSubPageBase?[4];
+
+    public WorldSettingsTabView(IntegratedHubMenu hub) : base(hub)
+    {
+        _pages[(int)WorldSettingsSubPage.DateAmbience] = new DateAmbiencePage(hub);
+    }
 
     public override void OnActivated()
     {
         // 切入本子页时默认选中「日期与氛围」（T4），不丢子页各自状态。
         _currentSubPage = WorldSettingsSubPage.DateAmbience;
+        _pages[(int)_currentSubPage]?.OnShown();
+    }
+
+    public override void OnDeactivated()
+    {
+        _pages[(int)_currentSubPage]?.OnHidden();
+    }
+
+    public override void Update(GameTime time)
+    {
+        _pages[(int)_currentSubPage]?.Update(time);
     }
 
     public override void Layout(Rectangle menuBounds, Rectangle contentBounds)
@@ -55,6 +73,7 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
         int rightX = listX + SubPageListWidth + SubPageListRightPad;
         _rightContentArea = new Rectangle(rightX, contentBounds.Y,
             contentBounds.Width - SubPageListWidth - SubPageListRightPad, contentBounds.Height);
+        _pages[(int)_currentSubPage]?.Layout(_rightContentArea);
     }
 
     public override bool ReceiveLeftClick(int x, int y)
@@ -65,13 +84,25 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
             {
                 if (_currentSubPage != (WorldSettingsSubPage)i)
                 {
+                    _pages[(int)_currentSubPage]?.OnHidden();
                     _currentSubPage = (WorldSettingsSubPage)i;
                     Game1.playSound("smallSelect");
+                    _pages[(int)_currentSubPage]?.OnShown();
                 }
                 return true;
             }
         }
-        return false;
+        return _pages[(int)_currentSubPage]?.ReceiveLeftClick(x, y) ?? false;
+    }
+
+    public override bool ReceiveKeyPress(Keys key)
+    {
+        return _pages[(int)_currentSubPage]?.ReceiveKeyPress(key) ?? false;
+    }
+
+    public override bool ReceiveScrollWheel(int direction)
+    {
+        return _pages[(int)_currentSubPage]?.ReceiveScrollWheel(direction) ?? false;
     }
 
     public override void Draw(SpriteBatch b, int mx, int my)
@@ -86,22 +117,8 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
         // ── 右侧内容区底板 ──
         b.Draw(Game1.staminaRect, _rightContentArea, new Color(0, 0, 0) * 0.04f);
 
-        // ── 委托当前子页绘制具体内容（T4/T5/T6c/T7 各自填充）──
-        switch (_currentSubPage)
-        {
-            case WorldSettingsSubPage.DateAmbience:
-                DrawDateAmbience(b, _rightContentArea, mx, my);
-                break;
-            case WorldSettingsSubPage.RelationNetwork:
-                DrawRelationNetwork(b, _rightContentArea, mx, my);
-                break;
-            case WorldSettingsSubPage.LocationFestival:
-                DrawLocationFestival(b, _rightContentArea, mx, my);
-                break;
-            case WorldSettingsSubPage.PoiTuning:
-                DrawPoiTuning(b, _rightContentArea, mx, my);
-                break;
-        }
+        // ── 委托当前子页绘制具体内容 ──
+        _pages[(int)_currentSubPage]?.Draw(b, _rightContentArea, mx, my);
     }
 
     private void DrawSubPageRow(SpriteBatch b, Rectangle rect, WorldSettingsSubPage page, bool isActive, int mx, int my)
@@ -138,20 +155,4 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
             _ => page.ToString()
         };
     }
-
-    // ════════════════════════════════════════════════════════════════════════
-    // 子页内容委托点（空占位）。T4/T5/T6c/T7 各自独立挂接，互不冲突。
-    // ════════════════════════════════════════════════════════════════════════
-
-    /// <summary>T4 日期与氛围：空占位，由 T4 工单填充。</summary>
-    private void DrawDateAmbience(SpriteBatch b, Rectangle area, int mx, int my) { }
-
-    /// <summary>T5 关系网络：空占位，由 T5 工单填充。</summary>
-    private void DrawRelationNetwork(SpriteBatch b, Rectangle area, int mx, int my) { }
-
-    /// <summary>T6c 地点与节日：空占位，由 T6c 工单填充。</summary>
-    private void DrawLocationFestival(SpriteBatch b, Rectangle area, int mx, int my) { }
-
-    /// <summary>T7 兴趣点调校：空占位，由 T7 工单填充。</summary>
-    private void DrawPoiTuning(SpriteBatch b, Rectangle area, int mx, int my) { }
 }

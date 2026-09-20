@@ -353,6 +353,22 @@ namespace ValleytalkReborn
             public static string RelationNetwork() => Lookup("WorldSettings.RelationNetwork");
             public static string LocationFestival() => Lookup("WorldSettings.LocationFestival");
             public static string PoiTuning() => Lookup("WorldSettings.PoiTuning");
+
+            // T4 约会氛围工坊子页
+            public static string NameZh() => Lookup("WorldSettings.DateAmbience.NameZh");
+            public static string NameEn() => Lookup("WorldSettings.DateAmbience.NameEn");
+            public static string TargetMap() => Lookup("WorldSettings.DateAmbience.TargetMap");
+            public static string RequiredHearts() => Lookup("WorldSettings.DateAmbience.RequiredHearts");
+            public static string StartTime() => Lookup("WorldSettings.DateAmbience.StartTime");
+            public static string EndTime() => Lookup("WorldSettings.DateAmbience.EndTime");
+            public static string AllowRainyDays() => Lookup("WorldSettings.DateAmbience.AllowRainyDays");
+            public static string DescZh() => Lookup("WorldSettings.DateAmbience.DescZh");
+            public static string DescEn() => Lookup("WorldSettings.DateAmbience.DescEn");
+            public static string Save() => Lookup("WorldSettings.DateAmbience.Save");
+            public static string RevertThis() => Lookup("WorldSettings.DateAmbience.RevertThis");
+            public static string DeleteThis() => Lookup("WorldSettings.DateAmbience.DeleteThis");
+            public static string NewCustom() => Lookup("WorldSettings.DateAmbience.NewCustom");
+            public static string Saved() => Lookup("WorldSettings.DateAmbience.Saved");
         }
 
         // =========================================================================

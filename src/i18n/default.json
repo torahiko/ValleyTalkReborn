@@ -314,5 +314,19 @@
   "WorldSettings.DateAmbience": "Date & Ambience",
   "WorldSettings.RelationNetwork": "Relation Network",
   "WorldSettings.LocationFestival": "Locations & Festivals",
-  "WorldSettings.PoiTuning": "POI Tuning"
+  "WorldSettings.PoiTuning": "POI Tuning",
+  "WorldSettings.DateAmbience.NameZh": "Name (Chinese)",
+  "WorldSettings.DateAmbience.NameEn": "Name (English)",
+  "WorldSettings.DateAmbience.TargetMap": "Target Map",
+  "WorldSettings.DateAmbience.RequiredHearts": "Required Hearts",
+  "WorldSettings.DateAmbience.StartTime": "Start Time",
+  "WorldSettings.DateAmbience.EndTime": "End Time",
+  "WorldSettings.DateAmbience.AllowRainyDays": "Allow Rainy Days",
+  "WorldSettings.DateAmbience.DescZh": "Ambience (Chinese)",
+  "WorldSettings.DateAmbience.DescEn": "Ambience (English)",
+  "WorldSettings.DateAmbience.Save": "Save",
+  "WorldSettings.DateAmbience.RevertThis": "Revert",
+  "WorldSettings.DateAmbience.DeleteThis": "Delete",
+  "WorldSettings.DateAmbience.NewCustom": "New",
+  "WorldSettings.DateAmbience.Saved": "Saved"
 }

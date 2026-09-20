@@ -313,5 +313,19 @@
   "WorldSettings.DateAmbience": "日期与氛围",
   "WorldSettings.RelationNetwork": "关系网络",
   "WorldSettings.LocationFestival": "地点与节日",
-  "WorldSettings.PoiTuning": "兴趣点调校"
+  "WorldSettings.PoiTuning": "兴趣点调校",
+  "WorldSettings.DateAmbience.NameZh": "名称（中文）",
+  "WorldSettings.DateAmbience.NameEn": "名称（英文）",
+  "WorldSettings.DateAmbience.TargetMap": "目标地图",
+  "WorldSettings.DateAmbience.RequiredHearts": "好感门槛",
+  "WorldSettings.DateAmbience.StartTime": "开始时间",
+  "WorldSettings.DateAmbience.EndTime": "结束时间",
+  "WorldSettings.DateAmbience.AllowRainyDays": "雨天开放",
+  "WorldSettings.DateAmbience.DescZh": "氛围描述（中文）",
+  "WorldSettings.DateAmbience.DescEn": "氛围描述（英文）",
+  "WorldSettings.DateAmbience.Save": "保存",
+  "WorldSettings.DateAmbience.RevertThis": "还原此条",
+  "WorldSettings.DateAmbience.DeleteThis": "删除此条",
+  "WorldSettings.DateAmbience.NewCustom": "新建",
+  "WorldSettings.DateAmbience.Saved": "已保存"
 }
