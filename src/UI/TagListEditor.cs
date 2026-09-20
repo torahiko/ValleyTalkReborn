@@ -203,66 +203,53 @@ namespace ValleytalkReborn
             int mx = Game1.getMouseX();
             int my = Game1.getMouseY();
 
-            // 1. 绘制现有胶囊
+            // 1. 绘制现有胶囊标签：纯净羊皮纸底 + 柔和浅木框
             foreach (var (r, delR, idx) in _tagHitboxes)
             {
                 bool isHover = r.Contains(mx, my);
-                IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6),
-                    r.X, r.Y, r.Width, r.Height, isHover ? new Color(245, 230, 210) : new Color(230, 220, 200), 2f, false);
+                Color tagBg = isHover ? new Color(255, 250, 240) : new Color(248, 242, 232);
+                Color tagBorder = isHover ? new Color(205, 185, 155) : new Color(228, 212, 190);
 
-                CustomFontManager.DrawString(b, _tags[idx], new Vector2(r.X + 6, r.Y + 4), Game1.textColor, 18.5f);
+                // 内缩 3px 纯色垫底，外层套木框
+                b.Draw(Game1.staminaRect, new Rectangle(r.X + 3, r.Y + 3, r.Width - 6, r.Height - 6), tagBg);
+                IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
+                    r.X, r.Y, r.Width, r.Height, tagBorder, 2f, false);
+
+                CustomFontManager.DrawString(b, _tags[idx], new Vector2(r.X + 7, r.Y + 4), Game1.textColor, 18.5f);
 
                 bool delHover = delR.Contains(mx, my);
-                CustomFontManager.DrawString(b, "×", new Vector2(delR.X + 2, delR.Y - 1), delHover ? Color.Red : Color.DimGray, 18.5f);
+                CustomFontManager.DrawString(b, "×", new Vector2(delR.X + 2, delR.Y - 1), delHover ? new Color(220, 75, 60) : new Color(150, 130, 110), 18.5f);
             }
 
-            // 2. 绘制新增按钮 / 输入状态
+            // 2. 绘制新增输入状态 / "+ 新增" 按钮
             if (_isAdding)
             {
                 var r = _addBtnRect;
 
-                // 2.1 内凹羊皮纸槽纹理
+                // 处于输入态时：直接套用激活态输入框标准（明亮底 + 纯正深红木 85, 40, 28）
+                b.Draw(Game1.staminaRect, new Rectangle(r.X + 4, r.Y + 4, r.Width - 8, r.Height - 8), new Color(255, 252, 245));
                 IClickableMenu.drawTextureBox(
                     b,
                     Game1.mouseCursors,
-                    new Rectangle(403, 383, 6, 6),
+                    new Rectangle(432, 439, 9, 9),
                     r.X,
                     r.Y,
                     r.Width,
                     r.Height,
-                    new Color(255, 248, 220),
+                    Color.White,
                     2f,
                     false
                 );
-
-                // 2.2 聚焦金色高亮轮廓
-                if (_inputBox.Selected)
-                {
-                    IClickableMenu.drawTextureBox(
-                        b,
-                        Game1.mouseCursors,
-                        new Rectangle(432, 439, 9, 9),
-                        r.X - 1,
-                        r.Y - 1,
-                        r.Width + 2,
-                        r.Height + 2,
-                        Color.Gold * 0.45f,
-                        2f,
-                        false
-                    );
-                }
 
                 string text = _inputBox.Text ?? "";
                 float textX = r.X + 8;
 
                 if (!string.IsNullOrEmpty(text))
                 {
-                    // 输入文字统一采用 17f，容纳更多字数同时清晰易读
                     Vector2 textSize = CustomFontManager.MeasureString(text, 17f);
                     float textY = r.Y + (r.Height - textSize.Y) / 2f;
                     CustomFontManager.DrawString(b, text, new Vector2(textX, textY), Game1.textColor, 17f);
 
-                    // 原生像素闪烁光标
                     if (_inputBox.Selected && (int)(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 500) % 2 == 0)
                     {
                         float cx = textX + textSize.X + 1;
@@ -289,8 +276,10 @@ namespace ValleytalkReborn
             else
             {
                 bool addHover = _addBtnRect.Contains(mx, my);
+                Color addBg = addHover ? new Color(255, 235, 205) : new Color(225, 205, 175);
+                b.Draw(Game1.staminaRect, new Rectangle(_addBtnRect.X + 3, _addBtnRect.Y + 3, _addBtnRect.Width - 6, _addBtnRect.Height - 6), addBg);
                 IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-                    _addBtnRect.X, _addBtnRect.Y, _addBtnRect.Width, _addBtnRect.Height, addHover ? new Color(255, 235, 205) : new Color(215, 195, 160), 2f, false);
+                    _addBtnRect.X, _addBtnRect.Y, _addBtnRect.Width, _addBtnRect.Height, new Color(200, 170, 135), 2f, false);
                 CustomFontManager.DrawString(b, "+ 新增", new Vector2(_addBtnRect.X + 10, _addBtnRect.Y + 4), Game1.textColor, 18.5f);
             }
         }

@@ -445,16 +445,46 @@ namespace ValleytalkReborn
             int bh = (int)Extent.Y;
 
             // 1. 底板槽与聚焦光晕外框
+            // 1. 底板槽与聚焦光晕外框
             if (DrawFrame)
             {
-                Color slotColor = Selected ? new Color(255, 250, 235) : new Color(238, 222, 198) * 0.92f;
-                IClickableMenu.drawTextureBox(spriteBatch, Game1.mouseCursors, new Rectangle(403, 383, 6, 6),
-                    bx, by, bw, bh, slotColor, 2f, false);
+                // 固定使用像素对齐的整数缩放 2f（Corner 为 3x3，在 2f 缩放下边框物理厚度恰好为 6px）
+                const float frameScale = 2f;
+                const int fillInset = 4; // 内衬内缩 4px，外侧不穿透圆角切口，内侧严密垫入木框 2px
+
+                // 底板内衬填充
+                Color innerBgColor = Selected
+                    ? new Color(255, 252, 245)  // 激活时明亮羊皮纸色
+                    : new Color(245, 240, 230); // 未激活时微灰羊皮纸色
+
+                spriteBatch.Draw(
+                    Game1.staminaRect,
+                    new Rectangle(bx + fillInset, by + fillInset, bw - fillInset * 2, bh - fillInset * 2),
+                    innerBgColor);
 
                 if (Selected)
                 {
-                    IClickableMenu.drawTextureBox(spriteBatch, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-                        bx - 1, by - 1, bw + 2, bh + 2, Color.Gold * 0.45f, 2f, false);
+                    // 激活时：纯正深红木框 rgb(85, 40, 28)
+                    IClickableMenu.drawTextureBox(
+                        spriteBatch, 
+                        Game1.mouseCursors, 
+                        new Rectangle(432, 439, 9, 9),
+                        bx, by, bw, bh, 
+                        Color.White, 
+                        frameScale, 
+                        false);
+                }
+                else
+                {
+                    // 未激活时：淡雅柔和浅木（清爽不抢眼，与未激活底色浑然一体）
+                    IClickableMenu.drawTextureBox(
+                        spriteBatch, 
+                        Game1.mouseCursors, 
+                        new Rectangle(432, 439, 9, 9),
+                        bx, by, bw, bh, 
+                        new Color(228, 212, 190), 
+                        frameScale, 
+                        false);
                 }
             }
 

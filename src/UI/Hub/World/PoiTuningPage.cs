@@ -58,10 +58,6 @@ internal sealed class PoiTuningPage : WorldSubPageBase
     private int _captureTileY;
     private bool _hasCapture;
 
-    // ── 抓取/新建 POI 表单 ────────────────────────────────────────────
-    private string _newDescZh = "";
-    private string _newDescEn = "";
-
     // ── 控件 ──────────────────────────────────────────────────────────
     private readonly DropdownList _npcDropdown;
     private readonly MultilineTextBox _newDescBoxZh = new(Rectangle.Empty, 3);
@@ -438,7 +434,7 @@ internal sealed class PoiTuningPage : WorldSubPageBase
         {
             // 覆盖层有该 NPC → 整体覆盖基线：以覆盖层列表为准，未列出的 POI 不写入（整体覆盖语义）
             _workingWeights.Clear();
-            foreach (var p in pref.PreferredPois)
+            foreach (var p in pref!.PreferredPois)
                 if (!string.IsNullOrEmpty(p.PoiId))
                     _workingWeights[p.PoiId] = Math.Clamp(p.Weight, 0, 100);
         }

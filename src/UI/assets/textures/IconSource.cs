@@ -72,6 +72,17 @@ public static class IconSource
     
     public static Rectangle Restore(IconTheme theme = IconTheme.Wood, IconState state = IconState.Normal)
         => Get(6, 0, theme, state);  // 还原
+    
+    public static Rectangle House(IconTheme theme = IconTheme.Wood, IconState state = IconState.Normal)
+        => Get(16, 0, theme, state);  // 小镇
+    
+    public static Rectangle House2(IconTheme theme = IconTheme.Wood, IconState state = IconState.Normal)
+        => Get(16, 4, theme, state);  // 小镇白
+    
+    public static Rectangle Star2(IconTheme theme = IconTheme.Wood, IconState state = IconState.Normal)
+        => Get(7, 5, theme, state);  // 星星白
+    
+    
 
     /// <summary>
     /// 专用的通用带点击下沉动效的绘制方法

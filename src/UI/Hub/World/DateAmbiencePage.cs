@@ -341,7 +341,7 @@ internal sealed class DateAmbiencePage : WorldSubPageBase
 
         foreach (var id in ids)
         {
-            reg.TryGetValue(id, out var baseline);
+            reg!.TryGetValue(id, out var baseline);
             var isCustom = id.StartsWith("Custom_", StringComparison.OrdinalIgnoreCase);
             string name;
             if (baseline != null)
