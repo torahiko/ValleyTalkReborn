@@ -379,7 +379,7 @@ internal sealed class ProfileTabView : HubTabViewBase
         }
         catch (Exception ex)
         {
-            ValleytalkReborn.ModEntry.SMonitor.Log($"[Hub] config save failed: {ex.Message}", StardewModdingAPI.LogLevel.Error);
+            ModEntry.SMonitor.Log($"[Hub] config save failed: {ex.Message}", StardewModdingAPI.LogLevel.Error);
             return;
         }
 
@@ -518,18 +518,16 @@ internal sealed class ProfileTabView : HubTabViewBase
 
     private bool HandleTab2NpcPageClick(int x, int y)
     {
-        // B1: 筛选复选框（基线顺序：先判筛选）
         bool hasFilter = _displayNpcCards.Count > 0;
         if (hasFilter && _filterCheckboxRect.Contains(x, y))
         {
             _filterCustomOnly = !_filterCustomOnly;
-            _npcGridPage = 0; // 基线：筛选后台码归零
+            _npcGridPage = 0;
             Game1.playSound("drumkit6");
             ApplyNpcFilter();
             return true;
         }
 
-        // B1: 翻页（基线顺序：先判翻页）
         int totalPages = GetNpcTotalPages();
         if (_prevPageBtnRect.Contains(x, y) && _npcGridPage > 0)
         {
@@ -546,7 +544,6 @@ internal sealed class ProfileTabView : HubTabViewBase
             return true;
         }
 
-        // B1: 卡片（基线顺序：先判还原按钮，再点击卡片）
         foreach (var slot in _visibleCardSlots)
         {
             if (slot.Card.HasCustomOverlay && slot.ResetBtnBounds.Contains(x, y))
@@ -604,14 +601,12 @@ internal sealed class ProfileTabView : HubTabViewBase
 
     private void RefreshNpcCards()
     {
-        var rawCandidates = NpcCandidateQueryService.CollectRawCandidates();
-        rawCandidates.Add("Marlon");
+        var cleanedCandidates = NpcCandidateQueryService.GetCleanedCandidates();
+        var cards = new List<NpcCardInfo>();
 
-        var resolvedCards = new Dictionary<string, NpcCardInfo>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var name in rawCandidates)
+        foreach (var candidate in cleanedCandidates)
         {
-            var portrait = SafeLoadPortrait(name);
+            var portrait = SafeLoadPortrait(candidate.Id);
             if (portrait == null || portrait.IsDisposed)
                 continue;
 
@@ -620,45 +615,20 @@ internal sealed class ProfileTabView : HubTabViewBase
                 continue;
 
             var defaultRect = GetDefaultPortraitSource(portrait);
+            bool hasCustom = ModEntry.BioStorage != null && ModEntry.BioStorage.HasCustomOverlay(candidate.Id);
 
-            string dispName = Game1.getCharacterFromName(name)?.displayName;
-            if (string.IsNullOrWhiteSpace(dispName)) dispName = name;
-
-            bool hasCustom = ModEntry.BioStorage != null && ModEntry.BioStorage.HasCustomOverlay(name);
-            bool hasFriendship = Game1.player?.friendshipData?.ContainsKey(name) == true;
-
-            var card = new NpcCardInfo
+            cards.Add(new NpcCardInfo
             {
-                Name = name,
-                DisplayName = dispName,
+                Name = candidate.Id,
+                DisplayName = candidate.DisplayName,
                 Portrait = portrait,
                 DefaultSourceRect = defaultRect,
                 SmileSourceRect = smileRect,
                 HasCustomOverlay = hasCustom
-            };
-
-            if (resolvedCards.TryGetValue(dispName, out var existing))
-            {
-                bool isCurrentTrue = name.Equals("Marlon", StringComparison.OrdinalIgnoreCase);
-                bool isExistingTrue = existing.Name.Equals("Marlon", StringComparison.OrdinalIgnoreCase);
-
-                if (isCurrentTrue && !isExistingTrue)
-                    resolvedCards[dispName] = card;
-                else if (!isCurrentTrue && isExistingTrue)
-                    continue;
-                else
-                {
-                    bool existingHasFriendship = Game1.player?.friendshipData?.ContainsKey(existing.Name) == true;
-                    if ((hasFriendship && !existingHasFriendship) ||
-                        (hasFriendship == existingHasFriendship && name.Length < existing.Name.Length))
-                        resolvedCards[dispName] = card;
-                }
-            }
-            else
-                resolvedCards[dispName] = card;
+            });
         }
 
-        _allNpcCards = resolvedCards.Values
+        _allNpcCards = cards
             .OrderByDescending(x => x.HasCustomOverlay)
             .ThenBy(x => x.DisplayName, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
@@ -761,7 +731,7 @@ internal sealed class ProfileTabView : HubTabViewBase
                 new Vector2(MenuBounds.X + (MenuBounds.Width - sz.X) / 2f, MenuBounds.Y + 260), Color.Gray, HubUi.RegularFontSize);
         }
 
-        bool isLeftMouseDown = Mouse.GetState().LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
+        bool isLeftMouseDown = Mouse.GetState().LeftButton == ButtonState.Pressed;
 
         foreach (var slot in _visibleCardSlots)
         {
