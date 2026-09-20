@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ValleytalkReborn;
+using ValleytalkReborn.Services;
 
 namespace ValleytalkReborn.UI;
 
@@ -15,7 +16,7 @@ namespace ValleytalkReborn.UI;
 /// </summary>
 internal sealed class NpcMemoryTabView : MemoryListTabViewBase
 {
-    private DropdownList _npcDropdown;
+    private readonly DropdownList _npcDropdown;
     private Rectangle _callsignRect;
     private Rectangle _aiExtractButtonRect;
     private Rectangle _manualAddRect;
@@ -71,12 +72,17 @@ internal sealed class NpcMemoryTabView : MemoryListTabViewBase
 
     protected override void OnLayout(Rectangle menuBounds, Rectangle contentBounds)
     {
+        _npcDropdown?.Close();
+
         int tabBaseX = menuBounds.X + LeftPadding;
         int totalTabSpace = contentBounds.Width;
         int halfW = (totalTabSpace - 16) / 2;
 
-        var dropdownRect = new Rectangle(tabBaseX, menuBounds.Y + TopPadding, halfW, TabHeight);
-        _callsignRect = new Rectangle(tabBaseX + halfW + 16, menuBounds.Y + TopPadding, halfW, TabHeight);
+        // 避开 IntegratedHubMenu 顶栏浅色分割线
+        int startY = menuBounds.Y + TopPadding + 2;
+
+        var dropdownRect = new Rectangle(tabBaseX, startY, halfW, TabHeight);
+        _callsignRect = new Rectangle(tabBaseX + halfW + 16, startY, halfW, TabHeight);
         _npcDropdown.SetHeaderBounds(dropdownRect);
 
         int btnY = menuBounds.Y + menuBounds.Height - 60;
@@ -94,7 +100,7 @@ internal sealed class NpcMemoryTabView : MemoryListTabViewBase
         {
             int gap = 8;
             int avail = totalTabSpace - gap * 2;
-            int arcW = System.Math.Max(120, avail * 160 / 580);
+            int arcW = Math.Max(120, avail * 160 / 580);
             int rem = avail - arcW;
             int eachW = rem / 2;
 
@@ -106,10 +112,17 @@ internal sealed class NpcMemoryTabView : MemoryListTabViewBase
 
     protected override bool OnReceiveLeftClick(int x, int y)
     {
-        if (_npcDropdown.ReceiveLeftClick(x, y))
-            return true;
+        if (_npcDropdown != null && _npcDropdown.IsOpen)
+        {
+            if (_npcDropdown.ReceiveLeftClick(x, y))
+                return true;
 
-        if (_npcDropdown.HeaderBounds.Contains(x, y))
+            _npcDropdown.Close();
+            Game1.playSound("shwip");
+            return true;
+        }
+
+        if (_npcDropdown != null && _npcDropdown.HeaderBounds.Contains(x, y))
         {
             _npcDropdown.ToggleOpen();
             Game1.playSound("shwip");
@@ -173,9 +186,14 @@ internal sealed class NpcMemoryTabView : MemoryListTabViewBase
         return false;
     }
 
+    protected override void OnDrawPre(SpriteBatch b, int mx, int my)
+    {
+        DrawCallsignButton(b, mx, my);
+    }
+
     public override void DrawOverlay(SpriteBatch b)
     {
-        _npcDropdown.Draw(b);
+        _npcDropdown?.Draw(b);
     }
 
     protected override void OnRefreshFromHub()
@@ -183,16 +201,12 @@ internal sealed class NpcMemoryTabView : MemoryListTabViewBase
         _archivedCount = string.IsNullOrEmpty(Hub.CurrentNpcName)
             ? 0
             : MemoryManager.Instance.GetArchivedCount(Hub.CurrentNpcName);
-    }
 
-    protected override void OnDrawPre(SpriteBatch b, int mx, int my)
-    {
-        DrawCallsignButton(b, mx, my);
+        BuildNpcDropdownItems();
     }
 
     protected override void DrawBottomButtons(SpriteBatch b, int mx, int my)
     {
-        // AI 提炼按钮
         string distillText = I18n.Memory.DistillButton();
         bool distillHover = _aiExtractButtonRect.Contains(mx, my);
         Color distillBg = distillHover ? new Color(255, 235, 205) : new Color(139, 90, 43);
@@ -211,7 +225,6 @@ internal sealed class NpcMemoryTabView : MemoryListTabViewBase
                 _aiExtractButtonRect.Y + (_aiExtractButtonRect.Height - distillLabelSize.Y) / 2f),
             distillHover ? Game1.textColor : Color.White, HubUi.TabFontSize);
 
-        // 手动添加按钮
         string manualText = I18n.Memory.AddButton();
         bool manualHover = _manualAddRect.Contains(mx, my);
         Color manualBg = manualHover ? new Color(255, 235, 205) : new Color(139, 90, 43);
@@ -230,7 +243,6 @@ internal sealed class NpcMemoryTabView : MemoryListTabViewBase
                 _manualAddRect.Y + (_manualAddRect.Height - manualLabelSize.Y) / 2f),
             manualHover ? Game1.textColor : Color.White, HubUi.TabFontSize);
 
-        // 归档箱按钮
         string archiveText = I18n.Memory.ArchiveButton(_archivedCount, MemoryManager.MaxArchivedMemoriesPerNpc);
         bool archiveHover = _archiveButtonRect.Contains(mx, my);
         Color archiveBg = archiveHover ? new Color(255, 235, 205) : new Color(139, 90, 43);
@@ -249,7 +261,6 @@ internal sealed class NpcMemoryTabView : MemoryListTabViewBase
                 _archiveButtonRect.Y + (_archiveButtonRect.Height - archiveLabelSize.Y) / 2f),
             archiveHover ? Game1.textColor : Color.White, HubUi.TabFontSize);
 
-        // 容量标签
         string cap = $"{MemoryManager.Instance.GetManualMemoryCount(Hub.CurrentNpcName)} / {MemoryManager.MaxMemoriesPerNpc}";
         CustomFontManager.DrawString(b, cap,
             new Vector2(MenuBounds.X + MenuBounds.Width - RightPadding - 120, ListTopY - 10),
@@ -287,39 +298,26 @@ internal sealed class NpcMemoryTabView : MemoryListTabViewBase
         StartIndex = 0;
         Game1.playSound("bigSelect");
         Hub.RefreshEntries();
-        // F11: 不重建下拉项（原始 SelectNpc 无此调用）
     }
 
     private void BuildNpcDropdownItems()
     {
-        var items = new List<(string Id, string Label)>();
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var cleanedList = NpcCandidateQueryService.GetCleanedCandidates();
 
-        if (!string.IsNullOrWhiteSpace(Hub.CurrentNpcName))
+        string selectedId = Hub.CurrentNpcName;
+        if (!string.IsNullOrEmpty(selectedId))
         {
-            string label = Game1.getCharacterFromName(Hub.CurrentNpcName)?.displayName ?? Hub.CurrentNpcName;
-            items.Add((Hub.CurrentNpcName, label));
-            seen.Add(Hub.CurrentNpcName);
+            string currentDisp = Game1.getCharacterFromName(selectedId)?.displayName ?? selectedId;
+            var match = cleanedList.FirstOrDefault(x => string.Equals(x.DisplayName, currentDisp, StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrEmpty(match.Id))
+            {
+                selectedId = match.Id;
+                Hub.CurrentNpcName = match.Id;
+            }
         }
 
-        string recent = DialogueHistoryManager.Instance.GetMostRecentNpc();
-        if (!string.IsNullOrEmpty(recent) && seen.Add(recent))
-        {
-            string label = Game1.getCharacterFromName(recent)?.displayName ?? recent;
-            items.Add((recent, label));
-        }
-
-        var remaining = Game1.player.friendshipData.Keys
-            .Where(k => !seen.Contains(k))
-            .OrderBy(k => k, StringComparer.OrdinalIgnoreCase);
-
-        foreach (var k in remaining)
-        {
-            string label = Game1.getCharacterFromName(k)?.displayName ?? k;
-            items.Add((k, label));
-        }
-
-        _npcDropdown.SetItems(items, Hub.CurrentNpcName);
+        var items = cleanedList.Select(x => (x.Id, x.DisplayName)).ToList();
+        _npcDropdown.SetItems(items, selectedId);
     }
 
     protected override void OpenAddMemory()

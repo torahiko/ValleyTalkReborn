@@ -19,7 +19,7 @@ namespace ValleytalkReborn
         public const float SizeRegular = 18f;   // Tab 标签、按钮、小节标题、单行/多行框文本
         public const float SizeSmall = 15f;     // 底部提示、说明、标签项
 
-        private const string FontLatinFileName = "RobotoSlab-Medium.ttf";
+        private const string FontLatinFileName = "RobotoSlab-Medium.ttf"; 
         private const string FontCjkFileName = "HarmonyOS_Sans_SC_Medium.ttf";
         private const string FontLatinBoldFileName = "RobotoSlab-Bold.ttf";
         private const string FontCjkBoldFileName = "HarmonyOS_Sans_SC_Bold.ttf";

@@ -63,9 +63,13 @@ namespace ValleytalkReborn
 
         private float _okButtonHoverScale = 1f;
         private float _cancelButtonHoverScale = 1f;
-        private const int MenuWidth = 600;
-        private const int MenuHeight = 280;
-        private const int TopPadding = 56;
+        private readonly float _okButtonBaseScale;
+        private readonly float _cancelButtonBaseScale;
+
+        // ── 与 AddMemoryInputMenu 保持统一的视觉内衬与尺寸规范 ──
+        private const int MenuWidth = 640;
+        private const int MenuHeight = 330;
+        private const int TopPadding = 125;
 
         public SetCallsignInputMenu(string npcName, IClickableMenu returnMenu)
         {
@@ -77,16 +81,21 @@ namespace ValleytalkReborn
             width = MenuWidth;
             height = MenuHeight;
 
+            const int inputPadX = 56;
+            int inputY = yPositionOnScreen + TopPadding + 54;
+            const int inputH = 56;
+
             _inputBox = new DialogueTextInputBox(MemoryManager.MaxCallsignLength, 15)
             {
-                Position = new Vector2(xPositionOnScreen + 44, yPositionOnScreen + 118),
-                Extent = new Vector2(width - 88, 52),
+                Position = new Vector2(xPositionOnScreen + inputPadX, inputY),
+                Extent = new Vector2(width - inputPadX * 2, inputH),
                 UseCustomFont = true,
-                CustomFontSize = CustomFontManager.SizeRegular,
-                CounterFontSize = CustomFontManager.SizeSmall,
+                CustomFontSize = CustomFontManager.SizeRegular + 2f,
+                CounterFontSize = CustomFontManager.SizeSmall + 2f,
                 DrawFrame = true,
                 ShowCharacterCount = true,
                 AllowNewlines = false,
+                TextColor = Game1.textColor,
                 Selected = true
             };
 
@@ -98,15 +107,18 @@ namespace ValleytalkReborn
             Game1.keyboardDispatcher.Subscriber = _inputBox;
 
             int btnY = yPositionOnScreen + height - 76;
+
             _okButton = new ClickableTextureComponent(
-                new Rectangle(xPositionOnScreen + width - 44 - 54, btnY, 54, 54),
+                new Rectangle(xPositionOnScreen + width - inputPadX - 52, btnY, 52, 52),
                 Game1.mouseCursors,
                 Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 46, -1, -1), 0.85f);
+            _okButtonBaseScale = 0.85f;
 
             _cancelButton = new ClickableTextureComponent(
-                new Rectangle(xPositionOnScreen + width - 44 - 54 * 2 - 16, btnY, 54, 54),
+                new Rectangle(xPositionOnScreen + width - inputPadX - 52 * 2 - 16, btnY, 52, 52),
                 Game1.mouseCursors,
                 Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 47, -1, -1), 0.85f);
+            _cancelButtonBaseScale = 0.85f;
 
             exitFunction = () =>
             {
@@ -124,6 +136,9 @@ namespace ValleytalkReborn
 
         private void ReturnToMemoryMenu()
         {
+            if (Game1.keyboardDispatcher.Subscriber == _inputBox)
+                Game1.keyboardDispatcher.Subscriber = null;
+
             exitThisMenu();
             Game1.activeClickableMenu = _returnMenu;
         }
@@ -133,6 +148,13 @@ namespace ValleytalkReborn
             base.receiveLeftClick(x, y, playSound);
 
             if (_inputBox.ReceiveLeftClick(x, y)) return;
+
+            if (_inputBox.ContainsPoint(x, y))
+            {
+                Game1.keyboardDispatcher.Subscriber = _inputBox;
+                _inputBox.Selected = true;
+                return;
+            }
 
             if (_okButton.containsPoint(x, y))
             {
@@ -175,11 +197,13 @@ namespace ValleytalkReborn
         {
             _inputBox.Update(Game1.currentGameTime);
 
+            // 1. 全屏黑色遮罩
             b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.4f);
 
-            // 星露谷原版对话底框
+            // 2. 原版主菜单对话框背景
             Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
 
+            // 3. 顶部副标题
             string dispName = Game1.getCharacterFromName(_npcName)?.displayName ?? _npcName;
             string subtitle = !string.IsNullOrEmpty(dispName) ? $"CALLSIGN • {dispName.ToUpper()}" : "CALLSIGN";
             var subSize = CustomFontManager.MeasureString(subtitle, 13f);
@@ -189,6 +213,7 @@ namespace ValleytalkReborn
             );
             CustomFontManager.DrawString(b, subtitle, subPos, new Color(135, 98, 62), 13f);
 
+            // 4. 双层阴影立体主标题
             string title = I18n.Memory.CallsignTitle(dispName);
             var titleSize = CustomFontManager.MeasureStringBold(title, CustomFontManager.SizeTitle);
             Vector2 titlePos = new Vector2(
@@ -198,20 +223,31 @@ namespace ValleytalkReborn
             CustomFontManager.DrawStringBold(b, title, titlePos + new Vector2(0, 1f), new Color(225, 200, 160) * 0.85f, CustomFontManager.SizeTitle);
             CustomFontManager.DrawStringBold(b, title, titlePos, Game1.textColor, CustomFontManager.SizeTitle);
 
+            // 5. 文本框渲染
             _inputBox.Draw(b);
 
             int mx = Game1.getMouseX();
             int my = Game1.getMouseY();
 
+            // 6. 确定 / 取消 悬浮缩放与渲染
             UiHelper.UpdateButtonScale(ref _okButtonHoverScale, _okButton, mx, my);
             UiHelper.UpdateButtonScale(ref _cancelButtonHoverScale, _cancelButton, mx, my);
 
-            _okButton.scale = 0.85f * _okButtonHoverScale;
-            _cancelButton.scale = 0.85f * _cancelButtonHoverScale;
+            _okButton.scale = _okButtonBaseScale * _okButtonHoverScale;
+            _cancelButton.scale = _cancelButtonBaseScale * _cancelButtonHoverScale;
 
             _okButton.draw(b);
             _cancelButton.draw(b);
+
             drawMouse(b);
+        }
+
+        protected override void cleanupBeforeExit()
+        {
+            base.cleanupBeforeExit();
+
+            if (Game1.keyboardDispatcher.Subscriber == _inputBox)
+                Game1.keyboardDispatcher.Subscriber = null;
         }
     }
 
