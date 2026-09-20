@@ -52,6 +52,9 @@ public class MemoryEntry
     public MemoryTier Tier { get; set; } = MemoryTier.Daily;
     public string DateLabel { get; set; } = "";   // 游戏内日历戳，如 "[Y1 春 7日]"，以入库时所在页面日期为准
     public string ArchiveReason { get; set; } = ""; // 归档原因："Distilled" | "ManualDeleted" | ""（未归档）
+
+    // ── RULE-MERGE：规则统一存储（追加字段，旧字段不变）──
+    public bool AutoArchive { get; set; } = true;   // 过期时是否自动入归档箱（规则默认 true）
 }
 
 public enum MemoryOperationResult
@@ -1583,59 +1586,54 @@ internal class MemoryManager : IMemoryProvider
     {
         EnsureLoaded();
 
-        if (string.IsNullOrWhiteSpace(npcName) ||
-            !_memories.TryGetValue(npcName, out var list) || list.Count == 0)
-            return "";
+        // RULE-MERGE：规则段必须在任何早退之前计算（接受准则 1）
+        string ruleSeg = string.IsNullOrWhiteSpace(npcName) ? "" : RuleManager.Instance.GetPromptSegment(npcName);
+
+        // 拥有 NPC 活跃记忆列表（不含 Manual，Manual 已迁移至 RuleManager）
+        List<MemoryEntry> list = null;
+        bool hasMemoryList = !string.IsNullOrWhiteSpace(npcName)
+                            && _memories.TryGetValue(npcName, out list)
+                            && list != null && list.Count > 0;
 
         // T10：inner_impressions 注入（每日固定随机种子，日内稳定）
-        string impressions = BuildInnerImpressions(npcName);
+        // BuildInnerImpressions 自带 _timelineMemories 空守卫，对空列表安全
+        string impressions = string.IsNullOrWhiteSpace(npcName) ? "" : BuildInnerImpressions(npcName);
 
         bool isZh = IsChineseLanguage;
-        int today = CurrentGameDay();
 
-        var hardRules = list
-            .Where(m => m.Source == "Manual" && m.Category == MemoryCategory.Behavior)
-            .OrderByDescending(m => m.CreatedAt)
-            .ThenByDescending(m => m.CreatedDay)
-            .Take(MaxHardRulesInPrompt)
-            .ToList();
+        // Manual 条目已迁移至 RuleManager；此处仅做 Auto/Fact 防御性过滤（RULE-MERGE）
+        var coreFacts = new List<MemoryEntry>();
+        var recentItems = new List<MemoryEntry>();
+        if (hasMemoryList)
+        {
+            int today = CurrentGameDay();
+            coreFacts = list
+                .Where(m => m.Source != "Manual" &&
+                            m.Category == MemoryCategory.Fact &&
+                            m.Importance >= EvictionImmuneImportance)
+                .OrderByDescending(m => m.Importance)
+                .ThenByDescending(m => m.CreatedDay)
+                .ThenByDescending(m => m.CreatedAt)
+                .Take(MaxCoreFactsInPrompt)
+                .ToList();
 
-        var coreFacts = list
-            .Where(m => m.Category == MemoryCategory.Fact && m.Importance >= EvictionImmuneImportance)
-            .OrderByDescending(m => m.Importance)
-            .ThenByDescending(m => m.CreatedDay)
-            .ThenByDescending(m => m.CreatedAt)
-            .Take(MaxCoreFactsInPrompt)
-            .ToList();
+            recentItems = list
+                .Where(m => m.Source != "Manual" &&
+                            m.Category == MemoryCategory.Fact &&
+                            m.Importance < EvictionImmuneImportance &&
+                            (today - m.CreatedDay) < 3)
+                .OrderByDescending(m => m.CreatedDay)
+                .ThenByDescending(m => m.CreatedAt)
+                .Take(MaxAutoInPrompt)
+                .ToList();
+        }
 
-        var recentItems = list
-            .Where(m => m.Category == MemoryCategory.Fact &&
-                        m.Importance < EvictionImmuneImportance &&
-                        (today - m.CreatedDay) < 3)
-            .OrderByDescending(m => m.CreatedDay)
-            .ThenByDescending(m => m.CreatedAt)
-            .Take(MaxAutoInPrompt)
-            .ToList();
-
-        // T10：短路条件修正——三段全空且无 impressions 才返回空串
-        if (hardRules.Count == 0 && coreFacts.Count == 0 && recentItems.Count == 0 && string.IsNullOrEmpty(impressions))
+        // RULE-MERGE：唯一早退点——四段全空才返回空串（接受准则 1）
+        if (coreFacts.Count == 0 && recentItems.Count == 0 &&
+            string.IsNullOrEmpty(impressions) && string.IsNullOrEmpty(ruleSeg))
             return "";
 
         var sb = new System.Text.StringBuilder();
-
-        if (hardRules.Count > 0)
-        {
-            sb.AppendLine(isZh
-                ? "=== 必须严格遵守的互动禁忌与防线 ==="
-                : "=== INTERACTION BOUNDARIES (STRICT) ===");
-            sb.AppendLine(isZh
-                ? "以下是不可违背的红线，在交谈中必须始终保持遵守："
-                : "Strict rules and boundaries you must never cross:");
-            foreach (var r in hardRules)
-                sb.AppendLine($"- {r.Content}");
-            sb.AppendLine("=========================================");
-            sb.AppendLine();
-        }
 
         if (coreFacts.Count > 0 || recentItems.Count > 0)
         {
@@ -1649,6 +1647,7 @@ internal class MemoryManager : IMemoryProvider
 
             foreach (var r in recentItems)
             {
+                int today = CurrentGameDay();
                 int diff = Math.Max(0, today - r.CreatedDay);
                 string prefix = diff switch
                 {
@@ -1667,6 +1666,13 @@ internal class MemoryManager : IMemoryProvider
         {
             sb.AppendLine();
             sb.Append(impressions);
+        }
+
+        // RULE-MERGE：规则段由 RuleManager 注入（已含严格规则 + NPC 事实 + 全局世界观）
+        if (!string.IsNullOrEmpty(ruleSeg))
+        {
+            sb.AppendLine();
+            sb.Append(ruleSeg);
         }
 
         return sb.ToString();
