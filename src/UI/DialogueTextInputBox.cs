@@ -11,7 +11,7 @@ namespace ValleytalkReborn
 {
     /// <summary>
     /// 对话/输入文本框：支持自适应字阶、CustomFontManager 原生接入、精准折行、滚动、光标定位及右下角字数指示器。
-    /// 内置羊皮纸风格底槽与聚焦高亮外框。
+    /// 内置羊皮纸风格底槽与聚焦高亮外框。（已进行像素级渲染防虚化校准）
     /// </summary>
     public class DialogueTextInputBox : IKeyboardSubscriber
     {
@@ -22,7 +22,12 @@ namespace ValleytalkReborn
         // 基础属性与字体设置
         ///////////////////////////////////////////////////////////////////
 
-        public Vector2 Position { get; set; }
+        private Vector2 _position;
+        public Vector2 Position
+        {
+            get => _position;
+            set => _position = new Vector2(MathF.Round(value.X), MathF.Round(value.Y));
+        }
 
         private Vector2 _extent;
         public Vector2 Extent
@@ -30,9 +35,10 @@ namespace ValleytalkReborn
             get => _extent;
             set
             {
-                if (_extent != value)
+                Vector2 rounded = new Vector2(MathF.Round(value.X), MathF.Round(value.Y));
+                if (_extent != rounded)
                 {
-                    _extent = value;
+                    _extent = rounded;
                     _isTextDirty = true;
                 }
             }
@@ -177,7 +183,7 @@ namespace ValleytalkReborn
         private float GetLineHeight()
         {
             float h = MeasureString("测试Ag").Y;
-            return h > 0 ? (float)Math.Ceiling(h) + 2f : 24f;
+            return h > 0 ? MathF.Ceiling(h) + 2f : 24f;
         }
 
         ///////////////////////////////////////////////////////////////////
@@ -438,7 +444,7 @@ namespace ValleytalkReborn
             int bw = (int)Extent.X;
             int bh = (int)Extent.Y;
 
-            // 1. 底板槽与聚焦光晕外框（若 DrawFrame 为 false 则不绘制，交由外层菜单统一渲染边框）
+            // 1. 底板槽与聚焦光晕外框
             if (DrawFrame)
             {
                 Color slotColor = Selected ? new Color(255, 250, 235) : new Color(238, 222, 198) * 0.92f;
@@ -452,7 +458,7 @@ namespace ValleytalkReborn
                 }
             }
 
-            float lineHeight = GetLineHeight();
+            int lineHeight = (int)MathF.Ceiling(GetLineHeight());
 
             int padX = 14;
             int padY = 12;
@@ -464,10 +470,10 @@ namespace ValleytalkReborn
                 bx + padX,
                 by + padY,
                 Math.Max(1, bw - padX * 2),
-                Math.Max((int)lineHeight, bh - padY - bottomReserved)
+                Math.Max(lineHeight, bh - padY - bottomReserved)
             );
 
-            _visibleLineCount = Math.Max(1, (int)(textArea.Height / lineHeight));
+            _visibleLineCount = Math.Max(1, textArea.Height / lineHeight);
 
             int totalVisualLines = GetTotalVisualLines();
             _needsScrolling = totalVisualLines > _visibleLineCount;
@@ -504,8 +510,8 @@ namespace ValleytalkReborn
             Color color)
         {
             var lines = GetWrappedLines(text);
-            float lineHeight = GetLineHeight();
-            float y = area.Y;
+            int lineHeight = (int)MathF.Ceiling(GetLineHeight());
+            int currentY = area.Y;
 
             int totalVisualLines = Math.Max(lines.Count, GetCaretLine() + 1);
             EnsureCaretVisible(totalVisualLines);
@@ -513,15 +519,17 @@ namespace ValleytalkReborn
             for (int i = _scrollOffset; i < lines.Count && (i - _scrollOffset) < _visibleLineCount; i++)
             {
                 string lineStr = lines[i];
+                Vector2 drawPos = new Vector2(area.X, currentY);
+
                 if (UseCustomFont)
                 {
-                    CustomFontManager.DrawString(spriteBatch, lineStr, new Vector2(area.X, y), color, CustomFontSize);
+                    CustomFontManager.DrawString(spriteBatch, lineStr, drawPos, color, CustomFontSize);
                 }
                 else
                 {
-                    spriteBatch.DrawString(Font, lineStr, new Vector2(area.X, y), color, 0f, Vector2.Zero, EffectiveScale, SpriteEffects.None, 1f);
+                    spriteBatch.DrawString(Font, lineStr, drawPos, color, 0f, Vector2.Zero, EffectiveScale, SpriteEffects.None, 1f);
                 }
-                y += lineHeight;
+                currentY += lineHeight;
             }
         }
 
@@ -546,7 +554,7 @@ namespace ValleytalkReborn
 
         private void DrawCaret(SpriteBatch spriteBatch, Rectangle textArea)
         {
-            float lineHeight = GetLineHeight();
+            int lineHeight = (int)MathF.Ceiling(GetLineHeight());
             int caretLine = GetCaretLine();
             int visibleCaretLine = caretLine - _scrollOffset;
 
@@ -561,12 +569,12 @@ namespace ValleytalkReborn
                 var linesBeforeCaret = WrapTextByPixelWidth(textBeforeCaret, GetWrapWidth());
                 if (caretLine < linesBeforeCaret.Count)
                 {
-                    caretX = textArea.X + (int)MeasureString(linesBeforeCaret[caretLine]).X;
+                    caretX = textArea.X + (int)MathF.Round(MeasureString(linesBeforeCaret[caretLine]).X);
                 }
             }
 
-            int caretY = (int)(textArea.Y + visibleCaretLine * lineHeight);
-            int caretHeight = Math.Max(6, (int)lineHeight - 4);
+            int caretY = textArea.Y + visibleCaretLine * lineHeight;
+            int caretHeight = Math.Max(6, lineHeight - 4);
             var caretRect = new Rectangle(caretX, caretY + 2, 2, caretHeight);
 
             // 闪烁光标
@@ -577,7 +585,7 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
-        /// 绘制右下角字符数指示器（支持放大字号）
+        /// 绘制右下角字符数指示器（强制整像素对齐）
         /// </summary>
         private void DrawCharacterCounter(SpriteBatch spriteBatch, int bx, int by, int bw, int bh)
         {
@@ -598,14 +606,13 @@ namespace ValleytalkReborn
             }
             else
             {
-                counterColor = new Color(130, 105, 80, 200); // 融入星露谷复古色系的浅褐灰色
+                counterColor = new Color(130, 105, 80, 200);
             }
 
             float rightOffset = _needsScrolling ? 36f : (CounterPadding + 4);
-            Vector2 counterPos = new Vector2(
-                bx + bw - counterSize.X - rightOffset,
-                by + bh - counterSize.Y - CounterPadding + 2
-            );
+            int posX = (int)MathF.Round(bx + bw - counterSize.X - rightOffset);
+            int posY = (int)MathF.Round(by + bh - counterSize.Y - CounterPadding + 2);
+            Vector2 counterPos = new Vector2(posX, posY);
 
             if (UseCustomFont)
             {

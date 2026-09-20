@@ -47,6 +47,9 @@ internal interface IHubTabView
     /// <summary>Hub.RefreshEntries 转发。</summary>
     void RefreshFromHub();
 
+    /// <summary>从子菜单返回后调用（重排布局+刷新）。</summary>
+    void OnReturnedFromChild();
+
     /// <summary>Draw 期间写入，Hub 每帧读取绘制。</summary>
     string HoveredTooltip { get; }
 }

@@ -1,3 +1,4 @@
+#nullable enable
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -41,6 +42,7 @@ internal abstract class HubTabViewBase : IHubTabView
     public virtual bool ReceiveKeyPress(Keys key) => false;
     public virtual void LeftClickHeld(int x, int y) { }
     public virtual void ReleaseLeftClick(int x, int y) { }
+    public virtual void OnReturnedFromChild() { }
     public virtual void RefreshFromHub() { }
 
     /// <summary>绘制悬停提示（委托到 HubUi）。</summary>
