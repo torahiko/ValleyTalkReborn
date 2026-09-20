@@ -122,6 +122,9 @@ namespace ValleytalkReborn
         internal static NpcRelationOverlayService NpcRelationOverlay;
         internal static PoiPreferenceOverlayService PoiPreferenceOverlay;
 
+        /// <summary>世界概要覆盖层存储服务（GameSummary 资产挂接 + 自创纪念日读时合成）。</summary>
+        internal static WorldSummaryOverlayService WorldSummaryOverlay { get; private set; }
+
         private int _lastDialogueCloseTick = -9999;
 
         /// <summary>最近一次对话的 NPC（内部名 Name 用于记忆键）。跨存档必须在 OnSaveLoaded/Cleanup 置空。</summary>
@@ -275,6 +278,9 @@ namespace ValleytalkReborn
             DateLocationOverlay.RegisterAssetProviders();
             NpcRelationOverlay.RegisterAssetProviders();
             PoiPreferenceOverlay.RegisterAssetProviders();
+
+            WorldSummaryOverlay = new WorldSummaryOverlayService(Helper, Monitor);
+            WorldSummaryOverlay.RegisterAssetProviders();
 
             // ★ 统一配偶查询服务（多婚/原版配偶判定、住所定位）
             SpouseQueryService.Instance.Initialize(helper);
