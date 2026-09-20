@@ -281,10 +281,14 @@ namespace ValleytalkReborn
         {
             public static string Title() => Lookup("Hub.Title");
             public static string SelectNpcLabel() => Lookup("Hub.SelectNpcLabel");
+            public static string TabRules() => Lookup("Hub.TabRules");
             public static string TabNpcMemory() => Lookup("Hub.TabNpcMemory");
             public static string TabWorldMemory() => Lookup("Hub.TabWorldMemory");
             public static string TabProfile() => Lookup("Hub.TabProfile");
             public static string TabAdvanced() => Lookup("Hub.TabAdvanced");
+            public static string ScopeAll() => Lookup("Hub.ScopeAll");
+            public static string ScopeGlobal() => Lookup("Hub.ScopeGlobal");
+            public static string ScopeNpc() => Lookup("Hub.ScopeNpc");
         }
 
         // =========================================================================
@@ -371,6 +375,11 @@ namespace ValleytalkReborn
             // Tags & Categories
             public static string RuleTag() => Lookup("Memory.RuleTag");
             public static string MemoryTag() => Lookup("Memory.MemoryTag");
+            public static string WorldScopeTag() => Lookup("Memory.WorldScopeTag");
+            public static string CapsulePermanent() => Lookup("Memory.CapsulePermanent");
+            public static string CapsuleExpired() => Lookup("Memory.CapsuleExpired");
+            public static string CapsuleDaysLeft(int days) =>
+                Lookup("Memory.CapsuleDaysLeft").Replace("{0}", days.ToString());
             public static string AutoPrefix() => Lookup("Memory.AutoPrefix");
             public static string CategoryFactLabel() => Lookup("Memory.CategoryFactLabel");
             public static string CategoryBehaviorLabel() => Lookup("Memory.CategoryBehaviorLabel");

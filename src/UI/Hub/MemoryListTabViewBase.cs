@@ -232,10 +232,10 @@ internal abstract class MemoryListTabViewBase : HubTabViewBase
         return false;
     }
 
-    protected void OpenEditMemory(MemoryEntry e)
+    protected virtual void OpenEditMemory(MemoryEntry e)
     {
         Hub.ReleaseKeyboard();
-        Game1.activeClickableMenu = new AddMemoryInputMenu(Hub.CurrentNpcName, Hub, e, Hub.CurrentTab);
+        Game1.activeClickableMenu = new AddRuleInputMenu(e.NpcName, Hub, e, false);
     }
 
     protected void ConfirmDeleteMemory(MemoryEntry entry)

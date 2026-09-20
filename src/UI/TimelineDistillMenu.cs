@@ -254,10 +254,10 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
             {
                 Game1.playSound("bigSelect");
                 int candIdx = layout.Index;
-                Game1.activeClickableMenu = new AddMemoryInputMenu(
+                Game1.activeClickableMenu = new AddRuleInputMenu(
                     _npcName, this,
-                    existingEntry: new MemoryEntry { Content = _candidates[candIdx] },
-                    tab: 0,
+                    new MemoryEntry { Content = _candidates[candIdx] },
+                    0,
                     customSubmit: editedText =>
                     {
                         _candidates[candIdx] = editedText;

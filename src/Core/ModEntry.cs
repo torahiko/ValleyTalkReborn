@@ -830,7 +830,7 @@ namespace ValleytalkReborn
         {
             if (!Context.IsWorldReady || Game1.activeClickableMenu != null) return;
 
-            targetTab = Math.Clamp(targetTab, 0, 3);
+            targetTab = Math.Clamp(targetTab, 0, 2);
 
             string npcName = null;
 

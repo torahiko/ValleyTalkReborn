@@ -4,6 +4,9 @@ using Microsoft.Xna.Framework.Input;
 using StardewValley;
 using StardewValley.Menus;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using ValleytalkReborn.Services;
 using ValleytalkReborn.UI;
 
 namespace ValleytalkReborn
@@ -251,60 +254,112 @@ namespace ValleytalkReborn
         }
     }
 
-    internal class AddMemoryInputMenu : IClickableMenu
+    /// <summary>
+    /// 向后兼容入口：供时间线/归档箱等菜单复用文本编辑器（仅内容 + 自定义提交，不暴露 scope/duration UI）。
+    /// RULE-MERGE：原 AddMemoryInputMenu 的 _tab==1 世界分支已删除，统一走 RuleManager 或 customSubmit。
+    /// </summary>
+    internal class AddRuleInputMenu : IClickableMenu
     {
-        private readonly string _npcName;
-        private readonly IClickableMenu _returnMenu;
-        private readonly DialogueTextInputBox _inputBox;
-        private readonly ClickableTextureComponent _okButton;
-        private readonly ClickableTextureComponent _cancelButton;
-        private readonly MemoryEntry _existingEntry;
-        private readonly int _tab;
-        private readonly Func<string, MemoryOperationResult> _customSubmit;
+        private readonly IntegratedHubMenu? _hub;
+        private readonly IClickableMenu? _returnMenu;
+        private DialogueTextInputBox _inputBox;
+        private ClickableTextureComponent _okButton;
+        private ClickableTextureComponent _cancelButton;
+        private readonly MemoryEntry? _existingEntry;
+        private readonly bool _isNew;
 
+        // 模式 A：完整规则表单（scope/duration/category）
+        private string _scopeNpcName;
+        private int _durationDays;
         private MemoryCategory _category;
         private Rectangle _factCapsuleRect;
         private Rectangle _behaviorCapsuleRect;
+        private Rectangle _scopeDropdownRect;
+        private DropdownList _scopeDropdown;
+        private int _durationMode;
+        private Rectangle _durTodayRect;
+        private Rectangle _durCustomRect;
+        private Rectangle _durPermRect;
+        private NumberStepper? _dayStepper;
+        private Rectangle _dayStepperRect;
 
-        // ── 调宽放高，给红木内衬留出充足安全空间 ──
+        // 模式 B：纯文本 + customSubmit（时间线/归档箱复用）
+        private readonly Func<string, MemoryOperationResult>? _customSubmit;
+
         private const int MenuWidth = 720;
-        private const int MenuHeight = 460;
-        private const int TopPadding = 125; 
-        private const int CharacterLimit = 60;
-        private const int WarningThreshold = 50;
+        private const int MenuHeight = 500;
+        private const int TopPadding = 125;
+        private const int CharacterLimit = 120;
+        private const int WarningThreshold = 100;
 
         private float _okButtonHoverScale = 1f;
         private float _cancelButtonHoverScale = 1f;
 
-        private readonly float _okButtonBaseScale;
-        private readonly float _cancelButtonBaseScale;
+        private float _okButtonBaseScale;
+        private float _cancelButtonBaseScale;
 
-        public AddMemoryInputMenu(
-            string npcName,
-            IClickableMenu returnMenu,
-            MemoryEntry existingEntry = null,
-            int tab = 0,
-            Func<string, MemoryOperationResult> customSubmit = null)
+        // ── 规则新增/编辑主构造器（RULE-MERGE）──
+        public AddRuleInputMenu(
+            string scopeNpcName,
+            IntegratedHubMenu hub,
+            MemoryEntry? existing,
+            bool isNew)
         {
-            _npcName = npcName;
-            _returnMenu = returnMenu;
-            _existingEntry = existingEntry;
-            _tab = tab;
-            _customSubmit = customSubmit;
+            _hub = hub;
+            _returnMenu = null;
+            _customSubmit = null;
+            _existingEntry = existing;
+            _isNew = isNew;
 
-            _category = (existingEntry != null && existingEntry.Category == MemoryCategory.Behavior)
+            _scopeNpcName = isNew ? scopeNpcName : (existing?.NpcName ?? scopeNpcName);
+            _durationDays = isNew ? 0 : (existing?.ExpireDay < 0 ? -1 : (existing?.ExpireDay ?? 0));
+            _category = (existing != null && existing.Category == MemoryCategory.Behavior)
                 ? MemoryCategory.Behavior
                 : MemoryCategory.Fact;
 
+            if (!isNew)
+            {
+                if (existing != null)
+                {
+                    if (existing.ExpireDay < 0) _durationMode = 2;
+                    else if (existing.ExpireDay == (int)Game1.Date.TotalDays + 1) _durationMode = 0;
+                    else _durationMode = 1;
+                }
+            }
+
+            InitMenu(scopeNpcName);
+            BuildScopeDropdownItems();
+        }
+
+        // ── 向后兼容构造器：时间线/归档箱复用（仅内容 + customSubmit）──
+        public AddRuleInputMenu(
+            string npcName,
+            IClickableMenu returnMenu,
+            MemoryEntry? existingEntry,
+            int tab,
+            Func<string, MemoryOperationResult>? customSubmit = null)
+        {
+            _hub = null;
+            _returnMenu = returnMenu;
+            _customSubmit = customSubmit;
+            _existingEntry = existingEntry;
+            _isNew = existingEntry == null;
+
+            _scopeNpcName = existingEntry?.NpcName ?? npcName;
+            _durationDays = 0;
+            _category = MemoryCategory.Fact;
+
+            InitMenu(npcName);
+        }
+
+        private void InitMenu(string npcName)
+        {
             xPositionOnScreen = (Game1.uiViewport.Width - MenuWidth) / 2;
             yPositionOnScreen = (Game1.uiViewport.Height - MenuHeight) / 2;
             width = MenuWidth;
             height = MenuHeight;
 
-            // 内部可用区域的水平 Padding
             const int inputPadX = 56;
-            
-            // 文本框位置：随 TopPadding 同步整体下移 20px
             int inputY = yPositionOnScreen + TopPadding + 54;
             const int inputH = 80;
 
@@ -322,12 +377,28 @@ namespace ValleytalkReborn
                 Selected = true
             };
 
-            // 分类胶囊按钮排版：跟随 inputY 下移 20px
             int capsuleY = inputY + inputH + 16;
             int totalSegW = width - inputPadX * 2;
             int segItemW = (totalSegW - 14) / 2;
-            _factCapsuleRect = new Rectangle(xPositionOnScreen + inputPadX, capsuleY, segItemW, 38);
-            _behaviorCapsuleRect = new Rectangle(xPositionOnScreen + inputPadX + segItemW + 14, capsuleY, segItemW, 38);
+            _factCapsuleRect = new Rectangle(xPositionOnScreen + inputPadX, capsuleY, segItemW, 34);
+            _behaviorCapsuleRect = new Rectangle(xPositionOnScreen + inputPadX + segItemW + 14, capsuleY, segItemW, 34);
+
+            int scopeY = capsuleY + 34 + 12;
+            _scopeDropdownRect = new Rectangle(xPositionOnScreen + inputPadX, scopeY, totalSegW, 34);
+            _scopeDropdown = new DropdownList(_scopeDropdownRect)
+            {
+                HeaderPrefix = "Scope: ",
+                OnItemSelected = name => _scopeNpcName = name
+            };
+
+            int durY = scopeY + 34 + 12;
+            int durSegW = (totalSegW - 14) / 3;
+            _durTodayRect = new Rectangle(xPositionOnScreen + inputPadX, durY, durSegW, 34);
+            _durCustomRect = new Rectangle(xPositionOnScreen + inputPadX + durSegW + 7, durY, durSegW, 34);
+            _durPermRect = new Rectangle(xPositionOnScreen + inputPadX + (durSegW + 7) * 2, durY, durSegW, 34);
+
+            _dayStepperRect = new Rectangle(xPositionOnScreen + inputPadX + durSegW + 7, durY + 34 + 6, durSegW, 32);
+            _dayStepper = new NumberStepper(_dayStepperRect, Math.Max(1, Math.Min(99, _durationDays)), 1, 99, 1, "d");
 
             if (_existingEntry != null)
                 _inputBox.SetText(_existingEntry.Content);
@@ -335,7 +406,6 @@ namespace ValleytalkReborn
             _inputBox.OnSubmit += sender => Submit(sender.Text);
             Game1.keyboardDispatcher.Subscriber = _inputBox;
 
-            // 底部按钮坐标保持原位不变
             int btnY = yPositionOnScreen + height - 76;
 
             _okButton = new ClickableTextureComponent(
@@ -351,15 +421,30 @@ namespace ValleytalkReborn
             _cancelButtonBaseScale = 0.85f;
         }
 
-        private void ReturnToMemoryMenu(bool refresh)
+        private void BuildScopeDropdownItems()
+        {
+            var items = new List<(string Id, string Label)> { ("WORLD", "[Global]") };
+            var candidates = NpcCandidateQueryService.GetCleanedCandidates();
+            foreach (var c in candidates)
+                items.Add((c.Id, c.DisplayName));
+
+            string selectedId = _scopeNpcName;
+            if (!items.Any(it => string.Equals(it.Id, selectedId, StringComparison.OrdinalIgnoreCase)))
+                selectedId = "WORLD";
+
+            _scopeDropdown.SetItems(items, selectedId);
+            _scopeNpcName = selectedId;
+        }
+
+        private void ReturnToMenu(bool refresh)
         {
             if (Game1.keyboardDispatcher.Subscriber == _inputBox)
                 Game1.keyboardDispatcher.Subscriber = null;
 
-            if (refresh && _returnMenu is IMemoryRefreshTarget refreshable)
-                refreshable.RefreshEntries();
+            if (refresh && _hub != null)
+                _hub.RefreshEntries();
 
-            Game1.activeClickableMenu = _returnMenu;
+            Game1.activeClickableMenu = _hub ?? _returnMenu;
         }
 
         private void ShowErrorHud(string message)
@@ -377,29 +462,8 @@ namespace ValleytalkReborn
             }
 
             string trimmed = text.Trim();
-            MemoryOperationResult result;
 
-            if (_tab == 1)
-            {
-                result = _existingEntry != null
-                    ? WorldMemoryManager.Instance.EditEntry(_existingEntry.Id, trimmed)
-                    : WorldMemoryManager.Instance.AddEntry(trimmed);
-            }
-            else
-            {
-                result = _existingEntry != null
-                    ? MemoryManager.Instance.EditMemory(_npcName, _existingEntry.Id, trimmed, _category)
-                    : MemoryManager.Instance.AddMemory(_npcName, trimmed, _category);
-            }
-
-            int maxLen = _tab == 1
-                ? WorldMemoryManager.MaxEntryLength
-                : MemoryManager.Instance.GetMaxMemoryLength();
-
-            int maxCount = _tab == 1
-                ? WorldMemoryManager.MaxEntries
-                : MemoryManager.MaxMemoriesPerNpc;
-
+            // 模式 B：时间线/归档箱自定义提交
             if (_customSubmit != null)
             {
                 var r = _customSubmit(trimmed);
@@ -407,39 +471,46 @@ namespace ValleytalkReborn
                 {
                     case MemoryOperationResult.Success:
                         Game1.playSound("coin");
-                        ReturnToMemoryMenu(true);
+                        ReturnToMenu(true);
                         return;
-
                     case MemoryOperationResult.CapacityFull:
-                        ShowErrorHud(I18n.Memory.AddFailedFull(maxCount));
+                        ShowErrorHud(I18n.Memory.AddFailedFull(RuleManager.MaxRulesPerScope));
                         return;
-
-                    case MemoryOperationResult.TooLong:
-                        ShowErrorHud(I18n.Memory.AddFailedTooLong(maxLen));
-                        return;
-
                     case MemoryOperationResult.Duplicate:
                         ShowErrorHud(I18n.Memory.AddFailedDuplicate());
                         return;
-
                     default:
                         ShowErrorHud(I18n.Memory.DistillFailed());
                         return;
                 }
             }
 
+            if (_durationMode == 1 && _dayStepper != null)
+                _durationDays = _dayStepper.Value;
+            else if (_durationMode == 2)
+                _durationDays = -1;
+            else
+                _durationDays = 0;
+
+            MemoryOperationResult result;
+            if (_existingEntry != null)
+            {
+                result = RuleManager.Instance.EditRule(_existingEntry.Id, trimmed);
+            }
+            else
+            {
+                result = RuleManager.Instance.AddRule(_scopeNpcName, trimmed, _durationDays, _category);
+            }
+
             switch (result)
             {
                 case MemoryOperationResult.Success:
                     Game1.playSound("coin");
-                    break;
-
-                case MemoryOperationResult.CapacityFull:
-                    ShowErrorHud(I18n.Memory.AddFailedFull(maxCount));
+                    ReturnToMenu(true);
                     return;
 
-                case MemoryOperationResult.TooLong:
-                    ShowErrorHud(I18n.Memory.AddFailedTooLong(maxLen));
+                case MemoryOperationResult.CapacityFull:
+                    ShowErrorHud(I18n.Memory.AddFailedFull(RuleManager.MaxRulesPerScope));
                     return;
 
                 case MemoryOperationResult.Duplicate:
@@ -447,11 +518,9 @@ namespace ValleytalkReborn
                     return;
 
                 default:
-                    ShowErrorHud(I18n.Memory.AddFailedDuplicate());
+                    ShowErrorHud(I18n.Memory.DistillFailed());
                     return;
             }
-
-            ReturnToMemoryMenu(true);
         }
 
         public override void receiveScrollWheelAction(int direction)
@@ -473,7 +542,23 @@ namespace ValleytalkReborn
                 return;
             }
 
-            if (_tab == 0 && _customSubmit == null && (_factCapsuleRect.Contains(x, y) || _behaviorCapsuleRect.Contains(x, y)))
+            if (_scopeDropdown.IsOpen)
+            {
+                if (_scopeDropdown.ReceiveLeftClick(x, y))
+                    return;
+                _scopeDropdown.Close();
+                Game1.playSound("shwip");
+                return;
+            }
+
+            if (_scopeDropdownRect.Contains(x, y))
+            {
+                _scopeDropdown.ToggleOpen();
+                Game1.playSound("shwip");
+                return;
+            }
+
+            if (_isNew && _customSubmit == null && (_factCapsuleRect.Contains(x, y) || _behaviorCapsuleRect.Contains(x, y)))
             {
                 var clicked = _behaviorCapsuleRect.Contains(x, y)
                     ? MemoryCategory.Behavior
@@ -486,6 +571,14 @@ namespace ValleytalkReborn
                 return;
             }
 
+            if (_isNew && _customSubmit == null)
+            {
+                if (_durTodayRect.Contains(x, y)) { _durationMode = 0; Game1.playSound("smallSelect"); return; }
+                if (_durCustomRect.Contains(x, y)) { _durationMode = 1; Game1.playSound("smallSelect"); return; }
+                if (_durPermRect.Contains(x, y)) { _durationMode = 2; Game1.playSound("smallSelect"); return; }
+                if (_durationMode == 1 && _dayStepper != null && _dayStepper.ReceiveLeftClick(x, y)) return;
+            }
+
             if (_okButton.containsPoint(x, y))
             {
                 Submit(_inputBox.Text);
@@ -493,7 +586,7 @@ namespace ValleytalkReborn
             else if (_cancelButton.containsPoint(x, y))
             {
                 Game1.playSound("bigDeSelect");
-                ReturnToMemoryMenu(false);
+                ReturnToMenu(false);
             }
         }
 
@@ -504,7 +597,7 @@ namespace ValleytalkReborn
                 if (key == Keys.Escape)
                 {
                     Game1.playSound("bigDeSelect");
-                    ReturnToMemoryMenu(false);
+                    ReturnToMenu(false);
                     return;
                 }
 
@@ -530,16 +623,10 @@ namespace ValleytalkReborn
             b.Draw(Game1.fadeToBlackRect,
                 Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.4f);
 
-            // 1. 原版主菜单底框
             Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
 
-            // 2. 本地化名字
-            string dispName = Game1.getCharacterFromName(_npcName)?.displayName ?? _npcName;
-
-            // 3. 顶部副标题（从 84 移到 104，整体下移 20px）
-            string subtitle = _tab == 1 
-                ? "WORLD MEMORY" 
-                : (!string.IsNullOrEmpty(dispName) ? $"MEMORY • {dispName.ToUpper()}" : "NPC MEMORY");
+            string dispName = Game1.getCharacterFromName(_scopeNpcName)?.displayName ?? _scopeNpcName;
+            string subtitle = _existingEntry != null ? "EDIT RULE" : "ADD RULE";
             var subSize = CustomFontManager.MeasureString(subtitle, 13f);
             Vector2 subPos = new Vector2(
                 MathF.Round(xPositionOnScreen + (width - subSize.X) / 2f),
@@ -547,13 +634,9 @@ namespace ValleytalkReborn
             );
             CustomFontManager.DrawString(b, subtitle, subPos, new Color(135, 98, 62), 13f);
 
-            // 4. 主标题（跟随副标题同步下移）
-            string title = _tab == 1
-                ? (_existingEntry != null ? I18n.Memory.WorldEditTitle() : I18n.Memory.WorldAddTitle())
-                : (_existingEntry != null
-                    ? I18n.Memory.EditTitle(dispName)
-                    : I18n.Memory.AddTitle(dispName));
-
+            string title = _existingEntry != null
+                ? (_isNew ? I18n.Memory.AddTitle(dispName) : I18n.Memory.EditTitle(dispName))
+                : I18n.Memory.AddTitle(dispName);
             var titleSize = CustomFontManager.MeasureStringBold(title, CustomFontManager.SizeTitle);
             Vector2 titlePos = new Vector2(
                 MathF.Round(xPositionOnScreen + (width - titleSize.X) / 2f),
@@ -562,24 +645,33 @@ namespace ValleytalkReborn
             CustomFontManager.DrawStringBold(b, title, titlePos + new Vector2(0, 1f), new Color(225, 200, 160) * 0.85f, CustomFontManager.SizeTitle);
             CustomFontManager.DrawStringBold(b, title, titlePos, Game1.textColor, CustomFontManager.SizeTitle);
 
-            // 5. 文本框渲染
             _inputBox.Draw(b);
 
             int mx = Game1.getMouseX();
             int my = Game1.getMouseY();
 
-            // 6. 类别分段选择器
-            if (_tab == 0 && _customSubmit == null)
+            if (_isNew && _customSubmit == null)
             {
                 DrawCleanSegment(b, _factCapsuleRect, I18n.Memory.CategoryFactLabel(), _category == MemoryCategory.Fact, mx, my);
                 DrawCleanSegment(b, _behaviorCapsuleRect, I18n.Memory.CategoryBehaviorLabel(), _category == MemoryCategory.Behavior, mx, my);
-
-                string hint2 = _category == MemoryCategory.Fact ? I18n.Memory.CategoryFactHint() : I18n.Memory.CategoryBehaviorHint();
-                int capsuleBottom = Math.Max(_factCapsuleRect.Bottom, _behaviorCapsuleRect.Bottom);
-
-                CustomFontManager.DrawString(b, hint2,
-                    new Vector2(xPositionOnScreen + 56, capsuleBottom + 10),
+            }
+            else if (_customSubmit == null)
+            {
+                string catLabel = _category == MemoryCategory.Behavior
+                    ? I18n.Memory.CategoryBehaviorLabel()
+                    : I18n.Memory.CategoryFactLabel();
+                var catSize = CustomFontManager.MeasureStringBold(catLabel, CustomFontManager.SizeSmall);
+                CustomFontManager.DrawString(b, catLabel,
+                    new Vector2(_factCapsuleRect.X, _factCapsuleRect.Y + 8),
                     new Color(135, 110, 85), CustomFontManager.SizeSmall);
+            }
+
+            if (_customSubmit == null)
+            {
+                DrawScopeSelector(b, mx, my);
+
+                if (_isNew)
+                    DrawDurationSelector(b, mx, my);
             }
 
             UiHelper.UpdateButtonScale(ref _okButtonHoverScale, _okButton, mx, my);
@@ -591,7 +683,37 @@ namespace ValleytalkReborn
             _okButton.draw(b);
             _cancelButton.draw(b);
 
+            _scopeDropdown.Draw(b);
+
             drawMouse(b);
+        }
+
+        private void DrawScopeSelector(SpriteBatch b, int mx, int my)
+        {
+            if (_isNew)
+            {
+                _scopeDropdown.Draw(b);
+            }
+            else
+            {
+                string label = $"Scope: {_scopeNpcName}";
+                var sz = CustomFontManager.MeasureStringBold(label, CustomFontManager.SizeSmall);
+                CustomFontManager.DrawString(b, label,
+                    new Vector2(_scopeDropdownRect.X, _scopeDropdownRect.Y + 8),
+                    new Color(135, 110, 85), CustomFontManager.SizeSmall);
+            }
+        }
+
+        private void DrawDurationSelector(SpriteBatch b, int mx, int my)
+        {
+            DrawCleanSegment(b, _durTodayRect, "Today", _durationMode == 0, mx, my);
+            DrawCleanSegment(b, _durCustomRect, "Days", _durationMode == 1, mx, my);
+            DrawCleanSegment(b, _durPermRect, "Perm", _durationMode == 2, mx, my);
+
+            if (_durationMode == 1 && _dayStepper != null)
+            {
+                _dayStepper.Draw(b);
+            }
         }
 
         private static void DrawCleanSegment(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my)
@@ -628,13 +750,9 @@ namespace ValleytalkReborn
                 : (isHover ? Game1.textColor * 0.9f : new Color(135, 110, 85));
 
             if (isActive)
-            {
                 CustomFontManager.DrawStringBold(b, label, textPos, textColor, CustomFontManager.SizeRegular);
-            }
             else
-            {
                 CustomFontManager.DrawString(b, label, textPos, textColor, CustomFontManager.SizeRegular);
-            }
         }
 
         protected override void cleanupBeforeExit()
