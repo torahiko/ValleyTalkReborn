@@ -19,6 +19,10 @@ public sealed class BioStorageService
     private readonly IMonitor monitor;
     private bool _subscribed;
 
+    // 基线缓存：在 OnAssetRequested 中于覆盖层替换前捕获纯净原版资产，
+    // 供 GetBaselineBio 与 ResetTabToBaseline 使用。Key = NPC 名（忽略大小写）。
+    private readonly Dictionary<string, BioData> _baselineCache = new(StringComparer.OrdinalIgnoreCase);
+
     // 记录已向日志报告过“文件名含非法字符”的 NPC 原名，避免重复刷屏。
     private static readonly HashSet<string> _warnedSanitize = new();
 
@@ -64,6 +68,31 @@ public sealed class BioStorageService
 
         BioData ov = TryDeserializeOverlay(npcName);
         return ov ?? baseBio;
+    }
+
+    /// <summary>
+    /// 获取指定 NPC 的纯净原版基线数据（不含任何自定义覆盖层修改）。
+    /// 优先从 _baselineCache 获取（OnAssetRequested 中于覆盖层替换前捕获）；
+    /// 若无缓存且当前无覆盖层，则从内容资产直接加载并缓存。
+    /// </summary>
+    public BioData GetBaselineBio(string npcName)
+    {
+        if (_baselineCache.TryGetValue(npcName, out var cached))
+            return DeepClone(cached);
+
+        try
+        {
+            BioData loaded = Game1.content.LoadLocalized<BioData>(BioAssetFor(npcName));
+            // 如果当前没有覆盖层，loaded 即为纯净基线
+            if (!HasCustomOverlay(npcName))
+            {
+                _baselineCache[npcName] = DeepClone(loaded);
+                return DeepClone(loaded);
+            }
+        }
+        catch { }
+
+        return new BioData { Missing = true };
     }
 
     /// <summary>
@@ -214,18 +243,24 @@ public sealed class BioStorageService
         if (npc == null)
             return;
 
-        if (!HasCustomOverlay(npc))
-            return; 
-
         try
         {
             // Edit 回调在 CP 内容包补丁之后执行（SMAPI C# 编辑提供器语义），是覆盖层晚于基线生效的机制依据。
             e.Edit(editor =>
             {
-                BioData ov = TryDeserializeOverlay(npc);
-                if (ov != null && editor is IAssetData<BioData> d)
-                    d.ReplaceWith(ov);
-                ModEntry.SMonitor?.Log($"[BioStorage] overlay applied: {npc}", LogLevel.Trace);
+                if (editor is IAssetData<BioData> d)
+                {
+                    // 在被覆盖层替换前，d.Data 就是 Content Patcher 处理完毕的纯净原版基准
+                    _baselineCache[npc] = DeepClone(d.Data);
+
+                    if (HasCustomOverlay(npc))
+                    {
+                        BioData ov = TryDeserializeOverlay(npc);
+                        if (ov != null)
+                            d.ReplaceWith(ov);
+                        ModEntry.SMonitor?.Log($"[BioStorage] overlay applied: {npc}", LogLevel.Trace);
+                    }
+                }
             }, AssetEditPriority.Default, null);
         }
         catch (Exception ex)

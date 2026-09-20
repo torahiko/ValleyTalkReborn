@@ -91,7 +91,8 @@ namespace ValleytalkReborn
         private readonly Rectangle[] _tabRects = new Rectangle[5];
         private Rectangle _cancelRect;
         private Rectangle _saveRect;
-        private Rectangle _resetRect;
+        private Rectangle _resetPageRect; // 当前页恢复原版
+        private Rectangle _resetAllRect;  // 全部恢复原版
 
         // ── Tab 1 控件（身份心理） ────────────────────────────────────────
         private DialogueTextInputBox _biographyBox;
@@ -280,14 +281,18 @@ namespace ValleytalkReborn
             for (int i = 0; i < TabTitles.Length; i++)
                 _tabRects[i] = new Rectangle(contentLeft + i * (tabW + tabGap), tabY, tabW, TabBarH);
 
-            // 2. 底部功能栏（保存与恢复默认位置互换）
+            // 2. 底部功能栏（四个按钮：取消 | 保存 || 当前页恢复原版 | 全部恢复原版）
             int footerY = yPositionOnScreen + height - FooterH + 10;
             int btnH = 38;
-            int btnW = Math.Clamp(contentW / 4, 150, 220);
+            int btnW = Math.Clamp((contentW - 36) / 4, 140, 200);
 
+            // 左侧：保存与取消安全区
             _cancelRect = new Rectangle(contentLeft, footerY, btnW, btnH);
-            _saveRect = new Rectangle(contentLeft + btnW + 16, footerY, btnW, btnH); // 移动到常规左中侧
-            _resetRect = new Rectangle(xPositionOnScreen + width - ContentPadding - btnW, footerY, btnW, btnH); // 独立在右侧，防误触
+            _saveRect = new Rectangle(contentLeft + btnW + 12, footerY, btnW, btnH);
+
+            // 右侧：恢复基准操作区（当前页在内侧，全部恢复在最右侧）
+            _resetAllRect = new Rectangle(xPositionOnScreen + width - ContentPadding - btnW, footerY, btnW, btnH);
+            _resetPageRect = new Rectangle(_resetAllRect.X - btnW - 12, footerY, btnW, btnH);
 
             // 3. 内容区总空间
             int bodyTop = tabY + TabBarH + 12;
@@ -529,7 +534,8 @@ namespace ValleytalkReborn
 
             if (_saveRect.Contains(x, y)) { SaveAndClose(); return; }
             if (_cancelRect.Contains(x, y)) { TryCancel(); return; }
-            if (_resetRect.Contains(x, y)) { TryReset(); return; }
+            if (_resetPageRect.Contains(x, y)) { TryResetCurrentPage(); return; }
+            if (_resetAllRect.Contains(x, y)) { TryResetAll(); return; }
 
             if (_activeTab == 0) HandleTab1Click(x, y);
             else if (_activeTab == 1) HandleTab2Click(x, y);
@@ -688,6 +694,12 @@ namespace ValleytalkReborn
             if (_relDelRect.Contains(x, y) && !string.IsNullOrEmpty(_vm.SelectedRelationshipNpc))
             {
                 string target = _vm.SelectedRelationshipNpc;
+                if (string.Equals(target, "ThePlayer", StringComparison.OrdinalIgnoreCase))
+                {
+                    Game1.playSound("cancel");
+                    Game1.addHUDMessage(new HUDMessage("玩家条目 (ThePlayer) 为核心设定，禁止删除", HUDMessage.error_type));
+                    return;
+                }
                 Game1.activeClickableMenu = new ConfirmationDialog(
                     $"删除 {_npcName} → {target} 的独立人设关系？",
                     _ =>
@@ -719,78 +731,79 @@ namespace ValleytalkReborn
         }
 
         public override void receiveKeyPress(Keys key)
+{
+    // 1. Tag 编辑器正在输入时优先处理
+    if (_activeTab == 2 && _stageTagEditor != null && _stageTagEditor.IsAdding)
+    {
+        if (_stageTagEditor.ReceiveKeyPress(key))
+            return;
+    }
+    if (_activeTab == 4 && _globalTagEditor != null && _globalTagEditor.IsAdding)
+    {
+        if (_globalTagEditor.ReceiveKeyPress(key))
+            return;
+    }
+
+    DialogueTextInputBox activeBox = GetActiveDialogueBox();
+
+    bool isAnyTextFocused = Game1.keyboardDispatcher.Subscriber != null
+                            || activeBox != null
+                            || (_activeTab == 0 && _uniqueBox.Selected)
+                            || (_activeTab == 3 && (_relSearchBox.Selected || _relHeadingBox.Selected));
+
+    // 2. 文本框/输入控件处于激活输入状态
+    if (isAnyTextFocused)
+    {
+        if (key == Keys.Escape)
         {
-            if (Game1.options.doesInputListContain(Game1.options.menuButton, key))
+            // 第一次按 ESC：退出输入框焦点
+            UnfocusAll();
+            Game1.playSound("bigDeSelect");
+            return;
+        }
+
+        if (activeBox != null && !DialogueTextInputBox.IsControlKeyDown())
+        {
+            if (key == Keys.Left || key == Keys.Right || key == Keys.Home ||
+                key == Keys.End || key == Keys.Delete || key == Keys.Back)
             {
+                activeBox.RecieveSpecialInput(key);
                 return;
-            }
-
-            if (_activeTab == 2 && _stageTagEditor != null && _stageTagEditor.IsAdding)
-            {
-                if (_stageTagEditor.ReceiveKeyPress(key))
-                    return;
-            }
-            if (_activeTab == 4 && _globalTagEditor != null && _globalTagEditor.IsAdding)
-            {
-                if (_globalTagEditor.ReceiveKeyPress(key))
-                    return;
-            }
-
-            DialogueTextInputBox activeBox = GetActiveDialogueBox();
-
-            bool isAnyTextFocused = Game1.keyboardDispatcher.Subscriber != null
-                                    || activeBox != null
-                                    || (_activeTab == 0 && _uniqueBox.Selected)
-                                    || (_activeTab == 3 && (_relSearchBox.Selected || _relHeadingBox.Selected));
-
-            if (isAnyTextFocused)
-            {
-                if (key == Keys.Escape)
-                {
-                    UnfocusAll();
-                    Game1.playSound("bigDeSelect");
-                    return;
-                }
-
-                if (activeBox != null && !DialogueTextInputBox.IsControlKeyDown())
-                {
-                    if (key == Keys.Left || key == Keys.Right || key == Keys.Home ||
-                        key == Keys.End || key == Keys.Delete || key == Keys.Back)
-                    {
-                        activeBox.RecieveSpecialInput(key);
-                        return;
-                    }
-                }
-
-                if (_activeTab == 3 && _relSearchBox.Selected)
-                {
-                    base.receiveKeyPress(key);
-                    _vm.RecomputeFilteredNpcs(_relSearchBox.Text);
-                    RecalculateTab4List();
-                    return;
-                }
-
-                base.receiveKeyPress(key);
-                return;
-            }
-
-            if (key == Keys.S && (Keyboard.GetState().IsKeyDown(Keys.LeftControl) || Keyboard.GetState().IsKeyDown(Keys.RightControl)))
-            {
-                SaveAndClose();
-                return;
-            }
-
-            if (key == Keys.Escape)
-            {
-                TryCancel();
-                return;
-            }
-
-            if (!Game1.options.doesInputListContain(Game1.options.menuButton, key))
-            {
-                base.receiveKeyPress(key);
             }
         }
+
+        if (_activeTab == 3 && _relSearchBox.Selected)
+        {
+            base.receiveKeyPress(key);
+            _vm.RecomputeFilteredNpcs(_relSearchBox.Text);
+            RecalculateTab4List();
+            return;
+        }
+
+        base.receiveKeyPress(key);
+        return;
+    }
+
+    // 3. 全局快捷键：保存 (Ctrl+S)
+    if (key == Keys.S && (Keyboard.GetState().IsKeyDown(Keys.LeftControl) || Keyboard.GetState().IsKeyDown(Keys.RightControl)))
+    {
+        SaveAndClose();
+        return;
+    }
+
+    // 4. 未聚焦任何输入框时，按 ESC 直接退出 / 提示保存取消
+    if (key == Keys.Escape)
+    {
+        TryCancel();
+        return;
+    }
+
+    // 5. 阻止菜单键（如 'E' 键）意外关闭本编辑器；若有其他按键透传给 base
+    if (!Game1.options.doesInputListContain(Game1.options.menuButton, key))
+    {
+        base.receiveKeyPress(key);
+    }
+}
 
         public override void receiveScrollWheelAction(int direction)
         {
@@ -868,10 +881,11 @@ namespace ValleytalkReborn
             else if (_activeTab == 3) DrawTab4(b, mx, my);
             else if (_activeTab == 4) DrawTab5(b, mx, my);
 
-            // 底部操作按钮（顺序已调整：取消 -> 保存 -> 恢复默认）
+            // 底部操作按钮（顺序：取消 -> 保存 -> 当前页恢复原版 -> 全部恢复原版）
             DrawActionButton(b, _cancelRect, "返回 / 取消 (Esc)", mx, my, isDanger: false);
             DrawActionButton(b, _saveRect, "✔ 保存修改 (Ctrl+S)", mx, my, isPrimary: true);
-            DrawActionButton(b, _resetRect, "恢复原版基准", mx, my, isDanger: true, isEnabled: _vm.HasOverlay);
+            DrawActionButton(b, _resetPageRect, "当前页恢复原版", mx, my, isDanger: false);
+            DrawActionButton(b, _resetAllRect, "全部恢复原版", mx, my, isDanger: true, isEnabled: _vm.HasOverlay || _vm.IsDirty);
 
             _closeButton.draw(b);
 
@@ -1505,15 +1519,81 @@ namespace ValleytalkReborn
             Layout();
         }
 
-        private void TryReset()
+        private void TryResetCurrentPage()
         {
-            if (!_vm.HasOverlay)
+            string currentTabName = TabTitles[_activeTab];
+            Game1.activeClickableMenu = new ConfirmationDialog(
+                $"确定将【{currentTabName}】恢复为原版默认基准？\n（未点击保存前不会写入磁盘）",
+                _ =>
+                {
+                    Game1.activeClickableMenu = this;
+                    _vm.ResetTabToBaseline(_activeTab);
+                    SyncActiveTabControls();
+                    Game1.playSound("coin");
+                    Game1.addHUDMessage(new HUDMessage($"已恢复【{currentTabName}】至原版基准", HUDMessage.newQuest_type));
+                },
+                _ => Game1.activeClickableMenu = this);
+        }
+
+        /// <summary>将当前活动 Tab 的控件同步为 VM 数据（单页重置后调用）。</summary>
+        private void SyncActiveTabControls()
+        {
+            switch (_activeTab)
+            {
+                case 0:
+                    _biographyBox.SetText(_vm.GetBiography());
+                    _uniqueBox.Text = _vm.GetUnique();
+                    _homeBedCheckbox.isChecked = _vm.GetHomeLocationBed();
+                    break;
+                case 1:
+                    _behaviorBox.SetText(_vm.GetTraitDescriptionOrNull("BehavioralRules") ?? string.Empty);
+                    _dialogueExamplesBox.SetText(_vm.GetTraitDescriptionOrNull("DialogueExamples") ?? string.Empty);
+                    break;
+                case 2:
+                    if (_vm.Bio.ProgressStates.Count > 0)
+                        SelectStage(0);
+                    else
+                    {
+                        _stageTextBox.SetText(string.Empty);
+                        _stageBarkBox.SetText(string.Empty);
+                        _stageTagEditor.SetTags(null);
+                        _heartsStepper.Value = 0;
+                    }
+                    Layout();
+                    break;
+                case 3:
+                    _vm.RecomputeFilteredNpcs(_relSearchBox.Text);
+                    RecalculateTab4List();
+                    if (_vm.FilteredNpcs.Count > 0)
+                    {
+                        _vm.SelectRelationship(0);
+                        SelectRelationshipView(_vm.SelectedRelationshipNpc);
+                    }
+                    else
+                    {
+                        _relHeadingBox.Text = string.Empty;
+                        _relDescBox.SetText(string.Empty);
+                    }
+                    break;
+                case 4:
+                    _enableBarkCheckbox.isChecked = _vm.GetEnableAmbientBarks();
+                    _globalTagEditor.SetTags(_vm.Bio.Preoccupations);
+                    SyncTab5BarkBoxes();
+                    break;
+            }
+        }
+
+        private void TryResetAll()
+        {
+            if (!_vm.HasOverlay && !_vm.IsDirty)
             {
                 Game1.playSound("cancel");
+                Game1.addHUDMessage(new HUDMessage("当前已经是原版基准，无需还原", HUDMessage.error_type));
                 return;
             }
+
             Game1.activeClickableMenu = new ConfirmationDialog(
-                $"确定将 {_npcName} 还原为默认人设，并删除自定义覆盖？",
+                $"确定将 {_npcName} 的全部人设恢复为原版，并删除自定义文件？",
                 _ =>
                 {
                     Game1.activeClickableMenu = this;
@@ -1524,6 +1604,7 @@ namespace ValleytalkReborn
                     }
                     SyncAllControlsFromVm();
                     Game1.playSound("throw");
+                    Game1.addHUDMessage(new HUDMessage($"已重置 {_npcName} 全部数据至原版", HUDMessage.achievement_type));
                 },
                 _ => Game1.activeClickableMenu = this);
         }

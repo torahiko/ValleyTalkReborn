@@ -125,6 +125,100 @@ internal sealed class BioEditorViewModel
         return true;
     }
 
+    /// <summary>
+    /// 将当前 Tab 对应的数据字段重置为原版基准值，并标记脏状态。
+    /// </summary>
+    public void ResetTabToBaseline(int tabIndex)
+    {
+        BioData baseline = _storage.GetBaselineBio(_npcName);
+        if (baseline == null || baseline.Missing)
+            return;
+
+        switch (tabIndex)
+        {
+            case 0: // Tab 1: 身份背景
+                _bio.Biography = baseline.Biography ?? string.Empty;
+                _bio.Unique = baseline.Unique ?? string.Empty;
+                _bio.HomeLocationBed = baseline.HomeLocationBed;
+                break;
+
+            case 1: // Tab 2: 言行举止
+                CopyTraitFromBaseline(baseline, "BehavioralRules", "Tone & Mannerisms Constraints");
+                CopyTraitFromBaseline(baseline, "DialogueExamples", "Dialogue Examples");
+                break;
+
+            case 2: // Tab 3: 好感演变
+                _bio.ProgressStates = baseline.ProgressStates != null
+                    ? baseline.ProgressStates.Select(s => new BioData.ProgressStateEntry
+                    {
+                        RequiredHearts = s.RequiredHearts,
+                        RequireMarried = s.RequireMarried,
+                        Text = s.Text,
+                        RequireBusRepaired = s.RequireBusRepaired,
+                        RequirePlayerMarriedTo = s.RequirePlayerMarriedTo,
+                        BarkMindset = s.BarkMindset,
+                        Preoccupations = s.Preoccupations != null ? new List<string>(s.Preoccupations) : null,
+                        RequireJojaMartClosed = s.RequireJojaMartClosed,
+                        RequireJojaMember = s.RequireJojaMember
+                    }).ToList()
+                    : new List<BioData.ProgressStateEntry>();
+                SelectedStageIndex = _bio.ProgressStates.Count > 0 ? 0 : -1;
+                break;
+
+            case 3: // Tab 4: 社交关系
+                _bio.Relationships = new Dictionary<string, BioData.ListEntry>();
+                if (baseline.Relationships != null)
+                {
+                    foreach (var kvp in baseline.Relationships)
+                    {
+                        _bio.Relationships[kvp.Key] = new BioData.ListEntry
+                        {
+                            id = kvp.Value.id,
+                            Heading = kvp.Value.Heading,
+                            Description = kvp.Value.Description,
+                            RequiredHearts = kvp.Value.RequiredHearts
+                        };
+                    }
+                }
+                break;
+
+            case 4: // Tab 5: 环境感知
+                _bio.EnableAmbientBarks = baseline.EnableAmbientBarks;
+                _bio.Preoccupations = baseline.Preoccupations != null ? new List<string>(baseline.Preoccupations) : new List<string>();
+                if (baseline.AmbientBarkPrompt != null)
+                {
+                    _bio.AmbientBarkPrompt = new AmbientBarkPrompt
+                    {
+                        VoiceAndAttitude = baseline.AmbientBarkPrompt.VoiceAndAttitude,
+                        SpokenHabits = baseline.AmbientBarkPrompt.SpokenHabits,
+                        ObservationLenses = baseline.AmbientBarkPrompt.ObservationLenses
+                    };
+                }
+                else
+                {
+                    _bio.AmbientBarkPrompt = null;
+                }
+                break;
+        }
+
+        MarkDirty();
+    }
+
+    private void CopyTraitFromBaseline(BioData baseline, string key, string defaultHeading)
+    {
+        if (baseline.Traits != null && baseline.Traits.TryGetValue(key, out var entry) && entry != null)
+        {
+            var target = EnsureTraitEntry(key, defaultHeading);
+            target.Heading = entry.Heading;
+            target.Description = entry.Description;
+            target.RequiredHearts = entry.RequiredHearts;
+        }
+        else
+        {
+            _bio.Traits.Remove(key);
+        }
+    }
+
     // ── Tab 2 / Tab 5 ──────────────────────────────────────────────
     internal enum ScrapeOutcome { Success, NoLines, Failed }
 

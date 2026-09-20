@@ -1024,11 +1024,11 @@ internal sealed class ProfileTabView : HubTabViewBase
 
         int leftColX = MenuBounds.X + LeftPadding;
         int contentW = MenuBounds.Width - LeftPadding - RightPadding;
-        int startY = MenuBounds.Y + TopPadding + 44;
+        int startY = MenuBounds.Y + TopPadding + 64; // 原来是 + 44，改为 + 64
 
         const int bottomPagingBarH = 40;
         const int bottomMargin = 8;
-        int bottomLimitY = MenuBounds.Y + MenuBounds.Height - BottomPadding;
+        int bottomLimitY = MenuBounds.Y + MenuBounds.Height - BottomPadding + 20; // 增加 + 20
         int availH = bottomLimitY - startY - bottomPagingBarH - bottomMargin;
 
         int cols = NpcCols;

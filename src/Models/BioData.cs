@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 using StardewValley;
 
 namespace ValleytalkReborn;
@@ -87,6 +88,12 @@ public class BioData
     public Dictionary<string, string> PromptOverrides { get; set; } = new Dictionary<string, string>();
     public bool UsePatchedDialogue { get; set; } = false;
     public bool Missing { get; internal set; }
+
+    /// <summary>
+    /// 捕获所有未在类中显式定义的 JSON 字段，确保保存时原样保留，防止未来扩展字段丢失。
+    /// </summary>
+    [JsonExtensionData]
+    public Dictionary<string, object> ExtensionData { get; set; } = new Dictionary<string, object>();
 
     // 新增：标记此 NPC 是否为大模型语料中已知的原版角色。
     // true  → Relationships 块整体跳过（大模型自己认识这些人）。
