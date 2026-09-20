@@ -753,7 +753,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
                 if (item.EditRect.Contains(x, y))
                 {
-                    Game1.activeClickableMenu = new AddMemoryInputMenu(
+                    Game1.activeClickableMenu = new AddRuleInputMenu(
                         _npcName, this, entry, 0,
                         customSubmit: text => MemoryManager.Instance.EditTimelineMemory(_npcName, entry.Id, text));
                     return;

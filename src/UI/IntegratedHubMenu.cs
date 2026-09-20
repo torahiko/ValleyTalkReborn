@@ -14,7 +14,7 @@ using ValleytalkReborn.UI;
 namespace ValleytalkReborn
 {
     /// <summary>
-    /// 四合一综合管理面板：NPC记忆 / 世界记忆 / 农夫档案 / 高级设置。
+    /// 三合一综合管理面板：规则 / 农夫档案 / 高级设置。
     /// 实现 IMemoryRefreshTarget，使子对话框返回后可通过接口刷新列表。
     /// </summary>
     internal class IntegratedHubMenu : IClickableMenu, IMemoryRefreshTarget
@@ -42,12 +42,12 @@ namespace ValleytalkReborn
         private string _currentNpcName;
         private bool _wasObscured;
 
-        private readonly Rectangle[] _tabRects = new Rectangle[4];
+        private readonly Rectangle[] _tabRects = new Rectangle[3];
         private ClickableTextureComponent _closeButton;
         private float _closeButtonHoverScale;
         private readonly float _closeButtonBaseScale;
 
-        private readonly IHubTabView?[] _tabViews = new IHubTabView?[4];
+        private readonly IHubTabView?[] _tabViews = new IHubTabView?[3];
 
         // 暴露给 View 的属性
         public string CurrentNpcName
@@ -79,16 +79,15 @@ namespace ValleytalkReborn
                     _currentNpcName = Game1.player?.friendshipData?.Keys.FirstOrDefault() ?? "";
             }
 
-            _tabViews[3] = new AdvancedSettingsTabView(this);
-            _tabViews[1] = new WorldMemoryTabView(this);
-            _tabViews[0] = new NpcMemoryTabView(this);
-            _tabViews[2] = new ProfileTabView(this);
+            _tabViews[2] = new AdvancedSettingsTabView(this);
+            _tabViews[0] = new RulesTabView(this);
+            _tabViews[1] = new ProfileTabView(this);
 
             RecalculateAllLayout();
 
             exitFunction = () => Game1.playSound("bigDeSelect");
 
-            _currentTab = Math.Clamp(initialTab, 0, 3);
+            _currentTab = Math.Clamp(initialTab, 0, 2);
             RefreshEntries();
         }
 
@@ -98,8 +97,8 @@ namespace ValleytalkReborn
             int tabBaseY = yPositionOnScreen + TabBarY;
 
             int totalTabSpace = width - LeftPadding - RightPadding;
-            int tabW = (totalTabSpace - (TabGap * 3)) / 4;
-            for (int i = 0; i < 4; i++)
+            int tabW = (totalTabSpace - (TabGap * 2)) / 3;
+            for (int i = 0; i < 3; i++)
             {
                 _tabRects[i] = new Rectangle(tabBaseX + i * (tabW + TabGap), tabBaseY, tabW, TabHeight);
             }
@@ -120,7 +119,7 @@ namespace ValleytalkReborn
                 _tabViews[0]!.RefreshFromHub();
             else if (_currentTab == 1)
                 _tabViews[1]!.RefreshFromHub();
-            else if (_currentTab == 2)
+            else
                 _tabViews[2]!.RefreshFromHub();
         }
 
@@ -173,7 +172,7 @@ namespace ValleytalkReborn
                 return;
             }
 
-            for (int t = 0; t < 4; t++)
+            for (int t = 0; t < 3; t++)
             {
                 if (_tabRects[t].Contains(x, y))
                 {
@@ -249,10 +248,9 @@ public override void draw(SpriteBatch b)
     );
     CustomFontManager.DrawStringBold(b, title, titlePos, Game1.textColor, TitleFontSize);
 
-    DrawTab(b, _tabRects[0], I18n.Hub.TabNpcMemory(), _currentTab == 0, mx, my);
-    DrawTab(b, _tabRects[1], I18n.Hub.TabWorldMemory(), _currentTab == 1, mx, my);
-    DrawTab(b, _tabRects[2], I18n.Hub.TabProfile(), _currentTab == 2, mx, my);
-    DrawTab(b, _tabRects[3], I18n.Hub.TabAdvanced(), _currentTab == 3, mx, my);
+    DrawTab(b, _tabRects[0], I18n.Hub.TabRules(), _currentTab == 0, mx, my);
+    DrawTab(b, _tabRects[1], I18n.Hub.TabProfile(), _currentTab == 1, mx, my);
+    DrawTab(b, _tabRects[2], I18n.Hub.TabAdvanced(), _currentTab == 2, mx, my);
 
     b.Draw(Game1.staminaRect,
         new Rectangle(xPositionOnScreen + LeftPadding,
@@ -264,10 +262,8 @@ public override void draw(SpriteBatch b)
         _tabViews[0]!.Draw(b, mx, my);
     else if (_currentTab == 1)
         _tabViews[1]!.Draw(b, mx, my);
-    else if (_currentTab == 2)
-        _tabViews[2]!.Draw(b, mx, my);
     else
-        _tabViews[3]!.Draw(b, mx, my);
+        _tabViews[2]!.Draw(b, mx, my);
 
     UiHelper.UpdateButtonScale(ref _closeButtonHoverScale, _closeButton, mx, my);
     _closeButton.scale = _closeButtonBaseScale * _closeButtonHoverScale;
@@ -315,8 +311,8 @@ private void DrawTab(SpriteBatch b, Rectangle rect, string label, bool isActive,
             _tabViews[_currentTab]?.Update(time);
 
             bool obscured = Game1.activeClickableMenu != this;
-            if (_wasObscured && !obscured && _currentTab == 2)
-                _tabViews[2]!.OnReturnedFromChild();
+            if (_wasObscured && !obscured && _currentTab == 1)
+                _tabViews[1]!.OnReturnedFromChild();
             _wasObscured = obscured;
         }
 
