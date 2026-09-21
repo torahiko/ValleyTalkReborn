@@ -94,6 +94,8 @@ internal sealed class RelationNetworkPage : WorldSubPageBase
     {
         Texture2D boxTex = Game1.content.Load<Texture2D>("LooseSprites\\textBox") ?? Game1.mouseCursors;
         _searchBox = new TextBox(boxTex, null, Game1.smallFont, RulesTheme.TextCharcoal);
+        // 关闭原版 TextBox 的像素宽度截断（Text setter 内置递归截断会静默损毁程序化赋值的长文本）
+        _searchBox.limitWidth = false;
 
         _descBox = new DialogueTextInputBox(600, 500)
         {
@@ -1276,14 +1278,14 @@ internal sealed class RelationNetworkPage : WorldSubPageBase
 
         NPC? npc = Game1.getCharacterFromName(npcName);
         Texture2D? charTexture = null;
-
+ 
         try
         {
             if (npc?.Sprite?.Texture != null && !npc.Sprite.Texture.IsDisposed)
                 charTexture = npc.Sprite.Texture;
         }
-        catch { }
-
+        catch { } 
+ 
         if (charTexture == null)
         {
             string assetName = npc?.getTextureName() ?? npcName;
@@ -1327,7 +1329,7 @@ internal sealed class RelationNetworkPage : WorldSubPageBase
         try
         {
             int checkWidth = Math.Min(frameWidth, texture.Width);
-            int checkHeight = Math.Min(frameHeight, texture.Height);
+            int checkHeight = Math.Min(frameHeight, texture.Height); 
             Color[] pixels = new Color[checkWidth * checkHeight];
             texture.GetData(0, new Rectangle(0, 0, checkWidth, checkHeight), pixels, 0, pixels.Length);
 
