@@ -30,22 +30,9 @@
       "FromFile": "assets/Prompts.json"
     },
     {
-      "LogName": "Load Chinese Game Summary",
       "Action": "Load",
       "Target": "ValleytalkReborn/GameSummary",
-      "FromFile": "assets/GameSummary.zh.json",
-      "When": {
-        "Language": "zh"
-      }
-    },
-    {
-      "LogName": "Load Default Game Summary",
-      "Action": "Load",
-      "Target": "ValleytalkReborn/GameSummary",
-      "FromFile": "assets/GameSummary.json",
-      "When": {
-        "Language": "!zh"
-      }
+      "FromFile": "assets/GameSummary.json"
     },
     {
       "LogName": "Load Bio Abigail",

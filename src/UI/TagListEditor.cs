@@ -32,6 +32,8 @@ namespace ValleytalkReborn
         {
             _bounds = bounds;
             _inputBox = new TextBox(Game1.content.Load<Texture2D>("LooseSprites\\textBox"), null, Game1.smallFont, Game1.textColor);
+            // 关闭原版 TextBox 的像素宽度截断（Text setter 内置递归截断会静默损毁程序化赋值的长文本）
+            _inputBox.limitWidth = false;
         }
 
         public void SetBounds(Rectangle bounds)

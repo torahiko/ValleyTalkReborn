@@ -82,6 +82,8 @@ internal sealed class DateAmbiencePage : WorldSubPageBase
     {
         Texture2D boxTex = Game1.content.Load<Texture2D>("LooseSprites\\textBox") ?? Game1.mouseCursors;
         _nameBox = new TextBox(boxTex, null, Game1.smallFont, RulesTheme.TextCharcoal);
+        // 关闭原版 TextBox 的像素宽度截断（Text setter 内置递归截断会静默损毁程序化赋值的长文本）
+        _nameBox.limitWidth = false;
 
         _heartsStepper = new NumberStepper(Rectangle.Empty, 4, 0, 14, 1, " 心");
         _startHourStepper = new NumberStepper(Rectangle.Empty, 18, 6, 26, 1, ":00");

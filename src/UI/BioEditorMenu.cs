@@ -222,8 +222,15 @@ namespace ValleytalkReborn
             // 2. 下面这三个是单行 TextBox，必须使用 new TextBox(...) 初始化：
             Texture2D boxTex = LoadTextBoxTexture();
             _uniqueBox = new TextBox(boxTex, null, Game1.smallFont, Game1.textColor);
+            // 关闭原版 TextBox 的像素宽度截断（Text setter 内置递归截断会静默损毁程序化赋值的长文本）
+            _uniqueBox.limitWidth = false;
+            _uniqueBox.textLimit = 20;
             _relSearchBox = new TextBox(boxTex, null, Game1.smallFont, Game1.textColor);
+            // 关闭原版 TextBox 的像素宽度截断（Text setter 内置递归截断会静默损毁程序化赋值的长文本）
+            _relSearchBox.limitWidth = false;
             _relHeadingBox = new TextBox(boxTex, null, Game1.smallFont, Game1.textColor);
+            // 关闭原版 TextBox 的像素宽度截断（Text setter 内置递归截断会静默损毁程序化赋值的长文本）
+            _relHeadingBox.limitWidth = false;
 
             _homeBedCheckbox = new SimpleCheckbox("床位固定 (HomeLocationBed)", -1, 0, 0);
             _enableBarkCheckbox = new SimpleCheckbox("启用日常碎碎念 (AmbientBarks)", -1, 0, 0);

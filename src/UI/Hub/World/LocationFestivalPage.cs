@@ -7,7 +7,9 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using StardewModdingAPI;
 using StardewValley;
+using StardewValley.GameData.Locations;
 using StardewValley.Menus;
+using StardewValley.TokenizableStrings;
 using ValleytalkReborn.Services.Overlays;
 
 namespace ValleytalkReborn.UI;
@@ -17,9 +19,11 @@ namespace ValleytalkReborn.UI;
 /// 1. 顶部模式切换（地点环境 / 节日日程），各享全屏完整编辑视野；
 /// 2. 玩家自创节日绝对置顶显示，列表文字颜色统一炭黑呈现；
 /// 3. 新建节日全历法自动探测空闲日期，单日唯一性严格校验；
-/// 4. 彻底修复官方节日废弃/恢复状态同步机制；
+/// 4. 原版节日禁止删除（置灰呈现），自创节日支持彻底删除；
 /// 5. 节日名称输入框字体恢复为黑色，搜索框保持深灰色；
-/// 6. 描述文本框字数限制严格收敛至 200 字以内。
+/// 6. 描述文本框字数限制严格收敛至 200 字以内；
+/// 7. 动态扫描过滤无意义小地图（地窖、传送间等）与破损翻译；
+/// 8. 地点铭牌根据当前语言动态本地化呈现。
 /// </summary>
 internal sealed class LocationFestivalPage : WorldSubPageBase
 {
@@ -81,7 +85,6 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
         public int Day = 1;
         public bool IsBaseline;
         public bool IsCustom;
-        public bool IsTombstone;
         public Dictionary<string, string> Names = new();
         public Dictionary<string, string> Descriptions = new();
     }
@@ -127,8 +130,10 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
     {
         Texture2D boxTex = Game1.content.Load<Texture2D>("LooseSprites\\textBox") ?? Game1.mouseCursors;
         _searchBox = new TextBox(boxTex, null, Game1.smallFont, DarkGrayText);
-        // ★ 节日单行名称框字体保持黑色
+        _searchBox.limitWidth = false;
+
         _festNameBox = new TextBox(boxTex, null, Game1.smallFont, RulesTheme.TextCharcoal);
+        _festNameBox.limitWidth = false;
 
         _dayStepper = new NumberStepper(Rectangle.Empty, 1, 1, 28, 1, " 日");
 
@@ -234,7 +239,6 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
 
     public override bool ReceiveLeftClick(int x, int y)
     {
-        // 1. 优先处理季节下拉框浮层
         if (_currentMode == ViewMode.Festivals && _isSeasonDropdownOpen)
         {
             var dropListRect = GetDropdownMenuRect(_seasonHeaderRect);
@@ -262,7 +266,6 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
             return true;
         }
 
-        // 2. 模式切换
         if (_modeLocationsBtnRect.Contains(x, y) && _currentMode != ViewMode.Locations)
         {
             _currentMode = ViewMode.Locations;
@@ -288,7 +291,6 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
             return true;
         }
 
-        // 3. 点击展开季节下拉框
         if (_currentMode == ViewMode.Festivals && _seasonHeaderRect.Contains(x, y))
         {
             _isSeasonDropdownOpen = true;
@@ -299,7 +301,6 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
             return true;
         }
 
-        // 4. 搜索框焦点
         if (_searchBoxRect.Contains(x, y))
         {
             _searchBox.SelectMe();
@@ -309,7 +310,6 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
             return true;
         }
 
-        // 5. 左侧列表交互
         int listTop = _searchBoxRect.Bottom + 5;
         int listH = _listRect.Bottom - 4 - listTop;
         int visibleCount = listH / (RowHeight + RowGap);
@@ -349,7 +349,6 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
             return true;
         }
 
-        // 6. 输入框焦点
         if (_currentMode == ViewMode.Festivals && new Rectangle(_festNameBox.X, _festNameBox.Y, _festNameBox.Width, _festNameBox.Height).Contains(x, y))
         {
             _festNameBox.SelectMe();
@@ -368,13 +367,11 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
             return true;
         }
 
-        // 7. 节日日期步进器
         if (_currentMode == ViewMode.Festivals && _dayStepper.ReceiveLeftClick(x, y))
         {
             return true;
         }
 
-        // 8. 底部操作按钮
         if (_btnSave.Contains(x, y))
         {
             if (_currentMode == ViewMode.Locations) SaveLocation();
@@ -389,6 +386,7 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
             return true;
         }
 
+        // 8. 底部删除按钮交互（原版节日置灰不可点击）
         if (_btnDelete.Contains(x, y) && _currentMode == ViewMode.Festivals)
         {
             if (_isCreatingNewFest)
@@ -402,7 +400,14 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
                 return true;
             }
 
-            RequestDeleteFestival();
+            var fest = !string.IsNullOrEmpty(_selectedFestKey)
+                ? _allFestivals.FirstOrDefault(f => string.Equals(f.Key, _selectedFestKey, StringComparison.OrdinalIgnoreCase))
+                : null;
+
+            if (fest?.IsCustom == true)
+            {
+                RequestDeleteFestival();
+            }
             return true;
         }
 
@@ -607,7 +612,6 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
     {
         DrawSectionCard(b, _listRect);
 
-        // 搜索框传入深灰色
         DrawSingleLineBox(b, _searchBox, DarkGrayText);
         if (string.IsNullOrEmpty(_searchBox.Text))
         {
@@ -686,7 +690,8 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
 
     private static void DrawLocationRow(SpriteBatch b, LocationEntry item, Rectangle drawRect, bool isSel, bool isHover)
     {
-        string regionName = string.IsNullOrEmpty(item.Region) ? "小镇" : item.Region;
+        // ★ 核心改动：地名前面的铭牌智能进行多语言判定与转换
+        string regionName = GetLocalizedRegion(item.Region);
         var regSz = CustomFontManager.MeasureString(regionName, CustomFontManager.SizeSmall);
         var regRect = new Rectangle(drawRect.X + 8, drawRect.Y + (drawRect.Height - 20) / 2, (int)regSz.X + 8, 20);
 
@@ -730,13 +735,10 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
 
         int textX = badgeRect.Right + 8;
         string label = item.Name;
-        if (item.IsTombstone) label += " [废弃]";
-        else if (item.IsCustom) label += " [★自创]";
+        if (item.IsCustom) label += " [★自创]";
 
         string truncated = CustomFontManager.TruncateString(label, CustomFontManager.SizeSmall, drawRect.Right - textX - 8);
-        Color textCol = item.IsTombstone ? RulesTheme.TextMuted : RulesTheme.TextCharcoal;
-
-        CustomFontManager.DrawString(b, truncated, new Vector2(textX, drawRect.Y + 11), textCol, CustomFontManager.SizeSmall);
+        CustomFontManager.DrawString(b, truncated, new Vector2(textX, drawRect.Y + 11), RulesTheme.TextCharcoal, CustomFontManager.SizeSmall);
     }
 
     private void DrawRightForm(SpriteBatch b, int mx, int my)
@@ -761,7 +763,7 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
                 infoRect.X, infoRect.Y, infoRect.Width, infoRect.Height, RulesTheme.BorderSoft, 1.2f, false);
 
             CustomFontManager.DrawStringBold(b, $"📍 {loc.Name}", new Vector2(infoRect.X + 10, infoRect.Y + 8), RulesTheme.TextCharcoal, CustomFontManager.SizeRegular);
-            CustomFontManager.DrawString(b, $"区域: {loc.Region}  |  标识: {loc.Id}", new Vector2(infoRect.X + 12, infoRect.Y + 26), RulesTheme.TextSecondary, CustomFontManager.SizeSmall);
+            CustomFontManager.DrawString(b, $"区域: {GetLocalizedRegion(loc.Region)}  |  标识: {loc.Id}", new Vector2(infoRect.X + 12, infoRect.Y + 26), RulesTheme.TextSecondary, CustomFontManager.SizeSmall);
 
             DrawFieldLabel(b, "场景氛围与环境描写 (AI 将根据此描述感知周围)", lx, (int)_descBox.Position.Y - 22);
             _descBox.Draw(b);
@@ -789,7 +791,6 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
                 : null;
 
             DrawFieldLabel(b, "节日名称", lx, _festNameBox.Y + 4);
-            // ★ 节日名称输入框显式指定为黑色
             DrawSingleLineBox(b, _festNameBox, RulesTheme.TextCharcoal);
 
             DrawFieldLabel(b, "举行日期", lx, _dayStepperRect.Y + 4);
@@ -805,8 +806,11 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
             DrawFormButton(b, _btnSave, "✔ 保存节日", mx, my, isPrimary: true, isEnabled: canSave && conflictFest == null);
             DrawFormButton(b, _btnRevert, "↺ 还原节日", mx, my, isPrimary: false, isEnabled: !_isCreatingNewFest && fest?.IsBaseline == true);
 
-            string deleteBtnText = _isCreatingNewFest ? "取消新建" : (fest?.IsCustom == true ? "彻底删除" : (fest?.IsTombstone == true ? "恢复节日" : "废弃节日"));
-            DrawFormButton(b, _btnDelete, deleteBtnText, mx, my, isPrimary: false, isDanger: fest?.IsCustom == true);
+            // ★ 核心改动：原版节日不可删除（置灰呈现），仅自创节日支持删除
+            string deleteBtnText = _isCreatingNewFest ? (IsZh ? "取消新建" : "Cancel") : (IsZh ? "删除节日" : "Delete Festival");
+            bool canDelete = _isCreatingNewFest || (fest?.IsCustom == true);
+            DrawFormButton(b, _btnDelete, deleteBtnText, mx, my, isPrimary: false, isEnabled: canDelete, isDanger: fest?.IsCustom == true);
+
             DrawFormButton(b, _btnNew, "+ 新建节日", mx, my, isPrimary: false);
 
             Vector2 statusPos = new(lx + 5, _btnSave.Y - 27);
@@ -1042,8 +1046,13 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
                 {
                     if (!string.IsNullOrEmpty(kv.Key) && kv.Value != null)
                     {
-                        _baselineLocations[kv.Key] = ResolveI18nToken(string.IsNullOrEmpty(kv.Value.Name) ? kv.Key : kv.Value.Name);
-                        _baselineRegions[kv.Key] = kv.Value.Region ?? "";
+                        if (IsExcludedLocation(null, kv.Key)) continue;
+
+                        string dispName = ResolveI18nToken(string.IsNullOrEmpty(kv.Value.Name) ? kv.Key : kv.Value.Name);
+                        if (IsInvalidDisplayName(dispName)) continue;
+
+                        _baselineLocations[kv.Key] = dispName;
+                        _baselineRegions[kv.Key] = kv.Value.Region ?? "Pelican Town";
                         _baselineLocDescriptions[kv.Key] = ResolveI18nToken(kv.Value.Description ?? "");
                     }
                 }
@@ -1063,6 +1072,414 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
         else
         {
             ModEntry.SMonitor?.Log("[LocationFestival] 基线数据加载失败，未能在游戏资产管道或本地目录找到有效的 GameSummary.json", LogLevel.Warn);
+        }
+
+        // 在基线文件载入完成后，扫描游戏内地图与节日数据（合并第三方 Mod）
+        ScanGameLocations();
+        ScanGameFestivals();
+    }
+
+    // ── 地图动态探测与过滤 ──
+
+    private void ScanGameLocations()
+    {
+        var visitedIds = new HashSet<string>(_baselineLocations.Keys, StringComparer.OrdinalIgnoreCase);
+
+        // 1. 扫描当前存档运行时的实际地图实例（包含建筑内部）
+        if (Game1.locations != null)
+        {
+            var locQueue = new List<GameLocation>(Game1.locations);
+            for (int i = 0; i < locQueue.Count; i++)
+            {
+                var loc = locQueue[i];
+                if (loc == null) continue;
+
+                if (loc.buildings != null)
+                {
+                    foreach (var b in loc.buildings)
+                    {
+                        var indoors = b.indoors.Value;
+                        if (indoors != null && !locQueue.Contains(indoors))
+                        {
+                            locQueue.Add(indoors);
+                        }
+                    }
+                }
+
+                string locId = loc.NameOrUniqueName ?? loc.Name ?? "";
+                if (string.IsNullOrWhiteSpace(locId)) continue;
+                if (IsExcludedLocation(loc, locId)) continue;
+
+                if (visitedIds.Add(locId))
+                {
+                    string dispName = ResolveLocationDisplayName(loc, locId);
+                    if (IsInvalidDisplayName(dispName)) continue;
+
+                    string region = InferLocationRegion(loc, locId);
+
+                    _baselineLocations[locId] = dispName;
+                    _baselineRegions[locId] = region;
+                    if (!_baselineLocDescriptions.ContainsKey(locId))
+                    {
+                        _baselineLocDescriptions[locId] = IsZh
+                            ? $"{dispName}的现场环境。居民们在此活动与交流。"
+                            : $"The environment of {dispName}.";
+                    }
+                }
+            }
+        }
+
+        // 2. 从 Data/Locations 字典中扫描（包含第三方 Mod 注册的静态地图）
+        try
+        {
+            var dataLocs = Game1.content.Load<Dictionary<string, LocationData>>("Data/Locations");
+            if (dataLocs != null)
+            {
+                foreach (var (locId, locData) in dataLocs)
+                {
+                    if (string.IsNullOrWhiteSpace(locId)) continue;
+                    if (IsExcludedLocation(null, locId)) continue;
+
+                    if (visitedIds.Add(locId))
+                    {
+                        string dispName = locId;
+                        if (locData != null && !string.IsNullOrWhiteSpace(locData.DisplayName))
+                        {
+                            try
+                            {
+                                dispName = TokenParser.ParseText(locData.DisplayName);
+                            }
+                            catch { }
+                        }
+
+                        if (IsInvalidDisplayName(dispName)) continue;
+
+                        string region = InferLocationRegion(null, locId);
+
+                        _baselineLocations[locId] = dispName;
+                        _baselineRegions[locId] = region;
+                        if (!_baselineLocDescriptions.ContainsKey(locId))
+                        {
+                            _baselineLocDescriptions[locId] = IsZh
+                                ? $"{dispName}的现场环境。居民们在此活动与交流。"
+                                : $"The environment of {dispName}.";
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log($"[LocationFestival] 扫描 Data/Locations 时提示: {ex.Message}", LogLevel.Trace);
+        }
+    }
+
+    private static bool IsExcludedLocation(GameLocation? loc, string locId)
+    {
+        if (string.IsNullOrWhiteSpace(locId)) return true;
+
+        // 地牢与矿洞类型排除
+        if (loc is StardewValley.Locations.MineShaft or StardewValley.Locations.VolcanoDungeon)
+            return true;
+
+        string typeName = loc?.GetType().Name ?? "";
+        if (typeName.Contains("MineShaft", StringComparison.OrdinalIgnoreCase) ||
+            typeName.Contains("VolcanoDungeon", StringComparison.OrdinalIgnoreCase) ||
+            typeName.EndsWith("Dungeon", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        // 纯数字地牢楼层检测（如矿洞 1~120）
+        if (int.TryParse(locId, out _)) return true;
+
+        // 常见地牢、火山口、虫穴专属过滤
+        if (locId.StartsWith("UndergroundMine", StringComparison.OrdinalIgnoreCase) ||
+            locId.StartsWith("VolcanoDungeon", StringComparison.OrdinalIgnoreCase) ||
+            locId.StartsWith("MineShaft", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (string.Equals(locId, "Mine", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(locId, "Mines", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(locId, "SkullCave", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(locId, "Caldera", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(locId, "BugLand", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        string lower = locId.ToLowerInvariant();
+
+        // 排除地窖及地下室变体 (如 cellar, cellar2, cellar3 等)
+        if (lower.Contains("cellar"))
+            return true;
+
+        // 排除传送间、中转站、NPC暂存与后台缓冲功能房 (如 Custom_Alesia_WarpRoom, Custom_Apples_WarpRoom)
+        if (lower.Contains("warproom") ||
+            lower.Contains("warp_room") ||
+            lower.Contains("_warp") ||
+            lower.StartsWith("warp_") ||
+            lower.EndsWith("_warp") ||
+            lower.Contains("holdingroom") ||
+            lower.Contains("stagingroom") ||
+            lower.Contains("backstage") ||
+            lower.Contains("eventroom") ||
+            lower.Contains("bufferroom"))
+        {
+            return true;
+        }
+
+        // 测试与临时地图关键词过滤
+        if (lower.Contains("testmap") ||
+            lower.Contains("debug") ||
+            lower.Contains("sandbox") ||
+            lower.Contains("dummy") ||
+            lower.Contains("unused") ||
+            lower.StartsWith("temp") ||
+            lower.StartsWith("test_") ||
+            lower.EndsWith("_test") ||
+            lower == "test")
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// 判定是否为未正确本地化或破损无效的地图名称（如 no translation 等）
+    /// </summary>
+    private static bool IsInvalidDisplayName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return true;
+        string lower = name.ToLowerInvariant();
+        if (lower.Contains("no translation") ||
+            lower.Contains("missing translation") ||
+            lower.Contains("(no translation:") ||
+            (lower.StartsWith("{{") && lower.EndsWith("}}")))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    private static string ResolveLocationDisplayName(GameLocation? loc, string locId)
+    {
+        try
+        {
+            if (loc != null && !string.IsNullOrWhiteSpace(loc.DisplayName) && !string.Equals(loc.DisplayName, locId, StringComparison.OrdinalIgnoreCase))
+            {
+                return TokenParser.ParseText(loc.DisplayName);
+            }
+        }
+        catch { }
+
+        try
+        {
+            var dataLocs = Game1.content.Load<Dictionary<string, LocationData>>("Data/Locations");
+            if (dataLocs != null && dataLocs.TryGetValue(locId, out var locData) && !string.IsNullOrWhiteSpace(locData.DisplayName))
+            {
+                string parsed = TokenParser.ParseText(locData.DisplayName);
+                if (!string.IsNullOrWhiteSpace(parsed)) return parsed;
+            }
+        }
+        catch { }
+
+        return locId;
+    }
+
+    private static string InferLocationRegion(GameLocation? loc, string locId)
+    {
+        if (loc != null)
+        {
+            try
+            {
+                if (loc.InIslandContext())
+                    return "Ginger Island";
+            }
+            catch { }
+        }
+
+        string idUpper = locId.ToUpperInvariant();
+        if (idUpper.Contains("ISLAND"))
+            return "Ginger Island";
+        if (idUpper.StartsWith("FARM") || idUpper.Contains("CABIN"))
+            return "Farm";
+        if (idUpper.Contains("RIDGESIDE") || idUpper.Contains("RSV"))
+            return "Ridgeside Village";
+        if (idUpper.Contains("EASTSCARP") || idUpper.Contains("SCARP"))
+            return "East Scarp";
+        if (idUpper.Contains("DESERT"))
+            return "Calico Desert";
+        if (idUpper.Contains("BEACH"))
+            return "Beach";
+        if (idUpper.Contains("MOUNTAIN") || idUpper.Contains("MINE") || idUpper.Contains("QUARRY"))
+            return "Mountain";
+        if (idUpper.Contains("FOREST") || idUpper.Contains("WOODS"))
+            return "Cindersap Forest";
+        if (idUpper.Contains("RAILROAD"))
+            return "Railroad";
+
+        return "Pelican Town";
+    }
+
+    /// <summary>
+    /// 根据游戏当前语言对区域铭牌进行智能转换
+    /// </summary>
+    private static string GetLocalizedRegion(string? rawRegion)
+    {
+        if (string.IsNullOrWhiteSpace(rawRegion))
+            return IsZh ? "小镇" : "Pelican Town";
+
+        string reg = rawRegion.Trim();
+
+        if (IsZh)
+        {
+            return reg.ToLowerInvariant() switch
+            {
+                "pelican town" or "pelicantown" or "town" or "pelican" => "小镇",
+                "ginger island" or "gingerisland" or "island" => "姜岛",
+                "farm" => "农场",
+                "forest" or "cindersap forest" or "cindersap" => "森林",
+                "mountain" or "mountains" => "山区",
+                "beach" => "海滩",
+                "desert" or "calico desert" or "calico" => "沙漠",
+                "railroad" => "铁路",
+                "woods" or "secret woods" or "secretwoods" => "秘密森林",
+                "bus stop" or "busstop" => "车站",
+                "backwoods" => "边远森林",
+                "sewers" or "sewer" => "下水道",
+                "swamp" or "witch swamp" => "女巫沼泽",
+                "ridgeside" or "ridgeside village" or "rsv" => "脊线村",
+                "east scarp" or "eastscarp" or "scarp" => "东围崖",
+                "grampleton" => "格兰普顿",
+                "zuzu city" or "zuzu" or "zuzucity" => "祖祖城",
+                _ => reg
+            };
+        }
+        else
+        {
+            return reg switch
+            {
+                "小镇" or "鹈鹕镇" => "Pelican Town",
+                "姜岛" => "Ginger Island",
+                "农场" => "Farm",
+                "森林" or "煤油森林" => "Cindersap Forest",
+                "山区" => "Mountain",
+                "海滩" => "Beach",
+                "沙漠" or "卡利科沙漠" => "Calico Desert",
+                "铁路" => "Railroad",
+                "秘密森林" => "Secret Woods",
+                "车站" => "Bus Stop",
+                "边远森林" => "Backwoods",
+                "下水道" => "Sewers",
+                "女巫沼泽" => "Witch's Swamp",
+                "脊线村" => "Ridgeside Village",
+                "东围崖" => "East Scarp",
+                "格兰普顿" => "Grampleton",
+                "祖祖城" => "Zuzu City",
+                _ => reg
+            };
+        }
+    }
+
+    // ── 节日动态探测（第三方 Mod 兼容） ──
+
+    private sealed class PassiveFestivalInfo
+    {
+        public string? Season { get; set; }
+        public int StartDay { get; set; } = 1;
+        public int EndDay { get; set; } = 1;
+        public string? DisplayName { get; set; }
+    }
+
+    private void ScanGameFestivals()
+    {
+        // 1. 扫描标准节日表 Data/Festivals/FestivalDates
+        try
+        {
+            var dates = Game1.content.Load<Dictionary<string, string>>("Data\\Festivals\\FestivalDates");
+            if (dates != null)
+            {
+                foreach (var (key, rawName) in dates)
+                {
+                    if (string.IsNullOrWhiteSpace(key)) continue;
+
+                    string festKey = key.Trim();
+                    string name = ResolveI18nToken(rawName);
+                    try
+                    {
+                        name = TokenParser.ParseText(name);
+                    }
+                    catch { }
+
+                    if (string.IsNullOrWhiteSpace(name)) name = festKey;
+
+                    if (!_baselineFestivals.ContainsKey(festKey))
+                    {
+                        _baselineFestivals[festKey] = name;
+                        _baselineFestDescriptions[festKey] = IsZh
+                            ? $"{name}庆典。居民们将在这一天欢聚一堂。"
+                            : $"The celebration of {name}.";
+                    }
+                    else if (string.IsNullOrWhiteSpace(_baselineFestivals[festKey]))
+                    {
+                        _baselineFestivals[festKey] = name;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log($"[LocationFestival] 扫描 FestivalDates 时提示: {ex.Message}", LogLevel.Trace);
+        }
+
+        // 2. 扫描星露谷 1.6+ 被动节日表 Data/PassiveFestivals
+        try
+        {
+            var passives = Game1.content.Load<Dictionary<string, PassiveFestivalInfo>>("Data/PassiveFestivals");
+            if (passives != null)
+            {
+                foreach (var (pId, pData) in passives)
+                {
+                    if (pData == null || string.IsNullOrWhiteSpace(pData.Season)) continue;
+                    string season = pData.Season.Trim().ToLowerInvariant();
+
+                    string baseName = pId;
+                    if (!string.IsNullOrWhiteSpace(pData.DisplayName))
+                    {
+                        try
+                        {
+                            baseName = TokenParser.ParseText(pData.DisplayName);
+                        }
+                        catch { }
+                    }
+
+                    int start = Math.Clamp(pData.StartDay, 1, 28);
+                    int end = pData.EndDay >= start ? Math.Clamp(pData.EndDay, start, 28) : start;
+
+                    for (int d = start; d <= end; d++)
+                    {
+                        string key = $"{season}{d}";
+                        if (!_baselineFestivals.ContainsKey(key))
+                        {
+                            string suffix = (start != end) ? (IsZh ? $" (第{d - start + 1}天)" : $" (Day {d - start + 1})") : "";
+                            string fullName = baseName + suffix;
+
+                            _baselineFestivals[key] = fullName;
+                            _baselineFestDescriptions[key] = IsZh
+                                ? $"{baseName}活动日程。居民们在此期间共同参与。"
+                                : $"The schedule for {baseName}.";
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log($"[LocationFestival] 扫描 PassiveFestivals 时提示: {ex.Message}", LogLevel.Trace);
         }
     }
 
@@ -1127,6 +1544,8 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
 
         foreach (var (id, name) in _baselineLocations)
         {
+            if (IsExcludedLocation(null, id) || IsInvalidDisplayName(name)) continue;
+
             string desc = _baselineLocDescriptions.GetValueOrDefault(id, "");
             bool hasCustom = false;
 
@@ -1159,7 +1578,7 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
         var overlay = ModEntry.WorldSummaryOverlay?.LoadOrNull();
         var handledKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        // 1. 先载入覆盖层中的自创或修改节日
+        // 1. 载入自创节日与覆盖层
         if (overlay?.Festivals != null)
         {
             foreach (var (key, custom) in overlay.Festivals)
@@ -1189,7 +1608,7 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
             }
         }
 
-        // 2. 载入官方基线节日
+        // 2. 载入官方与 Mod 基线节日
         foreach (var (key, name) in _baselineFestivals)
         {
             if (handledKeys.Contains(key)) continue;
@@ -1213,24 +1632,11 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
             });
         }
 
-        // ★ 3. 核心修复：在所有节日全部加载完成后统一应用 RemovedFestivalKeys，确保官方节日能被正确废弃标记
-        if (overlay?.RemovedFestivalKeys != null && overlay.RemovedFestivalKeys.Count > 0)
-        {
-            var removedSet = new HashSet<string>(overlay.RemovedFestivalKeys, StringComparer.OrdinalIgnoreCase);
-            foreach (var fest in _allFestivals)
-            {
-                if (removedSet.Contains(fest.Key))
-                {
-                    fest.IsTombstone = true;
-                }
-            }
-        }
-
-        // 4. 自创置顶，原版次之，废弃垫底
+        // 3. 自创置顶，原版次之（按历法日期排序）
         _allFestivals.Sort((a, b) =>
         {
-            int rankA = (a.IsCustom && !a.IsTombstone) ? 0 : (!a.IsTombstone ? 1 : 2);
-            int rankB = (b.IsCustom && !b.IsTombstone) ? 0 : (!b.IsTombstone ? 1 : 2);
+            int rankA = a.IsCustom ? 0 : 1;
+            int rankB = b.IsCustom ? 0 : 1;
             if (rankA != rankB) return rankA.CompareTo(rankB);
             return CompareFestivalDate(a, b);
         });
@@ -1396,7 +1802,6 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
     private FestivalEntry? GetConflictingFestival(string season, int day)
     {
         return _allFestivals.FirstOrDefault(f =>
-            !f.IsTombstone &&
             f.Season.Equals(season, StringComparison.OrdinalIgnoreCase) &&
             f.Day == day &&
             (_isCreatingNewFest || !string.Equals(f.Key, _selectedFestKey, StringComparison.OrdinalIgnoreCase))
@@ -1458,7 +1863,6 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
         if (!entry.Descriptions.ContainsKey(otherLang) || string.IsNullOrWhiteSpace(entry.Descriptions[otherLang]))
             entry.Descriptions[otherLang] = desc;
 
-        // 保存时自动确保移除废弃标记
         if (ov.RemovedFestivalKeys != null)
         {
             while (ov.RemovedFestivalKeys.Any(k => string.Equals(k, key, StringComparison.OrdinalIgnoreCase)))
@@ -1523,12 +1927,12 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
     {
         if (string.IsNullOrEmpty(_selectedFestKey)) return;
         var fest = _allFestivals.FirstOrDefault(f => string.Equals(f.Key, _selectedFestKey, StringComparison.OrdinalIgnoreCase));
-        if (fest == null) return;
+        if (fest == null || !fest.IsCustom) return;
 
         string targetKey = _selectedFestKey;
-        string prompt = fest.IsCustom
+        string prompt = IsZh
             ? $"确定要彻底删除自创节日【{fest.Name}】吗？"
-            : (fest.IsTombstone ? $"确定要重新恢复官方节日【{fest.Name}】吗？" : $"确定要废除官方节日【{fest.Name}】吗？\n（废除后村民将不会讨论该节日）");
+            : $"Are you sure you want to delete custom festival '{fest.Name}'?";
 
         Game1.activeClickableMenu = new ConfirmationDialog(
             prompt,
@@ -1539,56 +1943,28 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
                 if (service == null) return;
 
                 var ov = service.LoadOrNull() ?? new WorldSummaryOverlayFile();
-                ov.RemovedFestivalKeys ??= new();
+                ov.Festivals.Remove(targetKey);
 
-                string msg;
-                if (fest.IsCustom)
+                if (ov.RemovedFestivalKeys != null)
                 {
-                    ov.Festivals.Remove(targetKey);
                     while (ov.RemovedFestivalKeys.Any(k => string.Equals(k, targetKey, StringComparison.OrdinalIgnoreCase)))
                     {
                         var rk = ov.RemovedFestivalKeys.First(k => string.Equals(k, targetKey, StringComparison.OrdinalIgnoreCase));
                         ov.RemovedFestivalKeys.Remove(rk);
                     }
-                    msg = "已彻底删除自创节日";
-                }
-                else if (fest.IsTombstone)
-                {
-                    // 恢复官方节日：从 RemovedFestivalKeys 移除
-                    while (ov.RemovedFestivalKeys.Any(k => string.Equals(k, targetKey, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        var rk = ov.RemovedFestivalKeys.First(k => string.Equals(k, targetKey, StringComparison.OrdinalIgnoreCase));
-                        ov.RemovedFestivalKeys.Remove(rk);
-                    }
-                    msg = "✔ 已恢复官方庆典";
-                }
-                else
-                {
-                    // 废除官方节日：加入 RemovedFestivalKeys
-                    if (!ov.RemovedFestivalKeys.Any(k => string.Equals(k, targetKey, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        ov.RemovedFestivalKeys.Add(targetKey);
-                    }
-                    msg = "已废弃该官方庆典";
                 }
 
                 if (service.Save(ov, out string? _))
                 {
                     RebuildFestivalView();
 
-                    // ★ 修复：官方节日废弃或恢复后继续保持选中当前节日，使 UI 按钮与状态即时更新
-                    if (fest.IsCustom)
-                    {
-                        if (_filteredFestivals.Count > 0) SelectFestival(_filteredFestivals[0].Key);
-                    }
+                    if (_filteredFestivals.Count > 0)
+                        SelectFestival(_filteredFestivals[0].Key);
                     else
-                    {
-                        SelectFestival(targetKey);
-                    }
+                        _selectedFestKey = null;
 
-                    // 确保在 SelectFestival 之后设置提示语
-                    _statusMessage = msg;
-                    Game1.playSound(fest.IsTombstone ? "coin" : "trashcan");
+                    _statusMessage = IsZh ? "✔ 已彻底删除自创节日" : "✔ Custom festival deleted";
+                    Game1.playSound("trashcan");
                     Hub.RefreshEntries();
                 }
             },
@@ -1603,7 +1979,7 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
         {
             for (int d = 1; d <= 28; d++)
             {
-                if (!_allFestivals.Any(f => !f.IsTombstone && f.Season.Equals(s, StringComparison.OrdinalIgnoreCase) && f.Day == d))
+                if (!_allFestivals.Any(f => f.Season.Equals(s, StringComparison.OrdinalIgnoreCase) && f.Day == d))
                 {
                     return (s, d);
                 }
@@ -1639,8 +2015,8 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
 
     private static int ExtractDay(string key)
     {
-        string suffix = new string(key.SkipWhile(c => !char.IsDigit(c)).ToArray());
-        return int.TryParse(suffix, out int d) ? d : 1;
+        string digits = new string(key.SkipWhile(c => !char.IsDigit(c)).TakeWhile(char.IsDigit).ToArray());
+        return int.TryParse(digits, out int d) ? Math.Clamp(d, 1, 28) : 1;
     }
 
     private static string GetSeasonShortZh(string season) => season.ToLower() switch

@@ -141,7 +141,11 @@ internal sealed class PoiTuningPage : WorldSubPageBase
     {
         Texture2D boxTex = Game1.content.Load<Texture2D>("LooseSprites\\textBox") ?? Game1.mouseCursors;
         _searchBox = new TextBox(boxTex, null, Game1.smallFont, DarkGrayText);
+        // 关闭原版 TextBox 的像素宽度截断（Text setter 内置递归截断会静默损毁程序化赋值的长文本）
+        _searchBox.limitWidth = false;
         _aliasBox = new TextBox(boxTex, null, Game1.smallFont, RulesTheme.TextCharcoal);
+        // 关闭原版 TextBox 的像素宽度截断（Text setter 内置递归截断会静默损毁程序化赋值的长文本）
+        _aliasBox.limitWidth = false;
 
         _descBox = new DialogueTextInputBox(DescMaxChars)
         {
@@ -648,7 +652,7 @@ internal sealed class PoiTuningPage : WorldSubPageBase
 
         if (totalCount == 0 && _currentMode == ViewMode.NpcWeights)
         {
-            CustomFontManager.DrawString(b, "无已婚伴侣", new Vector2(_listRect.X + 16, listTop + 16), RulesTheme.TextMuted, CustomFontManager.SizeSmall);
+            CustomFontManager.DrawString(b, "无已婚伴侣", new Vector2(_listRect.X + 16, listTop + 16), Color.White, CustomFontManager.SizeSmall);
             return;
         }
 
@@ -784,7 +788,7 @@ internal sealed class PoiTuningPage : WorldSubPageBase
             var hSz = CustomFontManager.MeasureString(hint, CustomFontManager.SizeSmall);
 
             CustomFontManager.DrawStringBold(b, title, new Vector2(cx - tSz.X / 2f, cy), RulesTheme.AccentGold, CustomFontManager.SizeRegular);
-            CustomFontManager.DrawString(b, hint, new Vector2(cx - hSz.X / 2f, cy + 34), RulesTheme.TextSecondary, CustomFontManager.SizeSmall);
+            CustomFontManager.DrawString(b, hint, new Vector2(cx - hSz.X / 2f, cy + 34), Color.White, CustomFontManager.SizeSmall);
             return;
         }
 
