@@ -14,7 +14,7 @@ using ValleytalkReborn.UI;
 namespace ValleytalkReborn
 {
     /// <summary>
-    /// 三合一综合管理面板：规则 / 农夫档案 / 高级设置。
+    /// 三合一综合管理面板：规则 / 农夫档案 / 世界设置 / 高级设置。
     /// 实现 IMemoryRefreshTarget，使子对话框返回后可通过接口刷新列表。
     /// </summary>
     internal class IntegratedHubMenu : IClickableMenu, IMemoryRefreshTarget
@@ -79,10 +79,10 @@ namespace ValleytalkReborn
                     _currentNpcName = Game1.player?.friendshipData?.Keys.FirstOrDefault() ?? "";
             }
 
-            _tabViews[2] = new AdvancedSettingsTabView(this);
             _tabViews[0] = new RulesTabView(this);
             _tabViews[1] = new ProfileTabView(this);
-            _tabViews[3] = new WorldSettingsTabView(this);
+            _tabViews[2] = new WorldSettingsTabView(this);
+            _tabViews[3] = new AdvancedSettingsTabView(this);
 
             RecalculateAllLayout();
 
@@ -120,10 +120,10 @@ namespace ValleytalkReborn
                 _tabViews[0]!.RefreshFromHub();
             else if (_currentTab == 1)
                 _tabViews[1]!.RefreshFromHub();
-            else if (_currentTab == 3)
-                _tabViews[3]!.RefreshFromHub();
-            else
+            else if (_currentTab == 2)
                 _tabViews[2]!.RefreshFromHub();
+            else
+                _tabViews[3]!.RefreshFromHub();
         }
 
         private void SwitchTab(int tab)
@@ -140,12 +140,6 @@ namespace ValleytalkReborn
             RefreshEntries();
         }
 
-
-
-
-
-
-
         internal void ReleaseKeyboard()
         {
             // bio 失焦由 ProfileTabView 内联处理；Tab0/1 打开子菜单时原语义即为 no-op
@@ -159,7 +153,6 @@ namespace ValleytalkReborn
         {
             base.receiveScrollWheelAction(direction);
 
-            // 视图消费即返回（Tab2 宫格翻页/Tab0 下拉/Tab1 列表滚动）
             if (_tabViews[_currentTab]?.ReceiveScrollWheel(direction) == true)
                 return;
         }
@@ -184,14 +177,8 @@ namespace ValleytalkReborn
                 }
             }
 
-            // 视图消费即返回
             _tabViews[_currentTab]?.ReceiveLeftClick(x, y);
         }
-
-        // ── 输入处理 ────────────────────────────────────────────────────
-
-
-
 
         public override void leftClickHeld(int x, int y)
         {
@@ -222,94 +209,89 @@ namespace ValleytalkReborn
 
         // ── 绘制 ────────────────────────────────────────────────────────
 
-        // ── IntegratedHubMenu.cs 绘制部分修正 ──
+        public override void draw(SpriteBatch b)
+        {
+            int mx = Game1.getMouseX();
+            int my = Game1.getMouseY();
 
-public override void draw(SpriteBatch b)
-{
-    int mx = Game1.getMouseX();
-    int my = Game1.getMouseY();
+            b.Draw(Game1.fadeToBlackRect,
+                Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.45f);
 
-    b.Draw(Game1.fadeToBlackRect,
-        Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.45f);
+            IClickableMenu.drawTextureBox(b,
+                xPositionOnScreen - 16, yPositionOnScreen - 16,
+                width + 32, height + 32, Color.White);
 
-    IClickableMenu.drawTextureBox(b,
-        xPositionOnScreen - 16, yPositionOnScreen - 16,
-        width + 32, height + 32, Color.White);
+            IClickableMenu.drawTextureBox(b,
+                xPositionOnScreen - 8, yPositionOnScreen - 8,
+                width + 16, height + 16, Color.White);
 
-    IClickableMenu.drawTextureBox(b,
-        xPositionOnScreen - 8, yPositionOnScreen - 8,
-        width + 16, height + 16, Color.White);
+            Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
 
-    Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
+            // 大标题坐标强制整像素对齐
+            string title = I18n.Hub.Title();
+            var titleSize = CustomFontManager.MeasureStringBold(title, TitleFontSize);
+            Vector2 titlePos = new Vector2(
+                (int)MathF.Round(xPositionOnScreen + (width - titleSize.X) / 2f),
+                yPositionOnScreen + 12
+            );
+            CustomFontManager.DrawStringBold(b, title, titlePos, Game1.textColor, TitleFontSize);
 
-    // 修复：大标题坐标强制整像素对齐
-    string title = I18n.Hub.Title();
-    var titleSize = CustomFontManager.MeasureStringBold(title, TitleFontSize);
-    Vector2 titlePos = new Vector2(
-        (int)MathF.Round(xPositionOnScreen + (width - titleSize.X) / 2f),
-        yPositionOnScreen + 12
-    );
-    CustomFontManager.DrawStringBold(b, title, titlePos, Game1.textColor, TitleFontSize);
+            DrawTab(b, _tabRects[0], I18n.Hub.TabRules(), _currentTab == 0, mx, my);
+            DrawTab(b, _tabRects[1], I18n.Hub.TabProfile(), _currentTab == 1, mx, my);
+            DrawTab(b, _tabRects[2], I18n.Hub.TabWorldSettings(), _currentTab == 2, mx, my);
+            DrawTab(b, _tabRects[3], I18n.Hub.TabAdvanced(), _currentTab == 3, mx, my);
 
-    DrawTab(b, _tabRects[0], I18n.Hub.TabRules(), _currentTab == 0, mx, my);
-    DrawTab(b, _tabRects[1], I18n.Hub.TabProfile(), _currentTab == 1, mx, my);
-    DrawTab(b, _tabRects[2], I18n.Hub.TabAdvanced(), _currentTab == 2, mx, my);
-    DrawTab(b, _tabRects[3], I18n.Hub.TabWorldSettings(), _currentTab == 3, mx, my);
+            b.Draw(Game1.staminaRect,
+                new Rectangle(xPositionOnScreen + LeftPadding,
+                              yPositionOnScreen + TabBarY + TabHeight + 4,
+                              width - LeftPadding - RightPadding, 2),
+                Color.Gray * 0.4f);
 
-    b.Draw(Game1.staminaRect,
-        new Rectangle(xPositionOnScreen + LeftPadding,
-                      yPositionOnScreen + TabBarY + TabHeight + 4,
-                      width - LeftPadding - RightPadding, 2),
-        Color.Gray * 0.4f);
+            if (_currentTab == 0)
+                _tabViews[0]!.Draw(b, mx, my);
+            else if (_currentTab == 1)
+                _tabViews[1]!.Draw(b, mx, my);
+            else if (_currentTab == 2)
+                _tabViews[2]!.Draw(b, mx, my);
+            else
+                _tabViews[3]!.Draw(b, mx, my);
 
-    if (_currentTab == 0)
-        _tabViews[0]!.Draw(b, mx, my);
-    else if (_currentTab == 1)
-        _tabViews[1]!.Draw(b, mx, my);
-    else if (_currentTab == 3)
-        _tabViews[3]!.Draw(b, mx, my);
-    else
-        _tabViews[2]!.Draw(b, mx, my);
+            UiHelper.UpdateButtonScale(ref _closeButtonHoverScale, _closeButton, mx, my);
+            _closeButton.scale = _closeButtonBaseScale * _closeButtonHoverScale;
+            _closeButton.draw(b);
 
-    UiHelper.UpdateButtonScale(ref _closeButtonHoverScale, _closeButton, mx, my);
-    _closeButton.scale = _closeButtonBaseScale * _closeButtonHoverScale;
-    _closeButton.draw(b);
+            // Tab 页顶层弹层
+            _tabViews[_currentTab]?.DrawOverlay(b);
 
-    // Tab 页顶层弹层
-    _tabViews[_currentTab]?.DrawOverlay(b);
+            // 悬停提示
+            var tip = _tabViews[_currentTab]?.HoveredTooltip;
+            if (!string.IsNullOrEmpty(tip))
+                HubUi.DrawHoverTextCustom(b, tip);
 
-    // 悬停提示
-    var tip = _tabViews[_currentTab]?.HoveredTooltip;
-    if (!string.IsNullOrEmpty(tip))
-        HubUi.DrawHoverTextCustom(b, tip);
+            base.draw(b);
+            drawMouse(b);
+        }
 
-    base.draw(b);
-    drawMouse(b);
-}
+        private void DrawTab(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my)
+        {
+            Color bg = isActive ? new Color(210, 180, 140)
+                     : rect.Contains(mx, my) ? new Color(255, 235, 205)
+                     : new Color(139, 90, 43);
 
-private void DrawTab(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my)
-{
-    Color bg = isActive ? new Color(210, 180, 140)
-             : rect.Contains(mx, my) ? new Color(255, 235, 205)
-             : new Color(139, 90, 43);
+            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 2, rect.Y + 2, rect.Width - 4, rect.Height - 4), bg);
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
+                new Rectangle(432, 439, 9, 9),
+                rect.X, rect.Y, rect.Width, rect.Height, bg, 4f, false);
 
-    b.Draw(Game1.staminaRect, new Rectangle(rect.X + 2, rect.Y + 2, rect.Width - 4, rect.Height - 4), bg);
-    IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
-        new Rectangle(432, 439, 9, 9),
-        rect.X, rect.Y, rect.Width, rect.Height, bg, 4f, false);
+            var labelSize = CustomFontManager.MeasureStringBold(label, TabFontSize);
+            Vector2 textPos = new Vector2(
+                (int)MathF.Round(rect.X + (rect.Width - labelSize.X) / 2f),
+                (int)MathF.Round(rect.Y + (rect.Height - labelSize.Y) / 2f)
+            );
 
-    // 修复：Tab 标签坐标强制整像素对齐
-    var labelSize = CustomFontManager.MeasureStringBold(label, TabFontSize);
-    Vector2 textPos = new Vector2(
-        (int)MathF.Round(rect.X + (rect.Width - labelSize.X) / 2f),
-        (int)MathF.Round(rect.Y + (rect.Height - labelSize.Y) / 2f)
-    );
-
-    CustomFontManager.DrawStringBold(b, label, textPos,
-        isActive ? Game1.textColor : Color.White * 0.95f, TabFontSize);
-}
-
-
+            CustomFontManager.DrawStringBold(b, label, textPos,
+                isActive ? Game1.textColor : Color.White * 0.95f, TabFontSize);
+        }
 
         public override void update(GameTime time)
         {
@@ -322,31 +304,6 @@ private void DrawTab(SpriteBatch b, Rectangle rect, string label, bool isActive,
             _wasObscured = obscured;
         }
 
-        // ── Tab2（档案设置）══════════════════════════════════════════════
-
-
-
-
-
-
-        // ── Tab2 NPC 宫格卡片重构核心 ──────────────────────────────────────
-
-
-
-
-
-
-
-
-
-
-
-
-        // ── Tab3（高级设置）══════════════════════════════════════════════
-
-
-
-
         public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
         {
             width = Math.Max(700, Math.Min(1000, Game1.uiViewport.Width - 80));
@@ -356,7 +313,6 @@ private void DrawTab(SpriteBatch b, Rectangle rect, string label, bool isActive,
 
             _closeButton.bounds = new Rectangle(xPositionOnScreen + width - 60, yPositionOnScreen + 16, 44, 44);
 
-            // 视图 Layout 已含 up/down/scrollbar X 重定位（字段已清理）
             RecalculateAllLayout();
             RefreshEntries();
         }
@@ -364,7 +320,6 @@ private void DrawTab(SpriteBatch b, Rectangle rect, string label, bool isActive,
         protected override void cleanupBeforeExit()
         {
             base.cleanupBeforeExit();
-            // 菜单退出不经过 SwitchTab，需显式让当前页失焦（还原基线 L2167–2173 的键盘订阅清理语义）
             _tabViews[_currentTab]?.OnDeactivated();
         }
     }

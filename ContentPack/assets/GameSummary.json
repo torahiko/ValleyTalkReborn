@@ -1,11 +1,5 @@
 ﻿{
-  "Changes": [
-    {
-      "Action": "EditData",
-      "Target": "ValleyTalkReborn/GameSummary",
-      "Priority": "Early",
-      "Entries": {
-        "SectionOrder": {
+       "SectionOrder": {
           "Intro": false,
           "FarmerBackground": false,
           "Locations": true,
@@ -487,6 +481,3 @@
           "Entries": {}
         }
       }
-    }
-  ]
-}

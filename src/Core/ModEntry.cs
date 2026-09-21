@@ -10,6 +10,7 @@ using System.Globalization;
 using StardewValley;
 using ValleytalkReborn.Plugins;
 using ValleytalkReborn.Services;
+using ValleytalkReborn.UI;
 using Microsoft.Xna.Framework;
 
 namespace ValleytalkReborn
@@ -278,6 +279,9 @@ namespace ValleytalkReborn
             DateLocationOverlay.RegisterAssetProviders();
             NpcRelationOverlay.RegisterAssetProviders();
             PoiPreferenceOverlay.RegisterAssetProviders();
+
+            // 初始化兴趣点踩点悬浮挂件
+            PoiInspectHud.Initialize(Helper, Monitor);
 
             WorldSummaryOverlay = new WorldSummaryOverlayService(Helper, Monitor);
             WorldSummaryOverlay.RegisterAssetProviders();

@@ -215,10 +215,10 @@ namespace ValleytalkReborn
                 IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
                     r.X, r.Y, r.Width, r.Height, tagBorder, 2f, false);
 
-                CustomFontManager.DrawString(b, _tags[idx], new Vector2(r.X + 7, r.Y + 4), Game1.textColor, 18.5f);
+                CustomFontManager.DrawString(b, _tags[idx], new Vector2(r.X + 7, r.Y + 4), BioEditorMenu.TextPrimary, 18.5f);
 
                 bool delHover = delR.Contains(mx, my);
-                CustomFontManager.DrawString(b, "×", new Vector2(delR.X + 2, delR.Y - 1), delHover ? new Color(220, 75, 60) : new Color(150, 130, 110), 18.5f);
+                CustomFontManager.DrawString(b, "×", new Vector2(delR.X + 2, delR.Y - 1), delHover ? BioEditorMenu.TextDanger : BioEditorMenu.TextMuted, 18.5f);
             }
 
             // 2. 绘制新增输入状态 / "+ 新增" 按钮
@@ -248,14 +248,14 @@ namespace ValleytalkReborn
                 {
                     Vector2 textSize = CustomFontManager.MeasureString(text, 17f);
                     float textY = r.Y + (r.Height - textSize.Y) / 2f;
-                    CustomFontManager.DrawString(b, text, new Vector2(textX, textY), Game1.textColor, 17f);
+                    CustomFontManager.DrawString(b, text, new Vector2(textX, textY), BioEditorMenu.TextPrimary, 17f);
 
                     if (_inputBox.Selected && (int)(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 500) % 2 == 0)
                     {
                         float cx = textX + textSize.X + 1;
                         int cursorH = 16;
                         float cursorY = r.Y + (r.Height - cursorH) / 2f;
-                        b.Draw(Game1.staminaRect, new Rectangle((int)cx, (int)cursorY, 2, cursorH), Game1.textColor);
+                        b.Draw(Game1.staminaRect, new Rectangle((int)cx, (int)cursorY, 2, cursorH), BioEditorMenu.TextPrimary);
                     }
                 }
                 else
@@ -263,13 +263,13 @@ namespace ValleytalkReborn
                     string placeholder = "输入事物或焦点并回车...";
                     Vector2 phSize = CustomFontManager.MeasureString(placeholder, 15f);
                     float phY = r.Y + (r.Height - phSize.Y) / 2f;
-                    CustomFontManager.DrawString(b, placeholder, new Vector2(textX, phY), Color.Gray * 0.65f, 15f);
+                    CustomFontManager.DrawString(b, placeholder, new Vector2(textX, phY), BioEditorMenu.TextMuted, 15f);
 
                     if (_inputBox.Selected && (int)(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 500) % 2 == 0)
                     {
                         int cursorH = 16;
                         float cursorY = r.Y + (r.Height - cursorH) / 2f;
-                        b.Draw(Game1.staminaRect, new Rectangle((int)textX, (int)cursorY, 2, cursorH), Game1.textColor);
+                        b.Draw(Game1.staminaRect, new Rectangle((int)textX, (int)cursorY, 2, cursorH), BioEditorMenu.TextPrimary);
                     }
                 }
             }
@@ -280,7 +280,7 @@ namespace ValleytalkReborn
                 b.Draw(Game1.staminaRect, new Rectangle(_addBtnRect.X + 3, _addBtnRect.Y + 3, _addBtnRect.Width - 6, _addBtnRect.Height - 6), addBg);
                 IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
                     _addBtnRect.X, _addBtnRect.Y, _addBtnRect.Width, _addBtnRect.Height, new Color(200, 170, 135), 2f, false);
-                CustomFontManager.DrawString(b, "+ 新增", new Vector2(_addBtnRect.X + 10, _addBtnRect.Y + 4), Game1.textColor, 18.5f);
+                CustomFontManager.DrawString(b, "+ 新增", new Vector2(_addBtnRect.X + 10, _addBtnRect.Y + 4), BioEditorMenu.TextPrimary, 18.5f);
             }
         }
     }

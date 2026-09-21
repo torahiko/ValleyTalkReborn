@@ -10,7 +10,7 @@ using System.Text;
 namespace ValleytalkReborn
 {
     /// <summary>
-    /// 对话/输入文本框：支持自适应字阶、CustomFontManager 原生接入、精准折行、滚动、光标定位及右下角字数指示器。
+    /// 对话/输入文本框：支持自适应字阶、CustomFontManager 原生接入、精准折行、平滑拖拽滚动条、光标定位及右下角字数指示器。
     /// 内置羊皮纸风格底槽与聚焦高亮外框。（已进行像素级渲染防虚化校准）
     /// </summary>
     public class DialogueTextInputBox : IKeyboardSubscriber
@@ -114,12 +114,15 @@ namespace ValleytalkReborn
 
         private int _caretPosition = 0;
 
-        // 滚动状态
+        // 滚动与滚动条状态
         private int _scrollOffset = 0;
         private int _visibleLineCount = 0;
-        private readonly ClickableTextureComponent _scrollUpArrow;
-        private readonly ClickableTextureComponent _scrollDownArrow;
         private bool _needsScrolling = false;
+        private bool _needsEnsureCaretVisible = false;
+
+        private bool _isDraggingScrollbar = false;
+        private int _dragGrabOffsetY = 0;
+        private bool _isHoveringThumb = false;
 
         // 按键长按连发
         private const double InitialRepeatDelay = 0.45;
@@ -147,20 +150,6 @@ namespace ValleytalkReborn
         {
             _characterLimit = characterLimit;
             _warningThreshold = warningThreshold > 0 ? warningThreshold : (int)(characterLimit * 0.9);
-
-            _scrollUpArrow = new ClickableTextureComponent(
-                new Rectangle(0, 0, 24, 24),
-                Game1.mouseCursors,
-                new Rectangle(421, 459, 11, 12),
-                2.2f
-            );
-
-            _scrollDownArrow = new ClickableTextureComponent(
-                new Rectangle(0, 0, 24, 24),
-                Game1.mouseCursors,
-                new Rectangle(421, 472, 11, 12),
-                2.2f
-            );
         }
 
         ///////////////////////////////////////////////////////////////////
@@ -187,6 +176,71 @@ namespace ValleytalkReborn
         }
 
         ///////////////////////////////////////////////////////////////////
+        // 滚动条几何计算
+        ///////////////////////////////////////////////////////////////////
+
+        private Rectangle GetScrollTrackBounds()
+        {
+            int bx = (int)Position.X;
+            int by = (int)Position.Y;
+            int bw = (int)Extent.X;
+            int bh = (int)Extent.Y;
+
+            int trackWidth = 8;
+            int trackX = bx + bw - 16;
+            int trackY = by + 10;
+            int trackHeight = Math.Max(20, bh - 20);
+
+            return new Rectangle(trackX, trackY, trackWidth, trackHeight);
+        }
+
+        private int GetThumbHeight(int trackHeight, int totalVisualLines)
+        {
+            if (totalVisualLines <= 0) return trackHeight;
+            float ratio = (float)_visibleLineCount / totalVisualLines;
+            return Math.Clamp((int)(trackHeight * ratio), 22, trackHeight);
+        }
+
+        private Rectangle GetScrollThumbBounds()
+        {
+            var track = GetScrollTrackBounds();
+            int totalVisualLines = GetTotalVisualLines();
+            int maxScroll = Math.Max(0, totalVisualLines - _visibleLineCount);
+            int thumbHeight = GetThumbHeight(track.Height, totalVisualLines);
+
+            if (maxScroll <= 0)
+                return new Rectangle(track.X, track.Y, track.Width, track.Height);
+
+            int availableTrack = track.Height - thumbHeight;
+            int thumbY = track.Y + (int)MathF.Round(availableTrack * ((float)_scrollOffset / maxScroll));
+
+            return new Rectangle(track.X, thumbY, track.Width, thumbHeight);
+        }
+
+        private void UpdateScrollFromThumbPosition(int thumbY)
+        {
+            int totalVisualLines = GetTotalVisualLines();
+            int maxScroll = Math.Max(0, totalVisualLines - _visibleLineCount);
+            if (maxScroll <= 0) return;
+
+            var track = GetScrollTrackBounds();
+            int thumbHeight = GetThumbHeight(track.Height, totalVisualLines);
+            int availableTrack = track.Height - thumbHeight;
+
+            if (availableTrack > 0)
+            {
+                float pct = (float)(thumbY - track.Y) / availableTrack;
+                pct = Math.Clamp(pct, 0f, 1f);
+                int newOffset = (int)MathF.Round(pct * maxScroll);
+                if (newOffset != _scrollOffset)
+                {
+                    _scrollOffset = newOffset;
+                    _needsEnsureCaretVisible = false;
+                }
+            }
+        }
+
+        ///////////////////////////////////////////////////////////////////
         // 辅助方法
         ///////////////////////////////////////////////////////////////////
 
@@ -207,6 +261,7 @@ namespace ValleytalkReborn
 
             _isTextDirty = true;
             _caretPosition = Text.Length;
+            _needsEnsureCaretVisible = true;
         }
 
         public void InvalidateLayout()
@@ -223,26 +278,64 @@ namespace ValleytalkReborn
             if (!_needsScrolling)
                 return false;
 
-            if (_scrollUpArrow.containsPoint(x, y) && _scrollOffset > 0)
+            var track = GetScrollTrackBounds();
+            // 扩展判定区域，方便鼠标精准抓取
+            var hitArea = new Rectangle(track.X - 6, track.Y, track.Width + 12, track.Height);
+
+            if (hitArea.Contains(x, y))
             {
-                _scrollOffset--;
-                Game1.playSound("shwip");
+                var thumb = GetScrollThumbBounds();
+                _needsEnsureCaretVisible = false;
+
+                if (thumb.Contains(x, y))
+                {
+                    // 抓取滑块开始拖拽
+                    _isDraggingScrollbar = true;
+                    _dragGrabOffsetY = y - thumb.Y;
+                }
+                else
+                {
+                    // 点击滑轨空白处：直接定位
+                    int thumbHeight = thumb.Height;
+                    int availableTrack = track.Height - thumbHeight;
+
+                    if (availableTrack > 0)
+                    {
+                        int targetThumbY = y - thumbHeight / 2;
+                        int totalVisualLines = GetTotalVisualLines();
+                        int maxScroll = Math.Max(0, totalVisualLines - _visibleLineCount);
+
+                        float pct = (float)(targetThumbY - track.Y) / availableTrack;
+                        pct = Math.Clamp(pct, 0f, 1f);
+                        _scrollOffset = (int)MathF.Round(pct * maxScroll);
+                        _dragGrabOffsetY = thumbHeight / 2;
+                    }
+                    _isDraggingScrollbar = true;
+                    Game1.playSound("shwip");
+                }
                 return true;
             }
 
-            if (_scrollDownArrow.containsPoint(x, y))
+            return false;
+        }
+
+        public bool LeftClickHeld(int x, int y)
+        {
+            if (_isDraggingScrollbar)
             {
-                int totalVisualLines = GetTotalVisualLines();
-                int maxVisibleStart = Math.Max(0, totalVisualLines - _visibleLineCount);
-
-                if (_scrollOffset < maxVisibleStart)
-                {
-                    _scrollOffset++;
-                    Game1.playSound("shwip");
-                    return true;
-                }
+                UpdateScrollFromThumbPosition(y - _dragGrabOffsetY);
+                return true;
             }
+            return false;
+        }
 
+        public bool ReleaseLeftClick(int x, int y)
+        {
+            if (_isDraggingScrollbar)
+            {
+                _isDraggingScrollbar = false;
+                return true;
+            }
             return false;
         }
 
@@ -251,6 +344,7 @@ namespace ValleytalkReborn
             if (!_needsScrolling)
                 return;
 
+            _needsEnsureCaretVisible = false;
             int totalVisualLines = GetTotalVisualLines();
             int maxVisibleStart = Math.Max(0, totalVisualLines - _visibleLineCount);
 
@@ -312,6 +406,7 @@ namespace ValleytalkReborn
                 Text = Text.Insert(_caretPosition, str);
                 _caretPosition += str.Length;
                 _isTextDirty = true;
+                _needsEnsureCaretVisible = true;
             }
             else
             {
@@ -355,6 +450,7 @@ namespace ValleytalkReborn
 
                     case Keys.A:
                         _caretPosition = Text.Length;
+                        _needsEnsureCaretVisible = true;
                         return;
 
                     case Keys.Enter:
@@ -362,6 +458,8 @@ namespace ValleytalkReborn
                         return;
                 }
             }
+
+            _needsEnsureCaretVisible = true;
 
             switch (key)
             {
@@ -406,6 +504,26 @@ namespace ValleytalkReborn
 
         public void Update(GameTime gameTime)
         {
+            // 1. 拖拽追踪与鼠标状态检测
+            int mouseX = Game1.getMouseX();
+            int mouseY = Game1.getMouseY();
+            var mouseState = Game1.input.GetMouseState();
+
+            if (_isDraggingScrollbar)
+            {
+                if (mouseState.LeftButton == ButtonState.Released)
+                {
+                    _isDraggingScrollbar = false;
+                }
+                else
+                {
+                    UpdateScrollFromThumbPosition(mouseY - _dragGrabOffsetY);
+                }
+            }
+
+            _isHoveringThumb = _needsScrolling && GetScrollThumbBounds().Contains(mouseX, mouseY);
+
+            // 2. 键盘连发检测
             if (_currentSpecialKey == Keys.None)
                 return;
 
@@ -445,17 +563,14 @@ namespace ValleytalkReborn
             int bh = (int)Extent.Y;
 
             // 1. 底板槽与聚焦光晕外框
-            // 1. 底板槽与聚焦光晕外框
             if (DrawFrame)
             {
-                // 固定使用像素对齐的整数缩放 2f（Corner 为 3x3，在 2f 缩放下边框物理厚度恰好为 6px）
                 const float frameScale = 2f;
-                const int fillInset = 4; // 内衬内缩 4px，外侧不穿透圆角切口，内侧严密垫入木框 2px
+                const int fillInset = 4;
 
-                // 底板内衬填充
                 Color innerBgColor = Selected
-                    ? new Color(255, 252, 245)  // 激活时明亮羊皮纸色
-                    : new Color(245, 240, 230); // 未激活时微灰羊皮纸色
+                    ? new Color(255, 252, 245)
+                    : new Color(245, 240, 230);
 
                 spriteBatch.Draw(
                     Game1.staminaRect,
@@ -464,36 +579,32 @@ namespace ValleytalkReborn
 
                 if (Selected)
                 {
-                    // 激活时：纯正深红木框 rgb(85, 40, 28)
                     IClickableMenu.drawTextureBox(
-                        spriteBatch, 
-                        Game1.mouseCursors, 
+                        spriteBatch,
+                        Game1.mouseCursors,
                         new Rectangle(432, 439, 9, 9),
-                        bx, by, bw, bh, 
-                        Color.White, 
-                        frameScale, 
+                        bx, by, bw, bh,
+                        Color.White,
+                        frameScale,
                         false);
                 }
                 else
                 {
-                    // 未激活时：淡雅柔和浅木（清爽不抢眼，与未激活底色浑然一体）
                     IClickableMenu.drawTextureBox(
-                        spriteBatch, 
-                        Game1.mouseCursors, 
+                        spriteBatch,
+                        Game1.mouseCursors,
                         new Rectangle(432, 439, 9, 9),
-                        bx, by, bw, bh, 
-                        new Color(228, 212, 190), 
-                        frameScale, 
+                        bx, by, bw, bh,
+                        new Color(228, 212, 190),
+                        frameScale,
                         false);
                 }
             }
 
             int lineHeight = (int)MathF.Ceiling(GetLineHeight());
-
             int padX = 14;
             int padY = 12;
 
-            // 底部预留安全边距，防止文本内容压在右下角大号指示器上
             int bottomReserved = ShowCharacterCount ? 24 : padY;
 
             var textArea = new Rectangle(
@@ -514,10 +625,10 @@ namespace ValleytalkReborn
                 DrawWrappedTextWithScroll(spriteBatch, Text, textArea, TextColor);
             }
 
-            // 绘制滚动箭头
+            // 绘制新版滚动条
             if (_needsScrolling)
             {
-                DrawScrollArrows(spriteBatch);
+                DrawScrollBar(spriteBatch);
             }
 
             // 绘制光标
@@ -563,23 +674,46 @@ namespace ValleytalkReborn
             }
         }
 
-        private void DrawScrollArrows(SpriteBatch spriteBatch)
+        /// <summary>
+        /// 绘制像素风木质下拉滑轨与滑块
+        /// </summary>
+        private void DrawScrollBar(SpriteBatch spriteBatch)
         {
-            int arrowX = (int)Position.X + (int)Extent.X - 28;
-            int upArrowY = (int)Position.Y + 8;
-            int downArrowY = (int)Position.Y + (int)Extent.Y - 30;
+            var track = GetScrollTrackBounds();
+            var thumb = GetScrollThumbBounds();
 
-            _scrollUpArrow.bounds = new Rectangle(arrowX, upArrowY, 20, 20);
-            _scrollDownArrow.bounds = new Rectangle(arrowX, downArrowY, 20, 20);
+            // 1. 绘制滑轨底槽（内嵌微暗羊皮质感）
+            Color trackBg = new Color(225, 218, 205);
+            Color trackBorder = new Color(195, 185, 170);
+            DrawBorderedRect(spriteBatch, track, trackBg, trackBorder);
 
-            int totalVisualLines = GetTotalVisualLines();
-            int maxVisibleStart = Math.Max(0, totalVisualLines - _visibleLineCount);
+            // 2. 绘制滑块（星露谷原版木质暖棕风格）
+            Color thumbBg = (_isDraggingScrollbar || _isHoveringThumb)
+                ? new Color(190, 130, 85)   // 抓取/悬停高亮
+                : new Color(160, 100, 65);  // 平常木色
 
-            if (_scrollOffset > 0)
-                _scrollUpArrow.draw(spriteBatch);
+            Color thumbBorder = new Color(95, 55, 30);
+            DrawBorderedRect(spriteBatch, thumb, thumbBg, thumbBorder);
 
-            if (_scrollOffset < maxVisibleStart)
-                _scrollDownArrow.draw(spriteBatch);
+            // 3. 滑块内高光（立体微凸起质感）
+            if (thumb.Width > 2 && thumb.Height > 2)
+            {
+                Color highlight = new Color(225, 175, 135);
+                spriteBatch.Draw(Game1.staminaRect, new Rectangle(thumb.X + 1, thumb.Y + 1, thumb.Width - 2, 1), highlight);
+                spriteBatch.Draw(Game1.staminaRect, new Rectangle(thumb.X + 1, thumb.Y + 1, 1, thumb.Height - 2), highlight);
+            }
+        }
+
+        private void DrawBorderedRect(SpriteBatch spriteBatch, Rectangle rect, Color fillColor, Color borderColor)
+        {
+            // 填充背景
+            spriteBatch.Draw(Game1.staminaRect, rect, fillColor);
+
+            // 1px 像素边框
+            spriteBatch.Draw(Game1.staminaRect, new Rectangle(rect.X, rect.Y, rect.Width, 1), borderColor);
+            spriteBatch.Draw(Game1.staminaRect, new Rectangle(rect.X, rect.Bottom - 1, rect.Width, 1), borderColor);
+            spriteBatch.Draw(Game1.staminaRect, new Rectangle(rect.X, rect.Y, 1, rect.Height), borderColor);
+            spriteBatch.Draw(Game1.staminaRect, new Rectangle(rect.Right - 1, rect.Y, 1, rect.Height), borderColor);
         }
 
         private void DrawCaret(SpriteBatch spriteBatch, Rectangle textArea)
@@ -614,9 +748,6 @@ namespace ValleytalkReborn
             }
         }
 
-        /// <summary>
-        /// 绘制右下角字符数指示器（强制整像素对齐）
-        /// </summary>
         private void DrawCharacterCounter(SpriteBatch spriteBatch, int bx, int by, int bw, int bh)
         {
             string counterText = $"{Text.Length}/{_characterLimit}";
@@ -639,7 +770,7 @@ namespace ValleytalkReborn
                 counterColor = new Color(130, 105, 80, 200);
             }
 
-            float rightOffset = _needsScrolling ? 36f : (CounterPadding + 4);
+            float rightOffset = _needsScrolling ? 28f : (CounterPadding + 4);
             int posX = (int)MathF.Round(bx + bw - counterSize.X - rightOffset);
             int posY = (int)MathF.Round(by + bh - counterSize.Y - CounterPadding + 2);
             Vector2 counterPos = new Vector2(posX, posY);
@@ -660,7 +791,7 @@ namespace ValleytalkReborn
 
         private int GetWrapWidth()
         {
-            int reserved = _needsScrolling ? 48 : 28;
+            int reserved = _needsScrolling ? 34 : 28;
             return Math.Max(10, (int)Extent.X - reserved);
         }
 
@@ -716,7 +847,7 @@ namespace ValleytalkReborn
                     {
                         int mid = (low + high) / 2;
                         string sub = remaining.Substring(0, mid);
-                        if (MeasureString(sub).X <= maxWidth)
+                        if (MeasureString(sub).X <= maxWidth) 
                         {
                             bestFit = mid;
                             low = mid + 1;
@@ -756,9 +887,19 @@ namespace ValleytalkReborn
 
         private void EnsureCaretVisible(int totalVisualLines)
         {
+            int maxScroll = Math.Max(0, totalVisualLines - _visibleLineCount);
+
             if (totalVisualLines <= _visibleLineCount)
             {
                 _scrollOffset = 0;
+                _needsEnsureCaretVisible = false;
+                return;
+            }
+
+            // 如果当前不是因为键入/光标移动而触发的重绘，仅做上下限保护，防止打架
+            if (!_needsEnsureCaretVisible)
+            {
+                _scrollOffset = Math.Clamp(_scrollOffset, 0, maxScroll);
                 return;
             }
 
@@ -773,8 +914,8 @@ namespace ValleytalkReborn
                 _scrollOffset = caretLine - _visibleLineCount + 1;
             }
 
-            int maxScroll = Math.Max(0, totalVisualLines - _visibleLineCount);
-            _scrollOffset = Math.Max(0, Math.Min(_scrollOffset, maxScroll));
+            _scrollOffset = Math.Clamp(_scrollOffset, 0, maxScroll);
+            _needsEnsureCaretVisible = false;
         }
 
         ///////////////////////////////////////////////////////////////////
@@ -793,6 +934,7 @@ namespace ValleytalkReborn
 
         private void ExecuteSpecialKeyAction(Keys key)
         {
+            _needsEnsureCaretVisible = true;
             switch (key)
             {
                 case Keys.Left:
@@ -829,6 +971,7 @@ namespace ValleytalkReborn
             {
                 Text = Text.Remove(_caretPosition, 1);
                 _isTextDirty = true;
+                _needsEnsureCaretVisible = true;
             }
         }
 
@@ -839,6 +982,7 @@ namespace ValleytalkReborn
                 Text = Text.Remove(_caretPosition - 1, 1);
                 _caretPosition--;
                 _isTextDirty = true;
+                _needsEnsureCaretVisible = true;
             }
         }
 
@@ -922,6 +1066,7 @@ namespace ValleytalkReborn
                 Text = Text.Insert(_caretPosition, clipboardText);
                 _caretPosition += clipboardText.Length;
                 _isTextDirty = true;
+                _needsEnsureCaretVisible = true;
             }
             catch (Exception ex)
             {
@@ -940,6 +1085,7 @@ namespace ValleytalkReborn
                 Text = "";
                 _caretPosition = 0;
                 _isTextDirty = true;
+                _needsEnsureCaretVisible = true;
             }
             catch (Exception ex)
             {

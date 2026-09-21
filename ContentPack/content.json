@@ -1,5 +1,5 @@
 ﻿{
-  "Format": "2.3.0",
+  "Format": "2.4.0",
   "Changes": [
     {
       "LogName": "Load Global POI Assets",
@@ -30,139 +30,219 @@
       "FromFile": "assets/Prompts.json"
     },
     {
-      "Action": "Include",
-      "FromFile": "assets/GameSummary.json"
+      "LogName": "Load Chinese Game Summary",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/GameSummary",
+      "FromFile": "assets/GameSummary.zh.json",
+      "When": {
+        "Language": "zh"
+      }
     },
     {
-      "Action": "Include",
+      "LogName": "Load Default Game Summary",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/GameSummary",
+      "FromFile": "assets/GameSummary.json",
+      "When": {
+        "Language": "!zh"
+      }
+    },
+    {
+      "LogName": "Load Bio Abigail",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Abigail",
       "FromFile": "assets/bio/Abigail.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Alex",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Alex",
       "FromFile": "assets/bio/Alex.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Caroline",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Caroline",
       "FromFile": "assets/bio/Caroline.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Clint",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Clint",
       "FromFile": "assets/bio/Clint.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Demetrius",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Demetrius",
       "FromFile": "assets/bio/Demetrius.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Dwarf",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Dwarf",
       "FromFile": "assets/bio/Dwarf.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Elliott",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Elliott",
       "FromFile": "assets/bio/Elliott.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Emily",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Emily",
       "FromFile": "assets/bio/Emily.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Evelyn",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Evelyn",
       "FromFile": "assets/bio/Evelyn.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio George",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/George",
       "FromFile": "assets/bio/George.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Gus",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Gus",
       "FromFile": "assets/bio/Gus.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Haley",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Haley",
       "FromFile": "assets/bio/Haley.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Harvey",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Harvey",
       "FromFile": "assets/bio/Harvey.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Jas",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Jas",
       "FromFile": "assets/bio/Jas.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Jodi",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Jodi",
       "FromFile": "assets/bio/Jodi.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Kent",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Kent",
       "FromFile": "assets/bio/Kent.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Krobus",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Krobus",
       "FromFile": "assets/bio/Krobus.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Leah",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Leah",
       "FromFile": "assets/bio/Leah.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Lewis",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Lewis",
       "FromFile": "assets/bio/Lewis.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Linus",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Linus",
       "FromFile": "assets/bio/Linus.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Marnie",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Marnie",
       "FromFile": "assets/bio/Marnie.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Maru",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Maru",
       "FromFile": "assets/bio/Maru.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Pam",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Pam",
       "FromFile": "assets/bio/Pam.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Penny",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Penny",
       "FromFile": "assets/bio/Penny.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Pierre",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Pierre",
       "FromFile": "assets/bio/Pierre.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Robin",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Robin",
       "FromFile": "assets/bio/Robin.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Sam",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Sam",
       "FromFile": "assets/bio/Sam.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Sandy",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Sandy",
       "FromFile": "assets/bio/Sandy.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Sebastian",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Sebastian",
       "FromFile": "assets/bio/Sebastian.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Shane",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Shane",
       "FromFile": "assets/bio/Shane.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Vincent",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Vincent",
       "FromFile": "assets/bio/Vincent.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Willy",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Willy",
       "FromFile": "assets/bio/Willy.json"
     },
     {
-      "Action": "Include",
+      "LogName": "Load Bio Wizard",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Wizard",
       "FromFile": "assets/bio/Wizard.json"
     }
   ]

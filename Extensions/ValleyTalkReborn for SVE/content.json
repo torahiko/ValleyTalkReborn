@@ -1,117 +1,209 @@
 {
-    "Format": "2.3.0",
-    "Changes": [
-        {
-            "Action": "Include",
-            "FromFile": "assets/Locations.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/GameSummary.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/bio/Sophia.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/bio/Hakan.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/bio/Andy.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/bio/Claire.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/bio/Gunther.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/bio/Hank.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/bio/Henchman.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/bio/Isaac.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/bio/Jadu.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/bio/Jolyne.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/bio/Marlon.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/bio/Martin.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/bio/Morgan.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/bio/Olivia.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/bio/Peaches.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/bio/Scarlett.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/bio/Treyvon.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/bio/Victor.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/bio/Susan.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/bio/Apples.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/bio/Morris.json"
-        },
-         {
-            "Action": "Include",
-            "FromFile": "assets/bio/Alesia.json"
-        },
-         {
-            "Action": "Include",
-            "FromFile": "assets/bio/Sorren.json"
-        },
-         {
-            "Action": "Include",
-            "FromFile": "assets/bio/SuanNi.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/bio/Lance.json"
-        },
-        {
-            "Action": "Include",
-            "FromFile": "assets/bio/Camilla.json"
+  "Format": "2.4.0",
+  "Changes": [
+    {
+      "Action": "Include",
+      "FromFile": "assets/Locations.json"
+    },
+    {
+      "Action": "Include",
+      "FromFile": "assets/GameSummary.json"
+    },
+    {
+      "LogName": "Load Bio Sophia",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Sophia",
+      "FromFile": "assets/bio/Sophia.json"
+    },
+    {
+      "LogName": "Load Bio Hakan",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Hakan",
+      "FromFile": "assets/bio/Hakan.json"
+    },
+    {
+      "LogName": "Load Bio Andy",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Andy",
+      "FromFile": "assets/bio/Andy.json"
+    },
+    {
+      "LogName": "Load Bio Claire",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Claire",
+      "FromFile": "assets/bio/Claire.json"
+    },
+    {
+      "LogName": "Load Bio Gunther",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Gunther",
+      "FromFile": "assets/bio/Gunther.json"
+    },
+    {
+      "LogName": "Load Bio Isaac",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Isaac",
+      "FromFile": "assets/bio/Isaac.json"
+    },
+    {
+      "LogName": "Load Bio Marlon",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Marlon",
+      "FromFile": "assets/bio/Marlon.json"
+    },
+    {
+      "LogName": "Load Bio Martin",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Martin",
+      "FromFile": "assets/bio/Martin.json"
+    },
+    {
+      "LogName": "Load Bio Morgan",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Morgan",
+      "FromFile": "assets/bio/Morgan.json"
+    },
+    {
+      "LogName": "Load Bio Olivia",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Olivia",
+      "FromFile": "assets/bio/Olivia.json"
+    },
+    {
+      "LogName": "Load Bio Peaches",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Peaches",
+      "FromFile": "assets/bio/Peaches.json"
+    },
+    {
+      "LogName": "Load Bio Scarlett",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Scarlett",
+      "FromFile": "assets/bio/Scarlett.json"
+    },
+    {
+      "LogName": "Load Bio Victor",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Victor",
+      "FromFile": "assets/bio/Victor.json"
+    },
+    {
+      "LogName": "Load Bio Susan",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Susan",
+      "FromFile": "assets/bio/Susan.json"
+    },
+    {
+      "LogName": "Load Bio Apples",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Apples",
+      "FromFile": "assets/bio/Apples.json"
+    },
+    {
+      "LogName": "Load Bio Morris",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/MorrisTod",
+      "FromFile": "assets/bio/MorrisTod.json"
+    },
+    {
+      "LogName": "Load Bio Alesia",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Alesia",
+      "FromFile": "assets/bio/Alesia.json"
+    },
+    {
+      "LogName": "Load Bio Sorren",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Sorren",
+      "FromFile": "assets/bio/Sorren.json"
+    },
+    {
+      "LogName": "Load Bio SuanNi",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/SuanNi",
+      "FromFile": "assets/bio/SuanNi.json"
+    },
+    {
+      "LogName": "Load Bio Lance",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Lance",
+      "FromFile": "assets/bio/Lance.json"
+    },
+    {
+      "LogName": "Load Bio Camilla",
+      "Action": "Load",
+      "Target": "ValleytalkReborn/Bios/Camilla",
+      "FromFile": "assets/bio/Camilla.json"
+    },
+    {
+      "LogName": "Patch Emily Relationship for Sophia",
+      "Action": "EditData",
+      "Target": "ValleytalkReborn/Bios/Emily",
+      "TargetField": [ "Relationships" ],
+      "Priority": "Late",
+      "Entries": {
+        "Sophia": {
+          "id": "Sophia",
+          "Heading": "Sophia",
+          "Description": "Fellow seamstress and quiet soul. You admire her incredible drafting precision and natural dye work; you gladly share wool scraps and mordant jars, offering gentle warmth whenever she seems overwhelmed."
         }
-    ]
+      }
+    },
+    {
+      "LogName": "Patch Haley Relationship for Sophia",
+      "Action": "EditData",
+      "Target": "ValleytalkReborn/Bios/Haley",
+      "TargetField": [ "Relationships" ],
+      "Priority": "Late",
+      "Entries": {
+        "Sophia": {
+          "id": "Sophia",
+          "Heading": "Sophia",
+          "Description": "Talented but skittish tailor. You find her nervous fidgeting annoying, but you genuinely respect that she is the only person in the valley who can fit a custom dress silhouette to perfection."
+        }
+      }
+    },
+    {
+      "LogName": "Patch Lewis Relationship for Morris",
+      "Action": "EditData",
+      "Target": "ValleytalkReborn/Bios/Lewis",
+      "TargetField": [ "Relationships" ],
+      "Priority": "Late",
+      "Entries": {
+        "Morris": {
+          "id": "Morris",
+          "Heading": "Morris",
+          "Description": "Commercial applicant. You view his polished suits and corporate capital with a blend of municipal weariness and temptation, wary of his aggressive contracts yet desperate for infrastructure repairs you can't afford."
+        }
+      }
+    },
+    {
+      "LogName": "Patch Caroline Relationship for Olivia",
+      "Action": "EditData",
+      "Target": "ValleytalkReborn/Bios/Caroline",
+      "TargetField": [ "Relationships" ],
+      "Priority": "Late",
+      "Entries": {
+        "Olivia": {
+          "id": "Olivia",
+          "Heading": "Olivia",
+          "Description": "An elegant, polished confidante. You enjoy high-end tea and garden gossip with her, admiring her sophisticated cosmopolitan flair while feeling a slight, unspoken divide between her manor wealth and your shopkeeper life."
+        }
+      }
+    },
+    {
+      "LogName": "Patch Jodi Relationship for Olivia",
+      "Action": "EditData",
+      "Target": "ValleytalkReborn/Bios/Jodi",
+      "TargetField": [ "Relationships" ],
+      "Priority": "Late",
+      "Entries": {
+        "Olivia": {
+          "id": "Olivia",
+          "Heading": "Olivia",
+          "Description": "A glamorous neighbor from another world. You cherish Tuesday aerobics and tea calls with her as a brief escape from relentless household chores, privately marveling at her composed, worry-free luxury."
+        }
+      }
+    }
+  ]
 }
