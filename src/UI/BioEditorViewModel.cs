@@ -70,7 +70,19 @@ internal sealed class BioEditorViewModel
 
     public void SetUnique(string text)
     {
-        if (text != (_bio.Unique ?? string.Empty))
+        // ★ 统一限制最大 20 字符
+        if (!string.IsNullOrEmpty(text) && text.Length > 20)
+        {
+            text = text.Substring(0, 20);
+        }
+
+        string current = _bio.Unique ?? string.Empty;
+        if (current.Length > 20)
+        {
+            current = current.Substring(0, 20);
+        }
+
+        if (text != current)
         {
             _bio.Unique = text;
             MarkDirty();
@@ -248,8 +260,17 @@ internal sealed class BioEditorViewModel
     /// <summary>获取指定 Trait 条目的 Description；条目不存在或为 null 时返回 null（Description 本身可为 null，原样返回）。</summary>
     public string GetTraitDescriptionOrNull(string key)
     {
+        if (_bio?.Traits == null) return null;
+
+        // 优先直接读
         if (_bio.Traits.TryGetValue(key, out var e) && e != null)
             return e.Description;
+
+        // 容错：忽略大小写匹配
+        var match = _bio.Traits.FirstOrDefault(kvp => string.Equals(kvp.Key, key, StringComparison.OrdinalIgnoreCase));
+        if (match.Value != null)
+            return match.Value.Description;
+
         return null;
     }
 

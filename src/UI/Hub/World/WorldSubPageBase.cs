@@ -20,6 +20,10 @@ internal abstract class WorldSubPageBase
     public abstract void Draw(SpriteBatch b, Rectangle area, int mx, int my);
     public abstract bool ReceiveLeftClick(int x, int y);
 
+    // ── 鼠标按住拖拽与释放生命周期钩子（供滑动条、滑块拖动等交互使用） ──
+    public virtual void LeftClickHeld(int x, int y) { }
+    public virtual void ReleaseLeftClick(int x, int y) { }
+
     public virtual bool ReceiveScrollWheel(int direction) => false;
     public virtual bool ReceiveKeyPress(Keys key) => false;
     public virtual void OnHidden() { }

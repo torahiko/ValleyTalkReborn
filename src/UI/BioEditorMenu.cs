@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +12,7 @@ using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Menus;
 using ValleytalkReborn.Services;
+using ValleytalkReborn.UI;
 
 namespace ValleytalkReborn
 {
@@ -43,7 +46,7 @@ namespace ValleytalkReborn
             b.Draw(Game1.mouseCursors, new Vector2(bounds.X, bounds.Y), src, Color.White, 0f, Vector2.Zero, 3f, SpriteEffects.None, 1f);
 
             if (!string.IsNullOrEmpty(label))
-                CustomFontManager.DrawString(b, label, new Vector2(bounds.X + 34, bounds.Y + 4), Game1.textColor, CustomFontManager.SizeRegular);
+                CustomFontManager.DrawString(b, label, new Vector2(bounds.X + 34, bounds.Y + 4), BioEditorMenu.TextPrimary, CustomFontManager.SizeRegular);
         }
     }
 
@@ -76,9 +79,17 @@ namespace ValleytalkReborn
         private const int RowBtnH = 26;    // ★ 栏目标题行按钮统一高度
         private const int LabelRowGap = 6; // ★ 标签行与输入框的固定间距
 
-        // ★ 按钮文字炭黑（非纯黑，稍带暖调，避免冷灰刺眼）
-        private static readonly Color CharcoalBlack = new Color(35, 32, 28);
-        private static readonly Color DisabledCharcoal = new Color(120, 115, 105);
+        // ── 统一语义化字体配色体系（彻底告别生冷死黑与发脏冷灰） ──
+        public static readonly Color TextPrimary   = new Color(45, 26, 14);   // 主文字/标题/常规字（提纯碳焦褐，边缘更锐利）
+        public static readonly Color TextSecondary = new Color(112, 78, 52);  // 栏目标题/分类标签
+        public static readonly Color TextMuted     = new Color(158, 138, 118);// 说明提示/占位符/禁用项
+        public static readonly Color TextAccent    = new Color(175, 75, 20);  // 选中高亮/强调星标
+        public static readonly Color TextSuccess   = new Color(40, 118, 48);  // 生效/已定制/成功
+        public static readonly Color TextWarning   = new Color(195, 92, 18);  // 未保存/警告
+        public static readonly Color TextDanger    = new Color(188, 46, 38);  // 危险/删除/清空
+        public static readonly Color TextOnDark    = new Color(255, 248, 238);// 深木色底板反白文字
+        public static readonly Color TextOnLightBtn = new Color(52, 28, 16);  // 按钮专属深色文字（浅木底/金黄底）
+        public static readonly Color TextOnDarkBtn  = new Color(255, 250, 242);// 按钮专属反白文字（深木底/暗红底）
 
         private static readonly string[] TabTitles = new[]
         {
@@ -94,13 +105,15 @@ namespace ValleytalkReborn
         private readonly IClickableMenu _returnMenu;
         private readonly BioEditorViewModel _vm;
         private int _activeTab;
-        private string _hoverText;
+        private string? _hoverText;
 
-        private Texture2D _npcPortrait;
+        private Texture2D? _npcPortrait;
         private Rectangle _portraitSmileRect;
 
         // 通用组件
         private ClickableTextureComponent _closeButton;
+        private float _closeButtonHoverScale;              // 悬停缩放系数 (当前)
+        private const float CloseButtonBaseScale = 3f;      // 基准缩放倍数
         private readonly Rectangle[] _tabRects = new Rectangle[5];
         private Rectangle _cancelRect;
         private Rectangle _saveRect;
@@ -146,6 +159,7 @@ namespace ValleytalkReborn
 
         // ── Tab 4 控件（社交关系） ────────────────────────────────────────
         private int _relListScrollOffset = 0;
+        private bool _isDraggingTab4Scrollbar = false; // ★ 添加拖拽状态标记
         private TextBox _relSearchBox;
         private TextBox _relHeadingBox;
         private DialogueTextInputBox _relDescBox;
@@ -194,6 +208,7 @@ namespace ValleytalkReborn
 
             LoadNpcPortrait();
 
+            // 1. 这些多行大文本框才使用 CreateTextInputBox：
             _biographyBox = CreateTextInputBox(4000);
             _behaviorBox = CreateTextInputBox(4000);
             _dialogueExamplesBox = CreateTextInputBox(4000);
@@ -204,6 +219,7 @@ namespace ValleytalkReborn
             _habitsBox = CreateTextInputBox(2000);
             _lensesBox = CreateTextInputBox(2000);
 
+            // 2. 下面这三个是单行 TextBox，必须使用 new TextBox(...) 初始化：
             Texture2D boxTex = LoadTextBoxTexture();
             _uniqueBox = new TextBox(boxTex, null, Game1.smallFont, Game1.textColor);
             _relSearchBox = new TextBox(boxTex, null, Game1.smallFont, Game1.textColor);
@@ -232,10 +248,12 @@ namespace ValleytalkReborn
 
             _closeButton = new ClickableTextureComponent(
                 new Rectangle(xPositionOnScreen + width - 52, yPositionOnScreen + 16, 36, 36),
-                Game1.mouseCursors, new Rectangle(337, 494, 12, 12), 3f);
+                Game1.mouseCursors, new Rectangle(337, 494, 12, 12), CloseButtonBaseScale);
 
             _biographyBox.SetText(_vm.GetBiography());
-            _uniqueBox.Text = _vm.GetUnique();
+            string rawUnique = _vm.GetUnique() ?? string.Empty;
+            _uniqueBox.Text = rawUnique.Length > 20 ? rawUnique.Substring(0, 20) : rawUnique;
+
             _homeBedCheckbox.isChecked = _vm.GetHomeLocationBed();
 
             _enableBarkCheckbox.isChecked = _vm.Bio.EnableAmbientBarks;
@@ -527,15 +545,19 @@ namespace ValleytalkReborn
             _relVisibleItemRects.Clear();
             int listTop = _relLeftColRect.Y + 68;
             int listAvailH = _relLeftColRect.Height - 68 - 46;
-            int rowH = 36;
+            const int rowH = 40; // 与 RulesTabView 一致采用 40px 标准项高
             int maxVisible = Math.Max(1, listAvailH / rowH);
 
             _relListScrollOffset = Math.Clamp(_relListScrollOffset, 0, Math.Max(0, _vm.FilteredNpcs.Count - maxVisible));
 
+            bool hasScroll = _vm.FilteredNpcs.Count > maxVisible;
+            int itemRightPad = hasScroll ? 15 : 6;
+            int itemW = _relLeftColRect.Width - 12 - (hasScroll ? 9 : 0);
+
             for (int i = 0; i < maxVisible && _relListScrollOffset + i < _vm.FilteredNpcs.Count; i++)
             {
                 int idx = _relListScrollOffset + i;
-                var r = new Rectangle(_relLeftColRect.X, listTop + i * rowH, _relLeftColRect.Width, rowH - 4);
+                var r = new Rectangle(_relLeftColRect.X + 6, listTop + i * rowH, itemW, rowH - 4);
                 _relVisibleItemRects.Add((r, idx));
             }
         }
@@ -550,6 +572,13 @@ namespace ValleytalkReborn
             {
                 _biographyBox.Update(time);
                 _vm.SetBiography(_biographyBox.Text);
+
+                // ★ 用户打字或粘贴超过 20 字符时，实时回退截断，既安全又无需依赖底层 textLimit
+                if (_uniqueBox.Text != null && _uniqueBox.Text.Length > 20)
+                {
+                    _uniqueBox.Text = _uniqueBox.Text.Substring(0, 20);
+                }
+
                 _vm.SetUnique(_uniqueBox.Text);
                 _vm.SetHomeLocationBed(_homeBedCheckbox.isChecked);
             }
@@ -581,6 +610,45 @@ namespace ValleytalkReborn
         }
 
         // ── 交互输入分发 ──────────────────────────────────────────────────
+        public override void leftClickHeld(int x, int y)
+        {
+            base.leftClickHeld(x, y);
+
+            if (_activeTab == 3 && _isDraggingTab4Scrollbar)
+            {
+                int listAvailHeight = _relLeftColRect.Height - 68 - 46;
+                int visibleItemCount = Math.Max(1, listAvailHeight / 40);
+                int trackX = _relLeftColRect.Right - 9;
+                int trackY = _relLeftColRect.Y + 68;
+                int trackH = visibleItemCount * 40 - 4;
+                var trackRect = new Rectangle(trackX, trackY, 5, trackH);
+
+                int maxScroll = Math.Max(0, _vm.FilteredNpcs.Count - visibleItemCount);
+                float visibleRatio = Math.Clamp((float)visibleItemCount / _vm.FilteredNpcs.Count, 0.15f, 1f);
+                int thumbH = Math.Max(24, (int)(trackH * visibleRatio));
+
+                UpdateTab4ScrollFromMouse(y, trackRect, thumbH, maxScroll);
+            }
+        }
+
+        public override void releaseLeftClick(int x, int y)
+        {
+            base.releaseLeftClick(x, y);
+            _isDraggingTab4Scrollbar = false;
+        }
+
+        private void UpdateTab4ScrollFromMouse(int mouseY, Rectangle trackRect, int thumbH, int maxScroll)
+        {
+            if (maxScroll <= 0 || trackRect.Height <= thumbH) return;
+            float progress = Math.Clamp((float)(mouseY - trackRect.Y - thumbH / 2) / (trackRect.Height - thumbH), 0f, 1f);
+            int newOffset = (int)Math.Round(progress * maxScroll);
+            if (newOffset != _relListScrollOffset)
+            {
+                _relListScrollOffset = newOffset;
+                RecalculateTab4List();
+            }
+        }
+
         public override void receiveLeftClick(int x, int y, bool playSound = true)
         {
             if (_closeButton.containsPoint(x, y))
@@ -741,6 +809,27 @@ namespace ValleytalkReborn
 
         private void HandleTab4Click(int x, int y)
         {
+            // 1. 滚动条点击/开始拖拽检测
+            int listAvailHeight = _relLeftColRect.Height - 68 - 46;
+            int visibleItemCount = Math.Max(1, listAvailHeight / 40);
+            if (_vm.FilteredNpcs.Count > visibleItemCount)
+            {
+                int trackX = _relLeftColRect.Right - 9;
+                int trackY = _relLeftColRect.Y + 68;
+                int trackH = visibleItemCount * 40 - 4;
+                var trackRect = new Rectangle(trackX, trackY, 5, trackH);
+
+                if (trackRect.Contains(x, y))
+                {
+                    _isDraggingTab4Scrollbar = true;
+                    int maxScroll = _vm.FilteredNpcs.Count - visibleItemCount;
+                    float visibleRatio = Math.Clamp((float)visibleItemCount / _vm.FilteredNpcs.Count, 0.15f, 1f);
+                    int thumbH = Math.Max(24, (int)(trackH * visibleRatio));
+                    UpdateTab4ScrollFromMouse(y, trackRect, thumbH, maxScroll);
+                    return;
+                }
+            }
+
             if (new Rectangle(_relSearchBox.X, _relSearchBox.Y, _relSearchBox.Width, _relSearchBox.Height).Contains(x, y))
             {
                 FocusTextBox(_relSearchBox);
@@ -832,7 +921,7 @@ namespace ValleytalkReborn
                     return;
             }
 
-            DialogueTextInputBox activeBox = GetActiveDialogueBox();
+            DialogueTextInputBox? activeBox = GetActiveDialogueBox();
 
             bool isAnyTextFocused = Game1.keyboardDispatcher.Subscriber != null
                                     || activeBox != null
@@ -911,7 +1000,11 @@ namespace ValleytalkReborn
             {
                 if (_relLeftColRect.Contains(mx, my))
                 {
-                    _relListScrollOffset = Math.Clamp(_relListScrollOffset - (direction > 0 ? 1 : -1), 0, Math.Max(0, _vm.FilteredNpcs.Count - 6));
+                    int listAvailH = _relLeftColRect.Height - 68 - 46;
+                    int maxVisible = Math.Max(1, listAvailH / 40);
+                    int maxScroll = Math.Max(0, _vm.FilteredNpcs.Count - maxVisible);
+
+                    _relListScrollOffset = Math.Clamp(_relListScrollOffset - (direction > 0 ? 1 : -1), 0, maxScroll);
                     RecalculateTab4List();
                     return;
                 }
@@ -974,6 +1067,9 @@ namespace ValleytalkReborn
             DrawActionButton(b, _resetPageRect, "当前页恢复原版", mx, my, isDanger: false);
             DrawActionButton(b, _resetAllRect, "全部恢复原版", mx, my, isDanger: true, isEnabled: _vm.HasOverlay || _vm.IsDirty);
 
+            // ★ 关闭按钮平滑悬停动效（参考 IntegratedHubMenu）
+            UiHelper.UpdateButtonScale(ref _closeButtonHoverScale, _closeButton, mx, my);
+            _closeButton.scale = CloseButtonBaseScale * _closeButtonHoverScale;
             _closeButton.draw(b);
 
             if (!string.IsNullOrEmpty(_hoverText))
@@ -1021,7 +1117,7 @@ namespace ValleytalkReborn
             float textY = y + (boxH - sz.Y) / 2f - 1;
             CustomFontManager.DrawString(b, text,
                 new Vector2(x + padX, textY),
-                Game1.textColor, TipFontSize);
+                TextPrimary, TipFontSize);
         }
 
         private void DrawHeader(SpriteBatch b, int mx, int my)
@@ -1042,14 +1138,14 @@ namespace ValleytalkReborn
             else
             {
                 string avatarFallback = string.IsNullOrEmpty(_npcName) ? "?" : _npcName.Substring(0, 1);
-                CustomFontManager.DrawStringBold(b, avatarFallback, new Vector2(portraitRect.X + 14, portraitRect.Y + 6), Color.Gray, TitleFontSize);
+                CustomFontManager.DrawStringBold(b, avatarFallback, new Vector2(portraitRect.X + 14, portraitRect.Y + 6), TextMuted, TitleFontSize);
             }
 
             string disp = Game1.getCharacterFromName(_npcName)?.displayName ?? _npcName;
-            CustomFontManager.DrawStringBold(b, $"{disp} ({_npcName}) · 人设工作台", new Vector2(headX + pSize + 12, headY + 2), Game1.textColor, TitleFontSize);
+            CustomFontManager.DrawStringBold(b, $"{disp} ({_npcName}) · 人设工作台", new Vector2(headX + pSize + 12, headY + 2), TextPrimary, TitleFontSize);
 
             string status = _vm.IsDirty ? "● 存在未保存改动" : (_vm.HasOverlay ? "★ 自定义覆盖生效中" : "默认人设基准");
-            Color statusCol = _vm.IsDirty ? new Color(220, 90, 20) : (_vm.HasOverlay ? new Color(30, 140, 40) : Color.DimGray);
+            Color statusCol = _vm.IsDirty ? TextWarning : (_vm.HasOverlay ? TextSuccess : TextMuted);
             CustomFontManager.DrawString(b, status, new Vector2(headX + pSize + 14, headY + 30), statusCol, TipFontSize);
 
             string scopeLabel = _vm.TargetScope == BioStorageService.BioScope.Local ? "本存档独占" : "全局生效";
@@ -1062,7 +1158,7 @@ namespace ValleytalkReborn
         private void DrawTab1(SpriteBatch b, int mx, int my)
         {
             CustomFontManager.DrawString(b, "身份设定与心理矛盾（保留 [IDENTITY] 与 [PSYCHOLOGICAL CONFLICTS] 分节符）",
-                new Vector2(_biographyBox.Position.X, _biographyBox.Position.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
+                new Vector2(_biographyBox.Position.X, _biographyBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
 
             DrawActionButton(b, _scaffoldBtnRect, "插入身份模板", mx, my, false);
             DrawActionButton(b, _copyBiographyRect, "复制全部", mx, my, false);
@@ -1070,14 +1166,14 @@ namespace ValleytalkReborn
 
             DrawCard(b, _uniqueCardRect);
             CustomFontManager.DrawString(b, "特殊行为/身份标记 (Unique)",
-                new Vector2(_uniqueBox.X, _uniqueCardRect.Y + 6), Game1.textColor, SectionHeaderSize);
+                new Vector2(_uniqueBox.X, _uniqueCardRect.Y + 6), TextSecondary, SectionHeaderSize);
             DrawSingleLineBox(b, _uniqueBox);
             if (_uniqueBox.X <= mx && mx <= _uniqueBox.X + _uniqueBox.Width && _uniqueBox.Y <= my && my <= _uniqueBox.Y + _uniqueBox.Height)
                 _hoverText = "用于限定 NPC 的特殊行为或状态（如 'behind the counter', 'holding a football'）。";
 
             DrawCard(b, _homeBedCardRect);
             CustomFontManager.DrawString(b, "就寝行为偏好",
-                new Vector2(_homeBedCardRect.X + 16, _homeBedCardRect.Y + 6), Game1.textColor, SectionHeaderSize);
+                new Vector2(_homeBedCardRect.X + 16, _homeBedCardRect.Y + 6), TextSecondary, SectionHeaderSize);
             _homeBedCheckbox.draw(b, 0, 0, this);
             if (_homeBedCheckbox.bounds.Contains(mx, my))
                 _hoverText = "勾选后，NPC 在深夜对话时会偏向使用专属卧房就寝语境。";
@@ -1086,13 +1182,13 @@ namespace ValleytalkReborn
         private void DrawTab2(SpriteBatch b, int mx, int my)
         {
             CustomFontManager.DrawString(b, "行为规则 (BehavioralRules)",
-                new Vector2(_behaviorBox.Position.X, _behaviorBox.Position.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
+                new Vector2(_behaviorBox.Position.X, _behaviorBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
             DrawActionButton(b, _behaviorScaffoldRect, "插入规则模板", mx, my, false);
             DrawActionButton(b, _copyBehaviorRect, "复制全部", mx, my, false);
             DrawStyledDialogueBox(b, _behaviorBox);
 
             CustomFontManager.DrawString(b, "对白范例 (Dialogue)",
-                new Vector2(_dialogueExamplesBox.Position.X, _dialogueExamplesBox.Position.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
+                new Vector2(_dialogueExamplesBox.Position.X, _dialogueExamplesBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
             DrawActionButton(b, _insertBreakRect, "+ 分段符", mx, my, false);
             DrawActionButton(b, _insertChoiceRect, "+ 玩家选项", mx, my, false);
             DrawActionButton(b, _copyDialogueExamplesRect, "复制全部", mx, my, false);
@@ -1103,14 +1199,14 @@ namespace ValleytalkReborn
             DrawStyledDialogueBox(b, _dialogueExamplesBox);
 
             CustomFontManager.DrawString(b, "提示：支持原版表情符 ($0 / $s) 与换行分段；选项以 % 开头。",
-                new Vector2(_dialogueExamplesBox.Position.X, _dialogueExamplesBox.Position.Y + _dialogueExamplesBox.Extent.Y + 6), Color.DimGray, TipFontSize);
+                new Vector2(_dialogueExamplesBox.Position.X, _dialogueExamplesBox.Position.Y + _dialogueExamplesBox.Extent.Y + 6), TextMuted, TipFontSize);
         }
 
         private void DrawTab3(SpriteBatch b, int mx, int my)
         {
             DrawCard(b, _stageLeftColRect);
             CustomFontManager.DrawString(b, $"好感演变档位 ({_vm.Bio.ProgressStates.Count}/8)",
-                new Vector2(_stageLeftColRect.X + 12, _stageLeftColRect.Y + 8), Game1.textColor, SectionHeaderSize);
+                new Vector2(_stageLeftColRect.X + 12, _stageLeftColRect.Y + 8), TextSecondary, SectionHeaderSize);
 
             int visibleStages = Math.Min(_vm.Bio.ProgressStates.Count, 8);
             for (int i = 0; i < visibleStages; i++)
@@ -1119,13 +1215,16 @@ namespace ValleytalkReborn
                 bool isSel = (i == _vm.SelectedStageIndex);
                 bool isHover = r.Contains(mx, my);
 
-                Color bg = isSel ? new Color(215, 185, 140) : (isHover ? new Color(255, 235, 205) : Color.White);
+                // 选中态使用沉稳深棕底色，以便衬托纯白文字
+                Color bg = isSel ? new Color(150, 105, 60) : (isHover ? new Color(255, 235, 205) : Color.White);
+                Color borderCol = isSel ? new Color(110, 70, 35) : Color.Wheat;
 
                 b.Draw(Game1.staminaRect, new Rectangle(r.X + 1, r.Y + 1, r.Width - 2, r.Height - 2), bg);
-                IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9), r.X, r.Y, r.Width, r.Height, isSel ? new Color(180, 130, 80) : Color.Wheat, 2f, false);
+                IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9), r.X, r.Y, r.Width, r.Height, borderCol, 2f, false);
 
                 string gateSummary = _vm.BuildGateSummary(i);
-                CustomFontManager.DrawString(b, $"档位 {i + 1}  [{gateSummary}]", new Vector2(r.X + 12, r.Y + 8), isSel ? Game1.textColor : Color.Black, ContentFontSize);
+                // 选中时文字使用白色高亮，未选中使用深色主文字
+                CustomFontManager.DrawString(b, $"档位 {i + 1}  [{gateSummary}]", new Vector2(r.X + 12, r.Y + 8), isSel ? Color.White : TextPrimary, ContentFontSize);
             }
 
             if (_vm.CanAddStage)
@@ -1134,13 +1233,13 @@ namespace ValleytalkReborn
             if (_vm.SelectedStageIndex < 0 || _vm.SelectedStageIndex >= _vm.Bio.ProgressStates.Count)
             {
                 CustomFontManager.DrawString(b, "从左侧列表选择或添加一个好感档位开始编辑。",
-                    new Vector2(_stageRightColRect.X + 20, _stageRightColRect.Y + 40), Color.Gray, ContentFontSize);
+                    new Vector2(_stageRightColRect.X + 20, _stageRightColRect.Y + 40), TextMuted, ContentFontSize);
                 return;
             }
 
             var stage = _vm.Bio.ProgressStates[_vm.SelectedStageIndex];
 
-            CustomFontManager.DrawString(b, "激活门禁:", new Vector2(_stageRightColRect.X, _stageRightColRect.Y + 6), Game1.textColor, SectionHeaderSize);
+            CustomFontManager.DrawString(b, "激活门禁:", new Vector2(_stageRightColRect.X, _stageRightColRect.Y + 6), TextSecondary, SectionHeaderSize);
             _heartsStepper.Draw(b);
 
             DrawPillButton(b, _gateMarriedPillRect, stage.RequireMarried ? "已婚" : "不限婚姻", stage.RequireMarried, mx, my);
@@ -1179,17 +1278,17 @@ namespace ValleytalkReborn
 
             // ★ Tab3 复制按钮已移至标签右侧
             CustomFontManager.DrawString(b, "阶段态度演变 (Text)",
-                new Vector2(_stageTextBox.Position.X, _stageTextBox.Position.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
+                new Vector2(_stageTextBox.Position.X, _stageTextBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
             DrawActionButton(b, _copyStageTextRect, "复制全部", mx, my, false);
             DrawStyledDialogueBox(b, _stageTextBox);
 
             CustomFontManager.DrawString(b, "碎碎念心智 (BarkMindset: 规定此时的心态与注意力)",
-                new Vector2(_stageBarkBox.Position.X, _stageBarkBox.Position.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
+                new Vector2(_stageBarkBox.Position.X, _stageBarkBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
             DrawActionButton(b, _copyStageBarkRect, "复制全部", mx, my, false);
             DrawStyledDialogueBox(b, _stageBarkBox);
 
             CustomFontManager.DrawString(b, "阶段专属关注池 (Preoccupations: 优先提及的事物)",
-                new Vector2(_stageRightColRect.X, _stageTagEditor.Bounds.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
+                new Vector2(_stageRightColRect.X, _stageTagEditor.Bounds.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
             _stageTagEditor.Draw(b);
         }
 
@@ -1197,28 +1296,153 @@ namespace ValleytalkReborn
         {
             DrawCard(b, _relLeftColRect);
             CustomFontManager.DrawString(b, "目标角色列表 (★已定制)",
-                new Vector2(_relSearchBox.X, _relLeftColRect.Y + 8), Game1.textColor, SectionHeaderSize);
+                new Vector2(_relSearchBox.X, _relLeftColRect.Y + 8), TextSecondary, SectionHeaderSize);
             DrawSingleLineBox(b, _relSearchBox);
             if (string.IsNullOrEmpty(_relSearchBox.Text))
-                CustomFontManager.DrawString(b, "搜索角色...", new Vector2(_relSearchBox.X + 8, _relSearchBox.Y + 6), Color.Gray * 0.7f, ContentFontSize);
+                CustomFontManager.DrawString(b, "搜索角色...", new Vector2(_relSearchBox.X + 8, _relSearchBox.Y + 6), TextMuted, ContentFontSize);
 
-            foreach (var (r, idx) in _relVisibleItemRects)
+            // ── 绘制左侧 NPC 角色列表（复刻 RulesTabView 标准） ──
+            bool isMouseDown = IsLeftMouseDown();
+
+            foreach (var (itemRect, idx) in _relVisibleItemRects)
             {
                 var name = _vm.FilteredNpcs[idx];
                 bool isSel = (idx == _vm.SelectedRelationshipIndex);
-                bool isHover = r.Contains(mx, my);
+                bool isHover = itemRect.Contains(mx, my);
+                bool isItemPressed = isHover && isMouseDown;
                 bool hasConfig = _vm.Bio.Relationships.ContainsKey(name);
+                int pressOffset = isItemPressed ? 1 : 0;
 
-                Color bg = isSel ? new Color(215, 185, 140) : (isHover ? new Color(255, 235, 205) : Color.White);
+                // 1. 底层微阴影
+                if (!isItemPressed)
+                {
+                    b.Draw(Game1.staminaRect,
+                        new Rectangle(itemRect.X + 1, itemRect.Y + 2, itemRect.Width, itemRect.Height),
+                        RulesTheme.Shadow);
+                }
 
-                b.Draw(Game1.staminaRect, new Rectangle(r.X + 1, r.Y + 1, r.Width - 2, r.Height - 2), bg);
-                IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9), r.X, r.Y, r.Width, r.Height, isSel ? new Color(180, 130, 80) : Color.Wheat, 2f, false);
+                var drawRect = new Rectangle(itemRect.X, itemRect.Y + pressOffset, itemRect.Width, itemRect.Height);
 
+                Color bg = isSel ? RulesTheme.SurfaceActive
+                         : isItemPressed ? RulesTheme.SurfaceSunken
+                         : isHover ? RulesTheme.SurfaceHover
+                         : RulesTheme.SurfaceCard;
+
+                Color borderCol = isSel ? RulesTheme.BorderBold
+                                : isItemPressed ? RulesTheme.BorderBold
+                                : isHover ? RulesTheme.BorderMid
+                                : RulesTheme.BorderSoft;
+
+                // 2. 卡片底衬与 2f 九宫格外框
+                b.Draw(Game1.staminaRect, new Rectangle(drawRect.X + 1, drawRect.Y + 1, drawRect.Width - 2, drawRect.Height - 2), bg);
+                IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
+                    drawRect.X, drawRect.Y, drawRect.Width, drawRect.Height, borderCol, 2f, false);
+
+                // 3. 选中项左侧金色高亮条
+                if (isSel)
+                {
+                    b.Draw(Game1.staminaRect,
+                        new Rectangle(drawRect.X + 2, drawRect.Y + 3, 4, drawRect.Height - 6),
+                        RulesTheme.AccentGold);
+                }
+
+                // 4. 微型头像框 + 行走图切片
+                int avatarSize = 28;
+                int avatarX = drawRect.X + (isSel ? 8 : 6);
+                var avatarRect = new Rectangle(avatarX, drawRect.Y + (drawRect.Height - avatarSize) / 2, avatarSize, avatarSize);
+
+                b.Draw(Game1.staminaRect, avatarRect, RulesTheme.SurfaceSunken);
+                IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6),
+                    avatarRect.X - 1, avatarRect.Y - 1, avatarRect.Width + 2, avatarRect.Height + 2,
+                    isSel ? RulesTheme.BorderBold : (isHover ? RulesTheme.BorderMid : RulesTheme.BorderSoft), 1.2f, false);
+
+                var (headSprite, srcRect) = GetNpcWalkingHeadSprite(name);
                 string disp = Game1.getCharacterFromName(name)?.displayName ?? name;
-                if (hasConfig) disp += " ★";
 
-                Color itemTextCol = isSel ? Game1.textColor : (hasConfig ? new Color(160, 60, 0) : Color.Black);
-                CustomFontManager.DrawString(b, disp, new Vector2(r.X + 10, r.Y + 6), itemTextCol, ContentFontSize);
+                if (headSprite != null && !srcRect.IsEmpty)
+                {
+                    b.Draw(headSprite, avatarRect, srcRect, Color.White);
+                }
+                else
+                {
+                    string initial = string.IsNullOrEmpty(disp) ? "?" : disp.Substring(0, 1);
+                    var initSz = CustomFontManager.MeasureString(initial, CustomFontManager.SizeSmall);
+                    CustomFontManager.DrawString(b, initial,
+                        new Vector2(avatarRect.X + (avatarSize - initSz.X) / 2f, avatarRect.Y + (avatarSize - initSz.Y) / 2f - 1),
+                        RulesTheme.TextSecondary, CustomFontManager.SizeSmall);
+                }
+                
+                // 5. 角色名称文本（选中项高亮为纯白色，其余悬停/常规使用深色）
+                int textLeft = avatarRect.Right + 8;
+                Color nameCol = isSel ? Color.White
+                    : (isHover ? RulesTheme.TextCharcoal : RulesTheme.TextDarkBrown);
+
+                CustomFontManager.DrawString(b, disp,
+                    new Vector2(textLeft, drawRect.Y + (drawRect.Height - 20) / 2f),
+                    nameCol, ContentFontSize);
+
+                // 6. 右侧定制状态胶囊徽记 (★ 定制：永远常亮保持激活质感)
+                if (hasConfig)
+                {
+                    string badgeText = "★";
+                    var badgeSz = CustomFontManager.MeasureString(badgeText, CustomFontManager.SizeSmall);
+                    int badgeW = 20;
+                    var badgeRect = new Rectangle(drawRect.Right - badgeW - 6, drawRect.Y + (drawRect.Height - 18) / 2, badgeW, 18);
+
+                    // 1. 恒定明艳的星露谷金橙底色（彻底抛弃发灰的 403 凹槽，用饱满纯净金底）
+                    Color badgeBg = isSel ? new Color(245, 155, 20) : new Color(255, 182, 35);
+                    Color badgeBorder = isSel ? RulesTheme.BorderBold : new Color(195, 120, 20);
+
+                    // 纯色垫底 + 432 清晰木金外边框（绝不发脏发灰）
+                    b.Draw(Game1.staminaRect, badgeRect, badgeBg);
+                    IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
+                        badgeRect.X, badgeRect.Y, badgeRect.Width, badgeRect.Height,
+                        badgeBorder, 1.2f, false);
+
+                    // 2. 星星采用纯白高亮字（金底 + 白星 = 游戏内金星/高阶品质奖章的标准质感，任何背景下都极度醒目）
+                    CustomFontManager.DrawStringBold(b, badgeText,
+                        new Vector2(badgeRect.X + (badgeRect.Width - badgeSz.X) / 2f, badgeRect.Y + (badgeRect.Height - badgeSz.Y) / 2f - 1),
+                        Color.White, CustomFontManager.SizeSmall);
+                }
+
+                // 7. 选中金色勾选标记 (✔)
+                if (isSel)
+                {
+                    string checkMark = "✔";
+                    var csz = CustomFontManager.MeasureStringBold(checkMark, CustomFontManager.SizeSmall);
+                    int checkX = hasConfig ? (drawRect.Right - 20 - 6 - (int)csz.X - 4) : (drawRect.Right - (int)csz.X - 8);
+                    CustomFontManager.DrawStringBold(b, checkMark,
+                        new Vector2(checkX, drawRect.Y + (drawRect.Height - csz.Y) / 2f),
+                        RulesTheme.AccentGold, CustomFontManager.SizeSmall);
+                }
+            }
+
+            // 8. 左栏轻量滚动指示条
+            int listAvailHeight = _relLeftColRect.Height - 68 - 46;
+            int visibleItemCount = Math.Max(1, listAvailHeight / 40);
+            if (_vm.FilteredNpcs.Count > visibleItemCount)
+            {
+                int trackX = _relLeftColRect.Right - 9;
+                int trackY = _relLeftColRect.Y + 68;
+                int trackH = visibleItemCount * 40 - 4;
+                var trackRect = new Rectangle(trackX, trackY, 5, trackH);
+
+                float visibleRatio = Math.Clamp((float)visibleItemCount / _vm.FilteredNpcs.Count, 0.15f, 1f);
+                int thumbH = Math.Max(24, (int)(trackH * visibleRatio));
+                int maxScroll = _vm.FilteredNpcs.Count - visibleItemCount;
+                int thumbY = trackY + (int)((trackH - thumbH) * ((float)_relListScrollOffset / maxScroll));
+
+                b.Draw(Game1.staminaRect, trackRect, RulesTheme.SurfaceSunken);
+
+                // 悬停或拖拽时高亮
+                var thumbRect = new Rectangle(trackX - 1, thumbY, trackRect.Width + 2, thumbH);
+                bool thumbHover = thumbRect.Contains(mx, my);
+                Color thumbBg = _isDraggingTab4Scrollbar ? RulesTheme.BorderBold
+                              : (thumbHover ? RulesTheme.AccentGold : RulesTheme.BorderMid);
+
+                b.Draw(Game1.staminaRect, thumbRect, thumbBg);
+                IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6),
+                    thumbRect.X, thumbRect.Y, thumbRect.Width, thumbRect.Height, RulesTheme.BorderBold, 1f, false);
             }
 
             DrawActionButton(b, _relAddRect, "+ 定制关系", mx, my, false);
@@ -1226,55 +1450,55 @@ namespace ValleytalkReborn
 
             if (string.IsNullOrEmpty(_vm.SelectedRelationshipNpc))
             {
-                CustomFontManager.DrawString(b, "从左侧列表选择目标角色。", new Vector2(_relRightColRect.X + 20, _relRightColRect.Y + 40), Color.Gray, ContentFontSize);
+                CustomFontManager.DrawString(b, "从左侧列表选择目标角色。", new Vector2(_relRightColRect.X + 20, _relRightColRect.Y + 40), TextMuted, ContentFontSize);
                 return;
             }
 
             string targetDisp = Game1.getCharacterFromName(_vm.SelectedRelationshipNpc)?.displayName ?? _vm.SelectedRelationshipNpc;
             CustomFontManager.DrawString(b, $"{_npcName} 对 {targetDisp} 的单向社交关系",
-                new Vector2(_relHeadingBox.X, _relRightColRect.Y + 4), Game1.textColor, TitleFontSize);
+                new Vector2(_relHeadingBox.X, _relRightColRect.Y + 4), TextPrimary, TitleFontSize);
 
             CustomFontManager.DrawString(b, "关系称谓与定位 (Heading: 如 'Wife', 'Business Rival')",
-                new Vector2(_relHeadingBox.X, _relHeadingBox.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
+                new Vector2(_relHeadingBox.X, _relHeadingBox.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
             DrawSingleLineBox(b, _relHeadingBox);
 
             CustomFontManager.DrawString(b, "深层心理与互动细节 (Description)",
-                new Vector2(_relDescBox.Position.X, _relDescBox.Position.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
+                new Vector2(_relDescBox.Position.X, _relDescBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
             DrawActionButton(b, _copyRelDescRect, "复制全部", mx, my, false);
             DrawStyledDialogueBox(b, _relDescBox);
 
             CustomFontManager.DrawString(b, "提示：如需双方互动感知，请在两人的编辑器中分别配置相互的关系定位。",
-                new Vector2(_relDescBox.Position.X, _relDescBox.Position.Y + _relDescBox.Extent.Y + 6), Color.DimGray, TipFontSize);
+                new Vector2(_relDescBox.Position.X, _relDescBox.Position.Y + _relDescBox.Extent.Y + 6), TextMuted, TipFontSize);
         }
 
         private void DrawTab5(SpriteBatch b, int mx, int my)
         {
             DrawCard(b, _tab5LeftColRect);
             CustomFontManager.DrawString(b, "日常碎碎念总控",
-                new Vector2(_tab5LeftColRect.X + 12, _tab5LeftColRect.Y + 8), Game1.textColor, SectionHeaderSize);
+                new Vector2(_tab5LeftColRect.X + 12, _tab5LeftColRect.Y + 8), TextSecondary, SectionHeaderSize);
             _enableBarkCheckbox.draw(b, 0, 0, this);
 
             DrawActionButton(b, _scrapeRect, "↺ 从原版对白智能抓取范例", mx, my, false);
 
             CustomFontManager.DrawString(b, "全局常态关注池 (Preoccupations)",
-                new Vector2(_globalTagEditor.Bounds.X, _globalTagEditor.Bounds.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
+                new Vector2(_globalTagEditor.Bounds.X, _globalTagEditor.Bounds.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
             _globalTagEditor.Draw(b);
 
             // ★ Tab5 复制按钮已移至标签右侧
             CustomFontManager.DrawString(b, "口吻与态度 (Voice & Attitude)",
-                new Vector2(_voiceBox.Position.X, _voiceBox.Position.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
+                new Vector2(_voiceBox.Position.X, _voiceBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
             DrawActionButton(b, _copyVoiceRect, "复制全部", mx, my, false);
             DrawStyledDialogueBox(b, _voiceBox);
             if (ContainsPoint(_voiceBox, mx, my)) _hoverText = "限定碎碎念的基本语调、说话长短与即时情绪基调。";
 
             CustomFontManager.DrawString(b, "口头习惯 (Spoken Habits)",
-                new Vector2(_habitsBox.Position.X, _habitsBox.Position.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
+                new Vector2(_habitsBox.Position.X, _habitsBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
             DrawActionButton(b, _copyHabitsRect, "复制全部", mx, my, false);
             DrawStyledDialogueBox(b, _habitsBox);
             if (ContainsPoint(_habitsBox, mx, my)) _hoverText = "NPC 的口头禅、叹气声、常用起手式（如 'Well,', 'Sigh...'）。";
 
             CustomFontManager.DrawString(b, "观察透镜 (Observation Lenses)",
-                new Vector2(_lensesBox.Position.X, _lensesBox.Position.Y - RowBtnH - LabelRowGap), Game1.textColor, SectionHeaderSize);
+                new Vector2(_lensesBox.Position.X, _lensesBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
             DrawActionButton(b, _copyLensesRect, "复制全部", mx, my, false);
             DrawStyledDialogueBox(b, _lensesBox);
             if (ContainsPoint(_lensesBox, mx, my)) _hoverText = "NPC 打量周围世界时的特殊视角（例如铁匠关注矿物与工具锈蚀，农夫关注作物与雨水）。";
@@ -1299,7 +1523,7 @@ namespace ValleytalkReborn
             box.ReceiveLeftClick(x, y);
         }
 
-        private DialogueTextInputBox GetActiveDialogueBox()
+        private DialogueTextInputBox? GetActiveDialogueBox()
         {
             if (_activeTab == 0 && _biographyBox.Selected) return _biographyBox;
             if (_activeTab == 1)
@@ -1340,7 +1564,7 @@ namespace ValleytalkReborn
             var sz = CustomFontManager.MeasureStringBold(label, TabFontSize);
             CustomFontManager.DrawStringBold(b, label,
                 new Vector2(rect.X + pressOffset + (rect.Width - sz.X) / 2f, rect.Y + pressOffset + (rect.Height - sz.Y) / 2f),
-                isActive ? Game1.textColor : (isHover ? Color.Wheat : Color.White), TabFontSize);
+                isActive ? TextPrimary : (isHover ? Color.Wheat : TextOnDark), TabFontSize);
         }
 
         /// <summary>探测鼠标左键当前是否处于按下状态，用于按钮“下沉/弹起”的点击动效。</summary>
@@ -1365,8 +1589,8 @@ namespace ValleytalkReborn
             Color bg;
             if (!isEnabled) bg = Color.LightGray * 0.6f;
             else if (isPrimary) bg = isHover ? Color.Gold : new Color(255, 220, 130);
-            else if (isDanger) bg = isHover ? new Color(255, 115, 115) : new Color(245, 170, 170);
-            else bg = isHover ? new Color(255, 235, 205) : new Color(215, 185, 140);
+            else if (isDanger) bg = isHover ? new Color(245, 105, 105) : new Color(210, 85, 80);
+            else bg = isHover ? new Color(255, 240, 215) : new Color(225, 195, 155);
 
             int pressOffset = isPressed ? 1 : 0;
             if (isPressed) bg = Color.Lerp(bg, Color.Black, 0.14f);
@@ -1378,16 +1602,29 @@ namespace ValleytalkReborn
 
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
                 rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height,
-                isPrimary ? new Color(210, 160, 60) : new Color(180, 140, 95), 3f, false);
+                isPrimary ? new Color(210, 160, 60) : (isDanger ? new Color(175, 60, 55) : new Color(185, 150, 110)), 3f, false);
 
-            // ★ 炭黑文字（启用态）；禁用态用暖灰
+            // 文字颜色与按钮底色明暗自适应
+            Color btnTextCol;
+            if (!isEnabled)
+            {
+                btnTextCol = TextMuted;
+            }
+            else if (isDanger)
+            {
+                btnTextCol = TextOnDarkBtn;
+            }
+            else
+            {
+                btnTextCol = TextOnLightBtn;
+            }
+
             var sz = CustomFontManager.MeasureStringBold(label, ButtonFontSize);
             Vector2 textPos = new Vector2(
                 rect.X + pressOffset + (rect.Width - sz.X) / 2f,
                 rect.Y + pressOffset + (rect.Height - sz.Y) / 2f);
 
-            CustomFontManager.DrawStringBold(b, label, textPos,
-                isEnabled ? CharcoalBlack : DisabledCharcoal, ButtonFontSize);
+            CustomFontManager.DrawStringBold(b, label, textPos, btnTextCol, ButtonFontSize);
         }
 
         private static void DrawPillButton(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my)
@@ -1410,8 +1647,8 @@ namespace ValleytalkReborn
                 rect.X + pressOffset + (rect.Width - sz.X) / 2f,
                 rect.Y + pressOffset + (rect.Height - sz.Y) / 2f);
 
-            // ★ 炭黑文字
-            CustomFontManager.DrawString(b, label, textPos, CharcoalBlack, ContentFontSize);
+            // ★ 主文字色
+            CustomFontManager.DrawString(b, label, textPos, TextPrimary, ContentFontSize);
         }
 
         /// <summary>卡片：暖羊皮纸填充 + 星露谷式暖金棕边框（替代原灰调）。</summary>
@@ -1485,7 +1722,7 @@ namespace ValleytalkReborn
 
             if (!string.IsNullOrEmpty(text))
             {
-                CustomFontManager.DrawString(b, text, new Vector2(textX, textY), Game1.textColor, ContentFontSize);
+                CustomFontManager.DrawString(b, text, new Vector2(textX, textY), TextPrimary, ContentFontSize);
             }
 
             // 3. 闪烁光标
@@ -1497,7 +1734,7 @@ namespace ValleytalkReborn
 
                 if ((int)(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 500) % 2 == 0)
                 {
-                    b.Draw(Game1.staminaRect, new Rectangle((int)cx, (int)cursorY, 2, cursorH), Game1.textColor);
+                    b.Draw(Game1.staminaRect, new Rectangle((int)cx, (int)cursorY, 2, cursorH), TextPrimary);
                 }
             }
         }
@@ -1534,6 +1771,14 @@ namespace ValleytalkReborn
             if (_activeTab == tab) return;
             UnfocusAll();
             _activeTab = tab;
+ 
+            // ★ 切到 Tab 2 时，重新从 VM 灌一次数据，防止被空框冲掉
+            if (_activeTab == 1)
+            {
+                _behaviorBox.SetText(_vm.GetTraitDescriptionOrNull("BehavioralRules") ?? string.Empty);
+                _dialogueExamplesBox.SetText(_vm.GetTraitDescriptionOrNull("DialogueExamples") ?? string.Empty);
+            }
+
             Game1.playSound("smallSelect");
             Layout();
         }
@@ -1618,7 +1863,7 @@ namespace ValleytalkReborn
 
         private void ImportFromClipboard()
         {
-            string clip;
+            string? clip;
             try
             {
                 clip = TextCopy.ClipboardService.GetText();
@@ -1678,7 +1923,7 @@ namespace ValleytalkReborn
 
         private void CopyBoxToClipboard(string boxKey)
         {
-            DialogueTextInputBox box = boxKey switch
+            DialogueTextInputBox? box = boxKey switch
             {
                 "biography" => _biographyBox,
                 "behavior" => _behaviorBox,
@@ -1727,15 +1972,15 @@ namespace ValleytalkReborn
 
         private void SyncAllControlsFromVm()
         {
-            // Tab 1
+            // ── Tab 1 初始数据 ──
             _biographyBox.SetText(_vm.GetBiography());
             _uniqueBox.Text = _vm.GetUnique();
             _homeBedCheckbox.isChecked = _vm.GetHomeLocationBed();
 
-            // Tab 2
+            // ★★★ 补上：Tab 2 初始数据（行为规则与对白范例） ★★★
             _behaviorBox.SetText(_vm.GetTraitDescriptionOrNull("BehavioralRules") ?? string.Empty);
-            _dialogueExamplesBox.SetText(_vm.GetTraitDescriptionOrNull("DialogueExamples") ?? string.Empty);
-
+            _dialogueExamplesBox.SetText(_vm.GetTraitDescriptionOrNull("DialogueExamples") ?? string.Empty);  
+            
             // Tab 3
             if (_vm.Bio.ProgressStates.Count > 0)
                 SelectStage(0);
@@ -1761,8 +2006,8 @@ namespace ValleytalkReborn
                 _relDescBox.SetText(string.Empty);
             }
 
-            // Tab 5
-            _enableBarkCheckbox.isChecked = _vm.GetEnableAmbientBarks();
+// ── Tab 5 初始数据 ──
+            _enableBarkCheckbox.isChecked = _vm.Bio.EnableAmbientBarks;
             _globalTagEditor.SetTags(_vm.Bio.Preoccupations);
             SyncTab5BarkBoxes();
 
@@ -1791,7 +2036,11 @@ namespace ValleytalkReborn
             {
                 case 0:
                     _biographyBox.SetText(_vm.GetBiography());
-                    _uniqueBox.Text = _vm.GetUnique();
+
+                    // ★ 修改这里：同步时也强制按 20 字符对齐
+                    string rawUnique = _vm.GetUnique() ?? string.Empty;
+                    _uniqueBox.Text = rawUnique.Length > 20 ? rawUnique.Substring(0, 20) : rawUnique;
+
                     _homeBedCheckbox.isChecked = _vm.GetHomeLocationBed();
                     break;
                 case 1:
@@ -1889,6 +2138,77 @@ namespace ValleytalkReborn
         {
             try { return Game1.content.Load<Texture2D>("LooseSprites\\textBox") ?? Game1.mouseCursors; }
             catch { return Game1.mouseCursors; }
+        }
+
+        private static (Texture2D? Texture, Rectangle SourceRect) GetNpcWalkingHeadSprite(string npcName)
+        {
+            if (string.IsNullOrWhiteSpace(npcName)) return (null, Rectangle.Empty);
+
+            NPC? npc = Game1.getCharacterFromName(npcName);
+            Texture2D? texture = null;
+
+            try
+            {
+                if (npc?.Sprite?.Texture != null && !npc.Sprite.Texture.IsDisposed)
+                    texture = npc.Sprite.Texture;
+            }
+            catch { }
+
+            if (texture == null)
+            {
+                string assetName = npc?.getTextureName() ?? npcName;
+                try
+                {
+                    texture = Game1.content.Load<Texture2D>($"Characters\\{assetName}");
+                }
+                catch
+                {
+                    return (null, Rectangle.Empty);
+                }
+            }
+
+            if (texture == null || texture.IsDisposed)
+                return (null, Rectangle.Empty);
+
+            int frameWidth = 16;
+            if (npc?.Sprite != null && npc.Sprite.SpriteWidth > 0)
+                frameWidth = npc.Sprite.SpriteWidth;
+            else if (texture.Width >= 64)
+                frameWidth = texture.Width / 4;
+            else if (texture.Width >= 32)
+                frameWidth = texture.Width / 2;
+            else
+                frameWidth = texture.Width;
+
+            int frameHeight = (npc?.Sprite != null && npc.Sprite.SpriteHeight > 0)
+                ? npc.Sprite.SpriteHeight
+                : Math.Min(texture.Height, frameWidth * 2);
+
+            int topY = FindSpriteTopY(texture, frameWidth, frameHeight);
+            int headHeight = Math.Min(frameWidth, texture.Height - topY);
+            return (texture, new Rectangle(0, topY, frameWidth, headHeight));
+        }
+
+        private static int FindSpriteTopY(Texture2D texture, int frameWidth, int frameHeight)
+        {
+            try
+            {
+                int checkWidth = Math.Min(frameWidth, texture.Width);
+                int checkHeight = Math.Min(frameHeight, texture.Height);
+                Color[] pixels = new Color[checkWidth * checkHeight];
+                texture.GetData(0, new Rectangle(0, 0, checkWidth, checkHeight), pixels, 0, pixels.Length);
+
+                for (int y = 0; y < checkHeight; y++)
+                {
+                    for (int x = 0; x < checkWidth; x++)
+                    {
+                        if (pixels[y * checkWidth + x].A > 20)
+                            return y;
+                    }
+                }
+            }
+            catch { }
+            return 0;
         }
     }
 }

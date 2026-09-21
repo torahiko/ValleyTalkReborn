@@ -18,6 +18,7 @@ public class BioData
     private static string Hers => ModEntry.SHelper?.Translation.Get("generalHers") ?? "hers";
 
     private bool? isMale;
+    [JsonIgnore]
     public bool? IsMale => isMale;
 
     private string unique;
@@ -40,7 +41,7 @@ public class BioData
 
     public string Biography { get; set; } = string.Empty;
     public Dictionary<string, ListEntry> Relationships { get; set; } = new Dictionary<string, ListEntry>();
-    public Dictionary<string, ListEntry> Traits { get; set; } = new Dictionary<string, ListEntry>();
+    public Dictionary<string, ListEntry> Traits { get; set; } = new Dictionary<string, ListEntry>(StringComparer.OrdinalIgnoreCase);
     public string BiographyEnd { get; set; } = string.Empty;
     
     // Only update gender if the value passed is male or female
@@ -81,12 +82,18 @@ public class BioData
     public Dictionary<string, string> Dialogue { get; set; } = new Dictionary<string, string>();
     public bool HomeLocationBed { get; set; } = false;
 
+    [JsonIgnore]
     public string GenderP2 => (isMale ?? false) ? He : She;
+
+    [JsonIgnore]
     public string GenderPronoun => (isMale ?? false) ? Him : Her;
+
+    [JsonIgnore]
     public string GenderPossessive => (isMale ?? false) ? His : Hers;
 
     public Dictionary<string, string> PromptOverrides { get; set; } = new Dictionary<string, string>();
     public bool UsePatchedDialogue { get; set; } = false;
+    [JsonIgnore]
     public bool Missing { get; internal set; }
 
     /// <summary>
