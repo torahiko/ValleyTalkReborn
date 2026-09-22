@@ -372,6 +372,27 @@ namespace ValleytalkReborn
             _lastUndoRunKind = UndoRunKind.None;
         }
 
+        /// <summary>流式追加：仅限主线程调用；剥离 \r；超 characterLimit 部分截断丢弃；
+        /// 光标钉尾并请求滚动跟随；不写入撤销栈（流式文本无撤销语义）。</summary>
+        public void AppendStreamingText(string str)
+        {
+            if (string.IsNullOrEmpty(str))
+                return;
+
+            str = str.Replace("\r", "");
+            int space = _characterLimit - Text.Length;
+            if (space <= 0)
+                return;
+
+            if (str.Length > space)
+                str = str.Substring(0, space);
+
+            Text += str;
+            _caretPosition = _selectionStart = _selectionEnd = Text.Length;
+            _isTextDirty = true;
+            _needsEnsureCaretVisible = true;
+        }
+
         public void InvalidateLayout()
         {
             _isTextDirty = true;
