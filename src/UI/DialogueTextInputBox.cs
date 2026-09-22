@@ -351,10 +351,11 @@ namespace ValleytalkReborn
             _isTextDirty = true;
         }
 
-        /// <summary>清除选区（光标位置不变）</summary>
+        /// <summary>清除选区（双端点归拢至当前光标位置）</summary>
         public void ClearSelection()
         {
-            _selectionEnd = _selectionStart;
+            _selectionStart = _caretPosition;
+            _selectionEnd = _caretPosition;
         }
 
         /// <summary>删除选区内容，光标移至选区起始端</summary>
@@ -690,6 +691,16 @@ namespace ValleytalkReborn
                 case Keys.End:
                     _caretPosition = Text.Length;
                     ClearSelection();
+                    StartKeyRepeat(key);
+                    break;
+
+                case Keys.Up:
+                    MoveCaretUp();
+                    StartKeyRepeat(key);
+                    break;
+
+                case Keys.Down:
+                    MoveCaretDown();
                     StartKeyRepeat(key);
                     break;
 
@@ -1278,6 +1289,14 @@ namespace ValleytalkReborn
                     ClearSelection();
                     break;
 
+                case Keys.Up:
+                    MoveCaretUp();
+                    break;
+
+                case Keys.Down:
+                    MoveCaretDown();
+                    break;
+
                 case Keys.Delete:
                     ExecuteDelete();
                     break;
@@ -1286,6 +1305,84 @@ namespace ValleytalkReborn
                     ExecuteBackspace();
                     break;
             }
+        }
+
+        /// <summary>纵向光标移动（上一行）：基于当前列像素投影在目标行逐缝 best-diff 定位。</summary>
+        private void MoveCaretUp()
+        {
+            var lines = GetVisualLines();
+            if (lines.Count == 0)
+                return;
+
+            int curLine = GetCaretLine();
+            if (curLine <= 0)
+            {
+                _caretPosition = 0;
+                ClearSelection();
+                _needsEnsureCaretVisible = true;
+                return;
+            }
+
+            var cur = lines[curLine];
+            int offsetInLine = Math.Clamp(_caretPosition - cur.StartIndex, 0, cur.Length);
+            float currentX = MeasureString(cur.Text.Substring(0, offsetInLine)).X;
+
+            var target = lines[curLine - 1];
+            int bestOffset = 0;
+            float bestDiff = float.MaxValue;
+            for (int i = 0; i <= target.Length; i++)
+            {
+                float w = MeasureString(target.Text.Substring(0, i)).X;
+                float diff = MathF.Abs(w - currentX);
+                if (diff < bestDiff)
+                {
+                    bestDiff = diff;
+                    bestOffset = i;
+                }
+            }
+
+            _caretPosition = target.StartIndex + bestOffset;
+            ClearSelection();
+            _needsEnsureCaretVisible = true;
+        }
+
+        /// <summary>纵向光标移动（下一行）：基于当前列像素投影在目标行逐缝 best-diff 定位。</summary>
+        private void MoveCaretDown()
+        {
+            var lines = GetVisualLines();
+            if (lines.Count == 0)
+                return;
+
+            int curLine = GetCaretLine();
+            if (curLine >= lines.Count - 1)
+            {
+                _caretPosition = Text.Length;
+                ClearSelection();
+                _needsEnsureCaretVisible = true;
+                return;
+            }
+
+            var cur = lines[curLine];
+            int offsetInLine = Math.Clamp(_caretPosition - cur.StartIndex, 0, cur.Length);
+            float currentX = MeasureString(cur.Text.Substring(0, offsetInLine)).X;
+
+            var target = lines[curLine + 1];
+            int bestOffset = 0;
+            float bestDiff = float.MaxValue;
+            for (int i = 0; i <= target.Length; i++)
+            {
+                float w = MeasureString(target.Text.Substring(0, i)).X;
+                float diff = MathF.Abs(w - currentX);
+                if (diff < bestDiff)
+                {
+                    bestDiff = diff;
+                    bestOffset = i;
+                }
+            }
+
+            _caretPosition = target.StartIndex + bestOffset;
+            ClearSelection();
+            _needsEnsureCaretVisible = true;
         }
 
         private void ExecuteDelete()

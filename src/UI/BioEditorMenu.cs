@@ -949,13 +949,24 @@ namespace ValleytalkReborn
                     return;
                 }
 
-                if (activeBox != null && !DialogueTextInputBox.IsControlKeyDown())
+                if (activeBox != null)
                 {
-                    if (key == Keys.Left || key == Keys.Right || key == Keys.Home ||
-                        key == Keys.End || key == Keys.Delete || key == Keys.Back)
+                    if (DialogueTextInputBox.IsControlKeyDown())
                     {
-                        activeBox.RecieveSpecialInput(key);
-                        return;
+                        if (key == Keys.A || key == Keys.C || key == Keys.X)
+                        {
+                            activeBox.RecieveSpecialInput(key);
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        if (key == Keys.Left || key == Keys.Right || key == Keys.Up || key == Keys.Down ||
+                            key == Keys.Home || key == Keys.End || key == Keys.Delete || key == Keys.Back)
+                        {
+                            activeBox.RecieveSpecialInput(key);
+                            return;
+                        }
                     }
                 }
 
