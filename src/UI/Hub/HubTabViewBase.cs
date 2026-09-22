@@ -27,6 +27,9 @@ internal abstract class HubTabViewBase : IHubTabView
     /// <summary>派生类在 Draw 期间调用以更新悬停提示。</summary>
     protected void SetHoveredTooltip(string? text) => _hoveredTooltip = text;
 
+    /// <summary>本 Tab 是否存在未保存修改；无表单态的 Tab 恒 false。RulesTabView 直实现 IHubTabView、不经本基类，天然不受影响。</summary>
+    public virtual bool HasUnsavedChanges => false;
+
     public virtual void OnActivated() { }
     public virtual void OnDeactivated() { }
     public virtual void Layout(Rectangle menuBounds, Rectangle contentBounds)

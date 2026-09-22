@@ -333,6 +333,56 @@ internal sealed class DateAmbiencePage : WorldSubPageBase
         UnfocusInputs();
     }
 
+    public override void ResetToBaseline()
+    {
+        var service = ModEntry.DateLocationOverlay;
+        if (service == null)
+        {
+            Game1.playSound("cancel");
+            Game1.addHUDMessage(new HUDMessage("⚠ 世界设定覆盖层服务未初始化", HUDMessage.error_type));
+            return;
+        }
+
+        if (!service.HasOverlay)
+        {
+            Game1.playSound("cancel");
+            Game1.addHUDMessage(new HUDMessage("本页已无自定义设置", HUDMessage.error_type));
+            return;
+        }
+
+        _selectedId = null;
+
+        if (!service.DeleteOverlay(out string err))
+        {
+            Game1.playSound("cancel");
+            Game1.addHUDMessage(new HUDMessage($"⚠ 恢复默认失败: {err}", HUDMessage.error_type));
+            return;
+        }
+
+        OnShown();
+        Game1.playSound("coin");
+        Game1.addHUDMessage(new HUDMessage("✔ 已恢复默认配置", HUDMessage.newQuest_type));
+        Hub.RefreshEntries();
+    }
+
+    private string _formSnapshot = "";
+
+    private string BuildFormFingerprint()
+    {
+        return $"{_selectedId}|{_nameBox.Text.Trim()}|{_currentMap}|{_heartsStepper.Value}|{_startHourStepper.Value}|{_endHourStepper.Value}|{_rainCheckbox.isChecked}|{_descInputBox.Text.Trim()}";
+    }
+
+    private void RefreshFormSnapshot() => _formSnapshot = BuildFormFingerprint();
+
+    public override bool HasUnsavedChanges => !string.IsNullOrEmpty(_selectedId) && BuildFormFingerprint() != _formSnapshot;
+
+    public override bool TryCommitUnsavedChanges()
+    {
+        if (!HasUnsavedChanges) return true;
+        SaveCurrent();
+        return !HasUnsavedChanges;
+    }
+
     private void UnfocusInputs()
     {
         _descInputBox.Selected = false;
@@ -828,7 +878,7 @@ internal sealed class DateAmbiencePage : WorldSubPageBase
     private static string ResolveMapDisplayName(string? rawDisp, string id)
     {
         string disp = id;
-        if (!string.IsNullOrWhiteSpace(rawDisp))
+        if (!string.IsNullOrWhiteSpace(rawDisp)) 
         {
             try
             {
@@ -918,6 +968,7 @@ internal sealed class DateAmbiencePage : WorldSubPageBase
             _descInputBox.SetText(IsZh ? info.ContextDescriptionZh : info.ContextDescriptionEn);
         }
         UnfocusInputs();
+        RefreshFormSnapshot();
     }
 
     private void SaveCurrent()
@@ -959,6 +1010,7 @@ internal sealed class DateAmbiencePage : WorldSubPageBase
             Game1.playSound("coin");
             Game1.addHUDMessage(new HUDMessage("✔ 约会配置已更新", HUDMessage.newQuest_type));
             Hub.RefreshEntries();
+            RefreshFormSnapshot();
         }
     }
 

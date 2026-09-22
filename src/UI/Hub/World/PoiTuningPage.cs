@@ -294,6 +294,7 @@ internal sealed class PoiTuningPage : WorldSubPageBase
             DeselectAllBoxes();
             Game1.playSound("smallSelect");
             LayoutRightForm();
+            RefreshFormSnapshot();
             return true;
         }
         if (_modePoiBtnRect.Contains(x, y) && _currentMode != ViewMode.PoiCatalog)
@@ -308,6 +309,7 @@ internal sealed class PoiTuningPage : WorldSubPageBase
 
             Game1.playSound("smallSelect");
             LayoutRightForm();
+            RefreshFormSnapshot();
             return true;
         }
 
@@ -574,6 +576,72 @@ internal sealed class PoiTuningPage : WorldSubPageBase
             PoiInspectHud.Close();
     }
 
+    public override void ResetToBaseline()
+    {
+        var service = ModEntry.PoiPreferenceOverlay;
+        if (service == null)
+        {
+            Game1.playSound("cancel");
+            Game1.addHUDMessage(new HUDMessage("⚠ 世界设定覆盖层服务未初始化", HUDMessage.error_type));
+            return;
+        }
+
+        if (!service.HasOverlay)
+        {
+            Game1.playSound("cancel");
+            Game1.addHUDMessage(new HUDMessage("本页已无自定义设置", HUDMessage.error_type));
+            return;
+        }
+
+        _selectedPoiId = null;
+        _isCreatingNewPoi = false;
+
+        if (!service.DeleteOverlay(out string err))
+        {
+            Game1.playSound("cancel");
+            Game1.addHUDMessage(new HUDMessage($"⚠ 恢复默认失败: {err}", HUDMessage.error_type));
+            return;
+        }
+
+        OnShown();
+        Game1.playSound("coin");
+        Game1.addHUDMessage(new HUDMessage("✔ 已恢复默认配置", HUDMessage.newQuest_type));
+        Hub.RefreshEntries();
+    }
+
+    private string _formSnapshot = "";
+
+    private string BuildFormFingerprint()
+    {
+        if (_currentMode == ViewMode.NpcWeights)
+        {
+            string fp = _selectedSpouseId ?? "";
+            foreach (var kv in _weightSteppers)
+                fp += "|" + kv.Key + ":" + kv.Value.Value;
+            return fp;
+        }
+
+        if (_isCreatingNewPoi)
+            return $"NEW|{_hasCapture}|{_captureMapName}|{_captureTileX}|{_captureTileY}|{_aliasBox.Text.Trim()}|{_descBox.Text.Trim()}";
+
+        return $"{_selectedPoiId}|{_aliasBox.Text.Trim()}|{_descBox.Text.Trim()}|{_hasPendingCoordChange}|{_pendingMapName}|{_pendingTileX}|{_pendingTileY}";
+    }
+
+    private void RefreshFormSnapshot() => _formSnapshot = BuildFormFingerprint();
+
+    public override bool HasUnsavedChanges => (_currentMode == ViewMode.NpcWeights
+            ? _selectedSpouseId != null
+            : (_isCreatingNewPoi || _selectedPoiId != null))
+        && BuildFormFingerprint() != _formSnapshot;
+
+    public override bool TryCommitUnsavedChanges()
+    {
+        if (!HasUnsavedChanges) return true;
+        if (_currentMode == ViewMode.NpcWeights) SaveWeights();
+        else SavePoi();
+        return !HasUnsavedChanges;
+    }
+
     private void DeselectAllBoxes(bool keepSearch = false)
     {
         _aliasBox.Selected = false;
@@ -781,13 +849,13 @@ internal sealed class PoiTuningPage : WorldSubPageBase
             int cx = _formRect.X + _formRect.Width / 2;
             int cy = _formRect.Y + _formRect.Height / 2 - 30;
 
-            string title = "💍 没有找到已结婚伴侣";
+            string title = "没有找到已结婚伴侣";
             string hint = "结婚后可在此自定义配偶在星露谷各兴趣点的日程出没偏好与驻留意愿。";
 
             var tSz = CustomFontManager.MeasureStringBold(title, CustomFontManager.SizeRegular);
             var hSz = CustomFontManager.MeasureString(hint, CustomFontManager.SizeSmall);
 
-            CustomFontManager.DrawStringBold(b, title, new Vector2(cx - tSz.X / 2f, cy), RulesTheme.AccentGold, CustomFontManager.SizeRegular);
+            CustomFontManager.DrawStringBold(b, title, new Vector2(cx - tSz.X / 2f, cy), Color.White, CustomFontManager.SizeRegular);
             CustomFontManager.DrawString(b, hint, new Vector2(cx - hSz.X / 2f, cy + 34), Color.White, CustomFontManager.SizeSmall);
             return;
         }
@@ -1210,6 +1278,7 @@ internal sealed class PoiTuningPage : WorldSubPageBase
             _descBox.SetText(desc);
         }
         DeselectAllBoxes();
+        RefreshFormSnapshot();
     }
 
     private void RefreshCaptureState()
@@ -1219,6 +1288,7 @@ internal sealed class PoiTuningPage : WorldSubPageBase
         _captureTileX = 0;
         _captureTileY = 0;
         _hasPendingCoordChange = false;
+        RefreshFormSnapshot();
     }
 
     private void RebuildMergedPoiView()
@@ -1356,6 +1426,7 @@ internal sealed class PoiTuningPage : WorldSubPageBase
             int w = targetWeights.TryGetValue(poi.Id, out int val) ? val : DefaultWeight;
             _weightSteppers[poi.Id] = new NumberStepper(Rectangle.Empty, w, 0, 100, 5, " 分");
         }
+        RefreshFormSnapshot();
     }
 
     private static void LoadPoiAliases()
@@ -1492,6 +1563,7 @@ internal sealed class PoiTuningPage : WorldSubPageBase
         DeselectAllBoxes();
         Game1.playSound("smallSelect");
         LayoutRightForm();
+        RefreshFormSnapshot();
     }
 
     private void CaptureCurrentTile(bool silent = false)
@@ -1871,6 +1943,7 @@ internal sealed class PoiTuningPage : WorldSubPageBase
             _errorMessage = null;
             Game1.playSound("coin");
             Hub.RefreshEntries();
+            RefreshFormSnapshot();
         }
         else
         {

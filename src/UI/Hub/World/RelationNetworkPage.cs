@@ -419,6 +419,56 @@ internal sealed class RelationNetworkPage : WorldSubPageBase
         DeselectTextBoxes();
     }
 
+    public override void ResetToBaseline()
+    {
+        var service = ModEntry.NpcRelationOverlay;
+        if (service == null)
+        {
+            Game1.playSound("cancel");
+            Game1.addHUDMessage(new HUDMessage("⚠ 世界设定覆盖层服务未初始化", HUDMessage.error_type));
+            return;
+        }
+
+        if (!service.HasOverlay)
+        {
+            Game1.playSound("cancel");
+            Game1.addHUDMessage(new HUDMessage("本页已无自定义设置", HUDMessage.error_type));
+            return;
+        }
+
+        _selectedKey = null;
+
+        if (!service.DeleteOverlay(out string err))
+        {
+            Game1.playSound("cancel");
+            Game1.addHUDMessage(new HUDMessage($"⚠ 恢复默认失败: {err}", HUDMessage.error_type));
+            return;
+        }
+
+        OnShown();
+        Game1.playSound("coin");
+        Game1.addHUDMessage(new HUDMessage("✔ 已恢复默认配置", HUDMessage.newQuest_type));
+        Hub.RefreshEntries();
+    }
+
+    private string _formSnapshot = "";
+
+    private string BuildFormFingerprint()
+    {
+        return $"{_selectedKey ?? "NEW"}|{_npcA}|{_npcB}|{_descBox.Text.Trim()}";
+    }
+
+    private void RefreshFormSnapshot() => _formSnapshot = BuildFormFingerprint();
+
+    public override bool HasUnsavedChanges => (_editingEntry != null || _isCreatingNew) && BuildFormFingerprint() != _formSnapshot;
+
+    public override bool TryCommitUnsavedChanges()
+    {
+        if (!HasUnsavedChanges) return true;
+        Save();
+        return !HasUnsavedChanges;
+    }
+
     private void DeselectTextBoxes()
     {
         _descBox.Selected = false;
@@ -1031,6 +1081,7 @@ internal sealed class RelationNetworkPage : WorldSubPageBase
         _descBox.SetText(currentText);
 
         DeselectTextBoxes();
+        RefreshFormSnapshot();
     }
 
     /// <summary>
@@ -1057,6 +1108,7 @@ internal sealed class RelationNetworkPage : WorldSubPageBase
         _npcB = _candidateItems.Count > 1 ? _candidateItems[1].Id : "";
         _descBox.SetText("");
         DeselectTextBoxes();
+        RefreshFormSnapshot();
     }
 
     private bool IsDuplicateRelation(string a, string b)
@@ -1224,6 +1276,7 @@ internal sealed class RelationNetworkPage : WorldSubPageBase
         _descBox.SetText("");
         _statusMessage = "已开启新建自创关系模式";
         DeselectTextBoxes();
+        RefreshFormSnapshot();
     }
 
     private (Texture2D? Texture, Rectangle SourceRect) GetNpcAvatar(string npcId)

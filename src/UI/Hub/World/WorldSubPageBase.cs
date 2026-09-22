@@ -27,4 +27,12 @@ internal abstract class WorldSubPageBase
     public virtual bool ReceiveScrollWheel(int direction) => false;
     public virtual bool ReceiveKeyPress(Keys key) => false;
     public virtual void OnHidden() { }
+
+    /// <summary>将本子页恢复为内容包合成基线：删除本页用户覆盖层文件并重建合并视图。默认无操作。</summary>
+    public virtual void ResetToBaseline() { }
+
+    /// <summary>本子页是否存在未提交的表单编辑（基于装载时指纹快照比较）。</summary>
+    public virtual bool HasUnsavedChanges => false;
+    /// <summary>提交本页未保存的表单编辑。返回 true=已一致或提交成功；实现须调用本页既有保存方法并用 HasUnsavedChanges 复查。</summary>
+    public virtual bool TryCommitUnsavedChanges() => true;
 }
