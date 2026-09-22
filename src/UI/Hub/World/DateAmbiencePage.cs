@@ -631,53 +631,32 @@ internal sealed class DateAmbiencePage : WorldSubPageBase
 
     // ── 智能地图过滤引擎（排除功能性死角，保留大地图与拓展户外） ──
 
+    // ── 智能约会地图过滤引擎（仅保留户外大场景与标志性公共休闲室内） ──
+
     private void LoadAllAvailableMaps()
     {
         _allMapOptions.Clear();
         var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        // 黑名单关键字过滤（不适合作为公开约会漫步的区域）
-        string[] blacklistPatterns = {
-            "Cellar", "BugLand", "Sewer", "Mine", "Underground", "WitchSwamp",
-            "Submarine", "BathHouse", "Greenhouse", "FarmCave", "Coop", "Barn",
-            "Shed", "Cabin", "SlimeHutch", "Room", "Basement", "Locker", "Tent", "Cave"
-        };
-
-        void TryAddMap(string id, string? rawDisp)
-        {
-            if (string.IsNullOrWhiteSpace(id) || set.Contains(id)) return;
-
-            // 匹配黑名单模式
-            foreach (var pattern in blacklistPatterns)
-            {
-                if (id.Contains(pattern, StringComparison.OrdinalIgnoreCase)) return;
-            }
-
-            set.Add(id);
-
-            // 清理 Custom_ 前缀以获得友好的显示名称
-            string friendlyName = !string.IsNullOrWhiteSpace(rawDisp) ? rawDisp : id;
-            if (friendlyName.StartsWith("Custom_", StringComparison.OrdinalIgnoreCase))
-            {
-                friendlyName = friendlyName.Substring(7);
-            }
-
-            _allMapOptions.Add((id, $"{friendlyName} ({id})"));
-        }
-
-        // 1. 采集活跃场景
-        if (Context.IsWorldReady)
+        // 1. 扫描存档内所有活跃地图实例
+        if (Context.IsWorldReady && Game1.locations != null)
         {
             foreach (var loc in Game1.locations)
             {
-                if (loc != null)
+                if (loc == null) continue;
+                string id = loc.NameOrUniqueName ?? loc.Name ?? "";
+                if (string.IsNullOrWhiteSpace(id) || set.Contains(id)) continue;
+
+                if (IsValidDateMap(loc, id, loc.DisplayName))
                 {
-                    TryAddMap(loc.Name, loc.DisplayName);
+                    set.Add(id);
+                    string disp = ResolveMapDisplayName(loc.DisplayName, id);
+                    _allMapOptions.Add((id, $"{disp} ({id})"));
                 }
             }
         }
 
-        // 2. 采集动态服务注册的地图
+        // 2. 扫描动态服务注册的地图（兼容部分未预载的第三方 Mod 大地图）
         try
         {
             var dynamicMaps = DynamicAssetQueryService.GetAvailableMaps();
@@ -685,24 +664,188 @@ internal sealed class DateAmbiencePage : WorldSubPageBase
             {
                 foreach (var m in dynamicMaps)
                 {
-                    TryAddMap(m.Id, m.DisplayName);
+                    if (string.IsNullOrWhiteSpace(m.Id) || set.Contains(m.Id)) continue;
+                    if (IsValidDateMap(null, m.Id, m.DisplayName))
+                    {
+                        set.Add(m.Id);
+                        string disp = ResolveMapDisplayName(m.DisplayName, m.Id);
+                        _allMapOptions.Add((m.Id, $"{disp} ({m.Id})"));
+                    }
                 }
             }
         }
         catch { }
 
-        // 3. 兜底核心主场景保底
-        string[] coreLocations = { "Town", "Beach", "Mountain", "Woods", "Saloon", "Forest", "Desert", "Farm" };
-        foreach (var core in coreLocations)
+        // 3. 原版核心约会大地图保底（确保空档或离线时也能选用经典场景）
+        var coreDatingMaps = new (string Id, string NameZh, string NameEn)[]
         {
-            if (!set.Contains(core))
+            ("Town", "鹈鹕镇", "Pelican Town"),
+            ("Beach", "海滩", "Beach"),
+            ("Mountain", "山区", "Mountain"),
+            ("Forest", "煤矿森林", "Cindersap Forest"),
+            ("Woods", "秘密森林", "Secret Woods"),
+            ("Desert", "卡利科沙漠", "Calico Desert"),
+            ("Saloon", "星果沙龙", "The Stardrop Saloon"),
+            ("Railroad", "铁路", "Railroad"),
+            ("Farm", "农场", "Farm")
+        };
+
+        foreach (var (cId, cZh, cEn) in coreDatingMaps)
+        {
+            if (!set.Contains(cId))
             {
-                _allMapOptions.Add((core, core));
-                set.Add(core);
+                string disp = IsZh ? cZh : cEn;
+                _allMapOptions.Add((cId, $"{disp} ({cId})"));
+                set.Add(cId);
             }
         }
 
         _allMapOptions.Sort((a, b) => string.Compare(a.DisplayName, b.DisplayName, StringComparison.CurrentCultureIgnoreCase));
+    }
+
+    /// <summary>
+    /// 约会场景准入研判：严格剔除私人居所与功能房间，仅保留户外大地图与公共浪漫场所
+    /// </summary>
+    private static bool IsValidDateMap(GameLocation? loc, string id, string? rawDisp)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return false;
+        string lower = id.ToLowerInvariant();
+
+        // 1. 排除私人住宅、卧室、小屋（没人会在别人卧室约会）
+        if (lower.Contains("house") ||
+            lower.Contains("home") ||
+            lower.Contains("bedroom") ||
+            lower.Contains("cabin") ||
+            lower.Contains("trailer") ||
+            lower.Contains("tent") ||
+            lower.Contains("shack") ||
+            lower.Contains("hut") ||
+            lower.Contains("manor") ||
+            lower.Contains("room"))
+        {
+            // 特例豁免：星果沙龙与博物馆允许作为约会点
+            if (!string.Equals(id, "Saloon", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(id, "ArchaeologyHouse", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+        }
+
+        // 2. 排除功能性、生产性、地下、危险区域
+        if (lower.Contains("cellar") ||
+            lower.Contains("barn") ||
+            lower.Contains("coop") ||
+            lower.Contains("shed") ||
+            lower.Contains("greenhouse") ||
+            lower.Contains("farmcave") ||
+            lower.Contains("slimehutch") ||
+            lower.Contains("basement") ||
+            lower.Contains("locker") ||
+            lower.Contains("attic") ||
+            (lower.Contains("bathhouse_") && !lower.Contains("pool")) ||
+            lower.Contains("sewer") ||
+            lower.Contains("bugland") ||
+            lower.Contains("witchswamp") ||
+            lower.Contains("mine") ||
+            lower.Contains("cave") ||
+            lower.Contains("dungeon") ||
+            lower.Contains("volcano"))
+        {
+            return false;
+        }
+
+        // 3. 排除技术地图、过场动画、假层、废墟
+        if (lower.Contains("fake") ||
+            lower.Contains("ruins") ||
+            lower.Contains("cutscene") ||
+            lower.Contains("intro") ||
+            lower.Contains("event") ||
+            lower.Contains("holding") ||
+            lower.Contains("staging") ||
+            lower.Contains("backstage") ||
+            lower.Contains("warp") ||
+            lower.Contains("buffer") ||
+            lower.Contains("test") ||
+            lower.Contains("debug") ||
+            lower.Contains("dummy") ||
+            lower.StartsWith("temp"))
+        {
+            return false;
+        }
+
+        // 4. 检查 DisplayName 是否破损或缺失本地化
+        if (IsInvalidDisplayName(rawDisp)) return false;
+
+        // Custom_ 开头但 DisplayName 依然等于原 ID 的假地图直接丢弃
+        if (id.StartsWith("Custom_", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(rawDisp, id, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        // 5. 准入规则：
+        // A. 户外大场景（IsOutdoors == true）直接通过
+        if (loc != null && loc.IsOutdoors)
+            return true;
+
+        // B. 原版知名室内公共约会场所白名单
+        if (string.Equals(id, "Saloon", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(id, "MovieTheater", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(id, "IslandResort", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(id, "ArchaeologyHouse", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(id, "BathHouse_Pool", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        // C. 第三方 Mod 中的公共社交/休闲场所（酒馆、咖啡馆、餐厅、广场、海滨）
+        if (lower.Contains("tavern") ||
+            lower.Contains("inn") ||
+            lower.Contains("cafe") ||
+            lower.Contains("restaurant") ||
+            lower.Contains("lounge") ||
+            lower.Contains("plaza") ||
+            lower.Contains("square") ||
+            lower.Contains("park"))
+        {
+            return true;
+        }
+
+        // 其余未识别的封闭室内场景全部拒绝
+        return false;
+    }
+
+    private static bool IsInvalidDisplayName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return true;
+        string lower = name.ToLowerInvariant();
+        return lower.Contains("no translation") ||
+               lower.Contains("missing translation") ||
+               lower.Contains("(no translation:") ||
+               (lower.StartsWith("{{") && lower.EndsWith("}}"));
+    }
+
+    private static string ResolveMapDisplayName(string? rawDisp, string id)
+    {
+        string disp = id;
+        if (!string.IsNullOrWhiteSpace(rawDisp))
+        {
+            try
+            {
+                disp = StardewValley.TokenizableStrings.TokenParser.ParseText(rawDisp);
+            }
+            catch
+            {
+                disp = rawDisp;
+            }
+        }
+
+        if (disp.StartsWith("Custom_", StringComparison.OrdinalIgnoreCase))
+        {
+            disp = disp.Substring(7);
+        }
+
+        return disp;
     }
 
     private void RefreshMergedList()
