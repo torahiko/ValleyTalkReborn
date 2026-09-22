@@ -128,6 +128,7 @@ namespace ValleytalkReborn
         private Rectangle _uniqueCardRect;
         private Rectangle _homeBedCardRect;
         private Rectangle _copyBiographyRect;
+        private Rectangle _aiPolishBioRect;
 
         // ── Tab 2 控件（言行举止） ────────────────────────────────────────
         private DialogueTextInputBox _behaviorBox;
@@ -383,6 +384,12 @@ namespace ValleytalkReborn
                     _scaffoldBtnRect.Left - 8 - CopyBtnW,
                     _scaffoldBtnRect.Y + (_scaffoldBtnRect.Height - CopyBtnH) / 2,
                     CopyBtnW, CopyBtnH);
+
+                _aiPolishBioRect = new Rectangle(
+                    _copyBiographyRect.Left - 8 - CopyBtnW,
+                    _copyBiographyRect.Y,
+                    CopyBtnW,
+                    CopyBtnH);
             }
 
             // ── Tab 2 布局 ──
@@ -705,6 +712,12 @@ namespace ValleytalkReborn
             if (new Rectangle(_uniqueBox.X, _uniqueBox.Y, _uniqueBox.Width, _uniqueBox.Height).Contains(x, y)) { FocusTextBox(_uniqueBox); return; }
             if (_homeBedCheckbox.bounds.Contains(x, y)) { _homeBedCheckbox.receiveLeftClick(x, y); return; }
             if (!AnyTextBoxHasFocus() && _copyBiographyRect.Contains(x, y)) { CopyBoxToClipboard("biography"); return; }
+            if (!AnyTextBoxHasFocus() && _aiPolishBioRect.Contains(x, y) && !BioAiRunner.IsBusy)
+            {
+                UnfocusAll();
+                OpenBioPolishDialog();
+                return;
+            }
             UnfocusAll();
         }
 
@@ -920,6 +933,12 @@ namespace ValleytalkReborn
 
         public override void receiveKeyPress(Keys key)
         {
+            if (key == Keys.Escape && BioAiRunner.IsBusy)
+            {
+                BioAiRunner.CancelCurrentTask();
+                return;
+            }
+
             // 1. Tag 编辑器正在输入时优先处理
             if (_activeTab == 2 && _stageTagEditor != null && _stageTagEditor.IsAdding)
             {
@@ -1184,6 +1203,9 @@ namespace ValleytalkReborn
 
             DrawActionButton(b, _scaffoldBtnRect, "插入身份模板", mx, my, false);
             DrawActionButton(b, _copyBiographyRect, "复制全部", mx, my, false);
+            string aiLabel = BioAiRunner.IsBusy ? "构思中..." : "AI 润色";
+            DrawActionButton(b, _aiPolishBioRect, aiLabel, mx, my,
+                isPrimary: true, isEnabled: !BioAiRunner.IsBusy);
             DrawStyledDialogueBox(b, _biographyBox);
 
             DrawCard(b, _uniqueCardRect);
@@ -1761,7 +1783,66 @@ namespace ValleytalkReborn
             }
         }
 
-        // ── 业务回写辅助 ──────────────────────────────────────────────────
+        // ── AI 润色与业务回写辅助 ────────────────────────────────────────
+        private void OpenBioPolishDialog()
+        {
+            string sourceText = _biographyBox.HasSelection ? _biographyBox.SelectedText : _biographyBox.Text;
+            string systemPrompt =
+                $"你是一名专业的《星露谷物语》NPC 人设编辑助手，正在润色 {_npcName} 的身份设定。\n" +
+                "硬性要求：\n" +
+                "1. 保留 [IDENTITY]、[PSYCHOLOGICAL CONFLICTS] 等核心结构标记与原有分节结构。\n" +
+                "2. 保持角色核心气质，不得擅自改变身份、经历、关系或心理矛盾。\n" +
+                "3. 严格遵循玩家给出的调整方向。\n" +
+                "4. 严禁寒暄、解释、标题或代码围栏，只输出润色后的完整纯文本。";
+
+            Game1.activeClickableMenu = new BioAiPromptDialog("身份设定", this, (demand, enableThinking) =>
+            {
+                if (BioAiRunner.IsBusy)
+                    return;
+
+                UnfocusAll();
+                string userPrompt =
+                    $"【玩家期望调整方向】\n{demand}\n\n" +
+                    $"【待润色原文】\n{sourceText}\n\n" +
+                    "请直接输出优化后的完整内容";
+                var queue = new System.Collections.Concurrent.ConcurrentQueue<string>();
+                var review = new BioAiReviewMenu("身份设定", this,
+                    confirmedText => ApplyPolishResult(confirmedText));
+                review.BeginStreaming(queue);
+                Game1.activeClickableMenu = review;
+                BioAiRunner.ExecuteStreaming(systemPrompt, userPrompt, enableThinking, queue,
+                    result => review.OnStreamSettled(result));
+            });
+        }
+
+        private void ApplyPolishResult(string confirmedText)
+        {
+            if (string.IsNullOrWhiteSpace(confirmedText))
+            {
+                Game1.playSound("cancel");
+                return;
+            }
+
+            int projectedLen = _biographyBox.HasSelection
+                ? _biographyBox.Text.Length - _biographyBox.SelectionLength + confirmedText.Length
+                : confirmedText.Length;
+            if (projectedLen > 4000)
+            {
+                Game1.playSound("cancel");
+                Game1.addHUDMessage(new HUDMessage("润色结果过长，超出 4000 字符上限，已保留原文", HUDMessage.error_type));
+                return;
+            }
+
+            if (_biographyBox.HasSelection)
+                _biographyBox.RecieveTextInput(confirmedText);
+            else
+                _biographyBox.SetText(confirmedText);
+
+            _vm.SetBiography(_biographyBox.Text);
+            Game1.playSound("coin");
+            Game1.addHUDMessage(new HUDMessage("✔ 已应用 AI 润色内容", HUDMessage.newQuest_type));
+        }
+
         private void FocusTextBox(TextBox box)
         {
             UnfocusAll();
