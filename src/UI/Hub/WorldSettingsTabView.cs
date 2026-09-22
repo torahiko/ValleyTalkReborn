@@ -56,6 +56,11 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
         _pages[(int)_currentSubPage]?.OnHidden();
     }
 
+    public override bool HasUnsavedChanges
+    {
+        get { for (int i = 0; i < _pages.Length; i++) { if (_pages[i]?.HasUnsavedChanges == true) return true; } return false; }
+    }
+
     public override void Layout(Rectangle menuBounds, Rectangle contentBounds)
     {
         base.Layout(menuBounds, contentBounds);
@@ -113,15 +118,37 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
         // 1. 底部保存与重置按钮
         if (_saveBtnRect.Contains(x, y))
         {
-            Game1.playSound("coin");
-            Game1.addHUDMessage(new HUDMessage("✔ 世界设定已全部保存", HUDMessage.newQuest_type));
+            int committed = 0;
+            bool anyFailed = false;
+            for (int i = 0; i < _pages.Length; i++)
+            {
+                var p = _pages[i];
+                if (p == null || !p.HasUnsavedChanges) continue;
+                if (p.TryCommitUnsavedChanges()) committed++;
+                else anyFailed = true;
+            }
+
+            if (committed > 0)
+                Game1.addHUDMessage(new HUDMessage($"✔ 已保存 {committed} 页的待存修改", HUDMessage.newQuest_type));
+            else if (anyFailed)
+                Game1.addHUDMessage(new HUDMessage("⚠ 部分页面保存失败，请查看子页提示", HUDMessage.error_type));
+            else
+            {
+                Game1.playSound("smallSelect");
+                Game1.addHUDMessage(new HUDMessage("所有配置均已保存", HUDMessage.newQuest_type));
+            }
             return true;
         }
 
         if (_resetBtnRect.Contains(x, y))
         {
             Game1.playSound("trashcan");
-            Game1.addHUDMessage(new HUDMessage($"已重置【{GetSubPageLabel(_currentSubPage)}】", HUDMessage.error_type));
+            var page = _pages[(int)_currentSubPage];
+            string label = GetSubPageLabel(_currentSubPage);
+            Game1.activeClickableMenu = new ConfirmationDialog(
+                $"确定要恢复【{label}】的默认配置吗？\n该页全部自定义设置将被清除。",
+                _ => { Game1.activeClickableMenu = Hub; page?.ResetToBaseline(); },
+                _ => { Game1.activeClickableMenu = Hub; });
             return true;
         }
 

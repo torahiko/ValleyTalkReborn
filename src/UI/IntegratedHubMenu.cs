@@ -164,7 +164,7 @@ namespace ValleytalkReborn
             if (_closeButton.containsPoint(x, y))
             {
                 Game1.playSound("bigDeSelect");
-                exitThisMenu();
+                RequestExit();
                 return;
             }
 
@@ -200,11 +200,29 @@ namespace ValleytalkReborn
             if (key == Keys.Escape)
             {
                 Game1.playSound("bigDeSelect");
-                exitThisMenu();
+                RequestExit();
                 return;
             }
 
             base.receiveKeyPress(key);
+        }
+
+        private void RequestExit()
+        {
+            if (_tabViews[2] is HubTabViewBase ws && ws.HasUnsavedChanges)
+            {
+                Game1.activeClickableMenu = new ConfirmationDialog(
+                    "世界设定中存在未保存的修改，退出后将丢失。仍要退出吗？",
+                    _ =>
+                    {
+                        Game1.activeClickableMenu = this;
+                        exitThisMenu(playSound: false);
+                    },
+                    _ => { Game1.activeClickableMenu = this; }
+                );
+                return;
+            }
+            exitThisMenu();
         }
 
         // ── 绘制 ────────────────────────────────────────────────────────

@@ -552,6 +552,63 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
         DeselectAllBoxes();
     }
 
+    public override void ResetToBaseline()
+    {
+        var service = ModEntry.WorldSummaryOverlay;
+        if (service == null)
+        {
+            Game1.playSound("cancel");
+            Game1.addHUDMessage(new HUDMessage("⚠ 世界设定覆盖层服务未初始化", HUDMessage.error_type));
+            return;
+        }
+
+        if (!service.HasOverlay)
+        {
+            Game1.playSound("cancel");
+            Game1.addHUDMessage(new HUDMessage("本页已无自定义设置", HUDMessage.error_type));
+            return;
+        }
+
+        _selectedLocId = null;
+        _selectedFestKey = null;
+
+        if (!service.DeleteOverlay(out string err))
+        {
+            Game1.playSound("cancel");
+            Game1.addHUDMessage(new HUDMessage($"⚠ 恢复默认失败: {err}", HUDMessage.error_type));
+            return;
+        }
+
+        OnShown();
+        Game1.playSound("coin");
+        Game1.addHUDMessage(new HUDMessage("✔ 已恢复默认配置", HUDMessage.newQuest_type));
+        Hub.RefreshEntries();
+    }
+
+    private string _formSnapshot = "";
+
+    private string BuildFormFingerprint()
+    {
+        if (_currentMode == ViewMode.Locations)
+            return $"{_selectedLocId}|{_descBox.Text.Trim()}";
+        return $"{_isCreatingNewFest}|{_selectedFestKey ?? "NEW"}|{_festNameBox.Text.Trim()}|{_descBox.Text.Trim()}|{_dayStepper.Value}|{_selectedSeason}";
+    }
+
+    private void RefreshFormSnapshot() => _formSnapshot = BuildFormFingerprint();
+
+    public override bool HasUnsavedChanges => (_currentMode == ViewMode.Locations
+            ? _selectedLocId != null
+            : (_selectedFestKey != null || _isCreatingNewFest))
+        && BuildFormFingerprint() != _formSnapshot;
+
+    public override bool TryCommitUnsavedChanges()
+    {
+        if (!HasUnsavedChanges) return true;
+        if (_currentMode == ViewMode.Locations) SaveLocation();
+        else SaveFestival();
+        return !HasUnsavedChanges;
+    }
+
     private void DeselectAllBoxes()
     {
         _descBox.Selected = false;
@@ -1743,6 +1800,7 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
             _descBox.SetText(loc.CustomDescription);
         }
         DeselectAllBoxes();
+        RefreshFormSnapshot();
     }
 
     private void SelectFestival(string key)
@@ -1761,6 +1819,7 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
             _selectedSeason = fest.Season;
         }
         DeselectAllBoxes();
+        RefreshFormSnapshot();
     }
 
     // ── 业务保存与二次确认 ──
@@ -2022,6 +2081,7 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
         _isSeasonDropdownOpen = false;
         DeselectAllBoxes();
         _statusMessage = "已开启自创节日模式，请设定日期并保存。";
+        RefreshFormSnapshot();
     }
 
     // ── 辅助解析方法 ──
