@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using StardewValley;
@@ -10,13 +10,25 @@ using System.Text;
 namespace ValleytalkReborn
 {
     /// <summary>
-    /// 对话/输入文本框：支持自适应字阶、CustomFontManager 原生接入、精准折行、平滑拖拽滚动条、光标定位及右下角字数指示器。
+    /// 对话/输入文本框：支持自适应字阶、CustomFontManager 原生接入、精准折行、平滑拖拽滚动条、光标定位、文本选区及右下角字数指示器。
     /// 内置羊皮纸风格底槽与聚焦高亮外框。（已进行像素级渲染防虚化校准）
+    /// 选区状态为控件实例私有字段（Memory 作用域），无持久化/多人同步。
     /// </summary>
     public class DialogueTextInputBox : IKeyboardSubscriber
     {
         public delegate void TextBoxEvent(DialogueTextInputBox sender);
         public event TextBoxEvent OnSubmit;
+
+        ///////////////////////////////////////////////////////////////////
+        // 折行缓存结构（替代旧版 List<string>）
+        ///////////////////////////////////////////////////////////////////
+
+        private struct VisualLine
+        {
+            public string Text;
+            public int StartIndex;  // 在完整 Text 中的起始字符索引
+            public int Length;      // 本行字符长度
+        }
 
         ///////////////////////////////////////////////////////////////////
         // 基础属性与字体设置
@@ -102,8 +114,52 @@ namespace ValleytalkReborn
             }
         }
 
-        public bool Selected { get; set; } = true;
+        private bool _selected = true;
+        public bool Selected
+        {
+            get => _selected;
+            set
+            {
+                _selected = value;
+                // 失去焦点时重置点击连发计数，避免跨框多击误判
+                if (!value)
+                {
+                    _clickCount = 0;
+                    _isSelectingText = false;
+                }
+            }
+        }
+
         public string Text { get; private set; } = "";
+
+        ///////////////////////////////////////////////////////////////////
+        // 选区状态（Memory 作用域：控件实例私有字段，无持久化）
+        ///////////////////////////////////////////////////////////////////
+
+        private int _caretPosition = 0;
+        private int _selectionStart = 0;
+        private int _selectionEnd = 0;
+        private bool _isSelectingText = false;
+
+        // 多击识别（双击选词 / 三击选段）
+        private const double MultiClickThresholdMs = 400.0;
+        private double _lastClickTime = -1000.0;
+        private int _clickCount = 0;
+
+        /// <summary>是否存在选区</summary>
+        public bool HasSelection => _selectionStart != _selectionEnd;
+
+        /// <summary>选区较小端索引</summary>
+        public int SelectionStart => Math.Min(_selectionStart, _selectionEnd);
+
+        /// <summary>选区较大端索引</summary>
+        public int SelectionEnd => Math.Max(_selectionStart, _selectionEnd);
+
+        /// <summary>选区长度</summary>
+        public int SelectionLength => Math.Abs(_selectionEnd - _selectionStart);
+
+        /// <summary>选中文本（无选区返回空串）</summary>
+        public string SelectedText => HasSelection ? Text.Substring(SelectionStart, SelectionLength) : "";
 
         ///////////////////////////////////////////////////////////////////
         // 配置与内部状态
@@ -112,12 +168,11 @@ namespace ValleytalkReborn
         private readonly int _characterLimit;
         private readonly int _warningThreshold;
 
-        private int _caretPosition = 0;
-
         // 滚动与滚动条状态
         private int _scrollOffset = 0;
         private int _visibleLineCount = 0;
         private bool _needsScrolling = false;
+        private bool _lastNeedsScrolling = false;
         private bool _needsEnsureCaretVisible = false;
 
         private bool _isDraggingScrollbar = false;
@@ -131,12 +186,15 @@ namespace ValleytalkReborn
         private double _keyPressTime = 0;
         private int _repeatCount = 0;
 
-        // 换行缓存
-        private List<string> _cachedWrappedLines;
+        // 折行缓存
+        private List<VisualLine> _cachedVisualLines;
         private bool _isTextDirty = true;
 
         private const int CounterPadding = 10;
         private DateTime _lastSubmitTime = DateTime.MinValue;
+
+        // 选区高亮色（天青色半透明）
+        private static readonly Color SelectionHighlightColor = new Color(120, 205, 255) * 0.42f;
 
         ///////////////////////////////////////////////////////////////////
         // 构造函数
@@ -173,6 +231,28 @@ namespace ValleytalkReborn
         {
             float h = MeasureString("测试Ag").Y;
             return h > 0 ? MathF.Ceiling(h) + 2f : 24f;
+        }
+
+        ///////////////////////////////////////////////////////////////////
+        // 文本区矩形（绘制与命中共用）
+        ///////////////////////////////////////////////////////////////////
+
+        private Rectangle GetTextArea()
+        {
+            int bx = (int)Position.X;
+            int by = (int)Position.Y;
+            int bw = (int)Extent.X;
+            int bh = (int)Extent.Y;
+
+            int padX = 14;
+            int padY = 12;
+            int bottomReserved = ShowCharacterCount ? 24 : padY;
+
+            return new Rectangle(
+                bx + padX,
+                by + padY,
+                Math.Max(1, bw - padX * 2),
+                Math.Max((int)MathF.Ceiling(GetLineHeight()), bh - padY - bottomReserved));
         }
 
         ///////////////////////////////////////////////////////////////////
@@ -261,6 +341,8 @@ namespace ValleytalkReborn
 
             _isTextDirty = true;
             _caretPosition = Text.Length;
+            _selectionStart = _caretPosition;
+            _selectionEnd = _caretPosition;
             _needsEnsureCaretVisible = true;
         }
 
@@ -269,50 +351,142 @@ namespace ValleytalkReborn
             _isTextDirty = true;
         }
 
+        /// <summary>清除选区（光标位置不变）</summary>
+        public void ClearSelection()
+        {
+            _selectionEnd = _selectionStart;
+        }
+
+        /// <summary>删除选区内容，光标移至选区起始端</summary>
+        public void DeleteSelection()
+        {
+            if (!HasSelection)
+                return;
+
+            int start = SelectionStart;
+            int len = SelectionLength;
+            Text = Text.Remove(start, len);
+            _caretPosition = start;
+            _selectionStart = start;
+            _selectionEnd = start;
+            _isTextDirty = true;
+            _needsEnsureCaretVisible = true;
+        }
+
+        /// <summary>
+        /// 由屏幕坐标反推字符索引（光标落位）。
+        /// 空文本 → 0；行号越界 → Text.Length；relX≤0 → 行首；逐字 best-diff 兜底。
+        /// </summary>
+        public int GetCaretIndexFromPosition(float x, float y)
+        {
+            if (string.IsNullOrEmpty(Text))
+                return 0;
+
+            var lines = GetVisualLines();
+            if (lines.Count == 0)
+                return 0;
+
+            var area = GetTextArea();
+            int lineHeight = (int)MathF.Ceiling(GetLineHeight());
+
+            float relX = x - area.X;
+            int relY = (int)(y - area.Y);
+
+            int lineIdx = (lineHeight > 0) ? (relY / lineHeight + _scrollOffset) : _scrollOffset;
+            if (lineIdx < 0)
+                lineIdx = 0;
+            if (lineIdx >= lines.Count)
+                return Text.Length;
+
+            var line = lines[lineIdx];
+            if (relX <= 0)
+                return line.StartIndex;
+
+            // 逐字 best-diff 定位
+            string lineText = line.Text;
+            int bestOffset = lineText.Length;
+            float bestDiff = float.MaxValue;
+            for (int i = 0; i <= lineText.Length; i++)
+            {
+                float w = MeasureString(lineText.Substring(0, i)).X;
+                float diff = MathF.Abs(w - relX);
+                if (diff < bestDiff)
+                {
+                    bestDiff = diff;
+                    bestOffset = i;
+                }
+            }
+            return line.StartIndex + bestOffset;
+        }
+
         ///////////////////////////////////////////////////////////////////
         // 输入事件处理
         ///////////////////////////////////////////////////////////////////
 
         public bool ReceiveLeftClick(int x, int y)
         {
-            if (!_needsScrolling)
-                return false;
-
-            var track = GetScrollTrackBounds();
-            // 扩展判定区域，方便鼠标精准抓取
-            var hitArea = new Rectangle(track.X - 6, track.Y, track.Width + 12, track.Height);
-
-            if (hitArea.Contains(x, y))
+            // 1. 滚动条命中（仅在需要滚动时）
+            if (_needsScrolling)
             {
-                var thumb = GetScrollThumbBounds();
-                _needsEnsureCaretVisible = false;
+                var track = GetScrollTrackBounds();
+                var hitArea = new Rectangle(track.X - 6, track.Y, track.Width + 12, track.Height);
 
-                if (thumb.Contains(x, y))
+                if (hitArea.Contains(x, y))
                 {
-                    // 抓取滑块开始拖拽
-                    _isDraggingScrollbar = true;
-                    _dragGrabOffsetY = y - thumb.Y;
+                    var thumb = GetScrollThumbBounds();
+                    _needsEnsureCaretVisible = false;
+
+                    if (thumb.Contains(x, y))
+                    {
+                        _isDraggingScrollbar = true;
+                        _dragGrabOffsetY = y - thumb.Y;
+                    }
+                    else
+                    {
+                        int thumbHeight = thumb.Height;
+                        int availableTrack = track.Height - thumbHeight;
+
+                        if (availableTrack > 0)
+                        {
+                            int targetThumbY = y - thumbHeight / 2;
+                            int totalVisualLines = GetTotalVisualLines();
+                            int maxScroll = Math.Max(0, totalVisualLines - _visibleLineCount);
+
+                            float pct = (float)(targetThumbY - track.Y) / availableTrack;
+                            pct = Math.Clamp(pct, 0f, 1f);
+                            _scrollOffset = (int)MathF.Round(pct * maxScroll);
+                            _dragGrabOffsetY = thumbHeight / 2;
+                        }
+                        _isDraggingScrollbar = true;
+                        Game1.playSound("shwip");
+                    }
+                    return true;
                 }
+            }
+
+            // 2. 文本区（含框内非文本区）点击 → 光标落位 + 多击选区
+            if (ContainsPoint(x, y))
+            {
+                double now = Game1.currentGameTime.TotalGameTime.TotalMilliseconds;
+                if (now - _lastClickTime < MultiClickThresholdMs)
+                    _clickCount++;
+                else
+                    _clickCount = 1;
+                _lastClickTime = now;
+
+                int idx = GetCaretIndexFromPosition(x, y);
+
+                if (_clickCount >= 3)
+                    SelectParagraphAt(idx);
+                else if (_clickCount == 2)
+                    SelectWordAt(idx);
                 else
                 {
-                    // 点击滑轨空白处：直接定位
-                    int thumbHeight = thumb.Height;
-                    int availableTrack = track.Height - thumbHeight;
-
-                    if (availableTrack > 0)
-                    {
-                        int targetThumbY = y - thumbHeight / 2;
-                        int totalVisualLines = GetTotalVisualLines();
-                        int maxScroll = Math.Max(0, totalVisualLines - _visibleLineCount);
-
-                        float pct = (float)(targetThumbY - track.Y) / availableTrack;
-                        pct = Math.Clamp(pct, 0f, 1f);
-                        _scrollOffset = (int)MathF.Round(pct * maxScroll);
-                        _dragGrabOffsetY = thumbHeight / 2;
-                    }
-                    _isDraggingScrollbar = true;
-                    Game1.playSound("shwip");
+                    _caretPosition = idx;
+                    _selectionStart = idx;
+                    _selectionEnd = idx;
                 }
+                _isSelectingText = true;
                 return true;
             }
 
@@ -326,6 +500,18 @@ namespace ValleytalkReborn
                 UpdateScrollFromThumbPosition(y - _dragGrabOffsetY);
                 return true;
             }
+
+            if (_isSelectingText)
+            {
+                if (ContainsPoint(x, y))
+                {
+                    int idx = GetCaretIndexFromPosition(x, y);
+                    _caretPosition = idx;
+                    _selectionEnd = idx;
+                }
+                return true;
+            }
+
             return false;
         }
 
@@ -336,6 +522,10 @@ namespace ValleytalkReborn
                 _isDraggingScrollbar = false;
                 return true;
             }
+
+            if (_isSelectingText)
+                _isSelectingText = false;
+
             return false;
         }
 
@@ -394,6 +584,10 @@ namespace ValleytalkReborn
 
         private void InsertText(string str)
         {
+            // 有选区时先删除选区，再于选区起始处插入
+            if (HasSelection)
+                DeleteSelection();
+
             if (!AllowNewlines && (str.Contains('\r') || str.Contains('\n')))
             {
                 str = str.Replace("\r", "").Replace("\n", "");
@@ -405,6 +599,8 @@ namespace ValleytalkReborn
             {
                 Text = Text.Insert(_caretPosition, str);
                 _caretPosition += str.Length;
+                _selectionStart = _caretPosition;
+                _selectionEnd = _caretPosition;
                 _isTextDirty = true;
                 _needsEnsureCaretVisible = true;
             }
@@ -437,7 +633,10 @@ namespace ValleytalkReborn
                 switch (key)
                 {
                     case Keys.C:
-                        CopyAllToClipboard();
+                        if (HasSelection)
+                            CopySelectionToClipboard();
+                        else
+                            CopyAllToClipboard();
                         return;
 
                     case Keys.V:
@@ -445,10 +644,15 @@ namespace ValleytalkReborn
                         return;
 
                     case Keys.X:
-                        CutAllToClipboard();
+                        if (HasSelection)
+                            CutSelectionToClipboard();
+                        else
+                            CutAllToClipboard();
                         return;
 
                     case Keys.A:
+                        _selectionStart = 0;
+                        _selectionEnd = Text.Length;
                         _caretPosition = Text.Length;
                         _needsEnsureCaretVisible = true;
                         return;
@@ -466,22 +670,26 @@ namespace ValleytalkReborn
                 case Keys.Left:
                     if (_caretPosition > 0)
                         _caretPosition--;
+                    ClearSelection();
                     StartKeyRepeat(key);
                     break;
 
                 case Keys.Right:
                     if (_caretPosition < Text.Length)
                         _caretPosition++;
+                    ClearSelection();
                     StartKeyRepeat(key);
                     break;
 
                 case Keys.Home:
                     _caretPosition = 0;
+                    ClearSelection();
                     StartKeyRepeat(key);
                     break;
 
                 case Keys.End:
                     _caretPosition = Text.Length;
+                    ClearSelection();
                     StartKeyRepeat(key);
                     break;
 
@@ -520,6 +728,9 @@ namespace ValleytalkReborn
                     UpdateScrollFromThumbPosition(mouseY - _dragGrabOffsetY);
                 }
             }
+
+            if (_isSelectingText && mouseState.LeftButton == ButtonState.Released)
+                _isSelectingText = false;
 
             _isHoveringThumb = _needsScrolling && GetScrollThumbBounds().Contains(mouseX, mouseY);
 
@@ -601,27 +812,25 @@ namespace ValleytalkReborn
                 }
             }
 
+            var textArea = GetTextArea();
             int lineHeight = (int)MathF.Ceiling(GetLineHeight());
-            int padX = 14;
-            int padY = 12;
-
-            int bottomReserved = ShowCharacterCount ? 24 : padY;
-
-            var textArea = new Rectangle(
-                bx + padX,
-                by + padY,
-                Math.Max(1, bw - padX * 2),
-                Math.Max(lineHeight, bh - padY - bottomReserved)
-            );
-
             _visibleLineCount = Math.Max(1, textArea.Height / lineHeight);
 
             int totalVisualLines = GetTotalVisualLines();
             _needsScrolling = totalVisualLines > _visibleLineCount;
 
+            // 契约 E：滚动条出现/消失当帧重排
+            if (_needsScrolling != _lastNeedsScrolling)
+                _isTextDirty = true;
+            _lastNeedsScrolling = _needsScrolling;
+
             // 绘制文本
             if (!string.IsNullOrEmpty(Text))
             {
+                // 选区高亮绘制于文字之下
+                if (Selected && HasSelection)
+                    DrawSelectionHighlight(spriteBatch, textArea, lineHeight);
+
                 DrawWrappedTextWithScroll(spriteBatch, Text, textArea, TextColor);
             }
 
@@ -644,13 +853,55 @@ namespace ValleytalkReborn
             }
         }
 
+        private void DrawSelectionHighlight(SpriteBatch spriteBatch, Rectangle area, int lineHeight)
+        {
+            int selStart = SelectionStart;
+            int selEnd = SelectionEnd;
+            if (selEnd <= selStart)
+                return;
+
+            var lines = GetVisualLines();
+
+            for (int i = _scrollOffset; i < lines.Count && (i - _scrollOffset) < _visibleLineCount; i++)
+            {
+                var line = lines[i];
+                int lineStart = line.StartIndex;
+                int lineEnd = line.StartIndex + line.Length;
+
+                int ovStart = Math.Max(lineStart, selStart);
+                int ovEnd = Math.Min(lineEnd, selEnd);
+                if (ovEnd <= ovStart)
+                    continue;
+
+                int beforeChars = ovStart - lineStart;
+                int selChars = ovEnd - ovStart;
+                string lineText = line.Text;
+
+                float x = area.X;
+                if (beforeChars > 0)
+                    x += MeasureString(lineText.Substring(0, beforeChars)).X;
+
+                float w = (selChars > 0)
+                    ? MeasureString(lineText.Substring(beforeChars, selChars)).X
+                    : 0f;
+
+                int y = area.Y + (i - _scrollOffset) * lineHeight;
+                int cx = Math.Max((int)MathF.Round(x), area.X);
+                int cw = Math.Min((int)MathF.Round(x) + (int)MathF.Ceiling(Math.Max(1f, w)), area.Right) - cx;
+                if (cw <= 0)
+                    continue;
+
+                spriteBatch.Draw(Game1.staminaRect, new Rectangle(cx, y, cw, lineHeight), SelectionHighlightColor);
+            }
+        }
+
         private void DrawWrappedTextWithScroll(
             SpriteBatch spriteBatch,
             string text,
             Rectangle area,
             Color color)
         {
-            var lines = GetWrappedLines(text);
+            var lines = GetVisualLines();
             int lineHeight = (int)MathF.Ceiling(GetLineHeight());
             int currentY = area.Y;
 
@@ -659,7 +910,7 @@ namespace ValleytalkReborn
 
             for (int i = _scrollOffset; i < lines.Count && (i - _scrollOffset) < _visibleLineCount; i++)
             {
-                string lineStr = lines[i];
+                string lineStr = lines[i].Text;
                 Vector2 drawPos = new Vector2(area.X, currentY);
 
                 if (UseCustomFont)
@@ -719,27 +970,25 @@ namespace ValleytalkReborn
         private void DrawCaret(SpriteBatch spriteBatch, Rectangle textArea)
         {
             int lineHeight = (int)MathF.Ceiling(GetLineHeight());
+            var lines = GetVisualLines();
             int caretLine = GetCaretLine();
             int visibleCaretLine = caretLine - _scrollOffset;
 
             if (visibleCaretLine < 0 || visibleCaretLine >= _visibleLineCount)
                 return;
 
-            string textBeforeCaret = Text.Substring(0, _caretPosition);
-            int caretX = textArea.X;
-
-            if (textBeforeCaret.Length > 0 && textBeforeCaret[textBeforeCaret.Length - 1] != '\n')
+            float caretX = textArea.X;
+            if (lines.Count > 0 && caretLine < lines.Count)
             {
-                var linesBeforeCaret = WrapTextByPixelWidth(textBeforeCaret, GetWrapWidth());
-                if (caretLine < linesBeforeCaret.Count)
-                {
-                    caretX = textArea.X + (int)MathF.Round(MeasureString(linesBeforeCaret[caretLine]).X);
-                }
+                var line = lines[caretLine];
+                int offsetInLine = Math.Clamp(_caretPosition - line.StartIndex, 0, line.Length);
+                if (offsetInLine > 0)
+                    caretX += MeasureString(line.Text.Substring(0, offsetInLine)).X;
             }
 
             int caretY = textArea.Y + visibleCaretLine * lineHeight;
             int caretHeight = Math.Max(6, lineHeight - 4);
-            var caretRect = new Rectangle(caretX, caretY + 2, 2, caretHeight);
+            var caretRect = new Rectangle((int)MathF.Round(caretX), caretY + 2, 2, caretHeight);
 
             // 闪烁光标
             if ((int)(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 500) % 2 == 0)
@@ -797,35 +1046,40 @@ namespace ValleytalkReborn
 
         private int GetTotalVisualLines()
         {
-            var lines = GetWrappedLines(Text);
+            var lines = GetVisualLines();
             return Math.Max(lines.Count, GetCaretLine() + 1);
         }
 
-        private List<string> GetWrappedLines(string text)
+        private List<VisualLine> GetVisualLines()
         {
-            if (_isTextDirty || _cachedWrappedLines == null)
+            if (_isTextDirty || _cachedVisualLines == null)
             {
-                _cachedWrappedLines = WrapTextByPixelWidth(text ?? "", GetWrapWidth());
+                _cachedVisualLines = BuildVisualLines(Text ?? "", GetWrapWidth());
                 _isTextDirty = false;
             }
 
-            return _cachedWrappedLines;
+            return _cachedVisualLines;
         }
 
-        private List<string> WrapTextByPixelWidth(string text, int maxWidth)
+        private List<VisualLine> BuildVisualLines(string text, int maxWidth)
         {
-            var lines = new List<string>();
+            var lines = new List<VisualLine>();
             if (string.IsNullOrEmpty(text))
                 return lines;
 
             maxWidth = Math.Max(20, maxWidth);
-            string[] rawParagraphs = text.Split('\n');
+            string[] paragraphs = text.Split('\n');
+            int charOffset = 0;
 
-            foreach (var paragraph in rawParagraphs)
+            for (int p = 0; p < paragraphs.Length; p++)
             {
+                string paragraph = paragraphs[p];
+
                 if (paragraph.Length == 0)
                 {
-                    lines.Add("");
+                    // 空行（换行符本身）
+                    lines.Add(new VisualLine { Text = "", StartIndex = charOffset, Length = 0 });
+                    charOffset++; // 跳过 \n
                     continue;
                 }
 
@@ -833,9 +1087,12 @@ namespace ValleytalkReborn
                 while (startIndex < paragraph.Length)
                 {
                     string remaining = paragraph.Substring(startIndex);
+                    int lineStart = charOffset;
+
                     if (MeasureString(remaining).X <= maxWidth)
                     {
-                        lines.Add(remaining);
+                        lines.Add(new VisualLine { Text = remaining, StartIndex = lineStart, Length = remaining.Length });
+                        charOffset += remaining.Length;
                         break;
                     }
 
@@ -847,7 +1104,7 @@ namespace ValleytalkReborn
                     {
                         int mid = (low + high) / 2;
                         string sub = remaining.Substring(0, mid);
-                        if (MeasureString(sub).X <= maxWidth) 
+                        if (MeasureString(sub).X <= maxWidth)
                         {
                             bestFit = mid;
                             low = mid + 1;
@@ -858,9 +1115,12 @@ namespace ValleytalkReborn
                         }
                     }
 
-                    lines.Add(remaining.Substring(0, bestFit));
+                    lines.Add(new VisualLine { Text = remaining.Substring(0, bestFit), StartIndex = lineStart, Length = bestFit });
                     startIndex += bestFit;
+                    charOffset += bestFit;
                 }
+
+                charOffset++; // 跳过段落后的 \n
             }
 
             return lines;
@@ -874,15 +1134,16 @@ namespace ValleytalkReborn
             if (_caretPosition > Text.Length)
                 _caretPosition = Text.Length;
 
-            string textBeforeCaret = Text.Substring(0, _caretPosition);
-            var linesBeforeCaret = WrapTextByPixelWidth(textBeforeCaret, GetWrapWidth());
-
-            if (textBeforeCaret.EndsWith('\n'))
+            var lines = GetVisualLines();
+            for (int i = 0; i < lines.Count; i++)
             {
-                return linesBeforeCaret.Count;
+                var line = lines[i];
+                int lineEnd = line.StartIndex + line.Length;
+                if (_caretPosition >= line.StartIndex && _caretPosition <= lineEnd)
+                    return i;
             }
 
-            return Math.Max(0, linesBeforeCaret.Count - 1);
+            return Math.Max(0, lines.Count - 1);
         }
 
         private void EnsureCaretVisible(int totalVisualLines)
@@ -919,6 +1180,64 @@ namespace ValleytalkReborn
         }
 
         ///////////////////////////////////////////////////////////////////
+        // 选区辅助
+        ///////////////////////////////////////////////////////////////////
+
+        private void SelectWordAt(int index)
+        {
+            if (string.IsNullOrEmpty(Text))
+                return;
+
+            index = Math.Clamp(index, 0, Text.Length);
+            int start = index;
+            int end = index;
+
+            while (start > 0 && IsWordChar(Text[start - 1]))
+                start--;
+            while (end < Text.Length && IsWordChar(Text[end]))
+                end++;
+
+            // 若点击处非单词字符（如空白/标点），退化为选中单字符
+            if (start == end)
+            {
+                start = index;
+                end = Math.Min(index + 1, Text.Length);
+            }
+
+            _selectionStart = start;
+            _selectionEnd = end;
+            _caretPosition = end;
+        }
+
+        private void SelectParagraphAt(int index)
+        {
+            if (string.IsNullOrEmpty(Text))
+                return;
+
+            index = Math.Clamp(index, 0, Text.Length);
+            int start = index;
+            while (start > 0 && Text[start - 1] != '\n')
+                start--;
+            int end = index;
+            while (end < Text.Length && Text[end] != '\n')
+                end++;
+
+            _selectionStart = start;
+            _selectionEnd = end;
+            _caretPosition = end;
+        }
+
+        private static bool IsWordChar(char c)
+        {
+            // 中英文/标点边界：空白、标点、符号均视为单词边界
+            if (char.IsWhiteSpace(c))
+                return false;
+            if (char.IsPunctuation(c) || char.IsSymbol(c))
+                return false;
+            return true;
+        }
+
+        ///////////////////////////////////////////////////////////////////
         // 按键辅助与剪贴板
         ///////////////////////////////////////////////////////////////////
 
@@ -940,19 +1259,23 @@ namespace ValleytalkReborn
                 case Keys.Left:
                     if (_caretPosition > 0)
                         _caretPosition--;
+                    ClearSelection();
                     break;
 
                 case Keys.Right:
                     if (_caretPosition < Text.Length)
                         _caretPosition++;
+                    ClearSelection();
                     break;
 
                 case Keys.Home:
                     _caretPosition = 0;
+                    ClearSelection();
                     break;
 
                 case Keys.End:
                     _caretPosition = Text.Length;
+                    ClearSelection();
                     break;
 
                 case Keys.Delete:
@@ -967,6 +1290,12 @@ namespace ValleytalkReborn
 
         private void ExecuteDelete()
         {
+            if (HasSelection)
+            {
+                DeleteSelection();
+                return;
+            }
+
             if (_caretPosition < Text.Length)
             {
                 Text = Text.Remove(_caretPosition, 1);
@@ -977,10 +1306,18 @@ namespace ValleytalkReborn
 
         private void ExecuteBackspace()
         {
+            if (HasSelection)
+            {
+                DeleteSelection();
+                return;
+            }
+
             if (_caretPosition > 0 && Text.Length > 0)
             {
                 Text = Text.Remove(_caretPosition - 1, 1);
                 _caretPosition--;
+                _selectionStart = _caretPosition;
+                _selectionEnd = _caretPosition;
                 _isTextDirty = true;
                 _needsEnsureCaretVisible = true;
             }
@@ -1044,6 +1381,19 @@ namespace ValleytalkReborn
             }
         }
 
+        private void CopySelectionToClipboard()
+        {
+            try
+            {
+                if (HasSelection)
+                    TextCopy.ClipboardService.SetText(SelectedText);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug($"Clipboard copy selection failed: {ex.Message}");
+            }
+        }
+
         private void PasteFromClipboard()
         {
             try
@@ -1053,6 +1403,9 @@ namespace ValleytalkReborn
 
                 if (string.IsNullOrEmpty(clipboardText))
                     return;
+
+                if (HasSelection)
+                    DeleteSelection();
 
                 int remainingCapacity = _characterLimit - Text.Length;
                 if (remainingCapacity <= 0)
@@ -1065,6 +1418,8 @@ namespace ValleytalkReborn
 
                 Text = Text.Insert(_caretPosition, clipboardText);
                 _caretPosition += clipboardText.Length;
+                _selectionStart = _caretPosition;
+                _selectionEnd = _caretPosition;
                 _isTextDirty = true;
                 _needsEnsureCaretVisible = true;
             }
@@ -1084,12 +1439,30 @@ namespace ValleytalkReborn
                 TextCopy.ClipboardService.SetText(Text);
                 Text = "";
                 _caretPosition = 0;
+                _selectionStart = 0;
+                _selectionEnd = 0;
                 _isTextDirty = true;
                 _needsEnsureCaretVisible = true;
             }
             catch (Exception ex)
             {
                 Log.Debug($"Clipboard cut failed: {ex.Message}");
+            }
+        }
+
+        private void CutSelectionToClipboard()
+        {
+            try
+            {
+                if (!HasSelection)
+                    return;
+
+                TextCopy.ClipboardService.SetText(SelectedText);
+                DeleteSelection();
+            }
+            catch (Exception ex)
+            {
+                Log.Debug($"Clipboard cut selection failed: {ex.Message}");
             }
         }
     }
