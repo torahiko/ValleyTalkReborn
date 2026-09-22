@@ -953,7 +953,7 @@ namespace ValleytalkReborn
                 {
                     if (DialogueTextInputBox.IsControlKeyDown())
                     {
-                        if (key == Keys.A || key == Keys.C || key == Keys.X)
+                        if (key == Keys.A || key == Keys.C || key == Keys.X || key == Keys.Z)
                         {
                             activeBox.RecieveSpecialInput(key);
                             return;
