@@ -1082,40 +1082,112 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
     // ── 地图动态探测与过滤 ──
 
     private void ScanGameLocations()
+{
+    var visitedIds = new HashSet<string>(_baselineLocations.Keys, StringComparer.OrdinalIgnoreCase);
+
+    // 记录已经出现的 (DisplayName + Region) 组合，防止大量同名无意义子地图刷屏
+    var existingNameRegions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    foreach (var kv in _baselineLocations)
     {
-        var visitedIds = new HashSet<string>(_baselineLocations.Keys, StringComparer.OrdinalIgnoreCase);
+        string reg = _baselineRegions.GetValueOrDefault(kv.Key, "Pelican Town");
+        existingNameRegions.Add($"{kv.Value}@@{reg}");
+    }
 
-        // 1. 扫描当前存档运行时的实际地图实例（包含建筑内部）
-        if (Game1.locations != null)
+    // 1. 扫描当前运行实例
+    if (Game1.locations != null)
+    {
+        var locQueue = new List<GameLocation>(Game1.locations);
+        for (int i = 0; i < locQueue.Count; i++)
         {
-            var locQueue = new List<GameLocation>(Game1.locations);
-            for (int i = 0; i < locQueue.Count; i++)
-            {
-                var loc = locQueue[i];
-                if (loc == null) continue;
+            var loc = locQueue[i];
+            if (loc == null) continue;
 
-                if (loc.buildings != null)
+            if (loc.buildings != null)
+            {
+                foreach (var b in loc.buildings)
                 {
-                    foreach (var b in loc.buildings)
+                    var indoors = b.indoors.Value;
+                    if (indoors != null && !locQueue.Contains(indoors))
                     {
-                        var indoors = b.indoors.Value;
-                        if (indoors != null && !locQueue.Contains(indoors))
-                        {
-                            locQueue.Add(indoors);
-                        }
+                        locQueue.Add(indoors);
                     }
                 }
+            }
 
-                string locId = loc.NameOrUniqueName ?? loc.Name ?? "";
+            string locId = loc.NameOrUniqueName ?? loc.Name ?? "";
+            if (string.IsNullOrWhiteSpace(locId)) continue;
+            if (IsExcludedLocation(loc, locId)) continue;
+
+            if (visitedIds.Add(locId))
+            {
+                string dispName = ResolveLocationDisplayName(loc, locId);
+
+                // ★ 关键拦截：如果地图以 Custom_ 开头，却没有任何 DisplayName（解析结果依然等于 locId），说明是技术地图，直接丢弃
+                if (locId.StartsWith("Custom_", StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(dispName, locId, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if (IsInvalidDisplayName(dispName)) continue;
+
+                string region = InferLocationRegion(loc, locId);
+                string uniqueKey = $"{dispName}@@{region}";
+
+                // ★ 同名地图优化：如果同一区域下已经存在同名地图，跳过次级变体
+                if (!existingNameRegions.Add(uniqueKey))
+                    continue;
+
+                _baselineLocations[locId] = dispName;
+                _baselineRegions[locId] = region;
+                if (!_baselineLocDescriptions.ContainsKey(locId))
+                {
+                    _baselineLocDescriptions[locId] = IsZh
+                        ? $"{dispName}的现场环境。居民们在此活动与交流。"
+                        : $"The environment of {dispName}.";
+                }
+            }
+        }
+    }
+
+    // 2. 扫描 Data/Locations 静态注册表
+    try
+    {
+        var dataLocs = Game1.content.Load<Dictionary<string, LocationData>>("Data/Locations");
+        if (dataLocs != null)
+        {
+            foreach (var (locId, locData) in dataLocs)
+            {
                 if (string.IsNullOrWhiteSpace(locId)) continue;
-                if (IsExcludedLocation(loc, locId)) continue;
+                if (IsExcludedLocation(null, locId)) continue;
 
                 if (visitedIds.Add(locId))
                 {
-                    string dispName = ResolveLocationDisplayName(loc, locId);
+                    string dispName = locId;
+                    if (locData != null && !string.IsNullOrWhiteSpace(locData.DisplayName))
+                    {
+                        try
+                        {
+                            dispName = TokenParser.ParseText(locData.DisplayName);
+                        }
+                        catch { }
+                    }
+
+                    // ★ 关键拦截：如果属于 Custom_ 但没有提供可读 DisplayName，丢弃
+                    if (locId.StartsWith("Custom_", StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(dispName, locId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
                     if (IsInvalidDisplayName(dispName)) continue;
 
-                    string region = InferLocationRegion(loc, locId);
+                    string region = InferLocationRegion(null, locId);
+                    string uniqueKey = $"{dispName}@@{region}";
+
+                    // ★ 同名地图优化：同一区域已存在同名地名则跳过
+                    if (!existingNameRegions.Add(uniqueKey))
+                        continue;
 
                     _baselineLocations[locId] = dispName;
                     _baselineRegions[locId] = region;
@@ -1128,125 +1200,73 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
                 }
             }
         }
-
-        // 2. 从 Data/Locations 字典中扫描（包含第三方 Mod 注册的静态地图）
-        try
-        {
-            var dataLocs = Game1.content.Load<Dictionary<string, LocationData>>("Data/Locations");
-            if (dataLocs != null)
-            {
-                foreach (var (locId, locData) in dataLocs)
-                {
-                    if (string.IsNullOrWhiteSpace(locId)) continue;
-                    if (IsExcludedLocation(null, locId)) continue;
-
-                    if (visitedIds.Add(locId))
-                    {
-                        string dispName = locId;
-                        if (locData != null && !string.IsNullOrWhiteSpace(locData.DisplayName))
-                        {
-                            try
-                            {
-                                dispName = TokenParser.ParseText(locData.DisplayName);
-                            }
-                            catch { }
-                        }
-
-                        if (IsInvalidDisplayName(dispName)) continue;
-
-                        string region = InferLocationRegion(null, locId);
-
-                        _baselineLocations[locId] = dispName;
-                        _baselineRegions[locId] = region;
-                        if (!_baselineLocDescriptions.ContainsKey(locId))
-                        {
-                            _baselineLocDescriptions[locId] = IsZh
-                                ? $"{dispName}的现场环境。居民们在此活动与交流。"
-                                : $"The environment of {dispName}.";
-                        }
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            ModEntry.SMonitor?.Log($"[LocationFestival] 扫描 Data/Locations 时提示: {ex.Message}", LogLevel.Trace);
-        }
     }
+    catch (Exception ex)
+    {
+        ModEntry.SMonitor?.Log($"[LocationFestival] 扫描 Data/Locations 时提示: {ex.Message}", LogLevel.Trace);
+    }
+}
 
     private static bool IsExcludedLocation(GameLocation? loc, string locId)
+{
+    if (string.IsNullOrWhiteSpace(locId)) return true;
+
+    // 1. 地牢、矿洞排除
+    if (loc is StardewValley.Locations.MineShaft or StardewValley.Locations.VolcanoDungeon)
+        return true;
+
+    string typeName = loc?.GetType().Name ?? "";
+    if (typeName.Contains("MineShaft", StringComparison.OrdinalIgnoreCase) ||
+        typeName.Contains("VolcanoDungeon", StringComparison.OrdinalIgnoreCase) ||
+        typeName.EndsWith("Dungeon", StringComparison.OrdinalIgnoreCase))
     {
-        if (string.IsNullOrWhiteSpace(locId)) return true;
-
-        // 地牢与矿洞类型排除
-        if (loc is StardewValley.Locations.MineShaft or StardewValley.Locations.VolcanoDungeon)
-            return true;
-
-        string typeName = loc?.GetType().Name ?? "";
-        if (typeName.Contains("MineShaft", StringComparison.OrdinalIgnoreCase) ||
-            typeName.Contains("VolcanoDungeon", StringComparison.OrdinalIgnoreCase) ||
-            typeName.EndsWith("Dungeon", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        // 纯数字地牢楼层检测（如矿洞 1~120）
-        if (int.TryParse(locId, out _)) return true;
-
-        // 常见地牢、火山口、虫穴专属过滤
-        if (locId.StartsWith("UndergroundMine", StringComparison.OrdinalIgnoreCase) ||
-            locId.StartsWith("VolcanoDungeon", StringComparison.OrdinalIgnoreCase) ||
-            locId.StartsWith("MineShaft", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        if (string.Equals(locId, "Mine", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(locId, "Mines", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(locId, "SkullCave", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(locId, "Caldera", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(locId, "BugLand", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        string lower = locId.ToLowerInvariant();
-
-        // 排除地窖及地下室变体 (如 cellar, cellar2, cellar3 等)
-        if (lower.Contains("cellar"))
-            return true;
-
-        // 排除传送间、中转站、NPC暂存与后台缓冲功能房 (如 Custom_Alesia_WarpRoom, Custom_Apples_WarpRoom)
-        if (lower.Contains("warproom") ||
-            lower.Contains("warp_room") ||
-            lower.Contains("_warp") ||
-            lower.StartsWith("warp_") ||
-            lower.EndsWith("_warp") ||
-            lower.Contains("holdingroom") ||
-            lower.Contains("stagingroom") ||
-            lower.Contains("backstage") ||
-            lower.Contains("eventroom") ||
-            lower.Contains("bufferroom"))
-        {
-            return true;
-        }
-
-        // 测试与临时地图关键词过滤
-        if (lower.Contains("testmap") ||
-            lower.Contains("debug") ||
-            lower.Contains("sandbox") ||
-            lower.Contains("dummy") ||
-            lower.Contains("unused") ||
-            lower.StartsWith("temp") ||
-            lower.StartsWith("test_") ||
-            lower.EndsWith("_test") ||
-            lower == "test")
-        {
-            return true;
-        }
-
-        return false;
+        return true;
     }
+
+    if (int.TryParse(locId, out _)) return true; // 纯数字矿洞层
+
+    if (locId.StartsWith("UndergroundMine", StringComparison.OrdinalIgnoreCase) ||
+        locId.StartsWith("VolcanoDungeon", StringComparison.OrdinalIgnoreCase) ||
+        locId.StartsWith("MineShaft", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(locId, "Mine", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(locId, "Mines", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(locId, "SkullCave", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(locId, "Caldera", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(locId, "BugLand", StringComparison.OrdinalIgnoreCase))
+    {
+        return true;
+    }
+
+    string lower = locId.ToLowerInvariant();
+
+    // 2. 排除地窖、联机废弃房间、临时过渡房
+    if (lower.Contains("cellar") || lower.Contains("warproom") || lower.Contains("warp_room") || lower.Contains("_warp"))
+        return true;
+
+    // 3. 排除技术地图：过场动画、假层、废墟过渡、舞台、测试等
+    if (lower.Contains("fake") ||           // 如 Custom_FakeEnchantedGrove2
+        lower.Contains("ruins") ||          // 如 Custom_GrandpasShedRuins
+        lower.Contains("cutscene") ||
+        lower.Contains("intro") ||
+        lower.Contains("eventroom") ||
+        lower.Contains("holdingroom") ||
+        lower.Contains("stagingroom") ||
+        lower.Contains("backstage") ||
+        lower.Contains("bufferroom") ||
+        lower.Contains("testmap") ||
+        lower.Contains("debug") ||
+        lower.Contains("dummy") ||
+        lower.Contains("sandbox") ||
+        lower.StartsWith("temp") ||
+        lower.Contains("-festival") ||      // 节日临时城镇副本
+        lower.Contains("-eggfestival") ||
+        lower.Contains("-fair"))
+    {
+        return true;
+    }
+
+    return false;
+}
 
     /// <summary>
     /// 判定是否为未正确本地化或破损无效的地图名称（如 no translation 等）
