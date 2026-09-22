@@ -435,6 +435,18 @@ namespace ValleytalkReborn
             ReceiveScrollWheel(direction);
         }
 
+        public override void leftClickHeld(int x, int y)
+        {
+            base.leftClickHeld(x, y);
+            _inputTextBox.LeftClickHeld(x, y);
+        }
+
+        public override void releaseLeftClick(int x, int y)
+        {
+            base.releaseLeftClick(x, y);
+            _inputTextBox.ReleaseLeftClick(x, y);
+        }
+
         public void ReceiveScrollWheel(int direction)
         {
             _inputTextBox.ReceiveScrollWheel(direction);

@@ -621,6 +621,9 @@ namespace ValleytalkReborn
         {
             base.leftClickHeld(x, y);
 
+            // 无条件转发到当前激活的文本框（禁止 early-return / return true）
+            GetActiveDialogueBox()?.LeftClickHeld(x, y);
+
             if (_activeTab == 3 && _isDraggingTab4Scrollbar)
             {
                 int listAvailHeight = _relLeftColRect.Height - 68 - 46;
@@ -642,6 +645,7 @@ namespace ValleytalkReborn
         {
             base.releaseLeftClick(x, y);
             _isDraggingTab4Scrollbar = false;
+            GetActiveDialogueBox()?.ReleaseLeftClick(x, y);
         }
 
         private void UpdateTab4ScrollFromMouse(int mouseY, Rectangle trackRect, int thumbH, int maxScroll)
