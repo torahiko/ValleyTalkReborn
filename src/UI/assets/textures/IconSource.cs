@@ -97,7 +97,7 @@ public static class IconSource
         bool isPressed,
         float layerDepth = 0.89f)
     {
-        if (texture == null) return;
+        if (texture == null || texture.IsDisposed) return;
 
         IconState state = isPressed ? IconState.Pressed : IconState.Normal;
         Rectangle srcRect = Get(col, baseRow, theme, state);
@@ -131,7 +131,7 @@ public static class IconSource
         bool isPressed,
         float layerDepth = 0.89f)
     {
-        if (btn == null || btn.texture == null) return;
+        if (btn == null || btn.texture == null || btn.texture.IsDisposed) return;
 
         Rectangle srcRect = btn.sourceRect;
 

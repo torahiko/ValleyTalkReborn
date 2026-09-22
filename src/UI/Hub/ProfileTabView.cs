@@ -1199,7 +1199,7 @@ internal sealed class ProfileTabView : HubTabViewBase
                     slot.ResetBtnBounds.Width, slot.ResetBtnBounds.Height,
                     resetBg, 2.0f, false);
 
-                if (ModEntry.CustomIcons != null)
+                if (ModEntry.CustomIcons is { IsDisposed: false })
                 {
                     Rectangle restoreSrc = IconSource.Restore(IconTheme.Wood, iconState);
                     int iconTargetSize = 18;

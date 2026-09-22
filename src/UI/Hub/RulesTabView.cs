@@ -823,15 +823,16 @@ internal sealed class RulesTabView : IHubTabView
             avatarRect.X - 1, avatarRect.Y - 1, avatarRect.Width + 2, avatarRect.Height + 2,
             isSelected ? RulesTheme.BorderBold : (isHover ? RulesTheme.BorderMid : RulesTheme.BorderSoft), 1.2f, false);
 
-        if (item.Sprite != null && !item.SourceRect.IsEmpty)
+        if (item.Sprite is { IsDisposed: false } sprite && !item.SourceRect.IsEmpty)
         {
             // NPC 头像
-            b.Draw(item.Sprite, avatarRect, item.SourceRect, Color.White);
+            b.Draw(sprite, avatarRect, item.SourceRect, Color.White);
         }
-        else if (item.IconRect is Rectangle iconSrc)
+        else if (item.IconRect is Rectangle iconSrc && ModEntry.CustomIcons is { IsDisposed: false } icons)
         {
-            // 作用域图标（全部规则 = 星星，小镇共识 = 小镇）——始终原色显示，不随选中/悬停变灰
-            b.Draw(ModEntry.CustomIcons, avatarRect, iconSrc, Color.White);
+            // 作用域图标（全部规则 = 星星，小镇共识 = 小镇）——始终原色显示，不随选中/悬停变灰；
+            // 图集失效（返回标题清理/读档重建间隙）时落入下方兜底符号，绝不空纹理绘制
+            b.Draw(icons, avatarRect, iconSrc, Color.White);
         }
         else
         {
@@ -1025,7 +1026,8 @@ internal sealed class RulesTabView : IHubTabView
             Color trashTint = isTrashPressed ? RulesTheme.AccentRed * 0.8f
                             : isTrashHover ? RulesTheme.AccentRed
                             : RulesTheme.TextMuted;
-            b.Draw(ModEntry.CustomIcons, trashDrawRect, trashSrc, trashTint);
+            if (ModEntry.CustomIcons is { IsDisposed: false } trashIcons)
+                b.Draw(trashIcons, trashDrawRect, trashSrc, trashTint);
         }
 
         // ── 渲染中栏滑动块指示器 ──

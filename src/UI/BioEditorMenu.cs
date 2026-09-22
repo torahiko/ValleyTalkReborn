@@ -1366,9 +1366,9 @@ namespace ValleytalkReborn
                 var (headSprite, srcRect) = GetNpcWalkingHeadSprite(name);
                 string disp = Game1.getCharacterFromName(name)?.displayName ?? name;
 
-                if (headSprite != null && !srcRect.IsEmpty)
+                if (headSprite is { IsDisposed: false } headTex && !srcRect.IsEmpty)
                 {
-                    b.Draw(headSprite, avatarRect, srcRect, Color.White);
+                    b.Draw(headTex, avatarRect, srcRect, Color.White);
                 }
                 else
                 {
