@@ -1029,7 +1029,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
             if (!item.AvatarRect.IsEmpty)
             {
                 bool isPlayer = m.SpeakerType == SpeakerType.Player;
-                bool npcSpriteReady = _currentNpcSprite != null && !_currentNpcSourceRect.IsEmpty;
+                bool npcSpriteReady = _currentNpcSprite is { IsDisposed: false } && !_currentNpcSourceRect.IsEmpty;
                 bool playerReady = Game1.player?.FarmerRenderer != null;
                 bool canDrawAvatar = isPlayer ? playerReady : npcSpriteReady;
 

@@ -45,16 +45,10 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
-        /// Cleans up event subscriptions and resets state.
+        /// 清除待处理输入载荷；UpdateTicked 订阅为进程级生命周期，不在此退订。
         /// </summary>
-        public static void Cleanup(IModEvents events)
+        public static void Cleanup()
         {
-            if (_isInitialized && events != null)
-            {
-                events.GameLoop.UpdateTicked -= OnUpdateTicked;
-                _isInitialized = false;
-            }
-
             _pendingRequest = null;
         }
 

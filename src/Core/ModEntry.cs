@@ -1081,7 +1081,9 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
-        /// Performs comprehensive cleanup of all static resources, event subscriptions.
+        /// Performs save-scope cleanup of all per-save state and event wiring owned by
+        /// save-scope components. Process-scoped assets (CustomIcons, CustomFontManager,
+        /// TextInputManager subscription, Log) intentionally survive title return.
         /// </summary>
         private void Cleanup()
         {
@@ -1167,7 +1169,7 @@ namespace ValleytalkReborn
 
                 try
                 {
-                    TextInputManager.Cleanup(SHelper.Events);
+                    TextInputManager.Cleanup();
                 }
                 catch (Exception ex)
                 {
@@ -1325,28 +1327,6 @@ namespace ValleytalkReborn
                     Log.Error($"[ValleyTalkReborn] Error disposing cancel button plugin: {ex.Message}");
                 }
 
-                try
-                {
-                    // ★ 显式释放非托管显存纹理，防止反复返回标题造成显存泄漏
-                    CustomIcons?.Dispose();
-                    CustomIcons = null;
-                }
-                catch (Exception ex)
-                {
-                    Log.Error($"[ValleyTalkReborn] Error disposing CustomIcons: {ex.Message}");
-                }
-
-                // FONT-01-r2: 释放自定义字体链（须在 Log.Cleanup 之前，否则无法日志）
-                try
-                {
-                    CustomFontManager.Cleanup();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error($"[ValleyTalkReborn] Error disposing CustomFontManager: {ex.Message}");
-                }
-
-                Log.Cleanup();
                 _isInitialized = false;
 
                 Log.Debug("[ValleyTalkReborn] Full cleanup completed.");
@@ -1484,20 +1464,12 @@ namespace ValleytalkReborn
             LastSpokenNPC = null;
             Event_AnswerDialogue_Patch.LastEventSpeakerNpc = null;
 
-            // 修复：返回标题后 Cleanup 会销毁 _dialogueCoordinator，
-            // 重新读档时必须重建并订阅，否则 A2A 雷达与 AmbientBark 状态机将永久停摆。
+            // [Save-scope rebuild] DialogueCoordinator owns per-save dialogue state; Cleanup
+            // destroys it on title return. Rebuilt here by declared contract.
             InitializeDialogueCoordinator();
 
-            // 修复：返回标题后 Cleanup 会取消 TextInputManager 的 UpdateTicked 订阅，
-            // 重新读档时必须重新初始化，否则从对话选项触发的自定义回复会卡在 pending。
-            TextInputManager.Initialize(Helper.Events);
-
-            // 修复：返回标题后 Cleanup 会销毁 CustomFontManager 的 FontSystem 显存，
-            // 而 Initialize 仅挂接在进程级 OnGameLaunched（只触发一次），
-            // 重新读档后 IsLoaded 永久为 false，字体全部回退原版。读档时重建字体链。
-            CustomFontManager.Initialize(Helper, Monitor);
-
-            // 每次读档后重建 CancelButtonPlugin，防止 ReturnedToTitle 销毁后失效
+            // [Save-scope rebuild] CancelButtonPlugin is destroyed by Cleanup on title
+            // return; rebuilt here by declared contract.
             if (_cancelButtonPlugin == null)
             {
                 _cancelButtonPlugin = new CancelButtonPlugin(Helper, Monitor);
