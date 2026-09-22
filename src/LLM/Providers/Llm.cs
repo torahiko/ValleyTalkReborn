@@ -25,6 +25,9 @@ internal static class LlmContextTypes
     
     /// <summary>禁用工具调用的上下文标记（现有代码已使用）。</summary>
     public const string NoTools = "NO_TOOLS";
+
+    /// <summary>人设编辑器：AI 润色与生成上下文基前缀（实际传入值为 {Editor}_Think / {Editor}_Fast）。</summary>
+    public const string Editor = "BioEditor";
 }
 
 internal abstract class Llm
@@ -249,6 +252,11 @@ internal abstract class Llm
             allowCustomBody: false
         );
 
+        /// <summary>人设编辑器预设：高灵活文本创作，禁用 Custom Body 污染；deepThinking 时放大 token 空间容纳推理消耗。</summary>
+        public static GenerationParameters ForEditor(bool deepThinking) => deepThinking
+            ? new GenerationParameters(temperature: 0.75f, topP: 0.9f, maxTokens: 6000, allowCustomBody: false)
+            : new GenerationParameters(temperature: 0.75f, topP: 0.9f, maxTokens: 3000, allowCustomBody: false);
+
         /// <summary>
         /// 玩家主对话：尊崇 ModConfig 单一数据源，允许极客 Custom Body 注入。
         /// - 所有参数从 ModEntry.Config 读取（玩家在 GMCM 高级页面设置）
@@ -309,6 +317,13 @@ internal abstract class Llm
         {
             ModEntry.SMonitor.Log("[Llm] Resolving parameters for A2A (NPC-to-NPC conversations).", StardewModdingAPI.LogLevel.Debug);
             return GenerationParametersPresets.ForA2A();
+        }
+
+        if (!string.IsNullOrEmpty(cacheContext) &&
+            cacheContext.StartsWith(LlmContextTypes.Editor, StringComparison.OrdinalIgnoreCase))
+        {
+            ModEntry.SMonitor.Log("[Llm] Resolving parameters for Editor (bio polishing).", StardewModdingAPI.LogLevel.Debug);
+            return GenerationParametersPresets.ForEditor(cacheContext.Contains("_Think", StringComparison.OrdinalIgnoreCase));
         }
 
         // 主对话或其他未知上下文，统一回退到主对话配置

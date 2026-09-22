@@ -207,8 +207,14 @@ namespace ValleytalkReborn
         /// <summary>
         /// 按端点类型判定思考抑制方案（纯静态，无副作用）
         /// </summary>
-        internal static ThinkingSuppressionPlan EvaluateThinkingSuppression(string model, string baseUrl)
+        internal static ThinkingSuppressionPlan EvaluateThinkingSuppression(string model, string baseUrl, string cacheContext = "")
         {
+            if (!string.IsNullOrEmpty(cacheContext) &&
+                cacheContext.Contains("_Think", StringComparison.OrdinalIgnoreCase))
+            {
+                return ThinkingSuppressionPlan.Empty;
+            }
+
             string m = model ?? string.Empty;
             string b = baseUrl ?? string.Empty;
 
@@ -529,7 +535,8 @@ namespace ValleytalkReborn
             // 排除 Bark 和 A2A 挂载工具调用
             bool includeTools = cacheContext != LlmContextTypes.NoTools
                              && cacheContext != LlmContextTypes.Bark
-                             && cacheContext != LlmContextTypes.A2A;
+                             && cacheContext != LlmContextTypes.A2A
+                             && !cacheContext.StartsWith(LlmContextTypes.Editor, StringComparison.OrdinalIgnoreCase);
 
             if (!AndroidHelper.IsAndroid)
             {
@@ -566,7 +573,7 @@ namespace ValleytalkReborn
             messages.Add(new { role = "user", content = promptString });
 
             Dictionary<string, object> requestBody = BuildRequestBody(messages, n_predict, stream: false, includeTools, cacheContext);
-            ThinkingSuppressionPlan plan = EvaluateThinkingSuppression(modelName, url);
+            ThinkingSuppressionPlan plan = EvaluateThinkingSuppression(modelName, url, cacheContext);
             ApplyThinkingSuppression(requestBody, plan);
 
             string endpointUrl = BuildEndpoint("chat/completions");
@@ -795,10 +802,11 @@ namespace ValleytalkReborn
             // 排除 Bark 和 A2A 挂载工具调用
             bool includeTools = cacheContext != LlmContextTypes.NoTools
                              && cacheContext != LlmContextTypes.Bark
-                             && cacheContext != LlmContextTypes.A2A;
+                             && cacheContext != LlmContextTypes.A2A
+                             && !cacheContext.StartsWith(LlmContextTypes.Editor, StringComparison.OrdinalIgnoreCase);
 
             Dictionary<string, object> requestBody = BuildRequestBody(messages, n_predict, stream: true, includeTools, cacheContext);
-            ThinkingSuppressionPlan plan = EvaluateThinkingSuppression(modelName, url);
+            ThinkingSuppressionPlan plan = EvaluateThinkingSuppression(modelName, url, cacheContext);
             ApplyThinkingSuppression(requestBody, plan);
 
             string endpointUrl = BuildEndpoint("chat/completions");
