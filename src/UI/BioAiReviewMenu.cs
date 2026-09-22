@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -138,10 +139,19 @@ namespace ValleytalkReborn
 
         private void PumpTokens()
         {
-            if (_phase == ReviewPhase.Settled || _streamQueue == null || !_streamQueue.TryDequeue(out string token))
+            // 批量排空：单帧只取一个 token 会把渲染吞吐钉死在帧率（~60 token/s），
+            // 快速供应商必然积压；且落定后 Settled 守卫会永久丢弃积压尾部，导致审阅框缺尾。
+            if (_phase == ReviewPhase.Settled || _streamQueue == null || _streamQueue.IsEmpty)
                 return;
 
-            _reviewTextBox.AppendStreamingText(token);
+            var batch = new StringBuilder();
+            while (_streamQueue.TryDequeue(out string token))
+                batch.Append(token);
+
+            if (batch.Length == 0)
+                return;
+
+            _reviewTextBox.AppendStreamingText(batch.ToString());
             if (_phase == ReviewPhase.Thinking)
             {
                 _phase = ReviewPhase.Streaming;
