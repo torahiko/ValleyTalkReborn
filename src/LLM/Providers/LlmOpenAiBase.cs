@@ -536,7 +536,8 @@ namespace ValleytalkReborn
             bool includeTools = cacheContext != LlmContextTypes.NoTools
                              && cacheContext != LlmContextTypes.Bark
                              && cacheContext != LlmContextTypes.A2A
-                             && !cacheContext.StartsWith(LlmContextTypes.Editor, StringComparison.OrdinalIgnoreCase);
+                             && (string.IsNullOrEmpty(cacheContext)
+                                 || !cacheContext.StartsWith(LlmContextTypes.Editor, StringComparison.OrdinalIgnoreCase));
 
             if (!AndroidHelper.IsAndroid)
             {
@@ -803,7 +804,8 @@ namespace ValleytalkReborn
             bool includeTools = cacheContext != LlmContextTypes.NoTools
                              && cacheContext != LlmContextTypes.Bark
                              && cacheContext != LlmContextTypes.A2A
-                             && !cacheContext.StartsWith(LlmContextTypes.Editor, StringComparison.OrdinalIgnoreCase);
+                             && (string.IsNullOrEmpty(cacheContext)
+                                 || !cacheContext.StartsWith(LlmContextTypes.Editor, StringComparison.OrdinalIgnoreCase));
 
             Dictionary<string, object> requestBody = BuildRequestBody(messages, n_predict, stream: true, includeTools, cacheContext);
             ThinkingSuppressionPlan plan = EvaluateThinkingSuppression(modelName, url, cacheContext);
@@ -993,6 +995,7 @@ namespace ValleytalkReborn
                                                 }
 
                                                 fullContentBuilder.Append(textToken);
+                                                onToken?.Invoke(textToken);
 
                                                 if (!degenerateDetected &&
                                                     LooksLikeDegenerateRepetition(fullContentBuilder.ToString()))
