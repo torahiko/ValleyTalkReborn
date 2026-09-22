@@ -146,6 +146,25 @@ namespace ValleytalkReborn
         private double _lastClickTime = -1000.0;
         private int _clickCount = 0;
 
+        // 撤销状态（Memory 作用域：控件实例私有字段，随实例销毁，无持久化）
+        private enum UndoRunKind { None, InsertChar, DeleteChar }
+        private readonly struct UndoEntry
+        {
+            public readonly string Text;
+            public readonly int Caret;
+            public readonly int SelStart;
+            public readonly int SelEnd;
+            public UndoEntry(string text, int caret, int selStart, int selEnd)
+            {
+                Text = text; Caret = caret; SelStart = selStart; SelEnd = selEnd;
+            }
+        }
+        private readonly List<UndoEntry> _undoStack = new();
+        private UndoRunKind _lastUndoRunKind = UndoRunKind.None;
+        private double _lastUndoRunMs = 0;
+        private const double UndoCoalesceWindowMs = 600.0;
+        private const int MaxUndoEntries = 100;
+
         /// <summary>是否存在选区</summary>
         public bool HasSelection => _selectionStart != _selectionEnd;
 
@@ -332,7 +351,11 @@ namespace ValleytalkReborn
 
         public void SetText(string text)
         {
-            Text = NormalizeLineEndings(text ?? "");
+            string normalized = NormalizeLineEndings(text ?? "");
+            if (string.Equals(normalized, Text, StringComparison.Ordinal))
+                return;
+
+            Text = normalized;
 
             if (Text.Length > _characterLimit)
             {
@@ -344,6 +367,9 @@ namespace ValleytalkReborn
             _selectionStart = _caretPosition;
             _selectionEnd = _caretPosition;
             _needsEnsureCaretVisible = true;
+
+            _undoStack.Clear();
+            _lastUndoRunKind = UndoRunKind.None;
         }
 
         public void InvalidateLayout()
@@ -366,6 +392,7 @@ namespace ValleytalkReborn
 
             int start = SelectionStart;
             int len = SelectionLength;
+            PushUndo(UndoRunKind.None);
             Text = Text.Remove(start, len);
             _caretPosition = start;
             _selectionStart = start;
@@ -598,6 +625,8 @@ namespace ValleytalkReborn
 
             if (Text.Length + str.Length <= _characterLimit)
             {
+                bool isSingleCharInsert = str.Length == 1 && str != "\n";
+                PushUndo(isSingleCharInsert ? UndoRunKind.InsertChar : UndoRunKind.None);
                 Text = Text.Insert(_caretPosition, str);
                 _caretPosition += str.Length;
                 _selectionStart = _caretPosition;
@@ -656,6 +685,10 @@ namespace ValleytalkReborn
                         _selectionEnd = Text.Length;
                         _caretPosition = Text.Length;
                         _needsEnsureCaretVisible = true;
+                        return;
+
+                    case Keys.Z:
+                        Undo();
                         return;
 
                     case Keys.Enter:
@@ -1307,6 +1340,49 @@ namespace ValleytalkReborn
             }
         }
 
+        ///////////////////////////////////////////////////////////////////
+        // 撤销（Ctrl+Z）
+        ///////////////////////////////////////////////////////////////////
+
+        /// <summary>在文本变更前压入变更前快照；相同类型且在合并窗口内则合并。</summary>
+        private void PushUndo(UndoRunKind kind)
+        {
+            double now = Game1.currentGameTime?.TotalGameTime.TotalMilliseconds ?? 0;
+
+            bool coalesce = kind != UndoRunKind.None
+                && kind == _lastUndoRunKind
+                && (now - _lastUndoRunMs) < UndoCoalesceWindowMs
+                && _undoStack.Count > 0;
+
+            if (!coalesce)
+            {
+                _undoStack.Add(new UndoEntry(Text, _caretPosition, _selectionStart, _selectionEnd));
+                if (_undoStack.Count > MaxUndoEntries)
+                    _undoStack.RemoveAt(0);
+            }
+
+            _lastUndoRunKind = kind;
+            _lastUndoRunMs = now;
+        }
+
+        /// <summary>恢复最近一次快照；栈空则静默返回。</summary>
+        private void Undo()
+        {
+            if (_undoStack.Count == 0)
+                return;
+
+            UndoEntry entry = _undoStack[_undoStack.Count - 1];
+            _undoStack.RemoveAt(_undoStack.Count - 1);
+
+            Text = entry.Text;
+            _caretPosition = Math.Clamp(entry.Caret, 0, Text.Length);
+            _selectionStart = Math.Clamp(entry.SelStart, 0, Text.Length);
+            _selectionEnd = Math.Clamp(entry.SelEnd, 0, Text.Length);
+            _isTextDirty = true;
+            _needsEnsureCaretVisible = true;
+            _lastUndoRunKind = UndoRunKind.None;
+        }
+
         /// <summary>纵向光标移动（上一行）：基于当前列像素投影在目标行逐缝 best-diff 定位。</summary>
         private void MoveCaretUp()
         {
@@ -1395,6 +1471,7 @@ namespace ValleytalkReborn
 
             if (_caretPosition < Text.Length)
             {
+                PushUndo(UndoRunKind.DeleteChar);
                 Text = Text.Remove(_caretPosition, 1);
                 _isTextDirty = true;
                 _needsEnsureCaretVisible = true;
@@ -1411,6 +1488,7 @@ namespace ValleytalkReborn
 
             if (_caretPosition > 0 && Text.Length > 0)
             {
+                PushUndo(UndoRunKind.DeleteChar);
                 Text = Text.Remove(_caretPosition - 1, 1);
                 _caretPosition--;
                 _selectionStart = _caretPosition;
@@ -1501,7 +1579,8 @@ namespace ValleytalkReborn
                 if (string.IsNullOrEmpty(clipboardText))
                     return;
 
-                if (HasSelection)
+                bool hadSelection = HasSelection;
+                if (hadSelection)
                     DeleteSelection();
 
                 int remainingCapacity = _characterLimit - Text.Length;
@@ -1513,6 +1592,8 @@ namespace ValleytalkReborn
                     clipboardText = clipboardText.Substring(0, remainingCapacity);
                 }
 
+                if (!hadSelection)
+                    PushUndo(UndoRunKind.None);
                 Text = Text.Insert(_caretPosition, clipboardText);
                 _caretPosition += clipboardText.Length;
                 _selectionStart = _caretPosition;
@@ -1534,6 +1615,7 @@ namespace ValleytalkReborn
                     return;
 
                 TextCopy.ClipboardService.SetText(Text);
+                PushUndo(UndoRunKind.None);
                 Text = "";
                 _caretPosition = 0;
                 _selectionStart = 0;
