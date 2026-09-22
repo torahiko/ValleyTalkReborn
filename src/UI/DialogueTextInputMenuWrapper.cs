@@ -48,6 +48,18 @@ namespace ValleytalkReborn
             _innerMenu.ReceiveLeftClick(x, y);
         }
 
+        public override void leftClickHeld(int x, int y)
+        {
+            base.leftClickHeld(x, y);
+            _innerMenu.leftClickHeld(x, y);
+        }
+
+        public override void releaseLeftClick(int x, int y)
+        {
+            base.releaseLeftClick(x, y);
+            _innerMenu.releaseLeftClick(x, y);
+        }
+
         public override void receiveKeyPress(Keys key)
         {
             _innerMenu.ReceiveKeyPress(key);
