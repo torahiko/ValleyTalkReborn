@@ -24,7 +24,7 @@ namespace ValleytalkReborn
 
         private readonly string _sectionTitle;
         private readonly new IClickableMenu _parentMenu;
-        private readonly Action<string> _onAccepted;
+        private readonly Func<string, bool> _onAccepted;
         private readonly DialogueTextInputBox _reviewTextBox;
         private readonly ClickableTextureComponent _acceptButton;
         private readonly ClickableTextureComponent _cancelButton;
@@ -34,7 +34,7 @@ namespace ValleytalkReborn
         private ReviewPhase _phase = ReviewPhase.Thinking;
         private string _headerText = "AI 正在构思…";
 
-        public BioAiReviewMenu(string sectionTitle, IClickableMenu parentMenu, Action<string> onAccepted)
+        public BioAiReviewMenu(string sectionTitle, IClickableMenu parentMenu, Func<string, bool> onAccepted)
             : base(
                 (Game1.uiViewport.Width - MenuWidth) / 2,
                 (Game1.uiViewport.Height - MenuHeight) / 2,
@@ -186,10 +186,24 @@ namespace ValleytalkReborn
 
             if (_acceptButton.containsPoint(x, y))
             {
-                Game1.playSound("coin");
                 string confirmedText = _reviewTextBox.Text;
-                CloseToParent();
-                _onAccepted?.Invoke(confirmedText);
+                bool applied;
+                try { applied = _onAccepted?.Invoke(confirmedText) ?? true; }
+                catch (Exception ex)
+                {
+                    ModEntry.SMonitor?.Log($"[BioAiReviewMenu] Apply callback failed: {ex}", StardewModdingAPI.LogLevel.Error);
+                    applied = false;
+                }
+                if (applied)
+                {
+                    Game1.playSound("coin");
+                    CloseToParent();
+                }
+                else
+                {
+                    Game1.playSound("cancel");
+                    _headerText = "内容格式有误：请修正后重新点击 ✓（关闭则放弃）";
+                }
                 return;
             }
 
