@@ -140,6 +140,8 @@ namespace ValleytalkReborn
         private Rectangle _tab2RightColRect;
         private Rectangle _copyBehaviorRect;
         private Rectangle _copyDialogueExamplesRect;
+        private Rectangle _aiPolishBehaviorRect;
+        private Rectangle _aiPolishDialogueRect;
 
         // ── Tab 3 控件（好感演变） ────────────────────────────────────────
         private DialogueTextInputBox _stageTextBox;
@@ -419,6 +421,9 @@ namespace ValleytalkReborn
                     _insertBreakRect.Left - 6 - CopyBtnW,
                     _insertBreakRect.Y + (_insertBreakRect.Height - CopyBtnH) / 2,
                     CopyBtnW, CopyBtnH);
+
+                _aiPolishBehaviorRect = new Rectangle(_copyBehaviorRect.Left - 8 - CopyBtnW, _copyBehaviorRect.Y, CopyBtnW, CopyBtnH);
+                _aiPolishDialogueRect = new Rectangle(_copyDialogueExamplesRect.Left - 8 - CopyBtnW, _copyDialogueExamplesRect.Y, CopyBtnW, CopyBtnH);
             }
 
             // ── Tab 3 布局 ──
@@ -753,6 +758,10 @@ namespace ValleytalkReborn
 
             if (!AnyTextBoxHasFocus() && _copyBehaviorRect.Contains(x, y)) { CopyBoxToClipboard("behavior"); return; }
             if (!AnyTextBoxHasFocus() && _copyDialogueExamplesRect.Contains(x, y)) { CopyBoxToClipboard("dialogueExamples"); return; }
+            if (!AnyTextBoxHasFocus() && _aiPolishBehaviorRect.Contains(x, y) && !BioAiRunner.IsBusy)
+            { UnfocusAll(); CheckTab1Prerequisites(() => OpenTraitPolishDialog("BehavioralRules", "言行举止")); return; }
+            if (!AnyTextBoxHasFocus() && _aiPolishDialogueRect.Contains(x, y) && !BioAiRunner.IsBusy)
+            { UnfocusAll(); CheckTab1Prerequisites(() => OpenTraitPolishDialog("DialogueExamples", "对白范例")); return; }
 
             UnfocusAll();
         }
@@ -1226,6 +1235,7 @@ namespace ValleytalkReborn
                 new Vector2(_behaviorBox.Position.X, _behaviorBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
             DrawActionButton(b, _behaviorScaffoldRect, "插入规则模板", mx, my, false);
             DrawActionButton(b, _copyBehaviorRect, "复制全部", mx, my, false);
+            DrawActionButton(b, _aiPolishBehaviorRect, BioAiRunner.IsBusy ? "构思中..." : "AI 润色", mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy);
             DrawStyledDialogueBox(b, _behaviorBox);
 
             CustomFontManager.DrawString(b, "对白范例 (Dialogue)",
@@ -1233,6 +1243,7 @@ namespace ValleytalkReborn
             DrawActionButton(b, _insertBreakRect, "+ 分段符", mx, my, false);
             DrawActionButton(b, _insertChoiceRect, "+ 玩家选项", mx, my, false);
             DrawActionButton(b, _copyDialogueExamplesRect, "复制全部", mx, my, false);
+            DrawActionButton(b, _aiPolishDialogueRect, BioAiRunner.IsBusy ? "构思中..." : "AI 润色", mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy);
 
             if (_insertBreakRect.Contains(mx, my)) _hoverText = "插入 #$b#：在原版对话框中翻页。";
             if (_insertChoiceRect.Contains(mx, my)) _hoverText = "插入 % 选项：提供玩家可点击的分支回答。";
@@ -1834,6 +1845,78 @@ namespace ValleytalkReborn
                 _biographyBox.SetText(confirmedText);
 
             _vm.SetBiography(_biographyBox.Text);
+            Game1.playSound("coin");
+            Game1.addHUDMessage(new HUDMessage("✔ 已应用 AI 润色内容", HUDMessage.newQuest_type));
+            return true;
+        }
+
+        private bool CheckTab1Prerequisites(Action onProceed)
+        {
+            string bio = _vm.GetBiography() ?? string.Empty;
+            bool hasMarkers = bio.Contains("[IDENTITY]", StringComparison.Ordinal)
+                           && bio.Contains("[PSYCHOLOGICAL CONFLICTS]", StringComparison.Ordinal);
+            bool longEnough = bio.Trim().Length >= 60;
+
+            if (hasMarkers && longEnough)
+            {
+                onProceed();
+                return true;
+            }
+
+            Game1.activeClickableMenu = new ConfirmationDialog(
+                "身份档案（Tab 1）缺少 [IDENTITY] / [PSYCHOLOGICAL CONFLICTS] 标记，或内容不足 60 字。\n" +
+                "推荐先完善身份设定，否则润色结果可能偏离角色核心。",
+                _ => { Game1.activeClickableMenu = this; onProceed(); },
+                _ => { Game1.activeClickableMenu = this; SwitchTab(0); });
+            return false;
+        }
+
+        private void OpenTraitPolishDialog(string traitKey, string sectionTitle)
+        {
+            DialogueTextInputBox box = traitKey == "DialogueExamples" ? _dialogueExamplesBox : _behaviorBox;
+            string sourceText = box.HasSelection ? box.SelectedText : box.Text;
+
+            Game1.activeClickableMenu = new BioAiPromptDialog(sectionTitle, this, (demand, enableThinking) =>
+            {
+                if (BioAiRunner.IsBusy)
+                    return;
+
+                UnfocusAll();
+                var (system, user) = traitKey == "DialogueExamples"
+                    ? BioPromptBuilder.BuildDialogueExamplesPrompt(_vm, _npcName, sourceText, demand)
+                    : BioPromptBuilder.BuildBehaviorRulesPrompt(_vm, _npcName, sourceText, demand);
+                var queue = new System.Collections.Concurrent.ConcurrentQueue<string>();
+                var review = new BioAiReviewMenu(sectionTitle, this,
+                    confirmedText => ApplyTraitPolish(traitKey, confirmedText));
+                review.BeginStreaming(queue);
+                Game1.activeClickableMenu = review;
+                BioAiRunner.ExecuteStreaming(system, user, enableThinking, queue,
+                    result => review.OnStreamSettled(result));
+            });
+        }
+
+        private bool ApplyTraitPolish(string traitKey, string confirmedText)
+        {
+            if (string.IsNullOrWhiteSpace(confirmedText))
+            {
+                Game1.playSound("cancel");
+                return true;
+            }
+
+            DialogueTextInputBox box = traitKey == "DialogueExamples" ? _dialogueExamplesBox : _behaviorBox;
+            int projectedLen = box.HasSelection
+                ? box.Text.Length - box.SelectionLength + confirmedText.Length
+                : confirmedText.Length;
+            if (projectedLen > 4000)
+            {
+                Game1.playSound("cancel");
+                Game1.addHUDMessage(new HUDMessage("润色结果过长，超出 4000 字符上限，已保留原文", HUDMessage.error_type));
+                return true;
+            }
+
+            string defaultHeading = traitKey == "DialogueExamples" ? "Dialogue Examples" : "Tone & Mannerisms Constraints";
+            _vm.SyncTraitDescription(traitKey, defaultHeading, confirmedText);
+            box.SetText(confirmedText);
             Game1.playSound("coin");
             Game1.addHUDMessage(new HUDMessage("✔ 已应用 AI 润色内容", HUDMessage.newQuest_type));
             return true;
