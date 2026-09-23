@@ -254,8 +254,8 @@ internal abstract class Llm
 
         /// <summary>人设编辑器预设：高灵活文本创作，禁用 Custom Body 污染；deepThinking 时放大 token 空间容纳推理消耗。</summary>
         public static GenerationParameters ForEditor(bool deepThinking) => deepThinking
-            ? new GenerationParameters(temperature: 0.75f, topP: 0.9f, maxTokens: 6000, allowCustomBody: false)
-            : new GenerationParameters(temperature: 0.75f, topP: 0.9f, maxTokens: 3000, allowCustomBody: false);
+            ? new GenerationParameters(temperature: 0.75f, topP: 0.9f, maxTokens: 8192, allowCustomBody: false)
+            : new GenerationParameters(temperature: 0.75f, topP: 0.9f, maxTokens: 4096, allowCustomBody: false);
 
         /// <summary>
         /// 玩家主对话：尊崇 ModConfig 单一数据源，允许极客 Custom Body 注入。

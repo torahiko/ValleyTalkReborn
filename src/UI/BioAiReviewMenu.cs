@@ -109,6 +109,12 @@ namespace ValleytalkReborn
                     break;
 
                 case BioAiResultKind.Cancelled:
+                    if (string.IsNullOrWhiteSpace(_reviewTextBox.Text))
+                    {
+                        CloseToParent();
+                        return;
+                    }
+
                     EnterSettled("已停止生成：可编辑现有内容，或点 ✕ 放弃");
                     break;
             }
