@@ -2023,7 +2023,7 @@ namespace ValleytalkReborn
             if (!hasExisting) { StartWizard(); return; }
             Game1.activeClickableMenu = new ConfirmationDialog(
                 "检测到已有完整设定。引导式起号将逐步重构身份、言行、对白、阶梯与环境心智（每步均先审阅再落盘）。\n\n点击「确定」= 开始向导；点击「取消」= 保持在当前页。",
-                _ => { Game1.activeClickableMenu = this; StartWizard(); },
+                _ => { Game1.activeClickableMenu = this; RouteWizardStep0(); },
                 _ => { Game1.activeClickableMenu = this; });
         }
 
@@ -2033,31 +2033,61 @@ namespace ValleytalkReborn
             {
                 Game1.activeClickableMenu = new ConfirmationDialog(
                     "上一轮向导尚未完成，是否重新开始？",
-                    _ => { Game1.activeClickableMenu = this; _wizardStep = WizardStep.Identity; OpenWizardBiographyDialog(); },
+                    _ => { Game1.activeClickableMenu = this; RouteWizardStep0(); },
                     _ => { Game1.activeClickableMenu = this; });
                 return;
             }
-            _wizardStep = WizardStep.Identity;
-            OpenWizardBiographyDialog();
+            RouteWizardStep0();
         }
 
-        private void OpenWizardBiographyDialog()
+        /// <summary>
+        /// 向导第 0 步路由：合规门禁（首次）或直进问卷。
+        /// </summary>
+        private void RouteWizardStep0()
+        {
+            Game1.activeClickableMenu = this;
+            if (ModEntry.Config?.HasAcceptedBioWizardNotice != true)
+            {
+                Game1.activeClickableMenu = new BioWizardDisclaimerDialog(this, RouteWizardStep1_Questionnaire);
+            }
+            else
+            {
+                RouteWizardStep1_Questionnaire();
+            }
+        }
+
+        /// <summary>
+        /// 向导第 1 步路由：2×2 创作者问卷屏。
+        /// </summary>
+        private void RouteWizardStep1_Questionnaire()
+        {
+            Game1.activeClickableMenu = new BioWizardQuestionnaireDialog(_npcName, this,
+                (compiledDemand, enableThinking) =>
+                {
+                    _wizardStep = WizardStep.Identity;
+                    ExecuteWizardIdentityGeneration(compiledDemand, enableThinking);
+                });
+        }
+
+        /// <summary>
+        /// 执行身份起号生成管线：原生锚点 → 起号 Prompt → 审阅窗 → 流式生成。
+        /// </summary>
+        private void ExecuteWizardIdentityGeneration(string userDemand, bool enableThinking)
         {
             string rawContext = NpcGameDataScraper.BuildContextSummary(_npcName);
-            Game1.activeClickableMenu = new BioAiPromptDialog("身份起号", this, (demand, enableThinking) =>
-            {
-                if (BioAiRunner.IsBusy) return;
-                UnfocusAll();
-                var (system, user) = BioPromptBuilder.BuildInitialBiographyPrompt(_npcName, rawContext, demand);
-                var queue = new System.Collections.Concurrent.ConcurrentQueue<string>();
-                var review = new BioAiReviewMenu($"审阅【{_npcName}】身份起号", this,
-                    confirmedText => ApplyPolishResult(confirmedText),
-                    () => _wizardStep = WizardStep.None);
-                review.BeginStreaming(queue);
-                Game1.activeClickableMenu = review;
-                BioAiRunner.ExecuteStreaming(system, user, enableThinking, queue,
-                    result => review.OnStreamSettled(result));
-            }, allowEmptyDemand: true);
+
+            if (BioAiRunner.IsBusy)
+                return;
+            UnfocusAll();
+            var (system, user) = BioPromptBuilder.BuildInitialBiographyPrompt(_npcName, rawContext, userDemand);
+            var queue = new System.Collections.Concurrent.ConcurrentQueue<string>();
+            var review = new BioAiReviewMenu($"审阅【{_npcName}】身份起号", this,
+                confirmedText => ApplyPolishResult(confirmedText),
+                () => _wizardStep = WizardStep.None);
+            review.BeginStreaming(queue);
+            Game1.activeClickableMenu = review;
+            BioAiRunner.ExecuteStreaming(system, user, enableThinking, queue,
+                result => review.OnStreamSettled(result));
         }
 
         private void OfferWizardAdvance(string message, Action next)

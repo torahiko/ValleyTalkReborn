@@ -23,7 +23,6 @@ namespace ValleytalkReborn
         private readonly ClickableTextureComponent _okBtn;
         private readonly ClickableTextureComponent _cancelBtn;
         private Rectangle _thinkingPillRect;
-        private static bool _enableThinking;
         private string _hoverText;
 
         public BioAiPromptDialog(string targetTitle, IClickableMenu parentMenu, Action<string, bool> onSubmit, bool allowEmptyDemand = false)
@@ -85,7 +84,7 @@ namespace ValleytalkReborn
 
             if (_thinkingPillRect.Contains(x, y))
             {
-                _enableThinking = !_enableThinking;
+                BioAiUiPrefs.EnableThinking = !BioAiUiPrefs.EnableThinking;
                 Game1.playSound("smallSelect");
                 return;
             }
@@ -140,7 +139,7 @@ namespace ValleytalkReborn
                 {
                     Game1.playSound("coin");
                     Close(true);
-                    _onSubmit?.Invoke(string.Empty, _enableThinking);
+                    _onSubmit?.Invoke(string.Empty, BioAiUiPrefs.EnableThinking);
                 }
                 else
                 {
@@ -151,7 +150,7 @@ namespace ValleytalkReborn
 
             Game1.playSound("coin");
             Close(true);
-            _onSubmit?.Invoke(_inputBox.Text.Trim(), _enableThinking);
+            _onSubmit?.Invoke(_inputBox.Text.Trim(), BioAiUiPrefs.EnableThinking);
         }
 
         private void Close(bool submitted)
@@ -182,8 +181,8 @@ namespace ValleytalkReborn
 
             _inputBox.Draw(b);
 
-            Color pillColor = _enableThinking ? Color.Gold : new Color(235, 220, 195);
-            string pillText = _enableThinking ? "深度思考: 开" : "极速模式: 开";
+            Color pillColor = BioAiUiPrefs.EnableThinking ? Color.Gold : new Color(235, 220, 195);
+            string pillText = BioAiUiPrefs.EnableThinking ? "深度思考: 开" : "极速模式: 开";
             IClickableMenu.drawTextureBox(
                 b,
                 Game1.mouseCursors,
@@ -209,7 +208,7 @@ namespace ValleytalkReborn
             int mouseX = Game1.getMouseX();
             int mouseY = Game1.getMouseY();
             _hoverText = _thinkingPillRect.Contains(mouseX, mouseY)
-                ? _enableThinking
+                ? BioAiUiPrefs.EnableThinking
                     ? "启用模型进行多阶段推理，回答更完整严谨，但响应时间更长。\n适合复杂设定与需要反复推敲的需求。"
                     : "直接生成简洁回复，响应更快，适合日常快速润色。\n适合明确、简短且不要求深入推理的需求。"
                 : null;
