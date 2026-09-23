@@ -183,10 +183,12 @@ namespace ValleytalkReborn
             // 逐行绘制警告条目
             int textY = _cardRect.Y + 14;
             const int lineH = 26;
+            float maxWarningWidth = _cardRect.Width - 48; // 动态根据卡片宽度自适应计算安全宽度
             for (int i = 0; i < _warnings.Count; i++)
             {
                 CustomFontManager.DrawString(b, "•", new Vector2(_cardRect.X + 16, textY), BioEditorMenu.TextWarning, SectionHeaderSize);
-                CustomFontManager.DrawString(b, _warnings[i], new Vector2(_cardRect.X + 32, textY + 1), BioEditorMenu.TextPrimary, TipFontSize);
+                string displayText = CustomFontManager.TruncateString(_warnings[i], TipFontSize, maxWarningWidth);
+                CustomFontManager.DrawString(b, displayText, new Vector2(_cardRect.X + 32, textY + 1), BioEditorMenu.TextPrimary, TipFontSize);
                 textY += lineH;
             }
 

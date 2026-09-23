@@ -477,7 +477,7 @@ namespace ValleytalkReborn
         private void HandleDelete(int i)
         {
             MemoryEntry entry = _cachedEntries[i];
-            string safeContent = CustomFontManager.TruncateString(entry.Content, CustomFontManager.SizeRegular, 320f);
+            string safeContent = CustomFontManager.TruncateString(entry.Content, TipFontSize, 500f);
             Game1.activeClickableMenu = new BioValveWarningDialog(
                 this,
                 I18n.Memory.ArchiveDeleteConfirmTitle(),

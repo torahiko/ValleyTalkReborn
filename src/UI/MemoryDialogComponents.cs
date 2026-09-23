@@ -355,10 +355,14 @@ namespace ValleytalkReborn
 
         private void InitMenu(string npcName)
         {
-            xPositionOnScreen = (Game1.uiViewport.Width - MenuWidth) / 2;
-            yPositionOnScreen = (Game1.uiViewport.Height - MenuHeight) / 2;
-            width = MenuWidth;
-            height = MenuHeight;
+            // 最小影响隔离：纯文本编辑采用 640x360 紧凑尺寸，常规规则新增保持 720x500
+            int menuW = _customSubmit != null ? 640 : MenuWidth;
+            int menuH = _customSubmit != null ? 360 : MenuHeight;
+
+            xPositionOnScreen = (Game1.uiViewport.Width - menuW) / 2;
+            yPositionOnScreen = (Game1.uiViewport.Height - menuH) / 2;
+            width = menuW;
+            height = menuH;
 
             const int inputPadX = 56;
             int inputY = yPositionOnScreen + TopPadding + 54;
@@ -378,28 +382,36 @@ namespace ValleytalkReborn
                 Selected = true
             };
 
-            int capsuleY = inputY + inputH + 16;
-            int totalSegW = width - inputPadX * 2;
-            int segItemW = (totalSegW - 14) / 2;
-            _factCapsuleRect = new Rectangle(xPositionOnScreen + inputPadX, capsuleY, segItemW, 34);
-            _behaviorCapsuleRect = new Rectangle(xPositionOnScreen + inputPadX + segItemW + 14, capsuleY, segItemW, 34);
-
-            int scopeY = capsuleY + 34 + 12;
-            _scopeDropdownRect = new Rectangle(xPositionOnScreen + inputPadX, scopeY, totalSegW, 34);
-            _scopeDropdown = new DropdownList(_scopeDropdownRect)
+            if (_customSubmit == null)
             {
-                HeaderPrefix = "Scope: ",
-                OnItemSelected = name => _scopeNpcName = name
-            };
+                int capsuleY = inputY + inputH + 16;
+                int totalSegW = width - inputPadX * 2;
+                int segItemW = (totalSegW - 14) / 2;
+                _factCapsuleRect = new Rectangle(xPositionOnScreen + inputPadX, capsuleY, segItemW, 34);
+                _behaviorCapsuleRect = new Rectangle(xPositionOnScreen + inputPadX + segItemW + 14, capsuleY, segItemW, 34);
 
-            int durY = scopeY + 34 + 12;
-            int durSegW = (totalSegW - 14) / 3;
-            _durTodayRect = new Rectangle(xPositionOnScreen + inputPadX, durY, durSegW, 34);
-            _durCustomRect = new Rectangle(xPositionOnScreen + inputPadX + durSegW + 7, durY, durSegW, 34);
-            _durPermRect = new Rectangle(xPositionOnScreen + inputPadX + (durSegW + 7) * 2, durY, durSegW, 34);
+                int scopeY = capsuleY + 34 + 12;
+                _scopeDropdownRect = new Rectangle(xPositionOnScreen + inputPadX, scopeY, totalSegW, 34);
+                _scopeDropdown = new DropdownList(_scopeDropdownRect)
+                {
+                    HeaderPrefix = "Scope: ",
+                    OnItemSelected = name => _scopeNpcName = name
+                };
 
-            _dayStepperRect = new Rectangle(xPositionOnScreen + inputPadX + durSegW + 7, durY + 34 + 6, durSegW, 32);
-            _dayStepper = new NumberStepper(_dayStepperRect, Math.Max(1, Math.Min(99, _durationDays)), 1, 99, 1, "d");
+                int durY = scopeY + 34 + 12;
+                int durSegW = (totalSegW - 14) / 3;
+                _durTodayRect = new Rectangle(xPositionOnScreen + inputPadX, durY, durSegW, 34);
+                _durCustomRect = new Rectangle(xPositionOnScreen + inputPadX + durSegW + 7, durY, durSegW, 34);
+                _durPermRect = new Rectangle(xPositionOnScreen + inputPadX + (durSegW + 7) * 2, durY, durSegW, 34);
+
+                _dayStepperRect = new Rectangle(xPositionOnScreen + inputPadX + durSegW + 7, durY + 34 + 6, durSegW, 32);
+                _dayStepper = new NumberStepper(_dayStepperRect, Math.Max(1, Math.Min(99, _durationDays)), 1, 99, 1, "d");
+            }
+            else
+            {
+                // 纯文本模式初始化占位，防止字段空引用
+                _scopeDropdown = new DropdownList(Rectangle.Empty);
+            }
 
             if (_existingEntry != null)
                 _inputBox.SetText(_existingEntry.Content);
@@ -442,8 +454,17 @@ namespace ValleytalkReborn
             if (Game1.keyboardDispatcher.Subscriber == _inputBox)
                 Game1.keyboardDispatcher.Subscriber = null;
 
-            if (refresh && _hub != null)
-                _hub.RefreshEntries();
+            if (refresh)
+            {
+                if (_hub != null)
+                {
+                    _hub.RefreshEntries();
+                }
+                else if (_returnMenu is IMemoryRefreshTarget target)
+                {
+                    target.RefreshEntries();
+                }
+            }
 
             Game1.activeClickableMenu = _hub ?? _returnMenu;
         }
@@ -543,20 +564,23 @@ namespace ValleytalkReborn
                 return;
             }
 
-            if (_scopeDropdown.IsOpen)
+            if (_customSubmit == null)
             {
-                if (_scopeDropdown.ReceiveLeftClick(x, y))
+                if (_scopeDropdown.IsOpen)
+                {
+                    if (_scopeDropdown.ReceiveLeftClick(x, y))
+                        return;
+                    _scopeDropdown.Close();
+                    Game1.playSound("shwip");
                     return;
-                _scopeDropdown.Close();
-                Game1.playSound("shwip");
-                return;
-            }
+                }
 
-            if (_scopeDropdownRect.Contains(x, y))
-            {
-                _scopeDropdown.ToggleOpen();
-                Game1.playSound("shwip");
-                return;
+                if (_scopeDropdownRect.Contains(x, y))
+                {
+                    _scopeDropdown.ToggleOpen();
+                    Game1.playSound("shwip");
+                    return;
+                }
             }
 
             if (_isNew && _customSubmit == null && (_factCapsuleRect.Contains(x, y) || _behaviorCapsuleRect.Contains(x, y)))
@@ -684,7 +708,10 @@ namespace ValleytalkReborn
             _okButton.draw(b);
             _cancelButton.draw(b);
 
-            _scopeDropdown.Draw(b);
+            if (_customSubmit == null && _scopeDropdown != null)
+            {
+                _scopeDropdown.Draw(b);
+            }
 
             drawMouse(b);
         }
