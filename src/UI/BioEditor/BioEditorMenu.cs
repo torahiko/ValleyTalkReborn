@@ -420,14 +420,19 @@ namespace ValleytalkReborn
                 int rightColW = contentW - leftColW - 16;
                 _stageLeftColRect = new Rectangle(contentLeft, bodyTop, leftColW, bodyH);
                 _stageRightColRect = new Rectangle(contentLeft + leftColW + 16, bodyTop, rightColW, bodyH);
-                _aiGenerateStagesRect = new Rectangle(_stageLeftColRect.X + _stageLeftColRect.Width - 148, _stageLeftColRect.Y + 4, 140, 26);
 
+                // ★ AI 好感阶梯推演按钮扩大为全宽主操作按钮，与下方档位行/新建按钮同宽同高
+                int stageBtnW = leftColW - 16;
+                _aiGenerateStagesRect = new Rectangle(_stageLeftColRect.X + 8, _stageLeftColRect.Y + 36, stageBtnW, 34);
+
+                // ★ 档位列表整体顺延下移，从 AI 按钮底部开始排布
                 int rowH = 38;
+                int stageListStartY = _aiGenerateStagesRect.Bottom + 8;
                 for (int i = 0; i < _stageRowRects.Length; i++)
-                    _stageRowRects[i] = new Rectangle(_stageLeftColRect.X, _stageLeftColRect.Y + 34 + i * (rowH + 4), leftColW, rowH);
+                    _stageRowRects[i] = new Rectangle(_stageLeftColRect.X + 8, stageListStartY + i * (rowH + 4), stageBtnW, rowH);
 
-                int nextY = _stageLeftColRect.Y + 34 + Math.Min(_vm.Bio.ProgressStates.Count, 8) * (rowH + 4);
-                _newStageRect = new Rectangle(_stageLeftColRect.X, nextY, leftColW, 34);
+                int nextY = stageListStartY + Math.Min(_vm.Bio.ProgressStates.Count, 8) * (rowH + 4);
+                _newStageRect = new Rectangle(_stageLeftColRect.X + 8, nextY, stageBtnW, 34);
 
                 int rightX = _stageRightColRect.X;
                 int rightY = _stageRightColRect.Y;
@@ -824,16 +829,27 @@ namespace ValleytalkReborn
 
             if (_deleteStageRect.Contains(x, y))
             {
-                Game1.activeClickableMenu = new ConfirmationDialog(
-                    $"确定删除好感档位 {_vm.SelectedStageIndex + 1}？",
-                    _ =>
+                int stageNum = _vm.SelectedStageIndex + 1;
+                Game1.activeClickableMenu = new BioValveWarningDialog(
+                    this,
+                    "删除好感档位",
+                    $"即将删除档位 {stageNum} 的全部设定：",
+                    new List<string>
+                    {
+                        $"档位 {stageNum} 的阶段态度、碎碎念心智与关注池将被一并清空",
+                        "删除后无法撤销，如需恢复须手动重建"
+                    },
+                    "⚠ 确认删除",
+                    () =>
                     {
                         Game1.activeClickableMenu = this;
                         _vm.DeleteSelectedStage();
                         if (_vm.SelectedStageIndex >= 0) SelectStage(_vm.SelectedStageIndex);
                         Layout();
                     },
-                    _ => Game1.activeClickableMenu = this);
+                    "保留档位",
+                    () => Game1.activeClickableMenu = this,
+                    "提示：如只想微调该档位，可直接在右侧面板编辑，无需删除。");
                 return;
             }
 
@@ -911,9 +927,17 @@ namespace ValleytalkReborn
                     Game1.addHUDMessage(new HUDMessage("玩家条目 (ThePlayer) 为核心设定，禁止删除", HUDMessage.error_type));
                     return;
                 }
-                Game1.activeClickableMenu = new ConfirmationDialog(
-                    $"删除 {_npcName} → {target} 的独立人设关系？",
-                    _ =>
+                Game1.activeClickableMenu = new BioValveWarningDialog(
+                    this,
+                    "删除独立人设关系",
+                    $"即将删除 {_npcName} → {target} 的关系设定：",
+                    new List<string>
+                    {
+                        "该角色的独立关系标题与描述将被清空",
+                        "删除后如需恢复，须重新定制该角色关系"
+                    },
+                    "⚠ 确认删除",
+                    () =>
                     {
                         Game1.activeClickableMenu = this;
                         _vm.RemoveRelationship(target);
@@ -922,7 +946,9 @@ namespace ValleytalkReborn
                         _vm.SelectRelationship(_vm.SelectedRelationshipIndex);
                         SelectRelationshipView(_vm.SelectedRelationshipNpc);
                     },
-                    _ => Game1.activeClickableMenu = this);
+                    "保留关系",
+                    () => Game1.activeClickableMenu = this,
+                    "提示：如只想调整关系内容，可直接在右侧编辑框修改，无需删除。");
                 return;
             }
 
@@ -1254,11 +1280,12 @@ namespace ValleytalkReborn
         private void DrawTab3(SpriteBatch b, int mx, int my)
         {
             DrawCard(b, _stageLeftColRect);
+            // 顶栏标题独立展示为分类小标，不再与按钮同排
             CustomFontManager.DrawString(b, $"好感演变档位 ({_vm.Bio.ProgressStates.Count}/8)",
-                new Vector2(_stageLeftColRect.X + 12, _stageLeftColRect.Y + 8), TextSecondary, SectionHeaderSize);
-            DrawActionButton(b, _aiGenerateStagesRect, BioAiRunner.IsBusy ? "推演中..." : "AI生成阶梯", mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy);
+                new Vector2(_stageLeftColRect.X + 12, _stageLeftColRect.Y + 10), TextSecondary, SectionHeaderSize);
+            DrawActionButton(b, _aiGenerateStagesRect, BioAiRunner.IsBusy ? "推演中..." : "✨ AI好感阶梯推演", mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy);
             if (_aiGenerateStagesRect.Contains(mx, my))
-                _hoverText = "按可婚/常规自动生成 4/3 档并整体覆盖现有档位（可先在 Tab 1 完善身份档案）。";
+                _hoverText = "按可婚/常规自动推演 4/3 档并整体覆盖现有档位（建议先在 Tab 1 完善身份档案）。";
 
             int visibleStages = Math.Min(_vm.Bio.ProgressStates.Count, 8);
             for (int i = 0; i < visibleStages; i++)
@@ -1884,11 +1911,17 @@ namespace ValleytalkReborn
             Game1.playSound("coin");
             Game1.addHUDMessage(new HUDMessage("✔ 已应用 AI 润色内容", HUDMessage.newQuest_type));
             if (_wizardStep == WizardStep.Identity)
-                OfferWizardAdvance("【第 1/4 步完成】身份与心理内核已确立！\n\n是否推进第 2 步：基于此内核生成【言行举止】？\n\n点击「确定」= 推进下一步；点击「取消」= 留在当前页（向导结束，各页 AI 按钮可单独继续）",
-                    () => { _wizardStep = WizardStep.Behavior; SwitchTab(1); OpenTraitPolishDialog("BehavioralRules", "言行举止"); });
+                OfferWizardAdvance(
+                    "第 1/4 步完成",
+                    "身份与心理内核已确立！是否推进第 2 步？",
+                    new List<string> { "下一步将基于此内核生成【言行举止】" },
+                    "➜ 推进下一步",
+                    () => { _wizardStep = WizardStep.Behavior; SwitchTab(1); OpenTraitPolishDialog("BehavioralRules", "言行举止"); },
+                    "提示：选择「到此为止」即结束向导，各页 AI 按钮仍可单独继续生成。");
             return true;
         }
 
+        // 1. Tab 1 前置检查阀门
         private bool CheckTab1Prerequisites(Action onProceed)
         {
             string bio = _vm.GetBiography() ?? string.Empty;
@@ -1902,12 +1935,23 @@ namespace ValleytalkReborn
                 return true;
             }
 
-            Game1.activeClickableMenu = new ConfirmationDialog(
-                "身份档案（Tab 1）缺少 [IDENTITY] / [PSYCHOLOGICAL CONFLICTS] 标记，或内容不足 60 字。\n" +
-                "推荐先完善身份设定，否则润色结果可能偏离角色核心。\n\n" +
-                "点击「确定」= 仍要生成；点击「取消」= 跳转身份设定页完善。",
-                _ => { Game1.activeClickableMenu = this; onProceed(); },
-                _ => { Game1.activeClickableMenu = this; SwitchTab(0); });
+            var warnings = new List<string>();
+            if (!hasMarkers)
+                warnings.Add("缺少 [IDENTITY] 或 [PSYCHOLOGICAL CONFLICTS] 核心分节标记");
+            if (!longEnough)
+                warnings.Add($"身份设定字数不足 60 字（当前仅 {bio.Trim().Length} 字），线索过于单薄");
+            warnings.Add("缺少核心身份与矛盾锚点，润色或阶梯推演结果可能偏离角色内核");
+
+            Game1.activeClickableMenu = new BioValveWarningDialog(
+                this,
+                "身份基准未达推荐门槛",
+                "检测到当前角色的身份设定尚不完整：",
+                warnings,
+                "⚠ 仍要继续生成",
+                () => { Game1.activeClickableMenu = this; onProceed(); },
+                "前往 Tab 1 完善",
+                () => { Game1.activeClickableMenu = this; SwitchTab(0); },
+                "提示：强行生成可能导致人设偏离；建议优先前往对应标签完善设定。");
             return false;
         }
 
@@ -1928,17 +1972,25 @@ namespace ValleytalkReborn
                 return true;
             }
 
-            System.Text.StringBuilder warn = new("请先完善以下内容，否则萃取结果可能偏离角色核心：\n");
-            if (!(hasMarkers && longEnough))
-                warn.AppendLine("- 身份档案（Tab 1）：补全 [IDENTITY] / [PSYCHOLOGICAL CONFLICTS] 标记，或扩充至 60 字以上");
+            var warnings = new List<string>();
+            if (!hasMarkers)
+                warnings.Add("身份档案（Tab 1）：缺少 [IDENTITY] / [PSYCHOLOGICAL CONFLICTS] 标记");
+            if (!longEnough)
+                warnings.Add($"身份档案（Tab 1）：内容仅 {bio.Trim().Length} 字，建议扩充至 60 字以上");
             if (!hasBehavior)
-                warn.AppendLine("- 言行举止（Tab 2）：填写 BehavioralRules 言行规则");
-            warn.Append("\n\n点击「确定」= 仍要萃取；点击「取消」= 跳转身份设定页完善。");
+                warnings.Add("言行举止（Tab 2）：尚未填写 BehavioralRules 言行准则");
+            warnings.Add("环境心智高度依赖言行准则，缺少前置可能导致口吻与口头习惯脱节");
 
-            Game1.activeClickableMenu = new ConfirmationDialog(
-                warn.ToString(),
-                _ => { Game1.activeClickableMenu = this; onProceed(); },
-                _ => { Game1.activeClickableMenu = this; SwitchTab(0); });
+            Game1.activeClickableMenu = new BioValveWarningDialog(
+                this,
+                "环境心智萃取前置不全",
+                "环境心智萃取依赖完整的身份档案与言行准则：",
+                warnings,
+                "⚠ 仍要强制萃取",
+                () => { Game1.activeClickableMenu = this; onProceed(); },
+                "前往完善档案",
+                () => { Game1.activeClickableMenu = this; SwitchTab(!hasBehavior && hasMarkers ? 1 : 0); },
+                "提示：强行萃取可能导致口吻与关注池偏离；建议优先完善对应标签。");
             return false;
         }
 
@@ -1986,8 +2038,13 @@ namespace ValleytalkReborn
                 $"✔ 已应用环境心智（{preoccupations.Count} 个关注词条）",
                 HUDMessage.newQuest_type));
             if (_wizardStep == WizardStep.Ambient)
-                OfferWizardAdvance("【向导完成】身份/言行/对白/阶梯/环境心智全部就绪！可随时逐页微调。",
-                    () => { _wizardStep = WizardStep.None; });
+                OfferWizardAdvance(
+                    "向导完成",
+                    "身份/言行/对白/阶梯/环境心智全部就绪！",
+                    new List<string> { "可随时返回各标签页逐页微调" },
+                    "✔ 完成",
+                    () => { _wizardStep = WizardStep.None; },
+                    fixText: "留在当前页");
             return true;
         }
 
@@ -2026,20 +2083,44 @@ namespace ValleytalkReborn
                 && bio.Contains("[PSYCHOLOGICAL CONFLICTS]", StringComparison.Ordinal)
                 && bio.Trim().Length >= 60;
             if (!hasExisting) { StartWizard(); return; }
-            Game1.activeClickableMenu = new ConfirmationDialog(
-                "检测到已有完整设定。引导式起号将逐步重构身份、言行、对白、阶梯与环境心智（每步均先审阅再落盘）。\n\n点击「确定」= 开始向导；点击「取消」= 保持在当前页。",
-                _ => { Game1.activeClickableMenu = this; RouteWizardStep0(); },
-                _ => { Game1.activeClickableMenu = this; });
+
+            var warnings = new List<string>
+            {
+                "检测到当前角色已具备完整人设档案（身份、心理矛盾等均已就绪）",
+                "引导式起号将逐步重构身份、言行规则、对白范例、好感阶梯与环境心智",
+                "每一步生成均需您在审阅弹窗中确认后才会生效落盘",
+                "如需备份当前设定，建议先使用右上角「导出」按钮复制 JSON 到剪贴板"
+            };
+
+            Game1.activeClickableMenu = new BioValveWarningDialog(
+                this,
+                "重新起号风险提示",
+                "即将对已有设定启动完整的引导式起号向导：",
+                warnings,
+                "⚠ 重新开始向导",
+                () => { Game1.activeClickableMenu = this; RouteWizardStep0(); },
+                "保持现有设定",
+                () => { Game1.activeClickableMenu = this; },
+                "提示：向导每一步均先审阅后落盘，可在审阅弹窗中随时拒绝不满意的生成。");
         }
 
         private void StartWizard()
         {
             if (_wizardStep != WizardStep.None)
             {
-                Game1.activeClickableMenu = new ConfirmationDialog(
-                    "上一轮向导尚未完成，是否重新开始？",
-                    _ => { Game1.activeClickableMenu = this; RouteWizardStep0(); },
-                    _ => { Game1.activeClickableMenu = this; });
+                Game1.activeClickableMenu = new BioValveWarningDialog(
+                    this,
+                    "上一轮向导尚未完成",
+                    "检测到向导流程仍在进行中：",
+                    new List<string>
+                    {
+                        "重新开始将丢弃当前向导进度，从身份起号重新走完全流程",
+                        "已保存落盘的设定不受影响，仅向导流程状态重置"
+                    },
+                    "⚠ 重新开始向导",
+                    () => { Game1.activeClickableMenu = this; RouteWizardStep0(); },
+                    "保持现状",
+                    () => Game1.activeClickableMenu = this);
                 return;
             }
             RouteWizardStep0();
@@ -2095,12 +2176,15 @@ namespace ValleytalkReborn
                 result => review.OnStreamSettled(result));
         }
 
-        private void OfferWizardAdvance(string message, Action next)
+        private void OfferWizardAdvance(string title, string subtitle, List<string> warnings, string continueText, Action next, string? tip = null, string fixText = "到此为止")
         {
             AgentToolDispatcher.EnqueueMainThread(() =>
-                Game1.activeClickableMenu = new ConfirmationDialog(message,
-                    _ => { Game1.activeClickableMenu = this; next(); },
-                    _ => { Game1.activeClickableMenu = this; _wizardStep = WizardStep.None; }));
+                Game1.activeClickableMenu = new BioValveWarningDialog(
+                    this, title, subtitle, warnings, continueText,
+                    () => { Game1.activeClickableMenu = this; next(); },
+                    fixText,
+                    () => { Game1.activeClickableMenu = this; _wizardStep = WizardStep.None; },
+                    tip, continueIsDanger: false));
         }
 
         private bool ApplyTraitPolish(string traitKey, string confirmedText)
@@ -2128,11 +2212,21 @@ namespace ValleytalkReborn
             Game1.playSound("coin");
             Game1.addHUDMessage(new HUDMessage("✔ 已应用 AI 润色内容", HUDMessage.newQuest_type));
             if (_wizardStep == WizardStep.Behavior && traitKey == "BehavioralRules")
-                OfferWizardAdvance("【第 2/4 步完成】言行规则已就位！\n\n是否推进第 3 步：【对白范例】？\n\n点击「确定」= 推进下一步；点击「取消」= 留在当前页（向导结束，各页 AI 按钮可单独继续）",
-                    () => { _wizardStep = WizardStep.Dialogue; OpenTraitPolishDialog("DialogueExamples", "对白范例"); });
+                OfferWizardAdvance(
+                    "第 2/4 步完成",
+                    "言行规则已就位！是否推进第 3 步？",
+                    new List<string> { "下一步将生成【对白范例】" },
+                    "➜ 推进下一步",
+                    () => { _wizardStep = WizardStep.Dialogue; OpenTraitPolishDialog("DialogueExamples", "对白范例"); },
+                    "提示：选择「到此为止」即结束向导，各页 AI 按钮仍可单独继续生成。");
             else if (_wizardStep == WizardStep.Dialogue && traitKey == "DialogueExamples")
-                OfferWizardAdvance("【第 3/4 步完成】对白范例已就位！\n\n是否推进第 4 步：【好感阶梯】（自动按可婚 4 档/常规 3 档）？\n\n点击「确定」= 推进下一步；点击「取消」= 留在当前页（向导结束，各页 AI 按钮可单独继续）",
-                    () => { _wizardStep = WizardStep.Stage; SwitchTab(2); OpenStageLadderDialog(); });
+                OfferWizardAdvance(
+                    "第 3/4 步完成",
+                    "对白范例已就位！是否推进第 4 步？",
+                    new List<string> { "下一步将按可婚 4 档/常规 3 档推演【好感阶梯】" },
+                    "➜ 推进下一步",
+                    () => { _wizardStep = WizardStep.Stage; SwitchTab(2); OpenStageLadderDialog(); },
+                    "提示：选择「到此为止」即结束向导，各页 AI 按钮仍可单独继续生成。");
             return true;
         }
 
@@ -2183,8 +2277,13 @@ namespace ValleytalkReborn
             Game1.playSound("coin");
             Game1.addHUDMessage(new HUDMessage($"✔ 已应用 AI 阶梯（{stages.Count} 档）", HUDMessage.newQuest_type));
             if (_wizardStep == WizardStep.Stage)
-                OfferWizardAdvance("【第 4 步进行中】好感阶梯已就位！\n\n是否推进最后一步：【环境心智】萃取？\n\n点击「确定」= 推进下一步；点击「取消」= 留在当前页（向导结束，各页 AI 按钮可单独继续）",
-                    () => { _wizardStep = WizardStep.Ambient; SwitchTab(4); OpenAmbientExtractDialog(); });
+                OfferWizardAdvance(
+                    "第 4 步完成",
+                    "好感阶梯已就位！是否推进最后一步？",
+                    new List<string> { "下一步将萃取【环境心智】（口吻/口头禅/观察透镜/关注池）" },
+                    "➜ 推进最后一步",
+                    () => { _wizardStep = WizardStep.Ambient; SwitchTab(4); OpenAmbientExtractDialog(); },
+                    "提示：选择「到此为止」即结束向导，各页 AI 按钮仍可单独继续生成。");
             return true;
         }
 
@@ -2383,10 +2482,20 @@ namespace ValleytalkReborn
                 ExitAndReturn();
                 return;
             }
-            Game1.activeClickableMenu = new ConfirmationDialog(
-                "放弃未保存的所有修改？",
-                _ => { Game1.activeClickableMenu = this; ExitAndReturn(); },
-                _ => { Game1.activeClickableMenu = this; });
+            Game1.activeClickableMenu = new BioValveWarningDialog(
+                this,
+                "放弃未保存的修改",
+                "当前编辑内容尚未保存：",
+                new List<string>
+                {
+                    "退出将丢弃本编辑器内所有未保存的修改",
+                    "此前已保存的设定不受影响"
+                },
+                "⚠ 放弃并退出",
+                () => { Game1.activeClickableMenu = this; ExitAndReturn(); },
+                "继续编辑",
+                () => Game1.activeClickableMenu = this,
+                "提示：如想保留这些修改，请先点击「✔ 保存修改」再退出。");
         }
 
         private void SyncAllControlsFromVm()
@@ -2434,9 +2543,17 @@ namespace ValleytalkReborn
         private void TryResetCurrentPage()
         {
             string currentTabName = TabTitles[_activeTab];
-            Game1.activeClickableMenu = new ConfirmationDialog(
-                $"确定将【{currentTabName}】恢复为原版默认基准？\n（未点击保存前不会写入磁盘）",
-                _ =>
+            Game1.activeClickableMenu = new BioValveWarningDialog(
+                this,
+                "恢复当前页原版基准",
+                $"即将把【{currentTabName}】恢复为原版默认基准：",
+                new List<string>
+                {
+                    "该页全部自定义内容将回退至原版默认",
+                    "未点击保存前不会写入磁盘，可随时再改回"
+                },
+                "⚠ 确认恢复",
+                () =>
                 {
                     Game1.activeClickableMenu = this;
                     _vm.ResetTabToBaseline(_activeTab);
@@ -2444,7 +2561,8 @@ namespace ValleytalkReborn
                     Game1.playSound("coin");
                     Game1.addHUDMessage(new HUDMessage($"已恢复【{currentTabName}】至原版基准", HUDMessage.newQuest_type));
                 },
-                _ => Game1.activeClickableMenu = this);
+                "保持现状",
+                () => Game1.activeClickableMenu = this);
         }
 
         private void SyncActiveTabControls()
@@ -2501,9 +2619,18 @@ namespace ValleytalkReborn
                 return;
             }
 
-            Game1.activeClickableMenu = new ConfirmationDialog(
-                $"确定将 {_npcName} 的全部人设恢复为原版，并删除自定义文件？",
-                _ =>
+            Game1.activeClickableMenu = new BioValveWarningDialog(
+                this,
+                "全部恢复原版",
+                $"即将重置 {_npcName} 的全部人设：",
+                new List<string>
+                {
+                    "全部自定义人设（身份/言行/好感/关系/环境心智）将恢复原版",
+                    "对应的自定义数据文件将被删除，无法找回",
+                    "建议先点击右上角「导出」备份 JSON"
+                },
+                "⚠ 确认重置",
+                () =>
                 {
                     Game1.activeClickableMenu = this;
                     if (!_vm.TryReset(out string err))
@@ -2515,7 +2642,8 @@ namespace ValleytalkReborn
                     Game1.playSound("throw");
                     Game1.addHUDMessage(new HUDMessage($"已重置 {_npcName} 全部数据至原版", HUDMessage.achievement_type));
                 },
-                _ => Game1.activeClickableMenu = this);
+                "保持现有设定",
+                () => Game1.activeClickableMenu = this);
         }
 
         private void ExitAndReturn()
