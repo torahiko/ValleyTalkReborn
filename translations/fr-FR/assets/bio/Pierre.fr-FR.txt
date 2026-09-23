@@ -19,6 +19,5 @@
     "\u00EAtre sous-estim\u00E9",
     "Approvisionnement de plus de produits de soins capillaires"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": false
+  "Dialogue": {}
 }

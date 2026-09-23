@@ -18,6 +18,5 @@
     "emm\u00E9nager en ville",
     "les dangers des festivals"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": false
+  "Dialogue": {}
 }

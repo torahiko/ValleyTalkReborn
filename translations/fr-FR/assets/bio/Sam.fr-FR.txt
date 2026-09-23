@@ -31,6 +31,5 @@
     "ayant besoin d\u0027un nouveau skateboard",
     "voulant une nouvelle guitare"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": true
+  "Dialogue": {}
 }

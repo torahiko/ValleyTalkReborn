@@ -10,6 +10,5 @@
   "Preoccupations": [
     "obscurit\u00E9"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": false
+  "Dialogue": {}
 }

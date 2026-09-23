@@ -20,6 +20,5 @@
     "Jodi est triste quand son p\u00E8re est absent",
     "ne comprenant pas la guerre"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": false
+  "Dialogue": {}
 }

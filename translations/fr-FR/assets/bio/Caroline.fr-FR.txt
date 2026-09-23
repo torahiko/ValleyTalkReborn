@@ -11,6 +11,5 @@
     "le sorcier",
     "Pierre"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": false
+  "Dialogue": {}
 }

@@ -21,6 +21,5 @@
     "Contr\u00F4le a\u00E9rien",
     "aviation"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": false
+  "Dialogue": {}
 }

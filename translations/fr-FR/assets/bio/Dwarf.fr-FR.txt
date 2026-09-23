@@ -9,6 +9,5 @@
     "Tr\u00E9sor",
     "Ombres humaines"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": false
+  "Dialogue": {}
 }

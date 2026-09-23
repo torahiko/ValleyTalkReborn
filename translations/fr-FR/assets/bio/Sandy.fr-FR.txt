@@ -15,6 +15,5 @@
     "concurrence de Pierre",
     "le Videur"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": false
+  "Dialogue": {}
 }

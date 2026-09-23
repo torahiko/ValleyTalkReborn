@@ -12,6 +12,5 @@
     "musique",
     "Les r\u00E9actions d\u0027Emily"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": false
+  "Dialogue": {}
 }

@@ -17,6 +17,5 @@
     "grand-m\u00E8re Evelyn",
     "renforcement musculaire"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": true
+  "Dialogue": {}
 }

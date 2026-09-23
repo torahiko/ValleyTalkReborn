@@ -19,6 +19,5 @@
     "en le faisant en tant que femme c\u00E9libataire",
     "Ville de Zuza"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": false
+  "Dialogue": {}
 }

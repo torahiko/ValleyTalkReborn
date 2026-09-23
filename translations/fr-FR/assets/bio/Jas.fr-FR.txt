@@ -20,6 +20,5 @@
     "nourriture sauvage",
     "Mlle Penny"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": false
+  "Dialogue": {}
 }

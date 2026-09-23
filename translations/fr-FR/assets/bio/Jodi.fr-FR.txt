@@ -16,6 +16,5 @@
     "La musique de Sam",
     "La formation de Vincent"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": false
+  "Dialogue": {}
 }

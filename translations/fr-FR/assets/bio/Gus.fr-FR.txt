@@ -12,6 +12,5 @@
     "la communaut\u00E9 de Pelican Town",
     "sa c\u00E9l\u00E8bre omelette"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": false
+  "Dialogue": {}
 }
