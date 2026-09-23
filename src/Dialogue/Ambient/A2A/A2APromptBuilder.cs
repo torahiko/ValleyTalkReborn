@@ -868,7 +868,30 @@ internal sealed class A2APromptBuilder
     }
 
     private static string GetInterNpcRelationships(List<NPC> participants, bool isChinese)
-        => NpcRelationRegistry.Instance?.GetRelationships(participants, isChinese);
+    {
+        if (participants == null || participants.Count < 2)
+            return null;
+
+        var lines = new List<string>();
+        for (int i = 0; i < participants.Count; i++)
+        {
+            for (int j = 0; j < participants.Count; j++)
+            {
+                if (j == i) continue;
+                string desc = NpcPersonaRelationScanner.GetDescription(participants[i].Name, participants[j].Name);
+                if (string.IsNullOrWhiteSpace(desc)) continue;
+
+                string dnA = isChinese ? NpcNameLocalizer.GetZhName(participants[i].Name) : (participants[i].displayName ?? participants[i].Name);
+                string dnB = isChinese ? NpcNameLocalizer.GetZhName(participants[j].Name) : (participants[j].displayName ?? participants[j].Name);
+
+                lines.Add(isChinese
+                    ? $"- 【{dnA}】看待【{dnB}】：{desc}"
+                    : $"- {dnA} toward {dnB}: {desc}");
+            }
+        }
+
+        return lines.Count > 0 ? string.Join("\n", lines) : null;
+    }
 
     private static string TryGetRecentGossip(List<NPC> participants)
     {

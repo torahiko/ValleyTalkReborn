@@ -701,13 +701,12 @@ internal sealed class A2ASessionManager
 
         // a) 关系矩阵（一次构建复用，禁止在候选循环内重复调用 HasRelation 同一对）
         bool[,] related = new bool[n, n];
-        var registry = NpcRelationRegistry.Instance;
         for (int i = 0; i < n; i++)
         {
             for (int j = i + 1; j < n; j++)
             {
-                related[i, j] = related[j, i] = registry != null
-                    && registry.HasRelation(a2aNearbyNpcs[i].Name, a2aNearbyNpcs[j].Name);
+                related[i, j] = related[j, i] = NpcPersonaRelationScanner.HasRelationInAnyDirection(
+                    a2aNearbyNpcs[i].Name, a2aNearbyNpcs[j].Name);
             }
         }
 
