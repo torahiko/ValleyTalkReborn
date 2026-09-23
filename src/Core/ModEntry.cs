@@ -118,9 +118,8 @@ namespace ValleytalkReborn
         /// <summary>静态人设覆盖层存储服务（单例，跨存档存活，不进存档）。</summary>
         internal static BioStorageService BioStorage;
 
-        /// <summary>世界覆盖层存储服务组（约会地点 / NPC 关系 / 兴趣点偏好；跨存档存活，不进存档）。</summary>
+        /// <summary>世界覆盖层存储服务组（约会地点 / 兴趣点偏好；跨存档存活，不进存档）。</summary>
         internal static DateLocationOverlayService DateLocationOverlay;
-        internal static NpcRelationOverlayService NpcRelationOverlay;
         internal static PoiPreferenceOverlayService PoiPreferenceOverlay;
 
         /// <summary>世界概要覆盖层存储服务（GameSummary 资产挂接 + 自创纪念日读时合成）。</summary>
@@ -274,10 +273,8 @@ namespace ValleytalkReborn
             BioStorage.RegisterAssetProviders();
 
             DateLocationOverlay = new DateLocationOverlayService(Helper, Monitor);
-            NpcRelationOverlay = new NpcRelationOverlayService(Helper, Monitor);
             PoiPreferenceOverlay = new PoiPreferenceOverlayService(Helper, Monitor);
             DateLocationOverlay.RegisterAssetProviders();
-            NpcRelationOverlay.RegisterAssetProviders();
             PoiPreferenceOverlay.RegisterAssetProviders();
 
             // 初始化兴趣点踩点悬浮挂件
@@ -1244,16 +1241,6 @@ namespace ValleytalkReborn
                     Log.Error($"[ValleyTalkReborn] Error cleaning RuleManager: {ex.Message}");
                 }
 
-                // ★ 清理关系注册表缓存
-                try
-                {
-                    NpcRelationRegistry.Instance.Cleanup();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error($"[ValleyTalkReborn] Error cleaning NpcRelationRegistry: {ex.Message}");
-                }
-
                 // ★ 清理伴侣日程管理器资产与状态缓存
                 try
                 {
@@ -1418,12 +1405,6 @@ namespace ValleytalkReborn
         /// </summary>
         private void OnAssetsInvalidated(object sender, AssetsInvalidatedEventArgs e)
         {
-            // 刷新 NPC 关系表
-            if (e.NamesWithoutLocale.Any(an => an.IsEquivalentTo("ValleytalkReborn/NpcRelations")))
-            {
-                NpcRelationRegistry.Instance.Reload(Helper, Monitor);
-            }
-
             // 刷新 POI 地点与 NPC 喜好资产表
             if (e.NamesWithoutLocale.Any(an => an.IsEquivalentTo("ValleytalkReborn/GlobalPoiAssets") ||
                                                an.IsEquivalentTo("ValleytalkReborn/NpcPreferences")))
@@ -1480,9 +1461,6 @@ namespace ValleytalkReborn
             SessionCache.Instance.ResetAll();
             EatSubscriber.Initialize();
             ConsecutiveTalkTracker.Initialize();
-
-            // ★ 存档加载完成后载入 NPC 关系
-            NpcRelationRegistry.Instance.LoadAll(Helper, Monitor);
 
             // ★ 存档加载后从 CP 管道载入约会地点
             DateLocationRegistry.LoadAssets();

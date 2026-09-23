@@ -24,28 +24,21 @@ namespace ValleytalkReborn
         private static readonly ConditionalWeakTable<object, CursorState> States = new();
         private static IModHelper _helper;
 
-        // 统一受控 Debug 日志：仅在用户开启配置 Debug 时打印
+        // 常规生命周期/跟踪日志
+        private static void LogTrace(string message)
+        {
+            if (ModEntry.Config?.Debug == true)
+            {
+                ModEntry.SMonitor.Log("[TBCursor] " + message, LogLevel.Trace);
+            }
+        }
+
+        // 异常诊断日志：提升为 Debug 级别，便于调试模式下排查错误
         private static void LogDebug(string message)
         {
             if (ModEntry.Config?.Debug == true)
             {
                 ModEntry.SMonitor.Log("[TBCursor] " + message, LogLevel.Debug);
-            }
-        }
-
-        // 诊断探针标志（纯内存，不落盘，一次性）
-        private static bool _probeHitRecieveTextInput;
-        private static bool _probeHitRecieveTextInputString;
-        private static bool _probeHitRecieveCommandInput;
-        private static bool _probeHitDrawPrefix;
-        private static bool _probeHitDrawPostfix;
-
-        private static void LogProbeOnce(string tag, ref bool flag)
-        {
-            if (!flag)
-            {
-                flag = true;
-                LogDebug(tag);
             }
         }
 
@@ -68,19 +61,10 @@ namespace ValleytalkReborn
         private static FieldInfo SpaceboxSelectedImplField;
         private static PropertyInfo SpaceboxCallbackProperty; // 实为属性（Action<Element>），非字段
         private static MemberInfo SpaceboxPositionMember; // PropertyInfo 优先，FieldInfo 兜底
-        private static Type ElementType; // 日志用途：SpaceboxType.BaseType 链上首个 SpaceShared.UI 命名空间类型
+        private static Type ElementType; // SpaceboxType.BaseType 链上首个 SpaceShared.UI 命名空间类型
 
         [ThreadStatic]
         private static bool _spaceboxWasSelected;
-
-        private static bool _probeHitSbTextInputChar;
-        private static bool _probeHitSbTextInputString;
-        private static bool _probeHitSbCommandInput;
-        private static bool _probeHitSpaceboxInputError;
-
-        // 临时仪表化计数器（CLEAN 票时随探针一并拆除）
-        private static int _spaceboxDrawFrameCounter;
-        private static int _spaceboxP3Count;
 
         private static int GetCursorCore(object box, int textLength)
         {
@@ -222,7 +206,7 @@ namespace ValleytalkReborn
             SpaceboxType = match;
             if (SpaceboxType == null)
             {
-                ModEntry.SMonitor.Log("[TBCursor] SpaceShared.UI.Textbox not found — spacebox cursor disabled.", LogLevel.Error);
+                LogTrace("SpaceShared.UI.Textbox not found — spacebox cursor enhancement bypassed.");
                 return;
             }
 
@@ -256,12 +240,12 @@ namespace ValleytalkReborn
                 string missing = (SpaceboxStringProperty == null ? "String " : "") +
                                  (SpaceboxSelectedImplField == null ? "SelectedImpl " : "") +
                                  (SpaceboxCallbackProperty == null ? "Callback" : "");
-                ModEntry.SMonitor.Log($"[TBCursor] Spacebox input members missing ({missing.TrimEnd()}) — spacebox cursor disabled.", LogLevel.Error);
+                LogTrace($"Spacebox input members missing ({missing.TrimEnd()}) — spacebox cursor disabled.");
                 return;
             }
             if (!hasDraw)
             {
-                ModEntry.SMonitor.Log("[TBCursor] Spacebox Position member unavailable — caret will be invisible; input patches still mounted.", LogLevel.Warn);
+                LogTrace("Spacebox Position member unavailable — caret will be invisible; input patches still mounted.");
             }
 
             string asmName = SpaceboxType.Assembly.GetName().Name;
@@ -290,17 +274,12 @@ namespace ValleytalkReborn
                 );
             }
 
-            LogDebug($"Spacebox patches mounted: RecieveTextInput(char)->{SpaceboxType.Name}, RecieveTextInput(string)->{SpaceboxType.Name}, RecieveCommandInput(char)->{SpaceboxType.Name}, Draw(SpriteBatch)->{(hasDraw ? SpaceboxType.Name : "SKIPPED")} (asm={asmName}, base={elementName})");
+            LogTrace($"Spacebox patches mounted: RecieveTextInput(char)->{SpaceboxType.Name}, RecieveTextInput(string)->{SpaceboxType.Name}, RecieveCommandInput(char)->{SpaceboxType.Name}, Draw(SpriteBatch)->{(hasDraw ? SpaceboxType.Name : "SKIPPED")} (asm={asmName}, base={elementName})");
         }
 
         private static void OnButtonPressed(object sender, ButtonPressedEventArgs e)
         {
             var subscriber = Game1.keyboardDispatcher?.Subscriber;
-            if (subscriber != null)
-            {
-                string selected = (subscriber as TextBox)?.Selected.ToString() ?? "n/a";
-                LogDebug($"press={e.Button} sub={subscriber.GetType().FullName} selected={selected}");
-            }
 
             // GMCM Spacebox 分支：精确类型 + SelectedImpl 命中才进入，命中即消费
             if (subscriber != null && SpaceboxType != null
@@ -409,7 +388,6 @@ namespace ValleytalkReborn
 
         private static bool Prefix_RecieveTextInput(TextBox __instance, char inputChar)
         {
-            LogProbeOnce("hit Prefix_RecieveTextInput", ref _probeHitRecieveTextInput);
             if (__instance.numbersOnly && !char.IsDigit(inputChar)) return false;
             if (__instance.textLimit != -1 && (__instance.Text?.Length ?? 0) >= __instance.textLimit) return false;
 
@@ -423,7 +401,6 @@ namespace ValleytalkReborn
 
         private static bool Prefix_RecieveTextInputString(TextBox __instance, string text)
         {
-            LogProbeOnce("hit Prefix_RecieveTextInputString", ref _probeHitRecieveTextInputString);
             if (string.IsNullOrEmpty(text)) return false;
 
             if (__instance.numbersOnly)
@@ -448,7 +425,6 @@ namespace ValleytalkReborn
 
         private static bool Prefix_RecieveCommandInput(TextBox __instance, char command)
         {
-            LogProbeOnce("hit Prefix_RecieveCommandInput", ref _probeHitRecieveCommandInput);
             if (command != '\b') return true;
 
             string text = __instance.Text ?? string.Empty;
@@ -464,7 +440,6 @@ namespace ValleytalkReborn
 
         private static void Prefix_Draw(TextBox __instance)
         {
-            LogProbeOnce("hit Prefix_Draw", ref _probeHitDrawPrefix);
             _wasSelectedBeforeDraw = __instance.Selected;
             if (_wasSelectedBeforeDraw)
             {
@@ -474,7 +449,6 @@ namespace ValleytalkReborn
 
         private static void Postfix_Draw(TextBox __instance, SpriteBatch spriteBatch)
         {
-            LogProbeOnce("hit Postfix_Draw", ref _probeHitDrawPostfix);
             if (!_wasSelectedBeforeDraw) return;
             __instance.Selected = true;
             _wasSelectedBeforeDraw = false;
@@ -504,9 +478,9 @@ namespace ValleytalkReborn
                     color
                 );
             }
-            catch
+            catch (Exception ex)
             {
-                // 静默兜底
+                LogDebug($"Vanilla TextBox Postfix_Draw error: {ex.Message}");
             }
         }
 
@@ -529,7 +503,6 @@ namespace ValleytalkReborn
         {
             if (__instance.GetType() != SpaceboxType) return true;
             if (SpaceboxSelectedImplField.GetValue(__instance) is not true) return true;
-            LogProbeOnce("hit SpaceboxPrefix_RecieveTextInputChar", ref _probeHitSbTextInputChar);
             try
             {
                 if (char.IsControl(inputChar)) return true;
@@ -543,11 +516,7 @@ namespace ValleytalkReborn
             }
             catch (Exception ex)
             {
-                if (!_probeHitSpaceboxInputError)
-                {
-                    _probeHitSpaceboxInputError = true;
-                    LogDebug($"SpaceboxPrefix_RecieveTextInputChar error: {ex.Message}");
-                }
+                LogDebug($"SpaceboxPrefix_RecieveTextInputChar error: {ex.Message}");
                 return true;
             }
         }
@@ -556,7 +525,6 @@ namespace ValleytalkReborn
         {
             if (__instance.GetType() != SpaceboxType) return true;
             if (SpaceboxSelectedImplField.GetValue(__instance) is not true) return true;
-            LogProbeOnce("hit SpaceboxPrefix_RecieveTextInputString", ref _probeHitSbTextInputString);
             try
             {
                 string cur = SpaceboxGetString(__instance);
@@ -570,11 +538,7 @@ namespace ValleytalkReborn
             }
             catch (Exception ex)
             {
-                if (!_probeHitSpaceboxInputError)
-                {
-                    _probeHitSpaceboxInputError = true;
-                    LogDebug($"SpaceboxPrefix_RecieveTextInputString error: {ex.Message}");
-                }
+                LogDebug($"SpaceboxPrefix_RecieveTextInputString error: {ex.Message}");
                 return true;
             }
         }
@@ -583,12 +547,6 @@ namespace ValleytalkReborn
         {
             if (__instance.GetType() != SpaceboxType) return true;
             if (SpaceboxSelectedImplField.GetValue(__instance) is not true) return true;
-            LogProbeOnce("hit SpaceboxPrefix_RecieveCommandInput", ref _probeHitSbCommandInput);
-            if (_spaceboxP3Count < 5)
-            {
-                LogDebug($"P3 call={_spaceboxP3Count} cursor={GetCursorCore(__instance, (SpaceboxStringProperty.GetValue(__instance) as string)?.Length ?? 0)} len={(SpaceboxStringProperty.GetValue(__instance) as string)?.Length ?? 0} src={command}");
-                _spaceboxP3Count++;
-            }
             try
             {
                 if (command != '\b') return true;
@@ -605,11 +563,7 @@ namespace ValleytalkReborn
             }
             catch (Exception ex)
             {
-                if (!_probeHitSpaceboxInputError)
-                {
-                    _probeHitSpaceboxInputError = true;
-                    LogDebug($"SpaceboxPrefix_RecieveCommandInput error: {ex.Message}");
-                }
+                LogDebug($"SpaceboxPrefix_RecieveCommandInput error: {ex.Message}");
                 return true;
             }
         }
@@ -648,16 +602,10 @@ namespace ValleytalkReborn
                     new Rectangle(rectX, rectY, 4, 32),
                     Game1.textColor
                 );
-
-                if (++_spaceboxDrawFrameCounter >= 60)
-                {
-                    _spaceboxDrawFrameCounter = 0;
-                    LogDebug($"caret dbg rect=({rectX},{rectY}) cursor={cursor} offset={offset:F1} pos=({pos.X:F0},{pos.Y:F0}) selected={_spaceboxWasSelected}");
-                }
             }
             catch (Exception ex)
             {
-                LogDebug($"spacebox caret draw failed: {ex}");
+                LogDebug($"Spacebox caret draw failed: {ex.Message}");
             }
             finally
             {

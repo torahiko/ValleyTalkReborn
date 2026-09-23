@@ -14,12 +14,6 @@
       "FromFile": "assets/NPC_Preferences.json"
     },
     {
-      "LogName": "Load NPC Relations",
-      "Action": "Load",
-      "Target": "ValleytalkReborn/NpcRelations",
-      "FromFile": "assets/npc_relations.json"
-    },
-    {
       "LogName": "Load Date Locations",
       "Action": "Load",
       "Target": "ValleytalkReborn/DateLocations",
