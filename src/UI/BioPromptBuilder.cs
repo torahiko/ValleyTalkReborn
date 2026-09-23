@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ValleytalkReborn
 {
@@ -74,13 +76,151 @@ namespace ValleytalkReborn
         public static (string System, string User) BuildStageLadderPrompt(
             BioEditorViewModel vm, string npcName, bool isDatable, string demand)
         {
-            throw new NotSupportedException("BuildStageLadderPrompt 由 VT-AI-11 填充（本单仅保留签名）。");
+            string anchor = GetCorePersonaAnchor(vm, npcName);
+            int count = isDatable ? 4 : 3;
+            string ladder = isDatable ? "0/4/8/已婚(已婚: 是)" : "0/4/8";
+            string marriedNote = isDatable
+                ? "末档为已婚档：心数固定填 14，已婚: 是（推演婚后语气转变）；其余档心数必须为偶数。"
+                : "所有档位心数必须为偶数。";
+
+            string system =
+                "你是一名专业的《星露谷物语》NPC 人设编辑助手，正在为角色推演完整的【好感阶梯（ProgressStates）】。\n" +
+                "推演时必须以该角色的核心身份为锚点，让各档位的心态、关注点随好感递进自然演变：\n" +
+                $"{anchor}\n" +
+                "硬性要求：\n" +
+                $"1. 共输出 {count} 档，覆盖以下门槛（心数必须为偶数）：{ladder}。\n" +
+                $"2. {marriedNote}\n" +
+                "3. 态度段写清该阶段对玩家的态度与说话风格（自由文本，可多行）；心智段写清该阶段碎碎念时的心态与注意力流向（自由文本，可多行）。\n" +
+                "4. 关注池列 3~5 个该阶段优先提及的事物/话题，用中文顿号分隔；若无特别关注点可写\"无\"。\n" +
+                "5. 严禁生成 Joja 超市/巴士修复/具体配偶门禁等字段（这些由人工单独配置）。\n" +
+                "6. 严禁 Markdown 代码围栏（```）、严禁 JSON 注释（// 或 /* */）、严禁 JSON 对象与多余字段。\n" +
+                "7. 严格使用下列固定行式模板输出，每档一段：\n" +
+                "### 档位 1 | 心数: 0 | 已婚: 否\n" +
+                "态度:\n" +
+                "（自由文本，可多行）\n" +
+                "心智:\n" +
+                "（自由文本，可多行）\n" +
+                "关注: 词条A、词条B、词条C";
+
+            string user =
+                $"【整体心境与转变倾向】\n{demand}\n\n" +
+                $"请严格按上述模板输出 {count} 档，逐档递增心数，不要添加模板之外的字段。";
+
+            return (system, user);
         }
 
         public static (string System, string User) BuildAmbientExtractionPrompt(
             BioEditorViewModel vm, string npcName, string demand)
         {
             throw new NotSupportedException("BuildAmbientExtractionPrompt 由 VT-AI-12 填充（本单仅保留签名）。");
+        }
+
+        /// <summary>
+        /// 解析 AI 输出的行式好感阶梯文本。任一块缺少"态度:"段，或整体无有效块，即返回 false。
+        /// </summary>
+        public static bool TryParseStageLadder(string text, out List<BioData.ProgressStateEntry> stages)
+        {
+            stages = new List<BioData.ProgressStateEntry>();
+            if (string.IsNullOrWhiteSpace(text))
+                return false;
+
+            var blocks = System.Text.RegularExpressions.Regex.Split(text, @"^###\s*档位\s*\d+", System.Text.RegularExpressions.RegexOptions.Multiline);
+            foreach (var raw in blocks)
+            {
+                string block = raw.Trim();
+                if (string.IsNullOrEmpty(block))
+                    continue;
+
+                int hearts = ReadEvenField(block, "心数:");
+                bool married = ReadBoolField(block, "已婚:");
+                string attitude = ReadSection(block, "态度:");
+                string mindset = ReadSection(block, "心智:");
+                List<string> occ = ReadOccupations(block, "关注:");
+
+                // 态度段为必备：任一块缺失即整体失败
+                if (attitude == null)
+                {
+                    stages = new List<BioData.ProgressStateEntry>();
+                    return false;
+                }
+
+                stages.Add(new BioData.ProgressStateEntry
+                {
+                    RequiredHearts = Math.Clamp(hearts, 0, 14),
+                    RequireMarried = married,
+                    Text = attitude,
+                    BarkMindset = mindset,
+                    Preoccupations = occ
+                });
+            }
+
+            return stages.Count > 0;
+        }
+
+        private static int ReadEvenField(string block, string key)
+        {
+            string v = ReadLineValue(block, key);
+            if (string.IsNullOrEmpty(v)) return 0;
+            v = v.Replace("：", ":").Trim();
+            if (int.TryParse(v, out int n))
+            {
+                if (n % 2 != 0) n -= 1; // 对齐步进 2
+                return Math.Clamp(n, 0, 14);
+            }
+            return 0;
+        }
+
+        private static bool ReadBoolField(string block, string key)
+        {
+            string v = ReadLineValue(block, key);
+            if (string.IsNullOrEmpty(v)) return false;
+            return v == "是" || v == "y" || v == "Y" || v == "true" || v == "True" || v == "TRUE";
+        }
+
+        private static string ReadLineValue(string block, string key)
+        {
+            int idx = block.IndexOf(key, StringComparison.Ordinal);
+            if (idx < 0) return null;
+            int start = idx + key.Length;
+            int end = block.IndexOf('\n', start);
+            string v = end < 0 ? block.Substring(start) : block.Substring(start, end - start);
+            return v.Replace("：", ":").Trim();
+        }
+
+        private static string ReadSection(string block, string key)
+        {
+            int idx = block.IndexOf(key, StringComparison.Ordinal);
+            if (idx < 0) return null;
+            int start = idx + key.Length;
+            // 跳过字段标签后的换行，取到下一个字段标签（心数/已婚/态度/心智/关注）或块尾
+            string rest = start < block.Length ? block.Substring(start) : string.Empty;
+            int cut = IndexOfAny(rest, new[] { "\n态度:", "\n心智:", "\n关注:" });
+            string section = cut < 0 ? rest : rest.Substring(0, cut);
+            section = section.Trim();
+            return string.IsNullOrEmpty(section) ? "" : section;
+        }
+
+        private static List<string> ReadOccupations(string block, string key)
+        {
+            string v = ReadLineValue(block, key);
+            if (string.IsNullOrEmpty(v) || v == "无")
+                return null;
+            var parts = v.Split(new[] { '、', ',', ';', '，', '；' }, StringSplitOptions.RemoveEmptyEntries)
+                         .Select(p => p.Trim())
+                         .Where(p => !string.IsNullOrEmpty(p))
+                         .ToList();
+            return parts.Count > 0 ? parts : null;
+        }
+
+        private static int IndexOfAny(string text, string[] markers)
+        {
+            int best = -1;
+            foreach (var m in markers)
+            {
+                int i = text.IndexOf(m, StringComparison.Ordinal);
+                if (i >= 0 && (best < 0 || i < best)) best = i;
+            }
+            return best;
         }
     }
 }
