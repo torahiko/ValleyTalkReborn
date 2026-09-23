@@ -25,6 +25,7 @@ namespace ValleytalkReborn
         private readonly string _sectionTitle;
         private readonly new IClickableMenu _parentMenu;
         private readonly Func<string, bool> _onAccepted;
+        private readonly Action _onCancelled;
         private readonly DialogueTextInputBox _reviewTextBox;
         private readonly ClickableTextureComponent _acceptButton;
         private readonly ClickableTextureComponent _cancelButton;
@@ -34,7 +35,7 @@ namespace ValleytalkReborn
         private ReviewPhase _phase = ReviewPhase.Thinking;
         private string _headerText = "AI 正在构思…";
 
-        public BioAiReviewMenu(string sectionTitle, IClickableMenu parentMenu, Func<string, bool> onAccepted)
+        public BioAiReviewMenu(string sectionTitle, IClickableMenu parentMenu, Func<string, bool> onAccepted, Action onCancelled = null)
             : base(
                 (Game1.uiViewport.Width - MenuWidth) / 2,
                 (Game1.uiViewport.Height - MenuHeight) / 2,
@@ -44,6 +45,7 @@ namespace ValleytalkReborn
             _sectionTitle = sectionTitle ?? "";
             _parentMenu = parentMenu;
             _onAccepted = onAccepted;
+            _onCancelled = onCancelled;
 
             _reviewTextBox = new DialogueTextInputBox(6000)
             {
@@ -211,6 +213,11 @@ namespace ValleytalkReborn
             {
                 Game1.playSound("cancel");
                 CloseToParent();
+                try { _onCancelled?.Invoke(); }
+                catch (Exception ex)
+                {
+                    ModEntry.SMonitor?.Log($"[BioAiReviewMenu] Cancel callback failed: {ex}", StardewModdingAPI.LogLevel.Error);
+                }
             }
         }
 
@@ -226,6 +233,11 @@ namespace ValleytalkReborn
                 else
                 {
                     CloseToParent();
+                    try { _onCancelled?.Invoke(); }
+                    catch (Exception ex)
+                    {
+                        ModEntry.SMonitor?.Log($"[BioAiReviewMenu] Cancel callback failed: {ex}", StardewModdingAPI.LogLevel.Error);
+                    }
                 }
 
                 return;
