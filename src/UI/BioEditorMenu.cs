@@ -193,6 +193,11 @@ namespace ValleytalkReborn
         private Rectangle _importRect;
         private Rectangle _exportRect;
 
+        // ── VT-AI-18 向导状态机（Memory 作用域，随菜单实例生灭） ──
+        private enum WizardStep { None, Identity, Behavior, Dialogue, Stage, Ambient }
+        private WizardStep _wizardStep = WizardStep.None;
+        private Rectangle _wizardRect;
+
         // ── 构造函数 ──────────────────────────────────────────────────────
         public BioEditorMenu(string npcName, IClickableMenu returnMenu)
             : base(
@@ -333,6 +338,7 @@ namespace ValleytalkReborn
             _exportRect = new Rectangle(rightEdge - 70, hdrBtnY, 70, hdrBtnH);
             _importRect = new Rectangle(_exportRect.Left - 8 - 60, hdrBtnY, 60, hdrBtnH);
             _scopeCapsuleRect = new Rectangle(_importRect.Left - 8 - 110, hdrBtnY, 110, hdrBtnH);
+            _wizardRect = new Rectangle(_scopeCapsuleRect.Left - 8 - 130, hdrBtnY, 130, hdrBtnH);
 
             int contentLeft = xPositionOnScreen + ContentPadding;
             int contentW = width - ContentPadding * 2;
@@ -696,6 +702,9 @@ namespace ValleytalkReborn
             if (_cancelRect.Contains(x, y)) { TryCancel(); return; }
             if (_resetPageRect.Contains(x, y)) { TryResetCurrentPage(); return; }
             if (_resetAllRect.Contains(x, y)) { TryResetAll(); return; }
+
+            // VT-AI-18 向导入口：不加 !AnyTextBoxHasFocus 前置（顶栏按钮，文本框焦点不阻断）
+            if (_wizardRect.Contains(x, y)) { TryStartWizard(); return; }
 
             // 新按钮：作用域胶囊 / 导入 / 导出。文本框持有焦点时跳过，防止输入时误触。
             if (!AnyTextBoxHasFocus())
@@ -1214,6 +1223,7 @@ namespace ValleytalkReborn
             DrawActionButton(b, _scopeCapsuleRect, scopeLabel, mx, my, isPrimary: true);
             DrawActionButton(b, _importRect, "导入", mx, my, isPrimary: false);
             DrawActionButton(b, _exportRect, "导出", mx, my, isPrimary: false);
+            DrawActionButton(b, _wizardRect, "引导式起号", mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy);
         }
 
         // ── 各 Tab 具体渲染 ───────────────────────────────────────────────
@@ -1868,6 +1878,9 @@ namespace ValleytalkReborn
             _vm.SetBiography(_biographyBox.Text);
             Game1.playSound("coin");
             Game1.addHUDMessage(new HUDMessage("✔ 已应用 AI 润色内容", HUDMessage.newQuest_type));
+            if (_wizardStep == WizardStep.Identity)
+                OfferWizardAdvance("【第 1/4 步完成】身份与心理内核已确立！\n\n是否推进第 2 步：基于此内核生成【言行举止】？\n\n点击「确定」= 推进下一步；点击「取消」= 留在当前页（向导结束，各页 AI 按钮可单独继续）",
+                    () => { _wizardStep = WizardStep.Behavior; SwitchTab(1); OpenTraitPolishDialog("BehavioralRules", "言行举止"); });
             return true;
         }
 
@@ -1967,6 +1980,9 @@ namespace ValleytalkReborn
             Game1.addHUDMessage(new HUDMessage(
                 $"✔ 已应用环境心智（{preoccupations.Count} 个关注词条）",
                 HUDMessage.newQuest_type));
+            if (_wizardStep == WizardStep.Ambient)
+                OfferWizardAdvance("【向导完成】身份/言行/对白/阶梯/环境心智全部就绪！可随时逐页微调。",
+                    () => { _wizardStep = WizardStep.None; });
             return true;
         }
 
@@ -1994,6 +2010,64 @@ namespace ValleytalkReborn
             });
         }
 
+        // ── VT-AI-18 向导状态机：启动 / 防呆 / 身份起号 / 级联推进 ─────────────
+
+        private void TryStartWizard()
+        {
+            UnfocusAll();
+            if (BioAiRunner.IsBusy) { Game1.playSound("cancel"); return; }
+            string bio = _vm.GetBiography() ?? "";
+            bool hasExisting = bio.Contains("[IDENTITY]", StringComparison.Ordinal)
+                && bio.Contains("[PSYCHOLOGICAL CONFLICTS]", StringComparison.Ordinal)
+                && bio.Trim().Length >= 60;
+            if (!hasExisting) { StartWizard(); return; }
+            Game1.activeClickableMenu = new ConfirmationDialog(
+                "检测到已有完整设定。引导式起号将逐步重构身份、言行、对白、阶梯与环境心智（每步均先审阅再落盘）。\n\n点击「确定」= 开始向导；点击「取消」= 保持在当前页。",
+                _ => { Game1.activeClickableMenu = this; StartWizard(); },
+                _ => { Game1.activeClickableMenu = this; });
+        }
+
+        private void StartWizard()
+        {
+            if (_wizardStep != WizardStep.None)
+            {
+                Game1.activeClickableMenu = new ConfirmationDialog(
+                    "上一轮向导尚未完成，是否重新开始？",
+                    _ => { Game1.activeClickableMenu = this; _wizardStep = WizardStep.Identity; OpenWizardBiographyDialog(); },
+                    _ => { Game1.activeClickableMenu = this; });
+                return;
+            }
+            _wizardStep = WizardStep.Identity;
+            OpenWizardBiographyDialog();
+        }
+
+        private void OpenWizardBiographyDialog()
+        {
+            string rawContext = NpcGameDataScraper.BuildContextSummary(_npcName);
+            Game1.activeClickableMenu = new BioAiPromptDialog("身份起号", this, (demand, enableThinking) =>
+            {
+                if (BioAiRunner.IsBusy) return;
+                UnfocusAll();
+                var (system, user) = BioPromptBuilder.BuildInitialBiographyPrompt(_npcName, rawContext, demand);
+                var queue = new System.Collections.Concurrent.ConcurrentQueue<string>();
+                var review = new BioAiReviewMenu($"审阅【{_npcName}】身份起号", this,
+                    confirmedText => ApplyPolishResult(confirmedText),
+                    () => _wizardStep = WizardStep.None);
+                review.BeginStreaming(queue);
+                Game1.activeClickableMenu = review;
+                BioAiRunner.ExecuteStreaming(system, user, enableThinking, queue,
+                    result => review.OnStreamSettled(result));
+            }, allowEmptyDemand: true);
+        }
+
+        private void OfferWizardAdvance(string message, Action next)
+        {
+            AgentToolDispatcher.EnqueueMainThread(() =>
+                Game1.activeClickableMenu = new ConfirmationDialog(message,
+                    _ => { Game1.activeClickableMenu = this; next(); },
+                    _ => { Game1.activeClickableMenu = this; _wizardStep = WizardStep.None; }));
+        }
+
         private bool ApplyTraitPolish(string traitKey, string confirmedText)
         {
             if (string.IsNullOrWhiteSpace(confirmedText))
@@ -2018,6 +2092,12 @@ namespace ValleytalkReborn
             box.SetText(confirmedText);
             Game1.playSound("coin");
             Game1.addHUDMessage(new HUDMessage("✔ 已应用 AI 润色内容", HUDMessage.newQuest_type));
+            if (_wizardStep == WizardStep.Behavior && traitKey == "BehavioralRules")
+                OfferWizardAdvance("【第 2/4 步完成】言行规则已就位！\n\n是否推进第 3 步：【对白范例】？\n\n点击「确定」= 推进下一步；点击「取消」= 留在当前页（向导结束，各页 AI 按钮可单独继续）",
+                    () => { _wizardStep = WizardStep.Dialogue; OpenTraitPolishDialog("DialogueExamples", "对白范例"); });
+            else if (_wizardStep == WizardStep.Dialogue && traitKey == "DialogueExamples")
+                OfferWizardAdvance("【第 3/4 步完成】对白范例已就位！\n\n是否推进第 4 步：【好感阶梯】（自动按可婚 4 档/常规 3 档）？\n\n点击「确定」= 推进下一步；点击「取消」= 留在当前页（向导结束，各页 AI 按钮可单独继续）",
+                    () => { _wizardStep = WizardStep.Stage; SwitchTab(2); OpenStageLadderDialog(); });
             return true;
         }
 
@@ -2067,6 +2147,9 @@ namespace ValleytalkReborn
             Layout();
             Game1.playSound("coin");
             Game1.addHUDMessage(new HUDMessage($"✔ 已应用 AI 阶梯（{stages.Count} 档）", HUDMessage.newQuest_type));
+            if (_wizardStep == WizardStep.Stage)
+                OfferWizardAdvance("【第 4 步进行中】好感阶梯已就位！\n\n是否推进最后一步：【环境心智】萃取？\n\n点击「确定」= 推进下一步；点击「取消」= 留在当前页（向导结束，各页 AI 按钮可单独继续）",
+                    () => { _wizardStep = WizardStep.Ambient; SwitchTab(4); OpenAmbientExtractDialog(); });
             return true;
         }
 
@@ -2434,6 +2517,7 @@ namespace ValleytalkReborn
         {
             base.cleanupBeforeExit();
             UnfocusAll();
+            _wizardStep = WizardStep.None;
         }
 
         private static Texture2D LoadTextBoxTexture()
