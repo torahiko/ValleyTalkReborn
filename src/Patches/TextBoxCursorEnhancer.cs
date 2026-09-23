@@ -35,6 +35,7 @@ namespace ValleytalkReborn
 
         // 诊断探针标志（纯内存，不落盘，一次性）
         private static bool _probeHitRecieveTextInput;
+        private static bool _probeHitRecieveTextInputString;
         private static bool _probeHitRecieveCommandInput;
         private static bool _probeHitDrawPrefix;
         private static bool _probeHitDrawPostfix;
@@ -168,9 +169,15 @@ namespace ValleytalkReborn
             _helper = helper;
             helper.Events.Input.ButtonPressed += OnButtonPressed;
 
+            // 1. 原版 TextBox 输入补丁（char 与 string 重载均覆盖）
             harmony.Patch(
                 original: AccessTools.Method(typeof(TextBox), nameof(TextBox.RecieveTextInput), new[] { typeof(char) }),
                 prefix: new HarmonyMethod(typeof(TextBoxCursorEnhancer), nameof(Prefix_RecieveTextInput))
+            );
+
+            harmony.Patch(
+                original: AccessTools.Method(typeof(TextBox), nameof(TextBox.RecieveTextInput), new[] { typeof(string) }),
+                prefix: new HarmonyMethod(typeof(TextBoxCursorEnhancer), nameof(Prefix_RecieveTextInputString))
             );
 
             harmony.Patch(
@@ -178,10 +185,12 @@ namespace ValleytalkReborn
                 prefix: new HarmonyMethod(typeof(TextBoxCursorEnhancer), nameof(Prefix_RecieveCommandInput))
             );
 
+            // 2. 原版 TextBox 绘制补丁（追加 Finalizer 兜底保证 Selected 必恢复）
             harmony.Patch(
                 original: AccessTools.Method(typeof(TextBox), nameof(TextBox.Draw), new[] { typeof(SpriteBatch), typeof(bool) }),
                 prefix: new HarmonyMethod(typeof(TextBoxCursorEnhancer), nameof(Prefix_Draw)),
-                postfix: new HarmonyMethod(typeof(TextBoxCursorEnhancer), nameof(Postfix_Draw))
+                postfix: new HarmonyMethod(typeof(TextBoxCursorEnhancer), nameof(Postfix_Draw)),
+                finalizer: new HarmonyMethod(typeof(TextBoxCursorEnhancer), nameof(Finalizer_Draw))
             );
 
             ApplySpaceboxPatches(harmony);
@@ -412,6 +421,31 @@ namespace ValleytalkReborn
             return false;
         }
 
+        private static bool Prefix_RecieveTextInputString(TextBox __instance, string text)
+        {
+            LogProbeOnce("hit Prefix_RecieveTextInputString", ref _probeHitRecieveTextInputString);
+            if (string.IsNullOrEmpty(text)) return false;
+
+            if (__instance.numbersOnly)
+            {
+                text = new string(text.Where(char.IsDigit).ToArray());
+                if (text.Length == 0) return false;
+            }
+
+            string cur = __instance.Text ?? string.Empty;
+            if (__instance.textLimit != -1 && cur.Length + text.Length > __instance.textLimit)
+            {
+                int allowed = __instance.textLimit - cur.Length;
+                if (allowed <= 0) return false;
+                text = text.Substring(0, allowed);
+            }
+
+            int cursor = GetCursor(__instance);
+            __instance.Text = cur.Insert(cursor, text);
+            SetCursor(__instance, cursor + text.Length);
+            return false;
+        }
+
         private static bool Prefix_RecieveCommandInput(TextBox __instance, char command)
         {
             LogProbeOnce("hit Prefix_RecieveCommandInput", ref _probeHitRecieveCommandInput);
@@ -443,6 +477,7 @@ namespace ValleytalkReborn
             LogProbeOnce("hit Postfix_Draw", ref _probeHitDrawPostfix);
             if (!_wasSelectedBeforeDraw) return;
             __instance.Selected = true;
+            _wasSelectedBeforeDraw = false;
 
             if (DateTime.UtcNow.Millisecond % 1000 < 500) return;
 
@@ -473,6 +508,17 @@ namespace ValleytalkReborn
             {
                 // 静默兜底
             }
+        }
+
+        private static Exception Finalizer_Draw(TextBox __instance, Exception __exception)
+        {
+            if (__exception != null && _wasSelectedBeforeDraw && __instance != null)
+            {
+                __instance.Selected = true;
+                LogDebug($"TextBox Draw error: {__exception.Message}");
+            }
+            _wasSelectedBeforeDraw = false;
+            return null;
         }
 
         // ════════════════════════════════════════════════════════════════════════════
