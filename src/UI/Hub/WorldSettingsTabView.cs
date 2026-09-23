@@ -14,7 +14,7 @@ namespace ValleytalkReborn.UI;
 /// </summary>
 internal sealed class WorldSettingsTabView : HubTabViewBase
 {
-    public enum WorldSettingsSubPage { DateAmbience, RelationNetwork, LocationFestival, PoiTuning }
+    public enum WorldSettingsSubPage { DateAmbience, LocationFestival, PoiTuning }
 
     private const int NavColumnWidth = 190;
     private const int NavRowHeight = 44;
@@ -28,13 +28,12 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
     private Rectangle _resetBtnRect;
 
     private WorldSettingsSubPage _currentSubPage;
-    private readonly Rectangle[] _subPageRects = new Rectangle[4];
-    private readonly WorldSubPageBase?[] _pages = new WorldSubPageBase?[4];
+    private readonly Rectangle[] _subPageRects = new Rectangle[3];
+    private readonly WorldSubPageBase?[] _pages = new WorldSubPageBase?[3];
 
     public WorldSettingsTabView(IntegratedHubMenu hub) : base(hub)
     {
         _pages[(int)WorldSettingsSubPage.DateAmbience] = new DateAmbiencePage(hub);
-        _pages[(int)WorldSettingsSubPage.RelationNetwork] = new RelationNetworkPage(hub);
         _pages[(int)WorldSettingsSubPage.LocationFestival] = new LocationFestivalPage(hub);
         _pages[(int)WorldSettingsSubPage.PoiTuning] = new PoiTuningPage(hub);
     }
@@ -323,7 +322,6 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
         Rectangle src = page switch
         {
             WorldSettingsSubPage.DateAmbience => new Rectangle(211, 428, 7, 6),
-            WorldSettingsSubPage.RelationNetwork => new Rectangle(66, 4, 14, 12),
             WorldSettingsSubPage.LocationFestival => new Rectangle(403, 496, 5, 14),
             WorldSettingsSubPage.PoiTuning => new Rectangle(147, 422, 8, 8),
             _ => Rectangle.Empty
@@ -385,7 +383,6 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
     private static string GetSubPageLabel(WorldSettingsSubPage page) => page switch
     {
         WorldSettingsSubPage.DateAmbience => I18n.WorldSettings.DateAmbience(),
-        WorldSettingsSubPage.RelationNetwork => I18n.WorldSettings.RelationNetwork(),
         WorldSettingsSubPage.LocationFestival => I18n.WorldSettings.LocationFestival(),
         WorldSettingsSubPage.PoiTuning => I18n.WorldSettings.PoiTuning(),
         _ => page.ToString()
@@ -394,7 +391,6 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
     private static string GetSubPageDescription(WorldSettingsSubPage page) => page switch
     {
         WorldSettingsSubPage.DateAmbience => "约会事件与天气氛围",
-        WorldSettingsSubPage.RelationNetwork => "居民社交网络与羁绊",
         WorldSettingsSubPage.LocationFestival => "区域探索与节日庆典",
         WorldSettingsSubPage.PoiTuning => "兴趣点权重与寻路偏好",
         _ => string.Empty
