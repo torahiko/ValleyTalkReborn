@@ -37,6 +37,8 @@ internal sealed class DateLocationOverlayService : OverlayStorageServiceBase<Dat
             return;
         _helper.Events.Content.AssetRequested += OnAssetRequested;
         _subscribed = true;
+
+        MigrateLegacyOverlay();
     }
 
     public void InvalidateCache()

@@ -27,15 +27,18 @@ internal abstract class OverlayStorageServiceBase<TFile> where TFile : class, ne
     protected abstract string FileName { get; }
 
     /// <summary>虚属性，供测试子类覆写以指向临时目录。</summary>
-    protected virtual string RootDirectory => ModEntry.SHelper.DirectoryPath;
+    protected virtual string RootDirectory => StorageLayout.GlobalBaseDir;
 
-    /// <summary>= RootDirectory/saves/custom_overlays/{directoryName}</summary>
+    /// <summary>= RootDirectory/{directoryName}</summary>
     protected string OverlayDirectory =>
-        Path.Combine(RootDirectory, "saves", "custom_overlays", directoryName);
+        Path.Combine(RootDirectory, directoryName);
 
     /// <summary>= OverlayDirectory/{FileName}</summary>
     protected string OverlayFilePath =>
         Path.Combine(OverlayDirectory, FileName);
+
+    /// <summary>遗留迁移源根 = {ModDirectory}/saves/custom_overlays（仅作迁移源，不落盘）。</summary>
+    private static string LegacyOverlayDir => Path.Combine(StorageLayout.ModDirectory, "saves", "custom_overlays");
 
     /// <summary>覆盖层文件是否存在。</summary>
     public bool HasOverlay => File.Exists(OverlayFilePath);
@@ -145,6 +148,28 @@ internal abstract class OverlayStorageServiceBase<TFile> where TFile : class, ne
 
     /// <summary>供子类覆写，在 Info 日志中报告条目计数。默认空。</summary>
     protected virtual string GetEntrySummary(TFile file) => string.Empty;
+
+    /// <summary>
+    /// 一次性单向迁移遗留覆盖层：对 [LegacyOverlayDir, LegacyOverlayDir/custom_overlays] 两个历史形态
+    /// 调用 <see cref="StorageLayout.MigrateLegacyFile"/>，目标已存在则跳过，单文件失败 Warn 并继续。
+    /// 整体异常 Warn 吞掉，永不删除源。
+    /// </summary>
+    protected void MigrateLegacyOverlay()
+    {
+        try
+        {
+            string[] legacyRoots = { LegacyOverlayDir, Path.Combine(LegacyOverlayDir, "custom_overlays") };
+            foreach (string legacyDir in legacyRoots)
+            {
+                string src = Path.Combine(legacyDir, FileName);
+                StorageLayout.MigrateLegacyFile(src, OverlayFilePath, "OverlayStorage");
+            }
+        }
+        catch (Exception ex)
+        {
+            this.monitor.Log($"[OverlayStorage] 迁移过程异常: {ex.Message}", LogLevel.Warn);
+        }
+    }
 
     /// <summary>文件名消毒（照抄 BioStorageService 实现），供未来扩展。</summary>
     protected static string SanitizeFileName(string name)

@@ -36,6 +36,8 @@ internal sealed class PoiPreferenceOverlayService : OverlayStorageServiceBase<Po
             return;
         _helper.Events.Content.AssetRequested += OnAssetRequested;
         _subscribed = true;
+
+        MigrateLegacyOverlay();
     }
 
     public void InvalidateCache()
