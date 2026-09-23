@@ -383,6 +383,21 @@ internal sealed class BioEditorViewModel
         MarkDirty();
     }
 
+    /// <summary>
+    /// 一次性应用 AI 萃取的环境心智：写入 AmbientBarkPrompt 三字段（原为 null 则新建）与全局 Preoccupations，置脏。
+    /// 写入与 EnableAmbientBarks 开关解耦——开关只控制运行时消费。
+    /// </summary>
+    public void ApplyAmbientProfile(string voice, string habits, string lenses, List<string> preoccupations)
+    {
+        if (_bio.AmbientBarkPrompt == null)
+            _bio.AmbientBarkPrompt = new AmbientBarkPrompt();
+        _bio.AmbientBarkPrompt.VoiceAndAttitude = voice ?? "";
+        _bio.AmbientBarkPrompt.SpokenHabits = habits ?? "";
+        _bio.AmbientBarkPrompt.ObservationLenses = lenses ?? "";
+        _bio.Preoccupations = preoccupations ?? new List<string>();
+        MarkDirty();
+    }
+
     private BioData.ListEntry EnsureTraitEntry(string key, string defaultHeading)
     {
         if (!_bio.Traits.TryGetValue(key, out var entry) || entry == null)

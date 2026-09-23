@@ -112,7 +112,66 @@ namespace ValleytalkReborn
         public static (string System, string User) BuildAmbientExtractionPrompt(
             BioEditorViewModel vm, string npcName, string demand)
         {
-            throw new NotSupportedException("BuildAmbientExtractionPrompt 由 VT-AI-12 填充（本单仅保留签名）。");
+            string anchor = GetCorePersonaAnchor(vm, npcName);
+            string behaviorRef = vm != null
+                ? (vm.GetTraitDescriptionOrNull("BehavioralRules") ?? "(以原版言行规则为准)")
+                : "(以原版言行规则为准)";
+            string system =
+                "你是一名专业的《星露谷物语》NPC 人设编辑助手，正在为角色一次性萃取完整的【环境心智（Ambient Bark）】。\n" +
+                "萃取时必须以该角色的核心身份与言行规则为锚点，让口吻、口头禅、观察视角协调一致：\n" +
+                $"{anchor}\n" +
+                "既有言行规则（语气与表达习惯参照，萃取结果应与之匹配）：\n" +
+                $"{behaviorRef}\n" +
+                "硬性要求：\n" +
+                "1. 口吻段用 1-2 句概括该角色碎碎念时的基本语调、节奏与情绪底色。\n" +
+                "2. 口头禅段给出若干该角色常用的口头禅、叹气声、起手式（自由文本，可多行）。\n" +
+                "3. 观察透镜段给出 4 条该角色打量世界的特殊视角，每条以 \"- \" 起行。\n" +
+                "4. 关注词条列 8-10 个该角色优先提及的事物/话题，用中文顿号分隔。\n" +
+                "5. 严禁 Markdown 代码围栏（```）、严禁 JSON 注释（// 或 /* */）、严禁 JSON 对象与多余字段。\n" +
+                "6. 严格使用下列固定行式模板输出，字段顺序不可调换：\n" +
+                "口吻:\n" +
+                "（1-2 句概括）\n" +
+                "口头禅:\n" +
+                "（短句若干，可多行）\n" +
+                "观察透镜:\n" +
+                "（4 条，每条以 \"- \" 起行）\n" +
+                "关注词条: 词条1、词条2、…";
+
+            string user =
+                $"【整体语气与观察倾向】\n{demand}\n\n" +
+                "请严格按上述模板一次性输出四个字段，不要添加模板之外的字段。";
+
+            return (system, user);
+        }
+
+        /// <summary>
+        /// 解析 AI 输出的行式环境心智文本。透镜为空，或口吻与口头禅同时为空 → false。
+        /// </summary>
+        public static bool TryParseAmbientProfile(
+            string text, out string voice, out string habits, out string lenses, out List<string> preoccupations)
+        {
+            voice = "";
+            habits = "";
+            lenses = "";
+            preoccupations = new List<string>();
+            if (string.IsNullOrWhiteSpace(text))
+                return false;
+
+            string[] ambientEnd = new[] { "\n口头禅:", "\n观察透镜:", "\n关注词条:" };
+            voice = ReadSection(text, "口吻:", ambientEnd) ?? "";
+            habits = ReadSection(text, "口头禅:", ambientEnd) ?? "";
+            lenses = ReadSection(text, "观察透镜:", ambientEnd) ?? "";
+            preoccupations = ReadOccupations(text, "关注词条:");
+
+            bool hasVoice = !string.IsNullOrWhiteSpace(voice);
+            bool hasHabits = !string.IsNullOrWhiteSpace(habits);
+            bool hasLenses = !string.IsNullOrWhiteSpace(lenses);
+
+            // 透镜必填；口吻与口头禅不可同时为空
+            if (!hasLenses || (!hasVoice && !hasHabits))
+                return false;
+
+            return true;
         }
 
         /// <summary>
@@ -188,12 +247,19 @@ namespace ValleytalkReborn
 
         private static string ReadSection(string block, string key)
         {
+            // 好感阶梯字段段的默认边界（态度/心智/关注）
+            return ReadSection(block, key, new[] { "\n态度:", "\n心智:", "\n关注:" });
+        }
+
+        /// <summary>读取字段标签后的自由文本段，至任意一个 endMarkers 或块尾为止。</summary>
+        private static string ReadSection(string block, string key, string[] endMarkers)
+        {
             int idx = block.IndexOf(key, StringComparison.Ordinal);
             if (idx < 0) return null;
             int start = idx + key.Length;
-            // 跳过字段标签后的换行，取到下一个字段标签（心数/已婚/态度/心智/关注）或块尾
+            // 跳过字段标签后的换行，取到下一个字段标签或块尾
             string rest = start < block.Length ? block.Substring(start) : string.Empty;
-            int cut = IndexOfAny(rest, new[] { "\n态度:", "\n心智:", "\n关注:" });
+            int cut = IndexOfAny(rest, endMarkers);
             string section = cut < 0 ? rest : rest.Substring(0, cut);
             section = section.Trim();
             return string.IsNullOrEmpty(section) ? "" : section;

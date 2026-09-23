@@ -186,6 +186,7 @@ namespace ValleytalkReborn
         private Rectangle _copyVoiceRect;
         private Rectangle _copyHabitsRect;
         private Rectangle _copyLensesRect;
+        private Rectangle _aiExtractAmbientRect;
 
         // ── VT-UI-02 作用域胶囊 / 导入导出 ──
         private Rectangle _scopeCapsuleRect;
@@ -516,6 +517,7 @@ namespace ValleytalkReborn
                 _tab5RightColRect = new Rectangle(contentLeft + leftColW + 16, bodyTop, rightColW, bodyH);
 
                 _enableBarkCheckbox.bounds = new Rectangle(_tab5LeftColRect.X + 12, _tab5LeftColRect.Y + 32, 28, 28);
+                _aiExtractAmbientRect = new Rectangle(_tab5LeftColRect.X + 8, _tab5LeftColRect.Y + 76, leftColW - 16, 34);
 
                 int tagEditorTop = _tab5LeftColRect.Y + 152;
                 _globalTagEditor.SetBounds(new Rectangle(_tab5LeftColRect.X + 8, tagEditorTop, leftColW - 16, bodyBottom - tagEditorTop - 8));
@@ -942,6 +944,8 @@ namespace ValleytalkReborn
             if (!AnyTextBoxHasFocus() && _copyVoiceRect.Contains(x, y)) { CopyBoxToClipboard("voice"); return; }
             if (!AnyTextBoxHasFocus() && _copyHabitsRect.Contains(x, y)) { CopyBoxToClipboard("habits"); return; }
             if (!AnyTextBoxHasFocus() && _copyLensesRect.Contains(x, y)) { CopyBoxToClipboard("lenses"); return; }
+            if (!AnyTextBoxHasFocus() && _aiExtractAmbientRect.Contains(x, y) && !BioAiRunner.IsBusy)
+            { UnfocusAll(); CheckTab1PrerequisitesWithBehavior(OpenAmbientExtractDialog); return; }
 
             UnfocusAll();
         }
@@ -1541,6 +1545,9 @@ namespace ValleytalkReborn
             CustomFontManager.DrawString(b, "日常碎碎念总控",
                 new Vector2(_tab5LeftColRect.X + 12, _tab5LeftColRect.Y + 8), TextSecondary, SectionHeaderSize);
             _enableBarkCheckbox.draw(b, 0, 0, this);
+            DrawActionButton(b, _aiExtractAmbientRect, BioAiRunner.IsBusy ? "萃取中..." : "✨ 基于人设萃取全套心智", mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy);
+            if (_aiExtractAmbientRect.Contains(mx, my))
+                _hoverText = "基于身份档案与言行规则，一次性萃取口吻 / 口头禅 / 观察透镜 / 关注词条并整体写入（覆盖原有）。";
 
             CustomFontManager.DrawString(b, "全局常态关注池 (Preoccupations)",
                 new Vector2(_globalTagEditor.Bounds.X, _globalTagEditor.Bounds.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
@@ -1881,6 +1888,83 @@ namespace ValleytalkReborn
                 _ => { Game1.activeClickableMenu = this; onProceed(); },
                 _ => { Game1.activeClickableMenu = this; SwitchTab(0); });
             return false;
+        }
+
+        /// <summary>环境心智萃取专用阀门：在 Tab 1 门槛基础上，额外要求 Tab 2 言行规则（BehavioralRules）已填写。</summary>
+        private bool CheckTab1PrerequisitesWithBehavior(Action onProceed)
+        {
+            string bio = _vm.GetBiography() ?? string.Empty;
+            bool hasMarkers = bio.Contains("[IDENTITY]", StringComparison.Ordinal)
+                           && bio.Contains("[PSYCHOLOGICAL CONFLICTS]", StringComparison.Ordinal);
+            bool longEnough = bio.Trim().Length >= 60;
+
+            string behavior = _vm.GetTraitDescriptionOrNull("BehavioralRules");
+            bool hasBehavior = !string.IsNullOrWhiteSpace(behavior);
+
+            if (hasMarkers && longEnough && hasBehavior)
+            {
+                onProceed();
+                return true;
+            }
+
+            System.Text.StringBuilder warn = new("请先完善以下内容，否则萃取结果可能偏离角色核心：\n");
+            if (!(hasMarkers && longEnough))
+                warn.AppendLine("- 身份档案（Tab 1）：补全 [IDENTITY] / [PSYCHOLOGICAL CONFLICTS] 标记，或扩充至 60 字以上");
+            if (!hasBehavior)
+                warn.AppendLine("- 言行举止（Tab 2）：填写 BehavioralRules 言行规则");
+            warn.Append("可选择「仍然萃取」继续，或「完善设定」跳转 Tab 1。");
+
+            Game1.activeClickableMenu = new ConfirmationDialog(
+                warn.ToString(),
+                _ => { Game1.activeClickableMenu = this; onProceed(); },
+                _ => { Game1.activeClickableMenu = this; SwitchTab(0); });
+            return false;
+        }
+
+        private void OpenAmbientExtractDialog()
+        {
+            string title = $"审阅【{_npcName}】环境心智萃取";
+
+            Game1.activeClickableMenu = new BioAiPromptDialog("环境心智", this, (demand, enableThinking) =>
+            {
+                if (BioAiRunner.IsBusy)
+                    return;
+
+                UnfocusAll();
+                var (system, user) = BioPromptBuilder.BuildAmbientExtractionPrompt(_vm, _npcName, demand);
+                var queue = new System.Collections.Concurrent.ConcurrentQueue<string>();
+                var review = new BioAiReviewMenu(title, this,
+                    confirmedText => ApplyAmbientExtraction(confirmedText));
+                review.BeginStreaming(queue);
+                Game1.activeClickableMenu = review;
+                BioAiRunner.ExecuteStreaming(system, user, enableThinking, queue,
+                    result => review.OnStreamSettled(result));
+            });
+        }
+
+        private bool ApplyAmbientExtraction(string confirmedText)
+        {
+            if (!BioPromptBuilder.TryParseAmbientProfile(confirmedText, out var voice, out var habits, out var lenses, out var preoccupations))
+            {
+                Game1.playSound("cancel");
+                Game1.addHUDMessage(new HUDMessage(
+                    "心智格式有误：请保持“口吻:/口头禅:/观察透镜:/关注词条:”字段完整，且透镜不可为空、口吻与口头禅不可同时为空",
+                    HUDMessage.error_type));
+                return false;
+            }
+
+            _vm.ApplyAmbientProfile(voice, habits, lenses, preoccupations);
+
+            _voiceBox.SetText(voice);
+            _habitsBox.SetText(habits);
+            _lensesBox.SetText(lenses);
+            _globalTagEditor.SetTags(_vm.Bio.Preoccupations);
+
+            Game1.playSound("coin");
+            Game1.addHUDMessage(new HUDMessage(
+                $"✔ 已应用环境心智（{preoccupations.Count} 个关注词条）",
+                HUDMessage.newQuest_type));
+            return true;
         }
 
         private void OpenTraitPolishDialog(string traitKey, string sectionTitle)
