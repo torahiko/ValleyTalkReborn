@@ -218,9 +218,17 @@ namespace ValleytalkReborn
             Color bg;
             if (!isEnabled) bg = Color.LightGray * 0.6f;
             else if (isPrimary) bg = isHover ? Color.Gold : new Color(255, 220, 130);
-            else if (isDanger) bg = isHover ? new Color(245, 95, 95) : new Color(215, 75, 70); // ★ 标红背景
-            else bg = isHover ? new Color(255, 240, 215) : new Color(225, 195, 155);
+            else if (isDanger) bg = isHover ? new Color(245, 85, 85) : new Color(215, 70, 65); // ★ 标红背景
+            else bg = isHover ? new Color(255, 248, 225) : new Color(225, 195, 155);
 
+            // ★ 悬浮高亮：悬停时边框同步向暖白增亮，强化可点击感知
+            Color borderCol = isPrimary ? new Color(210, 160, 60)
+                : isDanger ? new Color(175, 50, 45)
+                : new Color(185, 150, 110);
+            if (isHover && isEnabled)
+                borderCol = Color.Lerp(borderCol, new Color(255, 245, 220), 0.5f);
+
+            // ★ 按钮动效：按下时收起阴影并整体下沉 1px，回弹时恢复立体投影
             int pressOffset = isPressed ? 1 : 0;
             if (isPressed) bg = Color.Lerp(bg, Color.Black, 0.14f);
 
@@ -230,8 +238,7 @@ namespace ValleytalkReborn
             b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1 + pressOffset, rect.Y + 1 + pressOffset, rect.Width - 2, rect.Height - 2), bg);
 
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-                rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height,
-                isPrimary ? new Color(210, 160, 60) : (isDanger ? new Color(175, 60, 55) : new Color(185, 150, 110)), 3f, false);
+                rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height, borderCol, 3f, false);
 
             // ★ 字体颜色：标红按钮使用 TextOnDarkBtn（纯白/象牙反白），严禁标红
             Color textCol = !isEnabled ? BioEditorMenu.TextMuted
