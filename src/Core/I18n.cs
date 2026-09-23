@@ -215,6 +215,9 @@ namespace ValleytalkReborn
             public static string DeleteConfirm(string content) =>
                 Lookup("Timeline.DeleteConfirm").Replace("{{content}}", content ?? string.Empty);
 
+            public static string DeleteConfirmTitle() => Lookup("Timeline.DeleteConfirmTitle");
+            public static string DeleteConfirmSubtitle() => Lookup("Timeline.DeleteConfirmSubtitle");
+
             public static string DistillLlmDisabled() => Lookup("Timeline.DistillLlmDisabled");
 
             public static string DistillNoHistory(string npcName) => Lookup("Timeline.DistillNoHistory")
@@ -481,6 +484,9 @@ namespace ValleytalkReborn
             public static string ArchiveDeleteConfirm(string content) => Lookup("Memory.ArchiveDeleteConfirm")
                 .Replace("{{content}}", content ?? string.Empty);
 
+            public static string ArchiveDeleteConfirmTitle() => Lookup("Memory.ArchiveDeleteConfirmTitle");
+            public static string ArchiveDeleteConfirmSubtitle() => Lookup("Memory.ArchiveDeleteConfirmSubtitle");
+
             public static string ArchiveRestoreDuplicate() => Lookup("Memory.ArchiveRestoreDuplicate");
             public static string ArchiveRestoreNotFound() => Lookup("Memory.ArchiveRestoreNotFound");
 
@@ -501,6 +507,13 @@ namespace ValleytalkReborn
 
             public static string ArchiveClearConfirm(int count) =>
                 Lookup("Memory.ArchiveClearConfirm").Replace("{{count}}", count.ToString());
+
+            public static string ArchiveClearConfirmTitle() => Lookup("Memory.ArchiveClearConfirmTitle");
+
+            public static string ArchiveClearConfirmSubtitle(int count) =>
+                Lookup("Memory.ArchiveClearConfirmSubtitle").Replace("{{count}}", count.ToString());
+
+            public static string ArchiveClearConfirmWarning() => Lookup("Memory.ArchiveClearConfirmWarning");
 
             public static string ArchiveEndangeredTag() => Lookup("Memory.ArchiveEndangeredTag");
 
@@ -596,6 +609,14 @@ namespace ValleytalkReborn
 
             public static string TooFarAway(string name)
                 => Lookup("Follower.TooFarAway").Replace("{{name}}", name ?? string.Empty);
+        }
+
+        /// <summary>统一警示/确认弹窗（BioValveWarningDialog）的共享按钮文案。</summary>
+        public static class Dialog
+        {
+            public static string ConfirmDelete() => Lookup("Dialog.ConfirmDelete");
+            public static string ConfirmArchive() => Lookup("Dialog.ConfirmArchive");
+            public static string Keep() => Lookup("Dialog.Keep");
         }
     }
 }

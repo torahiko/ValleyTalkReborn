@@ -597,9 +597,17 @@ internal sealed class RulesTabView : IHubTabView
             ? entry.Content.Substring(0, 18) + "..."
             : entry.Content;
 
-        Game1.activeClickableMenu = new ConfirmationDialog(
-            $"确定删除此规则？\n“{snippet}”\n（删除后将自动存入规则归档箱）",
-            _ =>
+        Game1.activeClickableMenu = new BioValveWarningDialog(
+            _hub,
+            "删除规则",
+            "即将删除此规则：",
+            new List<string>
+            {
+                $"“{snippet}”",
+                "删除后将自动存入规则归档箱"
+            },
+            "⚠ 确认删除",
+            () =>
             {
                 Game1.activeClickableMenu = _hub;
                 RuleManager.Instance.RemoveRule(entry.Id);
@@ -614,7 +622,8 @@ internal sealed class RulesTabView : IHubTabView
                 }
                 RefreshFromHub();
             },
-            _ => Game1.activeClickableMenu = _hub);
+            "保留规则",
+            () => Game1.activeClickableMenu = _hub);
     }
 
     private void OpenArchiveMenu()

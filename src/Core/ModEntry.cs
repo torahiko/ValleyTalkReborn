@@ -651,31 +651,19 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
-        /// Intercepts and suppresses keyboard input when our custom text box is active.
-        /// </summary>
-        /// <summary>
-        /// 判定当前是否处于 BioEditorMenu 或其唤出的子弹窗（如 ConfirmationDialog）中。
+        /// 判定当前是否处于 BioEditorMenu 或其唤出的子弹窗中。
         /// 用于按键守卫的范围判定，确保弹窗期间守卫不失效。
         /// </summary>
         private static bool IsBioEditorActive()
         {
-            var menu = Game1.activeClickableMenu;
-            if (menu is BioEditorMenu)
-                return true;
-
-            // 如果当前是确认弹窗，检查其父菜单/返回目标是否为人设编辑器
-            // 注意：ConfirmationDialog.onCancel 是 private，无法直接访问
-            // 因此这里只做简单判断：如果当前菜单不是 BioEditorMenu 也不是 null，
-            // 且 BioEditorMenu 曾经被打开过（通过检查 Game1.activeClickableMenu 的历史），
-            // 则认为弹窗是由 BioEditorMenu 唤起的
-            // 实际上，当 BioEditorMenu 打开时，ConfirmationDialog 会替换 activeClickableMenu，
-            // 但 BioEditorMenu 仍然存在于 Game1.activeClickableMenu 的栈中
-            // 这里我们简化处理：只要当前菜单是 ConfirmationDialog，就认为可能是 BioEditorMenu 唤起的
-            // 因为 BioEditorMenu 是唯一会打开 ConfirmationDialog 的菜单
-            if (menu is StardewValley.Menus.ConfirmationDialog)
-                return true;
-
-            return false;
+            // BioEditorMenu 的五类子弹窗仅由其自身唤出，据此精确识别；
+            // 原先按 ConfirmationDialog 泛判的分支已随编辑器弹窗迁移而移除
+            return Game1.activeClickableMenu is BioEditorMenu
+                or BioValveWarningDialog
+                or BioAiPromptDialog
+                or BioAiReviewMenu
+                or BioWizardDisclaimerDialog
+                or BioWizardQuestionnaireDialog;
         }
 
         [EventPriority(EventPriority.High)]

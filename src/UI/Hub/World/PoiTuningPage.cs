@@ -1749,9 +1749,17 @@ internal sealed class PoiTuningPage : WorldSubPageBase
         if (string.IsNullOrEmpty(_selectedPoiId)) return;
         string targetId = _selectedPoiId;
 
-        Game1.activeClickableMenu = new ConfirmationDialog(
-            $"确定将兴趣点【{targetId}】的坐标与描写恢复为官方原版基准（并清空自定义别名）吗？",
-            _ =>
+        Game1.activeClickableMenu = new BioValveWarningDialog(
+            Hub,
+            "恢复原版兴趣点",
+            $"即将把兴趣点【{targetId}】恢复为官方原版基准：",
+            new List<string>
+            {
+                "坐标与描写将恢复为官方原版预设",
+                "自定义别名将被一并清空"
+            },
+            "⚠ 确认恢复",
+            () =>
             {
                 Game1.activeClickableMenu = Hub;
                 var service = ModEntry.PoiPreferenceOverlay;
@@ -1775,8 +1783,8 @@ internal sealed class PoiTuningPage : WorldSubPageBase
                     LayoutRightForm();
                 }
             },
-            _ => Game1.activeClickableMenu = Hub
-        );
+            "保持现状",
+            () => Game1.activeClickableMenu = Hub);
     }
 
     private void TeleportToSelected()
@@ -1873,9 +1881,17 @@ internal sealed class PoiTuningPage : WorldSubPageBase
         if (!CanDeleteSelectedPoi || _selectedPoiId == null) return;
         string targetId = _selectedPoiId;
 
-        Game1.activeClickableMenu = new ConfirmationDialog(
-            $"确定要彻底删除自创兴趣点【{targetId}】吗？",
-            _ =>
+        Game1.activeClickableMenu = new BioValveWarningDialog(
+            Hub,
+            "删除自创兴趣点",
+            $"即将彻底删除自创兴趣点【{targetId}】：",
+            new List<string>
+            {
+                "该兴趣点及其自定义别名将被彻底移除",
+                "各 NPC 对该点的出没偏好引用将被一并清除"
+            },
+            "⚠ 确认删除",
+            () =>
             {
                 Game1.activeClickableMenu = Hub;
                 var service = ModEntry.PoiPreferenceOverlay;
@@ -1908,8 +1924,8 @@ internal sealed class PoiTuningPage : WorldSubPageBase
                     LayoutRightForm();
                 }
             },
-            _ => Game1.activeClickableMenu = Hub
-        );
+            "保留兴趣点",
+            () => Game1.activeClickableMenu = Hub);
     }
 
     private void SaveWeights()
@@ -1959,9 +1975,16 @@ internal sealed class PoiTuningPage : WorldSubPageBase
         var spouse = _allSpouses.FirstOrDefault(n => string.Equals(n.Id, _selectedSpouseId, StringComparison.OrdinalIgnoreCase));
         if (spouse == null || !spouse.HasCustomWeights) return;
 
-        Game1.activeClickableMenu = new ConfirmationDialog(
-            $"确定重置【{spouse.DisplayName}】的全部兴趣点出没意愿为默认 50 吗？",
-            _ =>
+        Game1.activeClickableMenu = new BioValveWarningDialog(
+            Hub,
+            "重置出没意愿",
+            $"即将重置【{spouse.DisplayName}】的兴趣点出没意愿：",
+            new List<string>
+            {
+                "全部兴趣点的出没意愿将恢复为默认值 50"
+            },
+            "⚠ 确认重置",
+            () =>
             {
                 Game1.activeClickableMenu = Hub;
                 var service = ModEntry.PoiPreferenceOverlay;
@@ -1983,7 +2006,7 @@ internal sealed class PoiTuningPage : WorldSubPageBase
                     Hub.RefreshEntries();
                 }
             },
-            _ => Game1.activeClickableMenu = Hub
-        );
+            "保持现状",
+            () => Game1.activeClickableMenu = Hub);
     }
 }

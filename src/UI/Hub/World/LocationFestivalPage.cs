@@ -1852,9 +1852,17 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
         var loc = _allLocations.FirstOrDefault(l => string.Equals(l.Id, _selectedLocId, StringComparison.OrdinalIgnoreCase));
         if (loc == null || !loc.HasCustomOverlay) return;
 
-        Game1.activeClickableMenu = new ConfirmationDialog(
-            $"确定要清除【{loc.Name}】的自定义描述，恢复为原版默认吗？",
-            _ =>
+        Game1.activeClickableMenu = new BioValveWarningDialog(
+            Hub,
+            "恢复原版环境描述",
+            $"即将清除【{loc.Name}】的自定义描述：",
+            new List<string>
+            {
+                "该地点的描述将恢复为原版默认文本",
+                "自定义内容删除后无法找回"
+            },
+            "⚠ 确认恢复",
+            () =>
             {
                 Game1.activeClickableMenu = Hub;
                 var service = ModEntry.WorldSummaryOverlay;
@@ -1874,8 +1882,8 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
                     Hub.RefreshEntries();
                 }
             },
-            _ => Game1.activeClickableMenu = Hub
-        );
+            "保持现状",
+            () => Game1.activeClickableMenu = Hub);
     }
 
     private FestivalEntry? GetConflictingFestival(string season, int day)
@@ -1968,9 +1976,16 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
         var fest = _allFestivals.FirstOrDefault(f => string.Equals(f.Key, _selectedFestKey, StringComparison.OrdinalIgnoreCase));
         if (fest == null || !fest.IsBaseline) return;
 
-        Game1.activeClickableMenu = new ConfirmationDialog(
-            $"确定将【{fest.Name}】还原为原版默认节日配置吗？",
-            _ =>
+        Game1.activeClickableMenu = new BioValveWarningDialog(
+            Hub,
+            "还原官方节日配置",
+            $"即将把【{fest.Name}】还原为原版默认：",
+            new List<string>
+            {
+                "该节日的自定义配置将被清除，恢复官方默认"
+            },
+            "⚠ 确认还原",
+            () =>
             {
                 Game1.activeClickableMenu = Hub;
                 var service = ModEntry.WorldSummaryOverlay;
@@ -1998,8 +2013,8 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
                     Hub.RefreshEntries();
                 }
             },
-            _ => Game1.activeClickableMenu = Hub
-        );
+            "保持现状",
+            () => Game1.activeClickableMenu = Hub);
     }
 
     private void RequestDeleteFestival()
@@ -2009,13 +2024,16 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
         if (fest == null || !fest.IsCustom) return;
 
         string targetKey = _selectedFestKey;
-        string prompt = IsZh
-            ? $"确定要彻底删除自创节日【{fest.Name}】吗？"
-            : $"Are you sure you want to delete custom festival '{fest.Name}'?";
 
-        Game1.activeClickableMenu = new ConfirmationDialog(
-            prompt,
-            _ =>
+        Game1.activeClickableMenu = new BioValveWarningDialog(
+            Hub,
+            IsZh ? "删除自创节日" : "Delete Custom Festival",
+            IsZh ? $"即将彻底删除自创节日【{fest.Name}】：" : $"About to permanently delete custom festival '{fest.Name}':",
+            IsZh
+                ? new List<string> { "该节日的全部自定义配置将被移除，无法找回" }
+                : new List<string> { "All custom configuration for this festival will be removed and cannot be recovered" },
+            IsZh ? "⚠ 确认删除" : "⚠ Delete",
+            () =>
             {
                 Game1.activeClickableMenu = Hub;
                 var service = ModEntry.WorldSummaryOverlay;
@@ -2047,8 +2065,8 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
                     Hub.RefreshEntries();
                 }
             },
-            _ => Game1.activeClickableMenu = Hub
-        );
+            IsZh ? "保留节日" : "Keep Festival",
+            () => Game1.activeClickableMenu = Hub);
     }
 
     private (string Season, int Day) FindFirstAvailableDate()

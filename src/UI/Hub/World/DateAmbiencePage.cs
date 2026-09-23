@@ -1041,18 +1041,23 @@ internal sealed class DateAmbiencePage : WorldSubPageBase
         string locName = _nameBox.Text.Trim();
         if (string.IsNullOrEmpty(locName)) locName = _selectedId;
 
-        Game1.activeClickableMenu = new ConfirmationDialog(
-            $"确定要删除约会地点【{locName}】吗？",
-            _ =>
+        Game1.activeClickableMenu = new BioValveWarningDialog(
+            Hub,
+            "删除约会地点",
+            $"即将删除约会地点【{locName}】：",
+            new List<string>
+            {
+                "该地点的自定义名称与氛围描述将被彻底移除",
+                "删除后如需恢复须重新创建"
+            },
+            "⚠ 确认删除",
+            () =>
             {
                 Game1.activeClickableMenu = Hub;
                 ExecuteDelete();
             },
-            _ =>
-            {
-                Game1.activeClickableMenu = Hub;
-            }
-        );
+            "保留地点",
+            () => { Game1.activeClickableMenu = Hub; });
     }
 
     private void ExecuteDelete()

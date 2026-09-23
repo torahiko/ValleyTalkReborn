@@ -337,16 +337,21 @@ namespace ValleytalkReborn
 
                 int countSnapshot = _cachedEntries.Count;
                 Game1.playSound("bigSelect");
-                Game1.activeClickableMenu = new ConfirmationDialog(
-                    I18n.Memory.ArchiveClearConfirm(countSnapshot),
-                    _ =>
+                Game1.activeClickableMenu = new BioValveWarningDialog(
+                    this,
+                    I18n.Memory.ArchiveClearConfirmTitle(),
+                    I18n.Memory.ArchiveClearConfirmSubtitle(countSnapshot),
+                    new List<string> { I18n.Memory.ArchiveClearConfirmWarning() },
+                    I18n.Dialog.ConfirmDelete(),
+                    () =>
                     {
                         _clearAction();
                         Game1.playSound("trashcan");
                         RefreshEntries();
                         Game1.activeClickableMenu = this;
                     },
-                    _ => Game1.activeClickableMenu = this);
+                    I18n.Dialog.Keep(),
+                    () => Game1.activeClickableMenu = this);
                 return;
             }
 
@@ -473,16 +478,21 @@ namespace ValleytalkReborn
         {
             MemoryEntry entry = _cachedEntries[i];
             string safeContent = CustomFontManager.TruncateString(entry.Content, CustomFontManager.SizeRegular, 320f);
-            Game1.activeClickableMenu = new ConfirmationDialog(
-                I18n.Memory.ArchiveDeleteConfirm(safeContent),
-                _ =>
+            Game1.activeClickableMenu = new BioValveWarningDialog(
+                this,
+                I18n.Memory.ArchiveDeleteConfirmTitle(),
+                I18n.Memory.ArchiveDeleteConfirmSubtitle(),
+                new List<string> { safeContent },
+                I18n.Dialog.ConfirmDelete(),
+                () =>
                 {
                     _deleteAction(entry.Id);
                     Game1.playSound("trashcan");
                     RefreshEntries();
                     Game1.activeClickableMenu = this;
                 },
-                _ => Game1.activeClickableMenu = this);
+                I18n.Dialog.Keep(),
+                () => Game1.activeClickableMenu = this);
         }
 
         // ★ 优化 3：条目标签统一核心方法（彻底废除 [记忆]，支持手帐/周记/大事记细分）

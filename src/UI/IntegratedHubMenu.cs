@@ -211,15 +211,19 @@ namespace ValleytalkReborn
         {
             if (_tabViews[2] is HubTabViewBase ws && ws.HasUnsavedChanges)
             {
-                Game1.activeClickableMenu = new ConfirmationDialog(
-                    "世界设定中存在未保存的修改，退出后将丢失。仍要退出吗？",
-                    _ =>
+                Game1.activeClickableMenu = new BioValveWarningDialog(
+                    this,
+                    "放弃未保存的世界设定",
+                    "世界设定中存在未保存的修改：",
+                    new List<string> { "退出后将丢失这些待存修改" },
+                    "⚠ 放弃并退出",
+                    () =>
                     {
                         Game1.activeClickableMenu = this;
                         exitThisMenu(playSound: false);
                     },
-                    _ => { Game1.activeClickableMenu = this; }
-                );
+                    "继续编辑",
+                    () => { Game1.activeClickableMenu = this; });
                 return;
             }
             exitThisMenu();

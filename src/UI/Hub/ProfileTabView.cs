@@ -943,9 +943,17 @@ internal sealed class ProfileTabView : HubTabViewBase
         string target = npcName;
         string disp = Game1.getCharacterFromName(target)?.displayName ?? target;
 
-        Game1.activeClickableMenu = new ConfirmationDialog(
-            $"删除 {disp} 的自定义人设覆盖并恢复默认基准？",
-            _ =>
+        Game1.activeClickableMenu = new BioValveWarningDialog(
+            Hub,
+            "删除自定义人设",
+            $"即将删除 {disp} 的自定义人设覆盖：",
+            new List<string>
+            {
+                "该角色的全部自定义人设将被清除，恢复默认基准",
+                "删除后无法找回，建议先在人设编辑器中导出备份"
+            },
+            "⚠ 确认删除",
+            () =>
             {
                 Game1.activeClickableMenu = Hub;
                 if (!ModEntry.BioStorage.ResetOverlay(target, out string err))
@@ -958,10 +966,8 @@ internal sealed class ProfileTabView : HubTabViewBase
                     RefreshNpcCards();
                 }
             },
-            _ =>
-            {
-                Game1.activeClickableMenu = Hub;
-            });
+            "保留人设",
+            () => { Game1.activeClickableMenu = Hub; });
     }
 
     private void RefreshNpcCards()
