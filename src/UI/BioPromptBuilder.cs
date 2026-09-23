@@ -157,7 +157,7 @@ namespace ValleytalkReborn
             if (string.IsNullOrWhiteSpace(text))
                 return false;
 
-            string[] ambientEnd = new[] { "\n口头禅:", "\n观察透镜:", "\n关注词条:" };
+            string[] ambientEnd = WithFullWidthVariants(new[] { "\n口头禅:", "\n观察透镜:", "\n关注词条:" });
             voice = ReadSection(text, "口吻:", ambientEnd) ?? "";
             habits = ReadSection(text, "口头禅:", ambientEnd) ?? "";
             lenses = ReadSection(text, "观察透镜:", ambientEnd) ?? "";
@@ -188,6 +188,14 @@ namespace ValleytalkReborn
             {
                 string block = raw.Trim();
                 if (string.IsNullOrEmpty(block))
+                    continue;
+
+                // 模板外前导寒暄（不含任何字段键）静默跳过；含字段但缺态度的真畸形块仍整体失败
+                bool hasAnyField = block.Contains("态度:", StringComparison.Ordinal)
+                                || block.Contains("态度：", StringComparison.Ordinal)
+                                || block.Contains("心数:", StringComparison.Ordinal)
+                                || block.Contains("心数：", StringComparison.Ordinal);
+                if (!hasAnyField)
                     continue;
 
                 int hearts = ReadHeartsField(block, "心数:");
@@ -238,23 +246,41 @@ namespace ValleytalkReborn
         private static string ReadLineValue(string block, string key)
         {
             int idx = block.IndexOf(key, StringComparison.Ordinal);
+            if (idx < 0)
+            {
+                // 键名全角冒号容错（如"心数："）；值内容保持原样，不污染中文正文标点
+                string fwKey = key.Replace(":", "：");
+                idx = block.IndexOf(fwKey, StringComparison.Ordinal);
+                if (idx < 0)
+                    return null;
+                key = fwKey;
+            }
             if (idx < 0) return null;
             int start = idx + key.Length;
             int end = block.IndexOf('\n', start);
             string v = end < 0 ? block.Substring(start) : block.Substring(start, end - start);
-            return v.Replace("：", ":").Trim();
+            return v.Trim();
         }
 
         private static string ReadSection(string block, string key)
         {
             // 好感阶梯字段段的默认边界（态度/心智/关注）
-            return ReadSection(block, key, new[] { "\n态度:", "\n心智:", "\n关注:" });
+            return ReadSection(block, key, WithFullWidthVariants(new[] { "\n态度:", "\n心智:", "\n关注:" }));
         }
 
         /// <summary>读取字段标签后的自由文本段，至任意一个 endMarkers 或块尾为止。</summary>
         private static string ReadSection(string block, string key, string[] endMarkers)
         {
             int idx = block.IndexOf(key, StringComparison.Ordinal);
+            if (idx < 0)
+            {
+                // 键名全角冒号容错（如"态度："）
+                string fwKey = key.Replace(":", "：");
+                idx = block.IndexOf(fwKey, StringComparison.Ordinal);
+                if (idx < 0)
+                    return null;
+                key = fwKey;
+            }
             if (idx < 0) return null;
             int start = idx + key.Length;
             // 跳过字段标签后的换行，取到下一个字段标签或块尾
@@ -286,6 +312,16 @@ namespace ValleytalkReborn
                 if (i >= 0 && (best < 0 || i < best)) best = i;
             }
             return best;
+        }
+
+        /// <summary>为字段边界标记生成全角冒号变体，避免模型输出全角键名时切段失败。</summary>
+        private static string[] WithFullWidthVariants(string[] markers)
+        {
+            var all = new List<string>(markers.Length * 2);
+            all.AddRange(markers);
+            foreach (var m in markers)
+                all.Add(m.Replace(":", "："));
+            return all.ToArray();
         }
     }
 }
