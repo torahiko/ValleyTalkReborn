@@ -15,9 +15,9 @@ namespace ValleytalkReborn
 {
     /// <summary>
     /// 归档记忆管理菜单：
-    /// 遵循 BioEditorMenu 视觉与动效规范 —— 羊皮纸无缝底板、立体按压下沉、
-    /// 仅主标题与主动作按钮使用 Bold 字体，卡片条目与说明文字回归 Medium 字体；
-    /// 彻底剔除冷灰冷蓝杂色，全面采用星露谷经典暖橘木质视觉体系。
+    /// 遵循 BioEditorMenu 视觉与动效规范 —— 羊皮纸无缝底板、立体按压下沉；
+    /// 自动根据场景区分展示左上角图标（常规规则显示垃圾桶，TimelineChronicleMenu 保持收纳箱/肖像现状）；
+    /// 彻底消除清空按钮边缘白缝；全面规范条目标签为 [小镇共识] / [行为守则] / [手帐] / [周记] / [大事记]。
     /// </summary>
     internal class ArchivedMemoryMenu : IClickableMenu, IMemoryRefreshTarget
     {
@@ -40,6 +40,9 @@ namespace ValleytalkReborn
 
         private readonly string _npcName;
         private readonly IClickableMenu _returnMenu;
+
+        // 判断是否为 TimelineChronicleMenu 调用上下文
+        private bool IsFromTimeline => _returnMenu != null && _returnMenu.GetType().Name.IndexOf("Timeline", StringComparison.OrdinalIgnoreCase) >= 0;
 
         // 肖像与关闭按钮
         private Texture2D? _npcPortrait;
@@ -172,7 +175,6 @@ namespace ValleytalkReborn
         {
             _closeButton.bounds = new Rectangle(xPositionOnScreen + width - 50, yPositionOnScreen + 16, 36, 36);
 
-            int contentLeft = xPositionOnScreen + ContentPadding;
             int listTop = yPositionOnScreen + HeaderH + 12;
             int listBottom = yPositionOnScreen + height - FooterH;
 
@@ -483,6 +485,52 @@ namespace ValleytalkReborn
                 _ => Game1.activeClickableMenu = this);
         }
 
+        // ★ 优化 3：条目标签统一核心方法（彻底废除 [记忆]，支持手帐/周记/大事记细分）
+        private string GetEntryTag(MemoryEntry entry)
+        {
+            if (IsFromTimeline)
+            {
+                string catStr = entry.Category.ToString();
+                string srcStr = entry.Source ?? string.Empty;
+
+                // 1. 周记判断
+                if (catStr.IndexOf("Week", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    srcStr.IndexOf("Week", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    catStr.Contains("周") || srcStr.Contains("周"))
+                {
+                    return "[周记] ";
+                }
+
+                // 2. 大事记判断
+                if (catStr.IndexOf("Chronicle", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    catStr.IndexOf("Milestone", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    catStr.IndexOf("Major", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    catStr.IndexOf("Epoch", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    catStr.Contains("大事") || srcStr.Contains("大事") ||
+                    srcStr.IndexOf("Milestone", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return "[大事记] ";
+                }
+
+                // 3. 默认手帐
+                return "[手帐] ";
+            }
+
+            // 规则/NPC 记忆管理场景：彻底告别 [记忆]
+            if (entry.Category == MemoryCategory.Behavior)
+            {
+                return "[行为守则] ";
+            }
+
+            if (string.Equals(_npcName, "WORLD", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(entry.Source, "WORLD", StringComparison.OrdinalIgnoreCase))
+            {
+                return "[小镇共识] ";
+            }
+
+            return "[既定事实] ";
+        }
+
         // ── 渲染管线 ──────────────────────────────────────────────────────────
 
         public override void draw(SpriteBatch b)
@@ -549,9 +597,8 @@ namespace ValleytalkReborn
                     IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
                         cardRect.X, cardRect.Y, cardRect.Width, cardRect.Height, borderCol, 2f, false);
 
-                    // 类别角标与文本渲染
-                    bool isRule = entry.Category == MemoryCategory.Behavior;
-                    string tag = isRule ? I18n.Memory.RuleTag() : I18n.Memory.MemoryTag();
+                    // ★ 优化 3：获取规范统一后的条目标签
+                    string tag = GetEntryTag(entry);
                     Color contentColor = entry.Source == "Auto" ? BioEditorMenu.TextSecondary : BioEditorMenu.TextPrimary;
 
                     // 第一行：正文（18f Medium）
@@ -630,7 +677,7 @@ namespace ValleytalkReborn
             if (_closeButton.containsPoint(mx, my))
                 _hoverText = _closeButton.hoverText;
             else if (_clearButtonRect.Contains(mx, my) && _cachedEntries.Count > 0)
-                _hoverText = "【清空全部归档】\n永久清除当前角色所有的归档记忆，释放存储空间。";
+                _hoverText = "【清空全部归档】\n永久清除当前所有的归档记忆，释放存储空间。";
             else
             {
                 for (int i = 0; i < _restoreButtons.Count; i++)
@@ -659,26 +706,52 @@ namespace ValleytalkReborn
             int headX = xPositionOnScreen + ContentPadding;
             int headY = yPositionOnScreen + 14;
 
-            // 肖像框
             const int pSize = 44;
             var portraitRect = new Rectangle(headX, headY, pSize, pSize);
 
+            // 图标外相框
             b.Draw(Game1.staminaRect, new Rectangle(portraitRect.X - 1, portraitRect.Y - 1, portraitRect.Width + 2, portraitRect.Height + 2), new Color(225, 210, 185));
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6),
                 portraitRect.X - 2, portraitRect.Y - 2, portraitRect.Width + 4, portraitRect.Height + 4,
                 new Color(200, 175, 140), 2f, false);
 
-            if (_npcPortrait != null && !_portraitSmileRect.IsEmpty)
+            // ★ 优化 1：左上角图标智能分流（Timeline 保持收纳箱/肖像现状，规则归档显示垃圾桶）
+            if (IsFromTimeline)
             {
-                b.Draw(_npcPortrait, portraitRect, _portraitSmileRect, Color.White);
+                if (_npcPortrait != null && !_portraitSmileRect.IsEmpty)
+                {
+                    b.Draw(_npcPortrait, portraitRect, _portraitSmileRect, Color.White);
+                }
+                else
+                {
+                    string avatarFallback = string.IsNullOrEmpty(_npcName) ? "?" : (string.Equals(_npcName, "WORLD", StringComparison.OrdinalIgnoreCase) ? "🌐" : _npcName.Substring(0, 1));
+                    var fsz = CustomFontManager.MeasureStringBold(avatarFallback, TitleFontSize);
+                    CustomFontManager.DrawStringBold(b, avatarFallback,
+                        new Vector2(portraitRect.X + (pSize - fsz.X) / 2f, portraitRect.Y + (pSize - fsz.Y) / 2f - 1),
+                        BioEditorMenu.TextMuted, TitleFontSize);
+                }
             }
             else
             {
-                string avatarFallback = string.IsNullOrEmpty(_npcName) ? "?" : (string.Equals(_npcName, "WORLD", StringComparison.OrdinalIgnoreCase) ? "🌐" : _npcName.Substring(0, 1));
-                var fsz = CustomFontManager.MeasureStringBold(avatarFallback, TitleFontSize);
-                CustomFontManager.DrawStringBold(b, avatarFallback,
-                    new Vector2(portraitRect.X + (pSize - fsz.X) / 2f, portraitRect.Y + (pSize - fsz.Y) / 2f - 1),
-                    BioEditorMenu.TextMuted, TitleFontSize);
+                // 规则/普通记忆回收站：渲染原木风垃圾桶图标
+                if (ModEntry.CustomIcons != null)
+                {
+                    Rectangle trashSrc = IconSource.Talk(IconTheme.Wood, IconState.Normal);
+                    const int iconSize = 48;
+                    var iconRect = new Rectangle(
+                        portraitRect.X + (pSize - iconSize) / 2,
+                        portraitRect.Y + (pSize - iconSize) / 2,
+                        iconSize, iconSize);
+                    b.Draw(ModEntry.CustomIcons, iconRect, trashSrc, Color.White);
+                }
+                else
+                {
+                    const string trashFallback = "🗑";
+                    var fsz = CustomFontManager.MeasureStringBold(trashFallback, TitleFontSize);
+                    CustomFontManager.DrawStringBold(b, trashFallback,
+                        new Vector2(portraitRect.X + (pSize - fsz.X) / 2f, portraitRect.Y + (pSize - fsz.Y) / 2f - 1),
+                        BioEditorMenu.TextPrimary, TitleFontSize);
+                }
             }
 
             // 大标题（24f Bold，TextPrimary）
@@ -686,7 +759,7 @@ namespace ValleytalkReborn
             CustomFontManager.DrawStringBold(b, title, new Vector2(headX + pSize + 12, headY + 2), BioEditorMenu.TextPrimary, TitleFontSize);
 
             // 副标题说明
-            const string subtitle = "浏览、还原或彻底删除被淘汰置换的历史记忆。";
+            string subtitle = IsFromTimeline ? "浏览、还原或彻底删除被收纳的历史随笔。" : "浏览、还原或彻底删除被淘汰置换的规则。";
             CustomFontManager.DrawString(b, subtitle, new Vector2(headX + pSize + 14, headY + 30), BioEditorMenu.TextMuted, TipFontSize);
 
             // 容量胶囊
@@ -694,7 +767,7 @@ namespace ValleytalkReborn
             bool isNearFull = _cachedEntries.Count >= NearFullThreshold;
             DrawCapacityBadge(b, _capacityPillRect, countText, isNearFull);
 
-            // 清空按钮（标准动作按钮，危险红风格，支持按压下沉）
+            // ★ 优化 2：清空按钮（无缝重构版，彻底根除右侧与底部白缝）
             string clearLabel = I18n.Memory.ArchiveClearButton();
             DrawActionButton(b, _clearButtonRect, clearLabel, mx, my, isDanger: true, isEnabled: _cachedEntries.Count > 0);
 
@@ -714,7 +787,7 @@ namespace ValleytalkReborn
             Color borderCol = isNearFull ? BioEditorMenu.TextWarning : new Color(225, 205, 175);
             Color textCol = isNearFull ? BioEditorMenu.TextWarning : BioEditorMenu.TextSecondary;
 
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1, rect.Y + 1, rect.Width - 2, rect.Height - 2), bg);
+            b.Draw(Game1.staminaRect, rect, bg);
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
                 rect.X, rect.Y, rect.Width, rect.Height, borderCol, 2f, false);
 
@@ -733,7 +806,7 @@ namespace ValleytalkReborn
             Color bg = isPressed ? new Color(230, 210, 185) : (isHover ? new Color(255, 242, 220) : new Color(245, 232, 212));
             Color borderCol = isHover ? new Color(210, 160, 60) : new Color(225, 205, 175);
 
-            b.Draw(Game1.staminaRect, new Rectangle(drawRect.X + 1, drawRect.Y + 1, drawRect.Width - 2, drawRect.Height - 2), bg);
+            b.Draw(Game1.staminaRect, drawRect, bg);
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
                 drawRect.X, drawRect.Y, drawRect.Width, drawRect.Height, borderCol, 1.6f, false);
         }
@@ -744,11 +817,13 @@ namespace ValleytalkReborn
             catch { return false; }
         }
 
+        // ★ 优化 2：彻底消灭白缝的动作按钮绘制方法
         private static void DrawActionButton(SpriteBatch b, Rectangle rect, string label, int mx, int my,
             bool isDanger = false, bool isPrimary = false, bool isEnabled = true)
         {
             bool isHover = isEnabled && rect.Contains(mx, my);
             bool isPressed = isHover && IsLeftMouseDown();
+            int pressOffset = isPressed ? 1 : 0;
 
             Color bg;
             if (!isEnabled) bg = Color.LightGray * 0.6f;
@@ -756,17 +831,21 @@ namespace ValleytalkReborn
             else if (isDanger) bg = isHover ? new Color(245, 105, 105) : new Color(210, 85, 80);
             else bg = isHover ? new Color(255, 240, 215) : new Color(225, 195, 155);
 
-            int pressOffset = isPressed ? 1 : 0;
             if (isPressed) bg = Color.Lerp(bg, Color.Black, 0.14f);
 
+            // 1. 底层立体阴影
             if (!isPressed)
-                b.Draw(Game1.staminaRect, new Rectangle(rect.X + 2, rect.Y + 2, rect.Width, rect.Height), Color.Black * 0.15f);
+                b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1, rect.Y + 2, rect.Width, rect.Height), Color.Black * 0.15f);
 
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1 + pressOffset, rect.Y + 1 + pressOffset, rect.Width - 2, rect.Height - 2), bg);
+            var drawRect = new Rectangle(rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height);
 
+            // 2. 底板全覆盖，坚决不留 1px 裸露边距，防白缝
+            b.Draw(Game1.staminaRect, drawRect, bg);
+
+            // 3. 严格采用 2f 整像素 scale，杜绝浮点栅格断裂
+            Color borderCol = isPrimary ? new Color(210, 160, 60) : (isDanger ? new Color(175, 60, 55) : new Color(185, 150, 110));
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-                rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height,
-                isPrimary ? new Color(210, 160, 60) : (isDanger ? new Color(175, 60, 55) : new Color(185, 150, 110)), 2.5f, false);
+                drawRect.X, drawRect.Y, drawRect.Width, drawRect.Height, borderCol, 2f, false);
 
             Color textCol = !isEnabled ? BioEditorMenu.TextMuted
                           : isDanger ? BioEditorMenu.TextOnDarkBtn
@@ -774,7 +853,7 @@ namespace ValleytalkReborn
 
             var sz = CustomFontManager.MeasureStringBold(label, ButtonFontSize);
             CustomFontManager.DrawStringBold(b, label,
-                new Vector2(rect.X + pressOffset + (rect.Width - sz.X) / 2f, rect.Y + pressOffset + (rect.Height - sz.Y) / 2f),
+                new Vector2(drawRect.X + (drawRect.Width - sz.X) / 2f, drawRect.Y + (drawRect.Height - sz.Y) / 2f),
                 textCol, ButtonFontSize);
         }
 
