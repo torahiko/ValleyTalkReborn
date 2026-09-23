@@ -123,9 +123,7 @@ namespace ValleytalkReborn
 
         // ── Tab 1 控件（身份心理） ────────────────────────────────────────
         private DialogueTextInputBox _biographyBox;
-        private TextBox _uniqueBox;
         private Rectangle _scaffoldBtnRect;
-        private Rectangle _uniqueCardRect;
         private Rectangle _copyBiographyRect;
         private Rectangle _aiPolishBioRect;
         // ── Tab 2 控件（言行举止） ────────────────────────────────────────
@@ -233,10 +231,6 @@ namespace ValleytalkReborn
 
             // 2. 下面这三个是单行 TextBox，必须使用 new TextBox(...) 初始化：
             Texture2D boxTex = LoadTextBoxTexture();
-            _uniqueBox = new TextBox(boxTex, null, Game1.smallFont, Game1.textColor);
-            // 关闭原版 TextBox 的像素宽度截断（Text setter 内置递归截断会静默损毁程序化赋值的长文本）
-            _uniqueBox.limitWidth = false;
-            _uniqueBox.textLimit = 20;
             _relSearchBox = new TextBox(boxTex, null, Game1.smallFont, Game1.textColor);
             // 关闭原版 TextBox 的像素宽度截断（Text setter 内置递归截断会静默损毁程序化赋值的长文本）
             _relSearchBox.limitWidth = false;
@@ -269,8 +263,6 @@ namespace ValleytalkReborn
                 Game1.mouseCursors, new Rectangle(337, 494, 12, 12), CloseButtonBaseScale);
 
             _biographyBox.SetText(_vm.GetBiography());
-            string rawUnique = _vm.GetUnique() ?? string.Empty;
-            _uniqueBox.Text = rawUnique.Length > 20 ? rawUnique.Substring(0, 20) : rawUnique;
 
             _enableBarkCheckbox.isChecked = _vm.Bio.EnableAmbientBarks;
             _globalTagEditor.SetTags(_vm.Bio.Preoccupations);
@@ -369,21 +361,11 @@ namespace ValleytalkReborn
             // ── Tab 1 布局 ──
             if (_activeTab == 0)
             {
-                int cardH = 68;
                 int topLabelH = 26;
                 _scaffoldBtnRect = new Rectangle(contentLeft + contentW - 140, bodyTop, 140, RowBtnH);
 
-                int bioH = bodyH - cardH - topLabelH - 24;
+                int bioH = bodyH - topLabelH - 8;
                 SetBoxBounds(_biographyBox, contentLeft, bodyTop + topLabelH + 4, contentW, bioH);
-
-                int cardY = (int)_biographyBox.Position.Y + (int)_biographyBox.Extent.Y + 16;
-                int cardW = (contentW - 16) / 2;
-                _uniqueCardRect = new Rectangle(contentLeft, cardY, cardW, cardH);
-
-                _uniqueBox.X = _uniqueCardRect.X + 12;
-                _uniqueBox.Y = _uniqueCardRect.Y + 28;
-                _uniqueBox.Width = _uniqueCardRect.Width - 24;
-                _uniqueBox.Height = 30;
 
                 // ★ 复制按钮：与「插入身份模板」按钮同一行、居中对齐
                 _copyBiographyRect = new Rectangle(
@@ -601,14 +583,6 @@ namespace ValleytalkReborn
             {
                 _biographyBox.Update(time);
                 _vm.SetBiography(_biographyBox.Text);
-
-                // ★ 用户打字或粘贴超过 20 字符时，实时回退截断，既安全又无需依赖底层 textLimit
-                if (_uniqueBox.Text != null && _uniqueBox.Text.Length > 20)
-                {
-                    _uniqueBox.Text = _uniqueBox.Text.Substring(0, 20);
-                }
-
-                _vm.SetUnique(_uniqueBox.Text);
             }
             else if (_activeTab == 1)
             {
@@ -726,7 +700,6 @@ namespace ValleytalkReborn
         {
             if (ContainsPoint(_biographyBox, x, y)) { FocusDialogueBox(_biographyBox, x, y); return; }
             if (_scaffoldBtnRect.Contains(x, y)) { InsertScaffold(); return; }
-            if (new Rectangle(_uniqueBox.X, _uniqueBox.Y, _uniqueBox.Width, _uniqueBox.Height).Contains(x, y)) { FocusTextBox(_uniqueBox); return; }
             if (!AnyTextBoxHasFocus() && _copyBiographyRect.Contains(x, y)) { CopyBoxToClipboard("biography"); return; }
             if (_aiPolishBioRect.Contains(x, y) && !BioAiRunner.IsBusy)
             {
@@ -999,7 +972,6 @@ namespace ValleytalkReborn
 
             bool isAnyTextFocused = Game1.keyboardDispatcher.Subscriber != null
                                     || activeBox != null
-                                    || (_activeTab == 0 && _uniqueBox.Selected)
                                     || (_activeTab == 3 && (_relSearchBox.Selected || _relHeadingBox.Selected));
 
             // 2. 文本框/输入控件处于激活输入状态
@@ -1252,13 +1224,6 @@ namespace ValleytalkReborn
             DrawActionButton(b, _aiPolishBioRect, aiLabel, mx, my,
                 isPrimary: true, isEnabled: !BioAiRunner.IsBusy);
             DrawStyledDialogueBox(b, _biographyBox);
-
-            DrawCard(b, _uniqueCardRect);
-            CustomFontManager.DrawString(b, "特殊行为/身份标记 (Unique)",
-                new Vector2(_uniqueBox.X, _uniqueCardRect.Y + 6), TextSecondary, SectionHeaderSize);
-            DrawSingleLineBox(b, _uniqueBox);
-            if (_uniqueBox.X <= mx && mx <= _uniqueBox.X + _uniqueBox.Width && _uniqueBox.Y <= my && my <= _uniqueBox.Y + _uniqueBox.Height)
-                _hoverText = "用于限定 NPC 的特殊行为或状态（如 'behind the counter', 'holding a football'）。";
         }
 
         private void DrawTab2(SpriteBatch b, int mx, int my)
@@ -2234,7 +2199,6 @@ namespace ValleytalkReborn
         {
             Game1.keyboardDispatcher.Subscriber = null;
             _biographyBox.Selected = false;
-            _uniqueBox.Selected = false;
             _behaviorBox.Selected = false;
             _dialogueExamplesBox.Selected = false;
             _stageTextBox.Selected = false;
@@ -2408,7 +2372,7 @@ namespace ValleytalkReborn
         }
 
         private bool AnyTextBoxHasFocus() =>
-            _biographyBox.Selected || _uniqueBox.Selected || _behaviorBox.Selected || _dialogueExamplesBox.Selected ||
+            _biographyBox.Selected || _behaviorBox.Selected || _dialogueExamplesBox.Selected ||
             _stageTextBox.Selected || _stageBarkBox.Selected || _relSearchBox.Selected || _relHeadingBox.Selected ||
             _relDescBox.Selected || _voiceBox.Selected || _habitsBox.Selected || _lensesBox.Selected;
 
@@ -2429,7 +2393,6 @@ namespace ValleytalkReborn
         {
             // ── Tab 1 初始数据 ──
             _biographyBox.SetText(_vm.GetBiography());
-            _uniqueBox.Text = _vm.GetUnique();
 
             // ★★★ 补上：Tab 2 初始数据（行为规则与对白范例） ★★★
             _behaviorBox.SetText(_vm.GetTraitDescriptionOrNull("BehavioralRules") ?? string.Empty);
@@ -2490,11 +2453,6 @@ namespace ValleytalkReborn
             {
                 case 0:
                     _biographyBox.SetText(_vm.GetBiography());
-
-                    // ★ 修改这里：同步时也强制按 20 字符对齐
-                    string rawUnique = _vm.GetUnique() ?? string.Empty;
-                    _uniqueBox.Text = rawUnique.Length > 20 ? rawUnique.Substring(0, 20) : rawUnique;
-
                     break;
                 case 1:
                     _behaviorBox.SetText(_vm.GetTraitDescriptionOrNull("BehavioralRules") ?? string.Empty);

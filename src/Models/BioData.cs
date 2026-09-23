@@ -21,7 +21,6 @@ public class BioData
     [JsonIgnore]
     public bool? IsMale => isMale;
 
-    private string unique;
     private string name = string.Empty;
 
     public string Name 
@@ -61,19 +60,6 @@ public class BioData
                 return;
             }
             isMale = null;
-        }
-    }
-
-    public string Unique 
-    { 
-        get => unique; 
-        set 
-        {
-            unique = value; 
-            if (!string.IsNullOrWhiteSpace(value) && ExtraPortraits != null && !ExtraPortraits.ContainsKey("u"))
-            {
-                ExtraPortraits["u"] = value;
-            }
         }
     }
 

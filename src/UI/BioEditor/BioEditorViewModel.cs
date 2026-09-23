@@ -66,29 +66,6 @@ internal sealed class BioEditorViewModel
         }
     }
 
-    public string GetUnique() => _bio.Unique;
-
-    public void SetUnique(string text)
-    {
-        // ★ 统一限制最大 20 字符
-        if (!string.IsNullOrEmpty(text) && text.Length > 20)
-        {
-            text = text.Substring(0, 20);
-        }
-
-        string current = _bio.Unique ?? string.Empty;
-        if (current.Length > 20)
-        {
-            current = current.Substring(0, 20);
-        }
-
-        if (text != current)
-        {
-            _bio.Unique = text;
-            MarkDirty();
-        }
-    }
-
     public string BuildBiographyScaffold()
     {
         return BiographyScaffold.Replace("{NPC}", _npcName);
@@ -162,7 +139,6 @@ internal sealed class BioEditorViewModel
         {
             case 0: // Tab 1: 身份背景
                 _bio.Biography = baseline.Biography ?? string.Empty;
-                _bio.Unique = baseline.Unique ?? string.Empty;
                 break;
 
             case 1: // Tab 2: 言行举止
