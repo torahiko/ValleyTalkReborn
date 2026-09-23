@@ -82,6 +82,9 @@ public static class IconSource
     public static Rectangle Star2(IconTheme theme = IconTheme.Wood, IconState state = IconState.Normal)
         => Get(7, 5, theme, state);  // 星星白
     
+    public static Rectangle Talk(IconTheme theme = IconTheme.Wood, IconState state = IconState.Normal)
+        => Get(15, 0, theme, state);  // 谈话
+    
     
 
     /// <summary>
