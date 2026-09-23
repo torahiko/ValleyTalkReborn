@@ -35,7 +35,7 @@ namespace ValleytalkReborn
             _onSubmit = onSubmit;
             _parentMenu = parentMenu;
             _targetTitle = targetTitle ?? "";
-            _titleText = $"✦ AI 润色 · {_targetTitle}";
+            _titleText = $"AI 润色 · {_targetTitle}";
 
             _inputBox = new DialogueTextInputBox(600)
             {
