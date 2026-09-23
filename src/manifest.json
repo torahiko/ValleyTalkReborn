@@ -6,7 +6,7 @@
   "UniqueID": "srkgou.ValleyTalkReborn",
   "EntryDll": "ValleyTalkReborn.dll",
   "MinimumApiVersion": "4.1.0",
-  "UpdateKeys": [ "Nexus:30319" ],
+  "UpdateKeys": [ "" ],
   "Dependencies": [
     {
       "UniqueID": "Pathoschild.ContentPatcher",
