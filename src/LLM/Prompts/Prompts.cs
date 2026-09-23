@@ -85,7 +85,7 @@ public class Prompts
 
     private string BuildStardewSummary()
     {
-        var builder = new GameSummaryBuilder();
+        var builder = GameSummaryBuilder.Instance;
         var regionMap = builder.GetLocationRegions();
         var ctx = BuildContext.FromGameState(CurrentFlags, Context.Location, regionMap);
         return builder.Build(ctx);
