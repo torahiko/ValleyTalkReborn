@@ -1235,7 +1235,7 @@ namespace ValleytalkReborn
             DrawActionButton(b, _scopeCapsuleRect, scopeLabel, mx, my, isPrimary: true);
             DrawActionButton(b, _importRect, "导入", mx, my, isPrimary: false);
             DrawActionButton(b, _exportRect, "导出", mx, my, isPrimary: false);
-            DrawActionButton(b, _wizardRect, "引导式起号", mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy);
+            DrawActionButton(b, _wizardRect, "引导式起号", mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy, hoverHighlight: false);
         }
 
         // ── 各 Tab 具体渲染 ───────────────────────────────────────────────
@@ -1248,7 +1248,7 @@ namespace ValleytalkReborn
             DrawActionButton(b, _copyBiographyRect, "复制全部", mx, my, false);
             string aiLabel = BioAiRunner.IsBusy ? "构思中..." : "AI 润色";
             DrawActionButton(b, _aiPolishBioRect, aiLabel, mx, my,
-                isPrimary: true, isEnabled: !BioAiRunner.IsBusy);
+                isPrimary: true, isEnabled: !BioAiRunner.IsBusy, hoverHighlight: false);
             DrawStyledDialogueBox(b, _biographyBox);
         }
 
@@ -1258,7 +1258,7 @@ namespace ValleytalkReborn
                 new Vector2(_behaviorBox.Position.X, _behaviorBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
             DrawActionButton(b, _behaviorScaffoldRect, "插入规则模板", mx, my, false);
             DrawActionButton(b, _copyBehaviorRect, "复制全部", mx, my, false);
-            DrawActionButton(b, _aiPolishBehaviorRect, BioAiRunner.IsBusy ? "构思中..." : "AI 润色", mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy);
+            DrawActionButton(b, _aiPolishBehaviorRect, BioAiRunner.IsBusy ? "构思中..." : "AI 润色", mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy, hoverHighlight: false);
             DrawStyledDialogueBox(b, _behaviorBox);
 
             CustomFontManager.DrawString(b, "对白范例 (Dialogue)",
@@ -1266,7 +1266,7 @@ namespace ValleytalkReborn
             DrawActionButton(b, _insertBreakRect, "+ 分段符", mx, my, false);
             DrawActionButton(b, _insertChoiceRect, "+ 玩家选项", mx, my, false);
             DrawActionButton(b, _copyDialogueExamplesRect, "复制全部", mx, my, false);
-            DrawActionButton(b, _aiPolishDialogueRect, BioAiRunner.IsBusy ? "构思中..." : "AI 润色", mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy);
+            DrawActionButton(b, _aiPolishDialogueRect, BioAiRunner.IsBusy ? "构思中..." : "AI 润色", mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy, hoverHighlight: false);
 
             if (_insertBreakRect.Contains(mx, my)) _hoverText = "插入 #$b#：在原版对话框中翻页。";
             if (_insertChoiceRect.Contains(mx, my)) _hoverText = "插入 % 选项：提供玩家可点击的分支回答。";
@@ -1283,7 +1283,7 @@ namespace ValleytalkReborn
             // 顶栏标题独立展示为分类小标，不再与按钮同排
             CustomFontManager.DrawString(b, $"好感演变档位 ({_vm.Bio.ProgressStates.Count}/8)",
                 new Vector2(_stageLeftColRect.X + 12, _stageLeftColRect.Y + 10), TextSecondary, SectionHeaderSize);
-            DrawActionButton(b, _aiGenerateStagesRect, BioAiRunner.IsBusy ? "推演中..." : "✨ AI好感阶梯推演", mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy);
+            DrawActionButton(b, _aiGenerateStagesRect, BioAiRunner.IsBusy ? "推演中..." : "✨ AI好感阶梯推演", mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy, hoverHighlight: false);
             if (_aiGenerateStagesRect.Contains(mx, my))
                 _hoverText = "按可婚/常规自动推演 4/3 档并整体覆盖现有档位（建议先在 Tab 1 完善身份档案）。";
 
@@ -1345,7 +1345,7 @@ namespace ValleytalkReborn
                     : $"【激活条件：农夫必须与 {spouseDisp} ({targetSpouse}) 结婚】\n仅当农夫的配偶为该角色时本档位激活（如克林特在玩家娶了艾米丽后的暗自心碎）。\n左键点击：切换下一位候选人；\n右键点击：重置为不限。";
             }
 
-            DrawActionButton(b, _deleteStageRect, "删除此档", mx, my, isDanger: true);
+            DrawActionButton(b, _deleteStageRect, "删除此档", mx, my, isDanger: true, hoverHighlight: false);
 
             // ── 第 2 行：小镇世界线门禁 ──
             int row2Y = _stageRightColRect.Y + 32;
@@ -1576,7 +1576,7 @@ namespace ValleytalkReborn
             CustomFontManager.DrawString(b, "日常碎碎念总控",
                 new Vector2(_tab5LeftColRect.X + 12, _tab5LeftColRect.Y + 8), TextSecondary, SectionHeaderSize);
             _enableBarkCheckbox.draw(b, 0, 0, this);
-            DrawActionButton(b, _aiExtractAmbientRect, BioAiRunner.IsBusy ? "萃取中..." : "✨ 基于人设萃取全套心智", mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy);
+            DrawActionButton(b, _aiExtractAmbientRect, BioAiRunner.IsBusy ? "萃取中..." : "✨ 基于人设萃取全套心智", mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy, hoverHighlight: false);
             if (_aiExtractAmbientRect.Contains(mx, my))
                 _hoverText = "基于身份档案与言行规则，一次性萃取口吻 / 口头禅 / 观察透镜 / 关注词条并整体写入（覆盖原有）。";
 
@@ -1667,21 +1667,30 @@ namespace ValleytalkReborn
                 isActive ? TextPrimary : (isHover ? Color.Wheat : TextOnDark), TabFontSize);
         }
 
-        /// <summary>探测鼠标左键当前是否处于按下状态，用于按钮“下沉/弹起”的点击动效。</summary>
+        /// <summary>探测鼠标左键当前是否处于按下状态，用于按钮“下沉/弹起”的点击动效。
+        /// 直连 MonoGame 底层硬件查询，避免编辑器文本框持有焦点/Dispatcher 监听时 Game1.input 按下状态失效。</summary>
         private static bool IsLeftMouseDown()
         {
             try
             {
-                return Game1.input.GetMouseState().LeftButton == ButtonState.Pressed;
+                return Mouse.GetState().LeftButton == ButtonState.Pressed;
             }
             catch
             {
-                return false;
+                // 退化到 Game1.input SMAPI 包装状态
+                try
+                {
+                    return Game1.input.GetMouseState().LeftButton == ButtonState.Pressed;
+                }
+                catch
+                {
+                    return false;
+                }
             }
         }
 
         private void DrawActionButton(SpriteBatch b, Rectangle rect, string label, int mx, int my,
-            bool isDanger = false, bool isPrimary = false, bool isEnabled = true)
+            bool isDanger = false, bool isPrimary = false, bool isEnabled = true, bool hoverHighlight = true)
         {
             bool isHover = isEnabled && rect.Contains(mx, my);
             bool isPressed = isHover && IsLeftMouseDown();
@@ -1695,14 +1704,23 @@ namespace ValleytalkReborn
             int pressOffset = isPressed ? 1 : 0;
             if (isPressed) bg = Color.Lerp(bg, Color.Black, 0.14f);
 
+            // 1. 立体微阴影：未按下时投射，按下时完全收起
             if (!isPressed)
                 b.Draw(Game1.staminaRect, new Rectangle(rect.X + 2, rect.Y + 2, rect.Width, rect.Height), Color.Black * 0.15f);
 
+            // 2. 底板填充：随按压下沉 1px
             b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1 + pressOffset, rect.Y + 1 + pressOffset, rect.Width - 2, rect.Height - 2), bg);
+
+            // 3. 边框：根据 hoverHighlight 参数决定悬停时是否泛光高亮
+            Color borderCol = isPrimary ? new Color(210, 160, 60)
+                            : (isDanger ? new Color(175, 60, 55) : new Color(185, 150, 110));
+
+            if (hoverHighlight && isHover && isEnabled)
+                borderCol = Color.Lerp(borderCol, new Color(255, 245, 220), 0.55f); // 暖白增亮泛光
 
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
                 rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height,
-                isPrimary ? new Color(210, 160, 60) : (isDanger ? new Color(175, 60, 55) : new Color(185, 150, 110)), 3f, false);
+                borderCol, 3f, false);
 
             // 文字颜色与按钮底色明暗自适应
             Color btnTextCol;
