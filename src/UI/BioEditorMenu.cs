@@ -178,7 +178,6 @@ namespace ValleytalkReborn
         private DialogueTextInputBox _voiceBox;
         private DialogueTextInputBox _habitsBox;
         private DialogueTextInputBox _lensesBox;
-        private Rectangle _scrapeRect;
         private Rectangle _tab5LeftColRect;
         private Rectangle _tab5RightColRect;
         private Rectangle _copyVoiceRect;
@@ -510,7 +509,6 @@ namespace ValleytalkReborn
                 _tab5RightColRect = new Rectangle(contentLeft + leftColW + 16, bodyTop, rightColW, bodyH);
 
                 _enableBarkCheckbox.bounds = new Rectangle(_tab5LeftColRect.X + 12, _tab5LeftColRect.Y + 32, 28, 28);
-                _scrapeRect = new Rectangle(_tab5LeftColRect.X + 8, _tab5LeftColRect.Y + 76, leftColW - 16, 34);
 
                 int tagEditorTop = _tab5LeftColRect.Y + 152;
                 _globalTagEditor.SetBounds(new Rectangle(_tab5LeftColRect.X + 8, tagEditorTop, leftColW - 16, bodyBottom - tagEditorTop - 8));
@@ -918,7 +916,6 @@ namespace ValleytalkReborn
         private void HandleTab5Click(int x, int y)
         {
             if (_enableBarkCheckbox.bounds.Contains(x, y)) { _enableBarkCheckbox.receiveLeftClick(x, y); return; }
-            if (_scrapeRect.Contains(x, y)) { ScrapeExamplesFromVm(); return; }
             if (_globalTagEditor.ReceiveLeftClick(x, y)) return;
             if (ContainsPoint(_voiceBox, x, y)) { FocusDialogueBox(_voiceBox, x, y); return; }
             if (ContainsPoint(_habitsBox, x, y)) { FocusDialogueBox(_habitsBox, x, y); return; }
@@ -1522,8 +1519,6 @@ namespace ValleytalkReborn
                 new Vector2(_tab5LeftColRect.X + 12, _tab5LeftColRect.Y + 8), TextSecondary, SectionHeaderSize);
             _enableBarkCheckbox.draw(b, 0, 0, this);
 
-            DrawActionButton(b, _scrapeRect, "↺ 从原版对白智能抓取范例", mx, my, false);
-
             CustomFontManager.DrawString(b, "全局常态关注池 (Preoccupations)",
                 new Vector2(_globalTagEditor.Bounds.X, _globalTagEditor.Bounds.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
             _globalTagEditor.Draw(b);
@@ -1910,34 +1905,6 @@ namespace ValleytalkReborn
             _voiceBox.SetText(_vm.GetAmbientVoice());
             _habitsBox.SetText(_vm.GetAmbientHabits());
             _lensesBox.SetText(_vm.GetAmbientLenses());
-        }
-
-        private void ScrapeExamplesFromVm()
-        {
-            var outcome = _vm.ScrapeDialogueExamples(out int added, out string scrapeErr);
-            switch (outcome)
-            {
-                case BioEditorViewModel.ScrapeOutcome.NoLines:
-                    Game1.addHUDMessage(new HUDMessage("未抓取到原版对白", HUDMessage.error_type));
-                    return;
-                case BioEditorViewModel.ScrapeOutcome.Failed:
-                    Game1.addHUDMessage(new HUDMessage("抓取对白失败", HUDMessage.error_type));
-                    return;
-                case BioEditorViewModel.ScrapeOutcome.Success:
-                default:
-                    _dialogueExamplesBox.SetText(_vm.GetTraitDescriptionOrNull("DialogueExamples") ?? string.Empty);
-                    if (added > 0)
-                    {
-                        Game1.playSound("newArtifact");
-                        Game1.addHUDMessage(new HUDMessage($"已成功抓取 {added} 条原版对白至言行模块", HUDMessage.newQuest_type));
-                    }
-                    else
-                    {
-                        Game1.playSound("cancel");
-                        Game1.addHUDMessage(new HUDMessage("未发现新增对白（可能已全部收录或对白池为空）", HUDMessage.error_type));
-                    }
-                    return;
-            }
         }
 
         private void InsertScaffold()
