@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using StardewModdingAPI;
+using ValleytalkReborn.Services;
 
 namespace ValleytalkReborn;
 
@@ -9,11 +11,13 @@ internal static class NightlyWorkStore
 {
     private static readonly object LockObject = new();
 
-    private static string FilePath =>
-        $"data/NightlyPending_{Constants.SaveFolderName}.json";
+    private static string? FilePath =>
+        StorageLayout.LocalBaseDir is null || string.IsNullOrEmpty(Constants.SaveFolderName)
+            ? null
+            : Path.Combine(StorageLayout.LocalBaseDir!, $"NightlyPending_{Constants.SaveFolderName}.json");
 
-    private static string BackupPath =>
-        $"data/NightlyPending_{Constants.SaveFolderName}.bak.json";
+    private static string? BackupPath =>
+        FilePath is null ? null : FilePath + ".bak.json";
 
     public static void Save(List<NightlyWorkItem> items)
     {
@@ -22,6 +26,8 @@ internal static class NightlyWorkStore
 
         lock (LockObject)
         {
+            if (FilePath == null) return;
+
             try
             {
                 // ── 与既有文件合并（新 items 覆盖同名 NPC，其余保留）──
@@ -101,8 +107,15 @@ internal static class NightlyWorkStore
     {
         try
         {
+            string? path = FilePath;
+            if (path == null) return null;
+
+            // 一次性单向迁移遗留数据
+            string legacyPath = Path.Combine(StorageLayout.ModDirectory, $"data/NightlyPending_{Constants.SaveFolderName}.json");
+            StorageLayout.MigrateLegacyFile(legacyPath, path, "NightlyWorkStore");
+
             return ModEntry.SHelper.Data
-                .ReadJsonFile<List<NightlyWorkItem>>(FilePath);
+                .ReadJsonFile<List<NightlyWorkItem>>(path);
         }
         catch (Exception ex)
         {
@@ -143,6 +156,8 @@ internal static class NightlyWorkStore
     {
         lock (LockObject)
         {
+            if (FilePath == null) return new List<NightlyWorkItem>();
+
             try
             {
                 var items = ModEntry.SHelper.Data
@@ -244,6 +259,8 @@ internal static class NightlyWorkStore
     {
         lock (LockObject)
         {
+            if (FilePath == null) return;
+
             try
             {
                 ModEntry.SHelper.Data.WriteJsonFile(

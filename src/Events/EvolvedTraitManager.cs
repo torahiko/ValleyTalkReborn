@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using StardewModdingAPI;
 using StardewValley;
+using ValleytalkReborn.Services;
 
 namespace ValleytalkReborn;
 
@@ -32,8 +34,10 @@ internal static class EvolvedTraitManager
             .ToString()
             .StartsWith("zh", StringComparison.OrdinalIgnoreCase);
 
-    private static string FilePath =>
-        $"data/EvolvedTraits_{Constants.SaveFolderName}.json";
+    private static string? FilePath =>
+        StorageLayout.LocalBaseDir is null || string.IsNullOrEmpty(Constants.SaveFolderName)
+            ? null
+            : Path.Combine(StorageLayout.LocalBaseDir!, $"EvolvedTraits_{Constants.SaveFolderName}.json");
 
     public static void OnSaveLoaded()
     {
@@ -41,9 +45,19 @@ internal static class EvolvedTraitManager
         {
             try
             {
-                _cache = ModEntry.SHelper.Data
-                    .ReadJsonFile<Dictionary<string, List<string>>>(FilePath)
-                    ?? CreateCache();
+                string? path = FilePath;
+                if (path != null)
+                {
+                    string legacyPath = Path.Combine(StorageLayout.ModDirectory, $"data/EvolvedTraits_{Constants.SaveFolderName}.json");
+                    StorageLayout.MigrateLegacyFile(legacyPath, path, "EvolvedTraits");
+                    _cache = ModEntry.SHelper.Data
+                        .ReadJsonFile<Dictionary<string, List<string>>>(path)
+                        ?? CreateCache();
+                }
+                else
+                {
+                    _cache = CreateCache();
+                }
 
                 NormalizeCache();
 
@@ -131,9 +145,19 @@ internal static class EvolvedTraitManager
                 return;
             }
 
+            string? path = FilePath;
+            if (path == null)
+            {
+                ModEntry.SMonitor?.Log(
+                    "[EvolvedTraitManager] OnSaving: no save loaded, skipping traits persistence.",
+                    LogLevel.Trace);
+                SaveMindsets(force: false);
+                return;
+            }
+
             try
             {
-                ModEntry.SHelper.Data.WriteJsonFile(FilePath, _cache);
+                ModEntry.SHelper.Data.WriteJsonFile(path, _cache);
                 _dirty = false;
 
                 ModEntry.SMonitor?.Log(
@@ -518,10 +542,17 @@ internal static class EvolvedTraitManager
         if (_cache != null)
             return;
 
+        string? path = FilePath;
+        if (path == null)
+        {
+            _cache = CreateCache();
+            return;
+        }
+
         try
         {
             _cache = ModEntry.SHelper.Data
-                .ReadJsonFile<Dictionary<string, List<string>>>(FilePath)
+                .ReadJsonFile<Dictionary<string, List<string>>>(path)
                 ?? CreateCache();
 
             NormalizeCache();

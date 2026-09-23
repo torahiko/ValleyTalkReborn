@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
+using ValleytalkReborn.Services;
 
 namespace ValleytalkReborn
 {
@@ -374,9 +376,11 @@ namespace ValleytalkReborn
 
         #region Save / Load (Multiplayer Support)
 
-        private string GetMultiplayerFilePath()
+        private string? GetMultiplayerFilePath()
         {
-            return $"data/multiplayer/{Constants.SaveFolderName}_DialogueHistory.json";
+            return StorageLayout.LocalBaseDir is null || string.IsNullOrEmpty(Constants.SaveFolderName)
+                ? null
+                : Path.Combine(StorageLayout.LocalBaseDir!, "multiplayer", $"{Constants.SaveFolderName}_DialogueHistory.json");
         }
 
         public void SaveSync()
@@ -397,10 +401,20 @@ namespace ValleytalkReborn
                     }
                     else
                     {
-                        ModEntry.SHelper.Data.WriteJsonFile(GetMultiplayerFilePath(), snapshot);
-                        ModEntry.SMonitor?.Log(
-                            $"[DialogueHistoryManager] [Farmhand] Saved local history to {GetMultiplayerFilePath()}.",
-                            LogLevel.Debug);
+                        string? mpPath = GetMultiplayerFilePath();
+                        if (mpPath == null)
+                        {
+                            ModEntry.SMonitor?.Log(
+                                "[DialogueHistoryManager] [Farmhand] No save loaded, skipping history persistence.",
+                                LogLevel.Warn);
+                        }
+                        else
+                        {
+                            ModEntry.SHelper.Data.WriteJsonFile(mpPath, snapshot);
+                            ModEntry.SMonitor?.Log(
+                                $"[DialogueHistoryManager] [Farmhand] Saved local history to {mpPath}.",
+                                LogLevel.Debug);
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -424,8 +438,12 @@ namespace ValleytalkReborn
                     }
                     else
                     {
-                        data = ModEntry.SHelper.Data.ReadJsonFile<Dictionary<string, List<SerializableEntry>>>(
-                            GetMultiplayerFilePath());
+                        string? mpPath = GetMultiplayerFilePath();
+                        if (mpPath != null)
+                        {
+                            data = ModEntry.SHelper.Data.ReadJsonFile<Dictionary<string, List<SerializableEntry>>>(
+                                mpPath);
+                        }
                     }
 
                     if (data == null) return;
