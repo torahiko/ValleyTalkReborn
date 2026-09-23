@@ -251,6 +251,12 @@ namespace ValleytalkReborn
         /// </summary>
         public bool RespectAuthorAiConsent { get; set; } = true;
 
+        /// <summary>
+        /// 玩家是否已确认"引导式起号"合规门禁（社区公约知悉同意）。
+        /// 安装级 Config 持久化；删除 config.json 后重现属预期行为。
+        /// </summary>
+        public bool HasAcceptedBioWizardNotice { get; set; } = false;
+
         // ── 对话系统配置（从 DialogueConfig 合并） ──
         public bool EnableAmbientBarks { get; set; } = true;
         public bool EnableA2A { get; set; } = true;
