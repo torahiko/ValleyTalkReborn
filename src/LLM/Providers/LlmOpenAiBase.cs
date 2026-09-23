@@ -819,6 +819,7 @@ namespace ValleytalkReborn
             // TTFT observation
             var ttftWatch = new System.Diagnostics.Stopwatch();
             bool ttftLogged = false;
+            bool truncatedByLength = false;
 
             // StrictHostStage key
             string hostModelKey = null;
@@ -930,6 +931,12 @@ namespace ValleytalkReborn
                                             var choices = chunkJson["choices"] as JArray;
                                             if (choices == null || choices.Count == 0) continue;
 
+                                            if (!truncatedByLength &&
+                                                string.Equals(choices[0].Value<string>("finish_reason"), "length", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                truncatedByLength = true;
+                                            }
+
                                             var delta = choices[0]["delta"] as JObject;
                                             if (delta == null) continue;
 
@@ -944,9 +951,13 @@ namespace ValleytalkReborn
                                                 {
                                                     reasoningSeen = true;
                                                     ttftReasoningMs = ttftWatch.ElapsedMilliseconds;
-                                                    ModEntry.SMonitor?.Log(
-                                                        $"[LlmOpenAiBase] Model emitted reasoning_content — thinking suppression NOT honored by server. model={modelName}. Check FINAL PAYLOAD log.",
-                                                        StardewModdingAPI.LogLevel.Warn);
+                                                    // 仅在已尝试抑制时告警；Editor _Think 主动放行思考属预期行为，不应误报
+                                                    if (plan.AnyApiSuppression)
+                                                    {
+                                                        ModEntry.SMonitor?.Log(
+                                                            $"[LlmOpenAiBase] Model emitted reasoning_content — thinking suppression NOT honored by server. model={modelName}. Check FINAL PAYLOAD log.",
+                                                            StardewModdingAPI.LogLevel.Warn);
+                                                    }
                                                 }
                                                 continue; // Do NOT append to fullContentBuilder
                                             }
@@ -1012,6 +1023,13 @@ namespace ValleytalkReborn
                                             Log.Debug("[LlmOpenAiBase] Chunk JSON parse skip: " + parseEx.Message);
                                         }
                                     }
+                                }
+
+                                if (truncatedByLength)
+                                {
+                                    ModEntry.SMonitor?.Log(
+                                        $"[LlmOpenAiBase] Output truncated by max_tokens={genParams.MaxTokens} (finish_reason=length). Raise the preset budget or shorten the request.",
+                                        StardewModdingAPI.LogLevel.Warn);
                                 }
 
                                 if (degenerateDetected)
