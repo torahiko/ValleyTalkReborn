@@ -460,7 +460,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 Vector2 textSize = CustomFontManager.MeasureString(wrapped, MemoryContentFontSize);
                 Vector2 dateSize = CustomFontManager.MeasureStringBold(dateLabel, TabFontSize);
 
-                float headerWidthNeeded = dateSize.X + 80;
+                float headerWidthNeeded = dateSize.X + 56;
                 float contentInnerWidth = Math.Max(textSize.X, headerWidthNeeded);
                 int cardWidth = (int)Math.Clamp(contentInnerWidth + padX * 2, minCardWidth, maxCardWidth);
                 int cardHeight = (int)(Math.Max(dateSize.Y, 28) + 6 + textSize.Y + padY * 2);
@@ -542,10 +542,10 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
                 layout.BoxRect = new Rectangle(startX, currentY, m.Width, m.Height);
 
-                const int btnSize = 32;
-                int btnY = currentY + m.InnerPadding.Y - 2;
+                const int btnSize = 22;
+                int btnY = currentY + m.InnerPadding.Y + 1;
                 layout.DeleteRect = new Rectangle(startX + m.Width - m.InnerPadding.X - btnSize, btnY, btnSize, btnSize);
-                layout.EditRect = new Rectangle(layout.DeleteRect.X - btnSize - 8, btnY, btnSize, btnSize);
+                layout.EditRect = new Rectangle(layout.DeleteRect.X - btnSize - 6, btnY, btnSize, btnSize);
             }
 
             _visibleLayouts.Add(layout);
@@ -782,7 +782,7 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
     private void ConfirmDelete(MemoryEntry entry)
     {
-        string safeContent = CustomFontManager.TruncateString(entry.Content, CustomFontManager.SizeRegular, 320f);
+        string safeContent = CustomFontManager.TruncateString(entry.Content, CustomFontManager.SizeSmall, 500f);
         Game1.activeClickableMenu = new BioValveWarningDialog(
             this,
             I18n.Timeline.DeleteConfirmTitle(),
