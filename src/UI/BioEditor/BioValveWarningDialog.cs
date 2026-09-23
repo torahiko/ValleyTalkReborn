@@ -227,7 +227,13 @@ namespace ValleytalkReborn
                 }
 
                 if (!string.IsNullOrEmpty(_tip))
-                    CustomFontManager.DrawString(b, _tip, new Vector2(_cardRect.X + 16, _cardRect.Bottom - 26), BioEditorMenu.TextMuted, TipFontSize);
+                {
+                    Vector2 tipPos = new Vector2(_cardRect.X + 16, _cardRect.Bottom - 26);
+                    // 绘制 1px 半透明阴影，托住白字
+                    CustomFontManager.DrawString(b, _tip, tipPos + new Vector2(1, 1), Color.Black * 0.35f, TipFontSize);
+                    // 绘制白色正文
+                    CustomFontManager.DrawString(b, _tip, tipPos, Color.White, TipFontSize);
+                }
             }
 
             // 4. 底部动作按钮

@@ -2095,7 +2095,7 @@ namespace ValleytalkReborn
                 "重新起号风险提示",
                 "即将对已有设定启动完整的引导式起号向导：",
                 warnings,
-                "⚠ 重新开始向导",
+                "重新开始向导",
                 () => { Game1.activeClickableMenu = this; RouteWizardStep0(); },
                 "保持现有设定",
                 () => { Game1.activeClickableMenu = this; },
