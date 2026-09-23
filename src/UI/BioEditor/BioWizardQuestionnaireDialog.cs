@@ -404,8 +404,7 @@ namespace ValleytalkReborn
                 DrawQuestionCard(b, _cardRects[i], i, mx, my);
 
             // 4. ★ 底部动作区域控件（模式胶囊 + 自由发挥 + 取消 + 开始生成）
-            string pillLabel = BioAiUiPrefs.EnableThinking ? "🧠 深度思考: 开启" : "⚡ 极速模式: 开启";
-            DrawPillButton(b, _thinkingPillRect, pillLabel, BioAiUiPrefs.EnableThinking, mx, my);
+            DrawThinkingToggleButton(b, _thinkingPillRect, BioAiUiPrefs.EnableThinking, mx, my);
 
             DrawActionButton(b, _aiFreeButtonRect, "★ 留空交给 AI 自由发挥", mx, my, isPrimary: false);
             DrawActionButton(b, _cancelButtonRect, "✕ 取消 (Esc)", mx, my, isDanger: false);
@@ -522,29 +521,49 @@ namespace ValleytalkReborn
             catch { return false; }
         }
 
-        private static void DrawPillButton(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my)
+        /// <summary>
+        /// 绘制符合 BioEditorMenu 动作栏规范的思考/极速模式立体开关按钮
+        /// </summary>
+        private static void DrawThinkingToggleButton(SpriteBatch b, Rectangle rect, bool isThinking, int mx, int my)
         {
             bool isHover = rect.Contains(mx, my);
             bool isPressed = isHover && IsLeftMouseDown();
-
-            Color bg = isActive
-                ? (isHover ? Color.Gold : new Color(255, 220, 130))
-                : (isHover ? new Color(255, 235, 205) : Color.White);
-
             int pressOffset = isPressed ? 1 : 0;
-            if (isPressed) bg = Color.Lerp(bg, Color.Black, 0.14f);
 
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1 + pressOffset, rect.Y + 1 + pressOffset, rect.Width - 2, rect.Height - 2), bg);
+            // 开启时呈现金黄主色，极速时呈现浅木棕色（与同排动作按钮色阶一致）
+            Color bg = isThinking
+                ? (isHover ? Color.Gold : new Color(255, 220, 130))
+                : (isHover ? new Color(255, 240, 215) : new Color(225, 195, 155));
+
+            if (isPressed)
+                bg = Color.Lerp(bg, Color.Black, 0.14f);
+
+            // 1. 底层立体微阴影（按下时瞬时收起）
+            if (!isPressed)
+            {
+                b.Draw(Game1.staminaRect,
+                    new Rectangle(rect.X + 2, rect.Y + 2, rect.Width, rect.Height),
+                    Color.Black * 0.15f);
+            }
+
+            // 2. 内衬填充
+            b.Draw(Game1.staminaRect,
+                new Rectangle(rect.X + 1 + pressOffset, rect.Y + 1 + pressOffset, rect.Width - 2, rect.Height - 2),
+                bg);
+
+            // 3. 3f 厚原木九宫格边框（与同排主按钮 3f 保持完全一致）
+            Color borderCol = isThinking ? new Color(210, 160, 60) : new Color(185, 150, 110);
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-                rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height,
-                isActive ? new Color(200, 150, 50) : Color.Wheat, 2f, false);
+                rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height, borderCol, 3f, false);
 
-            var sz = CustomFontManager.MeasureString(label, TipFontSize);
-            Vector2 textPos = new Vector2(
-                rect.X + pressOffset + (rect.Width - sz.X) / 2f,
-                rect.Y + pressOffset + (rect.Height - sz.Y) / 2f);
-
-            CustomFontManager.DrawString(b, label, textPos, BioEditorMenu.TextPrimary, TipFontSize);
+            // 4. 文字标示统一采用 18f Bold 粗体与居中对齐
+            string label = isThinking ? "思考模式:深度" : "思考模式:快速";
+            var sz = CustomFontManager.MeasureStringBold(label, ButtonFontSize);
+            CustomFontManager.DrawStringBold(b, label,
+                new Vector2(
+                    rect.X + pressOffset + (rect.Width - sz.X) / 2f,
+                    rect.Y + pressOffset + (rect.Height - sz.Y) / 2f),
+                BioEditorMenu.TextOnLightBtn, ButtonFontSize);
         }
 
         private static void DrawActionButton(SpriteBatch b, Rectangle rect, string label, int mx, int my,

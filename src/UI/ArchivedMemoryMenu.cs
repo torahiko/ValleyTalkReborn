@@ -1,67 +1,86 @@
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using StardewValley;
-using StardewValley.Menus;
-using StardewModdingAPI;
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
+using StardewModdingAPI;
+using StardewValley;
+using StardewValley.Menus;
 using ValleytalkReborn.UI;
 
 namespace ValleytalkReborn
 {
+    /// <summary>
+    /// 归档记忆管理菜单：
+    /// 遵循 BioEditorMenu 视觉与动效规范 —— 羊皮纸无缝底板、立体按压下沉、
+    /// 仅主标题与主动作按钮使用 Bold 字体，卡片条目与说明文字回归 Medium 字体；
+    /// 彻底剔除冷灰冷蓝杂色，全面采用星露谷经典暖橘木质视觉体系。
+    /// </summary>
     internal class ArchivedMemoryMenu : IClickableMenu, IMemoryRefreshTarget
     {
+        // ── 尺寸与布局常量 ──
+        private const int MenuWidth = 880;
+        private const int MenuHeight = 620;
+        private const int ContentPadding = 24;
+        private const int HeaderH = 68;
+        private const int FooterH = 50;
+        private const int LineHeight = 62;
+        private const int RightScrollArea = 48;
+        private const int ButtonSize = 30;
+        private const int ButtonGap = 8;
+
+        // 统一整数字号（完全继承 CustomFontManager 规范）
+        private const float TitleFontSize = CustomFontManager.SizeTitle;       // 24f Bold (顶栏大标题)
+        private const float ButtonFontSize = CustomFontManager.SizeRegular;    // 18f Bold (主动作按钮)
+        private const float ContentFontSize = CustomFontManager.SizeRegular;   // 18f Medium (记忆内容)
+        private const float TipFontSize = CustomFontManager.SizeSmall;         // 15f Medium (时间戳、容量与提示)
+
         private readonly string _npcName;
         private readonly IClickableMenu _returnMenu;
 
-        // 数据源注入
-        private readonly Func<IReadOnlyList<MemoryEntry>> _listSource = null!;
-        private readonly Func<string, MemoryOperationResult> _restoreAction = null!;
-        private readonly Func<string, bool> _deleteAction = null!;
-        private readonly int _capacity = 0;
-        private readonly Func<string> _titleSource = null!;
-        private readonly Func<string> _emptySource = null!;
-        private readonly Func<string> _ruleHintSource = null!;
-        private readonly Func<int> _clearAction = null!;
+        // 肖像与关闭按钮
+        private Texture2D? _npcPortrait;
+        private Rectangle _portraitSmileRect;
+        private ClickableTextureComponent _closeButton;
+        private float _closeButtonHoverScale;
+        private const float CloseButtonBaseScale = 3f;
+
+        // 数据源与回调
+        private readonly Func<IReadOnlyList<MemoryEntry>> _listSource;
+        private readonly Func<string, MemoryOperationResult> _restoreAction;
+        private readonly Func<string, bool> _deleteAction;
+        private readonly int _capacity;
+        private readonly Func<string> _titleSource;
+        private readonly Func<string> _emptySource;
+        private readonly Func<string> _ruleHintSource;
+        private readonly Func<int> _clearAction;
         private int NearFullThreshold => _capacity - 2;
 
         private List<MemoryEntry> _cachedEntries = new();
         private int _startIndex;
         private bool _scrolling;
 
-        private ClickableTextureComponent _closeButton;
-        private ClickableTextureComponent _upArrow;
-        private ClickableTextureComponent _downArrow;
-        private ClickableTextureComponent _scrollbar;
+        // 滚动组件
+        private ClickableTextureComponent _upArrow = null!;
+        private ClickableTextureComponent _downArrow = null!;
+        private ClickableTextureComponent _scrollbar = null!;
         private Rectangle _scrollbarRunner;
-
-        private float _closeButtonHoverScale;
         private float _upArrowHoverScale;
         private float _downArrowHoverScale;
+        private const float ArrowBaseScale = 3f;
 
-        private readonly float _closeButtonBaseScale;
-        private readonly float _upArrowBaseScale;
-        private readonly float _downArrowBaseScale;
-
+        // 列表行内按钮
         private readonly List<ClickableTextureComponent> _restoreButtons = new();
         private readonly List<ClickableTextureComponent> _deleteButtons = new();
 
-        // 与 Timeline 同款木质风格清空按钮
+        // 顶栏操作区
         private Rectangle _clearButtonRect;
+        private Rectangle _capacityPillRect;
 
-        // 布局参数
-        private const int MenuWidth = 860;
-        private const int MenuHeight = 600;
-        private const int TopPadding = 100;
-        private const int BottomPadding = 70;
-        private const int LineHeight = 60;
-        private const int LeftPadding = 36;
-        private const int RightScrollArea = 52;
-
-        private const int ButtonSize = 32;
-        private const int ButtonGap = 8;
+        private string? _hoverText;
 
         public ArchivedMemoryMenu(string npcName, IClickableMenu returnMenu)
             : this(npcName, returnMenu,
@@ -86,10 +105,10 @@ namespace ValleytalkReborn
             Func<string> ruleHintSource,
             Func<int> clearAction)
             : base(
-                  (Game1.uiViewport.Width - MenuWidth) / 2,
-                  (Game1.uiViewport.Height - MenuHeight) / 2,
-                  MenuWidth,
-                  MenuHeight,
+                  (Game1.uiViewport.Width - Math.Clamp(Game1.uiViewport.Width - 100, 820, MenuWidth)) / 2,
+                  (Game1.uiViewport.Height - Math.Clamp(Game1.uiViewport.Height - 80, 560, MenuHeight)) / 2,
+                  Math.Clamp(Game1.uiViewport.Width - 100, 820, MenuWidth),
+                  Math.Clamp(Game1.uiViewport.Height - 80, 560, MenuHeight),
                   false)
         {
             _npcName = npcName;
@@ -104,44 +123,89 @@ namespace ValleytalkReborn
             _ruleHintSource = ruleHintSource ?? throw new ArgumentNullException(nameof(ruleHintSource));
             _clearAction = clearAction ?? throw new ArgumentNullException(nameof(clearAction));
 
-            // 右上角关闭按钮
             _closeButton = new ClickableTextureComponent(
-                new Rectangle(xPositionOnScreen + width - 56, yPositionOnScreen + 16, 44, 44),
-                Game1.mouseCursors, new Rectangle(337, 494, 12, 12), 3.5f)
+                new Rectangle(xPositionOnScreen + width - 50, yPositionOnScreen + 16, 36, 36),
+                Game1.mouseCursors, new Rectangle(337, 494, 12, 12), CloseButtonBaseScale)
             {
                 hoverText = I18n.Memory.CloseButton()
             };
-            _closeButtonBaseScale = 3.5f;
 
-            // 滚动条与翻页箭头
+            LoadNpcPortrait();
+            Layout();
+            RefreshEntries();
+        }
+
+        private void LoadNpcPortrait()
+        {
+            try
+            {
+                if (string.Equals(_npcName, "WORLD", StringComparison.OrdinalIgnoreCase))
+                {
+                    _npcPortrait = null;
+                    _portraitSmileRect = Rectangle.Empty;
+                    return;
+                }
+
+                var character = Game1.getCharacterFromName(_npcName);
+                _npcPortrait = (character?.Portrait != null && !character.Portrait.IsDisposed)
+                    ? character.Portrait
+                    : Game1.content.Load<Texture2D>("Portraits\\" + _npcName);
+
+                if (_npcPortrait != null)
+                {
+                    if (_npcPortrait.Width >= 128 && _npcPortrait.Height >= 64)
+                        _portraitSmileRect = new Rectangle(64, 0, 64, 64);
+                    else if (_npcPortrait.Width >= 64 && _npcPortrait.Height >= 128)
+                        _portraitSmileRect = new Rectangle(0, 64, 64, 64);
+                    else
+                        _portraitSmileRect = new Rectangle(0, 0, Math.Min(64, _npcPortrait.Width), Math.Min(64, _npcPortrait.Height));
+                }
+            }
+            catch
+            {
+                _npcPortrait = null;
+                _portraitSmileRect = Rectangle.Empty;
+            }
+        }
+
+        private void Layout()
+        {
+            _closeButton.bounds = new Rectangle(xPositionOnScreen + width - 50, yPositionOnScreen + 16, 36, 36);
+
+            int contentLeft = xPositionOnScreen + ContentPadding;
+            int listTop = yPositionOnScreen + HeaderH + 12;
+            int listBottom = yPositionOnScreen + height - FooterH;
+
+            // 顶栏右侧按钮排布：容量胶囊 + 清空归档按钮
+            const int clearBtnW = 105;
+            const int clearBtnH = 30;
+            const int pillW = 110;
+            const int pillH = 30;
+
+            int rightEdge = _closeButton.bounds.Left - 10;
+            _clearButtonRect = new Rectangle(rightEdge - clearBtnW, yPositionOnScreen + 20, clearBtnW, clearBtnH);
+            _capacityPillRect = new Rectangle(_clearButtonRect.Left - 8 - pillW, yPositionOnScreen + 20, pillW, pillH);
+
+            // 右侧滚动条区域
+            int arrowSize = 36;
+            int arrowX = xPositionOnScreen + width - ContentPadding - arrowSize + 4;
+
             _upArrow = new ClickableTextureComponent(
-                new Rectangle(xPositionOnScreen + width - 44, yPositionOnScreen + TopPadding, 40, 44),
-                Game1.mouseCursors, new Rectangle(421, 459, 11, 12), 3.5f);
-            _upArrowBaseScale = 3.5f;
+                new Rectangle(arrowX, listTop + 4, arrowSize, arrowSize),
+                Game1.mouseCursors, new Rectangle(421, 459, 11, 12), ArrowBaseScale);
 
             _downArrow = new ClickableTextureComponent(
-                new Rectangle(xPositionOnScreen + width - 44, yPositionOnScreen + height - BottomPadding, 40, 44),
-                Game1.mouseCursors, new Rectangle(421, 472, 11, 12), 3.5f);
-            _downArrowBaseScale = 3.5f;
+                new Rectangle(arrowX, listBottom - arrowSize - 4, arrowSize, arrowSize),
+                Game1.mouseCursors, new Rectangle(421, 472, 11, 12), ArrowBaseScale);
 
-            _scrollbarRunner = new Rectangle(
-                xPositionOnScreen + width - 30,
-                yPositionOnScreen + TopPadding + 46,
-                10,
-                height - TopPadding - BottomPadding - 68);
+            int trackY = _upArrow.bounds.Bottom + 6;
+            int trackH = _downArrow.bounds.Y - 6 - trackY;
+
+            _scrollbarRunner = new Rectangle(arrowX + (arrowSize - 8) / 2, trackY, 8, Math.Max(20, trackH));
 
             _scrollbar = new ClickableTextureComponent(
-                new Rectangle(_scrollbarRunner.X - 5, _scrollbarRunner.Y, 20, 36),
-                Game1.mouseCursors, new Rectangle(435, 463, 6, 10), 3.5f);
-
-            // 清空按钮布局：位于右上侧，滚动条左侧区域
-            int clearW = 76;
-            int clearH = 32;
-            int clearX = xPositionOnScreen + width - RightScrollArea - clearW;
-            int clearY = yPositionOnScreen + TopPadding - clearH - 6;
-            _clearButtonRect = new Rectangle(clearX, clearY, clearW, clearH);
-
-            RefreshEntries();
+                new Rectangle(_scrollbarRunner.X - 4, _scrollbarRunner.Y, 16, 32),
+                Game1.mouseCursors, new Rectangle(435, 463, 6, 10), ArrowBaseScale);
         }
 
         public void RefreshEntries()
@@ -158,15 +222,15 @@ namespace ValleytalkReborn
             _deleteButtons.Clear();
 
             int visibleCount = GetVisibleLineCount();
-            int delX = xPositionOnScreen + width - RightScrollArea - ButtonSize;
+            int delX = xPositionOnScreen + width - ContentPadding - RightScrollArea - ButtonSize;
             int restoreX = delX - ButtonGap - ButtonSize;
+            int listTop = yPositionOnScreen + HeaderH + 12;
 
             for (int i = 0; i < visibleCount && _startIndex + i < _cachedEntries.Count; i++)
             {
-                int rowY = yPositionOnScreen + TopPadding + 6 + i * LineHeight;
-                int btnY = rowY + (LineHeight - 4 - ButtonSize) / 2; // 垂直严格居中
+                int rowY = listTop + i * LineHeight;
+                int btnY = rowY + (LineHeight - 6 - ButtonSize) / 2;
 
-                // 还原按钮（使用贴图集中的 Restore 旋转撤回箭头）
                 var restoreBtn = new ClickableTextureComponent(
                     new Rectangle(restoreX, btnY, ButtonSize, ButtonSize),
                     ModEntry.CustomIcons,
@@ -177,7 +241,6 @@ namespace ValleytalkReborn
                 };
                 _restoreButtons.Add(restoreBtn);
 
-                // 删除按钮（使用贴图集中的 Trash 垃圾桶）
                 var delBtn = new ClickableTextureComponent(
                     new Rectangle(delX, btnY, ButtonSize, ButtonSize),
                     ModEntry.CustomIcons,
@@ -197,8 +260,12 @@ namespace ValleytalkReborn
             _startIndex = Math.Clamp(_startIndex, 0, maxStart);
         }
 
-        private int GetVisibleLineCount() =>
-            (height - TopPadding - BottomPadding) / LineHeight;
+        private int GetVisibleLineCount()
+        {
+            int listTop = yPositionOnScreen + HeaderH + 12;
+            int listBottom = yPositionOnScreen + height - FooterH;
+            return Math.Max(1, (listBottom - listTop) / LineHeight);
+        }
 
         private void SetScrollbarPosition()
         {
@@ -210,10 +277,25 @@ namespace ValleytalkReborn
             }
         }
 
+        public override void update(GameTime time)
+        {
+            base.update(time);
+            _hoverText = null;
+        }
+
+        public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
+        {
+            width = Math.Clamp(Game1.uiViewport.Width - 100, 820, MenuWidth);
+            height = Math.Clamp(Game1.uiViewport.Height - 80, 560, MenuHeight);
+            xPositionOnScreen = (Game1.uiViewport.Width - width) / 2;
+            yPositionOnScreen = (Game1.uiViewport.Height - height) / 2;
+            Layout();
+            RefreshEntries();
+        }
+
         public override void receiveScrollWheelAction(int direction)
         {
             base.receiveScrollWheelAction(direction);
-
             int maxLines = GetVisibleLineCount();
             if (direction > 0 && _startIndex > 0)
             {
@@ -242,7 +324,7 @@ namespace ValleytalkReborn
                 return;
             }
 
-            // 清空按钮点击：无数据时播放 cancel 提示音；有数据时弹出二次确认框
+            // 清空归档
             if (_clearButtonRect.Contains(x, y))
             {
                 if (_cachedEntries.Count == 0)
@@ -262,10 +344,7 @@ namespace ValleytalkReborn
                         RefreshEntries();
                         Game1.activeClickableMenu = this;
                     },
-                    _ =>
-                    {
-                        Game1.activeClickableMenu = this;
-                    });
+                    _ => Game1.activeClickableMenu = this);
                 return;
             }
 
@@ -278,6 +357,7 @@ namespace ValleytalkReborn
                 RefreshActionButtons();
                 return;
             }
+
             if (_downArrow.containsPoint(x, y) && _startIndex < Math.Max(0, _cachedEntries.Count - maxLines))
             {
                 _startIndex++;
@@ -290,12 +370,7 @@ namespace ValleytalkReborn
             if (_cachedEntries.Count > maxLines && (_scrollbarRunner.Contains(x, y) || _scrollbar.containsPoint(x, y)))
             {
                 _scrolling = true;
-                int yPos = Math.Max(_scrollbarRunner.Y, Math.Min(y, _scrollbarRunner.Bottom - _scrollbar.bounds.Height));
-                float pct = (float)(yPos - _scrollbarRunner.Y) / (_scrollbarRunner.Height - _scrollbar.bounds.Height);
-                _startIndex = (int)(pct * (_cachedEntries.Count - maxLines));
-                ClampStartIndex();
-                SetScrollbarPosition();
-                RefreshActionButtons();
+                UpdateScrollFromMouse(y);
                 return;
             }
 
@@ -307,6 +382,7 @@ namespace ValleytalkReborn
                     HandleRestore(_startIndex + i);
                     return;
                 }
+
                 if (i < _deleteButtons.Count && _deleteButtons[i].containsPoint(x, y))
                 {
                     HandleDelete(_startIndex + i);
@@ -315,19 +391,24 @@ namespace ValleytalkReborn
             }
         }
 
+        private void UpdateScrollFromMouse(int y)
+        {
+            int maxLines = GetVisibleLineCount();
+            int yPos = Math.Max(_scrollbarRunner.Y, Math.Min(y, _scrollbarRunner.Bottom - _scrollbar.bounds.Height));
+            float pct = (float)(yPos - _scrollbarRunner.Y) / (_scrollbarRunner.Height - _scrollbar.bounds.Height);
+            _startIndex = (int)(pct * (_cachedEntries.Count - maxLines));
+            ClampStartIndex();
+            SetScrollbarPosition();
+            RefreshActionButtons();
+        }
+
         public override void leftClickHeld(int x, int y)
         {
             base.leftClickHeld(x, y);
-
             int maxLines = GetVisibleLineCount();
             if (_scrolling && _cachedEntries.Count > maxLines)
             {
-                int yPos = Math.Max(_scrollbarRunner.Y, Math.Min(y, _scrollbarRunner.Bottom - _scrollbar.bounds.Height));
-                float pct = (float)(yPos - _scrollbarRunner.Y) / (_scrollbarRunner.Height - _scrollbar.bounds.Height);
-                _startIndex = (int)(pct * (_cachedEntries.Count - maxLines));
-                ClampStartIndex();
-                SetScrollbarPosition();
-                RefreshActionButtons();
+                UpdateScrollFromMouse(y);
             }
         }
 
@@ -343,7 +424,11 @@ namespace ValleytalkReborn
             {
                 Game1.playSound("bigDeSelect");
                 exitThisMenu();
+                return;
             }
+
+            if (!Game1.options.doesInputListContain(Game1.options.menuButton, key))
+                base.receiveKeyPress(key);
         }
 
         protected override void cleanupBeforeExit()
@@ -367,16 +452,16 @@ namespace ValleytalkReborn
                     break;
                 case MemoryOperationResult.CapacityFull:
                     Game1.playSound("cancel");
-                    Game1.addHUDMessage(new HUDMessage(I18n.Memory.AddFailedFull(MemoryManager.MaxMemoriesPerNpc), 3));
+                    Game1.addHUDMessage(new HUDMessage(I18n.Memory.AddFailedFull(MemoryManager.MaxMemoriesPerNpc), HUDMessage.error_type));
                     break;
                 case MemoryOperationResult.Duplicate:
                     Game1.playSound("cancel");
-                    Game1.addHUDMessage(new HUDMessage(I18n.Memory.ArchiveRestoreDuplicate(), 0));
+                    Game1.addHUDMessage(new HUDMessage(I18n.Memory.ArchiveRestoreDuplicate(), HUDMessage.error_type));
                     break;
                 case MemoryOperationResult.NotFound:
                 default:
                     Game1.playSound("cancel");
-                    Game1.addHUDMessage(new HUDMessage(I18n.Memory.ArchiveRestoreNotFound(), 0));
+                    Game1.addHUDMessage(new HUDMessage(I18n.Memory.ArchiveRestoreNotFound(), HUDMessage.error_type));
                     RefreshEntries();
                     break;
             }
@@ -385,7 +470,6 @@ namespace ValleytalkReborn
         private void HandleDelete(int i)
         {
             MemoryEntry entry = _cachedEntries[i];
-            // 弹窗确认提示采用常规正文字号进行宽度测量与截断
             string safeContent = CustomFontManager.TruncateString(entry.Content, CustomFontManager.SizeRegular, 320f);
             Game1.activeClickableMenu = new ConfirmationDialog(
                 I18n.Memory.ArchiveDeleteConfirm(safeContent),
@@ -396,224 +480,311 @@ namespace ValleytalkReborn
                     RefreshEntries();
                     Game1.activeClickableMenu = this;
                 },
-                _ =>
-                {
-                    Game1.activeClickableMenu = this;
-                });
+                _ => Game1.activeClickableMenu = this);
         }
+
+        // ── 渲染管线 ──────────────────────────────────────────────────────────
 
         public override void draw(SpriteBatch b)
         {
             int mx = Game1.getMouseX();
             int my = Game1.getMouseY();
 
-            // 背景遮罩
-            b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.45f);
+            // 1. 全屏半透明遮罩
+            b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.5f);
 
-            // 标准星露谷双层外边框与羊皮纸底框
-            IClickableMenu.drawTextureBox(b,
-                xPositionOnScreen - 16, yPositionOnScreen - 16,
-                width + 32, height + 32, Color.White);
-            IClickableMenu.drawTextureBox(b,
-                xPositionOnScreen - 8, yPositionOnScreen - 8,
-                width + 16, height + 16, Color.White);
-            Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, false, true);
+            // 2. 双层羊皮纸木框底板（无缝防黑边）
+            IClickableMenu.drawTextureBox(b, xPositionOnScreen - 8, yPositionOnScreen - 8, width + 16, height + 16, Color.White);
+            b.Draw(Game1.staminaRect, new Rectangle(xPositionOnScreen, yPositionOnScreen, width, height), new Color(245, 230, 205));
+            b.Draw(Game1.menuTexture, new Rectangle(xPositionOnScreen, yPositionOnScreen, width, height),
+                new Rectangle(64, 128, 64, 64), new Color(245, 230, 205));
 
-            // 标题（24f 整数大标题）
-            string title = _titleSource();
-            var titleSize = CustomFontManager.MeasureString(title, CustomFontManager.SizeTitle);
-            CustomFontManager.DrawString(b, title,
-                new Vector2(xPositionOnScreen + (width - titleSize.X) / 2f, yPositionOnScreen + 20),
-                Game1.textColor, CustomFontManager.SizeTitle);
+            DrawHeader(b, mx, my);
 
-            // 归档记录容量文本（15f 整数小字）
-            string countText = I18n.Memory.ArchiveCount(_cachedEntries.Count, _capacity);
-            var countSize = CustomFontManager.MeasureString(countText, CustomFontManager.SizeSmall);
-            Color countColor = _cachedEntries.Count >= NearFullThreshold
-                ? new Color(255, 175, 70)
-                : Color.Gray;
+            // 3. 归档记录列表
+            int maxLines = GetVisibleLineCount();
+            int listTop = yPositionOnScreen + HeaderH + 12;
 
-            CustomFontManager.DrawString(b, countText,
-                new Vector2(_clearButtonRect.X - 12 - countSize.X,
-                            _clearButtonRect.Y + (_clearButtonRect.Height - countSize.Y) / 2f),
-                countColor, CustomFontManager.SizeSmall);
-
-            // ─── 清空按钮（常态统一为木质样式，悬停一律高亮） ───
-            bool clearHover = _clearButtonRect.Contains(mx, my);
-            Color clearBg = clearHover ? new Color(255, 235, 205) : new Color(139, 90, 43);
-
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
-                new Rectangle(432, 439, 9, 9),
-                _clearButtonRect.X, _clearButtonRect.Y,
-                _clearButtonRect.Width, _clearButtonRect.Height,
-                clearBg, 4f, false);
-
-            string clearLabel = I18n.Memory.ArchiveClearButton();
-            var clearLabelSize = CustomFontManager.MeasureString(clearLabel, CustomFontManager.SizeRegular);
-            Vector2 clearTextPos = new Vector2(
-                _clearButtonRect.X + (_clearButtonRect.Width - clearLabelSize.X) / 2f,
-                _clearButtonRect.Y + (_clearButtonRect.Height - clearLabelSize.Y) / 2f);
-
-            CustomFontManager.DrawString(b, clearLabel, clearTextPos, clearHover ? Game1.textColor : Color.White, CustomFontManager.SizeRegular);
-
-            // 底部淘汰规则提示（15f 整数小字）
-            string ruleHint = _ruleHintSource();
-            var ruleHintSize = CustomFontManager.MeasureString(ruleHint, CustomFontManager.SizeSmall);
-            CustomFontManager.DrawString(b, ruleHint,
-                new Vector2(xPositionOnScreen + (width - ruleHintSize.X) / 2f, yPositionOnScreen + height - 56),
-                Color.Gray * 0.85f, CustomFontManager.SizeSmall);
-
-            // 关闭按钮
-            UiHelper.UpdateButtonScale(ref _closeButtonHoverScale, _closeButton, mx, my);
-            _closeButton.scale = _closeButtonBaseScale * _closeButtonHoverScale;
-            _closeButton.draw(b);
-
-            // 列表内容区域
             if (_cachedEntries.Count == 0)
             {
                 string emptyText = _emptySource();
-                var emptySize = CustomFontManager.MeasureString(emptyText, CustomFontManager.SizeRegular);
-
+                var emptySize = CustomFontManager.MeasureString(emptyText, ContentFontSize);
                 CustomFontManager.DrawString(
-                    b,
-                    emptyText,
-                    new Vector2(xPositionOnScreen + (width - emptySize.X) / 2f,
-                                yPositionOnScreen + TopPadding + 80),
-                    Color.Gray,
-                    CustomFontManager.SizeRegular);
+                    b, emptyText,
+                    new Vector2(xPositionOnScreen + (width - emptySize.X) / 2f, listTop + 100),
+                    BioEditorMenu.TextMuted, ContentFontSize);
             }
             else
             {
-                int visible = GetVisibleLineCount();
-                int delX = xPositionOnScreen + width - RightScrollArea - ButtonSize;
+                int visible = maxLines;
+                int delX = xPositionOnScreen + width - ContentPadding - RightScrollArea - ButtonSize;
                 int restoreX = delX - ButtonGap - ButtonSize;
 
-                float textStartX = xPositionOnScreen + LeftPadding + 8;
+                float textStartX = xPositionOnScreen + ContentPadding + 14;
                 float maxTextWidth = (restoreX - 16) - textStartX;
-
-                bool isLeftMouseDown = Mouse.GetState().LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
+                bool isLeftMouseDown = IsLeftMouseDown();
 
                 for (int vis = 0; vis < visible && _startIndex + vis < _cachedEntries.Count; vis++)
                 {
                     int i = _startIndex + vis;
-                    int rowY = yPositionOnScreen + TopPadding + 6 + vis * LineHeight;
+                    int rowY = listTop + vis * LineHeight;
                     var entry = _cachedEntries[i];
 
                     var cardRect = new Rectangle(
-                        xPositionOnScreen + LeftPadding,
+                        xPositionOnScreen + ContentPadding,
                         rowY,
-                        width - LeftPadding - RightScrollArea + 4,
-                        LineHeight - 4);
+                        width - (ContentPadding * 2) - RightScrollArea + 8,
+                        LineHeight - 6);
 
                     bool isHovered = cardRect.Contains(mx, my);
-                    Color rowBg = isHovered ? new Color(70, 130, 180) * 0.18f : new Color(0, 0, 0) * 0.12f;
-                    b.Draw(Game1.staminaRect, cardRect, rowBg);
 
+                    // 卡片底层微阴影
+                    b.Draw(Game1.staminaRect, new Rectangle(cardRect.X + 1, cardRect.Y + 2, cardRect.Width, cardRect.Height), Color.Black * 0.08f);
+
+                    // 温润羊皮纸卡片底衬
+                    Color cardBg = isHovered ? new Color(255, 248, 236) : new Color(250, 242, 230);
+                    Color borderCol = isHovered ? new Color(210, 160, 60) : new Color(225, 205, 175);
+
+                    b.Draw(Game1.staminaRect, new Rectangle(cardRect.X + 1, cardRect.Y + 1, cardRect.Width - 2, cardRect.Height - 2), cardBg);
+                    IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
+                        cardRect.X, cardRect.Y, cardRect.Width, cardRect.Height, borderCol, 2f, false);
+
+                    // 类别角标与文本渲染
                     bool isRule = entry.Category == MemoryCategory.Behavior;
                     string tag = isRule ? I18n.Memory.RuleTag() : I18n.Memory.MemoryTag();
-                    Color contentColor = entry.Source == "Auto" ? new Color(130, 150, 170) : Game1.textColor;
+                    Color contentColor = entry.Source == "Auto" ? BioEditorMenu.TextSecondary : BioEditorMenu.TextPrimary;
 
-                    // 第一行：记忆文本（18f 规整正文）
+                    // 第一行：正文（18f Medium）
                     string content = $"{i + 1}. {tag}{entry.Content}";
-                    content = CustomFontManager.TruncateString(content, CustomFontManager.SizeRegular, maxTextWidth);
-                    CustomFontManager.DrawString(b, content,
-                        new Vector2(textStartX, rowY + 6),
-                        contentColor, CustomFontManager.SizeRegular);
+                    content = CustomFontManager.TruncateString(content, ContentFontSize, maxTextWidth);
+                    CustomFontManager.DrawString(b, content, new Vector2(textStartX, rowY + 8), contentColor, ContentFontSize);
 
-                    // 第二行：时间戳与预警（15f 规整小字）
+                    // 第二行：时间戳（15f Medium，TextMuted）
                     string time = entry.ArchivedAt != default
                         ? entry.ArchivedAt.ToString("yyyy-MM-dd HH:mm")
                         : entry.CreatedAt.ToString("yyyy-MM-dd HH:mm");
 
-                    CustomFontManager.DrawString(b, time,
-                        new Vector2(textStartX, rowY + 34),
-                        Color.Gray * 0.85f, CustomFontManager.SizeSmall);
+                    CustomFontManager.DrawString(b, time, new Vector2(textStartX, rowY + 34), BioEditorMenu.TextMuted, TipFontSize);
 
+                    // 濒危被淘汰预警标
                     if (_cachedEntries.Count >= _capacity && i == _cachedEntries.Count - 1)
                     {
-                        float timeWidth = CustomFontManager.MeasureString(time, CustomFontManager.SizeSmall).X;
+                        float timeWidth = CustomFontManager.MeasureString(time, TipFontSize).X;
                         string endangeredTag = $"  •  {I18n.Memory.ArchiveEndangeredTag()}";
                         CustomFontManager.DrawString(b, endangeredTag,
                             new Vector2(textStartX + timeWidth, rowY + 34),
-                            new Color(235, 95, 75), CustomFontManager.SizeSmall);
+                            BioEditorMenu.TextDanger, TipFontSize);
                     }
 
-                    // 右侧操作按钮
+                    // 右侧动作按钮（Restore & Delete）
                     if (vis < _restoreButtons.Count)
                     {
                         var btn = _restoreButtons[vis];
-                        bool isPressed = isLeftMouseDown && btn.containsPoint(mx, my);
+                        bool isBtnHover = btn.containsPoint(mx, my);
+                        bool isPressed = isLeftMouseDown && isBtnHover;
+                        DrawRowIconButton(b, btn, isPressed, isBtnHover);
                         IconSource.DrawButton(b, btn, isPressed);
                     }
 
                     if (vis < _deleteButtons.Count)
                     {
                         var btn = _deleteButtons[vis];
-                        bool isPressed = isLeftMouseDown && btn.containsPoint(mx, my);
+                        bool isBtnHover = btn.containsPoint(mx, my);
+                        bool isPressed = isLeftMouseDown && isBtnHover;
+                        DrawRowIconButton(b, btn, isPressed, isBtnHover);
                         IconSource.DrawButton(b, btn, isPressed);
                     }
                 }
 
-                // 滚动条与上下翻页
+                // 4. 滚动条与翻页箭头
                 if (_cachedEntries.Count > visible)
                 {
                     UiHelper.UpdateButtonScale(ref _upArrowHoverScale, _upArrow, mx, my);
                     UiHelper.UpdateButtonScale(ref _downArrowHoverScale, _downArrow, mx, my);
 
-                    _upArrow.scale = _upArrowBaseScale * _upArrowHoverScale;
-                    _downArrow.scale = _downArrowBaseScale * _downArrowHoverScale;
+                    _upArrow.scale = ArrowBaseScale * _upArrowHoverScale;
+                    _downArrow.scale = ArrowBaseScale * _downArrowHoverScale;
 
                     _upArrow.draw(b);
                     _downArrow.draw(b);
 
-                    IClickableMenu.drawTextureBox(b, Game1.mouseCursors,
-                        new Rectangle(403, 383, 6, 6),
-                        _scrollbarRunner.X, _scrollbarRunner.Y,
-                        _scrollbarRunner.Width, _scrollbarRunner.Height,
-                        Color.White, 4f, false);
+                    // 暖木色滑轨（彻底告别冷灰 403 槽）
+                    b.Draw(Game1.staminaRect, _scrollbarRunner, new Color(230, 218, 202));
+                    IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
+                        _scrollbarRunner.X - 1, _scrollbarRunner.Y - 1, _scrollbarRunner.Width + 2, _scrollbarRunner.Height + 2,
+                        new Color(215, 195, 165), 1f, false);
 
                     SetScrollbarPosition();
                     _scrollbar.draw(b);
                 }
             }
 
-            // 关闭按钮 Tooltip
+            // 5. 底部淘汰规则提示语（15f Medium，TextMuted）
+            string ruleHint = _ruleHintSource();
+            var ruleHintSize = CustomFontManager.MeasureString(ruleHint, TipFontSize);
+            CustomFontManager.DrawString(b, ruleHint,
+                new Vector2(xPositionOnScreen + (width - ruleHintSize.X) / 2f, yPositionOnScreen + height - 36),
+                BioEditorMenu.TextMuted, TipFontSize);
+
+            // 6. Tooltip 悬停提示
             if (_closeButton.containsPoint(mx, my))
+                _hoverText = _closeButton.hoverText;
+            else if (_clearButtonRect.Contains(mx, my) && _cachedEntries.Count > 0)
+                _hoverText = "【清空全部归档】\n永久清除当前角色所有的归档记忆，释放存储空间。";
+            else
             {
-                DrawHoverTextCustom(b, _closeButton.hoverText);
+                for (int i = 0; i < _restoreButtons.Count; i++)
+                {
+                    if (_restoreButtons[i].containsPoint(mx, my))
+                    {
+                        _hoverText = _restoreButtons[i].hoverText;
+                        break;
+                    }
+                    if (i < _deleteButtons.Count && _deleteButtons[i].containsPoint(mx, my))
+                    {
+                        _hoverText = _deleteButtons[i].hoverText;
+                        break;
+                    }
+                }
             }
 
-            // 还原/删除按钮 Tooltip
-            for (int i = 0; i < _restoreButtons.Count; i++)
-            {
-                if (_restoreButtons[i].containsPoint(mx, my))
-                {
-                    DrawHoverTextCustom(b, _restoreButtons[i].hoverText);
-                    break;
-                }
-                if (i < _deleteButtons.Count && _deleteButtons[i].containsPoint(mx, my))
-                {
-                    DrawHoverTextCustom(b, _deleteButtons[i].hoverText);
-                    break;
-                }
-            }
+            if (!string.IsNullOrEmpty(_hoverText))
+                DrawHoverTextCustom(b, _hoverText);
 
-            base.draw(b);
             drawMouse(b);
         }
 
-        /// <summary>
-        /// 悬浮提示的自定义矢量渲染：使用整数字阶 SizeRegular (18f)
-        /// </summary>
+        private void DrawHeader(SpriteBatch b, int mx, int my)
+        {
+            int headX = xPositionOnScreen + ContentPadding;
+            int headY = yPositionOnScreen + 14;
+
+            // 肖像框
+            const int pSize = 44;
+            var portraitRect = new Rectangle(headX, headY, pSize, pSize);
+
+            b.Draw(Game1.staminaRect, new Rectangle(portraitRect.X - 1, portraitRect.Y - 1, portraitRect.Width + 2, portraitRect.Height + 2), new Color(225, 210, 185));
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6),
+                portraitRect.X - 2, portraitRect.Y - 2, portraitRect.Width + 4, portraitRect.Height + 4,
+                new Color(200, 175, 140), 2f, false);
+
+            if (_npcPortrait != null && !_portraitSmileRect.IsEmpty)
+            {
+                b.Draw(_npcPortrait, portraitRect, _portraitSmileRect, Color.White);
+            }
+            else
+            {
+                string avatarFallback = string.IsNullOrEmpty(_npcName) ? "?" : (string.Equals(_npcName, "WORLD", StringComparison.OrdinalIgnoreCase) ? "🌐" : _npcName.Substring(0, 1));
+                var fsz = CustomFontManager.MeasureStringBold(avatarFallback, TitleFontSize);
+                CustomFontManager.DrawStringBold(b, avatarFallback,
+                    new Vector2(portraitRect.X + (pSize - fsz.X) / 2f, portraitRect.Y + (pSize - fsz.Y) / 2f - 1),
+                    BioEditorMenu.TextMuted, TitleFontSize);
+            }
+
+            // 大标题（24f Bold，TextPrimary）
+            string title = _titleSource();
+            CustomFontManager.DrawStringBold(b, title, new Vector2(headX + pSize + 12, headY + 2), BioEditorMenu.TextPrimary, TitleFontSize);
+
+            // 副标题说明
+            const string subtitle = "浏览、还原或彻底删除被淘汰置换的历史记忆。";
+            CustomFontManager.DrawString(b, subtitle, new Vector2(headX + pSize + 14, headY + 30), BioEditorMenu.TextMuted, TipFontSize);
+
+            // 容量胶囊
+            string countText = I18n.Memory.ArchiveCount(_cachedEntries.Count, _capacity);
+            bool isNearFull = _cachedEntries.Count >= NearFullThreshold;
+            DrawCapacityBadge(b, _capacityPillRect, countText, isNearFull);
+
+            // 清空按钮（标准动作按钮，危险红风格，支持按压下沉）
+            string clearLabel = I18n.Memory.ArchiveClearButton();
+            DrawActionButton(b, _clearButtonRect, clearLabel, mx, my, isDanger: true, isEnabled: _cachedEntries.Count > 0);
+
+            // 分割横线
+            int sepY = yPositionOnScreen + HeaderH + 4;
+            b.Draw(Game1.staminaRect, new Rectangle(xPositionOnScreen + ContentPadding, sepY, width - ContentPadding * 2, 2), Color.Gray * 0.35f);
+
+            // 关闭按钮平滑缩放
+            UiHelper.UpdateButtonScale(ref _closeButtonHoverScale, _closeButton, mx, my);
+            _closeButton.scale = CloseButtonBaseScale * _closeButtonHoverScale;
+            _closeButton.draw(b);
+        }
+
+        private static void DrawCapacityBadge(SpriteBatch b, Rectangle rect, string text, bool isNearFull)
+        {
+            Color bg = isNearFull ? new Color(255, 235, 215) : new Color(248, 240, 226);
+            Color borderCol = isNearFull ? BioEditorMenu.TextWarning : new Color(225, 205, 175);
+            Color textCol = isNearFull ? BioEditorMenu.TextWarning : BioEditorMenu.TextSecondary;
+
+            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1, rect.Y + 1, rect.Width - 2, rect.Height - 2), bg);
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
+                rect.X, rect.Y, rect.Width, rect.Height, borderCol, 2f, false);
+
+            var sz = CustomFontManager.MeasureString(text, TipFontSize);
+            CustomFontManager.DrawString(b, text,
+                new Vector2(rect.X + (rect.Width - sz.X) / 2f, rect.Y + (rect.Height - sz.Y) / 2f - 1),
+                textCol, TipFontSize);
+        }
+
+        private static void DrawRowIconButton(SpriteBatch b, ClickableTextureComponent btn, bool isPressed, bool isHover)
+        {
+            var r = btn.bounds;
+            int pressOffset = isPressed ? 1 : 0;
+            var drawRect = new Rectangle(r.X + pressOffset, r.Y + pressOffset, r.Width, r.Height);
+
+            Color bg = isPressed ? new Color(230, 210, 185) : (isHover ? new Color(255, 242, 220) : new Color(245, 232, 212));
+            Color borderCol = isHover ? new Color(210, 160, 60) : new Color(225, 205, 175);
+
+            b.Draw(Game1.staminaRect, new Rectangle(drawRect.X + 1, drawRect.Y + 1, drawRect.Width - 2, drawRect.Height - 2), bg);
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
+                drawRect.X, drawRect.Y, drawRect.Width, drawRect.Height, borderCol, 1.6f, false);
+        }
+
+        private static bool IsLeftMouseDown()
+        {
+            try { return Game1.input.GetMouseState().LeftButton == ButtonState.Pressed; }
+            catch { return false; }
+        }
+
+        private static void DrawActionButton(SpriteBatch b, Rectangle rect, string label, int mx, int my,
+            bool isDanger = false, bool isPrimary = false, bool isEnabled = true)
+        {
+            bool isHover = isEnabled && rect.Contains(mx, my);
+            bool isPressed = isHover && IsLeftMouseDown();
+
+            Color bg;
+            if (!isEnabled) bg = Color.LightGray * 0.6f;
+            else if (isPrimary) bg = isHover ? Color.Gold : new Color(255, 220, 130);
+            else if (isDanger) bg = isHover ? new Color(245, 105, 105) : new Color(210, 85, 80);
+            else bg = isHover ? new Color(255, 240, 215) : new Color(225, 195, 155);
+
+            int pressOffset = isPressed ? 1 : 0;
+            if (isPressed) bg = Color.Lerp(bg, Color.Black, 0.14f);
+
+            if (!isPressed)
+                b.Draw(Game1.staminaRect, new Rectangle(rect.X + 2, rect.Y + 2, rect.Width, rect.Height), Color.Black * 0.15f);
+
+            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1 + pressOffset, rect.Y + 1 + pressOffset, rect.Width - 2, rect.Height - 2), bg);
+
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
+                rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height,
+                isPrimary ? new Color(210, 160, 60) : (isDanger ? new Color(175, 60, 55) : new Color(185, 150, 110)), 2.5f, false);
+
+            Color textCol = !isEnabled ? BioEditorMenu.TextMuted
+                          : isDanger ? BioEditorMenu.TextOnDarkBtn
+                          : BioEditorMenu.TextOnLightBtn;
+
+            var sz = CustomFontManager.MeasureStringBold(label, ButtonFontSize);
+            CustomFontManager.DrawStringBold(b, label,
+                new Vector2(rect.X + pressOffset + (rect.Width - sz.X) / 2f, rect.Y + pressOffset + (rect.Height - sz.Y) / 2f),
+                textCol, ButtonFontSize);
+        }
+
         private static void DrawHoverTextCustom(SpriteBatch b, string text)
         {
             if (string.IsNullOrEmpty(text)) return;
 
-            var sz = CustomFontManager.MeasureString(text, CustomFontManager.SizeRegular);
-
-            // ── 宽裕舒展的内边距，彻底告别压迫感 ──
-            const int padX = 20; 
-            const int padY = 12; 
+            var sz = CustomFontManager.MeasureString(text, TipFontSize);
+            const int padX = 20;
+            const int padY = 12;
 
             int boxW = (int)MathF.Ceiling(sz.X) + padX * 2;
             int boxH = (int)MathF.Ceiling(sz.Y) + padY * 2;
@@ -622,34 +793,24 @@ namespace ValleytalkReborn
             int y = Game1.getOldMouseY() + 24;
             var safe = Utility.getSafeArea();
 
-            // 屏幕边缘自动翻折避让
-            if (x + boxW > safe.Right)
-                x = safe.Right - boxW;
+            if (x + boxW > safe.Right) x = safe.Right - boxW;
             if (y + boxH > safe.Bottom)
             {
                 x += 16;
-                if (x + boxW > safe.Right)
-                    x = safe.Right - boxW;
+                if (x + boxW > safe.Right) x = safe.Right - boxW;
                 y = safe.Bottom - boxH;
             }
-            if (x < safe.Left)
-                x = safe.Left;
-            if (y < safe.Top)
-                y = safe.Top;
+            if (x < safe.Left) x = safe.Left;
+            if (y < safe.Top) y = safe.Top;
 
-            // 1. 原版像素软阴影（0.65f 比例）
             IClickableMenu.drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
                 x + 4, y + 4, boxW, boxH, Color.Black * 0.28f, 0.65f, false);
 
-            // 2. 星露谷原版暖白/浅亮羊皮纸底框（解决厚重感，保留细腻像素边角）
             IClickableMenu.drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
                 x, y, boxW, boxH, new Color(255, 255, 250), 0.65f, false);
 
-            // 3. 提示文字（根据测算文本高度精准垂直居中）
             float textY = y + (boxH - sz.Y) / 2f - 1;
-            CustomFontManager.DrawString(b, text, 
-                new Vector2(x + padX, textY), 
-                Game1.textColor, CustomFontManager.SizeRegular);
+            CustomFontManager.DrawString(b, text, new Vector2(x + padX, textY), BioEditorMenu.TextPrimary, TipFontSize);
         }
     }
 }
