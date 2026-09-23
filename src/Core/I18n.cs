@@ -169,14 +169,6 @@ namespace ValleytalkReborn
                 .Replace("{{0}}", val);
         }
 
-        public static string MemoryCharacterLimit()
-        {
-            var maxLen = MemoryManager.Instance.GetMaxMemoryLength();
-            return Lookup("Memory.CharacterLimit")
-                .Replace("{{value}}", maxLen.ToString())
-                .Replace("{{0}}", maxLen.ToString());
-        }
-
         public static string ResponseStart() => Lookup("responseStart");
         public static string Get(string key) => Lookup(key);
 
@@ -211,9 +203,6 @@ namespace ValleytalkReborn
 
             // ── 与 Memory.* 解耦的时间线专属文案（此前与 ScrollableMemoryMenu/IntegratedHubMenu 共用）──
             public static string CloseButton() => Lookup("Timeline.CloseButton");
-
-            public static string DeleteConfirm(string content) =>
-                Lookup("Timeline.DeleteConfirm").Replace("{{content}}", content ?? string.Empty);
 
             public static string DeleteConfirmTitle() => Lookup("Timeline.DeleteConfirmTitle");
             public static string DeleteConfirmSubtitle() => Lookup("Timeline.DeleteConfirmSubtitle");
@@ -283,16 +272,12 @@ namespace ValleytalkReborn
         public static class Hub
         {
             public static string Title() => Lookup("Hub.Title");
-            public static string SelectNpcLabel() => Lookup("Hub.SelectNpcLabel");
             public static string TabRules() => Lookup("Hub.TabRules");
-            public static string TabNpcMemory() => Lookup("Hub.TabNpcMemory");
-            public static string TabWorldMemory() => Lookup("Hub.TabWorldMemory");
             public static string TabProfile() => Lookup("Hub.TabProfile");
             public static string TabAdvanced() => Lookup("Hub.TabAdvanced");
             public static string TabWorldSettings() => Lookup("Hub.TabWorldSettings");
             public static string ScopeAll() => Lookup("Hub.ScopeAll");
             public static string ScopeGlobal() => Lookup("Hub.ScopeGlobal");
-            public static string ScopeNpc() => Lookup("Hub.ScopeNpc");
         }
 
         // =========================================================================
@@ -300,10 +285,8 @@ namespace ValleytalkReborn
         // =========================================================================
         public static class Profile
         {
-            public static string MenuTitle() => Lookup("Profile.MenuTitle");
             public static string EnableProfile() => Lookup("Profile.EnableProfile");
             public static string OrientationLabel() => Lookup("Profile.OrientationLabel");
-            public static string SelectOption() => Lookup("Profile.SelectOption");
             public static string OrientationNone() => Lookup("Profile.Orientation.None");
             public static string OrientationHeterosexual() => Lookup("Profile.Orientation.Heterosexual");
             public static string OrientationHomosexual() => Lookup("Profile.Orientation.Homosexual");
@@ -321,7 +304,6 @@ namespace ValleytalkReborn
             public static string SavedHud() => Lookup("Profile.SavedHud");
 
             // Backward compatibility (used by DialogueTextInputMenu.cs)
-            public static string ButtonHover() => Lookup("Profile.ButtonHover");
         }
 
         // =========================================================================
@@ -329,7 +311,6 @@ namespace ValleytalkReborn
         // =========================================================================
         public static class AdvancedSettings
         {
-            public static string MenuTitle() => Lookup("AdvancedSettings.MenuTitle");
             public static string InfiniteChat() => Lookup("AdvancedSettings.InfiniteChat");
             public static string InfiniteChatTooltip() => Lookup("AdvancedSettings.InfiniteChatTooltip");
             public static string VanillaFirst() => Lookup("AdvancedSettings.VanillaFirst");
@@ -344,7 +325,6 @@ namespace ValleytalkReborn
             public static string Disclaimer() => Lookup("AdvancedSettings.Disclaimer");
 
             // Backward compatibility (used by DialogueTextInputMenu.cs)
-            public static string ButtonHover() => Lookup("AdvancedSettings.ButtonHover");
         }
 
         // =========================================================================
@@ -357,52 +337,10 @@ namespace ValleytalkReborn
             public static string PoiTuning() => Lookup("WorldSettings.PoiTuning");
 
             // T4 约会氛围工坊子页
-            public static string NameZh() => Lookup("WorldSettings.DateAmbience.NameZh");
-            public static string NameEn() => Lookup("WorldSettings.DateAmbience.NameEn");
-            public static string TargetMap() => Lookup("WorldSettings.DateAmbience.TargetMap");
-            public static string RequiredHearts() => Lookup("WorldSettings.DateAmbience.RequiredHearts");
-            public static string StartTime() => Lookup("WorldSettings.DateAmbience.StartTime");
-            public static string EndTime() => Lookup("WorldSettings.DateAmbience.EndTime");
-            public static string AllowRainyDays() => Lookup("WorldSettings.DateAmbience.AllowRainyDays");
-            public static string DescZh() => Lookup("WorldSettings.DateAmbience.DescZh");
-            public static string DescEn() => Lookup("WorldSettings.DateAmbience.DescEn");
-            public static string Save() => Lookup("WorldSettings.DateAmbience.Save");
-            public static string RevertThis() => Lookup("WorldSettings.DateAmbience.RevertThis");
-            public static string DeleteThis() => Lookup("WorldSettings.DateAmbience.DeleteThis");
-            public static string NewCustom() => Lookup("WorldSettings.DateAmbience.NewCustom");
-            public static string Saved() => Lookup("WorldSettings.DateAmbience.Saved");
 
             // T6c 地点与节日编撰子页
-            public static string LocationDescription() => Lookup("WorldSettings.LocationFestival.LocationDescription");
-            public static string Festival() => Lookup("WorldSettings.LocationFestival.Festival");
-            public static string Season() => Lookup("WorldSettings.LocationFestival.Season");
-            public static string Day() => Lookup("WorldSettings.LocationFestival.Day");
-            public static string FestivalNameZh() => Lookup("WorldSettings.LocationFestival.NameZh");
-            public static string FestivalNameEn() => Lookup("WorldSettings.LocationFestival.NameEn");
-            public static string FestivalDescZh() => Lookup("WorldSettings.LocationFestival.DescZh");
-            public static string FestivalDescEn() => Lookup("WorldSettings.LocationFestival.DescEn");
-            public static string SaveFestival() => Lookup("WorldSettings.LocationFestival.Save");
-            public static string RevertThisLoc() => Lookup("WorldSettings.LocationFestival.RevertThisLoc");
-            public static string DeleteFestival() => Lookup("WorldSettings.LocationFestival.Delete");
-            public static string NewCustomFestival() => Lookup("WorldSettings.LocationFestival.NewCustom");
-            public static string SavedLoc() => Lookup("WorldSettings.LocationFestival.Saved");
-            public static string VanillaCoexistWarning() => Lookup("WorldSettings.LocationFestival.VanillaCoexistWarning");
 
             // T7 兴趣点调谐子页
-            public static string Capture() => Lookup("WorldSettings.PoiTuning.Capture");
-            public static string Captured() => Lookup("WorldSettings.PoiTuning.Captured");
-            public static string NoTileCaptured() => Lookup("WorldSettings.PoiTuning.NoTileCaptured");
-            public static string NewPoi() => Lookup("WorldSettings.PoiTuning.NewPoi");
-            public static string DeletePoi() => Lookup("WorldSettings.PoiTuning.Delete");
-            public static string Teleport() => Lookup("WorldSettings.PoiTuning.Teleport");
-            public static string WeightsPerNpc() => Lookup("WorldSettings.PoiTuning.WeightsPerNpc");
-            public static string SelectNpcFirst() => Lookup("WorldSettings.PoiTuning.SelectNpcFirst");
-            public static string NewDescZh() => Lookup("WorldSettings.PoiTuning.NewDescZh");
-            public static string NewDescEn() => Lookup("WorldSettings.PoiTuning.NewDescEn");
-            public static string SaveWeights() => Lookup("WorldSettings.PoiTuning.Save");
-            public static string RevertNpc() => Lookup("WorldSettings.PoiTuning.RevertNpc");
-            public static string SavedPoi() => Lookup("WorldSettings.PoiTuning.Saved");
-            public static string VanillaPoiCoexist() => Lookup("WorldSettings.PoiTuning.VanillaCoexistWarning");
         }
 
         // =========================================================================
@@ -411,42 +349,17 @@ namespace ValleytalkReborn
         public static class Memory
         {
             // Shell & Navigation for ScrollableMemoryMenu
-            public static string MenuTitle() => Lookup("Memory.MenuTitle");
-            public static string TabNpc(string name) => FormatNpc(Lookup("Memory.TabNpc"), name);
-            public static string TabWorld() => Lookup("Memory.TabWorld");
-            public static string Empty() => Lookup("Memory.Empty");
-            public static string WorldEmpty() => Lookup("Memory.WorldEmpty");
 
             // Buttons & Hovers
-            public static string AddButton() => Lookup("Memory.AddButton");
-            public static string AddWorldButton() => Lookup("Memory.AddWorldButton");
             public static string CloseButton() => Lookup("Memory.CloseButton");
-            public static string EditButtonHover() => Lookup("Memory.EditButtonHover");
-            public static string DeleteButtonHover() => Lookup("Memory.DeleteButtonHover");
 
             // Add/Edit Dialogs
             public static string AddTitle(string name) => FormatNpc(Lookup("Memory.AddTitle"), name);
             public static string EditTitle(string name) => FormatNpc(Lookup("Memory.EditTitle"), name);
-            public static string AddHint(string npcName) => FormatNpc(Lookup("Memory.AddHint"), npcName);
-            public static string WorldAddTitle() => Lookup("Memory.WorldAddTitle");
-            public static string WorldEditTitle() => Lookup("Memory.WorldEditTitle");
-
-            public static string WorldAddHint(int max) =>
-                Lookup("Memory.WorldAddHint").Replace("{{max}}", max.ToString());
 
             // Tags & Categories
-            public static string RuleTag() => Lookup("Memory.RuleTag");
-            public static string MemoryTag() => Lookup("Memory.MemoryTag");
-            public static string WorldScopeTag() => Lookup("Memory.WorldScopeTag");
-            public static string CapsulePermanent() => Lookup("Memory.CapsulePermanent");
-            public static string CapsuleExpired() => Lookup("Memory.CapsuleExpired");
-            public static string CapsuleDaysLeft(int days) =>
-                Lookup("Memory.CapsuleDaysLeft").Replace("{0}", days.ToString());
-            public static string AutoPrefix() => Lookup("Memory.AutoPrefix");
             public static string CategoryFactLabel() => Lookup("Memory.CategoryFactLabel");
             public static string CategoryBehaviorLabel() => Lookup("Memory.CategoryBehaviorLabel");
-            public static string CategoryFactHint() => Lookup("Memory.CategoryFactHint");
-            public static string CategoryBehaviorHint() => Lookup("Memory.CategoryBehaviorHint");
 
             // Result HUD Messages
             public static string AddFailedFull(int max) =>
@@ -454,23 +367,10 @@ namespace ValleytalkReborn
 
             public static string AddFailedDuplicate() => Lookup("Memory.AddFailedDuplicate");
 
-            public static string AddFailedTooLong(int max) =>
-                Lookup("Memory.AddFailedTooLong").Replace("{{max}}", max.ToString());
-
-            public static string DeleteConfirm(string content) =>
-                Lookup("Memory.DeleteConfirm").Replace("{{content}}", content ?? string.Empty);
-
             // Callsigns
-            public static string CallsignPrefix() => Lookup("Memory.CallsignPrefix");
-            public static string CallsignUnset() => Lookup("Memory.CallsignUnset");
             public static string CallsignTitle(string npcName) => FormatNpc(Lookup("Memory.CallsignTitle"), npcName);
-            public static string CallsignHint() => Lookup("Memory.CallsignHint");
 
             // Archive Box
-            public static string ArchiveButton(int count, int max)
-                => Lookup("Memory.ArchiveButton").Replace("{{count}}", count.ToString())
-                    .Replace("{{max}}", max.ToString());
-
             public static string ArchiveTitle(string npcName) => FormatNpc(Lookup("Memory.ArchiveTitle"), npcName);
             public static string ArchiveEmpty() => Lookup("Memory.ArchiveEmpty");
 
@@ -480,9 +380,6 @@ namespace ValleytalkReborn
 
             public static string ArchiveRestoreButton() => Lookup("Memory.ArchiveRestoreButton");
             public static string ArchiveDeleteButton() => Lookup("Memory.ArchiveDeleteButton");
-
-            public static string ArchiveDeleteConfirm(string content) => Lookup("Memory.ArchiveDeleteConfirm")
-                .Replace("{{content}}", content ?? string.Empty);
 
             public static string ArchiveDeleteConfirmTitle() => Lookup("Memory.ArchiveDeleteConfirmTitle");
             public static string ArchiveDeleteConfirmSubtitle() => Lookup("Memory.ArchiveDeleteConfirmSubtitle");
@@ -497,16 +394,6 @@ namespace ValleytalkReborn
             public static string ArchiveClearButton() => Lookup("Memory.ArchiveClearButton");
 
             // 新增：实体按钮悬停提示文案（带回退保护）
-            public static string ArchiveClearHover()
-            {
-                var text = Lookup("Memory.ArchiveClearHover");
-                return (string.IsNullOrEmpty(text) || text == "Memory.ArchiveClearHover")
-                    ? ArchiveClearButton()
-                    : text;
-            }
-
-            public static string ArchiveClearConfirm(int count) =>
-                Lookup("Memory.ArchiveClearConfirm").Replace("{{count}}", count.ToString());
 
             public static string ArchiveClearConfirmTitle() => Lookup("Memory.ArchiveClearConfirmTitle");
 
@@ -518,22 +405,15 @@ namespace ValleytalkReborn
             public static string ArchiveEndangeredTag() => Lookup("Memory.ArchiveEndangeredTag");
 
             // 2-Column Distill Menu (MemoryDistillMenu.cs)
-            public static string DistillTitle(string npcName) => FormatNpc(Lookup("Memory.DistillTitle"), npcName);
-            public static string DistillButton() => Lookup("Memory.DistillButton");
-            public static string DistillLoading() => Lookup("Memory.DistillLoading");
             public static string DistillFailed() => Lookup("Memory.DistillFailed");
             public static string DistillEmpty() => Lookup("Memory.DistillEmpty");
 
             public static string DistillNoHistory(string npcName) =>
                 FormatNpc(Lookup("Memory.DistillNoHistory"), npcName);
 
-            public static string DistillLeftTitle() => Lookup("Memory.DistillLeftTitle");
-            public static string DistillRightTitle() => Lookup("Memory.DistillRightTitle");
             public static string DistillDuplicate() => Lookup("Memory.DistillDuplicate");
-            public static string DistillLlmDisabled() => Lookup("Memory.DistillLlmDisabled");
 
             // Backward compatibility (used by DialogueTextInputMenu.cs)
-            public static string ButtonHover(string name) => FormatNpc(Lookup("Memory.ButtonHover"), name);
         }
 
         public static class DialogueInput
@@ -542,19 +422,6 @@ namespace ValleytalkReborn
 
             public static string DefaultTitleWithNpc(string npcName) =>
                 FormatNpc(Lookup("DialogueInput.DefaultTitleWithNpc"), npcName);
-
-            public static string Instruction() => Lookup("DialogueInput.Instruction");
-
-            public static string ClearHistoryHover(string npcName) =>
-                FormatNpc(Lookup("DialogueInput.ClearHistoryHover"), npcName);
-
-            public static string ViewHistoryHover(string npcName) =>
-                FormatNpc(Lookup("DialogueInput.ViewHistoryHover"), npcName);
-
-            public static string ClearAllConfirm() => Lookup("DialogueInput.ClearAllConfirm");
-
-            public static string ClearOneConfirm(string npcName) =>
-                FormatNpc(Lookup("DialogueInput.ClearOneConfirm"), npcName);
 
             public static string ClearScopeTitle() => Lookup("DialogueInput.ClearScopeTitle");
             public static string ClearScopeHint() => Lookup("DialogueInput.ClearScopeHint");
@@ -575,11 +442,6 @@ namespace ValleytalkReborn
 
             public static string ClearScopeHudGlobalAll() => Lookup("DialogueInput.ClearScopeHudGlobalAll");
 
-            public static string HistoryTitle(string npcName) =>
-                FormatNpc(Lookup("DialogueInput.HistoryTitle"), npcName);
-
-            public static string HistoryEmpty(string npcName) =>
-                FormatNpc(Lookup("DialogueInput.HistoryEmpty"), npcName);
         }
 
         public static class Follower
