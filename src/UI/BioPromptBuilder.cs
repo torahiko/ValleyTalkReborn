@@ -12,6 +12,27 @@ namespace ValleytalkReborn
     {
         private const int AnchorCap = 1500;
 
+        /// <summary>
+        /// 角色设计宪法：所有内容型 Builder 共用，注入 system 提示词。
+        /// token 成本约 250/请求，四模块+起号共用一份文案。
+        /// </summary>
+        private static string GetDesignConstitution()
+        {
+            return "【角色设计宪法（所有自由文本字段一体适用）】\n" +
+                "1. 绝对正向描写：不写角色“不做什么”，写角色“正在把注意力放在什么具体事物上、正在做什么”。例：“避免眼神接触”→“眼神对视两秒后移开”；“从不考虑婚后家务”→“全神贯注于眼前的每日重体力活”。\n" +
+                "2. 摄影机原则：禁止抽象文学比喻与主观心理独白（如“内心的苦涩如冷水”）；所有动作与神态必须是摄影机能物理记录的细节（指节泛白、拇指摩挲杯沿、喉结滚动、肩膀紧绷、低头清嗓子、鞋底碾过门槛）。\n" +
+                "3. 关注词条纪律：每条 2~4 个词的短语（推荐“动名词+名词”，如“擦拭皮球”）；严禁绑定固定时段（下午/清晨——雨夜会穿帮）；严禁绑定固定静态姿势（坐在栅栏上——与走动状态冲突）。\n" +
+                "4. 字段值纯净：任何字段值内不得出现 [VOICE]、[STAGE] 之类的中括号标题。";
+        }
+
+        /// <summary>
+        /// 剥行首的中括号字段标头（如 "[VOICE] xxx" → "xxx"）；仅剥行首、不碰正文；null/空安全。
+        /// </summary>
+        private static string StripLeadingFieldHeader(string value)
+        {
+            return System.Text.RegularExpressions.Regex.Replace(value ?? "", "^[ \t]*\\[[^\\]]+\\][ \t]*", "").Trim();
+        }
+
         private static string GetCorePersonaAnchor(BioEditorViewModel vm, string npcName)
         {
             string bio = vm?.GetBiography() ?? string.Empty;
@@ -26,13 +47,18 @@ namespace ValleytalkReborn
             BioEditorViewModel vm, string npcName, string currentText, string demand)
         {
             string anchor = GetCorePersonaAnchor(vm, npcName);
+            string constitution = GetDesignConstitution();
             string system =
                 "你是一名专业的《星露谷物语》NPC 人设编辑助手，正在润色角色的【言行举止 (BehavioralRules)】模块。\n" +
                 "润色时必须以该角色的核心身份为锚点，不得偏离人格设定：\n" +
                 $"{anchor}\n" +
+                $"{constitution}\n" +
                 "硬性要求：\n" +
                 $"1. 润色对象为 {npcName} 的言行规则（语气、节奏、口头习惯、即时反应），保持条目化、可执行。\n" +
                 "2. 保留 [VOICE] / [SPEECH PATTERNS] / [MANNERISMS] / [IMMEDIATE REFLEXES] / [CONTEXT OVERRIDE] 等既有分节结构。\n" +
+                "   [MANNERISMS] 必须是摄影机可拍摄的标志性肢体微动作（抹汗、摸后颈、手指敲门框）；\n" +
+                "   [IMMEDIATE REFLEXES] 写“收到难懂文本/被挑衅/被提起痛处”时的第一瞬间肢体反应；\n" +
+                "   [CONTEXT OVERRIDE] 写室内外体态与音量反差。\n" +
                 "3. 严格遵循玩家给出的调整方向，不得自行扩展与角色身份冲突的内容。\n" +
                 "4. 严禁寒暄、解释、标题，只输出言行规则纯文本。\n" +
                 "5. 严禁 Markdown 代码围栏（```）、严禁 JSON 注释（// 或 /* */）。";
@@ -61,9 +87,10 @@ namespace ValleytalkReborn
                 "硬性要求：\n" +
                 $"1. 为 {npcName} 生成 3 条对白范例，分别对应：日常问候、闲聊、情绪低落。\n" +
                 "2. 对白必须体现角色性格与当下关系亲疏，语气与言行规则一致。\n" +
-                "3. 支持原版表情符（$h、$s 等）与换行分段；玩家选项以 % 开头。\n" +
-                "4. 严禁寒暄、解释、标题，只输出对白范例纯文本。\n" +
-                "5. 严禁 Markdown 代码围栏（```）、严禁 JSON 注释（// 或 /* */）。";
+                "3. 表情符使用原版五码：$h 开心 / $s 难过 / $u 独特 / $l 爱意 / $a 生气，句尾自然嵌入。\n" +
+                "4. 每条对白末尾提供 2~3 行以 % 开头的玩家可选回答；翻页用 #$b#。\n" +
+                "5. 严禁寒暄、解释、标题，只输出对白范例纯文本。\n" +
+                "6. 严禁 Markdown 代码围栏（```）、严禁 JSON 注释（// 或 /* */）。";
 
             string user =
                 $"【当前对白范例】\n{currentText}\n\n" +
@@ -82,15 +109,17 @@ namespace ValleytalkReborn
             string marriedNote = isDatable
                 ? "末档为已婚档：心数固定填 14，已婚: 是（推演婚后语气转变）；其余档心数必须为偶数。"
                 : "所有档位心数必须为偶数。";
+            string constitution = GetDesignConstitution();
 
             string system =
                 "你是一名专业的《星露谷物语》NPC 人设编辑助手，正在为角色推演完整的【好感阶梯（ProgressStates）】。\n" +
                 "推演时必须以该角色的核心身份为锚点，让各档位的心态、关注点随好感递进自然演变：\n" +
                 $"{anchor}\n" +
+                $"{constitution}\n" +
                 "硬性要求：\n" +
                 $"1. 共输出 {count} 档，覆盖以下门槛（心数必须为偶数）：{ladder}。\n" +
                 $"2. {marriedNote}\n" +
-                "3. 态度段写清该阶段对玩家的态度与说话风格（自由文本，可多行）；心智段写清该阶段碎碎念时的心态与注意力流向（自由文本，可多行）。\n" +
+                "3. 态度段写面对玩家时镜头可拍的体态与站位（低心：对视两秒移开、保持安全距离；高心：肩膀放松、主动拉近站姿）；心智段写该阶段纯文本心态与注意力流向，禁止任何中括号标头。\n" +
                 "4. 关注池列 3~5 个该阶段优先提及的事物/话题，用中文顿号分隔；若无特别关注点可写\"无\"。\n" +
                 "5. 严禁生成 Joja 超市/巴士修复/具体配偶门禁等字段（这些由人工单独配置）。\n" +
                 "6. 严禁 Markdown 代码围栏（```）、严禁 JSON 注释（// 或 /* */）、严禁 JSON 对象与多余字段。\n" +
@@ -116,17 +145,19 @@ namespace ValleytalkReborn
             string behaviorRef = vm != null
                 ? (vm.GetTraitDescriptionOrNull("BehavioralRules") ?? "(以原版言行规则为准)")
                 : "(以原版言行规则为准)";
+            string constitution = GetDesignConstitution();
             string system =
                 "你是一名专业的《星露谷物语》NPC 人设编辑助手，正在为角色一次性萃取完整的【环境心智（Ambient Bark）】。\n" +
                 "萃取时必须以该角色的核心身份与言行规则为锚点，让口吻、口头禅、观察视角协调一致：\n" +
                 $"{anchor}\n" +
                 "既有言行规则（语气与表达习惯参照，萃取结果应与之匹配）：\n" +
                 $"{behaviorRef}\n" +
+                $"{constitution}\n" +
                 "硬性要求：\n" +
-                "1. 口吻段用 1-2 句概括该角色碎碎念时的基本语调、节奏与情绪底色。\n" +
-                "2. 口头禅段给出若干该角色常用的口头禅、叹气声、起手式（自由文本，可多行）。\n" +
-                "3. 观察透镜段给出 4 条该角色打量世界的特殊视角，每条以 \"- \" 起行。\n" +
-                "4. 关注词条列 8-10 个该角色优先提及的事物/话题，用中文顿号分隔。\n" +
+                "1. 口吻段（常驻发声共鸣/身体原型/社会本能）用 1-2 句概括基本语调与情绪底色，值内严禁 [VOICE] 等标题。\n" +
+                "2. 口头禅段（句式节奏/常用起手式/日常语调）给出若干该角色常用的口头禅、叹气声、起手式（自由文本，可多行）。\n" +
+                "3. 观察透镜段（仅独处 Bark 生效的感官透镜）给出 4 个领域（例：铁匠注意锈蚀金属与矿石硬度），每条以 \"- \" 起行。\n" +
+                "4. 关注词条列 8-10 个全局保底关注池（铁律 3 纪律），用中文顿号分隔。\n" +
                 "5. 严禁 Markdown 代码围栏（```）、严禁 JSON 注释（// 或 /* */）、严禁 JSON 对象与多余字段。\n" +
                 "6. 严格使用下列固定行式模板输出，字段顺序不可调换：\n" +
                 "口吻:\n" +
@@ -154,6 +185,7 @@ namespace ValleytalkReborn
             string contextRequirement = string.IsNullOrEmpty(rawGameContext)
                 ? "②无原生锚点，依据合理推断创作；"
                 : "②专属最爱物品等原生锚点可作为性格意象隐喻自然融入，不得生硬罗列；";
+            string constitution = GetDesignConstitution();
 
             string system =
                 "你是一名专业的《星露谷物语》NPC 身份档案创作助手，正在为该 NPC 全新创作完整身份档案。\n" +
@@ -162,8 +194,8 @@ namespace ValleytalkReborn
                 "硬性要求：\n" +
                 "①输出必须包含 [IDENTITY] 与 [PSYCHOLOGICAL CONFLICTS] 标准分节（结构对齐一期插入模板）。\n" +
                 $"{contextRequirement}" +
-                "③规范元宪法：只描写镜头可见的物理体态、动作、行为与具体事实，严禁虚浮小说式抽象比喻与空洞形容。\n" +
-                "④严禁寒暄、解释、Markdown 围栏（```）、JSON。";
+                $"{constitution}\n" +
+                "③严禁寒暄、解释、Markdown 围栏（```）、JSON。";
 
             string demandText = string.IsNullOrWhiteSpace(userDemand)
                 ? "无特殊设想，请依据原生锚点自由创作"
@@ -190,9 +222,9 @@ namespace ValleytalkReborn
                 return false;
 
             string[] ambientEnd = WithFullWidthVariants(new[] { "\n口头禅:", "\n观察透镜:", "\n关注词条:" });
-            voice = ReadSection(text, "口吻:", ambientEnd) ?? "";
-            habits = ReadSection(text, "口头禅:", ambientEnd) ?? "";
-            lenses = ReadSection(text, "观察透镜:", ambientEnd) ?? "";
+            voice = StripLeadingFieldHeader(ReadSection(text, "口吻:", ambientEnd) ?? "");
+            habits = StripLeadingFieldHeader(ReadSection(text, "口头禅:", ambientEnd) ?? "");
+            lenses = StripLeadingFieldHeader(ReadSection(text, "观察透镜:", ambientEnd) ?? "");
             preoccupations = ReadOccupations(text, "关注词条:");
 
             bool hasVoice = !string.IsNullOrWhiteSpace(voice);
@@ -235,16 +267,16 @@ namespace ValleytalkReborn
                 if (hearts.HasValue)
                     heartsSpecified++;
                 bool married = ReadBoolField(block, "已婚:");
-                string attitude = ReadSection(block, "态度:");
-                string mindset = ReadSection(block, "心智:");
-                List<string> occ = ReadOccupations(block, "关注:");
-
-                // 态度段为必备：任一块缺失即整体失败
-                if (attitude == null)
+                // 态度段为必备：任一块缺失即整体失败（剥标头前判 null，保留既有失败语义）
+                string attitudeRaw = ReadSection(block, "态度:");
+                if (attitudeRaw == null)
                 {
                     stages = new List<BioData.ProgressStateEntry>();
                     return false;
                 }
+                string attitude = StripLeadingFieldHeader(attitudeRaw);
+                string mindset = StripLeadingFieldHeader(ReadSection(block, "心智:"));
+                List<string> occ = ReadOccupations(block, "关注:");
 
                 stages.Add(new BioData.ProgressStateEntry
                 {
