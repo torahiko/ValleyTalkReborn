@@ -184,6 +184,7 @@ namespace ValleytalkReborn
                 return false;
 
             var blocks = System.Text.RegularExpressions.Regex.Split(text, @"^###\s*档位\s*\d+", System.Text.RegularExpressions.RegexOptions.Multiline);
+            int heartsSpecified = 0;
             foreach (var raw in blocks)
             {
                 string block = raw.Trim();
@@ -195,10 +196,12 @@ namespace ValleytalkReborn
                                 || block.Contains("态度：", StringComparison.Ordinal)
                                 || block.Contains("心数:", StringComparison.Ordinal)
                                 || block.Contains("心数：", StringComparison.Ordinal);
-                if (!hasAnyField)
+            if (!hasAnyField)
                     continue;
 
-                int hearts = ReadHeartsField(block, "心数:");
+                int? hearts = ReadHeartsFieldOrNull(block, "心数:");
+                if (hearts.HasValue)
+                    heartsSpecified++;
                 bool married = ReadBoolField(block, "已婚:");
                 string attitude = ReadSection(block, "态度:");
                 string mindset = ReadSection(block, "心智:");
@@ -213,7 +216,7 @@ namespace ValleytalkReborn
 
                 stages.Add(new BioData.ProgressStateEntry
                 {
-                    RequiredHearts = Math.Clamp(hearts, 0, 14),
+                    RequiredHearts = Math.Clamp(hearts ?? 0, 0, 14),
                     RequireMarried = married,
                     Text = attitude,
                     BarkMindset = mindset,
@@ -221,19 +224,28 @@ namespace ValleytalkReborn
                 });
             }
 
+            // 多档且所有档位均缺失"心数:"行 → 判定为未遵循模板，
+            // 拒绝静默生成"全部 0 心"的退化阶梯（二期实测缺陷）
+            if (stages.Count > 1 && heartsSpecified == 0)
+            {
+                stages = new List<BioData.ProgressStateEntry>();
+                return false;
+            }
+
             return stages.Count > 0;
         }
 
-        private static int ReadHeartsField(string block, string key)
+        private static int? ReadHeartsFieldOrNull(string block, string key)
         {
             // 心数按 1 心 1 刻度原样接受（含奇数），仅 clamp 到 0–14；
-            // 不再对齐 NumberStepper 步进 2（奇数属于预期输入）。
+            // 不再对齐 NumberStepper 步进（奇数属于预期输入）。
+            // 字段缺失/不可解析 → null（由调用方区分"显式 0"与"未提供"）。
             string v = ReadLineValue(block, key);
-            if (string.IsNullOrEmpty(v)) return 0;
-            v = v.Replace("：", ":").Trim();
+            if (string.IsNullOrEmpty(v))
+                return null;
             if (int.TryParse(v, out int n))
                 return Math.Clamp(n, 0, 14);
-            return 0;
+            return null;
         }
 
         private static bool ReadBoolField(string block, string key)

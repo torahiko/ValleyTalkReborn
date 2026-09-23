@@ -251,7 +251,7 @@ namespace ValleytalkReborn
                 _vm.SyncGlobalPreoccupations(_globalTagEditor.Tags.Count > 0 ? _globalTagEditor.Tags.ToList() : null);
             };
 
-            _heartsStepper = new NumberStepper(Rectangle.Empty, 0, 0, 14, 2, " 心");
+            _heartsStepper = new NumberStepper(Rectangle.Empty, 0, 0, 14, 1, " 心");
             _heartsStepper.OnChanged += val =>
             {
                 _vm.SetStageHearts(val);
@@ -719,7 +719,7 @@ namespace ValleytalkReborn
             if (new Rectangle(_uniqueBox.X, _uniqueBox.Y, _uniqueBox.Width, _uniqueBox.Height).Contains(x, y)) { FocusTextBox(_uniqueBox); return; }
             if (_homeBedCheckbox.bounds.Contains(x, y)) { _homeBedCheckbox.receiveLeftClick(x, y); return; }
             if (!AnyTextBoxHasFocus() && _copyBiographyRect.Contains(x, y)) { CopyBoxToClipboard("biography"); return; }
-            if (!AnyTextBoxHasFocus() && _aiPolishBioRect.Contains(x, y) && !BioAiRunner.IsBusy)
+            if (_aiPolishBioRect.Contains(x, y) && !BioAiRunner.IsBusy)
             {
                 UnfocusAll();
                 OpenBioPolishDialog();
@@ -762,9 +762,9 @@ namespace ValleytalkReborn
 
             if (!AnyTextBoxHasFocus() && _copyBehaviorRect.Contains(x, y)) { CopyBoxToClipboard("behavior"); return; }
             if (!AnyTextBoxHasFocus() && _copyDialogueExamplesRect.Contains(x, y)) { CopyBoxToClipboard("dialogueExamples"); return; }
-            if (!AnyTextBoxHasFocus() && _aiPolishBehaviorRect.Contains(x, y) && !BioAiRunner.IsBusy)
+            if (_aiPolishBehaviorRect.Contains(x, y) && !BioAiRunner.IsBusy)
             { UnfocusAll(); CheckTab1Prerequisites(() => OpenTraitPolishDialog("BehavioralRules", "言行举止")); return; }
-            if (!AnyTextBoxHasFocus() && _aiPolishDialogueRect.Contains(x, y) && !BioAiRunner.IsBusy)
+            if (_aiPolishDialogueRect.Contains(x, y) && !BioAiRunner.IsBusy)
             { UnfocusAll(); CheckTab1Prerequisites(() => OpenTraitPolishDialog("DialogueExamples", "对白范例")); return; }
 
             UnfocusAll();
@@ -772,6 +772,15 @@ namespace ValleytalkReborn
 
         private void HandleTab3Click(int x, int y)
         {
+            // AI 分支必须位于 SelectedStageIndex 早退守卫之前：空档位时 SelectedStageIndex=-1，
+            // 否则"AI生成阶梯"在零档位状态下永远点不到（二期实测缺陷）
+            if (_aiGenerateStagesRect.Contains(x, y) && !BioAiRunner.IsBusy)
+            {
+                UnfocusAll();
+                CheckTab1Prerequisites(OpenStageLadderDialog);
+                return;
+            }
+
             int visibleStages = Math.Min(_vm.Bio.ProgressStates.Count, 8);
             for (int i = 0; i < visibleStages; i++)
             {
@@ -829,13 +838,6 @@ namespace ValleytalkReborn
                         Layout();
                     },
                     _ => Game1.activeClickableMenu = this);
-                return;
-            }
-
-            if (!AnyTextBoxHasFocus() && _aiGenerateStagesRect.Contains(x, y) && !BioAiRunner.IsBusy)
-            {
-                UnfocusAll();
-                CheckTab1Prerequisites(OpenStageLadderDialog);
                 return;
             }
 
@@ -944,7 +946,7 @@ namespace ValleytalkReborn
             if (!AnyTextBoxHasFocus() && _copyVoiceRect.Contains(x, y)) { CopyBoxToClipboard("voice"); return; }
             if (!AnyTextBoxHasFocus() && _copyHabitsRect.Contains(x, y)) { CopyBoxToClipboard("habits"); return; }
             if (!AnyTextBoxHasFocus() && _copyLensesRect.Contains(x, y)) { CopyBoxToClipboard("lenses"); return; }
-            if (!AnyTextBoxHasFocus() && _aiExtractAmbientRect.Contains(x, y) && !BioAiRunner.IsBusy)
+            if (_aiExtractAmbientRect.Contains(x, y) && !BioAiRunner.IsBusy)
             { UnfocusAll(); CheckTab1PrerequisitesWithBehavior(OpenAmbientExtractDialog); return; }
 
             UnfocusAll();
@@ -1884,7 +1886,8 @@ namespace ValleytalkReborn
 
             Game1.activeClickableMenu = new ConfirmationDialog(
                 "身份档案（Tab 1）缺少 [IDENTITY] / [PSYCHOLOGICAL CONFLICTS] 标记，或内容不足 60 字。\n" +
-                "推荐先完善身份设定，否则润色结果可能偏离角色核心。",
+                "推荐先完善身份设定，否则润色结果可能偏离角色核心。\n\n" +
+                "点击「确定」= 仍要生成；点击「取消」= 跳转身份设定页完善。",
                 _ => { Game1.activeClickableMenu = this; onProceed(); },
                 _ => { Game1.activeClickableMenu = this; SwitchTab(0); });
             return false;
@@ -1912,7 +1915,7 @@ namespace ValleytalkReborn
                 warn.AppendLine("- 身份档案（Tab 1）：补全 [IDENTITY] / [PSYCHOLOGICAL CONFLICTS] 标记，或扩充至 60 字以上");
             if (!hasBehavior)
                 warn.AppendLine("- 言行举止（Tab 2）：填写 BehavioralRules 言行规则");
-            warn.Append("可选择「仍然萃取」继续，或「完善设定」跳转 Tab 1。");
+            warn.Append("\n\n点击「确定」= 仍要萃取；点击「取消」= 跳转身份设定页完善。");
 
             Game1.activeClickableMenu = new ConfirmationDialog(
                 warn.ToString(),
@@ -2047,7 +2050,7 @@ namespace ValleytalkReborn
             {
                 Game1.playSound("cancel");
                 Game1.addHUDMessage(new HUDMessage(
-                    "阶梯格式有误：请保持“### 档位 n | 心数: n | 已婚: 是/否”结构与“态度:/心智:/关注:”字段行完整",
+                    "阶梯格式有误：请保持“### 档位 n | 心数: n | 已婚: 是/否”结构与“态度:/心智:/关注:”字段行完整（每档必须包含“心数:”行）",
                     HUDMessage.error_type));
                 return false;
             }
