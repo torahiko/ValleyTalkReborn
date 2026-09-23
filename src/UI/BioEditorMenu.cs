@@ -1815,12 +1815,12 @@ namespace ValleytalkReborn
             });
         }
 
-        private void ApplyPolishResult(string confirmedText)
+        private bool ApplyPolishResult(string confirmedText)
         {
             if (string.IsNullOrWhiteSpace(confirmedText))
             {
                 Game1.playSound("cancel");
-                return;
+                return true;
             }
 
             int projectedLen = _biographyBox.HasSelection
@@ -1830,7 +1830,7 @@ namespace ValleytalkReborn
             {
                 Game1.playSound("cancel");
                 Game1.addHUDMessage(new HUDMessage("润色结果过长，超出 4000 字符上限，已保留原文", HUDMessage.error_type));
-                return;
+                return true;
             }
 
             if (_biographyBox.HasSelection)
@@ -1841,6 +1841,7 @@ namespace ValleytalkReborn
             _vm.SetBiography(_biographyBox.Text);
             Game1.playSound("coin");
             Game1.addHUDMessage(new HUDMessage("✔ 已应用 AI 润色内容", HUDMessage.newQuest_type));
+            return true;
         }
 
         private void FocusTextBox(TextBox box)
