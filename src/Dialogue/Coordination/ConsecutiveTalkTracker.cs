@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
+using ValleytalkReborn.Services;
 
 namespace ValleytalkReborn;
 
@@ -45,8 +47,10 @@ internal static class ConsecutiveTalkTracker
     private static bool IsChineseLanguage =>
         LocalizedContentManager.CurrentLanguageCode.ToString().StartsWith("zh", StringComparison.OrdinalIgnoreCase);
 
-    private static string FilePath =>
-        $"data/ConsecutiveStreak_{Constants.SaveFolderName}.json";
+    private static string? FilePath =>
+        StorageLayout.LocalBaseDir is null || string.IsNullOrEmpty(Constants.SaveFolderName)
+            ? null
+            : Path.Combine(StorageLayout.LocalBaseDir!, $"ConsecutiveStreak_{Constants.SaveFolderName}.json");
 
     // ── Lifecycle ─────────────────────────────────────────────────────────
 
@@ -76,14 +80,27 @@ internal static class ConsecutiveTalkTracker
 
     private static void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
     {
-        _data = ModEntry.SHelper.Data.ReadJsonFile<TrackerData>(FilePath) ?? new TrackerData();
+        string? path = FilePath;
+        if (path == null) return;
+
+        // 一次性单向迁移遗留数据
+        string legacyPath = Path.Combine(StorageLayout.ModDirectory, $"data/ConsecutiveStreak_{Constants.SaveFolderName}.json");
+        StorageLayout.MigrateLegacyFile(legacyPath, path, "ConsecutiveStreak");
+
+        _data = ModEntry.SHelper.Data.ReadJsonFile<TrackerData>(path) ?? new TrackerData();
         _todayGifts.Clear();
         ModEntry.SMonitor?.Log("[ConsecutiveTalkTracker] Data loaded.", LogLevel.Debug);
     }
 
     private static void OnSaving(object sender, SavingEventArgs e)
     {
-        ModEntry.SHelper.Data.WriteJsonFile(FilePath, _data);
+        string? path = FilePath;
+        if (path == null)
+        {
+            ModEntry.SMonitor?.Log("[ConsecutiveTalkTracker] OnSaving: no save loaded, skipping persistence.", LogLevel.Trace);
+            return;
+        }
+        ModEntry.SHelper.Data.WriteJsonFile(path, _data);
         ModEntry.SMonitor?.Log("[ConsecutiveTalkTracker] Data saved.", LogLevel.Debug);
     }
 

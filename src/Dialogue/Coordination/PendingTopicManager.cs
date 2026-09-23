@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
+using ValleytalkReborn.Services;
 
 namespace ValleytalkReborn
 {
@@ -45,8 +47,10 @@ namespace ValleytalkReborn
         private readonly Dictionary<string, PendingTopicEntry> _pendingTopics
             = new(StringComparer.OrdinalIgnoreCase);
 
-        private static string FilePath =>
-            $"data/PendingTopics_{Constants.SaveFolderName}.json";
+        private static string? FilePath =>
+            StorageLayout.LocalBaseDir is null || string.IsNullOrEmpty(Constants.SaveFolderName)
+                ? null
+                : Path.Combine(StorageLayout.LocalBaseDir!, $"PendingTopics_{Constants.SaveFolderName}.json");
 
         private PendingTopicManager()
         {
@@ -70,10 +74,17 @@ namespace ValleytalkReborn
             // ── 先清空再读取，防止跨存档污染（修复 A1-1）──
             _pendingTopics.Clear();
 
+            string? path = FilePath;
+            if (path == null) return;
+
+            // 一次性单向迁移遗留数据（源缺失/目标已存在 → 无操作，见 StorageLayout.MigrateLegacyFile）
+            string legacyPath = Path.Combine(StorageLayout.ModDirectory, $"data/PendingTopics_{Constants.SaveFolderName}.json");
+            StorageLayout.MigrateLegacyFile(legacyPath, path, "PendingTopics");
+
             try
             {
                 var persisted = ModEntry.SHelper.Data
-                    .ReadJsonFile<Dictionary<string, PendingTopicEntry>>(FilePath);
+                    .ReadJsonFile<Dictionary<string, PendingTopicEntry>>(path);
                 if (persisted == null) return;
 
                 int currentDay = Context.IsWorldReady ? (int)Game1.Date.TotalDays : -1;
@@ -110,6 +121,15 @@ namespace ValleytalkReborn
 
         private void OnSaving(object sender, SavingEventArgs e)
         {
+            string? path = FilePath;
+            if (path == null)
+            {
+                ModEntry.SMonitor?.Log(
+                    "[PendingTopicManager] OnSaving: no save loaded, skipping persistence.",
+                    LogLevel.Trace);
+                return;
+            }
+
             try
             {
                 var toSave = new Dictionary<string, PendingTopicEntry>();
@@ -118,7 +138,7 @@ namespace ValleytalkReborn
                     if (kv.Value.IsCrossDay)
                         toSave[kv.Key] = kv.Value;
                 }
-                ModEntry.SHelper.Data.WriteJsonFile(FilePath, toSave);
+                ModEntry.SHelper.Data.WriteJsonFile(path, toSave);
             }
             catch (Exception ex)
             {
