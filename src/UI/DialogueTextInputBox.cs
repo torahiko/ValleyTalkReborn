@@ -19,6 +19,12 @@ namespace ValleytalkReborn
         public delegate void TextBoxEvent(DialogueTextInputBox sender);
         public event TextBoxEvent OnSubmit;
 
+        
+
+        public string PlaceholderText { get; set; } = "";
+        public Color PlaceholderColor { get; set; } = new Color(158, 138, 118); // 默认 TextMuted
+        public Rectangle TextAreaBounds => GetTextArea(); // 对外暴露准确的文本区域几何
+        
         ///////////////////////////////////////////////////////////////////
         // 折行缓存结构（替代旧版 List<string>）
         ///////////////////////////////////////////////////////////////////
@@ -844,9 +850,10 @@ namespace ValleytalkReborn
                 const float frameScale = 2f;
                 const int fillInset = 4;
 
+                // 内部温润羊皮纸底色
                 Color innerBgColor = Selected
                     ? new Color(255, 252, 245)
-                    : new Color(245, 240, 230);
+                    : new Color(248, 242, 230);
 
                 spriteBatch.Draw(
                     Game1.staminaRect,
@@ -855,6 +862,7 @@ namespace ValleytalkReborn
 
                 if (Selected)
                 {
+                    // ★ 聚焦激活：纯正星露谷原版暖橘红木边框 (Color.White 呈现 432 切片的饱满暖橘原色)
                     IClickableMenu.drawTextureBox(
                         spriteBatch,
                         Game1.mouseCursors,
@@ -866,12 +874,13 @@ namespace ValleytalkReborn
                 }
                 else
                 {
+                    // ★ 未激活：温润暖金木边框（彻底告别灰暗冷调）
                     IClickableMenu.drawTextureBox(
                         spriteBatch,
                         Game1.mouseCursors,
                         new Rectangle(432, 439, 9, 9),
                         bx, by, bw, bh,
-                        new Color(228, 212, 190),
+                        new Color(225, 195, 155),
                         frameScale,
                         false);
                 }
@@ -890,7 +899,7 @@ namespace ValleytalkReborn
             _lastNeedsScrolling = _needsScrolling;
 
             // 绘制文本
-            if (!string.IsNullOrEmpty(Text))
+                if (!string.IsNullOrEmpty(Text))
             {
                 // 选区高亮绘制于文字之下
                 if (Selected && HasSelection)
@@ -898,6 +907,22 @@ namespace ValleytalkReborn
 
                 DrawWrappedTextWithScroll(spriteBatch, Text, textArea, TextColor);
             }
+    else if (!string.IsNullOrEmpty(PlaceholderText))
+    {
+        // ★ 文本为空时渲染占位提示符：
+        // 聚焦时光标在 textArea.X 闪烁，示例文字向右微移 4px 避免与光标切线重叠；未聚焦时光标隐藏，示例文字顶格
+        float phX = textArea.X + (Selected ? 4f : 0f);
+        Vector2 drawPos = new Vector2(phX, textArea.Y);
+
+        if (UseCustomFont)
+        {
+            CustomFontManager.DrawString(spriteBatch, PlaceholderText, drawPos, PlaceholderColor, CustomFontSize);
+        }
+        else
+        {
+            spriteBatch.DrawString(Font, PlaceholderText, drawPos, PlaceholderColor, 0f, Vector2.Zero, EffectiveScale, SpriteEffects.None, 1f);
+        }
+    }
 
             // 绘制新版滚动条
             if (_needsScrolling)
