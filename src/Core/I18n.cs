@@ -350,7 +350,6 @@ namespace ValleytalkReborn
         public static class WorldSettings
         {
             public static string DateAmbience() => Lookup("WorldSettings.DateAmbience");
-            public static string RelationNetwork() => Lookup("WorldSettings.RelationNetwork");
             public static string LocationFestival() => Lookup("WorldSettings.LocationFestival");
             public static string PoiTuning() => Lookup("WorldSettings.PoiTuning");
 
@@ -369,17 +368,6 @@ namespace ValleytalkReborn
             public static string DeleteThis() => Lookup("WorldSettings.DateAmbience.DeleteThis");
             public static string NewCustom() => Lookup("WorldSettings.DateAmbience.NewCustom");
             public static string Saved() => Lookup("WorldSettings.DateAmbience.Saved");
-
-            // T5 客观社交关系网子页
-            public static string NpcA() => Lookup("WorldSettings.RelationNetwork.NpcA");
-            public static string NpcB() => Lookup("WorldSettings.RelationNetwork.NpcB");
-            public static string Description() => Lookup("WorldSettings.RelationNetwork.Description");
-            public static string SaveRelation() => Lookup("WorldSettings.RelationNetwork.Save");
-            public static string RevertRelation() => Lookup("WorldSettings.RelationNetwork.Revert");
-            public static string DeleteRelation() => Lookup("WorldSettings.RelationNetwork.Delete");
-            public static string NewRelation() => Lookup("WorldSettings.RelationNetwork.New");
-            public static string SavedRelation() => Lookup("WorldSettings.RelationNetwork.Saved");
-            public static string NeedTwoNpcs() => Lookup("WorldSettings.RelationNetwork.NeedTwoNpcs");
 
             // T6c 地点与节日编撰子页
             public static string LocationDescription() => Lookup("WorldSettings.LocationFestival.LocationDescription");

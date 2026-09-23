@@ -11,11 +11,6 @@ internal sealed class DateLocationOverlayFile
     [JsonProperty("RemovedLocationIds")] public List<string> RemovedLocationIds = new();
 }
 
-internal sealed class NpcRelationOverlayFile
-{
-    [JsonProperty("Relations")] public List<NpcRelationEntry> Relations = new();
-}
-
 internal sealed class CustomFestivalEntry
 {
     [JsonProperty("Names")]        public Dictionary<string, string> Names        = new();  // 语言键 "zh"/"en"
