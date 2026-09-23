@@ -116,38 +116,42 @@ public sealed class BuildContext
 // GameSummaryBuilder
 // ─────────────────────────────────────────────────────────
 
-internal class GameSummaryBuilder
+internal sealed class GameSummaryBuilder
 {
-    private GameSummary? _gameSummaryDict = new();
+    internal static GameSummaryBuilder Instance { get; } = new GameSummaryBuilder();
+
+    private GameSummary? _gameSummaryDict;   // 持久化范围: Memory（会话级缓存，不进存档、不写 ModData）
 
     private GameSummary GameSummaryDict
     {
         get
         {
-            if (_gameSummaryDict == null)
+            if (_gameSummaryDict != null) return _gameSummaryDict;
+
+            try
             {
                 _gameSummaryDict = Game1.content.LoadLocalized<GameSummary>(VtConstants.GameSummaryPath);
+            }
+            catch (System.Exception ex)
+            {
+                ModEntry.SMonitor.Log($"[GameSummaryBuilder] 加载 GameSummary 失败: {ex.Message}", LogLevel.Error);
+                _gameSummaryDict = new GameSummary();
             }
             return _gameSummaryDict;
         }
     }
 
-    public GameSummaryBuilder()
+    private GameSummaryBuilder()
     {
-        ModEntry.SHelper.Events.Content.AssetRequested += (sender, e) =>
+        ModEntry.SHelper.Events.Content.AssetsInvalidated += OnAssetsInvalidated;
+    }
+
+    private void OnAssetsInvalidated(object? sender, AssetsInvalidatedEventArgs e)
+    {
+        if (e.NamesWithoutLocale.Any(an => an.IsEquivalentTo(VtConstants.GameSummaryPath)))
         {
-            if (e.Name.IsEquivalentTo(VtConstants.GameSummaryPath))
-            {
-                e.LoadFrom(() => new GameSummary(), AssetLoadPriority.High);
-            }
-        };
-        ModEntry.SHelper.Events.Content.AssetsInvalidated += (sender, e) =>
-        {
-            if (e.NamesWithoutLocale.Any(an => an.IsEquivalentTo(VtConstants.GameSummaryPath)))
-            {
-                _gameSummaryDict = null;
-            }
-        };
+            _gameSummaryDict = null;
+        }
     }
 
     /// <summary>
