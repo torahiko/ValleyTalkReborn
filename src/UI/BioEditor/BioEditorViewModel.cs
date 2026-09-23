@@ -89,17 +89,6 @@ internal sealed class BioEditorViewModel
         }
     }
 
-    public bool GetHomeLocationBed() => _bio.HomeLocationBed;
-
-    public void SetHomeLocationBed(bool value)
-    {
-        if (value != _bio.HomeLocationBed)
-        {
-            _bio.HomeLocationBed = value;
-            MarkDirty();
-        }
-    }
-
     public string BuildBiographyScaffold()
     {
         return BiographyScaffold.Replace("{NPC}", _npcName);
@@ -174,7 +163,6 @@ internal sealed class BioEditorViewModel
             case 0: // Tab 1: 身份背景
                 _bio.Biography = baseline.Biography ?? string.Empty;
                 _bio.Unique = baseline.Unique ?? string.Empty;
-                _bio.HomeLocationBed = baseline.HomeLocationBed;
                 break;
 
             case 1: // Tab 2: 言行举止
@@ -554,13 +542,38 @@ internal sealed class BioEditorViewModel
         MarkDirty();
     }
 
-    /// <summary>构建门禁摘要："≥N♥"/"已婚"/"超市倒闭"/"会员" 依序 "/" 连接，空则"无门禁"；false 态不显示。</summary>
+    /// <summary>获取当前档位要求的农夫配偶 Id（null 表示不限）。</summary>
+    public string? GetStagePlayerMarriedTo()
+    {
+        var s = CurrentStageOrNull();
+        return s?.RequirePlayerMarriedTo;
+    }
+
+    /// <summary>设置当前档位要求的农夫配偶 Id（null/空白 = 不限），并标记修改脏态。</summary>
+    public void SetStagePlayerMarriedTo(string? spouseName)
+    {
+        var s = CurrentStageOrNull();
+        if (s == null) return;
+        string? val = string.IsNullOrWhiteSpace(spouseName) ? null : spouseName.Trim();
+        if (s.RequirePlayerMarriedTo != val)
+        {
+            s.RequirePlayerMarriedTo = val;
+            MarkDirty();
+        }
+    }
+
+    /// <summary>构建门禁摘要："≥N♥"/"已婚"/"配偶:XXX"/"超市倒闭"/"会员" 依序 "/" 连接，空则"无门禁"；false 态不显示。</summary>
     public string BuildGateSummary(int stageIndex)
     {
         var p = _bio.ProgressStates[stageIndex];
         var parts = new List<string>();
         if (p.RequiredHearts > 0) parts.Add($"≥{p.RequiredHearts}♥");
         if (p.RequireMarried) parts.Add("已婚");
+        if (!string.IsNullOrWhiteSpace(p.RequirePlayerMarriedTo))
+        {
+            string disp = Game1.getCharacterFromName(p.RequirePlayerMarriedTo)?.displayName ?? p.RequirePlayerMarriedTo;
+            parts.Add($"配偶:{disp}");
+        }
         if (p.RequireJojaMartClosed == true) parts.Add("超市倒闭");
         if (p.RequireJojaMember == true) parts.Add("会员");
         return parts.Count > 0 ? string.Join("/", parts) : "无门禁";

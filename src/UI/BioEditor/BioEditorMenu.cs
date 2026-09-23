@@ -104,6 +104,7 @@ namespace ValleytalkReborn
         private readonly string _npcName;
         private readonly IClickableMenu _returnMenu;
         private readonly BioEditorViewModel _vm;
+        private readonly bool _isDatable; // ★ 当前 NPC 是否为可结婚角色
         private int _activeTab;
         private string? _hoverText;
 
@@ -123,13 +124,10 @@ namespace ValleytalkReborn
         // ── Tab 1 控件（身份心理） ────────────────────────────────────────
         private DialogueTextInputBox _biographyBox;
         private TextBox _uniqueBox;
-        private SimpleCheckbox _homeBedCheckbox;
         private Rectangle _scaffoldBtnRect;
         private Rectangle _uniqueCardRect;
-        private Rectangle _homeBedCardRect;
         private Rectangle _copyBiographyRect;
         private Rectangle _aiPolishBioRect;
-
         // ── Tab 2 控件（言行举止） ────────────────────────────────────────
         private DialogueTextInputBox _behaviorBox;
         private DialogueTextInputBox _dialogueExamplesBox;
@@ -155,6 +153,7 @@ namespace ValleytalkReborn
         private Rectangle _newStageRect;
         private Rectangle _deleteStageRect;
         private Rectangle _gateMarriedPillRect;
+        private Rectangle _gatePlayerMarriedToPillRect; // ★ 农夫配偶门禁胶囊
         private Rectangle _gateJojaClosedPillRect;
         private Rectangle _gateJojaMemberPillRect;
         private Rectangle _copyStageTextRect;
@@ -212,6 +211,10 @@ namespace ValleytalkReborn
             _npcName = npcName;
             _returnMenu = returnMenu;
 
+            // ★ 判断当前角色在游戏中是否为可婚单身对象
+            var character = Game1.getCharacterFromName(npcName);
+            _isDatable = character != null && character.datable.Value;
+
             _vm = new BioEditorViewModel(npcName, ModEntry.BioStorage!);
             _activeTab = 0;
 
@@ -241,7 +244,6 @@ namespace ValleytalkReborn
             // 关闭原版 TextBox 的像素宽度截断（Text setter 内置递归截断会静默损毁程序化赋值的长文本）
             _relHeadingBox.limitWidth = false;
 
-            _homeBedCheckbox = new SimpleCheckbox("床位固定 (HomeLocationBed)", -1, 0, 0);
             _enableBarkCheckbox = new SimpleCheckbox("启用日常碎碎念 (AmbientBarks)", -1, 0, 0);
 
             _stageTagEditor = new TagListEditor(Rectangle.Empty);
@@ -269,8 +271,6 @@ namespace ValleytalkReborn
             _biographyBox.SetText(_vm.GetBiography());
             string rawUnique = _vm.GetUnique() ?? string.Empty;
             _uniqueBox.Text = rawUnique.Length > 20 ? rawUnique.Substring(0, 20) : rawUnique;
-
-            _homeBedCheckbox.isChecked = _vm.GetHomeLocationBed();
 
             _enableBarkCheckbox.isChecked = _vm.Bio.EnableAmbientBarks;
             _globalTagEditor.SetTags(_vm.Bio.Preoccupations);
@@ -379,14 +379,11 @@ namespace ValleytalkReborn
                 int cardY = (int)_biographyBox.Position.Y + (int)_biographyBox.Extent.Y + 16;
                 int cardW = (contentW - 16) / 2;
                 _uniqueCardRect = new Rectangle(contentLeft, cardY, cardW, cardH);
-                _homeBedCardRect = new Rectangle(contentLeft + cardW + 16, cardY, cardW, cardH);
 
                 _uniqueBox.X = _uniqueCardRect.X + 12;
                 _uniqueBox.Y = _uniqueCardRect.Y + 28;
                 _uniqueBox.Width = _uniqueCardRect.Width - 24;
                 _uniqueBox.Height = 30;
-
-                _homeBedCheckbox.bounds = new Rectangle(_homeBedCardRect.X + 16, _homeBedCardRect.Y + 26, 28, 28);
 
                 // ★ 复制按钮：与「插入身份模板」按钮同一行、居中对齐
                 _copyBiographyRect = new Rectangle(
@@ -453,13 +450,18 @@ namespace ValleytalkReborn
                 int rightX = _stageRightColRect.X;
                 int rightY = _stageRightColRect.Y;
 
-                _heartsStepper.SetBounds(new Rectangle(rightX + 85, rightY, 110, 28));
-                _gateMarriedPillRect = new Rectangle(rightX + 203, rightY, 95, 28);
-                _gateJojaClosedPillRect = new Rectangle(rightX + 306, rightY, 105, 28);
-                _gateJojaMemberPillRect = new Rectangle(rightX + 419, rightY, 105, 28);
-                _deleteStageRect = new Rectangle(rightX + rightColW - 95, rightY, 95, 28);
+                _heartsStepper.SetBounds(new Rectangle(rightX + 85, rightY, 105, 28));
+                _gateMarriedPillRect = new Rectangle(rightX + 196, rightY, 92, 28);
+                _gatePlayerMarriedToPillRect = new Rectangle(rightX + 294, rightY, 126, 28);
+                _deleteStageRect = new Rectangle(rightX + rightColW - 90, rightY, 90, 28);
 
-                int flowY = rightY + 38;
+                // ★ 第 2 行：小镇世界线门禁（超市倒闭、Joja会员）
+                int row2Y = rightY + 32;
+                _gateJojaClosedPillRect = new Rectangle(rightX + 85, row2Y, 105, 26);
+                _gateJojaMemberPillRect = new Rectangle(rightX + 196, row2Y, 105, 26);
+
+                // 下方文本框整体顺延 28px
+                int flowY = rightY + 64;
                 int tagEditorH = 56;
                 int labelH = 26;   // ★ 与 RowBtnH 一致
                 int availTextH = (bodyBottom - flowY) - tagEditorH - (labelH * 3) - 30;
@@ -607,7 +609,6 @@ namespace ValleytalkReborn
                 }
 
                 _vm.SetUnique(_uniqueBox.Text);
-                _vm.SetHomeLocationBed(_homeBedCheckbox.isChecked);
             }
             else if (_activeTab == 1)
             {
@@ -726,7 +727,6 @@ namespace ValleytalkReborn
             if (ContainsPoint(_biographyBox, x, y)) { FocusDialogueBox(_biographyBox, x, y); return; }
             if (_scaffoldBtnRect.Contains(x, y)) { InsertScaffold(); return; }
             if (new Rectangle(_uniqueBox.X, _uniqueBox.Y, _uniqueBox.Width, _uniqueBox.Height).Contains(x, y)) { FocusTextBox(_uniqueBox); return; }
-            if (_homeBedCheckbox.bounds.Contains(x, y)) { _homeBedCheckbox.receiveLeftClick(x, y); return; }
             if (!AnyTextBoxHasFocus() && _copyBiographyRect.Contains(x, y)) { CopyBoxToClipboard("biography"); return; }
             if (_aiPolishBioRect.Contains(x, y) && !BioAiRunner.IsBusy)
             {
@@ -816,7 +816,21 @@ namespace ValleytalkReborn
 
             if (_gateMarriedPillRect.Contains(x, y))
             {
+                // ★ 若不可结婚，点击无效并播放取消音效
+                if (!_isDatable)
+                {
+                    Game1.playSound("cancel");
+                    return;
+                }
                 _vm.CycleRequireMarried();
+                Game1.playSound("drumkit6");
+                return;
+            }
+
+            // ★ 农夫指定配偶胶囊点击
+            if (_gatePlayerMarriedToPillRect.Contains(x, y))
+            {
+                CyclePlayerMarriedTo();
                 Game1.playSound("drumkit6");
                 return;
             }
@@ -1245,13 +1259,6 @@ namespace ValleytalkReborn
             DrawSingleLineBox(b, _uniqueBox);
             if (_uniqueBox.X <= mx && mx <= _uniqueBox.X + _uniqueBox.Width && _uniqueBox.Y <= my && my <= _uniqueBox.Y + _uniqueBox.Height)
                 _hoverText = "用于限定 NPC 的特殊行为或状态（如 'behind the counter', 'holding a football'）。";
-
-            DrawCard(b, _homeBedCardRect);
-            CustomFontManager.DrawString(b, "就寝行为偏好",
-                new Vector2(_homeBedCardRect.X + 16, _homeBedCardRect.Y + 6), TextSecondary, SectionHeaderSize);
-            _homeBedCheckbox.draw(b, 0, 0, this);
-            if (_homeBedCheckbox.bounds.Contains(mx, my))
-                _hoverText = "勾选后，NPC 在深夜对话时会偏向使用专属卧房就寝语境。";
         }
 
         private void DrawTab2(SpriteBatch b, int mx, int my)
@@ -1319,16 +1326,38 @@ namespace ValleytalkReborn
 
             var stage = _vm.Bio.ProgressStates[_vm.SelectedStageIndex];
 
-            CustomFontManager.DrawString(b, "激活门禁:", new Vector2(_stageRightColRect.X, _stageRightColRect.Y + 6), TextSecondary, SectionHeaderSize);
+            // ── 第 1 行：情感与好感门禁 ──
+            CustomFontManager.DrawString(b, "好感门禁:", new Vector2(_stageRightColRect.X, _stageRightColRect.Y + 6), TextSecondary, SectionHeaderSize);
             _heartsStepper.Draw(b);
 
-            DrawPillButton(b, _gateMarriedPillRect, stage.RequireMarried ? "已婚" : "不限婚姻", stage.RequireMarried, mx, my);
+            // 1. 自身已婚胶囊（不可结婚角色置灰禁用）
+            string marriedLabel = !_isDatable ? "不可结婚" : (stage.RequireMarried ? "已婚" : "不限婚姻");
+            DrawPillButton(b, _gateMarriedPillRect, marriedLabel, _isDatable && stage.RequireMarried, mx, my, isEnabled: _isDatable);
             if (_gateMarriedPillRect.Contains(mx, my))
             {
-                _hoverText = stage.RequireMarried
-                    ? "【激活条件：必须与该 NPC 结婚】\n仅当玩家与当前角色处于已婚状态时，本档位人设才会激活生效。"
-                    : "【激活条件：不限婚姻】\n无论玩家单身、与该角色结婚还是与其他人结婚，均可进入本档位。";
+                _hoverText = !_isDatable
+                    ? $"【{_npcName} 为不可结婚角色】\n无法配置玩家与当前角色的已婚门禁。"
+                    : (stage.RequireMarried
+                        ? "【激活条件：必须与该 NPC 结婚】\n仅当玩家与当前角色处于已婚状态时，本档位人设才会激活生效。"
+                        : "【激活条件：不限婚姻】\n无论玩家单身、与该角色结婚还是与其他人结婚，均可进入本档位。");
             }
+
+            // 2. 农夫指定配偶胶囊 (RequirePlayerMarriedTo)
+            string targetSpouse = stage.RequirePlayerMarriedTo;
+            string spouseDisp = string.IsNullOrEmpty(targetSpouse) ? "不限" : (Game1.getCharacterFromName(targetSpouse)?.displayName ?? targetSpouse);
+            DrawPillButton(b, _gatePlayerMarriedToPillRect, $"配偶:{spouseDisp}", !string.IsNullOrEmpty(targetSpouse), mx, my);
+            if (_gatePlayerMarriedToPillRect.Contains(mx, my))
+            {
+                _hoverText = string.IsNullOrEmpty(targetSpouse)
+                    ? "【激活条件：农夫配偶门禁】\n当前不限制农夫与谁结婚。\n左键点击：在小镇可婚角色中轮换切换；\n右键点击：重置为不限。"
+                    : $"【激活条件：农夫必须与 {spouseDisp} ({targetSpouse}) 结婚】\n仅当农夫的配偶为该角色时本档位激活（如克林特在玩家娶了艾米丽后的暗自心碎）。\n左键点击：切换下一位候选人；\n右键点击：重置为不限。";
+            }
+
+            DrawActionButton(b, _deleteStageRect, "删除此档", mx, my, isDanger: true);
+
+            // ── 第 2 行：小镇世界线门禁 ──
+            int row2Y = _stageRightColRect.Y + 32;
+            CustomFontManager.DrawString(b, "世界进度:", new Vector2(_stageRightColRect.X, row2Y + 4), TextSecondary, SectionHeaderSize);
 
             string jojaClosedText = stage.RequireJojaMartClosed.HasValue ? (stage.RequireJojaMartClosed.Value ? "超市:倒闭" : "超市:营业") : "超市:不限";
             DrawPillButton(b, _gateJojaClosedPillRect, jojaClosedText, stage.RequireJojaMartClosed.HasValue, mx, my);
@@ -1708,12 +1737,24 @@ namespace ValleytalkReborn
             CustomFontManager.DrawStringBold(b, label, textPos, btnTextCol, ButtonFontSize);
         }
 
-        private static void DrawPillButton(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my)
+        private static void DrawPillButton(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my, bool isEnabled = true)
         {
-            bool isHover = rect.Contains(mx, my);
+            bool isHover = isEnabled && rect.Contains(mx, my);
             bool isPressed = isHover && IsLeftMouseDown();
 
-            Color bg = isActive ? (isHover ? Color.Gold : new Color(255, 220, 130)) : (isHover ? new Color(255, 235, 205) : Color.White);
+            Color bg;
+            if (!isEnabled)
+            {
+                bg = new Color(225, 220, 215) * 0.75f; // ★ 置灰浅灰色底
+            }
+            else if (isActive)
+            {
+                bg = isHover ? Color.Gold : new Color(255, 220, 130);
+            }
+            else
+            {
+                bg = isHover ? new Color(255, 235, 205) : Color.White;
+            }
 
             int pressOffset = isPressed ? 1 : 0;
             if (isPressed) bg = Color.Lerp(bg, Color.Black, 0.14f);
@@ -1721,15 +1762,14 @@ namespace ValleytalkReborn
             b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1 + pressOffset, rect.Y + 1 + pressOffset, rect.Width - 2, rect.Height - 2), bg);
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
                 rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height,
-                isActive ? new Color(200, 150, 50) : Color.Wheat, 2f, false);
+                !isEnabled ? Color.Gray * 0.4f : (isActive ? new Color(200, 150, 50) : Color.Wheat), 2f, false);
 
             var sz = CustomFontManager.MeasureString(label, ContentFontSize);
             Vector2 textPos = new Vector2(
                 rect.X + pressOffset + (rect.Width - sz.X) / 2f,
                 rect.Y + pressOffset + (rect.Height - sz.Y) / 2f);
 
-            // ★ 主文字色
-            CustomFontManager.DrawString(b, label, textPos, TextPrimary, ContentFontSize);
+            CustomFontManager.DrawString(b, label, textPos, isEnabled ? TextPrimary : TextMuted, ContentFontSize);
         }
 
         /// <summary>卡片：暖羊皮纸填充 + 星露谷式暖金棕边框（替代原灰调）。</summary>
@@ -2390,7 +2430,6 @@ namespace ValleytalkReborn
             // ── Tab 1 初始数据 ──
             _biographyBox.SetText(_vm.GetBiography());
             _uniqueBox.Text = _vm.GetUnique();
-            _homeBedCheckbox.isChecked = _vm.GetHomeLocationBed();
 
             // ★★★ 补上：Tab 2 初始数据（行为规则与对白范例） ★★★
             _behaviorBox.SetText(_vm.GetTraitDescriptionOrNull("BehavioralRules") ?? string.Empty);
@@ -2456,7 +2495,6 @@ namespace ValleytalkReborn
                     string rawUnique = _vm.GetUnique() ?? string.Empty;
                     _uniqueBox.Text = rawUnique.Length > 20 ? rawUnique.Substring(0, 20) : rawUnique;
 
-                    _homeBedCheckbox.isChecked = _vm.GetHomeLocationBed();
                     break;
                 case 1:
                     _behaviorBox.SetText(_vm.GetTraitDescriptionOrNull("BehavioralRules") ?? string.Empty);
@@ -2540,6 +2578,60 @@ namespace ValleytalkReborn
             else
             {
                 Game1.exitActiveMenu();
+            }
+        }
+
+        /// <summary>
+        /// 循环切换指定配偶要求：
+        /// 候选人序列：不限 -> 该角色的社交关系网中的可婚对象（如克林特的 Emily 会排在首位） -> 原版全部单身角色
+        /// </summary>
+        private void CyclePlayerMarriedTo()
+        {
+            if (_vm.SelectedStageIndex < 0 || _vm.SelectedStageIndex >= _vm.Bio.ProgressStates.Count)
+                return;
+
+            string current = _vm.GetStagePlayerMarriedTo() ?? "";
+
+            List<string> candidates = new() { "" };
+
+            // 1. 优先加入当前角色配置了关系的可婚对象（如 Clint 关系里的 Emily）
+            if (_vm.Bio.Relationships != null)
+            {
+                foreach (var relKey in _vm.Bio.Relationships.Keys)
+                {
+                    var c = Game1.getCharacterFromName(relKey);
+                    if (c != null && c.datable.Value && !candidates.Contains(relKey))
+                        candidates.Add(relKey);
+                }
+            }
+
+            // 2. 追加原版所有单身角色
+            string[] defaults = { "Emily", "Abigail", "Haley", "Leah", "Maru", "Penny", "Alex", "Elliott", "Harvey", "Sam", "Sebastian", "Shane" };
+            foreach (var d in defaults)
+            {
+                if (!candidates.Contains(d))
+                    candidates.Add(d);
+            }
+
+            int curIdx = candidates.IndexOf(current);
+            int nextIdx = (curIdx + 1) % candidates.Count;
+            string nextVal = candidates[nextIdx];
+
+            _vm.SetStagePlayerMarriedTo(string.IsNullOrEmpty(nextVal) ? null : nextVal);
+        }
+
+        /// <summary>重写右键操作：右键点击指定配偶胶囊可一键清空为“不限”。</summary>
+        public override void receiveRightClick(int x, int y, bool playSound = true)
+        {
+            base.receiveRightClick(x, y, playSound);
+
+            if (_activeTab == 2 && _gatePlayerMarriedToPillRect.Contains(x, y))
+            {
+                if (!string.IsNullOrEmpty(_vm.GetStagePlayerMarriedTo()))
+                {
+                    _vm.SetStagePlayerMarriedTo(null);
+                    Game1.playSound("bigDeSelect");
+                }
             }
         }
 
