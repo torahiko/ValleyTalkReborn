@@ -7,6 +7,7 @@ using StardewValley;
 using StardewValley.Menus;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using ValleytalkReborn.Services;
 
@@ -1487,35 +1488,43 @@ internal static class RuleArchiveManager
     public const int MaxCapacity = 100;
     private static List<MemoryEntry>? _cache;
 
-    private static string GetFilePath()
+    private static string? GetFilePath()
     {
-        try
+        if (Context.IsWorldReady && !string.IsNullOrEmpty(Constants.CurrentSavePath))
         {
-            if (Context.IsWorldReady && !string.IsNullOrEmpty(Constants.CurrentSavePath))
-            {
-                return System.IO.Path.Combine(Constants.CurrentSavePath, "rules_archive.json");
-            }
+            return Path.Combine(StorageLayout.LocalBaseDir!, "rules_archive.json");
         }
-        catch { }
-
-        string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-        return System.IO.Path.Combine(baseDir, "rules_archive.json");
+        return null;
     }
 
     public static List<MemoryEntry> GetAll()
     {
         if (_cache != null) return _cache;
 
-        string path = GetFilePath();
-        if (System.IO.File.Exists(path))
+        string? path = GetFilePath();
+        if (path != null)
         {
-            try
+            // 一次性单向迁移两个遗留源（目标已存在 → 跳过；永不删除源）
+            StorageLayout.MigrateLegacyFile(
+                Path.Combine(Constants.CurrentSavePath!, "rules_archive.json"),
+                path, "RuleArchive");
+            StorageLayout.MigrateLegacyFile(
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rules_archive.json"),
+                path, "RuleArchive");
+
+            if (File.Exists(path))
             {
-                string json = System.IO.File.ReadAllText(path);
-                _cache = Newtonsoft.Json.JsonConvert.DeserializeObject<List<MemoryEntry>>(json) ?? new List<MemoryEntry>();
-                return _cache;
+                try
+                {
+                    string json = File.ReadAllText(path);
+                    _cache = Newtonsoft.Json.JsonConvert.DeserializeObject<List<MemoryEntry>>(json) ?? new List<MemoryEntry>();
+                    return _cache;
+                }
+                catch (Exception ex)
+                {
+                    ModEntry.SMonitor?.Log($"[RuleArchive] Load failed: {ex.Message}", LogLevel.Warn);
+                }
             }
-            catch { }
         }
 
         _cache = new List<MemoryEntry>();
@@ -1525,19 +1534,36 @@ internal static class RuleArchiveManager
     public static void Save()
     {
         if (_cache == null) return;
+
+        string? path = GetFilePath();
+        if (path == null)
+        {
+            ModEntry.SMonitor?.Log("[RuleArchive] Save: no save loaded, skipping persistence.", LogLevel.Trace);
+            return;
+        }
+
+        string tmp = path + ".tmp";
         try
         {
-            string path = GetFilePath();
-            string? dir = System.IO.Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(dir) && !System.IO.Directory.Exists(dir))
+            string? dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
             {
-                System.IO.Directory.CreateDirectory(dir);
+                Directory.CreateDirectory(dir);
             }
 
             string json = Newtonsoft.Json.JsonConvert.SerializeObject(_cache, Newtonsoft.Json.Formatting.Indented);
-            System.IO.File.WriteAllText(path, json);
+            // 原子写：写 .tmp 后 Move，避免中断产生半写文件
+            File.WriteAllText(tmp, json);
+            File.Move(tmp, path, overwrite: true);
+
+            ModEntry.SMonitor?.Log($"[RuleArchive] Saved {_cache.Count} rule(s).", LogLevel.Debug);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            try { if (File.Exists(tmp)) File.Delete(tmp); }
+            catch { }
+            ModEntry.SMonitor?.Log($"[RuleArchive] Save failed: {ex.Message}", LogLevel.Warn);
+        }
     }
 
     public static IReadOnlyList<MemoryEntry> GetArchivedRules(string scope)
