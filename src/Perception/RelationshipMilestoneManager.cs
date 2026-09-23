@@ -32,13 +32,14 @@ internal class RelationshipMilestoneManager
     {
         // A1 决议：幂等防重入守卫，防止 Entry 异常重入导致重复订阅
         if (_helper != null) return;
-
+        
         _helper = helper;
         _monitor = monitor;
 
         _helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
         _helper.Events.GameLoop.DayEnding    += OnDayEnding;
         _helper.Events.GameLoop.DayStarted   += OnDayStarted;
+        
     }
 
     /// <summary>
