@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using StardewModdingAPI;
 using StardewValley;
+using ValleytalkReborn.Services;
 
 namespace ValleytalkReborn;
 
@@ -15,15 +17,30 @@ public class StoodUpTracker : IStoodUpProvider
     // Key: NpcName, Value: 被放鸽子的游戏日期描述（用于 Prompt 注入）
     private Dictionary<string, string> _stoodUpData = new();
 
+    /// <summary>
+    /// 存档本地绝对路径：StorageLayout.LocalBaseDir/stoodup.json。
+    /// 未载档或 SaveFolderName 为空时返回 null（此时读写均跳过）。
+    /// </summary>
+    private static string? FilePath =>
+        StorageLayout.LocalBaseDir is null || string.IsNullOrEmpty(Constants.SaveFolderName)
+            ? null
+            : Path.Combine(StorageLayout.LocalBaseDir!, "stoodup.json");
+
     private StoodUpTracker() { }
 
     public void Load()
     {
         _stoodUpData.Clear();
-        if (string.IsNullOrWhiteSpace(Constants.SaveFolderName) || ModEntry.SHelper == null) return;
+
+        string? path = FilePath;
+        if (path == null) return;
+
+        // 一次性单向迁移遗留数据（data/{SaveFolderName}/stoodup.json → LocalBaseDir/stoodup.json）
+        string legacyPath = Path.Combine(StorageLayout.ModDirectory, $"data/{Constants.SaveFolderName}/stoodup.json");
+        StorageLayout.MigrateLegacyFile(legacyPath, path, "StoodUp");
+
         try
         {
-            string path = $"data/{Constants.SaveFolderName}/stoodup.json";
             var loaded = ModEntry.SHelper.Data.ReadJsonFile<Dictionary<string, string>>(path);
             if (loaded != null)
                 _stoodUpData = loaded;
@@ -39,13 +56,15 @@ public class StoodUpTracker : IStoodUpProvider
     /// </summary>
     private void Save()
     {
-        // [OPT-1] 严格校验 SaveFolderName，防止未加载存档时写入
-        if (string.IsNullOrWhiteSpace(Constants.SaveFolderName) || ModEntry.SHelper == null) return;
+        string? path = FilePath;
+        if (path == null)
+        {
+            ModEntry.SMonitor?.Log("[StoodUpTracker] Save: no save loaded, skipping persistence.", LogLevel.Trace);
+            return;
+        }
 
         try
         {
-            string path = $"data/{Constants.SaveFolderName}/stoodup.json";
-
             // [OPT-2] 统一使用 SMAPI Data API，不再混用 File.Delete
             // 空字典写入比删除文件更安全：避免下次 Load 时因文件不存在产生额外 IO 或日志噪音
             ModEntry.SHelper.Data.WriteJsonFile(path, _stoodUpData);
