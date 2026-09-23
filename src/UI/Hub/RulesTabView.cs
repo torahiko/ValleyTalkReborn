@@ -49,6 +49,15 @@ internal sealed class RulesTabView : IHubTabView
     private MemoryCategory _editCategory;
     private Rectangle _editFactCapsuleRect;
     private Rectangle _editBehaviorCapsuleRect;
+
+    // ★ 新增：时效修改模式与控件 (0=Today, 1=Days, 2=Perm)
+    private int _editDurationMode = 2;
+    private int _editDaysValue = 3;
+    private Rectangle _editDurPermRect;
+    private Rectangle _editDurTodayRect;
+    private Rectangle _editDurCustomRect;
+    private NumberStepper? _editDayStepper;
+
     private Rectangle _saveBtnRect;
     private Rectangle _deleteBtnRect;
 
@@ -176,8 +185,9 @@ internal sealed class RulesTabView : IHubTabView
         _addBtnRect = new Rectangle(_midColRect.Right - 94, _midColRect.Y + 8, 88, 28);
 
         int editPad = 14;
-        int inputY = _rightColRect.Y + 68;
-        int inputH = Math.Clamp(h - 190, 110, 180);
+        int inputY = _rightColRect.Y + 64;
+        // 适度调整输入框高度范围，为下方的时效栏留出舒适垂直间距
+        int inputH = Math.Clamp(h - 225, 95, 135);
 
         _editInputBox = new DialogueTextInputBox(RuleManager.MaxRuleLength, (int)(RuleManager.MaxRuleLength * 0.9f))
         {
@@ -193,13 +203,28 @@ internal sealed class RulesTabView : IHubTabView
             Selected = false
         };
 
-        int catY = inputY + inputH + 16;
-        int catW = (_rightColRect.Width - editPad * 2 - 8) / 2;
-        _editFactCapsuleRect = new Rectangle(_rightColRect.X + editPad, catY, catW, 30);
-        _editBehaviorCapsuleRect = new Rectangle(_rightColRect.X + editPad + catW + 8, catY, catW, 30);
+        int usableW = _rightColRect.Width - editPad * 2;
 
+        // 1. 规则分类行（既定事实 / 行为准则）
+        int catY = inputY + inputH + 12;
+        int catW = (usableW - 8) / 2;
+        _editFactCapsuleRect = new Rectangle(_rightColRect.X + editPad, catY, catW, 28);
+        _editBehaviorCapsuleRect = new Rectangle(_rightColRect.X + editPad + catW + 8, catY, catW, 28);
+
+        // 2. ★ 新增：时效胶囊行（永久有效 / 仅今天 / 指定天）
+        int durY = catY + 28 + 10;
+        int durBtnW = (usableW - 12) / 3;
+        _editDurPermRect = new Rectangle(_rightColRect.X + editPad, durY, durBtnW, 28);
+        _editDurTodayRect = new Rectangle(_editDurPermRect.Right + 6, durY, durBtnW, 28);
+        _editDurCustomRect = new Rectangle(_editDurTodayRect.Right + 6, durY, usableW - durBtnW * 2 - 12, 28);
+
+        _editDayStepper = new NumberStepper(
+            new Rectangle(_editDurCustomRect.X + 1, _editDurCustomRect.Y, _editDurCustomRect.Width - 2, 28),
+            Math.Max(1, _editDaysValue), 1, 99, 1, "d");
+
+        // 3. 底部主操作按钮
         int btnY = _rightColRect.Bottom - 44;
-        int btnW = (_rightColRect.Width - editPad * 2 - 10) / 2;
+        int btnW = (usableW - 10) / 2;
         _saveBtnRect = new Rectangle(_rightColRect.X + editPad, btnY, btnW, 34);
         _deleteBtnRect = new Rectangle(_rightColRect.X + editPad + btnW + 10, btnY, btnW, 34);
 
@@ -275,6 +300,31 @@ internal sealed class RulesTabView : IHubTabView
         {
             _editInputBox?.SetText(_activeEditingEntry.Content);
             _editCategory = _activeEditingEntry.Category;
+
+            // ★ 回填时效数据
+            int today = (int)Game1.Date.TotalDays;
+            if (_editCategory == MemoryCategory.Behavior || _activeEditingEntry.ExpireDay < 0)
+            {
+                _editDurationMode = 2; // 永久有效
+                _editDaysValue = 3;
+            }
+            else
+            {
+                int remaining = _activeEditingEntry.ExpireDay - today;
+                if (remaining <= 1)
+                {
+                    _editDurationMode = 0; // 仅今天
+                    _editDaysValue = 1;
+                }
+                else
+                {
+                    _editDurationMode = 1; // 指定天
+                    _editDaysValue = Math.Clamp(remaining, 1, 99);
+                }
+            }
+
+            if (_editDayStepper != null)
+                _editDayStepper.Value = _editDaysValue;
         }
         else
         {
@@ -507,7 +557,50 @@ internal sealed class RulesTabView : IHubTabView
             if (_editBehaviorCapsuleRect.Contains(x, y))
             {
                 _editCategory = MemoryCategory.Behavior;
+                _editDurationMode = 2; // 行为准则属于长期内在约束，固定为永久有效
                 Game1.playSound("smallSelect");
+                return true;
+            }
+
+            // ★ 新增：时效模式交互
+            if (_editDurPermRect.Contains(x, y))
+            {
+                _editDurationMode = 2;
+                Game1.playSound("smallSelect");
+                return true;
+            }
+
+            if (_editDurTodayRect.Contains(x, y))
+            {
+                if (_editCategory == MemoryCategory.Behavior)
+                {
+                    Game1.playSound("cancel");
+                    Game1.addHUDMessage(new HUDMessage("行为准则为核心长期约束，固定为永久生效", HUDMessage.error_type));
+                    return true;
+                }
+                _editDurationMode = 0;
+                Game1.playSound("smallSelect");
+                return true;
+            }
+
+            if (_editDurCustomRect.Contains(x, y))
+            {
+                if (_editCategory == MemoryCategory.Behavior)
+                {
+                    Game1.playSound("cancel");
+                    Game1.addHUDMessage(new HUDMessage("行为准则为核心长期约束，固定为永久生效", HUDMessage.error_type));
+                    return true;
+                }
+
+                if (_editDurationMode != 1)
+                {
+                    _editDurationMode = 1;
+                    Game1.playSound("smallSelect");
+                }
+                else
+                {
+                    _editDayStepper?.ReceiveLeftClick(x, y);
+                }
                 return true;
             }
 
@@ -558,6 +651,23 @@ internal sealed class RulesTabView : IHubTabView
         if (result == MemoryOperationResult.Success)
         {
             _activeEditingEntry.Category = _editCategory;
+
+            // ★ 核心修改：写入修改后的 ExpireDay
+            int today = (int)Game1.Date.TotalDays;
+            if (_editCategory == MemoryCategory.Behavior || _editDurationMode == 2)
+            {
+                _activeEditingEntry.ExpireDay = -1;
+            }
+            else if (_editDurationMode == 0)
+            {
+                _activeEditingEntry.ExpireDay = today + 1; // 仅今天（明天过期）
+            }
+            else if (_editDurationMode == 1)
+            {
+                int days = _editDayStepper?.Value ?? _editDaysValue;
+                _activeEditingEntry.ExpireDay = today + Math.Max(1, days);
+            }
+
             RuleManager.Instance.Save();
             Game1.playSound("coin");
             Game1.addHUDMessage(new HUDMessage("✔ 规则已更新保存", HUDMessage.newQuest_type));
@@ -581,6 +691,15 @@ internal sealed class RulesTabView : IHubTabView
                 if (result == MemoryOperationResult.Success)
                 {
                     _activeEditingEntry.Category = _editCategory;
+
+                    // ★ 同步时效
+                    int today = (int)Game1.Date.TotalDays;
+                    if (_editCategory == MemoryCategory.Behavior || _editDurationMode == 2)
+                        _activeEditingEntry.ExpireDay = -1;
+                    else if (_editDurationMode == 0)
+                        _activeEditingEntry.ExpireDay = today + 1;
+                    else if (_editDurationMode == 1)
+                        _activeEditingEntry.ExpireDay = today + Math.Max(1, _editDayStepper?.Value ?? _editDaysValue);
                 }
             }
         }
@@ -1001,15 +1120,38 @@ internal sealed class RulesTabView : IHubTabView
             int curTagX = cardDrawRect.X + 12;
             int tagY = cardDrawRect.Y + 8;
 
-            string scopeLabel = entry.NpcName == "WORLD" ? "小镇共识" : entry.NpcName;
-            DrawMiniBadge(b, ref curTagX, tagY, scopeLabel,
-                entry.NpcName == "WORLD" ? RulesTheme.AccentBlue : RulesTheme.TextSecondary,
-                RulesTheme.SurfaceSunken);
+            // 归属铭牌
+            if (entry.NpcName == "WORLD")
+            {
+                DrawMiniBadge(b, ref curTagX, tagY, "小镇共识",
+                    bgCol: new Color(230, 240, 252),        // 柔和天蓝底
+                    borderCol: new Color(110, 150, 195),    // 钢蓝清晰木框
+                    textCol: new Color(38, 72, 120));       // 浓郁海蓝字
+            }
+            else
+            {
+                string npcDisp = Game1.getCharacterFromName(entry.NpcName)?.displayName ?? entry.NpcName;
+                DrawMiniBadge(b, ref curTagX, tagY, npcDisp,
+                    bgCol: new Color(255, 242, 222),        // 暖蜜金米色
+                    borderCol: new Color(196, 142, 82),     // 暖金木质边框
+                    textCol: new Color(75, 42, 20));        // 沉稳焦褐字
+            }
 
-            bool isBehavior = entry.Category == MemoryCategory.Behavior;
-            DrawMiniBadge(b, ref curTagX, tagY, isBehavior ? "行为准则" : "既定事实",
-                isBehavior ? RulesTheme.AccentAmber : RulesTheme.AccentGreen,
-                RulesTheme.SurfaceSunken);
+            // 规则类别铭牌
+            if (entry.Category == MemoryCategory.Behavior)
+            {
+                DrawMiniBadge(b, ref curTagX, tagY, "行为准则",
+                    bgCol: new Color(255, 236, 218),        // 暖杏琥珀底
+                    borderCol: new Color(215, 120, 50),     // 鲜明暖橙框
+                    textCol: new Color(148, 58, 12));       // 焦红褐粗体字
+            }
+            else
+            {
+                DrawMiniBadge(b, ref curTagX, tagY, "既定事实",
+                    bgCol: new Color(232, 246, 234),        // 清爽翡翠浅绿底
+                    borderCol: new Color(105, 165, 115),    // 橄榄绿边框
+                    textCol: new Color(32, 98, 45));        // 森林翠绿字
+            }
 
             int remaining = Math.Max(0, entry.ExpireDay - today);
             string durLabel = entry.ExpireDay < 0 ? "永久" : $"剩 {remaining} 天";
@@ -1088,29 +1230,66 @@ internal sealed class RulesTabView : IHubTabView
             new Vector2(_rightColRect.X + 14, _rightColRect.Y + 12),
             RulesTheme.TextPrimary, CustomFontManager.SizeRegular);
 
-        string scopeOwner = $"归属对象: {(_activeEditingEntry.NpcName == "WORLD" ? "小镇共识" : _activeEditingEntry.NpcName)}";
+        string scopeDisp = _activeEditingEntry.NpcName == "WORLD"
+            ? "小镇共识"
+            : (Game1.getCharacterFromName(_activeEditingEntry.NpcName)?.displayName ?? _activeEditingEntry.NpcName);
+        string scopeOwner = $"归属对象: {scopeDisp}";
         CustomFontManager.DrawString(b, scopeOwner,
             new Vector2(_rightColRect.X + 14, _rightColRect.Y + 38),
             RulesTheme.TextSecondary, CustomFontManager.SizeSmall);
 
         _editInputBox?.Draw(b);
 
+        // 1. 分类设置
         DrawSegmentButton(b, _editFactCapsuleRect, "既定事实", _editCategory == MemoryCategory.Fact, mx, my);
         DrawSegmentButton(b, _editBehaviorCapsuleRect, "行为准则", _editCategory == MemoryCategory.Behavior, mx, my);
 
+        // 2. ★ 新增：时效设置（行为准则固定永久有效）
+        bool isBehavior = _editCategory == MemoryCategory.Behavior;
+        DrawSegmentButton(b, _editDurPermRect, "永久有效", _editDurationMode == 2, mx, my);
+        DrawSegmentButton(b, _editDurTodayRect, "仅今天", !isBehavior && _editDurationMode == 0, mx, my, isEnabled: !isBehavior);
+
+        if (!isBehavior && _editDurationMode == 1)
+        {
+            _editDayStepper?.Draw(b);
+        }
+        else
+        {
+            DrawSegmentButton(b, _editDurCustomRect, "指定天", false, mx, my, isEnabled: !isBehavior);
+        }
+
+        // 悬停提示
+        if (_editDurPermRect.Contains(mx, my))
+            HoveredTooltip = "【永久有效】规则长期生效，直至手动删除";
+        else if (_editDurTodayRect.Contains(mx, my))
+            HoveredTooltip = isBehavior ? "行为准则属于核心长期约束，固定永久生效" : "【仅今天】规则在今天结束后自动过期并归档";
+        else if (_editDurCustomRect.Contains(mx, my))
+            HoveredTooltip = isBehavior ? "行为准则属于核心长期约束，固定永久生效" : "【指定天数】设定在 N 天后过期并自动归档";
+
+        // 3. 底部主操作按钮
         DrawActionButton(b, _saveBtnRect, "✔ 保存修改", mx, my, isPrimary: true);
         DrawActionButton(b, _deleteBtnRect, "删除规则", mx, my, isDanger: true);
     }
 
-    private static void DrawMiniBadge(SpriteBatch b, ref int curX, int y, string text, Color textCol, Color bgCol)
+    private static void DrawMiniBadge(SpriteBatch b, ref int curX, int y, string text, Color bgCol, Color borderCol, Color textCol)
     {
         var sz = CustomFontManager.MeasureString(text, CustomFontManager.SizeSmall);
-        var rect = new Rectangle(curX, y, (int)sz.X + 10, 20);
-        b.Draw(Game1.staminaRect, rect, bgCol);
-        IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-            rect.X, rect.Y, rect.Width, rect.Height, textCol * 0.45f, 1.5f, false);
+        int badgeW = (int)sz.X + 12;
+        int badgeH = 20;
+        var rect = new Rectangle(curX, y, badgeW, badgeH);
 
-        CustomFontManager.DrawString(b, text, new Vector2(rect.X + 5, rect.Y + 1), textCol, CustomFontManager.SizeSmall);
+        // 1. 微阴影增强立体浮雕感
+        b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1, rect.Y + 1, rect.Width, rect.Height), Color.Black * 0.12f);
+
+        // 2. 饱满内衬底色（全覆盖，防止透出底板白点）
+        b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1, rect.Y + 1, rect.Width - 2, rect.Height - 2), bgCol);
+
+        // 3. 严格采用 2f 整像素 scale，消灭 1.5f 浮点网格导致的右侧与底部白色采样裂缝
+        IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
+            rect.X, rect.Y, rect.Width, rect.Height, borderCol, 2f, false);
+
+        // 4. 文字清晰居中绘制
+        CustomFontManager.DrawString(b, text, new Vector2(rect.X + 6, rect.Y + 1), textCol, CustomFontManager.SizeSmall);
         curX += rect.Width + 6;
     }
 
@@ -1122,35 +1301,42 @@ internal sealed class RulesTabView : IHubTabView
             rect.X, rect.Y, rect.Width, rect.Height, RulesTheme.BorderSoft, 2f, false);
     }
 
-    private static void DrawSegmentButton(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my)
+    private static void DrawSegmentButton(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my, bool isEnabled = true)
     {
-        bool isHover = rect.Contains(mx, my);
+        bool isHover = isEnabled && rect.Contains(mx, my);
         bool isPressed = isHover && Mouse.GetState().LeftButton == ButtonState.Pressed;
         int pressOffset = isPressed ? 1 : 0;
 
-        Color bg = isActive
-            ? (isPressed ? RulesTheme.SurfaceSunken : (isHover ? RulesTheme.SurfaceHover : RulesTheme.SurfaceActive))
-            : (isPressed ? RulesTheme.SurfaceSunken : (isHover ? RulesTheme.SurfaceHover : RulesTheme.SurfaceCard));
+        Color bg = !isEnabled
+            ? new Color(236, 230, 222) * 0.75f
+            : isActive
+                ? (isPressed ? RulesTheme.SurfaceSunken : (isHover ? RulesTheme.SurfaceHover : RulesTheme.SurfaceActive))
+                : (isPressed ? RulesTheme.SurfaceSunken : (isHover ? RulesTheme.SurfaceHover : RulesTheme.SurfaceCard));
 
-        Color borderCol = isActive
-            ? RulesTheme.BorderBold
-            : (isPressed ? RulesTheme.BorderBold : (isHover ? RulesTheme.BorderMid : RulesTheme.BorderSoft));
+        Color borderCol = !isEnabled
+            ? RulesTheme.BorderSoft * 0.7f
+            : isActive
+                ? RulesTheme.BorderBold
+                : (isPressed ? RulesTheme.BorderBold : (isHover ? RulesTheme.BorderMid : RulesTheme.BorderSoft));
 
-        if (!isPressed && isActive)
+        if (!isPressed && isActive && isEnabled)
         {
             b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1, rect.Y + 2, rect.Width, rect.Height), RulesTheme.Shadow);
         }
 
-        var drawRect = new Rectangle(rect.X, rect.Y + pressOffset, rect.Width, rect.Height);
+        var drawRect = new Rectangle(rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height);
 
         b.Draw(Game1.staminaRect, new Rectangle(drawRect.X + 1, drawRect.Y + 1, drawRect.Width - 2, drawRect.Height - 2), bg);
         IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
             drawRect.X, drawRect.Y, drawRect.Width, drawRect.Height, borderCol, 2f, false);
 
         var sz = CustomFontManager.MeasureString(label, CustomFontManager.SizeSmall);
+        Color textCol = !isEnabled ? RulesTheme.TextMuted
+                      : isActive ? RulesTheme.TextPrimary : RulesTheme.TextSecondary;
+
         CustomFontManager.DrawString(b, label,
             new Vector2(drawRect.X + (drawRect.Width - sz.X) / 2f, drawRect.Y + (drawRect.Height - sz.Y) / 2f),
-            isActive ? RulesTheme.TextPrimary : RulesTheme.TextSecondary, CustomFontManager.SizeSmall);
+            textCol, CustomFontManager.SizeSmall);
     }
 
     private static void DrawActionButton(SpriteBatch b, Rectangle rect, string label, int mx, int my,
