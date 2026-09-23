@@ -80,7 +80,6 @@ public class BioData
     public Dictionary<string, string> ExtraPortraits { get; set; } = new Dictionary<string, string>();
     public List<string> Preoccupations { get; set; } = new List<string>();
     public Dictionary<string, string> Dialogue { get; set; } = new Dictionary<string, string>();
-    public bool HomeLocationBed { get; set; } = false;
 
     [JsonIgnore]
     public string GenderP2 => (isMale ?? false) ? He : She;
