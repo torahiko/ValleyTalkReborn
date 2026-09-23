@@ -40,6 +40,7 @@ namespace ValleytalkReborn
         private readonly Action _onFix;
         private readonly string? _tip;
         private readonly bool _continueIsDanger;
+        private readonly bool _isDestructiveAlert;
 
         private ClickableTextureComponent _closeButton;
         private float _closeButtonHoverScale;
@@ -59,12 +60,13 @@ namespace ValleytalkReborn
             string fixText,
             Action onFix,
             string? tip = null,
-            bool continueIsDanger = true)
+            bool continueIsDanger = true,
+            bool isDestructiveAlert = false)
             : base(
                 (Game1.uiViewport.Width - MenuWidth) / 2,
-                (Game1.uiViewport.Height - MenuHeight) / 2,
+                (Game1.uiViewport.Height - (isDestructiveAlert ? 330 : MenuHeight)) / 2,
                 MenuWidth,
-                MenuHeight,
+                isDestructiveAlert ? 330 : MenuHeight,
                 showUpperRightCloseButton: false)
         {
             _parentMenu = parentMenu;
@@ -77,6 +79,7 @@ namespace ValleytalkReborn
             _onFix = onFix;
             _tip = tip;
             _continueIsDanger = continueIsDanger;
+            _isDestructiveAlert = isDestructiveAlert;
 
             _closeButton = new ClickableTextureComponent(
                 new Rectangle(xPositionOnScreen + width - 48, yPositionOnScreen + 14, 36, 36),
@@ -180,21 +183,52 @@ namespace ValleytalkReborn
                 _cardRect.X, _cardRect.Y, _cardRect.Width, _cardRect.Height,
                 new Color(223, 122, 4) * 0.7f, 2f, false);
 
-            // 逐行绘制警告条目
-            int textY = _cardRect.Y + 14;
-            const int lineH = 26;
-            float maxWarningWidth = _cardRect.Width - 48; // 动态根据卡片宽度自适应计算安全宽度
-            for (int i = 0; i < _warnings.Count; i++)
+            // 分流绘制：破坏性清空模式（居中横幅）vs 常规列表模式（圆点条目）
+            if (_isDestructiveAlert)
             {
-                CustomFontManager.DrawString(b, "•", new Vector2(_cardRect.X + 16, textY), BioEditorMenu.TextWarning, SectionHeaderSize);
-                string displayText = CustomFontManager.TruncateString(_warnings[i], TipFontSize, maxWarningWidth);
-                CustomFontManager.DrawString(b, displayText, new Vector2(_cardRect.X + 32, textY + 1), BioEditorMenu.TextPrimary, TipFontSize);
-                textY += lineH;
-            }
+                // ── 清空专属排版 ──
+                // 1. 中部警告横幅（微红底衬 + 警示金红边框）
+                int bannerW = _cardRect.Width - 36;
+                int bannerH = 46;
+                Rectangle bannerRect = new Rectangle(_cardRect.X + 18, _cardRect.Y + 18, bannerW, bannerH);
 
-            // 底部提示（可选，传入空则隐藏）
-            if (!string.IsNullOrEmpty(_tip))
-                CustomFontManager.DrawString(b, _tip, new Vector2(_cardRect.X + 16, _cardRect.Bottom - 26), BioEditorMenu.TextMuted, TipFontSize);
+                b.Draw(Game1.staminaRect, bannerRect, new Color(255, 235, 230));
+                IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
+                    bannerRect.X, bannerRect.Y, bannerRect.Width, bannerRect.Height,
+                    new Color(220, 100, 90) * 0.8f, 2f, false);
+
+                // 2. 居中警示主文案（无圆点，居中大方）
+                string warnText = _warnings.Count > 0 ? _warnings[0] : "此操作不可撤销，清除后记录将永久丢失。";
+                var warnSize = CustomFontManager.MeasureStringBold(warnText, SectionHeaderSize);
+                CustomFontManager.DrawStringBold(b, warnText,
+                    new Vector2(bannerRect.X + (bannerRect.Width - warnSize.X) / 2f, bannerRect.Y + (bannerRect.Height - warnSize.Y) / 2f),
+                    BioEditorMenu.TextDanger, SectionHeaderSize);
+
+                // 3. 底部辅助提示语（居中排布）
+                string guideTip = !string.IsNullOrEmpty(_tip) ? _tip : "如需保留部分记忆，请点击【保留】后手动单条删除。";
+                var tipSize = CustomFontManager.MeasureString(guideTip, TipFontSize);
+                CustomFontManager.DrawString(b, guideTip,
+                    new Vector2(_cardRect.X + (_cardRect.Width - tipSize.X) / 2f, bannerRect.Bottom + 16),
+                    BioEditorMenu.TextMuted, TipFontSize);
+            }
+            else
+            {
+                // ── 原有列表排版（单条删除 / AI 阀门保持原样）──
+                int textY = _cardRect.Y + 14;
+                const int lineH = 26;
+                float maxWarningWidth = _cardRect.Width - 48; // 动态根据卡片宽度自适应计算安全宽度
+
+                for (int i = 0; i < _warnings.Count; i++)
+                {
+                    CustomFontManager.DrawString(b, "•", new Vector2(_cardRect.X + 16, textY), BioEditorMenu.TextWarning, SectionHeaderSize);
+                    string displayText = CustomFontManager.TruncateString(_warnings[i], TipFontSize, maxWarningWidth);
+                    CustomFontManager.DrawString(b, displayText, new Vector2(_cardRect.X + 32, textY + 1), BioEditorMenu.TextPrimary, TipFontSize);
+                    textY += lineH;
+                }
+
+                if (!string.IsNullOrEmpty(_tip))
+                    CustomFontManager.DrawString(b, _tip, new Vector2(_cardRect.X + 16, _cardRect.Bottom - 26), BioEditorMenu.TextMuted, TipFontSize);
+            }
 
             // 4. 底部动作按钮
             // 完善按钮（常规浅木按钮）
