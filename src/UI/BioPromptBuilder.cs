@@ -131,7 +131,7 @@ namespace ValleytalkReborn
                 if (string.IsNullOrEmpty(block))
                     continue;
 
-                int hearts = ReadEvenField(block, "心数:");
+                int hearts = ReadHeartsField(block, "心数:");
                 bool married = ReadBoolField(block, "已婚:");
                 string attitude = ReadSection(block, "态度:");
                 string mindset = ReadSection(block, "心智:");
@@ -157,16 +157,15 @@ namespace ValleytalkReborn
             return stages.Count > 0;
         }
 
-        private static int ReadEvenField(string block, string key)
+        private static int ReadHeartsField(string block, string key)
         {
+            // 心数按 1 心 1 刻度原样接受（含奇数），仅 clamp 到 0–14；
+            // 不再对齐 NumberStepper 步进 2（奇数属于预期输入）。
             string v = ReadLineValue(block, key);
             if (string.IsNullOrEmpty(v)) return 0;
             v = v.Replace("：", ":").Trim();
             if (int.TryParse(v, out int n))
-            {
-                if (n % 2 != 0) n -= 1; // 对齐步进 2
                 return Math.Clamp(n, 0, 14);
-            }
             return 0;
         }
 
