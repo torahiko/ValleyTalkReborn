@@ -617,19 +617,19 @@ private static List<PersonCandidate> EvaluateNearbyPresence(NPC npc, bool isZh)
     }
 
     // 优先 3.2: 关系网命中（亲属、死党、乐队同伴）
-    var relatedVillagers = new List<(NPC character, string relDesc)>();
+    var relatedVillagers = new List<NPC>();
     foreach (var other in inRangeVillagers)
     {
-        if (NpcRelationRegistry.Instance.TryGetRelation(npc.Name, other.Name, isZh, out var relDesc))
+        if (NpcPersonaRelationScanner.HasRelationInAnyDirection(npc.Name, other.Name))
         {
-            relatedVillagers.Add((other, relDesc));
+            relatedVillagers.Add(other);
         }
     }
 
     if (relatedVillagers.Count > 0)
     {
         var chosen = relatedVillagers[_rng.Next(relatedVillagers.Count)];
-        string oName = isZh ? NpcNameLocalizer.GetZhName(chosen.character.Name) : (chosen.character.displayName ?? chosen.character.Name);
+        string oName = isZh ? NpcNameLocalizer.GetZhName(chosen.Name) : (chosen.displayName ?? chosen.Name);
 
         // 如果在拥挤的室内（如酒吧），描述加上空间距离感
         string noticeLine = (crowdCount >= 4 && !loc.IsOutdoors)
