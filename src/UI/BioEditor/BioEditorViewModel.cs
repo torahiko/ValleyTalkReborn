@@ -542,6 +542,7 @@ internal sealed class BioEditorViewModel
         MarkDirty();
     }
 
+#nullable enable
     /// <summary>获取当前档位要求的农夫配偶 Id（null 表示不限）。</summary>
     public string? GetStagePlayerMarriedTo()
     {
@@ -561,6 +562,7 @@ internal sealed class BioEditorViewModel
             MarkDirty();
         }
     }
+#nullable disable
 
     /// <summary>构建门禁摘要："≥N♥"/"已婚"/"配偶:XXX"/"超市倒闭"/"会员" 依序 "/" 连接，空则"无门禁"；false 态不显示。</summary>
     public string BuildGateSummary(int stageIndex)
