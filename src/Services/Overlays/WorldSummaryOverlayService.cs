@@ -40,6 +40,8 @@ internal sealed class WorldSummaryOverlayService : OverlayStorageServiceBase<Wor
         if (_subscribed) return;
         _helper.Events.Content.AssetRequested += OnAssetRequested;
         _subscribed = true;
+
+        MigrateLegacyOverlay();
     }
 
     public void InvalidateCache()

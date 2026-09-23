@@ -55,7 +55,7 @@ public class OverlayStorageServiceBaseTests
         Assert.Null(loaded);
 
         // 覆盖层子目录不应被 LoadOrNull 创建。
-        string overlayDir = Path.Combine(root, "saves", "custom_overlays", "custom_overlays");
+        string overlayDir = Path.Combine(root, "custom_overlays");
         Assert.False(Directory.Exists(overlayDir), "LoadOrNull must not create directory");
     }
 
@@ -115,7 +115,7 @@ public class OverlayStorageServiceBaseTests
 
         // 先合法保存，再人为写坏。
         Assert.True(svc.Save(new DateLocationOverlayFile(), out _));
-        string path = Path.Combine(root, "saves", "custom_overlays", "custom_overlays", "date_locations.json");
+        string path = Path.Combine(root, "custom_overlays", "date_locations.json");
         Assert.True(File.Exists(path));
         File.WriteAllText(path, "{ this is : [ not valid json");
 
@@ -177,5 +177,68 @@ public class OverlayStorageServiceBaseTests
         }
         protected override string FileName => "poi_preferences.json";
         protected override string RootDirectory => _root;
+    }
+
+    // ── StorageLayout.MigrateLegacyFile 纯逻辑单测（不触碰 SMAPI） ────
+
+    [Fact]
+    public void MigrateLegacyFile_SourceMissing_NoOp()
+    {
+        string srcRoot = NewTempDir();
+        string dstRoot = NewTempDir();
+        string src = Path.Combine(srcRoot, "date_locations.json");
+        string dst = Path.Combine(dstRoot, "date_locations.json");
+
+        StorageLayout.MigrateLegacyFile(src, dst, "TestTag");
+
+        Assert.False(File.Exists(dst), "源缺失时不应创建目标");
+    }
+
+    [Fact]
+    public void MigrateLegacyFile_TargetExists_Skipped()
+    {
+        string srcRoot = NewTempDir();
+        string dstRoot = NewTempDir();
+        string src = Path.Combine(srcRoot, "date_locations.json");
+        string dst = Path.Combine(dstRoot, "date_locations.json");
+        File.WriteAllText(src, "\"legacy\"");
+        File.WriteAllText(dst, "\"existing\"");
+
+        StorageLayout.MigrateLegacyFile(src, dst, "TestTag");
+
+        Assert.Equal("\"existing\"", File.ReadAllText(dst));
+        Assert.True(File.Exists(src), "源文件必须保留");
+    }
+
+    [Fact]
+    public void MigrateLegacyFile_NormalCopy_Succeeds()
+    {
+        string srcRoot = NewTempDir();
+        string dstRoot = NewTempDir();
+        string src = Path.Combine(srcRoot, "date_locations.json");
+        string dst = Path.Combine(dstRoot, "custom_overlays", "date_locations.json");
+        File.WriteAllText(src, "{\"hello\":\"world\"}");
+
+        StorageLayout.MigrateLegacyFile(src, dst, "TestTag");
+
+        Assert.True(File.Exists(dst));
+        Assert.Equal("{\"hello\":\"world\"}", File.ReadAllText(dst));
+        Assert.True(File.Exists(src), "源文件必须保留（只读，不删除）");
+    }
+
+    [Fact]
+    public void MigrateLegacyFile_SourceReadOnly_Preserved()
+    {
+        string srcRoot = NewTempDir();
+        string dstRoot = NewTempDir();
+        string src = Path.Combine(srcRoot, "date_locations.json");
+        string dst = Path.Combine(dstRoot, "date_locations.json");
+        File.WriteAllText(src, "\"readonly-src\"");
+        File.SetAttributes(src, FileAttributes.ReadOnly);
+
+        StorageLayout.MigrateLegacyFile(src, dst, "TestTag");
+
+        Assert.True(File.Exists(dst), "只读源仍应被复制");
+        Assert.True(File.Exists(src), "源文件必须保留");
     }
 }
