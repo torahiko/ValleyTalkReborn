@@ -13,6 +13,5 @@
     "le plus gros poisson qu\u0027il ait jamais attrap\u00E9",
     "une anguille insaisissable"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": false
+  "Dialogue": {}
 }

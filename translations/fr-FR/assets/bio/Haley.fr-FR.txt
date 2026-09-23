@@ -23,6 +23,5 @@
     "\u00EAtre sous-estim\u00E9",
     "catastrophes vestimentaires"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": true
+  "Dialogue": {}
 }

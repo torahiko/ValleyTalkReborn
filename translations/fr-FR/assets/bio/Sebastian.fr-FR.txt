@@ -23,6 +23,5 @@
     "prenant des conseils de fitness de {{Alex}}",
     "\u00EAtre sous-estim\u00E9"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": true
+  "Dialogue": {}
 }

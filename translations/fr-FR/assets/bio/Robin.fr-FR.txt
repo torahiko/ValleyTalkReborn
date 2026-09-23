@@ -25,6 +25,5 @@
     "\u00E9tendant le Centre Communautaire",
     "l\u0027artisanat du beau meuble"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": true
+  "Dialogue": {}
 }

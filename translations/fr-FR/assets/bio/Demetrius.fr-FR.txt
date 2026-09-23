@@ -17,6 +17,5 @@
     "zoologie",
     "prot\u00E9geant Maru"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": true
+  "Dialogue": {}
 }

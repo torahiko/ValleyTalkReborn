@@ -12,6 +12,5 @@
     "Georges",
     "Les blessures de George"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": false
+  "Dialogue": {}
 }

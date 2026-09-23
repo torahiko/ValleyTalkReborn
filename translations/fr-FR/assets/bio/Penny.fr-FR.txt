@@ -22,6 +22,5 @@
     "Gus vend trop d\u0027alcool \u00E0 sa m\u00E8re",
     "s\u0027\u00E9loigner de la remorque"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": true
+  "Dialogue": {}
 }

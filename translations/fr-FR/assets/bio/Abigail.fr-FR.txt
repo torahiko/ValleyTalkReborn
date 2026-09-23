@@ -11,6 +11,5 @@
   ],
   "Dialogue": {
     "Mon": "Il n\u0027y a tout simplement rien de mieux au monde qu\u0027un beau amethyst"
-  },
-  "HomeLocationBed": true
+  }
 }

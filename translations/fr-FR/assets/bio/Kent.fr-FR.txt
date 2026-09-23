@@ -19,6 +19,5 @@
     "ennui mortel au front",
     "la vie avant la guerre"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": false
+  "Dialogue": {}
 }

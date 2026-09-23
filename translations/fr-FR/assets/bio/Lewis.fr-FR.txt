@@ -18,6 +18,5 @@
     "\u00EAtre sous-estim\u00E9",
     "savoir s\u0027il pourrait en faire plus en tant que maire"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": false
+  "Dialogue": {}
 }

@@ -14,6 +14,5 @@
     "la t\u00E9l\u00E9vision de ce matin",
     "les choses qu\u0027il attend avec impatience \u00E0 la t\u00E9l\u00E9vision"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": false
+  "Dialogue": {}
 }

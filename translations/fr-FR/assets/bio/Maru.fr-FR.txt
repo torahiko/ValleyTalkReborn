@@ -26,6 +26,5 @@
     "obtenir un nouveau t\u00E9lescope",
     "nouveau mat\u00E9riel dont elle a besoin"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": true
+  "Dialogue": {}
 }

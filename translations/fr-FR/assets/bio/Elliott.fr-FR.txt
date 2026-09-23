@@ -15,6 +15,5 @@
     "po\u00E9sie",
     "Ville de Zuza"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": false
+  "Dialogue": {}
 }

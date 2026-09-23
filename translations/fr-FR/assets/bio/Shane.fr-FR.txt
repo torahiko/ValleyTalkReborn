@@ -24,6 +24,5 @@
     "en aidant Marnie davantage",
     "Les sculptures de Leah"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": false
+  "Dialogue": {}
 }

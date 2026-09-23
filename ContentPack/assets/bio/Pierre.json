@@ -55,7 +55,6 @@
     "a": "defensive irritation"
   },
   "Unique": "behind the counter",
-  "HomeLocationBed": false,
   "ProgressStates": [
     {
       "RequireJojaMartClosed": true,

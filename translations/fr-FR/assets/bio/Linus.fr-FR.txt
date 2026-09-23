@@ -12,6 +12,5 @@
     "s\u00E9r\u00E9nit\u00E9",
     "s\u0027\u00E9vader de la ville"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": false
+  "Dialogue": {}
 }

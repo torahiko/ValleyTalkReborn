@@ -18,6 +18,5 @@
     "sa relation",
     "La d\u00E9pression de Shane"
   ],
-  "Dialogue": {},
-  "HomeLocationBed": false
+  "Dialogue": {}
 }
