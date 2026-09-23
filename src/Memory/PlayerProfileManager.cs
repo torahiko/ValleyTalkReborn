@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using StardewModdingAPI;
 using StardewValley;
@@ -6,22 +6,21 @@ using StardewValley;
 namespace ValleytalkReborn
 {
     /// <summary>
-    /// Clean &amp; LEAN PlayerProfileManager (v3.3 - Colorless Prompt Edition):
-    /// - All system-level instructions are tone-neutral structural constraints.
-    /// - Tone, attitude, and interpersonal distance are 100% delegated to Hearts + Character Card.
-    /// - Safety mode acts purely as content-scope boundary (no tone directives).
-    /// - Standardized semantic XML prompt tagging with strict EN-Fallback dual-track localization.
-    /// - Language: Chinese (zh*) → Chinese prompt; ALL other languages → English fallback.
+    /// v4.0 - Per-Farmer Profile Edition
+    /// Bio and Orientation are stored per-farmer in Farmer.modData (follows save & multiplayer sync automatically).
+    /// Orientation tri-state contract:
+    ///   - Key absent  -> live fallback to config.PlayerSexualOrientation (default for new saves / not-yet-set)
+    ///   - "none"       -> sentinel: player explicitly chose None (overrides config default)
+    ///   - Any other    -> stored orientation value, passed through as-is
+    /// Legacy v3.3 save-data/file bio is migrated once on first access after world load.
+    /// No static mutable state; no file I/O on the hot read path after migration.
     /// </summary>
     internal static class PlayerProfileManager
     {
-        // ──────────────────────────────────────────────────────────────
-        // Bio cache
-        // ──────────────────────────────────────────────────────────────
-        private const string SaveDataKey = "valleytalk.player-profile";
-
-        private static string _cachedBio = string.Empty;
-        private static bool _bioCacheLoaded;
+        private const string ModDataBioKey = "ValleyTalk.PlayerProfile.Bio";
+        private const string ModDataOrientationKey = "ValleyTalk.PlayerProfile.Orientation";
+        private const string OrientationNoneSentinel = "none";
+        private const string LegacySaveDataKey = "valleytalk.player-profile";
 
         // ──────────────────────────────────────────────────────────────
         // Orientation model
@@ -33,12 +32,6 @@ namespace ValleytalkReborn
             Homosexual,
             Bisexual,
             Asexual
-        }
-
-        public static void InvalidateBioCache()
-        {
-            _cachedBio = string.Empty;
-            _bioCacheLoaded = false;
         }
 
         /// <summary>
@@ -87,7 +80,7 @@ namespace ValleytalkReborn
                 ? "以下为玩家的背景偏好设定，仅在话题相关时参考："
                 : "The following are player background preferences; reference only when topically relevant:");
 
-            string saveBio = GetSaveCustomBio();
+            string saveBio = GetCustomBio();
             if (!string.IsNullOrWhiteSpace(saveBio))
             {
                 string safeBio = SanitizePromptText(saveBio).Trim();
@@ -99,7 +92,7 @@ namespace ValleytalkReborn
                 ? (isZh ? "男性" : "Male")
                 : (isZh ? "女性" : "Female");
 
-            string orientationRaw = config.PlayerSexualOrientation?.Trim() ?? string.Empty;
+            string orientationRaw = GetCustomOrientation();
             if (string.IsNullOrWhiteSpace(orientationRaw))
             {
                 lines.Add(isZh
@@ -132,7 +125,6 @@ namespace ValleytalkReborn
             return isZh
                 ? "<character_anchor>以角色卡设定与当前好感度为表达基准。角色拥有独立的生活、目标与关注点，对话围绕角色自身的视角与当下情境展开。</character_anchor>"
                 : "<character_anchor>Use the character card and current friendship level as the expressive baseline. The NPC has an independent life, goals, and focus; dialogue unfolds from the character's own perspective and immediate context.</character_anchor>";
-            
         }
 
         /// <summary>
@@ -193,21 +185,18 @@ namespace ValleytalkReborn
 
             return level switch
             {
-                // Strict: 不生成浪漫/亲密内容
                 SafetyModeLevel.Strict => (!isRomanceActive)
                     ? (isZh
                         ? "<interaction_boundary>双方未进入恋爱阶段。互动内容限于当前关系阶段；若遇越界言行，按角色性格予以拒绝或冷淡处理。</interaction_boundary>"
                         : "<interaction_boundary>Do not generate romantic, flirtatious, or intimate content. Keep interaction within the current relationship stage.</interaction_boundary>")
                     : string.Empty,
 
-                // Moderate: 不主动推进浪漫关系
                 SafetyModeLevel.Moderate => (!isRomanceActive && hearts <= 7)
                     ? (isZh
                         ? "<interaction_boundary>不主动推进浪漫关系。互动内容符合当前好感度阶段。</interaction_boundary>"
                         : "<interaction_boundary>Do not escalate the romantic relationship. Keep interaction consistent with the current friendship level.</interaction_boundary>")
                     : string.Empty,
 
-                // Loose: 仅对齐当前关系阶段
                 SafetyModeLevel.Loose => (!isRomanceActive && hearts <= 4)
                     ? (isZh
                         ? "<interaction_boundary>互动内容符合当前好感度阶段。</interaction_boundary>"
@@ -218,70 +207,125 @@ namespace ValleytalkReborn
             };
         }
 
-        /// <summary>读取当前存档 Bio（SaveData 优先、legacy 文件兜底）。供 UI 展示与提示词同源。</summary>
-        public static string GetCustomBio() => GetSaveCustomBio();
+        // ──────────────────────────────────────────────────────────────
+        // Per-farmer modData storage (v4.0)
+        // ──────────────────────────────────────────────────────────────
 
-        /// <summary>
-        /// 读取当前存档专属的 PlayerCustomBio（带轻量缓存）。
-        /// </summary>
-        private static string GetSaveCustomBio()
+        private static bool TryGetModData(string key, out string value)
         {
-            if (!Context.IsWorldReady || ModEntry.SHelper == null)
-                return string.Empty;
-
-            if (_bioCacheLoaded)
-                return _cachedBio;
-
-            try
+            if (!Context.IsWorldReady || ModEntry.SHelper == null || Game1.player == null)
             {
-                // 1. 从 SaveData 读取
-                var saveData = ModEntry.SHelper.Data.ReadSaveData<Dictionary<string, string>>(SaveDataKey);
-
-                if (saveData != null && saveData.TryGetValue("PlayerCustomBio", out string bio))
-                {
-                    _cachedBio = bio ?? string.Empty;
-                }
-                else
-                {
-                    // 2. 兼容迁移旧文件
-                    string oldPath = $"data/{Constants.SaveFolderName}/PlayerProfile.json";
-                    var oldData = ModEntry.SHelper.Data.ReadJsonFile<Dictionary<string, string>>(oldPath);
-                    if (oldData != null && oldData.TryGetValue("PlayerCustomBio", out string oldBio))
-                    {
-                        _cachedBio = oldBio ?? string.Empty;
-                        // 迁移写入 SaveData
-                        ModEntry.SHelper.Data.WriteSaveData(SaveDataKey, oldData);
-                    }
-                    else
-                    {
-                        _cachedBio = string.Empty;
-                    }
-                }
+                value = null;
+                return false;
             }
-            catch
-            {
-                _cachedBio = string.Empty;
-            }
-
-            _bioCacheLoaded = true;
-            return _cachedBio;
+            return Game1.player.modData.TryGetValue(key, out value);
         }
 
         /// <summary>
-        /// 当玩家在 UI 里修改了个人设定时调用
+        /// One-time legacy bio migration from v3.3 save-data / legacy JSON file.
+        /// Idempotent: short-circuits if ModDataBioKey already present.
         /// </summary>
+        private static void EnsureLegacyMigrated()
+        {
+            if (TryGetModData(ModDataBioKey, out _))
+                return;
+
+            string bioSeed = null;
+
+            try
+            {
+                var dict = ModEntry.SHelper.Data.ReadSaveData<Dictionary<string, string>>(LegacySaveDataKey);
+                if (dict != null && dict.TryGetValue("PlayerCustomBio", out var b) && b != null)
+                {
+                    bioSeed = b;
+                    ModEntry.SMonitor?.Log("[PlayerProfile] migrated bio from save-data", LogLevel.Debug);
+                }
+            }
+            catch (Exception ex)
+            {
+                ModEntry.SMonitor?.Log($"[PlayerProfile] save-data read failed: {ex.Message}", LogLevel.Warn);
+            }
+
+            if (bioSeed == null)
+            {
+                try
+                {
+                    var file = ModEntry.SHelper.Data.ReadJsonFile<Dictionary<string, string>>($"data/{Constants.SaveFolderName}/PlayerProfile.json");
+                    if (file != null && file.TryGetValue("PlayerCustomBio", out var fb) && fb != null)
+                    {
+                        bioSeed = fb;
+                        ModEntry.SMonitor?.Log("[PlayerProfile] migrated bio from legacy file", LogLevel.Debug);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ModEntry.SMonitor?.Log($"[PlayerProfile] save-data read failed: {ex.Message}", LogLevel.Warn);
+                }
+            }
+
+            // Write even empty as "migration complete" marker for idempotent short-circuit.
+            Game1.player.modData[ModDataBioKey] = bioSeed ?? string.Empty;
+
+            // Orientation key intentionally NOT written here — absent key means live fallback to config default.
+        }
+
+        public static string GetCustomBio()
+        {
+            EnsureLegacyMigrated();
+            return TryGetModData(ModDataBioKey, out var v) ? (v ?? string.Empty) : string.Empty;
+        }
+
         public static void SaveCustomBio(string newBio)
         {
-            if (!Context.IsWorldReady || ModEntry.SHelper == null) return;
-
-            var data = new Dictionary<string, string>
+            if (!Context.IsWorldReady)
             {
-                ["PlayerCustomBio"] = newBio ?? string.Empty
-            };
+                ModEntry.SMonitor?.Log("[PlayerProfile] SaveCustomBio ignored: no save loaded", LogLevel.Warn);
+                return;
+            }
 
-            ModEntry.SHelper.Data.WriteSaveData(SaveDataKey, data);
-            _cachedBio = newBio ?? string.Empty;
-            _bioCacheLoaded = true;
+            var text = newBio ?? string.Empty;
+            if (text.Length > 300)
+                text = text.Substring(0, 300);
+
+            Game1.player.modData[ModDataBioKey] = text;
+        }
+
+        /// <summary>
+        /// Returns the effective orientation for the current farmer.
+        /// Tri-state: stored value (incl. "none" sentinel -> empty) or config fallback when key absent.
+        /// </summary>
+        public static string GetCustomOrientation()
+        {
+            if (TryGetModData(ModDataOrientationKey, out var v))
+                return string.Equals(v, OrientationNoneSentinel, StringComparison.OrdinalIgnoreCase) ? string.Empty : (v?.Trim() ?? string.Empty);
+            return ModEntry.Config?.PlayerSexualOrientation?.Trim() ?? string.Empty;
+        }
+
+        /// <summary>
+        /// Returns true if the farmer has an explicit orientation stored (including "none" sentinel).
+        /// When false, caller should use config fallback (GetCustomOrientation handles this).
+        /// </summary>
+        public static bool TryGetCustomOrientation(out string orientation)
+        {
+            if (!TryGetModData(ModDataOrientationKey, out var v))
+            {
+                orientation = null;
+                return false;
+            }
+            orientation = string.Equals(v, OrientationNoneSentinel, StringComparison.OrdinalIgnoreCase) ? string.Empty : v;
+            return true;
+        }
+
+        public static void SaveCustomOrientation(string orientation)
+        {
+            if (!Context.IsWorldReady)
+            {
+                ModEntry.SMonitor?.Log("[PlayerProfile] SaveCustomOrientation ignored: no save loaded", LogLevel.Warn);
+                return;
+            }
+
+            var value = string.IsNullOrWhiteSpace(orientation) ? OrientationNoneSentinel : orientation.Trim();
+            Game1.player.modData[ModDataOrientationKey] = value;
         }
 
         /// <summary>

@@ -378,7 +378,9 @@ internal sealed class ProfileTabView : HubTabViewBase
             ("Asexual", I18n.Profile.OrientationAsexual()),
         };
 
-        string current = ModEntry.Config.PlayerSexualOrientation ?? "";
+        string current = PlayerProfileManager.TryGetCustomOrientation(out var stored)
+            ? (stored ?? "")
+            : (ModEntry.Config.PlayerSexualOrientation ?? "");
         string selectedId = "";
         foreach (var item in _orientationItems)
         {
@@ -639,7 +641,7 @@ internal sealed class ProfileTabView : HubTabViewBase
     {
         Game1.playSound("select");
 
-        ModEntry.Config.PlayerSexualOrientation = _orientationDropdown.SelectedId ?? "";
+        PlayerProfileManager.SaveCustomOrientation(_orientationDropdown.SelectedId ?? "");
         ModEntry.Config.RomanceSafetyMode = (SafetyModeLevel)_safetyModeIndex;
 
         try
