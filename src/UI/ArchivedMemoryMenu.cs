@@ -351,7 +351,10 @@ namespace ValleytalkReborn
                         Game1.activeClickableMenu = this;
                     },
                     I18n.Dialog.Keep(),
-                    () => Game1.activeClickableMenu = this);
+                    () => Game1.activeClickableMenu = this,
+                    tip: "提示：清除后无法还原，释放存储空间以便记录新记忆。",
+                    continueIsDanger: true,
+                    isDestructiveAlert: true);
                 return;
             }
 
