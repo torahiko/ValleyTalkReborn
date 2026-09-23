@@ -144,6 +144,38 @@ namespace ValleytalkReborn
             return (system, user);
         }
 
+        public static (string System, string User) BuildInitialBiographyPrompt(
+            string npcName, string rawGameContext, string userDemand)
+        {
+            string contextSection = string.IsNullOrEmpty(rawGameContext)
+                ? string.Empty
+                : $"该 NPC 的原生锚点（来自游戏数据的客观事实，创作时必须尊重）：\n{rawGameContext}\n";
+
+            string contextRequirement = string.IsNullOrEmpty(rawGameContext)
+                ? "②无原生锚点，依据合理推断创作；"
+                : "②专属最爱物品等原生锚点可作为性格意象隐喻自然融入，不得生硬罗列；";
+
+            string system =
+                "你是一名专业的《星露谷物语》NPC 身份档案创作助手，正在为该 NPC 全新创作完整身份档案。\n" +
+                "创作时必须基于已知事实，描写镜头可见的物理体态、动作、行为与具体事实：\n" +
+                $"{contextSection}" +
+                "硬性要求：\n" +
+                "①输出必须包含 [IDENTITY] 与 [PSYCHOLOGICAL CONFLICTS] 标准分节（结构对齐一期插入模板）。\n" +
+                $"{contextRequirement}" +
+                "③规范元宪法：只描写镜头可见的物理体态、动作、行为与具体事实，严禁虚浮小说式抽象比喻与空洞形容。\n" +
+                "④严禁寒暄、解释、Markdown 围栏（```）、JSON。";
+
+            string demandText = string.IsNullOrWhiteSpace(userDemand)
+                ? "无特殊设想，请依据原生锚点自由创作"
+                : userDemand;
+
+            string user =
+                $"【玩家设想】{demandText}\n\n" +
+                "请直接输出完整身份档案。";
+
+            return (system, user);
+        }
+
         /// <summary>
         /// 解析 AI 输出的行式环境心智文本。透镜为空，或口吻与口头禅同时为空 → false。
         /// </summary>

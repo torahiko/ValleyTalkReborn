@@ -18,6 +18,7 @@ namespace ValleytalkReborn
         private readonly new IClickableMenu _parentMenu;
         private readonly string _targetTitle;
         private readonly string _titleText;
+        private readonly bool _allowEmptyDemand;
         private readonly DialogueTextInputBox _inputBox;
         private readonly ClickableTextureComponent _okBtn;
         private readonly ClickableTextureComponent _cancelBtn;
@@ -25,7 +26,7 @@ namespace ValleytalkReborn
         private static bool _enableThinking;
         private string _hoverText;
 
-        public BioAiPromptDialog(string targetTitle, IClickableMenu parentMenu, Action<string, bool> onSubmit)
+        public BioAiPromptDialog(string targetTitle, IClickableMenu parentMenu, Action<string, bool> onSubmit, bool allowEmptyDemand = false)
             : base(
                 (Game1.uiViewport.Width - MenuWidth) / 2,
                 (Game1.uiViewport.Height - MenuHeight) / 2,
@@ -36,6 +37,7 @@ namespace ValleytalkReborn
             _parentMenu = parentMenu;
             _targetTitle = targetTitle ?? "";
             _titleText = $"AI 润色 · {_targetTitle}";
+            _allowEmptyDemand = allowEmptyDemand;
 
             _inputBox = new DialogueTextInputBox(600)
             {
@@ -134,7 +136,16 @@ namespace ValleytalkReborn
         {
             if (string.IsNullOrWhiteSpace(_inputBox.Text))
             {
-                Game1.playSound("cancel");
+                if (_allowEmptyDemand)
+                {
+                    Game1.playSound("coin");
+                    Close(true);
+                    _onSubmit?.Invoke(string.Empty, _enableThinking);
+                }
+                else
+                {
+                    Game1.playSound("cancel");
+                }
                 return;
             }
 
