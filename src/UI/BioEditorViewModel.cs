@@ -421,6 +421,31 @@ internal sealed class BioEditorViewModel
         MarkDirty();
     }
 
+    /// <summary>
+    /// 用 AI 推演结果整体替换现有档位：深拷贝逐条（Preoccupations null 安全拷贝，对齐 ResetTabToBaseline 既有纪律）；
+    /// 选中第 0 档并置脏。传入 null/空 → no-op（不置脏）。
+    /// </summary>
+    public void ReplaceProgressStates(List<BioData.ProgressStateEntry> stages)
+    {
+        if (stages == null || stages.Count == 0)
+            return;
+
+        _bio.ProgressStates = stages.Select(s => new BioData.ProgressStateEntry
+        {
+            RequiredHearts = s.RequiredHearts,
+            RequireMarried = s.RequireMarried,
+            Text = s.Text ?? "",
+            RequireBusRepaired = s.RequireBusRepaired,
+            RequirePlayerMarriedTo = s.RequirePlayerMarriedTo,
+            BarkMindset = s.BarkMindset,
+            Preoccupations = s.Preoccupations != null ? new List<string>(s.Preoccupations) : null,
+            RequireJojaMartClosed = s.RequireJojaMartClosed,
+            RequireJojaMember = s.RequireJojaMember
+        }).ToList();
+        SelectedStageIndex = 0;
+        MarkDirty();
+    }
+
     /// <summary>删除当前档位：前置选中有效；RemoveAt + 重定位 + 置脏。</summary>
     public void DeleteSelectedStage()
     {

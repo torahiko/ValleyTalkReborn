@@ -159,6 +159,7 @@ namespace ValleytalkReborn
         private Rectangle _gateJojaMemberPillRect;
         private Rectangle _copyStageTextRect;
         private Rectangle _copyStageBarkRect;
+        private Rectangle _aiGenerateStagesRect;
 
         // ── Tab 4 控件（社交关系） ────────────────────────────────────────
         private int _relListScrollOffset = 0;
@@ -433,6 +434,7 @@ namespace ValleytalkReborn
                 int rightColW = contentW - leftColW - 16;
                 _stageLeftColRect = new Rectangle(contentLeft, bodyTop, leftColW, bodyH);
                 _stageRightColRect = new Rectangle(contentLeft + leftColW + 16, bodyTop, rightColW, bodyH);
+                _aiGenerateStagesRect = new Rectangle(_stageLeftColRect.X + _stageLeftColRect.Width - 148, _stageLeftColRect.Y + 4, 140, 26);
 
                 int rowH = 38;
                 for (int i = 0; i < _stageRowRects.Length; i++)
@@ -825,6 +827,13 @@ namespace ValleytalkReborn
                         Layout();
                     },
                     _ => Game1.activeClickableMenu = this);
+                return;
+            }
+
+            if (!AnyTextBoxHasFocus() && _aiGenerateStagesRect.Contains(x, y) && !BioAiRunner.IsBusy)
+            {
+                UnfocusAll();
+                CheckTab1Prerequisites(OpenStageLadderDialog);
                 return;
             }
 
@@ -1259,6 +1268,9 @@ namespace ValleytalkReborn
             DrawCard(b, _stageLeftColRect);
             CustomFontManager.DrawString(b, $"好感演变档位 ({_vm.Bio.ProgressStates.Count}/8)",
                 new Vector2(_stageLeftColRect.X + 12, _stageLeftColRect.Y + 8), TextSecondary, SectionHeaderSize);
+            DrawActionButton(b, _aiGenerateStagesRect, BioAiRunner.IsBusy ? "推演中..." : "AI生成阶梯", mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy);
+            if (_aiGenerateStagesRect.Contains(mx, my))
+                _hoverText = "按可婚/常规自动生成 4/3 档并整体覆盖现有档位（可先在 Tab 1 完善身份档案）。";
 
             int visibleStages = Math.Min(_vm.Bio.ProgressStates.Count, 8);
             for (int i = 0; i < visibleStages; i++)
@@ -1919,6 +1931,55 @@ namespace ValleytalkReborn
             box.SetText(confirmedText);
             Game1.playSound("coin");
             Game1.addHUDMessage(new HUDMessage("✔ 已应用 AI 润色内容", HUDMessage.newQuest_type));
+            return true;
+        }
+
+        private void OpenStageLadderDialog()
+        {
+            var character = Game1.getCharacterFromName(_npcName);
+            bool isDatable = character != null && character.datable.Value;
+            string title = $"审阅【{_npcName}】好感阶梯推演";
+
+            Game1.activeClickableMenu = new BioAiPromptDialog("好感阶梯", this, (demand, enableThinking) =>
+            {
+                if (BioAiRunner.IsBusy)
+                    return;
+
+                UnfocusAll();
+                var (system, user) = BioPromptBuilder.BuildStageLadderPrompt(_vm, _npcName, isDatable, demand);
+                var queue = new System.Collections.Concurrent.ConcurrentQueue<string>();
+                var review = new BioAiReviewMenu(title, this,
+                    confirmedText => ApplyStageLadder(confirmedText));
+                review.BeginStreaming(queue);
+                Game1.activeClickableMenu = review;
+                BioAiRunner.ExecuteStreaming(system, user, enableThinking, queue,
+                    result => review.OnStreamSettled(result));
+            });
+        }
+
+        private bool ApplyStageLadder(string confirmedText)
+        {
+            if (!BioPromptBuilder.TryParseStageLadder(confirmedText, out var stages))
+            {
+                Game1.playSound("cancel");
+                Game1.addHUDMessage(new HUDMessage(
+                    "阶梯格式有误：请保持“### 档位 n | 心数: n | 已婚: 是/否”结构与“态度:/心智:/关注:”字段行完整",
+                    HUDMessage.error_type));
+                return false;
+            }
+
+            _vm.ReplaceProgressStates(stages);
+
+            var first = _vm.Bio.ProgressStates.Count > 0 ? _vm.Bio.ProgressStates[0] : null;
+            _stageTextBox.SetText(first?.Text ?? "");
+            _stageBarkBox.SetText(first?.BarkMindset ?? "");
+            _stageTagEditor.SetTags(first?.Preoccupations);
+            _heartsStepper.Value = first?.RequiredHearts ?? 0;
+
+            SelectStage(0);
+            Layout();
+            Game1.playSound("coin");
+            Game1.addHUDMessage(new HUDMessage($"✔ 已应用 AI 阶梯（{stages.Count} 档）", HUDMessage.newQuest_type));
             return true;
         }
 
