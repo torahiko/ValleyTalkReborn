@@ -408,7 +408,7 @@ namespace ValleytalkReborn
 
             DrawActionButton(b, _aiFreeButtonRect, "★ 留空交给 AI 自由发挥", mx, my, isPrimary: false);
             DrawActionButton(b, _cancelButtonRect, "✕ 取消 (Esc)", mx, my, isDanger: false);
-            DrawActionButton(b, _okButtonRect, "✔ 开始生成身份档案", mx, my, isPrimary: true);
+            DrawActionButton(b, _okButtonRect, "✔ 开始生成身份档案", mx, my, isSoftRed: true);
 
             // 5. 悬停气泡处理
             if (_thinkingPillRect.Contains(mx, my))
@@ -551,8 +551,10 @@ namespace ValleytalkReborn
                 new Rectangle(rect.X + 1 + pressOffset, rect.Y + 1 + pressOffset, rect.Width - 2, rect.Height - 2),
                 bg);
 
-            // 3. 3f 厚原木九宫格边框（与同排主按钮 3f 保持完全一致）
+            // 3. 3f 厚原木九宫格边框（与同排主按钮 3f 保持完全一致）+ 悬停暖金白泛光高亮
             Color borderCol = isThinking ? new Color(210, 160, 60) : new Color(185, 150, 110);
+            if (isHover)
+                borderCol = Color.Lerp(borderCol, new Color(255, 245, 220), 0.55f);
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
                 rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height, borderCol, 3f, false);
 
@@ -567,16 +569,17 @@ namespace ValleytalkReborn
         }
 
         private static void DrawActionButton(SpriteBatch b, Rectangle rect, string label, int mx, int my,
-            bool isDanger = false, bool isPrimary = false, bool isEnabled = true)
+            bool isDanger = false, bool isPrimary = false, bool isSoftRed = false, bool isEnabled = true)
         {
             bool isHover = isEnabled && rect.Contains(mx, my);
             bool isPressed = isHover && IsLeftMouseDown();
 
             Color bg;
             if (!isEnabled) bg = Color.LightGray * 0.6f;
+            else if (isSoftRed) bg = isHover ? new Color(245, 145, 138) : new Color(225, 118, 110);
             else if (isPrimary) bg = isHover ? Color.Gold : new Color(255, 220, 130);
             else if (isDanger) bg = isHover ? new Color(245, 105, 105) : new Color(210, 85, 80);
-            else bg = isHover ? new Color(255, 240, 215) : new Color(225, 195, 155);
+            else bg = isHover ? new Color(255, 248, 230) : new Color(225, 195, 155);
 
             int pressOffset = isPressed ? 1 : 0;
             if (isPressed) bg = Color.Lerp(bg, Color.Black, 0.14f);
@@ -586,12 +589,19 @@ namespace ValleytalkReborn
 
             b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1 + pressOffset, rect.Y + 1 + pressOffset, rect.Width - 2, rect.Height - 2), bg);
 
+            Color borderCol = isSoftRed ? new Color(180, 82, 75)
+                            : isPrimary ? new Color(210, 160, 60)
+                            : isDanger ? new Color(175, 60, 55)
+                            : new Color(185, 150, 110);
+
+            if (isHover && isEnabled)
+                borderCol = Color.Lerp(borderCol, new Color(255, 245, 220), 0.55f);
+
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-                rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height,
-                isPrimary ? new Color(210, 160, 60) : (isDanger ? new Color(175, 60, 55) : new Color(185, 150, 110)), 3f, false);
+                rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height, borderCol, 3f, false);
 
             Color textCol = !isEnabled ? BioEditorMenu.TextMuted
-                          : isDanger ? BioEditorMenu.TextOnDarkBtn
+                          : (isDanger || isSoftRed) ? BioEditorMenu.TextOnDarkBtn
                           : BioEditorMenu.TextOnLightBtn;
 
             var sz = CustomFontManager.MeasureStringBold(label, ButtonFontSize);
