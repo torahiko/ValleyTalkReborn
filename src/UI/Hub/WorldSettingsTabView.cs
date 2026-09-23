@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -144,10 +145,19 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
             Game1.playSound("trashcan");
             var page = _pages[(int)_currentSubPage];
             string label = GetSubPageLabel(_currentSubPage);
-            Game1.activeClickableMenu = new ConfirmationDialog(
-                $"确定要恢复【{label}】的默认配置吗？\n该页全部自定义设置将被清除。",
-                _ => { Game1.activeClickableMenu = Hub; page?.ResetToBaseline(); },
-                _ => { Game1.activeClickableMenu = Hub; });
+            Game1.activeClickableMenu = new BioValveWarningDialog(
+                Hub,
+                "恢复子页默认配置",
+                $"即将恢复【{label}】的默认配置：",
+                new List<string>
+                {
+                    "该页全部自定义设置将被清除",
+                    "恢复后无法一键撤销，需重新逐项配置"
+                },
+                "⚠ 确认恢复",
+                () => { Game1.activeClickableMenu = Hub; page?.ResetToBaseline(); },
+                "保持现状",
+                () => { Game1.activeClickableMenu = Hub; });
             return true;
         }
 

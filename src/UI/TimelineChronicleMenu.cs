@@ -782,9 +782,14 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
 
     private void ConfirmDelete(MemoryEntry entry)
     {
-        Game1.activeClickableMenu = new ConfirmationDialog(
-            I18n.Timeline.DeleteConfirm(entry.Content),
-            _ =>
+        string safeContent = CustomFontManager.TruncateString(entry.Content, CustomFontManager.SizeRegular, 320f);
+        Game1.activeClickableMenu = new BioValveWarningDialog(
+            this,
+            I18n.Timeline.DeleteConfirmTitle(),
+            I18n.Timeline.DeleteConfirmSubtitle(),
+            new List<string> { safeContent },
+            I18n.Dialog.ConfirmArchive(),
+            () =>
             {
                 MemoryManager.Instance.ArchiveTimelineMemories(_npcName, new[] { entry }, "ManualDeleted");
                 MemoryManager.Instance.RemoveTimelineMemory(_npcName, entry.Id);
@@ -792,10 +797,8 @@ internal class TimelineChronicleMenu : IClickableMenu, IMemoryRefreshTarget
                 RefreshEntries();
                 Game1.activeClickableMenu = this;
             },
-            _ =>
-            {
-                Game1.activeClickableMenu = this;
-            });
+            I18n.Dialog.Keep(),
+            () => Game1.activeClickableMenu = this);
     }
 
     private void HandleActionButton()
