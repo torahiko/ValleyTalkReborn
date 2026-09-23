@@ -1375,8 +1375,6 @@ namespace ValleytalkReborn
                     _hoverText = "【激活条件：不限会员身份】\n不对玩家是否购买 Joja 会员做任何限制（默认状态）。";
             }
 
-            DrawActionButton(b, _deleteStageRect, "删除此档", mx, my, isDanger: true);
-
             // ★ Tab3 复制按钮已移至标签右侧
             CustomFontManager.DrawString(b, "阶段态度演变 (Text)",
                 new Vector2(_stageTextBox.Position.X, _stageTextBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
