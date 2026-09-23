@@ -67,12 +67,10 @@ internal static class NpcGameDataScraper
         string specificField = fields.Length > 3 ? fields[3].Trim() : string.Empty;
 
         // 专属最爱缺失时回退普世最爱（fields[1]），强制过滤通货以保留性格意象
-        bool fallbackToUniversal = false;
         if (string.IsNullOrEmpty(specificField))
         {
             if (fields.Length > 1)
                 specificField = fields[1].Trim();
-            fallbackToUniversal = true;
         }
 
         if (string.IsNullOrEmpty(specificField))
