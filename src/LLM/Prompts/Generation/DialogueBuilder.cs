@@ -142,25 +142,29 @@ namespace ValleytalkReborn
                     1200, persistAcrossDays: false);
             }
 
-            // 冷落检测：modData["ValleytalkReborn.LastTalkDay.{name}"] 可空读
+            // 冷落检测：LastTalkDay 存于 Game1.player.modData（与 VT-EMO-04 交互提交点同源）；
+            // 成功解析路径不写回——lastDay 必须保持"最后一次交互日"语义，刷新只发生在交互提交点
             string key = $"ValleytalkReborn.LastTalkDay.{name}";
-            bool shouldWriteBack = true;
-            if (rawNpc.modData != null && rawNpc.modData.TryGetValue(key, out string rawValue)
-                && int.TryParse(rawValue, out int lastDay))
+            var playerData = Game1.player?.modData;
+            if (playerData != null)
             {
-                if (today - lastDay >= 3)
+                if (playerData.TryGetValue(key, out string rawValue)
+                    && int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out int lastDay))
                 {
-                    MoodShockStore.AddShock(
-                        name,
-                        EmotionShockIds.Neglect(name),
-                        -0.10f, 0f, -0.25f,
-                        1200, persistAcrossDays: true);
+                    if (today - lastDay >= 3)
+                    {
+                        MoodShockStore.AddShock(
+                            name,
+                            EmotionShockIds.Neglect(name),
+                            -0.10f, 0f, -0.25f,
+                            1200, persistAcrossDays: true);
+                    }
                 }
-            }
-
-            if (shouldWriteBack)
-            {
-                rawNpc.modData[key] = today.ToString(CultureInfo.InvariantCulture);
+                else
+                {
+                    // 仅缺失/解析失败时种入今日（首次种子，不加 Shock）
+                    playerData[key] = today.ToString(CultureInfo.InvariantCulture);
+                }
             }
 
             // 场景抽选
