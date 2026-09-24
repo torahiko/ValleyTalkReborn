@@ -41,16 +41,7 @@ public class Character : IDisposable
         Name = name;
         BioFilePath = $"{VtConstants.BiosPath}/{DialogueCleaner.RemoveDotSuffixes(Name)}";
         StardewNpc = stardewNpc;
-        ModEntry.SHelper.Events.Content.AssetRequested += OnAssetRequested;
         ModEntry.SHelper.Events.Content.AssetsInvalidated += OnAssetsInvalidated;
-    }
-
-    private void OnAssetRequested(object sender, AssetRequestedEventArgs e)
-    {
-        if (e.Name.IsEquivalentTo(BioFilePath))
-        {
-            e.LoadFrom(() => new BioData(), AssetLoadPriority.High);
-        }
     }
 
     private void OnAssetsInvalidated(object sender, AssetsInvalidatedEventArgs e)
@@ -58,6 +49,7 @@ public class Character : IDisposable
         if (e.NamesWithoutLocale.Any(an => an.IsEquivalentTo(BioFilePath)))
         {
             _bioData = null;
+            ModEntry.SMonitor?.Log($"[Character] {Name}: bio 缓存已失效（资产失效事件）", StardewModdingAPI.LogLevel.Debug);
             // 🌟 #3: 重置衍生缓存，防止 Bio 热重载后数据不一致
             ValidPortraits = null;
             PossiblePreoccupations = null;
@@ -66,7 +58,6 @@ public class Character : IDisposable
 
     public void Dispose()
     {
-        ModEntry.SHelper.Events.Content.AssetRequested -= OnAssetRequested;
         ModEntry.SHelper.Events.Content.AssetsInvalidated -= OnAssetsInvalidated;
         // Clean up the cancellation token if it belongs to this character
         if (CurrentDialogueCts != null)
