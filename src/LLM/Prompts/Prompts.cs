@@ -109,6 +109,7 @@ public class Prompts
     public string PendingSpouseWaitingBlock { get; set; }
     public string PendingEchoBlock { get; set; }
     public string PendingMilestoneBlock { get; set; }
+    public string PendingEmotionBlock { get; set; }
 
     private string _command;
     public string Command { get => _command ??= GetCommand(); internal set => _command = value; }
@@ -435,6 +436,8 @@ public class Prompts
                 prompt.AppendLine("\n" + PendingEvolvedTraitsBlock);
             if (!string.IsNullOrEmpty(PendingLocalPerceptionBlock))
                 prompt.AppendLine("\n" + PendingLocalPerceptionBlock);
+            if (!string.IsNullOrEmpty(PendingEmotionBlock))
+                prompt.AppendLine("\n" + PendingEmotionBlock);
 
             AppendDateInvitationProtocol(prompt);
             AppendFollowInvitationProtocol(prompt);
@@ -512,6 +515,8 @@ public class Prompts
                 prompt.AppendLine("\n" + PendingEvolvedTraitsBlock);
             if (!string.IsNullOrEmpty(PendingLocalPerceptionBlock))
                 prompt.AppendLine("\n" + PendingLocalPerceptionBlock);
+            if (!string.IsNullOrEmpty(PendingEmotionBlock))
+                prompt.AppendLine("\n" + PendingEmotionBlock);
 
             AppendDateInvitationProtocol(prompt);
             AppendFollowInvitationProtocol(prompt);
@@ -553,6 +558,8 @@ public class Prompts
                 prompt.AppendLine("\n" + PendingEvolvedTraitsBlock);
             if (!string.IsNullOrEmpty(PendingLocalPerceptionBlock))
                 prompt.AppendLine("\n" + PendingLocalPerceptionBlock);
+            if (!string.IsNullOrEmpty(PendingEmotionBlock))
+                prompt.AppendLine("\n" + PendingEmotionBlock);
 
             string simpleProfile = PlayerProfileManager.BuildProfileText(
                 Character.StardewNpc,
@@ -677,6 +684,8 @@ public class Prompts
             prompt.AppendLine(PendingEvolvedTraitsBlock + "\n");
         if (!string.IsNullOrEmpty(PendingLocalPerceptionBlock))
             prompt.AppendLine(PendingLocalPerceptionBlock + "\n");
+        if (!string.IsNullOrEmpty(PendingEmotionBlock))
+            prompt.AppendLine(PendingEmotionBlock + "\n");
 
         DefaultOrOverride("CurrentConversation", GetCurrentConversation, prompt);
         InjectSessionContinuity(prompt);
@@ -894,6 +903,9 @@ public class Prompts
 
     private void GetPreoccupation(StringBuilder prompt)
     {
+        // 情绪系统场景已含 [脑中主要挂念]，避免双重挂念
+        if (ModEntry.Config.EnableEmotionSystem && Character?.CurrentTodayScene != null) return;
+
         bool playerHasSpoken = Context.ChatHistory.Any(x => x.IsPlayerLine);
         if (playerHasSpoken) return;
         if (Game1.random.NextDouble() < 0.5) return;

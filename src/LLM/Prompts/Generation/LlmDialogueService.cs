@@ -94,6 +94,27 @@ public class LlmDialogueService
                 prompts.PendingEavesdropBlock = EavesdropInjector.BuildBlock(character.Name);
 
                 // ══════════════════════════════════════════════════════════════════════
+                // S4.8: 情绪系统快照与指令块（每代编译一次，实例级缓存）
+                // 失败降级：PendingEmotionBlock 与 PendingEmotion 一并置空，生成流程继续
+                // ══════════════════════════════════════════════════════════════════════
+                if (ModEntry.Config.EnableEmotionSystem)
+                {
+                    try
+                    {
+                        var snapshot = EmotionalStateResolver.PrepareSnapshot(character, character.StardewNpc);
+                        character.PendingEmotion = snapshot;
+                        prompts.PendingEmotionBlock = EmotionalStateResolver
+                            .Compile(character, character.StardewNpc, snapshot).PromptBlock;
+                    }
+                    catch (Exception ex)
+                    {
+                        prompts.PendingEmotionBlock = string.Empty;
+                        character.PendingEmotion = null;
+                        Log.Warning($"[EmotionState] 编译失败已降级: {ex.Message}");
+                    }
+                }
+
+                // ══════════════════════════════════════════════════════════════════════
                 // S5: 配偶深夜等待事件（仅探测是否存在，不消费）
                 // ══════════════════════════════════════════════════════════════════════
                 bool hasSpouseWaiting = SpouseWaitingEvent.HasPendingSpouseDialogue(character.Name);

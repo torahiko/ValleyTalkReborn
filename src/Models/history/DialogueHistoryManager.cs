@@ -284,6 +284,31 @@ namespace ValleytalkReborn
             DialogueMemoryCompressor.ClearCache(npcName);
         }
 
+        /// <summary>
+        /// 该 NPC 今日是否已开口（NPC 口径）：仅统计 SpeakerType.NPC 且非 eavesdrop/gift 的当日条目。
+        /// 玩家台词在生成前落库（TextInputHandler / Dialogue_ChoiceResponse / Event_AnswerDialogue），
+        /// 刻意不计入——否则"玩家先开口的当日首次对话"会错过 narration。
+        /// </summary>
+        public int GetTodayTurnCount(string npcName)
+        {
+            lock (_historyLock)
+            {
+                if (string.IsNullOrWhiteSpace(npcName) || !_history.TryGetValue(npcName, out var list))
+                    return 0;
+
+                int curYear = Game1.Date.Year;
+                var curSeason = (Season)Game1.Date.Season;
+                int curDay = Game1.Date.DayOfMonth;
+
+                return list.Count(e => e.SpeakerType == SpeakerType.NPC
+                                       && e.DialogueType != "eavesdrop"
+                                       && e.DialogueType != "gift"
+                                       && e.Timestamp.Year == curYear
+                                       && e.Timestamp.Season == curSeason
+                                       && e.Timestamp.DayOfMonth == curDay);
+            }
+        }
+
         public void ClearAllHistory()
         {
             lock (_historyLock)
