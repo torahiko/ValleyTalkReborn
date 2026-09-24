@@ -1426,6 +1426,9 @@ namespace ValleytalkReborn
                 {
                     Game1.currentSpeaker = null;
                 }
+
+                // VT3-B：对话框关闭 → 退役 active Tier 1 会话到 closed 软继承窗口
+                Tier1SnapshotStore.MarkCurrentDialogueClosed();
             }
         }
 
@@ -1493,6 +1496,12 @@ namespace ValleytalkReborn
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
         {
             AgentToolDispatcher.ProcessMainThreadQueue();
+
+            // VT3-B：每 60 帧驱逐 Tier 1 孤儿会话并清理过期 closed 记录
+            if (e.IsMultipleOf(60))
+            {
+                Tier1SnapshotStore.PeriodicCleanup();
+            }
         }
 
         /// <summary>
