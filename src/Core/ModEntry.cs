@@ -224,8 +224,9 @@ namespace ValleytalkReborn
                 _locale = CultureInfo.GetCultureInfo(SHelper.Translation.Locale);
                 _localeCache = SHelper.Translation.Locale;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                ModEntry.SMonitor?.Log($"[Locale] Invalid locale '{SHelper.Translation.Locale}' ({ex.GetType().Name}), falling back to en-US.", LogLevel.Warn);
                 _locale = null;
                 _localeCache = string.Empty;
             }
@@ -1311,13 +1312,7 @@ namespace ValleytalkReborn
             }
             catch (Exception ex)
             {
-                try
-                {
-                    Log.Error($"[ValleyTalkReborn] Critical error during cleanup: {ex.Message}");
-                }
-                catch
-                {
-                }
+                Log.Error($"[ValleyTalkReborn] Critical error during cleanup: {ex.Message}");
             }
         }
 
