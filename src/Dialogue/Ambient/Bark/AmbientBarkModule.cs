@@ -434,6 +434,8 @@ internal sealed class AmbientBarkModule : IDialogueModule
         if (string.IsNullOrWhiteSpace(npcName))
             return;
 
+        ProactiveDialogueManager.OnMainDialogueStarted(npcName);
+
         int cooldownTicks = cooldownSeconds * 60; // 30 秒 = 1800 Ticks
 
         // 边界防御：如果 NPC 不在当前地图或不存在，只施加冷却但跳过状态清理
@@ -853,6 +855,8 @@ internal sealed class AmbientBarkModule : IDialogueModule
 
         // ★ 立即清空输出队列中所有未播放的 Bark 浮字，实现"禁用即闭嘴"
         _outputQueue.ClearType("Bark");
+        SensoryCooldownStore.ClearAll();
+        ProactiveDialogueManager.ClearAll();
     }
 
     /// <summary>
