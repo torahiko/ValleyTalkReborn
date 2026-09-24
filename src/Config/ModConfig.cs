@@ -271,6 +271,10 @@ namespace ValleytalkReborn
         /// </summary>
         public int BarkDwellScans { get; set; } = 2;
 
+        // ── 情绪系统配置 ──
+        public bool EnableEmotionSystem { get; set; } = true;
+        public bool EnableEmotionNarration { get; set; } = true;
+
         /// <summary>
         /// 获取当前 Provider 的配置档案（不存在时自动初始化）。
         /// </summary>
