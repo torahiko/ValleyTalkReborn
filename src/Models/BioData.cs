@@ -105,6 +105,12 @@ public class BioData
     // 直接在角色卡里配置即可。解析逻辑见 ProgressStateResolver。
     public List<ProgressStateEntry> ProgressStates { get; set; } = new List<ProgressStateEntry>();
 
+    // ── 情绪系统（Emotion System）──
+    // null → 触发原生推导；有值时使用显式配置的基线。
+    public EmotionalBaseline EmotionalBaseline { get; set; }
+    // 空列表 → 场景降级为 null。
+    public List<TodayScene> TodayScenes { get; set; } = new();
+
     public class ListEntry
     {
         public string id { get; set; }

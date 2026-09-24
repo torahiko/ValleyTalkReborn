@@ -323,4 +323,13 @@ public class Character : IDisposable
     /// 与 Preoccupation / PreoccupationDate 构成复合缓存键，档位变更即失效（T6-Q1b）。
     /// </summary>
     public string PreoccupationStageKey { get; internal set; }
+
+    // ── 情绪系统 Memory 态字段（不序列化、不进存档、无构造副作用） ──
+    public TodayScene CurrentTodayScene { get; set; }
+    public List<string> RecentSceneIds { get; set; } = new();
+    public bool NeglectDampenedToday { get; set; }
+    public bool FeedbackTriggeredToday { get; set; }
+    public bool EmotionNarrationDoneToday { get; set; }
+    public EmotionSnapshot? PendingEmotion { get; set; }
+    public int DailyInitStamp { get; set; } = -1;
 }
