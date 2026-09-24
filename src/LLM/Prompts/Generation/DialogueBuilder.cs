@@ -1,6 +1,7 @@
 ﻿// DialogueBuilder.cs
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net.Mime;
 using System.Runtime;
@@ -83,11 +84,13 @@ namespace ValleytalkReborn
             if (!_characters.ContainsKey(instance.Name))
             {
                 var newCharacter = new Character(
-                    instance.Name, 
+                    instance.Name,
                     instance);
                 _characters.Add(instance.Name, newCharacter);
             }
-            return _characters[instance.Name];
+            var result = _characters[instance.Name];
+            EnsureDailyEmotionState(result, instance);
+            return result;
         }
 
         public Character GetCharacterByName(string name)
@@ -98,7 +101,109 @@ namespace ValleytalkReborn
             }
             return _characters[name];
         }
-        
+
+        // ── 情绪系统每日初始化 / 瞬态重置 ──
+
+        /// <summary>
+        /// 幂等日初始化：每角色每日一次（DailyInitStamp 守卫）。
+        /// 复位三标志 → 天气 Shock → 冷落 Shock → 场景抽选。主线程 only。
+        /// </summary>
+        public void EnsureDailyEmotionState(Character character, NPC rawNpc)
+        {
+            if (character == null) return;
+
+            int today = Game1.Date.TotalDays;
+            if (character.DailyInitStamp == today) return;
+            character.DailyInitStamp = today;
+
+            character.NeglectDampenedToday = false;
+            character.FeedbackTriggeredToday = false;
+            character.EmotionNarrationDoneToday = false;
+
+            if (!ModEntry.Config.EnableEmotionSystem) return;
+            if (rawNpc == null)
+            {
+                ModEntry.SMonitor?.Log("[TodayScene] rawNpc 为 null，跳过天气/冷落/场景步骤。", LogLevel.Trace);
+                return;
+            }
+
+            string name = character.Name;
+
+            // 天气 Shock（1.6 API：isLightning + IsRainingHere + isSnowing）
+            bool weatherActive = Game1.isLightning
+                || (Game1.currentLocation != null && Game1.currentLocation.IsRainingHere())
+                || Game1.isSnowing;
+            if (weatherActive)
+            {
+                MoodShockStore.AddShock(
+                    name,
+                    EmotionShockIds.Weather(name),
+                    -0.10f, -0.05f, 0f,
+                    1200, persistAcrossDays: false);
+            }
+
+            // 冷落检测：modData["ValleytalkReborn.LastTalkDay.{name}"] 可空读
+            string key = $"ValleytalkReborn.LastTalkDay.{name}";
+            bool shouldWriteBack = true;
+            if (rawNpc.modData != null && rawNpc.modData.TryGetValue(key, out string rawValue)
+                && int.TryParse(rawValue, out int lastDay))
+            {
+                if (today - lastDay >= 3)
+                {
+                    MoodShockStore.AddShock(
+                        name,
+                        EmotionShockIds.Neglect(name),
+                        -0.10f, 0f, -0.25f,
+                        1200, persistAcrossDays: true);
+                }
+            }
+
+            if (shouldWriteBack)
+            {
+                rawNpc.modData[key] = today.ToString(CultureInfo.InvariantCulture);
+            }
+
+            // 场景抽选
+            TodaySceneResolver.ResolveForCharacter(character, rawNpc);
+        }
+
+        /// <summary>
+        /// 读档/返回标题时全量重置情绪瞬态（主线程 only）。
+        /// 遍历 _characters 快照 → 清 MoodShockStore。
+        /// </summary>
+        public void ResetTransientEmotionState()
+        {
+            Character[] snapshot;
+            try
+            {
+                snapshot = _characters.Values.ToArray();
+            }
+            catch
+            {
+                snapshot = Array.Empty<Character>();
+            }
+
+            foreach (var c in snapshot)
+            {
+                c.CurrentTodayScene = null;
+                c.RecentSceneIds.Clear();
+                c.DailyInitStamp = -1;
+                c.NeglectDampenedToday = false;
+                c.FeedbackTriggeredToday = false;
+                c.EmotionNarrationDoneToday = false;
+            }
+
+            MoodShockStore.ClearAll();
+        }
+
+        /// <summary>
+        /// 返回已加载角色的快照副本（禁止直接暴露 Values）。
+        /// </summary>
+        public IReadOnlyCollection<Character> GetAllLoadedCharacters()
+        {
+            return _characters.Values.ToArray();
+        }
+
         internal async Task<string> GenerateResponse(NPC instance, List<ConversationElement> conversation, bool dontSkipNext = false, Action<string> onStreamingToken = null)
         {
             var character = GetCharacter(instance);
