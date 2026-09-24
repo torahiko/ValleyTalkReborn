@@ -108,6 +108,9 @@ public class Prompts
     public string PendingEavesdropBlock { get; set; }
     public string PendingSpouseWaitingBlock { get; set; }
     public string PendingEchoBlock { get; set; }
+    /// <summary>标记 PendingEchoBlock 当前由微社交 3 秒桥填充（而非 ImmediateEchoStore）。
+    /// ConfirmDynamicBlocksConsumed 据此跳过 ConsumeEcho——桥为 consume-on-read，无待确认条目。</summary>
+    public bool PendingEchoIsBridge { get; set; }
     public string PendingMilestoneBlock { get; set; }
     public string PendingEmotionBlock { get; set; }
 
