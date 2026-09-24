@@ -377,6 +377,9 @@ namespace ValleytalkReborn
             // 注册 Agent 工具调试控制台命令
             RegisterDebugConsoleCommands(helper);
 
+            // 情绪系统调试命令（VT-EMO-05）
+            EmotionDebugCommands.Register(helper.ConsoleCommands);
+
             // Ensure Harmony PatchAll is executed strictly ONCE per process session
             if (!_hasPatched)
             {
