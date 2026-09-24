@@ -87,9 +87,18 @@ internal static class ConsecutiveTalkTracker
         string legacyPath = Path.Combine(StorageLayout.ModDirectory, $"data/ConsecutiveStreak_{Constants.SaveFolderName}.json");
         StorageLayout.MigrateLegacyFile(legacyPath, path, "ConsecutiveStreak");
 
-        _data = ModEntry.SHelper.Data.ReadJsonFile<TrackerData>(path) ?? new TrackerData();
-        _todayGifts.Clear();
-        ModEntry.SMonitor?.Log("[ConsecutiveTalkTracker] Data loaded.", LogLevel.Debug);
+        try
+        {
+            _data = StorageJson.Read<TrackerData>(path) ?? new TrackerData();
+            _todayGifts.Clear();
+            ModEntry.SMonitor?.Log("[ConsecutiveTalkTracker] Data loaded.", LogLevel.Debug);
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log($"[ConsecutiveTalkTracker] Load failed, starting fresh: {ex.Message}", LogLevel.Warn);
+            _data = new TrackerData();
+            _todayGifts.Clear();
+        }
     }
 
     private static void OnSaving(object sender, SavingEventArgs e)
@@ -100,7 +109,7 @@ internal static class ConsecutiveTalkTracker
             ModEntry.SMonitor?.Log("[ConsecutiveTalkTracker] OnSaving: no save loaded, skipping persistence.", LogLevel.Trace);
             return;
         }
-        ModEntry.SHelper.Data.WriteJsonFile(path, _data);
+        StorageJson.Write(path, _data);
         ModEntry.SMonitor?.Log("[ConsecutiveTalkTracker] Data saved.", LogLevel.Debug);
     }
 

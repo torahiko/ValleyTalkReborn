@@ -65,7 +65,7 @@ internal static class NightlyWorkStore
                 {
                     if (existing != null && existing.Count > 0)
                     {
-                        ModEntry.SHelper.Data.WriteJsonFile(
+                        StorageJson.Write(
                             BackupPath,
                             existing);
                     }
@@ -77,7 +77,7 @@ internal static class NightlyWorkStore
                         LogLevel.Debug);
                 }
 
-                ModEntry.SHelper.Data.WriteJsonFile(
+                StorageJson.Write(
                     FilePath,
                     cleanItems);
 
@@ -114,8 +114,7 @@ internal static class NightlyWorkStore
             string legacyPath = Path.Combine(StorageLayout.ModDirectory, $"data/NightlyPending_{Constants.SaveFolderName}.json");
             StorageLayout.MigrateLegacyFile(legacyPath, path, "NightlyWorkStore");
 
-            return ModEntry.SHelper.Data
-                .ReadJsonFile<List<NightlyWorkItem>>(path);
+            return StorageJson.Read<List<NightlyWorkItem>>(path);
         }
         catch (Exception ex)
         {
@@ -160,8 +159,7 @@ internal static class NightlyWorkStore
 
             try
             {
-                var items = ModEntry.SHelper.Data
-                    .ReadJsonFile<List<NightlyWorkItem>>(FilePath);
+                var items = StorageJson.Read<List<NightlyWorkItem>>(FilePath);
 
                 if (items != null && items.Count > 0)
                 {
@@ -170,8 +168,7 @@ internal static class NightlyWorkStore
                 }
 
                 // 主文件为空，尝试从备份恢复。
-                var backupItems = ModEntry.SHelper.Data
-                    .ReadJsonFile<List<NightlyWorkItem>>(BackupPath);
+                var backupItems = StorageJson.Read<List<NightlyWorkItem>>(BackupPath);
 
                 if (backupItems != null && backupItems.Count > 0)
                 {
@@ -193,8 +190,7 @@ internal static class NightlyWorkStore
                 // Guard: 主文件损坏时尝试备份。
                 try
                 {
-                    var backupItems = ModEntry.SHelper.Data
-                        .ReadJsonFile<List<NightlyWorkItem>>(BackupPath);
+                    var backupItems = StorageJson.Read<List<NightlyWorkItem>>(BackupPath);
 
                     if (backupItems != null && backupItems.Count > 0)
                     {
@@ -263,7 +259,7 @@ internal static class NightlyWorkStore
 
             try
             {
-                ModEntry.SHelper.Data.WriteJsonFile(
+                StorageJson.Write(
                     FilePath,
                     new List<NightlyWorkItem>());
 

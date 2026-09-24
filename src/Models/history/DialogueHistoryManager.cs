@@ -435,7 +435,7 @@ namespace ValleytalkReborn
                         }
                         else
                         {
-                            ModEntry.SHelper.Data.WriteJsonFile(mpPath, snapshot);
+                            StorageJson.Write(mpPath, snapshot);
                             ModEntry.SMonitor?.Log(
                                 $"[DialogueHistoryManager] [Farmhand] Saved local history to {mpPath}.",
                                 LogLevel.Debug);
@@ -466,7 +466,7 @@ namespace ValleytalkReborn
                         string? mpPath = GetMultiplayerFilePath();
                         if (mpPath != null)
                         {
-                            data = ModEntry.SHelper.Data.ReadJsonFile<Dictionary<string, List<SerializableEntry>>>(
+                            data = StorageJson.Read<Dictionary<string, List<SerializableEntry>>>(
                                 mpPath);
                         }
                     }

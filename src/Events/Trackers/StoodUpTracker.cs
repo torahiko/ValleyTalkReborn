@@ -41,7 +41,7 @@ public class StoodUpTracker : IStoodUpProvider
 
         try
         {
-            var loaded = ModEntry.SHelper.Data.ReadJsonFile<Dictionary<string, string>>(path);
+            var loaded = StorageJson.Read<Dictionary<string, string>>(path);
             if (loaded != null)
                 _stoodUpData = loaded;
         }
@@ -67,7 +67,7 @@ public class StoodUpTracker : IStoodUpProvider
         {
             // [OPT-2] 统一使用 SMAPI Data API，不再混用 File.Delete
             // 空字典写入比删除文件更安全：避免下次 Load 时因文件不存在产生额外 IO 或日志噪音
-            ModEntry.SHelper.Data.WriteJsonFile(path, _stoodUpData);
+            StorageJson.Write(path, _stoodUpData);
         }
         catch (Exception ex)
         {
