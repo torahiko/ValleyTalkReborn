@@ -44,6 +44,13 @@ internal sealed class BarkPromptBuilder
         if (!_stateStore.TryGet(npc.Name, out var barkState))
             barkState = _stateStore.GetOrCreate(npc.Name);
 
+        var modeDecision = ProactiveDialogueManager.Resolve(npc.Name);
+        if (modeDecision.Mode == BarkOutputMode.MicroSocial)
+        {
+            var microRequest = TryBuildMicroSocial(npc, bio, isZh, barkState, modeDecision);
+            if (microRequest != null) return microRequest;
+        }
+
         var focusDecision = BarkFocusRouter.Decide(npc, barkState, bio, isZh);
 
         // 核心消费闭环：若本轮选中了感知条目，立即标记已阅与审美疲劳
@@ -778,5 +785,135 @@ Example 3 (Paranoia & Appetite):
             return "8-15 words each";
 
         return $"8-15 words each in {targetLangName}";
+    }
+
+    /// <summary>
+    /// 尝试构建 MicroSocial（擦肩互动）Bark 请求。
+    /// 任何构建失败 → 返回 null，由调用方落回 Soliloquy 流程。
+    /// </summary>
+    private DialogueModels.BarkRequest TryBuildMicroSocial(
+        NPC npc, BioData bio, bool isZh, AmbientBarkStateStore.State barkState,
+        ProactiveDialogueDecision decision)
+    {
+        // 关系路径（Sensory=null）无法构建 MicroSocial → 降级
+        if (decision.Sensory == null) return null;
+
+        try
+        {
+            // 1. 人设段
+            string rawPersona = bio.AmbientBarkPrompt?.BuildFull()?.Trim();
+            if (isZh) rawPersona = NpcNameLocalizer.LocalizeNamesInText(rawPersona);
+            if (string.IsNullOrWhiteSpace(rawPersona)) return null;
+
+            // 2. 感官行净化
+            string sensoryLine = BarkFocusRouter.FormatPerceptionForBark(decision.Sensory.Entry.Template, isZh);
+            if (string.IsNullOrWhiteSpace(sensoryLine))
+                sensoryLine = decision.Sensory.Entry.Template?.Trim();
+            if (string.IsNullOrWhiteSpace(sensoryLine)) return null;
+
+            // 3. 农夫段与场景段（可空）
+            string farmerNote = BuildFarmerIdentityNote(npc, isZh);
+            string ambientScene = BuildAmbientScene(npc, isZh);
+
+            // 4. 组装用户 prompt
+            string userPrompt = BuildMicroSocialUserPrompt(rawPersona, farmerNote, ambientScene, sensoryLine, isZh);
+            if (string.IsNullOrWhiteSpace(userPrompt)) return null;
+
+            // 5. 组装请求
+            var request = new DialogueModels.BarkRequest
+            {
+                NpcName = npc.Name,
+                SystemPrompt = BuildSystemPrompt(isZh) + "\n\n" + BuildMicroSocialTaskBlock(isZh),
+                UserPrompt = userPrompt,
+                IsChinese = isZh,
+                Mode = BarkOutputMode.MicroSocial,
+                SensoryLine = sensoryLine,
+            };
+
+            // 6. 感知消费（对齐 Soliloquy 侧阅后即焚语义）
+            PerceptionManager.Instance?.ConsumePerceptions(npc.Name, new[] { decision.Sensory.Entry });
+
+            // 7. Commit（上锁 + cap 登记）
+            if (!ProactiveDialogueManager.Commit(npc.Name, decision)) return null;
+
+            // 8. 回写焦点状态（台账既定语义）
+            lock (barkState)
+            {
+                barkState.LastFocusType = BarkFocusType.Interactive;
+                barkState.LastSensoryKey = null;
+            }
+
+            return request;
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log($"[BarkPromptBuilder] TryBuildMicroSocial error: {ex.Message}", LogLevel.Trace);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// MicroSocial 用户 prompt 三段式组装（人设段/农夫段/此刻段 + 任务块）。
+    /// 纯函数：输入全部为 string/bool，无 Game1 访问。
+    /// </summary>
+    internal static string BuildMicroSocialUserPrompt(
+        string rawPersona, string farmerNote, string ambientScene,
+        string sensoryLine, bool isZh)
+    {
+        var sb = new StringBuilder();
+
+        sb.AppendLine(isZh ? "### [你是谁]" : "### [WHO YOU ARE]");
+        sb.AppendLine(rawPersona);
+        sb.AppendLine();
+
+        if (!string.IsNullOrWhiteSpace(farmerNote))
+        {
+            sb.AppendLine(isZh ? "### [已知人物底色]" : "### [KNOWN CHARACTER]");
+            sb.AppendLine(farmerNote);
+            sb.AppendLine();
+        }
+
+        if (!string.IsNullOrWhiteSpace(ambientScene))
+        {
+            sb.AppendLine(isZh ? "### [此刻]" : "### [RIGHT NOW]");
+            sb.AppendLine(ambientScene);
+            sb.AppendLine();
+        }
+
+        sb.Append(BuildMicroSocialTaskBlock(isZh).Replace("{sensoryLine}", sensoryLine));
+
+        return sb.ToString().Trim();
+    }
+
+    /// <summary>
+    /// MicroSocial System prompt 增量块（双语，纯字符串）。
+    /// {sensoryLine} 为占位符，由 BuildMicroSocialUserPrompt 替换。
+    /// </summary>
+    internal static string BuildMicroSocialTaskBlock(bool isZh)
+    {
+        if (isZh)
+        {
+            return @"### [当前任务：擦肩而过的微社交]
+农夫的出现短暂打断了你的注意力。做出一次目光交互，随后迅速拉回自己的现实生活。
+
+你注意到的异样：{sensoryLine}
+
+第 [0] 条：针对农夫的异样/姿态/熟人关系，随口抛出一句打趣、招呼或警惕排斥（依你的性格），6~15 个汉字。
+第 [1] 条：注意力拉回手头事务的自语，15~25 个汉字。
+第 [2] 条：完全沉入私人事务的内心琐碎，15~25 个汉字。
+
+输出纯 JSON 数组，恰好 3 条，首字符 [ 末字符 ]，不要 Markdown 代码块。";
+        }
+
+        return @"### [CURRENT TASK: A PASSING GLANCE]
+The farmer's presence briefly interrupts your attention. Make one brief eye-contact, then sink back into your own life.
+
+What caught your eye: {sensoryLine}
+
+Line [0]: a casual quip, greeting, or wary brush-off at the farmer (per your personality), 3-10 words.
+Line [1]: a murmur as attention pulls back to the task at hand, 8-15 words.
+Line [2]: fully absorbed back into your private mental clutter, 8-15 words.
+
+Output a plain JSON array of EXACTLY 3 lines, starting with [ and ending with ], no Markdown.";
     }
 }
