@@ -36,31 +36,18 @@ namespace ValleytalkReborn.Movement
         // ─── Path target stabilization ───
         private Vector2 _committedTarget;
         private int _retargetCooldown;
-        private const int RETARGET_COOLDOWN = 30;
+        private const int RETARGET_COOLDOWN = 16;
 
-        // ─── Two-gear speed thresholds ───
-        private const float SPRINT_DIST  = 8f;
-        private const float NORMAL_DIST  = 4f;
-        private const int   SPEED_SPRINT = 3;
-        private const int   SPEED_NORMAL = 3;
-        private bool _isSprinting = false;
+        // ─── Dynamic speed-matching thresholds ───
+        private const float DIST_CATCHUP_RUN = 4.5f;   // 追赶带下界 & 闲逛中断阈值
+        private const float DIST_SPRINT_RUN  = 7.0f;   // 冲刺带下界
+        private const int   SPEED_BONUS_MIN  = 1;      // addedSpeed 下界（保证收拢间距）
+        private const int   SPEED_BONUS_MAX  = 7;      // addedSpeed 上界（防高移速穿模）
 
         // ─── State transition distance thresholds ───
-        private const float DIST_START_PATH              = 5.5f;
-        private const float DIST_STOP_PATH               = 1.75f;
-        private const float DIST_ABORT_WANDER            = 6.5f;
-        private const float DIST_IDLE_APPROACH           = 2.0f;
-        private const float DIST_PLAYER_STOPPED_APPROACH = 3.5f;
-
-        // ─── Startup delay ───
-        private int _startDelayTimer = 0;
-        private const int START_DELAY_FRAMES = 4;
-
-        // ─── Brake inertia ───
-        private bool _isBraking = false;
-        private int  _brakeTimer = 0;
-        private const int BRAKE_FRAMES = 4;
-        private const int BRAKE_SPEED  = 1;
+        private const float DIST_START_PATH    = 3.2f;
+        private const float DIST_STOP_PATH     = 2.0f;
+        private const float DIST_IDLE_APPROACH = 2.5f;   // 社交接近触发距离
 
         // ─── Pathfinding failure backoff ───
         private int _followPathFailCount;
@@ -68,26 +55,32 @@ namespace ValleytalkReborn.Movement
 
         // ─── Idle gaze ───
         private int _idleGazeTimer = 0;
-        private const int IDLE_GAZE_INTERVAL = 60;
+        private const int IDLE_GAZE_INTERVAL   = 60;
+        private const int IDLE_WANDER_THRESHOLD = 180;  // 3s 进入闲逛
+        private const int IDLE_GAZE_THRESHOLD   = 90;   // 1.5s 凝视/社交接近阈值
 
         // ─── Wander fan bias ───
-        private const float WANDER_HALF_SPREAD = 1.047f;
+        private const float WANDER_HALF_SPREAD        = 0.785f;  // 背后锥形 ±45°
+        private const float WANDER_LOOK_AROUND_PROB   = 0.2f;    // 原地观察概率
+        private const float WANDER_BEHIND_PROBABILITY = 0.3f;    // 背后偏置概率
+        private const int   LOOK_AROUND_COOLDOWN      = 60;
 
         // ─── Player idle timer ───
         private Vector2 _lastPlayerTile;
         private int _playerIdleTimer;
-        private const int IDLE_THRESHOLD = 360;
+        private bool _playerMovedThisTick;      // Memory 态，每 Tick 重算
+        private bool _warnedAbnormalNpcSpeed;   // Memory 态，异常 NPC 速度单次告警标志
 
         // ─── Wander parameters ───
         private int _wanderPathCooldown;
-        private const int WANDER_PAUSE      = 180;
-        private const int WANDER_RADIUS_MIN = 2;
-        private const int WANDER_RADIUS_MAX = 5;
+        private const int   WANDER_PAUSE      = 90;
+        private const float WANDER_RADIUS_MIN = 1.5f;
+        private const float WANDER_RADIUS_MAX = 3.5f;
 
         // ─── Pathing stage displacement stall detection ───
         private Vector2 _lastNpcTileInPathing;
         private int _npcStuckTicks;
-        private const int STUCK_TICKS_THRESHOLD = 40;
+        private const int STUCK_TICKS_THRESHOLD = 30;
 
         // ─── Wall-phasing recovery throttle (memory-only) ───
         private int _wallCheckCooldown;
@@ -185,20 +178,22 @@ namespace ValleytalkReborn.Movement
                 }
             }
 
-            _followingNpc       = null;
-            _isDateFollow       = false;
-            _followEndTime      = 0;
-            _followState        = FollowState.Halted;
-            _retargetCooldown   = 0;
-            _wanderPathCooldown = 0;
-            _isSprinting        = false;
-            _isBraking          = false;
-            _brakeTimer         = 0;
-            _startDelayTimer    = 0;
-            _playerIdleTimer    = 0;
-            _idleGazeTimer      = 0;
-            _committedTarget    = Vector2.Zero;
-            _wallCheckCooldown  = 0;
+            _followingNpc              = null;
+            _isDateFollow              = false;
+            _followEndTime             = 0;
+            _followState               = FollowState.Halted;
+            _retargetCooldown          = 0;
+            _wanderPathCooldown        = 0;
+            _playerIdleTimer           = 0;
+            _idleGazeTimer             = 0;
+            _committedTarget           = Vector2.Zero;
+            _wallCheckCooldown         = 0;
+            _playerMovedThisTick       = false;
+            _warnedAbnormalNpcSpeed    = false;
+            _npcStuckTicks             = 0;
+            _lastNpcTileInPathing      = Vector2.Zero;
+            _followPathFailCount       = 0;
+            _followPathFailCooldown    = 0;
         }
 
         public void Tick(UpdateTickedEventArgs e)
@@ -276,12 +271,14 @@ namespace ValleytalkReborn.Movement
             }
 
             Vector2 currentPlayerTile = Game1.player.Tile;
+            _playerMovedThisTick = (currentPlayerTile != _lastPlayerTile);
+
             if (currentPlayerTile != _lastPlayerTile)
             {
                 _playerIdleTimer = 0;
                 _lastPlayerTile  = currentPlayerTile;
             }
-            else if (_playerIdleTimer < IDLE_THRESHOLD + 60)
+            else if (_playerIdleTimer < IDLE_WANDER_THRESHOLD + 60)
             {
                 _playerIdleTimer++;
             }
@@ -289,7 +286,7 @@ namespace ValleytalkReborn.Movement
             float dist = Vector2.Distance(_followingNpc.Tile, Game1.player.Tile);
 
             if (_followState == FollowState.Pathing)
-                UpdateFollowSpeed(dist);
+                ApplyDynamicSpeed(dist);
 
             switch (_followState)
             {
@@ -354,38 +351,62 @@ namespace ValleytalkReborn.Movement
 
             _clearNpcMovement(_followingNpc);
 
-            _followingNpc       = null;
-            _isDateFollow       = false;
-            _followEndTime      = 0;
-            _followState        = FollowState.Halted;
-            _retargetCooldown   = 0;
-            _wanderPathCooldown = 0;
-            _isSprinting        = false;
-            _isBraking          = false;
-            _brakeTimer         = 0;
-            _startDelayTimer    = 0;
-            _playerIdleTimer    = 0;
-            _idleGazeTimer      = 0;
-            _committedTarget    = Vector2.Zero;
-            _lastPlayerTile     = Game1.player?.Tile ?? Vector2.Zero;
-            _wallCheckCooldown  = 0;
+            _followingNpc              = null;
+            _isDateFollow              = false;
+            _followEndTime             = 0;
+            _followState               = FollowState.Halted;
+            _retargetCooldown          = 0;
+            _wanderPathCooldown        = 0;
+            _playerIdleTimer           = 0;
+            _idleGazeTimer             = 0;
+            _committedTarget           = Vector2.Zero;
+            _lastPlayerTile            = Game1.player?.Tile ?? Vector2.Zero;
+            _wallCheckCooldown         = 0;
+            _playerMovedThisTick       = false;
+            _warnedAbnormalNpcSpeed    = false;
+            _npcStuckTicks             = 0;
+            _lastNpcTileInPathing      = Vector2.Zero;
+            _followPathFailCount       = 0;
+            _followPathFailCooldown    = 0;
         }
 
         // ─── Private helpers ───
 
-        private void UpdateFollowSpeed(float dist)
+        private float GetPlayerEffectiveSpeed()
+        {
+            return Game1.player.getMovementSpeed();
+        }
+
+        private void ApplyDynamicSpeed(float dist)
         {
             if (_followingNpc == null) return;
 
-            if (!_isSprinting && dist > SPRINT_DIST)
+            float playerSpeed = GetPlayerEffectiveSpeed();
+            int npcBase = _followingNpc.Speed;
+
+            if (npcBase <= 0)
             {
-                _isSprinting             = true;
-                _followingNpc.addedSpeed = SPEED_SPRINT;
+                if (!_warnedAbnormalNpcSpeed)
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[FollowMovementTracker] {_followingNpc.Name} abnormal Speed={npcBase}, falling back to 2",
+                        LogLevel.Warn);
+                    _warnedAbnormalNpcSpeed = true;
+                }
+                npcBase = 2;
             }
-            else if (_isSprinting && dist < NORMAL_DIST)
+
+            float needed = playerSpeed - npcBase;
+            int tier = dist > DIST_SPRINT_RUN ? 2 : (dist > DIST_CATCHUP_RUN ? 1 : 0);
+            int target = Math.Clamp((int)Math.Round(needed) + tier, SPEED_BONUS_MIN, SPEED_BONUS_MAX);
+
+            if (_followingNpc.addedSpeed != target)
             {
-                _isSprinting             = false;
-                _followingNpc.addedSpeed = SPEED_NORMAL;
+                float old = _followingNpc.addedSpeed;
+                _followingNpc.addedSpeed = target;
+                ModEntry.SMonitor?.Log(
+                    $"[FollowMovementTracker] {_followingNpc.Name} addedSpeed {old}→{target}, dist={dist:F1}, playerSpeed={playerSpeed:F1}",
+                    LogLevel.Trace);
             }
         }
 
@@ -393,65 +414,62 @@ namespace ValleytalkReborn.Movement
         {
             if (_followingNpc == null || Game1.player == null) return;
 
+            // 1.1 距离过远 → Pathing（无帧计数等待）
             if (dist > DIST_START_PATH)
             {
-                if (_startDelayTimer < START_DELAY_FRAMES)
-                {
-                    _startDelayTimer++;
-                    _followingNpc.faceGeneralDirection(Game1.player.getStandingPosition(), 0, false, false);
-                    return;
-                }
-
-                _startDelayTimer = 0;
                 TransitionTo(FollowState.Pathing);
                 return;
             }
 
-            _startDelayTimer = 0;
+            // 1.2 社交接近：双模式共用
+            if (_playerIdleTimer >= IDLE_GAZE_THRESHOLD && dist > DIST_IDLE_APPROACH)
+            {
+                TransitionTo(FollowState.Pathing);
+                return;
+            }
 
+            // 1.3 约会绝不进入 Wandering
             if (_isDateFollow)
             {
-                if (_playerIdleTimer >= IDLE_THRESHOLD / 2 && dist > DIST_IDLE_APPROACH)
-                {
-                    TransitionTo(FollowState.Pathing);
-                    return;
-                }
-
                 _followingNpc.faceGeneralDirection(Game1.player.getStandingPosition(), 0, false, false);
-                return;
-            }
 
-            if (_playerIdleTimer >= IDLE_THRESHOLD / 3 && dist > DIST_PLAYER_STOPPED_APPROACH)
-            {
-                TransitionTo(FollowState.Pathing);
-                return;
-            }
-
-            if (_playerIdleTimer >= IDLE_THRESHOLD)
-            {
-                if (dist > DIST_IDLE_APPROACH)
+                if (_playerIdleTimer >= IDLE_GAZE_THRESHOLD)
                 {
-                    TransitionTo(FollowState.Pathing);
-                    return;
+                    _idleGazeTimer++;
+                    if (_idleGazeTimer >= IDLE_GAZE_INTERVAL)
+                    {
+                        _idleGazeTimer = 0;
+                        _followingNpc.faceDirection(_rng.Next(4));
+                    }
+                }
+                else
+                {
+                    _idleGazeTimer = 0;
                 }
 
+                return;
+            }
+
+            // 1.4 进入闲逛
+            if (_playerIdleTimer >= IDLE_WANDER_THRESHOLD)
+            {
                 TransitionTo(FollowState.Wandering);
                 return;
             }
 
-            if (_playerIdleTimer >= IDLE_THRESHOLD / 2)
+            // 1.5 凝视循环
+            if (_playerIdleTimer >= IDLE_GAZE_THRESHOLD)
             {
                 _idleGazeTimer++;
-
                 if (_idleGazeTimer >= IDLE_GAZE_INTERVAL)
                 {
                     _idleGazeTimer = 0;
                     _followingNpc.faceDirection(_rng.Next(4));
                 }
-
                 return;
             }
 
+            // 1.6 静止面向玩家
             _idleGazeTimer = 0;
             _followingNpc.faceGeneralDirection(Game1.player.getStandingPosition(), 0, false, false);
         }
@@ -466,37 +484,14 @@ namespace ValleytalkReborn.Movement
                 return;
             }
 
-            if (_isBraking)
+            // 2.2 到达目标 → Halted（删除原刹车块）
+            if (dist <= DIST_STOP_PATH)
             {
-                if (dist > DIST_START_PATH)
-                {
-                    _isBraking  = false;
-                    _brakeTimer = 0;
-                    return;
-                }
-
-                _brakeTimer--;
-                _followingNpc.addedSpeed = BRAKE_SPEED;
-
-                if (_brakeTimer <= 0)
-                {
-                    _isBraking = false;
-                    TransitionTo(FollowState.Halted);
-                }
-
+                TransitionTo(FollowState.Halted);
                 return;
             }
 
-            float stopDist = (_playerIdleTimer >= IDLE_THRESHOLD) ? 2.0f : DIST_STOP_PATH;
-            if (dist <= stopDist)
-            {
-                _isBraking               = true;
-                _brakeTimer              = BRAKE_FRAMES;
-                _followingNpc.addedSpeed = BRAKE_SPEED;
-                return;
-            }
-
-            // Stall detection
+            // 2.3 停滞检测
             if (Vector2.Distance(_followingNpc.Tile, _lastNpcTileInPathing) < 0.1f)
                 _npcStuckTicks++;
             else
@@ -507,14 +502,16 @@ namespace ValleytalkReborn.Movement
 
             bool forceRetargetDueToStuck = _npcStuckTicks >= STUCK_TICKS_THRESHOLD;
 
+            // 2.4 冷却门
             if (_retargetCooldown > 0 && !forceRetargetDueToStuck) { _retargetCooldown--; return; }
 
+            // 2.5 重定向判定（无 dist 门、无冗余析取支）
             bool needRetarget =
                 forceRetargetDueToStuck ||
                 _followingNpc.controller == null ||
                 MovementPathfinding.IsPathDead(_followingNpc.controller) ||
                 MovementPathfinding.IsPathDone(_followingNpc.controller) ||
-                (Vector2.Distance(_committedTarget, Game1.player.Tile) > 2.5f && dist > DIST_START_PATH);
+                Vector2.Distance(_committedTarget, Game1.player.Tile) > 2.5f;
 
             if (needRetarget)
             {
@@ -545,17 +542,21 @@ namespace ValleytalkReborn.Movement
         {
             if (_followingNpc == null || Game1.player == null) return;
 
-            if (dist > DIST_ABORT_WANDER || _playerIdleTimer < IDLE_THRESHOLD / 3)
+            // 3.1 玩家移动 或 距离过远 → 回到 Pathing
+            if (_playerMovedThisTick || dist > DIST_CATCHUP_RUN)
             {
                 TransitionTo(FollowState.Pathing);
                 return;
             }
 
+            // 3.2 既有 controller/IsPathDone 检查
             if (_followingNpc.controller != null && !MovementPathfinding.IsPathDone(_followingNpc.controller))
                 return;
 
+            // 3.3 既有 _wanderPathCooldown 递减
             if (_wanderPathCooldown > 0) { _wanderPathCooldown--; return; }
 
+            // 3.4 尝试建立闲逛路径
             TrySetWanderPath();
         }
 
@@ -582,36 +583,31 @@ namespace ValleytalkReborn.Movement
             switch (next)
             {
                 case FollowState.Halted:
-                    _isSprinting             = false;
                     _followingNpc.addedSpeed = 0;
                     _retargetCooldown        = 0;
-                    _isBraking               = false;
-                    _brakeTimer              = 0;
-                    _startDelayTimer         = 0;
+                    _idleGazeTimer           = 0;
+                    _npcStuckTicks           = 0;
 
                     if (Game1.player != null)
                         _followingNpc.faceGeneralDirection(Game1.player.getStandingPosition(), 0, false, false);
                     break;
 
                 case FollowState.Pathing:
-                    _isSprinting             = false;
-                    _followingNpc.addedSpeed = SPEED_NORMAL;
-                    _lastNpcTileInPathing    = _followingNpc.Tile;
-                    _npcStuckTicks           = 0;
-                    _retargetCooldown        = 0;
-                    _wanderPathCooldown      = 0;
-                    _idleGazeTimer           = 0;
-                    _startDelayTimer         = 0;
-                    _isBraking               = false;
+                    _lastNpcTileInPathing = _followingNpc.Tile;
+                    _npcStuckTicks        = 0;
+                    _retargetCooldown     = 0;
+                    _wanderPathCooldown   = 0;
+                    _idleGazeTimer        = 0;
+
+                    if (Game1.player != null)
+                        ApplyDynamicSpeed(Vector2.Distance(_followingNpc.Tile, Game1.player.Tile));
                     break;
 
                 case FollowState.Wandering:
-                    _isSprinting             = false;
                     _followingNpc.addedSpeed = 0;
                     _retargetCooldown        = 0;
                     _wanderPathCooldown      = 0;
                     _idleGazeTimer           = 0;
-                    _startDelayTimer         = 0;
 
                     ModEntry.SMonitor?.Log(
                         $"[FollowMovementTracker] {_followingNpc.Name} started wandering",
@@ -713,8 +709,17 @@ namespace ValleytalkReborn.Movement
             var loc = _followingNpc.currentLocation ?? Game1.player.currentLocation;
             if (loc == null) return;
 
+            // 4.2 原地观察
+            if (_rng.NextDouble() < WANDER_LOOK_AROUND_PROB)
+            {
+                _followingNpc.faceDirection(_rng.Next(4));
+                _wanderPathCooldown = LOOK_AROUND_COOLDOWN;
+                return;
+            }
+
             Vector2 center = Game1.player.Tile;
 
+            // 4.3 behindAngle 映射
             float behindAngle = Game1.player.FacingDirection switch
             {
                 0 =>  (float)(Math.PI / 2),
@@ -724,11 +729,12 @@ namespace ValleytalkReborn.Movement
                 _ =>  0f
             };
 
+            // 4.4 ≤20 次采样
             for (int attempt = 0; attempt < 20; attempt++)
             {
                 float angle;
 
-                if (_rng.NextDouble() < 0.70)
+                if (_rng.NextDouble() < WANDER_BEHIND_PROBABILITY)
                 {
                     float offset = (float)((_rng.NextDouble() * 2 - 1) * WANDER_HALF_SPREAD);
                     angle = behindAngle + offset;
@@ -744,7 +750,7 @@ namespace ValleytalkReborn.Movement
                     center.X + (int)Math.Round(Math.Cos(angle) * radius),
                     center.Y + (int)Math.Round(Math.Sin(angle) * radius));
 
-                if (!MovementPathfinding.IsTileWalkable(loc, target, _followingNpc))
+                if (target == Game1.player.Tile || !MovementPathfinding.IsTileWalkable(loc, target, _followingNpc))
                     continue;
 
                 if (MovementPathfinding.TryCreatePath(_followingNpc, loc, target, out var controller, out _))
@@ -760,6 +766,7 @@ namespace ValleytalkReborn.Movement
                 }
             }
 
+            // 4.5 采样耗尽兜底
             _followingNpc.faceDirection(_rng.Next(4));
             _wanderPathCooldown = 60;
         }
