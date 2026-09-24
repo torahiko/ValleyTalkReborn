@@ -1,7 +1,7 @@
 {
   "Memory.AddFailedDuplicate": "That memory already exists.",
-  "Dialog.ConfirmDelete": "⚠ Delete",
-  "Dialog.ConfirmArchive": "⚠ Archive",
+  "Dialog.ConfirmDelete": "Delete",
+  "Dialog.ConfirmArchive": "Archive",
   "Dialog.Keep": "Keep",
   "Memory.AddTitle": "Add Memory for {{Name}}",
   "Memory.EditTitle": "Edit Memory for {{Name}}",
