@@ -795,8 +795,8 @@ Example 3 (Paranoia & Appetite):
         NPC npc, BioData bio, bool isZh, AmbientBarkStateStore.State barkState,
         ProactiveDialogueDecision decision)
     {
-        // 关系路径（Sensory=null）无法构建 MicroSocial → 降级
-        if (decision.Sensory == null) return null;
+        // 非法形态：SensoryTriggered=true 但 Sensory=null
+        if (decision.SensoryTriggered && decision.Sensory == null) return null;
 
         try
         {
@@ -805,35 +805,42 @@ Example 3 (Paranoia & Appetite):
             if (isZh) rawPersona = NpcNameLocalizer.LocalizeNamesInText(rawPersona);
             if (string.IsNullOrWhiteSpace(rawPersona)) return null;
 
-            // 2. 感官行净化
-            string sensoryLine = BarkFocusRouter.FormatPerceptionForBark(decision.Sensory.Entry.Template, isZh);
-            if (string.IsNullOrWhiteSpace(sensoryLine))
-                sensoryLine = decision.Sensory.Entry.Template?.Trim();
-            if (string.IsNullOrWhiteSpace(sensoryLine)) return null;
+            // 2. 感官行（仅感官路径）
+            string sensoryLine = null;
+            if (decision.SensoryTriggered)
+            {
+                sensoryLine = BarkFocusRouter.FormatPerceptionForBark(decision.Sensory.Entry.Template, isZh);
+                if (string.IsNullOrWhiteSpace(sensoryLine))
+                    sensoryLine = decision.Sensory.Entry.Template?.Trim();
+                if (string.IsNullOrWhiteSpace(sensoryLine)) return null;
+            }
 
             // 3. 农夫段与场景段（可空）
             string farmerNote = BuildFarmerIdentityNote(npc, isZh);
             string ambientScene = BuildAmbientScene(npc, isZh);
 
             // 4. 组装用户 prompt
-            string userPrompt = BuildMicroSocialUserPrompt(rawPersona, farmerNote, ambientScene, sensoryLine, isZh);
+            string userPrompt = BuildMicroSocialUserPrompt(rawPersona, farmerNote, ambientScene, sensoryLine, decision.SensoryTriggered, isZh);
             if (string.IsNullOrWhiteSpace(userPrompt)) return null;
 
             // 5. 组装请求
             var request = new DialogueModels.BarkRequest
             {
                 NpcName = npc.Name,
-                SystemPrompt = BuildSystemPrompt(isZh) + "\n\n" + BuildMicroSocialTaskBlock(isZh),
+                SystemPrompt = BuildSystemPrompt(isZh) + "\n\n" + BuildMicroSocialTaskBlock(isZh, decision.SensoryTriggered),
                 UserPrompt = userPrompt,
                 IsChinese = isZh,
                 Mode = BarkOutputMode.MicroSocial,
                 SensoryLine = sensoryLine,
             };
 
-            // 6. 感知消费（对齐 Soliloquy 侧阅后即焚语义）
-            PerceptionManager.Instance?.ConsumePerceptions(npc.Name, new[] { decision.Sensory.Entry });
+            // 6. 感知消费（仅感官路径；关系路径无感知条目）
+            if (decision.SensoryTriggered)
+            {
+                PerceptionManager.Instance?.ConsumePerceptions(npc.Name, new[] { decision.Sensory.Entry });
+            }
 
-            // 7. Commit（上锁 + cap 登记）
+            // 7. Commit（上锁 + cap 登记；关系路径免 TryClaim）
             if (!ProactiveDialogueManager.Commit(npc.Name, decision)) return null;
 
             // 8. 回写焦点状态（台账既定语义）
@@ -858,7 +865,7 @@ Example 3 (Paranoia & Appetite):
     /// </summary>
     internal static string BuildMicroSocialUserPrompt(
         string rawPersona, string farmerNote, string ambientScene,
-        string sensoryLine, bool isZh)
+        string sensoryLine, bool sensoryTriggered, bool isZh)
     {
         var sb = new StringBuilder();
 
@@ -880,20 +887,26 @@ Example 3 (Paranoia & Appetite):
             sb.AppendLine();
         }
 
-        sb.Append(BuildMicroSocialTaskBlock(isZh).Replace("{sensoryLine}", sensoryLine));
+        string taskBlock = BuildMicroSocialTaskBlock(isZh, sensoryTriggered);
+        if (sensoryTriggered && !string.IsNullOrEmpty(sensoryLine))
+            taskBlock = taskBlock.Replace("{sensoryLine}", sensoryLine);
+        sb.Append(taskBlock);
 
         return sb.ToString().Trim();
     }
 
     /// <summary>
     /// MicroSocial System prompt 增量块（双语，纯字符串）。
-    /// {sensoryLine} 为占位符，由 BuildMicroSocialUserPrompt 替换。
+    /// sensoryTriggered == true：含 {sensoryLine} 占位符，由 BuildMicroSocialUserPrompt 替换。
+    /// sensoryTriggered == false：关系变体，无 {sensoryLine}，含"熟人/familiar"锚点。
     /// </summary>
-    internal static string BuildMicroSocialTaskBlock(bool isZh)
+    internal static string BuildMicroSocialTaskBlock(bool isZh, bool sensoryTriggered)
     {
-        if (isZh)
+        if (sensoryTriggered)
         {
-            return @"### [当前任务：擦肩而过的微社交]
+            if (isZh)
+            {
+                return @"### [当前任务：擦肩而过的微社交]
 农夫的出现短暂打断了你的注意力。做出一次目光交互，随后迅速拉回自己的现实生活。
 
 你注意到的异样：{sensoryLine}
@@ -903,14 +916,37 @@ Example 3 (Paranoia & Appetite):
 第 [2] 条：完全沉入私人事务的内心琐碎，15~25 个汉字。
 
 输出纯 JSON 数组，恰好 3 条，首字符 [ 末字符 ]，不要 Markdown 代码块。";
-        }
+            }
 
-        return @"### [CURRENT TASK: A PASSING GLANCE]
+            return @"### [CURRENT TASK: A PASSING GLANCE]
 The farmer's presence briefly interrupts your attention. Make one brief eye-contact, then sink back into your own life.
 
 What caught your eye: {sensoryLine}
 
 Line [0]: a casual quip, greeting, or wary brush-off at the farmer (per your personality), 3-10 words.
+Line [1]: a murmur as attention pulls back to the task at hand, 8-15 words.
+Line [2]: fully absorbed back into your private mental clutter, 8-15 words.
+
+Output a plain JSON array of EXACTLY 3 lines, starting with [ and ending with ], no Markdown.";
+        }
+
+        // 关系变体（sensoryTriggered == false）
+        if (isZh)
+        {
+            return @"### [当前任务：擦肩而过的微社交]
+农夫的出现短暂打断了你的注意力。做出一次目光交互，随后迅速拉回自己的现实生活。
+
+第 [0] 条：这位农夫是熟人（关系见上方“已知人物底色”）。随口抛出一句符合你们关系的招呼或打趣，6~15 个汉字。
+第 [1] 条：注意力拉回手头事务的自语，15~25 个汉字。
+第 [2] 条：完全沉入私人事务的内心琐碎，15~25 个汉字。
+
+输出纯 JSON 数组，恰好 3 条，首字符 [ 末字符 ]，不要 Markdown 代码块。";
+        }
+
+        return @"### [CURRENT TASK: A PASSING GLANCE]
+The farmer's presence briefly interrupts your attention. Make one brief eye-contact, then sink back into your own life.
+
+Line [0]: this farmer is familiar (see KNOWN CHARACTER above). Toss out a greeting or quip that fits your relationship, 3-10 words.
 Line [1]: a murmur as attention pulls back to the task at hand, 8-15 words.
 Line [2]: fully absorbed back into your private mental clutter, 8-15 words.
 
