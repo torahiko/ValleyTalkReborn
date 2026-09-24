@@ -136,6 +136,21 @@ namespace ValleytalkReborn
     }
 
     // ══════════════════════════════════════════════════════════════
+    //  2b. 约会会话只读摘要（供聚焦路由消费）
+    // ══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Memory-only 只读快照，仅主线程调用（与 Prompts 组装同一线程约束）。
+    /// 描述一次约会会话的对话 / 礼物摘要。IsValid=false 表示会话不存在或 NPC 不匹配。
+    /// </summary>
+    public sealed record DateSessionDigest(
+        bool IsValid,
+        int StartGameTime,
+        int DialogueExchangeCount,
+        string? GivenGiftName,
+        int GivenGiftTaste);
+
+    // ══════════════════════════════════════════════════════════════
     //  3. 约会系统总状态机（DateManager）
     // ══════════════════════════════════════════════════════════════
     internal class DateManager : IDateStateProvider
@@ -212,6 +227,50 @@ namespace ValleytalkReborn
         public DateOrigin CurrentDateOrigin { get; private set; } = DateOrigin.NpcInitiated;
         public int DynamicEndTime { get; private set; } = HardEndTime;
         public DateSessionData CurrentSession { get; private set; }
+
+        /// <summary>
+        /// Memory-only 只读快照，仅主线程调用（与 Prompts 组装同一线程约束）。
+        /// 返回指定 NPC 当前会话摘要；会话不存在 / 名字不匹配 / 异常时返回 IsValid=false 的默认 record。
+        /// </summary>
+        public DateSessionDigest BuildSessionDigest(string npcName)
+        {
+            const int Invalid = -1;
+
+            try
+            {
+                if (string.IsNullOrWhiteSpace(npcName))
+                    return new DateSessionDigest(false, 0, 0, null, Invalid);
+
+                if (CurrentSession == null
+                    || !string.Equals(CurrentSession.NpcName, npcName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return new DateSessionDigest(false, 0, 0, null, Invalid);
+                }
+
+                var logs = CurrentSession.GiftLogs;
+                string? giftName = null;
+                int giftTaste = Invalid;
+
+                if (logs != null && logs.Count > 0)
+                {
+                    var last = logs[logs.Count - 1];
+                    giftName = last.ItemName;
+                    giftTaste = last.Taste;
+                }
+
+                return new DateSessionDigest(
+                    IsValid: true,
+                    StartGameTime: CurrentSession.StartTime,
+                    DialogueExchangeCount: CurrentSession.DialogueLogs.Count,
+                    GivenGiftName: giftName,
+                    GivenGiftTaste: giftTaste);
+            }
+            catch (Exception ex)
+            {
+                ModEntry.SMonitor?.Log($"[DateManager] BuildSessionDigest failed: {ex.Message}", LogLevel.Warn);
+                return new DateSessionDigest(false, 0, 0, null, Invalid);
+            }
+        }
 
         // 外部系统仍需要的状态（保持 public，供 NpcReceiveGiftPatch 等使用）
         public bool SpouseMorningInvitePending { get; set; } = false;
