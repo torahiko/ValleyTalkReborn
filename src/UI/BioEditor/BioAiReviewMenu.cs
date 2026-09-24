@@ -43,6 +43,7 @@ namespace ValleytalkReborn
         private readonly new IClickableMenu _parentMenu;
         private readonly Func<string, bool> _onAccepted;
         private readonly Action? _onCancelled;
+        private readonly Action<BioAiReviewMenu, string>? _onRequestRefine;   // (自身引用, 当前草稿全文)
         private readonly DialogueTextInputBox _reviewTextBox;
 
         // 顶栏关闭按钮
@@ -53,6 +54,7 @@ namespace ValleytalkReborn
         // 底部动作按钮
         private Rectangle _stopButtonRect;
         private Rectangle _copyButtonRect;
+        private Rectangle _refineButtonRect;
         private Rectangle _cancelButtonRect;
         private Rectangle _acceptButtonRect;
 
@@ -61,7 +63,7 @@ namespace ValleytalkReborn
         private string _statusSubtitle = "正在连接大模型并构建思考链路…";
         private string? _hoverText;
 
-        public BioAiReviewMenu(string sectionTitle, IClickableMenu parentMenu, Func<string, bool> onAccepted, Action? onCancelled = null)
+        public BioAiReviewMenu(string sectionTitle, IClickableMenu parentMenu, Func<string, bool> onAccepted, Action? onCancelled = null, Action<BioAiReviewMenu, string>? onRequestRefine = null)
             : base(
                 (Game1.uiViewport.Width - Math.Clamp(Game1.uiViewport.Width - 100, 880, MenuWidth)) / 2,
                 (Game1.uiViewport.Height - Math.Clamp(Game1.uiViewport.Height - 80, 560, MenuHeight)) / 2,
@@ -73,6 +75,7 @@ namespace ValleytalkReborn
             _parentMenu = parentMenu;
             _onAccepted = onAccepted;
             _onCancelled = onCancelled;
+            _onRequestRefine = onRequestRefine;
 
             _reviewTextBox = new DialogueTextInputBox(6000)
             {
@@ -97,6 +100,20 @@ namespace ValleytalkReborn
         public void BeginStreaming(ConcurrentQueue<string> tokenQueue)
         {
             _streamQueue = tokenQueue;
+        }
+
+        /// <summary>
+        /// 由「💬 追问优化」按钮链路调用（仅在 <see cref="ReviewPhase.Settled"/> 阶段触发，前置由构造保证）。
+        /// 切换至新一轮流式生成；基准草稿原样保留在文本框中，直至新流首个 token 到达时原子替换。
+        /// </summary>
+        internal void RestartStreamingForRefine(ConcurrentQueue<string> tokenQueue)
+        {
+            _streamQueue = tokenQueue;
+            _phase = ReviewPhase.Thinking;
+            _statusSubtitle = "正在结合追问要求重新构思与二次润色…";
+            _reviewTextBox.Selected = false;
+            if (ReferenceEquals(Game1.keyboardDispatcher.Subscriber, _reviewTextBox))
+                Game1.keyboardDispatcher.Subscriber = null;
         }
 
         public void OnStreamSettled(BioAiResult result)
@@ -181,11 +198,16 @@ namespace ValleytalkReborn
             if (batch.Length == 0)
                 return;
 
-            _reviewTextBox.AppendStreamingText(batch.ToString());
             if (_phase == ReviewPhase.Thinking)
             {
+                // 首包原子替换：新会话空框下与追加严格等价；追问会话下原子替换基准草稿
+                _reviewTextBox.SetText(batch.ToString());
                 _phase = ReviewPhase.Streaming;
                 _statusSubtitle = "正在实时接收并流式渲染生成内容…";
+            }
+            else
+            {
+                _reviewTextBox.AppendStreamingText(batch.ToString());
             }
         }
 
@@ -227,6 +249,10 @@ namespace ValleytalkReborn
             _copyButtonRect = new Rectangle(contentLeft, footerY, copyBtnW, btnH);
             _acceptButtonRect = new Rectangle(xPositionOnScreen + width - ContentPadding - acceptBtnW, footerY, acceptBtnW, btnH);
             _cancelButtonRect = new Rectangle(_acceptButtonRect.X - cancelBtnW - 12, footerY, cancelBtnW, btnH);
+
+            // 追问按钮归入左侧辅助簇（与「复制文本」同侧）；右侧决策簇 [取消][应用] 不动
+            const int refineBtnW = 150;
+            _refineButtonRect = new Rectangle(_cancelButtonRect.X - refineBtnW - 12, footerY, refineBtnW, btnH);
         }
 
         public override void leftClickHeld(int x, int y)
@@ -269,6 +295,17 @@ namespace ValleytalkReborn
             if (_copyButtonRect.Contains(x, y))
             {
                 CopyDraftToClipboard();
+                return;
+            }
+
+            if (_refineButtonRect.Contains(x, y) && _onRequestRefine != null)
+            {
+                Game1.playSound("smallSelect");
+                try { _onRequestRefine.Invoke(this, _reviewTextBox.Text); }
+                catch (Exception ex)
+                {
+                    ModEntry.SMonitor?.Log($"[BioAiReviewMenu] Refine callback failed: {ex}", StardewModdingAPI.LogLevel.Error);
+                }
                 return;
             }
 
@@ -416,11 +453,15 @@ namespace ValleytalkReborn
             else
             {
                 DrawActionButton(b, _copyButtonRect, "📋 复制文本", mx, my, isPrimary: false);
+                if (_onRequestRefine != null)
+                    DrawActionButton(b, _refineButtonRect, "💬 追问优化", mx, my, isPrimary: false);
                 DrawActionButton(b, _cancelButtonRect, "✕ 放弃 (Esc)", mx, my, isDanger: false);
                 DrawActionButton(b, _acceptButtonRect, "✔ 应用生成内容", mx, my, isPrimary: true);
 
                 if (_copyButtonRect.Contains(mx, my))
                     _hoverText = "【复制文本】\n将当前审阅框中的全部内容复制到系统剪贴板。";
+                else if (_onRequestRefine != null && _refineButtonRect.Contains(mx, my))
+                    _hoverText = "【追问优化】\n以当前文本为基础，向大模型提出进一步的润色、增补或调整要求。";
                 else if (_cancelButtonRect.Contains(mx, my))
                     _hoverText = "【放弃修改】\n关闭当前审阅窗口，不应用本次 AI 生成的任何内容。";
                 else if (_acceptButtonRect.Contains(mx, my))
