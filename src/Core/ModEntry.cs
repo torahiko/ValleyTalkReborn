@@ -381,6 +381,9 @@ namespace ValleytalkReborn
             // 情绪系统调试命令（VT-EMO-05）
             EmotionDebugCommands.Register(helper.ConsoleCommands);
 
+            // VT3-A：Prompt 拓扑夹具转储命令
+            PromptTopologyDumper.Register(helper.ConsoleCommands);
+
             // Ensure Harmony PatchAll is executed strictly ONCE per process session
             if (!_hasPatched)
             {
