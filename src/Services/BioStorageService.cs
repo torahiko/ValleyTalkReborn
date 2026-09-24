@@ -454,15 +454,17 @@ public sealed class BioStorageService
             // Edit 回调在 CP 内容包补丁之后执行（SMAPI C# 编辑提供器语义），是覆盖层晚于基线生效的机制依据。
             e.Edit(editor =>
             {
-                if (editor is not IAssetData<BioData> d)
+                // 守卫：比较资产数据类型（而非包装器运行时类型），从首次提交起真正可达。
+                if (editor.DataType != typeof(BioData))
                 {
                     ModEntry.SMonitor?.Log(
-                        $"[BioStorage] 注入跳过({npc}): 资产类型不匹配，期望 {typeof(BioData).Name}，实际 {editor.DataType}",
+                        $"[BioStorage] 注入跳过({npc}): 资产数据类型不匹配，期望 {typeof(BioData).FullName}，实际 {editor.DataType.FullName}",
                         LogLevel.Error);
                     return;
                 }
 
-                _baselineCache[npc] = DeepClone(d.Data);
+                // 在覆盖层替换前捕获纯净原版基线（首次真正生效）。
+                _baselineCache[npc] = DeepClone((BioData)editor.Data);
                 if (!HasCustomOverlay(npc))
                 {
                     ModEntry.SMonitor?.Log($"[BioStorage] 无覆盖层，基线直通: {npc}", LogLevel.Trace);
@@ -471,7 +473,7 @@ public sealed class BioStorageService
 
                 BioData ov = TryDeserializeOverlay(npc);
                 if (ov == null) return;
-                d.ReplaceWith(ov);
+                editor.ReplaceWith(ov);
                 TryGetActiveScope(npc, out BioScope scope);
                 ModEntry.SMonitor?.Log(
                     $"[BioStorage] overlay applied: {npc} (scope={scope}, Biography={ov.Biography?.Length ?? 0} chars, stages={ov.ProgressStates?.Count ?? 0})",
