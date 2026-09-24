@@ -1034,7 +1034,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
             if (Config?.Debug == true)
             {
                 ModEntry.SMonitor?.Log(
-                    $"[AmbientBark] Bark 请求上下文 ({request.NpcName}):\n[SYSTEM]\n{request.SystemPrompt}\n\n[USER]\n{request.UserPrompt}",
+                    $"[AmbientBark] Bark 请求上下文 ({request.NpcName}) Mode={request.Mode}:\n[SYSTEM]\n{request.SystemPrompt}\n\n[USER]\n{request.UserPrompt}",
                     LogLevel.Debug);
             }
 
