@@ -6,7 +6,7 @@ using StardewValley;
 
 namespace ValleytalkReborn;
 
-internal enum BarkFocusType { Sensory, Interactive, Introspective, FreeDrift }
+internal enum BarkFocusType { Sensory, Interactive, Introspective, Companion, FreeDrift }
 
 internal sealed class BarkFocusDecision
 {
@@ -95,6 +95,62 @@ internal static class BarkFocusRouter
         {
             list.Add(new Candidate(100.0f, tailDecision));
             return list;
+        }
+
+        // ── 池 0：Companion（跟随/约会注意力聚焦） ──
+        var focus = CompanionFocusResolver.Resolve(npc);
+        if (focus != CompanionFocusMode.None)
+        {
+            // 权重 2.2f：高于 Sensory(1.8f)/Preoccupation(0.7f)，低于瞬态感知(2.5f)；
+            // 疲劳阻尼：lastType == Companion 时 weight *= 0.4f（允许继续聚焦但不霸屏）
+            float companionWeight = 2.2f;
+            if (lastType == BarkFocusType.Companion)
+                companionWeight *= 0.4f;
+
+            var loc = npc?.currentLocation;
+            string locName = loc != null ? EnvironmentScanner.GetLocationFriendlyName(loc.Name) : null;
+
+            string contextLine;
+            if (loc == null)
+            {
+                // loc 为 null 兜底文案，不 return null 文本
+                contextLine = isZh ? "你和农夫正待在一起。" : "You are spending time with the farmer.";
+            }
+            else
+            {
+                switch (focus)
+                {
+                    case CompanionFocusMode.DateWalking:
+                        contextLine = isZh
+                            ? $"你和农夫正在{locName}边走边约会，注意力留在你们的同行相处上。"
+                            : $"You are walking through {locName} together with the farmer, your attention on the companionship between you.";
+                        break;
+                    case CompanionFocusMode.DateSettled:
+                        contextLine = isZh
+                            ? $"你正和农夫在{locName}约会，注意力留在两人之间的相处上。"
+                            : $"You and the farmer are on a date at {locName}, your attention on the two of you together.";
+                        break;
+                    case CompanionFocusMode.RegularFollow:
+                        contextLine = isZh
+                            ? $"你正陪着农夫在{locName}散步同行。"
+                            : $"You are walking alongside the farmer through {locName}.";
+                        break;
+                    default:
+                        contextLine = isZh ? "你和农夫正待在一起。" : "You are spending time with the farmer.";
+                        break;
+                }
+            }
+
+            list.Add(new Candidate(companionWeight, new BarkFocusDecision
+            {
+                FocusType           = BarkFocusType.Companion,
+                InjectedContextLine = contextLine,
+                AllowThinkingLens   = false,
+                SensoryItemKey      = null,
+                MatchedPerception   = null
+            }));
+            // 不 return：保留与其他池的竞争语义，与单槽位路由器设计一致
+            ModEntry.SMonitor?.Log($"[BarkFocusRouter] Companion focus candidate for {npc?.Name}: mode={focus}, weight={companionWeight:F2}", LogLevel.Trace);
         }
 
         // ── 池 1：Introspective（内心世界） ──
