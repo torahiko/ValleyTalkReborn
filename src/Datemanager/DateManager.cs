@@ -509,13 +509,13 @@ namespace ValleytalkReborn
 
         public void RecordDateDialogue(string speaker, string text)
         {
-            if (CurrentDateMode == DateMode.Scheduled && CurrentSession != null)
+            if (CurrentDateMode is DateMode.Scheduled or DateMode.Follow && CurrentSession != null)
                 CurrentSession.RecordDialogue(speaker, text);
         }
 
         public void RecordDateGift(string giftName, int taste)
         {
-            if (CurrentDateMode == DateMode.Scheduled && CurrentSession != null)
+            if (CurrentDateMode is DateMode.Scheduled or DateMode.Follow && CurrentSession != null)
                 CurrentSession.RecordGift(giftName, taste);
         }
 
@@ -603,6 +603,10 @@ namespace ValleytalkReborn
 
             Phase = DatePhase.Active;
             DynamicEndTime = endTime;
+
+            // VT-FOCUS-04: 即时同行约会激活会话，使 walking 容器可回放时长/礼物事实。
+            // ??= 保留 Scheduled→Follow 中途转换时已存在的预约段会话（保留其对话日志）。
+            CurrentSession ??= new DateSessionData(npc.Name, ActiveDateLocation, Game1.timeOfDay);
 
             npc.controller = null;
             npc.temporaryController = null;
