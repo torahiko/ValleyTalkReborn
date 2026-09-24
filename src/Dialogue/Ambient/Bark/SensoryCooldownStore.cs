@@ -10,9 +10,11 @@ internal static class SensoryCooldownStore
     // 测试缝线：NowProvider 返回线性游戏分钟轴（实现同 MoodShockStore.DefaultNowProvider 公式）
     internal static Func<int> NowProvider { get; set; } = DefaultNow;
 
-    private static readonly HashSet<(string NpcName, SensoryType Type)> _dailyLocks = new();
+    private static readonly HashSet<string> _dailyLocks = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<string, int> _transientExpiry = new(StringComparer.OrdinalIgnoreCase);
     private static readonly object _lock = new object();
+
+    private static string DailyKey(string npcName, SensoryType type) => npcName + "|" + type;
 
     private static int DefaultNow()
     {
@@ -33,7 +35,7 @@ internal static class SensoryCooldownStore
                 if (type is SensoryType.LewisShorts or SensoryType.TrashOutfit or SensoryType.HazmatSuit
                     or SensoryType.WeddingDress or SensoryType.FaintedYesterday)
                 {
-                    return _dailyLocks.Contains((npcName, type));
+                    return _dailyLocks.Contains(DailyKey(npcName, type));
                 }
 
                 // Transient
@@ -68,7 +70,7 @@ internal static class SensoryCooldownStore
 
                 if (category == SensoryCategory.Continuous)
                 {
-                    _dailyLocks.Add((npcName, type));
+                    _dailyLocks.Add(DailyKey(npcName, type));
                 }
                 else
                 {
