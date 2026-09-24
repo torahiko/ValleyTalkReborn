@@ -86,53 +86,57 @@ internal sealed class WorldSummaryOverlayService : OverlayStorageServiceBase<Wor
         {
             e.Edit(editor =>
             {
-                if (editor is IAssetData<GameSummary> d)
+                if (editor.DataType != typeof(GameSummary))
                 {
-                    // 1. 基线捕获（任何 upsert 之前）
-                    _baselineLocationDescriptions = d.Data.Locations.Entries?.ToDictionary(
-                        kv => kv.Key, kv => kv.Value.Description ?? "", StringComparer.OrdinalIgnoreCase);
-                    _baselineFestivals = d.Data.Festivals?.Entries?.ToDictionary(
-                        kv => kv.Key, kv => ToBaselineFestival(kv.Value), StringComparer.OrdinalIgnoreCase);
-
-                    var ov = GetOverlay();
-                    if (ov == null) return;
-
-                    // 2-3. 地点描述 upsert（未知键拒绝；墓碑键跳过 = 保持内容包原值）
-                    Dictionary<string, LocationObject>? locations = d.Data.Locations.Entries;
-                    if (locations != null)
-                    {
-                        foreach (var kv in ov.LocationDescriptions)
-                        {
-                            if (ov.RemovedLocationDescriptionIds.Exists(r => string.Equals(r, kv.Key, StringComparison.OrdinalIgnoreCase)))
-                                continue;
-                            if (!locations.TryGetValue(kv.Key, out var loc))
-                            {
-                                _monitor.Log($"[WorldSummaryOverlay] 未知地点键 {kv.Key}，已拒绝", LogLevel.Warn);
-                                continue;
-                            }
-                            loc.Description = kv.Value;
-                        }
-                    }
-
-                    // 4-5. 原版节日描述 upsert（IsCustomDate==false）；IsCustomDate==true 条目留给 WP-B 读时合成
-                    Dictionary<string, GeneralObject>? festivals = d.Data.Festivals?.Entries;
-                    if (festivals != null)
-                    {
-                        foreach (var kv in ov.Festivals)
-                        {
-                            if (kv.Value == null || kv.Value.IsCustomDate) continue;
-                            if (!festivals.TryGetValue(kv.Key, out var fest))
-                            {
-                                _monitor.Log($"[WorldSummaryOverlay] 未知节日键 {kv.Key}，已拒绝", LogLevel.Warn);
-                                continue;
-                            }
-                            fest.Name = ResolveLocalized(kv.Value.Names);
-                            fest.Description = ResolveLocalized(kv.Value.Descriptions);
-                        }
-                    }
-
-                    _monitor.Log($"[WorldSummaryOverlay] applied locDesc={ov.LocationDescriptions.Count}, fest={ov.Festivals.Count}", LogLevel.Trace);
+                    _monitor.Log($"[WorldSummaryOverlay] 注入跳过: 资产数据类型不匹配，期望 {typeof(GameSummary).FullName}，实际 {editor.DataType.FullName}", LogLevel.Error);
+                    return;
                 }
+                var data = (GameSummary)editor.Data;
+                _monitor.Log("[WorldSummaryOverlay] 注入回调生效", LogLevel.Debug);
+                // 1. 基线捕获（任何 upsert 之前）
+                _baselineLocationDescriptions = data.Locations.Entries?.ToDictionary(
+                    kv => kv.Key, kv => kv.Value.Description ?? "", StringComparer.OrdinalIgnoreCase);
+                _baselineFestivals = data.Festivals?.Entries?.ToDictionary(
+                    kv => kv.Key, kv => ToBaselineFestival(kv.Value), StringComparer.OrdinalIgnoreCase);
+
+                var ov = GetOverlay();
+                if (ov == null) return;
+
+                // 2-3. 地点描述 upsert（未知键拒绝；墓碑键跳过 = 保持内容包原值）
+                Dictionary<string, LocationObject>? locations = data.Locations.Entries;
+                if (locations != null)
+                {
+                    foreach (var kv in ov.LocationDescriptions)
+                    {
+                        if (ov.RemovedLocationDescriptionIds.Exists(r => string.Equals(r, kv.Key, StringComparison.OrdinalIgnoreCase)))
+                            continue;
+                        if (!locations.TryGetValue(kv.Key, out var loc))
+                        {
+                            _monitor.Log($"[WorldSummaryOverlay] 未知地点键 {kv.Key}，已拒绝", LogLevel.Warn);
+                            continue;
+                        }
+                        loc.Description = kv.Value;
+                    }
+                }
+
+                // 4-5. 原版节日描述 upsert（IsCustomDate==false）；IsCustomDate==true 条目留给 WP-B 读时合成
+                Dictionary<string, GeneralObject>? festivals = data.Festivals?.Entries;
+                if (festivals != null)
+                {
+                    foreach (var kv in ov.Festivals)
+                    {
+                        if (kv.Value == null || kv.Value.IsCustomDate) continue;
+                        if (!festivals.TryGetValue(kv.Key, out var fest))
+                        {
+                            _monitor.Log($"[WorldSummaryOverlay] 未知节日键 {kv.Key}，已拒绝", LogLevel.Warn);
+                            continue;
+                        }
+                        fest.Name = ResolveLocalized(kv.Value.Names);
+                        fest.Description = ResolveLocalized(kv.Value.Descriptions);
+                    }
+                }
+
+                _monitor.Log($"[WorldSummaryOverlay] applied locDesc={ov.LocationDescriptions.Count}, fest={ov.Festivals.Count}", LogLevel.Trace);
             }, AssetEditPriority.Default, null);
         }
         catch (Exception ex)
