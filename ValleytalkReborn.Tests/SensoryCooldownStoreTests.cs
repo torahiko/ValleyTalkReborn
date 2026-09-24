@@ -113,4 +113,19 @@ public class SensoryCooldownStoreTests
         // 过期后应可重新 claim
         Assert.True(SensoryCooldownStore.TryClaim("Abigail", SensoryType.GarlicStench, SensoryCategory.Transient));
     }
+
+    // ── 验收 4：OrdinalIgnoreCase 大小写不敏感 ──
+
+    [Fact]
+    public void UT08_CaseInsensitiveDailyLock()
+    {
+        ResetStore(1000);
+
+        Assert.True(SensoryCooldownStore.TryClaim("Alex", SensoryType.LewisShorts, SensoryCategory.Continuous));
+        Assert.True(SensoryCooldownStore.IsLocked("alex", SensoryType.LewisShorts));
+        Assert.False(SensoryCooldownStore.TryClaim("ALEX", SensoryType.LewisShorts, SensoryCategory.Continuous));
+
+        SensoryCooldownStore.ResetDaily();
+        Assert.False(SensoryCooldownStore.IsLocked("AlEx", SensoryType.LewisShorts));
+    }
 }
