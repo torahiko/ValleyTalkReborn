@@ -214,6 +214,29 @@ internal sealed class AmbientBarkModule : IDialogueModule
                     continue;
                 }
 
+                // MicroSocial 直出分支：成功构建的微社交结果跳过常规队列，直接入输出队列
+                var microLines = result.Mode == BarkOutputMode.MicroSocial
+                    ? result.Barks.Where(b => !string.IsNullOrWhiteSpace(b)).Select(b => b.Trim()).ToArray()
+                    : null;
+                var npcMicro = microLines != null ? Game1.getCharacterFromName(result.NpcName) : null;
+                bool microDirect = microLines != null && microLines.Length > 0
+                                   && npcMicro != null && !IsFestivalNow;
+
+                if (microDirect)
+                {
+                    state.BarkQueue.Clear();                                  // 决策 3：清空 + 覆盖重排
+                    state.IsRequesting = false;
+                    state.HasPlayedFirst = true;                              // N6 状态回填
+                    state.AddRecentBark(microLines[0]);                       // N6：思绪记忆链不断裂
+                    state.BusyTicksRemaining = DISPLAY_LINE_VISIBLE_TICKS;    // N6：节日占用计时口径一致
+                    state.DisplayCountdown = DialogueUtilities.NextDisplayInterval(npcMicro, _rng);
+                    _outputQueue.Enqueue(npcMicro.Name, microLines[0], 3500, "Bark", isMicroSocialBark: true);
+                    for (int i = 1; i < microLines.Length; i++)
+                        state.BarkQueue.Enqueue(microLines[i]);
+                    continue;   // ★ 不设 CooldownTicksRemaining——冷却归 FinalizeThreadLocked，与 Soliloquy 口径一致
+                }
+                // microLines 非空但节日 / NPC 缺失 / 全空白 → 不分支，落入既有常规入队块
+
                 foreach (var bark in result.Barks)
                 {
                     if (!string.IsNullOrWhiteSpace(bark))
@@ -857,6 +880,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
         _outputQueue.ClearType("Bark");
         SensoryCooldownStore.ClearAll();
         ProactiveDialogueManager.ClearAll();
+        FreshBarkBridgeStore.ClearAll();
     }
 
     /// <summary>
@@ -1059,7 +1083,8 @@ internal sealed class AmbientBarkModule : IDialogueModule
                 NpcName = request.NpcName,
                 RequestId = requestId,
                 Barks = barks,
-                IsChinese = request.IsChinese
+                IsChinese = request.IsChinese,
+                Mode = request.Mode
             });
         }
         catch (OperationCanceledException)
@@ -1093,7 +1118,8 @@ internal sealed class AmbientBarkModule : IDialogueModule
             NpcName = request.NpcName,
             RequestId = requestId,
             UseFallback = true,
-            IsChinese = request.IsChinese
+            IsChinese = request.IsChinese,
+            Mode = BarkOutputMode.Soliloquy
         });
     }
  
