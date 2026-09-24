@@ -90,24 +90,28 @@ internal sealed class DateLocationOverlayService : OverlayStorageServiceBase<Dat
         {
             e.Edit(editor =>
             {
-                if (editor is IAssetData<Dictionary<string, DateLocationInfo>> d)
+                if (editor.DataType != typeof(Dictionary<string, DateLocationInfo>))
                 {
-                    _baseline = new Dictionary<string, DateLocationInfo>(
-                        d.Data, StringComparer.OrdinalIgnoreCase);
-                    var ov = GetOverlay();
-                    if (ov == null)
-                        return;
-
-                    foreach (var (id, info) in ov.Entries)
-                    {
-                        info.LocationId = id;   // 回填 ID
-                        d.Data[id] = info;       // upsert
-                    }
-                    foreach (var id in ov.RemovedLocationIds)
-                        d.Data.Remove(id);       // 墓碑
-
-                    _monitor.Log($"[DateOverlay] applied {ov.Entries.Count} entries", LogLevel.Trace);
+                    _monitor.Log($"[DateOverlay] 注入跳过: 资产数据类型不匹配，期望 {typeof(Dictionary<string, DateLocationInfo>).FullName}，实际 {editor.DataType.FullName}", LogLevel.Error);
+                    return;
                 }
+                var data = (Dictionary<string, DateLocationInfo>)editor.Data;
+                _monitor.Log("[DateOverlay] 注入回调生效", LogLevel.Debug);
+                _baseline = new Dictionary<string, DateLocationInfo>(
+                    data, StringComparer.OrdinalIgnoreCase);
+                var ov = GetOverlay();
+                if (ov == null)
+                    return;
+
+                foreach (var (id, info) in ov.Entries)
+                {
+                    info.LocationId = id;
+                    data[id] = info;
+                }
+                foreach (var id in ov.RemovedLocationIds)
+                    data.Remove(id);
+
+                _monitor.Log($"[DateOverlay] applied {ov.Entries.Count} entries", LogLevel.Trace);
             }, AssetEditPriority.Default, null);
         }
         catch (Exception ex)

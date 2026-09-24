@@ -89,24 +89,32 @@ internal sealed class PoiPreferenceOverlayService : OverlayStorageServiceBase<Po
             {
                 e.Edit(editor =>
                 {
-                    if (editor is IAssetData<Dictionary<string, NpcPreference>> d)
+                    if (editor.DataType != typeof(Dictionary<string, NpcPreference>))
                     {
-                        _prefBaseline = new Dictionary<string, NpcPreference>(
-                            d.Data, StringComparer.OrdinalIgnoreCase);
-                        ApplyNpcPreferences(d.Data);
+                        _monitor.Log($"[PoiOverlay] 注入跳过: 资产数据类型不匹配，期望 {typeof(Dictionary<string, NpcPreference>).FullName}，实际 {editor.DataType.FullName}", LogLevel.Error);
+                        return;
                     }
+                    var data = (Dictionary<string, NpcPreference>)editor.Data;
+                    _monitor.Log("[PoiOverlay] 注入回调生效", LogLevel.Debug);
+                    _prefBaseline = new Dictionary<string, NpcPreference>(
+                        data, StringComparer.OrdinalIgnoreCase);
+                    ApplyNpcPreferences(data);
                 }, AssetEditPriority.Default, null);
             }
             else if (e.NameWithoutLocale.IsEquivalentTo(PoiRepository.POI_ASSET_KEY))
             {
                 e.Edit(editor =>
                 {
-                    if (editor is IAssetData<Dictionary<string, PoiAsset>> d)
+                    if (editor.DataType != typeof(Dictionary<string, PoiAsset>))
                     {
-                        _poiBaseline = new Dictionary<string, PoiAsset>(
-                            d.Data, StringComparer.OrdinalIgnoreCase);
-                        ApplyPoiAssets(d.Data);
+                        _monitor.Log($"[PoiOverlay] 注入跳过: 资产数据类型不匹配，期望 {typeof(Dictionary<string, PoiAsset>).FullName}，实际 {editor.DataType.FullName}", LogLevel.Error);
+                        return;
                     }
+                    var data = (Dictionary<string, PoiAsset>)editor.Data;
+                    _monitor.Log("[PoiOverlay] 注入回调生效", LogLevel.Debug);
+                    _poiBaseline = new Dictionary<string, PoiAsset>(
+                        data, StringComparer.OrdinalIgnoreCase);
+                    ApplyPoiAssets(data);
                 }, AssetEditPriority.Default, null);
             }
         }
