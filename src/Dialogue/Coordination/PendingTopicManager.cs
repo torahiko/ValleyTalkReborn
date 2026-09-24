@@ -83,8 +83,7 @@ namespace ValleytalkReborn
 
             try
             {
-                var persisted = ModEntry.SHelper.Data
-                    .ReadJsonFile<Dictionary<string, PendingTopicEntry>>(path);
+                var persisted = StorageJson.Read<Dictionary<string, PendingTopicEntry>>(path);
                 if (persisted == null) return;
 
                 int currentDay = Context.IsWorldReady ? (int)Game1.Date.TotalDays : -1;
@@ -138,7 +137,7 @@ namespace ValleytalkReborn
                     if (kv.Value.IsCrossDay)
                         toSave[kv.Key] = kv.Value;
                 }
-                ModEntry.SHelper.Data.WriteJsonFile(path, toSave);
+                StorageJson.Write(path, toSave);
             }
             catch (Exception ex)
             {

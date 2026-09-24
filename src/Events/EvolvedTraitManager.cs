@@ -50,8 +50,7 @@ internal static class EvolvedTraitManager
                 {
                     string legacyPath = Path.Combine(StorageLayout.ModDirectory, $"data/EvolvedTraits_{Constants.SaveFolderName}.json");
                     StorageLayout.MigrateLegacyFile(legacyPath, path, "EvolvedTraits");
-                    _cache = ModEntry.SHelper.Data
-                        .ReadJsonFile<Dictionary<string, List<string>>>(path)
+                    _cache = StorageJson.Read<Dictionary<string, List<string>>>(path)
                         ?? CreateCache();
                 }
                 else
@@ -157,7 +156,7 @@ internal static class EvolvedTraitManager
 
             try
             {
-                ModEntry.SHelper.Data.WriteJsonFile(path, _cache);
+                StorageJson.Write(path, _cache);
                 _dirty = false;
 
                 ModEntry.SMonitor?.Log(
@@ -551,8 +550,7 @@ internal static class EvolvedTraitManager
 
         try
         {
-            _cache = ModEntry.SHelper.Data
-                .ReadJsonFile<Dictionary<string, List<string>>>(path)
+            _cache = StorageJson.Read<Dictionary<string, List<string>>>(path)
                 ?? CreateCache();
 
             NormalizeCache();
