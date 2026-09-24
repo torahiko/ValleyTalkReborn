@@ -15,6 +15,7 @@
     <PathMap>$(MSBuildProjectDirectory)=/_</PathMap>
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
+	<Nullable>enable</Nullable>
     <!-- 将 NuGet 依赖 DLL（FontStashSharp.* 等）复制到输出/Mods 目录，
          否则 SMAPI 运行时因找不到依赖而报 "DLL couldn't be loaded" -->
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>

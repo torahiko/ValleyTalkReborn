@@ -1,3 +1,5 @@
+#nullable disable
+
 using StardewValley;
 using ValleytalkReborn;
 using Xunit;
