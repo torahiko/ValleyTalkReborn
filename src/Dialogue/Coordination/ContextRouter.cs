@@ -244,6 +244,14 @@ public static class ActionTagExtensions
     }
 }
 
+public enum CompanionFocusMode
+{
+    None,
+    RegularFollow,
+    DateWalking,
+    DateSettled
+}
+
 // ─────────────────────────────────────────────────────────
 // Dependency interfaces
 // ─────────────────────────────────────────────────────────
@@ -305,6 +313,7 @@ public sealed class ContextFlags
 
     // Date system
     public bool IsOnDate = false;
+    public CompanionFocusMode CompanionFocus = CompanionFocusMode.None;
     public string DateLocationId = string.Empty;
     public bool IsInviteRequested = false;
     public bool HasStoodUpPending = false;
@@ -338,6 +347,7 @@ public sealed class ContextFlags
             GotoIntentText = GotoIntentText,
 
             IsOnDate = IsOnDate,
+            CompanionFocus = CompanionFocus,
             DateLocationId = DateLocationId,
             IsInviteRequested = IsInviteRequested,
             HasStoodUpPending = HasStoodUpPending,
@@ -805,6 +815,8 @@ public static class ContextRouter
             flags,
             debugEnabled);
 
+        flags.CompanionFocus = CompanionFocusResolver.Resolve(npc);
+
         // Phase 3: 动作和导航意图
         EvaluateMovement(
             npc,
@@ -1243,6 +1255,10 @@ public static class ContextRouter
                 chatHistory,
                 context);
 
+        // 聚焦态（约会/跟随）下抑制农场细节，让 LLM 聚焦伴侣互动。
+        if (flags.CompanionFocus != CompanionFocusMode.None)
+            flags.IncludeFarmDetails = false;
+
         DebugLog(
             debugEnabled,
             $"Context switches: memoryCount={memoryCount}, "
@@ -1479,7 +1495,8 @@ public static class ContextRouter
             + $"Mem={flags.IncludeMemories} "
             + $"Env={flags.IncludeEnvironment} "
             + $"ShortCtx={flags.IncludeShortTermContext} "
-            + $"Farm={flags.IncludeFarmDetails}",
+            + $"Farm={flags.IncludeFarmDetails} "
+            + $"Focus={flags.CompanionFocus}",
             LogLevel.Debug);
     }
 }
