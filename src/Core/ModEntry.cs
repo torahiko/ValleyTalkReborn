@@ -1452,6 +1452,9 @@ namespace ValleytalkReborn
 
             // ★ 存档加载后从 CP 管道载入约会地点
             DateLocationRegistry.LoadAssets();
+
+            // ── 情绪系统瞬态重置（读档） ──
+            DialogueBuilder.Instance.ResetTransientEmotionState();
         }
 
         private void OnDayStarted(object sender, DayStartedEventArgs e)
@@ -1462,6 +1465,13 @@ namespace ValleytalkReborn
             NPC_CheckForNewCurrentDialogue_Patch.ClearDedupState();
             SessionCache.Instance.ResetAll();
             Event_AnswerDialogue_Patch.LastEventSpeakerNpc = null;
+
+            // ── 情绪系统日初始化 ──
+            MoodShockStore.OnDayStarted();
+            foreach (var character in DialogueBuilder.Instance.GetAllLoadedCharacters())
+            {
+                DialogueBuilder.Instance.EnsureDailyEmotionState(character, character.StardewNpc);
+            }
         }
 
         /// <summary>
@@ -1470,6 +1480,8 @@ namespace ValleytalkReborn
         private void OnReturnedToTitle(object sender, ReturnedToTitleEventArgs e)
         {
             Cleanup();
+            // ── 情绪系统瞬态重置（返回标题） ──
+            DialogueBuilder.Instance.ResetTransientEmotionState();
             SMonitor.Log("[ModEntry] Returned to title screen — all manager caches cleaned up.", LogLevel.Debug);
         }
 

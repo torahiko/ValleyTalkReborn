@@ -2,6 +2,12 @@ using StardewValley;
 using ValleytalkReborn;
 using Xunit;
 
+// 全部 emotion 测试共享静态容器 MoodShockStore，放入同一 Collection 强制串行，
+// 避免跨类 ClearAll 互相抹状态（xUnit 默认并行运行不同 test class）。
+[CollectionDefinition("EmotionStore")]
+public class EmotionStoreCollection { }
+
+[Collection("EmotionStore")]
 // 直接引用主工程 internal 成员（InternalsVisibleTo 已配置）。
 // MoodShockStore 纯静态容器 + NowProvider 虚拟时钟注入，全路径可在无游戏实例下覆盖。
 public class MoodShockStoreTests
