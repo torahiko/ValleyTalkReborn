@@ -3,10 +3,10 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <Nullable>disable</Nullable>
     <IsPackable>false</IsPackable>
     <SuppressTfmSupportBuildErrors>true</SuppressTfmSupportBuildErrors>
-    <NoWarn>NU1605;NU1701</NoWarn>
+    <NoWarn>NU1605;NU1701;CS8632</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
