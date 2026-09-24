@@ -452,11 +452,12 @@ namespace ValleytalkReborn
             }
             else
             {
-                DrawActionButton(b, _copyButtonRect, "📋 复制文本", mx, my, isPrimary: false);
+                DrawActionButton(b, _copyButtonRect, "📋 复制文本", mx, my);
                 if (_onRequestRefine != null)
-                    DrawActionButton(b, _refineButtonRect, "💬 追问优化", mx, my, isPrimary: false);
-                DrawActionButton(b, _cancelButtonRect, "✕ 放弃 (Esc)", mx, my, isDanger: false);
-                DrawActionButton(b, _acceptButtonRect, "✔ 应用生成内容", mx, my, isPrimary: true);
+                    DrawActionButton(b, _refineButtonRect, "💬 追问优化", mx, my);
+                DrawActionButton(b, _cancelButtonRect, "✕ 放弃 (Esc)", mx, my);
+                // ★ 确认按钮：偏红底色 + 黑色字体 + 悬浮暖光高亮
+                DrawActionButton(b, _acceptButtonRect, "✔ 应用生成内容", mx, my, isDanger: false, isPrimary: false, isSoftRed: true);
 
                 if (_copyButtonRect.Contains(mx, my))
                     _hoverText = "【复制文本】\n将当前审阅框中的全部内容复制到系统剪贴板。";
@@ -514,13 +515,14 @@ namespace ValleytalkReborn
         }
 
         private static void DrawActionButton(SpriteBatch b, Rectangle rect, string label, int mx, int my,
-            bool isDanger = false, bool isPrimary = false, bool isEnabled = true)
+            bool isDanger = false, bool isPrimary = false, bool isSoftRed = false, bool isEnabled = true)
         {
             bool isHover = isEnabled && rect.Contains(mx, my);
             bool isPressed = isHover && IsLeftMouseDown();
 
             Color bg;
             if (!isEnabled) bg = Color.LightGray * 0.6f;
+            else if (isSoftRed) bg = isHover ? new Color(245, 145, 138) : new Color(225, 118, 110);
             else if (isPrimary) bg = isHover ? Color.Gold : new Color(255, 220, 130);
             else if (isDanger) bg = isHover ? new Color(245, 105, 105) : new Color(210, 85, 80);
             else bg = isHover ? new Color(255, 240, 215) : new Color(225, 195, 155);
@@ -533,10 +535,19 @@ namespace ValleytalkReborn
 
             b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1 + pressOffset, rect.Y + 1 + pressOffset, rect.Width - 2, rect.Height - 2), bg);
 
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-                rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height,
-                isPrimary ? new Color(210, 160, 60) : (isDanger ? new Color(175, 60, 55) : new Color(185, 150, 110)), 3f, false);
+            Color borderCol = isSoftRed ? new Color(180, 82, 75)
+                            : isPrimary ? new Color(210, 160, 60)
+                            : isDanger ? new Color(175, 60, 55)
+                            : new Color(185, 150, 110);
 
+            // ★ 悬浮边框暖白高亮泛光（与 BioAiPromptDialog 完全统一）
+            if (isHover && isEnabled)
+                borderCol = Color.Lerp(borderCol, new Color(255, 245, 220), 0.55f);
+
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
+                rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height, borderCol, 3f, false);
+
+            // ★ 仅 isDanger 采用深色底白字，偏红（isSoftRed）确认按钮采用黑色/深色字体（TextOnLightBtn）
             Color textCol = !isEnabled ? BioEditorMenu.TextMuted
                           : isDanger ? BioEditorMenu.TextOnDarkBtn
                           : BioEditorMenu.TextOnLightBtn;
