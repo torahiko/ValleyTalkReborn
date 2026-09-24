@@ -271,6 +271,11 @@ namespace ValleytalkReborn
         /// </summary>
         public int BarkDwellScans { get; set; } = 2;
 
+        /// <summary>主动微社交（擦肩互动）总开关。关闭时 Bark 全部回落 Soliloquy。</summary>
+        public bool EnableProactiveMicroSocial { get; set; } = true;
+        /// <summary>3–6 心区间触发微社交的概率（0–1）。7+ 心恒可触发，0–2 心永不触发。</summary>
+        public float MicroSocialMidFriendshipChance { get; set; } = 0.35f;
+
         // ── 情绪系统配置 ──
         public bool EnableEmotionSystem { get; set; } = true;
         public bool EnableEmotionNarration { get; set; } = true;
@@ -322,6 +327,7 @@ namespace ValleytalkReborn
             BarkQueueSize = Clamp(BarkQueueSize, 1, 20);
             A2AMaxParticipants = Clamp(A2AMaxParticipants, 2, 4);
             BarkDwellScans = Clamp(BarkDwellScans, 1, 10);
+            MicroSocialMidFriendshipChance = Math.Clamp(MicroSocialMidFriendshipChance, 0.0f, 1.0f);
             PromptHistoryWindow = Clamp(PromptHistoryWindow, 1, 20);
 
             // ── 高级模型参数边界校验 ──
