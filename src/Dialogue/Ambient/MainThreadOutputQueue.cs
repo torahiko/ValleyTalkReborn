@@ -38,6 +38,9 @@ internal sealed class MainThreadOutputQueue
         // A2A 校验字段（Bark 输出时为 null）
         public string A2ASessionId { get; set; }
         public int A2AGeneration { get; set; } = -1;
+
+        // MicroSocial 直出标记（桥记录点守卫）
+        public bool IsMicroSocialBark { get; set; }
     }
 
     private readonly ConcurrentQueue<Item> _queue =
@@ -52,7 +55,7 @@ internal sealed class MainThreadOutputQueue
     /// <summary>
     /// 将输出请求加入队列。
     /// </summary>
-    internal void Enqueue(string npcName, string text, int duration, string source)
+    internal void Enqueue(string npcName, string text, int duration, string source, bool isMicroSocialBark = false)
     {
         if (string.IsNullOrWhiteSpace(npcName) ||
             string.IsNullOrWhiteSpace(text))
@@ -63,7 +66,8 @@ internal sealed class MainThreadOutputQueue
             NpcName = npcName,
             Text = text,
             Duration = duration,
-            Source = source
+            Source = source,
+            IsMicroSocialBark = isMicroSocialBark
         });
     }
 
@@ -201,6 +205,9 @@ internal sealed class MainThreadOutputQueue
                 npc.showTextAboveHead(
                     text,
                     duration: item.Duration);
+
+                if (item.IsMicroSocialBark)
+                    FreshBarkBridgeStore.Record(npc.Name, text);
 
                 ModEntry.SMonitor?.Log(
                     $"[{item.Source ?? "Dialogue"}] {npc.Name}: \"{text}\"",
