@@ -64,4 +64,48 @@ internal static class FreshBarkBridgeStore
     {
         _store.Clear();
     }
+
+    /// <summary>
+    /// 纯渲染（可单测）：逐字采用双语模板，{line} 为桥行原文。
+    /// </summary>
+    internal static string RenderBridgeBlock(string line, bool isZh)
+    {
+        if (isZh)
+        {
+            return $"<fresh_bark_bridge>\n" +
+                   $"[刚才你说的那句话]\n" +
+                   $"你几秒前刚抬起头，对面前的农夫说了：\n" +
+                   $"-\"{line}\"\n" +
+                   $"[语境引导]\n" +
+                   $"农夫现在就站在你面前，很可能正是听到这句话才停下脚步的。自然承接你刚才的话头，\n" +
+                   $"或直接回应农夫的来意；不要逐字重复上面那句话，也不要解释你为什么这么说。\n" +
+                   $"</fresh_bark_bridge>";
+        }
+
+        return $"<fresh_bark_bridge>\n" +
+               $"[WHAT YOU JUST SAID]\n" +
+               $"Moments ago you looked up and said to the farmer:\n" +
+               $"-\"{line}\"\n" +
+               $"[CONTEXT GUIDANCE]\n" +
+               $"The farmer is standing right in front of you — quite possibly because they heard it.\n" +
+               $"Pick up where you left off naturally, or respond to what the farmer wants;\n" +
+               $"do not repeat the line verbatim and do not explain yourself.\n" +
+               $"</fresh_bark_bridge>";
+    }
+
+    /// <summary>
+    /// 组合入口（唯一生产调用方 = LlmDialogueService）：消费 + 渲染；任何失败 → null（D9）。
+    /// </summary>
+    internal static string BuildBridgeBlock(string npcName)
+    {
+        string line = TryConsume(npcName);
+        if (string.IsNullOrWhiteSpace(line)) return null;
+
+        try
+        {
+            bool isZh = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+            return RenderBridgeBlock(line, isZh);
+        }
+        catch { return null; }
+    }
 }

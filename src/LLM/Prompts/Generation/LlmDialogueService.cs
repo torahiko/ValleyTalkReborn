@@ -136,14 +136,24 @@ public class LlmDialogueService
             }
 
             // ══════════════════════════════════════════════════════════════════════
-            // S4.6: 近期互动余韵（改为字段注入）
+            // S4.6: 近期互动余韵 + 微社交 3 秒桥（STEP5：桥优先；命中即抑制 Echo 本轮注入——台账 #11）
             // ══════════════════════════════════════════════════════════════════════
             // 注意：Echo 是延迟消费的一次性内容（如共进晚餐的余韵），
             //       必须在 Prompt 组装成功后、网络请求发出前执行，
             //       避免因 Prompt 组装失败或用户提前取消导致 Echo 被无声吞没。
-            prompts.PendingEchoBlock = ImmediateEchoStore.BuildEchoBlock(
-                character.Name,
-                character.StardewNpc?.currentLocation?.Name);
+            // 桥块在 Prompt 组装期一次性消费，重试循环（MAX_RETRY_ATTEMPTS）复用同一 prompts 对象，不得二次消费。
+            string bridgeBlock = FreshBarkBridgeStore.BuildBridgeBlock(character.Name);
+            if (!string.IsNullOrEmpty(bridgeBlock))
+            {
+                prompts.PendingEchoBlock = bridgeBlock;
+                prompts.PendingEchoIsBridge = true;
+            }
+            else
+            {
+                prompts.PendingEchoBlock = ImmediateEchoStore.BuildEchoBlock(
+                    character.Name,
+                    character.StardewNpc?.currentLocation?.Name);
+            }
 
             // S4.7: 关系里程碑与修罗场（结婚倒计时 / 离婚日 / 花舞节伴侣与吃醋）
             prompts.PendingMilestoneBlock = RelationshipMilestoneManager.Instance.BuildMilestoneBlock(character);
@@ -481,7 +491,7 @@ public class LlmDialogueService
             DialogueHistoryManager.Instance?.ConsumeEavesdropEntries(character.Name);
         if (!string.IsNullOrEmpty(prompts.PendingSpouseWaitingBlock))
             SpouseWaitingEvent.ConfirmSpouseDialogueConsumed(character.Name);
-        if (!string.IsNullOrEmpty(prompts.PendingEchoBlock))
+        if (!string.IsNullOrEmpty(prompts.PendingEchoBlock) && !prompts.PendingEchoIsBridge)
             ImmediateEchoStore.ConsumeEcho(character.Name);
 
         // 💍 确认本轮已表达过关系里程碑/吃醋，今日后续交谈恢复常态陪伴
