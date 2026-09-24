@@ -63,14 +63,20 @@ internal static class Tier1SnapshotStore
 
         string npcName = character.Name;
         string currentLocation = npc.currentLocation?.NameOrUniqueName ?? npc.currentLocation?.Name ?? string.Empty;
+        int currentGameDay = Context.IsWorldReady ? Game1.Date.TotalDays : 0;
 
         lock (_lock)
         {
-            // ── 1. active 续用：同 NPC + 同 branch + 同地图 ──
+            // ── 1. active 续用：同 NPC + 同 branch + 同地图 + 同游戏日 ──
             if (_activeByNpc.TryGetValue(npcName, out var active))
             {
                 string activeLoc = active.LocationName ?? string.Empty;
-                if (active.Branch == branch
+                if (active.CreatedGameDay != currentGameDay)
+                {
+                    RetireActiveRecord(active);
+                    ModEntry.SMonitor?.Log($"[Director] Session retired (day changed) for {npcName}", LogLevel.Debug);
+                }
+                else if (active.Branch == branch
                     && string.Equals(activeLoc, currentLocation, StringComparison.Ordinal))
                 {
                     active.LastActivityUtc = DateTime.UtcNow;
@@ -78,12 +84,14 @@ internal static class Tier1SnapshotStore
                     sessionId = active.SessionId;
                     return true;
                 }
-
-                // ── 2. branch/location 不匹配 → 退役 ──
-                RetireActiveRecord(active);
+                else
+                {
+                    // ── 2. branch/location 不匹配 → 退役 ──
+                    RetireActiveRecord(active);
+                }
             }
 
-            // ── 3. closed 软继承：≤30s + 同地图 + 同 branch ──
+            // ── 3. closed 软继承：≤30s + 同地图 + 同 branch + 同游戏日 ──
             if (_recentClosedSessions.TryGetValue(npcName, out var closed)
                 && closed.ClosedAt.HasValue)
             {
@@ -92,7 +100,8 @@ internal static class Tier1SnapshotStore
                 if (elapsed <= SoftReuseSeconds
                     && elapsed >= 0
                     && string.Equals(closedLoc, currentLocation, StringComparison.Ordinal)
-                    && closed.Branch == branch)
+                    && closed.Branch == branch
+                    && closed.CreatedGameDay == currentGameDay)
                 {
                     _recentClosedSessions.Remove(npcName);
                     closed.ClosedAt = null;
@@ -133,6 +142,7 @@ internal static class Tier1SnapshotStore
             Snapshot = snapshot,
             LastActivityUtc = DateTime.UtcNow,
             ClosedAt = null,
+            CreatedGameDay = Context.IsWorldReady ? Game1.Date.TotalDays : 0,
         };
 
         lock (_lock)
@@ -257,7 +267,8 @@ internal static class Tier1SnapshotStore
     }
 
     /// <summary>
-    /// 私有会话记录。含 Branch 字段用于软继承 branch 校验（M4）。
+    /// 私有会话记录。含 Branch 字段用于软继承 branch 校验（M4），
+    /// CreatedGameDay 用于游戏日守卫（VT3-B-2）。
     /// </summary>
     private sealed class SessionRecord
     {
@@ -268,5 +279,6 @@ internal static class Tier1SnapshotStore
         public Tier1SnapshotContext Snapshot { get; set; }
         public DateTime LastActivityUtc { get; set; }
         public DateTime? ClosedAt { get; set; }
+        public int CreatedGameDay { get; init; } = 0;
     }
 }
