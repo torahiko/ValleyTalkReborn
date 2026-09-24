@@ -68,6 +68,9 @@ namespace ValleytalkReborn
 
         public LatenessLevel Lateness { get; set; } = LatenessLevel.OnTime;
 
+        /// <summary>VT-FOCUS-05: 会话建立形式，供 review 提示词区分散步约会与正式约会。Memory-only。</summary>
+        internal DateManager.DateMode SessionMode { get; init; } = DateManager.DateMode.Scheduled;
+
         public List<DialogueRecord> DialogueLogs { get; } = new();
         public List<GiftRecord> GiftLogs { get; } = new();
         public List<ActionRecord> ActionLogs { get; } = new();
@@ -99,22 +102,27 @@ namespace ValleytalkReborn
 
         public string ToReviewPromptContext()
         {
-            string latenessNote = Lateness switch
-            {
-                LatenessLevel.TooEarly => "（玩家过早到达，早于 18:00）",
-                LatenessLevel.OnTime => "（玩家准时到达）",
-                LatenessLevel.SlightlyLate => "（玩家轻度迟到，19:00-21:00 之间到达）",
-                LatenessLevel.VeryLate => "（玩家严重迟到，21:00-22:00 之间到达）",
-                LatenessLevel.MissedWindow => "（玩家错过约会窗口，22:00 后才到达）",
-                _ => ""
-            };
+            // VT-FOCUS-05: 散步约会（SessionMode == Follow）无"守时"语义，改用约会形式描述。
+            bool isWalkDate = SessionMode == DateManager.DateMode.Follow;
+
+            string latenessLine = isWalkDate
+                ? "约会形式: 随性的同行散步约会（一路走走聊聊，没有固定流程）"
+                : $"守时情况: {Lateness switch
+                    {
+                        LatenessLevel.TooEarly => "（玩家过早到达，早于 18:00）",
+                        LatenessLevel.OnTime => "（玩家准时到达）",
+                        LatenessLevel.SlightlyLate => "（玩家轻度迟到，19:00-21:00 之间到达）",
+                        LatenessLevel.VeryLate => "（玩家严重迟到，21:00-22:00 之间到达）",
+                        LatenessLevel.MissedWindow => "（玩家错过约会窗口，22:00 后才到达）",
+                        _ => ""
+                    }}";
 
             return $@"
 === 约会概要 ===
 对象: {NpcName}
 地点: {TargetLocation}
 时间段: {StartTime} - {EndTime}
-守时情况: {latenessNote}
+{latenessLine}
 
 === 互动对话流水 ===
 {(DialogueLogs.Count > 0 ? string.Join("\n", DialogueLogs.Select(d => $"[{d.GameTime / 100:D2}:{d.GameTime % 100:D2}] [{d.Speaker}]: {d.Text}")) : "（两人安静相伴散步，未进行长篇交流）")}
@@ -606,7 +614,11 @@ namespace ValleytalkReborn
 
             // VT-FOCUS-04: 即时同行约会激活会话，使 walking 容器可回放时长/礼物事实。
             // ??= 保留 Scheduled→Follow 中途转换时已存在的预约段会话（保留其对话日志）。
-            CurrentSession ??= new DateSessionData(npc.Name, ActiveDateLocation, Game1.timeOfDay);
+            // VT-FOCUS-05: 标记会话建立形式为 Follow，供 review 提示词区分散步/正式约会。
+            CurrentSession ??= new DateSessionData(npc.Name, ActiveDateLocation, Game1.timeOfDay)
+            {
+                SessionMode = DateManager.DateMode.Follow
+            };
 
             npc.controller = null;
             npc.temporaryController = null;
@@ -1047,6 +1059,15 @@ namespace ValleytalkReborn
             if (CurrentDateMode == DateMode.Follow)
             {
                 ModEntry.SMonitor?.Log($"[DateManager] Follow mode ended at {e.NewTime}.", LogLevel.Info);
+
+                // VT-FOCUS-05: 自然结束同样进入会话复盘（与 EndDateGracefully / TriggerFarewellDialogue 对称）。
+                // 无告别对话——静默收场，仅提交夜间巩固。会话按引用传入，ResetDateState 不影响 review。
+                if (CurrentSession != null)
+                {
+                    CurrentSession.EndTime = e.NewTime;
+                    _ = ReviewDateSessionAsync(CurrentSession);
+                }
+
                 ReleaseNpc(ActiveDateNpcName);
                 ResetDateState();
                 return;
