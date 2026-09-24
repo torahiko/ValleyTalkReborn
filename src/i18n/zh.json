@@ -1,7 +1,7 @@
 {
   "Memory.AddFailedDuplicate": "该记忆已存在。",
-  "Dialog.ConfirmDelete": "⚠ 确认删除",
-  "Dialog.ConfirmArchive": "⚠ 确认归档",
+  "Dialog.ConfirmDelete": "确认删除",
+  "Dialog.ConfirmArchive": "确认归档",
   "Dialog.Keep": "保留",
   "Memory.AddTitle": "为{{Name}}添加记忆",
   "Memory.EditTitle": "编辑{{Name}}的记忆",
