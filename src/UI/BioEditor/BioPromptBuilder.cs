@@ -209,6 +209,29 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
+        /// 追问/二次迭代提示词：以上一轮草稿为基准底稿，按玩家新指令定向修改。
+        /// 三参均非 null（调用方契约）；currentDraft 允许为空串（确定性输出，不做特判）。
+        /// </summary>
+        public static (string System, string User) BuildRefinementPrompt(
+            string baseSystemPrompt, string currentDraft, string followUpDemand)
+        {
+            string refinementRules =
+                "【追问与二次迭代规则】\n" +
+                "①本轮为基于上一轮草稿的二次迭代修改，以上一轮草稿为基准底稿定向修改。\n" +
+                "②保持既有结构标记与不需修改的段落高度稳定，仅按玩家新指令优化指定部分。\n" +
+                "③严禁寒暄、解释、前导语，直接输出修改后的完整纯文本。";
+
+            string system = baseSystemPrompt + "\n\n" + refinementRules;
+
+            string user =
+                $"【上一轮生成的草稿内容】\n{currentDraft}\n\n" +
+                $"【玩家本次追问与优化要求】\n{followUpDemand}\n\n" +
+                "请结合上述要求，输出修改与优化后的完整内容。";
+
+            return (system, user);
+        }
+
+        /// <summary>
         /// 解析 AI 输出的行式环境心智文本。透镜为空，或口吻与口头禅同时为空 → false。
         /// </summary>
         public static bool TryParseAmbientProfile(
