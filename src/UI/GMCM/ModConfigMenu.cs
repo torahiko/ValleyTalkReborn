@@ -433,6 +433,27 @@ namespace ValleytalkReborn
                 setValue: value => ModEntry.Config.EnableA2A = value
             );
 
+            ConfigMenu.AddBoolOption(
+                mod: ModManifest,
+                name: () => GetUIString("configEnableProactiveMicroSocial", "Enable Proactive Micro-Social"),
+                tooltip: () => GetUIString("configEnableProactiveMicroSocialTooltip",
+                    "When disabled, all Barks fall back to Soliloquy (proactive micro-social interactions are disabled)."),
+                getValue: () => ModEntry.Config.EnableProactiveMicroSocial,
+                setValue: value => ModEntry.Config.EnableProactiveMicroSocial = value
+            );
+
+            ConfigMenu.AddNumberOption(
+                mod: ModManifest,
+                getValue: () => (int)(ModEntry.Config.MicroSocialMidFriendshipChance * 100),
+                setValue: value => ModEntry.Config.MicroSocialMidFriendshipChance = value / 100f,
+                name: () => GetUIString("configMicroSocialMidFriendshipChance", "Mid-Friendship Micro-Social Chance"),
+                tooltip: () => GetUIString("configMicroSocialMidFriendshipChanceTooltip",
+                    "Probability of triggering a micro-social interaction at 3-6 hearts; 7+ hearts always triggers, 0-2 hearts never triggers."),
+                min: 0,
+                max: 100,
+                interval: 5
+            );
+
             // ── 伴侣日程与出游系统 ──
             ConfigMenu.AddSectionTitle(
                 mod: ModManifest,
