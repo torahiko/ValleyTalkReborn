@@ -34,6 +34,8 @@ internal static class DialogueModels
         public string SystemPrompt { get; set; }
         public string UserPrompt { get; set; }
         public bool IsChinese { get; set; }
+        public BarkOutputMode Mode { get; set; } = BarkOutputMode.Soliloquy;
+        public string SensoryLine { get; set; }
     }
 
     internal sealed class BarkLlmResult
@@ -45,6 +47,7 @@ internal static class DialogueModels
         public bool Cancelled { get; set; }
         public bool IsChinese { get; set; }
         public LlmRequestEndReason EndReason { get; set; } = LlmRequestEndReason.Success;
+        public BarkOutputMode Mode { get; set; } = BarkOutputMode.Soliloquy;
     }
 
     internal sealed class A2ARequest
