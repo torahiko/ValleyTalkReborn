@@ -1890,13 +1890,7 @@ namespace ValleytalkReborn
                     $"【玩家期望调整方向】\n{demand}\n\n" +
                     $"【待润色原文】\n{sourceText}\n\n" +
                     "请直接输出优化后的完整内容";
-                var queue = new System.Collections.Concurrent.ConcurrentQueue<string>();
-                var review = new BioAiReviewMenu("身份设定", this,
-                    confirmedText => ApplyPolishResult(confirmedText));
-                review.BeginStreaming(queue);
-                Game1.activeClickableMenu = review;
-                BioAiRunner.ExecuteStreaming(systemPrompt, userPrompt, enableThinking, queue,
-                    result => review.OnStreamSettled(result));
+                BioAiReviewSession.Start(this, "身份设定", systemPrompt, userPrompt, confirmedText => ApplyPolishResult(confirmedText), null, enableThinking);
             });
         }
 
@@ -2021,13 +2015,7 @@ namespace ValleytalkReborn
 
                 UnfocusAll();
                 var (system, user) = BioPromptBuilder.BuildAmbientExtractionPrompt(_vm, _npcName, demand);
-                var queue = new System.Collections.Concurrent.ConcurrentQueue<string>();
-                var review = new BioAiReviewMenu(title, this,
-                    confirmedText => ApplyAmbientExtraction(confirmedText));
-                review.BeginStreaming(queue);
-                Game1.activeClickableMenu = review;
-                BioAiRunner.ExecuteStreaming(system, user, enableThinking, queue,
-                    result => review.OnStreamSettled(result));
+                BioAiReviewSession.Start(this, title, system, user, confirmedText => ApplyAmbientExtraction(confirmedText), null, enableThinking);
             });
         }
 
@@ -2078,13 +2066,7 @@ namespace ValleytalkReborn
                 var (system, user) = traitKey == "DialogueExamples"
                     ? BioPromptBuilder.BuildDialogueExamplesPrompt(_vm, _npcName, sourceText, demand)
                     : BioPromptBuilder.BuildBehaviorRulesPrompt(_vm, _npcName, sourceText, demand);
-                var queue = new System.Collections.Concurrent.ConcurrentQueue<string>();
-                var review = new BioAiReviewMenu(sectionTitle, this,
-                    confirmedText => ApplyTraitPolish(traitKey, confirmedText));
-                review.BeginStreaming(queue);
-                Game1.activeClickableMenu = review;
-                BioAiRunner.ExecuteStreaming(system, user, enableThinking, queue,
-                    result => review.OnStreamSettled(result));
+                BioAiReviewSession.Start(this, sectionTitle, system, user, confirmedText => ApplyTraitPolish(traitKey, confirmedText), null, enableThinking);
             });
         }
 
@@ -2182,14 +2164,7 @@ namespace ValleytalkReborn
                 return;
             UnfocusAll();
             var (system, user) = BioPromptBuilder.BuildInitialBiographyPrompt(_npcName, rawContext, userDemand);
-            var queue = new System.Collections.Concurrent.ConcurrentQueue<string>();
-            var review = new BioAiReviewMenu($"审阅【{_npcName}】身份起号", this,
-                confirmedText => ApplyPolishResult(confirmedText),
-                () => _wizardStep = WizardStep.None);
-            review.BeginStreaming(queue);
-            Game1.activeClickableMenu = review;
-            BioAiRunner.ExecuteStreaming(system, user, enableThinking, queue,
-                result => review.OnStreamSettled(result));
+            BioAiReviewSession.Start(this, $"审阅【{_npcName}】身份起号", system, user, confirmedText => ApplyPolishResult(confirmedText), () => _wizardStep = WizardStep.None, enableThinking);
         }
 
         private void OfferWizardAdvance(string title, string subtitle, List<string> warnings, string continueText, Action next, string? tip = null, string fixText = "到此为止")
@@ -2259,13 +2234,7 @@ namespace ValleytalkReborn
 
                 UnfocusAll();
                 var (system, user) = BioPromptBuilder.BuildStageLadderPrompt(_vm, _npcName, isDatable, demand);
-                var queue = new System.Collections.Concurrent.ConcurrentQueue<string>();
-                var review = new BioAiReviewMenu(title, this,
-                    confirmedText => ApplyStageLadder(confirmedText));
-                review.BeginStreaming(queue);
-                Game1.activeClickableMenu = review;
-                BioAiRunner.ExecuteStreaming(system, user, enableThinking, queue,
-                    result => review.OnStreamSettled(result));
+                BioAiReviewSession.Start(this, title, system, user, confirmedText => ApplyStageLadder(confirmedText), null, enableThinking);
             });
         }
 
