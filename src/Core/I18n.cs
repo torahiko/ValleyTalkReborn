@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
+using StardewModdingAPI;
 using StardewValley;
 
 namespace ValleytalkReborn
@@ -87,8 +88,9 @@ namespace ValleytalkReborn
                     if (translation.HasValue()) return translation.ToString();
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                ModEntry.SMonitor?.Log($"[I18n] Translation lookup failed for key '{key}': {ex.GetType().Name}: {ex.Message}", LogLevel.Warn);
             }
 
             return key;
@@ -122,8 +124,9 @@ namespace ValleytalkReborn
                         candidates.Add(Path.Combine(fullFolder, $"{locale}.json"));
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    ModEntry.SMonitor?.Log($"[I18n] Skipped i18n candidate folder '{folderPath}': {ex.GetType().Name}: {ex.Message}", LogLevel.Warn);
                 }
             }
 
@@ -150,8 +153,9 @@ namespace ValleytalkReborn
                         }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    ModEntry.SMonitor?.Log($"[I18n] Failed to load language file '{filePath}': {ex.GetType().Name}: {ex.Message}", LogLevel.Warn);
                 }
             }
 
