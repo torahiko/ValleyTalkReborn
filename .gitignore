@@ -21,6 +21,8 @@ mono_crash.*
 
 # Build results
 [Dd]ebug/
+# ★ 例外：src/Debug/ 是调试工具源码目录（PromptTopologyDumper 等），不是构建输出。
+!src/Debug/
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
