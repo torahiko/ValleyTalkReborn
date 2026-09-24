@@ -454,19 +454,28 @@ public sealed class BioStorageService
             // Edit 回调在 CP 内容包补丁之后执行（SMAPI C# 编辑提供器语义），是覆盖层晚于基线生效的机制依据。
             e.Edit(editor =>
             {
-                if (editor is IAssetData<BioData> d)
+                if (editor is not IAssetData<BioData> d)
                 {
-                    // 在被覆盖层替换前，d.Data 就是 Content Patcher 处理完毕的纯净原版基准
-                    _baselineCache[npc] = DeepClone(d.Data);
-
-                    if (HasCustomOverlay(npc))
-                    {
-                        BioData ov = TryDeserializeOverlay(npc);
-                        if (ov != null)
-                            d.ReplaceWith(ov);
-                        ModEntry.SMonitor?.Log($"[BioStorage] overlay applied: {npc}", LogLevel.Trace);
-                    }
+                    ModEntry.SMonitor?.Log(
+                        $"[BioStorage] 注入跳过({npc}): 资产类型不匹配，期望 {typeof(BioData).Name}，实际 {editor.DataType}",
+                        LogLevel.Error);
+                    return;
                 }
+
+                _baselineCache[npc] = DeepClone(d.Data);
+                if (!HasCustomOverlay(npc))
+                {
+                    ModEntry.SMonitor?.Log($"[BioStorage] 无覆盖层，基线直通: {npc}", LogLevel.Trace);
+                    return;
+                }
+
+                BioData ov = TryDeserializeOverlay(npc);
+                if (ov == null) return;
+                d.ReplaceWith(ov);
+                TryGetActiveScope(npc, out BioScope scope);
+                ModEntry.SMonitor?.Log(
+                    $"[BioStorage] overlay applied: {npc} (scope={scope}, Biography={ov.Biography?.Length ?? 0} chars, stages={ov.ProgressStates?.Count ?? 0})",
+                    LogLevel.Debug);
             }, AssetEditPriority.Default, null);
         }
         catch (Exception ex)
@@ -478,5 +487,6 @@ public sealed class BioStorageService
     private void InvalidateBioAsset(string npcName)
     {
         ModEntry.SHelper.GameContent.InvalidateCache(BioAssetFor(npcName));
+        ModEntry.SMonitor?.Log($"[BioStorage] 已失效资产缓存: {BioAssetFor(npcName)}", LogLevel.Debug);
     }
 }
