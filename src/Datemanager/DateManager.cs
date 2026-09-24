@@ -854,7 +854,10 @@ namespace ValleytalkReborn
                 LatenessLevel.MissedWindow   => "玩家错过约会窗口（22:00 后才到）。",
                 _                            => ""
             };
-            if (!string.IsNullOrEmpty(latenessNote))
+            // VT-FOCUS-05b: 散步约会无"守时"语义（Lateness 恒默认值），模式标注在此接入活跃 review。
+            if (session.SessionMode == DateManager.DateMode.Follow)
+                item.Events.Add("这是一次随性的同行散步约会（一路走走聊聊，没有固定流程）。");
+            else if (!string.IsNullOrEmpty(latenessNote))
                 item.Events.Add(latenessNote);
 
             // 约会时长（游戏内时间区间）
