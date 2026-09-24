@@ -301,6 +301,53 @@ public class Prompts
         return npcConstantPrompt.ToString();
     }
 
+    private string FormatDateElapsed(int startGameTime)
+    {
+        bool isZh = IsChineseLanguage;
+        int elapsed = Math.Max(0, Game1.timeOfDay - startGameTime);
+
+        if (elapsed < 100)
+            return isZh ? "不到一小时" : "less than an hour";
+
+        return isZh ? $"约 {elapsed / 100} 小时" : $"about {elapsed / 100} hour(s)";
+    }
+
+    private string BuildDateGiftLine(DateSessionDigest? digest)
+    {
+        bool isZh = IsChineseLanguage;
+
+        if (digest == null || string.IsNullOrWhiteSpace(digest.GivenGiftName))
+            return string.Empty;
+
+        string tasteDesc = digest.GivenGiftTaste switch
+        {
+            NPC.gift_taste_love => isZh ? "你最爱的东西" : "something you love",
+            NPC.gift_taste_like => isZh ? "你喜欢的东西" : "something you like",
+            NPC.gift_taste_dislike => isZh ? "你不喜欢的" : "something you dislike",
+            NPC.gift_taste_hate => isZh ? "你讨厌的" : "something you hate",
+            _ => isZh ? "普通的" : "an ordinary gift"
+        };
+
+        return isZh
+            ? $"- 你已经收到了农夫送的{digest.GivenGiftName}（{tasteDesc}）。"
+            : $"- You already received the {digest.GivenGiftName} from the farmer ({tasteDesc}).";
+    }
+
+    private void AppendCompanionWalkingContext(StringBuilder prompt)
+    {
+        bool isZh = IsChineseLanguage;
+        string locationName = EnvironmentScanner.GetLocationFriendlyName(Context.Location);
+
+        prompt.AppendLine("<companion_context mode=\"walking_together\">");
+        prompt.AppendLine(isZh
+            ? $"- 当前状态：你正与农夫在{locationName}一同散步同行。"
+            : $"- Current state: You're out walking together with the farmer at {locationName}.");
+        prompt.AppendLine(isZh
+            ? "- 【注意力焦点】这是你们俩的共处时光。本轮对话默认从你们的同行相处取材：沿途的景物、彼此的近况、随口的闲聊。你依然保有自己的生活与心事，但“此刻”发生在与农夫同行的路上。"
+            : "- [ATTENTION FOCUS] This is your shared time together. This turn's dialogue draws from the walk itself: the scenery along the way, each other's recent lives, casual small talk. You still have your own life and private thoughts, but “right now” is happening on the road beside the farmer.");
+        prompt.AppendLine("</companion_context>\n");
+    }
+
     private void GetMicroEnvironment(StringBuilder prompt)
     {
         prompt.AppendLine(Util.GetString(Character, "sceneHeading"));
@@ -452,6 +499,7 @@ public class Prompts
 
         if (ModEntry.Config.EnableDateSystem && !string.IsNullOrEmpty(npcName) && DateManager.Instance?.IsOnDate(npcName) == true)
         {
+            var digest = DateManager.Instance.BuildSessionDigest(npcName);
             var dateMode = DateManager.Instance.CurrentDateMode;
             if (dateMode == DateManager.DateMode.Follow)
             {
@@ -459,9 +507,16 @@ public class Prompts
                 prompt.AppendLine(isZh
                     ? $"- 当前地点：{DateManager.Instance.ActiveDateLocation ?? ""}"
                     : $"- Location: {DateManager.Instance.ActiveDateLocation ?? ""}");
+                if (digest is { IsValid: true })
+                    prompt.AppendLine(isZh
+                        ? $"- 约会进行中：你们已经一起走了{FormatDateElapsed(digest.StartGameTime)}。"
+                        : $"- Date in progress: you've been walking together for {FormatDateElapsed(digest.StartGameTime)}.");
+                string walkingGiftLine = BuildDateGiftLine(digest);
+                if (!string.IsNullOrEmpty(walkingGiftLine))
+                    prompt.AppendLine(walkingGiftLine);
                 prompt.AppendLine(isZh
-                    ? "- 你正在陪农夫在附近走走。"
-                    : "- You're walking around together.");
+                    ? "- 【注意力焦点】你正和农夫单独相处、边走边聊。本轮对话默认从约会本身取材：眼前的景色与行人、彼此的近况与感受、一路上的见闻。农场经营、家务杂事等日常话题只在玩家主动提起时才接。"
+                    : "- [ATTENTION FOCUS] You're alone with the farmer, walking and talking. This turn's dialogue draws from the date itself: the scenery and passersby around you, each other's recent lives and feelings, what you notice along the way. Farm work, chores and other everyday topics come up only if the player raises them.");
                 prompt.AppendLine("</date_context>\n");
             }
             else
@@ -481,6 +536,16 @@ public class Prompts
                 prompt.AppendLine(isZh
                     ? "- 你们正在进行约会。周围的环境就在眼前。"
                     : "- You're on a date. The surroundings are right there.");
+                if (digest is { IsValid: true })
+                    prompt.AppendLine(isZh
+                        ? $"- 约会进行中：你们已经相处了{FormatDateElapsed(digest.StartGameTime)}。"
+                        : $"- Date in progress: you've been together for {FormatDateElapsed(digest.StartGameTime)}.");
+                string settledGiftLine = BuildDateGiftLine(digest);
+                if (!string.IsNullOrEmpty(settledGiftLine))
+                    prompt.AppendLine(settledGiftLine);
+                prompt.AppendLine(isZh
+                    ? "- 【注意力焦点】你们正在进行约会。本轮对话默认从约会本身取材：眼前的场景氛围、彼此的感受与互动。农场经营、家务杂事等日常话题只在玩家主动提起时才接。"
+                    : "- [ATTENTION FOCUS] You're on a date right now. This turn's dialogue draws from the date itself: the scene and atmosphere around you, each other's feelings and interactions. Farm work, chores and other everyday topics come up only if the player raises them.");
                 prompt.AppendLine("</date_context>\n");
             }
 
@@ -490,16 +555,7 @@ public class Prompts
 
             GetMicroEnvironment(prompt);
 
-            if (!string.IsNullOrEmpty(PendingEavesdropBlock))
-            {
-                prompt.AppendLine(PendingEavesdropBlock);
-                prompt.AppendLine();
-            }
-            if (!string.IsNullOrEmpty(PendingSpouseWaitingBlock))
-            {
-                prompt.AppendLine(PendingSpouseWaitingBlock);
-                prompt.AppendLine();
-            }
+            // 聚焦裁剪：偷听与配偶等待语境与约会现场冲突，聚焦期间不进入 date prompt（VT-FOCUS-02）。
             if (!string.IsNullOrEmpty(PendingEchoBlock))
             {
                 prompt.AppendLine(PendingEchoBlock);
@@ -581,6 +637,12 @@ public class Prompts
 
         prompt.AppendLine($"## {Util.GetString(Character, "coreInstructionHeading")}");
         GetMicroEnvironment(prompt);
+
+        if (flags?.CompanionFocus == CompanionFocusMode.RegularFollow)
+        {
+            AppendCompanionWalkingContext(prompt);
+        }
+
         InjectGreetingContext(prompt);
 
         Friendship friendship = null;
