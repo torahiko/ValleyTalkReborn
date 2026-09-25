@@ -178,7 +178,7 @@ public sealed class ConversationDirector : IConversationDirector
             // RelationBase：友谊/婚姻关系层级（遗留 Normal 分支逐字，StardewNpc 空 → 跳过）
             if (!npcIsNull)
             {
-                var relationBase = BuildRelationBase(character, context, npcData, name, milestoneBlock, flags);
+                var relationBase = Prompts.PromptsBlocks.BuildRelationBase(character, context, npcData, name, milestoneBlock, flags);
                 SetTier1(snapshot, Tier1BlockIds.RelationBase, relationBase);
             }
 
@@ -191,43 +191,6 @@ public sealed class ConversationDirector : IConversationDirector
         SetTier1(snapshot, Tier1BlockIds.EvolvedTraits, EvolvedTraitManager.GetPromptBlock(character.Name, context));
 
         return new Tier1SnapshotContext(snapshot);
-    }
-
-    private string BuildRelationBase(
-        Character character, DialogueContext context, CharacterData npcData, string name, string milestoneBlock, ContextFlags flags)
-    {
-        var prompt = new StringBuilder();
-        bool npcIsMale = npcData.Gender == StardewValley.Gender.Male;
-
-        Friendship friendship = null;
-        Game1.getPlayerOrEventFarmer()?.friendshipData?.TryGetValue(character.Name, out friendship);
-        bool isMarriedOrRoommate = friendship != null && (friendship.IsMarried() || friendship.IsRoommate());
-
-        if (isMarriedOrRoommate)
-        {
-            if (friendship.IsRoommate())
-            {
-                prompt.AppendLine(Util.GetString(character, "coreRoommates", new { Name = name }));
-            }
-            else
-            {
-                prompt.AppendLine(Util.GetString(character, "coreMarried",
-                    new { Name = name, Pronoun = npcIsMale ? "his" : "her" }));
-                prompt.Append(Prompts.PromptsBlocks.BuildChildren(character, context, friendship, name));
-            }
-            prompt.Append(Prompts.PromptsBlocks.BuildSpouse(character, name));
-            if (flags?.IncludeFarmDetails == true)
-                prompt.Append(Prompts.PromptsBlocks.BuildTrinkets(character, name));
-            prompt.Append(Prompts.PromptsBlocks.BuildMarriageFeelings(character, context, name));
-        }
-        else
-        {
-            prompt.Append(Prompts.PromptsBlocks.BuildNonSpouseFriendshipLevel(character, context, npcData));
-            prompt.Append(Prompts.PromptsBlocks.BuildSpouse(character, name));
-            prompt.Append(Prompts.PromptsBlocks.BuildSpecialRelationshipStatus(character, context, friendship, milestoneBlock, name));
-        }
-
-        return prompt.ToString();
     }
 
     // ── Step 4: 解析活跃脉冲（Tier 2b）──
