@@ -369,6 +369,7 @@ namespace ValleytalkReborn
             // 此处剥除标签用于显示，并记录标记以决定后续是否追加确定性操作按键。
             bool allowDateUI = false;
             bool allowFollowUI = false;
+            bool dateInviteRejected = false;
 
             if (theLine != null && theLine.Length > 0)
             {
@@ -377,7 +378,16 @@ namespace ValleytalkReborn
                     if (theLine[i] == null) continue;
                     if (theLine[i].Contains("[UI:DATE_INVITE]")) { allowDateUI = true;  theLine[i] = theLine[i].Replace("[UI:DATE_INVITE]", "").Trim(); }
                     if (theLine[i].Contains("[UI:FOLLOW]"))      { allowFollowUI = true; theLine[i] = theLine[i].Replace("[UI:FOLLOW]", "").Trim(); }
+                    if (theLine[i].Contains("[UI:DATE_INVITE_REJECT]")) { dateInviteRejected = true; theLine[i] = theLine[i].Replace("[UI:DATE_INVITE_REJECT]", "").Trim(); }
                 }
+            }
+
+            if (dateInviteRejected && ModEntry.Config.Debug)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[DialogueBuilder] NPC {instance.Name} declined date invitation (festival conflict). " +
+                    "No date session created.",
+                    LogLevel.Debug);
             }
 
             string formattedLine = FormatLine(theLine, allowDateUI, allowFollowUI, speakerName: instance.Name);
