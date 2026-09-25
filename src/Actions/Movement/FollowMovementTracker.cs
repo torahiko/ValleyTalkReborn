@@ -40,9 +40,17 @@ namespace ValleytalkReborn.Movement
 
         // ─── Dynamic speed-matching thresholds ───
         private const float DIST_CATCHUP_RUN = 4.5f;   // 追赶带下界 & 闲逛中断阈值
-        private const float DIST_SPRINT_RUN  = 7.0f;   // 冲刺带下界
+
+        // ─── Speed tier caps & smoothing (FMT-02 rev B) ───
+        private const float SPEED_LERP_FACTOR       = 0.15f;
+        private const int   SPEED_CAP_NEAR          = 3;   // dist < 3.0
+        private const int   SPEED_CAP_MID           = 4;   // 3.0 ≤ dist < 6.0
+        private const int   SPEED_CAP_FAR           = 5;   // dist ≥ 6.0（总量 ≤7 ≈ 玩家跑步 1.4x）
+        private const float SPEED_TIER_NEAR_DIST    = 3.0f;
+        private const float SPEED_TIER_FAR_DIST     = 6.0f;
+        private const float SPEED_ARRIVAL_FLOOR_DIST= 2.6f; // 软减速带（略高于 DIST_STOP_PATH）
+        private const float SPEED_COMMIT_HYST       = 0.5f; // 提交滞回，防档位边界抖动
         private const int   SPEED_BONUS_MIN  = 1;      // addedSpeed 下界（保证收拢间距）
-        private const int   SPEED_BONUS_MAX  = 7;      // addedSpeed 上界（防高移速穿模）
 
         // ─── State transition distance thresholds ───
         private const float DIST_START_PATH    = 3.2f;
@@ -70,6 +78,10 @@ namespace ValleytalkReborn.Movement
         private int _playerIdleTimer;
         private bool _playerMovedThisTick;      // Memory 态，每 Tick 重算
         private bool _warnedAbnormalNpcSpeed;   // Memory 态，异常 NPC 速度单次告警标志
+
+        // ─── Speed smoothing state (FMT-02 rev B) ───
+        private float _smoothedAddedSpeed;
+        private int   _lastCommittedSpeed;
 
         // ─── Wander parameters ───
         private int _wanderPathCooldown;
@@ -202,6 +214,7 @@ namespace ValleytalkReborn.Movement
             _lastNpcPositionInPathing = Vector2.Zero; _positionWatchTicks = 0; _stuckWindowCount = 0; _stuckRecoveryCooldown = 0;
             _followPathFailCount       = 0;
             _followPathFailCooldown    = 0;
+            _smoothedAddedSpeed = 0; _lastCommittedSpeed = 0;
         }
 
         public void Tick(UpdateTickedEventArgs e)
@@ -375,6 +388,7 @@ namespace ValleytalkReborn.Movement
             _lastNpcPositionInPathing = Vector2.Zero; _positionWatchTicks = 0; _stuckWindowCount = 0; _stuckRecoveryCooldown = 0;
             _followPathFailCount       = 0;
             _followPathFailCooldown    = 0;
+            _smoothedAddedSpeed = 0; _lastCommittedSpeed = 0;
         }
 
         // ─── Private helpers ───
@@ -386,11 +400,10 @@ namespace ValleytalkReborn.Movement
 
         private void ApplyDynamicSpeed(float dist)
         {
-            if (_followingNpc == null) return;
+            if (_followingNpc == null || Game1.player == null) return;
 
             float playerSpeed = GetPlayerEffectiveSpeed();
             int npcBase = _followingNpc.Speed;
-
             if (npcBase <= 0)
             {
                 if (!_warnedAbnormalNpcSpeed)
@@ -403,16 +416,26 @@ namespace ValleytalkReborn.Movement
                 npcBase = 2;
             }
 
-            float needed = playerSpeed - npcBase;
-            int tier = dist > DIST_SPRINT_RUN ? 2 : (dist > DIST_CATCHUP_RUN ? 1 : 0);
-            int target = Math.Clamp((int)Math.Round(needed) + tier, SPEED_BONUS_MIN, SPEED_BONUS_MAX);
+            int tier = dist < SPEED_TIER_NEAR_DIST ? 0 : (dist < SPEED_TIER_FAR_DIST ? 1 : 2);
+            int cap  = dist < SPEED_TIER_NEAR_DIST ? SPEED_CAP_NEAR
+                     : (dist < SPEED_TIER_FAR_DIST ? SPEED_CAP_MID  : SPEED_CAP_FAR);
+            int floor = dist <= SPEED_ARRIVAL_FLOOR_DIST ? 0 : SPEED_BONUS_MIN;
 
-            if (_followingNpc.addedSpeed != target)
+            int target = Math.Clamp((int)Math.Round(playerSpeed - npcBase) + tier, floor, cap);
+
+            _smoothedAddedSpeed = MathHelper.Lerp(_smoothedAddedSpeed, target, SPEED_LERP_FACTOR);
+            int newSpeed = (int)Math.Round(_smoothedAddedSpeed);
+
+            bool committable = newSpeed != _lastCommittedSpeed
+                && Math.Abs(_smoothedAddedSpeed - _lastCommittedSpeed) >= SPEED_COMMIT_HYST;
+            if (committable)
             {
                 float old = _followingNpc.addedSpeed;
-                _followingNpc.addedSpeed = target;
+                _followingNpc.addedSpeed = newSpeed;
+                _lastCommittedSpeed      = newSpeed;
                 ModEntry.SMonitor?.Log(
-                    $"[FollowMovementTracker] {_followingNpc.Name} addedSpeed {old}→{target}, dist={dist:F1}, playerSpeed={playerSpeed:F1}",
+                    $"[FollowMovementTracker] {_followingNpc.Name} addedSpeed {old}→{newSpeed} " +
+                    $"(smoothed={_smoothedAddedSpeed:F2}, dist={dist:F1}, playerSpeed={playerSpeed:F1})",
                     LogLevel.Trace);
             }
         }
@@ -611,6 +634,7 @@ namespace ValleytalkReborn.Movement
                     _followingNpc.addedSpeed = 0;
                     _retargetCooldown        = 0;
                     _idleGazeTimer           = 0;
+                    _smoothedAddedSpeed = 0; _lastCommittedSpeed = 0;
 
                     if (Game1.player != null)
                         _followingNpc.faceGeneralDirection(Game1.player.getStandingPosition(), 0, false, false);
@@ -624,6 +648,7 @@ namespace ValleytalkReborn.Movement
 
                     if (Game1.player != null)
                         ApplyDynamicSpeed(Vector2.Distance(_followingNpc.Tile, Game1.player.Tile));
+                    _smoothedAddedSpeed = _followingNpc.addedSpeed; _lastCommittedSpeed = (int)_followingNpc.addedSpeed;
                     break;
 
                 case FollowState.Wandering:
@@ -631,6 +656,7 @@ namespace ValleytalkReborn.Movement
                     _retargetCooldown        = 0;
                     _wanderPathCooldown      = 0;
                     _idleGazeTimer           = 0;
+                    _smoothedAddedSpeed = 0; _lastCommittedSpeed = 0;
 
                     ModEntry.SMonitor?.Log(
                         $"[FollowMovementTracker] {_followingNpc.Name} started wandering",
