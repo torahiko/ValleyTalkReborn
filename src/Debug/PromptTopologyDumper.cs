@@ -15,6 +15,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -148,7 +149,7 @@ internal static class PromptTopologyDumper
     {
         try
         {
-            var context = new DialogueContext();
+            var context = BuildPopulatedContext(character);
             configure(context, context.RoutingFlags);
 
             string body = DumpFullRequest(character, context);
@@ -160,6 +161,56 @@ internal static class PromptTopologyDumper
         {
             ModEntry.SMonitor?.Log($"{Prefix} [{branch}] 分支 dump 失败: {ex.Message}", LogLevel.Warn);
         }
+    }
+
+    /// <summary>构建全要素填充的 DialogueContext（天气、好感、子代、地点、时间），
+    /// 避免 Prompts 组装期因空引用产生空白块。对应 2ebfb2db 的 CreatePopulatedContext 核心字段。</summary>
+    private static DialogueContext BuildPopulatedContext(Character character)
+    {
+        // 天气
+        var weather = new List<string>();
+        if (Game1.isRaining) weather.Add("rain");
+        else if (Game1.isSnowing) weather.Add("snow");
+        else if (Game1.isLightning) weather.Add("storm");
+        else weather.Add("sun");
+
+        // 好感 / 婚姻
+        Friendship friendship = null;
+        if (Game1.player?.friendshipData != null)
+            Game1.player.friendshipData.TryGetValue(character.Name, out friendship);
+        int? heartLevel = friendship != null ? friendship.Points / 250 : (int?)null;
+
+        // 子代
+        var children = new List<ChildDescription>();
+        try
+        {
+            if (Game1.player != null)
+            {
+                foreach (var c in Game1.player.getChildren())
+                {
+                    children.Add(new ChildDescription(c.Name, c.Gender == StardewValley.Gender.Male, c.Age));
+                }
+            }
+        }
+        catch { }
+
+        string locName = character.StardewNpc?.currentLocation?.Name
+            ?? Game1.currentLocation?.Name ?? "FarmHouse";
+
+        return new DialogueContext
+        {
+            Hearts = heartLevel,
+            Season = (ValleytalkReborn.Season)Game1.season,
+            Year = Game1.year,
+            DayOfSeason = Game1.dayOfMonth,
+            TimeOfDay = Game1.timeOfDay.ToString(),
+            Location = locName,
+            MaleFarmer = Game1.player?.IsMale ?? true,
+            Children = children,
+            Weather = weather,
+            ChatHistory = new List<ConversationElement>(),
+            CanGiveGift = false,
+        };
     }
 
     private static void DumpDateBranch(string outDir, string timestamp, Character character)
@@ -193,7 +244,7 @@ internal static class PromptTopologyDumper
 
             entered = true;
 
-            var context = new DialogueContext();
+            var context = BuildPopulatedContext(character);
             string body = DumpFullRequest(character, context);
             string path = Path.Combine(outDir, $"dump_Date_{timestamp}.txt");
             File.WriteAllText(path, body);
