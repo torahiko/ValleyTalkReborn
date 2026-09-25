@@ -781,36 +781,43 @@ internal static class PromptTopologyDumper
                 return (BranchOutcome.Fail, 0);
             }
 
-            // ── 扁平化权威比较（删除空行、按行序列比较）—— 成为权威判定 ──
-            // 比对器空白扁平化：双侧各自压平后按行序列比较，块边界差异不导致 FAIL。
-            var flatResult = CompareFlattened(legacyCore, newCore, out int flatWarn);
+            // ── 扁平化行袋权威比较（VT3-E-INS2）—— 权威判定 ──
+            // 双侧 CorePrompt → 删除空行 → 行多重集 → 双侧对称剔除随机类行 → Bag 相等 = PASS。
+            var flat = CompareFlattened(legacyCore, newCore);
 
-            // 块级比较降级为诊断输出（扁平化失败时辅助定位）。
+            // 块级比较降级为诊断输出（【真差异】→【诊断·待查】，不参与判定）。
             var legBlocks = NormalizeToBlocks(legacyCore);
             var newBlocks = NormalizeToBlocks(newCore);
             var blockResult = CompareBlockSets(legBlocks, newBlocks, out int blockWarn);
-            if (blockResult == ParityResult.Fail)
+            if (!flat.IsEqual)
                 LogBlockDiffDetail(branchName, ComputeBlockDiffDetail(legBlocks, newBlocks));
+
+            // 审计：报告双侧各自剔除的随机类行（防剔除吞真差异）。
+            if (flat.RemovedFromLegacy.Count > 0 || flat.RemovedFromNovel.Count > 0)
+                Info($"[{branchName}] 随机类剔除审计: A侧剔 {flat.RemovedFromLegacy.Count} 行 / B侧剔 {flat.RemovedFromNovel.Count} 行 "
+                    + $"(Preoccupation/Gift 类，对称剔除，不参与判定)");
 
             // Instructions superset check: legacy Normal 行 ⊆ new 分支行。
             var legacyInstr = GetInstructionLines(prompts.Instructions);
             var newInstr = GetInstructionLines(promptsB.Instructions);
             bool instrSuperset = legacyInstr.IsSubsetOf(newInstr);
 
-            if (flatResult == ParityResult.Fail)
+            if (!flat.IsEqual)
             {
-                Info($"[{branchName}] FAIL — {flatResult.GetLabel()} (flattened, authoritative) | block-level: {blockResult.GetLabel()} | Instructions superset: {instrSuperset}");
-                return (BranchOutcome.Fail, flatWarn);
+                Info($"[{branchName}] FAIL — flattened line-bag mismatch (authoritative) | "
+                    + $"block-level: {blockResult.GetLabel()} | Instructions superset: {instrSuperset} | "
+                    + $"extraInA=[{string.Join(" | ", flat.ExtraInLegacy.Select(l => Truncate(l, 40)))}] "
+                    + $"extraInB=[{string.Join(" | ", flat.ExtraInNovel.Select(l => Truncate(l, 40)))}]");
+                return (BranchOutcome.Fail, flat.ExtraInLegacy.Count + flat.ExtraInNovel.Count);
             }
             if (!instrSuperset)
             {
-                Info($"[{branchName}] FAIL — flattened equivalent but Instructions NOT superset");
-                return (BranchOutcome.Fail, flatWarn);
+                Info($"[{branchName}] FAIL — flattened line-bag equal but Instructions NOT superset");
+                return (BranchOutcome.Fail, 0);
             }
-            Info($"[{branchName}] PASS ({flatResult.GetLabel()}; block-level: {blockResult.GetLabel()}; instructions superset OK; warn={flatWarn})");
-            return (BranchOutcome.Pass, flatWarn);
-        }
-        catch (Exception ex)
+            Info($"[{branchName}] PASS (flattened line-bag equal; block-level: {blockResult.GetLabel()}; instructions superset OK)");
+            return (BranchOutcome.Pass, 0);
+        }        catch (Exception ex)
         {
             Info($"[{branchName}] ERROR: {ex.Message}");
             return (BranchOutcome.Error, 0);
@@ -897,52 +904,63 @@ internal static class PromptTopologyDumper
     }
 
     /// <summary>比对器自测：A vs A 必须 0 差异（自反性）；A vs A 去除一个已知块必须 FAIL 且正确定位（捕获力）。</summary>
+        /// <summary>比对器自测（VT3-E-INS2 三例）：行袋权威模式 + 对称剔除 + 审计。
+    /// a. 同内容不同拼接（胶合 vs 分离）→ PASS（顺序/拼接不敏感）；
+    /// b. 同内容不同块顺序 → PASS（顺序不敏感）；
+    /// c. 缺一块 → FAIL 且定位到缺失块的行（不漏）。</summary>
     private static void RunComparatorSelfTest()
     {
         Info("── 比对器自测 (--selftest) ──");
-        // 合成 side-A 样本：5 块（含 1 个随机方差类块），空行分隔。
+
+        // 自测 0：自反性（A vs A → PASS，行袋全等）。
         string sideA = string.Join("\n\n", new[]
         {
             "## GameState\n今天是阳光明媚的春天。",
-            "[preoccupation] Abigail 正想着她的吉他。",
             "## Relation\n你和农夫是好朋友。",
             "## Current Conversation\n- 农夫: 你好！\n- Abigail: 嗨！",
-            "<movement_instruction>\n- 跟随农夫。\n</movement_instruction>",
         });
-        var blocksA = NormalizeToBlocks(sideA);
+        var r0 = CompareFlattened(sideA, sideA);
+        bool t0 = r0.IsEqual && r0.ExtraInLegacy.Count == 0 && r0.ExtraInNovel.Count == 0
+            && r0.RemovedFromLegacy.Count == 0 && r0.RemovedFromNovel.Count == 0;
+        Info($"SELFTEST-0 自反性 (A vs A): {(t0 ? "PASS (行袋全等)" : $"FAIL (equal={r0.IsEqual}, extraA={r0.ExtraInLegacy.Count}, extraB={r0.ExtraInNovel.Count})")}");
 
-        // 自测 1：side A 与自身比对 → 必须 0 差异（分块/归一化自反性）。
-        var r1 = CompareBlockSets(blocksA, NormalizeToBlocks(sideA), out int warn1);
-        bool t1 = r1 == ParityResult.Pass && warn1 == 0;
-        Info($"SELFTEST-1 自反性 (A vs A): {(t1 ? "PASS (0 差异)" : $"FAIL (result={r1.GetLabel()}, warn={warn1})")}");
+        // 自测 1（a）：同内容不同拼接（胶合 vs 分离）→ PASS（拼接/顺序不敏感）。
+        string glueA = "## GameState\nfoo\n\n## Relation\nbar";
+        string glueB = "## GameState\nfoo\n## Relation\nbar";
+        var r1 = CompareFlattened(glueA, glueB);
+        bool t1 = r1.IsEqual && r1.ExtraInLegacy.Count == 0 && r1.ExtraInNovel.Count == 0;
+        Info($"SELFTEST-1 拼接不敏感 (胶合 vs 分离): {(t1 ? "PASS (行袋相等)" : $"FAIL (equal={r1.IsEqual}, extraA=[{string.Join(",", r1.ExtraInLegacy)}], extraB=[{string.Join(",", r1.ExtraInNovel)}])")}");
 
-        // 自测 2：side A vs 去除一个已知常规块 → 必须 FAIL 且正确定位（捕获力）。
-        string removed = blocksA[2]; // "## Relation…"——非随机方差类
-        var minusOne = new List<string>(blocksA);
-        minusOne.RemoveAt(2);
-        var r2 = CompareBlockSets(blocksA, minusOne, out _);
-        var detail = ComputeBlockDiffDetail(blocksA, minusOne);
-        bool located = detail.OnlyInLegacy.Count == 1 && detail.OnlyInLegacy[0] == removed
-                    && detail.OnlyInNovel.Count == 0 && detail.ContentDiffs.Count == 0;
-        bool t2 = r2 == ParityResult.Fail && located;
-        Info($"SELFTEST-2 捕获力 (A vs A 去除已知块): {(t2
-            ? $"PASS (FAIL 且定位准确: \"{Truncate(FirstLine(removed), 40)}\")"
-            : $"FAIL (result={r2.GetLabel()}, 定位{(located ? "准确" : "错误")})")}");
+        // 自测 2（b）：同内容不同块顺序 → PASS（顺序不敏感）。
+        string orderA = "## GameState\nfoo\n\n## Relation\nbar";
+        string orderB = "## Relation\nbar\n\n## GameState\nfoo";
+        var r2 = CompareFlattened(orderA, orderB);
+        bool t2 = r2.IsEqual && r2.ExtraInLegacy.Count == 0 && r2.ExtraInNovel.Count == 0;
+        Info($"SELFTEST-2 顺序不敏感 (块逆序): {(t2 ? "PASS (行袋相等)" : $"FAIL (equal={r2.IsEqual}, extraA=[{string.Join(",", r2.ExtraInLegacy)}], extraB=[{string.Join(",", r2.ExtraInNovel)}])")}");
 
-        // 自测 3（VT3-D-FIX2）：同内容不同拼接 → 扁平化模式必须 PASS（块级可 FAIL，边界伪影）。
-        string concatA = "## GameState\n今天是阳光明媚的春天。\n\n## Relation\n你和农夫是好朋友。";
-        string concatB = "## GameState\n今天是阳光明媚的春天。\n## Relation\n你和农夫是好朋友。"; // 少一个空行 → 块级不同
-        var r3Block = CompareBlockSets(NormalizeToBlocks(concatA), NormalizeToBlocks(concatB), out _);
-        var r3Flat = CompareFlattened(concatA, concatB, out int warn3);
-        bool t3 = r3Flat == ParityResult.Pass && warn3 == 0;
-        Info($"SELFTEST-3 扁平化 (同内容不同拼接): {(t3
-            ? $"PASS (flattened PASS; block-level={r3Block.GetLabel()})"
-            : $"FAIL (flattened={r3Flat.GetLabel()}, warn={warn3}, block-level={r3Block.GetLabel()})")}");
+        // 自测 3（c）：缺一块 → FAIL 且定位到缺失块的行（不漏）。
+        string full = "## GameState\nfoo\n\n## Relation\nbar\n\n## Current Conversation\n对话内容";
+        string missing = "## GameState\nfoo\n\n## Current Conversation\n对话内容";
+        var r3 = CompareFlattened(full, missing);
+        bool locatedRelation = r3.ExtraInLegacy.Contains("## Relation") && r3.ExtraInLegacy.Contains("bar");
+        bool t3 = !r3.IsEqual && locatedRelation && r3.ExtraInNovel.Count == 0;
+        Info($"SELFTEST-3 缺块定位 (缺 ## Relation): {(t3
+            ? $"PASS (FAIL 且定位: extraInA=[{string.Join(" | ", r3.ExtraInLegacy)}])"
+            : $"FAIL (equal={r3.IsEqual}, located={locatedRelation}, extraA=[{string.Join(" | ", r3.ExtraInLegacy)}], extraB=[{string.Join(" | ", r3.ExtraInNovel)}])")}");
 
-        int selftestPass = (t1 ? 1 : 0) + (t2 ? 1 : 0) + (t3 ? 1 : 0);
-        Info($"Selftest summary: {selftestPass}/3 PASS {(selftestPass == 3 ? "→ 比对器可用" : "→ 比对器不可用，A/B 结果禁止采信")}");
+        // 自测 4：对称剔除审计——随机类行两侧同剔，剔除清单入报告。
+        string randA = "## GameState\nfoo\n\n[preoccupation] 想法A";
+        string randB = "## GameState\nfoo\n\n[preoccupation] 想法B";
+        var r4 = CompareFlattened(randA, randB);
+        bool t4 = r4.IsEqual && r4.RemovedFromLegacy.Count == 1 && r4.RemovedFromNovel.Count == 1
+            && r4.RemovedFromLegacy[0].Contains("[preoccupation]") && r4.RemovedFromNovel[0].Contains("[preoccupation]");
+        Info($"SELFTEST-4 对称剔除审计 (Preoccupation 双侧同剔): {(t4
+            ? $"PASS (A剔 {r4.RemovedFromLegacy.Count} 行, B剔 {r4.RemovedFromNovel.Count} 行)"
+            : $"FAIL (equal={r4.IsEqual}, removedA={r4.RemovedFromLegacy.Count}, removedB={r4.RemovedFromNovel.Count})")}");
+
+        int selftestPass = (t0 ? 1 : 0) + (t1 ? 1 : 0) + (t2 ? 1 : 0) + (t3 ? 1 : 0) + (t4 ? 1 : 0);
+        Info($"Selftest summary: {selftestPass}/5 PASS {(selftestPass == 5 ? "→ 比对器可用" : "→ 比对器不可用，A/B 结果禁止采信")}");
     }
-
     private static void OnAbMultiCommand(string command, string[] args)
     {
         if (!Context.IsWorldReady) { Info("世界未就绪。"); return; }
@@ -1101,6 +1119,11 @@ internal static class PromptTopologyDumper
     // 双侧 CorePrompt 各自压平（删除空行、保留行序）后按行序列比较，成为权威判定。
     // 块边界伪影（同内容不同拼接）不导致 FAIL。
 
+        // ── 扁平化权威比较（VT3-E-INS2 行袋模式）──
+    // 权威判定 = 行袋比较：双侧 CorePrompt → 删除空行 → 行多重集（Bag，计重复）
+    // → 双侧对称剔除随机类行 → 剩余 Bag 相等 = PASS。
+    // 顺序不敏感、计重复、空行无关；剔除清单入审计报告（防剔除吞真差异）。
+
     /// <summary>压平：删除空行、逐行 Trim、保留行序。</summary>
     private static List<string> FlattenLines(string text)
     {
@@ -1114,52 +1137,75 @@ internal static class PromptTopologyDumper
         return lines;
     }
 
-    /// <summary>随机方差类行（内容含这些标记的行视为随机方差，差异 = WARN 不 FAIL）。</summary>
+    /// <summary>随机类行分类器（权威清单，仅 Preoccupation/Gift 类。
+    /// 扩大清单须架构师批准——见 contract_specifications）。</summary>
     private static bool IsRandomLine(string line) =>
         line.Contains("[preoccupation]", StringComparison.OrdinalIgnoreCase)
         || line.Contains("giftGiving", StringComparison.OrdinalIgnoreCase)
         || line.Contains("你刚刚收到了", StringComparison.OrdinalIgnoreCase)
         || line.Contains("You just received", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>扁平化比较：双侧压平后按行多重集合比较（权威判定）。
-    /// 剔除随机方差行后的非随机差异 → FAIL；仅随机差异 → PassWithWarnings。</summary>
-    private static ParityResult CompareFlattened(string legacy, string novel, out int warnCount)
+    /// <summary>扁平化行袋比较结果。</summary>
+    private sealed class FlatCompareResult
     {
-        warnCount = 0;
-        var legLines = FlattenLines(legacy);
-        var novLines = FlattenLines(novel);
+        public bool IsEqual { get; init; }
+        public List<string> RemovedFromLegacy { get; init; } = new();
+        public List<string> RemovedFromNovel { get; init; } = new();
+        public List<string> ExtraInLegacy { get; init; } = new();
+        public List<string> ExtraInNovel { get; init; } = new();
+    }
+
+    /// <summary>行袋权威比较（VT3-E-INS2）：
+    /// 双侧压平 → 对称剔除随机类行（记录审计清单）→ 行多重集比较。
+    /// 剩余 Bag 相等 = PASS；否则 FAIL，并输出剩余差异行供诊断定位。</summary>
+    private static FlatCompareResult CompareFlattened(string legacy, string novel)
+    {
+        var legAll = FlattenLines(legacy);
+        var novAll = FlattenLines(novel);
+
+        var legCore = new List<string>();
+        var removedLeg = new List<string>();
+        foreach (var l in legAll)
+        {
+            if (IsRandomLine(l)) removedLeg.Add(l);
+            else legCore.Add(l);
+        }
+        var novCore = new List<string>();
+        var removedNov = new List<string>();
+        foreach (var l in novAll)
+        {
+            if (IsRandomLine(l)) removedNov.Add(l);
+            else novCore.Add(l);
+        }
 
         var legCounts = new Dictionary<string, int>(StringComparer.Ordinal);
-        foreach (var l in legLines) legCounts[l] = legCounts.GetValueOrDefault(l) + 1;
+        foreach (var l in legCore) legCounts[l] = legCounts.GetValueOrDefault(l) + 1;
         var novCounts = new Dictionary<string, int>(StringComparer.Ordinal);
-        foreach (var l in novLines) novCounts[l] = novCounts.GetValueOrDefault(l) + 1;
+        foreach (var l in novCore) novCounts[l] = novCounts.GetValueOrDefault(l) + 1;
 
-        // 非随机差异行（A 多出的行 / B 多出的行）。
-        var extraInLegacy = new List<string>();
-        var extraInNovel = new List<string>();
+        var extraLeg = new List<string>();
+        var extraNov = new List<string>();
         foreach (var kvp in legCounts)
         {
             int nov = novCounts.GetValueOrDefault(kvp.Key);
-            int diff = kvp.Value - nov;
-            for (int i = 0; i < diff; i++) extraInLegacy.Add(kvp.Key);
+            for (int i = 0; i < kvp.Value - nov; i++) extraLeg.Add(kvp.Key);
         }
         foreach (var kvp in novCounts)
         {
             int leg = legCounts.GetValueOrDefault(kvp.Key);
-            int diff = kvp.Value - leg;
-            for (int i = 0; i < diff; i++) extraInNovel.Add(kvp.Key);
+            for (int i = 0; i < kvp.Value - leg; i++) extraNov.Add(kvp.Key);
         }
 
-        int nonRandomExtraLeg = extraInLegacy.Count(l => !IsRandomLine(l));
-        int nonRandomExtraNov = extraInNovel.Count(l => !IsRandomLine(l));
-        warnCount = extraInLegacy.Count(IsRandomLine) + extraInNovel.Count(IsRandomLine);
-
-        if (nonRandomExtraLeg == 0 && nonRandomExtraNov == 0)
-            return warnCount > 0 ? ParityResult.PassWithWarnings : ParityResult.Pass;
-        return ParityResult.Fail;
+        return new FlatCompareResult
+        {
+            IsEqual = extraLeg.Count == 0 && extraNov.Count == 0,
+            RemovedFromLegacy = removedLeg,
+            RemovedFromNovel = removedNov,
+            ExtraInLegacy = extraLeg,
+            ExtraInNovel = extraNov,
+        };
     }
-
-    private static HashSet<string> GetInstructionLines(string instructions)
+private static HashSet<string> GetInstructionLines(string instructions)
     {
         var lines = new HashSet<string>();
         if (string.IsNullOrEmpty(instructions)) return lines;
@@ -1283,27 +1329,26 @@ internal static class PromptTopologyDumper
         return detail;
     }
 
-    private static void LogBlockDiffDetail(string branch, BlockDiffDetail d)
+        private static void LogBlockDiffDetail(string branch, BlockDiffDetail d)
     {
-        Info($"[{branch}] 差异明细: 仅A侧 {d.OnlyInLegacy.Count} 块 / 仅B侧 {d.OnlyInNovel.Count} 块 / 边界伪影 {d.BoundaryArtifacts.Count} 块 / 双侧皆有但内容不同 {d.ContentDiffs.Count} 块");
+        Info($"[{branch}] 差异明细（审计输出，不参与判定）: 仅A侧 {d.OnlyInLegacy.Count} 块 / 仅B侧 {d.OnlyInNovel.Count} 块 / 边界伪影 {d.BoundaryArtifacts.Count} 块 / 双侧皆有但内容不同 {d.ContentDiffs.Count} 块");
         foreach (var b in d.OnlyInLegacy)
-            Info($"[{branch}]   仅A侧块: \"{Truncate(FirstLine(b), 90)}\"");
+            Info($"[{branch}]   [诊断·待查] 仅A侧块: \"{Truncate(FirstLine(b), 90)}\"");
         foreach (var b in d.OnlyInNovel)
-            Info($"[{branch}]   仅B侧块: \"{Truncate(FirstLine(b), 90)}\"");
+            Info($"[{branch}]   [诊断·待查] 仅B侧块: \"{Truncate(FirstLine(b), 90)}\"");
         foreach (var (legacyBlock, novelBlock) in d.BoundaryArtifacts)
         {
             string id = !string.IsNullOrEmpty(legacyBlock) ? FirstLine(legacyBlock) : FirstLine(novelBlock);
-            Info($"[{branch}]   边界伪影（同内容不同拼接）: \"{Truncate(id, 60)}\" → A 块多出的行与 B 的相邻独立块逐行相同，不标真差异");
+            Info($"[{branch}]   [诊断·边界伪影] \"{Truncate(id, 60)}\" → A 块多出的行与 B 的相邻独立块逐行相同（同内容不同拼接）");
         }
         foreach (var (identity, lineA, lineB, sameAfterNorm) in d.ContentDiffs)
         {
             if (sameAfterNorm)
-                Info($"[{branch}]   双侧皆有但内容不同: \"{Truncate(identity, 60)}\" → 【归一化后同文】(纯空白/换行差异 → 比对器归一化缺口)");
+                Info($"[{branch}]   [诊断·归一化缺口] \"{Truncate(identity, 60)}\" → 纯空白/换行差异（不影响行袋判定）");
             else
-                Info($"[{branch}]   双侧皆有但内容不同: \"{Truncate(identity, 60)}\" → 【真差异】首差异行 A=\"{Truncate(lineA, 70)}\" | B=\"{Truncate(lineB, 70)}\"");
+                Info($"[{branch}]   [诊断·待查] \"{Truncate(identity, 60)}\" → 首差异行 A=\"{Truncate(lineA, 70)}\" | B=\"{Truncate(lineB, 70)}\"");
         }
     }
-
     private static string FirstLine(string block) => block.Split('\n')[0].Trim();
 
     private static string StripAllWhitespace(string text) => string.Concat(text.Where(c => !char.IsWhiteSpace(c)));
