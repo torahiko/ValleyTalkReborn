@@ -29,7 +29,7 @@ public sealed class InjectionPlan
     public int HistoryWindowSize { get; init; }
 
     /// <summary>BlockId → 已渲染文本，仅含非空项。由装配层在构造时过滤。</summary>
-    public IReadOnlyDictionary<string, string> ActiveImpulses { get; init; }
+    public Dictionary<string, string> ActiveImpulses { get; init; }
         = new Dictionary<string, string>();
 
     /// <summary>本次 Echo 是否来自微社交 3 秒桥（bridge 优先于即时 echo）。</summary>
