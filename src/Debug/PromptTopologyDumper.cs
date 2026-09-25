@@ -62,8 +62,9 @@ internal static class PromptTopologyDumper
             OnCommand);
         console.Add(
             "vt_ab_topology",
-            "A/B parity check (legacy GetCorePrompt vs new AssembleCore) for one NPC. "
-            + "Usage: vt_ab_topology <NpcName>   e.g. vt_ab_topology Abigail",
+            "A/B parity check (legacy GetCorePrompt vs new AssembleCore) for one NPC, 4 branches. "
+            + "Usage: vt_ab_topology <NpcName>   e.g. vt_ab_topology Abigail   |   "
+            + "vt_ab_topology --selftest (comparator self-test)",
             OnAbCommand);
         console.Add(
             "vt_ab_topology_multi",
@@ -668,84 +669,262 @@ internal static class PromptTopologyDumper
 
     // ═══════════════════════════════════════════════════════════════════════════
     //  VT3-E: A/B Parity Verification Commands
+    //  VT3-E-INS 仪器修正：每分支会话隔离、单一上下文断言、三线分支断言、
+    //  Date 夹具、差异明细输出、比对器自测、multi 真断言（A1~A4）。
     // ═══════════════════════════════════════════════════════════════════════════
+
+    private enum BranchOutcome { Pass, Fail, FixtureFail, Error }
 
     private static void OnAbCommand(string command, string[] args)
     {
+        if (args.Length >= 1 && args[0] == "--selftest")
+        {
+            RunComparatorSelfTest();
+            return;
+        }
         if (!Context.IsWorldReady) { Info("世界未就绪。"); return; }
-        if (args.Length < 1) { Info("用法: vt_ab_topology <NpcName>"); return; }
+        if (args.Length < 1) { Info("用法: vt_ab_topology <NpcName> | vt_ab_topology --selftest"); return; }
         string npcName = args[0];
         var character = FindCharacter(npcName);
         if (character == null) { Info($"NPC 不存在: {npcName}"); return; }
 
-        int pass = 0, fail = 0, warn = 0;
-        foreach (var branchFlags in new[]
-        {
-            (name: "Normal", cfg: (Action<DialogueContext, ContextFlags>)((ctx, f) => { })),
-            (name: "StoodUp", cfg: (Action<DialogueContext, ContextFlags>)((ctx, f) => { f.HasStoodUpPending = true; })),
-            (name: "Greeting", cfg: (Action<DialogueContext, ContextFlags>)((ctx, f) => { f.IsSimpleGreeting = true; f.IsMovementRequested = false; })),
-        })
-        {
-            try
-            {
-                var context = BuildPopulatedContext(character);
-                branchCfg(branchFlags.cfg, context);
-                var prompts = new Prompts(context, character);
-                var plan = ConversationDirectorInstance.BuildPlan(context, character, prompts);
+        var results = new List<(string Branch, BranchOutcome Outcome, int Warn)>();
+        void AddResult(string name, (BranchOutcome Outcome, int Warn) r) =>
+            results.Add((name, r.Outcome, r.Warn));
 
-                // Side A (legacy): inject impulses into Pending*Block fields, read CorePrompt.
-#pragma warning disable CS0618 // VT3-E: 调试夹具仍读 Pending* 遗留字段（触达 Obsolete），集中抑制；生产路径已不触达。
-                foreach (var kvp in plan.ActiveImpulses)
+        AddResult("Normal", RunAbBranch("Normal", character, (ctx, f) => { }));
+        AddResult("StoodUp", RunAbBranch("StoodUp", character, (ctx, f) => { f.HasStoodUpPending = true; }));
+        AddResult("Greeting", RunAbBranch("Greeting", character, (ctx, f) => { f.IsSimpleGreeting = true; f.IsMovementRequested = false; }));
+
+        // 第 4 分支：Date（复用 DumpDateBranch 状态操纵；夹具仍失败 → 3 分支覆盖 + P-1 转移）。
+        AddResult("Date", RunAbDateBranch(character));
+
+        int pass = 0, fail = 0, fixtureFail = 0, errorCount = 0, warn = 0;
+        foreach (var r in results)
+        {
+            warn += r.Warn;
+            if (r.Outcome == BranchOutcome.Pass) pass++;
+            else if (r.Outcome == BranchOutcome.Fail) fail++;
+            else if (r.Outcome == BranchOutcome.FixtureFail) fixtureFail++;
+            else errorCount++;
+        }
+        Info($"A/B summary: {pass} PASS / {fail} FAIL / {fixtureFail} FIXTURE_FAIL / {errorCount} ERROR / {warn} WARN");
+    }
+
+    /// <summary>单分支 A/B 比对：会话隔离 → 单一上下文 → 三线断言 → 双侧渲染 → 同源断言 → 块集比对。</summary>
+    private static (BranchOutcome Outcome, int Warn) RunAbBranch(
+        string branchName, Character character, ConfigureFlags configure)
+    {
+        try
+        {
+            // ── §1 每分支会话隔离（与 multi 同规）+ 强制新会话（禁跨分支/真实游玩快照复用）──
+            SessionCache.ClearForNpc(character.Name);
+            ForceNewTier1Sessions(character.Name);
+
+            // ── §2 单一上下文：一次构建，BuildPlan 与两侧薄壳共用同一实例 ──
+            var context = BuildPopulatedContext(character);
+            configure(context, context.RoutingFlags);
+
+            var prompts = new Prompts(context, character);
+            var plan = ConversationDirectorInstance.BuildPlan(context, character, prompts);
+
+            // Side A（遗留薄壳）：plan 脉冲注入 Pending* 字段——遗留服务的注入职责重放。
+            // 含 EvolvedTraits：遗留四分支均渲染 PendingEvolvedTraitsBlock（服务注入职责），
+            // 内容取自 plan.Tier1Snapshot 以与 Side B 同源。
+#pragma warning disable CS0618 // VT3-E: 调试夹具仍读写 Pending* 遗留字段（触达 Obsolete），集中抑制；生产路径已不触达。
+            foreach (var kvp in plan.ActiveImpulses)
+            {
+                switch (kvp.Key)
                 {
-                    switch (kvp.Key)
-                    {
-                        case Tier2bBlockIds.Eavesdrop: prompts.PendingEavesdropBlock = kvp.Value; break;
-                        case Tier2bBlockIds.SpouseWaiting: prompts.PendingSpouseWaitingBlock = kvp.Value; break;
-                        case Tier2bBlockIds.Echo: prompts.PendingEchoBlock = kvp.Value; break;
-                        case Tier2bBlockIds.Milestone: prompts.PendingMilestoneBlock = kvp.Value; break;
-                        case Tier2bBlockIds.LocalPerception: prompts.PendingLocalPerceptionBlock = kvp.Value; break;
-                        case Tier2bBlockIds.Emotion: prompts.PendingEmotionBlock = kvp.Value; break;
-                        case Tier2bBlockIds.PlayerProfile: break; // injected via PlayerProfileManager path
-                        case Tier2bBlockIds.Preoccupation: break; // set via private field
-                    }
+                    case Tier2bBlockIds.Eavesdrop: prompts.PendingEavesdropBlock = kvp.Value; break;
+                    case Tier2bBlockIds.SpouseWaiting: prompts.PendingSpouseWaitingBlock = kvp.Value; break;
+                    case Tier2bBlockIds.Echo: prompts.PendingEchoBlock = kvp.Value; break;
+                    case Tier2bBlockIds.Milestone: prompts.PendingMilestoneBlock = kvp.Value; break;
+                    case Tier2bBlockIds.LocalPerception: prompts.PendingLocalPerceptionBlock = kvp.Value; break;
+                    case Tier2bBlockIds.Emotion: prompts.PendingEmotionBlock = kvp.Value; break;
+                    case Tier2bBlockIds.PlayerProfile: break; // 遗留薄壳内部经 PlayerProfileManager 路径构建
+                    case Tier2bBlockIds.Preoccupation: break; // 遗留薄壳内部构建（50% 重掷 → 随机方差类 WARN）
                 }
-                prompts.PendingEchoIsBridge = plan.EchoFromBridge;
-                string legacyCore = prompts.CorePrompt;
+            }
+            prompts.PendingEchoIsBridge = plan.EchoFromBridge;
+            string evolvedTraits = plan.Tier1Snapshot.Get(Tier1BlockIds.EvolvedTraits);
+            if (!string.IsNullOrEmpty(evolvedTraits))
+                prompts.PendingEvolvedTraitsBlock = evolvedTraits;
 #pragma warning restore CS0618
 
-                // Side B (new): AssembleCore with the same plan.
-                var promptsB = new Prompts(context, character);
-                promptsB.AssembleCore(plan, context, character);
-                string newCore = promptsB.CorePrompt;
-
-                // Block-level normalized comparison.
-                var (legBlocks, newBlocks) = (NormalizeToBlocks(legacyCore), NormalizeToBlocks(newCore));
-                var comparison = CompareBlockSets(legBlocks, newBlocks, out var warnCount);
-                warn += warnCount;
-
-                // Instructions superset check.
-                var legacyInstr = GetInstructionLines(prompts.Instructions);
-                var newInstr = GetInstructionLines(promptsB.Instructions);
-                bool instrSuperset = legacyInstr.IsSubsetOf(newInstr);
-
-                if (comparison == ParityResult.Pass && instrSuperset)
-                {
-                    pass++;
-                    Info($"[{branchFlags.name}] PASS (blocks equivalent, instructions superset OK)");
-                }
-                else
-                {
-                    fail++;
-                    Info($"[{branchFlags.name}] FAIL — {comparison.GetLabel()} | Instructions superset: {instrSuperset}");
-                }
-            }
-            catch (Exception ex)
+            // ── §3 三线分支断言：intended / A resolved / B resolved(=plan.Branch) ──
+            var sideAResolved = ResolveLegacyBranchMirror(prompts, character);
+            var sideBResolved = plan.Branch;
+            Info($"[{branchName}] 三线: intended={branchName} | A resolved={sideAResolved} | B resolved={sideBResolved} | "
+                + $"EnableDateSystem={ModEntry.Config.EnableDateSystem} | session reused={plan.IsTier1Reused} (id={Truncate(plan.SessionId, 8)}…)");
+            if (sideAResolved.ToString() != branchName || sideBResolved.ToString() != branchName)
             {
-                fail++;
-                Info($"[{branchFlags.name}] ERROR: {ex.Message}");
+                Info($"[{branchName}] FIXTURE_FAIL — 夹具未落到预期分支（intended≠resolved），跳过比对（不产出垃圾 FAIL）。");
+                return (BranchOutcome.FixtureFail, 0);
+            }
+
+            string legacyCore = prompts.CorePrompt;
+
+            // Side B（新管线）：同一 plan、同一 context。
+            var promptsB = new Prompts(context, character);
+            promptsB.AssembleCore(plan, context, character);
+            promptsB.Instructions = promptsB.GetInstructions(plan.Branch); // 生产接线镜像（LlmDialogueService.cs:91）
+            string newCore = promptsB.CorePrompt;
+
+            // ── §2（续）同源断言：两侧薄壳实际消费的 context 必须与 BuildPlan 同源 ──
+            bool ctxA = ReferenceEquals(GetPromptsContext(prompts), context);
+            bool ctxB = ReferenceEquals(GetPromptsContext(promptsB), context);
+            Info($"[{branchName}] context 同源: SideA={ctxA}, SideB={ctxB} → {(ctxA && ctxB ? "同源 OK" : "不同源 (仪器 BUG)")}");
+            if (!ctxA || !ctxB)
+            {
+                Info($"[{branchName}] FAIL — 两侧 context 不同源，比对无效。");
+                return (BranchOutcome.Fail, 0);
+            }
+
+            var legBlocks = NormalizeToBlocks(legacyCore);
+            var newBlocks = NormalizeToBlocks(newCore);
+            var comparison = CompareBlockSets(legBlocks, newBlocks, out int warnCount);
+
+            // Instructions superset check: legacy Normal 行 ⊆ new 分支行。
+            var legacyInstr = GetInstructionLines(prompts.Instructions);
+            var newInstr = GetInstructionLines(promptsB.Instructions);
+            bool instrSuperset = legacyInstr.IsSubsetOf(newInstr);
+
+            if (comparison == ParityResult.Fail)
+            {
+                LogBlockDiffDetail(branchName, ComputeBlockDiffDetail(legBlocks, newBlocks));
+                Info($"[{branchName}] FAIL — {comparison.GetLabel()} | Instructions superset: {instrSuperset}");
+                return (BranchOutcome.Fail, warnCount);
+            }
+            if (!instrSuperset)
+            {
+                Info($"[{branchName}] FAIL — blocks equivalent but Instructions NOT superset");
+                return (BranchOutcome.Fail, warnCount);
+            }
+            Info($"[{branchName}] PASS ({comparison.GetLabel()}; instructions superset OK; warn={warnCount})");
+            return (BranchOutcome.Pass, warnCount);
+        }
+        catch (Exception ex)
+        {
+            Info($"[{branchName}] ERROR: {ex.Message}");
+            return (BranchOutcome.Error, 0);
+        }
+    }
+
+    /// <summary>Date 分支夹具：复用 DumpDateBranch 的 DateManager 状态操纵，比对后恢复。</summary>
+    private static (BranchOutcome Outcome, int Warn) RunAbDateBranch(Character character)
+    {
+        var dm = DateManager.Instance;
+        if (dm == null)
+        {
+            Info("[Date] DateManager 不可用 → FIXTURE_FAIL（3 分支覆盖 + Date 转移 P-1，非阻塞）。");
+            return (BranchOutcome.FixtureFail, 0);
+        }
+
+        DatePhase origPhase = dm.Phase;
+        string origNpc = dm.ActiveDateNpcName;
+        string origLoc = dm.ActiveDateLocation;
+        DateManager.DateMode origMode = dm.CurrentDateMode;
+        bool entered = false;
+        try
+        {
+            Info("[Date] 进入约会状态（复用 DumpDateBranch 状态操纵）…");
+            SetDateField("Phase", typeof(DatePhase), DatePhase.Active);
+            SetDateField(nameof(DateManager.ActiveDateNpcName), typeof(string), character.Name);
+            SetDateField(nameof(DateManager.ActiveDateLocation), typeof(string),
+                Game1.player?.currentLocation?.Name ?? "");
+            SetDateField(nameof(DateManager.CurrentDateMode), typeof(DateManager.DateMode), DateManager.DateMode.Follow);
+            // IsOnDate 要求 Game1.timeOfDay < DynamicEndTime；置一个足够大的值。
+            SetDateField("DynamicEndTime", typeof(int), 2600);
+            entered = true;
+
+            var result = RunAbBranch("Date", character, (ctx, f) => { });
+            if (result.Outcome != BranchOutcome.Pass && result.Outcome != BranchOutcome.Fail)
+                Info("[Date] Date 夹具失败 → 3 分支覆盖 + Date 转移 P-1（记录，非阻塞）。");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Info($"[Date] 分支失败: {ex.Message} → 3 分支覆盖 + Date 转移 P-1（记录，非阻塞）。");
+            return (BranchOutcome.Error, 0);
+        }
+        finally
+        {
+            if (entered)
+            {
+                try
+                {
+                    Info("[Date] 退出并恢复原状态…");
+                    SetDateField("Phase", typeof(DatePhase), origPhase);
+                    SetDateField(nameof(DateManager.ActiveDateNpcName), typeof(string), origNpc);
+                    SetDateField(nameof(DateManager.ActiveDateLocation), typeof(string), origLoc);
+                    SetDateField(nameof(DateManager.CurrentDateMode), typeof(DateManager.DateMode), origMode);
+                }
+                catch (Exception ex)
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"{Prefix} [Date] 恢复原状态失败（需人工检查）: {ex.Message}",
+                        LogLevel.Warn);
+                }
             }
         }
-        Info($"A/B summary: {pass} PASS / {fail} FAIL / {warn} WARN");
+    }
+
+    /// <summary>遗留 GetCorePrompt 分支路由级联的逐字镜像（Prompts.cs StoodUp/Date/Greeting 判定序）。
+    /// 仅用于三线断言的 "A resolved" 读数；实际渲染仍由遗留薄壳自身路由。
+    /// 运行于 BuildPlan 之后——冲突清除（StoodUp∧IsOnDate）已由 BuildPlan 对同一 flags 对象完成。</summary>
+    private static InstructionsBranch ResolveLegacyBranchMirror(Prompts prompts, Character character)
+    {
+#pragma warning disable CS0618 // 读取 PendingMilestoneBlock（Obsolete）用于镜像 Greeting 门控。
+        var flags = prompts.CurrentFlags;
+        string npcName = character?.Name ?? "";
+        if (flags?.HasStoodUpPending == true && ModEntry.Config.EnableDateSystem)
+            return InstructionsBranch.StoodUp;
+        if (ModEntry.Config.EnableDateSystem && !string.IsNullOrEmpty(npcName)
+            && DateManager.Instance?.IsOnDate(npcName) == true)
+            return InstructionsBranch.Date;
+        if (flags?.IsSimpleGreeting == true && flags?.IsMovementRequested != true
+            && string.IsNullOrEmpty(prompts.PendingMilestoneBlock))
+            return InstructionsBranch.Greeting;
+#pragma warning restore CS0618
+        return InstructionsBranch.Normal;
+    }
+
+    /// <summary>比对器自测：A vs A 必须 0 差异（自反性）；A vs A 去除一个已知块必须 FAIL 且正确定位（捕获力）。</summary>
+    private static void RunComparatorSelfTest()
+    {
+        Info("── 比对器自测 (--selftest) ──");
+        // 合成 side-A 样本：5 块（含 1 个随机方差类块），空行分隔。
+        string sideA = string.Join("\n\n", new[]
+        {
+            "## GameState\n今天是阳光明媚的春天。",
+            "[preoccupation] Abigail 正想着她的吉他。",
+            "## Relation\n你和农夫是好朋友。",
+            "## Current Conversation\n- 农夫: 你好！\n- Abigail: 嗨！",
+            "<movement_instruction>\n- 跟随农夫。\n</movement_instruction>",
+        });
+        var blocksA = NormalizeToBlocks(sideA);
+
+        // 自测 1：side A 与自身比对 → 必须 0 差异（分块/归一化自反性）。
+        var r1 = CompareBlockSets(blocksA, NormalizeToBlocks(sideA), out int warn1);
+        bool t1 = r1 == ParityResult.Pass && warn1 == 0;
+        Info($"SELFTEST-1 自反性 (A vs A): {(t1 ? "PASS (0 差异)" : $"FAIL (result={r1.GetLabel()}, warn={warn1})")}");
+
+        // 自测 2：side A vs 去除一个已知常规块 → 必须 FAIL 且正确定位（捕获力）。
+        string removed = blocksA[2]; // "## Relation…"——非随机方差类
+        var minusOne = new List<string>(blocksA);
+        minusOne.RemoveAt(2);
+        var r2 = CompareBlockSets(blocksA, minusOne, out _);
+        var detail = ComputeBlockDiffDetail(blocksA, minusOne);
+        bool located = detail.OnlyInLegacy.Count == 1 && detail.OnlyInLegacy[0] == removed
+                    && detail.OnlyInNovel.Count == 0 && detail.ContentDiffs.Count == 0;
+        bool t2 = r2 == ParityResult.Fail && located;
+        Info($"SELFTEST-2 捕获力 (A vs A 去除已知块): {(t2
+            ? $"PASS (FAIL 且定位准确: \"{Truncate(FirstLine(removed), 40)}\")"
+            : $"FAIL (result={r2.GetLabel()}, 定位{(located ? "准确" : "错误")})")}");
+
+        int selftestPass = (t1 ? 1 : 0) + (t2 ? 1 : 0);
+        Info($"Selftest summary: {selftestPass}/2 PASS {(selftestPass == 2 ? "→ 比对器可用" : "→ 比对器不可用，A/B 结果禁止采信")}");
     }
 
     private static void OnAbMultiCommand(string command, string[] args)
@@ -756,15 +935,14 @@ internal static class PromptTopologyDumper
         var character = FindCharacter(npcName);
         if (character == null) { Info($"NPC 不存在: {npcName}"); return; }
 
-        int pass = 0, fail = 0;
         const int turns = 3;
-
-        // A1-A4 layered assertions across turns.
         var segA = new string[turns];
         var segX = new string[turns];
         var segB = new string[turns];
         var corePrompts = new string[turns];
         var reusedFlags = new bool[turns];
+        var a3Ok = new bool[turns];
+        var a4Ok = new bool[turns];
 
         for (int turn = 1; turn <= turns; turn++)
         {
@@ -778,36 +956,56 @@ internal static class PromptTopologyDumper
                 var prompts = new Prompts(context, character);
                 var plan = ConversationDirectorInstance.BuildPlan(context, character, prompts);
 
-                prompts.AssembleCore(plan, context, character);
-                corePrompts[turn - 1] = prompts.CorePrompt;
-
+                // 段捕获：Tier2a 用独立 fresh 实例渲染，避免与 AssembleCore 的
+                // _emittedBlockKeys 台账交叉（A4 字节级拼接完整性的前提）。
+                var segPrompts = new Prompts(context, character);
                 segA[turn - 1] = Prompts.AssembleTier1Segment(plan);
-                segX[turn - 1] = prompts.AssembleTier2aSegment(context, character);
+                segX[turn - 1] = segPrompts.AssembleTier2aSegment(context, character);
                 segB[turn - 1] = Prompts.AssembleTier2bSegment(plan);
                 reusedFlags[turn - 1] = plan.IsTier1Reused;
 
-                // A4: CorePrompt == Seg_A ⊕ Seg_X ⊕ Seg_B
-                string reassembled = segA[turn - 1] + segX[turn - 1] + segB[turn - 1];
-                if (NormalizeForAssertion(corePrompts[turn - 1]) == NormalizeForAssertion(reassembled))
-                    pass++;
-                else
-                { fail++; Info($"[turn{turn}] A4 FAIL (structure integrity)"); }
+                prompts.AssembleCore(plan, context, character);
+                corePrompts[turn - 1] = prompts.CorePrompt;
+
+                // A3（逐轮构造一致性，非跨轮）：段捕获后重渲同一 plan，必须字节一致。
+                a3Ok[turn - 1] = segB[turn - 1] == Prompts.AssembleTier2bSegment(plan);
+
+                // A4（拼接完整性，逐轮，字节级）。
+                a4Ok[turn - 1] = corePrompts[turn - 1] == segA[turn - 1] + segX[turn - 1] + segB[turn - 1];
             }
             catch (Exception ex)
-            { fail++; Info($"[turn{turn}] ERROR: {ex.Message}"); }
+            {
+                Info($"[turn{turn}] ERROR: {ex.Message}");
+            }
         }
 
-        // A1: Tier1 frozen across turns (active reuse).
-        bool a1 = segA[0] == segA[1] && segA[1] == segA[2];
-        Info($"A1 (Tier1 frozen): {(a1 ? "PASS" : "FAIL")}");
+        // A1: Tier1 frozen across turns（active 续用保证）。
+        bool a1 = segA.All(s => s != null) && segA[0] == segA[1] && segA[1] == segA[2];
+        Info($"A1 (Tier1 frozen, Seg_A(1)==(2)==(3)): {(a1 ? "PASS" : "FAIL")}");
 
-        // A3: per-turn render consistency (Seg_B matches plan impulses — self-check).
-        Info($"A3: rendered {turns} turns individually (cross-turn not compared)");
+        // A2: Seg_X(1)⊑Seg_X(2)⊑Seg_X(3) 字节前缀链（累积历史 + continuity 已清）。
+        int window = Math.Clamp(ModEntry.Config?.PromptHistoryWindow ?? 6, 1, 20);
+        bool a2 = segX.All(s => s != null)
+            && segX[1].StartsWith(segX[0], StringComparison.Ordinal)
+            && segX[2].StartsWith(segX[1], StringComparison.Ordinal);
+        Info($"A2 (Seg_X(1)⊑(2)⊑(3) 字节前缀链, historyWindow={window}): {(a2 ? "PASS" : "FAIL")}");
+        if (!a2)
+            Info($"  A2 归因: len(1)={segX[0]?.Length ?? -1}, len(2)={segX[1]?.Length ?? -1}, len(3)={segX[2]?.Length ?? -1} "
+                + "(window<4 时尾部截断破坏前缀链；turn1 空历史时受 SpokeJustNow 影响)");
 
-        // Reuse expectation: turn1 reused=false, turn2/3 reused=true.
+        // A3: Seg_B(i)==RenderTier2b(plan_i) 逐轮构造一致性。
+        int a3Count = a3Ok.Count(b => b);
+        Info($"A3 (Seg_B(i)==RenderTier2b(plan_i) 逐轮构造一致): {(a3Count == turns ? $"PASS ({turns}/{turns})" : $"FAIL ({a3Count}/{turns})")}");
+
+        // A4: CorePrompt(i)==Seg_A⊕Seg_X⊕Seg_B 拼接完整性。
+        int a4Count = a4Ok.Count(b => b);
+        Info($"A4 (CorePrompt(i)==Seg_A⊕Seg_X⊕Seg_B 拼接完整): {(a4Count == turns ? $"PASS ({turns}/{turns})" : $"FAIL ({a4Count}/{turns})")}");
+
+        // Reuse expectation: turn1 reused=false, turn2/3 reused=true。
         Info($"Reuse: turn1={reusedFlags[0]}, turn2={reusedFlags[1]}, turn3={reusedFlags[2]} (expect F,T,T)");
 
-        // Rotation probe (turn4): Normal → Greeting.
+        // Rotation probe (turn4): Normal → Greeting。
+        bool rotationOk = false;
         try
         {
             SessionCache.ClearForNpc(character.Name);
@@ -817,20 +1015,18 @@ internal static class PromptTopologyDumper
             var prompts4 = new Prompts(ctx4, character);
             var plan4 = ConversationDirectorInstance.BuildPlan(ctx4, character, prompts4);
             string segA4 = Prompts.AssembleTier1Segment(plan4);
-            bool rotationOk = !plan4.IsTier1Reused && segA4 != segA[0];
-            Info($"Rotation probe (turn4 Greeting): reused={plan4.IsTier1Reused}, segA changed={segA4 != segA[0]} (expect F,T) → {(rotationOk ? "PASS" : "FAIL")}");
-            if (rotationOk) pass++; else fail++;
+            rotationOk = !plan4.IsTier1Reused && segA4 != segA[0];
+            Info($"Rotation (turn4 Normal→Greeting): reused={plan4.IsTier1Reused}, segA changed={segA4 != segA[0]} (expect F,T) → {(rotationOk ? "PASS" : "FAIL")}");
         }
         catch (Exception ex)
-        { fail++; Info($"Rotation probe ERROR: {ex.Message}"); }
+        {
+            Info($"Rotation probe ERROR: {ex.Message}");
+        }
 
-        Info($"Multi summary: {pass} PASS / {fail} FAIL");
+        Info($"Multi summary: A1={(a1 ? "PASS" : "FAIL")} / A2={(a2 ? "PASS" : "FAIL")} / A3={a3Count}/{turns} / A4={a4Count}/{turns} / Rotation={(rotationOk ? "PASS" : "FAIL")}");
     }
 
     // ── A/B helpers ──
-
-    private static void branchCfg(Action<DialogueContext, ContextFlags> cfg, DialogueContext ctx) =>
-        cfg(ctx, ctx.RoutingFlags);
 
     private static List<string> NormalizeToBlocks(string text)
     {
@@ -888,16 +1084,132 @@ internal static class PromptTopologyDumper
 
     private static List<ConversationElement> BuildTurnChatHistory(int turn)
     {
-        // Deterministic罐头 history: turn N has 2*(N-1) lines (0, 2, 4).
+        // 累积式罐头历史：turn N 含 2*(N-1) 行（0/2/4），行文本跨轮稳定（hist-line{i}），
+        // 使 CurrentConversation 逐轮只追加 → Seg_X 呈字节前缀链（A2）。
         var history = new List<ConversationElement>();
         int lines = 2 * (turn - 1);
         for (int i = 0; i < lines; i++)
-            history.Add(new ConversationElement($"turn{turn}-line{i}", i % 2 == 0));
+            history.Add(new ConversationElement($"hist-line{i}", i % 2 == 0));
         return history;
     }
 
-    private static string NormalizeForAssertion(string text) =>
-        string.Join("\n", text.Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0));
+    // ── §5 差异明细 ──
+
+    private sealed class BlockDiffDetail
+    {
+        public List<string> OnlyInLegacy { get; } = new();
+        public List<string> OnlyInNovel { get; } = new();
+        public List<(string Identity, string LineA, string LineB, bool SameAfterNormalization)> ContentDiffs { get; } = new();
+    }
+
+    private static BlockDiffDetail ComputeBlockDiffDetail(List<string> legacy, List<string> novel)
+    {
+        var detail = new BlockDiffDetail();
+        var legSet = new HashSet<string>(legacy);
+        var novSet = new HashSet<string>(novel);
+        var onlyA = legacy.Where(b => !novSet.Contains(b)).ToList();
+        var onlyB = novel.Where(b => !legSet.Contains(b)).ToList();
+
+        // 首行配对：同首行 → “双侧皆有但内容不同”。
+        var pairedB = new HashSet<string>();
+        var bByFirstLine = new Dictionary<string, string>();
+        foreach (var b in onlyB)
+        {
+            string key = FirstLine(b);
+            if (!bByFirstLine.ContainsKey(key))
+                bByFirstLine[key] = b;
+        }
+        foreach (var a in onlyA)
+        {
+            if (bByFirstLine.TryGetValue(FirstLine(a), out var b) && !pairedB.Contains(b))
+            {
+                pairedB.Add(b);
+                bool sameAfterNorm = string.Equals(StripAllWhitespace(a), StripAllWhitespace(b), StringComparison.Ordinal);
+                var (lineA, lineB) = sameAfterNorm ? ("", "") : FirstDifferingLine(a, b);
+                detail.ContentDiffs.Add((FirstLine(a), lineA, lineB, sameAfterNorm));
+            }
+            else
+            {
+                detail.OnlyInLegacy.Add(a);
+            }
+        }
+        foreach (var b in onlyB)
+        {
+            if (!pairedB.Contains(b))
+                detail.OnlyInNovel.Add(b);
+        }
+        return detail;
+    }
+
+    private static void LogBlockDiffDetail(string branch, BlockDiffDetail d)
+    {
+        Info($"[{branch}] 差异明细: 仅A侧 {d.OnlyInLegacy.Count} 块 / 仅B侧 {d.OnlyInNovel.Count} 块 / 双侧皆有但内容不同 {d.ContentDiffs.Count} 块");
+        foreach (var b in d.OnlyInLegacy)
+            Info($"[{branch}]   仅A侧块: \"{Truncate(FirstLine(b), 90)}\"");
+        foreach (var b in d.OnlyInNovel)
+            Info($"[{branch}]   仅B侧块: \"{Truncate(FirstLine(b), 90)}\"");
+        foreach (var (identity, lineA, lineB, sameAfterNorm) in d.ContentDiffs)
+        {
+            if (sameAfterNorm)
+                Info($"[{branch}]   双侧皆有但内容不同: \"{Truncate(identity, 60)}\" → 【归一化后同文】(纯空白/换行差异 → 比对器归一化缺口)");
+            else
+                Info($"[{branch}]   双侧皆有但内容不同: \"{Truncate(identity, 60)}\" → 【真差异】首差异行 A=\"{Truncate(lineA, 70)}\" | B=\"{Truncate(lineB, 70)}\"");
+        }
+    }
+
+    private static string FirstLine(string block) => block.Split('\n')[0].Trim();
+
+    private static string StripAllWhitespace(string text) => string.Concat(text.Where(c => !char.IsWhiteSpace(c)));
+
+    private static (string LineA, string LineB) FirstDifferingLine(string a, string b)
+    {
+        var la = a.Split('\n').Select(l => l.Trim()).ToArray();
+        var lb = b.Split('\n').Select(l => l.Trim()).ToArray();
+        for (int i = 0; i < Math.Max(la.Length, lb.Length); i++)
+        {
+            string x = i < la.Length ? la[i] : "<无此行>";
+            string y = i < lb.Length ? lb[i] : "<无此行>";
+            if (!string.Equals(x, y, StringComparison.Ordinal))
+                return (x, y);
+        }
+        return ("<同文>", "<同文>");
+    }
+
+    private static string Truncate(string text, int max) =>
+        string.IsNullOrEmpty(text) ? text : (text.Length <= max ? text : text.Substring(0, max) + "…");
+
+    // ── §1/§2 会话隔离与同源断言辅助 ──
+
+    /// <summary>反射清除 Tier1SnapshotStore 中该 NPC 的 active/closed 会话记录，
+    /// 保证随后 BuildPlan 的 TryReuseSession 必走“新会话”分支（禁跨分支快照复用）。
+    /// Store 无公开清理 API 且本票禁触生产文件，故沿用 dumper 反射惯例。</summary>
+    private static void ForceNewTier1Sessions(string npcName)
+    {
+        const BindingFlags binding = BindingFlags.NonPublic | BindingFlags.Static;
+        var storeType = typeof(Tier1SnapshotStore);
+        var activeByNpc = storeType.GetField("_activeByNpc", binding)?.GetValue(null) as System.Collections.IDictionary;
+        var activeBySession = storeType.GetField("_activeBySession", binding)?.GetValue(null) as System.Collections.IDictionary;
+        var closed = storeType.GetField("_recentClosedSessions", binding)?.GetValue(null) as System.Collections.IDictionary;
+        if (activeByNpc == null || activeBySession == null || closed == null)
+        {
+            ModEntry.SMonitor?.Log($"{Prefix} Tier1SnapshotStore 反射字段缺失，无法强制新会话", LogLevel.Warn);
+            return;
+        }
+        if (activeByNpc.Contains(npcName))
+        {
+            var record = activeByNpc[npcName];
+            var sessionId = record?.GetType().GetProperty("SessionId")?.GetValue(record) as string;
+            activeByNpc.Remove(npcName);
+            if (!string.IsNullOrEmpty(sessionId))
+                activeBySession.Remove(sessionId);
+        }
+        closed.Remove(npcName);
+    }
+
+    /// <summary>反射读取 Prompts.Context（私有 getter）——同源断言用。</summary>
+    private static DialogueContext GetPromptsContext(Prompts prompts) =>
+        typeof(Prompts).GetProperty("Context", BindingFlags.NonPublic | BindingFlags.Instance)
+            ?.GetValue(prompts) as DialogueContext;
 
     private enum ParityResult { Pass, PassWithWarnings, Fail }
     private static string GetLabel(this ParityResult r) => r switch
