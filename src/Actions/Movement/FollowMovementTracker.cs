@@ -103,6 +103,14 @@ namespace ValleytalkReborn.Movement
         // ─── Dual-rate redirect gate ───
         private const int RETARGET_ARRIVAL_GRACE = 10; // structural-need grace window
 
+        // ─── Player velocity sampling (pixels, FMT-03R rev B) ───
+        private Vector2 _lastPlayerPosition;
+        private Vector2 _playerVelocity;              // tiles/tick
+        private const float VELOCITY_DECAY            = 0.85f;
+        private const float PREDICTION_LOOKAHEAD_TICKS= 22f;  // ~0.36s, running lookahead ≈1.7 tiles
+        private const float PREDICTION_MIN_VEL        = 0.03f;
+        private const float MAX_WARP_DELTA_PX         = 300f;
+
         // ─── Wall-phasing recovery throttle (memory-only) ───
         private int _wallCheckCooldown;
         private const int WALL_CHECK_INTERVAL        = 30;   // ticks between wall checks
@@ -215,6 +223,8 @@ namespace ValleytalkReborn.Movement
             _followPathFailCount       = 0;
             _followPathFailCooldown    = 0;
             _smoothedAddedSpeed = 0; _lastCommittedSpeed = 0;
+            _lastPlayerPosition = Game1.player?.Position ?? Vector2.Zero;
+            _playerVelocity     = Vector2.Zero;
         }
 
         public void Tick(UpdateTickedEventArgs e)
@@ -304,6 +314,27 @@ namespace ValleytalkReborn.Movement
                 _playerIdleTimer++;
             }
 
+            // Player velocity sampling (pixel → tiles/tick, warp-filtered).
+            Vector2 curPos  = Game1.player.Position;
+            Vector2 deltaPx = curPos - _lastPlayerPosition;
+
+            if (deltaPx.LengthSquared() > MAX_WARP_DELTA_PX * MAX_WARP_DELTA_PX)
+            {
+                _playerVelocity     = Vector2.Zero;   // teleport pulse filter
+                _lastPlayerPosition = curPos;
+            }
+            else if (deltaPx.LengthSquared() > 0.04f)
+            {
+                Vector2 instantVel = deltaPx / 64f;   // px/tick → tiles/tick
+                _playerVelocity    = _playerVelocity * 0.4f + instantVel * 0.6f;
+                _lastPlayerPosition = curPos;
+            }
+            else
+            {
+                _playerVelocity *= VELOCITY_DECAY;
+                if (_playerVelocity.LengthSquared() < 0.0001f) _playerVelocity = Vector2.Zero;
+            }
+
             float dist = Vector2.Distance(_followingNpc.Tile, Game1.player.Tile);
 
             if (_followState == FollowState.Pathing)
@@ -389,6 +420,8 @@ namespace ValleytalkReborn.Movement
             _followPathFailCount       = 0;
             _followPathFailCooldown    = 0;
             _smoothedAddedSpeed = 0; _lastCommittedSpeed = 0;
+            _lastPlayerPosition = Game1.player?.Position ?? Vector2.Zero;
+            _playerVelocity     = Vector2.Zero;
         }
 
         // ─── Private helpers ───
@@ -572,7 +605,9 @@ namespace ValleytalkReborn.Movement
                         LogLevel.Warn);
                 }
 
-                var target        = GetSmartFollowTarget();
+                var target = _playerVelocity.Length() > PREDICTION_MIN_VEL
+                    ? GetPredictiveFollowTarget()
+                    : GetSmartFollowTarget();
                 _committedTarget = target;
 
                 bool pathCreated = SetFollowPath(target);
@@ -669,9 +704,16 @@ namespace ValleytalkReborn.Movement
         {
             var player = Game1.player;
             if (player == null || _followingNpc == null) return Vector2.Zero;
+            return GetSmartFollowTargetAround(player.Tile);
+        }
+
+        private Vector2 GetSmartFollowTargetAround(Vector2 centerTile)
+        {
+            var player = Game1.player;
+            if (player == null || _followingNpc == null) return Vector2.Zero;
 
             var loc = player.currentLocation;
-            if (loc == null) return player.Tile;
+            if (loc == null) return centerTile;
 
             int behindDx = 0, behindDy = 0;
             switch (player.FacingDirection)
@@ -691,16 +733,16 @@ namespace ValleytalkReborn.Movement
                     candidates.Add((t, Vector2.Distance(_followingNpc.Tile, t) - bonus));
             }
 
-            AddCandidate(new Vector2(player.Tile.X + behindDx,     player.Tile.Y + behindDy),     1.5f);
-            AddCandidate(new Vector2(player.Tile.X + behindDx * 2, player.Tile.Y + behindDy * 2), 1.0f);
-            AddCandidate(new Vector2(player.Tile.X + 1,  player.Tile.Y));
-            AddCandidate(new Vector2(player.Tile.X - 1,  player.Tile.Y));
-            AddCandidate(new Vector2(player.Tile.X,      player.Tile.Y + 1));
-            AddCandidate(new Vector2(player.Tile.X,      player.Tile.Y - 1));
-            AddCandidate(new Vector2(player.Tile.X + 1,  player.Tile.Y + 1));
-            AddCandidate(new Vector2(player.Tile.X - 1,  player.Tile.Y - 1));
-            AddCandidate(new Vector2(player.Tile.X + 1,  player.Tile.Y - 1));
-            AddCandidate(new Vector2(player.Tile.X - 1,  player.Tile.Y + 1));
+            AddCandidate(new Vector2(centerTile.X + behindDx,     centerTile.Y + behindDy),     1.5f);
+            AddCandidate(new Vector2(centerTile.X + behindDx * 2, centerTile.Y + behindDy * 2), 1.0f);
+            AddCandidate(new Vector2(centerTile.X + 1,  centerTile.Y));
+            AddCandidate(new Vector2(centerTile.X - 1,  centerTile.Y));
+            AddCandidate(new Vector2(centerTile.X,      centerTile.Y + 1));
+            AddCandidate(new Vector2(centerTile.X,      centerTile.Y - 1));
+            AddCandidate(new Vector2(centerTile.X + 1,  centerTile.Y + 1));
+            AddCandidate(new Vector2(centerTile.X - 1,  centerTile.Y - 1));
+            AddCandidate(new Vector2(centerTile.X + 1,  centerTile.Y - 1));
+            AddCandidate(new Vector2(centerTile.X - 1,  centerTile.Y + 1));
 
             if (candidates.Count == 0)
             {
@@ -708,17 +750,37 @@ namespace ValleytalkReborn.Movement
                 for (int dx = -2; dx <= 2; dx++)
                 {
                     if (dx == 0 && dy == 0) continue;
-                    var fallback = new Vector2(player.Tile.X + dx, player.Tile.Y + dy);
+                    var fallback = new Vector2(centerTile.X + dx, centerTile.Y + dy);
                     if (fallback == _followingNpc.Tile) continue;
                     if (MovementPathfinding.IsTileWalkable(loc, fallback, _followingNpc))
                         return fallback;
                 }
 
-                return new Vector2(player.Tile.X + 1, player.Tile.Y + 1);
+                return new Vector2(centerTile.X + 1, centerTile.Y + 1);
             }
 
             candidates.Sort((a, b) => a.cost.CompareTo(b.cost));
             return candidates[0].tile;
+        }
+
+        private Vector2 GetPredictiveFollowTarget()
+        {
+            var player = Game1.player;
+            var npc    = _followingNpc;
+            if (player == null || npc == null) return GetSmartFollowTarget();
+
+            var loc = player.currentLocation;
+            if (loc == null) return GetSmartFollowTarget();
+
+            Vector2 offset = _playerVelocity * PREDICTION_LOOKAHEAD_TICKS;      // tiles/tick × tick = tiles
+            Vector2 predicted = new Vector2(
+                (float)Math.Round(player.Tile.X + offset.X),
+                (float)Math.Round(player.Tile.Y + offset.Y));
+
+            if (!MovementPathfinding.IsTileWalkable(loc, predicted, npc))
+                return GetSmartFollowTarget();
+
+            return GetSmartFollowTargetAround(predicted);
         }
 
         private bool SetFollowPath(Vector2 target)
