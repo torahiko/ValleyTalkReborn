@@ -582,9 +582,9 @@ public class Prompts
     private static string AssembleTier1(InjectionPlan plan)
     {
         var prompt = new StringBuilder();
-        // 契约：新会话时 Tier1Snapshot 为 null（InjectionPlan 文档），该层渲染为空。
+        // 契约（VT3-C2-A1）：Tier1Snapshot 始终非空（VT3-D BuildPlan 契约）；null = BUG，响亮失败。
         if (plan.Tier1Snapshot == null)
-            return prompt.ToString();
+            throw new InvalidOperationException("InjectionPlan.Tier1Snapshot must be non-null; BuildPlan builds and registers the snapshot for new sessions before assembling the plan.");
         foreach (var blockId in Tier1BlockSequence)
         {
             string text = plan.Tier1Snapshot.Get(blockId);

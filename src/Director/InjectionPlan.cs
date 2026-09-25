@@ -22,7 +22,7 @@ public sealed class InjectionPlan
     /// <summary>本次请求所处的对话分支。</summary>
     public InstructionsBranch Branch { get; init; }
 
-    /// <summary>续用时复用的 Tier 1 快照；新会话时为 null。</summary>
+    /// <summary>始终非空：新会话由 BuildPlan 构建并注册快照后携带（VT3-D 契约）。</summary>
     public Tier1SnapshotContext Tier1Snapshot { get; init; }
 
     /// <summary>历史窗口大小（已 Clamp 到 1..20）。短上下文门控在装配层。</summary>
