@@ -1003,6 +1003,50 @@ public class Prompts
             return Util.GetString(character, "friendshipLongTermBond", new { Hearts = hearts, Note = note });
         }
 
+        /// <summary>构建关系基础块（RelationBase）：友谊/婚姻层级、子女、配偶、里程碑状态。
+        /// 原 ConversationDirector.BuildRelationBase 逐字迁移，参数显式传递。</summary>
+        internal static string BuildRelationBase(
+            Character character,
+            DialogueContext context,
+            CharacterData npcData,
+            string name,
+            string milestoneBlock,
+            ContextFlags flags)
+        {
+            var prompt = new StringBuilder();
+            bool npcIsMale = npcData.Gender == StardewValley.Gender.Male;
+
+            Friendship friendship = null;
+            Game1.getPlayerOrEventFarmer()?.friendshipData?.TryGetValue(character.Name, out friendship);
+            bool isMarriedOrRoommate = friendship != null && (friendship.IsMarried() || friendship.IsRoommate());
+
+            if (isMarriedOrRoommate)
+            {
+                if (friendship.IsRoommate())
+                {
+                    prompt.AppendLine(Util.GetString(character, "coreRoommates", new { Name = name }));
+                }
+                else
+                {
+                    prompt.AppendLine(Util.GetString(character, "coreMarried",
+                        new { Name = name, Pronoun = npcIsMale ? "his" : "her" }));
+                    prompt.Append(BuildChildren(character, context, friendship, name));
+                }
+                prompt.Append(BuildSpouse(character, name));
+                if (flags?.IncludeFarmDetails == true)
+                    prompt.Append(BuildTrinkets(character, name));
+                prompt.Append(BuildMarriageFeelings(character, context, name));
+            }
+            else
+            {
+                prompt.Append(BuildNonSpouseFriendshipLevel(character, context, npcData));
+                prompt.Append(BuildSpouse(character, name));
+                prompt.Append(BuildSpecialRelationshipStatus(character, context, friendship, milestoneBlock, name));
+            }
+
+            return prompt.ToString();
+        }
+
         internal static string BuildSpecialRelationshipStatus(Character character, DialogueContext context, Friendship friendship, string pendingMilestoneBlock, string name)
         {
             var prompt = new StringBuilder();
