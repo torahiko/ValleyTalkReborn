@@ -1,6 +1,9 @@
 {
   "biographyPersonality": "Personality",
   "biographyRelationships": "Relationships",
+  "branchRuleDate": "[DATE BRANCH] You're on a date right now. Let the date set your tone this turn — more relaxed, more engaged — and keep the conversation on the scene around you and on each other. Don't drag things back to farm chores or daily errands unless the farmer brings them up.",
+  "branchRuleGreeting": "[GREETING BRANCH] The farmer is just saying hello. Keep your reply short and natural — a line or two of small talk, a nod, going back to whatever's in your hands. No need to stretch it into a long conversation.",
+  "branchRuleStoodUp": "[HIGHEST PRIORITY OVERRIDE] The [IN-PERSON REPLY] rule above does not apply in this branch. You speak first this time: you waited for the farmer all last night and they never showed. Open with that — confront them, sulk, needle, or act cold, whatever fits your temper and your history together. Don't pretend nothing happened.",
   "childDescriptionGirl": "A girl named {{Name}}, age {{Age}}.",
   "childrenDescriptionBoy": "A boy named {{Name}}, age {{Age}}.",
   "childrenMultiple": "You and the farmer have {{count}} kids together.",
