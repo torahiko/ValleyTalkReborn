@@ -29,7 +29,7 @@ namespace ValleytalkReborn;
 /// <summary>
 /// Debug utility that captures, per NPC, the exact prompt topology the
 /// production管线 would send to the LLM, across the four canonical branches.
-/// Registered as the SMAPI console command `vt_dump_topology &lt;NpcName&gt;`.
+/// Registered as the SMAPI console command `vt_dump_topology <NpcName>`.
 /// </summary>
 internal static class PromptTopologyDumper
 {
@@ -76,18 +76,16 @@ internal static class PromptTopologyDumper
 
         string npcName = args[0];
 
-        MainThreadDispatcher.RunOnMainThreadAsync(() =>
+        // SMAPI 控制台命令本身已在游戏主线程中调度执行，直接运行即可，避免死锁
+        try
         {
-            try
-            {
-                EnsureReflection();
-                RunDump(npcName);
-            }
-            catch (Exception ex)
-            {
-                ModEntry.SMonitor?.Log($"{Prefix} 命令执行失败: {ex}", LogLevel.Error);
-            }
-        }).GetAwaiter().GetResult();
+            EnsureReflection();
+            RunDump(npcName);
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log($"{Prefix} 命令执行失败: {ex}", LogLevel.Error);
+        }
     }
 
     private static void RunDump(string npcName)
@@ -184,8 +182,8 @@ internal static class PromptTopologyDumper
         {
             Info("[Date] 进入约会状态…");
 
-            // 通过反射把 DateManager 驱动到 Active（无公开 API 可直接到达 Active）。
-            SetDateField(nameof(DatePhase), typeof(DatePhase), DatePhase.Active);
+            // 通过反射把 DateManager 驱动到 Active（修正：属性名为 "Phase"）
+            SetDateField("Phase", typeof(DatePhase), DatePhase.Active);
             SetDateField(nameof(DateManager.ActiveDateNpcName), typeof(string), character.Name);
             SetDateField(nameof(DateManager.ActiveDateLocation), typeof(string),
                 Game1.player?.currentLocation?.Name ?? "");
@@ -212,7 +210,7 @@ internal static class PromptTopologyDumper
                 try
                 {
                     Info("[Date] 退出并恢复原状态…");
-                    SetDateField(nameof(DatePhase), typeof(DatePhase), origPhase);
+                    SetDateField("Phase", typeof(DatePhase), origPhase);
                     SetDateField(nameof(DateManager.ActiveDateNpcName), typeof(string), origNpc);
                     SetDateField(nameof(DateManager.ActiveDateLocation), typeof(string), origLoc);
                     SetDateField(nameof(DateManager.CurrentDateMode), typeof(DateManager.DateMode), origMode);
@@ -350,7 +348,8 @@ internal static class PromptTopologyDumper
 
         try
         {
-            var milestone = InvokeStatic(_milestoneBlock, character) as string;
+            object milestoneMgr = GetMilestoneManagerInstance();
+            var milestone = InvokeMethod(_milestoneBlock, milestoneMgr, character) as string;
             if (!string.IsNullOrEmpty(milestone))
                 prompts.PendingMilestoneBlock = milestone;
         }
@@ -426,7 +425,7 @@ internal static class PromptTopologyDumper
         _bridgeBlock = ResolveStatic("ValleytalkReborn.FreshBarkBridgeStore", "BuildBridgeBlock");
         _echoBlock = ResolveStaticTwoArgs("ValleytalkReborn.ImmediateEchoStore", "BuildEchoBlock");
         _milestoneBlock = ResolveMethod(
-            typeof(RelationshipMilestoneManager).GetMethod("BuildMilestoneBlock", BindingFlags.Public | BindingFlags.Instance));
+            typeof(RelationshipMilestoneManager).GetMethod("BuildMilestoneBlock", BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static));
 
         _reflectionResolved = true;
     }
@@ -478,6 +477,22 @@ internal static class PromptTopologyDumper
     {
         if (mi == null) return null;
         return mi.Invoke(null, args);
+    }
+
+    private static object InvokeMethod(MethodInfo mi, object target, params object[] args)
+    {
+        if (mi == null) return null;
+        return mi.Invoke(mi.IsStatic ? null : target, args);
+    }
+
+    private static object GetMilestoneManagerInstance()
+    {
+        var type = typeof(RelationshipMilestoneManager);
+        var prop = type.GetProperty("Instance", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+        if (prop != null) return prop.GetValue(null);
+
+        var field = type.GetField("Instance", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+        return field?.GetValue(null);
     }
 
     private static void PromptDeduplicatorDeduplicate(Prompts prompts)
