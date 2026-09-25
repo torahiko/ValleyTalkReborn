@@ -89,4 +89,7 @@ public bool IsExpired => (DateTime.Now - LastActivity).TotalMinutes > ExpiryMinu
     public void ResetAll() => _cache.Clear();
 
     public void Reset(string npcName) => _cache.Remove(npcName);
+
+    // VT3-E: 供 vt_ab_topology_multi 清除 continuity 干扰源。
+    internal static void ClearForNpc(string npcName) => Instance.Reset(npcName);
 }

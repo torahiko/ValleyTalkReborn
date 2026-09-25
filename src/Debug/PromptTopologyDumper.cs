@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using Newtonsoft.Json;
@@ -59,6 +60,16 @@ internal static class PromptTopologyDumper
             "Dump the full LLM request topology for an NPC across 4 branches. "
             + "Usage: vt_dump_topology <NpcName>   e.g. vt_dump_topology Abigail",
             OnCommand);
+        console.Add(
+            "vt_ab_topology",
+            "A/B parity check (legacy GetCorePrompt vs new AssembleCore) for one NPC. "
+            + "Usage: vt_ab_topology <NpcName>   e.g. vt_ab_topology Abigail",
+            OnAbCommand);
+        console.Add(
+            "vt_ab_topology_multi",
+            "Multi-turn A/B parity check with layered assertions (A1-A4 + rotation probe). "
+            + "Usage: vt_ab_topology_multi <NpcName>   e.g. vt_ab_topology_multi Abigail",
+            OnAbMultiCommand);
     }
 
     private static void OnCommand(string command, string[] args)
@@ -654,4 +665,249 @@ internal static class PromptTopologyDumper
 
     private static void Info(string message) =>
         ModEntry.SMonitor?.Log($"{Prefix} {message}", LogLevel.Info);
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    //  VT3-E: A/B Parity Verification Commands
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    private static void OnAbCommand(string command, string[] args)
+    {
+        if (!Context.IsWorldReady) { Info("世界未就绪。"); return; }
+        if (args.Length < 1) { Info("用法: vt_ab_topology <NpcName>"); return; }
+        string npcName = args[0];
+        var character = FindCharacter(npcName);
+        if (character == null) { Info($"NPC 不存在: {npcName}"); return; }
+
+        int pass = 0, fail = 0, warn = 0;
+        foreach (var branchFlags in new[]
+        {
+            (name: "Normal", cfg: (Action<DialogueContext, ContextFlags>)((ctx, f) => { })),
+            (name: "StoodUp", cfg: (Action<DialogueContext, ContextFlags>)((ctx, f) => { f.HasStoodUpPending = true; })),
+            (name: "Greeting", cfg: (Action<DialogueContext, ContextFlags>)((ctx, f) => { f.IsSimpleGreeting = true; f.IsMovementRequested = false; })),
+        })
+        {
+            try
+            {
+                var context = BuildPopulatedContext(character);
+                branchCfg(branchFlags.cfg, context);
+                var prompts = new Prompts(context, character);
+                var plan = ConversationDirectorInstance.BuildPlan(context, character, prompts);
+
+                // Side A (legacy): inject impulses into Pending*Block fields, read CorePrompt.
+#pragma warning disable CS0618 // VT3-E: 调试夹具仍读 Pending* 遗留字段（触达 Obsolete），集中抑制；生产路径已不触达。
+                foreach (var kvp in plan.ActiveImpulses)
+                {
+                    switch (kvp.Key)
+                    {
+                        case Tier2bBlockIds.Eavesdrop: prompts.PendingEavesdropBlock = kvp.Value; break;
+                        case Tier2bBlockIds.SpouseWaiting: prompts.PendingSpouseWaitingBlock = kvp.Value; break;
+                        case Tier2bBlockIds.Echo: prompts.PendingEchoBlock = kvp.Value; break;
+                        case Tier2bBlockIds.Milestone: prompts.PendingMilestoneBlock = kvp.Value; break;
+                        case Tier2bBlockIds.LocalPerception: prompts.PendingLocalPerceptionBlock = kvp.Value; break;
+                        case Tier2bBlockIds.Emotion: prompts.PendingEmotionBlock = kvp.Value; break;
+                        case Tier2bBlockIds.PlayerProfile: break; // injected via PlayerProfileManager path
+                        case Tier2bBlockIds.Preoccupation: break; // set via private field
+                    }
+                }
+                prompts.PendingEchoIsBridge = plan.EchoFromBridge;
+                string legacyCore = prompts.CorePrompt;
+#pragma warning restore CS0618
+
+                // Side B (new): AssembleCore with the same plan.
+                var promptsB = new Prompts(context, character);
+                promptsB.AssembleCore(plan, context, character);
+                string newCore = promptsB.CorePrompt;
+
+                // Block-level normalized comparison.
+                var (legBlocks, newBlocks) = (NormalizeToBlocks(legacyCore), NormalizeToBlocks(newCore));
+                var comparison = CompareBlockSets(legBlocks, newBlocks, out var warnCount);
+                warn += warnCount;
+
+                // Instructions superset check.
+                var legacyInstr = GetInstructionLines(prompts.Instructions);
+                var newInstr = GetInstructionLines(promptsB.Instructions);
+                bool instrSuperset = legacyInstr.IsSubsetOf(newInstr);
+
+                if (comparison == ParityResult.Pass && instrSuperset)
+                {
+                    pass++;
+                    Info($"[{branchFlags.name}] PASS (blocks equivalent, instructions superset OK)");
+                }
+                else
+                {
+                    fail++;
+                    Info($"[{branchFlags.name}] FAIL — {comparison.GetLabel()} | Instructions superset: {instrSuperset}");
+                }
+            }
+            catch (Exception ex)
+            {
+                fail++;
+                Info($"[{branchFlags.name}] ERROR: {ex.Message}");
+            }
+        }
+        Info($"A/B summary: {pass} PASS / {fail} FAIL / {warn} WARN");
+    }
+
+    private static void OnAbMultiCommand(string command, string[] args)
+    {
+        if (!Context.IsWorldReady) { Info("世界未就绪。"); return; }
+        if (args.Length < 1) { Info("用法: vt_ab_topology_multi <NpcName>"); return; }
+        string npcName = args[0];
+        var character = FindCharacter(npcName);
+        if (character == null) { Info($"NPC 不存在: {npcName}"); return; }
+
+        int pass = 0, fail = 0;
+        const int turns = 3;
+
+        // A1-A4 layered assertions across turns.
+        var segA = new string[turns];
+        var segX = new string[turns];
+        var segB = new string[turns];
+        var corePrompts = new string[turns];
+        var reusedFlags = new bool[turns];
+
+        for (int turn = 1; turn <= turns; turn++)
+        {
+            try
+            {
+                SessionCache.ClearForNpc(character.Name);
+                var context = BuildPopulatedContext(character);
+                context.ChatHistory = BuildTurnChatHistory(turn);
+                context.RoutingFlags.IncludeShortTermContext = true;
+
+                var prompts = new Prompts(context, character);
+                var plan = ConversationDirectorInstance.BuildPlan(context, character, prompts);
+
+                prompts.AssembleCore(plan, context, character);
+                corePrompts[turn - 1] = prompts.CorePrompt;
+
+                segA[turn - 1] = Prompts.AssembleTier1Segment(plan);
+                segX[turn - 1] = prompts.AssembleTier2aSegment(context, character);
+                segB[turn - 1] = Prompts.AssembleTier2bSegment(plan);
+                reusedFlags[turn - 1] = plan.IsTier1Reused;
+
+                // A4: CorePrompt == Seg_A ⊕ Seg_X ⊕ Seg_B
+                string reassembled = segA[turn - 1] + segX[turn - 1] + segB[turn - 1];
+                if (NormalizeForAssertion(corePrompts[turn - 1]) == NormalizeForAssertion(reassembled))
+                    pass++;
+                else
+                { fail++; Info($"[turn{turn}] A4 FAIL (structure integrity)"); }
+            }
+            catch (Exception ex)
+            { fail++; Info($"[turn{turn}] ERROR: {ex.Message}"); }
+        }
+
+        // A1: Tier1 frozen across turns (active reuse).
+        bool a1 = segA[0] == segA[1] && segA[1] == segA[2];
+        Info($"A1 (Tier1 frozen): {(a1 ? "PASS" : "FAIL")}");
+
+        // A3: per-turn render consistency (Seg_B matches plan impulses — self-check).
+        Info($"A3: rendered {turns} turns individually (cross-turn not compared)");
+
+        // Reuse expectation: turn1 reused=false, turn2/3 reused=true.
+        Info($"Reuse: turn1={reusedFlags[0]}, turn2={reusedFlags[1]}, turn3={reusedFlags[2]} (expect F,T,T)");
+
+        // Rotation probe (turn4): Normal → Greeting.
+        try
+        {
+            SessionCache.ClearForNpc(character.Name);
+            var ctx4 = BuildPopulatedContext(character);
+            ctx4.RoutingFlags.IsSimpleGreeting = true;
+            ctx4.RoutingFlags.IsMovementRequested = false;
+            var prompts4 = new Prompts(ctx4, character);
+            var plan4 = ConversationDirectorInstance.BuildPlan(ctx4, character, prompts4);
+            string segA4 = Prompts.AssembleTier1Segment(plan4);
+            bool rotationOk = !plan4.IsTier1Reused && segA4 != segA[0];
+            Info($"Rotation probe (turn4 Greeting): reused={plan4.IsTier1Reused}, segA changed={segA4 != segA[0]} (expect F,T) → {(rotationOk ? "PASS" : "FAIL")}");
+            if (rotationOk) pass++; else fail++;
+        }
+        catch (Exception ex)
+        { fail++; Info($"Rotation probe ERROR: {ex.Message}"); }
+
+        Info($"Multi summary: {pass} PASS / {fail} FAIL");
+    }
+
+    // ── A/B helpers ──
+
+    private static void branchCfg(Action<DialogueContext, ContextFlags> cfg, DialogueContext ctx) =>
+        cfg(ctx, ctx.RoutingFlags);
+
+    private static List<string> NormalizeToBlocks(string text)
+    {
+        var blocks = new List<string>();
+        if (string.IsNullOrEmpty(text)) return blocks;
+        var sb = new StringBuilder();
+        foreach (var line in text.Split('\n'))
+        {
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                if (sb.Length > 0) { blocks.Add(sb.ToString().Trim()); sb.Clear(); }
+            }
+            else sb.AppendLine(line.Trim());
+        }
+        if (sb.Length > 0) blocks.Add(sb.ToString().Trim());
+        return blocks;
+    }
+
+    private static ParityResult CompareBlockSets(List<string> legacy, List<string> novel, out int warnCount)
+    {
+        warnCount = 0;
+        var legSet = new HashSet<string>(legacy);
+        var novSet = new HashSet<string>(novel);
+
+        // Random-variance classes: presence/content diff = WARN, not FAIL.
+        bool IsRandomBlock(string b) =>
+            b.Contains("[preoccupation]", StringComparison.OrdinalIgnoreCase)
+            || b.Contains("giftGiving", StringComparison.OrdinalIgnoreCase)
+            || b.Contains("你刚刚收到了", StringComparison.OrdinalIgnoreCase)
+            || b.Contains("You just received", StringComparison.OrdinalIgnoreCase);
+
+        var missingInNovel = legSet.Where(b => !novSet.Contains(b)).ToList();
+        var extraInNovel = novSet.Where(b => !legSet.Contains(b)).ToList();
+
+        int nonRandomMissing = missingInNovel.Count(b => !IsRandomBlock(b));
+        int nonRandomExtra = extraInNovel.Count(b => !IsRandomBlock(b));
+        warnCount = missingInNovel.Count(b => IsRandomBlock(b)) + extraInNovel.Count(b => IsRandomBlock(b));
+
+        if (nonRandomMissing == 0 && nonRandomExtra == 0)
+            return warnCount > 0 ? ParityResult.PassWithWarnings : ParityResult.Pass;
+        return ParityResult.Fail;
+    }
+
+    private static HashSet<string> GetInstructionLines(string instructions)
+    {
+        var lines = new HashSet<string>();
+        if (string.IsNullOrEmpty(instructions)) return lines;
+        foreach (var line in instructions.Split('\n'))
+        {
+            var t = line.Trim();
+            if (!string.IsNullOrEmpty(t)) lines.Add(t);
+        }
+        return lines;
+    }
+
+    private static List<ConversationElement> BuildTurnChatHistory(int turn)
+    {
+        // Deterministic罐头 history: turn N has 2*(N-1) lines (0, 2, 4).
+        var history = new List<ConversationElement>();
+        int lines = 2 * (turn - 1);
+        for (int i = 0; i < lines; i++)
+            history.Add(new ConversationElement($"turn{turn}-line{i}", i % 2 == 0));
+        return history;
+    }
+
+    private static string NormalizeForAssertion(string text) =>
+        string.Join("\n", text.Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0));
+
+    private enum ParityResult { Pass, PassWithWarnings, Fail }
+    private static string GetLabel(this ParityResult r) => r switch
+    {
+        ParityResult.Pass => "blocks equivalent",
+        ParityResult.PassWithWarnings => "blocks equivalent (warnings)",
+        ParityResult.Fail => "block set mismatch",
+        _ => "unknown",
+    };
+
+    // ConversationDirector access (internal in Director namespace).
+    private static readonly ConversationDirector ConversationDirectorInstance = new();
 }

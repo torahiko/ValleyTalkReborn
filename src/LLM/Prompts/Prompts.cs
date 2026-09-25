@@ -639,6 +639,11 @@ public class Prompts
         return prompt.ToString();
     }
 
+    // ── VT3-E 分段访问器（单行委托，清理步不得移除；供 vt_ab_topology_multi 分层断言使用）──
+    internal static string AssembleTier1Segment(InjectionPlan plan) => AssembleTier1(plan);
+    internal string AssembleTier2aSegment(DialogueContext context, Character character) => AssembleTier2a(context, character);
+    internal static string AssembleTier2bSegment(InjectionPlan plan) => AssembleTier2b(plan);
+
     private void LogTopologyVerification(string finalPrompt, string routeType)
     {
 #pragma warning disable CS0618 // VT3-D: 方法体留 VT3-E 删除；Pending* 状态读取触达 Obsolete，集中抑制。
