@@ -63,10 +63,9 @@ public sealed class ConversationDirector : IConversationDirector
             throw new InvalidOperationException("[Director] Tier1Snapshot must be non-null after build/reuse.");
 
         // ── Step 4: 解析活跃脉冲（C1 静态生产者）──
-        IReadOnlyDictionary<string, string> impulses = ResolveActiveImpulses(context, character, branch, prompts);
+        var activeImpulses = ResolveActiveImpulses(context, character, branch, prompts);
 
         // ── Echo：桥优先（consume-on-read，每请求一次），并置 EchoFromBridge ──
-        var activeImpulses = new Dictionary<string, string>(impulses, StringComparer.Ordinal);
         bool echoFromBridge = false;
         string bridgeBlock = FreshBarkBridgeStore.BuildBridgeBlock(character.Name);
         if (!string.IsNullOrEmpty(bridgeBlock))
@@ -234,7 +233,7 @@ public sealed class ConversationDirector : IConversationDirector
     // ── Step 4: 解析活跃脉冲（Tier 2b）──
     // 显式 per-branch 白名单（权威 = 薄壳 GetCorePrompt 调用点）。
     // 禁止依赖值门控隐式覆盖分支结构约束：白名单即结构契约，值门控仅作内容过滤。
-    private IReadOnlyDictionary<string, string> ResolveActiveImpulses(
+    private Dictionary<string, string> ResolveActiveImpulses(
         DialogueContext context, Character character, InstructionsBranch branch, Prompts prompts)
     {
         var impulses = new Dictionary<string, string>(StringComparer.Ordinal);
