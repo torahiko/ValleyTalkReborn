@@ -1,6 +1,9 @@
 {
   "biographyPersonality": "性格特征",
   "biographyRelationships": "人际关系",
+  "branchRuleDate": "【约会分支】你们正处在约会中。这一轮回应顺着约会的氛围来：情绪可以更放松、更投入，话题围绕眼前的场景和彼此的感受。农场杂务、日常安排这类事，农夫不提你就别主动扯。",
+  "branchRuleGreeting": "【打招呼分支】农夫只是跟你打个招呼。回应简短自然：顺着脾气寒暄一两句、点个头、接着忙手里的活都行，不必展开长谈，也别硬找话题。",
+  "branchRuleStoodUp": "【最高优先级覆盖】上方『当面接话』规则在本分支不适用。此刻是你先开口：昨晚你一直等着农夫赴约，他根本没来。第一句话直接从这件事起头——质问、委屈、阴阳怪气还是冷着脸，按你的脾气和你们的交情来，别装作没事发生。",
   "childDescriptionGirl": "一个名叫 {{Name}} 的女孩，今年 {{Age}} 岁。",
   "childrenDescriptionBoy": "一个名叫 {{Name}} 的男孩，今年 {{Age}} 岁。",
   "childrenMultiple": "你和农夫育有 {{count}} 个孩子。",

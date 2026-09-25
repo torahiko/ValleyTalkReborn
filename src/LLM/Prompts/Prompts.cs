@@ -541,6 +541,109 @@ public class Prompts
         return finalPrompt;
     }
 
+    // ── VT3-C2: 分层拼装入口（惰性交付，零生产调用方；VT3-E 接线）──
+    // Tier1 快照层（plan.Tier1Snapshot）→ Tier2a 会话层 → Tier2b 脉冲层。
+    // 不变式：Tier2b 零管理器调用、零内容构建——脉冲内容单一事实源为 plan.ActiveImpulses
+    // （由 VT3-D BuildPlan 一次性预构建）；Tier2a 仅经 C1 静态生产者做只读上下文读取；
+    // plan 全程只读。
+
+    /// <summary>Tier 1 拼装序列（11 项，顺序固定）。</summary>
+    private static readonly IReadOnlyList<string> Tier1BlockSequence = new[]
+    {
+        Tier1BlockIds.GameState, Tier1BlockIds.EventHistory, Tier1BlockIds.BranchTheme,
+        Tier1BlockIds.Scene, Tier1BlockIds.CompanionFocus, Tier1BlockIds.GreetingContext,
+        Tier1BlockIds.RelationBase, Tier1BlockIds.RecentEvents, Tier1BlockIds.SpecialDates,
+        Tier1BlockIds.SpouseAction, Tier1BlockIds.EvolvedTraits,
+    };
+
+    /// <summary>Tier 2b 拼装序列（16 项，顺序固定）。</summary>
+    private static readonly IReadOnlyList<string> Tier2bBlockSequence = new[]
+    {
+        Tier2bBlockIds.Interaction, Tier2bBlockIds.Jealousy, Tier2bBlockIds.Preoccupation,
+        Tier2bBlockIds.PendingTopic, Tier2bBlockIds.Gift, Tier2bBlockIds.Milestone,
+        Tier2bBlockIds.Echo, Tier2bBlockIds.Eavesdrop, Tier2bBlockIds.SpouseWaiting,
+        Tier2bBlockIds.LocalPerception, Tier2bBlockIds.Emotion, Tier2bBlockIds.PlayerProfile,
+        Tier2bBlockIds.DateInvite, Tier2bBlockIds.FollowProto, Tier2bBlockIds.DateEndProto,
+        Tier2bBlockIds.Movement,
+    };
+
+    public void AssembleCore(InjectionPlan plan, DialogueContext context, Character character)
+    {
+        if (plan == null)
+            throw new ArgumentNullException(nameof(plan));
+
+        var prompt = new StringBuilder();
+        prompt.Append(AssembleTier1(plan));
+        prompt.Append(AssembleTier2a(context, character));
+        prompt.Append(AssembleTier2b(plan));
+        CorePrompt = prompt.ToString();
+    }
+
+    private static string AssembleTier1(InjectionPlan plan)
+    {
+        var prompt = new StringBuilder();
+        // 契约：新会话时 Tier1Snapshot 为 null（InjectionPlan 文档），该层渲染为空。
+        if (plan.Tier1Snapshot == null)
+            return prompt.ToString();
+        foreach (var blockId in Tier1BlockSequence)
+        {
+            string text = plan.Tier1Snapshot.Get(blockId);
+            if (!string.IsNullOrEmpty(text))
+            {
+                prompt.AppendLine(text);
+                prompt.AppendLine();
+            }
+        }
+        return prompt.ToString();
+    }
+
+    private string AssembleTier2a(DialogueContext context, Character character)
+    {
+        var prompt = new StringBuilder();
+        // ★顺序反转唯一落点★：continuity 先于 CurrentConversation（最新对话沉底）。
+        // shortCtx 钳制（shortCtxAllowed ? configured : 1）保留在 BuildCurrentConversation 体内；
+        // plan.HistoryWindowSize 即该 configured 值（VT3-D BuildPlan 契约，已 Clamp 1..20）。
+        prompt.Append(PromptsBlocks.BuildSessionContinuity(character, context, IsChineseLanguage));
+        prompt.Append(PromptsBlocks.BuildCurrentConversation(character, context, CurrentFlags, _emittedBlockKeys, Name));
+        return prompt.ToString();
+    }
+
+    private static string AssembleTier2b(InjectionPlan plan)
+    {
+        var prompt = new StringBuilder();
+        foreach (var blockId in Tier2bBlockSequence)
+        {
+            if (!plan.ActiveImpulses.TryGetValue(blockId, out string text) || string.IsNullOrEmpty(text))
+                continue;
+            switch (blockId)
+            {
+                case Tier2bBlockIds.Interaction:
+                case Tier2bBlockIds.Jealousy:
+                case Tier2bBlockIds.Preoccupation:
+                case Tier2bBlockIds.PendingTopic:
+                case Tier2bBlockIds.Gift:
+                case Tier2bBlockIds.Milestone:
+                case Tier2bBlockIds.Echo:
+                case Tier2bBlockIds.Eavesdrop:
+                case Tier2bBlockIds.SpouseWaiting:
+                case Tier2bBlockIds.LocalPerception:
+                case Tier2bBlockIds.Emotion:
+                case Tier2bBlockIds.PlayerProfile:
+                case Tier2bBlockIds.DateInvite:
+                case Tier2bBlockIds.FollowProto:
+                case Tier2bBlockIds.DateEndProto:
+                case Tier2bBlockIds.Movement:
+                    prompt.AppendLine(text);
+                    prompt.AppendLine();
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(blockId), blockId,
+                        "Unmapped Tier 2b block id in Tier2bBlockSequence.");
+            }
+        }
+        return prompt.ToString();
+    }
+
     private void LogTopologyVerification(string finalPrompt, string routeType)
     {
         if (!ModEntry.Config?.Debug ?? true)
@@ -728,6 +831,12 @@ public class Prompts
 
     private string GetInstructions()
     {
+        return GetInstructions(InstructionsBranch.Normal);
+    }
+
+    // VT3-C2：基础模板逻辑与遗留逐字一致；仅在其后按 branch 追加分支规则（Normal 零追加）。
+    private string GetInstructions(InstructionsBranch branch)
+    {
         var instructions = new StringBuilder();
         bool isZh = IsChineseLanguage;
         bool enableResponses = ModEntry.Config?.EnableSuggestedResponses ?? true;
@@ -788,6 +897,19 @@ public class Prompts
         if (!string.IsNullOrWhiteSpace(Llm.Instance.ExtraInstructions))
         {
             instructions.AppendLine(Llm.Instance.ExtraInstructions);
+        }
+
+        switch (branch)
+        {
+            case InstructionsBranch.StoodUp:
+                instructions.AppendLine(Util.GetString(Character, "branchRuleStoodUp"));
+                break;
+            case InstructionsBranch.Date:
+                instructions.AppendLine(Util.GetString(Character, "branchRuleDate"));
+                break;
+            case InstructionsBranch.Greeting:
+                instructions.AppendLine(Util.GetString(Character, "branchRuleGreeting"));
+                break;
         }
         return instructions.ToString();
     }
