@@ -1259,8 +1259,8 @@ public class Prompts
             if (isFestivalToday)
             {
                 sb.AppendLine(isZh
-                    ? "- 冲突拒绝: 今天是节日，日程有冲突。在对白中委婉说明改天再约，本次仅输出对白文本。"
-                    : "- DECLINE: Festival conflict today. Explain in dialogue that you'll reschedule; output dialogue text only.");
+                    ? "- 冲突拒绝: 今天是节日，日程有冲突。在台词中委婉说明改天再约，并在最末尾附加 [UI:DATE_INVITE_REJECT]。"
+                    : "- CONFLICT DECLINE: Festival today. Explain in dialogue that you'll reschedule, AND append [UI:DATE_INVITE_REJECT] at the absolute end.");
             }
             else
             {
