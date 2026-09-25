@@ -325,32 +325,10 @@ public class Prompts
         var prompt = new StringBuilder();
         foreach (var blockId in Tier2bBlockSequence)
         {
-            if (!plan.ActiveImpulses.TryGetValue(blockId, out string text) || string.IsNullOrEmpty(text))
-                continue;
-            switch (blockId)
+            if (plan.ActiveImpulses.TryGetValue(blockId, out string text) && !string.IsNullOrEmpty(text))
             {
-                case Tier2bBlockIds.Interaction:
-                case Tier2bBlockIds.Jealousy:
-                case Tier2bBlockIds.Preoccupation:
-                case Tier2bBlockIds.PendingTopic:
-                case Tier2bBlockIds.Gift:
-                case Tier2bBlockIds.Milestone:
-                case Tier2bBlockIds.Echo:
-                case Tier2bBlockIds.Eavesdrop:
-                case Tier2bBlockIds.SpouseWaiting:
-                case Tier2bBlockIds.LocalPerception:
-                case Tier2bBlockIds.Emotion:
-                case Tier2bBlockIds.PlayerProfile:
-                case Tier2bBlockIds.DateInvite:
-                case Tier2bBlockIds.FollowProto:
-                case Tier2bBlockIds.DateEndProto:
-                case Tier2bBlockIds.Movement:
-                    prompt.AppendLine(text);
-                    prompt.AppendLine();
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(blockId), blockId,
-                        "Unmapped Tier 2b block id in Tier2bBlockSequence.");
+                prompt.AppendLine(text);
+                prompt.AppendLine();
             }
         }
         return prompt.ToString();
