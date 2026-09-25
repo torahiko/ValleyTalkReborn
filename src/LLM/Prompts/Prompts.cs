@@ -93,16 +93,28 @@ public class Prompts
     private string _corePrompt;
     public string CorePrompt { get => _corePrompt ??= GetCorePrompt(); internal set => _corePrompt = value; }
 
+    [Obsolete("Use InjectionPlan / AssembleCore instead.")]
     public string PendingEvolvedTraitsBlock { get; set; }
+    [Obsolete("Use InjectionPlan / AssembleCore instead.")]
     public string PendingLocalPerceptionBlock { get; set; }
+    [Obsolete("Use InjectionPlan / AssembleCore instead.")]
     public string PendingEavesdropBlock { get; set; }
+    [Obsolete("Use InjectionPlan / AssembleCore instead.")]
     public string PendingSpouseWaitingBlock { get; set; }
+    [Obsolete("Use InjectionPlan / AssembleCore instead.")]
     public string PendingEchoBlock { get; set; }
     /// <summary>标记 PendingEchoBlock 当前由微社交 3 秒桥填充（而非 ImmediateEchoStore）。
     /// ConfirmDynamicBlocksConsumed 据此跳过 ConsumeEcho——桥为 consume-on-read，无待确认条目。</summary>
+    [Obsolete("Use InjectionPlan / AssembleCore instead.")]
     public bool PendingEchoIsBridge { get; set; }
+    [Obsolete("Use InjectionPlan / AssembleCore instead.")]
     public string PendingMilestoneBlock { get; set; }
+    [Obsolete("Use InjectionPlan / AssembleCore instead.")]
     public string PendingEmotionBlock { get; set; }
+
+    // VT3-D Δ2: 可变访问器——director 经此将 BuildPreoccupation/BuildPendingTopic 的 side-effect 写回
+    // 同一 List 实例，使 ProcessLines 反泄漏过滤（LlmDialogueService.cs:580-589）仍可达。禁止防御性拷贝。
+    internal List<string> InjectedPrivateThoughtsMutable => _injectedPrivateThoughts;
 
     private string _command;
     public string Command { get => _command ??= GetCommand(); internal set => _command = value; }
@@ -293,6 +305,7 @@ public class Prompts
 
     internal string GetCorePrompt()
     {
+#pragma warning disable CS0618 // VT3-D: 遗留迷宫保留至 VT3-E；Pending* 读取点已触达 Obsolete，此处集中抑制。
         var prompt = new StringBuilder();
         bool isZh = IsChineseLanguage;
         var flags = CurrentFlags;
@@ -351,7 +364,6 @@ public class Prompts
             prompt.Append(PromptsBlocks.BuildFollowInvitationProtocol(Character, CurrentFlags));
 
             string stoodUpPrompt = prompt.ToString();
-            LogTopologyVerification(stoodUpPrompt, "STOOD_UP");
             return stoodUpPrompt;
         }
 
@@ -387,7 +399,6 @@ public class Prompts
             prompt.Append(PromptsBlocks.BuildDateEndingProtocol(CurrentFlags));
 
             string datePrompt = prompt.ToString();
-            LogTopologyVerification(datePrompt, "DATE_CONTEXT");
             return datePrompt;
         }
 
@@ -432,7 +443,6 @@ public class Prompts
 
             string greetingPrompt = prompt.ToString();
             LogRoutingDebug(greetingPrompt, "SIMPLE_GREETING_FAST_PASS");
-            LogTopologyVerification(greetingPrompt, "SIMPLE_GREETING");
             return greetingPrompt;
         }
 
@@ -536,10 +546,10 @@ public class Prompts
 
         string finalPrompt = prompt.ToString();
         LogRoutingDebug(finalPrompt, "FULL_CONTEXT_BUILD");
-        LogTopologyVerification(finalPrompt, "FULL_CONTEXT_BUILD");
 
         return finalPrompt;
     }
+#pragma warning restore CS0618
 
     // ── VT3-C2: 分层拼装入口（惰性交付，零生产调用方；VT3-E 接线）──
     // Tier1 快照层（plan.Tier1Snapshot）→ Tier2a 会话层 → Tier2b 脉冲层。
@@ -646,6 +656,7 @@ public class Prompts
 
     private void LogTopologyVerification(string finalPrompt, string routeType)
     {
+#pragma warning disable CS0618 // VT3-D: 方法体留 VT3-E 删除；Pending* 状态读取触达 Obsolete，集中抑制。
         if (!ModEntry.Config?.Debug ?? true)
             return;
 
@@ -744,6 +755,7 @@ public class Prompts
             ModEntry.SMonitor?.Log($"[Prompts] Topology verification failed: {ex.Message}", StardewModdingAPI.LogLevel.Warn);
         }
     }
+#pragma warning restore CS0618
 
     private void LogRoutingDebug(string promptText, string routeType)
     {
@@ -835,7 +847,7 @@ public class Prompts
     }
 
     // VT3-C2：基础模板逻辑与遗留逐字一致；仅在其后按 branch 追加分支规则（Normal 零追加）。
-    private string GetInstructions(InstructionsBranch branch)
+    internal string GetInstructions(InstructionsBranch branch)
     {
         var instructions = new StringBuilder();
         bool isZh = IsChineseLanguage;
@@ -1062,10 +1074,6 @@ public class Prompts
                             : "- [ATTENTION FOCUS] You're on a date right now. This turn's dialogue draws from the date itself: the scene and atmosphere around you, each other's feelings and interactions. Farm work, chores and other everyday topics come up only if the player raises them.");
                         prompt.AppendLine("</date_context>\n");
                     }
-                    // RecordDateDialogue：原内联副作用逐字迁移（Manager 访问，非 Prompts 状态）
-                    var lastPlayerLine = context?.ChatHistory?.LastOrDefault(x => x.IsPlayerLine)?.Text;
-                    if (!string.IsNullOrWhiteSpace(lastPlayerLine))
-                        DateManager.Instance.RecordDateDialogue(Game1.player?.Name ?? "Farmer", lastPlayerLine);
                     break;
                 }
 

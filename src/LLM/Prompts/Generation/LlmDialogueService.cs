@@ -19,6 +19,9 @@ public class LlmDialogueService
 {
     public static LlmDialogueService Instance { get; } = new LlmDialogueService();
 
+    // VT3-D: 对话注入管线导演（替换原 Pending* 字段注入段）
+    private static readonly IConversationDirector Director = new ConversationDirector();
+
     // 重试与超时常量
     /// <summary>
     /// Indicates whether an LLM inference request is currently in progress.
@@ -57,6 +60,7 @@ public class LlmDialogueService
             ModEntry.CancelButtonPluginInstance?.SetActiveCharacter(character);
 
             Prompts prompts = null;
+            InjectionPlan plan = null;
             try
             {
                 PlayerStateScanner.Scan(character.Name);
@@ -74,58 +78,17 @@ public class LlmDialogueService
                 if (!string.IsNullOrEmpty(memoryCtx))
                     prompts.SystemPrompt += "\n\n" + memoryCtx;
 
-                // S3: EvolvedTraits（常驻心智底色，内容稳定不随输入重排；变动频率：约数天一次）
-                // 不能进 SystemPrompt：该段是 LlmClaude.cs 中零缓存的首段，每轮必变内容
-                // 放在这里会完全破坏前缀缓存。改为字段注入，由 GetCorePrompt() 内部读取。
-                prompts.PendingEvolvedTraitsBlock = EvolvedTraitManager.GetPromptBlock(character.Name, context);
-
                 // S4: 感知层（拆分处理）
                 //   - gossip（小镇传闻，每天去重，中频变化）→ SystemPrompt，作为背景设定
-                //   - local perceptions（gift/eat，每轮实时事件）→ CorePrompt，通过字段注入
+                //   - local perceptions（gift/eat，每轮实时事件）→ CorePrompt，通过 director 管线装配
                 var gossipBlock = PerceptionInjector.BuildGossipBlock(character.Name);
                 if (!string.IsNullOrEmpty(gossipBlock))
                     prompts.SystemPrompt += "\n\n" + gossipBlock;
 
-                prompts.PendingLocalPerceptionBlock = PerceptionInjector.BuildLocalBlock(character.Name);
-
-                // ══════════════════════════════════════════════════════════════════════
-                // S4.5: 偷听短期上下文（仅预览，不消费）
-                // ══════════════════════════════════════════════════════════════════════
-                prompts.PendingEavesdropBlock = EavesdropInjector.BuildBlock(character.Name);
-
-                // ══════════════════════════════════════════════════════════════════════
-                // S4.8: 情绪系统快照与指令块（每代编译一次，实例级缓存）
-                // 失败降级：PendingEmotionBlock 与 PendingEmotion 一并置空，生成流程继续
-                // ══════════════════════════════════════════════════════════════════════
-                if (ModEntry.Config.EnableEmotionSystem)
-                {
-                    try
-                    {
-                        var snapshot = EmotionalStateResolver.PrepareSnapshot(character, character.StardewNpc);
-                        character.PendingEmotion = snapshot;
-                        prompts.PendingEmotionBlock = EmotionalStateResolver
-                            .Compile(character, character.StardewNpc, snapshot).PromptBlock;
-                    }
-                    catch (Exception ex)
-                    {
-                        prompts.PendingEmotionBlock = string.Empty;
-                        character.PendingEmotion = null;
-                        Log.Warning($"[EmotionState] 编译失败已降级: {ex.Message}");
-                    }
-                }
-
-                // ══════════════════════════════════════════════════════════════════════
-                // S5: 配偶深夜等待事件（仅探测是否存在，不消费）
-                // ══════════════════════════════════════════════════════════════════════
-                bool hasSpouseWaiting = SpouseWaitingEvent.HasPendingSpouseDialogue(character.Name);
-                if (hasSpouseWaiting)
-                {
-                    string porchCtx = SpouseWaitingEvent.GetPorchContext();
-                    if (!string.IsNullOrEmpty(porchCtx))
-                    {
-                        prompts.PendingSpouseWaitingBlock = SpouseWaitingEvent.BuildStatusPrompt(porchCtx);
-                    }
-                }
+                // VT3-D: director 管线装配 InjectionPlan → CorePrompt + Instructions（替换原 Pending* 注入段）
+                plan = Director.BuildPlan(context, character, prompts);
+                prompts.AssembleCore(plan, context, character);
+                prompts.Instructions = prompts.GetInstructions(plan.Branch);
             }
             catch (Exception ex)
             {
@@ -134,29 +97,6 @@ public class LlmDialogueService
                 // 构造 Prompt 失败，直接返回占位符。外层 finally 会正确处理 IsRequestInProgress
                 return new string[] { "..." };
             }
-
-            // ══════════════════════════════════════════════════════════════════════
-            // S4.6: 近期互动余韵 + 微社交 3 秒桥（STEP5：桥优先；命中即抑制 Echo 本轮注入——台账 #11）
-            // ══════════════════════════════════════════════════════════════════════
-            // 注意：Echo 是延迟消费的一次性内容（如共进晚餐的余韵），
-            //       必须在 Prompt 组装成功后、网络请求发出前执行，
-            //       避免因 Prompt 组装失败或用户提前取消导致 Echo 被无声吞没。
-            // 桥块在 Prompt 组装期一次性消费，重试循环（MAX_RETRY_ATTEMPTS）复用同一 prompts 对象，不得二次消费。
-            string bridgeBlock = FreshBarkBridgeStore.BuildBridgeBlock(character.Name);
-            if (!string.IsNullOrEmpty(bridgeBlock))
-            {
-                prompts.PendingEchoBlock = bridgeBlock;
-                prompts.PendingEchoIsBridge = true;
-            }
-            else
-            {
-                prompts.PendingEchoBlock = ImmediateEchoStore.BuildEchoBlock(
-                    character.Name,
-                    character.StardewNpc?.currentLocation?.Name);
-            }
-
-            // S4.7: 关系里程碑与修罗场（结婚倒计时 / 离婚日 / 花舞节伴侣与吃醋）
-            prompts.PendingMilestoneBlock = RelationshipMilestoneManager.Instance.BuildMilestoneBlock(character);
 
             // ── 终局出口去重：优先保留下方 CorePrompt 的即时条目，剔除上方 SystemPrompt 的冗余条目 ──
             PromptDeduplicator.DeduplicatePrompts(prompts);
@@ -211,7 +151,7 @@ public class LlmDialogueService
                     // ══════════════════════════════════════════════════════════════════════
                     try
                     {
-                        ConfirmDynamicBlocksConsumed(context, character, prompts);
+                        ConfirmDynamicBlocksConsumed(context, character, plan);
                         PerceptionManager.Instance?.MarkAsConsolidated(character.Name);
                         PerceptionManager.Instance?.Evict("Eat");
                     }
@@ -282,7 +222,7 @@ public class LlmDialogueService
                         mood);
                 }
 
-                ConfirmDynamicBlocksConsumed(context, character, prompts);
+                ConfirmDynamicBlocksConsumed(context, character, plan);
                 // Mark perceptions as consolidated to prevent re-injection of "just received gift" next turn
                 PerceptionManager.Instance.MarkAsConsolidated(character.Name);
                 //本次对话已顺利消费该事件
@@ -378,7 +318,7 @@ public class LlmDialogueService
                     // 🔧 清理已注入的感知，避免重复（与流式路径保持一致）
                     try
                     {
-                        ConfirmDynamicBlocksConsumed(context, character, prompts);
+                        ConfirmDynamicBlocksConsumed(context, character, plan);
                         PerceptionManager.Instance?.MarkAsConsolidated(character.Name);
                         PerceptionManager.Instance?.Evict("Eat");
                     }
@@ -414,7 +354,7 @@ public class LlmDialogueService
                         SanitizeForSession(resultsInternal[0]),
                         mood);
 
-                    ConfirmDynamicBlocksConsumed(context, character, prompts);
+                    ConfirmDynamicBlocksConsumed(context, character, plan);
                     // Mark perceptions as consolidated to prevent re-injection of "just received gift" next turn
                     PerceptionManager.Instance.MarkAsConsolidated(character.Name);
                     //本次对话已顺利消费该事件
@@ -483,20 +423,37 @@ public class LlmDialogueService
     /// 才真正被标记为"已消费"，避免 STOOD_UP / DATE_CONTEXT /
     /// SIMPLE_GREETING 等早返回分支静默丢弃了尚未展示给玩家的内容。
     /// </summary>
-    private static void ConfirmDynamicBlocksConsumed(DialogueContext context, Character character, Prompts prompts)
+    // VT3-D ④：基于 InjectionPlan 确认一次性脉冲已消费（计划/角色 null → 早返回，与遗留对齐）。
+    // 集合严格四项：Eavesdrop / SpouseWaiting / Echo / Milestone。PendingTopic/Gift/Emotion/EvolvedTraits/LocalPerception 不在确认集合。
+    private static void ConfirmDynamicBlocksConsumed(DialogueContext context, Character character, InjectionPlan plan)
     {
-        if (prompts == null || character == null) return;
+        if (plan == null || character == null) return;
 
-        if (!string.IsNullOrEmpty(prompts.PendingEavesdropBlock))
+        var ids = new List<string>();
+
+        if (plan.ActiveImpulses.ContainsKey(Tier2bBlockIds.Eavesdrop))
+        {
             DialogueHistoryManager.Instance?.ConsumeEavesdropEntries(character.Name);
-        if (!string.IsNullOrEmpty(prompts.PendingSpouseWaitingBlock))
+            ids.Add(Tier2bBlockIds.Eavesdrop);
+        }
+        if (plan.ActiveImpulses.ContainsKey(Tier2bBlockIds.SpouseWaiting))
+        {
             SpouseWaitingEvent.ConfirmSpouseDialogueConsumed(character.Name);
-        if (!string.IsNullOrEmpty(prompts.PendingEchoBlock) && !prompts.PendingEchoIsBridge)
+            ids.Add(Tier2bBlockIds.SpouseWaiting);
+        }
+        if (plan.ActiveImpulses.ContainsKey(Tier2bBlockIds.Echo) && !plan.EchoFromBridge)
+        {
             ImmediateEchoStore.ConsumeEcho(character.Name);
+            ids.Add(Tier2bBlockIds.Echo);
+        }
+        if (plan.ActiveImpulses.ContainsKey(Tier2bBlockIds.Milestone))
+        {
+            RelationshipMilestoneManager.Instance?.ConfirmConsumed(character.Name);
+            ids.Add(Tier2bBlockIds.Milestone);
+        }
 
-        // 💍 确认本轮已表达过关系里程碑/吃醋，今日后续交谈恢复常态陪伴
-        if (!string.IsNullOrEmpty(prompts.PendingMilestoneBlock))
-            RelationshipMilestoneManager.Instance.ConfirmConsumed(character.Name);
+        if (ids.Count > 0)
+            ModEntry.SMonitor?.Log($"[Director] Consumed impulses: [{string.Join(",", ids)}]", LogLevel.Debug);
     }
 
     /// <summary>

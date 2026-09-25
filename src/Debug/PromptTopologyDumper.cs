@@ -232,6 +232,7 @@ internal static class PromptTopologyDumper
     /// </summary>
     public static string DumpFullRequest(Character character, DialogueContext context)
     {
+#pragma warning disable CS0618 // VT3-D: 调试夹具仍读 Pending* 遗留字段（触达 Obsolete），集中抑制；生产路径已不触达。
         if (character == null) throw new ArgumentNullException(nameof(character));
         if (context == null) throw new ArgumentNullException(nameof(context));
 
@@ -379,6 +380,7 @@ internal static class PromptTopologyDumper
         AppendSection(sb, "[ResponseStart]", prompts.ResponseStart);
         return sb.ToString();
     }
+#pragma warning restore CS0618
 
     private static void AppendSection(StringBuilder sb, string label, string content)
     {
