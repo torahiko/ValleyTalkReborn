@@ -1,6 +1,6 @@
 // Tier1SnapshotContext.cs
 // VT3-B — Tier 1 块的不可变快照。
-// 内部复制外部字典（Ordinal 比较器），此后对原始字典的修改不会污染快照。
+// 直接持有调用方字典（所有权转移；Ordinal 比较器由调用方 BuildTier1Snapshot 保证）。
 
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -8,18 +8,17 @@ using System.Collections.ObjectModel;
 namespace ValleytalkReborn;
 
 /// <summary>
-/// Tier 1 块的不可变快照视图。构造时做一次防御性深拷贝（Ordinal），
-/// 此后快照内容在会话生命周期内保持稳定。
+/// Tier 1 块的不可变快照视图。直接持有调用方传入的字典（所有权转移，
+/// 调用方构造后不得再修改），快照内容在会话生命周期内保持稳定。
 /// </summary>
 public sealed class Tier1SnapshotContext
 {
     private readonly Dictionary<string, string> _blocks;
 
-    /// <summary>从外部字典构造快照。内部复制，Ordinal 键比较。</summary>
+    /// <summary>从外部字典构造快照。直接持有引用，字典所有权转移给本实例。</summary>
     public Tier1SnapshotContext(Dictionary<string, string> blocks)
     {
-        _blocks = new Dictionary<string, string>(blocks ?? new Dictionary<string, string>(),
-            System.StringComparer.Ordinal);
+        _blocks = blocks ?? new Dictionary<string, string>();
     }
 
     /// <summary>按 blockId 取块内容；缺失返回 string.Empty。</summary>
