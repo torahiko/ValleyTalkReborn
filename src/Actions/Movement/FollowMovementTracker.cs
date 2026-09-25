@@ -69,9 +69,9 @@ namespace ValleytalkReborn.Movement
 
         // ─── Wander fan bias ───
         private const float WANDER_HALF_SPREAD        = 0.785f;  // 背后锥形 ±45°
-        private const float WANDER_LOOK_AROUND_PROB   = 0.2f;    // 原地观察概率
+        private const float WANDER_LOOK_AROUND_PROB   = 0.35f;   // 原地观察概率
         private const float WANDER_BEHIND_PROBABILITY = 0.3f;    // 背后偏置概率
-        private const int   LOOK_AROUND_COOLDOWN      = 60;
+        private const int   LOOK_AROUND_COOLDOWN      = 120;
 
         // ─── Player idle timer ───
         private Vector2 _lastPlayerTile;
@@ -85,9 +85,9 @@ namespace ValleytalkReborn.Movement
 
         // ─── Wander parameters ───
         private int _wanderPathCooldown;
-        private const int   WANDER_PAUSE      = 90;
+        private const int   WANDER_PAUSE      = 300;
         private const float WANDER_RADIUS_MIN = 1.5f;
-        private const float WANDER_RADIUS_MAX = 3.5f;
+        private const float WANDER_RADIUS_MAX = 2.5f;
 
         // ─── Pixel displacement observation window (replaces tile-stall check) ───
         private Vector2 _lastNpcPositionInPathing;   // window anchor (pixel coords)
@@ -871,7 +871,10 @@ namespace ValleytalkReborn.Movement
                     center.X + (int)Math.Round(Math.Cos(angle) * radius),
                     center.Y + (int)Math.Round(Math.Sin(angle) * radius));
 
-                if (target == Game1.player.Tile || !MovementPathfinding.IsTileWalkable(loc, target, _followingNpc))
+                if (target == Game1.player.Tile
+                    || target == _followingNpc.Tile
+                    || Vector2.Distance(target, Game1.player.Tile) > DIST_CATCHUP_RUN - 0.5f
+                    || !MovementPathfinding.IsTileWalkable(loc, target, _followingNpc))
                     continue;
 
                 if (MovementPathfinding.TryCreatePath(_followingNpc, loc, target, out var controller, out _))
