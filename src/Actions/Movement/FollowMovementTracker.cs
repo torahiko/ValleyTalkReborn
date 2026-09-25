@@ -36,7 +36,7 @@ namespace ValleytalkReborn.Movement
         // ─── Path target stabilization ───
         private Vector2 _committedTarget;
         private int _retargetCooldown;
-        private const int RETARGET_COOLDOWN = 16;
+        private const int RETARGET_COOLDOWN = 40;
 
         // ─── Dynamic speed-matching thresholds ───
         private const float DIST_CATCHUP_RUN = 4.5f;   // 追赶带下界 & 闲逛中断阈值
@@ -77,10 +77,19 @@ namespace ValleytalkReborn.Movement
         private const float WANDER_RADIUS_MIN = 1.5f;
         private const float WANDER_RADIUS_MAX = 3.5f;
 
-        // ─── Pathing stage displacement stall detection ───
-        private Vector2 _lastNpcTileInPathing;
-        private int _npcStuckTicks;
-        private const int STUCK_TICKS_THRESHOLD = 30;
+        // ─── Pixel displacement observation window (replaces tile-stall check) ───
+        private Vector2 _lastNpcPositionInPathing;   // window anchor (pixel coords)
+        private int _positionWatchTicks;
+        private int _stuckWindowCount;
+        private int _stuckRecoveryCooldown;
+
+        private const int   POSITION_WATCH_TICKS      = 45;  // 0.75s observation window
+        private const float POSITION_MIN_DISPLACEMENT = 16f; // 16px = meaningful displacement
+        private const int   STUCK_WINDOW_TRIGGER      = 2;   // 2 consecutive still windows = stuck
+        private const int   STUCK_RECOVERY_COOLDOWN   = 120; // 2s immunity after trigger
+
+        // ─── Dual-rate redirect gate ───
+        private const int RETARGET_ARRIVAL_GRACE = 10; // structural-need grace window
 
         // ─── Wall-phasing recovery throttle (memory-only) ───
         private int _wallCheckCooldown;
@@ -190,8 +199,7 @@ namespace ValleytalkReborn.Movement
             _wallCheckCooldown         = 0;
             _playerMovedThisTick       = false;
             _warnedAbnormalNpcSpeed    = false;
-            _npcStuckTicks             = 0;
-            _lastNpcTileInPathing      = Vector2.Zero;
+            _lastNpcPositionInPathing = Vector2.Zero; _positionWatchTicks = 0; _stuckWindowCount = 0; _stuckRecoveryCooldown = 0;
             _followPathFailCount       = 0;
             _followPathFailCooldown    = 0;
         }
@@ -364,8 +372,7 @@ namespace ValleytalkReborn.Movement
             _wallCheckCooldown         = 0;
             _playerMovedThisTick       = false;
             _warnedAbnormalNpcSpeed    = false;
-            _npcStuckTicks             = 0;
-            _lastNpcTileInPathing      = Vector2.Zero;
+            _lastNpcPositionInPathing = Vector2.Zero; _positionWatchTicks = 0; _stuckWindowCount = 0; _stuckRecoveryCooldown = 0;
             _followPathFailCount       = 0;
             _followPathFailCooldown    = 0;
         }
@@ -491,36 +498,54 @@ namespace ValleytalkReborn.Movement
                 return;
             }
 
-            // 2.3 停滞检测
-            if (Vector2.Distance(_followingNpc.Tile, _lastNpcTileInPathing) < 0.1f)
-                _npcStuckTicks++;
-            else
+            // 2.3 Stall detection (pixel window)
+            if (_stuckRecoveryCooldown > 0) _stuckRecoveryCooldown--;
+
+            _positionWatchTicks++;
+            if (_positionWatchTicks >= POSITION_WATCH_TICKS)
             {
-                _npcStuckTicks        = 0;
-                _lastNpcTileInPathing = _followingNpc.Tile;
+                float moved = Vector2.Distance(_followingNpc.Position, _lastNpcPositionInPathing);
+                _stuckWindowCount = moved >= POSITION_MIN_DISPLACEMENT ? 0 : _stuckWindowCount + 1;
+                _lastNpcPositionInPathing = _followingNpc.Position;
+                _positionWatchTicks = 0;
             }
 
-            bool forceRetargetDueToStuck = _npcStuckTicks >= STUCK_TICKS_THRESHOLD;
+            bool forceRetargetDueToStuck =
+                _stuckWindowCount >= STUCK_WINDOW_TRIGGER && _stuckRecoveryCooldown <= 0;
 
-            // 2.4 冷却门
-            if (_retargetCooldown > 0 && !forceRetargetDueToStuck) { _retargetCooldown--; return; }
-
-            // 2.5 重定向判定（无 dist 门、无冗余析取支）
-            bool needRetarget =
-                forceRetargetDueToStuck ||
+            // 2.4 Dual-rate cooldown gate
+            bool structuralNeed =
                 _followingNpc.controller == null ||
                 MovementPathfinding.IsPathDead(_followingNpc.controller) ||
-                MovementPathfinding.IsPathDone(_followingNpc.controller) ||
-                Vector2.Distance(_committedTarget, Game1.player.Tile) > 2.5f;
+                MovementPathfinding.IsPathDone(_followingNpc.controller);
+
+            if (!forceRetargetDueToStuck)
+            {
+                bool gateOpen = _retargetCooldown <= 0
+                    || (structuralNeed && _retargetCooldown <= RETARGET_ARRIVAL_GRACE);
+                if (!gateOpen) { _retargetCooldown--; return; }
+            }
+
+            // 2.5 Redirect decision
+            bool needRetarget =
+                forceRetargetDueToStuck ||
+                structuralNeed ||
+                Vector2.Distance(_committedTarget, Game1.player.Tile) > DIST_CATCHUP_RUN;
 
             if (needRetarget)
             {
                 if (forceRetargetDueToStuck)
                 {
                     MovementPathfinding.TryRecoverStartingTile(_followingNpc, _followingNpc.currentLocation);
-                    _npcStuckTicks = 0;
+                    _stuckWindowCount = 0;
+                    _positionWatchTicks = 0;
+                    _stuckRecoveryCooldown = STUCK_RECOVERY_COOLDOWN;
+                    _lastNpcPositionInPathing = _followingNpc.Position;
                     ModEntry.SMonitor?.Log(
-                        $"[FollowMovementTracker] {_followingNpc.Name} stuck detected ({STUCK_TICKS_THRESHOLD} ticks no displacement), forced re-path.",
+                        $"[FollowMovementTracker] {_followingNpc.Name} stuck detected " +
+                        $"({STUCK_WINDOW_TRIGGER} windows x {POSITION_WATCH_TICKS} ticks " +
+                        $"< {POSITION_MIN_DISPLACEMENT}px), recovery + " +
+                        $"{STUCK_RECOVERY_COOLDOWN}-tick immunity.",
                         LogLevel.Warn);
                 }
 
@@ -586,15 +611,13 @@ namespace ValleytalkReborn.Movement
                     _followingNpc.addedSpeed = 0;
                     _retargetCooldown        = 0;
                     _idleGazeTimer           = 0;
-                    _npcStuckTicks           = 0;
 
                     if (Game1.player != null)
                         _followingNpc.faceGeneralDirection(Game1.player.getStandingPosition(), 0, false, false);
                     break;
 
                 case FollowState.Pathing:
-                    _lastNpcTileInPathing = _followingNpc.Tile;
-                    _npcStuckTicks        = 0;
+                    _lastNpcPositionInPathing = _followingNpc.Position; _positionWatchTicks = 0; _stuckWindowCount = 0; _stuckRecoveryCooldown = 0;
                     _retargetCooldown     = 0;
                     _wanderPathCooldown   = 0;
                     _idleGazeTimer        = 0;
@@ -637,6 +660,7 @@ namespace ValleytalkReborn.Movement
 
             void AddCandidate(Vector2 t, float bonus = 0f)
             {
+                if (t == _followingNpc.Tile) return;
                 if (MovementPathfinding.IsTileWalkable(loc, t, _followingNpc))
                     candidates.Add((t, Vector2.Distance(_followingNpc.Tile, t) - bonus));
             }
@@ -659,6 +683,7 @@ namespace ValleytalkReborn.Movement
                 {
                     if (dx == 0 && dy == 0) continue;
                     var fallback = new Vector2(player.Tile.X + dx, player.Tile.Y + dy);
+                    if (fallback == _followingNpc.Tile) continue;
                     if (MovementPathfinding.IsTileWalkable(loc, fallback, _followingNpc))
                         return fallback;
                 }
@@ -676,6 +701,14 @@ namespace ValleytalkReborn.Movement
 
             var loc = _followingNpc.currentLocation ?? Game1.player?.currentLocation;
             if (loc == null) return false;
+
+            if ((int)target.X == (int)_followingNpc.Tile.X
+                && (int)target.Y == (int)_followingNpc.Tile.Y)
+            {
+                _followPathFailCount++;
+                _followPathFailCooldown = Math.Min(60, 20 * _followPathFailCount);
+                return false;
+            }
 
             // Recover starting tile if it is blocked before creating a new path.
             MovementPathfinding.TryRecoverStartingTile(_followingNpc, loc);
