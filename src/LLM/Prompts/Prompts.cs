@@ -56,11 +56,6 @@ public class Prompts
         }
     }
 
-    private string ComposeCurrentConversationHeading()
-    {
-        return "### " + Util.GetString(Character, "currentConversationHeading");
-    }
-
     private string ComposeInstructionsHeading()
     {
         return "## " + Util.GetString(Character, "instructionsHeading", new { Language = TargetLanguageName });
@@ -569,7 +564,7 @@ public class Prompts
             sb.AppendLine("║");
             sb.AppendLine("║ [Topology Structure]");
 
-            string computedHeading = ComposeCurrentConversationHeading();
+            string computedHeading = PromptsBlocks.BuildConversationHeading(Character);
             bool found = finalPrompt.Contains(computedHeading);
             bool overrideUsed = PromptOverrides?.ContainsKey("CurrentConversation") ?? false;
             bool ledgerEmitted = _emittedBlockKeys.Contains("CurrentConversation");
@@ -838,6 +833,12 @@ public class Prompts
 
         private static bool NpcIsMale(Character character) =>
             character.StardewNpc.GetData().Gender == StardewValley.Gender.Male;
+
+        /// <summary>组装当前对话历史标题（"### " + 本地化 currentConversationHeading）。
+        /// 单一方法体：供 BuildCurrentConversation（生产者）与 LogTopologyVerification（验证者）共用，
+        /// 杜绝双体漂移。</summary>
+        internal static string BuildConversationHeading(Character character) =>
+            "### " + Util.GetString(character, "currentConversationHeading");
 
         internal static string BuildRelationshipWord(Character character, bool? maleFarmer)
         {
@@ -1638,7 +1639,7 @@ public class Prompts
             var prompt = new StringBuilder();
             if (context.ChatHistory.Any())
             {
-                prompt.AppendLine("### " + Util.GetString(character, "currentConversationHeading"));
+                prompt.Append(PromptsBlocks.BuildConversationHeading(character));
                 emittedBlockKeys.Add("CurrentConversation");
                 prompt.AppendLine(Util.GetString(character, "currentConversationIntro", new { Name = name }));
                 bool shortCtxAllowed = flags?.IncludeShortTermContext != false;
@@ -1657,7 +1658,7 @@ public class Prompts
             }
             else if (character.SpokeJustNow())
             {
-                prompt.AppendLine("### " + Util.GetString(character, "currentConversationHeading"));
+                prompt.Append(PromptsBlocks.BuildConversationHeading(character));
                 emittedBlockKeys.Add("CurrentConversation");
                 prompt.AppendLine(Util.GetString(character, "currentConversationJustSpoke", new { Name = name }));
             }
