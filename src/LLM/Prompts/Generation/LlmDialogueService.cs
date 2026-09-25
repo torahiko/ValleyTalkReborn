@@ -79,11 +79,8 @@ public class LlmDialogueService
                     prompts.SystemPrompt += "\n\n" + memoryCtx;
 
                 // S4: 感知层（拆分处理）
-                //   - gossip（小镇传闻，每天去重，中频变化）→ SystemPrompt，作为背景设定
+                //   - gossip（小镇传闻，每天去重，中频变化）→ Tier 2b 脉冲，通过 director 管线装配
                 //   - local perceptions（gift/eat，每轮实时事件）→ CorePrompt，通过 director 管线装配
-                var gossipBlock = PerceptionInjector.BuildGossipBlock(character.Name);
-                if (!string.IsNullOrEmpty(gossipBlock))
-                    prompts.SystemPrompt += "\n\n" + gossipBlock;
 
                 // VT3-D: director 管线装配 InjectionPlan → CorePrompt + Instructions（替换原 Pending* 注入段）
                 plan = Director.BuildPlan(context, character, prompts);

@@ -85,6 +85,12 @@ public sealed class ConversationDirector : IConversationDirector
         if (hasMilestone && !string.IsNullOrEmpty(milestoneBlock))
             activeImpulses[Tier2bBlockIds.Milestone] = milestoneBlock;
 
+        // KV-Cache 保护：gossip 块从 SystemPrompt 迁移至 Tier 2b 脉冲，
+        // 使 SystemPrompt 在多轮对话间保持静态（hash 不变），复用前缀缓存。
+        string gossipBlock = PerceptionInjector.BuildGossipBlock(character.Name);
+        if (!string.IsNullOrEmpty(gossipBlock))
+            activeImpulses[Tier2bBlockIds.Gossip] = gossipBlock;
+
         string impulseIds = string.Join(",", activeImpulses.Keys);
 
         var plan = new InjectionPlan
@@ -333,40 +339,40 @@ public sealed class ConversationDirector : IConversationDirector
         switch (branch)
         {
             case InstructionsBranch.StoodUp:
-                // 薄壳 StoodUp 块（Prompts.cs:315-353）：PendingTopic, Eavesdrop, SpouseWaiting, Echo, Milestone,
+                // 薄壳 StoodUp 块（Prompts.cs:315-353）：Gossip, PendingTopic, Eavesdrop, SpouseWaiting, Echo, Milestone,
                 // EvolvedTraits(Tier1), LocalPerception, Emotion, DateInvite, FollowProto。
                 return new HashSet<string>(StringComparer.Ordinal)
                 {
-                    Tier2bBlockIds.PendingTopic, Tier2bBlockIds.Eavesdrop, Tier2bBlockIds.SpouseWaiting,
+                    Tier2bBlockIds.Gossip, Tier2bBlockIds.PendingTopic, Tier2bBlockIds.Eavesdrop, Tier2bBlockIds.SpouseWaiting,
                     Tier2bBlockIds.Echo, Tier2bBlockIds.Milestone, Tier2bBlockIds.LocalPerception,
                     Tier2bBlockIds.Emotion, Tier2bBlockIds.DateInvite, Tier2bBlockIds.FollowProto,
                 };
             case InstructionsBranch.Date:
-                // 薄壳 Date 块（Prompts.cs:355-388）：Echo, Milestone, PendingTopic, EvolvedTraits(Tier1),
+                // 薄壳 Date 块（Prompts.cs:355-388）：Gossip, Echo, Milestone, PendingTopic, EvolvedTraits(Tier1),
                 // LocalPerception, Emotion, DateInvite, FollowProto, DateEndProto。
                 // 聚焦裁剪：Eavesdrop/SpouseWaiting 与约会现场冲突（VT-FOCUS-02, Prompts.cs:360）。
                 return new HashSet<string>(StringComparer.Ordinal)
                 {
-                    Tier2bBlockIds.Echo, Tier2bBlockIds.Milestone, Tier2bBlockIds.PendingTopic,
+                    Tier2bBlockIds.Gossip, Tier2bBlockIds.Echo, Tier2bBlockIds.Milestone, Tier2bBlockIds.PendingTopic,
                     Tier2bBlockIds.LocalPerception, Tier2bBlockIds.Emotion, Tier2bBlockIds.DateInvite,
                     Tier2bBlockIds.FollowProto, Tier2bBlockIds.DateEndProto,
                 };
             case InstructionsBranch.Greeting:
-                // 薄壳 Greeting 块（Prompts.cs:390-432）：PendingTopic, Eavesdrop, SpouseWaiting, Echo,
+                // 薄壳 Greeting 块（Prompts.cs:390-432）：Gossip, PendingTopic, Eavesdrop, SpouseWaiting, Echo,
                 // EvolvedTraits(Tier1), LocalPerception, Emotion, PlayerProfile(""), DateInvite。
                 // 已知必删：Preoccupation、RelationBase（Tier1）。
                 return new HashSet<string>(StringComparer.Ordinal)
                 {
-                    Tier2bBlockIds.PendingTopic, Tier2bBlockIds.Eavesdrop, Tier2bBlockIds.SpouseWaiting,
+                    Tier2bBlockIds.Gossip, Tier2bBlockIds.PendingTopic, Tier2bBlockIds.Eavesdrop, Tier2bBlockIds.SpouseWaiting,
                     Tier2bBlockIds.Echo, Tier2bBlockIds.LocalPerception, Tier2bBlockIds.Emotion,
                     Tier2bBlockIds.PlayerProfile, Tier2bBlockIds.DateInvite,
                 };
             case InstructionsBranch.Normal:
             default:
-                // FULL = 全 16（FollowProto/DateEndProto 值门控为空，不出现在输出中）。
+                // FULL = 全 17（FollowProto/DateEndProto 值门控为空，不出现在输出中）。
                 return new HashSet<string>(StringComparer.Ordinal)
                 {
-                    Tier2bBlockIds.Interaction, Tier2bBlockIds.Jealousy, Tier2bBlockIds.Preoccupation,
+                    Tier2bBlockIds.Gossip, Tier2bBlockIds.Interaction, Tier2bBlockIds.Jealousy, Tier2bBlockIds.Preoccupation,
                     Tier2bBlockIds.PendingTopic, Tier2bBlockIds.Gift, Tier2bBlockIds.Milestone,
                     Tier2bBlockIds.Echo, Tier2bBlockIds.Eavesdrop, Tier2bBlockIds.SpouseWaiting,
                     Tier2bBlockIds.LocalPerception, Tier2bBlockIds.Emotion, Tier2bBlockIds.PlayerProfile,

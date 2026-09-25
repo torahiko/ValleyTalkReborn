@@ -7,10 +7,11 @@ using System.Collections.Generic;
 namespace ValleytalkReborn;
 
 /// <summary>
-/// Tier 2b 块标识符（16 项）。这些块反映即时状态，每代独立渲染。
+/// Tier 2b 块标识符（17 项）。这些块反映即时状态，每代独立渲染。
 /// </summary>
 public static class Tier2bBlockIds
 {
+    public const string Gossip = "Gossip";
     public const string Interaction = "Interaction";
     public const string Jealousy = "Jealousy";
     public const string Preoccupation = "Preoccupation";
@@ -31,7 +32,7 @@ public static class Tier2bBlockIds
     /// <summary>Tier 2b 全部块 Id 集合（有序）。</summary>
     public static readonly IReadOnlyList<string> All = new[]
     {
-        Interaction, Jealousy, Preoccupation, PendingTopic, Gift, Milestone, Echo, Eavesdrop,
+        Gossip, Interaction, Jealousy, Preoccupation, PendingTopic, Gift, Milestone, Echo, Eavesdrop,
         SpouseWaiting, LocalPerception, Emotion, PlayerProfile, DateInvite, FollowProto,
         DateEndProto, Movement,
     };
