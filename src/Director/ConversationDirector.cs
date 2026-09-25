@@ -148,7 +148,7 @@ public sealed class ConversationDirector : IConversationDirector
     {
         var snapshot = new Dictionary<string, string>(StringComparer.Ordinal);
         var flags = context.RoutingFlags;
-        bool isZh = IsZh();
+        bool isZh = Prompts.PromptsBlocks.IsZh();
         string name = character.StardewNpc?.displayName ?? character.Name;
         CharacterData npcData = character.StardewNpc?.GetData();
         bool npcIsNull = character.StardewNpc == null;
@@ -220,7 +220,7 @@ public sealed class ConversationDirector : IConversationDirector
     {
         var impulses = new Dictionary<string, string>(StringComparer.Ordinal);
         var flags = context.RoutingFlags;
-        bool isZh = IsZh();
+        bool isZh = Prompts.PromptsBlocks.IsZh();
         string name = character.StardewNpc?.displayName ?? character.Name;
         bool npcIsNull = character.StardewNpc == null;
         var thoughts = prompts.InjectedPrivateThoughtsMutable;
@@ -238,7 +238,7 @@ public sealed class ConversationDirector : IConversationDirector
             Prompts.PromptsBlocks.BuildPendingTopic(character, name, thoughts));
 
         SetImpulse(impulses, Tier2bBlockIds.Gift,
-            Prompts.PromptsBlocks.BuildGift(character, SelectGiftGiven(character), name));
+            Prompts.PromptsBlocks.BuildGift(character, Prompts.PromptsBlocks.SelectGiftGiven(character), name));
 
         SetImpulse(impulses, Tier2bBlockIds.Eavesdrop,
             EavesdropInjector.BuildBlock(character.Name));
@@ -288,7 +288,7 @@ public sealed class ConversationDirector : IConversationDirector
         SetImpulse(impulses, Tier2bBlockIds.DateEndProto,
             Prompts.PromptsBlocks.BuildDateEndingProtocol(flags));
         SetImpulse(impulses, Tier2bBlockIds.Movement,
-            Prompts.PromptsBlocks.BuildMovementInstruction(character, flags, MovementInstructionApplicable(flags)));
+            Prompts.PromptsBlocks.BuildMovementInstruction(character, flags, Prompts.PromptsBlocks.MovementInstructionApplicable(flags)));
 
         return impulses;
     }
@@ -307,9 +307,6 @@ public sealed class ConversationDirector : IConversationDirector
             impulses[blockId] = text;
     }
 
-    private static bool IsZh() =>
-        LocalizedContentManager.CurrentLanguageCode.ToString().StartsWith("zh", StringComparison.OrdinalIgnoreCase);
-
     private static bool IsMarriedOrRoommate(Character character)
     {
         Friendship friendship = null;
@@ -317,22 +314,4 @@ public sealed class ConversationDirector : IConversationDirector
         return friendship != null && (friendship.IsMarried() || friendship.IsRoommate());
     }
 
-    private static bool MovementInstructionApplicable(ContextFlags flags)
-    {
-        return !(flags?.IsOnDate == true)
-            && !(flags?.IsJealousy == true)
-            && ((flags?.IsActionRequested ?? false) || (flags?.IsFollowing ?? false));
-    }
-
-    // 遗留 Prompts.SelectGiftGiven 逐字（director 无法访问 Prompts 私有方法，独立复现）。
-    private static string SelectGiftGiven(Character character)
-    {
-        if (!Game1.player.friendshipData.TryGetValue(character.Name, out Friendship friendship) || !friendship.IsMarried())
-            return null;
-        if (Game1.random.NextDouble() < 0.8) return null;
-        var options = character.DialogueData.AllEntries.SelectMany(x => x.Value.AllValues)
-            .SelectMany(x => x.Elements).SelectMany(x => x.GiftOptions).ToList();
-        if (options.Count == 0) return null;
-        return options[Game1.random.Next(options.Count)];
-    }
 }

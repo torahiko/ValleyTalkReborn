@@ -68,9 +68,7 @@ public class Prompts
 
     private bool MovementInstructionApplicable()
     {
-        return !(CurrentFlags?.IsOnDate == true)
-            && !(CurrentFlags?.IsJealousy == true)
-            && ((CurrentFlags?.IsActionRequested ?? false) || (CurrentFlags?.IsFollowing ?? false));
+        return PromptsBlocks.MovementInstructionApplicable(CurrentFlags);
     }
 
     private string BuildStardewSummary()
@@ -187,20 +185,7 @@ public class Prompts
 
     private string SelectGiftGiven()
     {
-        if (!Game1.getPlayerOrEventFarmer().friendshipData.TryGetValue(Character.Name, out Friendship friendship) || !friendship.IsMarried())
-        {
-            return null;
-        }
-        if (Game1.random.NextDouble() < 0.8)
-        {
-            return null;
-        }
-        var options = Character.DialogueData.AllEntries.SelectMany(x => x.Value.AllValues).SelectMany(x => x.Elements).SelectMany(x => x.GiftOptions).ToList();
-        if (options.Count == 0)
-        {
-            return null;
-        }
-        return options[Game1.random.Next(options.Count)];
+        return PromptsBlocks.SelectGiftGiven(Character);
     }
 
     private string GetSystemPrompt()
@@ -962,8 +947,32 @@ public class Prompts
     internal static class PromptsBlocks
     {
         // ── 本地化辅助（提升可见性；原 instance 依赖 → 显式参数 / 静态读取）──
-        private static bool IsZh() =>
+        internal static bool IsZh() =>
             LocalizedContentManager.CurrentLanguageCode.ToString().StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>移动指令适用判定（原 Prompts.MovementInstructionApplicable 实例方法逐字迁移）。
+        /// 逻辑单源：Prompts 薄壳与 ConversationDirector 共享此静态体。</summary>
+        internal static bool MovementInstructionApplicable(ContextFlags flags)
+        {
+            return !(flags?.IsOnDate == true)
+                && !(flags?.IsJealousy == true)
+                && ((flags?.IsActionRequested ?? false) || (flags?.IsFollowing ?? false));
+        }
+
+        /// <summary>配偶礼物选择（原 Prompts.SelectGiftGiven 实例方法逐字迁移）。
+        /// 逻辑单源：Prompts 薄壳与 ConversationDirector 共享此静态体。
+        /// 注意：含随机抽取——legacy 装配期与 plan 期各抽一次，生产仅走 director 路径。</summary>
+        internal static string SelectGiftGiven(Character character)
+        {
+            if (character == null) return null;
+            if (!Game1.player.friendshipData.TryGetValue(character.Name, out Friendship friendship) || !friendship.IsMarried())
+                return null;
+            if (Game1.random.NextDouble() < 0.8) return null;
+            var options = character.DialogueData.AllEntries.SelectMany(x => x.Value.AllValues)
+                .SelectMany(x => x.Elements).SelectMany(x => x.GiftOptions).ToList();
+            if (options.Count == 0) return null;
+            return options[Game1.random.Next(options.Count)];
+        }
 
         private static bool NpcIsMale(Character character) =>
             character.StardewNpc.GetData().Gender == StardewValley.Gender.Male;
