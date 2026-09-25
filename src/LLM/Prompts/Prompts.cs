@@ -56,21 +56,6 @@ public class Prompts
         }
     }
 
-    private string ComposeInstructionsHeading()
-    {
-        return "## " + Util.GetString(Character, "instructionsHeading", new { Language = TargetLanguageName });
-    }
-
-    private bool CurrentConversationHasContent()
-    {
-        return (Context?.ChatHistory?.Any() ?? false) || (Character?.SpokeJustNow() ?? false);
-    }
-
-    private bool MovementInstructionApplicable()
-    {
-        return PromptsBlocks.MovementInstructionApplicable(CurrentFlags);
-    }
-
     private string BuildStardewSummary()
     {
         var builder = GameSummaryBuilder.Instance;
@@ -89,26 +74,7 @@ public class Prompts
     public string NpcConstantContext { get => _npcConstantContext ??= GetNpcConstantContext(); internal set => _npcConstantContext = value; }
 
     private string _corePrompt;
-    public string CorePrompt { get => _corePrompt ??= GetCorePrompt(); internal set => _corePrompt = value; }
-
-    [Obsolete("Use InjectionPlan / AssembleCore instead.")]
-    public string PendingEvolvedTraitsBlock { get; set; }
-    [Obsolete("Use InjectionPlan / AssembleCore instead.")]
-    public string PendingLocalPerceptionBlock { get; set; }
-    [Obsolete("Use InjectionPlan / AssembleCore instead.")]
-    public string PendingEavesdropBlock { get; set; }
-    [Obsolete("Use InjectionPlan / AssembleCore instead.")]
-    public string PendingSpouseWaitingBlock { get; set; }
-    [Obsolete("Use InjectionPlan / AssembleCore instead.")]
-    public string PendingEchoBlock { get; set; }
-    /// <summary>标记 PendingEchoBlock 当前由微社交 3 秒桥填充（而非 ImmediateEchoStore）。
-    /// ConfirmDynamicBlocksConsumed 据此跳过 ConsumeEcho——桥为 consume-on-read，无待确认条目。</summary>
-    [Obsolete("Use InjectionPlan / AssembleCore instead.")]
-    public bool PendingEchoIsBridge { get; set; }
-    [Obsolete("Use InjectionPlan / AssembleCore instead.")]
-    public string PendingMilestoneBlock { get; set; }
-    [Obsolete("Use InjectionPlan / AssembleCore instead.")]
-    public string PendingEmotionBlock { get; set; }
+    public string CorePrompt { get => _corePrompt; internal set => _corePrompt = value; }
 
     // VT3-D Δ2: 可变访问器——director 经此将 BuildPreoccupation/BuildPendingTopic 的 side-effect 写回
     // 同一 List 实例，使 ProcessLines 反泄漏过滤（LlmDialogueService.cs:580-589）仍可达。禁止防御性拷贝。
@@ -121,7 +87,7 @@ public class Prompts
     public string ResponseStart { get => _responseStart ??= GetResponseStart(); internal set => _responseStart = value; }
 
     private string _instructions;
-    public string Instructions { get => _instructions ??= GetInstructions(); internal set => _instructions = value; }
+    public string Instructions { get => _instructions ??= GetInstructions(InstructionsBranch.Normal); internal set => _instructions = value; }
 
     public string Name { get; internal set; }
     public string Gender { get; internal set; }
@@ -288,255 +254,6 @@ public class Prompts
         return npcConstantPrompt.ToString();
     }
 
-    internal string GetCorePrompt()
-    {
-#pragma warning disable CS0618 // VT3-D: 遗留迷宫保留至 VT3-E；Pending* 读取点已触达 Obsolete，此处集中抑制。
-        var prompt = new StringBuilder();
-        bool isZh = IsChineseLanguage;
-        var flags = CurrentFlags;
-        string npcName = Character?.Name ?? "";
-
-        if (flags?.HasStoodUpPending == true && flags?.IsOnDate == true)
-        {
-            ModEntry.SMonitor?.Log(
-                $"[Prompts] Conflict detected for {npcName}: HasStoodUpPending && IsOnDate both true. " +
-                "Prioritizing IsOnDate and clearing stood-up flag.",
-                StardewModdingAPI.LogLevel.Warn);
-
-            flags.HasStoodUpPending = false;
-            flags.StoodUpDate = string.Empty;
-        }
-
-        DefaultOrOverride("GameState", p => p.Append(PromptsBlocks.BuildGameState(Character)), prompt);
-
-        if (flags?.IncludeMemories == true)
-            DefaultOrOverride("EventHistory", p => p.Append(PromptsBlocks.BuildEventHistory(Character, Context)), prompt);
-
-        if (flags?.HasStoodUpPending == true && ModEntry.Config.EnableDateSystem)
-        {
-            prompt.Append(PromptsBlocks.BuildBranchTheme(Character, Context, InstructionsBranch.StoodUp));
-            prompt.Append(PromptsBlocks.BuildMicroEnvironment(Character, Context, CurrentFlags));
-            prompt.Append(PromptsBlocks.BuildPendingTopic(Character, Name, _injectedPrivateThoughts));
-
-            if (!string.IsNullOrEmpty(PendingEavesdropBlock))
-            {
-                prompt.AppendLine(PendingEavesdropBlock);
-                prompt.AppendLine();
-            }
-            if (!string.IsNullOrEmpty(PendingSpouseWaitingBlock))
-            {
-                prompt.AppendLine(PendingSpouseWaitingBlock);
-                prompt.AppendLine();
-            }
-            if (!string.IsNullOrEmpty(PendingEchoBlock))
-            {
-                prompt.AppendLine(PendingEchoBlock);
-                prompt.AppendLine();
-            }
-            if (!string.IsNullOrEmpty(PendingMilestoneBlock))
-            {
-                prompt.AppendLine(PendingMilestoneBlock);
-                prompt.AppendLine();
-            }
-            if (!string.IsNullOrEmpty(PendingEvolvedTraitsBlock))
-                prompt.AppendLine("\n" + PendingEvolvedTraitsBlock);
-            if (!string.IsNullOrEmpty(PendingLocalPerceptionBlock))
-                prompt.AppendLine("\n" + PendingLocalPerceptionBlock);
-            if (!string.IsNullOrEmpty(PendingEmotionBlock))
-                prompt.AppendLine("\n" + PendingEmotionBlock);
-
-            prompt.Append(PromptsBlocks.BuildDateInvitationProtocol(CurrentFlags));
-            prompt.Append(PromptsBlocks.BuildFollowInvitationProtocol(Character, CurrentFlags));
-
-            string stoodUpPrompt = prompt.ToString();
-            return stoodUpPrompt;
-        }
-
-        if (ModEntry.Config.EnableDateSystem && !string.IsNullOrEmpty(npcName) && DateManager.Instance?.IsOnDate(npcName) == true)
-        {
-            prompt.Append(PromptsBlocks.BuildBranchTheme(Character, Context, InstructionsBranch.Date));
-            prompt.Append(PromptsBlocks.BuildMicroEnvironment(Character, Context, CurrentFlags));
-
-            // 聚焦裁剪：偷听与配偶等待语境与约会现场冲突，聚焦期间不进入 date prompt（VT-FOCUS-02）。
-            if (!string.IsNullOrEmpty(PendingEchoBlock))
-            {
-                prompt.AppendLine(PendingEchoBlock);
-                prompt.AppendLine();
-            }
-            if (!string.IsNullOrEmpty(PendingMilestoneBlock))
-            {
-                prompt.AppendLine(PendingMilestoneBlock);
-                prompt.AppendLine();
-            }
-
-            DefaultOrOverride("CurrentConversation", p => p.Append(PromptsBlocks.BuildCurrentConversation(Character, Context, CurrentFlags, _emittedBlockKeys, Name)), prompt);
-            prompt.Append(PromptsBlocks.BuildSessionContinuity(Character, Context, isZh));
-            prompt.Append(PromptsBlocks.BuildPendingTopic(Character, Name, _injectedPrivateThoughts));
-            if (!string.IsNullOrEmpty(PendingEvolvedTraitsBlock))
-                prompt.AppendLine("\n" + PendingEvolvedTraitsBlock);
-            if (!string.IsNullOrEmpty(PendingLocalPerceptionBlock))
-                prompt.AppendLine("\n" + PendingLocalPerceptionBlock);
-            if (!string.IsNullOrEmpty(PendingEmotionBlock))
-                prompt.AppendLine("\n" + PendingEmotionBlock);
-
-            prompt.Append(PromptsBlocks.BuildDateInvitationProtocol(CurrentFlags));
-            prompt.Append(PromptsBlocks.BuildFollowInvitationProtocol(Character, CurrentFlags));
-            prompt.Append(PromptsBlocks.BuildDateEndingProtocol(CurrentFlags));
-
-            string datePrompt = prompt.ToString();
-            return datePrompt;
-        }
-
-        if (flags?.IsSimpleGreeting == true && flags?.IsMovementRequested != true && string.IsNullOrEmpty(PendingMilestoneBlock))
-        {
-            prompt.Append(PromptsBlocks.BuildBranchTheme(Character, Context, InstructionsBranch.Greeting));
-            prompt.Append(PromptsBlocks.BuildMicroEnvironment(Character, Context, CurrentFlags));
-            DefaultOrOverride("CurrentConversation", p => p.Append(PromptsBlocks.BuildCurrentConversation(Character, Context, CurrentFlags, _emittedBlockKeys, Name)), prompt);
-            prompt.Append(PromptsBlocks.BuildSessionContinuity(Character, Context, isZh));
-            prompt.Append(PromptsBlocks.BuildPendingTopic(Character, Name, _injectedPrivateThoughts));
-
-            if (!string.IsNullOrEmpty(PendingEavesdropBlock))
-            {
-                prompt.AppendLine(PendingEavesdropBlock);
-                prompt.AppendLine();
-            }
-            if (!string.IsNullOrEmpty(PendingSpouseWaitingBlock))
-            {
-                prompt.AppendLine(PendingSpouseWaitingBlock);
-                prompt.AppendLine();
-            }
-            if (!string.IsNullOrEmpty(PendingEchoBlock))
-            {
-                prompt.AppendLine(PendingEchoBlock);
-                prompt.AppendLine();
-            }
-            if (!string.IsNullOrEmpty(PendingEvolvedTraitsBlock))
-                prompt.AppendLine("\n" + PendingEvolvedTraitsBlock);
-            if (!string.IsNullOrEmpty(PendingLocalPerceptionBlock))
-                prompt.AppendLine("\n" + PendingLocalPerceptionBlock);
-            if (!string.IsNullOrEmpty(PendingEmotionBlock))
-                prompt.AppendLine("\n" + PendingEmotionBlock);
-
-            string simpleProfile = PlayerProfileManager.BuildProfileText(
-                Character.StardewNpc,
-                playerInput: "",
-                flags: flags);
-            if (!string.IsNullOrEmpty(simpleProfile))
-                prompt.AppendLine(simpleProfile);
-
-            prompt.Append(PromptsBlocks.BuildDateInvitationProtocol(CurrentFlags));
-
-            string greetingPrompt = prompt.ToString();
-            LogRoutingDebug(greetingPrompt, "SIMPLE_GREETING_FAST_PASS");
-            return greetingPrompt;
-        }
-
-        // FULL / Normal
-        prompt.Append(PromptsBlocks.BuildBranchTheme(Character, Context, InstructionsBranch.Normal));
-        prompt.Append(PromptsBlocks.BuildMicroEnvironment(Character, Context, CurrentFlags));
-
-        if (flags?.CompanionFocus == CompanionFocusMode.RegularFollow)
-            prompt.Append(PromptsBlocks.BuildCompanionWalkingContext(Character, Context, isZh));
-
-        prompt.Append(PromptsBlocks.BuildGreetingContext(Character, Context));
-
-        Friendship friendship = null;
-        Game1.getPlayerOrEventFarmer()?.friendshipData?.TryGetValue(Character.Name, out friendship);
-        bool isMarriedOrRoommate = friendship != null && (friendship.IsMarried() || friendship.IsRoommate());
-
-        if (isMarriedOrRoommate)
-        {
-            if (friendship.IsRoommate())
-            {
-                DefaultOrOverride("coreRoommates",
-                    p => p.AppendLine(Util.GetString(Character, "coreRoommates", new { Name = Name })), prompt);
-            }
-            else
-            {
-                prompt.AppendLine(Util.GetString(Character, "coreMarried",
-                    new { Name = Name, Pronoun = npcIsMale ? "his" : "her" }));
-                DefaultOrOverride("Children", p => p.Append(PromptsBlocks.BuildChildren(Character, Context, friendship, Name)), prompt);
-            }
-            DefaultOrOverride("Spouse", p => p.Append(PromptsBlocks.BuildSpouse(Character, Name)), prompt);
-            if (flags?.IncludeFarmDetails == true)
-                DefaultOrOverride("Trinkets", p => p.Append(PromptsBlocks.BuildTrinkets(Character, Name)), prompt);
-            DefaultOrOverride("MarriageFeelings", p => p.Append(PromptsBlocks.BuildMarriageFeelings(Character, Context, Name)), prompt);
-        }
-        else
-        {
-            prompt.Append(PromptsBlocks.BuildNonSpouseFriendshipLevel(Character, Context, npcData));
-            DefaultOrOverride("Spouse", p => p.Append(PromptsBlocks.BuildSpouse(Character, Name)), prompt);
-            DefaultOrOverride("SpecialRelationshipStatus",
-                p => p.Append(PromptsBlocks.BuildSpecialRelationshipStatus(Character, Context, friendship, PendingMilestoneBlock, Name)), prompt);
-        }
-
-        DefaultOrOverride("RecentEvents", p => p.Append(PromptsBlocks.BuildRecentEvents(Character, allPreviousActivities)), prompt);
-        DefaultOrOverride("SpecialDatesAndBirthday", p => p.Append(PromptsBlocks.BuildSpecialDatesAndBirthday(Character, Context, Name)), prompt);
-        DefaultOrOverride("Gift", p => p.Append(PromptsBlocks.BuildGift(Character, giveGift, Name)), prompt);
-        DefaultOrOverride("SpouseAction", p => p.Append(PromptsBlocks.BuildSpouseAction(Character, Context, Name)), prompt);
-
-        prompt.Append(PromptsBlocks.BuildInteractionState(Character, Context, CurrentFlags, Name, isMarriedOrRoommate));
-        prompt.Append(PromptsBlocks.BuildDateInvitationProtocol(CurrentFlags));
-        prompt.Append(PromptsBlocks.BuildJealousyTrigger(Character, CurrentFlags, isZh));
-
-        DefaultOrOverride("Preoccupation", p => p.Append(PromptsBlocks.BuildPreoccupation(Character, Context, _injectedPrivateThoughts, Name)), prompt);
-
-        string latestInput = Context?.ChatHistory?
-            .LastOrDefault(x => x.IsPlayerLine)?.Text ?? "";
-        string playerProfile = PlayerProfileManager.BuildProfileText(
-            Character.StardewNpc,
-            playerInput: latestInput,
-            flags: flags);
-        if (!string.IsNullOrEmpty(playerProfile))
-        {
-            prompt.AppendLine(playerProfile);
-            prompt.AppendLine();
-        }
-
-        if (!string.IsNullOrEmpty(PendingEavesdropBlock))
-        {
-            prompt.AppendLine(PendingEavesdropBlock);
-            prompt.AppendLine();
-        }
-
-        if (!string.IsNullOrEmpty(PendingSpouseWaitingBlock))
-        {
-            prompt.AppendLine(PendingSpouseWaitingBlock);
-            prompt.AppendLine();
-        }
-
-        if (!string.IsNullOrEmpty(PendingEchoBlock))
-        {
-            prompt.AppendLine(PendingEchoBlock);
-            prompt.AppendLine();
-        }
-
-        if (!string.IsNullOrEmpty(PendingMilestoneBlock))
-        {
-            prompt.AppendLine(PendingMilestoneBlock);
-            prompt.AppendLine();
-        }
-
-        if (!string.IsNullOrEmpty(PendingEvolvedTraitsBlock))
-            prompt.AppendLine(PendingEvolvedTraitsBlock + "\n");
-        if (!string.IsNullOrEmpty(PendingLocalPerceptionBlock))
-            prompt.AppendLine(PendingLocalPerceptionBlock + "\n");
-        if (!string.IsNullOrEmpty(PendingEmotionBlock))
-            prompt.AppendLine(PendingEmotionBlock + "\n");
-
-        DefaultOrOverride("CurrentConversation", p => p.Append(PromptsBlocks.BuildCurrentConversation(Character, Context, CurrentFlags, _emittedBlockKeys, Name)), prompt);
-        prompt.Append(PromptsBlocks.BuildSessionContinuity(Character, Context, isZh));
-        prompt.Append(PromptsBlocks.BuildPendingTopic(Character, Name, _injectedPrivateThoughts));
-        prompt.Append(PromptsBlocks.BuildMovementInstruction(Character, CurrentFlags, MovementInstructionApplicable()));
-
-        string finalPrompt = prompt.ToString();
-        LogRoutingDebug(finalPrompt, "FULL_CONTEXT_BUILD");
-
-        return finalPrompt;
-    }
-#pragma warning restore CS0618
-
-    // ── VT3-C2: 分层拼装入口（惰性交付，零生产调用方；VT3-E 接线）──
     // Tier1 快照层（plan.Tier1Snapshot）→ Tier2a 会话层 → Tier2b 脉冲层。
     // 不变式：Tier2b 零管理器调用、零内容构建——脉冲内容单一事实源为 plan.ActiveImpulses
     // （由 VT3-D BuildPlan 一次性预构建）；Tier2a 仅经 C1 静态生产者做只读上下文读取；
@@ -644,109 +361,6 @@ public class Prompts
     internal string AssembleTier2aSegment(DialogueContext context, Character character) => AssembleTier2a(context, character);
     internal static string AssembleTier2bSegment(InjectionPlan plan) => AssembleTier2b(plan);
 
-    private void LogTopologyVerification(string finalPrompt, string routeType)
-    {
-#pragma warning disable CS0618 // VT3-D: 方法体留 VT3-E 删除；Pending* 状态读取触达 Obsolete，集中抑制。
-        if (!ModEntry.Config?.Debug ?? true)
-            return;
-
-        try
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine("╔═══════════════════════════════════════════════════════════");
-            sb.AppendLine($"║ [Topology Verification] {Name} | Route: {routeType}");
-            sb.AppendLine("╠═══════════════════════════════════════════════════════════");
-
-            sb.AppendLine("║ [Dynamic Injection Status]");
-            sb.AppendLine($"║   PendingEvolvedTraitsBlock: {(!string.IsNullOrEmpty(PendingEvolvedTraitsBlock) ? "✓ Injected" : "✗ Empty")}");
-            sb.AppendLine($"║   PendingLocalPerceptionBlock: {(!string.IsNullOrEmpty(PendingLocalPerceptionBlock) ? "✓ Injected" : "✗ Empty")}");
-            sb.AppendLine($"║   PendingEavesdropBlock: {(!string.IsNullOrEmpty(PendingEavesdropBlock) ? "✓ Injected" : "✗ Empty")}");
-            sb.AppendLine($"║   PendingSpouseWaitingBlock: {(!string.IsNullOrEmpty(PendingSpouseWaitingBlock) ? "✓ Injected" : "✗ Empty")}");
-            sb.AppendLine($"║   PendingEchoBlock: {(!string.IsNullOrEmpty(PendingEchoBlock) ? "✓ Injected" : "✗ Empty")}");
-            sb.AppendLine($"║   PendingMilestoneBlock: {(!string.IsNullOrEmpty(PendingMilestoneBlock) ? "✓ Injected" : "✗ Empty")}");
-
-            sb.AppendLine("║");
-            sb.AppendLine("║ [Topology Structure]");
-
-            string computedHeading = PromptsBlocks.BuildConversationHeading(Character);
-            bool found = finalPrompt.Contains(computedHeading);
-            bool overrideUsed = PromptOverrides?.ContainsKey("CurrentConversation") ?? false;
-            bool ledgerEmitted = _emittedBlockKeys.Contains("CurrentConversation");
-            bool expected = routeType != "STOOD_UP" && CurrentConversationHasContent();
-
-            string currentConversationStatus;
-            if (found)
-                currentConversationStatus = "✓ Present";
-            else if (overrideUsed)
-                currentConversationStatus = "✓ Present (override)";
-            else if (ledgerEmitted)
-                currentConversationStatus = "✓ Present (ledger; heading 文本漂移)";
-            else if (!expected)
-                currentConversationStatus = routeType == "STOOD_UP"
-                    ? "– Not Required (route omits history)"
-                    : "– Not Required (empty history)";
-            else
-                currentConversationStatus = "✗ Missing";
-
-            if (!found && !overrideUsed && !ledgerEmitted && string.IsNullOrEmpty(Util.GetString(Character, "currentConversationHeading")))
-            {
-                sb.AppendLine("║   ⚠ [Topology] heading key 为空，文本扫描已降级");
-            }
-
-            bool hasMovementInstruction = finalPrompt.Contains("<movement_instruction");
-            bool isMovementExpected = (routeType == "FULL_CONTEXT_BUILD") && MovementInstructionApplicable();
-
-            string instructionsText = Instructions ?? "";
-            bool hasInstructions = instructionsText.Contains(ComposeInstructionsHeading())
-                                  || !string.IsNullOrWhiteSpace(instructionsText);
-
-            sb.AppendLine($"║   CurrentConversation: {currentConversationStatus}");
-            sb.AppendLine($"║   MovementInstruction: {(hasMovementInstruction ? "✓ Present" : (isMovementExpected ? "✗ Missing" : "– Not Required"))}");
-            sb.AppendLine($"║   InstructionsBlock: {(hasInstructions ? "✓ Present" : "✗ Missing")}");
-
-            if (found && hasMovementInstruction)
-            {
-                int conversationPos = finalPrompt.LastIndexOf(computedHeading, StringComparison.Ordinal);
-                int movementPos = finalPrompt.LastIndexOf("<movement_instruction", StringComparison.Ordinal);
-
-                bool correctOrder = conversationPos < movementPos;
-                sb.AppendLine($"║   Conversation → Movement order: {(correctOrder ? "✓ Correct" : "✗ INVERTED (BUG!)")}");
-
-                if (!correctOrder)
-                {
-                    sb.AppendLine("║   ⚠ WARNING: Movement instruction appears BEFORE conversation history!");
-                    sb.AppendLine("║   ⚠ This breaks the 'dialogue history at bottom' principle.");
-                }
-            }
-
-            if (!found && !overrideUsed && !ledgerEmitted && string.IsNullOrEmpty(Util.GetString(Character, "currentConversationHeading")))
-            {
-                sb.AppendLine("║   ⚠ [Topology] heading key 为空，文本扫描已降级");
-            }
-
-            sb.AppendLine("║");
-            sb.AppendLine("║ [Turn Detection]");
-            sb.AppendLine($"║   Context.IsActiveTurn: {Context?.IsActiveTurn.ToString() ?? "null"}");
-            sb.AppendLine($"║   Context.DialogueSessionId: {Context?.DialogueSessionId ?? "null"}");
-            sb.AppendLine($"║   RoutingFlags.IsSimpleGreeting: {CurrentFlags?.IsSimpleGreeting.ToString() ?? "null"}");
-            sb.AppendLine($"║   RoutingFlags.IncludeShortTermContext: {CurrentFlags?.IncludeShortTermContext.ToString() ?? "null"}");
-
-            sb.AppendLine("║");
-            sb.AppendLine("║ [Length Statistics]");
-            sb.AppendLine($"║   CorePrompt length: {finalPrompt.Length} chars (~{finalPrompt.Length / 4} tokens)");
-            sb.AppendLine($"║   Lines: {finalPrompt.Split('\n').Length}");
-
-            sb.AppendLine("╚═══════════════════════════════════════════════════════════");
-          
-            ModEntry.SMonitor?.Log(sb.ToString(), StardewModdingAPI.LogLevel.Debug);
-        }
-        catch (Exception ex)
-        {
-            ModEntry.SMonitor?.Log($"[Prompts] Topology verification failed: {ex.Message}", StardewModdingAPI.LogLevel.Warn);
-        }
-    }
-#pragma warning restore CS0618
-
     private void LogRoutingDebug(string promptText, string routeType)
     {
         try
@@ -831,12 +445,6 @@ public class Prompts
         return commandPrompt.ToString();
     }
 
-    private string GetInstructions()
-    {
-        return GetInstructions(InstructionsBranch.Normal);
-    }
-
-    // VT3-C2：基础模板逻辑与遗留逐字一致；仅在其后按 branch 追加分支规则（Normal 零追加）。
     internal string GetInstructions(InstructionsBranch branch)
     {
         var instructions = new StringBuilder();
@@ -983,8 +591,7 @@ public class Prompts
             character.StardewNpc.GetData().Gender == StardewValley.Gender.Male;
 
         /// <summary>组装当前对话历史标题（"### " + 本地化 currentConversationHeading）。
-        /// 单一方法体：供 BuildCurrentConversation（生产者）与 LogTopologyVerification（验证者）共用，
-        /// 杜绝双体漂移。</summary>
+        /// 单一方法体：供 BuildCurrentConversation（生产者）与 ConversationDirector 共享，杜绝双体漂移。</summary>
         internal static string BuildConversationHeading(Character character) =>
             "### " + Util.GetString(character, "currentConversationHeading");
 

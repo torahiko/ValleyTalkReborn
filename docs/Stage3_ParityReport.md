@@ -98,12 +98,75 @@ Single-line delegates over the existing `AssembleTier1/2a/2b` private methods.
 ab 命令已含 Date 夹具（复用 DumpDateBranch 状态操纵）。若夹具仍失败（FIXTURE_FAIL），
 按 3 分支覆盖验收，Date 运行时验证转移 P-1（记录，非阻塞）。
 
-## 8. 2ebfb2db Coverage (F2 replay)
+## 9. VT3-E-R2 Cleanup Deletion (阶段 3 收口)
 
-| Fix | Status |
-|-----|--------|
-| Deadlock fix (GetAwaiter removal) | Covered — current `vt_dump_topology` has no blocking calls |
-| DialogueContext population | Replayed via `BuildPopulatedContext` in `PromptTopologyDumper` |
-| DateManager BackingField reflection | Covered via `SetDateField` property fallback |
-| Export directory/filename | Current format differs but functional |
-| compare.py regex heuristics | Not replayed (separate tool, non-blocking) |
+### 9.1 Deleted members — `src/LLM/Prompts\Prompts.cs`
+
+| Item | Kind | Rationale |
+|------|------|-----------|
+| `GetCorePrompt()` + `#pragma CS0618` pair | method body | Maze retired; `CorePrompt` now backed by `_corePrompt` field populated solely by `AssembleCore` (LlmDialogueService.cs:90 calls `AssembleCore` before any `CorePrompt` read). |
+| `PendingEvolvedTraitsBlock` / `PendingLocalPerceptionBlock` / `PendingEavesdropBlock` / `PendingSpouseWaitingBlock` / `PendingEchoBlock` / `PendingEchoIsBridge` / `PendingMilestoneBlock` / `PendingEmotionBlock` + `[Obsolete]` attributes | properties | InjectionPlan/AssembleCore is now the single source; no remaining producers/consumers. |
+| `CorePrompt` lazy-init `??= GetCorePrompt()` → direct `_corePrompt` | property accessor | Matches ticket invariant "CorePrompt 起始为空，仅 AssembleCore 填充". |
+| `ComposeInstructionsHeading()` | method | Only consumer was `LogTopologyVerification` (deleted). |
+| `CurrentConversationHasContent()` | method | Only consumer was `LogTopologyVerification` (deleted). |
+| `LogTopologyVerification()` + `#pragma CS0618` pair | method body | Call sites already removed in VT3-D. |
+| `GetInstructions()` parameterless overload | method | Replaced by direct `GetInstructions(InstructionsBranch.Normal)` call in `Instructions` getter; overload retained per ticket. |
+
+### 9.2 Deleted members — `src\Debug\PromptTopologyDumper.cs`
+
+Entire file rewritten to retain only the multi-turn command, selftest, and their transitive dependencies. Deleted:
+
+- **Commands**: `vt_dump_topology` (registration + `OnCommand` + `RunDump` + `DumpBranch` + `DumpDateBranch` + `WriteManifest`; G2 baseline archival complete, superseded by production `[AI Request Context]` dumps), `vt_ab_topology` (registration + `OnAbCommand`; superseded by selftest-on-multi).
+- **Date fixture machinery**: `SetDateField`, `RunAbDateBranch`, `DumpDateBranch`.
+- **Side-A helpers**: `RunAbBranch`, `ResolveLegacyBranchMirror`, `ForceNewTier1Sessions`, `GetPromptsContext`, `CompareBlockSets`, `NormalizeToBlocks`, `LogBlockDiffDetail`, `ComputeBlockDiffDetail`, `BlockDiffDetail`, `GetInstructionLines`.
+- **Diff/block helpers**: `FirstLine`, `StripAllWhitespace`, `FirstDifferingLine`, `Truncate`, `FlattenLines`-adjacent diagnostics (`LogBlockDiffDetail`).
+- **Reflection plumbing**: `EnsureReflection`, `ResolveStatic`, `ResolveStaticTwoArgs`, `ResolveMethod`, `InvokeStatic`, `InvokeMethod`, `GetMilestoneManagerInstance`, `PromptDeduplicatorDeduplicate` + all `MethodInfo` caches.
+- **Dump helpers**: `DumpFullRequest`, `AppendSection`, `WriteManifest`, `TryGetGitCommitHash`, `TryGetGameVersion`, `FormatInGameDate`, `GetOwnModVersion`.
+- **Enums**: `BranchOutcome`, `ParityResult` + `GetLabel`.
+- `#pragma CS0618` pairs in `DumpFullRequest` (item 9) — removed with the method.
+
+### 9.3 Retained (per ticket keep-list)
+
+- `Prompts.AssembleTier1Segment / AssembleTier2aSegment / AssembleTier2bSegment` (single-line delegates, do not remove).
+- `vt_ab_topology_multi` (`OnAbMultiCommand`) including Reuse annotation.
+- `--selftest` 5 cases (`RunComparatorSelfTest`) — **moved** from `vt_ab_topology` to `vt_ab_topology_multi --selftest`.
+- `BuildPopulatedContext` (shared by director + multi).
+- Shared statics: `BuildConversationHeading`, `SelectGiftGiven`, `IsZh`, `MovementInstructionApplicable` (director + multi in use).
+- `CompareFlattened` + `FlattenLines` + `IsRandomLine` + `FlatCompareResult` (selftest + retained).
+- `BuildTurnChatHistory`, `FindCharacter`, `Info`, `ConversationDirectorInstance`.
+
+### 9.4 Random-class symmetric-removal audit list (retained in comparator)
+
+Lines classified as random-variance and symmetrically removed from both sides before bag comparison (WARN, never FAIL; removal logged for audit):
+
+| Class | Marker |
+|-------|--------|
+| Preoccupation | `[preoccupation]` |
+| Gift | `giftGiving` |
+| Gift (zh) | `你刚刚收到了` |
+| Gift (en) | `You just received` |
+
+(Per VT3-E-INS2 authoritative comparator; list frozen — extending requires architect approval.)
+
+### 9.5 Zero-reference evidence (post-cleanup `src/` grep)
+
+All symbols below have **zero executable references** in `src/` (only comments / unrelated `Tier2bBlockIds.PendingTopic` enum values remain):
+
+`GetCorePrompt`, `PendingEvolvedTraitsBlock`, `PendingLocalPerceptionBlock`, `PendingEavesdropBlock`, `PendingSpouseWaitingBlock`, `PendingEchoBlock`, `PendingEchoIsBridge`, `PendingMilestoneBlock`, `PendingEmotionBlock`, `ComposeInstructionsHeading`, `CurrentConversationHasContent`, `LogTopologyVerification`, `vt_dump_topology`.
+
+`vt_ab_topology` command registration removed; `--selftest` now lives on `vt_ab_topology_multi`.
+
+### 9.6 Build & Test Status
+
+- `dotnet build ValleytalkReborn.sln`: **0 errors, 0 warnings**.
+- `dotnet test`: **194/194 passed**.
+
+### 9.7 Pending manual in-game verification (人工, to be run once by developer)
+
+These require a live SMAPI game session and cannot be executed by the cleanup commit itself:
+
+1. `vt_ab_topology_multi --selftest` → expect **5/5 PASS** (INS2 re-validation).
+2. `vt_ab_topology_multi <NPC>` → expect **A1/A2/A3/A4 + Rotation + Reuse** all green.
+3. Production smoke: converse once each with two NPCs → `[Director]` Plan normal, `[AI Request Context]` dump normal, no exceptions.
+
+Steps 1–3 gate the final sign-off; the cleanup commit (build + unit tests) is independently green.
