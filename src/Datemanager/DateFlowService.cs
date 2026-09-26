@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using StardewModdingAPI;
 using StardewValley;
@@ -153,6 +154,109 @@ namespace ValleytalkReborn
             return isZh
                 ? "时间不早了……今晚我和你在一起很开心。晚安！"
                 : "It's getting late... I had a wonderful time tonight. Good night!";
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  手账摘要生成（Chronicle）
+        // ═══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// 安全获取地点显示名称（兼容 LocationId 与 TargetMap 两种传入值）。
+        /// 优先通过 LocationId 查询，失败时遍历 TargetMap 匹配，兜底返回原键。
+        /// </summary>
+        /// <param name="locationKey">地点 ID 或地图名（如 "Forest" 或 "Woods"）</param>
+        /// <returns>本地化显示名称（如"秘密森林"或"The Secret Forest"）</returns>
+        public static string ResolveLocationDisplayName(string locationKey)
+        {
+            bool isZh = IsChineseLanguage;
+
+            // BOUNDARY: 注册表未初始化
+            if (DateLocationRegistry.Locations == null || DateLocationRegistry.Locations.Count == 0)
+                return locationKey;
+
+            // 优先通过 LocationId 查询
+            if (DateLocationRegistry.Locations.TryGetValue(locationKey, out var info))
+                return isZh ? info.DisplayNameZh : info.DisplayNameEn;
+
+            // 降级：遍历 TargetMap 匹配（处理 "Woods" → "Forest" 映射）
+            var matched = DateLocationRegistry.Locations.Values
+                .FirstOrDefault(l => string.Equals(l.TargetMap, locationKey, StringComparison.OrdinalIgnoreCase));
+
+            if (matched != null)
+                return isZh ? matched.DisplayNameZh : matched.DisplayNameEn;
+
+            // 兜底：返回原键
+            return locationKey;
+        }
+
+        /// <summary>
+        /// 构建约会手账生成的 System + User Prompt。
+        /// </summary>
+        /// <param name="npcName">NPC 姓名</param>
+        /// <param name="locationKey">约会地点 ID 或地图名</param>
+        /// <param name="startTime">开始时间（游戏时间，如 1800）</param>
+        /// <param name="endTime">结束时间（游戏时间，如 2130）</param>
+        /// <param name="modeDesc">约会模式描述（"定点小聚" / "深情定点与漫步送归" / "随性散步"）</param>
+        /// <param name="giftSummary">送礼摘要（如"玩家送了我最爱的紫水晶" 或空字符串）</param>
+        /// <param name="dialogueHighlights">关键对话片段（可选，最多 2-3 句）</param>
+        /// <returns>(system prompt, user prompt)</returns>
+        public static (string sys, string user) BuildChroniclePrompt(
+            string npcName,
+            string locationKey,
+            int startTime,
+            int endTime,
+            string modeDesc,
+            string giftSummary,
+            string dialogueHighlights)
+        {
+            bool isZh = IsChineseLanguage;
+            string locDisplay = ResolveLocationDisplayName(locationKey);
+
+            string sys = isZh
+                ? $"你是《星露谷物语》中的 {npcName}。你刚和面前的农夫（@）结束了一场浪漫约会。"
+                : $"You are {npcName} from Stardew Valley. You just finished a romantic date with the farmer (@).";
+
+            string user = isZh
+                ? $"请根据以下约会事实，写下一篇属于你的第一人称约会手账心流随笔（50-80字，纯文本台词，不要用引号包裹）：\n" +
+                  $"- 约会地点：{locDisplay}\n" +
+                  $"- 约会形式：{modeDesc}\n" +
+                  (string.IsNullOrWhiteSpace(giftSummary) ? "" : $"- 礼物互动：{giftSummary}\n") +
+                  (string.IsNullOrWhiteSpace(dialogueHighlights) ? "" : $"- 彼此聊过的话题或片刻：{dialogueHighlights}\n") +
+                  $"\n要求：以第一人称（\"我\"）记录当下的心动或温情触动，强调情感体验而非报流水账，语言细腻。"
+                : $"Write a first-person personal date diary entry (50-80 words, plain text, no quotes) based on:\n" +
+                  $"- Location: {locDisplay}\n" +
+                  $"- Date Type: {modeDesc}\n" +
+                  (string.IsNullOrWhiteSpace(giftSummary) ? "" : $"- Gift: {giftSummary}\n") +
+                  (string.IsNullOrWhiteSpace(dialogueHighlights) ? "" : $"- Moments: {dialogueHighlights}\n") +
+                  $"\nFocus on emotional resonance and warmth rather than just a dry checklist.";
+
+            return (sys, user);
+        }
+
+        /// <summary>
+        /// 默认手账摘要（LLM 失败或超时时的模板化降级）。
+        /// </summary>
+        /// <param name="npcName">NPC 姓名</param>
+        /// <param name="locationKey">约会地点 ID 或地图名</param>
+        /// <param name="modeDesc">约会模式描述</param>
+        /// <param name="hasGift">是否送礼</param>
+        /// <returns>模板化手账文本</returns>
+        public static string BuildFallbackChronicle(
+            string npcName,
+            string locationKey,
+            string modeDesc,
+            bool hasGift)
+        {
+            bool isZh = IsChineseLanguage;
+            string locDisplay = ResolveLocationDisplayName(locationKey);
+
+            string giftPart = hasGift
+                ? (isZh ? "收到了特意为我准备的礼物，" : "received a thoughtful gift, ")
+                : "";
+
+            return isZh
+                ? $"今晚在{locDisplay}度过了很开心的时光（{modeDesc}）。{giftPart}夜风很温柔，和农夫在一起的时间总是过得飞快。"
+                : $"Spent a wonderful evening at {locDisplay} ({modeDesc}). {giftPart}Time always seems to fly by when we are together.";
         }
     }
 }
