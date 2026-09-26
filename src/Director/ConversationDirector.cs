@@ -310,6 +310,13 @@ public sealed class ConversationDirector : IConversationDirector
                 Prompts.PromptsBlocks.BuildMovementInstruction(character, flags,
                     Prompts.PromptsBlocks.MovementInstructionApplicable(flags)));
 
+        if (whitelist.Contains(Tier2bBlockIds.SocialLens))
+        {
+            string lensBlock = RelationshipAttitudeLensBuilder.Build(character, context);
+            if (!string.IsNullOrEmpty(lensBlock))
+                SetImpulse(impulses, Tier2bBlockIds.SocialLens, lensBlock);
+        }
+
         return impulses;
     }
 
@@ -328,6 +335,7 @@ public sealed class ConversationDirector : IConversationDirector
                     Tier2bBlockIds.SpouseWaiting,
                     Tier2bBlockIds.Echo, Tier2bBlockIds.Milestone, Tier2bBlockIds.LocalPerception,
                     Tier2bBlockIds.Emotion, Tier2bBlockIds.DateInvite, Tier2bBlockIds.FollowProto,
+                    Tier2bBlockIds.SocialLens,
                 };
             case InstructionsBranch.Date:
                 // 薄壳 Date 块（Prompts.cs:355-388）：Gossip, Echo, Milestone, PendingTopic, EvolvedTraits(Tier1),
@@ -337,7 +345,7 @@ public sealed class ConversationDirector : IConversationDirector
                 {
                     Tier2bBlockIds.Gossip, Tier2bBlockIds.Echo, Tier2bBlockIds.Milestone, Tier2bBlockIds.PendingTopic,
                     Tier2bBlockIds.LocalPerception, Tier2bBlockIds.Emotion, Tier2bBlockIds.DateInvite,
-                    Tier2bBlockIds.FollowProto, Tier2bBlockIds.DateEndProto,
+                    Tier2bBlockIds.FollowProto, Tier2bBlockIds.DateEndProto, Tier2bBlockIds.SocialLens,
                 };
             case InstructionsBranch.Greeting:
                 // 薄壳 Greeting 块（Prompts.cs:390-432）：Gossip, PendingTopic, Eavesdrop, SpouseWaiting, Echo,
@@ -348,11 +356,11 @@ public sealed class ConversationDirector : IConversationDirector
                     Tier2bBlockIds.Gossip, Tier2bBlockIds.PendingTopic, Tier2bBlockIds.Eavesdrop,
                     Tier2bBlockIds.SpouseWaiting,
                     Tier2bBlockIds.Echo, Tier2bBlockIds.LocalPerception, Tier2bBlockIds.Emotion,
-                    Tier2bBlockIds.PlayerProfile, Tier2bBlockIds.DateInvite,
+                    Tier2bBlockIds.PlayerProfile, Tier2bBlockIds.DateInvite, Tier2bBlockIds.SocialLens,
                 };
             case InstructionsBranch.Normal:
             default:
-                // FULL = 全 17（FollowProto/DateEndProto 值门控为空，不出现在输出中）。
+                // FULL = 全 18（FollowProto/DateEndProto 值门控为空，不出现在输出中）。
                 return new HashSet<string>(StringComparer.Ordinal)
                 {
                     Tier2bBlockIds.Gossip, Tier2bBlockIds.Interaction, Tier2bBlockIds.Jealousy,
@@ -361,7 +369,7 @@ public sealed class ConversationDirector : IConversationDirector
                     Tier2bBlockIds.Echo, Tier2bBlockIds.Eavesdrop, Tier2bBlockIds.SpouseWaiting,
                     Tier2bBlockIds.LocalPerception, Tier2bBlockIds.Emotion, Tier2bBlockIds.PlayerProfile,
                     Tier2bBlockIds.DateInvite, Tier2bBlockIds.FollowProto, Tier2bBlockIds.DateEndProto,
-                    Tier2bBlockIds.Movement,
+                    Tier2bBlockIds.Movement, Tier2bBlockIds.SocialLens,
                 };
         }
     }
