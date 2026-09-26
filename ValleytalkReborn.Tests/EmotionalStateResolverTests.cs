@@ -77,30 +77,32 @@ public class EmotionalStateResolverTests
     }
 
     // UT-14 反问双轨四象限。
+    // isZh 实参显式钉定 zh 分支——测试宿主无游戏上下文，IsChinese() 将回落 EN；
+    // 锚点与 src/Emotion/EmotionalStateResolver.cs 当前 zh 模板逐字对应，若生产模板再改写，本文件必须同步。
     [Fact]
     public void UT14_CompileCore_DualTrackQuadrants()
     {
         // ① baseline 0.25 自然常态 → 软约束出现、硬禁令不出现
-        var normal = EmotionalStateResolver.CompileCore(Snap(0.05f, 0.35f, 0.25f, 0.25f), 0, null, "测试");
-        Assert.Contains("言语克制内敛", normal.PromptBlock);
-        Assert.DoesNotContain("严禁向农夫提问", normal.PromptBlock);
+        var normal = EmotionalStateResolver.CompileCore(Snap(0.05f, 0.35f, 0.25f, 0.25f), 0, null, "测试", isZh: true);
+        Assert.Contains("保持内敛克制", normal.PromptBlock);
+        Assert.DoesNotContain("绝对禁止向玩家提问", normal.PromptBlock);
 
         // ②a 同角色 O 压至 <0.20 → 硬禁令出现（基线差 0.25-0.05=0.20 捕获）
-        var pressed = EmotionalStateResolver.CompileCore(Snap(0.05f, 0.35f, 0.18f, 0.25f), 0, null, "测试");
-        Assert.Contains("严禁向农夫提问", pressed.PromptBlock);
+        var pressed = EmotionalStateResolver.CompileCore(Snap(0.05f, 0.35f, 0.18f, 0.25f), 0, null, "测试", isZh: true);
+        Assert.Contains("绝对禁止向玩家提问", pressed.PromptBlock);
 
         // ②b V<-0.25 → 硬禁令出现
-        var negative = EmotionalStateResolver.CompileCore(Snap(-0.30f, 0.35f, 0.25f, 0.25f), 0, null, "测试");
-        Assert.Contains("严禁向农夫提问", negative.PromptBlock);
+        var negative = EmotionalStateResolver.CompileCore(Snap(-0.30f, 0.35f, 0.25f, 0.25f), 0, null, "测试", isZh: true);
+        Assert.Contains("绝对禁止向玩家提问", negative.PromptBlock);
 
         // ③ baseline 0.45（已婚内向）中性带 → 两类指令均不出现
-        var neutral = EmotionalStateResolver.CompileCore(Snap(0.20f, 0.50f, 0.45f, 0.45f), 0, null, "测试");
-        Assert.DoesNotContain("严禁向农夫提问", neutral.PromptBlock);
-        Assert.DoesNotContain("言语克制内敛", neutral.PromptBlock);
+        var neutral = EmotionalStateResolver.CompileCore(Snap(0.20f, 0.50f, 0.45f, 0.45f), 0, null, "测试", isZh: true);
+        Assert.DoesNotContain("绝对禁止向玩家提问", neutral.PromptBlock);
+        Assert.DoesNotContain("保持内敛克制", neutral.PromptBlock);
 
         // ④ baseline 0.75 外向受击 O=0.30 → 硬禁令出现（基线差捕获）
-        var extrovert = EmotionalStateResolver.CompileCore(Snap(0.05f, 0.50f, 0.30f, 0.75f), 0, null, "测试");
-        Assert.Contains("严禁向农夫提问", extrovert.PromptBlock);
+        var extrovert = EmotionalStateResolver.CompileCore(Snap(0.05f, 0.50f, 0.30f, 0.75f), 0, null, "测试", isZh: true);
+        Assert.Contains("绝对禁止向玩家提问", extrovert.PromptBlock);
     }
 
     // UT-15 Narration 优先级：V=0.40/A=0.30/O=0.30 → 第 4 档（轻松）而非第 5 档（迟缓）。
@@ -108,7 +110,7 @@ public class EmotionalStateResolverTests
     public void UT15_CompileCore_NarrationPriority()
     {
         var (_, narration) = EmotionalStateResolver.CompileCore(
-            Snap(0.40f, 0.30f, 0.30f, 0.50f), 0, null, "阿比盖尔");
+            Snap(0.40f, 0.30f, 0.30f, 0.50f), 0, null, "阿比盖尔", isZh: true);
         Assert.Equal("（阿比盖尔 神色轻松，嘴角带着一丝笑意）", narration);
         Assert.DoesNotContain("心不在焉", narration);
     }
@@ -117,16 +119,17 @@ public class EmotionalStateResolverTests
     [Fact]
     public void UT16_CompileCore_TransitionLineOncePerNegativeValence()
     {
+        // 锚点不含 "- " 前缀：CompileCore 组装 directives 时统一补前缀，锚点作为输出行子串计数不变。
         const string transition =
-            "- 若农夫的言行让你原本的情绪出现真实的松动，不必刻意维持冷硬；真实的情绪转折比强装的负面更可信。此时允许转用 $h 肖像。";
+            "[STATE_TRANSITION] 若玩家言行促成了真实的情绪破冰或有效抚慰，禁止机械化固守负面僵持；执行自然的情绪软化，解禁肖像标记 $h。";
 
-        var (high, _) = EmotionalStateResolver.CompileCore(Snap(-0.50f, 0.70f, 0.30f, 0.50f), 0, null, "谢恩");
+        var (high, _) = EmotionalStateResolver.CompileCore(Snap(-0.50f, 0.70f, 0.30f, 0.50f), 0, null, "谢恩", isZh: true);
         Assert.Equal(1, CountOccurrences(high, transition));
 
-        var (low, _) = EmotionalStateResolver.CompileCore(Snap(-0.50f, 0.50f, 0.30f, 0.50f), 0, null, "谢恩");
+        var (low, _) = EmotionalStateResolver.CompileCore(Snap(-0.50f, 0.50f, 0.30f, 0.50f), 0, null, "谢恩", isZh: true);
         Assert.Equal(1, CountOccurrences(low, transition));
 
-        var (pos, _) = EmotionalStateResolver.CompileCore(Snap(0.40f, 0.70f, 0.80f, 0.50f), 0, null, "谢恩");
+        var (pos, _) = EmotionalStateResolver.CompileCore(Snap(0.40f, 0.70f, 0.80f, 0.50f), 0, null, "谢恩", isZh: true);
         Assert.Equal(0, CountOccurrences(pos, transition));
     }
 
