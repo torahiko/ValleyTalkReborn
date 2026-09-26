@@ -123,6 +123,8 @@ namespace ValleytalkReborn
         public ProxyMode ProxyMode { get; set; } = ProxyMode.System;
         public string CustomProxyUrl { get; set; } = "http://127.0.0.1:7890";
         public bool ApplyTranslation { get; set; } = false;
+        /// <summary>语言覆盖：非空时以 "zh" 前缀（忽略大小写）判定中文 Prompt 分支，优先于游戏语言；留空跟随游戏语言代码。</summary>
+        public string LanguageOverride { get; set; } = string.Empty;
         public int GeneralFrequency { get; set; } = 4;
         public int MarriageFrequency { get; set; } = 4;
         public int GiftFrequency { get; set; } = 4;

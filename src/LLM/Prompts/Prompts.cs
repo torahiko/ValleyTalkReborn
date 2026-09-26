@@ -29,16 +29,15 @@ public class Prompts
     private readonly HashSet<string> _emittedBlockKeys = new HashSet<string>(StringComparer.Ordinal);
 
     /// <summary>
-    /// 统一语言解析，支持用户配置覆盖回退。
+    /// 统一语言解析：Config.LanguageOverride 优先（"zh" 前缀判定，忽略大小写），
+    /// 留空/空白回退游戏语言代码 LocalizedContentManager.CurrentLanguageCode。
     /// </summary>
     internal static bool ResolveIsChinese()
     {
-        if (!string.IsNullOrEmpty(ModEntry.Language))
-        {
-            return ModEntry.Language.StartsWith("zh", StringComparison.OrdinalIgnoreCase)
-                || ModEntry.Language.IndexOf("chinese", StringComparison.OrdinalIgnoreCase) >= 0;
-        }
-        return LocalizedContentManager.CurrentLanguageCode.ToString().StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+        string languageOverride = ModEntry.Config?.LanguageOverride?.Trim();
+        if (!string.IsNullOrEmpty(languageOverride))
+            return languageOverride.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+        return LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
     }
 
     private bool IsChineseLanguage => ResolveIsChinese();
@@ -88,6 +87,10 @@ public class Prompts
     private string _corePrompt;
     public string CorePrompt { get => _corePrompt; internal set => _corePrompt = value; }
 
+    private InjectionPlan _corePlan;
+    private string _sessionContinuitySegment;
+    private string _currentConversationSegment;
+
     // VT3-D Δ2: 可变访问器——director 经此将 BuildPreoccupation/BuildPendingTopic 的 side-effect 写回
     // 同一 List 实例，使 ProcessLines 反泄漏过滤（LlmDialogueService.cs:580-589）仍可达。禁止防御性拷贝。
     internal List<string> InjectedPrivateThoughtsMutable => _injectedPrivateThoughts;
@@ -100,6 +103,61 @@ public class Prompts
 
     private string _instructions;
     public string Instructions { get => _instructions ??= GetInstructions(InstructionsBranch.Normal); internal set => _instructions = value; }
+
+    // ── 命名边界视图（PROMPT-ARCH-01）：内存态只读组合，按请求重算；不改变 Provider 载荷 ──
+
+    /// <summary>静态指令边界：Instructions + Command。不含 CorePrompt 与对话流。</summary>
+    public string StaticInstructionContext => JoinPromptSegments(Instructions, Command);
+
+    /// <summary>
+    /// 动态上下文边界：GameConstantContext + NpcConstantContext + Tier 1 + Tier 2b（现有装配顺序）。
+    /// 需先经 AssembleCore 装配 InjectionPlan；缺失时按契约报错而非返回空上下文。
+    /// </summary>
+    public string DynamicContext
+    {
+        get
+        {
+            if (_corePlan == null)
+            {
+                ModEntry.SMonitor?.Log(
+                    "[Prompts] DynamicContext accessed before AssembleCore; InjectionPlan unavailable.",
+                    StardewModdingAPI.LogLevel.Error);
+                throw new InvalidOperationException(
+                    "DynamicContext requires AssembleCore to have assembled an InjectionPlan for this Prompts instance.");
+            }
+            return JoinPromptSegments(
+                GameConstantContext,
+                NpcConstantContext,
+                AssembleTier1Segment(_corePlan),
+                AssembleTier2bSegment(_corePlan));
+        }
+    }
+
+    /// <summary>对话流边界：SessionContinuity + CurrentConversation + 触发后缀。不含指令、常量上下文与 Tier 1/2b。</summary>
+    public string ConversationStream
+    {
+        get
+        {
+            string triggerSuffix = IsChineseLanguage
+                ? "<response_trigger>\n[RESPONSE_TRIGGER] 农夫刚刚说了话。你的第一句必须直接回应农夫的最新发言；完成直接回应后，才允许展开无关的延续话题。\n</response_trigger>"
+                : "<response_trigger>\n[RESPONSE_TRIGGER] The farmer has just spoken. Your first line MUST respond directly to the farmer's latest words; only after that direct response may you continue with unrelated topics.\n</response_trigger>";
+            return JoinPromptSegments(_sessionContinuitySegment, _currentConversationSegment, triggerSuffix);
+        }
+    }
+
+    /// <summary>拼接非空 Prompt 段：忽略 null/空段，非空段间恰好两个换行符，全空返回 string.Empty。</summary>
+    internal static string JoinPromptSegments(params string[] segments)
+    {
+        if (segments == null || segments.Length == 0)
+            return string.Empty;
+        var nonEmpty = new List<string>(segments.Length);
+        foreach (var segment in segments)
+        {
+            if (!string.IsNullOrEmpty(segment))
+                nonEmpty.Add(segment);
+        }
+        return nonEmpty.Count == 0 ? string.Empty : string.Join("\n\n", nonEmpty);
+    }
 
     public string Name { get; internal set; }
     public string Gender { get; internal set; }
@@ -291,6 +349,7 @@ public class Prompts
         if (plan == null)
             throw new ArgumentNullException(nameof(plan));
 
+        _corePlan = plan;
         var prompt = new StringBuilder();
         prompt.Append(AssembleTier1(plan));
         prompt.Append(AssembleTier2a(context, character));
@@ -318,8 +377,10 @@ public class Prompts
     private string AssembleTier2a(DialogueContext context, Character character)
     {
         var prompt = new StringBuilder();
-        prompt.Append(PromptsBlocks.BuildSessionContinuity(character, context, IsChineseLanguage));
-        prompt.Append(PromptsBlocks.BuildCurrentConversation(character, context, CurrentFlags, _emittedBlockKeys, Name));
+        _sessionContinuitySegment = PromptsBlocks.BuildSessionContinuity(character, context, IsChineseLanguage);
+        prompt.Append(_sessionContinuitySegment);
+        _currentConversationSegment = PromptsBlocks.BuildCurrentConversation(character, context, CurrentFlags, _emittedBlockKeys, Name);
+        prompt.Append(_currentConversationSegment);
         return prompt.ToString();
     }
 
