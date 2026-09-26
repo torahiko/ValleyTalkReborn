@@ -305,6 +305,9 @@ namespace ValleytalkReborn
         // 告别对话关闭轮询
         private string _farewellCloseNpcName = null;
 
+        // StagedActive 阶段对话计数（用于触发散步分支选择）
+        private int _stagedDialogueCount = 0;
+
         // ─── 构造 / 初始化 / 清理 ────────────────────────────────────
 
         private DateManager()
@@ -550,12 +553,87 @@ namespace ValleytalkReborn
         {
             if (CurrentDateMode is DateMode.Scheduled or DateMode.Follow && CurrentSession != null)
                 CurrentSession.RecordDialogue(speaker, text);
+
+            if (Phase == DatePhase.StagedActive)
+            {
+                _stagedDialogueCount++;
+                if (_stagedDialogueCount >= 2)
+                {
+                    NPC npc = Game1.getCharacterFromName(ActiveDateNpcName);
+                    if (npc != null)
+                    {
+                        // 延迟 800ms，待上一轮对话框平稳关闭后弹出选择分支
+                        DelayedAction.functionAfterDelay(() =>
+                        {
+                            if (Phase == DatePhase.StagedActive && Game1.activeClickableMenu == null)
+                                OfferWalkingTransition(npc);
+                        }, 800);
+                    }
+                }
+            }
         }
 
         public void RecordDateGift(string giftName, int taste)
         {
             if (CurrentDateMode is DateMode.Scheduled or DateMode.Follow && CurrentSession != null)
                 CurrentSession.RecordGift(giftName, taste);
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        //  散步分支选择（StagedActive → WalkingActive / Closing）
+        // ─────────────────────────────────────────────────────────────
+
+        private void OfferWalkingTransition(NPC npc)
+        {
+            if (npc == null || !Context.IsWorldReady) return;
+            if (Phase != DatePhase.StagedActive) return;
+
+            bool isZh = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+
+            string inviteText = isZh
+                ? "今晚坐在这里聊得很开心……时间还早，要一起散步走走吗？顺便送我回家？"
+                : "I had a wonderful time sitting with you... It's still early, shall we take a walk together?";
+
+            string option1 = isZh ? "好啊，我想再陪你走走。" : "Sure, I'd love to walk with you.";
+            string option2 = isZh ? "今天有点晚了，早点休息吧。" : "It's getting late, let's call it a night.";
+
+            var responses = new Response[]
+            {
+                new("AcceptWalking", option1),
+                new("DeclineWalking", option2)
+            };
+
+            Game1.currentLocation.createQuestionDialogue(
+                inviteText,
+                responses,
+                (who, whichAnswer) => HandleWalkingChoice(npc, whichAnswer),
+                npc);
+        }
+
+        private void HandleWalkingChoice(NPC npc, string whichAnswer)
+        {
+            if (npc == null || string.IsNullOrEmpty(whichAnswer)) return;
+
+            if (whichAnswer == "AcceptWalking")
+            {
+                if (!TryTransitionPhase(DatePhase.StagedActive, DatePhase.WalkingActive))
+                {
+                    TriggerFarewellDialogue(npc);
+                    return;
+                }
+
+                npc.jump();
+                npc.doEmote(32);
+                MovementManager.Instance.StartDateFollow(npc, DynamicEndTime);
+                ModEntry.SMonitor?.Log($"[DateManager] 玩家选择散步，切换至 WalkingActive，启动跟随。", LogLevel.Info);
+            }
+            else
+            {
+                if (TryTransitionPhase(DatePhase.StagedActive, DatePhase.Closing))
+                {
+                    TriggerFarewellDialogue(npc);
+                }
+            }
         }
 
         // ══════════════════════════════════════════════════════════════
@@ -1326,6 +1404,7 @@ namespace ValleytalkReborn
             HasGivenDateGiftThisSession = false;
             CurrentSession = null;
             _farewellCloseNpcName = null;
+            _stagedDialogueCount = 0;
 
             // 清空待处理邀约队列
             _pendingInvites.Clear();
