@@ -490,5 +490,20 @@
   "Profile.SaveButton": "保存档案",
   "WorldSettings.DateAmbience": "日期与氛围",
   "WorldSettings.LocationFestival": "地点与节日",
-  "WorldSettings.PoiTuning": "兴趣点调校"
+  "WorldSettings.PoiTuning": "兴趣点调校",
+  "WorldSettings.DateAmbienceDesc": "约会与氛围",
+  "WorldSettings.LocationFestivalDesc": "地点与节日",
+  "WorldSettings.PoiTuningDesc": "兴趣点与寻路",
+  "WorldSettings.NavTitle": "设定模块",
+  "WorldSettings.SaveButton": "保存设置",
+  "WorldSettings.ResetButton": "重置本页",
+  "WorldSettings.SaveHudSuccess": "已保存 {{count}} 页",
+  "WorldSettings.SaveHudPartialFail": "部分页面保存失败，请查看子页提示",
+  "WorldSettings.SaveHudAllSaved": "所有设置已保存",
+  "WorldSettings.ResetDialogTitle": "重置页面至默认",
+  "WorldSettings.ResetDialogSubtitle": "即将重置【{{page}}】至默认设置：",
+  "WorldSettings.ResetDialogBullet1": "该页全部自定义设置将被清除",
+  "WorldSettings.ResetDialogBullet2": "无法撤销，需手动重新配置",
+  "WorldSettings.ResetDialogConfirm": "确认重置",
+  "WorldSettings.ResetDialogCancel": "保持现状"
 }
