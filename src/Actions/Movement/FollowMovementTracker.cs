@@ -33,10 +33,21 @@ namespace ValleytalkReborn.Movement
         // ─── Follow state machine ───
         private FollowState _followState = FollowState.Halted;
 
-        // ─── Path target stabilization ───
+        // ─── Path target stabilization (FMT-04 adaptive commitment) ───
         private Vector2 _committedTarget;
         private int _retargetCooldown;
-        private const int RETARGET_COOLDOWN = 40;
+        private int _currentRetargetCooldown;
+        private Vector2 _lastEvaluatedPlayerTile;
+        private Vector2 _lastCommittedPlayerVelocity;
+
+        private const int   RETARGET_COOLDOWN_NEAR   = 10;  // dist < 3.0
+        private const int   RETARGET_COOLDOWN_MID    = 20;  // 3.0 ≤ dist < 6.0
+        private const int   RETARGET_COOLDOWN_FAR    = 30;  // dist ≥ 6.0
+        private const int   RETARGET_COOLDOWN_FAILED = 30;
+        private const float TARGET_SWITCH_MIN_IMPROVEMENT       = 0.75f;
+        private const float VELOCITY_DIRECTION_CHANGE_THRESHOLD = 0.35f;
+        private const float TARGET_STABILITY_BONUS     = 1.0f;  // 滞回：已提交目标的稳定加成
+        private const float TARGET_PLAYER_TILE_PENALTY = 1.5f;  // 惩罚选择玩家当前格
 
         // ─── Dynamic speed-matching thresholds ───
         private const float DIST_CATCHUP_RUN = 4.5f;   // 追赶带下界 & 闲逛中断阈值
@@ -170,6 +181,11 @@ namespace ValleytalkReborn.Movement
                 _lastPlayerPosition = Game1.player.Position;
                 _playerVelocity     = Vector2.Zero;
                 _lastPlayerTile     = Game1.player.Tile;
+
+                // FMT-04: reset adaptive commitment memory state.
+                _lastEvaluatedPlayerTile     = Vector2.Zero;
+                _lastCommittedPlayerVelocity = Vector2.Zero;
+                _currentRetargetCooldown     = 0;
             }
 
             _followingNpc  = npc;
@@ -223,6 +239,9 @@ namespace ValleytalkReborn.Movement
             _playerIdleTimer           = 0;
             _idleGazeTimer             = 0;
             _committedTarget           = Vector2.Zero;
+            _lastEvaluatedPlayerTile     = Vector2.Zero;
+            _lastCommittedPlayerVelocity = Vector2.Zero;
+            _currentRetargetCooldown     = 0;
             _wallCheckCooldown         = 0;
             _playerMovedThisTick       = false;
             _warnedAbnormalNpcSpeed    = false;
@@ -425,6 +444,9 @@ namespace ValleytalkReborn.Movement
             _playerIdleTimer           = 0;
             _idleGazeTimer             = 0;
             _committedTarget           = Vector2.Zero;
+            _lastEvaluatedPlayerTile     = Vector2.Zero;
+            _lastCommittedPlayerVelocity = Vector2.Zero;
+            _currentRetargetCooldown     = 0;
             _lastPlayerTile            = Game1.player?.Tile ?? Vector2.Zero;
             _wallCheckCooldown         = 0;
             _playerMovedThisTick       = false;
@@ -582,56 +604,153 @@ namespace ValleytalkReborn.Movement
             bool forceRetargetDueToStuck =
                 _stuckWindowCount >= STUCK_WINDOW_TRIGGER && _stuckRecoveryCooldown <= 0;
 
-            // 2.4 Dual-rate cooldown gate
+            // 2.4 Dual-rate cooldown gate + FMT-04 direction-change bypass
             bool structuralNeed =
                 _followingNpc.controller == null ||
                 MovementPathfinding.IsPathDead(_followingNpc.controller) ||
                 MovementPathfinding.IsPathDone(_followingNpc.controller);
 
+            bool playerDirectionChanged = false;
+            if (_lastCommittedPlayerVelocity.LengthSquared() > PREDICTION_MIN_VEL * PREDICTION_MIN_VEL
+                && _playerVelocity.LengthSquared() > PREDICTION_MIN_VEL * PREDICTION_MIN_VEL)
+            {
+                playerDirectionChanged = Vector2.Dot(
+                    Vector2.Normalize(_lastCommittedPlayerVelocity),
+                    Vector2.Normalize(_playerVelocity)) < 1f - VELOCITY_DIRECTION_CHANGE_THRESHOLD;
+            }
+
             if (!forceRetargetDueToStuck)
             {
                 bool gateOpen = _retargetCooldown <= 0
-                    || (structuralNeed && _retargetCooldown <= RETARGET_ARRIVAL_GRACE);
+                    || (structuralNeed && _retargetCooldown <= RETARGET_ARRIVAL_GRACE)
+                    || playerDirectionChanged;
                 if (!gateOpen) { _retargetCooldown--; return; }
             }
 
-            // 2.5 Redirect decision
-            bool needRetarget =
-                forceRetargetDueToStuck ||
-                structuralNeed ||
-                Vector2.Distance(_committedTarget, Game1.player.Tile) > DIST_CATCHUP_RUN;
-
-            if (needRetarget)
+            // 2.5 Stuck recovery（沿用原有逻辑）
+            if (forceRetargetDueToStuck)
             {
-                if (forceRetargetDueToStuck)
-                {
-                    MovementPathfinding.TryRecoverStartingTile(_followingNpc, _followingNpc.currentLocation);
-                    _stuckWindowCount = 0;
-                    _positionWatchTicks = 0;
-                    _stuckRecoveryCooldown = STUCK_RECOVERY_COOLDOWN;
-                    _lastNpcPositionInPathing = _followingNpc.Position;
-                    ModEntry.SMonitor?.Log(
-                        $"[FollowMovementTracker] {_followingNpc.Name} stuck detected " +
-                        $"({STUCK_WINDOW_TRIGGER} windows x {POSITION_WATCH_TICKS} ticks " +
-                        $"< {POSITION_MIN_DISPLACEMENT}px), recovery + " +
-                        $"{STUCK_RECOVERY_COOLDOWN}-tick immunity.",
-                        LogLevel.Warn);
-                }
+                MovementPathfinding.TryRecoverStartingTile(_followingNpc, _followingNpc.currentLocation);
+                _stuckWindowCount = 0;
+                _positionWatchTicks = 0;
+                _stuckRecoveryCooldown = STUCK_RECOVERY_COOLDOWN;
+                _lastNpcPositionInPathing = _followingNpc.Position;
+                ModEntry.SMonitor?.Log(
+                    $"[FollowMovementTracker] {_followingNpc.Name} stuck detected " +
+                    $"({STUCK_WINDOW_TRIGGER} windows x {POSITION_WATCH_TICKS} ticks " +
+                    $"< {POSITION_MIN_DISPLACEMENT}px), recovery + " +
+                    $"{STUCK_RECOVERY_COOLDOWN}-tick immunity.",
+                    LogLevel.Warn);
+            }
 
-                var target = _playerVelocity.Length() > PREDICTION_MIN_VEL
-                    ? GetPredictiveFollowTarget()
-                    : GetSmartFollowTarget();
-                _committedTarget = target;
+            // 2.6 Candidate generation（沿用既有目标选择算法）
+            var candidate = _playerVelocity.Length() > PREDICTION_MIN_VEL
+                ? GetPredictiveFollowTarget()
+                : GetSmartFollowTarget();
 
-                bool pathCreated = SetFollowPath(target);
-                _retargetCooldown = pathCreated
-                    ? RETARGET_COOLDOWN
-                    : 60;
+            if (candidate == Vector2.Zero)
+                return;
+
+            // 2.7 Score sanity（BUG 类：非有限分值 → 保留现有控制器并退出本 tick）
+            Vector2 playerTile = Game1.player.Tile;
+            if (!float.IsFinite(GetFollowTargetScore(candidate, playerTile))
+                || !float.IsFinite(GetFollowTargetScore(_committedTarget, playerTile)))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[FollowMovementTracker] {_followingNpc.Name} non-finite follow target score " +
+                    $"(candidate=({candidate.X},{candidate.Y}), current=({_committedTarget.X},{_committedTarget.Y})), " +
+                    "keeping current controller.",
+                    LogLevel.Error);
+                return;
+            }
+
+            // 2.8 FMT-04 target commitment hysteresis.
+            // Stuck NPC 的既有路径即使存活也不可用，视同结构性需求强制换目标。
+            bool structuralCommitNeed = structuralNeed || forceRetargetDueToStuck;
+
+            if (!ShouldCommitFollowTarget(candidate, dist, structuralCommitNeed))
+            {
+                _currentRetargetCooldown = GetAdaptiveRetargetCooldown(dist, structuralNeed);
+                _retargetCooldown = _currentRetargetCooldown;
 
                 ModEntry.SMonitor?.Log(
-                    $"[FollowMovementTracker] {_followingNpc.Name} retarget → ({target.X},{target.Y}), dist={dist:F1}",
+                    $"[FollowMovementTracker] {_followingNpc.Name} candidate ({candidate.X},{candidate.Y}) " +
+                    $"rejected by target hysteresis, keeping ({_committedTarget.X},{_committedTarget.Y})",
                     LogLevel.Debug);
+                return;
             }
+
+            _committedTarget = candidate;
+            bool pathCreated = SetFollowPath(candidate);
+
+            _currentRetargetCooldown = pathCreated
+                ? GetAdaptiveRetargetCooldown(dist, structuralNeed)
+                : RETARGET_COOLDOWN_FAILED;
+            _retargetCooldown = _currentRetargetCooldown;
+
+            if (pathCreated)
+            {
+                _lastEvaluatedPlayerTile     = Game1.player.Tile;
+                _lastCommittedPlayerVelocity = _playerVelocity;
+            }
+
+            ModEntry.SMonitor?.Log(
+                $"[FollowMovementTracker] {_followingNpc.Name} retarget → ({candidate.X},{candidate.Y}), dist={dist:F1}",
+                LogLevel.Debug);
+        }
+
+        // ─── FMT-04 adaptive follow target commitment ───
+
+        private int GetAdaptiveRetargetCooldown(float distance, bool pathStructuralNeed)
+        {
+            if (pathStructuralNeed)
+                return 0;
+
+            if (_followPathFailCount > 0)
+                return RETARGET_COOLDOWN_FAILED;
+
+            if (distance < SPEED_TIER_NEAR_DIST)
+                return RETARGET_COOLDOWN_NEAR;
+            if (distance >= SPEED_TIER_FAR_DIST)
+                return RETARGET_COOLDOWN_FAR;
+            return RETARGET_COOLDOWN_MID;
+        }
+
+        private bool ShouldCommitFollowTarget(Vector2 candidateTarget, float distance, bool structuralNeed)
+        {
+            if (structuralNeed) return true;
+            if (_committedTarget == Vector2.Zero) return true;
+            if (Vector2.Distance(_committedTarget, Game1.player.Tile) > DIST_CATCHUP_RUN) return true;
+
+            // 玩家变向：无需等满远距冷却即可换目标
+            if (_lastCommittedPlayerVelocity.LengthSquared() > PREDICTION_MIN_VEL * PREDICTION_MIN_VEL
+                && _playerVelocity.LengthSquared() > PREDICTION_MIN_VEL * PREDICTION_MIN_VEL)
+            {
+                float dirDot = Vector2.Dot(
+                    Vector2.Normalize(_lastCommittedPlayerVelocity),
+                    Vector2.Normalize(_playerVelocity));
+                if (dirDot < 1f - VELOCITY_DIRECTION_CHANGE_THRESHOLD)
+                    return true;
+            }
+
+            Vector2 playerTile = Game1.player.Tile;
+            float candidateScore = GetFollowTargetScore(candidateTarget, playerTile);
+            float committedScore = GetFollowTargetScore(_committedTarget, playerTile);
+            return candidateScore <= committedScore - TARGET_SWITCH_MIN_IMPROVEMENT;
+        }
+
+        private float GetFollowTargetScore(Vector2 target, Vector2 playerTile)
+        {
+            float score = Vector2.Distance(_followingNpc.Tile, target)
+                        + Vector2.Distance(target, playerTile);
+
+            if (target == _committedTarget)
+                score -= TARGET_STABILITY_BONUS;
+
+            if (target == playerTile)
+                score += TARGET_PLAYER_TILE_PENALTY;
+
+            return score;
         }
 
         private void TickWandering(float dist)
