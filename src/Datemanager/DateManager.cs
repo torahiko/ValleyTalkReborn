@@ -327,6 +327,18 @@ namespace ValleytalkReborn
             helper.Events.GameLoop.ReturnedToTitle += OnReturnedToTitle;
             helper.Events.Player.Warped += OnPlayerWarped;
             helper.Events.Display.MenuChanged += OnMenuChanged;
+
+            MovementManager.Instance.OnFollowEndedCallback = npcName =>
+            {
+                if (Phase == DatePhase.WalkingActive && string.Equals(ActiveDateNpcName, npcName, StringComparison.OrdinalIgnoreCase))
+                {
+                    NPC npc = Game1.getCharacterFromName(npcName);
+                    if (npc != null && TryTransitionPhase(DatePhase.WalkingActive, DatePhase.Closing))
+                    {
+                        TriggerFarewellDialogue(npc);
+                    }
+                }
+            };
         }
 
         public void Cleanup(IModHelper helper)
