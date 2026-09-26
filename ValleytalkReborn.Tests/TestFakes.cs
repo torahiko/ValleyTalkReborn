@@ -19,29 +19,81 @@ namespace ValleytalkReborn.Tests;
 
 internal static class TestEnv
 {
-    private static bool _initialized;
+    private static readonly FieldInfo LocaleField =
+        typeof(ModEntry).GetField("_locale", BindingFlags.Static | BindingFlags.NonPublic);
+    private static readonly FieldInfo LocaleCacheField =
+        typeof(ModEntry).GetField("_localeCache", BindingFlags.Static | BindingFlags.NonPublic);
+    private static readonly MethodInfo SHelperSetter =
+        typeof(ModEntry).GetProperty("SHelper").GetSetMethod(nonPublic: true);
 
-    public static void Init()
+    public static IModHelper GetSHelper() => ModEntry.SHelper;
+    public static void SetSHelper(IModHelper value) => SHelperSetter?.Invoke(null, new object[] { value });
+
+    public static CultureInfo GetLocaleField() => (CultureInfo)LocaleField?.GetValue(null);
+    public static string GetLocaleCacheField() => (string)LocaleCacheField?.GetValue(null);
+    public static void SetLocaleField(CultureInfo value) => LocaleField?.SetValue(null, value);
+    public static void SetLocaleCacheField(string value) => LocaleCacheField?.SetValue(null, value);
+
+    /// <summary>
+    /// Snapshots current ModEntry static state, applies the requested locale, and returns
+    /// an IDisposable that restores the original state on Dispose. Use in a using statement
+    /// to guarantee cleanup even if the test throws.
+    /// </summary>
+    public static IDisposable UseIsolatedLocale(string locale)
     {
-        if (_initialized) return;
-        _initialized = true;
-        // Install a no-op monitor so PromptCache's catch-block logging doesn't throw.
-        ModEntry.SMonitor = new FakeMonitor();
-        // Provide a Config so PromptCache's catch-block can set EnableMod = false without NRE.
-        ModEntry.Config = new ModConfig();
+        return new LocaleIsolation(locale);
     }
 
-    public static void SetLanguage(string localeCode)
+    private class LocaleIsolation : IDisposable
     {
-        Init();
-        // Force English UI culture so CultureInfo.DisplayName returns "Chinese (Simplified)"
-        // rather than the native name "中文", which lets ResolveIsChinese() match "chinese".
-        Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo("en-US");
+        private readonly IModHelper _originalSHelper;
+        private readonly IMonitor _originalSMonitor;
+        private readonly ModConfig _originalConfig;
+        private readonly CultureInfo _originalLocale;
+        private readonly string _originalLocaleCache;
+        private bool _disposed;
 
-        var fake = new FakeModHelper(localeCode);
-        typeof(ModEntry).GetProperty("SHelper")?.SetValue(null, fake);
-        typeof(ModEntry).GetField("_locale", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
-        typeof(ModEntry).GetField("_localeCache", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, string.Empty);
+        public LocaleIsolation(string locale)
+        {
+            // Snapshot BEFORE any mutation.
+            _originalSHelper = ModEntry.SHelper;
+            _originalSMonitor = ModEntry.SMonitor;
+            _originalConfig = ModEntry.Config;
+            _originalLocale = GetLocaleField();
+            _originalLocaleCache = GetLocaleCacheField();
+
+            ApplyLocale(locale);
+        }
+
+        private static void ApplyLocale(string locale)
+        {
+            // Force English UI culture so CultureInfo.DisplayName returns "Chinese (Simplified)"
+            // rather than the native name "中文", which lets ResolveIsChinese() match "chinese".
+            Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo("en-US");
+
+            // Provide a no-op monitor so PromptCache's catch-block logging doesn't throw.
+            ModEntry.SMonitor = new FakeMonitor();
+            // Provide a Config so PromptCache's catch-block can set EnableMod = false without NRE.
+            ModEntry.Config = new ModConfig();
+
+            var fake = new FakeModHelper(locale);
+            SetSHelper(fake);
+            SetLocaleField(null);
+            SetLocaleCacheField(string.Empty);
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+
+            // Unconditionally restore to pre-test values.
+            SetSHelper(_originalSHelper);
+            ModEntry.SMonitor = _originalSMonitor;
+            ModEntry.Config = _originalConfig;
+            SetLocaleField(_originalLocale);
+            SetLocaleCacheField(_originalLocaleCache);
+        }
     }
 }
 

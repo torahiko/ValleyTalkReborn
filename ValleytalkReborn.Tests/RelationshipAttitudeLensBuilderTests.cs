@@ -4,16 +4,44 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
+using StardewModdingAPI;
 using ValleytalkReborn;
 using ValleytalkReborn.Tests;
 using Xunit;
 
-public class RelationshipAttitudeLensBuilderTests
+[Collection("StaticGlobalStateCollection")]
+public class RelationshipAttitudeLensBuilderTests : IDisposable
 {
+    private readonly IModHelper _originalSHelper;
+    private readonly IMonitor _originalSMonitor;
+    private readonly ModConfig _originalConfig;
+    private readonly CultureInfo _originalLocale;
+    private readonly string _originalLocaleCache;
+
+    public RelationshipAttitudeLensBuilderTests()
+    {
+        // Snapshot the pre-test global state so we can unconditionally restore it
+        // in Dispose(), even if a test assertion fails or throws.
+        _originalSHelper = TestEnv.GetSHelper();
+        _originalSMonitor = ModEntry.SMonitor;
+        _originalConfig = ModEntry.Config;
+        _originalLocale = TestEnv.GetLocaleField();
+        _originalLocaleCache = TestEnv.GetLocaleCacheField();
+    }
+
+    public void Dispose()
+    {
+        TestEnv.SetSHelper(_originalSHelper);
+        ModEntry.SMonitor = _originalSMonitor;
+        ModEntry.Config = _originalConfig;
+        TestEnv.SetLocaleField(_originalLocale);
+        TestEnv.SetLocaleCacheField(_originalLocaleCache);
+    }
+
     private static Character MakeCharacter(string name, Dictionary<string, BioData.ListEntry> relationships)
     {
-        TestEnv.Init();
         var c = new Character(name, null);
         var bioField = typeof(Character).GetField("_bioData", BindingFlags.Instance | BindingFlags.NonPublic);
         var bio = new BioData();
@@ -45,7 +73,7 @@ public class RelationshipAttitudeLensBuilderTests
     [Fact]
     public void UT01_PlayerMentionsGeorge_ToAlex_EmitsLens()
     {
-        TestEnv.SetLanguage("en");
+        using var _ = TestEnv.UseIsolatedLocale("en");
         var character = MakeCharacter("Alex", new Dictionary<string, BioData.ListEntry>
         {
             ["George"] = RelEntry("George", "George", "A grumpy old man who secretly cares about the town."),
@@ -66,7 +94,7 @@ public class RelationshipAttitudeLensBuilderTests
     [Fact]
     public void UT02_SamSubstringInSame_NoMatch()
     {
-        TestEnv.SetLanguage("en");
+        using var _ = TestEnv.UseIsolatedLocale("en");
         var character = MakeCharacter("Alex", new Dictionary<string, BioData.ListEntry>
         {
             ["Sam"] = RelEntry("Sam", "Sam", "The town's cool guitarist."),
@@ -82,7 +110,7 @@ public class RelationshipAttitudeLensBuilderTests
     [Fact]
     public void UT03_SelfFilterAlex_MatchesHaley()
     {
-        TestEnv.SetLanguage("en");
+        using var _ = TestEnv.UseIsolatedLocale("en");
         var character = MakeCharacter("Alex", new Dictionary<string, BioData.ListEntry>
         {
             ["Alex"] = RelEntry("Alex", "Alex", "This is Alex's self-description."),
@@ -103,7 +131,7 @@ public class RelationshipAttitudeLensBuilderTests
     [Fact]
     public void UT04_AmbiguousTwoTargets_ReturnsEmpty()
     {
-        TestEnv.SetLanguage("en");
+        using var _ = TestEnv.UseIsolatedLocale("en");
         var character = MakeCharacter("Alex", new Dictionary<string, BioData.ListEntry>
         {
             ["George"] = RelEntry("George", "George", "A grumpy old man."),
@@ -120,7 +148,7 @@ public class RelationshipAttitudeLensBuilderTests
     [Fact]
     public void UT05_HeartsBelowRequired_ReturnsEmpty()
     {
-        TestEnv.SetLanguage("en");
+        using var _ = TestEnv.UseIsolatedLocale("en");
         var character = MakeCharacter("Alex", new Dictionary<string, BioData.ListEntry>
         {
             ["George"] = RelEntry("George", "George", "A grumpy old man.", requiredHearts: 4),
@@ -136,7 +164,7 @@ public class RelationshipAttitudeLensBuilderTests
     [Fact]
     public void UT06_OnlyLatestPlayerLineCounts_ReturnsEmpty()
     {
-        TestEnv.SetLanguage("en");
+        using var _ = TestEnv.UseIsolatedLocale("en");
         var character = MakeCharacter("Alex", new Dictionary<string, BioData.ListEntry>
         {
             ["George"] = RelEntry("George", "George", "A grumpy old man."),
@@ -155,7 +183,7 @@ public class RelationshipAttitudeLensBuilderTests
     [Fact]
     public void UT07b_EnglishMode_PreservesRawStrings()
     {
-        TestEnv.SetLanguage("en");
+        using var _ = TestEnv.UseIsolatedLocale("en");
         var character = MakeCharacter("Alex", new Dictionary<string, BioData.ListEntry>
         {
             ["Pierre"] = RelEntry("Pierre", "Pierre", "Pierre is stubborn. He often argues with George."),
@@ -202,7 +230,7 @@ public class RelationshipAttitudeLensBuilderTests
     [Fact]
     public void UT09_NoPlayerLine_ReturnsEmpty()
     {
-        TestEnv.SetLanguage("en");
+        using var _ = TestEnv.UseIsolatedLocale("en");
         var character = MakeCharacter("Alex", new Dictionary<string, BioData.ListEntry>
         {
             ["George"] = RelEntry("George", "George", "A grumpy old man."),
@@ -216,7 +244,7 @@ public class RelationshipAttitudeLensBuilderTests
     [Fact]
     public void UT10_BlankPlayerLine_ReturnsEmpty()
     {
-        TestEnv.SetLanguage("en");
+        using var _ = TestEnv.UseIsolatedLocale("en");
         var character = MakeCharacter("Alex", new Dictionary<string, BioData.ListEntry>
         {
             ["George"] = RelEntry("George", "George", "A grumpy old man."),
@@ -230,7 +258,7 @@ public class RelationshipAttitudeLensBuilderTests
     [Fact]
     public void UT11_BlankDescription_ReturnsEmpty()
     {
-        TestEnv.SetLanguage("en");
+        using var _ = TestEnv.UseIsolatedLocale("en");
         var character = MakeCharacter("Alex", new Dictionary<string, BioData.ListEntry>
         {
             ["George"] = RelEntry("George", "George", "   "),
@@ -244,7 +272,7 @@ public class RelationshipAttitudeLensBuilderTests
     [Fact]
     public void UT12_SelfFilterViaDisplayName()
     {
-        TestEnv.SetLanguage("en");
+        using var _ = TestEnv.UseIsolatedLocale("en");
         var character = MakeCharacter("Alex", new Dictionary<string, BioData.ListEntry>
         {
             ["George"] = RelEntry("George", "George", "A grumpy old man."),
@@ -262,7 +290,7 @@ public class RelationshipAttitudeLensBuilderTests
     [Fact]
     public void UT13_GusSubstring_NoMatch()
     {
-        TestEnv.SetLanguage("en");
+        using var _ = TestEnv.UseIsolatedLocale("en");
         var character = MakeCharacter("Alex", new Dictionary<string, BioData.ListEntry>
         {
             ["Gus"] = RelEntry("Gus", "Gus", "The saloon chef."),
@@ -276,7 +304,7 @@ public class RelationshipAttitudeLensBuilderTests
     [Fact]
     public void UT14_NullHearts_TreatedAsZero()
     {
-        TestEnv.SetLanguage("en");
+        using var _ = TestEnv.UseIsolatedLocale("en");
         var character = MakeCharacter("Alex", new Dictionary<string, BioData.ListEntry>
         {
             ["George"] = RelEntry("George", "George", "A grumpy old man.", requiredHearts: 2),
@@ -291,7 +319,7 @@ public class RelationshipAttitudeLensBuilderTests
     [Fact]
     public void UT15_MultipleAliasesSameKey_Deduplicated()
     {
-        TestEnv.SetLanguage("en");
+        using var _ = TestEnv.UseIsolatedLocale("en");
         var character = MakeCharacter("Alex", new Dictionary<string, BioData.ListEntry>
         {
             // Heading "Georgie" is an alias for the "George" key; both should count as 1 match.
