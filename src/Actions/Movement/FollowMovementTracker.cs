@@ -164,12 +164,19 @@ namespace ValleytalkReborn.Movement
 
             Unbind(silent: false);
 
+            // ─── 新增：同步玩家初始位置与速度，消除首帧速度脉冲 ───
+            if (Game1.player != null)
+            {
+                _lastPlayerPosition = Game1.player.Position;
+                _playerVelocity     = Vector2.Zero;
+                _lastPlayerTile     = Game1.player.Tile;
+            }
+
             _followingNpc  = npc;
             _followEndTime = endTime;
             _isDateFollow  = true;
 
             TransitionTo(FollowState.Halted);
-
             OnFollowStartedCallback?.Invoke(npc);
 
             ModEntry.SMonitor?.Log(
@@ -360,6 +367,12 @@ namespace ValleytalkReborn.Movement
                 ModEntry.SMonitor?.Log(
                     $"[FollowMovementTracker] {_followingNpc.Name} detected out-of-bounds/wall-phasing, forced recovery.",
                     LogLevel.Warn);
+            }
+
+            if (_isDateFollow && _followState == FollowState.Pathing)
+            {
+                if (TryTriggerHomeDoorArrival())
+                    return;
             }
         }
 
@@ -893,6 +906,37 @@ namespace ValleytalkReborn.Movement
             // 4.5 采样耗尽兜底
             _followingNpc.faceDirection(_rng.Next(4));
             _wanderPathCooldown = 60;
+        }
+
+        /// <summary>
+        /// 检查约会对象是否已陪同送至其家门口附近。
+        /// </summary>
+        private bool TryTriggerHomeDoorArrival()
+        {
+            if (!_isDateFollow || _followingNpc == null || Game1.player == null)
+                return false;
+
+            // 必须在 NPC 默认住所地图
+            if (!string.Equals(_followingNpc.currentLocation?.Name, _followingNpc.DefaultMap, StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            // 获取 NPC 原始床位/房间地块坐标
+            Vector2 homeTile = new(
+                (int)(_followingNpc.DefaultPosition.X / 64f),
+                (int)(_followingNpc.DefaultPosition.Y / 64f));
+
+            // 距离 NPC 住所锚点 3.5 格以内判定为到家
+            if (Vector2.Distance(_followingNpc.Tile, homeTile) <= 3.5f)
+            {
+                ModEntry.SMonitor?.Log($"[FollowMovementTracker] {_followingNpc.Name} 已被安全送达家门，触发散步告别。", LogLevel.Info);
+
+                var departingNpc = _followingNpc;
+                Unbind(silent: false, suppressScheduleRestore: false);
+                OnFollowEndedCallback?.Invoke(departingNpc.Name);
+                return true;
+            }
+
+            return false;
         }
     }
 }
