@@ -63,11 +63,21 @@ namespace ValleytalkReborn;
 /// </summary>
 internal static class PerceptionInjector
 {
-    private static bool IsChineseLanguage => 
+    private static bool IsChineseLanguage =>
         LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
 
     private static HashSet<string> _mentionedGossipKeys =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    // Tier 2b Gossip remains outside Tier 1 snapshots, but its rendered value is
+    // stable for the lifetime of a conversation session. Entries are memory-only
+    // and bounded because session IDs are transient.
+    private const int MaxGossipSessionEntries = 512;
+
+    private static readonly Dictionary<string, string> _gossipBySession =
+        new Dictionary<string, string>(StringComparer.Ordinal);
+
+    private static readonly Queue<string> _gossipSessionOrder = new Queue<string>();
 
     /// <summary>
     /// 清空跨天/跨存档的 gossip 提及去重记录。
@@ -76,6 +86,8 @@ internal static class PerceptionInjector
     public static void ResetMentionedGossipKeys()
     {
         _mentionedGossipKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        _gossipBySession.Clear();
+        _gossipSessionOrder.Clear();
     }
 
     public static string BuildPerceptionText(string npcName)
@@ -83,14 +95,14 @@ internal static class PerceptionInjector
         if (string.IsNullOrEmpty(npcName)) return string.Empty;
 
         string gossipBlock = BuildGossipBlock(npcName);
-        string localBlock  = BuildLocalBlock(npcName);
+        string localBlock = BuildLocalBlock(npcName);
 
         if (string.IsNullOrEmpty(gossipBlock) && string.IsNullOrEmpty(localBlock))
             return string.Empty;
 
         var parts = new List<string>();
         if (!string.IsNullOrEmpty(gossipBlock)) parts.Add(gossipBlock);
-        if (!string.IsNullOrEmpty(localBlock))  parts.Add(localBlock);
+        if (!string.IsNullOrEmpty(localBlock)) parts.Add(localBlock);
         return string.Join("\n\n", parts);
     }
 
@@ -128,16 +140,31 @@ internal static class PerceptionInjector
         return header + "\n" + body;
     }
 
-    public static string BuildGossipBlock(string npcName)
+    public static string BuildGossipBlock(string npcName) => BuildGossipBlock(npcName, null);
+
+    /// <summary>
+    /// Build the gossip impulse once per NPC/conversation session. Repeated
+    /// generations in that session receive the same block (including an empty
+    /// result), while the existing per-NPC/day gossip deduplication remains the
+    /// source of candidate consumption.
+    /// </summary>
+    public static string BuildGossipBlock(string npcName, string sessionId)
     {
+        string sessionKey = string.IsNullOrWhiteSpace(sessionId)
+            ? null
+            : $"{Game1.Date.TotalDays}:{npcName}:{sessionId}";
+        if (sessionKey != null && _gossipBySession.TryGetValue(sessionKey, out string cachedBlock))
+            return cachedBlock;
+
         var snapshots = PerceptionManager.Instance.GetGossipSnapshots();
-        if (snapshots == null || snapshots.Count == 0) return string.Empty;
+        if (snapshots == null || snapshots.Count == 0)
+            return CacheSessionBlock(sessionKey, string.Empty);
 
         bool isZh = IsChineseLanguage;
 
         var lines = new List<string>
         {
-            isZh 
+            isZh
                 ? "[小镇传闻]（小镇近期的日常谈资与背景印象）"
                 : "[Town Rumors] (Passive background information circulating around town)"
         };
@@ -168,8 +195,8 @@ internal static class PerceptionInjector
             if (_mentionedGossipKeys.Contains(dedupeKey))
                 continue;
 
-            targetSnapshot   = candidate;
-            targetDedupeKey  = dedupeKey;
+            targetSnapshot = candidate;
+            targetDedupeKey = dedupeKey;
             break;
         }
 
@@ -183,7 +210,22 @@ internal static class PerceptionInjector
             lines.Add($"- {targetSnapshot.Template}");
         }
 
-        return lines.Count > 1 ? string.Join("\n", lines) : string.Empty;
+        return CacheSessionBlock(sessionKey, lines.Count > 1 ? string.Join("\n", lines) : string.Empty);
+    }
+
+    private static string CacheSessionBlock(string sessionKey, string block)
+    {
+        if (sessionKey == null) return block;
+
+        while (_gossipBySession.Count >= MaxGossipSessionEntries)
+        {
+            string oldestKey = _gossipSessionOrder.Dequeue();
+            _gossipBySession.Remove(oldestKey);
+        }
+
+        _gossipBySession[sessionKey] = block;
+        _gossipSessionOrder.Enqueue(sessionKey);
+        return block;
     }
 
     public static string BuildLocalBlock(string npcName)
@@ -196,14 +238,14 @@ internal static class PerceptionInjector
         // 1. 本人收到的礼物：必须给出强反应，进入强指令块
         var giftPerceptions = perceptions
             .Where(p => p?.Key == "Gift"
-                && !string.IsNullOrEmpty(p.NpcName)
-                && p.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase))
+                        && !string.IsNullOrEmpty(p.NpcName)
+                        && p.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         // 2. 弱感知：非自身礼物事件与周边环境动作
         var otherPerceptions = perceptions
-            .Where(p => p?.Key != "Gift" || 
-                       (p.Key == "Gift" && !string.Equals(p.NpcName, npcName, StringComparison.OrdinalIgnoreCase)))
+            .Where(p => p?.Key != "Gift" ||
+                        (p.Key == "Gift" && !string.Equals(p.NpcName, npcName, StringComparison.OrdinalIgnoreCase)))
             .ToList();
 
         var lines = new List<string>();
@@ -301,42 +343,42 @@ internal static class PerceptionInjector
         return key switch
         {
             // 1. 瞬态交互动作（目击一次即消费）
-            "Gift"                       => true, // 旁观他人收礼
-            "Eat"                        => true, // 吃东西
-            "Fish"                       => true, // 钓鱼
-            "LegendaryFish"              => true, // 钓上传说鱼的现场目击
-            "Chop"                       => true, // 砍树
-            "Place"                      => true, // 放置物品
-            "Harvest"                    => true, // 收获作物
-            "Talk"                       => true, // 与他人交谈
+            "Gift" => true, // 旁观他人收礼
+            "Eat" => true, // 吃东西
+            "Fish" => true, // 钓鱼
+            "LegendaryFish" => true, // 钓上传说鱼的现场目击
+            "Chop" => true, // 砍树
+            "Place" => true, // 放置物品
+            "Harvest" => true, // 收获作物
+            "Talk" => true, // 与他人交谈
 
             // 2. 外观装束与随身/伴随细节
-            "PlayerHat"                  => true, // 帽子
-            "PlayerWeddingOutfit"        => true, // 婚礼礼服
+            "PlayerHat" => true, // 帽子
+            "PlayerWeddingOutfit" => true, // 婚礼礼服
             "PlayerSpecialOutfit_Shorts" => true, // 镇长幸运短裤
-            "PlayerSpecialOutfit_Trash"  => true, // 垃圾桶外观
+            "PlayerSpecialOutfit_Trash" => true, // 垃圾桶外观
             "PlayerSpecialOutfit_Hazmat" => true, // 防化生化服
-            "PlayerFainted"              => true, // 昨夜晕倒经历
-            "PlayerPet"                  => true, // 随行宠物
-            "PlayerHorseNearby"          => true, // 附近坐骑
-            "PlayerRidingHorse"          => true, // 骑乘状态
-            "PlayerBagFull"              => true, // 背包满载
-            "PlayerActiveItem"           => true, // 手持携带物
+            "PlayerFainted" => true, // 昨夜晕倒经历
+            "PlayerPet" => true, // 随行宠物
+            "PlayerHorseNearby" => true, // 附近坐骑
+            "PlayerRidingHorse" => true, // 骑乘状态
+            "PlayerBagFull" => true, // 背包满载
+            "PlayerActiveItem" => true, // 手持携带物
 
             // 3. 信物与关键随身物
-            "PlayerHasPendant"           => true, // 求婚信物（美人鱼吊坠）
-            "PlayerHasBouquet"           => true, // 确立关系信物（花束）
+            "PlayerHasPendant" => true, // 求婚信物（美人鱼吊坠）
+            "PlayerHasBouquet" => true, // 确立关系信物（花束）
 
             // 4. 生理状态与 Buff 光环
-            "PlayerExhausted"            => true, // 精疲力竭
-            "PlayerTired"                => true, // 疲惫
-            "PlayerLowHealth"            => true, // 残血负伤
-            "PlayerDrunk"                => true, // 醉酒
-            "PlayerSpeedBuff"            => true, // 步伐飞速/咖啡亢奋
-            "PlayerGarlicSmell"          => true, // 大蒜油气味
-            "PlayerMonsterMusk"          => true, // 怪物麝香腥气
-            "PlayerGlowing"              => true, // 戒指光晕
-            "PlayerLateNight"            => true, // 深夜独自游荡
+            "PlayerExhausted" => true, // 精疲力竭
+            "PlayerTired" => true, // 疲惫
+            "PlayerLowHealth" => true, // 残血负伤
+            "PlayerDrunk" => true, // 醉酒
+            "PlayerSpeedBuff" => true, // 步伐飞速/咖啡亢奋
+            "PlayerGarlicSmell" => true, // 大蒜油气味
+            "PlayerMonsterMusk" => true, // 怪物麝香腥气
+            "PlayerGlowing" => true, // 戒指光晕
+            "PlayerLateNight" => true, // 深夜独自游荡
 
             // 5. 兜底保护：凡是被成功注入 Prompt 的条目，均执行阅后即焚
             _ => true
@@ -348,7 +390,7 @@ internal static class PerceptionInjector
         if (entry.Key != "Gift") return entry.Template;
 
         bool isRecipient = !string.IsNullOrEmpty(entry.NpcName)
-            && entry.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase);
+                           && entry.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase);
 
         if (!isRecipient) return entry.Template;
 
@@ -375,7 +417,10 @@ internal static class PerceptionInjector
             var item = ItemRegistry.Create(itemId);
             return item?.DisplayName ?? item?.Name ?? itemId;
         }
-        catch { return itemId; }
+        catch
+        {
+            return itemId;
+        }
     }
 
     private static string BuildGiftTasteAnnotation(string npcName, string itemId, bool isZh)
@@ -390,11 +435,11 @@ internal static class PerceptionInjector
 
             return npc.getGiftTasteForThisItem(item) switch
             {
-                NPC.gift_taste_love    => isZh ? "（最爱的礼物）" : " (Loved gift)",
-                NPC.gift_taste_like    => isZh ? "（喜欢的礼物）" : " (Liked gift)",
+                NPC.gift_taste_love => isZh ? "（最爱的礼物）" : " (Loved gift)",
+                NPC.gift_taste_like => isZh ? "（喜欢的礼物）" : " (Liked gift)",
                 NPC.gift_taste_dislike => isZh ? "（不喜欢的礼物）" : " (Disliked gift)",
-                NPC.gift_taste_hate    => isZh ? "（讨厌的礼物）" : " (Hated gift)",
-                _                      => isZh ? "（普通礼物）" : " (Neutral gift)",
+                NPC.gift_taste_hate => isZh ? "（讨厌的礼物）" : " (Hated gift)",
+                _ => isZh ? "（普通礼物）" : " (Neutral gift)",
             };
         }
         catch

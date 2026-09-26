@@ -54,7 +54,7 @@ public sealed class ConversationDirector : IConversationDirector
         {
             snapshot = BuildTier1Snapshot(context, character, branch, milestoneBlock);
             string locationName = character.StardewNpc?.currentLocation?.NameOrUniqueName
-                ?? character.StardewNpc?.currentLocation?.Name ?? string.Empty;
+                                  ?? character.StardewNpc?.currentLocation?.Name ?? string.Empty;
             Tier1SnapshotStore.RegisterActiveSession(sessionId, character.Name, locationName, branch, snapshot);
         }
 
@@ -86,7 +86,7 @@ public sealed class ConversationDirector : IConversationDirector
 
         // KV-Cache 保护：gossip 块从 SystemPrompt 迁移至 Tier 2b 脉冲，
         // 使 SystemPrompt 在多轮对话间保持静态（hash 不变），复用前缀缓存。
-        string gossipBlock = PerceptionInjector.BuildGossipBlock(character.Name);
+        string gossipBlock = PerceptionInjector.BuildGossipBlock(character.Name, sessionId);
         if (!string.IsNullOrEmpty(gossipBlock))
             activeImpulses[Tier2bBlockIds.Gossip] = gossipBlock;
 
@@ -165,27 +165,34 @@ public sealed class ConversationDirector : IConversationDirector
         // 公共前缀（四分支均有）。
         SetTier1(snapshot, Tier1BlockIds.GameState, Prompts.PromptsBlocks.BuildGameState(character));
         SetTier1(snapshot, Tier1BlockIds.EventHistory, Prompts.PromptsBlocks.BuildEventHistory(character, context));
-        SetTier1(snapshot, Tier1BlockIds.BranchTheme, Prompts.PromptsBlocks.BuildBranchTheme(character, context, branch));
+        SetTier1(snapshot, Tier1BlockIds.BranchTheme,
+            Prompts.PromptsBlocks.BuildBranchTheme(character, context, branch));
         SetTier1(snapshot, Tier1BlockIds.Scene, Prompts.PromptsBlocks.BuildMicroEnvironment(character, context, flags));
 
         // FULL-only 块（StoodUp/Date/Greeting 薄壳不渲染）。
         if (isFull)
         {
             if (flags?.CompanionFocus == CompanionFocusMode.RegularFollow)
-                SetTier1(snapshot, Tier1BlockIds.CompanionFocus, Prompts.PromptsBlocks.BuildCompanionWalkingContext(character, context, isZh));
-            SetTier1(snapshot, Tier1BlockIds.GreetingContext, Prompts.PromptsBlocks.BuildGreetingContext(character, context));
+                SetTier1(snapshot, Tier1BlockIds.CompanionFocus,
+                    Prompts.PromptsBlocks.BuildCompanionWalkingContext(character, context, isZh));
+            SetTier1(snapshot, Tier1BlockIds.GreetingContext,
+                Prompts.PromptsBlocks.BuildGreetingContext(character, context));
 
             // RelationBase：友谊/婚姻关系层级（遗留 Normal 分支逐字，StardewNpc 空 → 跳过）
             if (!npcIsNull)
             {
-                var relationBase = Prompts.PromptsBlocks.BuildRelationBase(character, context, npcData, name, milestoneBlock, flags);
+                var relationBase =
+                    Prompts.PromptsBlocks.BuildRelationBase(character, context, npcData, name, milestoneBlock, flags);
                 SetTier1(snapshot, Tier1BlockIds.RelationBase, relationBase);
             }
 
             var allPreviousActivities = Game1.getPlayerOrEventFarmer()?.previousActiveDialogueEvents?.LastOrDefault();
-            SetTier1(snapshot, Tier1BlockIds.RecentEvents, Prompts.PromptsBlocks.BuildRecentEvents(character, allPreviousActivities));
-            SetTier1(snapshot, Tier1BlockIds.SpecialDates, Prompts.PromptsBlocks.BuildSpecialDatesAndBirthday(character, context, name));
-            SetTier1(snapshot, Tier1BlockIds.SpouseAction, Prompts.PromptsBlocks.BuildSpouseAction(character, context, name));
+            SetTier1(snapshot, Tier1BlockIds.RecentEvents,
+                Prompts.PromptsBlocks.BuildRecentEvents(character, allPreviousActivities));
+            SetTier1(snapshot, Tier1BlockIds.SpecialDates,
+                Prompts.PromptsBlocks.BuildSpecialDatesAndBirthday(character, context, name));
+            SetTier1(snapshot, Tier1BlockIds.SpouseAction,
+                Prompts.PromptsBlocks.BuildSpouseAction(character, context, name));
         }
 
         SetTier1(snapshot, Tier1BlockIds.EvolvedTraits, EvolvedTraitManager.GetPromptBlock(character.Name, context));
@@ -212,7 +219,8 @@ public sealed class ConversationDirector : IConversationDirector
 
         if (whitelist.Contains(Tier2bBlockIds.Interaction))
             SetImpulse(impulses, Tier2bBlockIds.Interaction,
-                Prompts.PromptsBlocks.BuildInteractionState(character, context, flags, name, IsMarriedOrRoommate(character)));
+                Prompts.PromptsBlocks.BuildInteractionState(character, context, flags, name,
+                    IsMarriedOrRoommate(character)));
 
         if (whitelist.Contains(Tier2bBlockIds.Jealousy))
             SetImpulse(impulses, Tier2bBlockIds.Jealousy,
@@ -289,7 +297,8 @@ public sealed class ConversationDirector : IConversationDirector
 
         if (whitelist.Contains(Tier2bBlockIds.Movement))
             SetImpulse(impulses, Tier2bBlockIds.Movement,
-                Prompts.PromptsBlocks.BuildMovementInstruction(character, flags, Prompts.PromptsBlocks.MovementInstructionApplicable(flags)));
+                Prompts.PromptsBlocks.BuildMovementInstruction(character, flags,
+                    Prompts.PromptsBlocks.MovementInstructionApplicable(flags)));
 
         return impulses;
     }
@@ -305,7 +314,8 @@ public sealed class ConversationDirector : IConversationDirector
                 // EvolvedTraits(Tier1), LocalPerception, Emotion, DateInvite, FollowProto。
                 return new HashSet<string>(StringComparer.Ordinal)
                 {
-                    Tier2bBlockIds.Gossip, Tier2bBlockIds.PendingTopic, Tier2bBlockIds.Eavesdrop, Tier2bBlockIds.SpouseWaiting,
+                    Tier2bBlockIds.Gossip, Tier2bBlockIds.PendingTopic, Tier2bBlockIds.Eavesdrop,
+                    Tier2bBlockIds.SpouseWaiting,
                     Tier2bBlockIds.Echo, Tier2bBlockIds.Milestone, Tier2bBlockIds.LocalPerception,
                     Tier2bBlockIds.Emotion, Tier2bBlockIds.DateInvite, Tier2bBlockIds.FollowProto,
                 };
@@ -325,7 +335,8 @@ public sealed class ConversationDirector : IConversationDirector
                 // 已知必删：Preoccupation、RelationBase（Tier1）。
                 return new HashSet<string>(StringComparer.Ordinal)
                 {
-                    Tier2bBlockIds.Gossip, Tier2bBlockIds.PendingTopic, Tier2bBlockIds.Eavesdrop, Tier2bBlockIds.SpouseWaiting,
+                    Tier2bBlockIds.Gossip, Tier2bBlockIds.PendingTopic, Tier2bBlockIds.Eavesdrop,
+                    Tier2bBlockIds.SpouseWaiting,
                     Tier2bBlockIds.Echo, Tier2bBlockIds.LocalPerception, Tier2bBlockIds.Emotion,
                     Tier2bBlockIds.PlayerProfile, Tier2bBlockIds.DateInvite,
                 };
@@ -334,7 +345,8 @@ public sealed class ConversationDirector : IConversationDirector
                 // FULL = 全 17（FollowProto/DateEndProto 值门控为空，不出现在输出中）。
                 return new HashSet<string>(StringComparer.Ordinal)
                 {
-                    Tier2bBlockIds.Gossip, Tier2bBlockIds.Interaction, Tier2bBlockIds.Jealousy, Tier2bBlockIds.Preoccupation,
+                    Tier2bBlockIds.Gossip, Tier2bBlockIds.Interaction, Tier2bBlockIds.Jealousy,
+                    Tier2bBlockIds.Preoccupation,
                     Tier2bBlockIds.PendingTopic, Tier2bBlockIds.Gift, Tier2bBlockIds.Milestone,
                     Tier2bBlockIds.Echo, Tier2bBlockIds.Eavesdrop, Tier2bBlockIds.SpouseWaiting,
                     Tier2bBlockIds.LocalPerception, Tier2bBlockIds.Emotion, Tier2bBlockIds.PlayerProfile,
@@ -364,5 +376,4 @@ public sealed class ConversationDirector : IConversationDirector
         Game1.getPlayerOrEventFarmer()?.friendshipData?.TryGetValue(character.Name, out friendship);
         return friendship != null && (friendship.IsMarried() || friendship.IsRoommate());
     }
-
 }
