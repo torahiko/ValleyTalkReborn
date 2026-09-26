@@ -28,8 +28,20 @@ public class Prompts
 
     private readonly HashSet<string> _emittedBlockKeys = new HashSet<string>(StringComparer.Ordinal);
 
-    private bool IsChineseLanguage =>
-        LocalizedContentManager.CurrentLanguageCode.ToString().StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+    /// <summary>
+    /// 统一语言解析，支持用户配置覆盖回退。
+    /// </summary>
+    internal static bool ResolveIsChinese()
+    {
+        if (!string.IsNullOrEmpty(ModEntry.Language))
+        {
+            return ModEntry.Language.StartsWith("zh", StringComparison.OrdinalIgnoreCase)
+                || ModEntry.Language.IndexOf("chinese", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+        return LocalizedContentManager.CurrentLanguageCode.ToString().StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool IsChineseLanguage => ResolveIsChinese();
 
     private string TargetLanguageName
     {
@@ -254,11 +266,6 @@ public class Prompts
         return npcConstantPrompt.ToString();
     }
 
-    // Tier1 快照层（plan.Tier1Snapshot）→ Tier2a 会话层 → Tier2b 脉冲层。
-    // 不变式：Tier2b 零管理器调用、零内容构建——脉冲内容单一事实源为 plan.ActiveImpulses
-    // （由 VT3-D BuildPlan 一次性预构建）；Tier2a 仅经 C1 静态生产者做只读上下文读取；
-    // plan 全程只读。
-
     /// <summary>Tier 1 拼装序列（11 项，顺序固定）。</summary>
     private static readonly IReadOnlyList<string> Tier1BlockSequence = new[]
     {
@@ -294,7 +301,6 @@ public class Prompts
     private static string AssembleTier1(InjectionPlan plan)
     {
         var prompt = new StringBuilder();
-        // 契约（VT3-C2-A1）：Tier1Snapshot 始终非空（VT3-D BuildPlan 契约）；null = BUG，响亮失败。
         if (plan.Tier1Snapshot == null)
             throw new InvalidOperationException("InjectionPlan.Tier1Snapshot must be non-null; BuildPlan builds and registers the snapshot for new sessions before assembling the plan.");
         foreach (var blockId in Tier1BlockSequence)
@@ -312,9 +318,6 @@ public class Prompts
     private string AssembleTier2a(DialogueContext context, Character character)
     {
         var prompt = new StringBuilder();
-        // ★顺序反转唯一落点★：continuity 先于 CurrentConversation（最新对话沉底）。
-        // shortCtx 钳制（shortCtxAllowed ? configured : 1）保留在 BuildCurrentConversation 体内；
-        // plan.HistoryWindowSize 即该 configured 值（VT3-D BuildPlan 契约，已 Clamp 1..20）。
         prompt.Append(PromptsBlocks.BuildSessionContinuity(character, context, IsChineseLanguage));
         prompt.Append(PromptsBlocks.BuildCurrentConversation(character, context, CurrentFlags, _emittedBlockKeys, Name));
         return prompt.ToString();
@@ -334,7 +337,6 @@ public class Prompts
         return prompt.ToString();
     }
 
-    // ── VT3-E 分段访问器（单行委托，清理步不得移除；供 vt_ab_topology_multi 分层断言使用）──
     internal static string AssembleTier1Segment(InjectionPlan plan) => AssembleTier1(plan);
     internal string AssembleTier2aSegment(DialogueContext context, Character character) => AssembleTier2a(context, character);
     internal static string AssembleTier2bSegment(InjectionPlan plan) => AssembleTier2b(plan);
@@ -376,40 +378,34 @@ public class Prompts
         }, commandPrompt);
         commandPrompt.AppendLine();
 
-        // 🌟 结构化隔离容器：显式标记“只读系统参考”，降低小模型将指令块复述为台词的注意力权重
+        // 结构化系统动作协议容器：规定多标签排布优先级流水线
         commandPrompt.AppendLine("<system_action_reference>");
-        commandPrompt.AppendLine(isZh ? "### [系统行为指令：肢体动作与表情]" : "### [SYSTEM TRIGGERS: EMOTES & PHYSICAL ACTIONS]");
+        commandPrompt.AppendLine(isZh ? "### [系统控制协议：动作与行为标签]" : "### [SYSTEM SPECIFICATION: ACTION & EMOTE TAGS]");
 
         if (isZh)
         {
-            commandPrompt.AppendLine("- 表情气泡标签（对应角色头顶动画）：");
-            commandPrompt.AppendLine("  * [ACTION:EMOTE:HAPPY]：开心、微笑");
-            commandPrompt.AppendLine("  * [ACTION:EMOTE:HEART]：爱心");
-            commandPrompt.AppendLine("  * [ACTION:EMOTE:BLUSH]：害羞");
-            commandPrompt.AppendLine("  * [ACTION:EMOTE:SURPRISE]：惊讶");
-            commandPrompt.AppendLine("  * [ACTION:EMOTE:SAD]：难过");
-            commandPrompt.AppendLine("  * [ACTION:EMOTE:ANGRY]：生气");
+            commandPrompt.AppendLine("- 表情气泡 (角色头顶动画): [ACTION:EMOTE:HAPPY], [ACTION:EMOTE:HEART], [ACTION:EMOTE:BLUSH], [ACTION:EMOTE:SURPRISE], [ACTION:EMOTE:SAD], [ACTION:EMOTE:ANGRY]");
+            commandPrompt.AppendLine("- 身体转向: [ACTION:FACE:FARMER] (面向玩家), [ACTION:FACE:UP], [ACTION:FACE:DOWN], [ACTION:FACE:LEFT], [ACTION:FACE:RIGHT]");
+            commandPrompt.AppendLine("- 物理位移: [ACTION:STEP:FORWARD], [ACTION:STEP:BACKWARD], [ACTION:STEP:LEFT], [ACTION:STEP:RIGHT]");
+            commandPrompt.AppendLine();
+            commandPrompt.AppendLine("[OUTPUT_FORMAT_RULE]");
+            commandPrompt.AppendLine("- 所有控制标签必须统一置于台词对白的最末尾，禁止穿插在句子中间。");
+            commandPrompt.AppendLine("- 多标签排布统一流水线：[台词正文] [肖像标记(如$h)] [ACTION标签] [UI标签] [MOOD标签]");
+            commandPrompt.AppendLine("  示例：\"好的，我们走吧。\" $h [ACTION:FACE:FARMER] [UI:FOLLOW] [MOOD:happy]");
+            commandPrompt.AppendLine("[NEGATIVE_CONSTRAINT] 严禁在对白台词中输出、提及或解释上述任何系统指令标签。");
         }
         else
         {
-            commandPrompt.AppendLine("- Emote bubble tags (head animation triggers):");
-            commandPrompt.AppendLine("  * [ACTION:EMOTE:HAPPY]: Happy, smile");
-            commandPrompt.AppendLine("  * [ACTION:EMOTE:HEART]: Heart");
-            commandPrompt.AppendLine("  * [ACTION:EMOTE:BLUSH]: Blush");
-            commandPrompt.AppendLine("  * [ACTION:EMOTE:SURPRISE]: Surprise");
-            commandPrompt.AppendLine("  * [ACTION:EMOTE:SAD]: Sad");
-            commandPrompt.AppendLine("  * [ACTION:EMOTE:ANGRY]: Angry");
+            commandPrompt.AppendLine("- Emote bubbles (head animation): [ACTION:EMOTE:HAPPY], [ACTION:EMOTE:HEART], [ACTION:EMOTE:BLUSH], [ACTION:EMOTE:SURPRISE], [ACTION:EMOTE:SAD], [ACTION:EMOTE:ANGRY]");
+            commandPrompt.AppendLine("- Facing direction: [ACTION:FACE:FARMER] (look at player), [ACTION:FACE:UP], [ACTION:FACE:DOWN], [ACTION:FACE:LEFT], [ACTION:FACE:RIGHT]");
+            commandPrompt.AppendLine("- Movement steps: [ACTION:STEP:FORWARD], [ACTION:STEP:BACKWARD], [ACTION:STEP:LEFT], [ACTION:STEP:RIGHT]");
+            commandPrompt.AppendLine();
+            commandPrompt.AppendLine("[OUTPUT_FORMAT_RULE]");
+            commandPrompt.AppendLine("- All control tags MUST be placed at the absolute end of the dialogue line. NEVER inline tags inside sentences.");
+            commandPrompt.AppendLine("- Multi-tag sequence pipeline: [Dialogue] [Portrait token(e.g. $h)] [ACTION tag] [UI tag] [MOOD tag]");
+            commandPrompt.AppendLine("  Example: \"Sure, let's head out.\" $h [ACTION:FACE:FARMER] [UI:FOLLOW] [MOOD:happy]");
+            commandPrompt.AppendLine("[NEGATIVE_CONSTRAINT] Strictly forbid outputting, mentioning, or explaining any action/system tags in character dialogue.");
         }
-
-        commandPrompt.AppendLine(isZh ? "- 转向标签: [ACTION:FACE:FARMER] (面向玩家), [ACTION:FACE:UP] / [DOWN] / [LEFT] / [RIGHT]" : "- Turn tags: [ACTION:FACE:FARMER] (look at player), [ACTION:FACE:UP] / [DOWN] / [LEFT] / [RIGHT]");
-        commandPrompt.AppendLine(isZh ? "- 位移标签: [ACTION:STEP:FORWARD], [ACTION:STEP:BACKWARD], [ACTION:STEP:LEFT], [ACTION:STEP:RIGHT]" : "- Movement tags: [ACTION:STEP:FORWARD], [ACTION:STEP:BACKWARD], [ACTION:STEP:LEFT], [ACTION:STEP:RIGHT]");
-        commandPrompt.AppendLine();
-        commandPrompt.AppendLine(isZh ? "格式规则 — 动作标签置于台词的最末尾：" : "OUTPUT FORMAT — Action tags MUST be placed at the absolute end of spoken line:");
-        commandPrompt.AppendLine("  [Dialogue Text] [ACTION:STEP:BACKWARD]");
-        commandPrompt.AppendLine("  [Dialogue Text] [ACTION:EMOTE:HAPPY]");
-        commandPrompt.AppendLine(isZh
-            ? "禁止在台词中输出、提及或解释上述任何标签，以及“表情气泡标签”、“转向标签”、“位移标签”等字样。"
-            : "NEVER output, mention, or explain these tags or the phrases 'Emote tags', 'Turn tags', 'Movement tags' in dialogue.");
         commandPrompt.AppendLine("</system_action_reference>");
 
         string targetLang = TargetLanguageName;
@@ -442,32 +438,32 @@ public class Prompts
             instructions.AppendLine(Util.GetString(Character, "instructionsNoResponses", new { Name = Name }));
         }
         instructions.AppendLine(Util.GetString(Character, "instructionsFallback", new { Name = Name }));
-        instructions.AppendLine(isZh
-            ? "- 【核心视角】仅输出你自身角色的言语、动作与神态反应。完成当前台词表达后立即停下，将话语权交还给面前的农夫。"
-            : "- [CORE PERSPECTIVE] Output only your own character's dialogue, actions, and mannerisms. Conclude your lines cleanly and yield the floor to the farmer.");
-        instructions.AppendLine(isZh
-            ? "- 【当面接话】农夫刚说的那句话就在你耳边。第一句必须直接回答或接住他刚才的话；答完之后，手头有事或想起别的事再顺着往下提。"
-            : "- [IN-PERSON REPLY] The farmer's last words just reached your ears. Your very first sentence must directly address or answer what they just said. Only after answering can you naturally follow up with your own chores or thoughts.");
 
-        // ── 💡 注入亲疏坦率规则（以正向替换避免粉色大象，防止 AI 客服腔，兼顾生人与配偶） ──
+        // LLM 注意力引导词规范化
         instructions.AppendLine(isZh
-            ? "- 【亲疏坦率】情绪与边界随熟悉度自然分流。面对突兀、无用或不合心意的事物时展现生活本能：对生人保持明确边界与干脆拒收；对密友与配偶展现毫无防备的熟稔调侃、叹气或日常嗔怪。始终以真实的市井生活直觉回应。"
-            : "- [FAMILIAR DIRECTNESS] Match boundaries and emotional friction directly to familiarity. When handed odd, useless, or unwanted things, react with raw everyday instinct: acquaintances receive clean distance and blunt refusals; spouses and close friends receive comfortable eye-rolls, dry teasing, or casual nagging. Ground your words in lived-in honesty rather than polished polite padding.");
+            ? "- [CORE_PERSPECTIVE] 仅输出你自身角色的言语、动作与神态反应。完成当前台词表达后立即停下，交出对话回合，绝不代替玩家说话或行动。"
+            : "- [CORE_PERSPECTIVE] Output only your own character's speech, actions, and reactions. Yield the dialogue turn immediately after your line; never generate actions or speech for the farmer.");
+        instructions.AppendLine(isZh
+            ? "- [IMMEDIATE_RESPONSE_RULE] 农夫刚说的话具有最高注意力优先级。第一句话必须直接承接、回复农夫的输入；完成直接反馈后，方可顺承个人日常思绪或生活事项。"
+            : "- [IMMEDIATE_RESPONSE_RULE] The farmer's latest words have top attention priority. Your very first sentence MUST directly address or answer their input before transitioning to personal thoughts or ambient chores.");
+        instructions.AppendLine(isZh
+            ? "- [FAMILIARITY_BOUNDARIES] 人际边界与抗性随熟悉度动态分流。面对突兀、无用或不合心意之事展现市井本能：对生人保持明确边界感与干脆拒收；对密友与配偶展现防备卸除的熟稔调侃、日常嗔怪或叹气。禁止机械客套与 AI 客服腔。"
+            : "- [FAMILIARITY_BOUNDARIES] Scale interpersonal distance and emotional friction to relationship depth. Reject unwanted things with raw everyday instinct: maintain crisp boundaries and blunt refusals with acquaintances; display effortless banter, comfortable teasing, or casual exasperation with spouses and close friends. Avoid robotic politeness.");
+        instructions.AppendLine(isZh
+            ? "- [MOOD_SHIFT_RULE] 若本次交流导致你的情绪基调发生明显转换（如转为好奇/烦躁/欣喜），在台词末尾附带 [MOOD:curious] / [MOOD:annoyed] / [MOOD:happy] 等标签。"
+            : "- [MOOD_SHIFT_RULE] If this turn causes a distinct emotional shift (e.g., to curious, annoyed, happy), append [MOOD:curious] / [MOOD:annoyed] / [MOOD:happy] at the end of the line.");
 
-        instructions.AppendLine(isZh
-            ? "- 若本次对话结束后你的情绪明显转变（如变得好奇/生气/高兴），在台词最末尾附加 [MOOD:curious] / [MOOD:annoyed] / [MOOD:happy] 等标签。"
-            : "- If your emotional tone has clearly shifted after this exchange (e.g. curious/annoyed/happy), append [MOOD:curious] / [MOOD:annoyed] / [MOOD:happy] at the absolute end.");
         if (enableResponses)
         {
             instructions.AppendLine(isZh
-                ? "- 【选项范围】% 发言选项，取材范围仅限于你已经在台词中亲口说出的内容——这是农夫能听到、能借此接话的信息。你的内心思绪（preoccupation / pending_thought）与偷听到的内容，要等你自己说出口之后，才算进入这个范围。"
-                : "- [OPTION SCOPE] % options draw only from what you have actually said aloud in dialogue — that's the information the farmer has heard and can respond to. Your inner thoughts (preoccupation / pending_thought) and anything overheard enter that scope only once you've voiced them yourself.");
+                ? "- [SUGGESTION_SCOPE_RULE] 以 '%' 开头的发言选项，取材范围仅严格限于你已经在本次台词中亲口说出的信息。未说出口的潜意识、私密挂念与偷听内容严禁作为选项线索。"
+                : "- [SUGGESTION_SCOPE_RULE] Any suggested response options prefixed with '%' MUST draw solely from what you have explicitly voiced aloud. Unspoken inner thoughts and overheard gossip are strictly excluded until you voice them.");
         }
         else
         {
             instructions.AppendLine(isZh
-                ? "- 【格式约束】严禁输出任何以 '%' 开头的玩家选项、分支回答或多余解释。"
-                : "- [STRICT FORMAT] NEVER output any player response options, choices, or lines starting with '%'.");
+                ? "- [NEGATIVE_CONSTRAINT] 绝对禁止输出任何以 '%' 开头的玩家选项、分支回答或格式解释。"
+                : "- [NEGATIVE_CONSTRAINT] Strictly forbid outputting any player options, branches, or formatting notes prefixed with '%'.");
         }
 
         if (!Character.Bio.ExtraPortraits.ContainsKey("!"))
@@ -531,18 +527,26 @@ public class Prompts
                     .FirstOrDefault(x => x.Key == Context))?.Value;
     }
 
-    // ── VT3-C1: 静态块生产者（机械搬移，函数体逐字自 instance 方法迁移）──
-    // 每个方法以显式参数取代 Prompts 实例状态读取；返回块文本（空串 = 本轮不渲染）。
-    // Δ8 两集合（_injectedPrivateThoughts / _emittedBlockKeys）由薄壳穿线写入。
-    // 禁止在体内出现 Pending* 尾部、协议、Profile、CurrentConversation/Continuity 调用。
+    // ── VT3-C1: 静态块生产者 ──
     internal static class PromptsBlocks
     {
-        // ── 本地化辅助（提升可见性；原 instance 依赖 → 显式参数 / 静态读取）──
-        internal static bool IsZh() =>
-            LocalizedContentManager.CurrentLanguageCode.ToString().StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+        internal static bool IsZh() => Prompts.ResolveIsChinese();
 
-        /// <summary>移动指令适用判定（原 Prompts.MovementInstructionApplicable 实例方法逐字迁移）。
-        /// 逻辑单源：Prompts 薄壳与 ConversationDirector 共享此静态体。</summary>
+        private static string LocalizeDirection(object direction, bool isZh)
+        {
+            if (direction == null) return string.Empty;
+            string raw = direction.ToString();
+            if (!isZh) return raw.ToLowerInvariant();
+            return raw.ToLowerInvariant() switch
+            {
+                "up" => "上方",
+                "down" => "下方",
+                "left" => "左侧",
+                "right" => "右侧",
+                _ => raw
+            };
+        }
+
         internal static bool MovementInstructionApplicable(ContextFlags flags)
         {
             return !(flags?.IsOnDate == true)
@@ -550,9 +554,6 @@ public class Prompts
                 && ((flags?.IsActionRequested ?? false) || (flags?.IsFollowing ?? false));
         }
 
-        /// <summary>配偶礼物选择（原 Prompts.SelectGiftGiven 实例方法逐字迁移）。
-        /// 逻辑单源：Prompts 薄壳与 ConversationDirector 共享此静态体。
-        /// 注意：含随机抽取——legacy 装配期与 plan 期各抽一次，生产仅走 director 路径。</summary>
         internal static string SelectGiftGiven(Character character)
         {
             if (character == null) return null;
@@ -568,8 +569,6 @@ public class Prompts
         private static bool NpcIsMale(Character character) =>
             character.StardewNpc.GetData().Gender == StardewValley.Gender.Male;
 
-        /// <summary>组装当前对话历史标题（"### " + 本地化 currentConversationHeading）。
-        /// 单一方法体：供 BuildCurrentConversation（生产者）与 ConversationDirector 共享，杜绝双体漂移。</summary>
         internal static string BuildConversationHeading(Character character) =>
             "### " + Util.GetString(character, "currentConversationHeading");
 
@@ -606,7 +605,7 @@ public class Prompts
                 : $"- You already received the {digest.GivenGiftName} from the farmer ({tasteDesc}).";
         }
 
-        // ── Tier 1：分支主题前缀（BuildBranchTheme）──
+        // ── Tier 1：分支主题前缀 ──
         internal static string BuildBranchTheme(Character character, DialogueContext context, InstructionsBranch branch)
         {
             bool isZh = IsZh();
@@ -623,6 +622,9 @@ public class Prompts
 
                 case InstructionsBranch.Date:
                 {
+                    if (DateManager.Instance == null)
+                        return prompt.ToString();
+
                     string npcName = character?.Name ?? "";
                     var digest = DateManager.Instance.BuildSessionDigest(npcName);
                     var dateMode = DateManager.Instance.CurrentDateMode;
@@ -640,8 +642,8 @@ public class Prompts
                         if (!string.IsNullOrEmpty(walkingGiftLine))
                             prompt.AppendLine(walkingGiftLine);
                         prompt.AppendLine(isZh
-                            ? "- 【注意力焦点】你正和农夫单独相处、边走边聊。本轮对话默认从约会本身取材：眼前的景色与行人、彼此的近况与感受、一路上的见闻。农场经营、家务杂事等日常话题只在玩家主动提起时才接。"
-                            : "- [ATTENTION FOCUS] You're alone with the farmer, walking and talking. This turn's dialogue draws from the date itself: the scenery and passersby around you, each other's recent lives and feelings, what you notice along the way. Farm work, chores and other everyday topics come up only if the player raises them.");
+                            ? "- [ATTENTION_FOCUS] 你正和农夫单独相处、边走边聊。本轮对话默认从约会本身取材：眼前的景色与行人、彼此的近况与感受、一路上的见闻。农场经营、家务杂事等日常话题只在玩家主动提起时才接。"
+                            : "- [ATTENTION_FOCUS] You're alone with the farmer, walking and talking. This turn's dialogue draws from the date itself: the scenery and passersby around you, each other's recent lives and feelings, what you notice along the way. Farm work, chores and other everyday topics come up only if the player raises them.");
                         prompt.AppendLine("</date_context>\n");
                     }
                     else
@@ -669,8 +671,8 @@ public class Prompts
                         if (!string.IsNullOrEmpty(settledGiftLine))
                             prompt.AppendLine(settledGiftLine);
                         prompt.AppendLine(isZh
-                            ? "- 【注意力焦点】你们正在进行约会。本轮对话默认从约会本身取材：眼前的场景氛围、彼此的感受与互动。农场经营、家务杂事等日常话题只在玩家主动提起时才接。"
-                            : "- [ATTENTION FOCUS] You're on a date right now. This turn's dialogue draws from the date itself: the scene and atmosphere around you, each other's feelings and interactions. Farm work, chores and other everyday topics come up only if the player raises them.");
+                            ? "- [ATTENTION_FOCUS] 你们正在进行约会。本轮对话默认从约会本身取材：眼前的场景氛围、彼此的感受与互动。农场经营、家务杂事等日常话题只在玩家主动提起时才接。"
+                            : "- [ATTENTION_FOCUS] You're on a date right now. This turn's dialogue draws from the date itself: the scene and atmosphere around you, each other's feelings and interactions. Farm work, chores and other everyday topics come up only if the player raises them.");
                         prompt.AppendLine("</date_context>\n");
                     }
                     break;
@@ -693,7 +695,6 @@ public class Prompts
         }
 
         // ── Tier 1：纯文本生产者 ──
-
         internal static string BuildGameState(Character character)
         {
             var prompt = new StringBuilder();
@@ -786,8 +787,8 @@ public class Prompts
                 ? $"- 当前状态：你正与农夫在{locationName}一同散步同行。"
                 : $"- Current state: You're out walking together with the farmer at {locationName}.");
             prompt.AppendLine(isZh
-                ? "- 【注意力焦点】这是你们俩的共处时光。本轮对话默认从你们的同行相处取材：沿途的景物、彼此的近况、随口的闲聊。你依然保有自己的生活与心事，但\"此刻\"发生在与农夫同行的路上。"
-                : "- [ATTENTION FOCUS] This is your shared time together. This turn's dialogue draws from the walk itself: the scenery along the way, each other's recent lives, casual small talk. You still have your own life and private thoughts, but \"right now\" is happening on the road beside the farmer.");
+                ? "- [ATTENTION_FOCUS] 这是你们俩的共处时光。本轮对话默认从你们的同行相处取材：沿途的景物、彼此的近况、随口的闲聊。你依然保有自己的生活与心事，但\"此刻\"发生在与农夫同行的路上。"
+                : "- [ATTENTION_FOCUS] This is your shared time together. This turn's dialogue draws from the walk itself: the scenery along the way, each other's recent lives, casual small talk. You still have your own life and private thoughts, but \"right now\" is happening on the road beside the farmer.");
             prompt.AppendLine("</companion_context>\n");
             return prompt.ToString();
         }
@@ -1003,8 +1004,6 @@ public class Prompts
             return Util.GetString(character, "friendshipLongTermBond", new { Hearts = hearts, Note = note });
         }
 
-        /// <summary>构建关系基础块（RelationBase）：友谊/婚姻层级、子女、配偶、里程碑状态。
-        /// 原 ConversationDirector.BuildRelationBase 逐字迁移，参数显式传递。</summary>
         internal static string BuildRelationBase(
             Character character,
             DialogueContext context,
@@ -1145,7 +1144,6 @@ public class Prompts
         }
 
         // ── Tier 2b ──
-
         internal static string BuildPreoccupation(Character character, DialogueContext context, List<string> injectedPrivateThoughts, string name)
         {
             var prompt = new StringBuilder();
@@ -1189,10 +1187,14 @@ public class Prompts
                 character.PreoccupationStageKey = stageKey;
             }
             injectedPrivateThoughts.Add(preoccupation);
+
+            // 结构化隐秘容器：彻底防止潜意识外泄与幻觉抢答
+            prompt.AppendLine("<inner_preoccupation status=\"confidential\">");
             prompt.AppendLine(Util.GetString(character, "preoccupation", new { Name = name, preoccupation = preoccupation }));
             prompt.AppendLine(isZh
-                ? "（这是你尚未说出口的内心想法，农夫无从知晓。若要让农夫知道，需由你自己先在台词中说出来；发言选项的内容范围以你已经说出口的台词为准。）"
-                : "(This is your private, unspoken thought — the farmer has no way of knowing it. If you want them to know, voice it yourself in dialogue first; base any farmer response options only on what you have already said aloud.)");
+                ? "[NEGATIVE_CONSTRAINT] 这是未公开的潜意识思绪，农夫毫不知情。绝对严禁在开场白中假定农夫已知；严禁直接展开讨论，除非你自己先在对白中主动坦白。"
+                : "[NEGATIVE_CONSTRAINT] CONFIDENTIAL UNSPOKEN THOUGHT. The farmer has zero knowledge of this. Strictly forbid assuming the farmer knows; do NOT elaborate on it unless you explicitly voice it first in dialogue.");
+            prompt.AppendLine("</inner_preoccupation>\n");
             return prompt.ToString();
         }
 
@@ -1380,9 +1382,10 @@ public class Prompts
             if (flags.IsPathBlocked)
             {
                 prompt.AppendLine("<movement_instruction mode=\"blocked\">");
+                string dirStr = LocalizeDirection(flags.BlockDirection, isZh);
                 prompt.AppendLine(isZh
-                    ? $"向 {flags.BlockDirection.ToString().ToLower()} 移动的路径被障碍物阻挡。指出前面的阻碍并说明无法过去。"
-                    : $"Path to the {flags.BlockDirection.ToString().ToLower()} is BLOCKED. Acknowledge the barrier and explain why you cannot move.");
+                    ? $"向{dirStr}移动的路径被障碍物阻挡。在对白中指出前方阻碍并明确说明无法过去。"
+                    : $"Path to the {dirStr} is BLOCKED. Acknowledge the barrier and state clearly that you cannot proceed.");
                 prompt.AppendLine("</movement_instruction>\n");
                 return prompt.ToString();
             }
@@ -1406,7 +1409,6 @@ public class Prompts
         }
 
         // ── Tier 2a ──
-
         internal static string BuildCurrentConversation(Character character, DialogueContext context, ContextFlags flags, HashSet<string> emittedBlockKeys, string name)
         {
             var prompt = new StringBuilder();
@@ -1471,10 +1473,12 @@ public class Prompts
             }
             if (candidateTurns.Count == 0) return prompt.ToString();
             var previousTurns = candidateTurns.TakeLast(3).ToList();
-            prompt.AppendLine(isZh ? "### 早先交流回顾" : "### EARLIER IN OUR CONVERSATION");
+
+            prompt.AppendLine("<continuity_context>");
+            prompt.AppendLine(isZh ? "### [早先会话衔接参考]" : "### [EARLIER SESSION CONTINUITY]");
             prompt.AppendLine(isZh
-                ? "（今天更早的对话片段，供衔接参考）"
-                : "(Earlier exchanges today — for continuity reference)");
+                ? "[REFERENCE_ONLY] 当日早先对话记录，仅用于保持人物记忆与逻辑连贯："
+                : "[REFERENCE_ONLY] Earlier conversation turns today, provided solely for conversational consistency:");
             foreach (var turn in previousTurns)
             {
                 string label = turn.IsPlayerLine ? (isZh ? "农夫" : "Farmer") : character.Name;
@@ -1484,10 +1488,10 @@ public class Prompts
             if (!string.IsNullOrEmpty(session.EmotionalTone))
             {
                 prompt.AppendLine(isZh
-                    ? $"（你之前的情绪基调：{session.EmotionalTone}。保持与前序交流的一致性。）"
-                    : $"(Your earlier emotional tone: {session.EmotionalTone} — maintain consistency with prior exchanges.)");
+                    ? $"[MOOD_CONSISTENCY] 前置情绪基调: {session.EmotionalTone}。确保语气演变符合心理过渡规律。"
+                    : $"[MOOD_CONSISTENCY] Prior emotional tone: {session.EmotionalTone}. Ensure tonal transition remains psychologically coherent.");
             }
-            prompt.AppendLine();
+            prompt.AppendLine("</continuity_context>\n");
             return prompt.ToString();
         }
 
