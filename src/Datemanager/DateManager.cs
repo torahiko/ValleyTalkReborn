@@ -931,19 +931,158 @@ namespace ValleytalkReborn
 
             try
             {
+                // 1. 现有逻辑：生成 Trait（夜间记忆巩固）
                 var item = BuildDateWorkItem(session);
 
                 ModEntry.SMonitor?.Log(
                     $"[DateManager] Submitting date review for {session.NpcName} to NightlyConsolidator.",
                     LogLevel.Debug);
 
-                // 复用夜间巩固管线：LLM复盘 → Trait写入 → 阅后即焚晨间话题
                 await NightlyConsolidator.RunAsync(new List<NightlyWorkItem> { item });
+
+                // ─── 2. 新增：生成手账（Timeline Chronicle 归档）───
+                await GenerateAndWriteDateChronicleAsync(session);
+                // ────────────────────────────────────────────────────────
             }
             catch (Exception ex)
             {
                 ModEntry.SMonitor?.Log(
                     $"[DateManager] Date review failed for {session.NpcName}: {ex.Message}",
+                    LogLevel.Warn);
+            }
+        }
+
+        /// <summary>
+        /// 生成约会手账并安全写入 MemoryManager（Daily Timeline）。
+        /// LLM 推理在 Task 线程池执行，ModData 写入封送回主线程队列。
+        /// </summary>
+        /// <param name="session">约会会话数据（包含 HasWalkedAfterStaged 状态）</param>
+        /// <returns>异步任务</returns>
+        private async Task GenerateAndWriteDateChronicleAsync(DateSessionData session)
+        {
+            if (session == null || string.IsNullOrWhiteSpace(session.NpcName))
+                return;
+
+            try
+            {
+                bool isZh = LocalizedContentManager.CurrentLanguageCode ==
+                            LocalizedContentManager.LanguageCode.zh;
+
+                // 1. 约会模式描述（基于 HasWalkedAfterStaged 状态）
+                string modeDesc;
+                if (session.SessionMode == DateMode.Follow)
+                {
+                    modeDesc = isZh ? "随性漫步" : "Casual Walk";
+                }
+                else if (session.HasWalkedAfterStaged)
+                {
+                    modeDesc = isZh ? "深情定点与漫步送归" : "Intimate Date & Walk Home";
+                }
+                else
+                {
+                    modeDesc = isZh ? "定点小聚" : "Quiet Gathering";
+                }
+
+                // 2. 礼物摘要提取
+                string giftSummary = "";
+                if (session.PlayerGaveGift && !string.IsNullOrWhiteSpace(session.GivenGiftName))
+                {
+                    string taste = session.GiftTaste switch
+                    {
+                        NPC.gift_taste_love => isZh ? "最爱的" : "favorite ",
+                        NPC.gift_taste_like => isZh ? "喜欢的" : "nice ",
+                        _ => ""
+                    };
+                    giftSummary = isZh
+                        ? $"农夫送了我{taste}【{session.GivenGiftName}】"
+                        : $"Farmer gave me {taste}[{session.GivenGiftName}]";
+                }
+
+                // 3. 对话片段摘录（最后 1-2 条，截短保护）
+                string dialogueHighlights = "";
+                if (session.DialogueLogs.Count > 0)
+                {
+                    var highlights = session.DialogueLogs
+                        .TakeLast(2)
+                        .Select(d => $"{d.Speaker}: {d.Text}");
+                    dialogueHighlights = string.Join(" / ", highlights);
+                    if (dialogueHighlights.Length > 80)
+                        dialogueHighlights = dialogueHighlights.Substring(0, 80) + "...";
+                }
+
+                // 4. 调用 LLM（20 秒超时）
+                var (sys, user) = DateFlowService.BuildChroniclePrompt(
+                    session.NpcName,
+                    session.TargetLocation,
+                    session.StartTime,
+                    session.EndTime,
+                    modeDesc,
+                    giftSummary,
+                    dialogueHighlights);
+
+                string chronicle = await DateFlowService.FetchLlmResponse(sys, user, 20000);
+
+                // 5. 降级兜底：LLM 失败时使用模板化文本
+                if (string.IsNullOrWhiteSpace(chronicle))
+                {
+                    chronicle = DateFlowService.BuildFallbackChronicle(
+                        session.NpcName,
+                        session.TargetLocation,
+                        modeDesc,
+                        session.PlayerGaveGift);
+
+                    ModEntry.SMonitor?.Log(
+                        $"[DateManager] LLM chronicle generation failed/timeout for {session.NpcName}. Using fallback template.",
+                        LogLevel.Debug);
+                }
+
+                // 6. 主线程封送：写入 MemoryManager（三参数调用，默认参数自动生成日期标签）
+                string chronicleSnapshot = chronicle;
+                string npcNameSnapshot = session.NpcName;
+
+                _mainThreadQueue.Enqueue(() =>
+                {
+                    // BOUNDARY: 世界未就绪（玩家已退出游戏）
+                    if (!Context.IsWorldReady || Game1.player == null)
+                    {
+                        ModEntry.SMonitor?.Log(
+                            $"[DateManager] Chronicle write skipped: world not ready (player offline).",
+                            LogLevel.Debug);
+                        return;
+                    }
+
+                    // ─── 规范调用：仅传 3 个参数，让 MemoryManager 内部自动生成日期标签与天数 ───
+                    var result = MemoryManager.Instance.AddTimelineMemory(
+                        npcNameSnapshot,
+                        chronicleSnapshot,
+                        MemoryTier.Daily);
+                    // ────────────────────────────────────────────────────────────────────────────
+
+                    if (result == MemoryOperationResult.Success)
+                    {
+                        // HUD 提示
+                        string notif = isZh
+                            ? $"今晚与 {npcNameSnapshot} 的约会已被记录在手账中。"
+                            : $"Tonight's date with {npcNameSnapshot} has been recorded in your chronicle.";
+
+                        Game1.addHUDMessage(new HUDMessage(notif, 2));
+
+                        ModEntry.SMonitor?.Log(
+                            $"[DateManager] Chronicle written for {npcNameSnapshot}: {chronicleSnapshot.Substring(0, Math.Min(50, chronicleSnapshot.Length))}...",
+                            LogLevel.Info);
+                    }
+                    else
+                    {
+                        ModEntry.SMonitor?.Log(
+                            $"[DateManager] MemoryManager.AddTimelineMemory failed: {result}",
+                            LogLevel.Warn);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[DateManager] Chronicle generation pipeline exception for {session.NpcName}: {ex.Message}",
                     LogLevel.Warn);
             }
         }
