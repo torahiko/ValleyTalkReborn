@@ -121,6 +121,13 @@ internal static class PerceptionInjector
                 : "[Town Rumors] (Passive background context circulating around town. Do not force repetition if the current conversation already covers this topic.)"
         };
 
+        // TIE-004：镇事件传闻优先于全局快照选择；提供方未认领时，下方原有快照路径字节不变。
+        if (TownIncidentRumorProvider.TryClaimMainDialogueRumor(npcName, out string incidentRumor))
+        {
+            lines.Add($"- {incidentRumor}");
+            return string.Join("\n", lines);
+        }
+
         string dayKey;
         try
         {
