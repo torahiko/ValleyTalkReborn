@@ -647,6 +647,54 @@ namespace ValleytalkReborn
             // Backward compatibility (used by DialogueTextInputMenu.cs)
         }
 
+        // =========================================================================
+        // 6c. ARCHIVED MEMORY MENU (Archive box, rules + timeline scopes)
+        // =========================================================================
+        public static class ArchiveMenu
+        {
+            public static string IconAlt() => Lookup("ArchiveMenu.IconAlt");
+            public static string SubtitleRules() => Lookup("ArchiveMenu.SubtitleRules");
+            public static string SubtitleTimeline() => Lookup("ArchiveMenu.SubtitleTimeline");
+            public static string ClearButton() => Lookup("ArchiveMenu.ClearButton");
+            public static string ClearTooltip() => Lookup("ArchiveMenu.ClearTooltip");
+
+            public static string CapacityNearFull(int count, int max)
+                => Lookup("ArchiveMenu.CapacityNearFull").Replace("{{count}}", count.ToString())
+                    .Replace("{{max}}", max.ToString());
+
+            public static string CapacityNormal(int count, int max)
+                => Lookup("ArchiveMenu.CapacityNormal").Replace("{{count}}", count.ToString())
+                    .Replace("{{max}}", max.ToString());
+
+            public static string EndangeredTag() => Lookup("ArchiveMenu.EndangeredTag");
+            public static string RestoreTooltip() => Lookup("ArchiveMenu.RestoreTooltip");
+            public static string DeleteTooltip() => Lookup("ArchiveMenu.DeleteTooltip");
+
+            public static string DeleteConfirmTitle() => Lookup("ArchiveMenu.DeleteConfirmTitle");
+            public static string DeleteConfirmSubtitle() => Lookup("ArchiveMenu.DeleteConfirmSubtitle");
+
+            public static string ClearConfirmTitle() => Lookup("ArchiveMenu.ClearConfirmTitle");
+            public static string ClearConfirmSubtitle(int count)
+                => Lookup("ArchiveMenu.ClearConfirmSubtitle").Replace("{{count}}", count.ToString());
+            public static string ClearConfirmWarning() => Lookup("ArchiveMenu.ClearConfirmWarning");
+            public static string ClearConfirmTip() => Lookup("ArchiveMenu.ClearConfirmTip");
+
+            public static string TagTownConsensus() => Lookup("ArchiveMenu.TagTownConsensus");
+            public static string TagBehavior() => Lookup("ArchiveMenu.TagBehavior");
+            public static string TagFact() => Lookup("ArchiveMenu.TagFact");
+            public static string TagJournal() => Lookup("ArchiveMenu.TagJournal");
+            public static string TagWeekly() => Lookup("ArchiveMenu.TagWeekly");
+            public static string TagChronicle() => Lookup("ArchiveMenu.TagChronicle");
+
+            public static string RestoreDuplicate() => Lookup("ArchiveMenu.RestoreDuplicate");
+            public static string RestoreNotFound() => Lookup("ArchiveMenu.RestoreNotFound");
+            public static string RestoreCapacityFull(int max)
+                => Lookup("ArchiveMenu.RestoreCapacityFull").Replace("{{max}}", max.ToString());
+
+            public static string EmptyPrompt() => Lookup("ArchiveMenu.EmptyPrompt");
+            public static string EmptyPromptTimeline() => Lookup("ArchiveMenu.EmptyPromptTimeline");
+        }
+
         public static class DialogueInput
         {
             public static string DefaultTitle() => Lookup("DialogueInput.DefaultTitle");
