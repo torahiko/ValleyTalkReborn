@@ -794,6 +794,59 @@ namespace ValleytalkReborn
             public static string UnstuckFailedHud() => Lookup("PoiHud.UnstuckFailedHud");
         }
 
+        // =========================================================================
+        // 6e. ADD MULTI RULE INPUT MENU (Batch rule creation & dispatch)
+        // =========================================================================
+        public static class AddRuleMenu
+        {
+            public static string SubtitleGlobal() => Lookup("AddRuleMenu.SubtitleGlobal");
+            public static string SubtitleNpc(string name) =>
+                Lookup("AddRuleMenu.SubtitleNpc").Replace("{{name}}", name ?? string.Empty);
+
+            public static string CategoryLabel() => Lookup("AddRuleMenu.CategoryLabel");
+            public static string CategoryFact() => Lookup("AddRuleMenu.CategoryFact");
+            public static string CategoryBehavior() => Lookup("AddRuleMenu.CategoryBehavior");
+
+            public static string ScopeLabel() => Lookup("AddRuleMenu.ScopeLabel");
+            public static string ScopeAll() => Lookup("AddRuleMenu.ScopeAll");
+            public static string ScopeSelected(int count) =>
+                Lookup("AddRuleMenu.ScopeSelected").Replace("{{count}}", count.ToString());
+
+            public static string NpcSelectorPrompt() => Lookup("AddRuleMenu.NpcSelectorPrompt");
+            public static string NpcSearchPlaceholder() => Lookup("AddRuleMenu.NpcSearchPlaceholder");
+            public static string InputPlaceholder(int limit) =>
+                Lookup("AddRuleMenu.InputPlaceholder").Replace("{{limit}}", limit.ToString());
+
+            public static string CharCountPattern(int current, int limit)
+                => Lookup("AddRuleMenu.CharCountPattern")
+                    .Replace("{{current}}", current.ToString())
+                    .Replace("{{limit}}", limit.ToString());
+
+            public static string ButtonConfirm() => Lookup("AddRuleMenu.ButtonConfirm");
+            public static string ButtonCancel() => Lookup("AddRuleMenu.ButtonCancel");
+
+            public static string ValidationEmptyContent() => Lookup("AddRuleMenu.ValidationEmptyContent");
+            public static string ValidationExceedsLimit(int limit) =>
+                Lookup("AddRuleMenu.ValidationExceedsLimit").Replace("{{limit}}", limit.ToString());
+            public static string ValidationNoNpcSelected() => Lookup("AddRuleMenu.ValidationNoNpcSelected");
+
+            public static string SuccessHudSingle(int count, string name)
+                => Lookup("AddRuleMenu.SuccessHudSingle")
+                    .Replace("{{count}}", count.ToString())
+                    .Replace("{{name}}", name ?? string.Empty);
+            public static string SuccessHudMultiple(int count, int npcCount)
+                => Lookup("AddRuleMenu.SuccessHudMultiple")
+                    .Replace("{{count}}", count.ToString())
+                    .Replace("{{npcCount}}", npcCount.ToString());
+            public static string SuccessHudGlobal(int count)
+                => Lookup("AddRuleMenu.SuccessHudGlobal").Replace("{{count}}", count.ToString());
+
+            public static string TooltipCategory() => Lookup("AddRuleMenu.TooltipCategory");
+            public static string TooltipScope() => Lookup("AddRuleMenu.TooltipScope");
+            public static string TooltipConfirm() => Lookup("AddRuleMenu.TooltipConfirm");
+            public static string TooltipCancel() => Lookup("AddRuleMenu.TooltipCancel");
+        }
+
         /// <summary>统一警示/确认弹窗（BioValveWarningDialog）的共享按钮文案。</summary>
         public static class Dialog
         {

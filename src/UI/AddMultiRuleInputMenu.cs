@@ -144,7 +144,7 @@ namespace ValleytalkReborn.UI
                 AllowNewlines = false,
                 TextColor = BioEditorMenu.TextPrimary,
                 Selected = true,
-                PlaceholderText = "输入规则正文（例如：'农夫在冬天向全镇赠送了星之果实茶' / '说话时习惯带笑'）...",
+                PlaceholderText = I18n.AddRuleMenu.InputPlaceholder(RuleManager.MaxRuleLength),
                 PlaceholderColor = new Color(175, 145, 115)
             };
             Game1.keyboardDispatcher.Subscriber = _inputBox;
@@ -528,14 +528,23 @@ namespace ValleytalkReborn.UI
             if (string.IsNullOrWhiteSpace(text))
             {
                 Game1.playSound("cancel");
-                Game1.addHUDMessage(new HUDMessage("请输入规则正文", HUDMessage.error_type));
+                Game1.addHUDMessage(new HUDMessage(I18n.AddRuleMenu.ValidationEmptyContent(), HUDMessage.error_type));
                 return;
             }
 
-            if (_selectedNpcIds.Count == 0)
+            if (text.Length > RuleManager.MaxRuleLength)
             {
                 Game1.playSound("cancel");
-                Game1.addHUDMessage(new HUDMessage("请勾选【全镇共识】或至少一位适用村民", HUDMessage.error_type));
+                Game1.addHUDMessage(new HUDMessage(I18n.AddRuleMenu.ValidationExceedsLimit(RuleManager.MaxRuleLength), HUDMessage.error_type));
+                return;
+            }
+
+            bool isWorld = _selectedNpcIds.Contains("WORLD");
+            int npcCount = isWorld ? 0 : _selectedNpcIds.Count;
+            if (!isWorld && npcCount == 0)
+            {
+                Game1.playSound("cancel");
+                Game1.addHUDMessage(new HUDMessage(I18n.AddRuleMenu.ValidationNoNpcSelected(), HUDMessage.error_type));
                 return;
             }
 
@@ -559,8 +568,10 @@ namespace ValleytalkReborn.UI
             if (successCount > 0)
             {
                 Game1.playSound("coin");
-                string scopeDesc = _selectedNpcIds.Contains("WORLD") ? "全镇共识" : $"{successCount} 位村民";
-                Game1.addHUDMessage(new HUDMessage($"✔ 规则已成功分派至【{scopeDesc}】", HUDMessage.newQuest_type));
+                if (isWorld)
+                    Game1.addHUDMessage(new HUDMessage(I18n.AddRuleMenu.SuccessHudGlobal(successCount), HUDMessage.newQuest_type));
+                else
+                    Game1.addHUDMessage(new HUDMessage(I18n.AddRuleMenu.SuccessHudMultiple(successCount, npcCount), HUDMessage.newQuest_type));
                 CloseAndReturn();
             }
             else if (fullCount > 0)
@@ -575,6 +586,19 @@ namespace ValleytalkReborn.UI
             }
         }
 
+
+        private string FirstSelectedNpcName()
+        {
+            foreach (var id in _selectedNpcIds)
+            {
+                if (string.Equals(id, "WORLD", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                var opt = _npcOptions.FirstOrDefault(o => string.Equals(o.Id, id, StringComparison.OrdinalIgnoreCase));
+                if (opt != null)
+                    return opt.DisplayName;
+            }
+            return "NPC";
+        }
         private void CloseAndReturn()
         {
             Game1.keyboardDispatcher.Subscriber = null;
@@ -606,9 +630,9 @@ namespace ValleytalkReborn.UI
 
             // 4. 属性配置栏
             int padX = ContentPadding;
-            CustomFontManager.DrawString(b, "分类:", new Vector2(xPositionOnScreen + padX, _factCapsuleRect.Y + 5), BioEditorMenu.TextSecondary, SectionHeaderSize);
-            DrawPillButton(b, _factCapsuleRect, "既定事实", _category == MemoryCategory.Fact, mx, my);
-            DrawPillButton(b, _behaviorCapsuleRect, "行为准则", _category == MemoryCategory.Behavior, mx, my);
+            CustomFontManager.DrawString(b, I18n.AddRuleMenu.CategoryLabel(), new Vector2(xPositionOnScreen + padX, _factCapsuleRect.Y + 5), BioEditorMenu.TextSecondary, SectionHeaderSize);
+            DrawPillButton(b, _factCapsuleRect, I18n.AddRuleMenu.CategoryFact(), _category == MemoryCategory.Fact, mx, my);
+            DrawPillButton(b, _behaviorCapsuleRect, I18n.AddRuleMenu.CategoryBehavior(), _category == MemoryCategory.Behavior, mx, my);
 
             // ★ 优化 4：行为准则下时效锁定为永久有效，临时时效按钮置灰
             bool isBehavior = _category == MemoryCategory.Behavior;
@@ -634,7 +658,7 @@ namespace ValleytalkReborn.UI
             DrawSingleLineBox(b, _searchBox);
             if (string.IsNullOrEmpty(_searchBox.Text) && !_searchBox.Selected)
             {
-                CustomFontManager.DrawString(b, "搜索村民...", new Vector2(_searchBox.X + 8, _searchBox.Y + 6), BioEditorMenu.TextMuted, TipFontSize);
+                CustomFontManager.DrawString(b, I18n.AddRuleMenu.NpcSearchPlaceholder(), new Vector2(_searchBox.X + 8, _searchBox.Y + 6), BioEditorMenu.TextMuted, TipFontSize);
             }
 
             // 筛选标签
@@ -673,14 +697,14 @@ namespace ValleytalkReborn.UI
             }
 
             // 7. 底部主操作按钮
-            string targetCountDesc = isWorld ? "全镇广播" : $"{_selectedNpcIds.Count} 位村民";
-            DrawActionButton(b, _btnCancelRect, "✕ 取消 (Esc)", mx, my, isDanger: false, isPrimary: false);
-            DrawActionButton(b, _btnOkRect, $"✔ 确定分派 ({targetCountDesc})", mx, my, isDanger: false, isPrimary: true);
+
+            DrawActionButton(b, _btnCancelRect, I18n.AddRuleMenu.ButtonCancel(), mx, my, isDanger: false, isPrimary: false);
+            DrawActionButton(b, _btnOkRect, I18n.AddRuleMenu.ButtonConfirm(), mx, my, isDanger: false, isPrimary: true);
 
             // 8. ★ 优化 4：悬停气泡精准提示解释
             if (_factCapsuleRect.Contains(mx, my))
             {
-                _hoverText = "【既定事实 (Fact)】\n记录客观发生的事实经历或背景信息。\nNPC 在对话中会选择性提及或遵守。\n支持设定有效天数（如仅今天、指定天数）或永久有效。";
+                _hoverText = I18n.AddRuleMenu.TooltipCategory();
             }
             else if (_behaviorCapsuleRect.Contains(mx, my))
             {
@@ -692,7 +716,7 @@ namespace ValleytalkReborn.UI
             }
             else if (_worldScopePillRect.Contains(mx, my))
             {
-                _hoverText = "【分派给全镇共识】\n规则作为公共认知广播至整个小镇，所有村民均可感知。\n激活时将自动取消对个别村民的独立分派。";
+                _hoverText = I18n.AddRuleMenu.TooltipScope();
             }
             else if (_filterDatableRect.Contains(mx, my))
             {
@@ -712,8 +736,8 @@ namespace ValleytalkReborn.UI
 
             const string title = "新建规则 · 批量分派";
             CustomFontManager.DrawStringBold(b, title, new Vector2(headX, headY), BioEditorMenu.TextPrimary, TitleFontSize);
-
-            const string subtitle = "录入事实或行为准则，并批量同步至小镇公共认知或指定村民记忆库中。";
+            bool isWorldDraw = _selectedNpcIds.Contains("WORLD");
+            string subtitle = isWorldDraw ? I18n.AddRuleMenu.SubtitleGlobal() : I18n.AddRuleMenu.SubtitleNpc(FirstSelectedNpcName());
             CustomFontManager.DrawString(b, subtitle, new Vector2(headX + 2, headY + 28), BioEditorMenu.TextMuted, TipFontSize);
 
             int sepY = yPositionOnScreen + HeaderH + 2;
@@ -949,10 +973,9 @@ namespace ValleytalkReborn.UI
                           : isDanger ? BioEditorMenu.TextOnDarkBtn
                           : BioEditorMenu.TextOnLightBtn;
 
-            var sz = CustomFontManager.MeasureStringBold(label, ButtonFontSize);
-            CustomFontManager.DrawStringBold(b, label,
-                new Vector2(rect.X + pressOffset + (rect.Width - sz.X) / 2f, rect.Y + pressOffset + (rect.Height - sz.Y) / 2f),
-                textCol, ButtonFontSize);
+            var drawRect = new Rectangle(rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height);
+            ButtonTextRenderer.DrawButtonText(b, label, drawRect, textCol, useBold: true);
+
         }
 
         private static void DrawHoverTextCustom(SpriteBatch b, string text)
