@@ -28,12 +28,13 @@ public static class Tier2bBlockIds
     public const string FollowProto = "FollowProto";
     public const string DateEndProto = "DateEndProto";
     public const string Movement = "Movement";
+    public const string SocialLens = "SocialLens";
 
     /// <summary>Tier 2b 全部块 Id 集合（有序）。</summary>
     public static readonly IReadOnlyList<string> All = new[]
     {
         Gossip, Interaction, Jealousy, Preoccupation, PendingTopic, Gift, Milestone, Echo, Eavesdrop,
         SpouseWaiting, LocalPerception, Emotion, PlayerProfile, DateInvite, FollowProto,
-        DateEndProto, Movement,
+        DateEndProto, Movement, SocialLens,
     };
 }
