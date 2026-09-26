@@ -183,6 +183,67 @@ public class TownIncidentRumorTests
         Assert.True(TownIncidentRumorProvider.TryClaimMainDialogueRumor("Penny", out _));
     }
 
+    // ── 验收（TIE-FIX-001 回归）：事件传闻在 PerceptionManager 快照为空时仍可认领 ──
+
+    [Fact]
+    public void UT09_IncidentRumor_Claimed_WhenGossipSnapshotsEmpty()
+    {
+        ResetWithActiveIncident();
+
+        // PerceptionManager.Instance 在测试环境下未录入任何 Gossip，
+        // GetGossipSnapshots() 返回空列表；BuildGossipBlock 不得因此提前返回。
+        string result = PerceptionInjector.BuildGossipBlock("Pierre");
+
+        Assert.False(string.IsNullOrEmpty(result), "BuildGossipBlock returned empty with empty Gossip snapshots.");
+        Assert.Contains("Saloon Cook-Off", result);
+        Assert.Contains("Pierre", result);
+    }
+
+    // ── 验收（TIE-FIX-001 回归）：无活跃事件且快照为空时，BuildGossipBlock 仍返回空 ──
+
+    [Fact]
+    public void UT10_NoIncident_EmptySnapshots_ReturnsEmpty()
+    {
+        LocalizedContentManager.CurrentLanguageCode = LocalizedContentManager.LanguageCode.en;
+        TownIncidentRumorProvider.ResetDailyRumorQuota();
+        SetEngineData(new TownIncidentData { SchemaVersion = 1 });
+
+        string result = PerceptionInjector.BuildGossipBlock("Pierre");
+        Assert.True(string.IsNullOrEmpty(result), "BuildGossipBlock should be empty with no active incident and no Gossip snapshots.");
+    }
+
+    // ── 验收（TIE-FIX-001 回归）：事件认领成功时不调用 RecordGossip ──
+
+    [Fact]
+    public void UT11_IncidentRumor_DoesNot_RecordGossip()
+    {
+        ResetWithActiveIncident();
+
+        int snapshotsBefore = PerceptionManager.Instance.GetGossipSnapshots().Count;
+        PerceptionInjector.BuildGossipBlock("Pierre");
+        int snapshotsAfter = PerceptionManager.Instance.GetGossipSnapshots().Count;
+
+        Assert.Equal(snapshotsBefore, snapshotsAfter);
+    }
+
+    // ── 验收（TIE-FIX-001 回归）：配额用尽后，ResetDailyRumorQuota 恢复 2 次新认领 ──
+
+    [Fact]
+    public void UT12_ResetDailyQuota_Restores_TwoNewClaims()
+    {
+        ResetWithActiveIncident();
+
+        Assert.True(TownIncidentRumorProvider.TryClaimMainDialogueRumor("Pierre", out _));
+        Assert.True(TownIncidentRumorProvider.TryClaimMainDialogueRumor("Marnie", out _));
+        Assert.False(TownIncidentRumorProvider.TryClaimMainDialogueRumor("Penny", out _));
+
+        TownIncidentRumorProvider.ResetDailyRumorQuota();
+
+        Assert.True(TownIncidentRumorProvider.TryClaimMainDialogueRumor("Penny", out _));
+        Assert.True(TownIncidentRumorProvider.TryClaimMainDialogueRumor("Sam", out _));
+        Assert.False(TownIncidentRumorProvider.TryClaimMainDialogueRumor("Evelyn", out _));
+    }
+
     // ── 验收：传闻行由事件壳与认领 NPC 确定 ──
 
     [Fact]
