@@ -417,7 +417,7 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
     /// <summary>
     /// 自适应文本至指定宽度：先缩放（1.0 → 0.9 → 0.75），再截断至完整单词/字符。
     /// </summary>
-    private static (string fittedText, float scale) FitTextToWidth(string text, float maxWidth, float fontSize, bool isBold)
+    internal static (string fittedText, float scale) FitTextToWidth(string text, float maxWidth, float fontSize, bool isBold)
     {
         if (string.IsNullOrEmpty(text)) return (string.Empty, 1f);
 

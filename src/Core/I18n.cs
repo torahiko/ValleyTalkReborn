@@ -372,6 +372,50 @@ namespace ValleytalkReborn
             public static string ResetDialogBullet2() => Lookup("WorldSettings.ResetDialogBullet2");
             public static string ResetDialogConfirm() => Lookup("WorldSettings.ResetDialogConfirm");
             public static string ResetDialogCancel() => Lookup("WorldSettings.ResetDialogCancel");
+
+            // ── Date Ambience sub-page (FEAT-WS-I18N-002) ──
+            public static class DateAmbiencePage
+            {
+                // 字段标签
+                public static string FieldLocationName() => Lookup("WorldSettings.DateAmbience.FieldLocationName");
+                public static string FieldTargetMap() => Lookup("WorldSettings.DateAmbience.FieldTargetMap");
+                public static string FieldHeartsWeather() => Lookup("WorldSettings.DateAmbience.FieldHeartsWeather");
+                public static string FieldTimeWindow() => Lookup("WorldSettings.DateAmbience.FieldTimeWindow");
+                public static string FieldAmbience() => Lookup("WorldSettings.DateAmbience.FieldAmbience");
+
+                // 控件标签与后缀
+                public static string HeartsSuffix() => Lookup("WorldSettings.DateAmbience.HeartsSuffix");
+                public static string AllowRainyDays() => Lookup("WorldSettings.DateAmbience.AllowRainyDays");
+                public static string TimeWindowTo() => Lookup("WorldSettings.DateAmbience.TimeWindowTo");
+                public static string CustomTag() => Lookup("WorldSettings.DateAmbience.CustomTag");
+
+                // 空态提示
+                public static string EmptySelectionHint() => Lookup("WorldSettings.DateAmbience.EmptySelectionHint");
+
+                // 按钮
+                public static string SaveButton() => Lookup("WorldSettings.DateAmbience.SaveButton");
+                public static string RevertButton() => Lookup("WorldSettings.DateAmbience.RevertButton");
+                public static string DeleteButton() => Lookup("WorldSettings.DateAmbience.DeleteButton");
+                public static string NewButton() => Lookup("WorldSettings.DateAmbience.NewButton");
+
+                // 删除弹窗
+                public static string DeleteDialogTitle() => Lookup("WorldSettings.DateAmbience.DeleteDialogTitle");
+                public static string DeleteDialogSubtitle(string locationName) =>
+                    Lookup("WorldSettings.DateAmbience.DeleteDialogSubtitle").Replace("{{location}}", locationName ?? string.Empty);
+                public static string DeleteDialogBullet1() => Lookup("WorldSettings.DateAmbience.DeleteDialogBullet1");
+                public static string DeleteDialogBullet2() => Lookup("WorldSettings.DateAmbience.DeleteDialogBullet2");
+                public static string DeleteDialogConfirm() => Lookup("WorldSettings.DateAmbience.DeleteDialogConfirm");
+                public static string DeleteDialogCancel() => Lookup("WorldSettings.DateAmbience.DeleteDialogCancel");
+
+                // HUD 消息
+                public static string DeleteSuccessHud() => Lookup("WorldSettings.DateAmbience.DeleteSuccessHud");
+
+                // 新建默认值（语言专属）
+                public static string NewLocationDefaultNameZh() => Lookup("WorldSettings.DateAmbience.NewLocationDefaultNameZh");
+                public static string NewLocationDefaultNameEn() => Lookup("WorldSettings.DateAmbience.NewLocationDefaultNameEn");
+                public static string NewLocationDefaultDescZh() => Lookup("WorldSettings.DateAmbience.NewLocationDefaultDescZh");
+                public static string NewLocationDefaultDescEn() => Lookup("WorldSettings.DateAmbience.NewLocationDefaultDescEn");
+            }
         }
 
         // =========================================================================
