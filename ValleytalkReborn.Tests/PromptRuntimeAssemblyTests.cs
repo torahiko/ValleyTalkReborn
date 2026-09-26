@@ -80,6 +80,30 @@ public class PromptRuntimeAssemblyTests : IDisposable
         return prompts;
     }
 
+    /// <summary>
+    /// 为去重回归测试构建 Prompts：SystemPrompt 与 DynamicContext 均以 "- " 列表行注入。
+    /// DynamicContext 由 GameConstantContext 提供（Tier 1/2b 置空），便于精确控制动态列表内容。
+    /// </summary>
+    private static Prompts MakeDedupPrompts(string systemPrompt, string dynamicText)
+    {
+        var prompts = (Prompts)FormatterServices.GetUninitializedObject(typeof(Prompts));
+        prompts.SystemPrompt = systemPrompt;
+        prompts.GameConstantContext = dynamicText;
+        prompts.NpcConstantContext = string.Empty;
+        prompts.Instructions = "INSTR";
+        prompts.Command = "CMD";
+        prompts.CorePrompt = "CORE";
+        prompts.ResponseStart = "RESP";
+        SetPrivateField(prompts, "_corePlan", new InjectionPlan
+        {
+            Tier1Snapshot = new Tier1SnapshotContext(new Dictionary<string, string>()),
+            ActiveImpulses = new Dictionary<string, string>(),
+        });
+        SetPrivateField(prompts, "_sessionContinuitySegment", "CONTINUITY-SEG");
+        SetPrivateField(prompts, "_currentConversationSegment", "CONVERSATION-SEG");
+        return prompts;
+    }
+
     // ── BuildRuntimeSystemPrompt：SystemPrompt + "\n\n" + StaticInstructionContext ──
 
     [Fact]
@@ -126,6 +150,110 @@ public class PromptRuntimeAssemblyTests : IDisposable
         Assert.StartsWith("GAMECONST-SENTINEL\n\nNPCCONST-SENTINEL\n\nTIER1-SENTINEL", result);
         Assert.Contains("CONTINUITY-SENTINEL\n\nCONVERSATION-SENTINEL", result);
         Assert.Contains("<response_trigger>", result);
+    }
+
+    // ── PROMPT-ARCH-02A: 运行时对话载荷去重回归（重复动态条目仅在匹配 SystemPrompt 时被移除） ──
+
+    [Fact]
+    public void BuildRuntimeConversationPrompt_DuplicateOfSystemPrompt_IsOmitted()
+    {
+        SetLanguageEnvironment(string.Empty, LocalizedContentManager.LanguageCode.en);
+        var prompts = MakeDedupPrompts(
+            systemPrompt: "- SHARED-GOSSIP-1234",
+            dynamicText: "- SHARED-GOSSIP-1234\n- UNIQUE-DYNAMIC-5678");
+
+        string result = LlmDialogueService.BuildRuntimeConversationPrompt(prompts);
+
+        Assert.DoesNotContain("SHARED-GOSSIP-1234", result);
+        Assert.Contains("UNIQUE-DYNAMIC-5678", result);
+    }
+
+    [Fact]
+    public void BuildRuntimeConversationPrompt_Tier2bDuplicateOfSystemPrompt_IsOmitted()
+    {
+        SetLanguageEnvironment(string.Empty, LocalizedContentManager.LanguageCode.en);
+        var prompts = (Prompts)FormatterServices.GetUninitializedObject(typeof(Prompts));
+        prompts.SystemPrompt = "- TIER2B-DUP-1234";
+        prompts.GameConstantContext = "- UNIQUE-GAME-5678";
+        prompts.NpcConstantContext = string.Empty;
+        prompts.Instructions = "INSTR";
+        prompts.Command = "CMD";
+        prompts.CorePrompt = "CORE";
+        prompts.ResponseStart = "RESP";
+        SetPrivateField(prompts, "_corePlan", new InjectionPlan
+        {
+            Tier1Snapshot = new Tier1SnapshotContext(new Dictionary<string, string>()),
+            ActiveImpulses = new Dictionary<string, string>
+            {
+                [Tier2bBlockIds.Gossip] = "- TIER2B-DUP-1234",
+            },
+        });
+        SetPrivateField(prompts, "_sessionContinuitySegment", "CONTINUITY-SEG");
+        SetPrivateField(prompts, "_currentConversationSegment", "CONVERSATION-SEG");
+
+        string result = LlmDialogueService.BuildRuntimeConversationPrompt(prompts);
+
+        Assert.DoesNotContain("TIER2B-DUP-1234", result);
+        Assert.Contains("UNIQUE-GAME-5678", result);
+    }
+
+    [Fact]
+    public void BuildRuntimeConversationPrompt_UniqueDynamicEntry_Retained()
+    {
+        SetLanguageEnvironment(string.Empty, LocalizedContentManager.LanguageCode.en);
+        var prompts = MakeDedupPrompts(
+            systemPrompt: "- ONLY-IN-SYSTEM-1111",
+            dynamicText: "- ONLY-IN-DYNAMIC-2222");
+
+        string result = LlmDialogueService.BuildRuntimeConversationPrompt(prompts);
+
+        Assert.Contains("ONLY-IN-DYNAMIC-2222", result);
+        Assert.DoesNotContain("ONLY-IN-SYSTEM-1111", result);
+    }
+
+    [Fact]
+    public void BuildRuntimeConversationPrompt_ConversationStream_Unchanged()
+    {
+        SetLanguageEnvironment(string.Empty, LocalizedContentManager.LanguageCode.en);
+        var prompts = MakeDedupPrompts(
+            systemPrompt: "- SHARED-AAA-1111",
+            dynamicText: "- SHARED-AAA-1111\n- UNIQUE-BBB-2222");
+        string before = prompts.ConversationStream;
+
+        string result = LlmDialogueService.BuildRuntimeConversationPrompt(prompts);
+
+        Assert.Equal(before, prompts.ConversationStream);
+        Assert.Contains(before, result);
+    }
+
+    [Fact]
+    public void BuildRuntimeConversationPrompt_SystemPrompt_Unchanged()
+    {
+        SetLanguageEnvironment(string.Empty, LocalizedContentManager.LanguageCode.en);
+        string systemPrompt = "- SHARED-CCC-3333\n- SYSTEM-ONLY-4444";
+        var prompts = MakeDedupPrompts(
+            systemPrompt: systemPrompt,
+            dynamicText: "- SHARED-CCC-3333\n- UNIQUE-DDD-5555");
+
+        LlmDialogueService.BuildRuntimeConversationPrompt(prompts);
+
+        Assert.Equal(systemPrompt, prompts.SystemPrompt);
+    }
+
+    [Fact]
+    public void BuildRuntimeConversationPrompt_DedupDeterministic_AcrossBothPaths()
+    {
+        SetLanguageEnvironment(string.Empty, LocalizedContentManager.LanguageCode.en);
+        var prompts = MakeDedupPrompts(
+            systemPrompt: "- SHARED-EEE-6666",
+            dynamicText: "- SHARED-EEE-6666\n- UNIQUE-FFF-7777");
+
+        string streaming = LlmDialogueService.BuildRuntimeConversationPrompt(prompts);
+        string nonStreaming = LlmDialogueService.BuildRuntimeConversationPrompt(prompts);
+
+        Assert.Equal(nonStreaming, streaming);
+        Assert.DoesNotContain("SHARED-EEE-6666", streaming);
+        Assert.Contains("UNIQUE-FFF-7777", streaming);
     }
 
     [Fact]
@@ -194,6 +322,7 @@ public class PromptRuntimeAssemblyTests : IDisposable
     {
         SetLanguageEnvironment(string.Empty, LocalizedContentManager.LanguageCode.en);
         var prompts = (Prompts)FormatterServices.GetUninitializedObject(typeof(Prompts));
+        prompts.SystemPrompt = string.Empty;
         prompts.GameConstantContext = string.Empty;
         prompts.NpcConstantContext = string.Empty;
         SetPrivateField(prompts, "_corePlan", new InjectionPlan

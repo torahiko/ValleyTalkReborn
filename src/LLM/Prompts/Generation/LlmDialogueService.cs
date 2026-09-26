@@ -95,9 +95,6 @@ public class LlmDialogueService
                 return new string[] { "..." };
             }
 
-            // ── 终局出口去重：优先保留下方 CorePrompt 的即时条目，剔除上方 SystemPrompt 的冗余条目 ──
-            PromptDeduplicator.DeduplicatePrompts(prompts);
-
             // ── PROMPT-ARCH-02: 运行时边界装配（每次生成计算一次；流式/非流式 Provider 调用共用） ──
             string runtimeSystemPrompt = BuildRuntimeSystemPrompt(prompts);
             string runtimeConversationPrompt = BuildRuntimeConversationPrompt(prompts);
@@ -580,14 +577,16 @@ public class LlmDialogueService
     }
 
     /// <summary>
-    /// 运行时对话载荷：DynamicContext + ConversationStream。
+    /// 运行时对话载荷：DynamicContext（去除与 SystemPrompt 重复的列表条目）+ ConversationStream。
     /// 不含 SystemPrompt、StaticInstructionContext、独立的 Instructions/Command、ResponseStart。
     /// </summary>
     internal static string BuildRuntimeConversationPrompt(Prompts prompts)
     {
         if (prompts == null)
             throw new ArgumentNullException(nameof(prompts));
-        return Prompts.JoinPromptSegments(prompts.DynamicContext, prompts.ConversationStream);
+        string dynamicDeduped = PromptDeduplicator.DeduplicateDynamicSegment(
+            prompts.SystemPrompt, prompts.DynamicContext);
+        return Prompts.JoinPromptSegments(dynamicDeduped, prompts.ConversationStream);
     }
 
     /// <summary>
@@ -758,8 +757,9 @@ public class LlmDialogueService
     }
 
     /// <summary>
-    /// 内部终局提示词去重排查器。
-    /// 严格排查以 "- " 开头的列表行，同时对元数据和示范台词实施完全白名单保护。
+    /// 运行时动态段去重器：仅当动态列表条目与 SystemPrompt 中的条目重复时，
+    /// 才将其从动态段中移除。SystemPrompt 本身绝不会被修改。
+    /// 保护前缀、最小内容长度（>=4）、OrdinalIgnoreCase 行为保持不变。
     /// </summary>
     private static class PromptDeduplicator
     {
@@ -777,67 +777,30 @@ public class LlmDialogueService
         };
 
         /// <summary>
-        /// 智能去重：只对动态内容（CorePrompt）去重，保持静态内容（SystemPrompt）完全不变。
+        /// 返回去重后的动态段：仅移除与 SystemPrompt 列表条目重复的 "- " 列表行。
+        /// SystemPrompt 不会被修改；动态段内部重复的条目保留（仅对 SystemPrompt 去重）。
         /// </summary>
-        /// <remarks>
-        /// <para><strong>KV-Cache 保护原则：</strong></para>
-        /// <para>1. SystemPrompt 必须保持完全静态，任何修改都会导致前缀缓存失效</para>
-        /// <para>2. 前缀缓存的价值在于多轮对话中 SystemPrompt 一字不变，LLM 可复用已计算的 KV 状态</para>
-        /// <para>3. 如果 SystemPrompt 和 CorePrompt 中存在重复内容（如 gossip），应在注入阶段就避免重复</para>
-        /// <para>
-        /// <strong>为何不直接删除去重器？</strong><br/>
-        /// 保留此方法作为防御性编程手段，捕获潜在的动态注入错误（如未来新增模块意外重复注入）。
-        /// 但去重操作仅限于 CorePrompt，绝不触碰 SystemPrompt。
-        /// </para>
-        /// </remarks>
-        public static void DeduplicatePrompts(Prompts prompts)
+        public static string DeduplicateDynamicSegment(string systemPrompt, string dynamicText)
         {
-            if (prompts == null) return;
+            if (string.IsNullOrWhiteSpace(dynamicText))
+                return dynamicText;
 
-            var seenEntries = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            // ══════════════════════════════════════════════════════════════════════
-            // [KV-CACHE PROTECTION] 只对 CorePrompt 去重，SystemPrompt 保持完全静态
-            // ══════════════════════════════════════════════════════════════════════
-          
-            // 1. 先收集 SystemPrompt 中的条目（用于检测重复，但不修改 SystemPrompt）
-            int systemEntriesCount = seenEntries.Count;
-            CollectEntriesWithoutModifying(prompts.SystemPrompt, seenEntries);
-            systemEntriesCount = seenEntries.Count - systemEntriesCount;
-
-            // 2. 只清洗 CorePrompt（若与 SystemPrompt 撞车，CorePrompt 中的副本被移除）
-            string originalCorePrompt = prompts.CorePrompt;
-            prompts.CorePrompt = DeduplicateInternal(prompts.CorePrompt, seenEntries);
-
-            // 3. SystemPrompt 完全不动，保持前缀缓存有效性
-            // prompts.SystemPrompt 保持原样
-
-            // 4. Debug 日志：记录去重结果
-            if (ModEntry.Config?.Debug ?? false)
-            {
-                int coreEntriesRemoved = 0;
-                if (!string.IsNullOrEmpty(originalCorePrompt))
-                {
-                    int originalLines = originalCorePrompt.Split('\n').Count(l => l.TrimStart().StartsWith("- "));
-                    int finalLines = prompts.CorePrompt.Split('\n').Count(l => l.TrimStart().StartsWith("- "));
-                    coreEntriesRemoved = originalLines - finalLines;
-                }
-
-                if (coreEntriesRemoved > 0 || systemEntriesCount > 0)
-                {
-                    ModEntry.SMonitor?.Log(
-                        $"[PromptDeduplicator] SystemPrompt entries: {systemEntriesCount}, " +
-                        $"CorePrompt duplicates removed: {coreEntriesRemoved}",
-                        StardewModdingAPI.LogLevel.Debug);
-                }
-            }
+            var systemEntries = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            CollectSystemEntries(systemPrompt, systemEntries);
+            return DeduplicateDynamic(dynamicText, systemEntries);
         }
 
-        /// <summary>
-        /// 只收集 SystemPrompt 中的条目到 seenEntries，不做任何修改。
-        /// 用于去重时让 CorePrompt 知晓 SystemPrompt 已有哪些内容，但绝不触碰 SystemPrompt 本身。
-        /// </summary>
-        private static void CollectEntriesWithoutModifying(string rawText, HashSet<string> seenEntries)
+        private static bool IsProtected(string trimmed)
+        {
+            for (int i = 0; i < ProtectedPrefixes.Length; i++)
+            {
+                if (trimmed.StartsWith(ProtectedPrefixes[i], StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+
+        private static void CollectSystemEntries(string rawText, HashSet<string> entries)
         {
             if (string.IsNullOrWhiteSpace(rawText))
                 return;
@@ -849,36 +812,23 @@ public class LlmDialogueService
                 {
                     string trimmed = line.TrimStart();
 
-                    if (trimmed.StartsWith("- ", StringComparison.Ordinal))
+                    if (trimmed.StartsWith("- ", StringComparison.Ordinal) && !IsProtected(trimmed))
                     {
-                        bool isProtected = false;
-                        for (int i = 0; i < ProtectedPrefixes.Length; i++)
-                        {
-                            if (trimmed.StartsWith(ProtectedPrefixes[i], StringComparison.OrdinalIgnoreCase))
-                            {
-                                isProtected = true;
-                                break;
-                            }
-                        }
-
-                        if (!isProtected)
-                        {
-                            string content = trimmed.Substring(2).Trim();
-                            if (content.Length >= 4)
-                            {
-                                seenEntries.Add(content); // 只收集，不修改任何内容
-                            }
-                        }
+                        string content = trimmed.Substring(2).Trim();
+                        if (content.Length >= 4)
+                            entries.Add(content);
                     }
                 }
             }
         }
-        private static string DeduplicateInternal(string rawText, HashSet<string> seenEntries)
+
+        private static string DeduplicateDynamic(string rawText, HashSet<string> systemEntries)
         {
             if (string.IsNullOrWhiteSpace(rawText))
                 return rawText;
 
             var sb = new StringBuilder(rawText.Length);
+            bool removedAny = false;
 
             using (var reader = new StringReader(rawText))
             {
@@ -887,31 +837,14 @@ public class LlmDialogueService
                 {
                     string trimmed = line.TrimStart();
 
-                    // 严格且仅识别以 "- " 开头的列表行
-                    if (trimmed.StartsWith("- ", StringComparison.Ordinal))
+                    if (trimmed.StartsWith("- ", StringComparison.Ordinal) && !IsProtected(trimmed))
                     {
-                        bool isProtected = false;
-                        for (int i = 0; i < ProtectedPrefixes.Length; i++)
-                        {
-                            if (trimmed.StartsWith(ProtectedPrefixes[i], StringComparison.OrdinalIgnoreCase))
-                            {
-                                isProtected = true;
-                                break;
-                            }
-                        }
+                        string content = trimmed.Substring(2).Trim();
 
-                        if (!isProtected)
+                        if (content.Length >= 4 && systemEntries.Contains(content))
                         {
-                            string content = trimmed.Substring(2).Trim();
-
-                            // 长度 >= 4 的具体事件或新闻才排查
-                            if (content.Length >= 4)
-                            {
-                                if (!seenEntries.Add(content))
-                                {
-                                    continue; // 命中重复，跳过写入（丢弃）
-                                }
-                            }
+                            removedAny = true;
+                            continue; // 与 SystemPrompt 重复，省略
                         }
                     }
 
@@ -919,6 +852,9 @@ public class LlmDialogueService
                 }
             }
 
+            // 未移除任何条目时，原样返回原始字节（保留 Tier 段内的 \r\n 等原始换行）。
+            if (!removedAny)
+                return rawText;
             return sb.ToString().TrimEnd();
         }
     }
