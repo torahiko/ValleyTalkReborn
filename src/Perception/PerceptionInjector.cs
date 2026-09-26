@@ -108,26 +108,24 @@ internal static class PerceptionInjector
     /// </summary>
     public static string BuildGossipBlock(string npcName)
     {
+        bool isZh = IsChineseLanguage;
+        string gossipHeader = isZh
+            ? "[小镇传闻]（小镇近期的日常谈资与背景印象；若当前交谈已涉及此话题，切勿强行重复提及）"
+            : "[Town Rumors] (Passive background context circulating around town. Do not force repetition if the current conversation already covers this topic.)";
+
+        // TIE-FIX-001：镇事件传闻优先于全局快照选择，且快照列表为空时也必须
+        // 先给事件提供方认领机会。原代码在读取快照后、认领前即对空列表提前返回，
+        // 导致事件传闻在全局 Gossip 队列空置时永远无法产出。
+        if (TownIncidentRumorProvider.TryClaimMainDialogueRumor(npcName, out string incidentRumor))
+        {
+            return $"{gossipHeader}\n- {incidentRumor}";
+        }
+
         var snapshots = PerceptionManager.Instance.GetGossipSnapshots();
         if (snapshots == null || snapshots.Count == 0)
             return string.Empty;
 
-        bool isZh = IsChineseLanguage;
-
-        var lines = new List<string>
-        {
-            isZh
-                ? "[小镇传闻]（小镇近期的日常谈资与背景印象；若当前交谈已涉及此话题，切勿强行重复提及）"
-                : "[Town Rumors] (Passive background context circulating around town. Do not force repetition if the current conversation already covers this topic.)"
-        };
-
-        // TIE-004：镇事件传闻优先于全局快照选择；提供方未认领时，下方原有快照路径字节不变。
-        if (TownIncidentRumorProvider.TryClaimMainDialogueRumor(npcName, out string incidentRumor))
-        {
-            lines.Add($"- {incidentRumor}");
-            return string.Join("\n", lines);
-        }
-
+        var lines = new List<string> { gossipHeader };
         string dayKey;
         try
         {
