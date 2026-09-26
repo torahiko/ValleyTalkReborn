@@ -582,14 +582,14 @@ internal sealed class PoiTuningPage : WorldSubPageBase
         if (service == null)
         {
             Game1.playSound("cancel");
-            Game1.addHUDMessage(new HUDMessage("⚠ 世界设定覆盖层服务未初始化", HUDMessage.error_type));
+            Game1.addHUDMessage(new HUDMessage(I18n.WorldSettings.PoiTuningPage.ResetServiceUnavailable(), HUDMessage.error_type));
             return;
         }
 
         if (!service.HasOverlay)
         {
             Game1.playSound("cancel");
-            Game1.addHUDMessage(new HUDMessage("本页已无自定义设置", HUDMessage.error_type));
+            Game1.addHUDMessage(new HUDMessage(I18n.WorldSettings.PoiTuningPage.ResetNothingToReset(), HUDMessage.error_type));
             return;
         }
 
@@ -671,11 +671,16 @@ internal sealed class PoiTuningPage : WorldSubPageBase
 
     private void DrawModeSwitcher(SpriteBatch b, int mx, int my)
     {
-        DrawTabPill(b, _modeNpcBtnRect, "⚖️ 伴侣出没偏好调谐", _currentMode == ViewMode.NpcWeights, mx, my);
-        DrawTabPill(b, _modePoiBtnRect, "📍 兴趣点勘测与建档", _currentMode == ViewMode.PoiCatalog, mx, my);
+        string npcModeText = I18n.WorldSettings.PoiTuningPage.ModeNpcWeights();
+        var (fittedNpc, npcScale) = WorldSettingsTabView.FitTextToWidth(npcModeText, _modeNpcBtnRect.Width - 16, CustomFontManager.SizeSmall, true);
+        DrawTabPill(b, _modeNpcBtnRect, fittedNpc, _currentMode == ViewMode.NpcWeights, mx, my, npcScale);
+
+        string poiModeText = I18n.WorldSettings.PoiTuningPage.ModePoiCatalog();
+        var (fittedPoi, poiScale) = WorldSettingsTabView.FitTextToWidth(poiModeText, _modePoiBtnRect.Width - 16, CustomFontManager.SizeSmall, true);
+        DrawTabPill(b, _modePoiBtnRect, fittedPoi, _currentMode == ViewMode.PoiCatalog, mx, my, poiScale);
     }
 
-    private static void DrawTabPill(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my)
+    private static void DrawTabPill(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my, float scale = 1f)
     {
         bool isHover = rect.Contains(mx, my);
         Color bg = isActive ? RulesTheme.SurfaceActive : (isHover ? RulesTheme.SurfaceHover : RulesTheme.SurfaceCard);
@@ -688,12 +693,12 @@ internal sealed class PoiTuningPage : WorldSubPageBase
         if (isActive)
             b.Draw(Game1.staminaRect, new Rectangle(rect.X + 3, rect.Bottom - 3, rect.Width - 6, 2), RulesTheme.AccentGold);
 
-        var sz = CustomFontManager.MeasureStringBold(label, CustomFontManager.SizeSmall);
+        var sz = CustomFontManager.MeasureStringBold(label, CustomFontManager.SizeSmall) * scale;
         Color textCol = isActive ? RulesTheme.TextCharcoal : DarkGrayText;
 
         CustomFontManager.DrawStringBold(b, label,
             new Vector2(rect.X + (rect.Width - sz.X) / 2f, rect.Y + (rect.Height - sz.Y) / 2f),
-            textCol, CustomFontManager.SizeSmall);
+            textCol, CustomFontManager.SizeSmall, scale: scale);
     }
 
     private void DrawLeftList(SpriteBatch b, int mx, int my)
@@ -703,7 +708,9 @@ internal sealed class PoiTuningPage : WorldSubPageBase
         DrawSingleLineBox(b, _searchBox, DarkGrayText);
         if (string.IsNullOrEmpty(_searchBox.Text))
         {
-            string ph = _currentMode == ViewMode.NpcWeights ? "🔍 搜索伴侣姓名..." : "🔍 搜索 POI 或地图...";
+            string ph = _currentMode == ViewMode.NpcWeights
+                ? I18n.WorldSettings.PoiTuningPage.SearchSpousePlaceholder()
+                : I18n.WorldSettings.PoiTuningPage.SearchPoiPlaceholder();
             CustomFontManager.DrawString(b, ph, new Vector2(_searchBox.X + 8, _searchBox.Y + 6), DarkGrayText, CustomFontManager.SizeSmall);
         }
 
@@ -720,7 +727,8 @@ internal sealed class PoiTuningPage : WorldSubPageBase
 
         if (totalCount == 0 && _currentMode == ViewMode.NpcWeights)
         {
-            CustomFontManager.DrawString(b, "无已婚伴侣", new Vector2(_listRect.X + 16, listTop + 16), Color.White, CustomFontManager.SizeSmall);
+            CustomFontManager.DrawString(b, I18n.WorldSettings.PoiTuningPage.NoSpousesHint(),
+                new Vector2(_listRect.X + 16, listTop + 16), Color.White, CustomFontManager.SizeSmall);
             return;
         }
 
@@ -997,30 +1005,50 @@ internal sealed class PoiTuningPage : WorldSubPageBase
 
             CustomFontManager.DrawString(b, coordText, new Vector2(topCardRect.X + 14, topCardRect.Y + 32), RulesTheme.TextCharcoal, CustomFontManager.SizeSmall);
 
-            DrawFormButton(b, _btnTeleport, "🚀 传送测试", mx, my, isPrimary: false, isEnabled: CanTeleport);
-            DrawFormButton(b, _btnCapture, "🎯 抓取新坐标绑定", mx, my, isPrimary: false, isEnabled: IsWorldReady);
+            string teleportText = I18n.WorldSettings.PoiTuningPage.TeleportButton();
+            var (fittedTeleport, teleportScale) = WorldSettingsTabView.FitTextToWidth(teleportText, _btnTeleport.Width - 16, CustomFontManager.SizeSmall, true);
+            DrawFormButton(b, _btnTeleport, fittedTeleport, mx, my, isPrimary: false, isEnabled: CanTeleport, scale: teleportScale);
+
+            string captureText = I18n.WorldSettings.PoiTuningPage.CaptureButton();
+            var (fittedCapture, captureScale) = WorldSettingsTabView.FitTextToWidth(captureText, _btnCapture.Width - 16, CustomFontManager.SizeSmall, true);
+            DrawFormButton(b, _btnCapture, fittedCapture, mx, my, isPrimary: false, isEnabled: IsWorldReady, scale: captureScale);
         }
 
         // 2. 别名输入项
-        CustomFontManager.DrawStringBold(b, "兴趣点自定义别名 (用于列表直观显示)", new Vector2(lx, _aliasBoxRect.Y - 18), RulesTheme.TextDarkBrown, CustomFontManager.SizeSmall);
+        CustomFontManager.DrawStringBold(b, I18n.WorldSettings.PoiTuningPage.AliasLabel(),
+            new Vector2(lx, _aliasBoxRect.Y - 18), RulesTheme.TextDarkBrown, CustomFontManager.SizeSmall);
         DrawSingleLineBox(b, _aliasBox);
         if (string.IsNullOrEmpty(_aliasBox.Text))
-            CustomFontManager.DrawString(b, "点击输入别名（留空则显示原始标识）...", new Vector2(_aliasBox.X + 8, _aliasBox.Y + 6), DarkGrayText, CustomFontManager.SizeSmall);
+            CustomFontManager.DrawString(b, I18n.WorldSettings.PoiTuningPage.AliasPlaceholder(),
+                new Vector2(_aliasBox.X + 8, _aliasBox.Y + 6), DarkGrayText, CustomFontManager.SizeSmall);
 
         // 3. 环境描写输入框
-        string channelTip = IsZh ? "中文环境描写 (Chinese Prompt Context)" : "English Environment Description";
-        CustomFontManager.DrawStringBold(b, $"场景氛围与出没动机 ({channelTip})", new Vector2(lx, _descBox.Position.Y - 20), RulesTheme.TextDarkBrown, CustomFontManager.SizeSmall);
+        string channelTip = IsZh ? I18n.WorldSettings.PoiTuningPage.DescLabelZh() : I18n.WorldSettings.PoiTuningPage.DescLabelEn();
+        CustomFontManager.DrawStringBold(b, I18n.WorldSettings.PoiTuningPage.AmbienceLabel(channelTip),
+            new Vector2(lx, _descBox.Position.Y - 20), RulesTheme.TextDarkBrown, CustomFontManager.SizeSmall);
         _descBox.Draw(b);
 
         // 4. 底部 4 按钮底栏
-        string saveLabel = _isCreatingNewPoi ? "✔ 保存新点位" : "✔ 保存配置";
-        DrawFormButton(b, _btnSave, saveLabel, mx, my, isPrimary: true, isEnabled: CanSaveCurrentPoi);
-        DrawFormButton(b, _btnRevert, "↺ 还原原版", mx, my, isPrimary: false, isEnabled: CanRevertSelectedPoi);
+        string saveLabel = _isCreatingNewPoi
+            ? I18n.WorldSettings.PoiTuningPage.SaveNewButton()
+            : I18n.WorldSettings.PoiTuningPage.SaveButton();
+        var (fittedSave, saveScale) = WorldSettingsTabView.FitTextToWidth(saveLabel, _btnSave.Width - 16, CustomFontManager.SizeSmall, true);
+        DrawFormButton(b, _btnSave, fittedSave, mx, my, isPrimary: true, isEnabled: CanSaveCurrentPoi, scale: saveScale);
 
-        string deleteLabel = _isCreatingNewPoi ? "取消新建" : "🗑️ 彻底删除";
-        DrawFormButton(b, _btnDelete, deleteLabel, mx, my, isDanger: !_isCreatingNewPoi && CanDeleteSelectedPoi, isEnabled: _isCreatingNewPoi || CanDeleteSelectedPoi);
+        string revertText = I18n.WorldSettings.PoiTuningPage.RevertButton();
+        var (fittedRevert, revertScale) = WorldSettingsTabView.FitTextToWidth(revertText, _btnRevert.Width - 16, CustomFontManager.SizeSmall, true);
+        DrawFormButton(b, _btnRevert, fittedRevert, mx, my, isPrimary: false, isEnabled: CanRevertSelectedPoi, scale: revertScale);
 
-        DrawFormButton(b, _btnNewPoi, "➕ 新建兴趣点", mx, my, isPrimary: false, isEnabled: !_isCreatingNewPoi);
+        string deleteLabel = _isCreatingNewPoi
+            ? I18n.WorldSettings.PoiTuningPage.CancelNewButton()
+            : I18n.WorldSettings.PoiTuningPage.DeleteButton();
+        var (fittedDelete, deleteScale) = WorldSettingsTabView.FitTextToWidth(deleteLabel, _btnDelete.Width - 16, CustomFontManager.SizeSmall, true);
+        DrawFormButton(b, _btnDelete, fittedDelete, mx, my, isDanger: !_isCreatingNewPoi && CanDeleteSelectedPoi,
+            isEnabled: _isCreatingNewPoi || CanDeleteSelectedPoi, scale: deleteScale);
+
+        string newPoiText = I18n.WorldSettings.PoiTuningPage.NewPoiButton();
+        var (fittedNew, newScale) = WorldSettingsTabView.FitTextToWidth(newPoiText, _btnNewPoi.Width - 16, CustomFontManager.SizeSmall, true);
+        DrawFormButton(b, _btnNewPoi, fittedNew, mx, my, isPrimary: false, isEnabled: !_isCreatingNewPoi, scale: newScale);
 
         string? msg = _errorMessage ?? _statusMessage;
         if (!string.IsNullOrEmpty(msg))
@@ -1059,7 +1087,7 @@ internal sealed class PoiTuningPage : WorldSubPageBase
     }
 
     private static void DrawFormButton(SpriteBatch b, Rectangle rect, string label, int mx, int my,
-        bool isPrimary = false, bool isEnabled = true, bool isDanger = false)
+        bool isPrimary = false, bool isEnabled = true, bool isDanger = false, float scale = 1f)
     {
         bool isHover = isEnabled && rect.Contains(mx, my);
         bool isPressed = isHover && Mouse.GetState().LeftButton == ButtonState.Pressed;
@@ -1085,10 +1113,10 @@ internal sealed class PoiTuningPage : WorldSubPageBase
         IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
             drawRect.X, drawRect.Y, drawRect.Width, drawRect.Height, border, 2f, false);
 
-        var sz = CustomFontManager.MeasureStringBold(label, CustomFontManager.SizeSmall);
+        var sz = CustomFontManager.MeasureStringBold(label, CustomFontManager.SizeSmall) * scale;
         CustomFontManager.DrawStringBold(b, label,
             new Vector2(drawRect.X + (drawRect.Width - sz.X) / 2f, drawRect.Y + (drawRect.Height - sz.Y) / 2f),
-            isEnabled ? (isDanger ? Color.White : RulesTheme.TextCharcoal) : RulesTheme.TextMuted, CustomFontManager.SizeSmall);
+            isEnabled ? (isDanger ? Color.White : RulesTheme.TextCharcoal) : RulesTheme.TextMuted, CustomFontManager.SizeSmall, scale: scale);
     }
 
     private static void DrawScrollbarVisual(SpriteBatch b, Rectangle trackRect, int visibleCount, int totalCount, int scrollOffset, bool isDragging, int mx, int my)
@@ -1855,12 +1883,12 @@ internal sealed class PoiTuningPage : WorldSubPageBase
 
                 if (startTime > 0 && Game1.timeOfDay < startTime)
                 {
-                    reason = $"【{GetLocalizedMapName(targetMapName)}】正在筹备今日节日庆典（{startTime / 100}:00 前封闭），禁止传送测试！";
+                    reason = I18n.WorldSettings.PoiTuningPage.FestivalPreparationBlock(GetLocalizedMapName(targetMapName), startTime / 100);
                     return true;
                 }
                 else
                 {
-                    reason = $"【{GetLocalizedMapName(targetMapName)}】当前正处于节日庆典中，强行传送会导致剧情事件错乱，已被系统拦截！";
+                    reason = I18n.WorldSettings.PoiTuningPage.FestivalActiveBlock(GetLocalizedMapName(targetMapName));
                     return true;
                 }
             }
@@ -1869,7 +1897,7 @@ internal sealed class PoiTuningPage : WorldSubPageBase
         // 2. 判定目标地图是否处于原版封锁状态（例如正在发生过场事件）
         if (Game1.eventUp)
         {
-            reason = "当前正在进行过场动画/剧情事件，无法传送！";
+            reason = I18n.WorldSettings.PoiTuningPage.EventInProgressBlock();
             return true;
         }
 
@@ -1883,14 +1911,14 @@ internal sealed class PoiTuningPage : WorldSubPageBase
 
         Game1.activeClickableMenu = new BioValveWarningDialog(
             Hub,
-            "删除自创兴趣点",
-            $"即将彻底删除自创兴趣点【{targetId}】：",
+            I18n.WorldSettings.PoiTuningPage.DeletePoiDialogTitle(),
+            I18n.WorldSettings.PoiTuningPage.DeletePoiDialogSubtitle(targetId),
             new List<string>
             {
-                "该兴趣点及其自定义别名将被彻底移除",
-                "各 NPC 对该点的出没偏好引用将被一并清除"
+                I18n.WorldSettings.PoiTuningPage.DeletePoiDialogBullet1(),
+                I18n.WorldSettings.PoiTuningPage.DeletePoiDialogBullet2()
             },
-            "⚠ 确认删除",
+            I18n.WorldSettings.PoiTuningPage.DeletePoiDialogConfirm(),
             () =>
             {
                 Game1.activeClickableMenu = Hub;
@@ -1918,13 +1946,13 @@ internal sealed class PoiTuningPage : WorldSubPageBase
                     if (_allPois.Count > 0) SelectPoi(_allPois[0].Id);
                     else _selectedPoiId = null;
     
-                    _statusMessage = "✔ 已彻底删除自创兴趣点";
+                    _statusMessage = I18n.WorldSettings.PoiTuningPage.DeletePoiSuccessHud();
                     Game1.playSound("trashcan");
                     Hub.RefreshEntries();
                     LayoutRightForm();
                 }
             },
-            "保留兴趣点",
+            I18n.WorldSettings.PoiTuningPage.DeletePoiDialogCancel(),
             () => Game1.activeClickableMenu = Hub);
     }
 
@@ -1932,7 +1960,7 @@ internal sealed class PoiTuningPage : WorldSubPageBase
     {
         if (_selectedSpouseId == null) return;
         var service = ModEntry.PoiPreferenceOverlay;
-        if (service == null) { _errorMessage = "存储服务不可用"; return; }
+        if (service == null) { _errorMessage = I18n.WorldSettings.PoiTuningPage.SaveWeightsServiceUnavailable(); return; }
 
         var ov = service.LoadOrNull() ?? new PoiOverlayFile();
         var pref = new NpcPreference();
@@ -1955,7 +1983,7 @@ internal sealed class PoiTuningPage : WorldSubPageBase
         {
             BuildMarriedSpouses();
             FilterCurrentList();
-            _statusMessage = "✔ 伴侣出没意愿偏好已保存";
+            _statusMessage = I18n.WorldSettings.PoiTuningPage.SaveWeightsSuccessHud();
             _errorMessage = null;
             Game1.playSound("coin");
             Hub.RefreshEntries();
@@ -1963,7 +1991,7 @@ internal sealed class PoiTuningPage : WorldSubPageBase
         }
         else
         {
-            _errorMessage = string.IsNullOrEmpty(err) ? "保存失败" : err;
+            _errorMessage = string.IsNullOrEmpty(err) ? I18n.WorldSettings.PoiTuningPage.SaveWeightsFailure() : err;
             _statusMessage = null;
             Game1.playSound("cancel");
         }
@@ -1977,13 +2005,13 @@ internal sealed class PoiTuningPage : WorldSubPageBase
 
         Game1.activeClickableMenu = new BioValveWarningDialog(
             Hub,
-            "重置出没意愿",
-            $"即将重置【{spouse.DisplayName}】的兴趣点出没意愿：",
+            I18n.WorldSettings.PoiTuningPage.ResetWeightsDialogTitle(),
+            I18n.WorldSettings.PoiTuningPage.ResetWeightsDialogSubtitle(spouse.DisplayName),
             new List<string>
             {
-                "全部兴趣点的出没意愿将恢复为默认值 50"
+                I18n.WorldSettings.PoiTuningPage.ResetWeightsDialogBullet1()
             },
-            "⚠ 确认重置",
+            I18n.WorldSettings.PoiTuningPage.ResetWeightsDialogConfirm(),
             () =>
             {
                 Game1.activeClickableMenu = Hub;
@@ -2001,12 +2029,12 @@ internal sealed class PoiTuningPage : WorldSubPageBase
                     BuildMarriedSpouses();
                     FilterCurrentList();
                     LoadWorkingWeightsForSpouse();
-                    _statusMessage = "✔ 已重置为默认基准权重 (全 50)";
+                    _statusMessage = I18n.WorldSettings.PoiTuningPage.ResetWeightsSuccessHud();
                     Game1.playSound("coin");
                     Hub.RefreshEntries();
                 }
             },
-            "保持现状",
+            I18n.WorldSettings.PoiTuningPage.ResetWeightsDialogCancel(),
             () => Game1.activeClickableMenu = Hub);
     }
 }
