@@ -1,0 +1,47 @@
+[
+  {
+    "ChoreId": "chore-01-saloon-dairy-restock",
+    "SourceNpc": "Gus",
+    "TargetNpc": "Pierre",
+    "ApplicableSeasons": [ "spring", "summer" ],
+    "DayOfWeek": 1,
+    "SourceTopic": {
+      "InnerMotivation": "The saloon's ice cream and milk stocks are nearly empty before the weekend crowd arrives.",
+      "PublicOpinion": "Gus prides himself on keeping the Stardrop Saloon fully stocked for every celebration."
+    },
+    "TargetTopic": {
+      "InnerMotivation": "Pierre wants his general-store dairy displayed prominently at the saloon to boost his own sales.",
+      "PublicOpinion": "Pierre is always looking for a reason to deliver goods across town and chat with regulars."
+    }
+  },
+  {
+    "ChoreId": "chore-02-shelf-repair",
+    "SourceNpc": "Pierre",
+    "TargetNpc": "Robin",
+    "ApplicableSeasons": [ "summer", "fall" ],
+    "DayOfWeek": 3,
+    "SourceTopic": {
+      "InnerMotivation": "One of the store display shelves cracked under the weight of unsold seeds and needs a carpenter before it collapses.",
+      "PublicOpinion": "Pierre fusses over the appearance of his shop whenever a shelf looks the slightest bit crooked."
+    },
+    "TargetTopic": {
+      "InnerMotivation": "Robin enjoys the excuse to take a short break from roofing jobs and do a tidy carpentry repair.",
+      "PublicOpinion": "Robin is the first person everyone calls when a shelf, cabinet, or fence won't hold together."
+    }
+  },
+  {
+    "ChoreId": "chore-03-boat-anchor-rust",
+    "SourceNpc": "Willy",
+    "TargetNpc": "Clint",
+    "ApplicableSeasons": [ "spring", "summer", "fall" ],
+    "DayOfWeek": 5,
+    "SourceTopic": {
+      "InnerMotivation": "Willy's spare anchor is rusted to the point where it might snap off during the next storm.",
+      "PublicOpinion": "Willy never lets his fishing gear fall into disrepair, no matter how long the off-season lasts."
+    },
+    "TargetTopic": {
+      "InnerMotivation": "Clint takes pride in restoring old metal tools and wants to prove his craft can save even a neglected anchor.",
+      "PublicOpinion": "Clint is quietly delighted whenever someone brings him a piece of rusted metal to polish back to life."
+    }
+  }
+]

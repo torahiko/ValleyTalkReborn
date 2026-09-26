@@ -310,6 +310,9 @@ namespace ValleytalkReborn
             // 保证每次读档只执行一次 SaveData 读取。
             TownIncidentEngine.Initialize(helper, Monitor);
 
+            // CHORE-001: 社区家务账目管理器（内存态调度索引 + 双面话题查询）。
+            CommunityChoreLedger.Initialize(helper, Monitor);
+
             // Subscribe to game lifecycle events（DialogueCoordinator 将订阅 GameLoop 事件）
             helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
             helper.Events.Display.MenuChanged += OnMenuChanged;
@@ -1427,6 +1430,12 @@ namespace ValleytalkReborn
             {
                 DateLocationRegistry.ReloadAssets();
             }
+
+            // ★ CP 热重载时刷新社区家务账目资产（CHORE-001）
+            if (e.NamesWithoutLocale.Any(an => an.IsEquivalentTo(CommunityChoreLedger.ASSET_KEY)))
+            {
+                CommunityChoreLedger.ReloadAsset();
+            }
         }
 
         /// <summary>
@@ -1438,6 +1447,14 @@ namespace ValleytalkReborn
             {
                 e.LoadFromModFile<Dictionary<string, DateLocationInfo>>(
                     "assets/date_locations.json",
+                    AssetLoadPriority.Low);
+            }
+
+            // ★ 注册模组自带默认社区家务账目资产（AssetLoadPriority.Low，外部 CP 可覆写）
+            if (e.NameWithoutLocale.IsEquivalentTo(CommunityChoreLedger.ASSET_KEY))
+            {
+                e.LoadFromModFile<List<ChoreLedgerEntry>>(
+                    "assets/ChoreLedgerData.json",
                     AssetLoadPriority.Low);
             }
         }
