@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -28,6 +30,12 @@ internal static class TownIncidentEngine
     private static bool _isSaveLoaded;
     private static bool _isDirty;
     private static bool _multiplayerDisabledLogged;
+
+    // TIE-002: in-flight scriptwriter state — memory-only, reset with the
+    // rest of the memory state (never persisted).
+    private static CancellationTokenSource _scriptwriterCts;
+    private static Task _scriptwriterTask;
+    private static string _scriptwriterRequestedIncidentId;
 
     internal static EventSlotContract CurrentIncident => _data?.ActiveIncident;
 
@@ -252,7 +260,11 @@ internal static class TownIncidentEngine
         if (!TryResolvePilotRoles(out var assignedRoles))
             return false;
 
-        _data.ActiveIncident = new EventSlotContract
+        // TIE-002: language is Game1-dependent input — capture it here on the
+        // main thread before any asynchronous work begins.
+        bool isChinese = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+
+        var incident = new EventSlotContract
         {
             IncidentId = scheduleKey,
             ArchetypeId = ContestArchetypeId,
@@ -263,14 +275,65 @@ internal static class TownIncidentEngine
             AssignedRoles = assignedRoles,
             EventName = "Saloon Cook-Off",
             IncidentTheme = "A friendly cooking contest strains old rivalries in Pelican Town.",
-            PhaseScripts = BuildContestPhaseScripts(),
-            BranchOutcomes = BuildContestBranchOutcomes(),
-            RuntimeFlags = new Dictionary<string, bool>(),
         };
+
+        // TIE-002: install the language-appropriate static fallback first —
+        // the incident is fully usable before the LLM request starts.
+        TownIncidentScriptwriter.CreateFallback(incident, isChinese);
+
+        _data.ActiveIncident = incident;
         _data.LastScheduleKey = scheduleKey;
         MarkDirty();
         _monitor?.Log($"[TownIncident] Created Contest incident '{scheduleKey}' (Host=Gus, Champion=Abigail, Skeptic=Alex), duration {ContestDurationDays} days.", LogLevel.Info);
+
+        KickOffScriptwriter(incident, isChinese);
         return true;
+    }
+
+    /// <summary>
+    /// TIE-002: starts at most one scriptwriter request per newly created
+    /// incident. The LLM call and JSON parsing run on a worker thread via
+    /// LlmRequestGateway; no game state is touched there.
+    /// </summary>
+    private static void KickOffScriptwriter(EventSlotContract incident, bool isChinese)
+    {
+        if (_scriptwriterRequestedIncidentId == incident.IncidentId)
+            return;
+
+        _scriptwriterRequestedIncidentId = incident.IncidentId;
+        _scriptwriterCts = new CancellationTokenSource();
+        var scriptwriter = new TownIncidentScriptwriter(new LlmRequestGateway(ModEntry.Config.LlmTimeoutSeconds));
+        _scriptwriterTask = RunScriptwriterAsync(scriptwriter, incident, isChinese, _scriptwriterCts.Token);
+    }
+
+    private static async Task RunScriptwriterAsync(
+        TownIncidentScriptwriter scriptwriter,
+        EventSlotContract incident,
+        bool isChinese,
+        CancellationToken cancellationToken)
+    {
+        EventSlotContract candidate = await scriptwriter.GenerateAsync(incident, isChinese, cancellationToken);
+        if (candidate == null)
+            return; // failure already logged; the static fallback stays installed
+
+        // Applying the validated script mutates engine state — back to the
+        // main thread through AsyncBuilder's action queue.
+        AsyncBuilder.Instance.EnqueueToMainThread(() =>
+        {
+            var active = _data?.ActiveIncident;
+            if (active == null || !string.Equals(active.IncidentId, candidate.IncidentId, StringComparison.Ordinal))
+            {
+                _monitor?.Log(
+                    $"[TownIncident] Scriptwriter result for incident '{candidate.IncidentId}' is no longer active; discarded.",
+                    LogLevel.Debug);
+                return;
+            }
+
+            candidate.RuntimeFlags = new Dictionary<string, bool>(active.RuntimeFlags);
+            _data.ActiveIncident = candidate;
+            MarkDirty();
+            _monitor?.Log($"[TownIncident] Applied LLM-generated script to incident '{candidate.IncidentId}'.", LogLevel.Info);
+        });
     }
 
     private static bool TryResolvePilotRoles(out Dictionary<string, string> assignedRoles)
@@ -336,6 +399,11 @@ internal static class TownIncidentEngine
 
     private static void ResetMemoryState()
     {
+        _scriptwriterCts?.Cancel();
+        _scriptwriterCts = null;
+        _scriptwriterTask = null;
+        _scriptwriterRequestedIncidentId = null;
+
         _data = null;
         _isSaveLoaded = false;
         _isDirty = false;
@@ -348,105 +416,5 @@ internal static class TownIncidentEngine
         _helper?.Events.GameLoop.DayStarted -= OnDayStarted;
         _helper?.Events.GameLoop.Saving -= OnSaving;
         _helper?.Events.GameLoop.ReturnedToTitle -= OnReturnedToTitle;
-    }
-
-    /// <summary>
-    /// Deterministic static fallback script (usable without any LLM): briefs
-    /// per NPC per phase for the Contest MVP.
-    /// </summary>
-    private static Dictionary<IncidentPhase, Dictionary<string, RolePhaseBrief>> BuildContestPhaseScripts()
-    {
-        return new Dictionary<IncidentPhase, Dictionary<string, RolePhaseBrief>>
-        {
-            [IncidentPhase.Inception] = new Dictionary<string, RolePhaseBrief>
-            {
-                ["Gus"] = new RolePhaseBrief
-                {
-                    Motivation = "Announce the Saloon Cook-Off, recruit contestants and fill every seat in the saloon.",
-                    PublicOpinion = "Townsfolk are curious but noncommittal; some suspect it is just a saloon promotion.",
-                },
-                ["Abigail"] = new RolePhaseBrief
-                {
-                    Motivation = "Defend her title with a daring new recipe and prove the quiet miner's daughter can win twice.",
-                    PublicOpinion = "Admirers call her fearless; traditionalists whisper that her ingredients are simply strange.",
-                },
-                ["Alex"] = new RolePhaseBrief
-                {
-                    Motivation = "Point out that the same regulars always win and push for an outside judge.",
-                    PublicOpinion = "A handful of villagers admit the judging looks cozy, but most tell him to lighten up.",
-                },
-            },
-            [IncidentPhase.Escalation] = new Dictionary<string, RolePhaseBrief>
-            {
-                ["Gus"] = new RolePhaseBrief
-                {
-                    Motivation = "Keep the contest from boiling over while rumors and side bets fill the saloon.",
-                    PublicOpinion = "The town has split into camps; everyone has picked a favorite.",
-                },
-                ["Abigail"] = new RolePhaseBrief
-                {
-                    Motivation = "Train in secret, shrug off the sabotage rumors and let her cooking answer the doubt.",
-                    PublicOpinion = "Her fans grow louder; her critics claim the fix is already in.",
-                },
-                ["Alex"] = new RolePhaseBrief
-                {
-                    Motivation = "Escalate the fairness complaints and float the idea of boycotting the finale.",
-                    PublicOpinion = "More villagers start asking who is really judging.",
-                },
-            },
-            [IncidentPhase.Climax] = new Dictionary<string, RolePhaseBrief>
-            {
-                ["Gus"] = new RolePhaseBrief
-                {
-                    Motivation = "Host a clean, dramatic finale and crown a winner the whole town can accept.",
-                    PublicOpinion = "The saloon is packed; the whole town wants a fair result.",
-                },
-                ["Abigail"] = new RolePhaseBrief
-                {
-                    Motivation = "Plate her boldest dish yet and silence the doubters for good.",
-                    PublicOpinion = "Even her critics admit the finale is must-see.",
-                },
-                ["Alex"] = new RolePhaseBrief
-                {
-                    Motivation = "Watch the judging like a hawk and demand transparency before conceding anything.",
-                    PublicOpinion = "He promised to eat his words if the result is clean.",
-                },
-            },
-        };
-    }
-
-    /// <summary>
-    /// Deterministic keyword groups for the Contest MVP: the outer key is the
-    /// RuntimeFlags flag that RecordChoice sets when the player's selected
-    /// text contains any of the inner keywords.
-    /// </summary>
-    private static Dictionary<string, Dictionary<string, string>> BuildContestBranchOutcomes()
-    {
-        return new Dictionary<string, Dictionary<string, string>>
-        {
-            ["backed_champion"] = new Dictionary<string, string>
-            {
-                ["cheer"] = "The town sees the player openly backing the champion.",
-                ["root for"] = "The town sees the player openly backing the champion.",
-                ["encourage"] = "The town sees the player openly backing the champion.",
-                ["you can win"] = "The town sees the player openly backing the champion.",
-                ["believe in you"] = "The town sees the player openly backing the champion.",
-            },
-            ["backed_skeptic"] = new Dictionary<string, string>
-            {
-                ["rigged"] = "The player's doubts embolden the skeptic camp.",
-                ["unfair"] = "The player's doubts embolden the skeptic camp.",
-                ["fixed"] = "The player's doubts embolden the skeptic camp.",
-                ["boycott"] = "The player's doubts embolden the skeptic camp.",
-                ["doubt"] = "The player's doubts embolden the skeptic camp.",
-            },
-            ["stayed_neutral"] = new Dictionary<string, string>
-            {
-                ["wait and see"] = "The player keeps the town guessing about where they stand.",
-                ["fair judge"] = "The player keeps the town guessing about where they stand.",
-                ["may the best"] = "The player keeps the town guessing about where they stand.",
-                ["let the cooking speak"] = "The player keeps the town guessing about where they stand.",
-            },
-        };
     }
 }
