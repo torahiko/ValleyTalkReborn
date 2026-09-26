@@ -137,7 +137,7 @@ internal static class PoiInspectHud
         int contentX = _cardRect.X + 14;
         int topY = _cardRect.Y + 12;
 
-        string titleBadge = "勘测点位";
+        string titleBadge = I18n.PoiHud.TitleBadge();
         var badgeSz = CustomFontManager.MeasureStringBold(titleBadge, CustomFontManager.SizeSmall);
         var badgeRect = new Rectangle(contentX, topY, (int)badgeSz.X + 12, 22);
 
@@ -151,15 +151,15 @@ internal static class PoiInspectHud
 
         // 5. 第二行：玩家当前所处实时坐标与通行校验状态
         Point curTile = Game1.player.TilePoint;
-        string curMap = Game1.currentLocation?.Name ?? "未知";
+        string curMap = Game1.currentLocation?.Name ?? I18n.PoiHud.UnknownMap();
         bool isPassable = PoiSamplingService.TryCaptureCurrentTile(out _, out _, out _, out string failureReason);
 
         int statusY = topY + 28;
-        string locInfo = $"当前脚下: {curMap} ({curTile.X}, {curTile.Y})";
+        string locInfo = I18n.PoiHud.LocationLabel(curMap ?? string.Empty, curTile.X, curTile.Y);
         CustomFontManager.DrawString(b, locInfo, new Vector2(contentX + 2, statusY), RulesTheme.TextPrimary, CustomFontManager.SizeSmall);
 
         var locSz = CustomFontManager.MeasureString(locInfo, CustomFontManager.SizeSmall);
-        string statusText = isPassable ? "✔ 可安全驻留" : $"⚠ {failureReason}";
+        string statusText = isPassable ? I18n.PoiHud.StatusPassable() : I18n.PoiHud.StatusBlocked(failureReason);
         Color statusColor = isPassable ? RulesTheme.AccentGreen : RulesTheme.AccentRed;
         CustomFontManager.DrawStringBold(b, statusText, new Vector2(contentX + 2 + locSz.X + 12, statusY), statusColor, CustomFontManager.SizeSmall);
 
@@ -177,10 +177,10 @@ internal static class PoiInspectHud
         _btnUnstuck = new Rectangle(_btnConfirm.Right + btnGap, btnY, btnW3, btnH);
         _btnClose = new Rectangle(_btnUnstuck.Right + btnGap, btnY, btnW4, btnH);
 
-        DrawWoodActionButton(b, _btnCaptureAndTweak, "🎯 抓取新点并微调", _btnCaptureAndTweak.Contains(mx, my), isPassable, isPrimary: true);
-        DrawWoodActionButton(b, _btnConfirm, "✔ 确认此点位", _btnConfirm.Contains(mx, my), isPassable);
-        DrawWoodActionButton(b, _btnUnstuck, "🛟 智能脱困", _btnUnstuck.Contains(mx, my), true, isPrimary: !isPassable);
-        DrawWoodActionButton(b, _btnClose, "✖ 退出", _btnClose.Contains(mx, my), true, isDanger: true);
+        DrawWoodActionButton(b, _btnCaptureAndTweak, I18n.PoiHud.ButtonCapture(), _btnCaptureAndTweak.Contains(mx, my), isPassable, isPrimary: true);
+        DrawWoodActionButton(b, _btnConfirm, I18n.PoiHud.ButtonConfirm(), _btnConfirm.Contains(mx, my), isPassable);
+        DrawWoodActionButton(b, _btnUnstuck, I18n.PoiHud.ButtonUnstuck(), _btnUnstuck.Contains(mx, my), true, isPrimary: !isPassable);
+        DrawWoodActionButton(b, _btnClose, I18n.PoiHud.ButtonClose(), _btnClose.Contains(mx, my), true, isDanger: true);
     }
 
     private static void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
@@ -229,7 +229,7 @@ internal static class PoiInspectHud
     {
         if (!PoiSamplingService.TryCaptureCurrentTile(out string mapName, out int tx, out int ty, out string reason))
         {
-            Game1.addHUDMessage(new HUDMessage($"无法抓取该瓦片: {reason}", HUDMessage.error_type));
+            Game1.addHUDMessage(new HUDMessage(I18n.PoiHud.CaptureFailedHud(reason), HUDMessage.error_type));
             Game1.playSound("cancel");
             return;
         }
@@ -245,7 +245,7 @@ internal static class PoiInspectHud
     {
         if (!PoiSamplingService.TryCaptureCurrentTile(out string mapName, out int tx, out int ty, out string reason))
         {
-            Game1.addHUDMessage(new HUDMessage($"无法将该瓦片设为点位: {reason}", HUDMessage.error_type));
+            Game1.addHUDMessage(new HUDMessage(I18n.PoiHud.ConfirmFailedHud(reason), HUDMessage.error_type));
             Game1.playSound("cancel");
             return;
         }
@@ -278,7 +278,7 @@ internal static class PoiInspectHud
 
         Close();
         Game1.playSound("achievement");
-        Game1.addHUDMessage(new HUDMessage($"✔ 已将【{_poiDisplayName}】坐标保存为 ({tx}, {ty})", HUDMessage.newQuest_type));
+        Game1.addHUDMessage(new HUDMessage(I18n.PoiHud.ConfirmSuccessHud(_poiDisplayName, tx, ty), HUDMessage.newQuest_type));
     }
 
     private static void HandleUnstuck()
@@ -297,12 +297,12 @@ internal static class PoiInspectHud
             Game1.player.Halt();
 
             Game1.playSound("wand");
-            Game1.addHUDMessage(new HUDMessage($"🛟 已脱困至安全平地 ({target.X}, {target.Y})", HUDMessage.newQuest_type));
+            Game1.addHUDMessage(new HUDMessage(I18n.PoiHud.UnstuckSuccessHud(target.X, target.Y), HUDMessage.newQuest_type));
         }
         else
         {
             Game1.playSound("cancel");
-            Game1.addHUDMessage(new HUDMessage("未能在此地图 30 格范围内寻找到通行平地", HUDMessage.error_type));
+            Game1.addHUDMessage(new HUDMessage(I18n.PoiHud.UnstuckFailedHud(), HUDMessage.error_type));
         }
     }
 
@@ -412,9 +412,6 @@ internal static class PoiInspectHud
             : isDanger ? new Color(255, 250, 242)
             : RulesTheme.TextCharcoal;
 
-        var sz = CustomFontManager.MeasureStringBold(label, CustomFontManager.SizeSmall);
-        CustomFontManager.DrawStringBold(b, label,
-            new Vector2(drawRect.X + (drawRect.Width - sz.X) / 2f, drawRect.Y + (drawRect.Height - sz.Y) / 2f - 1),
-            btnTextCol, CustomFontManager.SizeSmall);
+        ButtonTextRenderer.DrawButtonText(b, label, drawRect, btnTextCol, useBold: true);
     }
 } 
