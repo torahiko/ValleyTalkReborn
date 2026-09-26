@@ -91,13 +91,13 @@ namespace ValleytalkReborn
         public static readonly Color TextOnLightBtn = new Color(52, 28, 16);  // 按钮专属深色文字（浅木底/金黄底）
         public static readonly Color TextOnDarkBtn  = new Color(255, 250, 242);// 按钮专属反白文字（深木底/暗红底）
 
-        private static readonly string[] TabTitles = new[]
+        private static string[] TabTitles() => new[]
         {
-            "1. 身份背景",
-            "2. 言行举止",
-            "3. 好感演变",
-            "4. 社交关系",
-            "5. 环境感知",
+            I18n.Get("Bio.Tab1"),
+            I18n.Get("Bio.Tab2"),
+            I18n.Get("Bio.Tab3"),
+            I18n.Get("Bio.Tab4"),
+            I18n.Get("Bio.Tab5"),
         };
 
         // ── 核心状态 ──────────────────────────────────────────────────────
@@ -238,7 +238,7 @@ namespace ValleytalkReborn
             // 关闭原版 TextBox 的像素宽度截断（Text setter 内置递归截断会静默损毁程序化赋值的长文本）
             _relHeadingBox.limitWidth = false;
 
-            _enableBarkCheckbox = new SimpleCheckbox("启用日常碎碎念 (AmbientBarks)", -1, 0, 0);
+            _enableBarkCheckbox = new SimpleCheckbox(I18n.Get("Bio.EnableBarks"), -1, 0, 0);
 
             _stageTagEditor = new TagListEditor(Rectangle.Empty);
             _stageTagEditor.OnChanged += () =>
@@ -252,7 +252,7 @@ namespace ValleytalkReborn
                 _vm.SyncGlobalPreoccupations(_globalTagEditor.Tags.Count > 0 ? _globalTagEditor.Tags.ToList() : null);
             };
 
-            _heartsStepper = new NumberStepper(Rectangle.Empty, 0, 0, 14, 1, " 心");
+            _heartsStepper = new NumberStepper(Rectangle.Empty, 0, 0, 14, 1, I18n.Get("Bio.HeartsSuffix"));
             _heartsStepper.OnChanged += val =>
             {
                 _vm.SetStageHearts(val);
@@ -337,9 +337,10 @@ namespace ValleytalkReborn
 
             // 1. Tab 栏
             int tabGap = 8;
-            int tabW = (contentW - tabGap * (TabTitles.Length - 1)) / TabTitles.Length;
+            string[] tabTitles = TabTitles();
+            int tabW = (contentW - tabGap * (tabTitles.Length - 1)) / tabTitles.Length;
             int tabY = yPositionOnScreen + HeaderH + 4;
-            for (int i = 0; i < TabTitles.Length; i++)
+            for (int i = 0; i < tabTitles.Length; i++)
                 _tabRects[i] = new Rectangle(contentLeft + i * (tabW + tabGap), tabY, tabW, TabBarH);
 
             // 2. 底部功能栏（四个按钮：取消 | 保存 || 当前页恢复原版 | 全部恢复原版）
@@ -463,8 +464,8 @@ namespace ValleytalkReborn
                 _stageTagEditor.SetBounds(new Rectangle(rightX, flowY + labelH + LabelRowGap, rightColW, tagEditorH));
 
                 // ★ 复制按钮：紧贴标签文字右侧，不再贴右端
-                _copyStageTextRect = MakeLabelRightCopyRect("阶段态度演变 (Text)", rightX, (int)_stageTextBox.Position.Y - labelH - LabelRowGap);
-                _copyStageBarkRect = MakeLabelRightCopyRect("碎碎念心智 (BarkMindset: 规定此时的心态与注意力)", rightX, (int)_stageBarkBox.Position.Y - labelH - LabelRowGap);
+                _copyStageTextRect = MakeLabelRightCopyRect(I18n.Get("Bio.StageTextSection"), rightX, (int)_stageTextBox.Position.Y - labelH - LabelRowGap);
+                _copyStageBarkRect = MakeLabelRightCopyRect(I18n.Get("Bio.StageBarkSection"), rightX, (int)_stageBarkBox.Position.Y - labelH - LabelRowGap);
             }
 
             // ── Tab 4 布局 ──
@@ -500,7 +501,7 @@ namespace ValleytalkReborn
 
                 RecalculateTab4List();
 
-                _copyRelDescRect = MakeLabelRightCopyRect("深层心理与互动细节 (Description)", rightX, (int)_relDescBox.Position.Y - labelH - LabelRowGap);
+                _copyRelDescRect = MakeLabelRightCopyRect(I18n.Get("Bio.RelDescSection"), rightX, (int)_relDescBox.Position.Y - labelH - LabelRowGap);
             }
 
             // ── Tab 5 布局 ──
@@ -533,9 +534,9 @@ namespace ValleytalkReborn
                     else SetBoxBounds(_lensesBox, rightX, boxY, rightColW, boxH);
                 }
 
-                _copyVoiceRect = MakeLabelRightCopyRect("口吻与态度 (Voice & Attitude)", rightX, (int)_voiceBox.Position.Y - labelH - LabelRowGap);
-                _copyHabitsRect = MakeLabelRightCopyRect("口头习惯 (Spoken Habits)", rightX, (int)_habitsBox.Position.Y - labelH - LabelRowGap);
-                _copyLensesRect = MakeLabelRightCopyRect("观察透镜 (Observation Lenses)", rightX, (int)_lensesBox.Position.Y - labelH - LabelRowGap);
+                _copyVoiceRect = MakeLabelRightCopyRect(I18n.Get("Bio.VoiceSection"), rightX, (int)_voiceBox.Position.Y - labelH - LabelRowGap);
+                _copyHabitsRect = MakeLabelRightCopyRect(I18n.Get("Bio.HabitsSection"), rightX, (int)_habitsBox.Position.Y - labelH - LabelRowGap);
+                _copyLensesRect = MakeLabelRightCopyRect(I18n.Get("Bio.LensesSection"), rightX, (int)_lensesBox.Position.Y - labelH - LabelRowGap);
             }
         }
 
@@ -750,9 +751,9 @@ namespace ValleytalkReborn
             if (!AnyTextBoxHasFocus() && _copyBehaviorRect.Contains(x, y)) { CopyBoxToClipboard("behavior"); return; }
             if (!AnyTextBoxHasFocus() && _copyDialogueExamplesRect.Contains(x, y)) { CopyBoxToClipboard("dialogueExamples"); return; }
             if (_aiPolishBehaviorRect.Contains(x, y) && !BioAiRunner.IsBusy)
-            { UnfocusAll(); CheckTab1Prerequisites(() => OpenTraitPolishDialog("BehavioralRules", "言行举止")); return; }
+            { UnfocusAll(); CheckTab1Prerequisites(() => OpenTraitPolishDialog("BehavioralRules", I18n.Get("Bio.Tab2BehaviorSection"))); return; }
             if (_aiPolishDialogueRect.Contains(x, y) && !BioAiRunner.IsBusy)
-            { UnfocusAll(); CheckTab1Prerequisites(() => OpenTraitPolishDialog("DialogueExamples", "对白范例")); return; }
+            { UnfocusAll(); CheckTab1Prerequisites(() => OpenTraitPolishDialog("DialogueExamples", I18n.Get("Bio.Tab2DialogueSection"))); return; }
 
             UnfocusAll();
         }
@@ -832,14 +833,14 @@ namespace ValleytalkReborn
                 int stageNum = _vm.SelectedStageIndex + 1;
                 Game1.activeClickableMenu = new BioValveWarningDialog(
                     this,
-                    "删除好感档位",
-                    $"即将删除档位 {stageNum} 的全部设定：",
+                    I18n.Get("Bio.DeleteStageTitle"),
+                    I18n.Get("Bio.DeleteStageSubtitle").Replace("{{num}}", stageNum.ToString()),
                     new List<string>
                     {
-                        $"档位 {stageNum} 的阶段态度、碎碎念心智与关注池将被一并清空",
-                        "删除后无法撤销，如需恢复须手动重建"
+                        I18n.Get("Bio.DeleteStageBullet1").Replace("{{num}}", stageNum.ToString()),
+                        I18n.Get("Bio.DeleteStageBullet2")
                     },
-                    "⚠ 确认删除",
+                    I18n.Get("Bio.ConfirmDeleteStage"),
                     () =>
                     {
                         Game1.activeClickableMenu = this;
@@ -847,9 +848,9 @@ namespace ValleytalkReborn
                         if (_vm.SelectedStageIndex >= 0) SelectStage(_vm.SelectedStageIndex);
                         Layout();
                     },
-                    "保留档位",
+                    I18n.Get("Bio.KeepStage"),
                     () => Game1.activeClickableMenu = this,
-                    "提示：如只想微调该档位，可直接在右侧面板编辑，无需删除。");
+                    I18n.Get("Bio.DeleteStageTip"));
                 return;
             }
 
@@ -924,19 +925,19 @@ namespace ValleytalkReborn
                 if (string.Equals(target, "ThePlayer", StringComparison.OrdinalIgnoreCase))
                 {
                     Game1.playSound("cancel");
-                    Game1.addHUDMessage(new HUDMessage("玩家条目 (ThePlayer) 为核心设定，禁止删除", HUDMessage.error_type));
+                    Game1.addHUDMessage(new HUDMessage(I18n.Get("Bio.RelPlayerProtected"), HUDMessage.error_type));
                     return;
                 }
                 Game1.activeClickableMenu = new BioValveWarningDialog(
                     this,
-                    "删除独立人设关系",
-                    $"即将删除 {_npcName} → {target} 的关系设定：",
+                    I18n.Get("Bio.DeleteRelTitle"),
+                    I18n.Get("Bio.DeleteRelSubtitle").Replace("{{npc}}", _npcName).Replace("{{target}}", target),
                     new List<string>
                     {
-                        "该角色的独立关系标题与描述将被清空",
-                        "删除后如需恢复，须重新定制该角色关系"
+                        I18n.Get("Bio.DeleteRelBullet1"),
+                        I18n.Get("Bio.DeleteRelBullet2")
                     },
-                    "⚠ 确认删除",
+                    I18n.Get("Bio.ConfirmDeleteRel"),
                     () =>
                     {
                         Game1.activeClickableMenu = this;
@@ -946,9 +947,9 @@ namespace ValleytalkReborn
                         _vm.SelectRelationship(_vm.SelectedRelationshipIndex);
                         SelectRelationshipView(_vm.SelectedRelationshipNpc);
                     },
-                    "保留关系",
+                    I18n.Get("Bio.KeepRel"),
                     () => Game1.activeClickableMenu = this,
-                    "提示：如只想调整关系内容，可直接在右侧编辑框修改，无需删除。");
+                    I18n.Get("Bio.DeleteRelTip"));
                 return;
             }
 
@@ -1132,8 +1133,9 @@ namespace ValleytalkReborn
 
             DrawHeader(b, mx, my);
 
+            string[] tabTitles = TabTitles();
             for (int i = 0; i < _tabRects.Length; i++)
-                DrawTabButton(b, _tabRects[i], TabTitles[i], _activeTab == i, mx, my);
+                DrawTabButton(b, _tabRects[i], tabTitles[i], _activeTab == i, mx, my);
 
             int sepY = yPositionOnScreen + HeaderH + TabBarH + 6;
             b.Draw(Game1.staminaRect, new Rectangle(xPositionOnScreen + ContentPadding, sepY, width - ContentPadding * 2, 2), Color.Gray * 0.35f);
@@ -1145,10 +1147,10 @@ namespace ValleytalkReborn
             else if (_activeTab == 4) DrawTab5(b, mx, my);
 
             // 底部操作按钮（顺序：取消 -> 保存 -> 当前页恢复原版 -> 全部恢复原版）
-            DrawActionButton(b, _cancelRect, "返回 / 取消 (Esc)", mx, my, isDanger: false);
-            DrawActionButton(b, _saveRect, "✔ 保存修改 (Ctrl+S)", mx, my, isPrimary: true);
-            DrawActionButton(b, _resetPageRect, "当前页恢复原版", mx, my, isDanger: false);
-            DrawActionButton(b, _resetAllRect, "全部恢复原版", mx, my, isDanger: true, isEnabled: _vm.HasOverlay || _vm.IsDirty);
+            DrawActionButton(b, _cancelRect, I18n.Get("Bio.CancelButton"), mx, my, isDanger: false);
+            DrawActionButton(b, _saveRect, I18n.Get("Bio.SaveButton"), mx, my, isPrimary: true);
+            DrawActionButton(b, _resetPageRect, I18n.Get("Bio.ResetPage"), mx, my, isDanger: false);
+            DrawActionButton(b, _resetAllRect, I18n.Get("Bio.ResetAll"), mx, my, isDanger: true, isEnabled: _vm.HasOverlay || _vm.IsDirty);
 
             // ★ 关闭按钮平滑悬停动效（参考 IntegratedHubMenu）
             UiHelper.UpdateButtonScale(ref _closeButtonHoverScale, _closeButton, mx, my);
@@ -1225,28 +1227,28 @@ namespace ValleytalkReborn
             }
 
             string disp = Game1.getCharacterFromName(_npcName)?.displayName ?? _npcName;
-            CustomFontManager.DrawStringBold(b, $"{disp} ({_npcName}) · 人设工作台", new Vector2(headX + pSize + 12, headY + 2), TextPrimary, TitleFontSize);
+            CustomFontManager.DrawStringBold(b, I18n.Bio.Title(disp, _npcName), new Vector2(headX + pSize + 12, headY + 2), TextPrimary, TitleFontSize);
 
-            string status = _vm.IsDirty ? "● 存在未保存改动" : (_vm.HasOverlay ? "★ 自定义覆盖生效中" : "默认人设基准");
+            string status = _vm.IsDirty ? I18n.Get("Bio.StatusDirty") : (_vm.HasOverlay ? I18n.Get("Bio.StatusOverlay") : I18n.Get("Bio.StatusVanilla"));
             Color statusCol = _vm.IsDirty ? TextWarning : (_vm.HasOverlay ? TextSuccess : TextMuted);
             CustomFontManager.DrawString(b, status, new Vector2(headX + pSize + 14, headY + 30), statusCol, TipFontSize);
 
-            string scopeLabel = _vm.TargetScope == BioStorageService.BioScope.Local ? "本存档独占" : "全局生效";
+            string scopeLabel = _vm.TargetScope == BioStorageService.BioScope.Local ? I18n.Get("Bio.ScopeLocal") : I18n.Get("Bio.ScopeGlobal");
             DrawActionButton(b, _scopeCapsuleRect, scopeLabel, mx, my, isPrimary: true);
-            DrawActionButton(b, _importRect, "导入", mx, my, isPrimary: false);
-            DrawActionButton(b, _exportRect, "导出", mx, my, isPrimary: false);
-            DrawActionButton(b, _wizardRect, "引导式起号", mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy, hoverHighlight: false);
+            DrawActionButton(b, _importRect, I18n.Get("Bio.Import"), mx, my, isPrimary: false);
+            DrawActionButton(b, _exportRect, I18n.Get("Bio.Export"), mx, my, isPrimary: false);
+            DrawActionButton(b, _wizardRect, I18n.Get("Bio.WizardButton"), mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy, hoverHighlight: false);
         }
 
         // ── 各 Tab 具体渲染 ───────────────────────────────────────────────
         private void DrawTab1(SpriteBatch b, int mx, int my)
         {
-            CustomFontManager.DrawString(b, "身份设定与心理矛盾（保留 [IDENTITY] 与 [PSYCHOLOGICAL CONFLICTS] 分节符）",
+            CustomFontManager.DrawString(b, I18n.Get("Bio.Tab1Section"),
                 new Vector2(_biographyBox.Position.X, _biographyBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
 
-            DrawActionButton(b, _scaffoldBtnRect, "插入身份模板", mx, my, false);
-            DrawActionButton(b, _copyBiographyRect, "复制全部", mx, my, false);
-            string aiLabel = BioAiRunner.IsBusy ? "构思中..." : "AI 润色";
+            DrawActionButton(b, _scaffoldBtnRect, I18n.Get("Bio.InsertIdentityTemplate"), mx, my, false);
+            DrawActionButton(b, _copyBiographyRect, I18n.Get("Bio.CopyAll"), mx, my, false);
+            string aiLabel = BioAiRunner.IsBusy ? I18n.Get("Bio.AiBusy") : I18n.Get("Bio.AiPolish");
             DrawActionButton(b, _aiPolishBioRect, aiLabel, mx, my,
                 isPrimary: true, isEnabled: !BioAiRunner.IsBusy, hoverHighlight: false);
             DrawStyledDialogueBox(b, _biographyBox);
@@ -1254,26 +1256,26 @@ namespace ValleytalkReborn
 
         private void DrawTab2(SpriteBatch b, int mx, int my)
         {
-            CustomFontManager.DrawString(b, "行为规则 (BehavioralRules)",
+            CustomFontManager.DrawString(b, I18n.Get("Bio.Tab2BehaviorSection"),
                 new Vector2(_behaviorBox.Position.X, _behaviorBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
-            DrawActionButton(b, _behaviorScaffoldRect, "插入规则模板", mx, my, false);
-            DrawActionButton(b, _copyBehaviorRect, "复制全部", mx, my, false);
-            DrawActionButton(b, _aiPolishBehaviorRect, BioAiRunner.IsBusy ? "构思中..." : "AI 润色", mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy, hoverHighlight: false);
+            DrawActionButton(b, _behaviorScaffoldRect, I18n.Get("Bio.InsertRulesTemplate"), mx, my, false);
+            DrawActionButton(b, _copyBehaviorRect, I18n.Get("Bio.CopyAll"), mx, my, false);
+            DrawActionButton(b, _aiPolishBehaviorRect, BioAiRunner.IsBusy ? I18n.Get("Bio.AiBusy") : I18n.Get("Bio.AiPolish"), mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy, hoverHighlight: false);
             DrawStyledDialogueBox(b, _behaviorBox);
 
-            CustomFontManager.DrawString(b, "对白范例 (Dialogue)",
+            CustomFontManager.DrawString(b, I18n.Get("Bio.Tab2DialogueSection"),
                 new Vector2(_dialogueExamplesBox.Position.X, _dialogueExamplesBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
-            DrawActionButton(b, _insertBreakRect, "+ 分段符", mx, my, false);
-            DrawActionButton(b, _insertChoiceRect, "+ 玩家选项", mx, my, false);
-            DrawActionButton(b, _copyDialogueExamplesRect, "复制全部", mx, my, false);
-            DrawActionButton(b, _aiPolishDialogueRect, BioAiRunner.IsBusy ? "构思中..." : "AI 润色", mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy, hoverHighlight: false);
+            DrawActionButton(b, _insertBreakRect, I18n.Get("Bio.InsertBreak"), mx, my, false);
+            DrawActionButton(b, _insertChoiceRect, I18n.Get("Bio.InsertChoice"), mx, my, false);
+            DrawActionButton(b, _copyDialogueExamplesRect, I18n.Get("Bio.CopyAll"), mx, my, false);
+            DrawActionButton(b, _aiPolishDialogueRect, BioAiRunner.IsBusy ? I18n.Get("Bio.AiBusy") : I18n.Get("Bio.AiPolish"), mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy, hoverHighlight: false);
 
-            if (_insertBreakRect.Contains(mx, my)) _hoverText = "插入 #$b#：在原版对话框中翻页。";
-            if (_insertChoiceRect.Contains(mx, my)) _hoverText = "插入 % 选项：提供玩家可点击的分支回答。";
+            if (_insertBreakRect.Contains(mx, my)) _hoverText = I18n.Get("Bio.InsertBreakHover");
+            if (_insertChoiceRect.Contains(mx, my)) _hoverText = I18n.Get("Bio.InsertChoiceHover");
 
             DrawStyledDialogueBox(b, _dialogueExamplesBox);
 
-            CustomFontManager.DrawString(b, "提示：支持原版表情符 ($0 / $s) 与换行分段；选项以 % 开头。",
+            CustomFontManager.DrawString(b, I18n.Get("Bio.Tab2Tip"),
                 new Vector2(_dialogueExamplesBox.Position.X, _dialogueExamplesBox.Position.Y + _dialogueExamplesBox.Extent.Y + 6), TextMuted, TipFontSize);
         }
 
@@ -1281,11 +1283,11 @@ namespace ValleytalkReborn
         {
             DrawCard(b, _stageLeftColRect);
             // 顶栏标题独立展示为分类小标，不再与按钮同排
-            CustomFontManager.DrawString(b, $"好感演变档位 ({_vm.Bio.ProgressStates.Count}/8)",
+            CustomFontManager.DrawString(b, I18n.Bio.StageCount(_vm.Bio.ProgressStates.Count, 8),
                 new Vector2(_stageLeftColRect.X + 12, _stageLeftColRect.Y + 10), TextSecondary, SectionHeaderSize);
-            DrawActionButton(b, _aiGenerateStagesRect, BioAiRunner.IsBusy ? "推演中..." : "✨ AI好感阶梯推演", mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy, hoverHighlight: false);
+            DrawActionButton(b, _aiGenerateStagesRect, BioAiRunner.IsBusy ? I18n.Get("Bio.AiStageBusy") : I18n.Get("Bio.AiStageLadder"), mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy, hoverHighlight: false);
             if (_aiGenerateStagesRect.Contains(mx, my))
-                _hoverText = "按可婚/常规自动推演 4/3 档并整体覆盖现有档位（建议先在 Tab 1 完善身份档案）。";
+                _hoverText = I18n.Get("Bio.AiStageLadderHover");
 
             int visibleStages = Math.Min(_vm.Bio.ProgressStates.Count, 8);
             for (int i = 0; i < visibleStages; i++)
@@ -1303,15 +1305,15 @@ namespace ValleytalkReborn
 
                 string gateSummary = _vm.BuildGateSummary(i);
                 // 选中时文字使用白色高亮，未选中使用深色主文字
-                CustomFontManager.DrawString(b, $"档位 {i + 1}  [{gateSummary}]", new Vector2(r.X + 12, r.Y + 8), isSel ? Color.White : TextPrimary, ContentFontSize);
+                CustomFontManager.DrawString(b, I18n.Bio.StageRow(i + 1, gateSummary), new Vector2(r.X + 12, r.Y + 8), isSel ? Color.White : TextPrimary, ContentFontSize);
             }
 
             if (_vm.CanAddStage)
-                DrawActionButton(b, _newStageRect, "+ 新建好感档位", mx, my, false);
+                DrawActionButton(b, _newStageRect, I18n.Get("Bio.AddStage"), mx, my, false);
 
             if (_vm.SelectedStageIndex < 0 || _vm.SelectedStageIndex >= _vm.Bio.ProgressStates.Count)
             {
-                CustomFontManager.DrawString(b, "从左侧列表选择或添加一个好感档位开始编辑。",
+                CustomFontManager.DrawString(b, I18n.Get("Bio.StageEmptyHint"),
                     new Vector2(_stageRightColRect.X + 20, _stageRightColRect.Y + 40), TextMuted, ContentFontSize);
                 return;
             }
@@ -1319,74 +1321,74 @@ namespace ValleytalkReborn
             var stage = _vm.Bio.ProgressStates[_vm.SelectedStageIndex];
 
             // ── 第 1 行：情感与好感门禁 ──
-            CustomFontManager.DrawString(b, "好感门禁:", new Vector2(_stageRightColRect.X, _stageRightColRect.Y + 6), TextSecondary, SectionHeaderSize);
+            CustomFontManager.DrawString(b, I18n.Get("Bio.GateHeartsLabel"), new Vector2(_stageRightColRect.X, _stageRightColRect.Y + 6), TextSecondary, SectionHeaderSize);
             _heartsStepper.Draw(b);
 
             // 1. 自身已婚胶囊（不可结婚角色置灰禁用）
-            string marriedLabel = !_isDatable ? "不可结婚" : (stage.RequireMarried ? "已婚" : "不限婚姻");
+            string marriedLabel = !_isDatable ? I18n.Get("Bio.GateNotDatable") : (stage.RequireMarried ? I18n.Get("Bio.GateMarried") : I18n.Get("Bio.GateMarriageAny"));
             DrawPillButton(b, _gateMarriedPillRect, marriedLabel, _isDatable && stage.RequireMarried, mx, my, isEnabled: _isDatable);
             if (_gateMarriedPillRect.Contains(mx, my))
             {
                 _hoverText = !_isDatable
-                    ? $"【{_npcName} 为不可结婚角色】\n无法配置玩家与当前角色的已婚门禁。"
+                    ? I18n.Get("Bio.GateMarriedHoverNotDatable").Replace("{{name}}", _npcName)
                     : (stage.RequireMarried
-                        ? "【激活条件：必须与该 NPC 结婚】\n仅当玩家与当前角色处于已婚状态时，本档位人设才会激活生效。"
-                        : "【激活条件：不限婚姻】\n无论玩家单身、与该角色结婚还是与其他人结婚，均可进入本档位。");
+                        ? I18n.Get("Bio.GateMarriedHoverOn")
+                        : I18n.Get("Bio.GateMarriedHoverOff"));
             }
 
             // 2. 农夫指定配偶胶囊 (RequirePlayerMarriedTo)
             string targetSpouse = stage.RequirePlayerMarriedTo;
-            string spouseDisp = string.IsNullOrEmpty(targetSpouse) ? "不限" : (Game1.getCharacterFromName(targetSpouse)?.displayName ?? targetSpouse);
-            DrawPillButton(b, _gatePlayerMarriedToPillRect, $"配偶:{spouseDisp}", !string.IsNullOrEmpty(targetSpouse), mx, my);
+            string spouseDisp = string.IsNullOrEmpty(targetSpouse) ? I18n.Get("Bio.GateNone") : (Game1.getCharacterFromName(targetSpouse)?.displayName ?? targetSpouse);
+            DrawPillButton(b, _gatePlayerMarriedToPillRect, I18n.Bio.GateSpouse(spouseDisp), !string.IsNullOrEmpty(targetSpouse), mx, my);
             if (_gatePlayerMarriedToPillRect.Contains(mx, my))
             {
                 _hoverText = string.IsNullOrEmpty(targetSpouse)
-                    ? "【激活条件：农夫配偶门禁】\n当前不限制农夫与谁结婚。\n左键点击：在小镇可婚角色中轮换切换；\n右键点击：重置为不限。"
-                    : $"【激活条件：农夫必须与 {spouseDisp} ({targetSpouse}) 结婚】\n仅当农夫的配偶为该角色时本档位激活（如克林特在玩家娶了艾米丽后的暗自心碎）。\n左键点击：切换下一位候选人；\n右键点击：重置为不限。";
+                    ? I18n.Get("Bio.GateSpouseHoverOff")
+                    : I18n.Get("Bio.GateSpouseHoverOn").Replace("{{spouse}}", spouseDisp).Replace("{{target}}", targetSpouse);
             }
 
-            DrawActionButton(b, _deleteStageRect, "删除此档", mx, my, isDanger: true, hoverHighlight: false);
+            DrawActionButton(b, _deleteStageRect, I18n.Get("Bio.DeleteStage"), mx, my, isDanger: true, hoverHighlight: false);
 
             // ── 第 2 行：小镇世界线门禁 ──
             int row2Y = _stageRightColRect.Y + 32;
-            CustomFontManager.DrawString(b, "世界进度:", new Vector2(_stageRightColRect.X, row2Y + 4), TextSecondary, SectionHeaderSize);
+            CustomFontManager.DrawString(b, I18n.Get("Bio.GateWorldLabel"), new Vector2(_stageRightColRect.X, row2Y + 4), TextSecondary, SectionHeaderSize);
 
-            string jojaClosedText = stage.RequireJojaMartClosed.HasValue ? (stage.RequireJojaMartClosed.Value ? "超市:倒闭" : "超市:营业") : "超市:不限";
+            string jojaClosedText = stage.RequireJojaMartClosed.HasValue ? (stage.RequireJojaMartClosed.Value ? I18n.Get("Bio.GateJojaClosed") : I18n.Get("Bio.GateJojaOpen")) : I18n.Get("Bio.GateJojaAny");
             DrawPillButton(b, _gateJojaClosedPillRect, jojaClosedText, stage.RequireJojaMartClosed.HasValue, mx, my);
             if (_gateJojaClosedPillRect.Contains(mx, my))
             {
                 if (stage.RequireJojaMartClosed == true)
-                    _hoverText = "【激活条件：Joja 超市已倒闭】\n判定玩家完成了活动中心全部献祭线并驱逐了 Joja 超市。\n注：此时会自动解除与 Joja 会员的冲突。";
+                    _hoverText = I18n.Get("Bio.GateJojaClosedHoverClosed");
                 else if (stage.RequireJojaMartClosed == false)
-                    _hoverText = "【激活条件：Joja 超市保持营业】\n判定小镇超市依然正常开门，尚未完成社区中心献祭。";
+                    _hoverText = I18n.Get("Bio.GateJojaClosedHoverOpen");
                 else
-                    _hoverText = "【激活条件：不限超市状态】\n不对 Joja 超市是否倒闭做任何前置要求（默认状态）。";
+                    _hoverText = I18n.Get("Bio.GateJojaClosedHoverAny");
             }
 
-            string jojaMemberText = stage.RequireJojaMember.HasValue ? (stage.RequireJojaMember.Value ? "会员:加入" : "会员:未入") : "会员:不限";
+            string jojaMemberText = stage.RequireJojaMember.HasValue ? (stage.RequireJojaMember.Value ? I18n.Get("Bio.GateJojaMemberYes") : I18n.Get("Bio.GateJojaMemberNo")) : I18n.Get("Bio.GateJojaMemberAny");
             DrawPillButton(b, _gateJojaMemberPillRect, jojaMemberText, stage.RequireJojaMember.HasValue, mx, my);
             if (_gateJojaMemberPillRect.Contains(mx, my))
             {
                 if (stage.RequireJojaMember == true)
-                    _hoverText = "【激活条件：玩家是 Joja 会员】\n判定农夫已花费 5000G 在莫里斯处购买了 Joja 会员资格。\n注：此时超市绝不会倒闭，与“超市:倒闭”互斥。";
+                    _hoverText = I18n.Get("Bio.GateJojaMemberHoverYes");
                 else if (stage.RequireJojaMember == false)
-                    _hoverText = "【激活条件：玩家未加入 Joja】\n判定农夫拒绝了 Joja 会员，坚持走传统村民路线。";
+                    _hoverText = I18n.Get("Bio.GateJojaMemberHoverNo");
                 else
-                    _hoverText = "【激活条件：不限会员身份】\n不对玩家是否购买 Joja 会员做任何限制（默认状态）。";
+                    _hoverText = I18n.Get("Bio.GateJojaMemberHoverAny");
             }
 
             // ★ Tab3 复制按钮已移至标签右侧
-            CustomFontManager.DrawString(b, "阶段态度演变 (Text)",
+            CustomFontManager.DrawString(b, I18n.Get("Bio.StageTextSection"),
                 new Vector2(_stageTextBox.Position.X, _stageTextBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
-            DrawActionButton(b, _copyStageTextRect, "复制全部", mx, my, false);
+            DrawActionButton(b, _copyStageTextRect, I18n.Get("Bio.CopyAll"), mx, my, false);
             DrawStyledDialogueBox(b, _stageTextBox);
 
-            CustomFontManager.DrawString(b, "碎碎念心智 (BarkMindset: 规定此时的心态与注意力)",
+            CustomFontManager.DrawString(b, I18n.Get("Bio.StageBarkSection"),
                 new Vector2(_stageBarkBox.Position.X, _stageBarkBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
-            DrawActionButton(b, _copyStageBarkRect, "复制全部", mx, my, false);
+            DrawActionButton(b, _copyStageBarkRect, I18n.Get("Bio.CopyAll"), mx, my, false);
             DrawStyledDialogueBox(b, _stageBarkBox);
 
-            CustomFontManager.DrawString(b, "阶段专属关注池 (Preoccupations: 优先提及的事物)",
+            CustomFontManager.DrawString(b, I18n.Get("Bio.StagePreoccSection"),
                 new Vector2(_stageRightColRect.X, _stageTagEditor.Bounds.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
             _stageTagEditor.Draw(b);
         }
@@ -1394,11 +1396,11 @@ namespace ValleytalkReborn
         private void DrawTab4(SpriteBatch b, int mx, int my)
         {
             DrawCard(b, _relLeftColRect);
-            CustomFontManager.DrawString(b, "目标角色列表 (★已定制)",
+            CustomFontManager.DrawString(b, I18n.Get("Bio.RelListSection"),
                 new Vector2(_relSearchBox.X, _relLeftColRect.Y + 8), TextSecondary, SectionHeaderSize);
             DrawSingleLineBox(b, _relSearchBox);
             if (string.IsNullOrEmpty(_relSearchBox.Text))
-                CustomFontManager.DrawString(b, "搜索角色...", new Vector2(_relSearchBox.X + 8, _relSearchBox.Y + 6), TextMuted, ContentFontSize);
+                CustomFontManager.DrawString(b, I18n.Get("Bio.SearchPlaceholder"), new Vector2(_relSearchBox.X + 8, _relSearchBox.Y + 6), TextMuted, ContentFontSize);
 
             // ── 绘制左侧 NPC 角色列表（复刻 RulesTabView 标准） ──
             bool isMouseDown = IsLeftMouseDown();
@@ -1549,59 +1551,59 @@ namespace ValleytalkReborn
 
             if (string.IsNullOrEmpty(_vm.SelectedRelationshipNpc))
             {
-                CustomFontManager.DrawString(b, "从左侧列表选择目标角色。", new Vector2(_relRightColRect.X + 20, _relRightColRect.Y + 40), TextMuted, ContentFontSize);
+                CustomFontManager.DrawString(b, I18n.Get("Bio.RelEmptyHint"), new Vector2(_relRightColRect.X + 20, _relRightColRect.Y + 40), TextMuted, ContentFontSize);
                 return;
             }
 
             string targetDisp = Game1.getCharacterFromName(_vm.SelectedRelationshipNpc)?.displayName ?? _vm.SelectedRelationshipNpc;
-            CustomFontManager.DrawString(b, $"{_npcName} 对 {targetDisp} 的单向社交关系",
+            CustomFontManager.DrawString(b, I18n.Bio.RelHeading(_npcName, targetDisp),
                 new Vector2(_relHeadingBox.X, _relRightColRect.Y + 4), TextPrimary, TitleFontSize);
 
-            CustomFontManager.DrawString(b, "关系称谓与定位 (Heading: 如 'Wife', 'Business Rival')",
+            CustomFontManager.DrawString(b, I18n.Get("Bio.RelHeadingSection"),
                 new Vector2(_relHeadingBox.X, _relHeadingBox.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
             DrawSingleLineBox(b, _relHeadingBox);
 
-            CustomFontManager.DrawString(b, "深层心理与互动细节 (Description)",
+            CustomFontManager.DrawString(b, I18n.Get("Bio.RelDescSection"),
                 new Vector2(_relDescBox.Position.X, _relDescBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
-            DrawActionButton(b, _copyRelDescRect, "复制全部", mx, my, false);
+            DrawActionButton(b, _copyRelDescRect, I18n.Get("Bio.CopyAll"), mx, my, false);
             DrawStyledDialogueBox(b, _relDescBox);
 
-            CustomFontManager.DrawString(b, "提示：如需双方互动感知，请在两人的编辑器中分别配置相互的关系定位。",
+            CustomFontManager.DrawString(b, I18n.Get("Bio.RelTip"),
                 new Vector2(_relDescBox.Position.X, _relDescBox.Position.Y + _relDescBox.Extent.Y + 6), TextMuted, TipFontSize);
         }
 
         private void DrawTab5(SpriteBatch b, int mx, int my)
         {
             DrawCard(b, _tab5LeftColRect);
-            CustomFontManager.DrawString(b, "日常碎碎念总控",
+            CustomFontManager.DrawString(b, I18n.Get("Bio.BarkSection"),
                 new Vector2(_tab5LeftColRect.X + 12, _tab5LeftColRect.Y + 8), TextSecondary, SectionHeaderSize);
             _enableBarkCheckbox.draw(b, 0, 0, this);
-            DrawActionButton(b, _aiExtractAmbientRect, BioAiRunner.IsBusy ? "萃取中..." : "✨ 基于人设萃取全套心智", mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy, hoverHighlight: false);
+            DrawActionButton(b, _aiExtractAmbientRect, BioAiRunner.IsBusy ? I18n.Get("Bio.AiExtractBusy") : I18n.Get("Bio.AiExtractAmbient"), mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy, hoverHighlight: false);
             if (_aiExtractAmbientRect.Contains(mx, my))
-                _hoverText = "基于身份档案与言行规则，一次性萃取口吻 / 口头禅 / 观察透镜 / 关注词条并整体写入（覆盖原有）。";
+                _hoverText = I18n.Get("Bio.AiExtractHover");
 
-            CustomFontManager.DrawString(b, "全局常态关注池 (Preoccupations)",
+            CustomFontManager.DrawString(b, I18n.Get("Bio.GlobalPreoccSection"),
                 new Vector2(_globalTagEditor.Bounds.X, _globalTagEditor.Bounds.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
             _globalTagEditor.Draw(b);
 
             // ★ Tab5 复制按钮已移至标签右侧
-            CustomFontManager.DrawString(b, "口吻与态度 (Voice & Attitude)",
+            CustomFontManager.DrawString(b, I18n.Get("Bio.VoiceSection"),
                 new Vector2(_voiceBox.Position.X, _voiceBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
-            DrawActionButton(b, _copyVoiceRect, "复制全部", mx, my, false);
+            DrawActionButton(b, _copyVoiceRect, I18n.Get("Bio.CopyAll"), mx, my, false);
             DrawStyledDialogueBox(b, _voiceBox);
-            if (ContainsPoint(_voiceBox, mx, my)) _hoverText = "限定碎碎念的基本语调、说话长短与即时情绪基调。";
+            if (ContainsPoint(_voiceBox, mx, my)) _hoverText = I18n.Get("Bio.VoiceHover");
 
-            CustomFontManager.DrawString(b, "口头习惯 (Spoken Habits)",
+            CustomFontManager.DrawString(b, I18n.Get("Bio.HabitsSection"),
                 new Vector2(_habitsBox.Position.X, _habitsBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
-            DrawActionButton(b, _copyHabitsRect, "复制全部", mx, my, false);
+            DrawActionButton(b, _copyHabitsRect, I18n.Get("Bio.CopyAll"), mx, my, false);
             DrawStyledDialogueBox(b, _habitsBox);
-            if (ContainsPoint(_habitsBox, mx, my)) _hoverText = "NPC 的口头禅、叹气声、常用起手式（如 'Well,', 'Sigh...'）。";
+            if (ContainsPoint(_habitsBox, mx, my)) _hoverText = I18n.Get("Bio.HabitsHover");
 
-            CustomFontManager.DrawString(b, "观察透镜 (Observation Lenses)",
+            CustomFontManager.DrawString(b, I18n.Get("Bio.LensesSection"),
                 new Vector2(_lensesBox.Position.X, _lensesBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
-            DrawActionButton(b, _copyLensesRect, "复制全部", mx, my, false);
+            DrawActionButton(b, _copyLensesRect, I18n.Get("Bio.CopyAll"), mx, my, false);
             DrawStyledDialogueBox(b, _lensesBox);
-            if (ContainsPoint(_lensesBox, mx, my)) _hoverText = "NPC 打量周围世界时的特殊视角（例如铁匠关注矿物与工具锈蚀，农夫关注作物与雨水）。";
+            if (ContainsPoint(_lensesBox, mx, my)) _hoverText = I18n.Get("Bio.LensesHover");
         }
 
         private static void DrawStyledDialogueBox(SpriteBatch b, DialogueTextInputBox box)
@@ -1661,10 +1663,11 @@ namespace ValleytalkReborn
                 rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height, bg, 4f, false);
 
             // Tab 标签：走 Bold 18f，颜色保持原逻辑（大 tab 标题不改白字）
-            var sz = CustomFontManager.MeasureStringBold(label, TabFontSize);
-            CustomFontManager.DrawStringBold(b, label,
+            var (fitLabel, fitScale) = BioLabelFitter.FitBold(label, rect.Width, TabFontSize);
+            var sz = CustomFontManager.MeasureStringBold(fitLabel, TabFontSize, fitScale);
+            CustomFontManager.DrawStringBold(b, fitLabel,
                 new Vector2(rect.X + pressOffset + (rect.Width - sz.X) / 2f, rect.Y + pressOffset + (rect.Height - sz.Y) / 2f),
-                isActive ? TextPrimary : (isHover ? Color.Wheat : TextOnDark), TabFontSize);
+                isActive ? TextPrimary : (isHover ? Color.Wheat : TextOnDark), TabFontSize, fitScale);
         }
 
         /// <summary>探测鼠标左键当前是否处于按下状态，用于按钮“下沉/弹起”的点击动效。
@@ -1737,12 +1740,13 @@ namespace ValleytalkReborn
                 btnTextCol = TextOnLightBtn;
             }
 
-            var sz = CustomFontManager.MeasureStringBold(label, ButtonFontSize);
+            var (fitLabel, fitScale) = BioLabelFitter.FitBold(label, rect.Width, ButtonFontSize);
+            var sz = CustomFontManager.MeasureStringBold(fitLabel, ButtonFontSize, fitScale);
             Vector2 textPos = new Vector2(
                 rect.X + pressOffset + (rect.Width - sz.X) / 2f,
                 rect.Y + pressOffset + (rect.Height - sz.Y) / 2f);
 
-            CustomFontManager.DrawStringBold(b, label, textPos, btnTextCol, ButtonFontSize);
+            CustomFontManager.DrawStringBold(b, fitLabel, textPos, btnTextCol, ButtonFontSize, fitScale);
         }
 
         private static void DrawPillButton(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my, bool isEnabled = true)
@@ -1772,12 +1776,13 @@ namespace ValleytalkReborn
                 rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height,
                 !isEnabled ? Color.Gray * 0.4f : (isActive ? new Color(200, 150, 50) : Color.Wheat), 2f, false);
 
-            var sz = CustomFontManager.MeasureString(label, ContentFontSize);
+            var (fitLabel, fitScale) = BioLabelFitter.FitBold(label, rect.Width, ContentFontSize);
+            var sz = CustomFontManager.MeasureString(fitLabel, ContentFontSize, fitScale);
             Vector2 textPos = new Vector2(
                 rect.X + pressOffset + (rect.Width - sz.X) / 2f,
                 rect.Y + pressOffset + (rect.Height - sz.Y) / 2f);
 
-            CustomFontManager.DrawString(b, label, textPos, isEnabled ? TextPrimary : TextMuted, ContentFontSize);
+            CustomFontManager.DrawString(b, fitLabel, textPos, isEnabled ? TextPrimary : TextMuted, ContentFontSize, fitScale);
         }
 
         /// <summary>卡片：暖羊皮纸填充 + 星露谷式暖金棕边框（替代原灰调）。</summary>
@@ -1880,7 +1885,7 @@ namespace ValleytalkReborn
                 "3. 严格遵循玩家给出的调整方向。\n" +
                 "4. 严禁寒暄、解释、标题或代码围栏，只输出润色后的完整纯文本。";
 
-            Game1.activeClickableMenu = new BioAiPromptDialog("身份设定", this, (demand, enableThinking) =>
+            Game1.activeClickableMenu = new BioAiPromptDialog(I18n.Get("Bio.Tab1Section"), this, (demand, enableThinking) =>
             {
                 if (BioAiRunner.IsBusy)
                     return;
@@ -1890,7 +1895,7 @@ namespace ValleytalkReborn
                     $"【玩家期望调整方向】\n{demand}\n\n" +
                     $"【待润色原文】\n{sourceText}\n\n" +
                     "请直接输出优化后的完整内容";
-                BioAiReviewSession.Start(this, "身份设定", systemPrompt, userPrompt, confirmedText => ApplyPolishResult(confirmedText), null, enableThinking);
+                BioAiReviewSession.Start(this, I18n.Get("Bio.Tab1Section"), systemPrompt, userPrompt, confirmedText => ApplyPolishResult(confirmedText), null, enableThinking);
             });
         }
 
@@ -1908,7 +1913,7 @@ namespace ValleytalkReborn
             if (projectedLen > 4000)
             {
                 Game1.playSound("cancel");
-                Game1.addHUDMessage(new HUDMessage("润色结果过长，超出 4000 字符上限，已保留原文", HUDMessage.error_type));
+                Game1.addHUDMessage(new HUDMessage(I18n.Get("Bio.PolishTooLong"), HUDMessage.error_type));
                 return true;
             }
 
@@ -1919,15 +1924,16 @@ namespace ValleytalkReborn
 
             _vm.SetBiography(_biographyBox.Text);
             Game1.playSound("coin");
-            Game1.addHUDMessage(new HUDMessage("✔ 已应用 AI 润色内容", HUDMessage.newQuest_type));
+            Game1.addHUDMessage(new HUDMessage(I18n.Get("Bio.ApplyPolishDone"), HUDMessage.newQuest_type));
             if (_wizardStep == WizardStep.Identity)
                 OfferWizardAdvance(
-                    "第 1/4 步完成",
-                    "身份与心理内核已确立！是否推进第 2 步？",
-                    new List<string> { "下一步将基于此内核生成【言行举止】" },
-                    "➜ 推进下一步",
-                    () => { _wizardStep = WizardStep.Behavior; SwitchTab(1); OpenTraitPolishDialog("BehavioralRules", "言行举止"); },
-                    "提示：选择「到此为止」即结束向导，各页 AI 按钮仍可单独继续生成。");
+                    I18n.Get("Bio.WizardStepDone1"),
+                    I18n.Get("Bio.WizardStepDone1Sub"),
+                    new List<string> { I18n.Get("Bio.WizardStepDone1Bullet") },
+                    I18n.Get("Bio.WizardNext"),
+                    () => { _wizardStep = WizardStep.Behavior; SwitchTab(1); OpenTraitPolishDialog("BehavioralRules", I18n.Get("Bio.Tab2BehaviorSection")); },
+                    I18n.Get("Bio.WizardAdvanceTip"),
+                    fixText: I18n.Get("Bio.WizardStopHere"));
             return true;
         }
 
@@ -1947,21 +1953,21 @@ namespace ValleytalkReborn
 
             var warnings = new List<string>();
             if (!hasMarkers)
-                warnings.Add("缺少 [IDENTITY] 或 [PSYCHOLOGICAL CONFLICTS] 核心分节标记");
+                warnings.Add(I18n.Get("Bio.IdentityBaselineBullet1"));
             if (!longEnough)
-                warnings.Add($"身份设定字数不足 60 字（当前仅 {bio.Trim().Length} 字），线索过于单薄");
-            warnings.Add("缺少核心身份与矛盾锚点，润色或阶梯推演结果可能偏离角色内核");
+                warnings.Add(I18n.Get("Bio.IdentityBaselineBullet2").Replace("{{count}}", bio.Trim().Length.ToString()));
+            warnings.Add(I18n.Get("Bio.IdentityBaselineBullet3"));
 
             Game1.activeClickableMenu = new BioValveWarningDialog(
                 this,
-                "身份基准未达推荐门槛",
-                "检测到当前角色的身份设定尚不完整：",
+                I18n.Get("Bio.IdentityBaselineTitle"),
+                I18n.Get("Bio.IdentityBaselineSubtitle"),
                 warnings,
-                "⚠ 仍要继续生成",
+                I18n.Get("Bio.ConfirmAnyway"),
                 () => { Game1.activeClickableMenu = this; onProceed(); },
-                "前往 Tab 1 完善",
+                I18n.Get("Bio.GotoTab1"),
                 () => { Game1.activeClickableMenu = this; SwitchTab(0); },
-                "提示：强行生成可能导致人设偏离；建议优先前往对应标签完善设定。");
+                I18n.Get("Bio.IdentityBaselineTip"));
             return false;
         }
 
@@ -1984,31 +1990,31 @@ namespace ValleytalkReborn
 
             var warnings = new List<string>();
             if (!hasMarkers)
-                warnings.Add("身份档案（Tab 1）：缺少 [IDENTITY] / [PSYCHOLOGICAL CONFLICTS] 标记");
+                warnings.Add(I18n.Get("Bio.AmbientPrereqBullet1"));
             if (!longEnough)
-                warnings.Add($"身份档案（Tab 1）：内容仅 {bio.Trim().Length} 字，建议扩充至 60 字以上");
+                warnings.Add(I18n.Get("Bio.AmbientPrereqBullet2").Replace("{{count}}", bio.Trim().Length.ToString()));
             if (!hasBehavior)
-                warnings.Add("言行举止（Tab 2）：尚未填写 BehavioralRules 言行准则");
-            warnings.Add("环境心智高度依赖言行准则，缺少前置可能导致口吻与口头习惯脱节");
+                warnings.Add(I18n.Get("Bio.AmbientPrereqBullet3"));
+            warnings.Add(I18n.Get("Bio.AmbientPrereqBullet4"));
 
             Game1.activeClickableMenu = new BioValveWarningDialog(
                 this,
-                "环境心智萃取前置不全",
-                "环境心智萃取依赖完整的身份档案与言行准则：",
+                I18n.Get("Bio.AmbientPrereqTitle"),
+                I18n.Get("Bio.AmbientPrereqSubtitle"),
                 warnings,
-                "⚠ 仍要强制萃取",
+                I18n.Get("Bio.ConfirmExtractAnyway"),
                 () => { Game1.activeClickableMenu = this; onProceed(); },
-                "前往完善档案",
+                I18n.Get("Bio.GotoFix"),
                 () => { Game1.activeClickableMenu = this; SwitchTab(!hasBehavior && hasMarkers ? 1 : 0); },
-                "提示：强行萃取可能导致口吻与关注池偏离；建议优先完善对应标签。");
+                I18n.Get("Bio.AmbientPrereqTip"));
             return false;
         }
 
         private void OpenAmbientExtractDialog()
         {
-            string title = $"审阅【{_npcName}】环境心智萃取";
+            string title = I18n.Bio.ReviewAmbientTitle(_npcName);
 
-            Game1.activeClickableMenu = new BioAiPromptDialog("环境心智", this, (demand, enableThinking) =>
+            Game1.activeClickableMenu = new BioAiPromptDialog(I18n.Get("Bio.BarkSection"), this, (demand, enableThinking) =>
             {
                 if (BioAiRunner.IsBusy)
                     return;
@@ -2024,9 +2030,7 @@ namespace ValleytalkReborn
             if (!BioPromptBuilder.TryParseAmbientProfile(confirmedText, out var voice, out var habits, out var lenses, out var preoccupations))
             {
                 Game1.playSound("cancel");
-                Game1.addHUDMessage(new HUDMessage(
-                    "心智格式有误：请保持“口吻:/口头禅:/观察透镜:/关注词条:”字段完整，且透镜不可为空、口吻与口头禅不可同时为空",
-                    HUDMessage.error_type));
+                Game1.addHUDMessage(new HUDMessage(I18n.Get("Bio.AmbientFormatError"), HUDMessage.error_type));
                 return false;
             }
 
@@ -2039,16 +2043,16 @@ namespace ValleytalkReborn
 
             Game1.playSound("coin");
             Game1.addHUDMessage(new HUDMessage(
-                $"✔ 已应用环境心智（{preoccupations.Count} 个关注词条）",
+                I18n.Get("Bio.ApplyAmbientDone").Replace("{{count}}", preoccupations.Count.ToString()),
                 HUDMessage.newQuest_type));
             if (_wizardStep == WizardStep.Ambient)
                 OfferWizardAdvance(
-                    "向导完成",
-                    "身份/言行/对白/阶梯/环境心智全部就绪！",
-                    new List<string> { "可随时返回各标签页逐页微调" },
-                    "✔ 完成",
+                    I18n.Get("Bio.WizardDoneTitle"),
+                    I18n.Get("Bio.WizardDoneSub"),
+                    new List<string> { I18n.Get("Bio.WizardDoneBullet") },
+                    I18n.Get("Bio.WizardDoneConfirm"),
                     () => { _wizardStep = WizardStep.None; },
-                    fixText: "留在当前页");
+                    fixText: I18n.Get("Bio.WizardDoneConfirm"));
             return true;
         }
 
@@ -2084,22 +2088,22 @@ namespace ValleytalkReborn
 
             var warnings = new List<string>
             {
-                "检测到当前角色已具备完整人设档案（身份、心理矛盾等均已就绪）",
-                "引导式起号将逐步重构身份、言行规则、对白范例、好感阶梯与环境心智",
-                "每一步生成均需您在审阅弹窗中确认后才会生效落盘",
-                "如需备份当前设定，建议先使用右上角「导出」按钮复制 JSON 到剪贴板"
+                I18n.Get("Bio.WizardRerunBullet1"),
+                I18n.Get("Bio.WizardRerunBullet2"),
+                I18n.Get("Bio.WizardRerunBullet3"),
+                I18n.Get("Bio.WizardRerunBullet4")
             };
 
             Game1.activeClickableMenu = new BioValveWarningDialog(
                 this,
-                "重新起号风险提示",
-                "即将对已有设定启动完整的引导式起号向导：",
+                I18n.Get("Bio.WizardRerunTitle"),
+                I18n.Get("Bio.WizardRerunSubtitle"),
                 warnings,
-                "重新开始向导",
+                I18n.Get("Bio.ConfirmRerun"),
                 () => { Game1.activeClickableMenu = this; RouteWizardStep0(); },
-                "保持现有设定",
+                I18n.Get("Bio.KeepCurrent"),
                 () => { Game1.activeClickableMenu = this; },
-                "提示：向导每一步均先审阅后落盘，可在审阅弹窗中随时拒绝不满意的生成。");
+                I18n.Get("Bio.WizardRerunTip"));
         }
 
         private void StartWizard()
@@ -2108,16 +2112,16 @@ namespace ValleytalkReborn
             {
                 Game1.activeClickableMenu = new BioValveWarningDialog(
                     this,
-                    "上一轮向导尚未完成",
-                    "检测到向导流程仍在进行中：",
+                    I18n.Get("Bio.WizardIncompleteTitle"),
+                    I18n.Get("Bio.WizardIncompleteSubtitle"),
                     new List<string>
                     {
-                        "重新开始将丢弃当前向导进度，从身份起号重新走完全流程",
-                        "已保存落盘的设定不受影响，仅向导流程状态重置"
+                        I18n.Get("Bio.WizardIncompleteBullet1"),
+                        I18n.Get("Bio.WizardIncompleteBullet2")
                     },
-                    "⚠ 重新开始向导",
+                    I18n.Get("Bio.WizardIncompleteConfirm"),
                     () => { Game1.activeClickableMenu = this; RouteWizardStep0(); },
-                    "保持现状",
+                    I18n.Get("Bio.KeepState"),
                     () => Game1.activeClickableMenu = this);
                 return;
             }
@@ -2164,16 +2168,17 @@ namespace ValleytalkReborn
                 return;
             UnfocusAll();
             var (system, user) = BioPromptBuilder.BuildInitialBiographyPrompt(_npcName, rawContext, userDemand);
-            BioAiReviewSession.Start(this, $"审阅【{_npcName}】身份起号", system, user, confirmedText => ApplyPolishResult(confirmedText), () => _wizardStep = WizardStep.None, enableThinking);
+            BioAiReviewSession.Start(this, I18n.Bio.ReviewBioTitle(_npcName), system, user, confirmedText => ApplyPolishResult(confirmedText), () => _wizardStep = WizardStep.None, enableThinking);
         }
 
-        private void OfferWizardAdvance(string title, string subtitle, List<string> warnings, string continueText, Action next, string? tip = null, string fixText = "到此为止")
+        private void OfferWizardAdvance(string title, string subtitle, List<string> warnings, string continueText, Action next, string? tip = null, string fixText = null)
         {
+            string fix = fixText ?? I18n.Get("Bio.WizardStopHere");
             AgentToolDispatcher.EnqueueMainThread(() =>
                 Game1.activeClickableMenu = new BioValveWarningDialog(
                     this, title, subtitle, warnings, continueText,
                     () => { Game1.activeClickableMenu = this; next(); },
-                    fixText,
+                    fix,
                     () => { Game1.activeClickableMenu = this; _wizardStep = WizardStep.None; },
                     tip, continueIsDanger: false));
         }
@@ -2193,7 +2198,7 @@ namespace ValleytalkReborn
             if (projectedLen > 4000)
             {
                 Game1.playSound("cancel");
-                Game1.addHUDMessage(new HUDMessage("润色结果过长，超出 4000 字符上限，已保留原文", HUDMessage.error_type));
+                Game1.addHUDMessage(new HUDMessage(I18n.Get("Bio.PolishTooLong"), HUDMessage.error_type));
                 return true;
             }
 
@@ -2201,23 +2206,25 @@ namespace ValleytalkReborn
             _vm.SyncTraitDescription(traitKey, defaultHeading, confirmedText);
             box.SetText(confirmedText);
             Game1.playSound("coin");
-            Game1.addHUDMessage(new HUDMessage("✔ 已应用 AI 润色内容", HUDMessage.newQuest_type));
+            Game1.addHUDMessage(new HUDMessage(I18n.Get("Bio.ApplyPolishDone"), HUDMessage.newQuest_type));
             if (_wizardStep == WizardStep.Behavior && traitKey == "BehavioralRules")
                 OfferWizardAdvance(
-                    "第 2/4 步完成",
-                    "言行规则已就位！是否推进第 3 步？",
-                    new List<string> { "下一步将生成【对白范例】" },
-                    "➜ 推进下一步",
-                    () => { _wizardStep = WizardStep.Dialogue; OpenTraitPolishDialog("DialogueExamples", "对白范例"); },
-                    "提示：选择「到此为止」即结束向导，各页 AI 按钮仍可单独继续生成。");
+                    I18n.Get("Bio.WizardStepDone2"),
+                    I18n.Get("Bio.WizardStepDone2Sub"),
+                    new List<string> { I18n.Get("Bio.WizardStepDone2Bullet") },
+                    I18n.Get("Bio.WizardNext"),
+                    () => { _wizardStep = WizardStep.Dialogue; OpenTraitPolishDialog("DialogueExamples", I18n.Get("Bio.Tab2DialogueSection")); },
+                    I18n.Get("Bio.WizardAdvanceTip"),
+                    fixText: I18n.Get("Bio.WizardStopHere"));
             else if (_wizardStep == WizardStep.Dialogue && traitKey == "DialogueExamples")
                 OfferWizardAdvance(
-                    "第 3/4 步完成",
-                    "对白范例已就位！是否推进第 4 步？",
-                    new List<string> { "下一步将按可婚 4 档/常规 3 档推演【好感阶梯】" },
-                    "➜ 推进下一步",
+                    I18n.Get("Bio.WizardStepDone3"),
+                    I18n.Get("Bio.WizardStepDone3Sub"),
+                    new List<string> { I18n.Get("Bio.WizardStepDone3Bullet") },
+                    I18n.Get("Bio.WizardStepLast"),
                     () => { _wizardStep = WizardStep.Stage; SwitchTab(2); OpenStageLadderDialog(); },
-                    "提示：选择「到此为止」即结束向导，各页 AI 按钮仍可单独继续生成。");
+                    I18n.Get("Bio.WizardAdvanceTip"),
+                    fixText: I18n.Get("Bio.WizardStopHere"));
             return true;
         }
 
@@ -2225,9 +2232,9 @@ namespace ValleytalkReborn
         {
             var character = Game1.getCharacterFromName(_npcName);
             bool isDatable = character != null && character.datable.Value;
-            string title = $"审阅【{_npcName}】好感阶梯推演";
+            string title = I18n.Bio.ReviewLadderTitle(_npcName);
 
-            Game1.activeClickableMenu = new BioAiPromptDialog("好感阶梯", this, (demand, enableThinking) =>
+            Game1.activeClickableMenu = new BioAiPromptDialog(I18n.Get("Bio.AiStageLadder"), this, (demand, enableThinking) =>
             {
                 if (BioAiRunner.IsBusy)
                     return;
@@ -2243,9 +2250,7 @@ namespace ValleytalkReborn
             if (!BioPromptBuilder.TryParseStageLadder(confirmedText, out var stages))
             {
                 Game1.playSound("cancel");
-                Game1.addHUDMessage(new HUDMessage(
-                    "阶梯格式有误：请保持“### 档位 n | 心数: n | 已婚: 是/否”结构与“态度:/心智:/关注:”字段行完整（每档必须包含“心数:”行）",
-                    HUDMessage.error_type));
+                Game1.addHUDMessage(new HUDMessage(I18n.Get("Bio.StageLadderFormatError"), HUDMessage.error_type));
                 return false;
             }
 
@@ -2260,15 +2265,16 @@ namespace ValleytalkReborn
             SelectStage(0);
             Layout();
             Game1.playSound("coin");
-            Game1.addHUDMessage(new HUDMessage($"✔ 已应用 AI 阶梯（{stages.Count} 档）", HUDMessage.newQuest_type));
+            Game1.addHUDMessage(new HUDMessage(I18n.Get("Bio.ApplyStageLadderDone").Replace("{{count}}", stages.Count.ToString()), HUDMessage.newQuest_type));
             if (_wizardStep == WizardStep.Stage)
                 OfferWizardAdvance(
-                    "第 4 步完成",
-                    "好感阶梯已就位！是否推进最后一步？",
-                    new List<string> { "下一步将萃取【环境心智】（口吻/口头禅/观察透镜/关注池）" },
-                    "➜ 推进最后一步",
+                    I18n.Get("Bio.WizardStepDone4"),
+                    I18n.Get("Bio.WizardStepDone4Sub"),
+                    new List<string> { I18n.Get("Bio.WizardStepDone4Bullet") },
+                    I18n.Get("Bio.WizardStepLast"),
                     () => { _wizardStep = WizardStep.Ambient; SwitchTab(4); OpenAmbientExtractDialog(); },
-                    "提示：选择「到此为止」即结束向导，各页 AI 按钮仍可单独继续生成。");
+                    I18n.Get("Bio.WizardAdvanceTip"),
+                    fixText: I18n.Get("Bio.WizardStopHere"));
             return true;
         }
 
@@ -2349,7 +2355,7 @@ namespace ValleytalkReborn
 
         private void SaveAndClose()
         {
-            if (!_vm.TrySave(out string err)) { Game1.addHUDMessage(new HUDMessage($"保存失败: {err}", HUDMessage.error_type)); return; }
+            if (!_vm.TrySave(out string err)) { Game1.addHUDMessage(new HUDMessage(I18n.Bio.WithErr("Bio.SaveFailed", err), HUDMessage.error_type)); return; }
             Game1.playSound("achievement");
             ExitAndReturn();
         }
@@ -2374,7 +2380,7 @@ namespace ValleytalkReborn
             catch (Exception ex)
             {
                 Game1.playSound("cancel");
-                Game1.addHUDMessage(new HUDMessage($"导入失败: {ex.Message}", HUDMessage.error_type));
+                Game1.addHUDMessage(new HUDMessage(I18n.Bio.WithErr("Bio.ImportFailed", ex.Message), HUDMessage.error_type));
                 return;
             }
 
@@ -2382,12 +2388,12 @@ namespace ValleytalkReborn
             {
                 SyncAllControlsFromVm();
                 Game1.playSound("coin");
-                Game1.addHUDMessage(new HUDMessage("已从剪贴板导入人设（未保存，保存时按当前作用域落盘）", HUDMessage.newQuest_type));
+                Game1.addHUDMessage(new HUDMessage(I18n.Get("Bio.ImportDone"), HUDMessage.newQuest_type));
             }
             else
             {
                 Game1.playSound("cancel");
-                Game1.addHUDMessage(new HUDMessage($"导入失败: {err}", HUDMessage.error_type));
+                Game1.addHUDMessage(new HUDMessage(I18n.Bio.WithErr("Bio.ImportFailed", err), HUDMessage.error_type));
             }
         }
 
@@ -2400,7 +2406,7 @@ namespace ValleytalkReborn
             if (_vm.Bio == null)
             {
                 Game1.playSound("cancel");
-                Game1.addHUDMessage(new HUDMessage("导出失败: 无可导出数据", HUDMessage.error_type));
+                Game1.addHUDMessage(new HUDMessage(I18n.Get("Bio.ExportNoData"), HUDMessage.error_type));
                 return;
             }
 
@@ -2411,7 +2417,7 @@ namespace ValleytalkReborn
 
                 Game1.playSound("coin");
                 Game1.addHUDMessage(new HUDMessage(
-                    $"已将 {_vm.NpcName} 的人设 JSON 复制到剪贴板，可直接粘贴备份",
+                    I18n.Get("Bio.ExportDone").Replace("{{npc}}", _vm.NpcName),
                     HUDMessage.newQuest_type));
                 ModEntry.SMonitor?.Log(
                     $"[BioEditor] 已复制 {_vm.NpcName} 人设 JSON 到剪贴板（{json.Length} 字符）",
@@ -2420,7 +2426,7 @@ namespace ValleytalkReborn
             catch (Exception ex)
             {
                 Game1.playSound("cancel");
-                Game1.addHUDMessage(new HUDMessage($"导出失败: {ex.Message}", HUDMessage.error_type));
+                Game1.addHUDMessage(new HUDMessage(I18n.Bio.WithErr("Bio.ExportFailed", ex.Message), HUDMessage.error_type));
             }
         }
 
@@ -2446,12 +2452,12 @@ namespace ValleytalkReborn
             {
                 TextCopy.ClipboardService.SetText(box.Text ?? string.Empty);
                 Game1.playSound("coin");
-                Game1.addHUDMessage(new HUDMessage("已复制全部文本至剪贴板，可在外部精修后 Ctrl+V 贴回", HUDMessage.newQuest_type));
+                Game1.addHUDMessage(new HUDMessage(I18n.Get("Bio.CopyDone"), HUDMessage.newQuest_type));
             }
             catch (Exception ex)
             {
                 Game1.playSound("cancel");
-                Game1.addHUDMessage(new HUDMessage($"复制失败: {ex.Message}", HUDMessage.error_type));
+                Game1.addHUDMessage(new HUDMessage(I18n.Bio.WithErr("Bio.CopyFailed", ex.Message), HUDMessage.error_type));
             }
         }
 
@@ -2469,18 +2475,18 @@ namespace ValleytalkReborn
             }
             Game1.activeClickableMenu = new BioValveWarningDialog(
                 this,
-                "放弃未保存的修改",
-                "当前编辑内容尚未保存：",
+                I18n.Get("Bio.CancelConfirmTitle"),
+                I18n.Get("Bio.CancelConfirmSubtitle"),
                 new List<string>
                 {
-                    "退出将丢弃本编辑器内所有未保存的修改",
-                    "此前已保存的设定不受影响"
+                    I18n.Get("Bio.CancelConfirmBullet1"),
+                    I18n.Get("Bio.CancelConfirmBullet2")
                 },
-                "⚠ 放弃并退出",
+                I18n.Get("Bio.ConfirmDiscardExit"),
                 () => { Game1.activeClickableMenu = this; ExitAndReturn(); },
-                "继续编辑",
+                I18n.Get("Bio.KeepEditing"),
                 () => Game1.activeClickableMenu = this,
-                "提示：如想保留这些修改，请先点击「✔ 保存修改」再退出。");
+                I18n.Get("Bio.CancelConfirmTip"));
         }
 
         private void SyncAllControlsFromVm()
@@ -2527,26 +2533,26 @@ namespace ValleytalkReborn
 
         private void TryResetCurrentPage()
         {
-            string currentTabName = TabTitles[_activeTab];
+            string currentTabName = TabTitles()[_activeTab];
             Game1.activeClickableMenu = new BioValveWarningDialog(
                 this,
-                "恢复当前页原版基准",
-                $"即将把【{currentTabName}】恢复为原版默认基准：",
+                I18n.Get("Bio.ResetTabTitle"),
+                I18n.Get("Bio.ResetTabSubtitle").Replace("{{tab}}", currentTabName),
                 new List<string>
                 {
-                    "该页全部自定义内容将回退至原版默认",
-                    "未点击保存前不会写入磁盘，可随时再改回"
+                    I18n.Get("Bio.ResetTabBullet1"),
+                    I18n.Get("Bio.ResetTabBullet2")
                 },
-                "⚠ 确认恢复",
+                I18n.Get("Bio.ConfirmResetTab"),
                 () =>
                 {
                     Game1.activeClickableMenu = this;
                     _vm.ResetTabToBaseline(_activeTab);
                     SyncActiveTabControls();
                     Game1.playSound("coin");
-                    Game1.addHUDMessage(new HUDMessage($"已恢复【{currentTabName}】至原版基准", HUDMessage.newQuest_type));
+                    Game1.addHUDMessage(new HUDMessage(I18n.Get("Bio.ResetTabDone").Replace("{{tab}}", currentTabName), HUDMessage.newQuest_type));
                 },
-                "保持现状",
+                I18n.Get("Bio.KeepTab"),
                 () => Game1.activeClickableMenu = this);
         }
 
@@ -2600,34 +2606,34 @@ namespace ValleytalkReborn
             if (!_vm.HasOverlay && !_vm.IsDirty)
             {
                 Game1.playSound("cancel");
-                Game1.addHUDMessage(new HUDMessage("当前已经是原版基准，无需还原", HUDMessage.error_type));
+                Game1.addHUDMessage(new HUDMessage(I18n.Get("Bio.ResetNotNeeded"), HUDMessage.error_type));
                 return;
             }
 
             Game1.activeClickableMenu = new BioValveWarningDialog(
                 this,
-                "全部恢复原版",
-                $"即将重置 {_npcName} 的全部人设：",
+                I18n.Get("Bio.ResetAllTitle"),
+                I18n.Get("Bio.ResetAllSubtitle").Replace("{{npc}}", _npcName),
                 new List<string>
                 {
-                    "全部自定义人设（身份/言行/好感/关系/环境心智）将恢复原版",
-                    "对应的自定义数据文件将被删除，无法找回",
-                    "建议先点击右上角「导出」备份 JSON"
+                    I18n.Get("Bio.ResetAllBullet1"),
+                    I18n.Get("Bio.ResetAllBullet2"),
+                    I18n.Get("Bio.ResetAllBullet3")
                 },
-                "⚠ 确认重置",
+                I18n.Get("Bio.ConfirmResetAll"),
                 () =>
                 {
                     Game1.activeClickableMenu = this;
                     if (!_vm.TryReset(out string err))
                     {
-                        Game1.addHUDMessage(new HUDMessage($"还原失败: {err}", HUDMessage.error_type));
+                        Game1.addHUDMessage(new HUDMessage(I18n.Bio.WithErr("Bio.ResetFailed", err), HUDMessage.error_type));
                         return;
                     }
                     SyncAllControlsFromVm();
                     Game1.playSound("throw");
-                    Game1.addHUDMessage(new HUDMessage($"已重置 {_npcName} 全部数据至原版", HUDMessage.achievement_type));
+                    Game1.addHUDMessage(new HUDMessage(I18n.Get("Bio.ResetDone").Replace("{{npc}}", _npcName), HUDMessage.achievement_type));
                 },
-                "保持现有设定",
+                I18n.Get("Bio.KeepSettings"),
                 () => Game1.activeClickableMenu = this);
         }
 
