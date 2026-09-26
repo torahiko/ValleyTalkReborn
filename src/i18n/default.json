@@ -490,5 +490,20 @@
   "Profile.SaveButton": "Save",
   "WorldSettings.DateAmbience": "Date & Ambience",
   "WorldSettings.LocationFestival": "Locations & Festivals",
-  "WorldSettings.PoiTuning": "POI Tuning"
+  "WorldSettings.PoiTuning": "POI Tuning",
+  "WorldSettings.DateAmbienceDesc": "Date events & weather moods",
+  "WorldSettings.LocationFestivalDesc": "Locations & festivals",
+  "WorldSettings.PoiTuningDesc": "POI weights & pathfinding",
+  "WorldSettings.NavTitle": "Settings Modules",
+  "WorldSettings.SaveButton": "Save Settings",
+  "WorldSettings.ResetButton": "Reset Page",
+  "WorldSettings.SaveHudSuccess": "Saved {{count}} page(s)",
+  "WorldSettings.SaveHudPartialFail": "Some pages failed to save; check sub-page alerts",
+  "WorldSettings.SaveHudAllSaved": "All settings saved",
+  "WorldSettings.ResetDialogTitle": "Reset Page to Defaults",
+  "WorldSettings.ResetDialogSubtitle": "Reset [{{page}}] to default settings:",
+  "WorldSettings.ResetDialogBullet1": "All custom settings on this page will be cleared",
+  "WorldSettings.ResetDialogBullet2": "Cannot be undone; must reconfigure manually",
+  "WorldSettings.ResetDialogConfirm": "Confirm Reset",
+  "WorldSettings.ResetDialogCancel": "Keep Current"
 }

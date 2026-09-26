@@ -345,6 +345,33 @@ namespace ValleytalkReborn
             // T6c 地点与节日编撰子页
 
             // T7 兴趣点调谐子页
+
+            // Sub-page descriptions
+            public static string DateAmbienceDesc() => Lookup("WorldSettings.DateAmbienceDesc");
+            public static string LocationFestivalDesc() => Lookup("WorldSettings.LocationFestivalDesc");
+            public static string PoiTuningDesc() => Lookup("WorldSettings.PoiTuningDesc");
+
+            // Navigation title
+            public static string NavTitle() => Lookup("WorldSettings.NavTitle");
+
+            // Bottom buttons
+            public static string SaveButton() => Lookup("WorldSettings.SaveButton");
+            public static string ResetButton() => Lookup("WorldSettings.ResetButton");
+
+            // HUD messages
+            public static string SaveHudSuccess(int count) =>
+                Lookup("WorldSettings.SaveHudSuccess").Replace("{{count}}", count.ToString());
+            public static string SaveHudPartialFail() => Lookup("WorldSettings.SaveHudPartialFail");
+            public static string SaveHudAllSaved() => Lookup("WorldSettings.SaveHudAllSaved");
+
+            // Reset dialog
+            public static string ResetDialogTitle() => Lookup("WorldSettings.ResetDialogTitle");
+            public static string ResetDialogSubtitle(string pageName) =>
+                Lookup("WorldSettings.ResetDialogSubtitle").Replace("{{page}}", pageName ?? string.Empty);
+            public static string ResetDialogBullet1() => Lookup("WorldSettings.ResetDialogBullet1");
+            public static string ResetDialogBullet2() => Lookup("WorldSettings.ResetDialogBullet2");
+            public static string ResetDialogConfirm() => Lookup("WorldSettings.ResetDialogConfirm");
+            public static string ResetDialogCancel() => Lookup("WorldSettings.ResetDialogCancel");
         }
 
         // =========================================================================

@@ -129,13 +129,13 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
             }
 
             if (committed > 0)
-                Game1.addHUDMessage(new HUDMessage($"✔ 已保存 {committed} 页的待存修改", HUDMessage.newQuest_type));
+                Game1.addHUDMessage(new HUDMessage(I18n.WorldSettings.SaveHudSuccess(committed), HUDMessage.newQuest_type));
             else if (anyFailed)
-                Game1.addHUDMessage(new HUDMessage("⚠ 部分页面保存失败，请查看子页提示", HUDMessage.error_type));
+                Game1.addHUDMessage(new HUDMessage(I18n.WorldSettings.SaveHudPartialFail(), HUDMessage.error_type));
             else
             {
                 Game1.playSound("smallSelect");
-                Game1.addHUDMessage(new HUDMessage("所有配置均已保存", HUDMessage.newQuest_type));
+                Game1.addHUDMessage(new HUDMessage(I18n.WorldSettings.SaveHudAllSaved(), HUDMessage.newQuest_type));
             }
             return true;
         }
@@ -147,16 +147,16 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
             string label = GetSubPageLabel(_currentSubPage);
             Game1.activeClickableMenu = new BioValveWarningDialog(
                 Hub,
-                "恢复子页默认配置",
-                $"即将恢复【{label}】的默认配置：",
+                I18n.WorldSettings.ResetDialogTitle(),
+                I18n.WorldSettings.ResetDialogSubtitle(label),
                 new List<string>
                 {
-                    "该页全部自定义设置将被清除",
-                    "恢复后无法一键撤销，需重新逐项配置"
+                    I18n.WorldSettings.ResetDialogBullet1(),
+                    I18n.WorldSettings.ResetDialogBullet2()
                 },
-                "⚠ 确认恢复",
+                I18n.WorldSettings.ResetDialogConfirm(),
                 () => { Game1.activeClickableMenu = Hub; page?.ResetToBaseline(); },
-                "保持现状",
+                I18n.WorldSettings.ResetDialogCancel(),
                 () => { Game1.activeClickableMenu = Hub; });
             return true;
         }
@@ -214,15 +214,20 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
         DrawLeftColumn(b, mx, my);
         DrawRightColumn(b, mx, my);
 
-        DrawActionButton(b, _saveBtnRect, "✔ 保存世界配置", mx, my, isPrimary: true);
-        DrawActionButton(b, _resetBtnRect, "↺ 恢复本页默认", mx, my, isPrimary: false);
+        string saveBtnText = I18n.WorldSettings.SaveButton();
+        var (fittedSave, saveScale) = FitTextToWidth(saveBtnText, _saveBtnRect.Width - 16, CustomFontManager.SizeRegular, true);
+        DrawActionButton(b, _saveBtnRect, fittedSave, mx, my, isPrimary: true, scale: saveScale);
+
+        string resetBtnText = I18n.WorldSettings.ResetButton();
+        var (fittedReset, resetScale) = FitTextToWidth(resetBtnText, _resetBtnRect.Width - 16, CustomFontManager.SizeRegular, true);
+        DrawActionButton(b, _resetBtnRect, fittedReset, mx, my, isPrimary: false, scale: resetScale);
     }
 
     private void DrawLeftColumn(SpriteBatch b, int mx, int my)
     {
         DrawSectionCard(b, _leftColRect);
 
-        CustomFontManager.DrawString(b, "设定模块",
+        CustomFontManager.DrawString(b, I18n.WorldSettings.NavTitle(),
             new Vector2(_leftColRect.X + 12, _leftColRect.Y + 12),
             RulesTheme.TextPrimary, CustomFontManager.SizeRegular);
 
@@ -289,9 +294,12 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
             Color nameCol = isSelected ? RulesTheme.TextCharcoal
                          : (isHover ? RulesTheme.TextCharcoal : RulesTheme.TextDarkBrown);
 
-            CustomFontManager.DrawString(b, GetSubPageLabel(page),
+            string rawLabel = GetSubPageLabel(page);
+            int availableWidth = drawRect.Width - (avatarRect.Right + 8 - textLeft) - 28;
+            var (fittedLabel, scale) = FitTextToWidth(rawLabel, availableWidth, CustomFontManager.SizeRegular, false);
+            CustomFontManager.DrawString(b, fittedLabel,
                 new Vector2(textLeft, drawRect.Y + (drawRect.Height - 20) / 2f),
-                nameCol, CustomFontManager.SizeRegular);
+                nameCol, CustomFontManager.SizeRegular, scale: scale);
 
             if (isSelected)
             {
@@ -357,7 +365,7 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
     }
 
     private static void DrawActionButton(SpriteBatch b, Rectangle rect, string label, int mx, int my,
-        bool isPrimary = false, bool isEnabled = true)
+        bool isPrimary = false, bool isEnabled = true, float scale = 1f)
     {
         bool isHover = isEnabled && rect.Contains(mx, my);
         bool isPressed = isHover && Mouse.GetState().LeftButton == ButtonState.Pressed;
@@ -384,10 +392,10 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
         IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
             drawRect.X, drawRect.Y, drawRect.Width, drawRect.Height, borderCol, 2f, false);
 
-        var sz = CustomFontManager.MeasureStringBold(label, CustomFontManager.SizeRegular);
+        var sz = CustomFontManager.MeasureStringBold(label, CustomFontManager.SizeRegular) * scale;
         CustomFontManager.DrawStringBold(b, label,
             new Vector2(drawRect.X + (drawRect.Width - sz.X) / 2f, drawRect.Y + (drawRect.Height - sz.Y) / 2f),
-            isEnabled ? RulesTheme.TextCharcoal : RulesTheme.TextMuted, CustomFontManager.SizeRegular);
+            isEnabled ? RulesTheme.TextCharcoal : RulesTheme.TextMuted, CustomFontManager.SizeRegular, scale: scale);
     }
 
     private static string GetSubPageLabel(WorldSettingsSubPage page) => page switch
@@ -400,9 +408,51 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
 
     private static string GetSubPageDescription(WorldSettingsSubPage page) => page switch
     {
-        WorldSettingsSubPage.DateAmbience => "约会事件与天气氛围",
-        WorldSettingsSubPage.LocationFestival => "区域探索与节日庆典",
-        WorldSettingsSubPage.PoiTuning => "兴趣点权重与寻路偏好",
+        WorldSettingsSubPage.DateAmbience => I18n.WorldSettings.DateAmbienceDesc(),
+        WorldSettingsSubPage.LocationFestival => I18n.WorldSettings.LocationFestivalDesc(),
+        WorldSettingsSubPage.PoiTuning => I18n.WorldSettings.PoiTuningDesc(),
         _ => string.Empty
     };
+
+    /// <summary>
+    /// 自适应文本至指定宽度：先缩放（1.0 → 0.9 → 0.75），再截断至完整单词/字符。
+    /// </summary>
+    private static (string fittedText, float scale) FitTextToWidth(string text, float maxWidth, float fontSize, bool isBold)
+    {
+        if (string.IsNullOrEmpty(text)) return (string.Empty, 1f);
+
+        Func<string, float, Vector2> measureFunc = isBold
+            ? (t, fs) => CustomFontManager.MeasureStringBold(t, fs)
+            : (t, fs) => CustomFontManager.MeasureString(t, fs);
+
+        float[] scales = { 1f, 0.9f, 0.75f };
+        foreach (var scale in scales)
+        {
+            var measured = measureFunc(text, fontSize) * scale;
+            if (measured.X <= maxWidth) return (text, scale);
+        }
+
+        float finalScale = 0.75f;
+        int maxChars = (int)(text.Length * (maxWidth / (measureFunc(text, fontSize).X * finalScale)));
+        if (maxChars <= 0) return ("...", finalScale);
+
+        string truncated = text.Substring(0, Math.Min(maxChars, text.Length));
+
+        if (!I18n.IsChinese && truncated.Contains(" "))
+        {
+            int lastSpace = truncated.LastIndexOf(' ');
+            if (lastSpace > 0) truncated = truncated.Substring(0, lastSpace);
+        }
+
+        truncated += I18n.IsChinese ? "…" : "...";
+
+        int guard = 0;
+        while (truncated.Length > 1 && (measureFunc(truncated, fontSize) * finalScale).X > maxWidth)
+        {
+            truncated = truncated.Substring(0, truncated.Length - (I18n.IsChinese ? 2 : 4)) + (I18n.IsChinese ? "…" : "...");
+            if (++guard > 100) return ("...", finalScale);
+        }
+
+        return (truncated, finalScale);
+    }
 }
