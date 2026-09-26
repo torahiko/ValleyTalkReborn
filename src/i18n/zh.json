@@ -610,5 +610,8 @@
   "WorldSettings.LocationFestival.DeleteFestivalDialogConfirm": "确认删除",
   "WorldSettings.LocationFestival.DeleteFestivalDialogCancel": "保留节日",
   "WorldSettings.LocationFestival.NewFestivalDefaultName": "新自创纪念日",
-  "WorldSettings.LocationFestival.NewFestivalDefaultDesc": "小镇全体居民共同庆祝这一天。"
+  "WorldSettings.LocationFestival.NewFestivalDefaultDesc": "小镇全体居民共同庆祝这一天。",
+  "Profile.NpcCustomBadge": "自定义",
+  "Profile.NpcResetTooltip": "还原{{npc}}为默认人设",
+  "Profile.NpcPaginationInfo": "第{{current}} / {{total}}页 (共{{count}}人)"
 }
