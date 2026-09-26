@@ -929,6 +929,77 @@ namespace ValleytalkReborn
         }
 
         // ─────────────────────────────────────────────────────────────
+        //  NPC 提前到场等候调度
+        // ─────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// 将约会 NPC 调度至约定地点的 WaitTile 等候。
+        /// 同地图优先寻路，跨地图或寻路失败时降级安全 Warp。
+        /// </summary>
+        private bool TryScheduleNpcWaiting(NPC npc, DateLocationInfo location)
+        {
+            if (npc == null || location == null) return false;
+
+            // 1. 地图加载检测
+            var targetLocation = Game1.getLocationFromName(location.TargetMap);
+            if (targetLocation == null)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[DateManager] 目标地图 '{location.TargetMap}' 尚未加载，等待重试。",
+                    LogLevel.Trace);
+                return false;
+            }
+
+            // 2. WaitTile 兜底校验
+            if (location.WaitTile == Vector2.Zero)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[DateManager] 地点 '{location.LocationId}' 未配置有效 WaitTile，NPC 保持原地就位。",
+                    LogLevel.Warn);
+                npc.followSchedule = false;
+                npc.Halt();
+                return true;
+            }
+
+            // 3. 到场判定：同地图且距离 <= 1.5 格
+            if (npc.currentLocation == targetLocation)
+            {
+                if (Vector2.Distance(npc.Tile, location.WaitTile) <= 1.5f)
+                {
+                    npc.faceDirection(location.DefaultFacingDirection);
+                    npc.Halt();
+                    npc.followSchedule = false;
+                    return true;
+                }
+
+                // 同地图尝试 PathFindController 寻路
+                var targetPoint = new xTile.Dimensions.Location((int)location.WaitTile.X, (int)location.WaitTile.Y);
+                var pathController = new PathFindController(
+                    npc,
+                    targetLocation,
+                    new Point(targetPoint.X, targetPoint.Y),
+                    location.DefaultFacingDirection);
+
+                if (pathController.pathToEndPoint != null && pathController.pathToEndPoint.Count > 0)
+                {
+                    npc.controller = pathController;
+                    npc.followSchedule = false;
+                    ModEntry.SMonitor?.Log($"[DateManager] {npc.Name} 开始在同地图内走向 WaitTile ({location.WaitTile.X}, {location.WaitTile.Y})。", LogLevel.Debug);
+                    return true;
+                }
+            }
+
+            // 4. 跨地图或寻路失败：规范使用 Game1.warpCharacter 瞬移就位
+            ModEntry.SMonitor?.Log($"[DateManager] 跨地图或寻路无路径，将 {npc.Name} 安全传送至 {location.TargetMap} ({location.WaitTile.X}, {location.WaitTile.Y}) 等候。", LogLevel.Debug);
+            Game1.warpCharacter(npc, location.TargetMap, location.WaitTile);
+            npc.faceDirection(location.DefaultFacingDirection);
+            npc.Halt();
+            npc.controller = null;
+            npc.followSchedule = false;
+            return true;
+        }
+
+        // ─────────────────────────────────────────────────────────────
         //  辅助工具
         // ─────────────────────────────────────────────────────────────
 
@@ -1025,6 +1096,16 @@ namespace ValleytalkReborn
             // ── Pending 阶段（等待玩家到达）──────────────────────────
             if (Phase == DatePhase.Pending && CurrentDateMode == DateMode.Scheduled)
             {
+                // 1. 17:30 - 18:00 提前调度入场
+                if (e.NewTime >= 1730 && e.NewTime < EarliestDateTriggerTime)
+                {
+                    var npc = Game1.getCharacterFromName(ActiveDateNpcName);
+                    if (npc != null && DateLocationRegistry.Locations.TryGetValue(ActiveDateLocation, out var locInfo))
+                    {
+                        TryScheduleNpcWaiting(npc, locInfo);
+                    }
+                }
+
                 if (e.NewTime == SlightlyLateCutoff)
                 {
                     string npcDisplayName =
@@ -1236,6 +1317,9 @@ namespace ValleytalkReborn
 
         private void ResetDateState()
         {
+            // ★ 在清空字段前快照当前约会 NPC 姓名，供末尾日程恢复保护使用。
+            string npcToRestoreSchedule = ActiveDateNpcName;
+
             InvalidateDateSession();
             Phase = DatePhase.None;
             ActiveDateNpcName = "";
@@ -1257,6 +1341,16 @@ namespace ValleytalkReborn
             // 清空队列中残留的回调，防止跨天或跨存档执行
             while (_mainThreadQueue.TryDequeue(out _))
             {
+            }
+
+            // 末尾：对当前待约 NPC 的日程进行恢复保护（仅当日程已被禁用时恢复）
+            if (!string.IsNullOrEmpty(npcToRestoreSchedule))
+            {
+                var npc = Game1.getCharacterFromName(npcToRestoreSchedule);
+                if (npc != null && !npc.followSchedule)
+                {
+                    MovementManager.Instance.TryRestoreSchedule(npc);
+                }
             }
         }
 
