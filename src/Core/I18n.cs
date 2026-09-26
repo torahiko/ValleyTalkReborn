@@ -603,7 +603,6 @@ namespace ValleytalkReborn
 
             // Archive Box
             public static string ArchiveTitle(string npcName) => FormatNpc(Lookup("Memory.ArchiveTitle"), npcName);
-            public static string ArchiveEmpty() => Lookup("Memory.ArchiveEmpty");
 
             public static string ArchiveCount(int count, int max)
                 => Lookup("Memory.ArchiveCount").Replace("{{count}}", count.ToString())
@@ -612,28 +611,8 @@ namespace ValleytalkReborn
             public static string ArchiveRestoreButton() => Lookup("Memory.ArchiveRestoreButton");
             public static string ArchiveDeleteButton() => Lookup("Memory.ArchiveDeleteButton");
 
-            public static string ArchiveDeleteConfirmTitle() => Lookup("Memory.ArchiveDeleteConfirmTitle");
-            public static string ArchiveDeleteConfirmSubtitle() => Lookup("Memory.ArchiveDeleteConfirmSubtitle");
-
-            public static string ArchiveRestoreDuplicate() => Lookup("Memory.ArchiveRestoreDuplicate");
-            public static string ArchiveRestoreNotFound() => Lookup("Memory.ArchiveRestoreNotFound");
-
             public static string ArchiveRuleHint(int max) =>
                 Lookup("Memory.ArchiveRuleHint").Replace("{{max}}", max.ToString());
-
-            // ── 时间线归档箱（FEAT-AUTO-T6 解耦：与 Manual/Auto 归档箱文案不共用）──
-            public static string ArchiveClearButton() => Lookup("Memory.ArchiveClearButton");
-
-            // 新增：实体按钮悬停提示文案（带回退保护）
-
-            public static string ArchiveClearConfirmTitle() => Lookup("Memory.ArchiveClearConfirmTitle");
-
-            public static string ArchiveClearConfirmSubtitle(int count) =>
-                Lookup("Memory.ArchiveClearConfirmSubtitle").Replace("{{count}}", count.ToString());
-
-            public static string ArchiveClearConfirmWarning() => Lookup("Memory.ArchiveClearConfirmWarning");
-
-            public static string ArchiveEndangeredTag() => Lookup("Memory.ArchiveEndangeredTag");
 
             // 2-Column Distill Menu (MemoryDistillMenu.cs)
             public static string DistillFailed() => Lookup("Memory.DistillFailed");
