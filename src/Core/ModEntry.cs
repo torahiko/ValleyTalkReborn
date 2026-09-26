@@ -304,6 +304,12 @@ namespace ValleytalkReborn
             MovementManager.Instance.Initialize(helper);
             RelationshipMilestoneManager.Instance.Initialize(Helper, Monitor);
 
+            // TIE-001: 镇事件引擎（Town Incident 契约与持久化状态）。
+            // 必须位于下方 GameLoop 事件订阅之前：引擎自身的 SaveLoaded 处理器需先于
+            // OnSaveLoaded 内的重新装配触发，配合 Initialize 的 !_isSaveLoaded 补读守卫，
+            // 保证每次读档只执行一次 SaveData 读取。
+            TownIncidentEngine.Initialize(helper, Monitor);
+
             // Subscribe to game lifecycle events（DialogueCoordinator 将订阅 GameLoop 事件）
             helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
             helper.Events.Display.MenuChanged += OnMenuChanged;
@@ -1260,6 +1266,16 @@ namespace ValleytalkReborn
                     Log.Error("[ValleyTalkReborn] Error cleaning RelationshipMilestoneManager: " + ex.Message);
                 }
 
+                // ★ 清理镇事件引擎（TIE-001：注销事件订阅并重置内存态）
+                try
+                {
+                    TownIncidentEngine.Cleanup();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[ValleyTalkReborn] Error cleaning TownIncidentEngine: {ex.Message}");
+                }
+
                 // ★ 清理 DateManager（取消事件订阅并重置状态）
                 try
                 {
@@ -1468,6 +1484,12 @@ namespace ValleytalkReborn
             {
                 _cancelButtonPlugin = new CancelButtonPlugin(Helper, Monitor);
             }
+
+            // [Save-scope rebuild] TIE-001: TownIncidentEngine is unsubscribed by
+            // Cleanup on title return; re-armed here. Initialize catches up the
+            // SaveLoaded read itself, because a handler subscribed mid-raise
+            // never sees the raise that is currently in progress.
+            TownIncidentEngine.Initialize(Helper, Monitor);
 
             DialogueHistoryManager.Instance.Load();
             RecentConversationTracker.Clear();
