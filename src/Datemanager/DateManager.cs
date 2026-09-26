@@ -485,6 +485,35 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
+        /// 外部交互拦截调用接口：玩家右键点击处于等候状态的约会 NPC 时触发约会开场。
+        /// 校验阶段 / 时间窗口 / 地点一致后，原地无黑屏开启 StagedActive 并播放问候。
+        /// </summary>
+        public bool TryStartDateOnInteraction(NPC npc)
+        {
+            if (!Context.IsWorldReady || npc == null) return false;
+            if (Phase != DatePhase.Pending || CurrentDateMode != DateMode.Scheduled) return false;
+            if (!string.Equals(npc.Name, ActiveDateNpcName, StringComparison.OrdinalIgnoreCase)) return false;
+
+            // 检查时间窗口
+            if (Game1.timeOfDay < EarliestDateTriggerTime || Game1.timeOfDay >= ScheduledDateTriggerCutoff)
+                return false;
+
+            // 检查地点是否一致
+            string currentMap = Game1.player.currentLocation?.Name ?? "";
+            if (!DateLocationRegistry.Locations.TryGetValue(ActiveDateLocation, out var locInfo)
+                || !string.Equals(currentMap, locInfo.TargetMap, StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            int durationMinutes = DateRules.GetDateDurationMinutes(
+                Game1.timeOfDay, OnTimeCutoff, SlightlyLateCutoff, ScheduledDurationMinutes);
+            int rawEnd = Utility.ModifyTime(Game1.timeOfDay, durationMinutes);
+            int scheduledEndTime = Math.Min(rawEnd, HardEndTime);
+
+            StartScheduledDate(npc, scheduledEndTime);
+            return true;
+        }
+
+        /// <summary>
         /// IDateStateProvider 接口实现。
         /// Phase >= Active 时视为"已消费"，外部调用通常不需要这个方法了，
         /// 但保留以维持接口兼容。
@@ -635,53 +664,36 @@ namespace ValleytalkReborn
             ModEntry.SMonitor?.Log($"[DateManager] Immediate follow active for {npc.Name}.", LogLevel.Info);
         }
 
-        private void StartScheduledDateWithFade(NPC npc, int endTime)
+        private void StartScheduledDate(NPC npc, int endTime)
         {
-            if (Phase == DatePhase.StagedActive) return;
+            if (Phase != DatePhase.Pending) return;
 
             LatenessLevel lateness = DateRules.GetLatenessLevel(
                 Game1.timeOfDay, EarliestDateTriggerTime, OnTimeCutoff, SlightlyLateCutoff, HardEndTime);
 
-            // 🔧 拦截异常到达时间：TooEarly（<18:00）/ MissedWindow（>=22:00）均不应开启约会，
-            // 防止时间异常引发约会死锁。弹出红字提示并重置状态。
             if (lateness == LatenessLevel.TooEarly || lateness == LatenessLevel.MissedWindow)
             {
-                ModEntry.SMonitor?.Log($"[DateManager] StartScheduledDateWithFade 被拦截：异常到达时间 {Game1.timeOfDay}（{lateness}）。", LogLevel.Warn);
-                Game1.showRedMessage(IsChineseLanguage
-                    ? "现在还不是赴约的时间。"
-                    : "It's not time for the date yet.");
-                ResetDateState();
+                Game1.showRedMessage(IsChineseLanguage ? "现在还不是赴约的时间。" : "It's not time for the date yet.");
                 return;
             }
 
-            Phase = DatePhase.StagedActive;
-            DynamicEndTime = endTime;
+            if (!TryTransitionPhase(DatePhase.Pending, DatePhase.StagedActive))
+                return;
 
+            DynamicEndTime = endTime;
             CurrentSession = new DateSessionData(npc.Name, ActiveDateLocation, Game1.timeOfDay)
             {
                 Lateness = lateness
             };
 
-            string npcNameSnapshot = npc.Name;
-            string locationSnapshot = ActiveDateLocation;
-            int endTimeSnapshot = endTime;
+            npc.Halt();
+            npc.controller = null;
+            npc.temporaryController = null;
+            npc.facePlayer(Game1.player);
+            Game1.player.faceGeneralDirection(npc.getStandingPosition());
 
             int currentSessionVersion = StartNewDateGeneration();
-            Game1.globalFadeToBlack(() =>
-            {
-                npc.controller = null;
-                npc.temporaryController = null;
-                npc.doingEndOfRouteAnimation.Value = false;
-                npc.Schedule?.Clear();
-                npc.CurrentDialogue.Clear();
-
-                Vector2 spawnTile = FindSafeTileNearPlayer(npc);
-                Game1.warpCharacter(npc, Game1.player.currentLocation, spawnTile);
-                npc.facePlayer(Game1.player);
-                Game1.player.faceGeneralDirection(npc.getStandingPosition());
-
-                _ = FetchAndQueueGreetingAsync(npcNameSnapshot, locationSnapshot, lateness, endTimeSnapshot, currentSessionVersion);
-            });
+            _ = FetchAndQueueGreetingAsync(npc.Name, ActiveDateLocation, lateness, endTime, currentSessionVersion);
         }
 
         /// <summary>独立的异步问候语获取方法。</summary>
@@ -713,7 +725,6 @@ namespace ValleytalkReborn
                 if (targetNpc == null) return;
 
                 targetNpc.doEmote(32);
-                MovementManager.Instance.StartDateFollow(targetNpc, endTime);
                 targetNpc.CurrentDialogue.Clear();
                 targetNpc.CurrentDialogue.Push(new Dialogue(targetNpc, null, greeting));
                 Game1.drawDialogue(targetNpc);
@@ -1068,22 +1079,6 @@ namespace ValleytalkReborn
                 }
             }
 
-            if (!e.IsMultipleOf(30)) return;
-
-            var world = CaptureWorldSnapshot();
-            if (!DateRules.ShouldTriggerDate(world, ActiveDateLocation,
-                    EarliestDateTriggerTime, ScheduledDateTriggerCutoff))
-                return;
-
-            NPC npc = Game1.getCharacterFromName(ActiveDateNpcName);
-            if (npc == null) return;
-
-            int durationMinutes = DateRules.GetDateDurationMinutes(
-                Game1.timeOfDay, OnTimeCutoff, SlightlyLateCutoff, ScheduledDurationMinutes);
-
-            int rawEnd = Utility.ModifyTime(Game1.timeOfDay, durationMinutes);
-            int scheduledEndTime = Math.Min(rawEnd, HardEndTime);
-            StartScheduledDateWithFade(npc, scheduledEndTime);
         }
 
         private void OnTimeChanged(object sender, TimeChangedEventArgs e)
