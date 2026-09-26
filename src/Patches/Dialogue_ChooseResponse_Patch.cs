@@ -132,6 +132,12 @@ namespace ValleytalkReborn
             // 用户主动选择选项，清零冷却防止请求被静默丢弃
             AsyncBuilder.Instance.ClearCooldown();
 
+            // TIE-005：观察性钩子——玩家选项文本交由镇事件引擎按关键词组记录运行时标志。
+            // 引擎内部自行处理参与者归属、空文本与多人排除；无论 AsyncBuilder 是否接受
+            // 后续请求，玩家的选择本身已经发生，故先于请求调用。
+            if (!string.IsNullOrWhiteSpace(farmerResponse))
+                TownIncidentEngine.RecordChoice(__instance.speaker.Name, farmerResponse);
+
             var updatedHistory = new List<ConversationElement>(previous)
             {
                 new ConversationElement(farmerResponse, true)
