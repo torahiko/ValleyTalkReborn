@@ -7,23 +7,22 @@ namespace ValleytalkReborn
     /// <summary>
     /// AI 润色提示词工厂：集中产出送往 LLM 的 (system, user) 提示词对。
     /// 菜单层禁止直接硬编码业务文案，一律经由此处组装外发。
+    /// 模板文本已外移至 BioPromptTemplates；本类保留数据提取与解析逻辑。
     /// </summary>
     internal static class BioPromptBuilder
     {
         private const int AnchorCap = 1500;
 
-        /// <summary>
-        /// 角色设计宪法：所有内容型 Builder 共用，注入 system 提示词。
-        /// token 成本约 250/请求，四模块+起号共用一份文案。
-        /// </summary>
-        private static string GetDesignConstitution()
-        {
-            return "【角色设计宪法（所有自由文本字段一体适用）】\n" +
-                "1. 绝对正向描写：不写角色“不做什么”，写角色“正在把注意力放在什么具体事物上、正在做什么”。例：“避免眼神接触”→“眼神对视两秒后移开”；“从不考虑婚后家务”→“全神贯注于眼前的每日重体力活”。\n" +
-                "2. 摄影机原则：禁止抽象文学比喻与主观心理独白（如“内心的苦涩如冷水”）；所有动作与神态必须是摄影机能物理记录的细节（指节泛白、拇指摩挲杯沿、喉结滚动、肩膀紧绷、低头清嗓子、鞋底碾过门槛）。\n" +
-                "3. 关注词条纪律：每条 2~4 个词的短语（推荐“动名词+名词”，如“擦拭皮球”）；严禁绑定固定时段（下午/清晨——雨夜会穿帮）；严禁绑定固定静态姿势（坐在栅栏上——与走动状态冲突）。\n" +
-                "4. 字段值纯净：任何字段值内不得出现 [VOICE]、[STAGE] 之类的中括号标题。";
-        }
+        // ── 解析器双语键常量（E-3）──
+        private static readonly string[] KeyHearts = { "心数:", "Hearts:" };
+        private static readonly string[] KeyMarried = { "已婚:", "Married:" };
+        private static readonly string[] KeyAttitude = { "态度:", "Attitude:" };
+        private static readonly string[] KeyMindset = { "心智:", "Mindset:" };
+        private static readonly string[] KeyFocus = { "关注:", "Focus:" };
+        private static readonly string[] KeyVoice = { "口吻:", "Voice:" };
+        private static readonly string[] KeyHabits = { "口头禅:", "Habits:" };
+        private static readonly string[] KeyLenses = { "观察透镜:", "Lenses:" };
+        private static readonly string[] KeyPreocc = { "关注词条:", "Focus:" };
 
         /// <summary>
         /// 剥行首的中括号字段标头（如 "[VOICE] xxx" → "xxx"）；仅剥行首、不碰正文；null/空安全。
@@ -37,38 +36,22 @@ namespace ValleytalkReborn
         {
             string bio = vm?.GetBiography() ?? string.Empty;
             if (string.IsNullOrWhiteSpace(bio))
-                return $"角色：{npcName}（身份档案暂未填写，请仅依据言行与对白模块推断语气，不要臆造身份）。";
+                return BioPromptTemplates.AnchorMissingProfile(npcName);
 
             string trimmed = bio.Length > AnchorCap ? bio.Substring(0, AnchorCap) + "…" : bio;
             return $"角色：{npcName}\n核心身份档案：\n{trimmed}";
         }
 
+        /// <summary>供 Templates 内部调用的 anchor 工厂（无 vm 上下文，返回双语 fallback）。</summary>
+        internal static string GetCorePersonaAnchorPublic(string npcName) =>
+            BioPromptTemplates.AnchorMissingProfile(npcName);
+
         public static (string System, string User) BuildBehaviorRulesPrompt(
             BioEditorViewModel vm, string npcName, string currentText, string demand)
         {
             string anchor = GetCorePersonaAnchor(vm, npcName);
-            string constitution = GetDesignConstitution();
-            string system =
-                "你是一名专业的《星露谷物语》NPC 人设编辑助手，正在润色角色的【言行举止 (BehavioralRules)】模块。\n" +
-                "润色时必须以该角色的核心身份为锚点，不得偏离人格设定：\n" +
-                $"{anchor}\n" +
-                $"{constitution}\n" +
-                "硬性要求：\n" +
-                $"1. 润色对象为 {npcName} 的言行规则（语气、节奏、口头习惯、即时反应），保持条目化、可执行。\n" +
-                "2. 保留 [VOICE] / [SPEECH PATTERNS] / [MANNERISMS] / [IMMEDIATE REFLEXES] / [CONTEXT OVERRIDE] 等既有分节结构。\n" +
-                "   [MANNERISMS] 必须是摄影机可拍摄的标志性肢体微动作（抹汗、摸后颈、手指敲门框）；\n" +
-                "   [IMMEDIATE REFLEXES] 写“收到难懂文本/被挑衅/被提起痛处”时的第一瞬间肢体反应；\n" +
-                "   [CONTEXT OVERRIDE] 写室内外体态与音量反差。\n" +
-                "3. 严格遵循玩家给出的调整方向，不得自行扩展与角色身份冲突的内容。\n" +
-                "4. 严禁寒暄、解释、标题，只输出言行规则纯文本。\n" +
-                "5. 严禁 Markdown 代码围栏（```）、严禁 JSON 注释（// 或 /* */）。";
-
-            string user =
-                $"【当前言行规则】\n{currentText}\n\n" +
-                $"【玩家调整方向】\n{demand}\n\n" +
-                "请直接输出优化后的言行规则全文，保留分节标记。";
-
-            return (system, user);
+            string constitution = BioPromptTemplates.GetDesignConstitution();
+            return BioPromptTemplates.BehaviorRules(anchor, constitution, npcName, currentText, demand);
         }
 
         public static (string System, string User) BuildDialogueExamplesPrompt(
@@ -76,28 +59,9 @@ namespace ValleytalkReborn
         {
             string anchor = GetCorePersonaAnchor(vm, npcName);
             string tone = vm != null
-                ? (vm.GetTraitDescriptionOrNull("BehavioralRules") ?? "(以原版标准语气为准)")
-                : "(以原版标准语气为准)";
-            string system =
-                "你是一名专业的《星露谷物语》NPC 人设编辑助手，正在润色角色的【对白范例 (DialogueExamples)】模块。\n" +
-                "润色时必须以该角色的核心身份为锚点，不得偏离人格设定：\n" +
-                $"{anchor}\n" +
-                "关联言行基调（仅供语气参照，非润色对象）：\n" +
-                $"{tone}\n" +
-                "硬性要求：\n" +
-                $"1. 为 {npcName} 生成 3 条对白范例，分别对应：日常问候、闲聊、情绪低落。\n" +
-                "2. 对白必须体现角色性格与当下关系亲疏，语气与言行规则一致。\n" +
-                "3. 表情符使用原版五码：$h 开心 / $s 难过 / $u 独特 / $l 爱意 / $a 生气，句尾自然嵌入。\n" +
-                "4. 每条对白末尾提供 2~3 行以 % 开头的玩家可选回答；翻页用 #$b#。\n" +
-                "5. 严禁寒暄、解释、标题，只输出对白范例纯文本。\n" +
-                "6. 严禁 Markdown 代码围栏（```）、严禁 JSON 注释（// 或 /* */）。";
-
-            string user =
-                $"【当前对白范例】\n{currentText}\n\n" +
-                $"【玩家调整方向】\n{demand}\n\n" +
-                "请直接输出 3 条优化后的对白范例（日常问候 / 闲聊 / 情绪低落），保留表情符与换行分段。";
-
-            return (system, user);
+                ? (vm.GetTraitDescriptionOrNull("BehavioralRules") ?? BioPromptTemplates.ToneFallback())
+                : BioPromptTemplates.ToneFallback();
+            return BioPromptTemplates.DialogueExamples(anchor, tone, npcName, currentText, demand);
         }
 
         public static (string System, string User) BuildStageLadderPrompt(
@@ -109,33 +73,8 @@ namespace ValleytalkReborn
             string marriedNote = isDatable
                 ? "末档为已婚档：心数固定填 14，已婚: 是（推演婚后语气转变）；其余档心数必须为偶数。"
                 : "所有档位心数必须为偶数。";
-            string constitution = GetDesignConstitution();
-
-            string system =
-                "你是一名专业的《星露谷物语》NPC 人设编辑助手，正在为角色推演完整的【好感阶梯（ProgressStates）】。\n" +
-                "推演时必须以该角色的核心身份为锚点，让各档位的心态、关注点随好感递进自然演变：\n" +
-                $"{anchor}\n" +
-                $"{constitution}\n" +
-                "硬性要求：\n" +
-                $"1. 共输出 {count} 档，覆盖以下门槛（心数必须为偶数）：{ladder}。\n" +
-                $"2. {marriedNote}\n" +
-                "3. 态度段写面对玩家时镜头可拍的体态与站位（低心：对视两秒移开、保持安全距离；高心：肩膀放松、主动拉近站姿）；心智段写该阶段纯文本心态与注意力流向，禁止任何中括号标头。\n" +
-                "4. 关注池列 3~5 个该阶段优先提及的事物/话题，用中文顿号分隔；若无特别关注点可写\"无\"。\n" +
-                "5. 严禁生成 Joja 超市/巴士修复/具体配偶门禁等字段（这些由人工单独配置）。\n" +
-                "6. 严禁 Markdown 代码围栏（```）、严禁 JSON 注释（// 或 /* */）、严禁 JSON 对象与多余字段。\n" +
-                "7. 严格使用下列固定行式模板输出，每档一段：\n" +
-                "### 档位 1 | 心数: 0 | 已婚: 否\n" +
-                "态度:\n" +
-                "（自由文本，可多行）\n" +
-                "心智:\n" +
-                "（自由文本，可多行）\n" +
-                "关注: 词条A、词条B、词条C";
-
-            string user =
-                $"【整体心境与转变倾向】\n{demand}\n\n" +
-                $"请严格按上述模板输出 {count} 档，逐档递增心数，不要添加模板之外的字段。";
-
-            return (system, user);
+            string constitution = BioPromptTemplates.GetDesignConstitution();
+            return BioPromptTemplates.StageLadder(anchor, constitution, npcName, count, ladder, marriedNote, demand);
         }
 
         public static (string System, string User) BuildAmbientExtractionPrompt(
@@ -143,36 +82,9 @@ namespace ValleytalkReborn
         {
             string anchor = GetCorePersonaAnchor(vm, npcName);
             string behaviorRef = vm != null
-                ? (vm.GetTraitDescriptionOrNull("BehavioralRules") ?? "(以原版言行规则为准)")
-                : "(以原版言行规则为准)";
-            string constitution = GetDesignConstitution();
-            string system =
-                "你是一名专业的《星露谷物语》NPC 人设编辑助手，正在为角色一次性萃取完整的【环境心智（Ambient Bark）】。\n" +
-                "萃取时必须以该角色的核心身份与言行规则为锚点，让口吻、口头禅、观察视角协调一致：\n" +
-                $"{anchor}\n" +
-                "既有言行规则（语气与表达习惯参照，萃取结果应与之匹配）：\n" +
-                $"{behaviorRef}\n" +
-                $"{constitution}\n" +
-                "硬性要求：\n" +
-                "1. 口吻段（常驻发声共鸣/身体原型/社会本能）用 1-2 句概括基本语调与情绪底色，值内严禁 [VOICE] 等标题。\n" +
-                "2. 口头禅段（句式节奏/常用起手式/日常语调）给出若干该角色常用的口头禅、叹气声、起手式（自由文本，可多行）。\n" +
-                "3. 观察透镜段（仅独处 Bark 生效的感官透镜）给出 4 个领域（例：铁匠注意锈蚀金属与矿石硬度），每条以 \"- \" 起行。\n" +
-                "4. 关注词条列 8-10 个全局保底关注池（铁律 3 纪律），用中文顿号分隔。\n" +
-                "5. 严禁 Markdown 代码围栏（```）、严禁 JSON 注释（// 或 /* */）、严禁 JSON 对象与多余字段。\n" +
-                "6. 严格使用下列固定行式模板输出，字段顺序不可调换：\n" +
-                "口吻:\n" +
-                "（1-2 句概括）\n" +
-                "口头禅:\n" +
-                "（短句若干，可多行）\n" +
-                "观察透镜:\n" +
-                "（4 条，每条以 \"- \" 起行）\n" +
-                "关注词条: 词条1、词条2、…";
-
-            string user =
-                $"【整体语气与观察倾向】\n{demand}\n\n" +
-                "请严格按上述模板一次性输出四个字段，不要添加模板之外的字段。";
-
-            return (system, user);
+                ? (vm.GetTraitDescriptionOrNull("BehavioralRules") ?? BioPromptTemplates.BehaviorFallback())
+                : BioPromptTemplates.BehaviorFallback();
+            return BioPromptTemplates.AmbientExtraction(anchor, behaviorRef, npcName, demand);
         }
 
         public static (string System, string User) BuildInitialBiographyPrompt(
@@ -185,27 +97,12 @@ namespace ValleytalkReborn
             string contextRequirement = string.IsNullOrEmpty(rawGameContext)
                 ? "②无原生锚点，依据合理推断创作；"
                 : "②专属最爱物品等原生锚点可作为性格意象隐喻自然融入，不得生硬罗列；";
-            string constitution = GetDesignConstitution();
-
-            string system =
-                "你是一名专业的《星露谷物语》NPC 身份档案创作助手，正在为该 NPC 全新创作完整身份档案。\n" +
-                "创作时必须基于已知事实，描写镜头可见的物理体态、动作、行为与具体事实：\n" +
-                $"{contextSection}" +
-                "硬性要求：\n" +
-                "①输出必须包含 [IDENTITY] 与 [PSYCHOLOGICAL CONFLICTS] 标准分节（结构对齐一期插入模板）。\n" +
-                $"{contextRequirement}" +
-                $"{constitution}\n" +
-                "③严禁寒暄、解释、Markdown 围栏（```）、JSON。";
 
             string demandText = string.IsNullOrWhiteSpace(userDemand)
-                ? "无特殊设想，请依据原生锚点自由创作"
+                ? BioPromptTemplates.NoDemandFallback()
                 : userDemand;
 
-            string user =
-                $"【玩家设想】{demandText}\n\n" +
-                "请直接输出完整身份档案。";
-
-            return (system, user);
+            return BioPromptTemplates.InitialBiography(npcName, rawGameContext, contextRequirement, userDemand, demandText);
         }
 
         /// <summary>
@@ -215,21 +112,10 @@ namespace ValleytalkReborn
         public static (string System, string User) BuildRefinementPrompt(
             string baseSystemPrompt, string currentDraft, string followUpDemand)
         {
-            string refinementRules =
-                "【追问与二次迭代规则】\n" +
-                "①本轮为基于上一轮草稿的二次迭代修改，以上一轮草稿为基准底稿定向修改。\n" +
-                "②保持既有结构标记与不需修改的段落高度稳定，仅按玩家新指令优化指定部分。\n" +
-                "③严禁寒暄、解释、前导语，直接输出修改后的完整纯文本。";
-
-            string system = baseSystemPrompt + "\n\n" + refinementRules;
-
-            string user =
-                $"【上一轮生成的草稿内容】\n{currentDraft}\n\n" +
-                $"【玩家本次追问与优化要求】\n{followUpDemand}\n\n" +
-                "请结合上述要求，输出修改与优化后的完整内容。";
-
-            return (system, user);
+            return BioPromptTemplates.Refinement(baseSystemPrompt, currentDraft, followUpDemand);
         }
+
+        // ── 解析器（E-3 双语别名扩展）──
 
         /// <summary>
         /// 解析 AI 输出的行式环境心智文本。透镜为空，或口吻与口头禅同时为空 → false。
@@ -244,11 +130,11 @@ namespace ValleytalkReborn
             if (string.IsNullOrWhiteSpace(text))
                 return false;
 
-            string[] ambientEnd = WithFullWidthVariants(new[] { "\n口头禅:", "\n观察透镜:", "\n关注词条:" });
-            voice = StripLeadingFieldHeader(ReadSection(text, "口吻:", ambientEnd) ?? "");
-            habits = StripLeadingFieldHeader(ReadSection(text, "口头禅:", ambientEnd) ?? "");
-            lenses = StripLeadingFieldHeader(ReadSection(text, "观察透镜:", ambientEnd) ?? "");
-            preoccupations = ReadOccupations(text, "关注词条:");
+            string[] ambientEnd = EndMarkers(KeyHabits, KeyLenses, KeyPreocc);
+            voice = StripLeadingFieldHeader(ReadSection(text, KeyVoice, ambientEnd) ?? "");
+            habits = StripLeadingFieldHeader(ReadSection(text, KeyHabits, ambientEnd) ?? "");
+            lenses = StripLeadingFieldHeader(ReadSection(text, KeyLenses, ambientEnd) ?? "");
+            preoccupations = ReadOccupations(text, KeyPreocc);
 
             bool hasVoice = !string.IsNullOrWhiteSpace(voice);
             bool hasHabits = !string.IsNullOrWhiteSpace(habits);
@@ -270,7 +156,7 @@ namespace ValleytalkReborn
             if (string.IsNullOrWhiteSpace(text))
                 return false;
 
-            var blocks = System.Text.RegularExpressions.Regex.Split(text, @"^###\s*档位\s*\d+", System.Text.RegularExpressions.RegexOptions.Multiline);
+            var blocks = System.Text.RegularExpressions.Regex.Split(text, @"^\x23\x23\x23\s*(?:档位|Stage)\s*\d+", System.Text.RegularExpressions.RegexOptions.Multiline);
             int heartsSpecified = 0;
             foreach (var raw in blocks)
             {
@@ -279,27 +165,23 @@ namespace ValleytalkReborn
                     continue;
 
                 // 模板外前导寒暄（不含任何字段键）静默跳过；含字段但缺态度的真畸形块仍整体失败
-                bool hasAnyField = block.Contains("态度:", StringComparison.Ordinal)
-                                || block.Contains("态度：", StringComparison.Ordinal)
-                                || block.Contains("心数:", StringComparison.Ordinal)
-                                || block.Contains("心数：", StringComparison.Ordinal);
-            if (!hasAnyField)
+                if (!BlockHasAnyField(block, KeyAttitude.Concat(KeyHearts).ToArray()))
                     continue;
 
-                int? hearts = ReadHeartsFieldOrNull(block, "心数:");
+                int? hearts = ReadHeartsFieldOrNull(block, KeyHearts);
                 if (hearts.HasValue)
                     heartsSpecified++;
-                bool married = ReadBoolField(block, "已婚:");
+                bool married = ReadBoolField(block, KeyMarried);
                 // 态度段为必备：任一块缺失即整体失败（剥标头前判 null，保留既有失败语义）
-                string attitudeRaw = ReadSection(block, "态度:");
+                string attitudeRaw = ReadSection(block, KeyAttitude);
                 if (attitudeRaw == null)
                 {
                     stages = new List<BioData.ProgressStateEntry>();
                     return false;
                 }
                 string attitude = StripLeadingFieldHeader(attitudeRaw);
-                string mindset = StripLeadingFieldHeader(ReadSection(block, "心智:"));
-                List<string> occ = ReadOccupations(block, "关注:");
+                string mindset = StripLeadingFieldHeader(ReadSection(block, KeyMindset));
+                List<string> occ = ReadOccupations(block, KeyFocus);
 
                 stages.Add(new BioData.ProgressStateEntry
                 {
@@ -322,24 +204,33 @@ namespace ValleytalkReborn
             return stages.Count > 0;
         }
 
-        private static int? ReadHeartsFieldOrNull(string block, string key)
+        private static int? ReadHeartsFieldOrNull(string block, params string[] keys)
         {
             // 心数按 1 心 1 刻度原样接受（含奇数），仅 clamp 到 0–14；
             // 不再对齐 NumberStepper 步进（奇数属于预期输入）。
             // 字段缺失/不可解析 → null（由调用方区分"显式 0"与"未提供"）。
-            string v = ReadLineValue(block, key);
-            if (string.IsNullOrEmpty(v))
-                return null;
-            if (int.TryParse(v, out int n))
-                return Math.Clamp(n, 0, 14);
+            foreach (var key in keys)
+            {
+                string v = ReadLineValue(block, key);
+                if (v != null)
+                {
+                    if (int.TryParse(v, out int n))
+                        return Math.Clamp(n, 0, 14);
+                    return null;
+                }
+            }
             return null;
         }
 
-        private static bool ReadBoolField(string block, string key)
+        private static bool ReadBoolField(string block, params string[] keys)
         {
-            string v = ReadLineValue(block, key);
-            if (string.IsNullOrEmpty(v)) return false;
-            return v == "是" || v == "y" || v == "Y" || v == "true" || v == "True" || v == "TRUE";
+            foreach (var key in keys)
+            {
+                string v = ReadLineValue(block, key);
+                if (v != null)
+                    return v == "是" || v == "yes" || v == "Yes" || v == "YES" || v == "y" || v == "Y" || v == "true" || v == "True" || v == "TRUE";
+            }
+            return false;
         }
 
         private static string ReadLineValue(string block, string key)
@@ -357,14 +248,25 @@ namespace ValleytalkReborn
             if (idx < 0) return null;
             int start = idx + key.Length;
             int end = block.IndexOf('\n', start);
+            // 模板行式 "Hearts: 0 | Married: no" 中 | 也是值边界
+            int pipe = block.IndexOf('|', start);
+            if (pipe >= 0 && (end < 0 || pipe < end))
+                end = pipe;
             string v = end < 0 ? block.Substring(start) : block.Substring(start, end - start);
             return v.Trim();
         }
 
-        private static string ReadSection(string block, string key)
+        private static string ReadSection(string block, params string[] keys)
         {
-            // 好感阶梯字段段的默认边界（态度/心智/关注）
-            return ReadSection(block, key, WithFullWidthVariants(new[] { "\n态度:", "\n心智:", "\n关注:" }));
+            // 默认边界：态度/心智/关注（含全角变体，带 \n 前缀）
+            string[] endMarkers = EndMarkers(KeyAttitude, KeyMindset, KeyFocus);
+            foreach (var key in keys)
+            {
+                string result = ReadSection(block, key, endMarkers);
+                if (result != null)
+                    return result;
+            }
+            return null;
         }
 
         /// <summary>读取字段标签后的自由文本段，至任意一个 endMarkers 或块尾为止。</summary>
@@ -390,17 +292,51 @@ namespace ValleytalkReborn
             return string.IsNullOrEmpty(section) ? "" : section;
         }
 
-        private static List<string> ReadOccupations(string block, string key)
+        /// <summary>多键重载：对每个键尝试读取，首个命中即返回。</summary>
+        private static string ReadSection(string block, string[] keys, string[] endMarkers)
         {
-            string v = ReadLineValue(block, key);
-            if (string.IsNullOrEmpty(v) || v == "无")
-                return null;
-            var parts = v.Split(new[] { '、', ',', ';', '，', '；' }, StringSplitOptions.RemoveEmptyEntries)
-                         .Select(p => p.Trim())
-                         .Where(p => !string.IsNullOrEmpty(p))
-                         .ToList();
-            return parts.Count > 0 ? parts : null;
+            foreach (var key in keys)
+            {
+                string result = ReadSection(block, key, endMarkers);
+                if (result != null)
+                    return result;
+            }
+            return null;
         }
+
+        private static List<string> ReadOccupations(string block, params string[] keys)
+        {
+            foreach (var key in keys)
+            {
+                string v = ReadLineValue(block, key);
+                if (v != null)
+                {
+                    if (v == "无" || v == "none" || v == "None")
+                        return null;
+                    var parts = v.Split(new[] { '、', ',', ';', '，', '；' }, StringSplitOptions.RemoveEmptyEntries)
+                                 .Select(p => p.Trim())
+                                 .Where(p => !string.IsNullOrEmpty(p))
+                                 .ToList();
+                    return parts.Count > 0 ? parts : null;
+                }
+            }
+            return null;
+        }
+
+        private static bool BlockHasAnyField(string block, params string[] keys)
+        {
+            foreach (var key in keys)
+            {
+                if (block.IndexOf(key, StringComparison.Ordinal) >= 0
+                    || block.IndexOf(key.Replace(":", "："), StringComparison.Ordinal) >= 0)
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>测试辅助：暴露 ReadOccupations 逻辑。</summary>
+        internal static List<string> ReadOccupationsPublic(string block, params string[] keys) =>
+            ReadOccupations(block, keys);
 
         private static int IndexOfAny(string text, string[] markers)
         {
@@ -411,6 +347,21 @@ namespace ValleytalkReborn
                 if (i >= 0 && (best < 0 || i < best)) best = i;
             }
             return best;
+        }
+
+        /// <summary>为字段边界标记生成带 \n 前缀的全角/半角变体，避免模型输出全角键名时切段失败。</summary>
+        private static string[] EndMarkers(params string[][] keyGroups)
+        {
+            var list = new List<string>();
+            foreach (var group in keyGroups)
+            {
+                foreach (var k in group)
+                {
+                    list.Add("\n" + k);
+                    list.Add("\n" + k.Replace(":", "："));
+                }
+            }
+            return list.ToArray();
         }
 
         /// <summary>为字段边界标记生成全角冒号变体，避免模型输出全角键名时切段失败。</summary>

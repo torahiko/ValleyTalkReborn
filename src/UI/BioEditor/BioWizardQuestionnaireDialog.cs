@@ -373,14 +373,16 @@ namespace ValleytalkReborn
             string a3 = q3?.Trim() ?? string.Empty;
             string a4 = q4?.Trim() ?? string.Empty;
 
+            bool zh = BioPromptLanguage.IsChineseTemplate;
+
             if (!string.IsNullOrEmpty(a1))
-                sb.AppendLine($"【明面身份与生活日常】{a1}");
+                sb.AppendLine(zh ? $"【{BioPromptTemplates.QuestionHeader(1)}】{a1}" : $"{BioPromptTemplates.QuestionHeader(1)}: {a1}");
             if (!string.IsNullOrEmpty(a2))
-                sb.AppendLine($"【心理矛盾与深层弱点】{a2}");
+                sb.AppendLine(zh ? $"【{BioPromptTemplates.QuestionHeader(2)}】{a2}" : $"{BioPromptTemplates.QuestionHeader(2)}: {a2}");
             if (!string.IsNullOrEmpty(a3))
-                sb.AppendLine($"【说话风格与口吻习惯】{a3}");
+                sb.AppendLine(zh ? $"【{BioPromptTemplates.QuestionHeader(3)}】{a3}" : $"{BioPromptTemplates.QuestionHeader(3)}: {a3}");
             if (!string.IsNullOrEmpty(a4))
-                sb.AppendLine($"【对外来农夫第一印象】{a4}");
+                sb.AppendLine(zh ? $"【{BioPromptTemplates.QuestionHeader(4)}】{a4}" : $"{BioPromptTemplates.QuestionHeader(4)}: {a4}");
 
             return sb.ToString().TrimEnd();
         }

@@ -1877,13 +1877,6 @@ namespace ValleytalkReborn
         private void OpenBioPolishDialog()
         {
             string sourceText = _biographyBox.HasSelection ? _biographyBox.SelectedText : _biographyBox.Text;
-            string systemPrompt =
-                $"你是一名专业的《星露谷物语》NPC 人设编辑助手，正在润色 {_npcName} 的身份设定。\n" +
-                "硬性要求：\n" +
-                "1. 保留 [IDENTITY]、[PSYCHOLOGICAL CONFLICTS] 等核心结构标记与原有分节结构。\n" +
-                "2. 保持角色核心气质，不得擅自改变身份、经历、关系或心理矛盾。\n" +
-                "3. 严格遵循玩家给出的调整方向。\n" +
-                "4. 严禁寒暄、解释、标题或代码围栏，只输出润色后的完整纯文本。";
 
             Game1.activeClickableMenu = new BioAiPromptDialog(I18n.Get("Bio.Tab1Section"), this, (demand, enableThinking) =>
             {
@@ -1891,11 +1884,8 @@ namespace ValleytalkReborn
                     return;
 
                 UnfocusAll();
-                string userPrompt =
-                    $"【玩家期望调整方向】\n{demand}\n\n" +
-                    $"【待润色原文】\n{sourceText}\n\n" +
-                    "请直接输出优化后的完整内容";
-                BioAiReviewSession.Start(this, I18n.Get("Bio.Tab1Section"), systemPrompt, userPrompt, confirmedText => ApplyPolishResult(confirmedText), null, enableThinking);
+                var (system, user) = BioPromptTemplates.IdentityPolish(_npcName, sourceText, demand);
+                BioAiReviewSession.Start(this, I18n.Get("Bio.Tab1Section"), system, user, confirmedText => ApplyPolishResult(confirmedText), null, enableThinking);
             });
         }
 
