@@ -92,7 +92,9 @@ namespace ValleytalkReborn
                   id => MemoryManager.Instance.DeleteArchivedMemory(npcName, id),
                   MemoryManager.MaxArchivedMemoriesPerNpc,
                   () => I18n.Memory.ArchiveTitle(npcName),
-                  () => I18n.Memory.ArchiveEmpty(),
+                  () => (returnMenu != null && returnMenu.GetType().Name.IndexOf("Timeline", StringComparison.OrdinalIgnoreCase) >= 0)
+                        ? I18n.ArchiveMenu.EmptyPromptTimeline()
+                        : I18n.ArchiveMenu.EmptyPrompt(),
                   () => I18n.Memory.ArchiveRuleHint(MemoryManager.MaxArchivedMemoriesPerNpc),
                   () => MemoryManager.Instance.ClearArchivedMemories(npcName))
         {
@@ -339,9 +341,9 @@ namespace ValleytalkReborn
                 Game1.playSound("bigSelect");
                 Game1.activeClickableMenu = new BioValveWarningDialog(
                     this,
-                    I18n.Memory.ArchiveClearConfirmTitle(),
-                    I18n.Memory.ArchiveClearConfirmSubtitle(countSnapshot),
-                    new List<string> { I18n.Memory.ArchiveClearConfirmWarning() },
+                    I18n.ArchiveMenu.ClearConfirmTitle(),
+                    I18n.ArchiveMenu.ClearConfirmSubtitle(countSnapshot),
+                    new List<string> { I18n.ArchiveMenu.ClearConfirmWarning() },
                     I18n.Dialog.ConfirmDelete(),
                     () =>
                     {
@@ -352,7 +354,7 @@ namespace ValleytalkReborn
                     },
                     I18n.Dialog.Keep(),
                     () => Game1.activeClickableMenu = this,
-                    tip: "提示：清除后无法还原，释放存储空间以便记录新记忆。",
+                    tip: I18n.ArchiveMenu.ClearConfirmTip(),
                     continueIsDanger: true,
                     isDestructiveAlert: true);
                 return;
@@ -462,16 +464,16 @@ namespace ValleytalkReborn
                     break;
                 case MemoryOperationResult.CapacityFull:
                     Game1.playSound("cancel");
-                    Game1.addHUDMessage(new HUDMessage(I18n.Memory.AddFailedFull(MemoryManager.MaxMemoriesPerNpc), HUDMessage.error_type));
+                    Game1.addHUDMessage(new HUDMessage(I18n.ArchiveMenu.RestoreCapacityFull(MemoryManager.MaxMemoriesPerNpc), HUDMessage.error_type));
                     break;
                 case MemoryOperationResult.Duplicate:
                     Game1.playSound("cancel");
-                    Game1.addHUDMessage(new HUDMessage(I18n.Memory.ArchiveRestoreDuplicate(), HUDMessage.error_type));
+                    Game1.addHUDMessage(new HUDMessage(I18n.ArchiveMenu.RestoreDuplicate(), HUDMessage.error_type));
                     break;
                 case MemoryOperationResult.NotFound:
                 default:
                     Game1.playSound("cancel");
-                    Game1.addHUDMessage(new HUDMessage(I18n.Memory.ArchiveRestoreNotFound(), HUDMessage.error_type));
+                    Game1.addHUDMessage(new HUDMessage(I18n.ArchiveMenu.RestoreNotFound(), HUDMessage.error_type));
                     RefreshEntries();
                     break;
             }
@@ -483,8 +485,8 @@ namespace ValleytalkReborn
             string safeContent = CustomFontManager.TruncateString(entry.Content, TipFontSize, 500f);
             Game1.activeClickableMenu = new BioValveWarningDialog(
                 this,
-                I18n.Memory.ArchiveDeleteConfirmTitle(),
-                I18n.Memory.ArchiveDeleteConfirmSubtitle(),
+                I18n.ArchiveMenu.DeleteConfirmTitle(),
+                I18n.ArchiveMenu.DeleteConfirmSubtitle(),
                 new List<string> { safeContent },
                 I18n.Dialog.ConfirmDelete(),
                 () =>
@@ -511,7 +513,7 @@ namespace ValleytalkReborn
                     srcStr.IndexOf("Week", StringComparison.OrdinalIgnoreCase) >= 0 ||
                     catStr.Contains("周") || srcStr.Contains("周"))
                 {
-                    return "[周记] ";
+                    return I18n.ArchiveMenu.TagWeekly();
                 }
 
                 // 2. 大事记判断
@@ -522,26 +524,26 @@ namespace ValleytalkReborn
                     catStr.Contains("大事") || srcStr.Contains("大事") ||
                     srcStr.IndexOf("Milestone", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    return "[大事记] ";
+                    return I18n.ArchiveMenu.TagChronicle();
                 }
 
                 // 3. 默认手帐
-                return "[手帐] ";
+                return I18n.ArchiveMenu.TagJournal();
             }
 
             // 规则/NPC 记忆管理场景：彻底告别 [记忆]
             if (entry.Category == MemoryCategory.Behavior)
             {
-                return "[行为守则] ";
+                return I18n.ArchiveMenu.TagBehavior();
             }
 
             if (string.Equals(_npcName, "WORLD", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(entry.Source, "WORLD", StringComparison.OrdinalIgnoreCase))
             {
-                return "[小镇共识] ";
+                return I18n.ArchiveMenu.TagTownConsensus();
             }
 
-            return "[既定事实] ";
+            return I18n.ArchiveMenu.TagFact();
         }
 
         // ── 渲染管线 ──────────────────────────────────────────────────────────
@@ -630,7 +632,7 @@ namespace ValleytalkReborn
                     if (_cachedEntries.Count >= _capacity && i == _cachedEntries.Count - 1)
                     {
                         float timeWidth = CustomFontManager.MeasureString(time, TipFontSize).X;
-                        string endangeredTag = $"  •  {I18n.Memory.ArchiveEndangeredTag()}";
+                        string endangeredTag = $"  {I18n.ArchiveMenu.EndangeredTag()}";
                         CustomFontManager.DrawString(b, endangeredTag,
                             new Vector2(textStartX + timeWidth, rowY + 34),
                             BioEditorMenu.TextDanger, TipFontSize);
@@ -690,7 +692,7 @@ namespace ValleytalkReborn
             if (_closeButton.containsPoint(mx, my))
                 _hoverText = _closeButton.hoverText;
             else if (_clearButtonRect.Contains(mx, my) && _cachedEntries.Count > 0)
-                _hoverText = "【清空全部归档】\n永久清除当前所有的归档记忆，释放存储空间。";
+                _hoverText = I18n.ArchiveMenu.ClearTooltip();
             else
             {
                 for (int i = 0; i < _restoreButtons.Count; i++)
@@ -737,7 +739,7 @@ namespace ValleytalkReborn
                 }
                 else
                 {
-                    string avatarFallback = string.IsNullOrEmpty(_npcName) ? "?" : (string.Equals(_npcName, "WORLD", StringComparison.OrdinalIgnoreCase) ? "🌐" : _npcName.Substring(0, 1));
+                    string avatarFallback = string.IsNullOrEmpty(_npcName) ? "?" : _npcName.Substring(0, 1);
                     var fsz = CustomFontManager.MeasureStringBold(avatarFallback, TitleFontSize);
                     CustomFontManager.DrawStringBold(b, avatarFallback,
                         new Vector2(portraitRect.X + (pSize - fsz.X) / 2f, portraitRect.Y + (pSize - fsz.Y) / 2f - 1),
@@ -759,7 +761,7 @@ namespace ValleytalkReborn
                 }
                 else
                 {
-                    const string trashFallback = "🗑";
+                    string trashFallback = I18n.ArchiveMenu.IconAlt();
                     var fsz = CustomFontManager.MeasureStringBold(trashFallback, TitleFontSize);
                     CustomFontManager.DrawStringBold(b, trashFallback,
                         new Vector2(portraitRect.X + (pSize - fsz.X) / 2f, portraitRect.Y + (pSize - fsz.Y) / 2f - 1),
@@ -772,7 +774,7 @@ namespace ValleytalkReborn
             CustomFontManager.DrawStringBold(b, title, new Vector2(headX + pSize + 12, headY + 2), BioEditorMenu.TextPrimary, TitleFontSize);
 
             // 副标题说明
-            string subtitle = IsFromTimeline ? "浏览、还原或彻底删除被收纳的历史随笔。" : "浏览、还原或彻底删除被淘汰置换的规则。";
+            string subtitle = IsFromTimeline ? I18n.ArchiveMenu.SubtitleTimeline() : I18n.ArchiveMenu.SubtitleRules();
             CustomFontManager.DrawString(b, subtitle, new Vector2(headX + pSize + 14, headY + 30), BioEditorMenu.TextMuted, TipFontSize);
 
             // 容量胶囊
@@ -781,7 +783,7 @@ namespace ValleytalkReborn
             DrawCapacityBadge(b, _capacityPillRect, countText, isNearFull);
 
             // ★ 优化 2：清空按钮（无缝重构版，彻底根除右侧与底部白缝）
-            string clearLabel = I18n.Memory.ArchiveClearButton();
+            string clearLabel = I18n.ArchiveMenu.ClearButton();
             DrawActionButton(b, _clearButtonRect, clearLabel, mx, my, isDanger: true, isEnabled: _cachedEntries.Count > 0);
 
             // 分割横线
@@ -864,10 +866,7 @@ namespace ValleytalkReborn
                           : isDanger ? BioEditorMenu.TextOnDarkBtn
                           : BioEditorMenu.TextOnLightBtn;
 
-            var sz = CustomFontManager.MeasureStringBold(label, ButtonFontSize);
-            CustomFontManager.DrawStringBold(b, label,
-                new Vector2(drawRect.X + (drawRect.Width - sz.X) / 2f, drawRect.Y + (drawRect.Height - sz.Y) / 2f),
-                textCol, ButtonFontSize);
+            ButtonTextRenderer.DrawButtonText(b, label, drawRect, textCol, useBold: true);
         }
 
         private static void DrawHoverTextCustom(SpriteBatch b, string text)
