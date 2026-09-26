@@ -9,7 +9,8 @@
 //
 // 1. Gossip Perceptions (Background Rumors)
 //    - Town-wide events and ambient social context
-//    - Injected into SystemPrompt (static cache layer)
+//    - Produced as a Tier 2b block by ConversationDirector (session freezing
+//      owned by Tier1SnapshotStore)
 //    - Daily rotation with strict deduplication
 //    - Examples: marriages, new babies, festivals, mayor scandals
 //
@@ -69,16 +70,6 @@ internal static class PerceptionInjector
     private static HashSet<string> _mentionedGossipKeys =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-    // Tier 2b Gossip remains outside Tier 1 snapshots, but its rendered value is
-    // stable for the lifetime of a conversation session. Entries are memory-only
-    // and bounded because session IDs are transient.
-    private const int MaxGossipSessionEntries = 512;
-
-    private static readonly Dictionary<string, string> _gossipBySession =
-        new Dictionary<string, string>(StringComparer.Ordinal);
-
-    private static readonly Queue<string> _gossipSessionOrder = new Queue<string>();
-
     /// <summary>
     /// 清空跨天/跨存档的 gossip 提及去重记录。
     /// 由 PerceptionManager 在 DayStarted 与 Cleanup 时调用。
@@ -86,38 +77,6 @@ internal static class PerceptionInjector
     public static void ResetMentionedGossipKeys()
     {
         _mentionedGossipKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        _gossipBySession.Clear();
-        _gossipSessionOrder.Clear();
-    }
-
-    public static string BuildPerceptionText(string npcName)
-    {
-        if (string.IsNullOrEmpty(npcName)) return string.Empty;
-
-        string gossipBlock = BuildGossipBlock(npcName);
-        string localBlock = BuildLocalBlock(npcName);
-
-        if (string.IsNullOrEmpty(gossipBlock) && string.IsNullOrEmpty(localBlock))
-            return string.Empty;
-
-        var parts = new List<string>();
-        if (!string.IsNullOrEmpty(gossipBlock)) parts.Add(gossipBlock);
-        if (!string.IsNullOrEmpty(localBlock)) parts.Add(localBlock);
-        return string.Join("\n\n", parts);
-    }
-
-    public static void Inject(string npcName, Prompts prompts)
-    {
-        if (prompts == null || string.IsNullOrEmpty(npcName)) return;
-
-        string streakBlock = BuildStreakBlock(npcName);
-        if (!string.IsNullOrEmpty(streakBlock))
-            prompts.SystemPrompt += "\n\n" + streakBlock;
-
-        string text = BuildPerceptionText(npcName);
-        if (string.IsNullOrEmpty(text)) return;
-
-        prompts.SystemPrompt += "\n\n" + text;
     }
 
     /// <summary>
@@ -140,25 +99,16 @@ internal static class PerceptionInjector
         return header + "\n" + body;
     }
 
-    public static string BuildGossipBlock(string npcName) => BuildGossipBlock(npcName, null);
-
     /// <summary>
-    /// Build the gossip impulse once per NPC/conversation session. Repeated
-    /// generations in that session receive the same block (including an empty
-    /// result), while the existing per-NPC/day gossip deduplication remains the
-    /// source of candidate consumption.
+    /// Build the gossip impulse for an NPC. Session-level freezing is owned by
+    /// Tier1SnapshotStore/ConversationDirector; this method performs the per-NPC/day
+    /// candidate selection and rendering.
     /// </summary>
-    public static string BuildGossipBlock(string npcName, string sessionId)
+    public static string BuildGossipBlock(string npcName)
     {
-        string sessionKey = string.IsNullOrWhiteSpace(sessionId)
-            ? null
-            : $"{Game1.Date.TotalDays}:{npcName}:{sessionId}";
-        if (sessionKey != null && _gossipBySession.TryGetValue(sessionKey, out string cachedBlock))
-            return cachedBlock;
-
         var snapshots = PerceptionManager.Instance.GetGossipSnapshots();
         if (snapshots == null || snapshots.Count == 0)
-            return CacheSessionBlock(sessionKey, string.Empty);
+            return string.Empty;
 
         bool isZh = IsChineseLanguage;
 
@@ -210,22 +160,7 @@ internal static class PerceptionInjector
             lines.Add($"- {targetSnapshot.Template}");
         }
 
-        return CacheSessionBlock(sessionKey, lines.Count > 1 ? string.Join("\n", lines) : string.Empty);
-    }
-
-    private static string CacheSessionBlock(string sessionKey, string block)
-    {
-        if (sessionKey == null) return block;
-
-        while (_gossipBySession.Count >= MaxGossipSessionEntries)
-        {
-            string oldestKey = _gossipSessionOrder.Dequeue();
-            _gossipBySession.Remove(oldestKey);
-        }
-
-        _gossipBySession[sessionKey] = block;
-        _gossipSessionOrder.Enqueue(sessionKey);
-        return block;
+        return lines.Count > 1 ? string.Join("\n", lines) : string.Empty;
     }
 
     public static string BuildLocalBlock(string npcName)
