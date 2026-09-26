@@ -1,5 +1,6 @@
-﻿{
+{
   "Saloon": {
+    "LocationId": "Saloon",
     "TargetMap": "Saloon",
     "DisplayNameZh": "星之果实酒吧",
     "DisplayNameEn": "The Stardrop Saloon",
@@ -7,9 +8,13 @@
     "ContextDescriptionEn": "The saloon is warm and bustling, with the gentle crackle of the fireplace, aroma of food, and soft music.",
     "RequiredHearts": 4,
     "AllowRainyDays": true,
-    "TimeWindow": "1800-2130"
+    "TimeWindow": "1800-2130",
+    "WaitTile": "18, 20",
+    "DefaultFacingDirection": 2,
+    "StagedActivityType": "Drink"
   },
   "Beach": {
+    "LocationId": "Beach",
     "TargetMap": "Beach",
     "DisplayNameZh": "海滩码头",
     "DisplayNameEn": "The Beach Pier",
@@ -17,9 +22,13 @@
     "ContextDescriptionEn": "The evening ocean breeze is gentle and cool, with waves softly lapping against the wooden pier beneath a starry sky.",
     "RequiredHearts": 4,
     "AllowRainyDays": false,
-    "TimeWindow": "1800-2130"
+    "TimeWindow": "1800-2130",
+    "WaitTile": "28, 34",
+    "DefaultFacingDirection": 2,
+    "StagedActivityType": "Talk"
   },
   "Forest": {
+    "LocationId": "Forest",
     "TargetMap": "Woods",
     "DisplayNameZh": "秘密森林",
     "DisplayNameEn": "The Secret Forest",
@@ -27,9 +36,13 @@
     "ContextDescriptionEn": "Secluded deep within ancient trees, with faint glowing mushrooms, still waters, and soft whispers of nature.",
     "RequiredHearts": 6,
     "AllowRainyDays": true,
-    "TimeWindow": "1800-2130"
+    "TimeWindow": "1800-2130",
+    "WaitTile": "31, 23",
+    "DefaultFacingDirection": 2,
+    "StagedActivityType": "Talk"
   },
   "Mountain": {
+    "LocationId": "Mountain",
     "TargetMap": "Mountain",
     "DisplayNameZh": "深山湖畔",
     "DisplayNameEn": "The Mountain Lake",
@@ -37,9 +50,13 @@
     "ContextDescriptionEn": "Cool crisp mountain air overlooking the lake, with distant town lights twinkling on the water.",
     "RequiredHearts": 4,
     "AllowRainyDays": false,
-    "TimeWindow": "1800-2130"
+    "TimeWindow": "1800-2130",
+    "WaitTile": "31, 10",
+    "DefaultFacingDirection": 2,
+    "StagedActivityType": "Talk"
   },
   "Town": {
+    "LocationId": "Town",
     "TargetMap": "Town",
     "DisplayNameZh": "鹈鹕镇广场",
     "DisplayNameEn": "Pelican Town Square",
@@ -47,6 +64,9 @@
     "ContextDescriptionEn": "Streetlamps cast a warm golden glow across the cobblestone square, creating a peaceful evening stroll.",
     "RequiredHearts": 4,
     "AllowRainyDays": true,
-    "TimeWindow": "1800-2130"
+    "TimeWindow": "1800-2130",
+    "WaitTile": "55, 67",
+    "DefaultFacingDirection": 2,
+    "StagedActivityType": "Talk"
   }
 }
