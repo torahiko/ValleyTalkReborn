@@ -416,6 +416,76 @@ namespace ValleytalkReborn
                 public static string NewLocationDefaultDescZh() => Lookup("WorldSettings.DateAmbience.NewLocationDefaultDescZh");
                 public static string NewLocationDefaultDescEn() => Lookup("WorldSettings.DateAmbience.NewLocationDefaultDescEn");
             }
+
+            // ── POI Tuning sub-page (FEAT-WS-I18N-004) ──
+            public static class PoiTuningPage
+            {
+                // 模式切换按钮
+                public static string ModeNpcWeights() => Lookup("WorldSettings.PoiTuning.ModeNpcWeights");
+                public static string ModePoiCatalog() => Lookup("WorldSettings.PoiTuning.ModePoiCatalog");
+
+                // 搜索框 placeholder
+                public static string SearchSpousePlaceholder() => Lookup("WorldSettings.PoiTuning.SearchSpousePlaceholder");
+                public static string SearchPoiPlaceholder() => Lookup("WorldSettings.PoiTuning.SearchPoiPlaceholder");
+
+                // 空态提示
+                public static string NoSpousesHint() => Lookup("WorldSettings.PoiTuning.NoSpousesHint");
+
+                // POI 模式字段标签
+                public static string AliasLabel() => Lookup("WorldSettings.PoiTuning.AliasLabel");
+                public static string AliasPlaceholder() => Lookup("WorldSettings.PoiTuning.AliasPlaceholder");
+                public static string DescLabelZh() => Lookup("WorldSettings.PoiTuning.DescLabelZh");
+                public static string DescLabelEn() => Lookup("WorldSettings.PoiTuning.DescLabelEn");
+                public static string AmbienceLabel(string channelTip) =>
+                    Lookup("WorldSettings.PoiTuning.AmbienceLabel").Replace("{{channel}}", channelTip ?? string.Empty);
+
+                // POI 模式按钮
+                public static string TeleportButton() => Lookup("WorldSettings.PoiTuning.TeleportButton");
+                public static string CaptureButton() => Lookup("WorldSettings.PoiTuning.CaptureButton");
+                public static string SaveNewButton() => Lookup("WorldSettings.PoiTuning.SaveNewButton");
+                public static string SaveButton() => Lookup("WorldSettings.PoiTuning.SaveButton");
+                public static string RevertButton() => Lookup("WorldSettings.PoiTuning.RevertButton");
+                public static string CancelNewButton() => Lookup("WorldSettings.PoiTuning.CancelNewButton");
+                public static string DeleteButton() => Lookup("WorldSettings.PoiTuning.DeleteButton");
+                public static string NewPoiButton() => Lookup("WorldSettings.PoiTuning.NewPoiButton");
+
+                // 传送拦截错误
+                public static string FestivalPreparationBlock(string mapName, int startHour) =>
+                    Lookup("WorldSettings.PoiTuning.FestivalPreparationBlock")
+                        .Replace("{{map}}", mapName ?? string.Empty)
+                        .Replace("{{time}}", startHour.ToString());
+                public static string FestivalActiveBlock(string mapName) =>
+                    Lookup("WorldSettings.PoiTuning.FestivalActiveBlock").Replace("{{map}}", mapName ?? string.Empty);
+                public static string EventInProgressBlock() => Lookup("WorldSettings.PoiTuning.EventInProgressBlock");
+
+                // POI 删除弹窗
+                public static string DeletePoiDialogTitle() => Lookup("WorldSettings.PoiTuning.DeletePoiDialogTitle");
+                public static string DeletePoiDialogSubtitle(string poiId) =>
+                    Lookup("WorldSettings.PoiTuning.DeletePoiDialogSubtitle").Replace("{{poi}}", poiId ?? string.Empty);
+                public static string DeletePoiDialogBullet1() => Lookup("WorldSettings.PoiTuning.DeletePoiDialogBullet1");
+                public static string DeletePoiDialogBullet2() => Lookup("WorldSettings.PoiTuning.DeletePoiDialogBullet2");
+                public static string DeletePoiDialogConfirm() => Lookup("WorldSettings.PoiTuning.DeletePoiDialogConfirm");
+                public static string DeletePoiDialogCancel() => Lookup("WorldSettings.PoiTuning.DeletePoiDialogCancel");
+                public static string DeletePoiSuccessHud() => Lookup("WorldSettings.PoiTuning.DeletePoiSuccessHud");
+
+                // NPC 权重相关 HUD/错误
+                public static string SaveWeightsServiceUnavailable() => Lookup("WorldSettings.PoiTuning.SaveWeightsServiceUnavailable");
+                public static string SaveWeightsSuccessHud() => Lookup("WorldSettings.PoiTuning.SaveWeightsSuccessHud");
+                public static string SaveWeightsFailure() => Lookup("WorldSettings.PoiTuning.SaveWeightsFailure");
+
+                // NPC 权重重置弹窗
+                public static string ResetWeightsDialogTitle() => Lookup("WorldSettings.PoiTuning.ResetWeightsDialogTitle");
+                public static string ResetWeightsDialogSubtitle(string spouseName) =>
+                    Lookup("WorldSettings.PoiTuning.ResetWeightsDialogSubtitle").Replace("{{spouse}}", spouseName ?? string.Empty);
+                public static string ResetWeightsDialogBullet1() => Lookup("WorldSettings.PoiTuning.ResetWeightsDialogBullet1");
+                public static string ResetWeightsDialogConfirm() => Lookup("WorldSettings.PoiTuning.ResetWeightsDialogConfirm");
+                public static string ResetWeightsDialogCancel() => Lookup("WorldSettings.PoiTuning.ResetWeightsDialogCancel");
+                public static string ResetWeightsSuccessHud() => Lookup("WorldSettings.PoiTuning.ResetWeightsSuccessHud");
+
+                // ResetToBaseline HUD
+                public static string ResetServiceUnavailable() => Lookup("WorldSettings.PoiTuning.ResetServiceUnavailable");
+                public static string ResetNothingToReset() => Lookup("WorldSettings.PoiTuning.ResetNothingToReset");
+            }
         }
 
         // =========================================================================
