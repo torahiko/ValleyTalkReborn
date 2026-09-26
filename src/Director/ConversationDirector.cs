@@ -265,6 +265,16 @@ public sealed class ConversationDirector : IConversationDirector
                 }
             }
 
+            // CHORE-002：Normal 分支下，镇事件无活跃参与者时，降级查询社区家务账目话题作为 Preoccupation。
+            // CommunityChoreLedger 自身持有单机/读档/世界状态门禁；false 或空文本均静默回退到静态构造（RECOVERABLE，不记 Warn/Error）。
+            if (preoccupation == null
+                && branch == InstructionsBranch.Normal
+                && CommunityChoreLedger.TryGetTopic(character.Name, out string choreTopic)
+                && !string.IsNullOrWhiteSpace(choreTopic))
+            {
+                preoccupation = choreTopic;
+            }
+
             if (preoccupation == null)
                 preoccupation = Prompts.PromptsBlocks.BuildPreoccupation(character, context, thoughts, name);
 
