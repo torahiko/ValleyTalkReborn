@@ -324,6 +324,9 @@ namespace ValleytalkReborn
             // ★ 监听 CP 热重载（使用规范的 AssetsInvalidated 事件）
             helper.Events.Content.AssetsInvalidated += OnAssetsInvalidated;
 
+            // ★ 注册模组自带默认约会地点资产（Low 优先级，允许外部 CP 覆写或 EditData）
+            helper.Events.Content.AssetRequested += OnAssetRequested;
+
            Config = Helper.ReadConfig<ModConfig>();
 
             // ── 老版本配置自动迁移（一次性执行） ──
@@ -1405,6 +1408,19 @@ namespace ValleytalkReborn
             if (e.NamesWithoutLocale.Any(an => an.IsEquivalentTo(DateLocationRegistry.ASSET_KEY)))
             {
                 DateLocationRegistry.ReloadAssets();
+            }
+        }
+
+        /// <summary>
+        /// 提供模组自带的默认约会地点资产（AssetLoadPriority.Low，外部 CP 可任意覆写或 EditData）
+        /// </summary>
+        private void OnAssetRequested(object sender, AssetRequestedEventArgs e)
+        {
+            if (e.NameWithoutLocale.IsEquivalentTo(DateLocationRegistry.ASSET_KEY))
+            {
+                e.LoadFromModFile<Dictionary<string, DateLocationInfo>>(
+                    "assets/date_locations.json",
+                    AssetLoadPriority.Low);
             }
         }
 

@@ -87,13 +87,13 @@ namespace ValleytalkReborn
 
                     Locations = result;
                     _isLoaded = true;
-                    ModEntry.SMonitor?.Log($"[DateLocationRegistry] 成功通过 CP 载入 {Locations.Count} 个约会地点配置。", LogLevel.Info);
+                    ModEntry.SMonitor?.Log($"[DateLocationRegistry] 成功载入 {Locations.Count} 个约会地点资产。", LogLevel.Info);
                     return;
                 }
             }
             catch (Exception ex)
             {
-                ModEntry.SMonitor?.Log($"[DateLocationRegistry] CP 约会地点资产加载失败，保留默认配置: {ex.Message}", LogLevel.Warn);
+                ModEntry.SMonitor?.Log($"[DateLocationRegistry] 约会地点资产加载失败: {ex.Message}，降级启用 C# 硬编码兜底。", LogLevel.Error);
             }
 
             if (!_isLoaded)
