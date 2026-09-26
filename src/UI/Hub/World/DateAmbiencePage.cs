@@ -85,11 +85,11 @@ internal sealed class DateAmbiencePage : WorldSubPageBase
         // 关闭原版 TextBox 的像素宽度截断（Text setter 内置递归截断会静默损毁程序化赋值的长文本）
         _nameBox.limitWidth = false;
 
-        _heartsStepper = new NumberStepper(Rectangle.Empty, 4, 0, 14, 1, " 心");
+        _heartsStepper = new NumberStepper(Rectangle.Empty, 4, 0, 14, 1, I18n.WorldSettings.DateAmbiencePage.HeartsSuffix());
         _startHourStepper = new NumberStepper(Rectangle.Empty, 18, 6, 26, 1, ":00");
         _endHourStepper = new NumberStepper(Rectangle.Empty, 22, 6, 26, 1, ":00");
 
-        _rainCheckbox = new SimpleCheckbox("雨天开放", -1, 0, 0);
+        _rainCheckbox = new SimpleCheckbox(I18n.WorldSettings.DateAmbiencePage.AllowRainyDays(), -1, 0, 0);
 
         _descInputBox = new DialogueTextInputBox(600, 500)
         {
@@ -453,7 +453,7 @@ internal sealed class DateAmbiencePage : WorldSubPageBase
             b.Draw(Game1.mouseCursors, new Vector2(drawRect.X + 8, drawRect.Y + 13), iconSrc, Color.White, 0f, Vector2.Zero, 2.5f, SpriteEffects.None, 0.9f);
 
             string title = item.DisplayName;
-            if (item.IsCustom) title += " [自创]";
+            if (item.IsCustom) title += I18n.WorldSettings.DateAmbiencePage.CustomTag();
             CustomFontManager.DrawString(b, title, new Vector2(drawRect.X + 34, drawRect.Y + 11), RulesTheme.TextCharcoal, CustomFontManager.SizeRegular);
         }
     }
@@ -464,7 +464,7 @@ internal sealed class DateAmbiencePage : WorldSubPageBase
 
         if (string.IsNullOrEmpty(_selectedId))
         {
-            CustomFontManager.DrawString(b, "从左侧列表选择一个约会地点进行配置",
+            CustomFontManager.DrawString(b, I18n.WorldSettings.DateAmbiencePage.EmptySelectionHint(),
                 new Vector2(_formRect.X + 24, _formRect.Y + 24), RulesTheme.TextSecondary, CustomFontManager.SizeRegular);
             return;
         }
@@ -472,33 +472,45 @@ internal sealed class DateAmbiencePage : WorldSubPageBase
         int lx = _formRect.X + 12;
 
         // 1. 地点名称
-        DrawFieldLabel(b, "地点名称", lx, _nameBox.Y + 4);
+        DrawFieldLabel(b, I18n.WorldSettings.DateAmbiencePage.FieldLocationName(), lx, _nameBox.Y + 4);
         DrawSingleLineBox(b, _nameBox);
 
         // 2. 对应地图
-        DrawFieldLabel(b, "对应地图", lx, _mapDropdownHeaderRect.Y + 4);
+        DrawFieldLabel(b, I18n.WorldSettings.DateAmbiencePage.FieldTargetMap(), lx, _mapDropdownHeaderRect.Y + 4);
         DrawDropdownHeader(b, mx, my);
 
         // 3. 好感与天气
-        DrawFieldLabel(b, "好感与天气", lx, _heartsRect.Y + 4);
+        DrawFieldLabel(b, I18n.WorldSettings.DateAmbiencePage.FieldHeartsWeather(), lx, _heartsRect.Y + 4);
         _heartsStepper.Draw(b);
         _rainCheckbox.draw(b, 0, 0, Hub);
 
         // 4. 生效时段
-        DrawFieldLabel(b, "生效时段", lx, _startHourRect.Y + 4);
+        DrawFieldLabel(b, I18n.WorldSettings.DateAmbiencePage.FieldTimeWindow(), lx, _startHourRect.Y + 4);
         _startHourStepper.Draw(b);
-        CustomFontManager.DrawString(b, "至", new Vector2(_startHourRect.Right + 10, _startHourRect.Y + 4), RulesTheme.TextSecondary, CustomFontManager.SizeRegular);
+        CustomFontManager.DrawString(b, I18n.WorldSettings.DateAmbiencePage.TimeWindowTo(),
+            new Vector2(_startHourRect.Right + 10, _startHourRect.Y + 4), RulesTheme.TextSecondary, CustomFontManager.SizeRegular);
         _endHourStepper.Draw(b);
 
         // 5. 环境氛围
-        DrawFieldLabel(b, "环境氛围", lx, (int)_descInputBox.Position.Y);
+        DrawFieldLabel(b, I18n.WorldSettings.DateAmbiencePage.FieldAmbience(), lx, (int)_descInputBox.Position.Y);
         _descInputBox.Draw(b);
 
         // 6. 底部四个按钮
-        DrawFormButton(b, _btnSave, "✔ 保存设置", mx, my, isPrimary: true);
-        DrawFormButton(b, _btnRevert, "↺ 还原此项", mx, my, isPrimary: false, isEnabled: _baselineExists && !_isCustom);
-        DrawFormButton(b, _btnDelete, "删除地点", mx, my, isPrimary: false, isEnabled: _selectedId != null);
-        DrawFormButton(b, _btnNew, "+ 新建地点", mx, my, isPrimary: false);
+        string saveBtnText = I18n.WorldSettings.DateAmbiencePage.SaveButton();
+        var (fittedSave, saveScale) = WorldSettingsTabView.FitTextToWidth(saveBtnText, _btnSave.Width - 16, CustomFontManager.SizeRegular, true);
+        DrawFormButton(b, _btnSave, fittedSave, mx, my, isPrimary: true, scale: saveScale);
+
+        string revertBtnText = I18n.WorldSettings.DateAmbiencePage.RevertButton();
+        var (fittedRevert, revertScale) = WorldSettingsTabView.FitTextToWidth(revertBtnText, _btnRevert.Width - 16, CustomFontManager.SizeRegular, true);
+        DrawFormButton(b, _btnRevert, fittedRevert, mx, my, isPrimary: false, isEnabled: _baselineExists && !_isCustom, scale: revertScale);
+
+        string deleteBtnText = I18n.WorldSettings.DateAmbiencePage.DeleteButton();
+        var (fittedDelete, deleteScale) = WorldSettingsTabView.FitTextToWidth(deleteBtnText, _btnDelete.Width - 16, CustomFontManager.SizeRegular, true);
+        DrawFormButton(b, _btnDelete, fittedDelete, mx, my, isPrimary: false, isEnabled: _selectedId != null, scale: deleteScale);
+
+        string newBtnText = I18n.WorldSettings.DateAmbiencePage.NewButton();
+        var (fittedNew, newScale) = WorldSettingsTabView.FitTextToWidth(newBtnText, _btnNew.Width - 16, CustomFontManager.SizeRegular, true);
+        DrawFormButton(b, _btnNew, fittedNew, mx, my, isPrimary: false, scale: newScale);
 
         if (!string.IsNullOrEmpty(_statusTip))
         {
@@ -647,7 +659,7 @@ internal sealed class DateAmbiencePage : WorldSubPageBase
         CustomFontManager.DrawStringBold(b, text, new Vector2(x, y), RulesTheme.TextDarkBrown, CustomFontManager.SizeRegular);
     }
 
-    private static void DrawFormButton(SpriteBatch b, Rectangle rect, string label, int mx, int my, bool isPrimary = false, bool isEnabled = true)
+    private static void DrawFormButton(SpriteBatch b, Rectangle rect, string label, int mx, int my, bool isPrimary = false, bool isEnabled = true, float scale = 1f)
     {
         bool isHover = isEnabled && rect.Contains(mx, my);
         bool isPressed = isHover && Mouse.GetState().LeftButton == ButtonState.Pressed;
@@ -673,10 +685,10 @@ internal sealed class DateAmbiencePage : WorldSubPageBase
         IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
             drawRect.X, drawRect.Y, drawRect.Width, drawRect.Height, border, 2f, false);
 
-        var sz = CustomFontManager.MeasureStringBold(label, CustomFontManager.SizeSmall);
+        var sz = CustomFontManager.MeasureStringBold(label, CustomFontManager.SizeSmall) * scale;
         CustomFontManager.DrawStringBold(b, label,
             new Vector2(drawRect.X + (drawRect.Width - sz.X) / 2f, drawRect.Y + (drawRect.Height - sz.Y) / 2f),
-            isEnabled ? RulesTheme.TextCharcoal : RulesTheme.TextMuted, CustomFontManager.SizeSmall);
+            isEnabled ? RulesTheme.TextCharcoal : RulesTheme.TextMuted, CustomFontManager.SizeSmall, scale: scale);
     }
 
     // ── 智能地图过滤引擎（排除功能性死角，保留大地图与拓展户外） ──
@@ -1043,20 +1055,20 @@ internal sealed class DateAmbiencePage : WorldSubPageBase
 
         Game1.activeClickableMenu = new BioValveWarningDialog(
             Hub,
-            "删除约会地点",
-            $"即将删除约会地点【{locName}】：",
+            I18n.WorldSettings.DateAmbiencePage.DeleteDialogTitle(),
+            I18n.WorldSettings.DateAmbiencePage.DeleteDialogSubtitle(locName),
             new List<string>
             {
-                "该地点的自定义名称与氛围描述将被彻底移除",
-                "删除后如需恢复须重新创建"
+                I18n.WorldSettings.DateAmbiencePage.DeleteDialogBullet1(),
+                I18n.WorldSettings.DateAmbiencePage.DeleteDialogBullet2()
             },
-            "⚠ 确认删除",
+            I18n.WorldSettings.DateAmbiencePage.DeleteDialogConfirm(),
             () =>
             {
                 Game1.activeClickableMenu = Hub;
                 ExecuteDelete();
             },
-            "保留地点",
+            I18n.WorldSettings.DateAmbiencePage.DeleteDialogCancel(),
             () => { Game1.activeClickableMenu = Hub; });
     }
 
@@ -1073,7 +1085,7 @@ internal sealed class DateAmbiencePage : WorldSubPageBase
 
         if (service.Save(ov, out _))
         {
-            _statusTip = "已删除该约会点";
+            _statusTip = I18n.WorldSettings.DateAmbiencePage.DeleteSuccessHud();
             RefreshMergedList();
             if (_items.Count > 0) SelectLocation(_items[0].Id);
             Game1.playSound("trashcan");
@@ -1089,14 +1101,14 @@ internal sealed class DateAmbiencePage : WorldSubPageBase
         ov.Entries[newId] = new DateLocationInfo
         {
             LocationId = newId,
-            DisplayNameZh = "新约会地点",
-            DisplayNameEn = "New Date Spot",
+            DisplayNameZh = I18n.WorldSettings.DateAmbiencePage.NewLocationDefaultNameZh(),
+            DisplayNameEn = I18n.WorldSettings.DateAmbiencePage.NewLocationDefaultNameEn(),
             TargetMap = !string.IsNullOrEmpty(_currentMap) ? _currentMap : "Town",
             RequiredHearts = 4,
             AllowRainyDays = true,
             TimeWindow = "1800-2200",
-            ContextDescriptionZh = "两人在此相聚，享受宁静的夜晚时光。",
-            ContextDescriptionEn = "Meeting here together to enjoy a peaceful evening."
+            ContextDescriptionZh = I18n.WorldSettings.DateAmbiencePage.NewLocationDefaultDescZh(),
+            ContextDescriptionEn = I18n.WorldSettings.DateAmbiencePage.NewLocationDefaultDescEn()
         };
 
         if (ModEntry.DateLocationOverlay?.Save(ov, out _) == true)
