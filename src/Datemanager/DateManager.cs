@@ -73,6 +73,9 @@ namespace ValleytalkReborn
         /// <summary>VT-FOCUS-05: 会话建立形式，供 review 提示词区分散步约会与正式约会。Memory-only。</summary>
         internal DateManager.DateMode SessionMode { get; init; } = DateManager.DateMode.Scheduled;
 
+        /// <summary>标记本次约会是否经历过定点后的漫步送归阶段（持久化在 Session 实例中，免疫 ResetDateState 异步擦除）。</summary>
+        public bool HasWalkedAfterStaged { get; set; } = false;
+
         public List<DialogueRecord> DialogueLogs { get; } = new();
         public List<GiftRecord> GiftLogs { get; } = new();
         public List<ActionRecord> ActionLogs { get; } = new();
@@ -515,8 +518,7 @@ namespace ValleytalkReborn
 
             // 检查地点是否一致
             string currentMap = Game1.player.currentLocation?.Name ?? "";
-            if (!DateLocationRegistry.Locations.TryGetValue(ActiveDateLocation, out var locInfo)
-                || !string.Equals(currentMap, locInfo.TargetMap, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(currentMap, ActiveDateLocation, StringComparison.OrdinalIgnoreCase))
                 return false;
 
             int durationMinutes = DateRules.GetDateDurationMinutes(
@@ -632,6 +634,12 @@ namespace ValleytalkReborn
                 {
                     TriggerFarewellDialogue(npc);
                     return;
+                }
+
+                // ─── 标记散步阶段，作为会话事实随 Session 传递给后台 Review 任务 ───
+                if (CurrentSession != null)
+                {
+                    CurrentSession.HasWalkedAfterStaged = true;
                 }
 
                 npc.jump();
