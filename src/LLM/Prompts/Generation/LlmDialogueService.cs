@@ -98,6 +98,11 @@ public class LlmDialogueService
             // ── 终局出口去重：优先保留下方 CorePrompt 的即时条目，剔除上方 SystemPrompt 的冗余条目 ──
             PromptDeduplicator.DeduplicatePrompts(prompts);
 
+            // ── PROMPT-ARCH-02: 运行时边界装配（每次生成计算一次；流式/非流式 Provider 调用共用） ──
+            string runtimeSystemPrompt = BuildRuntimeSystemPrompt(prompts);
+            string runtimeConversationPrompt = BuildRuntimeConversationPrompt(prompts);
+            string responseStart = prompts.ResponseStart;
+
             // ══════════════════════════════════════════════════
             //  流式路径
             // ══════════════════════════════════════════════════
@@ -118,10 +123,10 @@ public class LlmDialogueService
                 try
                 {
                     streamResult = await Llm.Instance.RunStreamingInference(
-                        prompts.SystemPrompt,
-                        prompts.GameConstantContext,
-                        prompts.NpcConstantContext,
-                        $"{prompts.CorePrompt}{prompts.Instructions}{prompts.Command}",
+                        runtimeSystemPrompt,
+                        string.Empty,
+                        string.Empty,
+                        runtimeConversationPrompt,
                         delta =>
                         {
                             var displayText = tracker.Feed(delta);
@@ -129,7 +134,7 @@ public class LlmDialogueService
                                 onStreamingToken(displayText);
                         },
                         cts.Token,
-                        prompts.ResponseStart);
+                        responseStart);
                 }
                 catch (OperationCanceledException)
                 {
@@ -260,11 +265,11 @@ public class LlmDialogueService
                     if (isDebug) LogDebugRequest(character, prompts, attempt + 1);
 
                     var inferenceTask = Llm.Instance.RunInference(
-                        prompts.SystemPrompt,
-                        $"{prompts.GameConstantContext}",
-                        $"{prompts.NpcConstantContext}",
-                        $"{prompts.CorePrompt}{prompts.Instructions}{prompts.Command}",
-                        prompts.ResponseStart
+                        runtimeSystemPrompt,
+                        string.Empty,
+                        string.Empty,
+                        runtimeConversationPrompt,
+                        responseStart
                     );
                     result = await inferenceTask.WaitAsync(cts.Token);
 
@@ -561,45 +566,78 @@ public class LlmDialogueService
         }
     }
 
+    // ── PROMPT-ARCH-02: 运行时边界装配（流式与非流式共用同一组助手，保证双路径字节一致） ──
+
     /// <summary>
-    /// Logs the named prompt boundaries (System, StaticInstructionContext, DynamicContext,
-    /// ConversationStream, ResponseStart) in a formatted box. Until PROMPT-ARCH-02 lands,
-    /// the Provider payload is still composed from the legacy fields, so these sections are
-    /// boundary views, not the final Provider payload.
+    /// 运行时 system 载荷：SystemPrompt + StaticInstructionContext。
+    /// 不含 DynamicContext、ConversationStream、ResponseStart。
+    /// </summary>
+    internal static string BuildRuntimeSystemPrompt(Prompts prompts)
+    {
+        if (prompts == null)
+            throw new ArgumentNullException(nameof(prompts));
+        return Prompts.JoinPromptSegments(prompts.SystemPrompt, prompts.StaticInstructionContext);
+    }
+
+    /// <summary>
+    /// 运行时对话载荷：DynamicContext + ConversationStream。
+    /// 不含 SystemPrompt、StaticInstructionContext、独立的 Instructions/Command、ResponseStart。
+    /// </summary>
+    internal static string BuildRuntimeConversationPrompt(Prompts prompts)
+    {
+        if (prompts == null)
+            throw new ArgumentNullException(nameof(prompts));
+        return Prompts.JoinPromptSegments(prompts.DynamicContext, prompts.ConversationStream);
+    }
+
+    /// <summary>
+    /// Logs the runtime payload topology (RuntimeSystemPrompt → RuntimeConversationPrompt →
+    /// ResponseStart) in a formatted box, identical to the actual Provider argument order.
+    /// Sub-boundaries are listed as clearly-distinguished views (legacy naming); their content
+    /// is already included in the runtime sections above.
     /// </summary>
     private void LogDebugRequest(Character character, Prompts prompts, int attemptNumber)
     {
+        string runtimeSystemPrompt = BuildRuntimeSystemPrompt(prompts);
+        string runtimeConversationPrompt = BuildRuntimeConversationPrompt(prompts);
+        string responseStart = prompts.ResponseStart;
+
         var sb = new System.Text.StringBuilder();
         sb.AppendLine($"╔═══════════════════════════════════════════════════════════════════");
         sb.AppendLine($"║ [AI Request Context] {character.Name} (Attempt {attemptNumber})");
         sb.AppendLine($"╠═══════════════════════════════════════════════════════════════════");
-        AppendBoundarySection(sb, "[System]", prompts.SystemPrompt);
-        AppendBoundarySection(sb, "[StaticInstructionContext]", prompts.StaticInstructionContext);
-        AppendBoundarySection(sb, "[DynamicContext]", prompts.DynamicContext);
-        AppendBoundarySection(sb, "[ConversationStream]", prompts.ConversationStream);
-        AppendBoundarySection(sb, "[ResponseStart]", prompts.ResponseStart);
-        sb.AppendLine($"║ 【Length Statistics】 (legacy composition; Provider payload unchanged until PROMPT-ARCH-02)");
-        sb.AppendLine($"║   CorePrompt Length: {prompts.CorePrompt.Length} chars");
-        int totalPromptChars = (prompts.SystemPrompt?.Length ?? 0)
-                             + (prompts.GameConstantContext?.Length ?? 0)
-                             + (prompts.NpcConstantContext?.Length ?? 0)
-                             + (prompts.Instructions?.Length ?? 0)
-                             + (prompts.CorePrompt?.Length ?? 0)
-                             + (prompts.Command?.Length ?? 0);
+        AppendBoundarySection(sb, "[RuntimeSystemPrompt]", runtimeSystemPrompt,
+            "final runtime section (Provider system arg)",
+            "[System] + [StaticInstructionContext]");
+        AppendBoundarySection(sb, "[RuntimeConversationPrompt]", runtimeConversationPrompt,
+            "final runtime section (Provider prompt arg)",
+            "[DynamicContext] + [ConversationStream]");
+        AppendBoundarySection(sb, "[ResponseStart]", responseStart,
+            "final runtime section (Provider responseStart arg)", null);
+        sb.AppendLine($"║ 【Length Statistics】 (runtime sections)");
+        sb.AppendLine($"║   RuntimeSystemPrompt Length: {runtimeSystemPrompt.Length} chars");
+        sb.AppendLine($"║   RuntimeConversationPrompt Length: {runtimeConversationPrompt.Length} chars");
+        sb.AppendLine($"║   ResponseStart Length: {(responseStart?.Length ?? 0)} chars");
+        int totalRuntimeChars = runtimeSystemPrompt.Length
+                              + runtimeConversationPrompt.Length
+                              + (responseStart?.Length ?? 0);
         // Mixed CJK/Latin payload ≈ 3.8 chars/token
-        int estimatedTokens = (int)Math.Ceiling(totalPromptChars / 3.8);
-        sb.AppendLine($"║   Total Request Length: {totalPromptChars} chars (~{estimatedTokens} Tokens)");
+        int estimatedTokens = (int)Math.Ceiling(totalRuntimeChars / 3.8);
+        sb.AppendLine($"║   Total Runtime Length: {totalRuntimeChars} chars (~{estimatedTokens} Tokens)");
         sb.AppendLine($"╚═══════════════════════════════════════════════════════════════════");
         Log.Debug(sb.ToString());
     }
 
-    private static void AppendBoundarySection(System.Text.StringBuilder sb, string label, string content)
+    private static void AppendBoundarySection(
+        System.Text.StringBuilder sb, string label, string content, string sectionNote, string subBoundaryNote)
     {
-        sb.AppendLine($"║ {label}");
+        sb.AppendLine($"║ {label} — {sectionNote}");
         foreach (var line in content.Split('\n'))
         {
             sb.AppendLine($"║   {line.TrimEnd()}");
         }
+        if (!string.IsNullOrEmpty(subBoundaryNote))
+            sb.AppendLine($"║   sub-boundaries (legacy naming, content included above): {subBoundaryNote}");
         sb.AppendLine($"║");
     }
 
