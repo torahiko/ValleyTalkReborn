@@ -562,7 +562,10 @@ public class LlmDialogueService
     }
 
     /// <summary>
-    /// Logs the full request context (System, GameConstant, NpcConstant, CorePrompt, etc.) in a formatted box.
+    /// Logs the named prompt boundaries (System, StaticInstructionContext, DynamicContext,
+    /// ConversationStream, ResponseStart) in a formatted box. Until PROMPT-ARCH-02 lands,
+    /// the Provider payload is still composed from the legacy fields, so these sections are
+    /// boundary views, not the final Provider payload.
     /// </summary>
     private void LogDebugRequest(Character character, Prompts prompts, int attemptNumber)
     {
@@ -570,49 +573,12 @@ public class LlmDialogueService
         sb.AppendLine($"╔═══════════════════════════════════════════════════════════════════");
         sb.AppendLine($"║ [AI Request Context] {character.Name} (Attempt {attemptNumber})");
         sb.AppendLine($"╠═══════════════════════════════════════════════════════════════════");
-        sb.AppendLine($"║ 【System】");
-        foreach (var line in prompts.SystemPrompt.Split('\n'))
-        {
-            sb.AppendLine($"║   {line.TrimEnd()}");
-        }
-        sb.AppendLine($"║");
-        sb.AppendLine($"║ 【GameConstantContext】");
-        foreach (var line in prompts.GameConstantContext.Split('\n'))
-        {
-            sb.AppendLine($"║   {line.TrimEnd()}");
-        }
-        sb.AppendLine($"║");
-        sb.AppendLine($"║ 【NpcConstantContext】");
-        foreach (var line in prompts.NpcConstantContext.Split('\n'))
-        {
-            sb.AppendLine($"║   {line.TrimEnd()}");
-        }
-        sb.AppendLine($"║");
-        sb.AppendLine($"║ 【Instructions】"); // 🌟【日志渲染前置】：与推理顺序保持一致
-        foreach (var line in prompts.Instructions.Split('\n'))
-        {
-            sb.AppendLine($"║   {line.TrimEnd()}");
-        }
-        sb.AppendLine($"║");
-        sb.AppendLine($"║ 【CorePrompt】");
-        foreach (var line in prompts.CorePrompt.Split('\n'))
-        {
-            sb.AppendLine($"║   {line.TrimEnd()}");
-        }
-        sb.AppendLine($"║");
-        sb.AppendLine($"║ 【Command】");
-        foreach (var line in prompts.Command.Split('\n'))
-        {
-            sb.AppendLine($"║   {line.TrimEnd()}");
-        }
-        sb.AppendLine($"║");
-        sb.AppendLine($"║ 【ResponseStart】");
-        foreach (var line in prompts.ResponseStart.Split('\n'))
-        {
-            sb.AppendLine($"║   {line.TrimEnd()}");
-        }
-        sb.AppendLine($"║");
-        sb.AppendLine($"║ 【Length Statistics】");
+        AppendBoundarySection(sb, "[System]", prompts.SystemPrompt);
+        AppendBoundarySection(sb, "[StaticInstructionContext]", prompts.StaticInstructionContext);
+        AppendBoundarySection(sb, "[DynamicContext]", prompts.DynamicContext);
+        AppendBoundarySection(sb, "[ConversationStream]", prompts.ConversationStream);
+        AppendBoundarySection(sb, "[ResponseStart]", prompts.ResponseStart);
+        sb.AppendLine($"║ 【Length Statistics】 (legacy composition; Provider payload unchanged until PROMPT-ARCH-02)");
         sb.AppendLine($"║   CorePrompt Length: {prompts.CorePrompt.Length} chars");
         int totalPromptChars = (prompts.SystemPrompt?.Length ?? 0)
                              + (prompts.GameConstantContext?.Length ?? 0)
@@ -625,6 +591,16 @@ public class LlmDialogueService
         sb.AppendLine($"║   Total Request Length: {totalPromptChars} chars (~{estimatedTokens} Tokens)");
         sb.AppendLine($"╚═══════════════════════════════════════════════════════════════════");
         Log.Debug(sb.ToString());
+    }
+
+    private static void AppendBoundarySection(System.Text.StringBuilder sb, string label, string content)
+    {
+        sb.AppendLine($"║ {label}");
+        foreach (var line in content.Split('\n'))
+        {
+            sb.AppendLine($"║   {line.TrimEnd()}");
+        }
+        sb.AppendLine($"║");
     }
 
     /// <summary>
