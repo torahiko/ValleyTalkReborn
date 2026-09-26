@@ -700,6 +700,29 @@ namespace ValleytalkReborn
 
             public static string ClearScopeHudGlobalAll() => Lookup("DialogueInput.ClearScopeHudGlobalAll");
 
+            // ── 输入框占位符 / 副标题 / 按钮 / 气泡（VT3-i18n-002B）──
+            public static string Placeholder() => Lookup("DialogInput.Placeholder");
+            public static string PlaceholderWithName(string name) =>
+                Lookup("DialogInput.PlaceholderWithName").Replace("{{name}}", name ?? string.Empty);
+
+            public static string SubtitleGeneric() => Lookup("DialogInput.SubtitleGeneric");
+            public static string SubtitleWithName(string name) =>
+                Lookup("DialogInput.SubtitleWithName").Replace("{{name}}", name ?? string.Empty);
+
+            public static string ButtonHistory() => Lookup("DialogInput.ButtonHistory");
+            public static string ButtonClearMemory() => Lookup("DialogInput.ButtonClearMemory");
+            public static string ButtonCancel() => Lookup("DialogInput.ButtonCancel");
+            public static string ButtonSend() => Lookup("DialogInput.ButtonSend");
+
+            public static string TooltipHistory(string name) =>
+                Lookup("DialogInput.TooltipHistory").Replace("{{name}}", name ?? string.Empty);
+            public static string TooltipHistoryGeneric() => Lookup("DialogInput.TooltipHistoryGeneric");
+            public static string TooltipClearMemory(string name) =>
+                Lookup("DialogInput.TooltipClearMemory").Replace("{{name}}", name ?? string.Empty);
+            public static string TooltipClearMemoryGeneric() => Lookup("DialogInput.TooltipClearMemoryGeneric");
+            public static string TooltipCancel() => Lookup("DialogInput.TooltipCancel");
+            public static string TooltipSend() => Lookup("DialogInput.TooltipSend");
+
         }
 
         public static class Follower
