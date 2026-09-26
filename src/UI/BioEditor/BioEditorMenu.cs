@@ -2161,7 +2161,14 @@ namespace ValleytalkReborn
             BioAiReviewSession.Start(this, I18n.Bio.ReviewBioTitle(_npcName), system, user, confirmedText => ApplyPolishResult(confirmedText), () => _wizardStep = WizardStep.None, enableThinking);
         }
 
-        private void OfferWizardAdvance(string title, string subtitle, List<string> warnings, string continueText, Action next, string? tip = null, string fixText = null)
+        private void OfferWizardAdvance(
+            string title, 
+            string subtitle, 
+            List<string> warnings, 
+            string continueText, 
+            Action next, 
+            string? tip = null, 
+            string? fixText = null) 
         {
             string fix = fixText ?? I18n.Get("Bio.WizardStopHere");
             AgentToolDispatcher.EnqueueMainThread(() =>
