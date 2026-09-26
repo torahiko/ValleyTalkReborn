@@ -307,6 +307,21 @@ namespace ValleytalkReborn
             public static string SaveButton() => Lookup("Profile.SaveButton");
             public static string SavedHud() => Lookup("Profile.SavedHud");
 
+            // ── NPC 宫格文案（FEAT-PROFILE-I18N-001）──
+            /// <summary>NPC 宫格卡片右上角徽章文本（标识有自定义人设）。</summary>
+            public static string NpcCustomBadge() => Lookup("Profile.NpcCustomBadge");
+
+            /// <summary>NPC 宫格卡片重置按钮 tooltip。含 {{npc}} 插值（NPC 显示名称）。</summary>
+            public static string NpcResetTooltip(string npcDisplayName) =>
+                Lookup("Profile.NpcResetTooltip").Replace("{{npc}}", npcDisplayName ?? string.Empty);
+
+            /// <summary>NPC 宫格分页信息。含 {{current}} / {{total}} / {{count}} 三个插值。</summary>
+            public static string NpcPaginationInfo(int currentPage, int totalPages, int totalCount) =>
+                Lookup("Profile.NpcPaginationInfo")
+                    .Replace("{{current}}", currentPage.ToString())
+                    .Replace("{{total}}", totalPages.ToString())
+                    .Replace("{{count}}", totalCount.ToString());
+
             // Backward compatibility (used by DialogueTextInputMenu.cs)
         }
 

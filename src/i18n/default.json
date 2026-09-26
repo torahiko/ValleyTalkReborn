@@ -610,5 +610,8 @@
   "WorldSettings.LocationFestival.DeleteFestivalDialogConfirm": "Confirm Delete",
   "WorldSettings.LocationFestival.DeleteFestivalDialogCancel": "Keep Festival",
   "WorldSettings.LocationFestival.NewFestivalDefaultName": "New Custom Festival",
-  "WorldSettings.LocationFestival.NewFestivalDefaultDesc": "The whole town celebrates this day together."
+  "WorldSettings.LocationFestival.NewFestivalDefaultDesc": "The whole town celebrates this day together.",
+  "Profile.NpcCustomBadge": "Custom",
+  "Profile.NpcResetTooltip": "Reset {{npc}} to default",
+  "Profile.NpcPaginationInfo": "Page {{current}} / {{total}} ({{count}} total)"
 }

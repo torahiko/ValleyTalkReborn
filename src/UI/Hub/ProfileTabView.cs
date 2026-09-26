@@ -1176,7 +1176,7 @@ internal sealed class ProfileTabView : HubTabViewBase
 
             if (card.HasCustomOverlay)
             {
-                string badgeText = "★ 自定义";
+                string badgeText = I18n.Profile.NpcCustomBadge();
                 Color badgeBg = new Color(34, 139, 34);
                 var badgeSz = CustomFontManager.MeasureStringBold(badgeText, HubUi.SmallFontSize);
                 int bw = (int)badgeSz.X + 8;
@@ -1193,7 +1193,7 @@ internal sealed class ProfileTabView : HubTabViewBase
                 bool resetHover = slot.ResetBtnBounds.Contains(mx, my);
                 if (resetHover)
                 {
-                    SetHoveredTooltip($"还原 {card.DisplayName} 为默认人设");
+                    SetHoveredTooltip(I18n.Profile.NpcResetTooltip(card.DisplayName));
                 }
 
                 bool resetPressed = isLeftMouseDown && resetHover;
@@ -1233,7 +1233,7 @@ internal sealed class ProfileTabView : HubTabViewBase
 
         DrawArrowButton(b, _prevPageBtnRect, isLeft: true, enabled: prevEnabled, mx, my);
 
-        string pageInfo = $"第 {curPage} / {totalPages} 页 (共 {_displayNpcCards.Count} 人)";
+        string pageInfo = I18n.Profile.NpcPaginationInfo(curPage, totalPages, _displayNpcCards.Count);
         var pageInfoSz = CustomFontManager.MeasureStringBold(pageInfo, HubUi.RegularFontSize);
         CustomFontManager.DrawStringBold(b, pageInfo,
             new Vector2(MenuBounds.X + (MenuBounds.Width - pageInfoSz.X) / 2f, _prevPageBtnRect.Y + (_prevPageBtnRect.Height - pageInfoSz.Y) / 2f),
