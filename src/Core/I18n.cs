@@ -484,5 +484,54 @@ namespace ValleytalkReborn
             public static string ConfirmArchive() => Lookup("Dialog.ConfirmArchive");
             public static string Keep() => Lookup("Dialog.Keep");
         }
+
+        // =========================================================================
+        // 7. BIO EDITOR / CHARACTER STUDIO DOMAIN (Isolated Scope)
+        // =========================================================================
+        public static class Bio
+        {
+            public static string TabTitle(int index) => Lookup("Bio.Tab" + (index + 1));
+
+            public static string Title(string display, string internalName) => Lookup("Bio.Title")
+                .Replace("{{display}}", display ?? string.Empty)
+                .Replace("{{internal}}", internalName ?? string.Empty);
+
+            public static string StageCount(int count, int max) => Lookup("Bio.StageCountPattern")
+                .Replace("{{count}}", count.ToString())
+                .Replace("{{max}}", max.ToString());
+
+            public static string StageRow(int number, string gateSummary) => Lookup("Bio.StageRowPattern")
+                .Replace("{{num}}", number.ToString())
+                .Replace("{{gates}}", gateSummary ?? string.Empty);
+
+            public static string GateSpouse(string spouseDisplay) => Lookup("Bio.GateSpousePattern")
+                .Replace("{{spouse}}", spouseDisplay ?? string.Empty);
+
+            public static string RelHeading(string npcDisplay, string targetDisplay) => Lookup("Bio.RelHeadingPattern")
+                .Replace("{{npc}}", npcDisplay ?? string.Empty)
+                .Replace("{{target}}", targetDisplay ?? string.Empty);
+
+            public static string DeleteRelSubtitle(string npcDisplay, string targetDisplay) => Lookup("Bio.DeleteRelSubtitle")
+                .Replace("{{npc}}", npcDisplay ?? string.Empty)
+                .Replace("{{target}}", targetDisplay ?? string.Empty);
+
+            public static string PromptTitle(string section) => Lookup("Bio.PromptTitlePattern")
+                .Replace("{{section}}", section ?? string.Empty);
+
+            public static string WizardTitle(string npcDisplay) => Lookup("Bio.WizardTitlePattern")
+                .Replace("{{npc}}", npcDisplay ?? string.Empty);
+
+            public static string StageNum(int number) => Lookup("Bio.StageNumPattern")
+                .Replace("{{num}}", number.ToString());
+
+            public static string ExportDone(string npcDisplay) => Lookup("Bio.ExportDone")
+                .Replace("{{npc}}", npcDisplay ?? string.Empty);
+
+            public static string ResetDone(string npcDisplay) => Lookup("Bio.ResetDone")
+                .Replace("{{npc}}", npcDisplay ?? string.Empty);
+
+            public static string WithErr(string key, string err) => Lookup(key)
+                .Replace("{{err}}", err ?? string.Empty);
+        }
     }
 }
