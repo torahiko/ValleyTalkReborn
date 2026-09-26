@@ -78,8 +78,8 @@ namespace ValleytalkReborn
 
             // 文本框初始化（使用 18f 锐利字号，暖橘红木外框与内置占位符）
             string placeholder = !string.IsNullOrEmpty(_npcDisplayName)
-                ? $"输入你想对 {_npcDisplayName} 说的话... (Enter 快速发送)"
-                : "输入对话内容... (Enter 快速发送)";
+                ? I18n.DialogueInput.PlaceholderWithName(_npcDisplayName)
+                : I18n.DialogueInput.Placeholder();
 
             _inputTextBox = new DialogueTextInputBox(300)
             {
@@ -406,31 +406,31 @@ namespace ValleytalkReborn
             _inputTextBox.Draw(b);
 
             // 4. ★ 核心修复 1：接入平滑弹性缩放、高亮边框与浮起阴影动效的现代化实体按钮
-            DrawAnimatedActionButton(b, _viewHistoryRect, "📜 对话历史", ref _viewHistoryHoverScale, mx, my, isPrimary: false);
-            DrawAnimatedActionButton(b, _clearHistoryRect, "🗑 清理记忆", ref _clearHistoryHoverScale, mx, my, isDanger: false);
-            DrawAnimatedActionButton(b, _cancelButtonRect, "✕ 取消 (Esc)", ref _cancelButtonHoverScale, mx, my, isDanger: false);
-            DrawAnimatedActionButton(b, _okButtonRect, "✔ 发送对话 (Enter)", ref _okButtonHoverScale, mx, my, isPrimary: true);
+            DrawAnimatedActionButton(b, _viewHistoryRect, I18n.DialogueInput.ButtonHistory(), ref _viewHistoryHoverScale, mx, my, isPrimary: false);
+            DrawAnimatedActionButton(b, _clearHistoryRect, I18n.DialogueInput.ButtonClearMemory(), ref _clearHistoryHoverScale, mx, my, isDanger: false);
+            DrawAnimatedActionButton(b, _cancelButtonRect, I18n.DialogueInput.ButtonCancel(), ref _cancelButtonHoverScale, mx, my, isDanger: false);
+            DrawAnimatedActionButton(b, _okButtonRect, I18n.DialogueInput.ButtonSend(), ref _okButtonHoverScale, mx, my, isPrimary: true);
 
             // 5. 悬停提示检测（鼠标离开感应区后当帧自然失效）
             if (_viewHistoryRect.Contains(mx, my))
             {
                 _hoverText = !string.IsNullOrEmpty(_npcDisplayName)
-                    ? $"【查看回忆时间轴】\n翻阅您与 {_npcDisplayName} 往昔的所有对话片段与心境演变。"
-                    : "查看历史对话记录。";
+                    ? I18n.DialogueInput.TooltipHistory(_npcDisplayName)
+                    : I18n.DialogueInput.TooltipHistoryGeneric();
             }
             else if (_clearHistoryRect.Contains(mx, my))
             {
                 _hoverText = !string.IsNullOrEmpty(_npcDisplayName)
-                    ? $"【重置对话上下文】\n清除 {_npcDisplayName} 的今日对话或长期短期记忆缓存。"
-                    : "清空对话记忆。";
+                    ? I18n.DialogueInput.TooltipClearMemory(_npcDisplayName)
+                    : I18n.DialogueInput.TooltipClearMemoryGeneric();
             }
             else if (_cancelButtonRect.Contains(mx, my))
             {
-                _hoverText = "【放弃输入】\n关闭当前输入窗口，不发送任何内容。";
+                _hoverText = I18n.DialogueInput.TooltipCancel();
             }
             else if (_okButtonRect.Contains(mx, my))
             {
-                _hoverText = "【发送对话】\n将输入内容发送给角色并开启大模型回复推演。";
+                _hoverText = I18n.DialogueInput.TooltipSend();
             }
 
             if (!string.IsNullOrEmpty(_hoverText))
@@ -469,8 +469,8 @@ namespace ValleytalkReborn
 
             // ★ 副说明：Medium 字体，SizeSmall (15f)
             string subtitle = !string.IsNullOrEmpty(_npcDisplayName)
-                ? $"正在与 {_npcDisplayName} 进行自由交谈 · 支持日常闲聊、追问真相与情感表达"
-                : "自由对话输入";
+                ? I18n.DialogueInput.SubtitleWithName(_npcDisplayName)
+                : I18n.DialogueInput.SubtitleGeneric();
             CustomFontManager.DrawString(b, subtitle, new Vector2(headX + pSize + 14, headY + 30), BioEditorMenu.TextMuted, TipFontSize);
 
             // 分割横线
@@ -582,12 +582,7 @@ namespace ValleytalkReborn
                           : isDanger ? BioEditorMenu.TextOnDarkBtn
                           : BioEditorMenu.TextOnLightBtn;
 
-            var sz = CustomFontManager.MeasureStringBold(label, ButtonFontSize);
-            CustomFontManager.DrawStringBold(b, label,
-                new Vector2(
-                    btnBounds.X + (btnBounds.Width - sz.X) / 2f,
-                    btnBounds.Y + (btnBounds.Height - sz.Y) / 2f),
-                textCol, ButtonFontSize);
+            ButtonTextRenderer.DrawButtonText(b, label, btnBounds, textCol, useBold: true);
         }
 
         private static void DrawHoverTextCustom(SpriteBatch b, string text)
