@@ -754,6 +754,46 @@ namespace ValleytalkReborn
                 => Lookup("Follower.TooFarAway").Replace("{{name}}", name ?? string.Empty);
         }
 
+        // =========================================================================
+        // 6d. POI INSPECT HUD (Survey point capture HUD)
+        // =========================================================================
+        public static class PoiHud
+        {
+            public static string TitleBadge() => Lookup("PoiHud.TitleBadge");
+
+            public static string LocationLabel(string map, int x, int y)
+                => Lookup("PoiHud.LocationLabel")
+                    .Replace("{{map}}", map ?? string.Empty)
+                    .Replace("{{x}}", x.ToString())
+                    .Replace("{{y}}", y.ToString());
+
+            public static string StatusPassable() => Lookup("PoiHud.StatusPassable");
+            public static string StatusBlocked(string reason)
+                => Lookup("PoiHud.StatusBlocked").Replace("{{reason}}", reason ?? string.Empty);
+
+            public static string UnknownMap() => Lookup("PoiHud.UnknownMap");
+
+            public static string ButtonCapture() => Lookup("PoiHud.ButtonCapture");
+            public static string ButtonConfirm() => Lookup("PoiHud.ButtonConfirm");
+            public static string ButtonUnstuck() => Lookup("PoiHud.ButtonUnstuck");
+            public static string ButtonClose() => Lookup("PoiHud.ButtonClose");
+
+            public static string CaptureFailedHud(string reason)
+                => Lookup("PoiHud.CaptureFailedHud").Replace("{{reason}}", reason ?? string.Empty);
+            public static string ConfirmFailedHud(string reason)
+                => Lookup("PoiHud.ConfirmFailedHud").Replace("{{reason}}", reason ?? string.Empty);
+            public static string ConfirmSuccessHud(string name, int x, int y)
+                => Lookup("PoiHud.ConfirmSuccessHud")
+                    .Replace("{{name}}", name ?? string.Empty)
+                    .Replace("{{x}}", x.ToString())
+                    .Replace("{{y}}", y.ToString());
+            public static string UnstuckSuccessHud(int x, int y)
+                => Lookup("PoiHud.UnstuckSuccessHud")
+                    .Replace("{{x}}", x.ToString())
+                    .Replace("{{y}}", y.ToString());
+            public static string UnstuckFailedHud() => Lookup("PoiHud.UnstuckFailedHud");
+        }
+
         /// <summary>统一警示/确认弹窗（BioValveWarningDialog）的共享按钮文案。</summary>
         public static class Dialog
         {
