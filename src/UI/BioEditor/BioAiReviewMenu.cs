@@ -446,18 +446,23 @@ namespace ValleytalkReborn
             // 4. 底部动作按钮
             if (_phase != ReviewPhase.Settled)
             {
-                DrawActionButton(b, _stopButtonRect, I18n.Get("Bio.StopButton"), mx, my, isDanger: true);
+                BioEditorMenu.DrawActionButton(b, _stopButtonRect, I18n.Get("Bio.StopButton"), mx, my, ButtonFontSize,
+                    isDanger: true, isLeftMouseDownFunc: () => IsLeftMouseDown());
                 if (_stopButtonRect.Contains(mx, my))
                     _hoverText = I18n.Get("Bio.StopHover");
             }
             else
             {
-                DrawActionButton(b, _copyButtonRect, I18n.Get("Bio.CopyReview"), mx, my);
+                BioEditorMenu.DrawActionButton(b, _copyButtonRect, I18n.Get("Bio.CopyReview"), mx, my, ButtonFontSize,
+                    isLeftMouseDownFunc: () => IsLeftMouseDown());
                 if (_onRequestRefine != null)
-                    DrawActionButton(b, _refineButtonRect, I18n.Get("Bio.RefineButton"), mx, my);
-                DrawActionButton(b, _cancelButtonRect, I18n.Get("Bio.DiscardButton"), mx, my);
+                    BioEditorMenu.DrawActionButton(b, _refineButtonRect, I18n.Get("Bio.RefineButton"), mx, my, ButtonFontSize,
+                        isLeftMouseDownFunc: () => IsLeftMouseDown());
+                BioEditorMenu.DrawActionButton(b, _cancelButtonRect, I18n.Get("Bio.DiscardButton"), mx, my, ButtonFontSize,
+                    isLeftMouseDownFunc: () => IsLeftMouseDown());
                 // ★ 确认按钮：偏红底色 + 黑色字体 + 悬浮暖光高亮
-                DrawActionButton(b, _acceptButtonRect, I18n.Get("Bio.ApplyButton"), mx, my, isDanger: false, isPrimary: false, isSoftRed: true);
+                BioEditorMenu.DrawActionButton(b, _acceptButtonRect, I18n.Get("Bio.ApplyButton"), mx, my, ButtonFontSize,
+                    isDanger: false, isPrimary: false, isSoftRed: true, isLeftMouseDownFunc: () => IsLeftMouseDown());
 
                 if (_copyButtonRect.Contains(mx, my))
                     _hoverText = I18n.Get("Bio.CopyReviewHover");
@@ -471,7 +476,7 @@ namespace ValleytalkReborn
 
             // 5. 悬停气泡与光标
             if (!string.IsNullOrEmpty(_hoverText))
-                DrawHoverTextCustom(b, _hoverText);
+                BioEditorMenu.DrawButtonTooltip(b, _hoverText, TipFontSize);
 
             drawMouse(b);
         }
@@ -512,88 +517,6 @@ namespace ValleytalkReborn
             {
                 return false;
             }
-        }
-
-        private static void DrawActionButton(SpriteBatch b, Rectangle rect, string label, int mx, int my,
-            bool isDanger = false, bool isPrimary = false, bool isSoftRed = false, bool isEnabled = true)
-        {
-            bool isHover = isEnabled && rect.Contains(mx, my);
-            bool isPressed = isHover && IsLeftMouseDown();
-
-            Color bg;
-            if (!isEnabled) bg = Color.LightGray * 0.6f;
-            else if (isSoftRed) bg = isHover ? new Color(245, 145, 138) : new Color(225, 118, 110);
-            else if (isPrimary) bg = isHover ? Color.Gold : new Color(255, 220, 130);
-            else if (isDanger) bg = isHover ? new Color(245, 105, 105) : new Color(210, 85, 80);
-            else bg = isHover ? new Color(255, 240, 215) : new Color(225, 195, 155);
-
-            int pressOffset = isPressed ? 1 : 0;
-            if (isPressed) bg = Color.Lerp(bg, Color.Black, 0.14f);
-
-            if (!isPressed)
-                b.Draw(Game1.staminaRect, new Rectangle(rect.X + 2, rect.Y + 2, rect.Width, rect.Height), Color.Black * 0.15f);
-
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1 + pressOffset, rect.Y + 1 + pressOffset, rect.Width - 2, rect.Height - 2), bg);
-
-            Color borderCol = isSoftRed ? new Color(180, 82, 75)
-                            : isPrimary ? new Color(210, 160, 60)
-                            : isDanger ? new Color(175, 60, 55)
-                            : new Color(185, 150, 110);
-
-            // ★ 悬浮边框暖白高亮泛光（与 BioAiPromptDialog 完全统一）
-            if (isHover && isEnabled)
-                borderCol = Color.Lerp(borderCol, new Color(255, 245, 220), 0.55f);
-
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-                rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height, borderCol, 3f, false);
-
-            // ★ 仅 isDanger 采用深色底白字，偏红（isSoftRed）确认按钮采用黑色/深色字体（TextOnLightBtn）
-            Color textCol = !isEnabled ? BioEditorMenu.TextMuted
-                          : isDanger ? BioEditorMenu.TextOnDarkBtn
-                          : BioEditorMenu.TextOnLightBtn;
-
-            var (fitLabel, fitScale) = BioLabelFitter.FitBold(label, rect.Width, ButtonFontSize);
-            var sz = CustomFontManager.MeasureStringBold(fitLabel, ButtonFontSize, fitScale);
-            CustomFontManager.DrawStringBold(b, fitLabel,
-                new Vector2(
-                    rect.X + pressOffset + (rect.Width - sz.X) / 2f,
-                    rect.Y + pressOffset + (rect.Height - sz.Y) / 2f),
-                textCol, ButtonFontSize, fitScale);
-        }
-
-        private static void DrawHoverTextCustom(SpriteBatch b, string text)
-        {
-            if (string.IsNullOrEmpty(text)) return;
-
-            var sz = CustomFontManager.MeasureString(text, TipFontSize);
-            const int padX = 20;
-            const int padY = 12;
-
-            int boxW = (int)MathF.Ceiling(sz.X) + padX * 2;
-            int boxH = (int)MathF.Ceiling(sz.Y) + padY * 2;
-
-            int x = Game1.getOldMouseX() + 24;
-            int y = Game1.getOldMouseY() + 24;
-            var safe = Utility.getSafeArea();
-
-            if (x + boxW > safe.Right) x = safe.Right - boxW;
-            if (y + boxH > safe.Bottom)
-            {
-                x += 16;
-                if (x + boxW > safe.Right) x = safe.Right - boxW;
-                y = safe.Bottom - boxH;
-            }
-            if (x < safe.Left) x = safe.Left;
-            if (y < safe.Top) y = safe.Top;
-
-            IClickableMenu.drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
-                x + 4, y + 4, boxW, boxH, Color.Black * 0.28f, 0.65f, false);
-
-            IClickableMenu.drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
-                x, y, boxW, boxH, new Color(255, 255, 250), 0.65f, false);
-
-            float textY = y + (boxH - sz.Y) / 2f - 1;
-            CustomFontManager.DrawString(b, text, new Vector2(x + padX, textY), BioEditorMenu.TextPrimary, TipFontSize);
         }
     }
 }

@@ -2785,5 +2785,126 @@ namespace ValleytalkReborn
             catch { }
             return 0;
         }
+
+        // ── 共享绘制工具（供 BioEditor 模块所有对话框共用） ─────────────────
+        #region Shared Drawing Helpers
+
+        /// <summary>
+        /// 绘制统一样式的动作按钮（供 BioEditor 模块所有对话框共用）。
+        /// </summary>
+        /// <param name="b">SpriteBatch 实例。</param>
+        /// <param name="rect">按钮矩形区域。</param>
+        /// <param name="label">按钮文本。</param>
+        /// <param name="mx">鼠标 X 坐标。</param>
+        /// <param name="my">鼠标 Y 坐标。</param>
+        /// <param name="fontSize">按钮字号（调用方从对话框常量传入，如 ButtonFontSize）。</param>
+        /// <param name="isDanger">是否为危险操作按钮（深红背景）。</param>
+        /// <param name="isPrimary">是否为主要操作按钮（金色背景）。</param>
+        /// <param name="isSoftRed">是否为警告按钮（浅红背景，软警告态）。</param>
+        /// <param name="isEnabled">是否启用（禁用时灰显且无交互）。</param>
+        /// <param name="isLeftMouseDownFunc">左键按下检测函数（由调用方传入，因各对话框持私有 IsLeftMouseDown）。</param>
+        public static void DrawActionButton(SpriteBatch b, Rectangle rect, string label, int mx, int my, float fontSize,
+            bool isDanger = false, bool isPrimary = false, bool isSoftRed = false, bool isEnabled = true,
+            Func<bool>? isLeftMouseDownFunc = null)
+        {
+            bool isHover = isEnabled && rect.Contains(mx, my);
+            bool isPressed = isHover && (isLeftMouseDownFunc?.Invoke() ?? false);
+
+            // 背景色计算（统一四态逻辑）
+            Color bg;
+            if (!isEnabled)
+                bg = Color.LightGray * 0.6f;
+            else if (isSoftRed)
+                bg = isHover ? new Color(245, 145, 138) : new Color(225, 118, 110);
+            else if (isPrimary)
+                bg = isHover ? Color.Gold : new Color(255, 220, 130);
+            else if (isDanger)
+                bg = isHover ? new Color(245, 105, 105) : new Color(210, 85, 80);  // 统一值（放弃 Valve 微差）
+            else
+                bg = isHover ? new Color(255, 240, 215) : new Color(225, 195, 155);
+
+            int pressOffset = isPressed ? 1 : 0;
+            if (isPressed)
+                bg = Color.Lerp(bg, Color.Black, 0.14f);
+
+            // 投影（按下时消失）
+            if (!isPressed)
+                b.Draw(Game1.staminaRect, new Rectangle(rect.X + 2, rect.Y + 2, rect.Width, rect.Height), Color.Black * 0.15f);
+
+            // 背景填充
+            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1 + pressOffset, rect.Y + 1 + pressOffset, rect.Width - 2, rect.Height - 2), bg);
+
+            // 边框（统一无增亮版本，放弃 ValveWarningDialog 的悬浮增亮）
+            Color borderCol = isSoftRed ? new Color(180, 82, 75)
+                            : isPrimary ? new Color(210, 160, 60)
+                            : isDanger ? new Color(175, 60, 55)
+                            : new Color(185, 150, 110);
+
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
+                rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height, borderCol, 3f, false);
+
+            // 文本颜色
+            Color textCol = !isEnabled ? TextMuted
+                          : (isDanger || isSoftRed) ? TextOnDarkBtn
+                          : TextOnLightBtn;
+
+            var (fitLabel, fitScale) = BioLabelFitter.FitBold(label, rect.Width, fontSize);
+            var sz = CustomFontManager.MeasureStringBold(fitLabel, fontSize, fitScale);
+            CustomFontManager.DrawStringBold(b, fitLabel,
+                new Vector2(
+                    rect.X + pressOffset + (rect.Width - sz.X) / 2f,
+                    rect.Y + pressOffset + (rect.Height - sz.Y) / 2f),
+                textCol, fontSize, fitScale);
+        }
+
+        /// <summary>
+        /// 绘制按钮悬浮提示框（统一 DrawTooltip/DrawHoverTip 实现）。
+        /// </summary>
+        /// <param name="b">SpriteBatch 实例。</param>
+        /// <param name="text">提示文本。</param>
+        /// <param name="fontSize">提示字号（调用方从对话框常量传入，如 TipFontSize）。</param>
+        public static void DrawButtonTooltip(SpriteBatch b, string text, float fontSize)
+        {
+            if (string.IsNullOrEmpty(text)) return;
+
+            const int padX = 20;
+            const int padY = 14;
+            var sz = CustomFontManager.MeasureString(text, fontSize);
+            int boxW = (int)sz.X + padX * 2;
+            int boxH = (int)sz.Y + padY * 2;
+
+            int x = Game1.getOldMouseX() + 24;
+            int y = Game1.getOldMouseY() + 24;
+            var safe = Utility.getSafeArea();
+
+            // 边界约束（逐字保留既有逻辑）
+            if (x + boxW > safe.Right)
+                x = safe.Right - boxW;
+            if (y + boxH > safe.Bottom)
+            {
+                x += 16;
+                if (x + boxW > safe.Right)
+                    x = safe.Right - boxW;
+                y = safe.Bottom - boxH;
+            }
+            if (x < safe.Left)
+                x = safe.Left;
+            if (y < safe.Top)
+                y = safe.Top;
+
+            // 投影
+            IClickableMenu.drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
+                x + 4, y + 4, boxW, boxH, Color.Black * 0.28f, 0.65f, false);
+
+            // 底框
+            IClickableMenu.drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
+                x, y, boxW, boxH, new Color(255, 255, 250), 0.65f, false);
+
+            // 文本居中
+            float textY = y + (boxH - sz.Y) / 2f - 1;
+            CustomFontManager.DrawString(b, text, new Vector2(x + padX, textY), TextPrimary, fontSize);
+        }
+
+        #endregion
     }
 }
