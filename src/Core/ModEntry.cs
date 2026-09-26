@@ -1094,6 +1094,8 @@ namespace ValleytalkReborn
 
             try
             {
+                Tier1SnapshotStore.ClearAll();
+
                 try
                 {
                     DialogueHistoryManager.Instance?.SaveSync();
@@ -1453,6 +1455,9 @@ namespace ValleytalkReborn
             LastSpokenNPC = null;
             Event_AnswerDialogue_Patch.LastEventSpeakerNpc = null;
 
+            // 会话级 Memory 重置：确保新存档的对话不会复用前一个存档的 Tier 1 / Gossip 会话。
+            Tier1SnapshotStore.ClearAll();
+
             // [Save-scope rebuild] DialogueCoordinator owns per-save dialogue state; Cleanup
             // destroys it on title return. Rebuilt here by declared contract.
             InitializeDialogueCoordinator();
@@ -1481,6 +1486,8 @@ namespace ValleytalkReborn
         {
             PlayerStateScanner.OnDayStarted();
             RecentConversationTracker.Clear();
+            // 跨天 Memory 重置：前一个游戏日的 Tier 1 / Gossip 会话不得延续到新的一天。
+            Tier1SnapshotStore.ClearAll();
             //NPC_CurrentDialogue_Patch.ClearDedupState();
             NPC_CheckForNewCurrentDialogue_Patch.ClearDedupState();
             SessionCache.Instance.ResetAll();
