@@ -237,8 +237,39 @@ public sealed class ConversationDirector : IConversationDirector
                 Prompts.PromptsBlocks.BuildJealousyTrigger(character, flags, isZh));
 
         if (whitelist.Contains(Tier2bBlockIds.Preoccupation))
-            SetImpulse(impulses, Tier2bBlockIds.Preoccupation,
-                Prompts.PromptsBlocks.BuildPreoccupation(character, context, thoughts, name));
+        {
+            string preoccupation = null;
+
+            // TIE-003：Normal 分支的镇事件参与者优先注入事件演员简报；
+            // 无活跃事件或非参与者静默走原有路径（RECOVERABLE，不记 Warn/Error）。
+            if (branch == InstructionsBranch.Normal)
+            {
+                if (string.IsNullOrWhiteSpace(character.Name))
+                {
+                    ModEntry.SMonitor?.Log(
+                        "[ConversationDirector] TownIncidentEngine query skipped: character.Name is empty.",
+                        LogLevel.Error);
+                }
+                else if (TownIncidentEngine.TryGetActorBrief(character.Name, out string incidentBrief))
+                {
+                    if (string.IsNullOrWhiteSpace(incidentBrief))
+                    {
+                        ModEntry.SMonitor?.Log(
+                            $"[ConversationDirector] TownIncidentEngine contract violation: empty actor brief for '{character.Name}'; using the existing Preoccupation path.",
+                            LogLevel.Error);
+                    }
+                    else
+                    {
+                        preoccupation = incidentBrief;
+                    }
+                }
+            }
+
+            if (preoccupation == null)
+                preoccupation = Prompts.PromptsBlocks.BuildPreoccupation(character, context, thoughts, name);
+
+            SetImpulse(impulses, Tier2bBlockIds.Preoccupation, preoccupation);
+        }
 
         if (whitelist.Contains(Tier2bBlockIds.PendingTopic))
             SetImpulse(impulses, Tier2bBlockIds.PendingTopic,
