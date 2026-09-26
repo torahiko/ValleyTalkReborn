@@ -60,7 +60,7 @@ namespace ValleytalkReborn
             _onSubmit = onSubmit;
             _parentMenu = parentMenu;
             _targetTitle = targetTitle ?? string.Empty;
-            _titleText = $"AI 引导 · {_targetTitle}";
+            _titleText = I18n.Bio.PromptTitle(_targetTitle);
             _allowEmptyDemand = allowEmptyDemand;
 
             _inputBox = new DialogueTextInputBox(600)
@@ -72,8 +72,8 @@ namespace ValleytalkReborn
                 ShowCharacterCount = true,
                 DrawFrame = true, // ★ 启用纯正暖橘红木外框，彻底告别 403 灰框
                 PlaceholderText = _allowEmptyDemand
-                    ? "可选：输入期望调整的方向与风格要求（可留空直接生成）..."
-                    : "输入您期望的调整方向、细节增补或特定语气（Enter 快速生成）...",
+                    ? I18n.Get("Bio.PromptPlaceholderOptional")
+                    : I18n.Get("Bio.PromptPlaceholderRequired"),
                 PlaceholderColor = new Color(175, 145, 115) // ★ 温暖金木色提示词
             };
 
@@ -222,7 +222,7 @@ namespace ValleytalkReborn
                 else
                 {
                     Game1.playSound("cancel");
-                    Game1.addHUDMessage(new HUDMessage("请先输入期望的调整方向（或点取消放弃）", HUDMessage.error_type));
+                    Game1.addHUDMessage(new HUDMessage(I18n.Get("Bio.PromptNeedDemand"), HUDMessage.error_type));
                 }
                 return;
             }
@@ -271,21 +271,21 @@ namespace ValleytalkReborn
             DrawThinkingToggleButton(b, _thinkingPillRect, BioAiUiPrefs.EnableThinking, mx, my);
 
             bool canSubmit = _allowEmptyDemand || !string.IsNullOrWhiteSpace(_inputBox.Text);
-            DrawActionButton(b, _cancelBtnRect, "✕ 取消 (Esc)", mx, my, isDanger: false, isPrimary: false);
-            DrawActionButton(b, _okBtnRect, "✔ 开始生成", mx, my, isDanger: false, isSoftRed: true, isEnabled: canSubmit);
+            DrawActionButton(b, _cancelBtnRect, I18n.Get("Bio.CancelEsc"), mx, my, isDanger: false, isPrimary: false);
+            DrawActionButton(b, _okBtnRect, I18n.Get("Bio.GenerateButton"), mx, my, isDanger: false, isSoftRed: true, isEnabled: canSubmit);
 
             // 5. 悬停提示文本处理
             if (_thinkingPillRect.Contains(mx, my))
             {
                 _hoverText = BioAiUiPrefs.EnableThinking
-                    ? "【深度思考模式：已开启】\n模型将进行更严密的多阶段推理与推演，构思更细腻，响应时间稍长。\n推荐用于复杂身世背景、深层矛盾或好感演变等关键节点。"
-                    : "【极速生成模式：已开启】\n直接生成对白与规则，响应极快，轻快高效。\n适合简短对白、口头禅修正等快速润色任务。";
+                    ? I18n.Get("Bio.ThinkingOnHover")
+                    : I18n.Get("Bio.ThinkingOffHover");
             }
             else if (_okBtnRect.Contains(mx, my))
             {
                 _hoverText = canSubmit
-                    ? "【开始生成】\n将当前指示提交给大模型开始构思与推演。"
-                    : "【前置要求】\n当前项目需要明确指导，请在上方输入框填写调整方向。";
+                    ? I18n.Get("Bio.GenerateHover")
+                    : I18n.Get("Bio.GenerateBlockedHover");
             }
 
             if (!string.IsNullOrEmpty(_hoverText))
@@ -303,7 +303,7 @@ namespace ValleytalkReborn
             CustomFontManager.DrawStringBold(b, _titleText, new Vector2(headX, headY), BioEditorMenu.TextPrimary, TitleFontSize);
 
             // ★ 副说明：Medium 字体，SizeSmall (15f)
-            const string sub = "请在下方输入框明确指导 AI 的构思方向（例如：翻译为其他语言、改得更加活泼一些等。）；";
+            string sub = I18n.Get("Bio.PromptSubtitle");
             CustomFontManager.DrawString(b, sub, new Vector2(headX + 2, headY + 28), BioEditorMenu.TextMuted, TipFontSize);
 
             // 分割横线
@@ -366,13 +366,14 @@ namespace ValleytalkReborn
                 rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height, borderCol, 3f, false);
 
             // 4. 文字标示统一采用 18f Bold 粗体与居中对齐
-            string label = isThinking ? "思考模式:深度" : "思考模式:快速";
-            var sz = CustomFontManager.MeasureStringBold(label, ButtonFontSize);
-            CustomFontManager.DrawStringBold(b, label,
+            string label = isThinking ? I18n.Get("Bio.ThinkingDeep") : I18n.Get("Bio.ThinkingFast");
+            var (fitLabel, fitScale) = BioLabelFitter.FitBold(label, rect.Width, ButtonFontSize);
+            var sz = CustomFontManager.MeasureStringBold(fitLabel, ButtonFontSize, fitScale);
+            CustomFontManager.DrawStringBold(b, fitLabel,
                 new Vector2(
                     rect.X + pressOffset + (rect.Width - sz.X) / 2f,
                     rect.Y + pressOffset + (rect.Height - sz.Y) / 2f),
-                BioEditorMenu.TextOnLightBtn, ButtonFontSize);
+                BioEditorMenu.TextOnLightBtn, ButtonFontSize, fitScale);
         }
 
         private static void DrawActionButton(SpriteBatch b, Rectangle rect, string label, int mx, int my,
@@ -411,12 +412,13 @@ namespace ValleytalkReborn
                           : (isDanger || isSoftRed) ? BioEditorMenu.TextOnDarkBtn
                           : BioEditorMenu.TextOnLightBtn;
 
-            var sz = CustomFontManager.MeasureStringBold(label, ButtonFontSize);
-            CustomFontManager.DrawStringBold(b, label,
+            var (fitLabel, fitScale) = BioLabelFitter.FitBold(label, rect.Width, ButtonFontSize);
+            var sz = CustomFontManager.MeasureStringBold(fitLabel, ButtonFontSize, fitScale);
+            CustomFontManager.DrawStringBold(b, fitLabel,
                 new Vector2(
                     rect.X + pressOffset + (rect.Width - sz.X) / 2f,
                     rect.Y + pressOffset + (rect.Height - sz.Y) / 2f),
-                textCol, ButtonFontSize);
+                textCol, ButtonFontSize, fitScale);
         }
 
         private static void DrawHoverTextCustom(SpriteBatch b, string text)

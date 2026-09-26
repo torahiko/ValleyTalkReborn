@@ -58,21 +58,27 @@ namespace ValleytalkReborn
 
         private string? _hoverText;
 
-        private static readonly string[] QuestionHeaders = new[]
+        private static string[] QuestionHeaders()
         {
-            "1. 明面身份与生活日常",
-            "2. 心理矛盾与深层弱点",
-            "3. 说话风格与口吻习惯",
-            "4. 对外来农夫第一印象"
-        };
+            return new[]
+            {
+                I18n.Get("Bio.WizardQ1"),
+                I18n.Get("Bio.WizardQ2"),
+                I18n.Get("Bio.WizardQ3"),
+                I18n.Get("Bio.WizardQ4"),
+            };
+        }
 
-        private static readonly string[] QuestionPlaceholders = new[]
+        private static string[] QuestionPlaceholders()
         {
-            "例：单亲矿工 / 退役邮递员 / 守墓人之女……",
-            "例：愧疚于一段旧关系 / 害怕被抛弃 / 强迫性囤积……",
-            "例：慢条斯理带方言 / 粗鲁但心软 / 沉默寡言……",
-            "例：好奇但警惕 / 热情好客 / 冷漠疏离……"
-        };
+            return new[]
+            {
+                I18n.Get("Bio.WizardQ1Ph"),
+                I18n.Get("Bio.WizardQ2Ph"),
+                I18n.Get("Bio.WizardQ3Ph"),
+                I18n.Get("Bio.WizardQ4Ph"),
+            };
+        }
 
         public BioWizardQuestionnaireDialog(string npcName, IClickableMenu parentMenu, Action<string, bool> onSubmit)
             : base(
@@ -98,7 +104,7 @@ namespace ValleytalkReborn
                     AllowNewlines = false,
                     Selected = i == 0,
                     DrawFrame = true, // 原生暖橘红木质感底框
-                    PlaceholderText = QuestionPlaceholders[i],
+                    PlaceholderText = QuestionPlaceholders()[i],
                     PlaceholderColor = new Color(175, 145, 115) // 温暖金木色提示词
                 };
             }
@@ -406,9 +412,9 @@ namespace ValleytalkReborn
             // 4. ★ 底部动作区域控件（模式胶囊 + 自由发挥 + 取消 + 开始生成）
             DrawThinkingToggleButton(b, _thinkingPillRect, BioAiUiPrefs.EnableThinking, mx, my);
 
-            DrawActionButton(b, _aiFreeButtonRect, "★ 留空交给 AI 自由发挥", mx, my, isPrimary: false);
-            DrawActionButton(b, _cancelButtonRect, "✕ 取消 (Esc)", mx, my, isDanger: false);
-            DrawActionButton(b, _okButtonRect, "✔ 开始生成身份档案", mx, my, isSoftRed: true);
+            DrawActionButton(b, _aiFreeButtonRect, I18n.Get("Bio.AiFreeButton"), mx, my, isPrimary: false);
+            DrawActionButton(b, _cancelButtonRect, I18n.Get("Bio.CancelEsc"), mx, my, isDanger: false);
+            DrawActionButton(b, _okButtonRect, I18n.Get("Bio.GenerateButton"), mx, my, isSoftRed: true);
 
             // 5. 悬停气泡处理
             if (_thinkingPillRect.Contains(mx, my))
@@ -453,10 +459,10 @@ namespace ValleytalkReborn
             }
 
             string disp = Game1.getCharacterFromName(_npcName)?.displayName ?? _npcName;
-            string title = $"引导式起号 · 角色种子问卷（{disp}）";
+            string title = I18n.Bio.WizardTitle(disp);
             CustomFontManager.DrawStringBold(b, title, new Vector2(headX + pSize + 12, headY + 2), BioEditorMenu.TextPrimary, TitleFontSize);
 
-            const string subTitle = "构思核心特征引导 AI 具象化人设；亦可留空部分项交给 AI 基于原版脉络自由发挥。";
+            string subTitle = I18n.Get("Bio.WizardSubtitle");
             CustomFontManager.DrawString(b, subTitle, new Vector2(headX + pSize + 14, headY + 30), BioEditorMenu.TextMuted, TipFontSize);
 
             int sepY = yPositionOnScreen + HeaderH + 4;
@@ -499,14 +505,14 @@ namespace ValleytalkReborn
             // 4. 标题与状态标
             float headerX = rect.X + (focused ? 16 : 14);
             CustomFontManager.DrawString(
-                b, QuestionHeaders[index],
+                b, QuestionHeaders()[index],
                 new Vector2(headerX, rect.Y + 10),
                 focused ? BioEditorMenu.TextPrimary : BioEditorMenu.TextSecondary,
                 SectionHeaderSize);
 
             if (hasText)
             {
-                const string badge = "✔ 已填写";
+                string badge = I18n.Get("Bio.WizardFilled");
                 var bsz = CustomFontManager.MeasureString(badge, TipFontSize);
                 CustomFontManager.DrawString(b, badge, new Vector2(rect.Right - bsz.X - 14, rect.Y + 12), BioEditorMenu.TextSuccess, TipFontSize);
             }
@@ -559,13 +565,14 @@ namespace ValleytalkReborn
                 rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height, borderCol, 3f, false);
 
             // 4. 文字标示统一采用 18f Bold 粗体与居中对齐
-            string label = isThinking ? "思考模式:深度" : "思考模式:快速";
-            var sz = CustomFontManager.MeasureStringBold(label, ButtonFontSize);
-            CustomFontManager.DrawStringBold(b, label,
+            string label = isThinking ? I18n.Get("Bio.ThinkingDeep") : I18n.Get("Bio.ThinkingFast");
+            var (fitLabel, fitScale) = BioLabelFitter.FitBold(label, rect.Width, ButtonFontSize);
+            var sz = CustomFontManager.MeasureStringBold(fitLabel, ButtonFontSize, fitScale);
+            CustomFontManager.DrawStringBold(b, fitLabel,
                 new Vector2(
                     rect.X + pressOffset + (rect.Width - sz.X) / 2f,
                     rect.Y + pressOffset + (rect.Height - sz.Y) / 2f),
-                BioEditorMenu.TextOnLightBtn, ButtonFontSize);
+                BioEditorMenu.TextOnLightBtn, ButtonFontSize, fitScale);
         }
 
         private static void DrawActionButton(SpriteBatch b, Rectangle rect, string label, int mx, int my,
@@ -604,12 +611,13 @@ namespace ValleytalkReborn
                           : (isDanger || isSoftRed) ? BioEditorMenu.TextOnDarkBtn
                           : BioEditorMenu.TextOnLightBtn;
 
-            var sz = CustomFontManager.MeasureStringBold(label, ButtonFontSize);
-            CustomFontManager.DrawStringBold(b, label,
+            var (fitLabel, fitScale) = BioLabelFitter.FitBold(label, rect.Width, ButtonFontSize);
+            var sz = CustomFontManager.MeasureStringBold(fitLabel, ButtonFontSize, fitScale);
+            CustomFontManager.DrawStringBold(b, fitLabel,
                 new Vector2(
                     rect.X + pressOffset + (rect.Width - sz.X) / 2f,
                     rect.Y + pressOffset + (rect.Height - sz.Y) / 2f),
-                textCol, ButtonFontSize);
+                textCol, ButtonFontSize, fitScale);
         }
 
         private static void DrawHoverTextCustom(SpriteBatch b, string text)

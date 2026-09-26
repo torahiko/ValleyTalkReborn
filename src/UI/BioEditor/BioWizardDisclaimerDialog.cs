@@ -52,15 +52,15 @@ namespace ValleytalkReborn
 
         private string? _hoverText;
 
-        private static readonly (string Header, string Body)[] Covenants = new[]
+        private static (string Header, string Body)[] Covenants()
         {
-            ("本地沙盒用途",
-             "本功能仅在您本地运行并直接调用您配置的大模型服务商接口；绝不上传任何角色数据至第三方中转服务器，您对自己的生成内容负全部责任。"),
-            ("版权归属 ConcernedApe 与原作者",
-             "《星露谷物语》所有原创内容（角色、对白、美术、音乐等）均归 ConcernedApe 及原作者所有；AI 生成内容亦须在此版权框架内，不得主张排他权利。"),
-            ("社区分享须标注 AI-Assisted 且禁止商用",
-             "向玩家社区分享 AI 辅助生成的角色档案时，须在显著位置标注「AI-Assisted」；任何基于本功能产出的内容均严禁直接或间接商业牟利。")
-        };
+            return new[]
+            {
+                (I18n.Get("Bio.DisclaimerC1H"), I18n.Get("Bio.DisclaimerC1B")),
+                (I18n.Get("Bio.DisclaimerC2H"), I18n.Get("Bio.DisclaimerC2B")),
+                (I18n.Get("Bio.DisclaimerC3H"), I18n.Get("Bio.DisclaimerC3B")),
+            };
+        }
 
         public BioWizardDisclaimerDialog(IClickableMenu parentMenu, Action onAccepted)
             : base(
@@ -73,7 +73,7 @@ namespace ValleytalkReborn
             _parentMenu = parentMenu;
             _onAccepted = onAccepted;
 
-            _checkbox = new SimpleCheckbox("我已知悉并同意上述公约（勾选后开启起号通道，且不再提示）", -1, 0, 0);
+            _checkbox = new SimpleCheckbox(I18n.Get("Bio.DisclaimerCheckbox"), -1, 0, 0);
 
             _closeButton = new ClickableTextureComponent(
                 new Rectangle(xPositionOnScreen + width - 50, yPositionOnScreen + 16, 36, 36),
@@ -150,7 +150,7 @@ namespace ValleytalkReborn
                 if (!_checkbox.isChecked)
                 {
                     Game1.playSound("cancel");
-                    Game1.addHUDMessage(new HUDMessage("请先阅读并勾选公约知悉框", HUDMessage.error_type));
+                    Game1.addHUDMessage(new HUDMessage(I18n.Get("Bio.DisclaimerMustCheck"), HUDMessage.error_type));
                     return;
                 }
 
@@ -167,7 +167,7 @@ namespace ValleytalkReborn
                 catch (Exception ex)
                 {
                     ModEntry.SMonitor?.Log($"[BioWizard] 合规门禁 Config 写入失败：{ex.Message}", StardewModdingAPI.LogLevel.Warn);
-                    Game1.addHUDMessage(new HUDMessage("配置写入失败（本次仍可继续使用，下次启动会再次提示）", HUDMessage.error_type));
+                    Game1.addHUDMessage(new HUDMessage(I18n.Get("Bio.DisclaimerConfigWarn"), HUDMessage.error_type));
                 }
 
                 Game1.playSound("coin");
@@ -213,7 +213,7 @@ namespace ValleytalkReborn
             // 3. 绘制三条公约卡片
             for (int i = 0; i < 3; i++)
             {
-                var (hdr, body) = Covenants[i];
+                var (hdr, body) = Covenants()[i];
                 DrawCovenantCard(b, _cardRects[i], hdr, body, mx, my);
             }
 
@@ -221,16 +221,16 @@ namespace ValleytalkReborn
             _checkbox.draw(b, 0, 0, this);
 
             // 5. 底部动作按钮
-            DrawActionButton(b, _cancelRect, "✕ 取消 (Esc)", mx, my, isDanger: false, isPrimary: false);
-            DrawActionButton(b, _acceptRect, "✔ 同意并继续", mx, my, isDanger: false, isPrimary: true, isEnabled: _checkbox.isChecked);
+            DrawActionButton(b, _cancelRect, I18n.Get("Bio.CancelEsc"), mx, my, isDanger: false, isPrimary: false);
+            DrawActionButton(b, _acceptRect, I18n.Get("Bio.AcceptButton"), mx, my, isDanger: false, isPrimary: true, isEnabled: _checkbox.isChecked);
 
             if (_cancelRect.Contains(mx, my))
-                _hoverText = "放弃本次起号向导，返回角色人设工作台。";
+                _hoverText = I18n.Get("Bio.DisclaimerCancelHover");
             else if (_acceptRect.Contains(mx, my))
             {
                 _hoverText = _checkbox.isChecked
-                    ? "【已同意公约】\n开启 2×2 引导问卷，开始构思角色设定。"
-                    : "【前置要求】\n请先勾选上方的“我已知悉并同意上述公约”复选框。";
+                    ? I18n.Get("Bio.DisclaimerAcceptHover")
+                    : I18n.Get("Bio.DisclaimerBlockedHover");
             }
 
             // 6. 悬停说明气泡与鼠标光标
@@ -246,11 +246,11 @@ namespace ValleytalkReborn
             int headY = yPositionOnScreen + 16;
 
             // ★ 主标题：唯一使用 Bold 的顶栏文字，SizeTitle (24f)
-            const string title = "关于 AI 创作与社区公约";
+            string title = I18n.Get("Bio.DisclaimerTitle");
             CustomFontManager.DrawStringBold(b, title, new Vector2(headX, headY), BioEditorMenu.TextPrimary, TitleFontSize);
 
             // ★ 副标题：使用 Medium 字体，SizeSmall (15f)
-            const string subtitle = "在体验引导式起号前，请知悉以下本地沙盒运行、模型调用与社区分享规范：";
+            string subtitle = I18n.Get("Bio.DisclaimerSubtitle");
             CustomFontManager.DrawString(b, subtitle, new Vector2(headX + 2, headY + 28), BioEditorMenu.TextMuted, TipFontSize);
 
             // 分割横线
@@ -304,7 +304,7 @@ namespace ValleytalkReborn
             if (string.IsNullOrEmpty(text))
                 return;
 
-            float lineHeight = CustomFontManager.MeasureString("测试", fontSize).Y + 2f;
+            float lineHeight = CustomFontManager.MeasureString("Ag", fontSize).Y + 2f;
             float curX = x;
             float curY = y;
             var sb = new StringBuilder();
@@ -386,12 +386,13 @@ namespace ValleytalkReborn
                           : BioEditorMenu.TextOnLightBtn;
 
             // ★ 动作按钮文字：使用 Bold 字体，SizeRegular (18f)
-            var sz = CustomFontManager.MeasureStringBold(label, ButtonFontSize);
-            CustomFontManager.DrawStringBold(b, label,
+            var (fitLabel, fitScale) = BioLabelFitter.FitBold(label, rect.Width, ButtonFontSize);
+            var sz = CustomFontManager.MeasureStringBold(fitLabel, ButtonFontSize, fitScale);
+            CustomFontManager.DrawStringBold(b, fitLabel,
                 new Vector2(
                     rect.X + pressOffset + (rect.Width - sz.X) / 2f,
                     rect.Y + pressOffset + (rect.Height - sz.Y) / 2f),
-                textCol, ButtonFontSize);
+                textCol, ButtonFontSize, fitScale);
         }
 
         private static void DrawHoverTextCustom(SpriteBatch b, string text)

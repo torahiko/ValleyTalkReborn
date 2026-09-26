@@ -60,7 +60,7 @@ namespace ValleytalkReborn
 
         private ConcurrentQueue<string>? _streamQueue;
         private ReviewPhase _phase = ReviewPhase.Thinking;
-        private string _statusSubtitle = "正在连接大模型并构建思考链路…";
+        private string _statusSubtitle = I18n.Get("Bio.ConnectingSubtitle");
         private string? _hoverText;
 
         public BioAiReviewMenu(string sectionTitle, IClickableMenu parentMenu, Func<string, bool> onAccepted, Action? onCancelled = null, Action<BioAiReviewMenu, string>? onRequestRefine = null)
@@ -84,7 +84,7 @@ namespace ValleytalkReborn
                 CustomFontSize = ContentFontSize,
                 Selected = false,
                 DrawFrame = true, // ★ 启用原生暖金/暖橘红木外框，消除 403 灰凹槽
-                PlaceholderText = "AI 正在构思生成方案，即将在此流式呈现…",
+                PlaceholderText = I18n.Get("Bio.ReviewPlaceholder"),
                 PlaceholderColor = new Color(175, 145, 115) // ★ 温暖金木色提示词
             };
 
@@ -110,7 +110,7 @@ namespace ValleytalkReborn
         {
             _streamQueue = tokenQueue;
             _phase = ReviewPhase.Thinking;
-            _statusSubtitle = "正在结合追问要求重新构思与二次润色…";
+            _statusSubtitle = I18n.Get("Bio.RefineThinking");
             _reviewTextBox.Selected = false;
             if (ReferenceEquals(Game1.keyboardDispatcher.Subscriber, _reviewTextBox))
                 Game1.keyboardDispatcher.Subscriber = null;
@@ -132,7 +132,7 @@ namespace ValleytalkReborn
                     if (_reviewTextBox.Text.StartsWith("```", StringComparison.Ordinal))
                         _reviewTextBox.SetText(result.Text);
 
-                    EnterSettled("生成完成：您可以直接在下方自由修改，满意后点击「应用生成内容」");
+                    EnterSettled(I18n.Get("Bio.SuccessSubtitle"));
                     Game1.playSound("shiny4");
                     break;
 
@@ -144,7 +144,7 @@ namespace ValleytalkReborn
                         return;
                     }
 
-                    EnterSettled("生成中断：已保留当前生成的内容，可编辑后应用或放弃");
+                    EnterSettled(I18n.Get("Bio.FailedSubtitle"));
                     break;
 
                 case BioAiResultKind.Cancelled:
@@ -154,7 +154,7 @@ namespace ValleytalkReborn
                         return;
                     }
 
-                    EnterSettled("已停止生成：已保留前半段内容，可编辑后应用或放弃");
+                    EnterSettled(I18n.Get("Bio.CancelledSubtitle"));
                     break;
             }
         }
@@ -203,7 +203,7 @@ namespace ValleytalkReborn
                 // 首包原子替换：新会话空框下与追加严格等价；追问会话下原子替换基准草稿
                 _reviewTextBox.SetText(batch.ToString());
                 _phase = ReviewPhase.Streaming;
-                _statusSubtitle = "正在实时接收并流式渲染生成内容…";
+                _statusSubtitle = I18n.Get("Bio.Streaming");
             }
             else
             {
@@ -343,7 +343,7 @@ namespace ValleytalkReborn
                 else
                 {
                     Game1.playSound("cancel");
-                    _statusSubtitle = "内容格式有误：请在文本框中修正后再次点击「应用」";
+                    _statusSubtitle = I18n.Get("Bio.ApplyFormatError");
                 }
                 return;
             }
@@ -409,12 +409,12 @@ namespace ValleytalkReborn
             {
                 TextCopy.ClipboardService.SetText(_reviewTextBox.Text ?? string.Empty);
                 Game1.playSound("coin");
-                Game1.addHUDMessage(new HUDMessage("已复制审阅文本至剪贴板", HUDMessage.newQuest_type));
+                Game1.addHUDMessage(new HUDMessage(I18n.Get("Bio.CopyReviewDone"), HUDMessage.newQuest_type));
             }
             catch (Exception ex)
             {
                 Game1.playSound("cancel");
-                Game1.addHUDMessage(new HUDMessage($"复制失败: {ex.Message}", HUDMessage.error_type));
+                Game1.addHUDMessage(new HUDMessage(I18n.Bio.WithErr("Bio.CopyReviewFailed", ex.Message), HUDMessage.error_type));
             }
         }
 
@@ -446,27 +446,27 @@ namespace ValleytalkReborn
             // 4. 底部动作按钮
             if (_phase != ReviewPhase.Settled)
             {
-                DrawActionButton(b, _stopButtonRect, "■ 停止生成 (Esc)", mx, my, isDanger: true);
+                DrawActionButton(b, _stopButtonRect, I18n.Get("Bio.StopButton"), mx, my, isDanger: true);
                 if (_stopButtonRect.Contains(mx, my))
-                    _hoverText = "【中断生成】\n立即停止大模型推理，已生成的文本片段将被保留供编辑。";
+                    _hoverText = I18n.Get("Bio.StopHover");
             }
             else
             {
-                DrawActionButton(b, _copyButtonRect, "📋 复制文本", mx, my);
+                DrawActionButton(b, _copyButtonRect, I18n.Get("Bio.CopyReview"), mx, my);
                 if (_onRequestRefine != null)
-                    DrawActionButton(b, _refineButtonRect, "💬 追问优化", mx, my);
-                DrawActionButton(b, _cancelButtonRect, "✕ 放弃 (Esc)", mx, my);
+                    DrawActionButton(b, _refineButtonRect, I18n.Get("Bio.RefineButton"), mx, my);
+                DrawActionButton(b, _cancelButtonRect, I18n.Get("Bio.DiscardButton"), mx, my);
                 // ★ 确认按钮：偏红底色 + 黑色字体 + 悬浮暖光高亮
-                DrawActionButton(b, _acceptButtonRect, "✔ 应用生成内容", mx, my, isDanger: false, isPrimary: false, isSoftRed: true);
+                DrawActionButton(b, _acceptButtonRect, I18n.Get("Bio.ApplyButton"), mx, my, isDanger: false, isPrimary: false, isSoftRed: true);
 
                 if (_copyButtonRect.Contains(mx, my))
-                    _hoverText = "【复制文本】\n将当前审阅框中的全部内容复制到系统剪贴板。";
+                    _hoverText = I18n.Get("Bio.CopyReviewHover");
                 else if (_onRequestRefine != null && _refineButtonRect.Contains(mx, my))
-                    _hoverText = "【追问优化】\n以当前文本为基础，向大模型提出进一步的润色、增补或调整要求。";
+                    _hoverText = I18n.Get("Bio.RefineHover");
                 else if (_cancelButtonRect.Contains(mx, my))
-                    _hoverText = "【放弃修改】\n关闭当前审阅窗口，不应用本次 AI 生成的任何内容。";
+                    _hoverText = I18n.Get("Bio.DiscardHover");
                 else if (_acceptButtonRect.Contains(mx, my))
-                    _hoverText = "【应用并保存】\n将当前文本写入人设档案的对应项，生效改动。";
+                    _hoverText = I18n.Get("Bio.ApplyHover");
             }
 
             // 5. 悬停气泡与光标
@@ -552,12 +552,13 @@ namespace ValleytalkReborn
                           : isDanger ? BioEditorMenu.TextOnDarkBtn
                           : BioEditorMenu.TextOnLightBtn;
 
-            var sz = CustomFontManager.MeasureStringBold(label, ButtonFontSize);
-            CustomFontManager.DrawStringBold(b, label,
+            var (fitLabel, fitScale) = BioLabelFitter.FitBold(label, rect.Width, ButtonFontSize);
+            var sz = CustomFontManager.MeasureStringBold(fitLabel, ButtonFontSize, fitScale);
+            CustomFontManager.DrawStringBold(b, fitLabel,
                 new Vector2(
                     rect.X + pressOffset + (rect.Width - sz.X) / 2f,
                     rect.Y + pressOffset + (rect.Height - sz.Y) / 2f),
-                textCol, ButtonFontSize);
+                textCol, ButtonFontSize, fitScale);
         }
 
         private static void DrawHoverTextCustom(SpriteBatch b, string text)

@@ -530,6 +530,15 @@ namespace ValleytalkReborn
             public static string ResetDone(string npcDisplay) => Lookup("Bio.ResetDone")
                 .Replace("{{npc}}", npcDisplay ?? string.Empty);
 
+            public static string ReviewBioTitle(string npcName) => Lookup("Bio.ReviewBioTitle")
+                .Replace("{{name}}", npcName ?? string.Empty);
+
+            public static string ReviewAmbientTitle(string npcName) => Lookup("Bio.ReviewAmbientTitle")
+                .Replace("{{name}}", npcName ?? string.Empty);
+
+            public static string ReviewLadderTitle(string npcName) => Lookup("Bio.ReviewLadderTitle")
+                .Replace("{{name}}", npcName ?? string.Empty);
+
             public static string WithErr(string key, string err) => Lookup(key)
                 .Replace("{{err}}", err ?? string.Empty);
         }
