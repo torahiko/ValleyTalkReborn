@@ -17,15 +17,16 @@ public class BioPromptBuilderRefinementTests
         var (system, user) = BioPromptBuilder.BuildRefinementPrompt(baseSystem, draft, demand);
 
         Assert.Contains(baseSystem, system);
-        Assert.Contains("二次迭代修改", system);
-        Assert.Contains("基准底稿", system);
-        Assert.Contains("严禁寒暄、解释、前导语", system);
+        // 测试环境为 en（LocalizedContentManager 默认），断言 en 段头
+        Assert.Contains("[REFINEMENT RULES]", system);
+        Assert.Contains("second-pass edit", system);
+        Assert.Contains("DO NOT output greetings", system);
 
         Assert.Contains(draft, user);
         Assert.Contains(demand, user);
-        Assert.Contains("【上一轮生成的草稿内容】", user);
-        Assert.Contains("【玩家本次追问与优化要求】", user);
-        Assert.Contains("输出修改与优化后的完整内容", user);
+        Assert.Contains("[PREVIOUS DRAFT]", user);
+        Assert.Contains("[PLAYER REQUEST]", user);
+        Assert.Contains("complete revised", user);
     }
 
     // ── 验收 9b：含换行的多行草稿逐字保留 ──
@@ -57,10 +58,12 @@ public class BioPromptBuilderRefinementTests
         var (system, user) = BioPromptBuilder.BuildRefinementPrompt(baseSystem, draft, demand);
 
         Assert.Contains(baseSystem, system);
-        Assert.Contains("二次迭代修改", system);
+        // 测试环境为 en（LocalizedContentManager 默认），断言 en 段头
+        Assert.Contains("[REFINEMENT RULES]", system);
+        Assert.Contains("second-pass edit", system);
         Assert.Contains(draft, user);
-        Assert.Contains("【玩家本次追问与优化要求】", user);
-        Assert.Contains("【上一轮生成的草稿内容】", user);
-        Assert.Contains("输出修改与优化后的完整内容", user);
+        Assert.Contains("[PLAYER REQUEST]", user);
+        Assert.Contains("[PREVIOUS DRAFT]", user);
+        Assert.Contains("complete revised", user);
     }
 }
