@@ -60,7 +60,9 @@ using StardewValley;
 namespace ValleytalkReborn;
 
 /// <summary>
-/// Builds and injects perception text into the NPC system prompt.
+/// Builds perception text blocks (gossip and local context) for NPCs.
+/// Gossip is assembled into a Tier 2b block by ConversationDirector and
+/// session-frozen by Tier1SnapshotStore; this class only performs block construction.
 /// </summary>
 internal static class PerceptionInjector
 {
