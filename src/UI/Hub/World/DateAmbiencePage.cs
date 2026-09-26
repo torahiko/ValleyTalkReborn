@@ -1006,6 +1006,12 @@ internal sealed class DateAmbiencePage : WorldSubPageBase
             AllowRainyDays = _rainCheckbox.isChecked,
             TimeWindow = $"{_startHourStepper.Value * 100:D4}-{_endHourStepper.Value * 100:D4}",
 
+            // ─── 必须回填原始物理锚点，防止 UI 保存抹除 Phase 2.0 站位系统 ───
+            WaitTile = original?.WaitTile ?? Vector2.Zero,
+            DefaultFacingDirection = original?.DefaultFacingDirection ?? 2,
+            StagedActivityType = original?.StagedActivityType ?? "Talk",
+            // ─────────────────────────────────────────────────────────────────
+
             DisplayNameZh = IsZh ? currentName : (original?.DisplayNameZh ?? currentName),
             DisplayNameEn = !IsZh ? currentName : (original?.DisplayNameEn ?? currentName),
             ContextDescriptionZh = IsZh ? currentText : (original?.ContextDescriptionZh ?? currentText),
