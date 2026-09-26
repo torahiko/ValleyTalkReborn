@@ -20,17 +20,19 @@ namespace ValleytalkReborn
     /// 描述一次约会的生命周期阶段。
     /// <list type="bullet">
     ///   <item><term>None</term><description>无进行中约会。</description></item>
-    ///   <item><term>Pending</term><description>已预约，等待玩家到达约会地点（原 DateWindowOpen=true, DateStarted=false）。</description></item>
-    ///   <item><term>Active</term><description>约会进行中（原 DateStarted=true, DateConsumed=true）。</description></item>
+    ///   <item><term>Pending</term><description>已预约，NPC 提前到场等候中（原 DateWindowOpen=true, DateStarted=false）。</description></item>
+    ///   <item><term>StagedActive</term><description>定点互动中（禁止随从跟随）。</description></item>
+    ///   <item><term>WalkingActive</term><description>漫步伴游中（启用 FollowMovementTracker）。</description></item>
     ///   <item><term>Closing</term><description>告别对话播放中，等待玩家关闭对话框后清理（原 _farewellPending=true）。</description></item>
     /// </list>
     /// </summary>
     public enum DatePhase
     {
         None,
-        Pending,
-        Active,
-        Closing,
+        Pending,        // 已预约，NPC 提前到场等候中
+        StagedActive,   // 定点互动中（禁止随从跟随）
+        WalkingActive,  // 漫步伴游中（启用 FollowMovementTracker）
+        Closing         // 告别对话播放中
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -494,7 +496,7 @@ namespace ValleytalkReborn
 
         public void EndDateGracefully(string npcName, string reason = "Player_Requested")
         {
-            if (ActiveDateNpcName != npcName || Phase != DatePhase.Active) return;
+            if (ActiveDateNpcName != npcName || !(Phase == DatePhase.StagedActive || Phase == DatePhase.WalkingActive)) return;
 
             ModEntry.SMonitor?.Log(
                 $"[DateManager] Date ended gracefully: {npcName} (reason: {reason}).",
@@ -511,7 +513,7 @@ namespace ValleytalkReborn
         }
 
         public bool IsOnDate(string npcName) => ModEntry.Config.EnableDateSystem
-                                                && Phase == DatePhase.Active
+                                                && (Phase == DatePhase.StagedActive || Phase == DatePhase.WalkingActive)
                                                 && ActiveDateNpcName == npcName
                                                 && Game1.timeOfDay < DynamicEndTime;
 
@@ -537,7 +539,7 @@ namespace ValleytalkReborn
         /// </summary>
         public bool CanNpcWitnessDate(string bystanderName)
         {
-            if (Phase != DatePhase.Active || CurrentDateMode != DateMode.Scheduled)
+            if (!(Phase == DatePhase.StagedActive || Phase == DatePhase.WalkingActive) || CurrentDateMode != DateMode.Scheduled)
                 return false;
 
             if (string.IsNullOrEmpty(ActiveDateNpcName) || string.IsNullOrEmpty(bystanderName))
@@ -594,7 +596,7 @@ namespace ValleytalkReborn
 
         public bool CanTriggerTwoStageCallout()
             => CurrentDateMode == DateMode.Scheduled
-               && Phase == DatePhase.Active
+               && (Phase == DatePhase.StagedActive || Phase == DatePhase.WalkingActive)
                && Game1.activeClickableMenu == null
                && !Game1.player.UsingTool
                && !Game1.player.isRidingHorse()
@@ -607,9 +609,9 @@ namespace ValleytalkReborn
 
         private void StartDateFollowImmediate(NPC npc, int endTime)
         {
-            if (Phase == DatePhase.Active) return;
+            if (Phase == DatePhase.WalkingActive) return;
 
-            Phase = DatePhase.Active;
+            Phase = DatePhase.WalkingActive;
             DynamicEndTime = endTime;
 
             // VT-FOCUS-04: 即时同行约会激活会话，使 walking 容器可回放时长/礼物事实。
@@ -635,7 +637,7 @@ namespace ValleytalkReborn
 
         private void StartScheduledDateWithFade(NPC npc, int endTime)
         {
-            if (Phase == DatePhase.Active) return;
+            if (Phase == DatePhase.StagedActive) return;
 
             LatenessLevel lateness = DateRules.GetLatenessLevel(
                 Game1.timeOfDay, EarliestDateTriggerTime, OnTimeCutoff, SlightlyLateCutoff, HardEndTime);
@@ -652,7 +654,7 @@ namespace ValleytalkReborn
                 return;
             }
 
-            Phase = DatePhase.Active;
+            Phase = DatePhase.StagedActive;
             DynamicEndTime = endTime;
 
             CurrentSession = new DateSessionData(npc.Name, ActiveDateLocation, Game1.timeOfDay)
@@ -1056,7 +1058,7 @@ namespace ValleytalkReborn
             }
 
             // ── Active 阶段：检查是否到结束时间 ──────────────────────
-            if (Phase != DatePhase.Active) return;
+            if (Phase != DatePhase.StagedActive && Phase != DatePhase.WalkingActive) return;
             if (e.NewTime < DynamicEndTime && e.NewTime < HardEndTime) return;
 
             if (CurrentDateMode == DateMode.Follow)
@@ -1140,7 +1142,7 @@ namespace ValleytalkReborn
                     // 玩家主动约但没去赴约，直接睡觉算放鸽子
                     StoodUpTracker.Instance.RecordStoodUp(ActiveDateNpcName);
                 }
-                else if (Phase == DatePhase.Active && CurrentSession != null)
+                else if ((Phase == DatePhase.StagedActive || Phase == DatePhase.WalkingActive) && CurrentSession != null)
                 {
                     // 约会中途去睡觉，补一次复盘结算
                     CurrentSession.EndTime = Game1.timeOfDay;
@@ -1173,6 +1175,59 @@ namespace ValleytalkReborn
         private void OnReturnedToTitle(object sender, ReturnedToTitleEventArgs e)
         {
             AbortActiveDateSilently();
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        //  状态转换卫兵
+        // ─────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// 验证状态转换的合法性，拦截非法跳跃。
+        /// 失败时记录 Error 日志并返回 false。
+        /// </summary>
+        private bool TryTransitionPhase(DatePhase from, DatePhase to)
+        {
+            if (Phase != from)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[DateManager] Phase transition rejected: expected {from}, actual {Phase}. " +
+                    $"Attempted transition to {to}.",
+                    LogLevel.Error);
+                return false;
+            }
+
+            if (!IsValidTransition(from, to))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[DateManager] Invalid phase transition: {from} → {to}.",
+                    LogLevel.Error);
+                return false;
+            }
+
+            ModEntry.SMonitor?.Log(
+                $"[DateManager] Phase transition: {from} → {to}.",
+                LogLevel.Debug);
+
+            Phase = to;
+            return true;
+        }
+
+        /// <summary>
+        /// 定义合法的状态转换路径（包含随性伴游直接进入 WalkingActive 通道与紧急重置）。
+        /// </summary>
+        private static bool IsValidTransition(DatePhase from, DatePhase to)
+        {
+            return (from, to) switch
+            {
+                (DatePhase.None, DatePhase.Pending) => true,
+                (DatePhase.Pending, DatePhase.StagedActive) => true,
+                (DatePhase.Pending, DatePhase.WalkingActive) => true, // 随性散步约会通道（TryStartFollow）
+                (DatePhase.StagedActive, DatePhase.WalkingActive) => true,
+                (DatePhase.StagedActive, DatePhase.Closing) => true,
+                (DatePhase.WalkingActive, DatePhase.Closing) => true,
+                (_, DatePhase.None) => true, // 紧急重置通道（ResetDateState/Abort）
+                _ => false
+            };
         }
 
         // ─────────────────────────────────────────────────────────────
