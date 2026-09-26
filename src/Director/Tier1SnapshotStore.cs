@@ -241,6 +241,62 @@ internal static class Tier1SnapshotStore
         }
     }
 
+    // ── Gossip 会话级冻结 ──
+
+    /// <summary>
+    /// 取指定会话的冻结 Gossip。会话存在且 CachedGossip 不为 null 时返回 true
+    /// （gossip 可为 string.Empty）；会话无效 / 无活跃记录 / CachedGossip 仍为 null 返回 false。
+    /// </summary>
+    public static bool TryGetSessionGossip(string sessionId, out string gossip)
+    {
+        gossip = null;
+
+        if (string.IsNullOrEmpty(sessionId))
+        {
+            ModEntry.SMonitor?.Log("[Director] TryGetSessionGossip: empty session id, invalid gossip lookup.", LogLevel.Warn);
+            return false;
+        }
+
+        if (_activeBySession.TryGetValue(sessionId, out var record) && record.CachedGossip != null)
+        {
+            gossip = record.CachedGossip;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// 写入指定活跃会话的冻结 Gossip。null 归一化为 string.Empty。
+    /// 不创建新记录；空 sessionId → Warn；无活跃记录 → Error（违反注册契约）。
+    /// </summary>
+    public static void SetSessionGossip(string sessionId, string gossip)
+    {
+        if (string.IsNullOrEmpty(sessionId))
+        {
+            ModEntry.SMonitor?.Log("[Director] SetSessionGossip: empty session id, no state mutated.", LogLevel.Warn);
+            return;
+        }
+
+        if (!_activeBySession.TryGetValue(sessionId, out var record))
+        {
+            ModEntry.SMonitor?.Log("[Director] SetSessionGossip: no active session found for id " + sessionId, LogLevel.Error);
+            return;
+        }
+
+        record.CachedGossip = gossip ?? string.Empty;
+    }
+
+    /// <summary>
+    /// 清空全部 Memory 会话状态（active / closed）。标题期/读档/跨天生命周期重置。
+    /// </summary>
+    public static void ClearAll()
+    {
+        _activeBySession.Clear();
+        _activeByNpc.Clear();
+        _recentClosedSessions.Clear();
+    }
+
     // ── helpers ──
 
     private static void RetireActiveRecord(SessionRecord record)
@@ -265,5 +321,12 @@ internal static class Tier1SnapshotStore
         public DateTime LastActivityUtc { get; set; }
         public DateTime? ClosedAt { get; set; }
         public int CreatedGameDay { get; init; } = 0;
+
+        /// <summary>
+        /// Gossip 脉冲的会话级冻结副本。null = 本会话尚未探测候选池；
+        /// string.Empty = 本会话已探测但无可用候选；非空 = 本会话的冻结 gossip 文本。
+        /// Memory-only；由 BuildPlan 在会话首次构建 gossip 时写入。
+        /// </summary>
+        public string CachedGossip { get; set; } = null;
     }
 }

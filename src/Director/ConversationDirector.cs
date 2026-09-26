@@ -84,9 +84,19 @@ public sealed class ConversationDirector : IConversationDirector
         if (hasMilestone && !string.IsNullOrEmpty(milestoneBlock))
             activeImpulses[Tier2bBlockIds.Milestone] = milestoneBlock;
 
-        // KV-Cache 保护：gossip 块从 SystemPrompt 迁移至 Tier 2b 脉冲，
+        // ⑧ KV-Cache 保护：gossip 块从 SystemPrompt 迁移至 Tier 2b 脉冲，
         // 使 SystemPrompt 在多轮对话间保持静态（hash 不变），复用前缀缓存。
-        string gossipBlock = PerceptionInjector.BuildGossipBlock(character.Name, sessionId);
+        // 会话级冻结：复用会话内首次构建的 gossip，避免重复消费候选池。
+        string gossipBlock;
+        if (Tier1SnapshotStore.TryGetSessionGossip(sessionId, out var cachedGossip))
+        {
+            gossipBlock = cachedGossip;
+        }
+        else
+        {
+            gossipBlock = PerceptionInjector.BuildGossipBlock(character.Name);
+            Tier1SnapshotStore.SetSessionGossip(sessionId, gossipBlock);
+        }
         if (!string.IsNullOrEmpty(gossipBlock))
             activeImpulses[Tier2bBlockIds.Gossip] = gossipBlock;
 

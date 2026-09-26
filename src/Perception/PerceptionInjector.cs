@@ -165,8 +165,8 @@ internal static class PerceptionInjector
         var lines = new List<string>
         {
             isZh
-                ? "[小镇传闻]（小镇近期的日常谈资与背景印象）"
-                : "[Town Rumors] (Passive background information circulating around town)"
+                ? "[小镇传闻]（小镇近期的日常谈资与背景印象；若当前交谈已涉及此话题，切勿强行重复提及）"
+                : "[Town Rumors] (Passive background context circulating around town. Do not force repetition if the current conversation already covers this topic.)"
         };
 
         string dayKey;
