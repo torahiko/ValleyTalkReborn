@@ -95,12 +95,12 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
     private bool _isCreatingNewFest = false;
 
     // ── 节日下拉框状态机 ──
-    private static readonly (string Id, string Label)[] SeasonOptions = new[]
+    private static (string Id, string Label)[] GetSeasonOptions() => new[]
     {
-        ("spring", "春季 (Spring)"),
-        ("summer", "夏季 (Summer)"),
-        ("fall", "秋季 (Fall)"),
-        ("winter", "冬季 (Winter)")
+        ("spring", I18n.WorldSettings.LocationFestivalPage.SeasonSpring()),
+        ("summer", I18n.WorldSettings.LocationFestivalPage.SeasonSummer()),
+        ("fall", I18n.WorldSettings.LocationFestivalPage.SeasonFall()),
+        ("winter", I18n.WorldSettings.LocationFestivalPage.SeasonWinter())
     };
     private bool _isSeasonDropdownOpen = false;
     private int _seasonDropdownScrollOffset = 0;
@@ -246,9 +246,9 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
             if (dropListRect.Contains(x, y))
             {
                 int clickIdx = (y - dropListRect.Y - 4) / DropdownItemHeight + _seasonDropdownScrollOffset;
-                if (clickIdx >= 0 && clickIdx < SeasonOptions.Length)
+                if (clickIdx >= 0 && clickIdx < GetSeasonOptions().Length)
                 {
-                    _selectedSeason = SeasonOptions[clickIdx].Id;
+                    _selectedSeason = GetSeasonOptions()[clickIdx].Id;
                     _isSeasonDropdownOpen = false;
                     Game1.playSound("smallSelect");
                 }
@@ -294,8 +294,8 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
         if (_currentMode == ViewMode.Festivals && _seasonHeaderRect.Contains(x, y))
         {
             _isSeasonDropdownOpen = true;
-            int idx = Array.FindIndex(SeasonOptions, s => string.Equals(s.Id, _selectedSeason, StringComparison.OrdinalIgnoreCase));
-            _seasonDropdownScrollOffset = Math.Clamp(idx >= 0 ? idx : 0, 0, Math.Max(0, SeasonOptions.Length - DropdownMaxVisible));
+            int idx = Array.FindIndex(GetSeasonOptions(), s => string.Equals(s.Id, _selectedSeason, StringComparison.OrdinalIgnoreCase));
+            _seasonDropdownScrollOffset = Math.Clamp(idx >= 0 ? idx : 0, 0, Math.Max(0, GetSeasonOptions().Length - DropdownMaxVisible));
             Game1.playSound("shwip");
             DeselectAllBoxes();
             return true;
@@ -461,7 +461,7 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
             var dropListRect = GetDropdownMenuRect(_seasonHeaderRect);
             if (dropListRect.Contains(mx, my) || _seasonHeaderRect.Contains(mx, my))
             {
-                int maxScroll = Math.Max(0, SeasonOptions.Length - DropdownMaxVisible);
+                int maxScroll = Math.Max(0, GetSeasonOptions().Length - DropdownMaxVisible);
                 _seasonDropdownScrollOffset = Math.Clamp(_seasonDropdownScrollOffset - (direction > 0 ? 1 : -1), 0, maxScroll);
                 Game1.playSound("shwip");
                 return true;
@@ -638,11 +638,16 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
 
     private void DrawModeSwitcher(SpriteBatch b, int mx, int my)
     {
-        DrawTabPill(b, _modeLocationsBtnRect, "🗺️ 地点环境描述", _currentMode == ViewMode.Locations, mx, my);
-        DrawTabPill(b, _modeFestivalsBtnRect, "🎪 节日庆典日程", _currentMode == ViewMode.Festivals, mx, my);
+        string locModeText = I18n.WorldSettings.LocationFestivalPage.ModeLocations();
+        var (fittedLoc, locScale) = WorldSettingsTabView.FitTextToWidth(locModeText, _modeLocationsBtnRect.Width - 16, CustomFontManager.SizeSmall, true);
+        DrawTabPill(b, _modeLocationsBtnRect, fittedLoc, _currentMode == ViewMode.Locations, mx, my, locScale);
+
+        string festModeText = I18n.WorldSettings.LocationFestivalPage.ModeFestivals();
+        var (fittedFest, festScale) = WorldSettingsTabView.FitTextToWidth(festModeText, _modeFestivalsBtnRect.Width - 16, CustomFontManager.SizeSmall, true);
+        DrawTabPill(b, _modeFestivalsBtnRect, fittedFest, _currentMode == ViewMode.Festivals, mx, my, festScale);
     }
 
-    private static void DrawTabPill(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my)
+    private static void DrawTabPill(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my, float scale = 1f)
     {
         bool isHover = rect.Contains(mx, my);
         Color bg = isActive ? RulesTheme.SurfaceActive : (isHover ? RulesTheme.SurfaceHover : RulesTheme.SurfaceCard);
@@ -657,12 +662,12 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
             b.Draw(Game1.staminaRect, new Rectangle(rect.X + 3, rect.Bottom - 3, rect.Width - 6, 2), RulesTheme.AccentGold);
         }
 
-        var sz = CustomFontManager.MeasureStringBold(label, CustomFontManager.SizeSmall);
+        var sz = CustomFontManager.MeasureStringBold(label, CustomFontManager.SizeSmall) * scale;
         Color textCol = isActive ? RulesTheme.TextCharcoal : DarkGrayText;
 
         CustomFontManager.DrawStringBold(b, label,
             new Vector2(rect.X + (rect.Width - sz.X) / 2f, rect.Y + (rect.Height - sz.Y) / 2f),
-            textCol, CustomFontManager.SizeSmall);
+            textCol, CustomFontManager.SizeSmall, scale: scale);
     }
 
     private void DrawLeftList(SpriteBatch b, int mx, int my)
@@ -672,7 +677,9 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
         DrawSingleLineBox(b, _searchBox, DarkGrayText);
         if (string.IsNullOrEmpty(_searchBox.Text))
         {
-            string ph = _currentMode == ViewMode.Locations ? "🔍 搜索地点或区域..." : "🔍 搜索节日名称...";
+            string ph = _currentMode == ViewMode.Locations
+                ? I18n.WorldSettings.LocationFestivalPage.SearchLocationsPlaceholder()
+                : I18n.WorldSettings.LocationFestivalPage.SearchFestivalsPlaceholder();
             CustomFontManager.DrawString(b, ph, new Vector2(_searchBox.X + 8, _searchBox.Y + 6), DarkGrayText, CustomFontManager.SizeSmall);
         }
 
@@ -770,7 +777,7 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
 
     private static void DrawFestivalRow(SpriteBatch b, FestivalEntry item, Rectangle drawRect, bool isSel, bool isHover)
     {
-        string dateBadge = $"{GetSeasonShortZh(item.Season)}{item.Day}";
+        string dateBadge = $"{GetSeasonShort(item.Season)}{item.Day}";
         var badgeRect = new Rectangle(drawRect.X + 8, drawRect.Y + (drawRect.Height - 20) / 2, 40, 20);
 
         Color badgeColor = item.Season switch
@@ -899,7 +906,7 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
         IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
             headerRect.X, headerRect.Y, headerRect.Width, headerRect.Height, border, 2f, false);
 
-        string text = SeasonOptions.FirstOrDefault(s => s.Id == selectedSeasonId).Label ?? selectedSeasonId;
+        string text = GetSeasonOptions().FirstOrDefault(s => s.Id == selectedSeasonId).Label ?? selectedSeasonId;
 
         CustomFontManager.DrawString(b, text,
             new Vector2(headerRect.X + 10, headerRect.Y + 5),
@@ -919,16 +926,16 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
         IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
             menuRect.X, menuRect.Y, menuRect.Width, menuRect.Height, RulesTheme.BorderBold, 2f, false);
 
-        int count = Math.Min(SeasonOptions.Length, DropdownMaxVisible);
-        bool hasScroll = SeasonOptions.Length > DropdownMaxVisible;
+        int count = Math.Min(GetSeasonOptions().Length, DropdownMaxVisible);
+        bool hasScroll = GetSeasonOptions().Length > DropdownMaxVisible;
         int itemW = hasScroll ? menuRect.Width - 14 : menuRect.Width - 4;
 
         for (int i = 0; i < count; i++)
         {
             int optIdx = _seasonDropdownScrollOffset + i;
-            if (optIdx >= SeasonOptions.Length) break;
+            if (optIdx >= GetSeasonOptions().Length) break;
 
-            var opt = SeasonOptions[optIdx];
+            var opt = GetSeasonOptions()[optIdx];
             var itemRect = new Rectangle(menuRect.X + 2, menuRect.Y + 4 + i * DropdownItemHeight, itemW, DropdownItemHeight);
             bool isHover = itemRect.Contains(mx, my);
             bool isSelected = string.Equals(opt.Id, _selectedSeason, StringComparison.OrdinalIgnoreCase);
@@ -967,8 +974,8 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
             var trackRect = new Rectangle(menuRect.Right - 8, menuRect.Y + 4, 5, menuRect.Height - 8);
             b.Draw(Game1.staminaRect, trackRect, RulesTheme.SurfaceSunken);
 
-            int maxScroll = SeasonOptions.Length - DropdownMaxVisible;
-            float ratio = (float)DropdownMaxVisible / SeasonOptions.Length;
+            int maxScroll = GetSeasonOptions().Length - DropdownMaxVisible;
+            float ratio = (float)DropdownMaxVisible / GetSeasonOptions().Length;
             int thumbH = Math.Max(20, (int)(trackRect.Height * ratio));
             int thumbY = trackRect.Y + (int)((trackRect.Height - thumbH) * ((float)_seasonDropdownScrollOffset / maxScroll));
 
@@ -978,7 +985,7 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
 
     private Rectangle GetDropdownMenuRect(Rectangle headerRect)
     {
-        int count = Math.Min(SeasonOptions.Length, DropdownMaxVisible);
+        int count = Math.Min(GetSeasonOptions().Length, DropdownMaxVisible);
         int menuH = count * DropdownItemHeight + 8;
         return new Rectangle(headerRect.X, headerRect.Bottom + 2, headerRect.Width, menuH);
     }
@@ -1200,8 +1207,8 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
                 if (!_baselineLocDescriptions.ContainsKey(locId))
                 {
                     _baselineLocDescriptions[locId] = IsZh
-                        ? $"{dispName}的现场环境。居民们在此活动与交流。"
-                        : $"The environment of {dispName}.";
+                        ? I18n.WorldSettings.LocationFestivalPage.DefaultLocationDescZh(dispName)
+                        : I18n.WorldSettings.LocationFestivalPage.DefaultLocationDescEn(dispName);
                 }
             }
         }
@@ -1251,8 +1258,8 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
                     if (!_baselineLocDescriptions.ContainsKey(locId))
                     {
                         _baselineLocDescriptions[locId] = IsZh
-                            ? $"{dispName}的现场环境。居民们在此活动与交流。"
-                            : $"The environment of {dispName}.";
+                            ? I18n.WorldSettings.LocationFestivalPage.DefaultLocationDescZh(dispName)
+                            : I18n.WorldSettings.LocationFestivalPage.DefaultLocationDescEn(dispName);
                     }
                 }
             }
@@ -1840,7 +1847,7 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
             string locId = _selectedLocId;
             RebuildLocationView();
             SelectLocation(locId);
-            _statusMessage = "✔ 地点环境已保存生效";
+            _statusMessage = I18n.WorldSettings.LocationFestivalPage.SaveLocationSuccessHud();
             Game1.playSound("coin");
             Hub.RefreshEntries();
         }
@@ -1854,14 +1861,14 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
 
         Game1.activeClickableMenu = new BioValveWarningDialog(
             Hub,
-            "恢复原版环境描述",
-            $"即将清除【{loc.Name}】的自定义描述：",
+            I18n.WorldSettings.LocationFestivalPage.RevertLocationDialogTitle(),
+            I18n.WorldSettings.LocationFestivalPage.RevertLocationDialogSubtitle(loc.Name),
             new List<string>
             {
-                "该地点的描述将恢复为原版默认文本",
-                "自定义内容删除后无法找回"
+                I18n.WorldSettings.LocationFestivalPage.RevertLocationDialogBullet1(),
+                I18n.WorldSettings.LocationFestivalPage.RevertLocationDialogBullet2()
             },
-            "⚠ 确认恢复",
+            I18n.WorldSettings.LocationFestivalPage.RevertLocationDialogConfirm(),
             () =>
             {
                 Game1.activeClickableMenu = Hub;
@@ -1877,12 +1884,12 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
                     string locId = _selectedLocId;
                     RebuildLocationView();
                     SelectLocation(locId);
-                    _statusMessage = "✔ 已恢复原版环境设定";
+                    _statusMessage = I18n.WorldSettings.LocationFestivalPage.RevertLocationSuccessHud();
                     Game1.playSound("coin");
                     Hub.RefreshEntries();
                 }
             },
-            "保持现状",
+            I18n.WorldSettings.LocationFestivalPage.RevertLocationDialogCancel(),
             () => Game1.activeClickableMenu = Hub);
     }
 
@@ -1905,8 +1912,8 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
         if (conflictFest != null)
         {
             Game1.playSound("cancel");
-            _statusMessage = $"⚠ 同一天只能允许有一个节日！（已有：{conflictFest.Name}）";
-            Game1.addHUDMessage(new HUDMessage($"同一天只能允许有一个节日（已有：{conflictFest.Name}）", HUDMessage.error_type));
+            _statusMessage = I18n.WorldSettings.LocationFestivalPage.FestivalDateConflictHud(conflictFest.Name);
+            Game1.addHUDMessage(new HUDMessage(I18n.WorldSettings.LocationFestivalPage.FestivalDateConflictHud(conflictFest.Name), HUDMessage.error_type));
             return;
         }
 
@@ -1964,7 +1971,7 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
             _isCreatingNewFest = false;
             RebuildFestivalView();
             SelectFestival(key);
-            _statusMessage = "✔ 节日设定已保存";
+            _statusMessage = I18n.WorldSettings.LocationFestivalPage.SaveFestivalSuccessHud();
             Game1.playSound("coin");
             Hub.RefreshEntries();
         }
@@ -1978,13 +1985,15 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
 
         Game1.activeClickableMenu = new BioValveWarningDialog(
             Hub,
-            "还原官方节日配置",
-            $"即将把【{fest.Name}】还原为原版默认：",
+            I18n.WorldSettings.LocationFestivalPage.RevertFestivalDialogTitle(),
+            I18n.WorldSettings.LocationFestivalPage.RevertFestivalDialogSubtitle(fest.Name),
             new List<string>
             {
-                "该节日的自定义配置将被清除，恢复官方默认"
+                I18n.WorldSettings.LocationFestivalPage.RevertFestivalDialogBullet1(),
+                I18n.WorldSettings.LocationFestivalPage.RevertFestivalDialogBullet2(),
+                I18n.WorldSettings.LocationFestivalPage.RevertFestivalDialogBullet3()
             },
-            "⚠ 确认还原",
+            I18n.WorldSettings.LocationFestivalPage.RevertFestivalDialogConfirm(),
             () =>
             {
                 Game1.activeClickableMenu = Hub;
@@ -1994,26 +2003,17 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
                 var ov = service.LoadOrNull() ?? new WorldSummaryOverlayFile();
                 ov.Festivals.Remove(_selectedFestKey);
 
-                if (ov.RemovedFestivalKeys != null)
-                {
-                    while (ov.RemovedFestivalKeys.Any(k => string.Equals(k, _selectedFestKey, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        var rk = ov.RemovedFestivalKeys.First(k => string.Equals(k, _selectedFestKey, StringComparison.OrdinalIgnoreCase));
-                        ov.RemovedFestivalKeys.Remove(rk);
-                    }
-                }
-
                 if (service.Save(ov, out string? _))
                 {
-                    string targetKey = _selectedFestKey;
+                    string festKey = _selectedFestKey;
                     RebuildFestivalView();
-                    SelectFestival(targetKey);
-                    _statusMessage = "✔ 已还原为官方节日";
+                    SelectFestival(festKey);
+                    _statusMessage = I18n.WorldSettings.LocationFestivalPage.RevertFestivalSuccessHud();
                     Game1.playSound("coin");
                     Hub.RefreshEntries();
                 }
             },
-            "保持现状",
+            I18n.WorldSettings.LocationFestivalPage.RevertFestivalDialogCancel(),
             () => Game1.activeClickableMenu = Hub);
     }
 
@@ -2027,12 +2027,13 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
 
         Game1.activeClickableMenu = new BioValveWarningDialog(
             Hub,
-            IsZh ? "删除自创节日" : "Delete Custom Festival",
-            IsZh ? $"即将彻底删除自创节日【{fest.Name}】：" : $"About to permanently delete custom festival '{fest.Name}':",
-            IsZh
-                ? new List<string> { "该节日的全部自定义配置将被移除，无法找回" }
-                : new List<string> { "All custom configuration for this festival will be removed and cannot be recovered" },
-            IsZh ? "⚠ 确认删除" : "⚠ Delete",
+            I18n.WorldSettings.LocationFestivalPage.DeleteFestivalDialogTitle(),
+            I18n.WorldSettings.LocationFestivalPage.DeleteFestivalDialogSubtitle(fest.Name),
+            new List<string>
+            {
+                I18n.WorldSettings.LocationFestivalPage.DeleteFestivalDialogBullet1()
+            },
+            I18n.WorldSettings.LocationFestivalPage.DeleteFestivalDialogConfirm(),
             () =>
             {
                 Game1.activeClickableMenu = Hub;
@@ -2060,12 +2061,12 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
                     else
                         _selectedFestKey = null;
 
-                    _statusMessage = IsZh ? "✔ 已彻底删除自创节日" : "✔ Custom festival deleted";
+                    _statusMessage = I18n.WorldSettings.LocationFestivalPage.DeleteFestivalSuccessHud();
                     Game1.playSound("trashcan");
                     Hub.RefreshEntries();
                 }
             },
-            IsZh ? "保留节日" : "Keep Festival",
+            I18n.WorldSettings.LocationFestivalPage.DeleteFestivalDialogCancel(),
             () => Game1.activeClickableMenu = Hub);
     }
 
@@ -2089,8 +2090,8 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
     {
         _isCreatingNewFest = true;
         _selectedFestKey = null;
-        _festNameBox.Text = "新自创纪念日";
-        _descBox.SetText("小镇全体居民共同庆祝这一天。");
+        _festNameBox.Text = I18n.WorldSettings.LocationFestivalPage.NewFestivalDefaultName();
+        _descBox.SetText(I18n.WorldSettings.LocationFestivalPage.NewFestivalDefaultDesc());
 
         var (freeSeason, freeDay) = FindFirstAvailableDate();
         _selectedSeason = freeSeason;
@@ -2098,7 +2099,7 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
 
         _isSeasonDropdownOpen = false;
         DeselectAllBoxes();
-        _statusMessage = "已开启自创节日模式，请设定日期并保存。";
+        _statusMessage = I18n.WorldSettings.LocationFestivalPage.NewFestivalModeHint();
         RefreshFormSnapshot();
     }
 
@@ -2117,13 +2118,13 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
         return int.TryParse(digits, out int d) ? Math.Clamp(d, 1, 28) : 1;
     }
 
-    private static string GetSeasonShortZh(string season) => season.ToLower() switch
+    private static string GetSeasonShort(string season) => season.ToLower() switch
     {
-        "spring" => "春",
-        "summer" => "夏",
-        "fall" => "秋",
-        "winter" => "冬",
-        _ => "春"
+        "spring" => I18n.WorldSettings.LocationFestivalPage.SeasonSpringShort(),
+        "summer" => I18n.WorldSettings.LocationFestivalPage.SeasonSummerShort(),
+        "fall" => I18n.WorldSettings.LocationFestivalPage.SeasonFallShort(),
+        "winter" => I18n.WorldSettings.LocationFestivalPage.SeasonWinterShort(),
+        _ => I18n.WorldSettings.LocationFestivalPage.SeasonSpringShort()
     };
 
     // ── Content Patcher 格式反序列化辅助类 ──

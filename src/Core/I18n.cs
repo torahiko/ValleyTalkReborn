@@ -486,6 +486,77 @@ namespace ValleytalkReborn
                 public static string ResetServiceUnavailable() => Lookup("WorldSettings.PoiTuning.ResetServiceUnavailable");
                 public static string ResetNothingToReset() => Lookup("WorldSettings.PoiTuning.ResetNothingToReset");
             }
+
+            // ── Location & Festival sub-page (FEAT-WS-I18N-003) ──
+            public static class LocationFestivalPage
+            {
+                // 模式切换按钮
+                public static string ModeLocations() => Lookup("WorldSettings.LocationFestival.ModeLocations");
+                public static string ModeFestivals() => Lookup("WorldSettings.LocationFestival.ModeFestivals");
+
+                // 搜索框 placeholder
+                public static string SearchLocationsPlaceholder() => Lookup("WorldSettings.LocationFestival.SearchLocationsPlaceholder");
+                public static string SearchFestivalsPlaceholder() => Lookup("WorldSettings.LocationFestival.SearchFestivalsPlaceholder");
+
+                // 季节选择器
+                public static string SeasonSpring() => Lookup("WorldSettings.LocationFestival.SeasonSpring");
+                public static string SeasonSummer() => Lookup("WorldSettings.LocationFestival.SeasonSummer");
+                public static string SeasonFall() => Lookup("WorldSettings.LocationFestival.SeasonFall");
+                public static string SeasonWinter() => Lookup("WorldSettings.LocationFestival.SeasonWinter");
+                public static string SeasonSpringShort() => Lookup("WorldSettings.LocationFestival.SeasonSpringShort");
+                public static string SeasonSummerShort() => Lookup("WorldSettings.LocationFestival.SeasonSummerShort");
+                public static string SeasonFallShort() => Lookup("WorldSettings.LocationFestival.SeasonFallShort");
+                public static string SeasonWinterShort() => Lookup("WorldSettings.LocationFestival.SeasonWinterShort");
+
+                // 地点模式默认描述（语言专属）
+                public static string DefaultLocationDescZh(string dispName) =>
+                    Lookup("WorldSettings.LocationFestival.DefaultLocationDescZh").Replace("{{name}}", dispName ?? string.Empty);
+                public static string DefaultLocationDescEn(string dispName) =>
+                    Lookup("WorldSettings.LocationFestival.DefaultLocationDescEn").Replace("{{name}}", dispName ?? string.Empty);
+
+                // 地点模式 HUD 消息
+                public static string SaveLocationSuccessHud() => Lookup("WorldSettings.LocationFestival.SaveLocationSuccessHud");
+                public static string RevertLocationSuccessHud() => Lookup("WorldSettings.LocationFestival.RevertLocationSuccessHud");
+
+                // 地点重置弹窗
+                public static string RevertLocationDialogTitle() => Lookup("WorldSettings.LocationFestival.RevertLocationDialogTitle");
+                public static string RevertLocationDialogSubtitle(string locationName) =>
+                    Lookup("WorldSettings.LocationFestival.RevertLocationDialogSubtitle").Replace("{{location}}", locationName ?? string.Empty);
+                public static string RevertLocationDialogBullet1() => Lookup("WorldSettings.LocationFestival.RevertLocationDialogBullet1");
+                public static string RevertLocationDialogBullet2() => Lookup("WorldSettings.LocationFestival.RevertLocationDialogBullet2");
+                public static string RevertLocationDialogConfirm() => Lookup("WorldSettings.LocationFestival.RevertLocationDialogConfirm");
+                public static string RevertLocationDialogCancel() => Lookup("WorldSettings.LocationFestival.RevertLocationDialogCancel");
+
+                // 节日模式 HUD 消息
+                public static string FestivalDateConflictHud(string existingFestivalName) =>
+                    Lookup("WorldSettings.LocationFestival.FestivalDateConflictHud").Replace("{{festival}}", existingFestivalName ?? string.Empty);
+                public static string SaveFestivalSuccessHud() => Lookup("WorldSettings.LocationFestival.SaveFestivalSuccessHud");
+                public static string RevertFestivalSuccessHud() => Lookup("WorldSettings.LocationFestival.RevertFestivalSuccessHud");
+                public static string DeleteFestivalSuccessHud() => Lookup("WorldSettings.LocationFestival.DeleteFestivalSuccessHud");
+                public static string NewFestivalModeHint() => Lookup("WorldSettings.LocationFestival.NewFestivalModeHint");
+
+                // 节日重置弹窗
+                public static string RevertFestivalDialogTitle() => Lookup("WorldSettings.LocationFestival.RevertFestivalDialogTitle");
+                public static string RevertFestivalDialogSubtitle(string festivalName) =>
+                    Lookup("WorldSettings.LocationFestival.RevertFestivalDialogSubtitle").Replace("{{festival}}", festivalName ?? string.Empty);
+                public static string RevertFestivalDialogBullet1() => Lookup("WorldSettings.LocationFestival.RevertFestivalDialogBullet1");
+                public static string RevertFestivalDialogBullet2() => Lookup("WorldSettings.LocationFestival.RevertFestivalDialogBullet2");
+                public static string RevertFestivalDialogBullet3() => Lookup("WorldSettings.LocationFestival.RevertFestivalDialogBullet3");
+                public static string RevertFestivalDialogConfirm() => Lookup("WorldSettings.LocationFestival.RevertFestivalDialogConfirm");
+                public static string RevertFestivalDialogCancel() => Lookup("WorldSettings.LocationFestival.RevertFestivalDialogCancel");
+
+                // 节日删除弹窗
+                public static string DeleteFestivalDialogTitle() => Lookup("WorldSettings.LocationFestival.DeleteFestivalDialogTitle");
+                public static string DeleteFestivalDialogSubtitle(string festivalName) =>
+                    Lookup("WorldSettings.LocationFestival.DeleteFestivalDialogSubtitle").Replace("{{festival}}", festivalName ?? string.Empty);
+                public static string DeleteFestivalDialogBullet1() => Lookup("WorldSettings.LocationFestival.DeleteFestivalDialogBullet1");
+                public static string DeleteFestivalDialogConfirm() => Lookup("WorldSettings.LocationFestival.DeleteFestivalDialogConfirm");
+                public static string DeleteFestivalDialogCancel() => Lookup("WorldSettings.LocationFestival.DeleteFestivalDialogCancel");
+
+                // 新建节日默认值
+                public static string NewFestivalDefaultName() => Lookup("WorldSettings.LocationFestival.NewFestivalDefaultName");
+                public static string NewFestivalDefaultDesc() => Lookup("WorldSettings.LocationFestival.NewFestivalDefaultDesc");
+            }
         }
 
         // =========================================================================
