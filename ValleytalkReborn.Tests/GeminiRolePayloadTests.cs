@@ -8,9 +8,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using StardewModdingAPI;
+using StardewModdingAPI.Framework.Logging;
 using ValleytalkReborn;
 using Xunit;
 
@@ -369,6 +373,139 @@ public class GeminiRolePayloadTests
         Assert.Equal(500, response.ResponseCode);
     }
 
+    // ── ProcessGeminiSseAsync：SSE 分片解析失败不再静默忽略 ──
+
+    [Fact]
+    public void ProcessGeminiSseAsync_MalformedChunkAfterPartialText_ReturnsFailedWithPartial()
+    {
+        // 合法文本分片之后紧跟一个非法 JSON 分片 → 解析失败，已收集文本仅作诊断保留。
+        var gemini = new LlmGemini("test-key", "gemini-2.5-flash");
+        using var stream = BuildGeminiSseStream(new[]
+        {
+            "data: " + JsonConvert.SerializeObject(new
+            {
+                candidates = new[] { new { content = new { parts = new[] { new { text = "partial" } } } } }
+            }),
+            "data: { this is not valid json",
+        });
+
+        var result = gemini.ProcessGeminiSseAsync(stream, _ => { }, CancellationToken.None).Result;
+
+        Assert.False(result.Success);
+        Assert.NotNull(result.ParseError);
+        // 已收集文本保留（诊断用），但结果不是成功对话
+        Assert.Equal("partial", result.Text);
+    }
+
+    [Fact]
+    public void ProcessGeminiSseAsync_MalformedChunk_FailedLlmResponse()
+    {
+        // 完整映射：解析失败 → BuildGeminiStreamingFailureResponse → IsSuccess=false / ResponseCode=500。
+        var gemini = new LlmGemini("test-key", "gemini-2.5-flash");
+        using var stream = BuildGeminiSseStream(new[]
+        {
+            "data: " + JsonConvert.SerializeObject(new
+            {
+                candidates = new[] { new { content = new { parts = new[] { new { text = "partial" } } } } }
+            }),
+            "data: { this is not valid json",
+        });
+
+        var sseResult = gemini.ProcessGeminiSseAsync(stream, _ => { }, CancellationToken.None).Result;
+        var response = gemini.BuildGeminiStreamingFailureResponse(sseResult.ParseError, sseResult.Text);
+
+        Assert.False(response.IsSuccess);
+        Assert.Equal(500, response.ResponseCode);
+        Assert.Equal("partial", response.ErrorMessage);
+    }
+
+    [Fact]
+    public void ProcessGeminiSseAsync_MalformedChunk_LogsError()
+    {
+        // 解析失败必须产生 Warn/Error 日志，标识 Gemini role-based 解析失败。
+        var gemini = new LlmGemini("test-key", "gemini-2.5-flash");
+        var capture = new CapturingMonitor();
+        var originalLogMonitor = Log.Logger.Monitor;
+        Log.Initialize(capture);
+        try
+        {
+            using var stream = BuildGeminiSseStream(new[]
+            {
+                "data: " + JsonConvert.SerializeObject(new
+                {
+                    candidates = new[] { new { content = new { parts = new[] { new { text = "partial" } } } } }
+                }),
+                "data: { this is not valid json",
+            });
+
+            gemini.ProcessGeminiSseAsync(stream, _ => { }, CancellationToken.None).Wait();
+
+            Assert.True(
+                capture.Captured.ToString().Contains("parse failed", StringComparison.OrdinalIgnoreCase),
+                "A Warn/Error entry identifying the Gemini SSE parse failure should be emitted.");
+        }
+        finally
+        {
+            Log.Initialize(originalLogMonitor);
+        }
+    }
+
+    [Fact]
+    public void ProcessGeminiSseAsync_ValidEmptyContentChunk_NotTreatedAsFailure()
+    {
+        // 有效 JSON 但无文本/工具调用分片（空 candidates / 无 parts）→ 不视为失败，继续解析。
+        var gemini = new LlmGemini("test-key", "gemini-2.5-flash");
+        using var stream = BuildGeminiSseStream(new[]
+        {
+            "data: " + JsonConvert.SerializeObject(new { candidates = new object[] { } }),
+            "data: " + JsonConvert.SerializeObject(new
+            {
+                candidates = new[] { new { content = new { parts = new[] { new { text = "ok" } } } } }
+            }),
+        });
+
+        var result = gemini.ProcessGeminiSseAsync(stream, _ => { }, CancellationToken.None).Result;
+
+        Assert.True(result.Success);
+        Assert.Null(result.ParseError);
+        Assert.Equal("ok", result.Text);
+    }
+
+    [Fact]
+    public void ProcessGeminiSseAsync_MidStreamCancellation_NoParseErrorLog()
+    {
+        // 请求级取消（CancellationToken）不应被归类为解析失败，也不产生 Error 日志。
+        var gemini = new LlmGemini("test-key", "gemini-2.5-flash");
+        var capture = new CapturingMonitor();
+        var originalLogMonitor = Log.Logger.Monitor;
+        Log.Initialize(capture);
+        try
+        {
+            using var stream = BuildGeminiSseStream(new[]
+            {
+                "data: " + JsonConvert.SerializeObject(new
+                {
+                    candidates = new[] { new { content = new { parts = new[] { new { text = "partial" } } } } }
+                }),
+            });
+
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            var result = gemini.ProcessGeminiSseAsync(stream, _ => { }, cts.Token).Result;
+
+            // 取消导致循环退出：Success 保持 true（非解析失败），无 ParseError。
+            Assert.True(result.Success);
+            Assert.Null(result.ParseError);
+            Assert.False(
+                capture.Captured.ToString().Contains("parse failed", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Log.Initialize(originalLogMonitor);
+        }
+    }
+
     // ── 辅助 ──
 
     private static string RoleOf(object content)
@@ -381,5 +518,22 @@ public class GeminiRolePayloadTests
     {
         var j = content as JObject;
         return j?["parts"]?[0]?["text"]?.ToString();
+    }
+
+    private static MemoryStream BuildGeminiSseStream(string[] lines)
+    {
+        var text = string.Join("\n", lines) + "\n";
+        var bytes = Encoding.UTF8.GetBytes(text);
+        return new MemoryStream(bytes);
+    }
+
+    private sealed class CapturingMonitor : IMonitor
+    {
+        public readonly StringBuilder Captured = new StringBuilder();
+        public bool IsVerbose => false;
+        public void Log(string message, LogLevel level) => Captured.AppendLine(message);
+        public void LogOnce(string message, LogLevel level) => Captured.AppendLine(message);
+        public void VerboseLog(string message) { }
+        public void VerboseLog(ref VerboseLogStringHandler handler) { }
     }
 }

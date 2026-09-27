@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Linq; 
+using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
-using Newtonsoft.Json; 
-using Newtonsoft.Json.Linq; 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ValleytalkReborn.Platform;
@@ -585,9 +586,6 @@ internal class LlmGemini : Llm, IGetModelNames
         var streamUrl = $"https://generativelanguage.googleapis.com/v1beta/models/" +
                         $"{modelName}:streamGenerateContent?alt=sse&key={apiKey}";
 
-        var fullText = new StringBuilder();
-        var streamedToolCalls = new List<ToolCallData>();
-
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, streamUrl);
@@ -604,66 +602,124 @@ internal class LlmGemini : Llm, IGetModelNames
             }
 
             using var stream = await response.Content.ReadAsStreamAsync();
-            using var reader = new System.IO.StreamReader(stream);
+            GeminiSseProcessResult sseResult = await ProcessGeminiSseAsync(stream, onToken, ct);
 
-            while (!reader.EndOfStream && !ct.IsCancellationRequested)
+            if (!sseResult.Success)
             {
-                var line = await reader.ReadLineAsync();
-                if (string.IsNullOrWhiteSpace(line)) continue;
-                if (!line.StartsWith("data:")) continue;
-
-                var data = line.Substring(5).Trim();
-                if (data == "[DONE]") break;
-
-                try
-                {
-                    var json = JObject.Parse(data);
-                    var candidates = json["candidates"] as JArray;
-                    var parts = candidates?[0]?["content"]?["parts"] as JArray;
-
-                    if (parts == null) continue;
-
-                    foreach (var part in parts)
-                    {
-                        var funcCallToken = part["functionCall"];
-                        if (funcCallToken != null)
-                        {
-                            var funcName = funcCallToken["name"]?.ToString();
-                            var argsToken = funcCallToken["args"];
-                            var funcArgs = argsToken != null ? argsToken.ToString(Formatting.None) : "{}";
-                            if (!string.IsNullOrEmpty(funcName))
-                                streamedToolCalls.Add(new ToolCallData { FunctionName = funcName, JsonArguments = funcArgs });
-                            continue;
-                        }
-
-                        var text = part["text"]?.ToString();
-                        if (!string.IsNullOrEmpty(text))
-                        {
-                            fullText.Append(text);
-                            onToken(text);
-                        }
-                    }
-                }
-                catch { }
+                // 分片解析失败（非取消）：已通过 ProcessGeminiSseAsync 记录错误，
+                // 返回显式失败响应，保留已收集文本仅作诊断用途。
+                return BuildGeminiStreamingFailureResponse(sseResult.ParseError, sseResult.Text);
             }
 
-            if (streamedToolCalls.Count > 0)
+            if (sseResult.ToolCalls.Count > 0)
             {
-                var toolResp = new LlmResponse(fullText.ToString(), true);
-                toolResp.ToolCalls.AddRange(streamedToolCalls);
+                var toolResp = new LlmResponse(sseResult.Text, true);
+                toolResp.ToolCalls.AddRange(sseResult.ToolCalls);
                 return toolResp;
             }
 
-            return new LlmResponse(fullText.ToString(), fullText.Length > 0);
+            return new LlmResponse(sseResult.Text, sseResult.Text.Length > 0);
         }
         catch (OperationCanceledException)
         {
-            return new LlmResponse(fullText.ToString(), fullText.Length > 0);
+            // 请求级取消（HttpClient.SendAsync / 上层 CancellationToken）：不视为解析失败。
+            return new LlmResponse(string.Empty, false);
         }
         catch (Exception ex)
         {
-            return BuildGeminiStreamingFailureResponse(ex, fullText.ToString());
+            return BuildGeminiStreamingFailureResponse(ex, string.Empty);
         }
+    }
+
+    /// <summary>
+    /// Gemini SSE 流处理结果。Success=false 且 ParseError != null 表示遇到非法 JSON 分片，
+    /// 调用方应通过 BuildGeminiStreamingFailureResponse 返回显式失败（已收集文本仅作诊断）。
+    /// </summary>
+    internal sealed class GeminiSseProcessResult
+    {
+        public bool Success { get; set; }
+        public string Text { get; set; }
+        public List<ToolCallData> ToolCalls { get; set; } = new();
+        public Exception ParseError { get; set; }
+    }
+
+    /// <summary>
+    /// 读取并解析 Gemini SSE 流（generateContent?alt=sse），提取文本与工具调用分片。
+    /// 遇到首个无法解析的非空 data 分片时：记录 Error 日志并以 Success=false 返回
+    /// （不再静默忽略）。有效 JSON 但无文本/工具调用的空内容分片不视为失败。
+    /// 测试隔离点：接受原始 Stream，供离线注入 SSE 数据行（无需真实 HTTP）。
+    /// </summary>
+    internal async Task<GeminiSseProcessResult> ProcessGeminiSseAsync(Stream stream, Action<string> onToken, CancellationToken ct)
+    {
+        var result = new GeminiSseProcessResult { Success = true };
+        var fullText = new StringBuilder();
+        var toolCalls = new List<ToolCallData>();
+
+        using var reader = new StreamReader(stream);
+        while (!reader.EndOfStream && !ct.IsCancellationRequested)
+        {
+            var line = await reader.ReadLineAsync();
+            if (string.IsNullOrWhiteSpace(line)) continue;
+            if (!line.StartsWith("data:")) continue;
+
+            var data = line.Substring(5).Trim();
+            if (data == "[DONE]") break;
+
+            try
+            {
+                var json = JObject.Parse(data);
+                var candidates = json["candidates"] as JArray;
+
+                // 安全取首个 candidate：candidates 为空数组时 ?[0] 会抛异常，
+                // 原代码依赖静默 catch{} 吞掉；现改为显式守卫，视为"有效但无内容"跳过。
+                var firstCandidate = (candidates != null && candidates.Count > 0)
+                    ? candidates[0]
+                    : null;
+                JArray parts = null;
+                if (firstCandidate != null)
+                {
+                    var content = firstCandidate["content"] as JObject;
+                    parts = content?["parts"] as JArray;
+                }
+
+                // 有效 JSON 但无内容分片（如空 candidates / 无 parts）→ 非失败，继续。
+                if (parts == null) continue;
+
+                foreach (var part in parts)
+                {
+                    var funcCallToken = part["functionCall"];
+                    if (funcCallToken != null)
+                    {
+                        var funcName = funcCallToken["name"]?.ToString();
+                        var argsToken = funcCallToken["args"];
+                        var funcArgs = argsToken != null ? argsToken.ToString(Formatting.None) : "{}";
+                        if (!string.IsNullOrEmpty(funcName))
+                            toolCalls.Add(new ToolCallData { FunctionName = funcName, JsonArguments = funcArgs });
+                        continue;
+                    }
+
+                    var text = part["text"]?.ToString();
+                    if (!string.IsNullOrEmpty(text))
+                    {
+                        fullText.Append(text);
+                        onToken(text);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, $"[LlmGemini] Gemini role-based SSE chunk parse failed after {fullText.Length} chars of partial text; terminating stream.");
+                result.Success = false;
+                result.ParseError = ex;
+                result.Text = fullText.ToString();
+                result.ToolCalls = toolCalls;
+                return result;
+            }
+        }
+
+        result.Text = fullText.ToString();
+        result.ToolCalls = toolCalls;
+        return result;
     }
 
     /// <summary>
