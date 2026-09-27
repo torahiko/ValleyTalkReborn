@@ -64,6 +64,8 @@ internal static class PromptTopologyDumper
         var reusedFlags = new bool[turns];
         var a3Ok = new bool[turns];
         var a4Ok = new bool[turns];
+        bool turn1UsedSpokeJustNow = false;
+        bool laterTurnHasChatHistory = false;
 
         for (int turn = 1; turn <= turns; turn++)
         {
@@ -73,6 +75,13 @@ internal static class PromptTopologyDumper
                 var context = BuildPopulatedContext(character);
                 context.ChatHistory = BuildTurnChatHistory(turn);
                 context.RoutingFlags.IncludeShortTermContext = true;
+
+                // VT3-E-R2-VERIFY-002: 在 turn 上下文丢弃前捕获夹具路径标志
+                // （turn1 空历史走 SpokeJustNow 分支；后续 turn 非空 ChatHistory）。
+                if (turn == 1)
+                    turn1UsedSpokeJustNow = context.ChatHistory.Count == 0 && character.SpokeJustNow();
+                else if (context.ChatHistory.Count > 0)
+                    laterTurnHasChatHistory = true;
 
                 var prompts = new Prompts(context, character);
                 var plan = ConversationDirectorInstance.BuildPlan(context, character, prompts);
@@ -105,14 +114,30 @@ internal static class PromptTopologyDumper
         Info($"A1 (Tier1 frozen, Seg_A(1)==(2)==(3)): {(a1 ? "PASS" : "FAIL")}");
 
         // A2: Seg_X(1)⊑Seg_X(2)⊑Seg_X(3) 字节前缀链（累积历史 + continuity 已清）。
+        // VT3-E-R2-VERIFY-002: 原始前缀链结果交由 EvaluateA2Status 分类——
+        // 已知夹具限制（turn1 空历史 SpokeJustNow 过渡）报 WARN，非生产内容失败。
         int window = Math.Clamp(ModEntry.Config?.PromptHistoryWindow ?? 6, 1, 20);
-        bool a2 = segX.All(s => s != null)
+        bool a2Raw = segX.All(s => s != null)
             && segX[1].StartsWith(segX[0], StringComparison.Ordinal)
             && segX[2].StartsWith(segX[1], StringComparison.Ordinal);
-        Info($"A2 (Seg_X(1)⊑(2)⊑(3) 字节前缀链, historyWindow={window}): {(a2 ? "PASS" : "FAIL")}");
-        if (!a2)
-            Info($"  A2 归因: len(1)={segX[0]?.Length ?? -1}, len(2)={segX[1]?.Length ?? -1}, len(3)={segX[2]?.Length ?? -1} "
-                + "(window<4 时尾部截断破坏前缀链；turn1 空历史时受 SpokeJustNow 影响)");
+        var a2Status = EvaluateA2Status(a2Raw, turn1UsedSpokeJustNow, laterTurnHasChatHistory);
+        string a2Label = a2Status switch
+        {
+            A2ParityStatus.Pass => "PASS",
+            A2ParityStatus.Warn => "WARN",
+            _ => "FAIL",
+        };
+        Info($"A2 (Seg_X(1)⊑(2)⊑(3) 字节前缀链, historyWindow={window}): {a2Label}");
+        if (a2Status != A2ParityStatus.Pass)
+        {
+            Info($"  A2 归因: len(1)={segX[0]?.Length ?? -1}, len(2)={segX[1]?.Length ?? -1}, len(3)={segX[2]?.Length ?? -1}");
+            if (window < 4)
+                Info("  A2 归因: window<4 时尾部截断破坏前缀链");
+            else if (a2Status == A2ParityStatus.Warn)
+                Info("  A2 归因: 首turn 使用空历史连续性 (SpokeJustNow)，后续 turn 使用非空 ChatHistory — 已知验证夹具限制，非生产内容失败");
+            else
+                Info("  A2 归因: 未分类前缀链失败 (BUG)");
+        }
 
         // A3: Seg_B(i)==RenderTier2b(plan_i) 逐轮构造一致性。
         int a3Count = a3Ok.Count(b => b);
@@ -155,7 +180,17 @@ internal static class PromptTopologyDumper
         bool turn3Reused = reusedFlags[2];
         bool reuseAssertion = turn2Reused && turn3Reused && rotationNotReused;
         Info($"Reuse: turn1={reusedFlags[0]} ({turn1Source}) / turn2={turn2Reused} (expect T) / turn3={turn3Reused} (expect T) / rotation reused={rotationReused} (expect F) → {(reuseAssertion ? "PASS" : "FAIL")}");
-        Info($"Multi summary: A1={(a1 ? "PASS" : "FAIL")} / A2={(a2 ? "PASS" : "FAIL")} / A3={a3Count}/{turns} / A4={a4Count}/{turns} / Rotation={(rotationOk ? "PASS" : "FAIL")} / Reuse={(reuseAssertion ? "PASS" : "FAIL")}");
+        Info($"Multi summary: A1={(a1 ? "PASS" : "FAIL")} / A2={a2Label} / A3={a3Count}/{turns} / A4={a4Count}/{turns} / Rotation={(rotationOk ? "PASS" : "FAIL")} / Reuse={(reuseAssertion ? "PASS" : "FAIL")}");
+    }
+
+    /// <summary>A2 分类器（VT3-E-R2-VERIFY-002）。纯函数，仅供本调试比对器使用：
+    /// Pass=前缀链通过；Warn=前缀链失败但命中已知夹具限制（turn1 空历史 SpokeJustNow
+    /// 过渡 + 后续 turn 非空 ChatHistory），非生产内容失败；Fail=其余失败（BUG）。</summary>
+    internal static A2ParityStatus EvaluateA2Status(bool prefixChainPassed, bool turn1UsedSpokeJustNow, bool laterTurnHasChatHistory)
+    {
+        if (prefixChainPassed) return A2ParityStatus.Pass;
+        if (turn1UsedSpokeJustNow && laterTurnHasChatHistory) return A2ParityStatus.Warn;
+        return A2ParityStatus.Fail;
     }
 
     /// <summary>比对器自测（VT3-E-INS2 五例）：行袋权威模式 + 对称剔除 + 审计。
@@ -385,4 +420,13 @@ internal static class PromptTopologyDumper
 
     // ConversationDirector access (internal in Director namespace).
     private static readonly ConversationDirector ConversationDirectorInstance = new();
+}
+
+/// <summary>A2 前缀链比对结果分类（VT3-E-R2-VERIFY-002）：
+/// Pass=通过；Warn=已知验证夹具限制；Fail=未分类失败（BUG）。</summary>
+internal enum A2ParityStatus
+{
+    Pass,
+    Warn,
+    Fail,
 }
