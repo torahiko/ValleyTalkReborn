@@ -100,9 +100,11 @@ public class LlmDialogueService
             string runtimeConversationPrompt = BuildRuntimeConversationPrompt(prompts);
             string responseStart = prompts.ResponseStart;
 
-            // ── PROMPT-ARCH-03: OpenAI 兼容 Provider 使用 role-based 消息序列 ──
-            // 仅在 LlmOpenAiBase 时装配角色消息；其他 Provider 沿用 PROMPT-ARCH-02 字符串路径。
-            bool useRoleBased = Llm.Instance is LlmOpenAiBase;
+            // ── PROMPT-ARCH-03/04A: 兼容 Provider 使用 role-based 消息序列 ──
+            // Claude 与 OpenAI 兼容 Provider 均走 role-based 路径，但各自使用专属入口。
+            bool useClaude = Llm.Instance is LlmClaude;
+            bool useOpenAi = Llm.Instance is LlmOpenAiBase;
+            bool useRoleBased = useClaude || useOpenAi;
             IReadOnlyList<LlmChatMessage> roleMessages = useRoleBased ? prompts.BuildRuntimeChatMessages() : null;
 
             // ══════════════════════════════════════════════════
@@ -124,9 +126,27 @@ public class LlmDialogueService
                 LlmResponse streamResult = null;
                 try
                 {
-                    if (useRoleBased)
+                    if (useClaude)
                     {
-                        // ── PROMPT-ARCH-03: 流式 role-based 路径 ──
+                        // ── PROMPT-ARCH-04A: 流式 Claude role-based 路径 ──
+                        var claude = (LlmClaude)Llm.Instance;
+                        streamResult = await claude.RunClaudeStreamingChatInference(
+                            runtimeSystemPrompt,
+                            string.Empty,
+                            string.Empty,
+                            roleMessages,
+                            delta =>
+                            {
+                                var displayText = tracker.Feed(delta);
+                                if (displayText != null)
+                                    onStreamingToken(displayText);
+                            },
+                            cts.Token,
+                            responseStart);
+                    }
+                    else if (useOpenAi)
+                    {
+                        // ── PROMPT-ARCH-03: 流式 OpenAI role-based 路径 ──
                         var openAi = (LlmOpenAiBase)Llm.Instance;
                         streamResult = await openAi.RunStreamingChatInference(
                             runtimeSystemPrompt,
@@ -285,9 +305,22 @@ public class LlmDialogueService
 
                     if (isDebug) LogDebugRequest(character, prompts, attempt + 1);
 
-                    // ── PROMPT-ARCH-03: 非流式 role-based 路径 ──
-                    if (useRoleBased)
+                    if (useClaude)
                     {
+                        // ── PROMPT-ARCH-04A: 非流式 Claude role-based 路径 ──
+                        var claude = (LlmClaude)Llm.Instance;
+                        result = await claude.RunClaudeChatInference(
+                            runtimeSystemPrompt,
+                            string.Empty,
+                            string.Empty,
+                            roleMessages,
+                            cts.Token,
+                            responseStart,
+                            cacheContext: string.Empty);
+                    }
+                    else if (useOpenAi)
+                    {
+                        // ── PROMPT-ARCH-03: 非流式 OpenAI role-based 路径 ──
                         var openAi = (LlmOpenAiBase)Llm.Instance;
                         result = await openAi.RunChatInference(
                             runtimeSystemPrompt,

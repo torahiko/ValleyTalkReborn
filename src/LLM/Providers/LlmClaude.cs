@@ -62,6 +62,59 @@ internal class LlmClaude : Llm, IGetModelNames
         return blocks.ToArray();
     }
 
+    /// <summary>
+    /// 将内部 LlmChatMessage 列表标准化为 Anthropic messages 数组。
+    /// 角色映射：user→user，assistant→assistant（其他角色视为编程错误）。
+    /// 相邻同角色消息以 "\n\n" 合并，保留顺序与内容。
+    /// responseStart 按现有语义作为末尾 assistant 消息追加（非空时）。
+    /// </summary>
+    internal static List<object> BuildClaudeMessages(IReadOnlyList<LlmChatMessage> messages, string responseStart)
+    {
+        if (messages == null) throw new ArgumentNullException(nameof(messages));
+
+        var result = new List<object>();
+        foreach (var m in messages)
+        {
+            if (m == null) throw new ArgumentException("Claude message list contains a null message.");
+            if (m.Content == null) throw new ArgumentException("Claude message content is null.");
+
+            string role;
+            if (m.Role == "user") role = "user";
+            else if (m.Role == "assistant") role = "assistant";
+            else throw new ArgumentException($"Claude role-mapping error: unsupported role '{m.Role}'.");
+
+            // 相邻同角色合并（以恰好两个换行符连接）
+            if (result.Count > 0)
+            {
+                var last = result[result.Count - 1] as JObject;
+                string lastRole = last?["role"]?.ToString();
+                if (last != null && lastRole == role)
+                {
+                    last["content"] = last["content"]?.ToString() + "\n\n" + m.Content;
+                    continue;
+                }
+            }
+            result.Add(JObject.FromObject(new { role, content = m.Content }));
+        }
+
+        // 按现有 Claude 语义，responseStart 作为末尾 assistant 消息追加（非空时）
+        if (!string.IsNullOrWhiteSpace(responseStart))
+        {
+            var last = result.Count > 0 ? result[result.Count - 1] as JObject : null;
+            if (last != null && last["role"]?.ToString() == "assistant")
+            {
+                last["content"] = last["content"]?.ToString() + "\n\n" + responseStart;
+            }
+            else
+            {
+                result.Add(JObject.FromObject(new { role = "assistant", content = responseStart }));
+            }
+        }
+
+        return result;
+    }
+
+
     public LlmClaude(string apiKey, string modelName = null)
     {
         url = "https://api.anthropic.com/v1/messages";
@@ -77,15 +130,12 @@ internal class LlmClaude : Llm, IGetModelNames
     public override bool SupportsStreamingWithTools => true;
 
     internal override async Task<LlmResponse> RunInference(
-        string systemPromptString, string gameCacheString, string npcCacheString, 
-        string promptString, string responseStart = "", int n_predict = 2048, 
-        string cacheContext = "", bool allowRetry = true) // TODO: cacheContext 参数当前未使用。若后续需要按会话/NPC分组缓存策略，可在此处理。
+        string systemPromptString, string gameCacheString, string npcCacheString,
+        string promptString, string responseStart = "", int n_predict = 2048,
+        string cacheContext = "", bool allowRetry = true)
     {
-        // ── VT-NOTOOLS-T6: 工具调用已全量移除；恒空 → tools 字段整体省略 ──
         var anthropicTools = AgentToolDefinitions.GetAnthropicToolsArray();
         var tools = anthropicTools.Count > 0 ? (object)anthropicTools : null;
-
-        // ★ 从单一数据源解析参数（自动完成 Bark/A2A 豁免）
         var genParams = ResolveParameters(cacheContext);
 
         var inputString = JsonConvert.SerializeObject(new
@@ -106,14 +156,52 @@ internal class LlmClaude : Llm, IGetModelNames
             tools
         }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
+        return await ExecuteClaudeNonStreamingAsync(inputString, allowRetry);
+    }
+
+    internal override async Task<LlmResponse> RunStreamingInference(
+        string systemPromptString, string gameCacheString, string npcCacheString,
+        string promptString, Action<string> onToken, CancellationToken ct,
+        string responseStart = "", int n_predict = 2048,
+        string cacheContext = "")
+    {
+        var anthropicTools = AgentToolDefinitions.GetAnthropicToolsArray();
+        var tools = anthropicTools.Count > 0 ? (object)anthropicTools : null;
+        var genParams = ResolveParameters(cacheContext);
+
+        var inputString = JsonConvert.SerializeObject(new
+        {
+            thinking = new { type = "disabled" },
+            model = modelName,
+            max_tokens = genParams.MaxTokens,
+            temperature = genParams.Temperature,
+            top_p = genParams.TopP,
+            stream = true,
+            system = BuildSystemBlocks(systemPromptString, gameCacheString, npcCacheString),
+            messages = string.IsNullOrWhiteSpace(responseStart)
+                ? new[] { new { role = "user", content = promptString } }
+                : new object[]
+                {
+                    new { role = "user", content = promptString },
+                    new { role = "assistant", content = responseStart }
+                },
+            tools
+        }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+
+        return await ExecuteClaudeStreamingAsync(inputString, onToken, ct);
+    }
+
+    /// <summary>
+    /// 共享的 Claude 非流式 HTTP 执行与响应解析（Anthropic messages API）。
+    /// </summary>
+    internal async Task<LlmResponse> ExecuteClaudeNonStreamingAsync(string inputString, bool allowRetry)
+    {
         int retry = allowRetry ? 3 : 1;
         var fullUrl = url;
-        
+
         if (AndroidHelper.IsAndroid && !NetworkHelper.IsNetworkAvailable())
-        {
             throw new InvalidOperationException("Network not available");
-        }
-        
+
         string responseString = "";
         int apiResponseCode = 500;
 
@@ -146,22 +234,19 @@ internal class LlmClaude : Llm, IGetModelNames
                 var responseJson = JObject.Parse(responseString);
 
                 if (responseJson == null)
-                {
                     throw new Exception("Failed to parse response");
+
+                if (!responseJson.TryGetValue("content", out var contentToken) || contentToken.Type == JTokenType.Null)
+                {
+                    retry--; continue;
                 }
 
-                if (!responseJson.TryGetValue("content", out var contentToken) || contentToken.Type == JTokenType.Null) 
-                { 
-                    retry--; continue; 
-                }
-                
                 var contentArray = contentToken as JArray;
-                if (contentArray == null || !contentArray.HasValues) 
-                { 
-                    retry--; continue; 
+                if (contentArray == null || !contentArray.HasValues)
+                {
+                    retry--; continue;
                 }
 
-                // ── Native Tool Calling & Text Extraction ──
                 var toolResponse = new LlmResponse("", true);
                 string textContent = null;
 
@@ -190,18 +275,14 @@ internal class LlmClaude : Llm, IGetModelNames
                 }
 
                 if (!string.IsNullOrWhiteSpace(textContent))
-                {
                     return new LlmResponse(textContent);
-                }
-                
+
                 retry--;
             }
             catch (Exception ex)
             {
                 if (ex.InnerException is HttpRequestException httpEx)
-                {
                     apiResponseCode = (int)(httpEx.StatusCode ?? 0);
-                }
                 Log.Debug(ex.Message);
                 Log.Debug("Retrying...");
                 retry--;
@@ -211,43 +292,15 @@ internal class LlmClaude : Llm, IGetModelNames
         return new LlmResponse(responseString, apiResponseCode);
     }
 
-    internal override async Task<LlmResponse> RunStreamingInference(
-        string systemPromptString, string gameCacheString, string npcCacheString,
-        string promptString, Action<string> onToken, CancellationToken ct,
-        string responseStart = "", int n_predict = 2048, // TODO: cacheContext 参数当前未使用。若后续需要按会话/NPC分组缓存策略，可在此处理。
-        string cacheContext = "")
+    /// <summary>
+    /// 共享的 Claude 流式 HTTP 执行与 SSE 解析（Anthropic messages API）。
+    /// </summary>
+    internal async Task<LlmResponse> ExecuteClaudeStreamingAsync(string inputString, Action<string> onToken, CancellationToken ct)
     {
         if (AndroidHelper.IsAndroid && !NetworkHelper.IsNetworkAvailable())
             throw new InvalidOperationException("Network not available");
 
-        // ── VT-NOTOOLS-T6: 工具调用已全量移除；恒空 → tools 字段整体省略 ──
-        var anthropicTools = AgentToolDefinitions.GetAnthropicToolsArray();
-        var tools = anthropicTools.Count > 0 ? (object)anthropicTools : null;
-
-        // ★ 从单一数据源解析参数（自动完成 Bark/A2A 豁免）
-        var genParams = ResolveParameters(cacheContext);
-
-        var inputString = JsonConvert.SerializeObject(new
-        {
-            thinking = new { type = "disabled" },
-            model = modelName,
-            max_tokens = genParams.MaxTokens,
-            temperature = genParams.Temperature,
-            top_p = genParams.TopP,
-            stream = true,
-            system = BuildSystemBlocks(systemPromptString, gameCacheString, npcCacheString),
-            messages = string.IsNullOrWhiteSpace(responseStart)
-                ? new[] { new { role = "user", content = promptString } }
-                : new object[]
-                {
-                    new { role = "user", content = promptString },
-                    new { role = "assistant", content = responseStart }
-                },
-            tools
-        }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
-
         var fullText = new StringBuilder();
-
         var streamedToolCalls = new List<ToolCallData>();
         var toolBlocksByIndex = new Dictionary<int, (string name, StringBuilder args)>();
 
@@ -284,7 +337,6 @@ internal class LlmClaude : Llm, IGetModelNames
                 try
                 {
                     var json = JObject.Parse(data);
-
                     var eventType = json["type"]?.ToString();
 
                     if (eventType == "content_block_start")
@@ -303,7 +355,6 @@ internal class LlmClaude : Llm, IGetModelNames
                     {
                         var delta = json["delta"];
                         if (delta == null) continue;
-
                         var deltaType = delta["type"]?.ToString();
                         if (deltaType == "text_delta")
                         {
@@ -319,9 +370,7 @@ internal class LlmClaude : Llm, IGetModelNames
                             int index = json["index"]?.Value<int>() ?? 0;
                             var partialJson = delta["partial_json"]?.ToString();
                             if (!string.IsNullOrEmpty(partialJson) && toolBlocksByIndex.TryGetValue(index, out var entry))
-                            {
                                 entry.args.Append(partialJson);
-                            }
                         }
                         continue;
                     }
@@ -359,10 +408,77 @@ internal class LlmClaude : Llm, IGetModelNames
         catch (Exception ex)
         {
             Log.Error(ex, "[LlmClaude] Streaming failed, falling back to non-streaming");
-            return await base.RunStreamingInference(
-                systemPromptString, gameCacheString, npcCacheString,
-                promptString, onToken, ct, responseStart, n_predict);
+            return await base.RunStreamingInference(null, null, null, null, null, ct);
         }
+    }
+
+    // ── Claude 主对话 role-based 入口（PROMPT-ARCH-04A） ──
+
+    /// <summary>
+    /// 非流式 Claude role-based 主对话推理。使用 BuildRuntimeChatMessages 产出的角色消息序列。
+    /// </summary>
+    internal async Task<LlmResponse> RunClaudeChatInference(
+        string systemPromptString,
+        string gameCacheString,
+        string npcCacheString,
+        IReadOnlyList<LlmChatMessage> messages,
+        CancellationToken ct,
+        string responseStart = "",
+        int n_predict = 2048,
+        string cacheContext = "",
+        bool allowRetry = true)
+    {
+        var anthropicTools = AgentToolDefinitions.GetAnthropicToolsArray();
+        var tools = anthropicTools.Count > 0 ? (object)anthropicTools : null;
+        var genParams = ResolveParameters(cacheContext);
+
+        var inputString = JsonConvert.SerializeObject(new
+        {
+            thinking = new { type = "disabled" },
+            model = this.modelName,
+            max_tokens = genParams.MaxTokens,
+            temperature = genParams.Temperature,
+            top_p = genParams.TopP,
+            system = BuildSystemBlocks(systemPromptString, gameCacheString, npcCacheString),
+            messages = BuildClaudeMessages(messages, responseStart),
+            tools
+        }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+
+        return await ExecuteClaudeNonStreamingAsync(inputString, allowRetry);
+    }
+
+    /// <summary>
+    /// 流式 Claude role-based 主对话推理。使用 BuildRuntimeChatMessages 产出的角色消息序列。
+    /// </summary>
+    internal async Task<LlmResponse> RunClaudeStreamingChatInference(
+        string systemPromptString,
+        string gameCacheString,
+        string npcCacheString,
+        IReadOnlyList<LlmChatMessage> messages,
+        Action<string> onToken,
+        CancellationToken ct,
+        string responseStart = "",
+        int n_predict = 2048,
+        string cacheContext = "")
+    {
+        var anthropicTools = AgentToolDefinitions.GetAnthropicToolsArray();
+        var tools = anthropicTools.Count > 0 ? (object)anthropicTools : null;
+        var genParams = ResolveParameters(cacheContext);
+
+        var inputString = JsonConvert.SerializeObject(new
+        {
+            thinking = new { type = "disabled" },
+            model = this.modelName,
+            max_tokens = genParams.MaxTokens,
+            temperature = genParams.Temperature,
+            top_p = genParams.TopP,
+            stream = true,
+            system = BuildSystemBlocks(systemPromptString, gameCacheString, npcCacheString),
+            messages = BuildClaudeMessages(messages, responseStart),
+            tools
+        }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+
+        return await ExecuteClaudeStreamingAsync(inputString, onToken, ct);
     }
 
     internal override Dictionary<string, double>[] RunInferenceProbabilities(string fullPrompt, int n_predict = 1)
