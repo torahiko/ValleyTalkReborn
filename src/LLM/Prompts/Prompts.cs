@@ -202,8 +202,8 @@ public class Prompts
 
         // 4. 最终触发后缀作为独立的 user 消息
         string triggerSuffix = IsChineseLanguage
-            ? "<response_trigger>\n[RESPONSE_TRIGGER] 农夫刚刚说了话。你的第一句必须直接回应农夫的最新发言；完成直接回应后，才允许展开无关的延续话题。\n</response_trigger>"
-            : "<response_trigger>\n[RESPONSE_TRIGGER] The farmer has just spoken. Your first line MUST respond directly to the farmer's latest words; only after that direct response may you continue with unrelated topics.\n</response_trigger>";
+            ? "<response_trigger>\n[RESPONSE_TRIGGER] 若农夫刚刚说了话：你的第一句必须直接回应他的最新发言。若农夫没有说话（现场触发或沉默）：直接从你当下的动作与环境自然开口，不要虚构农夫的发言。两种情形都只输出一轮，完成选项区后立即交回对话回合。\n</response_trigger>"
+            : "<response_trigger>\n[RESPONSE_TRIGGER] If the farmer just spoke: your first line MUST directly reply to the farmer's latest words. If the farmer said nothing (ambient trigger or silence): open naturally from your current action and surroundings; do NOT invent farmer speech. In both cases output exactly one turn and hand the turn back right after the option block.\n</response_trigger>";
         messages.Add(new LlmChatMessage("user", triggerSuffix));
 
         return messages;
