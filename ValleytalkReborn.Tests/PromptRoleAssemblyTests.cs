@@ -26,6 +26,8 @@ public class PromptRoleAssemblyTests : IDisposable
     private readonly IModHelper _originalSHelper;
     private readonly IMonitor _originalSMonitor;
     private readonly bool _needRestore;
+    // VT-CONTEXT-01：role-based 装配需要可解析的玩家身份名，测试环境安装一个具名 Farmer。
+    private readonly IDisposable _playerScope;
 
     public PromptRoleAssemblyTests()
     {
@@ -45,10 +47,12 @@ public class PromptRoleAssemblyTests : IDisposable
             ModEntry.Config = new ModConfig();
             sHelperField?.SetValue(null, new ValleytalkReborn.Tests.FakeModHelper(string.Empty));
         }
+        _playerScope = ValleytalkReborn.Tests.FakePlayer.Install("TestFarmer");
     }
 
     public void Dispose()
     {
+        _playerScope?.Dispose();
         ModEntry.Config = _originalConfig;
         LocalizedContentManager.CurrentLanguageCode = _originalLanguageCode;
         if (_needRestore)

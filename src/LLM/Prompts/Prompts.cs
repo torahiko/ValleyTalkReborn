@@ -42,6 +42,37 @@ public class Prompts
 
     private bool IsChineseLanguage => ResolveIsChinese();
 
+    /// <summary>
+    /// VT-CONTEXT-01：运行时提示词中的玩家身份名。实例入口，供本类的装配方法复用。
+    /// 每次提示词装配只解析一次（hot path 约束），不在历史循环内重复访问 Game1.player。
+    /// </summary>
+    private string GetPromptPlayerName() => ResolvePromptPlayerName(Character);
+
+    /// <summary>
+    /// 玩家身份名解析：优先 Game1.player.Name；为 null/空/空白时回退
+    /// Util.GetString(character, "generalFarmerLabel") 的本地化标签。
+    /// PromptsBlocks 的静态装配路径（Tier 2a）复用同一实现，保证 role-based 与
+    /// 非 role-based 路径的玩家说话者标签一致。
+    /// 玩家名与回退标签同时为空白属 BUG：记录 Error 并抛出，绝不静默产出空标签。
+    /// </summary>
+    internal static string ResolvePromptPlayerName(Character character)
+    {
+        string playerName = Game1.player?.Name;
+        if (!string.IsNullOrWhiteSpace(playerName))
+            return playerName.Trim();
+
+        string fallbackLabel = Util.GetString(character, "generalFarmerLabel");
+        if (string.IsNullOrWhiteSpace(fallbackLabel))
+        {
+            ModEntry.SMonitor?.Log(
+                "[Prompts] Player identity unavailable: Game1.player.Name is blank and the generalFarmerLabel fallback resolved to blank; refusing to emit an empty speaker label.",
+                StardewModdingAPI.LogLevel.Error);
+            throw new InvalidOperationException(
+                "Prompt player identity unavailable: Game1.player.Name is blank and the generalFarmerLabel fallback resolved to blank.");
+        }
+        return fallbackLabel;
+    }
+
     private string TargetLanguageName
     {
         get
@@ -156,6 +187,9 @@ public class Prompts
     {
         var messages = new List<LlmChatMessage>();
 
+        // VT-CONTEXT-01：本次装配的玩家身份名（只解析一次，后续循环复用）
+        string promptPlayerName = GetPromptPlayerName();
+
         // 1. 去重后的动态上下文作为 user 消息
         string dynamicContext = PromptDeduplicator.DeduplicateDynamicSegment(this.SystemPrompt, this.DynamicContext);
         if (!string.IsNullOrWhiteSpace(dynamicContext))
@@ -183,8 +217,12 @@ public class Prompts
             foreach (var turn in continuityTurns)
             {
                 // 保留 FuzzyTime 前缀（与 BuildSessionContinuity 一致的格式语义）。
+                // VT-CONTEXT-01：玩家轮次显式标注玩家名，NPC（assistant）轮次内容不变。
                 string timePrefix = string.IsNullOrEmpty(turn.FuzzyTime) ? "" : $"[{turn.FuzzyTime}] ";
-                messages.Add(new LlmChatMessage(turn.IsPlayerLine ? "user" : "assistant", timePrefix + turn.Text));
+                string content = turn.IsPlayerLine
+                    ? $"{timePrefix}{promptPlayerName}: {turn.Text}"
+                    : timePrefix + turn.Text;
+                messages.Add(new LlmChatMessage(turn.IsPlayerLine ? "user" : "assistant", content));
             }
         }
 
@@ -197,13 +235,16 @@ public class Prompts
             : this.Context.ChatHistory;
         foreach (var elem in visible)
         {
-            messages.Add(new LlmChatMessage(elem.IsPlayerLine ? "user" : "assistant", elem.Text));
+            // VT-CONTEXT-01：玩家轮次以“{玩家名}: ”标注说话者；NPC（assistant）轮次内容不变。
+            string content = elem.IsPlayerLine ? $"{promptPlayerName}: {elem.Text}" : elem.Text;
+            messages.Add(new LlmChatMessage(elem.IsPlayerLine ? "user" : "assistant", content));
         }
 
         // 4. 最终触发后缀作为独立的 user 消息
+        // VT-CONTEXT-01：附带玩家身份说明——玩家名与“农夫/Farmer”是同一人。
         string triggerSuffix = IsChineseLanguage
-            ? "<response_trigger>\n[RESPONSE_TRIGGER] 若农夫刚刚说了话：你的第一句必须直接回应他的最新发言。若农夫没有说话（现场触发或沉默）：直接从你当下的动作与环境自然开口，不要虚构农夫的发言。两种情形都只输出一轮，完成选项区后立即交回对话回合。\n</response_trigger>"
-            : "<response_trigger>\n[RESPONSE_TRIGGER] If the farmer just spoke: your first line MUST directly reply to the farmer's latest words. If the farmer said nothing (ambient trigger or silence): open naturally from your current action and surroundings; do NOT invent farmer speech. In both cases output exactly one turn and hand the turn back right after the option block.\n</response_trigger>";
+            ? $"<response_trigger>\n[IDENTITY] 玩家姓名为 {promptPlayerName}；上下文中标为该姓名的玩家发言，以及称作农夫/Farmer 的玩家身份，都是同一个人，不是两个角色。\n[RESPONSE_TRIGGER] 若农夫刚刚说了话：你的第一句必须直接回应他的最新发言。若农夫没有说话（现场触发或沉默）：直接从你当下的动作与环境自然开口，不要虚构农夫的发言。两种情形都只输出一轮，完成选项区后立即交回对话回合。\n</response_trigger>"
+            : $"<response_trigger>\n[IDENTITY] The player's name is {promptPlayerName}; player lines labelled with that name and the player identity called 农夫/Farmer are the same person, not two different characters.\n[RESPONSE_TRIGGER] If the farmer just spoke: your first line MUST directly reply to the farmer's latest words. If the farmer said nothing (ambient trigger or silence): open naturally from your current action and surroundings; do NOT invent farmer speech. In both cases output exactly one turn and hand the turn back right after the option block.\n</response_trigger>";
         messages.Add(new LlmChatMessage("user", triggerSuffix));
 
         return messages;
@@ -1537,6 +1578,8 @@ public class Prompts
         internal static string BuildCurrentConversation(Character character, DialogueContext context, ContextFlags flags, HashSet<string> emittedBlockKeys, string name)
         {
             var prompt = new StringBuilder();
+            // VT-CONTEXT-01：本次装配的玩家身份名（只解析一次，循环内复用）
+            string promptPlayerName = Prompts.ResolvePromptPlayerName(character);
             if (context.ChatHistory.Any())
             {
                 prompt.Append(PromptsBlocks.BuildConversationHeading(character));
@@ -1551,8 +1594,9 @@ public class Prompts
                 foreach (var elem in visible)
                 {
                     string timePrefix = string.IsNullOrEmpty(elem.FuzzyTime) ? "" : $"[{elem.FuzzyTime}] ";
+                    // VT-CONTEXT-01：玩家历史行以当前玩家名标注；NPC 标签与格式不变。
                     prompt.AppendLine(elem.IsPlayerLine
-                        ? $"- {timePrefix}{Util.GetString(character, "generalFarmerLabel")}: {elem.Text}"
+                        ? $"- {timePrefix}{promptPlayerName}: {elem.Text}"
                         : $"- {timePrefix}{name}: {elem.Text}");
                 }
             }
@@ -1608,6 +1652,8 @@ public class Prompts
             var previousTurns = GetContinuityTurns(character, context);
             if (previousTurns.Count == 0) return string.Empty;
 
+            // VT-CONTEXT-01：本次装配的玩家身份名（只解析一次，循环内复用）
+            string promptPlayerName = Prompts.ResolvePromptPlayerName(character);
             var session = SessionCache.Instance.GetOrCreate(character.Name);
             var prompt = new StringBuilder();
             prompt.AppendLine("<continuity_context>");
@@ -1617,7 +1663,8 @@ public class Prompts
                 : "[REFERENCE_ONLY] Earlier conversation turns today, provided solely for conversational consistency:");
             foreach (var turn in previousTurns)
             {
-                string label = turn.IsPlayerLine ? (isZh ? "农夫" : "Farmer") : character.Name;
+                // VT-CONTEXT-01：玩家历史行使用当前玩家名；NPC 标签不变。
+                string label = turn.IsPlayerLine ? promptPlayerName : character.Name;
                 string timePrefix = string.IsNullOrEmpty(turn.FuzzyTime) ? "" : $"[{turn.FuzzyTime}] ";
                 prompt.AppendLine($"- {timePrefix}{label}: {turn.Text}");
             }

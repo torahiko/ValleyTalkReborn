@@ -10,6 +10,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Threading;
+using Netcode;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Framework.Logging;
@@ -93,6 +94,92 @@ internal static class TestEnv
             ModEntry.Config = _originalConfig;
             SetLocaleField(_originalLocale);
             SetLocaleCacheField(_originalLocaleCache);
+        }
+    }
+}
+
+/// <summary>
+/// VT-CONTEXT-01：安装/卸载一个仅含 Name 的 Farmer 作为 Game1.player，
+/// 使提示词装配路径能在无真实存档的测试环境中解析玩家身份名。
+/// 使用方式：using (FakePlayer.Install("虎彦")) { ... }
+/// </summary>
+internal static class FakePlayer
+{
+    private static readonly FieldInfo PlayerField =
+        typeof(Game1).GetField("_player", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+
+    private static readonly FieldInfo FarmerNameField =
+        typeof(Farmer).GetField("name", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
+    public static IDisposable Install(string name)
+    {
+        var farmer = (Farmer)FormatterServices.GetUninitializedObject(typeof(Farmer));
+        // 无存档环境下 Farmer 的 Net 字段（gender 等）为 null，读取 Gender 会 NRE，
+        // 先补上标量 Net 字段，再写入 Name 的 NetString 后备字段（Name setter 同样依赖其他字段）。
+        InitializeScalarNetFields(farmer);
+        FarmerNameField?.SetValue(farmer, new NetString(name));
+        object previous = PlayerField?.GetValue(null);
+        PlayerField?.SetValue(null, farmer);
+        return new PlayerScope(previous);
+    }
+
+    private static bool IsNetField(Type type)
+    {
+        for (Type t = type; t != null && t != typeof(object); t = t.BaseType)
+        {
+            if (t.IsGenericType && t.GetGenericTypeDefinition().FullName == "Netcode.NetFieldBase`2")
+                return true;
+        }
+        return false;
+    }
+
+    private static void InitializeScalarNetFields(Farmer farmer)
+    {
+        foreach (var field in typeof(Farmer).GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+        {
+            if (field.GetValue(farmer) != null) continue;
+            try
+            {
+                if (field.FieldType == typeof(NetInt)) field.SetValue(farmer, new NetInt(0));
+                else if (field.FieldType == typeof(NetBool)) field.SetValue(farmer, new NetBool(false));
+                else if (field.FieldType == typeof(NetLong)) field.SetValue(farmer, new NetLong(0L));
+                else if (field.FieldType == typeof(NetFloat)) field.SetValue(farmer, new NetFloat(0f));
+                else if (field.FieldType == typeof(NetDouble)) field.SetValue(farmer, new NetDouble(0d));
+                else if (field.FieldType == typeof(NetString)) field.SetValue(farmer, new NetString(string.Empty));
+                else if (IsNetField(field.FieldType) && !field.FieldType.IsAbstract)
+                {
+                    var ctor = field.FieldType.GetConstructors(BindingFlags.Instance | BindingFlags.Public)
+                        .Where(c => c.GetParameters().Length <= 1)
+                        .OrderBy(c => c.GetParameters().Length)
+                        .FirstOrDefault();
+                    if (ctor == null) continue;
+                    var args = ctor.GetParameters()
+                        .Select(p => p.HasDefaultValue
+                            ? p.DefaultValue
+                            : (p.ParameterType.IsValueType ? Activator.CreateInstance(p.ParameterType) : null))
+                        .ToArray();
+                    field.SetValue(farmer, ctor.Invoke(args));
+                }
+            }
+            catch (Exception)
+            {
+                // 测试用桩：无法初始化的字段保持原样，调用方若真的触碰会以显式异常暴露。
+            }
+        }
+    }
+
+    private sealed class PlayerScope : IDisposable
+    {
+        private readonly object _previous;
+        private bool _disposed;
+
+        public PlayerScope(object previous) => _previous = previous;
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            PlayerField?.SetValue(null, _previous);
         }
     }
 }
