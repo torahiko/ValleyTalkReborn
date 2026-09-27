@@ -221,10 +221,10 @@ public class ClaudeRolePayloadTests
     // ── ExecuteClaudeStreamingAsync：流式异常不触发 null 参数回退 ──
 
     [Fact]
-    public void ExecuteClaudeStreamingAsync_Exception_DoesNotFallbackWithNullArgs()
+    public void ExecuteClaudeStreamingAsync_Cancelled_PreservesExistingBehavior()
     {
-        // 验证：流式请求异常时，不再调用 base.RunStreamingInference(null, null, null, null, null, ct)。
-        // 通过预取消令牌触发 OperationCanceledException，验证返回部分文本且不发起二次请求。
+        // 预取消令牌触发 OperationCanceledException 路径（与通用异常路径分离）。
+        // 验证取消路径保持原有语义：返回已收集文本（此处为空），不发起二次请求。
         var claude = new LlmClaude("test-key", "claude-3-5-haiku-latest");
         var inputString = JsonConvert.SerializeObject(new
         {
@@ -240,9 +240,33 @@ public class ClaudeRolePayloadTests
 
         var response = claude.ExecuteClaudeStreamingAsync(inputString, _ => { }, cts.Token).Result;
 
-        // 取消时应返回空结果（无文本被收集），且不抛出。
         Assert.NotNull(response);
         Assert.Equal(string.Empty, response.Text);
+    }
+
+    // ── BuildStreamingFailureResponse：非取消异常路径标记为失败 ──
+
+    [Fact]
+    public void BuildStreamingFailureResponse_PartialText_ReturnsFailed()
+    {
+        // 验证：非取消异常后，即使有部分收集文本，结果也标记为 IsSuccess=false。
+        var claude = new LlmClaude("test-key", "claude-3-5-haiku-latest");
+        var response = claude.BuildStreamingFailureResponse(new Exception("simulated stream failure"), "partial text collected");
+
+        Assert.False(response.IsSuccess);
+        Assert.Equal(500, response.ResponseCode);
+        // 部分文本作为诊断内容保留在 ErrorMessage 中
+        Assert.Equal("partial text collected", response.ErrorMessage);
+    }
+
+    [Fact]
+    public void BuildStreamingFailureResponse_EmptyPartialText_ReturnsFailed()
+    {
+        var claude = new LlmClaude("test-key", "claude-3-5-haiku-latest");
+        var response = claude.BuildStreamingFailureResponse(new Exception("fail"), string.Empty);
+
+        Assert.False(response.IsSuccess);
+        Assert.Equal(500, response.ResponseCode);
     }
 
     // ── 辅助 ──

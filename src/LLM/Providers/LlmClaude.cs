@@ -414,11 +414,18 @@ internal class LlmClaude : Llm, IGetModelNames
         }
         catch (Exception ex)
         {
-            // 不再回退到带有 null 参数的 base.RunStreamingInference；
-            // 直接返回已收集的流式文本作为显式失败结果，避免发送残缺的二次请求。
-            Log.Error(ex, "[LlmClaude] Streaming failed; returning collected partial text without fallback request.");
-            return new LlmResponse(fullText.ToString(), fullText.Length > 0);
+            return BuildStreamingFailureResponse(ex, fullText.ToString());
         }
+    }
+
+    /// <summary>
+    /// 构建流式异常时的显式失败响应（测试隔离点）。
+    /// 不发起二次请求；保留部分收集文本作为诊断内容，但标记为失败。
+    /// </summary>
+    internal LlmResponse BuildStreamingFailureResponse(Exception ex, string partialText)
+    {
+        Log.Error(ex, "[LlmClaude] Streaming failed; returning explicit failure without fallback request.");
+        return new LlmResponse(partialText, 500, false);
     }
 
     // ── Claude 主对话 role-based 入口（PROMPT-ARCH-04A） ──
