@@ -156,7 +156,7 @@ internal class LlmClaude : Llm, IGetModelNames
             tools
         }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
-        return await ExecuteClaudeNonStreamingAsync(inputString, allowRetry);
+        return await ExecuteClaudeNonStreamingAsync(inputString, allowRetry, CancellationToken.None);
     }
 
     internal override async Task<LlmResponse> RunStreamingInference(
@@ -194,7 +194,7 @@ internal class LlmClaude : Llm, IGetModelNames
     /// <summary>
     /// 共享的 Claude 非流式 HTTP 执行与响应解析（Anthropic messages API）。
     /// </summary>
-    internal async Task<LlmResponse> ExecuteClaudeNonStreamingAsync(string inputString, bool allowRetry)
+    internal async Task<LlmResponse> ExecuteClaudeNonStreamingAsync(string inputString, bool allowRetry, CancellationToken callerToken)
     {
         int retry = allowRetry ? 3 : 1;
         var fullUrl = url;
@@ -216,20 +216,27 @@ internal class LlmClaude : Llm, IGetModelNames
                     { "anthropic-beta", "prompt-caching-2024-07-31" }
                 };
 
-                if (AndroidHelper.IsAndroid)
+                // 链接调用方取消令牌与配置的 HTTP 超时。
+                using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(callerToken))
                 {
-                    responseString = await NetworkHelper.MakeRequestWithCustomHeadersAsync(fullUrl, inputString, headers);
-                }
-                else
-                {
-                    using var req = new HttpRequestMessage(HttpMethod.Post, fullUrl);
-                    req.Content = new StringContent(inputString, Encoding.UTF8, "application/json");
-                    foreach (var kvp in headers)
-                        req.Headers.Add(kvp.Key, kvp.Value);
+                    linkedCts.CancelAfter(TimeSpan.FromSeconds(ModEntry.Config.QueryTimeout));
+                    var linkedToken = linkedCts.Token;
 
-                    using var resp = await SharedHttpClient.SendAsync(req);
-                    apiResponseCode = (int)resp.StatusCode;
-                    responseString = await resp.Content.ReadAsStringAsync();
+                    if (AndroidHelper.IsAndroid)
+                    {
+                        responseString = await NetworkHelper.MakeRequestWithCustomHeadersAsync(fullUrl, inputString, headers, linkedToken);
+                    }
+                    else
+                    {
+                        using var req = new HttpRequestMessage(HttpMethod.Post, fullUrl);
+                        req.Content = new StringContent(inputString, Encoding.UTF8, "application/json");
+                        foreach (var kvp in headers)
+                            req.Headers.Add(kvp.Key, kvp.Value);
+
+                        using var resp = await SharedHttpClient.SendAsync(req, linkedToken);
+                        apiResponseCode = (int)resp.StatusCode;
+                        responseString = await resp.Content.ReadAsStringAsync();
+                    }
                 }
                 var responseJson = JObject.Parse(responseString);
 
@@ -407,8 +414,10 @@ internal class LlmClaude : Llm, IGetModelNames
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "[LlmClaude] Streaming failed, falling back to non-streaming");
-            return await base.RunStreamingInference(null, null, null, null, null, ct);
+            // 不再回退到带有 null 参数的 base.RunStreamingInference；
+            // 直接返回已收集的流式文本作为显式失败结果，避免发送残缺的二次请求。
+            Log.Error(ex, "[LlmClaude] Streaming failed; returning collected partial text without fallback request.");
+            return new LlmResponse(fullText.ToString(), fullText.Length > 0);
         }
     }
 
@@ -444,7 +453,7 @@ internal class LlmClaude : Llm, IGetModelNames
             tools
         }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
-        return await ExecuteClaudeNonStreamingAsync(inputString, allowRetry);
+        return await ExecuteClaudeNonStreamingAsync(inputString, allowRetry, ct);
     }
 
     /// <summary>

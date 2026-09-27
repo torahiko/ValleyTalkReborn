@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using ValleytalkReborn;
 using Xunit;
@@ -187,6 +188,61 @@ public class ClaudeRolePayloadTests
     {
         var result = LlmClaude.BuildClaudeMessages(new List<LlmChatMessage>(), "");
         Assert.Empty(result);
+    }
+
+    // ── ExecuteClaudeNonStreamingAsync：取消令牌传播到 HTTP 请求路径 ──
+
+    [Fact]
+    public void ExecuteClaudeNonStreamingAsync_PreCancelledToken_ReturnsQuickly()
+    {
+        // 使用预取消令牌：HttpClient.SendAsync 在发起网络请求前即抛出，
+        // 证明取消令牌已传递到 HTTP 请求路径（无需真实网络）。
+        var claude = new LlmClaude("test-key", "claude-3-5-haiku-latest");
+        var inputString = JsonConvert.SerializeObject(new
+        {
+            model = "claude-3-5-haiku-latest",
+            max_tokens = 256,
+            system = new object[] { new { type = "text", text = "sys" } },
+            messages = new object[] { new { role = "user", content = "hi" } }
+        });
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel(); // 立即取消
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var response = claude.ExecuteClaudeNonStreamingAsync(inputString, true, cts.Token).Result;
+        sw.Stop();
+
+        // 预取消令牌应在远小于配置超时的时间内返回（取消被传递到 HTTP 层）。
+        Assert.True(sw.ElapsedMilliseconds < 5000, $"Expected fast cancellation, took {sw.ElapsedMilliseconds}ms");
+        Assert.False(response.IsSuccess);
+    }
+
+    // ── ExecuteClaudeStreamingAsync：流式异常不触发 null 参数回退 ──
+
+    [Fact]
+    public void ExecuteClaudeStreamingAsync_Exception_DoesNotFallbackWithNullArgs()
+    {
+        // 验证：流式请求异常时，不再调用 base.RunStreamingInference(null, null, null, null, null, ct)。
+        // 通过预取消令牌触发 OperationCanceledException，验证返回部分文本且不发起二次请求。
+        var claude = new LlmClaude("test-key", "claude-3-5-haiku-latest");
+        var inputString = JsonConvert.SerializeObject(new
+        {
+            model = "claude-3-5-haiku-latest",
+            max_tokens = 256,
+            stream = true,
+            system = new object[] { new { type = "text", text = "sys" } },
+            messages = new object[] { new { role = "user", content = "hi" } }
+        });
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        var response = claude.ExecuteClaudeStreamingAsync(inputString, _ => { }, cts.Token).Result;
+
+        // 取消时应返回空结果（无文本被收集），且不抛出。
+        Assert.NotNull(response);
+        Assert.Equal(string.Empty, response.Text);
     }
 
     // ── 辅助 ──
