@@ -169,11 +169,16 @@ public class Prompts
     {
         get
         {
-            string triggerSuffix = IsChineseLanguage
-                ? "<response_trigger>\n[RESPONSE_TRIGGER] 农夫刚刚说了话。你的第一句必须直接回应农夫的最新发言；完成直接回应后，才允许展开无关的延续话题。\n</response_trigger>"
-                : "<response_trigger>\n[RESPONSE_TRIGGER] The farmer has just spoken. Your first line MUST respond directly to the farmer's latest words; only after that direct response may you continue with unrelated topics.\n</response_trigger>";
-            return JoinPromptSegments(_sessionContinuitySegment, _currentConversationSegment, triggerSuffix);
+            return JoinPromptSegments(_sessionContinuitySegment, _currentConversationSegment, BuildResponseTriggerSuffix(GetPromptPlayerName()));
         }
+    }
+
+    /// <summary>触发后缀单一来源（VT-RCA-02-R1）。两处载荷（role-based 最终 user 消息 / legacy ConversationStream 末段）共用，禁止再内联副本。</summary>
+    internal string BuildResponseTriggerSuffix(string promptPlayerName)
+    {
+        return IsChineseLanguage
+            ? $"<response_trigger>\n[IDENTITY] 玩家姓名为 {promptPlayerName}；上下文中标为该姓名的玩家发言，以及称作农夫/Farmer 的玩家身份，都是同一个人，不是两个角色。\n[RESPONSE_TRIGGER] 若农夫刚刚说了话：你的第一句必须直接回应他的最新发言。若农夫没有说话（现场触发或沉默）：直接从你当下的动作与环境自然开口，不要虚构农夫的发言。两种情形都只输出一轮，完成选项区后立即交回对话回合。\n</response_trigger>"
+            : $"<response_trigger>\n[IDENTITY] The player's name is {promptPlayerName}; player lines labelled with that name and the player identity called 农夫/Farmer are the same person, not two different characters.\n[RESPONSE_TRIGGER] If the farmer just spoke: your first line MUST directly reply to the farmer's latest words. If the farmer said nothing (ambient trigger or silence): open naturally from your current action and surroundings; do NOT invent farmer speech. In both cases output exactly one turn and hand the turn back right after the option block.\n</response_trigger>";
     }
 
     /// <summary>
@@ -242,9 +247,7 @@ public class Prompts
 
         // 4. 最终触发后缀作为独立的 user 消息
         // VT-CONTEXT-01：附带玩家身份说明——玩家名与“农夫/Farmer”是同一人。
-        string triggerSuffix = IsChineseLanguage
-            ? $"<response_trigger>\n[IDENTITY] 玩家姓名为 {promptPlayerName}；上下文中标为该姓名的玩家发言，以及称作农夫/Farmer 的玩家身份，都是同一个人，不是两个角色。\n[RESPONSE_TRIGGER] 若农夫刚刚说了话：你的第一句必须直接回应他的最新发言。若农夫没有说话（现场触发或沉默）：直接从你当下的动作与环境自然开口，不要虚构农夫的发言。两种情形都只输出一轮，完成选项区后立即交回对话回合。\n</response_trigger>"
-            : $"<response_trigger>\n[IDENTITY] The player's name is {promptPlayerName}; player lines labelled with that name and the player identity called 农夫/Farmer are the same person, not two different characters.\n[RESPONSE_TRIGGER] If the farmer just spoke: your first line MUST directly reply to the farmer's latest words. If the farmer said nothing (ambient trigger or silence): open naturally from your current action and surroundings; do NOT invent farmer speech. In both cases output exactly one turn and hand the turn back right after the option block.\n</response_trigger>";
+        string triggerSuffix = BuildResponseTriggerSuffix(promptPlayerName);
         messages.Add(new LlmChatMessage("user", triggerSuffix));
 
         return messages;

@@ -14,6 +14,7 @@ using StardewModdingAPI;
 using StardewModdingAPI.Framework.Logging;
 using StardewValley;
 using ValleytalkReborn;
+using ValleytalkReborn.Tests;
 using Xunit;
 
 [Collection("StaticGlobalStateCollection")]
@@ -22,16 +23,21 @@ public class PromptRuntimeAssemblyTests : IDisposable
     private readonly ModConfig _originalConfig;
     private readonly LocalizedContentManager.LanguageCode _originalLanguageCode;
     private readonly IMonitor _originalLogMonitor;
+    private readonly IDisposable _playerScope;
 
     public PromptRuntimeAssemblyTests()
     {
         _originalConfig = ModEntry.Config;
         _originalLanguageCode = LocalizedContentManager.CurrentLanguageCode;
         _originalLogMonitor = Log.Logger.Monitor;
+        // VT-RCA-02-R1：ConversationStream 经 BuildResponseTriggerSuffix 解析玩家身份名，
+        // 无存档环境下需安装一个仅含 Name 的 Farmer，避免 ResolvePromptPlayerName 走 BUG 抛错路径。
+        _playerScope = FakePlayer.Install("虎彦");
     }
 
     public void Dispose()
     {
+        _playerScope.Dispose();
         ModEntry.Config = _originalConfig;
         LocalizedContentManager.CurrentLanguageCode = _originalLanguageCode;
         Log.Initialize(_originalLogMonitor);

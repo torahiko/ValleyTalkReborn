@@ -356,6 +356,22 @@ public class PromptPlayerIdentityTests : IDisposable
         }
     }
 
+    [Fact]
+    public void ConversationStream_CarriesIdentityAndSingleTurnBoundary_Zh()
+    {
+        SetLanguageEnvironment("zh", LocalizedContentManager.LanguageCode.zh);
+        var prompts = MakeRolePrompts(MakeContext(new List<ConversationElement>()), MakeCharacter(NpcName));
+
+        using (FakePlayer.Install(PlayerName))
+        {
+            string stream = prompts.ConversationStream;
+
+            Assert.Contains("[IDENTITY]", stream);
+            Assert.Contains("RESPONSE_TRIGGER", stream);
+            Assert.Contains("完成选项区后立即交回对话回合", stream);
+        }
+    }
+
     // ── 4. 玩家名为空白：回退本地化 generalFarmerLabel ──
 
     [Fact]
