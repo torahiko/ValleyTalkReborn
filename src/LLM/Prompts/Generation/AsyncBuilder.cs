@@ -305,7 +305,7 @@ public class AsyncBuilder
                         ModEntry.SMonitor?.Log($"[AsyncBuilder] Page guard trimmed {originalCount} -> {DialogueBuilder.MaxDialoguePages} pages (tail preserved) for {npc?.Name}", LogLevel.Warn);
                     }
 
-                    // ① 任何修改前捕获原始文本（页面守卫之后、narration 前置之前）
+                    // ① 页面守卫之后、任何修改之前捕获原始文本
                     string rawText = string.Join(" ", newDialogue.dialogues.Select(d => d.Text));
 
                     // ② 肖像码提取（反馈用；$0 门禁在 ExtractPortraitCode 内部完成）
@@ -313,39 +313,10 @@ public class AsyncBuilder
                     string portraitCode = DialogueFeedbackService.ExtractPortraitCode(
                         rawText, character?.ValidPortraits);
 
-                    // ③ 叙事门（NPC 口径）：当日 NPC 首次开口才出 narration
-                    if (ModEntry.Config.EnableEmotionNarration && character != null
-                        && character.PendingEmotion.HasValue
-                        && !character.EmotionNarrationDoneToday
-                        && newDialogue.dialogues.Count > 0)
-                    {
-                        bool isFirstNpcTurnToday;
-                        try
-                        {
-                            isFirstNpcTurnToday = DialogueHistoryManager.Instance.GetTodayTurnCount(npc.Name) == 0;
-                        }
-                        catch (Exception countEx)
-                        {
-                            isFirstNpcTurnToday = false; // 异常视为已开口，不出 narration
-                            ModEntry.SMonitor?.Log($"[EmotionState] GetTodayTurnCount 异常，视为已开口: {countEx.Message}", LogLevel.Trace);
-                        }
-
-                        if (isFirstNpcTurnToday)
-                        {
-                            string narration = EmotionalStateResolver
-                                .Compile(character, npc, character.PendingEmotion.Value).NarrationLine;
-                            if (!string.IsNullOrEmpty(narration))
-                            {
-                                newDialogue.dialogues[0].Text = narration + "\n" + newDialogue.dialogues[0].Text;
-                                character.EmotionNarrationDoneToday = true;
-                            }
-                        }
-                    }
-
                     Game1.DrawDialogue(newDialogue);
 
-                    // ⑤ 既有清洗/记录/偷听管线（一字不改）——输入为 ① 的 rawText 衍生，
-                    //    天然不含 narration 与肖像码
+                    // ④ 既有清洗/记录/偷听管线（一字不改）——输入为 ① 的 rawText 衍生，
+                    //    天然不含肖像码
                     // 🌟【核心修复】：清洗星露谷原版内部标记、选项占位符以及肖像指令，防止 ${ 回应: } 泄露至历史库
                     string rawResponseText = rawText;
                     string cleanResponseText = SanitizeDialogueForHistory(rawResponseText);
@@ -405,7 +376,7 @@ public class AsyncBuilder
                         }
                     }
 
-                    // ⑥ 情绪反馈结算与冷落衰减提交（位于 _generationId 检查之后，快照来自本代）
+                    // ⑤ 情绪反馈结算与冷落衰减提交（位于 _generationId 检查之后，快照来自本代）
                     if (ModEntry.Config.EnableEmotionSystem && character != null && character.PendingEmotion.HasValue)
                     {
                         DialogueFeedbackService.EvaluateDialogueFeedback(character, character.PendingEmotion.Value, portraitCode);
