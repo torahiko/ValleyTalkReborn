@@ -561,6 +561,8 @@ public class LlmDialogueService
     /// Parses the raw LLM output string into dialogue lines and response option lines.
     /// Lines starting with '-' are treated as dialogue content.
     /// Lines starting with '%' are treated as response options.
+    /// Only the first dialogue turn is retained: a '-' line after the first
+    /// response-option section marks a second turn and is discarded.
     /// </summary>
     /// <param name="resultString">Raw LLM output.</param>
     /// <param name="character">Target character (used for portrait validation).</param>
@@ -575,14 +577,13 @@ public class LlmDialogueService
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .ToList();
 
-            // ── Step 2: Separate dialogue lines from response option lines ──
-            var rawDialogueLines = resultLines.Where(x => x.StartsWith("-")).ToList();
-            var rawResponseLines = resultLines.Where(x => x.StartsWith("%")).ToList();
+            // ── Step 2: Enforce first-dialogue-turn boundary (DIALOGUE-001) ──
+            // 第一轮 = 首个 '%' 选项区之前的 '-' 台词 + 该选项区本身；
+            // 其后再次出现的 '-' 属于 Provider 越界的第二轮输出，整段截断丢弃。
+            SelectFirstDialogueTurn(resultLines, out var rawDialogueLines, out var rawResponseLines, out bool truncated);
 
-            // Fallback: 如果 LLM 没有输出 '-' 前缀，就兜底将所有非 '%' 的文本视作对话正文
-            // 注意：若 LLM 输出了混排格式（如第一行无前缀，第二行有 '-'），此处不触发，这是预期设计
-            if (rawDialogueLines.Count == 0)
-                rawDialogueLines = resultLines.Where(x => !x.StartsWith("%")).ToList();
+            if (truncated)
+                Log.Warning($"[LlmDialogueService] {character.Name}: Provider output contained a second dialogue turn after the first response-option section; output after the first turn was discarded.");
 
             if (rawDialogueLines.Count == 0)
                 return Array.Empty<string>();
@@ -663,6 +664,59 @@ public class LlmDialogueService
             Log.Error($"ProcessLines exception: {ex.Message}\n{ex.StackTrace}");
             return Array.Empty<string>();
         }
+    }
+
+    /// <summary>
+    /// DIALOGUE-001: 从规范化后的 Provider 输出行中选取第一轮对话。
+    /// 首个 '%' 选项行之前的 '-' 行构成第一轮台词；其后的 '%' 行构成首个选项区。
+    /// 选项区之后再次出现的 '-' 行视为第二轮越界输出：truncated=true 并丢弃其后全部内容。
+    /// 若无 '-' 台词，则沿用既有回退：边界前的非 '%' 行作为对话候选。
+    /// 纯内存、无状态；不访问 Game1 / Character 状态 / 存档 / 配置。
+    /// </summary>
+    internal static void SelectFirstDialogueTurn(
+        IReadOnlyList<string> normalizedLines,
+        out List<string> dialogueLines,
+        out List<string> responseLines,
+        out bool truncated)
+    {
+        if (normalizedLines == null)
+            throw new ArgumentNullException(nameof(normalizedLines));
+
+        dialogueLines = new List<string>();
+        responseLines = new List<string>();
+        truncated = false;
+
+        var fallbackCandidates = new List<string>();
+        bool sawDialogueLine = false;
+        bool sawResponseLine = false;
+
+        foreach (var line in normalizedLines)
+        {
+            if (line.StartsWith("%"))
+            {
+                responseLines.Add(line);
+                sawResponseLine = true;
+                continue;
+            }
+
+            if (line.StartsWith("-"))
+            {
+                if (sawResponseLine)
+                {
+                    truncated = true;
+                    break;
+                }
+                dialogueLines.Add(line);
+                sawDialogueLine = true;
+                continue;
+            }
+
+            if (!sawResponseLine)
+                fallbackCandidates.Add(line);
+        }
+
+        if (!sawDialogueLine)
+            dialogueLines = fallbackCandidates;
     }
 
     // ── PROMPT-ARCH-02: 运行时边界装配（流式与非流式共用同一组助手，保证双路径字节一致） ──
