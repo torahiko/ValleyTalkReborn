@@ -20,7 +20,7 @@
 //    会触发 SMAPI Context 的静态构造器，它依赖 SMAPI.Toolkit.dll（测试 bin
 //    未复制）。若在其它测试类注册 AssemblyResolve 之前触发，构造失败会
 //    污染整个进程。此处沿用 TownIncidentContractTests 的 InstallHeadless
-//    模式，在类静态构造中先行注册（见文件底部）。
+//    模式，在类静态构造中先行注册（见类静态构造函数）。
 //
 // ── 覆盖策略 ────────────────────────────────────────────────────────────
 // 可观察并断言：null-NPC 早退、空输入、catch-all 降级锚点、Date 邀请恒拒。
