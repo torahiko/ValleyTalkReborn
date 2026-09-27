@@ -292,6 +292,7 @@ public class LlmDialogueService
                         result = await openAi.RunChatInference(
                             runtimeSystemPrompt,
                             roleMessages,
+                            cts.Token,
                             responseStart,
                             cacheContext: string.Empty);
                     }

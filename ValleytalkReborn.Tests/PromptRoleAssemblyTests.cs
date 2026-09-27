@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
+using System.Threading;
 using StardewModdingAPI;
 using StardewValley;
 using ValleytalkReborn;
@@ -296,6 +297,62 @@ public class PromptRoleAssemblyTests : IDisposable
         Assert.Single(messages);
         Assert.Equal("user", messages[0].Role);
         Assert.Contains("RESPONSE_TRIGGER", messages[0].Content);
+    }
+
+    // ── BuildRuntimeChatMessages：衔接轮次保留 FuzzyTime 前缀 ──
+
+    [Fact]
+    public void BuildRuntimeChatMessages_ContinuityTurns_RetainFuzzyTime()
+    {
+        SetLanguageEnvironment(string.Empty, LocalizedContentManager.LanguageCode.en);
+        var history = new List<ConversationElement>();
+        var ctx = MakeContext(history);
+        var character = MakeCharacter("Abigail");
+        var prompts = MakeRolePrompts(ctx, character);
+
+        // 向 SessionCache 注入带 FuzzyTime 的衔接轮次（与 GetContinuityTurns 的筛选语义一致）。
+        var session = SessionCache.Instance.GetOrCreate("Abigail");
+        session.RecentTurns.Add(new ConversationElement("player turn with time", true) { FuzzyTime = "Morning" });
+        session.RecentTurns.Add(new ConversationElement("npc turn no time", false) { FuzzyTime = "" });
+
+        var messages = prompts.BuildRuntimeChatMessages();
+
+        // 找到衔接轮次消息（在标题 user 消息之后，触发后缀之前）
+        var roleMessages = messages.Where(m => m.Content.Contains("player turn with time") || m.Content.Contains("npc turn no time")).ToList();
+        Assert.Equal(2, roleMessages.Count);
+
+        var playerMsg = roleMessages.First(m => m.Content.Contains("player turn with time"));
+        var npcMsg = roleMessages.First(m => m.Content.Contains("npc turn no time"));
+
+        // 玩家轮次：FuzzyTime 非空，应带前缀；角色为 user
+        Assert.Equal("user", playerMsg.Role);
+        Assert.StartsWith("[Morning] ", playerMsg.Content);
+
+        // NPC 轮次：FuzzyTime 为空，无前缀；角色为 assistant
+        Assert.Equal("assistant", npcMsg.Role);
+        Assert.DoesNotContain("[", npcMsg.Content);
+        Assert.StartsWith("npc turn no time", npcMsg.Content);
+    }
+
+    // ── ExecuteNonStreamingRequestAsync：取消令牌传播到 HTTP 请求路径 ──
+
+    [Fact]
+    public void ExecuteNonStreamingRequestAsync_PreCancelledToken_ReturnsQuickly()
+    {
+        // 使用预取消令牌：HttpClient.SendAsync 在发起网络请求前即抛出，
+        // 证明取消令牌已传递到 HTTP 请求路径（无需真实网络）。
+        var provider = new LlmOpenAi("test-key", "gpt-4o");
+        var messages = new List<object> { new { role = "user", content = "hi" } };
+        using var cts = new CancellationTokenSource();
+        cts.Cancel(); // 立即取消
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var response = provider.ExecuteNonStreamingRequestAsync(messages, 256, "", true, cts.Token).Result;
+        sw.Stop();
+
+        // 预取消令牌应在远小于配置超时的时间内返回（取消被传递到 HTTP 层）。
+        Assert.True(sw.ElapsedMilliseconds < 5000, $"Expected fast cancellation, took {sw.ElapsedMilliseconds}ms");
+        Assert.False(response.IsSuccess);
     }
 
     // ── 辅助 ──

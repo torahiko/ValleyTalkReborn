@@ -573,18 +573,19 @@ namespace ValleytalkReborn
 
             messages.Add(new { role = "user", content = promptString });
 
-            return await ExecuteNonStreamingRequestAsync(messages, n_predict, cacheContext, allowRetry);
+            return await ExecuteNonStreamingRequestAsync(messages, n_predict, cacheContext, allowRetry, CancellationToken.None);
         }
 
         /// <summary>
         /// 共享的非流式 chat/completions HTTP 执行。
         /// 由 Android 路径与 role-based 路径共用，统一处理思考抑制与重试。
         /// </summary>
-        private async Task<LlmResponse> ExecuteNonStreamingRequestAsync(
+        internal async Task<LlmResponse> ExecuteNonStreamingRequestAsync(
             List<object> messages,
             int n_predict,
             string cacheContext,
-            bool allowRetry)
+            bool allowRetry,
+            CancellationToken callerToken)
         {
             bool includeTools = cacheContext != LlmContextTypes.NoTools
                              && cacheContext != LlmContextTypes.Bark
@@ -611,32 +612,39 @@ namespace ValleytalkReborn
                     string jsonData = SerializePayloadWithCustomBody(requestBody, genParams.AllowCustomBody);
                     LogFinalPayloadSuppression(jsonData, endpointUrl);
 
-                    if (AndroidHelper.IsAndroid && NetworkHelper.IsNetworkAvailable())
+                    // 链接调用方取消令牌与配置的 HTTP 超时。
+                    using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(callerToken))
                     {
-                        var headers = new Dictionary<string, string>
+                        linkedCts.CancelAfter(TimeSpan.FromSeconds(ModEntry.Config.QueryTimeout));
+                        var linkedToken = linkedCts.Token;
+
+                        if (AndroidHelper.IsAndroid && NetworkHelper.IsNetworkAvailable())
                         {
-                            { "Authorization", EffectiveBearer(apiKey) }
-                        };
-
-                        responseString = await NetworkHelper.MakeRequestWithCustomHeadersAsync(
-                            endpointUrl,
-                            jsonData,
-                            headers);
-
-                        statusCode = LooksLikeErrorResponse(responseString) ? 400 : 200;
-                    }
-                    else
-                    {
-                        using (var request = new HttpRequestMessage(HttpMethod.Post, endpointUrl))
-                        {
-                            request.Headers.Add("Authorization", EffectiveBearer(apiKey));
-                            request.Content = new StringContent(jsonData, Encoding.UTF8, "application/json");
-
-                            using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(ModEntry.Config.QueryTimeout)))
-                            using (var response = await SharedHttpClient.SendAsync(request, cts.Token))
+                            var headers = new Dictionary<string, string>
                             {
-                                statusCode = (int)response.StatusCode;
-                                responseString = await response.Content.ReadAsStringAsync();
+                                { "Authorization", EffectiveBearer(apiKey) }
+                            };
+
+                            responseString = await NetworkHelper.MakeRequestWithCustomHeadersAsync(
+                                endpointUrl,
+                                jsonData,
+                                headers,
+                                linkedToken);
+
+                            statusCode = LooksLikeErrorResponse(responseString) ? 400 : 200;
+                        }
+                        else
+                        {
+                            using (var request = new HttpRequestMessage(HttpMethod.Post, endpointUrl))
+                            {
+                                request.Headers.Add("Authorization", EffectiveBearer(apiKey));
+                                request.Content = new StringContent(jsonData, Encoding.UTF8, "application/json");
+
+                                using (var response = await SharedHttpClient.SendAsync(request, linkedToken))
+                                {
+                                    statusCode = (int)response.StatusCode;
+                                    responseString = await response.Content.ReadAsStringAsync();
+                                }
                             }
                         }
                     }
@@ -1101,6 +1109,7 @@ namespace ValleytalkReborn
         internal async Task<LlmResponse> RunChatInference(
             string systemPromptString,
             IReadOnlyList<LlmChatMessage> messages,
+            CancellationToken ct,
             string responseStart = "",
             int n_predict = 2048,
             string cacheContext = "",
@@ -1110,10 +1119,10 @@ namespace ValleytalkReborn
 
             if (!AndroidHelper.IsAndroid)
             {
-                return await ExecuteStreamingRequestAsync(msgList, null, CancellationToken.None, n_predict, cacheContext);
+                return await ExecuteStreamingRequestAsync(msgList, null, ct, n_predict, cacheContext);
             }
 
-            return await ExecuteNonStreamingRequestAsync(msgList, n_predict, cacheContext, allowRetry);
+            return await ExecuteNonStreamingRequestAsync(msgList, n_predict, cacheContext, allowRetry, ct);
         }
 
         /// <summary>
@@ -1130,7 +1139,7 @@ namespace ValleytalkReborn
         {
             if (AndroidHelper.IsAndroid)
             {
-                var fallback = await RunChatInference(systemPromptString, messages, responseStart, n_predict, cacheContext);
+                var fallback = await RunChatInference(systemPromptString, messages, ct, responseStart, n_predict, cacheContext);
                 if (fallback.IsSuccess && !string.IsNullOrWhiteSpace(fallback.Text))
                     onToken?.Invoke(fallback.Text);
                 return fallback;

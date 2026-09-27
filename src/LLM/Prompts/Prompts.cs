@@ -182,7 +182,9 @@ public class Prompts
 
             foreach (var turn in continuityTurns)
             {
-                messages.Add(new LlmChatMessage(turn.IsPlayerLine ? "user" : "assistant", turn.Text));
+                // 保留 FuzzyTime 前缀（与 BuildSessionContinuity 一致的格式语义）。
+                string timePrefix = string.IsNullOrEmpty(turn.FuzzyTime) ? "" : $"[{turn.FuzzyTime}] ";
+                messages.Add(new LlmChatMessage(turn.IsPlayerLine ? "user" : "assistant", timePrefix + turn.Text));
             }
         }
 
