@@ -100,11 +100,12 @@ public class LlmDialogueService
             string runtimeConversationPrompt = BuildRuntimeConversationPrompt(prompts);
             string responseStart = prompts.ResponseStart;
 
-            // ── PROMPT-ARCH-03/04A: 兼容 Provider 使用 role-based 消息序列 ──
-            // Claude 与 OpenAI 兼容 Provider 均走 role-based 路径，但各自使用专属入口。
+            // ── PROMPT-ARCH-03/04A/04B: 兼容 Provider 使用 role-based 消息序列 ──
+            // Claude、OpenAI 兼容 Provider 与 Gemini 均走 role-based 路径，各自使用专属入口。
             bool useClaude = Llm.Instance is LlmClaude;
             bool useOpenAi = Llm.Instance is LlmOpenAiBase;
-            bool useRoleBased = useClaude || useOpenAi;
+            bool useGemini = Llm.Instance is LlmGemini;
+            bool useRoleBased = useClaude || useOpenAi || useGemini;
             IReadOnlyList<LlmChatMessage> roleMessages = useRoleBased ? prompts.BuildRuntimeChatMessages() : null;
 
             // ══════════════════════════════════════════════════
@@ -150,6 +151,24 @@ public class LlmDialogueService
                         var openAi = (LlmOpenAiBase)Llm.Instance;
                         streamResult = await openAi.RunStreamingChatInference(
                             runtimeSystemPrompt,
+                            roleMessages,
+                            delta =>
+                            {
+                                var displayText = tracker.Feed(delta);
+                                if (displayText != null)
+                                    onStreamingToken(displayText);
+                            },
+                            cts.Token,
+                            responseStart);
+                    }
+                    else if (useGemini)
+                    {
+                        // ── PROMPT-ARCH-04B: 流式 Gemini role-based 路径 ──
+                        var gemini = (LlmGemini)Llm.Instance;
+                        streamResult = await gemini.RunGeminiStreamingChatInference(
+                            runtimeSystemPrompt,
+                            string.Empty,
+                            string.Empty,
                             roleMessages,
                             delta =>
                             {
@@ -324,6 +343,19 @@ public class LlmDialogueService
                         var openAi = (LlmOpenAiBase)Llm.Instance;
                         result = await openAi.RunChatInference(
                             runtimeSystemPrompt,
+                            roleMessages,
+                            cts.Token,
+                            responseStart,
+                            cacheContext: string.Empty);
+                    }
+                    else if (useGemini)
+                    {
+                        // ── PROMPT-ARCH-04B: 非流式 Gemini role-based 路径 ──
+                        var gemini = (LlmGemini)Llm.Instance;
+                        result = await gemini.RunGeminiChatInference(
+                            runtimeSystemPrompt,
+                            string.Empty,
+                            string.Empty,
                             roleMessages,
                             cts.Token,
                             responseStart,
