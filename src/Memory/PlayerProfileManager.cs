@@ -54,7 +54,8 @@ namespace ValleytalkReborn
             bool isZh = IsChineseLanguage();
 
             // 0. 路由评估
-            flags ??= ContextRouter.Evaluate(targetNpc, playerInput, config.RomanceSafetyMode);
+            flags ??= ContextRouter.Evaluate(new ContextRouteInput(
+                targetNpc, playerInput, config.RomanceSafetyMode, null, false));
 
             // 1. 动态社交边界 (内容范围约束，不干预语气)
             if (flags.IncludeSafetyRules)

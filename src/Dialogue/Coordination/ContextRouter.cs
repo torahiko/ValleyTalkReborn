@@ -358,6 +358,17 @@ public sealed class ContextFlags
 }
 
 // ─────────────────────────────────────────────────────────
+// Route input carrier
+// ─────────────────────────────────────────────────────────
+
+internal sealed record ContextRouteInput(
+    NPC Npc,
+    string PlayerInput,
+    SafetyModeLevel SafetyMode,
+    List<ConversationElement> ChatHistory,
+    bool IsActiveTurn);
+
+// ─────────────────────────────────────────────────────────
 // Intent Regex
 // ─────────────────────────────────────────────────────────
 
@@ -723,87 +734,46 @@ public static class ContextRouter
         | RegexOptions.CultureInvariant);
 
     // ─────────────────────────────────────────────────────
-    // Public entry point
+    // Route entry point
     // ─────────────────────────────────────────────────────
 
-    public static ContextFlags Evaluate(
-        NPC npc,
-        string playerInput,
-        SafetyModeLevel safetyMode,
-        List<ConversationElement> chatHistory = null)
+    internal static ContextFlags Evaluate(ContextRouteInput input)
     {
+        if (input == null)
+            throw new ArgumentNullException(nameof(input));
+
         bool debugEnabled = ModEntry.Config?.Debug ?? false;
 
-        try
-        {
-            return EvaluateInternal(
-                npc,
-                playerInput,
-                safetyMode,
-                chatHistory,
-                debugEnabled);
-        }
-        catch (Exception ex)
-        {
-            ModEntry.SMonitor?.Log(
-                "[ContextRouter] Evaluate failed: " + ex,
-                LogLevel.Error);
-
-            // 路由失败时返回安全默认值，避免阻断整个对话流程。
-            return new ContextFlags
-            {
-                IncludeSafetyRules = safetyMode != SafetyModeLevel.Off,
-                IncludeMemories = false,
-                IncludeEnvironment = true,
-                IncludeFarmDetails = true
-            };
-        }
+        return EvaluateInternal(input, debugEnabled);
     }
 
     private static ContextFlags EvaluateInternal(
-        NPC npc,
-        string playerInput,
-        SafetyModeLevel safetyMode,
-        List<ConversationElement> chatHistory,
+        ContextRouteInput input,
         bool debugEnabled)
     {
         var flags = new ContextFlags();
 
-        if (npc == null)
+        if (input.Npc == null)
         {
             DebugLog(debugEnabled, "Evaluate skipped: npc is null.");
             return flags;
         }
 
-        string originalInput = playerInput?.Trim() ?? string.Empty;
+        string originalInput = input.PlayerInput?.Trim() ?? string.Empty;
         string cleanInput = originalInput.ToLowerInvariant();
         bool hasInput = cleanInput.Length > 0;
 
+        // 输入边界归一化：ChatHistory 为 null 时视作空列表，下游不再重复判空。
+        var chatHistory = input.ChatHistory ?? new List<ConversationElement>();
+        bool isActiveTurn = input.IsActiveTurn;
+
         DebugLog(
             debugEnabled,
-            $"Input npc={npc.Name}, raw=\"{originalInput}\", clean=\"{cleanInput}\"");
-
-        // ── 🔑 构建或获取 DialogueContext（用于访问 IsActiveTurn 标志） ──
-        DialogueContext context = null;
-        var builder = DialogueBuilder.Instance;
-        if (builder != null)
-        {
-            context = builder.GetContext(npc.Name);
-        }
-
-        // 如果没有现有上下文（如首次交互），创建临时上下文用于路由判定
-        if (context == null)
-        {
-            context = new DialogueContext
-            {
-                ChatHistory = chatHistory ?? new List<ConversationElement>(),
-                IsActiveTurn = false  // 默认为新开场
-            };
-        }
+            $"Input npc={input.Npc.Name}, raw=\"{originalInput}\", clean=\"{cleanInput}\"");
 
         // Phase 1: 日期、邀请、爽约和嫉妒状态
         EvaluateDateState(
-            npc,
+            input.Npc,
             cleanInput,
             hasInput,
             flags,
@@ -811,51 +781,51 @@ public static class ContextRouter
 
         // Phase 2: 读取真实跟随状态
         EvaluateFollowState(
-            npc,
+            input.Npc,
             flags,
             debugEnabled);
 
-        flags.CompanionFocus = CompanionFocusResolver.Resolve(npc);
+        flags.CompanionFocus = CompanionFocusResolver.Resolve(input.Npc);
 
         // Phase 3: 动作和导航意图
         EvaluateMovement(
-            npc,
+            input.Npc,
             originalInput,
             cleanInput,
             hasInput,
             flags,
             debugEnabled);
 
-        bool talkedToday = HasTalkedToToday(npc);
+        bool talkedToday = HasTalkedToToday(input.Npc);
 
         // Phase 4: 首次问候快速路径
-        if (!ShouldSuppressSimpleGreeting(npc, flags))
+        if (!ShouldSuppressSimpleGreeting(input.Npc, flags))
         {
             if (TryEvaluateAsSimpleGreeting(
                 cleanInput,
                 hasInput,
                 talkedToday,
-                safetyMode,
+                input.SafetyMode,
                 flags))
             {
-                LogFlags(npc.Name, flags, debugEnabled);
+                LogFlags(input.Npc.Name, flags, debugEnabled);
                 return flags;
             }
         }
 
         // Phase 5: 上下文开关
         EvaluateContextSwitches(
-            npc,
+            input.Npc,
             cleanInput,
             hasInput,
-            safetyMode,
+            input.SafetyMode,
             flags,
             talkedToday,
             chatHistory,
-            context,
+            isActiveTurn,
             debugEnabled);
 
-        LogFlags(npc.Name, flags, debugEnabled);
+        LogFlags(input.Npc.Name, flags, debugEnabled);
         return flags;
     }
 
@@ -1219,7 +1189,7 @@ public static class ContextRouter
         ContextFlags flags,
         bool talkedToday,
         List<ConversationElement> chatHistory,
-        DialogueContext context,
+        bool isActiveTurn,
         bool debugEnabled)
     {
         flags.IncludeSafetyRules =
@@ -1253,7 +1223,7 @@ public static class ContextRouter
                 hasInput,
                 talkedToday,
                 chatHistory,
-                context);
+                isActiveTurn);
 
         // 聚焦态（约会/跟随）下抑制农场细节，让 LLM 聚焦伴侣互动。
         if (flags.CompanionFocus != CompanionFocusMode.None)
@@ -1271,7 +1241,7 @@ public static class ContextRouter
         bool hasInput,
         bool talkedToday,
         List<ConversationElement> chatHistory,
-        DialogueContext context)
+        bool isActiveTurn)
     {
         // 1. 玩家明确要求重置/换话题
         if (hasInput && ContainsAny(
@@ -1285,13 +1255,13 @@ public static class ContextRouter
         // 2. ★★★ 核心修复：使用显式的 IsActiveTurn 标志判定 ★★★
         //    IsActiveTurn = true  → 当前对话框内的连续交互（Turn 1+），必须保留短期上下文
         //    IsActiveTurn = false → 新开场（Turn 0），根据今天是否交谈过决定
-        if (context?.IsActiveTurn == true)
+        if (isActiveTurn)
         {
             return true;
         }
 
         // 3. Turn 0 但今天已经交谈过，保留历史延续感
-        if (talkedToday && chatHistory != null && chatHistory.Any(x => x != null))
+        if (talkedToday && chatHistory.Any(x => x != null))
         {
             return true;
         }

@@ -1,19 +1,18 @@
 // ContextRouterBaselineTests.cs
 // ═══════════════════════════════════════════════════════════════════════════
-// CONTEXT ROUTER BASELINE（票 CTX-001，REV A）
+// CONTEXT ROUTER BASELINE（票 CTX-002，REV B）
 // ═══════════════════════════════════════════════════════════════════════════
 //
 // ContextRouter.Evaluate（src/Dialogue/Coordination/ContextRouter.cs）的基线
 // 测试与契约锁定。本文件不修改任何生产代码。
 //
 // ── 环境事实（2026-09-28 实证）────────────────────────────────────────────
-// 1. `new NPC()` 与 `Name`  setter 可在无游戏环境下使用。
+// 1. `new NPC()` 与 `Name` setter 可在无游戏环境下使用。
 // 2. `npc.currentLocation` 无法在单元测试中初始化：该属性由私有字段
 //    Character.currentLocationRef（NetLocationRef）支撑，其 Get/Set 路径
 //    需要在线游戏网络状态（Game1）。无游戏世界时 getter 抛 NullReference，
 //    因此 EvaluateMovement 的位置守卫（ContextRouter.cs:1012）对任何
-//    非空输入都会抛异常，Evaluate 随之降级到安全默认值
-//    （ContextRouter.cs:746-760 的 catch-all）。
+//    非空输入都会抛异常。REV B 起 Evaluate 外层 catch 已移除，异常直接上抛。
 // 3. DateManager.IsOnDate 解引用 ModEntry.Config（ContextRouter.cs:895），
 //    故所有非 null-NPC 用例都要设置 ModEntry.Config（用后恢复）。
 // 4. Context.IsWorldReady 的读取（CompanionFocusResolver L17、邀请分支 L937）
@@ -23,7 +22,7 @@
 //    模式，在类静态构造中先行注册（见类静态构造函数）。
 //
 // ── 覆盖策略 ────────────────────────────────────────────────────────────
-// 可观察并断言：null-NPC 早退、空输入、catch-all 降级锚点、Date 邀请恒拒。
+// 可观察并断言：null-NPC 早退、空输入、非空输入异常浮出锚点。
 // 必须跳过：问候/告别/否定/Follow/StopFollow/方向移动/GoTo 疑问句抑制——
 // 这些纯文本意图路径被 L1012 守卫阻断，需要"已放入装载完成的 GameLocation
 // 的 NPC"这一 SMAPI 状态，现有 TestFakes 无法隔离。Skip 原因统一记录
@@ -72,11 +71,11 @@ public class ContextRouterBaselineTests
     private const string SkipReason =
         "Requires a loaded Stardew Valley game world: EvaluateMovement's guard " +
         "(ContextRouter.cs:1012) reads npc.currentLocation, whose NetLocationRef " +
-        "needs live game net state; without a world the getter throws and " +
-        "Evaluate returns the safe fallback, so the pure-text intent is " +
-        "unobservable. Missing SMAPI state: Context.IsWorldReady=true and an " +
-        "NPC placed in a loaded GameLocation. Not isolable with existing " +
-        "TestFakes; production code unchanged (ticket CTX-001).";
+        "needs live game net state; without a world the getter throws, and since " +
+        "REV B removed Evaluate's catch-all, the exception now propagates. Missing " +
+        "SMAPI state: Context.IsWorldReady=true and an NPC placed in a loaded " +
+        "GameLocation. Not isolable with existing TestFakes; production code " +
+        "unchanged (ticket CTX-002).";
 
     private static NPC NewTestNpc()
     {
@@ -113,8 +112,8 @@ public class ContextRouterBaselineTests
     [Fact]
     public void Evaluate_NullNpc_ReturnsDefaultContextFlags()
     {
-        ContextFlags flags = ContextRouter.Evaluate(
-            null, "hi", SafetyModeLevel.Strict, null);
+        ContextFlags flags = ContextRouter.Evaluate(new ContextRouteInput(
+            null, "hi", SafetyModeLevel.Strict, null, false));
 
         Assert.False(flags.IsSimpleGreeting);
         Assert.False(flags.IsFarewell);
@@ -150,8 +149,8 @@ public class ContextRouterBaselineTests
         NPC npc = NewTestNpc();
         using (UseModConfig())
         {
-            ContextFlags flags = ContextRouter.Evaluate(
-                npc, "", SafetyModeLevel.Strict, null);
+            ContextFlags flags = ContextRouter.Evaluate(new ContextRouteInput(
+                npc, "", SafetyModeLevel.Strict, null, false));
 
             Assert.False(flags.IsActionRequested);
             Assert.Equal(ActionTag.None, flags.RequestedAction);
@@ -172,8 +171,8 @@ public class ContextRouterBaselineTests
         NPC npc = NewTestNpc();
         using (UseModConfig())
         {
-            ContextFlags flags = ContextRouter.Evaluate(
-                npc, "   ", SafetyModeLevel.Strict, null);
+            ContextFlags flags = ContextRouter.Evaluate(new ContextRouteInput(
+                npc, "   ", SafetyModeLevel.Strict, null, false));
 
             Assert.False(flags.IsActionRequested);
             Assert.False(flags.IsSimpleGreeting);
@@ -191,8 +190,8 @@ public class ContextRouterBaselineTests
         NPC npc = NewTestNpc();
         using (UseModConfig())
         {
-            ContextFlags flags = ContextRouter.Evaluate(
-                npc, "hi", SafetyModeLevel.Strict, null);
+            ContextFlags flags = ContextRouter.Evaluate(new ContextRouteInput(
+                npc, "hi", SafetyModeLevel.Strict, null, false));
 
             Assert.True(flags.IsSimpleGreeting);
             Assert.False(flags.IsFarewell);
@@ -214,8 +213,8 @@ public class ContextRouterBaselineTests
         NPC npc = NewTestNpc();
         using (UseModConfig())
         {
-            ContextFlags flags = ContextRouter.Evaluate(
-                npc, "bye", SafetyModeLevel.Strict, null);
+            ContextFlags flags = ContextRouter.Evaluate(new ContextRouteInput(
+                npc, "bye", SafetyModeLevel.Strict, null, false));
 
             Assert.True(flags.IsFarewell);
             Assert.True(flags.IsSimpleGreeting);
@@ -232,8 +231,8 @@ public class ContextRouterBaselineTests
         NPC npc = NewTestNpc();
         using (UseModConfig())
         {
-            ContextFlags flags = ContextRouter.Evaluate(
-                npc, "不要亲我", SafetyModeLevel.Strict, null);
+            ContextFlags flags = ContextRouter.Evaluate(new ContextRouteInput(
+                npc, "不要亲我", SafetyModeLevel.Strict, null, false));
 
             Assert.False(flags.IsActionRequested);
             Assert.Equal(ActionTag.None, flags.RequestedAction);
@@ -252,8 +251,8 @@ public class ContextRouterBaselineTests
         NPC npc = NewTestNpc();
         using (UseModConfig())
         {
-            ContextFlags flags = ContextRouter.Evaluate(
-                npc, "跟着我", SafetyModeLevel.Strict, null);
+            ContextFlags flags = ContextRouter.Evaluate(new ContextRouteInput(
+                npc, "跟着我", SafetyModeLevel.Strict, null, false));
 
             Assert.True(flags.IsActionRequested);
             Assert.Equal(ActionTag.Follow, flags.RequestedAction);
@@ -271,8 +270,8 @@ public class ContextRouterBaselineTests
         NPC npc = NewTestNpc();
         using (UseModConfig())
         {
-            ContextFlags flags = ContextRouter.Evaluate(
-                npc, "别跟着我", SafetyModeLevel.Strict, null);
+            ContextFlags flags = ContextRouter.Evaluate(new ContextRouteInput(
+                npc, "别跟着我", SafetyModeLevel.Strict, null, false));
 
             Assert.True(flags.IsActionRequested);
             Assert.Equal(ActionTag.StopFollow, flags.RequestedAction);
@@ -290,8 +289,8 @@ public class ContextRouterBaselineTests
         NPC npc = NewTestNpc();
         using (UseModConfig())
         {
-            ContextFlags flags = ContextRouter.Evaluate(
-                npc, "向前走", SafetyModeLevel.Strict, null);
+            ContextFlags flags = ContextRouter.Evaluate(new ContextRouteInput(
+                npc, "向前走", SafetyModeLevel.Strict, null, false));
 
             Assert.True(flags.IsActionRequested);
             Assert.Equal(ActionTag.StepForward, flags.RequestedAction);
@@ -310,8 +309,8 @@ public class ContextRouterBaselineTests
         NPC npc = NewTestNpc();
         using (UseModConfig())
         {
-            ContextFlags flags = ContextRouter.Evaluate(
-                npc, "你能去那里吗？", SafetyModeLevel.Strict, null);
+            ContextFlags flags = ContextRouter.Evaluate(new ContextRouteInput(
+                npc, "你能去那里吗？", SafetyModeLevel.Strict, null, false));
 
             Assert.False(flags.IsGotoRequested);
             Assert.False(flags.IsActionRequested);
@@ -319,11 +318,10 @@ public class ContextRouterBaselineTests
         }
     }
 
-    // ── 回归锚点 A：catch-all 降级返回（ContextRouter.cs:729-761）──────────
+    // ── 回归锚点 A：异常浮出（原 catch-all 降级返回已移除）────────────────
     //    非空输入 + 无游戏世界时，EvaluateMovement 的位置守卫（L1012）抛异常，
-    //    Evaluate 捕获后返回安全默认值：Memories=false，Environment=true，
-    //    FarmDetails=true，IncludeSafetyRules = safetyMode != Off（L755）。
-    //    此锚点锁定当前可观察行为，供后续票回归比对。
+    //    异常直接上抛，不再被外层 catch 降级为安全默认值。
+    //    锁定契约 = "BUG 不再被转为静默默认路由"。
 
     [Fact]
     public void Evaluate_NonEmptyInput_WithoutGameState_ReturnsSafeFallback()
@@ -331,45 +329,33 @@ public class ContextRouterBaselineTests
         NPC npc = NewTestNpc();
         using (UseModConfig())
         {
-            ContextFlags flags = ContextRouter.Evaluate(
-                npc, "hi", SafetyModeLevel.Strict, null);
+            var ex = Record.Exception(() =>
+                ContextRouter.Evaluate(new ContextRouteInput(
+                    npc, "hi", SafetyModeLevel.Strict, null, false)));
 
-            Assert.False(flags.IsSimpleGreeting);
-            Assert.False(flags.IsFarewell);
-            Assert.False(flags.IsActionRequested);
-            Assert.Equal(ActionTag.None, flags.RequestedAction);
-            Assert.False(flags.IsMovementRequested);
-            Assert.False(flags.IsGotoRequested);
-            Assert.False(flags.IncludeMemories);
-            Assert.True(flags.IncludeEnvironment);
-            Assert.True(flags.IncludeFarmDetails);
-            Assert.True(flags.IncludeSafetyRules);
+            Assert.NotNull(ex);
         }
     }
 
     [Fact]
     public void Evaluate_NonEmptyInput_WithSafetyOff_FallbackDisablesSafetyRules()
     {
-        // 同一降级路径在 safetyMode=Off 时关闭安全规则（L755）。
+        // 非空输入 + 无游戏世界时同样异常浮出（异常类型/行号不钉死）。
+        // 锁定契约 = "BUG 不再被转为静默默认路由"。
         NPC npc = NewTestNpc();
         using (UseModConfig())
         {
-            ContextFlags flags = ContextRouter.Evaluate(
-                npc, "hi", SafetyModeLevel.Off, null);
+            var ex = Record.Exception(() =>
+                ContextRouter.Evaluate(new ContextRouteInput(
+                    npc, "hi", SafetyModeLevel.Off, null, false)));
 
-            Assert.False(flags.IsActionRequested);
-            Assert.False(flags.IncludeMemories);
-            Assert.True(flags.IncludeEnvironment);
-            Assert.True(flags.IncludeFarmDetails);
-            Assert.False(flags.IncludeSafetyRules);
+            Assert.NotNull(ex);
         }
     }
 
-    // ── 回归锚点 B：Date 邀请恒拒（ContextRouter.cs:941-947）───────────────
-    //    "约你" 命中 InviteZh（L562-570）进入邀请分支，但 CanScheduleDate
-    //    首先检查 world.IsWorldReady（DateRules.cs:38），测试环境下恒为
-    //    false → "ignored by router"（L949-952）→ IsInviteRequested 保持
-    //    false。此锚点锁定票面所述"恒拒"观察。
+    // ── 回归锚点 B：Date 邀请路径异常浮出（原恒拒降级返回已移除）──────────
+    //    非空输入 + 无游戏世界时，位置守卫（L1012）异常直接上抛。
+    //    锁定契约 = "BUG 不再被转为静默默认路由"。
 
     [Fact]
     public void Evaluate_DateInviteInput_WithoutGameState_InviteNotRequested()
@@ -377,13 +363,11 @@ public class ContextRouterBaselineTests
         NPC npc = NewTestNpc();
         using (UseModConfig())
         {
-            ContextFlags flags = ContextRouter.Evaluate(
-                npc, "约你", SafetyModeLevel.Strict, null);
+            var ex = Record.Exception(() =>
+                ContextRouter.Evaluate(new ContextRouteInput(
+                    npc, "约你", SafetyModeLevel.Strict, null, false)));
 
-            Assert.False(flags.IsInviteRequested);
-            Assert.False(flags.IsOnDate);
-            Assert.False(flags.IsJealousy);
-            Assert.False(flags.HasStoodUpPending);
+            Assert.NotNull(ex);
         }
     }
 }

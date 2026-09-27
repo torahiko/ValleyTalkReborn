@@ -298,7 +298,8 @@ namespace ValleytalkReborn
             context.ChatHistory = cleanHistory;
 
             string latestPlayerInput = conversation.LastOrDefault(x => x.IsPlayerLine)?.Text ?? "";
-            context.RoutingFlags = ContextRouter.Evaluate(instance, latestPlayerInput, ModEntry.Config.RomanceSafetyMode, context.ChatHistory);
+            context.RoutingFlags = ContextRouter.Evaluate(new ContextRouteInput(
+                instance, latestPlayerInput, ModEntry.Config.RomanceSafetyMode, context.ChatHistory, context.IsActiveTurn));
 
             DynamicBarkManager.CancelBackgroundTasks(instance.Name);
 
@@ -558,7 +559,8 @@ namespace ValleytalkReborn
             
             // 🌟【核心修复】：传入真实的历史记录 context.ChatHistory，而非硬编码的 null！
             // 彻底解决路由器误判为 IsSimpleGreeting 导致的循环复读开场白
-            context.RoutingFlags = ContextRouter.Evaluate(instance, string.Empty, ModEntry.Config.RomanceSafetyMode, context.ChatHistory);
+            context.RoutingFlags = ContextRouter.Evaluate(new ContextRouteInput(
+                instance, string.Empty, ModEntry.Config.RomanceSafetyMode, context.ChatHistory, false));
 
             SetContext(instance.Name, context);
             context.ScheduleLine = originalLine;
