@@ -145,6 +145,68 @@ public class Prompts
         }
     }
 
+    /// <summary>
+    /// 组装 OpenAI 兼容的 role-based 消息序列（PROMPT-ARCH-03）。
+    /// 顺序：动态上下文（user）→ 会话衔接（标题说明 + 各轮次 user/assistant）→
+    /// 最近对话历史窗口（user/assistant）→ 最终触发后缀（user）。
+    /// DynamicContext 经 PromptDeduplicator 去重（复用 PROMPT-ARCH-02A 策略），
+    /// 衔接与历史窗口复用现有筛选/窗口语义。
+    /// </summary>
+    internal IReadOnlyList<LlmChatMessage> BuildRuntimeChatMessages()
+    {
+        var messages = new List<LlmChatMessage>();
+
+        // 1. 去重后的动态上下文作为 user 消息
+        string dynamicContext = PromptDeduplicator.DeduplicateDynamicSegment(this.SystemPrompt, this.DynamicContext);
+        if (!string.IsNullOrWhiteSpace(dynamicContext))
+            messages.Add(new LlmChatMessage("user", dynamicContext));
+
+        // 2. 会话衔接（标题说明 + 各轮次）
+        var continuityTurns = PromptsBlocks.GetContinuityTurns(this.Character, this.Context);
+        if (continuityTurns.Count > 0)
+        {
+            bool isZh = IsChineseLanguage;
+            var session = SessionCache.Instance.GetOrCreate(this.Character.Name);
+            var ctxSb = new StringBuilder();
+            ctxSb.AppendLine(isZh ? "### [早先会话衔接参考]" : "### [EARLIER SESSION CONTINUITY]");
+            ctxSb.AppendLine(isZh
+                ? "[REFERENCE_ONLY] 当日早先对话记录，仅用于保持人物记忆与逻辑连贯："
+                : "[REFERENCE_ONLY] Earlier conversation turns today, provided solely for conversational consistency:");
+            if (!string.IsNullOrEmpty(session.EmotionalTone))
+            {
+                ctxSb.AppendLine(isZh
+                    ? $"[MOOD_CONSISTENCY] 前置情绪基调: {session.EmotionalTone}。确保语气演变符合心理过渡规律。"
+                    : $"[MOOD_CONSISTENCY] Prior emotional tone: {session.EmotionalTone}. Ensure tonal transition remains psychologically coherent.");
+            }
+            messages.Add(new LlmChatMessage("user", ctxSb.ToString().TrimEnd()));
+
+            foreach (var turn in continuityTurns)
+            {
+                messages.Add(new LlmChatMessage(turn.IsPlayerLine ? "user" : "assistant", turn.Text));
+            }
+        }
+
+        // 3. 最近对话历史窗口（复用现有窗口规则）
+        bool shortCtxAllowed = CurrentFlags?.IncludeShortTermContext != false;
+        int configured = Math.Clamp(ModEntry.Config?.PromptHistoryWindow ?? 6, 1, 20);
+        int window = Math.Clamp(shortCtxAllowed ? configured : 1, 1, Math.Max(1, this.Context.ChatHistory.Count));
+        var visible = this.Context.ChatHistory.Count > window
+            ? this.Context.ChatHistory.GetRange(this.Context.ChatHistory.Count - window, window)
+            : this.Context.ChatHistory;
+        foreach (var elem in visible)
+        {
+            messages.Add(new LlmChatMessage(elem.IsPlayerLine ? "user" : "assistant", elem.Text));
+        }
+
+        // 4. 最终触发后缀作为独立的 user 消息
+        string triggerSuffix = IsChineseLanguage
+            ? "<response_trigger>\n[RESPONSE_TRIGGER] 农夫刚刚说了话。你的第一句必须直接回应农夫的最新发言；完成直接回应后，才允许展开无关的延续话题。\n</response_trigger>"
+            : "<response_trigger>\n[RESPONSE_TRIGGER] The farmer has just spoken. Your first line MUST respond directly to the farmer's latest words; only after that direct response may you continue with unrelated topics.\n</response_trigger>";
+        messages.Add(new LlmChatMessage("user", triggerSuffix));
+
+        return messages;
+    }
+
     /// <summary>拼接非空 Prompt 段：忽略 null/空段，非空段间恰好两个换行符，全空返回 string.Empty。</summary>
     internal static string JoinPromptSegments(params string[] segments)
     {
@@ -1501,16 +1563,19 @@ public class Prompts
             return prompt.ToString();
         }
 
-        internal static string BuildSessionContinuity(Character character, DialogueContext context, bool isZh)
+        /// <summary>
+        /// 选择会话衔接的历史轮次（与 BuildSessionContinuity 共享同一筛选语义）。
+        /// 返回最多 3 个最早的历史 ConversationElement（已做同日校验、去重、跳过最近 2 轮）。
+        /// </summary>
+        internal static List<ConversationElement> GetContinuityTurns(Character character, DialogueContext context)
         {
-            var prompt = new StringBuilder();
             var session = SessionCache.Instance.GetOrCreate(character.Name);
-            if (session.RecentTurns.Count == 0) return prompt.ToString();
+            if (session.RecentTurns.Count == 0) return new List<ConversationElement>();
             if (StardewModdingAPI.Context.IsWorldReady &&
                 (session.LastUpdatedYear != Game1.year ||
                  session.LastUpdatedSeason != (Season)Game1.season ||
                  session.LastUpdatedDay != Game1.dayOfMonth))
-                return prompt.ToString();
+                return new List<ConversationElement>();
             string playerName = Game1.player?.Name ?? "";
             string Normalize(string s)
             {
@@ -1532,9 +1597,17 @@ public class Prompts
                 int skipRecentCount = Math.Min(2, candidateTurns.Count);
                 candidateTurns = candidateTurns.Take(candidateTurns.Count - skipRecentCount).ToList();
             }
-            if (candidateTurns.Count == 0) return prompt.ToString();
-            var previousTurns = candidateTurns.TakeLast(3).ToList();
+            if (candidateTurns.Count == 0) return new List<ConversationElement>();
+            return candidateTurns.TakeLast(3).ToList();
+        }
 
+        internal static string BuildSessionContinuity(Character character, DialogueContext context, bool isZh)
+        {
+            var previousTurns = GetContinuityTurns(character, context);
+            if (previousTurns.Count == 0) return string.Empty;
+
+            var session = SessionCache.Instance.GetOrCreate(character.Name);
+            var prompt = new StringBuilder();
             prompt.AppendLine("<continuity_context>");
             prompt.AppendLine(isZh ? "### [早先会话衔接参考]" : "### [EARLIER SESSION CONTINUITY]");
             prompt.AppendLine(isZh

@@ -100,6 +100,11 @@ public class LlmDialogueService
             string runtimeConversationPrompt = BuildRuntimeConversationPrompt(prompts);
             string responseStart = prompts.ResponseStart;
 
+            // ── PROMPT-ARCH-03: OpenAI 兼容 Provider 使用 role-based 消息序列 ──
+            // 仅在 LlmOpenAiBase 时装配角色消息；其他 Provider 沿用 PROMPT-ARCH-02 字符串路径。
+            bool useRoleBased = Llm.Instance is LlmOpenAiBase;
+            IReadOnlyList<LlmChatMessage> roleMessages = useRoleBased ? prompts.BuildRuntimeChatMessages() : null;
+
             // ══════════════════════════════════════════════════
             //  流式路径
             // ══════════════════════════════════════════════════
@@ -119,19 +124,38 @@ public class LlmDialogueService
                 LlmResponse streamResult = null;
                 try
                 {
-                    streamResult = await Llm.Instance.RunStreamingInference(
-                        runtimeSystemPrompt,
-                        string.Empty,
-                        string.Empty,
-                        runtimeConversationPrompt,
-                        delta =>
-                        {
-                            var displayText = tracker.Feed(delta);
-                            if (displayText != null)
-                                onStreamingToken(displayText);
-                        },
-                        cts.Token,
-                        responseStart);
+                    if (useRoleBased)
+                    {
+                        // ── PROMPT-ARCH-03: 流式 role-based 路径 ──
+                        var openAi = (LlmOpenAiBase)Llm.Instance;
+                        streamResult = await openAi.RunStreamingChatInference(
+                            runtimeSystemPrompt,
+                            roleMessages,
+                            delta =>
+                            {
+                                var displayText = tracker.Feed(delta);
+                                if (displayText != null)
+                                    onStreamingToken(displayText);
+                            },
+                            cts.Token,
+                            responseStart);
+                    }
+                    else
+                    {
+                        streamResult = await Llm.Instance.RunStreamingInference(
+                            runtimeSystemPrompt,
+                            string.Empty,
+                            string.Empty,
+                            runtimeConversationPrompt,
+                            delta =>
+                            {
+                                var displayText = tracker.Feed(delta);
+                                if (displayText != null)
+                                    onStreamingToken(displayText);
+                            },
+                            cts.Token,
+                            responseStart);
+                    }
                 }
                 catch (OperationCanceledException)
                 {
@@ -261,14 +285,26 @@ public class LlmDialogueService
 
                     if (isDebug) LogDebugRequest(character, prompts, attempt + 1);
 
-                    var inferenceTask = Llm.Instance.RunInference(
-                        runtimeSystemPrompt,
-                        string.Empty,
-                        string.Empty,
-                        runtimeConversationPrompt,
-                        responseStart
-                    );
-                    result = await inferenceTask.WaitAsync(cts.Token);
+                    // ── PROMPT-ARCH-03: 非流式 role-based 路径 ──
+                    if (useRoleBased)
+                    {
+                        var openAi = (LlmOpenAiBase)Llm.Instance;
+                        result = await openAi.RunChatInference(
+                            runtimeSystemPrompt,
+                            roleMessages,
+                            responseStart,
+                            cacheContext: string.Empty);
+                    }
+                    else
+                    {
+                        result = await Llm.Instance.RunInference(
+                            runtimeSystemPrompt,
+                            string.Empty,
+                            string.Empty,
+                            runtimeConversationPrompt,
+                            responseStart
+                        );
+                    }
 
                     if (result.IsSuccess)
                     {
@@ -755,107 +791,107 @@ public class LlmDialogueService
         text = Regex.Replace(text, @" {2,}", " ");
         return text.Trim();
     }
+}
+
+/// <summary>
+/// 运行时动态段去重器：仅当动态列表条目与 SystemPrompt 中的条目重复时，
+/// 才将其从动态段中移除。SystemPrompt 本身绝不会被修改。
+/// 保护前缀、最小内容长度（>=4）、OrdinalIgnoreCase 行为保持不变。
+/// </summary>
+internal static class PromptDeduplicator
+{
+    private static readonly string[] ProtectedPrefixes = new[]
+    {
+        "- 位置:", "- Location:",
+        "- 时间:", "- Time:",
+        "- 季节:", "- Season:",
+        "- 天气氛围:", "- Weather:",
+        "- 空间状态:", "- Spatial Status:",
+        "- 社交关系:", "- Social Standing:",
+        "- 状态:", "- Status:",
+        "- 目标:", "- Goal:",
+        "- ("      // 保护示范台词起笔
+    };
 
     /// <summary>
-    /// 运行时动态段去重器：仅当动态列表条目与 SystemPrompt 中的条目重复时，
-    /// 才将其从动态段中移除。SystemPrompt 本身绝不会被修改。
-    /// 保护前缀、最小内容长度（>=4）、OrdinalIgnoreCase 行为保持不变。
+    /// 返回去重后的动态段：仅移除与 SystemPrompt 列表条目重复的 "- " 列表行。
+    /// SystemPrompt 不会被修改；动态段内部重复的条目保留（仅对 SystemPrompt 去重）。
     /// </summary>
-    private static class PromptDeduplicator
+    public static string DeduplicateDynamicSegment(string systemPrompt, string dynamicText)
     {
-        private static readonly string[] ProtectedPrefixes = new[]
-        {
-            "- 位置:", "- Location:",
-            "- 时间:", "- Time:",
-            "- 季节:", "- Season:",
-            "- 天气氛围:", "- Weather:",
-            "- 空间状态:", "- Spatial Status:",
-            "- 社交关系:", "- Social Standing:",
-            "- 状态:", "- Status:",
-            "- 目标:", "- Goal:",
-            "- ("      // 保护示范台词起笔
-        };
+        if (string.IsNullOrWhiteSpace(dynamicText))
+            return dynamicText;
 
-        /// <summary>
-        /// 返回去重后的动态段：仅移除与 SystemPrompt 列表条目重复的 "- " 列表行。
-        /// SystemPrompt 不会被修改；动态段内部重复的条目保留（仅对 SystemPrompt 去重）。
-        /// </summary>
-        public static string DeduplicateDynamicSegment(string systemPrompt, string dynamicText)
-        {
-            if (string.IsNullOrWhiteSpace(dynamicText))
-                return dynamicText;
+        var systemEntries = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        CollectSystemEntries(systemPrompt, systemEntries);
+        return DeduplicateDynamic(dynamicText, systemEntries);
+    }
 
-            var systemEntries = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            CollectSystemEntries(systemPrompt, systemEntries);
-            return DeduplicateDynamic(dynamicText, systemEntries);
+    private static bool IsProtected(string trimmed)
+    {
+        for (int i = 0; i < ProtectedPrefixes.Length; i++)
+        {
+            if (trimmed.StartsWith(ProtectedPrefixes[i], StringComparison.OrdinalIgnoreCase))
+                return true;
         }
+        return false;
+    }
 
-        private static bool IsProtected(string trimmed)
+    private static void CollectSystemEntries(string rawText, HashSet<string> entries)
+    {
+        if (string.IsNullOrWhiteSpace(rawText))
+            return;
+
+        using (var reader = new StringReader(rawText))
         {
-            for (int i = 0; i < ProtectedPrefixes.Length; i++)
+            string line;
+            while ((line = reader.ReadLine()) != null)
             {
-                if (trimmed.StartsWith(ProtectedPrefixes[i], StringComparison.OrdinalIgnoreCase))
-                    return true;
-            }
-            return false;
-        }
+                string trimmed = line.TrimStart();
 
-        private static void CollectSystemEntries(string rawText, HashSet<string> entries)
-        {
-            if (string.IsNullOrWhiteSpace(rawText))
-                return;
-
-            using (var reader = new StringReader(rawText))
-            {
-                string line;
-                while ((line = reader.ReadLine()) != null)
+                if (trimmed.StartsWith("- ", StringComparison.Ordinal) && !IsProtected(trimmed))
                 {
-                    string trimmed = line.TrimStart();
-
-                    if (trimmed.StartsWith("- ", StringComparison.Ordinal) && !IsProtected(trimmed))
-                    {
-                        string content = trimmed.Substring(2).Trim();
-                        if (content.Length >= 4)
-                            entries.Add(content);
-                    }
+                    string content = trimmed.Substring(2).Trim();
+                    if (content.Length >= 4)
+                        entries.Add(content);
                 }
             }
         }
+    }
 
-        private static string DeduplicateDynamic(string rawText, HashSet<string> systemEntries)
+    private static string DeduplicateDynamic(string rawText, HashSet<string> systemEntries)
+    {
+        if (string.IsNullOrWhiteSpace(rawText))
+            return rawText;
+
+        var sb = new StringBuilder(rawText.Length);
+        bool removedAny = false;
+
+        using (var reader = new StringReader(rawText))
         {
-            if (string.IsNullOrWhiteSpace(rawText))
-                return rawText;
-
-            var sb = new StringBuilder(rawText.Length);
-            bool removedAny = false;
-
-            using (var reader = new StringReader(rawText))
+            string line;
+            while ((line = reader.ReadLine()) != null)
             {
-                string line;
-                while ((line = reader.ReadLine()) != null)
+                string trimmed = line.TrimStart();
+
+                if (trimmed.StartsWith("- ", StringComparison.Ordinal) && !IsProtected(trimmed))
                 {
-                    string trimmed = line.TrimStart();
+                    string content = trimmed.Substring(2).Trim();
 
-                    if (trimmed.StartsWith("- ", StringComparison.Ordinal) && !IsProtected(trimmed))
+                    if (content.Length >= 4 && systemEntries.Contains(content))
                     {
-                        string content = trimmed.Substring(2).Trim();
-
-                        if (content.Length >= 4 && systemEntries.Contains(content))
-                        {
-                            removedAny = true;
-                            continue; // 与 SystemPrompt 重复，省略
-                        }
+                        removedAny = true;
+                        continue; // 与 SystemPrompt 重复，省略
                     }
-
-                    sb.AppendLine(line);
                 }
-            }
 
-            // 未移除任何条目时，原样返回原始字节（保留 Tier 段内的 \r\n 等原始换行）。
-            if (!removedAny)
-                return rawText;
-            return sb.ToString().TrimEnd();
+                sb.AppendLine(line);
+            }
         }
+
+        // 未移除任何条目时，原样返回原始字节（保留 Tier 段内的 \r\n 等原始换行）。
+        if (!removedAny)
+            return rawText;
+        return sb.ToString().TrimEnd();
     }
 }

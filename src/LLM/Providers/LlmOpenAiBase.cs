@@ -573,6 +573,25 @@ namespace ValleytalkReborn
 
             messages.Add(new { role = "user", content = promptString });
 
+            return await ExecuteNonStreamingRequestAsync(messages, n_predict, cacheContext, allowRetry);
+        }
+
+        /// <summary>
+        /// 共享的非流式 chat/completions HTTP 执行。
+        /// 由 Android 路径与 role-based 路径共用，统一处理思考抑制与重试。
+        /// </summary>
+        private async Task<LlmResponse> ExecuteNonStreamingRequestAsync(
+            List<object> messages,
+            int n_predict,
+            string cacheContext,
+            bool allowRetry)
+        {
+            bool includeTools = cacheContext != LlmContextTypes.NoTools
+                             && cacheContext != LlmContextTypes.Bark
+                             && cacheContext != LlmContextTypes.A2A
+                             && (string.IsNullOrEmpty(cacheContext)
+                                 || !cacheContext.StartsWith(LlmContextTypes.Editor, StringComparison.OrdinalIgnoreCase));
+
             Dictionary<string, object> requestBody = BuildRequestBody(messages, n_predict, stream: false, includeTools, cacheContext);
             ThinkingSuppressionPlan plan = EvaluateThinkingSuppression(modelName, url, cacheContext);
             ApplyThinkingSuppression(requestBody, plan);
@@ -751,55 +770,17 @@ namespace ValleytalkReborn
             return new LlmResponse(responseString, statusCode);
         }
 
-        #endregion
-
-        #region 真实 SSE 流式传输实现
-
-        internal override async Task<LlmResponse> RunStreamingInference(
-            string systemPromptString,
-            string gameCacheString,
-            string npcCacheString,
-            string promptString,
+        /// <summary>
+        /// 共享的流式 chat/completions HTTP 执行（真实 SSE）。
+        /// 由调用方装配好消息列表后调用，统一处理思考抑制、黑名单降级与重试。
+        /// </summary>
+        private async Task<LlmResponse> ExecuteStreamingRequestAsync(
+            List<object> messages,
             Action<string> onToken,
             CancellationToken ct,
-            string responseStart = "",
-            int n_predict = 2048,
-            string cacheContext = "")
+            int n_predict,
+            string cacheContext)
         {
-            if (AndroidHelper.IsAndroid)
-            {
-                var fallback = await RunInference(systemPromptString, gameCacheString, npcCacheString, promptString, responseStart, n_predict, cacheContext);
-                if (fallback.IsSuccess && !string.IsNullOrWhiteSpace(fallback.Text))
-                {
-                    onToken?.Invoke(fallback.Text);
-                }
-                return fallback;
-            }
-
-            LlmTrafficLogger.LogOutgoing(cacheContext, modelName,
-                BuildEndpoint("chat/completions"),
-                systemPromptString, gameCacheString, npcCacheString, promptString, responseStart);
-
-            promptString =
-                (gameCacheString ?? string.Empty) +
-                (npcCacheString ?? string.Empty) +
-                (promptString ?? string.Empty);
-
-            var messages = new List<object>();
-
-            if (!string.IsNullOrWhiteSpace(systemPromptString))
-            {
-                messages.Add(new { role = "system", content = systemPromptString });
-            }
-
-            if (!string.IsNullOrWhiteSpace(responseStart) &&
-                !responseStart.Trim().Equals("responseStart", StringComparison.OrdinalIgnoreCase))
-            {
-                promptString += "\n\n" + responseStart;
-            }
-
-            messages.Add(new { role = "user", content = promptString });
-
             // 排除 Bark 和 A2A 挂载工具调用
             bool includeTools = cacheContext != LlmContextTypes.NoTools
                              && cacheContext != LlmContextTypes.Bark
@@ -1077,7 +1058,141 @@ namespace ValleytalkReborn
             return new LlmResponse("All streaming attempts failed.", 500);
         }
 
+        /// <summary>
+        /// 将 role-based 消息列表序列化为 OpenAI 兼容的匿名对象列表。
+        /// systemPromptString 作为首条 system 消息；responseStart 按原有位置追加到末尾 user 消息内容（仅一次）。
+        /// </summary>
+        internal static List<object> BuildChatMessages(
+            string systemPromptString,
+            IReadOnlyList<LlmChatMessage> messages,
+            string responseStart)
+        {
+            if (messages == null)
+                throw new ArgumentNullException(nameof(messages));
+
+            var result = new List<object>();
+
+            if (!string.IsNullOrWhiteSpace(systemPromptString))
+                result.Add(new { role = "system", content = systemPromptString });
+
+            for (int i = 0; i < messages.Count; i++)
+            {
+                var m = messages[i];
+                if (m == null)
+                    throw new ArgumentException("Chat message list contains a null message.", nameof(messages));
+
+                string content = m.Content;
+                bool isLast = (i == messages.Count - 1);
+                if (isLast && string.Equals(m.Role, "user", StringComparison.Ordinal)
+                    && !string.IsNullOrWhiteSpace(responseStart)
+                    && !responseStart.Trim().Equals("responseStart", StringComparison.OrdinalIgnoreCase))
+                {
+                    content += "\n\n" + responseStart;
+                }
+                result.Add(new { role = m.Role, content = content });
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 非流式 role-based 推理（OpenAI 兼容）。仅主对话路径使用。
+        /// </summary>
+        internal async Task<LlmResponse> RunChatInference(
+            string systemPromptString,
+            IReadOnlyList<LlmChatMessage> messages,
+            string responseStart = "",
+            int n_predict = 2048,
+            string cacheContext = "",
+            bool allowRetry = true)
+        {
+            var msgList = BuildChatMessages(systemPromptString, messages, responseStart);
+
+            if (!AndroidHelper.IsAndroid)
+            {
+                return await ExecuteStreamingRequestAsync(msgList, null, CancellationToken.None, n_predict, cacheContext);
+            }
+
+            return await ExecuteNonStreamingRequestAsync(msgList, n_predict, cacheContext, allowRetry);
+        }
+
+        /// <summary>
+        /// 流式 role-based 推理（OpenAI 兼容）。仅主对话路径使用。
+        /// </summary>
+        internal async Task<LlmResponse> RunStreamingChatInference(
+            string systemPromptString,
+            IReadOnlyList<LlmChatMessage> messages,
+            Action<string> onToken,
+            CancellationToken ct,
+            string responseStart = "",
+            int n_predict = 2048,
+            string cacheContext = "")
+        {
+            if (AndroidHelper.IsAndroid)
+            {
+                var fallback = await RunChatInference(systemPromptString, messages, responseStart, n_predict, cacheContext);
+                if (fallback.IsSuccess && !string.IsNullOrWhiteSpace(fallback.Text))
+                    onToken?.Invoke(fallback.Text);
+                return fallback;
+            }
+
+            var msgList = BuildChatMessages(systemPromptString, messages, responseStart);
+            return await ExecuteStreamingRequestAsync(msgList, onToken, ct, n_predict, cacheContext);
+        }
+
         #endregion
+
+        #region 真实 SSE 流式传输实现
+
+        internal override async Task<LlmResponse> RunStreamingInference(
+            string systemPromptString,
+            string gameCacheString,
+            string npcCacheString,
+            string promptString,
+            Action<string> onToken,
+            CancellationToken ct,
+            string responseStart = "",
+            int n_predict = 2048,
+            string cacheContext = "")
+        {
+            if (AndroidHelper.IsAndroid)
+            {
+                var fallback = await RunInference(systemPromptString, gameCacheString, npcCacheString, promptString, responseStart, n_predict, cacheContext);
+                if (fallback.IsSuccess && !string.IsNullOrWhiteSpace(fallback.Text))
+                {
+                    onToken?.Invoke(fallback.Text);
+                }
+                return fallback;
+            }
+
+            LlmTrafficLogger.LogOutgoing(cacheContext, modelName,
+                BuildEndpoint("chat/completions"),
+                systemPromptString, gameCacheString, npcCacheString, promptString, responseStart);
+
+            promptString =
+                (gameCacheString ?? string.Empty) +
+                (npcCacheString ?? string.Empty) +
+                (promptString ?? string.Empty);
+
+            var messages = new List<object>();
+
+            if (!string.IsNullOrWhiteSpace(systemPromptString))
+            {
+                messages.Add(new { role = "system", content = systemPromptString });
+            }
+
+            if (!string.IsNullOrWhiteSpace(responseStart) &&
+                !responseStart.Trim().Equals("responseStart", StringComparison.OrdinalIgnoreCase))
+            {
+                promptString += "\n\n" + responseStart;
+            }
+
+            messages.Add(new { role = "user", content = promptString });
+
+            return await ExecuteStreamingRequestAsync(messages, onToken, ct, n_predict, cacheContext);
+        }
+
+#endregion
 
         private bool LooksLikeDegenerateRepetition(string text, int minLength = 60)
         {

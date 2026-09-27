@@ -10,6 +10,13 @@ using Newtonsoft.Json.Linq;
 namespace ValleytalkReborn;
 
 /// <summary>
+/// 单条聊天消息模型（OpenAI 兼容的 role/content 结构）。
+/// 仅在单次推理请求内使用，不持久化。允许的角色为本票务限的 "user" 与 "assistant"。
+/// systemPromptString 仍作为 Provider 独立的 system 参数传入，不归入此模型。
+/// </summary>
+internal sealed record LlmChatMessage(string Role, string Content);
+
+/// <summary>
 /// LLM 调用上下文类型常量定义，用于区分不同业务场景的参数策略。
 /// </summary>
 internal static class LlmContextTypes
