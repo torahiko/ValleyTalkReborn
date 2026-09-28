@@ -412,10 +412,10 @@ namespace ValleytalkReborn
             // Initialize SpouseWaitingEvent (伴侣深夜等待事件)
             SpouseWaitingEvent.Initialize();
 
-            // 注册共享主线程封送器（原寄生于 NightlyConsolidationHook，现已独立）
+            // 注册共享主线程封送器（原寄生于夜间固化 Hook，现已独立）
             MainThreadDispatcher.Register(helper);
 
-            // EvolvedTraitManager 持久化生命周期（原寄生于 NightlyConsolidationHook，现已独立）
+            // EvolvedTraitManager 持久化生命周期（原寄生于夜间固化 Hook，现已独立）
             helper.Events.GameLoop.SaveLoaded += (_, _) => EvolvedTraitManager.OnSaveLoaded();
             helper.Events.GameLoop.Saving += (_, _) => EvolvedTraitManager.OnSaving();
 
