@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using StardewValley;
+using ValleytalkReborn.Dialogue.Coordination;
 
 namespace ValleytalkReborn
 {

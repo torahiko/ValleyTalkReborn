@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using StardewModdingAPI;
 using StardewValley;
+using ValleytalkReborn.Dialogue.Coordination;
 
 namespace ValleytalkReborn;
 

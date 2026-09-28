@@ -12,6 +12,7 @@ using ValleytalkReborn.Plugins;
 using ValleytalkReborn.Services;
 using ValleytalkReborn.UI;
 using Microsoft.Xna.Framework;
+using ValleytalkReborn.Dialogue.Coordination;
 
 namespace ValleytalkReborn
 {

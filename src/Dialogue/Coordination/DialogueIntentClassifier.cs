@@ -17,7 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace ValleytalkReborn;
+namespace ValleytalkReborn.Dialogue.Coordination;
 
 internal static class DialogueIntentClassifier
 {

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ValleytalkReborn;
+using ValleytalkReborn.Dialogue.Coordination;
 using Xunit;
 
 [Collection("EmotionStore")]

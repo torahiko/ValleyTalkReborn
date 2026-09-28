@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace ValleytalkReborn;
+namespace ValleytalkReborn.Dialogue.Coordination;
 
 internal sealed class StreamLineTracker
 {

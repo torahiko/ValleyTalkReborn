@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using StardewValley;
 
-namespace ValleytalkReborn;
+namespace ValleytalkReborn.Dialogue.Coordination;
 
 internal static class NpcNameLocalizer
 {

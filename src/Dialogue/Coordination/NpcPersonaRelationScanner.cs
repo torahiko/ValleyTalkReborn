@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace ValleytalkReborn;
+namespace ValleytalkReborn.Dialogue.Coordination;
 
 /// <summary>
 /// 无状态扫描器：从 NPC 人设卡（Bio）的 Relationships 字典中读取双向关系描述。

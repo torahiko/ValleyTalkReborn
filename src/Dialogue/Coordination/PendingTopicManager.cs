@@ -6,7 +6,7 @@ using StardewModdingAPI.Events;
 using StardewValley;
 using ValleytalkReborn.Services;
 
-namespace ValleytalkReborn
+namespace ValleytalkReborn.Dialogue.Coordination
 {
     public class PendingTopicEntry
     {

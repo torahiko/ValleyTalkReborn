@@ -5,6 +5,7 @@ using System.Text;
 using Newtonsoft.Json;
 using StardewModdingAPI;
 using StardewValley;
+using ValleytalkReborn.Dialogue.Coordination;
 
 namespace ValleytalkReborn;
 

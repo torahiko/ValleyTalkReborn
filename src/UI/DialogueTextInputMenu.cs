@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework.Input;
 using StardewValley;
 using StardewValley.Menus;
 using ValleytalkReborn.UI;
+using ValleytalkReborn.Dialogue.Coordination;
 
 namespace ValleytalkReborn
 {

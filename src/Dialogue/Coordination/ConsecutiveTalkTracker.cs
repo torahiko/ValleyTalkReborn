@@ -7,7 +7,7 @@ using StardewModdingAPI.Events;
 using StardewValley;
 using ValleytalkReborn.Services;
 
-namespace ValleytalkReborn;
+namespace ValleytalkReborn.Dialogue.Coordination;
 
 /// <summary>
 /// Tracks cross-day consecutive interaction patterns per NPC:

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using StardewValley;
+using ValleytalkReborn.Dialogue.Coordination;
 
 namespace ValleytalkReborn;
 

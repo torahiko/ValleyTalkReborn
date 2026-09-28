@@ -3,6 +3,7 @@ using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using ValleytalkReborn;
+using ValleytalkReborn.Dialogue.Coordination;
 
 namespace ValleytalkReborn;
 

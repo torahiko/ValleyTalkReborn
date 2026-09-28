@@ -2,7 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using StardewValley;
 
-namespace ValleytalkReborn;
+namespace ValleytalkReborn.Dialogue.Coordination;
 
 /// <summary>
 /// 微社交气泡桥存储（Memory 域）。

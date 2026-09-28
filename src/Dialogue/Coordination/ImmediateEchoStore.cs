@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using StardewValley;
 
-namespace ValleytalkReborn;
+namespace ValleytalkReborn.Dialogue.Coordination;
 
 /// <summary>
 /// 近期互动余韵（Immediate Echo）暂存区：

@@ -4,7 +4,7 @@ using System.Linq;
 using StardewModdingAPI;
 using StardewValley;
 
-namespace ValleytalkReborn;
+namespace ValleytalkReborn.Dialogue.Coordination;
 
 /// <summary>
 /// Lightweight cross-turn session state per NPC.

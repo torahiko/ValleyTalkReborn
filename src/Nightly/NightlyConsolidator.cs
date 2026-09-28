@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using StardewModdingAPI;
 using StardewValley;
+using ValleytalkReborn.Dialogue.Coordination;
 
 namespace ValleytalkReborn;
 

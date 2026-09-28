@@ -3,6 +3,7 @@ using HarmonyLib;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Menus;
+using ValleytalkReborn.Dialogue.Coordination;
 
 namespace ValleytalkReborn
 {

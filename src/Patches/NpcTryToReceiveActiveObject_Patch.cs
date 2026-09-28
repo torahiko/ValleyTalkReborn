@@ -2,6 +2,7 @@ using System;
 using HarmonyLib;
 using StardewModdingAPI;
 using StardewValley;
+using ValleytalkReborn.Dialogue.Coordination;
 
 namespace ValleytalkReborn;
 

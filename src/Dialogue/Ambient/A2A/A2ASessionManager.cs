@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using StardewModdingAPI;
 using StardewValley;
+using ValleytalkReborn.Dialogue.Coordination;
 
 namespace ValleytalkReborn;
 

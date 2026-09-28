@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using StardewValley;
 
-namespace ValleytalkReborn
+namespace ValleytalkReborn.Dialogue.Coordination
 {
     /// <summary>
     /// Tracks short-term conversation context per NPC to allow seamless follow-up dialogue
