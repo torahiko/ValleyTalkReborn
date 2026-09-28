@@ -914,7 +914,7 @@ namespace ValleytalkReborn
                         retryCount--;
                         if (retryCount > 0)
                         {
-                            await Task.Delay(250);
+                            await Task.Delay(250, callerToken);
                         }
                         continue;
                     }
@@ -932,10 +932,17 @@ namespace ValleytalkReborn
                     Log.Debug("[LlmOpenAiBase] Invalid JSON response: " + ex.Message);
                     retryCount--;
                 }
-                catch (OperationCanceledException ex)
+                catch (OperationCanceledException) when (callerToken.IsCancellationRequested)
                 {
-                    Log.Debug("[LlmOpenAiBase] Request timeout: " + ex.Message);
-                    retryCount--;
+                    // BOUNDARY：调用方取消 —— 立即返回，不消耗重试预算、不记为服务故障。
+                    Log.Debug($"[LlmOpenAiBase] Request cancelled by caller. endpoint={endpointUrl}");
+                    return LlmResponse.Cancelled();
+                }
+                catch (OperationCanceledException)
+                {
+                    // BOUNDARY：QueryTimeout 触发 —— 立即返回，不重试。
+                    Log.Warning($"[LlmOpenAiBase] Request timed out after {ModEntry.Config.QueryTimeout}s. endpoint={endpointUrl}");
+                    return LlmResponse.Timeout();
                 }
                 catch (Exception ex)
                 {
@@ -945,7 +952,7 @@ namespace ValleytalkReborn
 
                 if (retryCount > 0)
                 {
-                    await Task.Delay(250);
+                    await Task.Delay(250, callerToken);
                 }
             }
 

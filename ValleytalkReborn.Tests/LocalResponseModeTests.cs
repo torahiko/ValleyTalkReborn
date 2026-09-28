@@ -35,6 +35,10 @@ public class LocalResponseModeTests : IDisposable
     private const string StreamUnsupportedBody =
         "{\"error\":{\"message\":\"streaming is not supported by this server\"}}";
 
+    /// <summary>退化重复正文：单字符重复 80 次，命中 LooksLikeDegenerateRepetition（≥60 且末尾重复 ≥20）。</summary>
+    private static readonly string DegenerateBody =
+        "{\"choices\":[{\"message\":{\"content\":\"" + new string('a', 80) + "\"}}]}";
+
     private static readonly FieldInfo SharedHttpClientField =
         typeof(Llm).GetField("_sharedHttpClient", BindingFlags.NonPublic | BindingFlags.Static);
 
@@ -263,6 +267,164 @@ public class LocalResponseModeTests : IDisposable
         Assert.Equal(string.Empty, result.Text);
     }
 
+    // ── LOCAL-004-R2：非流式执行器的取消 / 超时语义（照搬 LOCAL-002 模板） ──
+
+    [Fact]
+    public async Task NonStreaming_TransportCancelledWithoutCallerToken_ReturnsTimeout()
+    {
+        using var cts = new CancellationTokenSource();
+
+        var (provider, handler) = Install(CloudUrl, (_, token, _) =>
+            Task.FromException<HttpResponseMessage>(new OperationCanceledException(token)));
+
+        var result = await provider.ExecuteNonStreamingRequestAsync(RawMessages(), 64, "", true, cts.Token);
+
+        Assert.Equal("Timeout", result.EndReason.ToString());
+        Assert.False(result.IsSuccess);
+        Assert.Equal(1, handler.CallCount);
+    }
+
+    [Fact]
+    public async Task NonStreaming_PreCancelledToken_ReturnsCancelledWithoutHttp()
+    {
+        // 本地端点：预取消令牌在 ExecuteNonStreamingRequestAsync 内的本地闸门即被拦下，零 HTTP。
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        var (provider, handler) = Install(LocalUrl, (_, token, _) =>
+            Task.FromException<HttpResponseMessage>(new OperationCanceledException(token)));
+
+        var result = await provider.ExecuteNonStreamingRequestAsync(RawMessages(), 64, "", true, cts.Token);
+
+        Assert.Equal("Cancelled", result.EndReason.ToString());
+        Assert.False(result.IsSuccess);
+        Assert.Equal(0, handler.CallCount);
+    }
+
+    [Fact]
+    public async Task NonStreaming_PreCancelledToken_CloudEndpoint_HasNoSecondAttempt()
+    {
+        // 云端端点：无本地闸门，HttpClient 传输层会进入 handler 一次；执行器立即返回 Cancelled，
+        // 不消耗重试预算、无第二次请求（CallCount 恒 1，绝不出现 2）。
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        var (provider, handler) = Install(CloudUrl, (_, token, _) =>
+            Task.FromException<HttpResponseMessage>(new OperationCanceledException(token)));
+
+        var result = await provider.ExecuteNonStreamingRequestAsync(RawMessages(), 64, "", true, cts.Token);
+
+        Assert.Equal("Cancelled", result.EndReason.ToString());
+        Assert.False(result.IsSuccess);
+        Assert.Equal(1, handler.CallCount);
+    }
+
+    [Fact]
+    public async Task NonStreaming_CancelledDuringFirstAttempt_ReturnsCancelled()
+    {
+        using var cts = new CancellationTokenSource();
+
+        var (provider, handler) = Install(CloudUrl, (_, token, _) =>
+        {
+            cts.Cancel();
+            return Task.FromException<HttpResponseMessage>(new OperationCanceledException(token));
+        });
+
+        var result = await provider.ExecuteNonStreamingRequestAsync(RawMessages(), 64, "", true, cts.Token);
+
+        Assert.Equal("Cancelled", result.EndReason.ToString());
+        Assert.Equal(1, handler.CallCount);
+    }
+
+    [Fact]
+    public async Task NonStreaming_CancelledDuringRetryWait_DoesNotSendSecondRequest()
+    {
+        using var cts = new CancellationTokenSource();
+
+        var (provider, handler) = Install(CloudUrl, (_, _, _) =>
+        {
+            // 退化重复命中重试预算；在返回响应前取消，重试等待必须被中断。
+            cts.Cancel();
+            return Task.FromResult(Json(DegenerateBody));
+        });
+
+        var result = await provider.ExecuteNonStreamingRequestAsync(RawMessages(), 64, "", true, cts.Token);
+
+        Assert.Equal("Cancelled", result.EndReason.ToString());
+        Assert.Equal(1, handler.CallCount);
+    }
+
+    [Fact]
+    public async Task NonStreaming_InvalidJson_KeepsLegacyRetryBudget()
+    {
+        using var cts = new CancellationTokenSource();
+
+        var (provider, handler) = Install(CloudUrl, (_, _, _) =>
+            Task.FromResult(Json("not-json")));
+
+        await provider.ExecuteNonStreamingRequestAsync(RawMessages(), 64, "", true, cts.Token);
+
+        Assert.Equal(3, handler.CallCount);
+    }
+
+    [Fact]
+    public async Task NonStreaming_DegenerateRepetition_KeepsLegacyRetryBudget()
+    {
+        using var cts = new CancellationTokenSource();
+
+        var (provider, handler) = Install(CloudUrl, (_, _, _) =>
+            Task.FromResult(Json(DegenerateBody)));
+
+        await provider.ExecuteNonStreamingRequestAsync(RawMessages(), 64, "", true, cts.Token);
+
+        Assert.Equal(3, handler.CallCount);
+    }
+
+    // ── LOCAL-004-R2 + LOCAL-005 新路径：本地降级进入非流式重试循环后的取消 / 超时 ──
+
+    [Fact]
+    public async Task LocalDegradePath_Timeout_ReturnsTimeoutWithOneNonStreamingAttempt()
+    {
+        using var cts = new CancellationTokenSource();
+
+        var (provider, handler) = Install(LocalUrl, (_, token, call) =>
+            call == 1
+                ? Task.FromResult(Json(StreamUnsupportedBody, HttpStatusCode.BadRequest))
+                : Task.FromException<HttpResponseMessage>(new OperationCanceledException(token)));
+
+        var received = new List<string>();
+        var result = await provider.RunStreamingChatInference("system", Messages(), received.Add, cts.Token);
+
+        Assert.Equal("Timeout", result.EndReason.ToString());
+        Assert.Equal(2, handler.CallCount);
+        Assert.Contains("\"stream\":false", handler.Bodies[1]);
+        Assert.Empty(received);
+    }
+
+    [Fact]
+    public async Task LocalDegradePath_CallerCancel_ReturnsCancelledWithOneNonStreamingAttempt()
+    {
+        using var cts = new CancellationTokenSource();
+
+        var (provider, handler) = Install(LocalUrl, (_, token, call) =>
+        {
+            if (call == 1)
+            {
+                return Task.FromResult(Json(StreamUnsupportedBody, HttpStatusCode.BadRequest));
+            }
+
+            cts.Cancel();
+            return Task.FromException<HttpResponseMessage>(new OperationCanceledException(token));
+        });
+
+        var received = new List<string>();
+        var result = await provider.RunStreamingChatInference("system", Messages(), received.Add, cts.Token);
+
+        Assert.Equal("Cancelled", result.EndReason.ToString());
+        Assert.Equal(2, handler.CallCount);
+        Assert.Empty(received);
+    }
+
     // ── 测试脚手架 ──
 
     private delegate Task<HttpResponseMessage> StubBehavior(
@@ -270,6 +432,10 @@ public class LocalResponseModeTests : IDisposable
 
     private static IReadOnlyList<LlmChatMessage> Messages() =>
         new[] { new LlmChatMessage("user", "hello") };
+
+    /// <summary>非流式执行器的 messages 形参（List&lt;object&gt;），供 ExecuteNonStreamingRequestAsync 直连。</summary>
+    private static List<object> RawMessages() =>
+        new List<object> { new { role = "user", content = "hello" } };
 
     private (LlmOAICompatible Provider, StubHandler Handler) Install(
         string baseUrl,
