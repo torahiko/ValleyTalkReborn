@@ -44,11 +44,13 @@ internal static class A2AScriptValidator
                 !string.IsNullOrWhiteSpace(line.Line) &&
                 participantSet.Contains(line.SpeakerName) &&
                 line.Line.Length <= MaxLineLength)
-            .Take(expectedCount)
             .ToArray();
 
-        // Guard: 至少有 2 句才认为有效（原版无此校验，但防止空脚本）
-        if (filtered.Length < 2)
+        // 数量契约：有效条数必须精确等于 expectedCount（不足与超出同样失败），
+        // 不再用 Take 把短脚本截断后当成完整会话放行。expectedCount 由
+        // A2ASessionManager 传入 session.RoundsLeft，与 Prompt 注入的
+        // targetLineCount 同源。
+        if (filtered.Length != expectedCount)
             return false;
 
         validLines = filtered;

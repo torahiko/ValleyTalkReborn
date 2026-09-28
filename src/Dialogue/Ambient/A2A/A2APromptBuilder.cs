@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Newtonsoft.Json;
 using StardewValley;
 using ValleytalkReborn.Dialogue.Coordination;
 
@@ -48,15 +47,35 @@ internal sealed class A2APromptBuilder
         string previousTopicLine = null,
         string interruptedTail = null)
     {
-        if (session == null) return null;
+        if (session == null)
+        {
+            ModEntry.SMonitor?.Log(
+                "[A2A] Build 失败：session 为 null，转 A2A fallback",
+                StardewModdingAPI.LogLevel.Warn);
+            return null;
+        }
 
         var participants = session.ResolveParticipants();
 
         if (participants == null || participants.Count < 2)
+        {
+            ModEntry.SMonitor?.Log(
+                $"[A2A] Build 失败：参与者不足 2 人，转 A2A fallback | SessionId={session.SessionId}",
+                StardewModdingAPI.LogLevel.Warn);
             return null;
+        }
 
         if (Game1.player == null)
+        {
+            ModEntry.SMonitor?.Log(
+                "[A2A] Build 失败：Game1.player 不可用，转 A2A fallback",
+                StardewModdingAPI.LogLevel.Trace);
             return null;
+        }
+
+        // 目标条数与会话剩余轮数同源：Prompt 注入的数量、A2AScriptValidator 的
+        // expectedCount（A2ASessionManager 传入 session.RoundsLeft）必须一致。
+        int targetLineCount = Math.Max(1, session.RoundsLeft);
 
         bool isZh = IsChineseLanguage;
 
@@ -233,13 +252,10 @@ internal sealed class A2APromptBuilder
             userSb.AppendLine();
         }
 
-        userSb.Append(BuildA2AConversationGuidance(topicHook, lengthDesc, isZh));
+        userSb.Append(BuildA2AConversationGuidance(topicHook, lengthDesc, isZh, targetLineCount));
         userSb.AppendLine();
 
-        userSb.Append(BuildA2AExampleBlock(displayNames, isZh));
-        userSb.AppendLine();
-
-        userSb.Append(BuildA2AFinalRules(lengthDesc, isZh));
+        userSb.Append(BuildA2AFinalRules(lengthDesc, isZh, targetLineCount));
 
         return new DialogueModels.A2ARequest
         {
@@ -414,7 +430,7 @@ internal sealed class A2APromptBuilder
         return sb.ToString();
     }
 
-    private static string BuildA2AConversationGuidance(string topicHook, string lengthDesc, bool isZh)
+    private static string BuildA2AConversationGuidance(string topicHook, string lengthDesc, bool isZh, int targetLineCount)
     {
         var sb = new StringBuilder();
 
@@ -424,14 +440,14 @@ internal sealed class A2APromptBuilder
             sb.AppendLine($"背景氛围：{topicHook}");
             sb.AppendLine();
             sb.AppendLine("执行指引：");
-            sb.AppendLine("- 对话始于此刻真正进入注意力的现实细节——身体感受、天气、刚想到的事、眼前的景致、或对身旁之人的随口一瞥。");
-            sb.AppendLine("- 后续各句顺着注意力自然流动：可以展开深入、转向新念头、或是被动静打断。交谈节奏保持松散自由，单人可连说两句，也可作短促的反应性应答。");
-            sb.AppendLine("- 重点在于展现同处一室的生活质感。台词可以是随口念叨、吐槽、或半途而废的念头，在自然停顿处收尾即可。");
-            sb.AppendLine("- 场景物体与环境仅作为视线自然扫过或肢体实际接触时的背景衬托。");
+            sb.AppendLine("- 先挑一个此刻自然冒出来的催化点，再自由展开：彼此的关系、镇上的传闻、眼下正在做的事、身体感受、刚留意到的细节，或被打断的话尾（存在时优先续接）。");
+            sb.AppendLine("- 后续每一句顺着上一句自然生长：回应、转向、补充、打断或短暂跑题都可以；允许同一人连说两句，也允许只回一句短促的反应。");
+            sb.AppendLine("- 不设固定结构：不要求首句描写环境，不要求第二句回应环境，不要求倒数第二句交代行动，不要求末句落到未来计划，也不要求按发言人严格交替。");
+            sb.AppendLine("- 参与者身份、关系、传闻、场景、当下举动与话尾都只是可选素材，用不用、出现在哪一句，由对话自身决定，不构成固定顺序。");
             sb.AppendLine();
-            sb.AppendLine("任务：参与者均自然开口，编写 4~6 条连贯流动的日常对白。");
+            sb.AppendLine($"任务：参与者均自然开口，编写 {targetLineCount} 条连贯流动的日常对白。");
             sb.AppendLine();
-            sb.AppendLine("输出格式：包含 4~6 个对象的 JSON 数组。首字符为 [，末字符为 ]。");
+            sb.AppendLine($"输出格式：包含 {targetLineCount} 个对象的 JSON 数组。首字符为 [，末字符为 ]。");
             sb.AppendLine($"每个对象：{{\"speaker\": \"名字\", \"line\": \"台词文本（{lengthDesc}）\"}}");
         }
         else
@@ -440,57 +456,21 @@ internal sealed class A2APromptBuilder
             sb.AppendLine($"Atmosphere: {topicHook}");
             sb.AppendLine();
             sb.AppendLine("Execution:");
-            sb.AppendLine("- Begin with an immediate sensory focus: physical sensations, weather, an idle thought, an object in view, or a glance at the person nearby.");
-            sb.AppendLine("- Subsequent lines follow the natural drift of attention: deepening, branching, or pausing. Maintain loose pacing where characters may speak consecutively or offer brief reactive mutters.");
-            sb.AppendLine("- Emphasize everyday coexistence. Lines can be idle observations, small complaints, or half-finished remarks that conclude at a believable pause.");
-            sb.AppendLine("- Surroundings act strictly as sensory backdrop when naturally noticed or physically engaged.");
+            sb.AppendLine("- Start from one catalyst that surfaces naturally right now, then let it unfold: the relationship between you, town gossip, what someone is doing at the moment, a physical sensation, a detail just noticed, or the tail of an interrupted line (continue it first when present).");
+            sb.AppendLine("- Let every later line grow out of the one before it: reacting, pivoting, adding, cutting in, or drifting briefly off-topic. The same person may speak twice in a row; a single short reaction is fine too.");
+            sb.AppendLine("- No fixed shape: do not open with a sensory description, do not answer it in line two, do not spend the second-to-last line on an action, do not close on future plans, and do not enforce strict speaker alternation.");
+            sb.AppendLine("- Identities, relationships, gossip, surroundings, current actions and the interrupted tail are optional material only. Whether and where they appear is the conversation's call, never a fixed order.");
             sb.AppendLine();
-            sb.AppendLine("Task: Ensure all participants contribute naturally, generating 4–6 organic conversational lines.");
+            sb.AppendLine($"Task: Every participant speaks naturally; write {targetLineCount} flowing everyday lines.");
             sb.AppendLine();
-            sb.AppendLine("Output format: JSON array of 4–6 objects. First character MUST be [, last character MUST be ].");
+            sb.AppendLine($"Output format: JSON array of {targetLineCount} objects. First character MUST be [, last character MUST be ].");
             sb.AppendLine($"Each object: {{\"speaker\": \"name\", \"line\": \"dialogue text ({lengthDesc})\"}}");
         }
 
         return sb.ToString();
     }
 
-    private static string BuildA2AExampleBlock(List<string> displayNames, bool isZh)
-    {
-        var sb = new StringBuilder();
-
-        if (isZh)
-        {
-            sb.AppendLine("互动参考示例（注重自然呼吸与松散承接）：");
-
-            var example = JsonConvert.SerializeObject(new[]
-            {
-                new { speaker = displayNames[0], line = "嘶……这一大早的，屋里还是有点冷。" },
-                new { speaker = displayNames[1], line = "刚才开门通风来着，炉子火刚生起来。" },
-                new { speaker = displayNames[0], line = "窗台那边的霜结得挺厚啊。" },
-                new { speaker = displayNames[0], line = "今天出门少不了得裹厚点。" },
-                new { speaker = displayNames[1], line = "手套放在门后篮子里了，走的时候自己拿。" }
-            });
-            sb.AppendLine(example);
-        }
-        else
-        {
-            sb.AppendLine("Interaction Examples (focus on natural breathing and loose connections):");
-
-            var example = JsonConvert.SerializeObject(new[]
-            {
-                new { speaker = displayNames[0], line = "Brr... still kind of brisk in here this morning." },
-                new { speaker = displayNames[1], line = "Aired the place out earlier. Fire's just catching now." },
-                new { speaker = displayNames[0], line = "Frost is pretty thick on the windowsill." },
-                new { speaker = displayNames[0], line = "Definitely bundling up today." },
-                new { speaker = displayNames[1], line = "Gloves are in the basket by the door, grab them before you head out." }
-            });
-            sb.AppendLine(example);
-        }
-
-        return sb.ToString();
-    }
-
-    private static string BuildA2AFinalRules(string lengthDesc, bool isZh)
+    private static string BuildA2AFinalRules(string lengthDesc, bool isZh, int targetLineCount)
     {
         var sb = new StringBuilder();
         bool needLangConstraint = ShouldInjectLanguageConstraint(out string targetLangZh, out string targetLangEn);
@@ -512,8 +492,8 @@ internal sealed class A2APromptBuilder
         }
 
         sb.AppendLine(isZh
-            ? "- 发言节奏：参与者均有发言，按当下互动自然轮换或连说，总条数 4~6 条。"
-            : "- Pacing: All participants must speak; flow organically without rigid turn-taking. Total 4–6 lines.");
+            ? $"- 发言节奏：参与者均有发言，按当下互动自然轮换或连说，总条数 {targetLineCount} 条。"
+            : $"- Pacing: All participants must speak; flow organically without rigid turn-taking. Total {targetLineCount} lines.");
         sb.AppendLine(isZh
             ? "- 交流推进：各人以自身的生活经验、反应或新视角接续话头，让思绪自然前行，保持真实流动的语言交替。"
             : "- Progression: Advance each line with the speaker's own perspective, emotional reaction, or lived experience, sustaining an organic exchange.");

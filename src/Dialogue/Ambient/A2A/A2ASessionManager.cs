@@ -1165,6 +1165,43 @@ internal sealed class A2ASessionManager
         });
     }
 
+    /// <summary>
+    /// A2A 独立 fallback 台词池：短反应式会话应答，与单人 Bark 的
+    /// AmbientBarkModule fallback 池完全隔离。Memory 作用域，只读。
+    /// </summary>
+    private static readonly string[] A2AFallbackLinesZh =
+    {
+        "嗯？你刚说啥来着？",
+        "哈哈，还真是这么回事。",
+        "别说，我也这么觉得。",
+        "等下，让我想想啊。",
+        "这我倒还真没注意。",
+        "真的假的？别糊弄我啊。",
+        "行吧，随你高兴。",
+        "说起来，好像也有点道理。"
+    };
+
+    private static readonly string[] A2AFallbackLinesEn =
+    {
+        "Hmm? What was that you just said?",
+        "Haha, that's fair enough.",
+        "You know what, I think so too.",
+        "Hold on, let me think a sec.",
+        "Huh, hadn't noticed that before.",
+        "Really now? Don't pull my leg.",
+        "Fine, suits me either way.",
+        "Now that you say it, that tracks."
+    };
+
+    /// <summary>
+    /// 取一条 A2A 专用 fallback 台词（短反应式，供会话交替补位）。
+    /// </summary>
+    private static string GetA2AFallbackLine(bool isChinese)
+    {
+        var pool = isChinese ? A2AFallbackLinesZh : A2AFallbackLinesEn;
+        return pool[Random.Shared.Next(pool.Length)];
+    }
+
     internal DialogueModels.A2ALine[] BuildFallbackScript(List<string> names, bool isChinese)
     {
         if (names == null || names.Count < 2)
@@ -1183,7 +1220,7 @@ internal sealed class A2ASessionManager
             result.Add(new DialogueModels.A2ALine
             {
                 SpeakerName = name,
-                Line = AmbientBarkModule.GetRandomFallbackPublic(isChinese)
+                Line = GetA2AFallbackLine(isChinese)
             });
         }
 
