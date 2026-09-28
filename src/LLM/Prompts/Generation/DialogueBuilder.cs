@@ -331,7 +331,7 @@ namespace ValleytalkReborn
 
             ApplyEmbodiedActions(instance, context, theLine);
 
-            // speak_in_bubble sentinel: 气泡模式下跳过对白肢体解析
+            // 无台词产出（theLine 为 null）时跳过对白肢体解析
             if (theLine != null)
             {
                 if (context.RoutingFlags.IsActionRequested

@@ -390,7 +390,7 @@ public class AsyncBuilder
                 }
                 else
                 {
-                    // 仅当没有台词产生（如 speak_in_bubble 气泡模式或空对话）时，才显式关闭占位框
+                    // 仅当本代没有产出任何对白页（newDialogue 为 null 或 0 页）时，才显式关闭占位框
                     if (menuToClose != null && Game1.activeClickableMenu == menuToClose)
                         Game1.exitActiveMenu();
                 }
