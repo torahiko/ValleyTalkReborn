@@ -62,10 +62,74 @@ public class CommunityChoreLedgerTests
     // CTX-011.5: world-ready state is no longer set here. Callers wrap their
     // assertions in TestEnvironment.WithWorldReady so the flag is restored in a
     // finally instead of leaking into every later test in the process.
-    private static void SetupContext(bool multiplayer, bool saveLoaded)
+    // CTX-013: 返回作用域对象——GameRunner.gameInstances 与账目 _isSaveLoaded 同为
+    // 进程级静态，调用方以 using 承接，异常路径也走 Dispose 还原。
+    private static IDisposable SetupContext(bool multiplayer, bool saveLoaded)
     {
+        var scope = new ChoreContextScope();
         SetMultiplayer(multiplayer);
         SetField("_isSaveLoaded", saveLoaded);
+        return scope;
+    }
+
+    private sealed class ChoreContextScope : IDisposable
+    {
+        private readonly object[] _gameInstances;
+        private readonly bool _isSaveLoaded;
+
+        public ChoreContextScope()
+        {
+            _gameInstances = SnapshotGameInstances();
+            _isSaveLoaded = GetField<bool>("_isSaveLoaded");
+        }
+
+        public void Dispose()
+        {
+            SetField("_isSaveLoaded", _isSaveLoaded);
+            RestoreGameInstances(_gameInstances);
+        }
+    }
+
+    private static object[] SnapshotGameInstances()
+    {
+        var list = GameInstances();
+        var snapshot = new object[list.Count];
+        list.CopyTo(snapshot, 0);
+        return snapshot;
+    }
+
+    private static void RestoreGameInstances(object[] snapshot)
+    {
+        var list = GameInstances();
+        list.Clear();
+        foreach (var instance in snapshot)
+            list.Add(instance);
+    }
+
+    private static System.Collections.IList GameInstances()
+        => (System.Collections.IList)typeof(GameRunner).GetField("gameInstances",
+            BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)!
+            .GetValue(GameRunner.instance);
+
+    // CTX-013: Game1.currentSeason / dayOfMonth 同为进程级静态，UT06 用作用域写回原值。
+    private sealed class GameDateScope : IDisposable
+    {
+        private readonly string _season;
+        private readonly int _dayOfMonth;
+
+        public GameDateScope(string season, int dayOfMonth)
+        {
+            _season = Game1.currentSeason;
+            _dayOfMonth = Game1.dayOfMonth;
+            Game1.currentSeason = season;
+            Game1.dayOfMonth = dayOfMonth;
+        }
+
+        public void Dispose()
+        {
+            Game1.currentSeason = _season;
+            Game1.dayOfMonth = _dayOfMonth;
+        }
     }
 
     // ── 资产加载 ──
@@ -237,8 +301,7 @@ public class CommunityChoreLedgerTests
     [Fact]
     public void UT06_DeterministicCollisionChoosesOrdinalSmallestChoreId()
     {
-        Game1.currentSeason = "spring";
-        Game1.dayOfMonth = 1; // → DayOfWeek = 1
+        using var dateScope = new GameDateScope("spring", 1); // dayOfMonth=1 → DayOfWeek = 1
 
         // "z-second" > "a-first" 按序号；先注入大序号条目。
         SetField("_entries", new List<ChoreLedgerEntry>
@@ -248,7 +311,7 @@ public class CommunityChoreLedgerTests
         });
         TestEnvironment.WithWorldReady(true, () =>
         {
-            SetupContext(multiplayer: false, saveLoaded: true);
+            using var ctx = SetupContext(multiplayer: false, saveLoaded: true);
 
             CommunityChoreLedger.OnDayStarted();
             var winner1 = GetField<Dictionary<string, ChoreLedgerEntry>>("_entriesByNpcAndSchedule");
@@ -276,7 +339,7 @@ public class CommunityChoreLedgerTests
     {
         TestEnvironment.WithWorldReady(true, () =>
         {
-            SetupContext(multiplayer: false, saveLoaded: false);
+            using var ctx = SetupContext(multiplayer: false, saveLoaded: false);
 
             Assert.False(CommunityChoreLedger.TryGetTopic("Gus", out var topic));
             Assert.Null(topic);
@@ -299,7 +362,7 @@ public class CommunityChoreLedgerTests
         });
         TestEnvironment.WithWorldReady(true, () =>
         {
-            SetupContext(multiplayer: true, saveLoaded: true);
+            using var ctx = SetupContext(multiplayer: true, saveLoaded: true);
 
             Assert.False(CommunityChoreLedger.TryGetTopic("Gus", out var topic),
                 "Multiplayer lookup must return false.");
@@ -328,7 +391,7 @@ public class CommunityChoreLedgerTests
         });
         TestEnvironment.WithWorldReady(true, () =>
         {
-            SetupContext(multiplayer: false, saveLoaded: true);
+            using var ctx = SetupContext(multiplayer: false, saveLoaded: true);
 
             Assert.False(CommunityChoreLedger.TryGetTopic("Pierre", out var topic),
                 "Unscheduled NPC must return false.");
@@ -352,7 +415,7 @@ public class CommunityChoreLedgerTests
         });
         TestEnvironment.WithWorldReady(true, () =>
         {
-            SetupContext(multiplayer: false, saveLoaded: true);
+            using var ctx = SetupContext(multiplayer: false, saveLoaded: true);
 
             Assert.True(CommunityChoreLedger.TryGetTopic("Abigail", out var topic),
                 "Scheduled source NPC Abigail must return a topic.");
@@ -379,7 +442,7 @@ public class CommunityChoreLedgerTests
         });
         TestEnvironment.WithWorldReady(true, () =>
         {
-            SetupContext(multiplayer: false, saveLoaded: true);
+            using var ctx = SetupContext(multiplayer: false, saveLoaded: true);
 
             Assert.True(CommunityChoreLedger.TryGetTopic("Sebastian", out var topic),
                 "Scheduled target NPC Sebastian must return a topic.");
