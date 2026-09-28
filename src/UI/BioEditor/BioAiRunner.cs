@@ -105,7 +105,7 @@ internal static class BioAiRunner
                 result = new BioAiResult(BioAiResultKind.Failure, detail: ex.Message);
             }
 
-            AgentToolDispatcher.EnqueueMainThread(() =>
+            MainThreadActionQueue.EnqueueMainThread(() =>
             {
                 if (gen != _generation)
                     return;

@@ -2171,7 +2171,7 @@ namespace ValleytalkReborn
             string? fixText = null) 
         {
             string fix = fixText ?? I18n.Get("Bio.WizardStopHere");
-            AgentToolDispatcher.EnqueueMainThread(() =>
+            MainThreadActionQueue.EnqueueMainThread(() =>
                 Game1.activeClickableMenu = new BioValveWarningDialog(
                     this, title, subtitle, warnings, continueText,
                     () => { Game1.activeClickableMenu = this; next(); },

@@ -245,7 +245,7 @@ internal sealed class TimelineAutoSummaryScheduler
 
             var capturedTask = task;
             var capturedResult = result;
-            AgentToolDispatcher.EnqueueMainThread(() => CompleteTask(capturedTask, capturedResult, targetDay));
+            MainThreadActionQueue.EnqueueMainThread(() => CompleteTask(capturedTask, capturedResult, targetDay));
         }
         catch (Exception ex)
         {

@@ -1529,12 +1529,12 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
-        /// Called every game tick. Processes the AgentToolDispatcher's thread-safe action queue
+        /// Called every game tick. Processes the MainThreadActionQueue's thread-safe action queue
         /// to safely execute background-thread requests (e.g. DelayedAction registrations) on the main thread.
         /// </summary>
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
         {
-            AgentToolDispatcher.ProcessMainThreadQueue();
+            MainThreadActionQueue.ProcessMainThreadQueue();
 
             // VT3-B：每 60 帧驱逐 Tier 1 孤儿会话并清理过期 closed 记录
             if (e.IsMultipleOf(60))

@@ -8,7 +8,7 @@ namespace ValleytalkReborn;
 /// 原生工具调用已全量移除（VT-NOTOOLS-T1）；
 /// 本类仅保留主线程队列基础设施（由 Timeline / Bio 编辑器等非工具调用方使用）。
 /// </summary>
-internal static class AgentToolDispatcher
+internal static class MainThreadActionQueue
 {
     private static readonly ConcurrentQueue<Action> _mainThreadActions = new();
 
@@ -25,7 +25,7 @@ internal static class AgentToolDispatcher
             }
             catch (Exception ex)
             {
-                LogError($"[AgentToolDispatcher] Queue execution error: {ex}");
+                LogError($"[MainThreadActionQueue] Queue execution error: {ex}");
             }
         }
     }
@@ -35,16 +35,6 @@ internal static class AgentToolDispatcher
     {
         if (action == null) return;
         _mainThreadActions.Enqueue(action);
-    }
-
-    private static void LogDebug(string message)
-    {
-        ModEntry.SMonitor?.Log(message, LogLevel.Debug);
-    }
-
-    private static void LogWarn(string message)
-    {
-        ModEntry.SMonitor?.Log(message, LogLevel.Warn);
     }
 
     private static void LogError(string message)
