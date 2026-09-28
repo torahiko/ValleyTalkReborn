@@ -36,9 +36,6 @@ public class DateInvitationContractTests
     static DateInvitationContractTests()
     {
         TestEnvironment.InstallHeadlessContext();
-
-        // 注册表自带默认地点（Initialize 只做 FallbackToDefault，不读游戏内容）。
-        DateLocationRegistry.Initialize(null);
     }
 
     private static NPC NewTestNpc()
