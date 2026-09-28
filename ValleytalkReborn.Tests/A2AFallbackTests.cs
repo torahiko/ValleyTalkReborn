@@ -3,7 +3,8 @@
 // 覆盖：
 //   1) BuildFallbackScript 在 2/3/4 人下的数量契约不变、speaker 全部命中参与者
 //      集合、台词非空（含 <2 人的空数组行为）；
-//   2) fallback 路径不再引用 AmbientBarkModule.GetRandomFallbackPublic；
+//   2) fallback 路径不再引用 AmbientBarkModule.GetRandomFallbackPublic，
+//      且 AmbientBarkModule 内该公开包装已删除；
 //   3) A2AScriptValidator 数量判定改为 validCount != expectedCount 即失败
 //      （不足与超出同判失败，MaxLineLength 与 speaker 白名单未放宽）；
 //   4) A2A Prompt 的目标条数由 targetLineCount 注入，"4~6" 字面量不复存在，
@@ -104,10 +105,14 @@ public class A2AFallbackTests : IDisposable
     [Fact]
     public void UT06_FallbackPath_DoesNotReferenceAmbientBarkFallbackPool()
     {
-        string source = ReadSourceOrFail("src", "Dialogue", "Ambient", "A2A", "A2ASessionManager.cs");
+        string sessionSource = ReadSourceOrFail("src", "Dialogue", "Ambient", "A2A", "A2ASessionManager.cs");
+        string barkSource = ReadSourceOrFail("src", "Dialogue", "Ambient", "Bark", "AmbientBarkModule.cs");
 
-        Assert.DoesNotContain("GetRandomFallbackPublic", source);
-        Assert.DoesNotContain("AmbientBarkModule.GetRandomFallback", source);
+        Assert.DoesNotContain("GetRandomFallbackPublic", sessionSource);
+        Assert.DoesNotContain("AmbientBarkModule.GetRandomFallback", sessionSource);
+
+        // GetRandomFallbackPublic 已删除；GetRandomFallback（PushFallbackLocked 依赖）保留
+        Assert.DoesNotContain("GetRandomFallbackPublic", barkSource);
     }
 
     // ── 验收 5：A2AScriptValidator 数量契约 ──

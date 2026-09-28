@@ -13,6 +13,15 @@ internal sealed class ProactiveDialogueDecision
     public string DenyReason { get; init; }
 }
 
+internal enum MicroSocialCommitResult
+{
+    Committed,
+    InvalidDecision,      // decision 为 null / npcName 空 / Mode != MicroSocial
+    AlreadyFiredToday,    // _microSocialFiredToday 命中
+    SensoryCooldownBusy,  // SensoryCooldownStore.TryClaim 未抢到
+    Error                 // Commit 内部异常
+}
+
 internal static class ProactiveDialogueManager
 {
     internal const int MainDialogueGateGameMinutes = 120;
@@ -137,33 +146,36 @@ internal static class ProactiveDialogueManager
         }
     }
 
-    internal static bool Commit(string npcName, ProactiveDialogueDecision decision)
+    internal static MicroSocialCommitResult Commit(string npcName, ProactiveDialogueDecision decision)
     {
         if (decision == null || string.IsNullOrWhiteSpace(npcName) || decision.Mode != BarkOutputMode.MicroSocial)
-            return false;
+            return MicroSocialCommitResult.InvalidDecision;
 
         try
         {
             lock (_lock)
             {
-                if (_microSocialFiredToday.Contains(npcName)) return false;
+                if (_microSocialFiredToday.Contains(npcName)) return MicroSocialCommitResult.AlreadyFiredToday;
 
                 if (decision.SensoryTriggered && decision.Sensory != null)
                 {
                     if (!SensoryCooldownStore.TryClaim(npcName, decision.Sensory.Type, decision.Sensory.Category))
-                        return false;
+                        return MicroSocialCommitResult.SensoryCooldownBusy;
                 }
 
                 _microSocialFiredToday.Add(npcName);
                 ModEntry.SMonitor?.Log(
                     $"[Proactive] MicroSocial committed: {npcName} (sensory:{(decision.SensoryTriggered ? decision.Sensory.Type.ToString() : "none")})",
                     LogLevel.Debug);
-                return true;
+                return MicroSocialCommitResult.Committed;
             }
         }
-        catch
+        catch (Exception ex)
         {
-            return false;
+            ModEntry.SMonitor?.Log(
+                $"[Proactive] MicroSocial commit error: npc={npcName} {ex.GetType().Name}: {ex.Message}",
+                LogLevel.Error);
+            return MicroSocialCommitResult.Error;
         }
     }
 
@@ -177,6 +189,11 @@ internal static class ProactiveDialogueManager
                 _microSocialFiredToday.Clear();
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log(
+                $"[Proactive] ClearAll failed: {ex.GetType().Name}: {ex.Message}",
+                LogLevel.Warn);
+        }
     }
 }

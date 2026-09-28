@@ -1292,11 +1292,6 @@ internal sealed class AmbientBarkModule : IDialogueModule
         });
     }
  
-    internal static string GetRandomFallbackPublic(bool isChinese)
-    {
-        return GetRandomFallback(isChinese);
-    }
-
     internal bool IsReservedByOther(string npcName)
     {
         if (string.IsNullOrWhiteSpace(npcName))

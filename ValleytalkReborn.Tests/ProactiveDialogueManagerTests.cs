@@ -99,8 +99,8 @@ public class ProactiveDialogueManagerTests
         var d1 = ProactiveDialogueManager.Resolve("Abigail");
         Assert.True(d1.SensoryTriggered);
 
-        bool committed = ProactiveDialogueManager.Commit("Abigail", d1);
-        Assert.True(committed);
+        var committed = ProactiveDialogueManager.Commit("Abigail", d1);
+        Assert.Equal(MicroSocialCommitResult.Committed, committed);
         Assert.True(SensoryCooldownStore.IsLocked("Abigail", SensoryType.LewisShorts));
 
         // 再次 Resolve：感官锁定 → 关系路径（hearts=8 ≥ 7）→ 但 cap 已触发 → daily-cap
@@ -181,7 +181,7 @@ public class ProactiveDialogueManagerTests
 
         var d1 = ProactiveDialogueManager.Resolve("Abigail");
         Assert.Equal(BarkOutputMode.MicroSocial, d1.Mode);
-        Assert.True(ProactiveDialogueManager.Commit("Abigail", d1));
+        Assert.Equal(MicroSocialCommitResult.Committed, ProactiveDialogueManager.Commit("Abigail", d1));
 
         // 再次 Resolve：hearts=8 → 关系路径 → cap → daily-cap
         var d2 = ProactiveDialogueManager.Resolve("Abigail");
@@ -197,7 +197,7 @@ public class ProactiveDialogueManagerTests
         SensoryClassifier.BucketProvider = _ => new List<PerceptionEntry> { Entry("PlayerSpecialOutfit_Shorts") };
 
         var d1 = ProactiveDialogueManager.Resolve("Abigail");
-        Assert.True(ProactiveDialogueManager.Commit("Abigail", d1));
+        Assert.Equal(MicroSocialCommitResult.Committed, ProactiveDialogueManager.Commit("Abigail", d1));
 
         // 再次 Resolve：感官未锁定（Shorts 是 Continuous，Commit 时 TryClaim 成功）→ 但 cap → daily-cap
         var d2 = ProactiveDialogueManager.Resolve("Abigail");
@@ -225,23 +225,23 @@ public class ProactiveDialogueManagerTests
     // ── 验收 2g：Commit 语义 ──
 
     [Fact]
-    public void UT14_Commit_SoliloquyDecision_ReturnsFalse()
+    public void UT14_Commit_SoliloquyDecision_ReturnsInvalidDecision()
     {
         ResetAll();
         var soliloquy = new ProactiveDialogueDecision { Mode = BarkOutputMode.Soliloquy, DenyReason = "test" };
 
-        Assert.False(ProactiveDialogueManager.Commit("Abigail", soliloquy));
+        Assert.Equal(MicroSocialCommitResult.InvalidDecision, ProactiveDialogueManager.Commit("Abigail", soliloquy));
     }
 
     [Fact]
-    public void UT15_Commit_Duplicate_ReturnsFalse()
+    public void UT15_Commit_Duplicate_ReturnsAlreadyFiredToday()
     {
         ResetAll();
         ProactiveDialogueManager.HeartsProvider = _ => 8;
 
         var d1 = ProactiveDialogueManager.Resolve("Abigail");
-        Assert.True(ProactiveDialogueManager.Commit("Abigail", d1));
-        Assert.False(ProactiveDialogueManager.Commit("Abigail", d1));
+        Assert.Equal(MicroSocialCommitResult.Committed, ProactiveDialogueManager.Commit("Abigail", d1));
+        Assert.Equal(MicroSocialCommitResult.AlreadyFiredToday, ProactiveDialogueManager.Commit("Abigail", d1));
     }
 
     [Fact]
@@ -258,8 +258,8 @@ public class ProactiveDialogueManagerTests
         // 2. 手工锁定同一 Type（模拟并发/异常）
         Assert.True(SensoryCooldownStore.TryClaim("Abigail", SensoryType.LewisShorts, SensoryCategory.Continuous));
 
-        // 3. Commit → TryClaim 失败 → false，cap 未登记
-        Assert.False(ProactiveDialogueManager.Commit("Abigail", d1));
+        // 3. Commit → TryClaim 失败 → SensoryCooldownBusy，cap 未登记
+        Assert.Equal(MicroSocialCommitResult.SensoryCooldownBusy, ProactiveDialogueManager.Commit("Abigail", d1));
 
         // 4. 验证 cap 未登记：再次 Resolve → 感官锁定 → 关系路径（hearts=8）→ cap 未触发 → MicroSocial
         var d2 = ProactiveDialogueManager.Resolve("Abigail");
@@ -267,7 +267,53 @@ public class ProactiveDialogueManagerTests
         Assert.False(d2.SensoryTriggered);
 
         // 5. Commit 成功 → 证明 cap 确实未登记
-        Assert.True(ProactiveDialogueManager.Commit("Abigail", d2));
+        Assert.Equal(MicroSocialCommitResult.Committed, ProactiveDialogueManager.Commit("Abigail", d2));
+    }
+
+    // ── 验收 2i：Commit 失败原因可观测（枚举区分四种失败）──
+
+    [Fact]
+    public void UT18_Commit_NullOrEmptyArgs_ReturnsInvalidDecision()
+    {
+        ResetAll();
+        var micro = new ProactiveDialogueDecision { Mode = BarkOutputMode.MicroSocial, DenyReason = "test" };
+
+        Assert.Equal(MicroSocialCommitResult.InvalidDecision, ProactiveDialogueManager.Commit("Abigail", null));
+        Assert.Equal(MicroSocialCommitResult.InvalidDecision, ProactiveDialogueManager.Commit(null, micro));
+        Assert.Equal(MicroSocialCommitResult.InvalidDecision, ProactiveDialogueManager.Commit("   ", micro));
+    }
+
+    [Fact]
+    public void UT19_Commit_SecondCallSameNpc_ReturnsAlreadyFiredToday()
+    {
+        ResetAll();
+        ProactiveDialogueManager.HeartsProvider = _ => 8;
+
+        var d = ProactiveDialogueManager.Resolve("Abigail");
+        Assert.Equal(MicroSocialCommitResult.Committed, ProactiveDialogueManager.Commit("Abigail", d));
+        Assert.Equal(MicroSocialCommitResult.AlreadyFiredToday, ProactiveDialogueManager.Commit("Abigail", d));
+
+        // 复位静态状态后同 NPC 可再次提交（ResetAll 会把 hearts 归零，需重申）
+        ResetAll();
+        ProactiveDialogueManager.HeartsProvider = _ => 8;
+        var again = ProactiveDialogueManager.Resolve("Abigail");
+        Assert.Equal(MicroSocialCommitResult.Committed, ProactiveDialogueManager.Commit("Abigail", again));
+    }
+
+    [Fact]
+    public void UT20_Commit_SensoryCooldownSeeded_ReturnsSensoryCooldownBusy()
+    {
+        ResetAll();
+        ProactiveDialogueManager.HeartsProvider = _ => 8;
+        SensoryClassifier.BucketProvider = _ => new List<PerceptionEntry> { Entry("PlayerSpecialOutfit_Shorts") };
+
+        var d = ProactiveDialogueManager.Resolve("Abigail");
+        Assert.True(d.SensoryTriggered);
+
+        // headless 播种：先用同 Type 抢占冷却，Commit 无法抢到
+        Assert.True(SensoryCooldownStore.TryClaim("Abigail", SensoryType.LewisShorts, SensoryCategory.Continuous));
+
+        Assert.Equal(MicroSocialCommitResult.SensoryCooldownBusy, ProactiveDialogueManager.Commit("Abigail", d));
     }
 
     // ── 验收 2h：异常注入 ──
