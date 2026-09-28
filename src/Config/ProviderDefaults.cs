@@ -13,6 +13,21 @@ internal static class ProviderDefaults
             || string.Equals(provider, "LMStudio", StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// 本地目标共享分类：Provider 名（Ollama / LMStudio / LlamaCpp）或 URL 指向回环/私网。
+    /// 纯函数，无 ModEntry / 世界状态依赖。
+    /// </summary>
+    internal static bool IsLocalTarget(string provider, string configuredUrl)
+    {
+        if (IsLocalProvider(provider)
+            || string.Equals(provider, "LlamaCpp", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return UrlHelper.IsLoopbackUrl(configuredUrl) || UrlHelper.IsPrivateNetworkUrl(configuredUrl);
+    }
+
     internal static string ResolveServerAddress(string provider, string configuredUrl)
     {
         if (!string.IsNullOrWhiteSpace(configuredUrl))

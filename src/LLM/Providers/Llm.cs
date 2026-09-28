@@ -143,8 +143,7 @@ internal abstract class Llm
         var config = ModEntry.Config;
         if (config == null) return false;
         if (Instance is LlmLlamaCpp) return true;
-        if (ProviderDefaults.IsLocalProvider(config.Provider)) return true;
-        return UrlHelper.IsLoopbackUrl(config.ServerAddress);
+        return ProviderDefaults.IsLocalTarget(config.Provider, config.ServerAddress);
     }
 
     private static async Task<bool> CheckConnection(string apiKey, string modelName)

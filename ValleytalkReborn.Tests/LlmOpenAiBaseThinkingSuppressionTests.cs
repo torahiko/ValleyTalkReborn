@@ -22,6 +22,7 @@ public class LlmOpenAiBaseThinkingSuppressionTests
     private const string ThinkContext = "BioEditor_Think";
 
     private const string LocalUrl = "http://localhost:1234/v1";
+    private const string CloudUrl = "https://api.example.com/v1";
     private const string OpenAiUrl = "https://api.openai.com/v1";
     private const string OpenRouterUrl = "https://openrouter.ai/api/v1";
     private const string AnthropicUrl = "https://api.anthropic.com";
@@ -60,20 +61,30 @@ public class LlmOpenAiBaseThinkingSuppressionTests
         Assert.True(string.IsNullOrEmpty(plan.Reason));
     }
 
+    // LOCAL-001-R1：本地端点（回环 / 私网）一律不广播思考抑制参数，避免本地后端 400/422。
+    // 原断言（ReasoningEffortLow / UniversalBroadcast）已被该票据取代，云端矩阵不受影响。
     [Fact]
-    public void T1_LocalReasoningFamily_Fast_UsesReasoningEffortLow()
+    public void T1_LocalReasoningFamily_Fast_ReturnsEmptyPlan_LocalEndpoint()
     {
         var plan = LlmOpenAiBase.EvaluateThinkingSuppression("deepseek-r1:14b", LocalUrl, FastContext);
 
-        Assert.True(plan.UseReasoningEffortLow);
-        Assert.False(plan.UseThinkingDisabled);
-        Assert.Equal("OpenAiReasoningFamily", plan.Reason);
+        Assert.False(plan.AnyApiSuppression);
+        Assert.True(string.IsNullOrEmpty(plan.Reason));
     }
 
     [Fact]
-    public void T1_LocalGenericModel_Fast_UsesUniversalBroadcast()
+    public void T1_LocalGenericModel_Fast_ReturnsEmptyPlan_LocalEndpoint()
     {
         var plan = LlmOpenAiBase.EvaluateThinkingSuppression("local-model", LocalUrl, FastContext);
+
+        Assert.False(plan.AnyApiSuppression);
+        Assert.True(string.IsNullOrEmpty(plan.Reason));
+    }
+
+    [Fact]
+    public void T1_CloudGenericModel_Fast_UsesUniversalBroadcast()
+    {
+        var plan = LlmOpenAiBase.EvaluateThinkingSuppression("local-model", CloudUrl, FastContext);
 
         Assert.True(plan.UseThinkingDisabled);
         Assert.True(plan.UseEnableThinking);

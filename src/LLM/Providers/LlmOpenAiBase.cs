@@ -65,8 +65,8 @@ namespace ValleytalkReborn
 
         protected async Task<string[]> CoreGetModelNamesAsync()
         {
-            // 本地无 Key 端点放行模型列表拉取；云端空 Key 仍拦截，避免无效请求。
-            if (string.IsNullOrWhiteSpace(apiKey) && !UrlHelper.IsLoopbackUrl(url))
+            // 本地无 Key 端点（回环 / 私网）放行模型列表拉取；云端空 Key 仍拦截，避免无效请求。
+            if (string.IsNullOrWhiteSpace(apiKey) && !UrlHelper.IsPrivateNetworkUrl(url))
             {
                 return Array.Empty<string>();
             }
@@ -217,6 +217,10 @@ namespace ValleytalkReborn
             string b = baseUrl ?? string.Empty;
 
             if (IsPlainTextModel(m))
+                return ThinkingSuppressionPlan.Empty;
+
+            // 本地端点（回环 / 私网）：不广播任何思考抑制参数，避免 400/422。
+            if (UrlHelper.IsPrivateNetworkUrl(b))
                 return ThinkingSuppressionPlan.Empty;
 
             if (b.Contains("api.openai.com"))
@@ -1118,11 +1122,6 @@ namespace ValleytalkReborn
             bool allowRetry = true)
         {
             var msgList = BuildChatMessages(systemPromptString, messages, responseStart);
-
-            if (!AndroidHelper.IsAndroid)
-            {
-                return await ExecuteStreamingRequestAsync(msgList, null, ct, n_predict, cacheContext);
-            }
 
             return await ExecuteNonStreamingRequestAsync(msgList, n_predict, cacheContext, allowRetry, ct);
         }

@@ -633,7 +633,7 @@ namespace ValleytalkReborn
         private static string GetConnectionStatusText()
         {
             if (string.IsNullOrWhiteSpace(ModEntry.Config.ApiKey)
-                && !(ProviderDefaults.IsLocalProvider(ModEntry.Config.Provider) || UrlHelper.IsLoopbackUrl(ModEntry.Config.ServerAddress)))
+                && !ProviderDefaults.IsLocalTarget(ModEntry.Config.Provider, ModEntry.Config.ServerAddress))
             {
                 return GetUIString("configStatusNotConfigured", "Not Configured: Enter API Key and save");
             }
@@ -706,8 +706,7 @@ namespace ValleytalkReborn
         {
             // 本地服务商（Ollama / LMStudio）与回环地址放行无 Key 模型列表拉取；云端空 Key 仍拦截。
             if (string.IsNullOrWhiteSpace(ModEntry.Config.ApiKey)
-                && !ProviderDefaults.IsLocalProvider(ModEntry.Config.Provider)
-                && !UrlHelper.IsLoopbackUrl(ModEntry.Config.ServerAddress))
+                && !ProviderDefaults.IsLocalTarget(ModEntry.Config.Provider, ModEntry.Config.ServerAddress))
                 return Array.Empty<string>();
 
             if (!ModEntry.LlmMap.TryGetValue(ModEntry.Config.Provider, out var provider))

@@ -130,4 +130,53 @@ internal static class UrlHelper
 
         return false;
     }
+
+    /// <summary>
+    /// 判定 URL 是否指向本地/私网端点：Host 为 localhost / 127.0.0.1 / [::1]，
+    /// 或 IPv4 落在 10.0.0.0/8、172.16.0.0/12、192.168.0.0/16。
+    /// 纯字符串与 URI 解析，禁止 DNS、网络与文件 I/O；解析失败返回 false（不因解析失败判为本地）。
+    /// </summary>
+    internal static bool IsPrivateNetworkUrl(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return false;
+        }
+
+        if (!Uri.TryCreate(EnsureScheme(url.Trim()), UriKind.Absolute, out Uri uri))
+        {
+            return false;
+        }
+
+        if (IsLocalHost(uri.Host))
+        {
+            return true;
+        }
+
+        if (uri.HostNameType != UriHostNameType.IPv4)
+        {
+            return false;
+        }
+
+        string[] parts = uri.Host.Split('.');
+        if (parts.Length != 4)
+        {
+            return false;
+        }
+
+        byte[] octets = new byte[4];
+        for (int i = 0; i < 4; i++)
+        {
+            if (!byte.TryParse(parts[i], out octets[i]))
+            {
+                return false;
+            }
+        }
+
+        if (octets[0] == 10) return true;
+        if (octets[0] == 172 && octets[1] >= 16 && octets[1] <= 31) return true;
+        if (octets[0] == 192 && octets[1] == 168) return true;
+
+        return false;
+    }
 }
