@@ -254,6 +254,39 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
+        /// 判定上下文是否为 BioEditor 快速（无思考）模式。纯函数，null 安全。
+        /// </summary>
+        internal static bool IsBioEditorFastContext(string cacheContext)
+        {
+            return string.Equals(cacheContext, LlmContextTypes.Editor + "_Fast", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// 快速模式下该抑制方案是否无法保证关闭思考：推理族（o1/o3/o4/gpt-5/deepseek-r1/qwq）
+        /// 协议上只能降低不能关闭，故快速模式不可用；OpenRouter 与 UniversalBroadcast 保留
+        /// 为"可发送并在输出侧校验"。
+        /// </summary>
+        internal static bool FastModePlanCannotGuaranteeSuppression(ThinkingSuppressionPlan plan)
+        {
+            return plan.UseReasoningEffortLow;
+        }
+
+        private static readonly System.Text.RegularExpressions.Regex PairedThinkTagRegex =
+            new System.Text.RegularExpressions.Regex(
+                @"<think\b[^>]*>[\s\S]*?</think\s*>",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        /// <summary>
+        /// 判定文本是否含成对 think 标签（开标签之后存在闭标签）。仅识别成对标签，不做任何关键词删除。
+        /// </summary>
+        internal static bool ContainsPairedThinkTags(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return false;
+
+            return PairedThinkTagRegex.IsMatch(text);
+        }
+
+        /// <summary>
         /// 降级梯子：stage 1 移除部分键，stage 2 完整回退
         /// </summary>
         private void ApplyDowngradeStage(
@@ -573,6 +606,15 @@ namespace ValleytalkReborn
             ThinkingSuppressionPlan plan = EvaluateThinkingSuppression(modelName, url, cacheContext);
             ApplyThinkingSuppression(requestBody, plan);
 
+            // Fast 上下文：推理族协议上只能降低不能关闭思考，无法保证抑制 → 拒绝发起请求
+            if (IsBioEditorFastContext(cacheContext) && FastModePlanCannotGuaranteeSuppression(plan))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[LlmOpenAiBase] Fast context rejected before request: model={modelName}, context={cacheContext}, plan={plan.Reason} cannot disable thinking.",
+                    StardewModdingAPI.LogLevel.Warn);
+                return new LlmResponse("Fast thinking mode is unsupported for this reasoning model.", 422);
+            }
+
             string endpointUrl = BuildEndpoint("chat/completions");
 
             int retryCount = allowRetry ? 3 : 1;
@@ -630,6 +672,13 @@ namespace ValleytalkReborn
                     if (isClientError && !strippedThinkingParameters &&
                         (plan.AnyApiSuppression || LooksLikeUnknownParameterError(responseString)))
                     {
+                        // Fast 上下文：不得剥离抑制参数后继续请求，直接失败
+                        if (IsBioEditorFastContext(cacheContext))
+                        {
+                            ModEntry.SMonitor?.Log($"[LlmOpenAiBase] Fast context: server rejected thinking suppression ({statusCode}); failing instead of stripping.", StardewModdingAPI.LogLevel.Warn);
+                            return new LlmResponse(responseString, statusCode);
+                        }
+
                         Log.Debug("[LlmOpenAiBase] Server rejected thinking parameters. Retrying with pure standard payload.");
 
                         StripThinkingParameters(requestBody, n_predict, cacheContext);
@@ -673,7 +722,28 @@ namespace ValleytalkReborn
                         continue;
                     }
 
+                    string messageReasoning = messageToken.Value<string>("reasoning_content")
+                                              ?? messageToken.Value<string>("reasoning");
+
+                    if (!string.IsNullOrEmpty(messageReasoning) && IsBioEditorFastContext(cacheContext))
+                    {
+                        ModEntry.SMonitor?.Log(
+                            $"[LlmOpenAiBase] Fast context: model emitted reasoning in message despite suppression. model={modelName}, context={cacheContext}.",
+                            StardewModdingAPI.LogLevel.Warn);
+                        return new LlmResponse("Model emitted reasoning tokens despite suppression (BioEditor fast mode).", 502);
+                    }
+
                     string contentString = messageToken["content"]?.ToString();
+
+                    if (!string.IsNullOrWhiteSpace(contentString) &&
+                        IsBioEditorFastContext(cacheContext) &&
+                        ContainsPairedThinkTags(contentString))
+                    {
+                        ModEntry.SMonitor?.Log(
+                            $"[LlmOpenAiBase] Fast context: model emitted think tags in content despite suppression. model={modelName}, context={cacheContext}.",
+                            StardewModdingAPI.LogLevel.Warn);
+                        return new LlmResponse("Model emitted think tags in content despite suppression (BioEditor fast mode).", 502);
+                    }
 
                     if (!string.IsNullOrWhiteSpace(contentString))
                     {
@@ -739,6 +809,15 @@ namespace ValleytalkReborn
             ThinkingSuppressionPlan plan = EvaluateThinkingSuppression(modelName, url, cacheContext);
             ApplyThinkingSuppression(requestBody, plan);
 
+            // Fast 上下文：推理族协议上只能降低不能关闭思考，无法保证抑制 → 拒绝发起请求
+            if (IsBioEditorFastContext(cacheContext) && FastModePlanCannotGuaranteeSuppression(plan))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[LlmOpenAiBase] Fast context rejected before request: model={modelName}, context={cacheContext}, plan={plan.Reason} cannot disable thinking.",
+                    StardewModdingAPI.LogLevel.Warn);
+                return new LlmResponse("Fast thinking mode is unsupported for this reasoning model.", 422);
+            }
+
             string endpointUrl = BuildEndpoint("chat/completions");
             var genParams = ResolveParameters(cacheContext);
             string jsonData = SerializePayloadWithCustomBody(requestBody, genParams.AllowCustomBody);
@@ -760,7 +839,8 @@ namespace ValleytalkReborn
 
             // Check blacklist before first attempt
             byte rememberedStage = 0;
-            if (hostModelKey != null && StrictHostStage.TryGetValue(hostModelKey, out rememberedStage) && rememberedStage > 0)
+            if (!IsBioEditorFastContext(cacheContext) &&
+                hostModelKey != null && StrictHostStage.TryGetValue(hostModelKey, out rememberedStage) && rememberedStage > 0)
             {
                 ApplyDowngradeStage(requestBody, rememberedStage, n_predict, cacheContext);
             }
@@ -804,6 +884,13 @@ namespace ValleytalkReborn
                                     if (isClientError && stage < 2 &&
                                         (plan.AnyApiSuppression || LooksLikeUnknownParameterError(errContent)))
                                     {
+                                        // Fast 上下文：不得静默降级续发，直接失败
+                                        if (IsBioEditorFastContext(cacheContext))
+                                        {
+                                            ModEntry.SMonitor?.Log($"[LlmOpenAiBase] Fast context: server rejected thinking suppression ({status}); failing instead of degrading.", StardewModdingAPI.LogLevel.Warn);
+                                            return new LlmResponse(errContent, status);
+                                        }
+
                                         stage++;
                                         ModEntry.SMonitor?.Log($"[LlmOpenAiBase] Streaming got {status}, degrading to stage {stage}.", StardewModdingAPI.LogLevel.Debug);
                                         ApplyDowngradeStage(requestBody, stage, n_predict, cacheContext);
@@ -835,6 +922,7 @@ namespace ValleytalkReborn
                                 var fullContentBuilder = new StringBuilder();
                                 bool degenerateDetected = false;
                                 bool reasoningSeen = false;
+                                bool reasoningEmitted = false;
                                 long ttftReasoningMs = -1;
 
                                 using (var stream = await response.Content.ReadAsStreamAsync())
@@ -874,6 +962,9 @@ namespace ValleytalkReborn
 
                                             if (!string.IsNullOrEmpty(reasoningToken))
                                             {
+                                                if (IsBioEditorFastContext(cacheContext))
+                                                    reasoningEmitted = true;
+
                                                 if (!reasoningSeen)
                                                 {
                                                     reasoningSeen = true;
@@ -936,6 +1027,26 @@ namespace ValleytalkReborn
                                 string completeText = fullContentBuilder.ToString();
 
                                 LlmTrafficLogger.LogIncoming(cacheContext, completeText);
+
+                                // Fast 上下文：抑制未生效则显式失败，不得把部分结果报告为成功
+                                if (IsBioEditorFastContext(cacheContext))
+                                {
+                                    if (reasoningEmitted)
+                                    {
+                                        ModEntry.SMonitor?.Log(
+                                            $"[LlmOpenAiBase] Fast context: model emitted reasoning tokens despite suppression. model={modelName}, context={cacheContext}.",
+                                            StardewModdingAPI.LogLevel.Warn);
+                                        return new LlmResponse("Model emitted reasoning tokens despite suppression (BioEditor fast mode).", 502);
+                                    }
+
+                                    if (ContainsPairedThinkTags(completeText))
+                                    {
+                                        ModEntry.SMonitor?.Log(
+                                            $"[LlmOpenAiBase] Fast context: model emitted think tags in content despite suppression. model={modelName}, context={cacheContext}.",
+                                            StardewModdingAPI.LogLevel.Warn);
+                                        return new LlmResponse("Model emitted think tags in content despite suppression (BioEditor fast mode).", 502);
+                                    }
+                                }
 
                                 return new LlmResponse(completeText);
                             }
