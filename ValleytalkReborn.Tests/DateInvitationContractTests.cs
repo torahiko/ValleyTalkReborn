@@ -146,8 +146,9 @@ public class DateInvitationContractTests
     // ── 3. 路由边界：世界未就绪 ⇒ 不置位、不抛 ───────────────────────────────
     //     CTX-010 起 Router 不做地点解析，故「无地点」与「有地点」两条输入
     //     在无世界时走向同一条 BOUNDARY 早退，均保持纯对白。
-    //     CTX-011：用 WithoutWorldReady 显式钉定 false——CommunityChoreLedgerTests
-    //     置位后从不还原，进程内 ambient 值不可依赖（见 TestEnvironment 注释）。
+    //     CTX-011：用 WithoutWorldReady 显式钉定 false——IsWorldReady 是进程级静态，
+    //     任何先行 fixture 都可能留下置位值，ambient 值不可依赖
+    //     （见 TestEnvironment 注释；CTX-011.5/CTX-013 起各写入方均改为作用域注入）。
 
     [Fact]
     public void Evaluate_InvitationIntentWithoutLocation_WithoutWorld_DoesNotSetInviteRequested()

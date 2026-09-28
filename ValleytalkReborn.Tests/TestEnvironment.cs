@@ -43,9 +43,10 @@ internal static class TestEnvironment
     /// <summary>
     /// Counterpart of <see cref="WithWorldReady(Action)"/> that pins the flag to
     /// false. Exists so tests asserting the "no world" boundary state do not
-    /// depend on ambient process state — CommunityChoreLedgerTests sets the flag
-    /// to true without ever restoring it, so the ambient value is unreliable
-    /// (CTX-011 finding; that class is outside this ticket's allowed_files).
+    /// depend on ambient process state — Context.IsWorldReady is a process-level
+    /// static, so any earlier fixture in the process may still leave it set
+    /// (CTX-011 finding; CTX-011.5/CTX-013 moved every in-scope writer onto this
+    /// scoped helper, which restores in a finally).
     /// </summary>
     internal static void WithoutWorldReady(Action action) => WithWorldReady(false, action);
 
