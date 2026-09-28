@@ -797,14 +797,26 @@ Example 3 (Paranoia & Appetite):
         ProactiveDialogueDecision decision)
     {
         // 非法形态：SensoryTriggered=true 但 Sensory=null
-        if (decision.SensoryTriggered && decision.Sensory == null) return null;
+        if (decision.SensoryTriggered && decision.Sensory == null)
+        {
+            ModEntry.SMonitor?.Log(
+                $"[BarkPromptBuilder] MicroSocial 决策非法：SensoryTriggered=true 但 Sensory=null（NPC={npc?.Name}），回落 Soliloquy。",
+                LogLevel.Warn);
+            return null;
+        }
 
         try
         {
             // 1. 人设段
             string rawPersona = bio.AmbientBarkPrompt?.BuildFull()?.Trim();
             if (isZh) rawPersona = NpcNameLocalizer.LocalizeNamesInText(rawPersona);
-            if (string.IsNullOrWhiteSpace(rawPersona)) return null;
+            if (string.IsNullOrWhiteSpace(rawPersona))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[BarkPromptBuilder] MicroSocial 人设段为空（NPC={npc?.Name}），内容包未提供有效 Bark 人设，回落 Soliloquy。",
+                    LogLevel.Trace);
+                return null;
+            }
 
             // 2. 感官行（仅感官路径）
             string sensoryLine = null;
@@ -813,7 +825,13 @@ Example 3 (Paranoia & Appetite):
                 sensoryLine = BarkFocusRouter.FormatPerceptionForBark(decision.Sensory.Entry.Template, isZh);
                 if (string.IsNullOrWhiteSpace(sensoryLine))
                     sensoryLine = decision.Sensory.Entry.Template?.Trim();
-                if (string.IsNullOrWhiteSpace(sensoryLine)) return null;
+                if (string.IsNullOrWhiteSpace(sensoryLine))
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[BarkPromptBuilder] MicroSocial 感官行格式化后为空（NPC={npc?.Name}），不生成空占位请求，回落 Soliloquy。",
+                        LogLevel.Trace);
+                    return null;
+                }
             }
 
             // 3. 农夫段与场景段（可空）
@@ -855,7 +873,9 @@ Example 3 (Paranoia & Appetite):
         }
         catch (Exception ex)
         {
-            ModEntry.SMonitor?.Log($"[BarkPromptBuilder] TryBuildMicroSocial error: {ex.Message}", LogLevel.Trace);
+            ModEntry.SMonitor?.Log(
+                $"[BarkPromptBuilder] TryBuildMicroSocial error: {ex.GetType().Name}（NPC={npc?.Name}） {ex.Message}",
+                LogLevel.Warn);
             return null;
         }
     }
@@ -912,11 +932,13 @@ Example 3 (Paranoia & Appetite):
 
 你注意到的异样：{sensoryLine}
 
-第 [0] 条：针对农夫的异样/姿态/熟人关系，随口抛出一句打趣、招呼或警惕排斥（依你的性格），6~15 个汉字。
-第 [1] 条：注意力拉回手头事务的自语，15~25 个汉字。
-第 [2] 条：完全沉入私人事务的内心琐碎，15~25 个汉字。
+就让他（她）从你嘴里带出一两句短话，别写成排好的三段式：
+- 第一条：对着上面这份异样随口反应一句——姿态、穿着、或者你们本就认识这件事，打趣、招呼、警惕排斥都行，看你的性格，6~15 个汉字。
+- 第二条（可选）：只有你的角色确实还会接着说时才写，是上一句的自然延续——把注意力收回去、嘀咕半句、或者把话撂下。如果他不会继续说，就只输出一条。
 
-输出纯 JSON 数组，恰好 3 条，首字符 [ 末字符 ]，不要 Markdown 代码块。";
+不必每次都先描一遍环境，也不必每次都以“等一下要做什么”收尾。
+
+输出纯 JSON 字符串数组，1 至 2 条，首字符 [ 末字符 ]，不要 Markdown 代码块。";
             }
 
             return @"### [CURRENT TASK: A PASSING GLANCE]
@@ -924,11 +946,13 @@ The farmer's presence briefly interrupts your attention. Make one brief eye-cont
 
 What caught your eye: {sensoryLine}
 
-Line [0]: a casual quip, greeting, or wary brush-off at the farmer (per your personality), 3-10 words.
-Line [1]: a murmur as attention pulls back to the task at hand, 8-15 words.
-Line [2]: fully absorbed back into your private mental clutter, 8-15 words.
+Let one or two short lines slip out, rather than a neatly staged three-beat set:
+- First line: react off the cuff to what caught your eye — their posture, outfit, or the fact that you already know them. A quip, a greeting, or a wary brush-off, whichever fits your personality. 3-10 words.
+- Second line (optional): write it only if your character would actually keep talking — a natural follow-on: attention snapping back, half a mutter, or dropping the subject. If they wouldn't, output just one line.
 
-Output a plain JSON array of EXACTLY 3 lines, starting with [ and ending with ], no Markdown.";
+Do not open by describing the surroundings every time, and do not close by announcing what you'll do next every time.
+
+Output a plain JSON array of 1 to 2 lines, starting with [ and ending with ], no Markdown.";
         }
 
         // 关系变体（sensoryTriggered == false）
@@ -937,20 +961,24 @@ Output a plain JSON array of EXACTLY 3 lines, starting with [ and ending with ],
             return @"### [当前任务：擦肩而过的微社交]
 农夫的出现短暂打断了你的注意力。做出一次目光交互，随后迅速拉回自己的现实生活。
 
-第 [0] 条：这位农夫是熟人（关系见上方“已知人物底色”）。随口抛出一句符合你们关系的招呼或打趣，6~15 个汉字。
-第 [1] 条：注意力拉回手头事务的自语，15~25 个汉字。
-第 [2] 条：完全沉入私人事务的内心琐碎，15~25 个汉字。
+这位农夫是熟人（关系见上方“已知人物底色”）。自然地对他（她）冒出一两句短话：
+- 第一条：一句招呼、一个打趣、认出他来，或者干脆直白地表达一个态度，6~15 个汉字。
+- 第二条（可选）：只有你的角色确实还会接着说时才写，是上一句的自然延续。如果他不会继续说，就只输出一条。
 
-输出纯 JSON 数组，恰好 3 条，首字符 [ 末字符 ]，不要 Markdown 代码块。";
+不要为了凑数而追加环境描写，也不要顺手交代接下来要做什么。
+
+输出纯 JSON 字符串数组，1 至 2 条，首字符 [ 末字符 ]，不要 Markdown 代码块。";
         }
 
         return @"### [CURRENT TASK: A PASSING GLANCE]
 The farmer's presence briefly interrupts your attention. Make one brief eye-contact, then sink back into your own life.
 
-Line [0]: this farmer is familiar (see KNOWN CHARACTER above). Toss out a greeting or quip that fits your relationship, 3-10 words.
-Line [1]: a murmur as attention pulls back to the task at hand, 8-15 words.
-Line [2]: fully absorbed back into your private mental clutter, 8-15 words.
+This farmer is familiar (see KNOWN CHARACTER above). Let one or two short lines slip out naturally:
+- First line: a greeting, a quip, recognizing them, or simply stating an attitude outright. 3-10 words.
+- Second line (optional): write it only if your character would actually keep talking — a natural follow-on. If they wouldn't, output just one line.
 
-Output a plain JSON array of EXACTLY 3 lines, starting with [ and ending with ], no Markdown.";
+Do not pad it with a description of the surroundings, and do not tag on what you're about to do next.
+
+Output a plain JSON array of 1 to 2 lines, starting with [ and ending with ], no Markdown.";
     }
 }
