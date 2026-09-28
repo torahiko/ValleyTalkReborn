@@ -10,7 +10,7 @@ using ValleytalkReborn.Dialogue.Coordination;
 
 namespace ValleytalkReborn;
 
-internal static class NightlyConsolidator
+internal static class SessionConsolidator
 {
     private const int MaxStanceLength = 120;
     private const int MaxBoundaryLength = 120;
@@ -28,14 +28,14 @@ internal static class NightlyConsolidator
             .StartsWith("zh", StringComparison.OrdinalIgnoreCase);
 
     public static async Task<bool> RunAsync(
-        List<NightlyWorkItem> items)
+        List<ConsolidationWorkItem> items)
     {
         string expectedFolder = Constants.SaveFolderName;
 
         if (items == null || items.Count == 0)
         {
             ModEntry.SMonitor?.Log(
-                "[NightlyConsolidator] RunAsync called with null/empty items; no-op.",
+                "[SessionConsolidator] RunAsync called with null/empty items; no-op.",
                 LogLevel.Debug);
             return true;
         }
@@ -43,7 +43,7 @@ internal static class NightlyConsolidator
         if (RunGate.CurrentCount == 0)
         {
             ModEntry.SMonitor?.Log(
-                "[NightlyConsolidator] Another consolidation run is in flight; queuing.",
+                "[SessionConsolidator] Another consolidation run is in flight; queuing.",
                 LogLevel.Info);
         }
 
@@ -59,7 +59,7 @@ internal static class NightlyConsolidator
     }
 
     private static async Task<bool> RunConsolidationBatchAsync(
-        List<NightlyWorkItem> items,
+        List<ConsolidationWorkItem> items,
         string expectedFolder)
     {
         bool isZh = IsChineseLanguage;
@@ -71,11 +71,11 @@ internal static class NightlyConsolidator
         int timeoutSeconds = Math.Clamp(45 + items.Count * 20, 60, ceiling);
 
         ModEntry.SMonitor?.Log(
-            $"[NightlyConsolidator] Sending batch LLM request. " +
+            $"[SessionConsolidator] Sending batch LLM request. " +
             $"NPCs: {items.Count}, max tokens: {n_predict}, timeout: {timeoutSeconds}s.",
             LogLevel.Debug);
 
-        List<NightlyResult> results = null;
+        List<ConsolidationResult> results = null;
 
         for (int attempt = 0; attempt < MaxBatchAttempts; attempt++)
         {
@@ -96,7 +96,7 @@ internal static class NightlyConsolidator
                 if (!result.IsSuccess || string.IsNullOrWhiteSpace(result.Text))
                 {
                     ModEntry.SMonitor?.Log(
-                        $"[NightlyConsolidator] Batch attempt {attempt + 1}/{MaxBatchAttempts} failed: empty or unsuccessful response.",
+                        $"[SessionConsolidator] Batch attempt {attempt + 1}/{MaxBatchAttempts} failed: empty or unsuccessful response.",
                         LogLevel.Warn);
                     if (attempt < MaxBatchAttempts - 1)
                         await Task.Delay(RetryDelaySeconds * 1000);
@@ -107,7 +107,7 @@ internal static class NightlyConsolidator
                 if (results == null)
                 {
                     ModEntry.SMonitor?.Log(
-                        $"[NightlyConsolidator] Batch attempt {attempt + 1}/{MaxBatchAttempts} failed: JSON parse error. Raw prefix: {result.Text[..Math.Min(500, result.Text.Length)]}",
+                        $"[SessionConsolidator] Batch attempt {attempt + 1}/{MaxBatchAttempts} failed: JSON parse error. Raw prefix: {result.Text[..Math.Min(500, result.Text.Length)]}",
                         LogLevel.Warn);
                     if (attempt < MaxBatchAttempts - 1)
                         await Task.Delay(RetryDelaySeconds * 1000);
@@ -120,7 +120,7 @@ internal static class NightlyConsolidator
             catch (OperationCanceledException)
             {
                 ModEntry.SMonitor?.Log(
-                    $"[NightlyConsolidator] Batch attempt {attempt + 1}/{MaxBatchAttempts} timed out.",
+                    $"[SessionConsolidator] Batch attempt {attempt + 1}/{MaxBatchAttempts} timed out.",
                     LogLevel.Warn);
                 if (attempt < MaxBatchAttempts - 1)
                     await Task.Delay(RetryDelaySeconds * 1000);
@@ -128,7 +128,7 @@ internal static class NightlyConsolidator
             catch (TimeoutException)
             {
                 ModEntry.SMonitor?.Log(
-                    $"[NightlyConsolidator] Batch attempt {attempt + 1}/{MaxBatchAttempts} timed out.",
+                    $"[SessionConsolidator] Batch attempt {attempt + 1}/{MaxBatchAttempts} timed out.",
                     LogLevel.Warn);
                 if (attempt < MaxBatchAttempts - 1)
                     await Task.Delay(RetryDelaySeconds * 1000);
@@ -136,7 +136,7 @@ internal static class NightlyConsolidator
             catch (Exception ex)
             {
                 ModEntry.SMonitor?.Log(
-                    $"[NightlyConsolidator] Batch attempt {attempt + 1}/{MaxBatchAttempts} failed: {ex.Message}",
+                    $"[SessionConsolidator] Batch attempt {attempt + 1}/{MaxBatchAttempts} failed: {ex.Message}",
                     LogLevel.Warn);
                 if (attempt < MaxBatchAttempts - 1)
                     await Task.Delay(RetryDelaySeconds * 1000);
@@ -146,7 +146,7 @@ internal static class NightlyConsolidator
         if (results == null)
         {
             ModEntry.SMonitor?.Log(
-                "[NightlyConsolidator] All batch attempts failed. Pending data retained for retry.",
+                "[SessionConsolidator] All batch attempts failed. Pending data retained for retry.",
                 LogLevel.Warn);
             return false;
         }
@@ -155,7 +155,7 @@ internal static class NightlyConsolidator
         if (Constants.SaveFolderName != expectedFolder)
         {
             ModEntry.SMonitor?.Log(
-                "[NightlyConsolidator] Save changed during run; results discarded.",
+                "[SessionConsolidator] Save changed during run; results discarded.",
                 LogLevel.Warn);
             return false;
         }
@@ -166,12 +166,12 @@ internal static class NightlyConsolidator
             {
                 foreach (var r in results)
                 {
-                    ApplyNightlyResult(r);
+                    ApplyResult(r);
                 }
             });
 
             ModEntry.SMonitor?.Log(
-                $"[NightlyConsolidator] Applied {results.Count} nightly result(s) on main thread.",
+                $"[SessionConsolidator] Applied {results.Count} result(s) on main thread.",
                 LogLevel.Debug);
 
             return true;
@@ -179,7 +179,7 @@ internal static class NightlyConsolidator
         catch (Exception ex)
         {
             ModEntry.SMonitor?.Log(
-                $"[NightlyConsolidator] Applying nightly results failed: {ex}",
+                $"[SessionConsolidator] Applying results failed: {ex}",
                 LogLevel.Error);
             return false;
         }
@@ -189,7 +189,7 @@ internal static class NightlyConsolidator
     // 解析模型
     // ──────────────────────────────────────────────────────────────
 
-    private sealed class NightlyResult
+    private sealed class ConsolidationResult
     {
         public string Npc;
         public MindsetResult Mindset;
@@ -204,16 +204,16 @@ internal static class NightlyConsolidator
         public string Boundary;
     }
 
-    private static List<NightlyResult> ParseBatchResult(
+    private static List<ConsolidationResult> ParseBatchResult(
         string raw,
-        List<NightlyWorkItem> items)
+        List<ConsolidationWorkItem> items)
     {
         string jsonText = ExtractJsonArray(raw);
 
         if (string.IsNullOrWhiteSpace(jsonText))
         {
             ModEntry.SMonitor?.Log(
-                $"[NightlyConsolidator] No JSON array found. Raw response: {raw}",
+                $"[SessionConsolidator] No JSON array found. Raw response: {raw}",
                 LogLevel.Warn);
 
             return null;
@@ -228,7 +228,7 @@ internal static class NightlyConsolidator
         catch (Exception ex)
         {
             ModEntry.SMonitor?.Log(
-                $"[NightlyConsolidator] Batch JSON parse error: {ex}. " +
+                $"[SessionConsolidator] Batch JSON parse error: {ex}. " +
                 $"Extracted JSON: {jsonText}",
                 LogLevel.Warn);
 
@@ -239,7 +239,7 @@ internal static class NightlyConsolidator
             items.Select(x => x.NpcName),
             StringComparer.OrdinalIgnoreCase);
 
-        var result = new List<NightlyResult>();
+        var result = new List<ConsolidationResult>();
         var alreadySeenNpcs = new HashSet<string>(
             StringComparer.OrdinalIgnoreCase);
 
@@ -257,7 +257,7 @@ internal static class NightlyConsolidator
                 !validNames.Contains(npcName))
             {
                 ModEntry.SMonitor?.Log(
-                    $"[NightlyConsolidator] Ignored unknown NPC in response: {npcName}",
+                    $"[SessionConsolidator] Ignored unknown NPC in response: {npcName}",
                     LogLevel.Debug);
 
                 continue;
@@ -266,13 +266,13 @@ internal static class NightlyConsolidator
             if (!alreadySeenNpcs.Add(npcName))
             {
                 ModEntry.SMonitor?.Log(
-                    $"[NightlyConsolidator] Duplicate result ignored for [{npcName}].",
+                    $"[SessionConsolidator] Duplicate result ignored for [{npcName}].",
                     LogLevel.Debug);
 
                 continue;
             }
 
-            var nr = new NightlyResult { Npc = npcName };
+            var nr = new ConsolidationResult { Npc = npcName };
 
             // ── mindset ──
             JToken mindsetToken = token["mindset"];
@@ -335,7 +335,7 @@ internal static class NightlyConsolidator
         return result;
     }
 
-    private static void ApplyNightlyResult(NightlyResult entry)
+    private static void ApplyResult(ConsolidationResult entry)
     {
         if (entry == null) return;
 
@@ -359,14 +359,14 @@ internal static class NightlyConsolidator
             }
 
             ModEntry.SMonitor?.Log(
-                $"[NightlyConsolidator] Applied nightly result for [{entry.Npc}]: " +
+                $"[SessionConsolidator] Applied result for [{entry.Npc}]: " +
                 $"mindset={entry.Mindset != null}, thought={thoughtSet}.",
                 LogLevel.Info);
         }
         catch (Exception ex)
         {
             ModEntry.SMonitor?.Log(
-                $"[NightlyConsolidator] ApplyNightlyResult failed for [{entry.Npc}]: {ex.Message}",
+                $"[SessionConsolidator] ApplyResult failed for [{entry.Npc}]: {ex.Message}",
                 LogLevel.Error);
             throw;
         }
@@ -389,7 +389,7 @@ internal static class NightlyConsolidator
     }
 
     private static string BuildBatchPrompt(
-        List<NightlyWorkItem> items,
+        List<ConsolidationWorkItem> items,
         bool isZh)
     {
         var sb = new System.Text.StringBuilder();

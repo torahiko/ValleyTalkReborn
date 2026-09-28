@@ -93,8 +93,7 @@ public class BioData
     public bool IsKnownNpc { get; set; } = false;
 
     // ── 环境自言自语（Ambient Bark）系统 ──
-    // 消费方：BarkPromptBuilder、A2APromptBuilder、AmbientBarkModule（雷达/跟随门禁）、
-    // NightlyConsolidationHook（夜间固化读取 ObservationLenses）。
+    // 消费方：BarkPromptBuilder、A2APromptBuilder、AmbientBarkModule（雷达/跟随门禁）。
     public bool EnableAmbientBarks { get; set; } = false;
     public AmbientBarkPrompt AmbientBarkPrompt { get; set; } = null;
 

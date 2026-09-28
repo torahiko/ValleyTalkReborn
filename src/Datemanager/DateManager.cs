@@ -932,14 +932,14 @@ namespace ValleytalkReborn
 
             try
             {
-                // 1. 现有逻辑：生成 Trait（夜间记忆巩固）
+                // 1. 现有逻辑：约会复盘会话巩固（心智沉淀 + 晨间余韵）
                 var item = BuildDateWorkItem(session);
 
                 ModEntry.SMonitor?.Log(
-                    $"[DateManager] Submitting date review for {session.NpcName} to NightlyConsolidator.",
+                    $"[DateManager] Submitting date review for {session.NpcName} to SessionConsolidator.",
                     LogLevel.Debug);
 
-                await NightlyConsolidator.RunAsync(new List<NightlyWorkItem> { item });
+                await SessionConsolidator.RunAsync(new List<ConsolidationWorkItem> { item });
 
                 // ─── 2. 新增：生成手账（Timeline Chronicle 归档）───
                 await GenerateAndWriteDateChronicleAsync(session);
@@ -1089,11 +1089,11 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
-        /// 将约会会话数据转换为 NightlyWorkItem，复用夜间记忆巩固管线。
+        /// 将约会会话数据转换为 ConsolidationWorkItem，复用会话巩固管线。
         /// </summary>
-        private static NightlyWorkItem BuildDateWorkItem(DateSessionData session)
+        private static ConsolidationWorkItem BuildDateWorkItem(DateSessionData session)
         {
-            var item = new NightlyWorkItem { NpcName = session.NpcName };
+            var item = new ConsolidationWorkItem { NpcName = session.NpcName };
 
             // ── Events：约会基本事实 ──
             string latenessNote = session.Lateness switch

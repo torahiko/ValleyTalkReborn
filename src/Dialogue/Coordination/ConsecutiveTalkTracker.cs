@@ -219,32 +219,6 @@ internal static class ConsecutiveTalkTracker
         }
     }
 
-    // ── Core: called by NightlyConsolidationHook at DayEnding ─────────────
-
-    public static List<string> FlushAndGetContextLines(string npcName)
-    {
-        var result = new List<string>();
-        if (string.IsNullOrEmpty(npcName)) return result;
-
-        string todayKey = $"{Game1.year}_{Game1.currentSeason}_{Game1.dayOfMonth}";
-
-        if (!_data.Streaks.TryGetValue(npcName, out var entry))
-        {
-            entry = new NpcStreakEntry();
-            _data.Streaks[npcName] = entry;
-        }
-
-        if (entry.LastUpdatedDate == todayKey)
-        {
-            AppendStreakLines(entry, npcName, result);
-            return result;
-        }
-
-        AdvanceStreaks(npcName);
-        AppendStreakLines(entry, npcName, result);
-        return result;
-    }
-
     /// <summary>
     /// DayEnding driver: advances streaks for every NPC in the ledger plus
     /// every NPC interacted with today. Failures are logged per-NPC and never

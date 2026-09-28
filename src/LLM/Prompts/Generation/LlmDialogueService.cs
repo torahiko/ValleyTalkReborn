@@ -26,7 +26,7 @@ public class LlmDialogueService
     // 重试与超时常量
     /// <summary>
     /// Indicates whether an LLM inference request is currently in progress.
-    /// Used by NightlyConsolidationHook to wait for pending requests before packing events.
+    /// Used by pre-dialogue gating to wait for pending requests before packing events.
     /// </summary>
     private volatile bool _isRequestInProgress = false;
     public bool IsRequestInProgress => _isRequestInProgress;

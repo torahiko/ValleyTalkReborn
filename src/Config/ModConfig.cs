@@ -207,10 +207,9 @@ namespace ValleytalkReborn
         /// 现有"无条件记录事件对白"行为（注意与 RecordVanillaDialogue 默认 false 的不对称是有意的）。
         /// </summary>
         public bool RecordEventDialogue { get; set; } = true;
-        public bool EnableNightlyConsolidation { get; set; } = true;
 
         /// <summary>
-        /// 静态连胜事实注入（连聊/连礼/同款礼物）：纯硬编码判定，与夜间整理（EnableNightlyConsolidation）完全无关。
+        /// 静态连胜事实注入（连聊/连礼/同款礼物）：纯硬编码判定，与任何夜间整理逻辑完全无关。
         /// </summary>
         public bool EnableStreakContext { get; set; } = true;
 

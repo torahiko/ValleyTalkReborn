@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace ValleytalkReborn;
 
-internal sealed class NightlyWorkItem
+internal sealed class ConsolidationWorkItem
 {
     public string NpcName { get; set; } = string.Empty;
 
