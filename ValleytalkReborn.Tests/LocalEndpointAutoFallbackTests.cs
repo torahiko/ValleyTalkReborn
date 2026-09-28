@@ -561,6 +561,119 @@ public class LocalEndpointAutoFallbackTests : IDisposable
         Assert.Equal(expected, ProviderDefaults.IsMissingApiKeyBlocking(provider, serverAddress, apiKey));
     }
 
+    // ── B2：RunInferenceAsync（legacy 非流式入口的令牌贯穿版）──
+
+    [Fact]
+    public async Task RunInferenceAsync_SendsNonStreamingRequestAndReturnsContent()
+    {
+        var (provider, handler) = Install(LocalUrl, (_, _, _) =>
+            Task.FromResult(Json("{\"choices\":[{\"message\":{\"content\":\"Non-stream reply\"}}]}")));
+
+        using var cts = new CancellationTokenSource();
+
+        var result = await provider.RunInferenceAsync("system", "", "", "hello", cts.Token);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Non-stream reply", result.Text);
+        Assert.Equal(1, handler.CallCount);
+        Assert.Contains("\"stream\":false", handler.Bodies[0]);
+    }
+
+    [Fact]
+    public async Task RunInferenceAsync_PreCancelledToken_ReturnsCancelledWithoutHttp()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        var (provider, handler) = Install(LocalUrl, (_, token, _) =>
+            Task.FromException<HttpResponseMessage>(new OperationCanceledException(token)));
+
+        var result = await provider.RunInferenceAsync("system", "", "", "hello", cts.Token);
+
+        Assert.Equal("Cancelled", result.EndReason.ToString());
+        Assert.False(result.IsSuccess);
+        Assert.Equal(0, handler.CallCount);
+    }
+
+    [Fact]
+    public async Task RunInferenceAsync_CancelledDuringRequest_DoesNotRetry()
+    {
+        using var cts = new CancellationTokenSource();
+
+        var (provider, handler) = Install(CloudUrl, (_, token, _) =>
+        {
+            cts.Cancel();
+            return Task.FromException<HttpResponseMessage>(new OperationCanceledException(token));
+        });
+
+        var result = await provider.RunInferenceAsync("system", "", "", "hello", cts.Token);
+
+        Assert.Equal("Cancelled", result.EndReason.ToString());
+        Assert.Equal(1, handler.CallCount);
+    }
+
+    [Fact]
+    public async Task RunInferenceAsync_CloudEndpoint_AppliesThinkingSuppression()
+    {
+        var (provider, handler) = Install(CloudUrl, (_, _, _) =>
+            Task.FromResult(Json("{\"choices\":[{\"message\":{\"content\":\"Cloud reply\"}}]}")));
+
+        using var cts = new CancellationTokenSource();
+
+        await provider.RunInferenceAsync("system", "", "", "hello", cts.Token);
+
+        Assert.Equal(1, handler.CallCount);
+        Assert.Contains("\"stream\":false", handler.Bodies[0]);
+        Assert.Contains("\"enable_thinking\":false", handler.Bodies[0]);
+    }
+
+    [Fact]
+    public async Task RunInferenceAsync_LocalEndpoint_BroadcastsNoThinkingSuppression()
+    {
+        var (provider, handler) = Install(LocalUrl, (_, _, _) =>
+            Task.FromResult(Json("{\"choices\":[{\"message\":{\"content\":\"Local reply\"}}]}")));
+
+        using var cts = new CancellationTokenSource();
+
+        await provider.RunInferenceAsync("system", "", "", "hello", cts.Token);
+
+        Assert.Equal(1, handler.CallCount);
+        Assert.DoesNotContain("enable_thinking", handler.Bodies[0]);
+    }
+
+    // ── B2：LlmLlamaCpp.RunInferenceAsync（令牌贯穿本地核心）──
+
+    [Fact]
+    public async Task LlamaCpp_RunInferenceAsync_ReachesCoreWithCallerToken()
+    {
+        var (provider, handler) = InstallLlamaCpp(LocalUrl, (_, _, _) =>
+            Task.FromResult(Json("{\"content\":\"llama reply\"}")));
+
+        using var cts = new CancellationTokenSource();
+
+        var result = await provider.RunInferenceAsync("system", "", "", "hello", cts.Token);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("llama reply", result.Text);
+        Assert.Equal(1, handler.CallCount);
+    }
+
+    [Fact]
+    public async Task LlamaCpp_RunInferenceAsync_PreCancelledToken_ReturnsCancelledWithoutHttp()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        var (provider, handler) = InstallLlamaCpp(LocalUrl, (_, token, _) =>
+            Task.FromException<HttpResponseMessage>(new OperationCanceledException(token)));
+
+        var result = await provider.RunInferenceAsync("system", "", "", "hello", cts.Token);
+
+        Assert.Equal("Cancelled", result.EndReason.ToString());
+        Assert.False(result.IsSuccess);
+        Assert.Equal(0, handler.CallCount);
+    }
+
     // ── 测试脚手架 ──
 
     private delegate Task<HttpResponseMessage> StubBehavior(
@@ -585,6 +698,20 @@ public class LocalEndpointAutoFallbackTests : IDisposable
         SharedHttpClientField.SetValue(null, new HttpClient(handler));
 
         return (new LlmOAICompatible("local-key", baseUrl, "local-model"), handler);
+    }
+
+    /// <summary>B2：llama.cpp Provider 的桩装配（与 Install 同一套内存 Handler，仅 Provider 类型不同）。</summary>
+    private (LlmLlamaCpp Provider, StubHandler Handler) InstallLlamaCpp(
+        string baseUrl,
+        StubBehavior behavior)
+    {
+        ModEntry.Config = new ModConfig { QueryTimeout = 5 };
+        ModEntry.SMonitor = new FakeMonitor();
+
+        var handler = new StubHandler(behavior);
+        SharedHttpClientField.SetValue(null, new HttpClient(handler));
+
+        return (new LlmLlamaCpp(baseUrl, "{system}\n{prompt}\n{response_start}"), handler);
     }
 
     private static HttpResponseMessage Json(string body, HttpStatusCode code = HttpStatusCode.OK)

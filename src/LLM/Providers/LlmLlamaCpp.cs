@@ -65,6 +65,50 @@ internal class LlmLlamaCpp : Llm
     }
 
     /// <summary>
+    /// 可取消的非流式入口（B2）：令牌贯穿闸门排队与核心（HTTP / 重试等待），
+    /// 取消真正中止请求并即时释放闸门租约，不再"弃等"。遥测语义与 RunInference 一致。
+    /// </summary>
+    internal override async Task<LlmResponse> RunInferenceAsync(
+        string systemPromptString, string gameCacheString, string npcCacheString,
+        string promptString, CancellationToken ct,
+        string responseStart = "", int n_predict = 2048,
+        string cacheContext = "", bool allowRetry = true)
+    {
+        // LOCAL-005：本地端点（回环 / 私网）请求进入进程内并发闸门；云端地址拿到空租约。
+        LocalRequestLease lease;
+
+        try
+        {
+            lease = await LocalRequestThrottle.AcquireAsync(url, ct);
+        }
+        catch (OperationCanceledException)
+        {
+            // BOUNDARY：排队阶段被取消 —— 不进入 HTTP，不记为服务故障。
+            Log.Debug($"[LlmLlamaCpp] Local request cancelled while queued; no HTTP sent. endpoint={url}");
+            return LlmResponse.Cancelled();
+        }
+
+        var telemetry = new LlmTrafficLogger.LlmRequestTelemetry(nameof(LlmLlamaCpp), url, null, string.Empty);
+
+        using (lease)
+        {
+            telemetry.QueueWaitMs = lease.QueueWaitMs;
+            var totalWatch = System.Diagnostics.Stopwatch.StartNew();
+
+            LlmResponse result = await RunInferenceCoreAsync(
+                systemPromptString, gameCacheString, npcCacheString,
+                promptString, responseStart, n_predict, ct, allowRetry, telemetry);
+
+            totalWatch.Stop();
+            telemetry.TotalMs = totalWatch.ElapsedMilliseconds;
+            telemetry.OutputChars = result?.Text?.Length ?? 0;
+            telemetry.Log();
+
+            return result;
+        }
+    }
+
+    /// <summary>
     /// 流式入口：llama.cpp 不做 SSE 增量解析，复用非流式核心，成功时把完整文本一次性交给回调。
     /// 调用方令牌贯穿 HTTP 与重试等待。
     /// </summary>

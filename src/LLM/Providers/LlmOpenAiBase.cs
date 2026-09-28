@@ -726,6 +726,45 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
+        /// 可取消的推理入口（B2）：消息装配沿用既有规则（system + 单条 user，responseStart 追加规则一致），
+        /// 走共享非流式执行器 —— 令牌贯穿闸门排队、HTTP 与重试等待，取消不再"弃等"；
+        /// 思考抑制 / 重试 / 闸门由执行器统一保证。
+        /// </summary>
+        internal override async Task<LlmResponse> RunInferenceAsync(
+            string systemPromptString,
+            string gameCacheString,
+            string npcCacheString,
+            string promptString,
+            CancellationToken ct,
+            string responseStart = "",
+            int n_predict = 2048,
+            string cacheContext = "",
+            bool allowRetry = true)
+        {
+            promptString =
+                (gameCacheString ?? string.Empty) +
+                (npcCacheString ?? string.Empty) +
+                (promptString ?? string.Empty);
+
+            var messages = new List<object>();
+
+            if (!string.IsNullOrWhiteSpace(systemPromptString))
+            {
+                messages.Add(new { role = "system", content = systemPromptString });
+            }
+
+            if (!string.IsNullOrWhiteSpace(responseStart) &&
+                !responseStart.Trim().Equals("responseStart", StringComparison.OrdinalIgnoreCase))
+            {
+                promptString += "\n\n" + responseStart;
+            }
+
+            messages.Add(new { role = "user", content = promptString });
+
+            return await ExecuteNonStreamingRequestAsync(messages, n_predict, cacheContext, allowRetry, ct);
+        }
+
+        /// <summary>
         /// 共享的非流式 chat/completions HTTP 执行。
         /// 由 Android 路径与 role-based 路径共用，统一处理思考抑制与重试。
         /// </summary>

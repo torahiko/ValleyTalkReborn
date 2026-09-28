@@ -378,6 +378,110 @@ public class LocalRequestThrottleTests : IDisposable
         Assert.Equal(3, handler.MaxObserved);
     }
 
+    // ── B2：Gateway 的令牌贯穿（取消 / 超时不再弃等，闸门租约即时释放）──
+
+    [Fact]
+    public async Task Gateway_CallerCancelled_ReleasesGateLeaseImmediately()
+    {
+        CountingHandler handler = InstallFakeHttp(TimeSpan.FromMilliseconds(5000));
+
+        object originalInstance = LlmInstanceField.GetValue(null);
+        LlmInstanceField.SetValue(null, LocalProvider());
+
+        try
+        {
+            var gateway = new LlmRequestGateway(30);
+            using var cts = new CancellationTokenSource();
+
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            Task<LlmResponse> inFlight =
+                gateway.ExecuteAsync(LlmContextTypes.Bark, "SYS-CONTEXT", SecretPrompt, cts.Token);
+
+            await Task.Delay(150);
+            cts.Cancel();
+
+            LlmResponse result = await WithTimeout(inFlight, 10000);
+            watch.Stop();
+
+            Assert.True(result == null || !result.IsSuccess);
+            Assert.True(watch.ElapsedMilliseconds < 3000, $"cancel did not propagate: {watch.ElapsedMilliseconds}ms");
+            Assert.True(handler.Total <= 1, $"HTTP calls: {handler.Total}");
+
+            // 闸门租约即时释放：后续请求 10s 内取得许可（超时即证明租约泄漏）。
+            InstallFakeHttp(TimeSpan.FromMilliseconds(20));
+            LlmResponse after = await WithTimeout(
+                gateway.ExecuteAsync(LlmContextTypes.Bark, "SYS-CONTEXT", SecretPrompt, CancellationToken.None),
+                10000);
+
+            Assert.True(after.IsSuccess);
+        }
+        finally
+        {
+            LlmInstanceField.SetValue(null, originalInstance);
+        }
+    }
+
+    [Fact]
+    public async Task Gateway_Timeout_ReturnsWithoutSuccess()
+    {
+        InstallFakeHttp(TimeSpan.FromMilliseconds(10000));
+
+        object originalInstance = LlmInstanceField.GetValue(null);
+        LlmInstanceField.SetValue(null, LocalProvider());
+
+        try
+        {
+            var gateway = new LlmRequestGateway(1);
+
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            LlmResponse result = await WithTimeout(
+                gateway.ExecuteAsync(LlmContextTypes.Bark, "SYS-CONTEXT", SecretPrompt, CancellationToken.None),
+                10000);
+            watch.Stop();
+
+            Assert.True(result == null || !result.IsSuccess);
+            Assert.True(watch.ElapsedMilliseconds < 5000, $"timeout did not propagate: {watch.ElapsedMilliseconds}ms");
+        }
+        finally
+        {
+            LlmInstanceField.SetValue(null, originalInstance);
+        }
+    }
+
+    [Fact]
+    public async Task Gateway_LogsTruncatedResponseOnly()
+    {
+        const string tail = "SECRET-TAIL-DO-NOT-LOG";
+        string longBody = "{\"choices\":[{\"message\":{\"content\":\"" + new string('y', 250) + tail + "\"}}]}";
+
+        InstallFakeHttp(TimeSpan.FromMilliseconds(20), HttpStatusCode.OK, longBody);
+
+        object originalInstance = LlmInstanceField.GetValue(null);
+        LlmInstanceField.SetValue(null, LocalProvider());
+
+        try
+        {
+            var gateway = new LlmRequestGateway(30);
+
+            LlmResponse result = await WithTimeout(
+                gateway.ExecuteAsync(LlmContextTypes.Bark, "SYS-CONTEXT", SecretPrompt, CancellationToken.None),
+                10000);
+
+            Assert.True(result.IsSuccess);
+
+            string log = Assert.Single(_monitor.Messages, m => m.Contains("[Bark] LLM output"));
+            Assert.DoesNotContain(tail, log);
+            Assert.Contains($"(len={250 + tail.Length})", log);
+        }
+        finally
+        {
+            LlmInstanceField.SetValue(null, originalInstance);
+        }
+    }
+
+    private static FieldInfo LlmInstanceField =>
+        typeof(Llm).GetField("<Instance>k__BackingField", BindingFlags.Static | BindingFlags.NonPublic);
+
     /// <summary>
     /// 统计并发与总次数的 Fake HTTP Handler：只观察，不发起任何真实网络请求。
     /// </summary>

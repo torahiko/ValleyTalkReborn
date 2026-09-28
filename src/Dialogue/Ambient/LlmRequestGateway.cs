@@ -6,8 +6,8 @@ namespace ValleytalkReborn;
 
 /// <summary>
 /// LLM 请求网关：统一超时与日志。
-/// 不做并发限制——旧版 DynamicBarkManager 中每个 FetchBarksAsync / FetchA2AScriptAsync
-/// 各自独立调用 llm.RunInference()，无全局信号量，此处保持一致。
+/// 并发由 LocalRequestThrottle 统一门控（本地端点进程内信号量，云端端点拿空租约），
+/// Gateway 自身不再另设信号量；超时令牌贯穿到 HTTP 层，取消不再"弃等"。
 /// Gateway 不得访问 Game1、NPC 或其他游戏对象。
 ///
 /// 变更说明：移除了原先的 IsValidLlmContent 黑名单式前置拦截。
@@ -57,20 +57,19 @@ internal sealed class LlmRequestGateway
 
         try
         {
-            var response = await llm.RunInference(
-                    systemPrompt,
-                    "",
-                    "",
-                    userPrompt,
-                    "",
-                    cacheContext: source)
-                .WaitAsync(timeoutCts.Token);
+            var response = await llm.RunInferenceAsync(
+                systemPrompt,
+                "",
+                "",
+                userPrompt,
+                timeoutCts.Token,
+                cacheContext: source);
 
             if (response == null)
                 return null;
 
             ModEntry.SMonitor?.Log(
-                $"[{source}] LLM output:\n{response.Text}",
+                $"[{source}] LLM output:\n{LlmTrafficLogger.TruncateForLog(response.Text)}",
                 StardewModdingAPI.LogLevel.Debug);
 
             return response;

@@ -155,6 +155,8 @@ internal abstract class Llm
 
         // 【新增防线】如果 API Key 或 Model Name 为空，直接判定连接不可用，拦截无效的网络测试请求。
         // 本地目标（Ollama / LMStudio / 回环地址 / LlamaCpp）放行空 Key；LlamaCpp 同时放行空模型名。
+        // LOCAL-006 issue #4（模型名门对 LlmLlamaCpp 的豁免）已在 B2 评估过并维持现状：
+        // 它属于"连接自检是否发起"的判定语义，与令牌贯穿无关，改动会连带影响自检既有行为。
         if (isLocal && string.IsNullOrWhiteSpace(apiKey))
         {
             ModEntry.SMonitor.Log("[Llm] Local LLM target detected, skipping API-key requirement.", StardewModdingAPI.LogLevel.Debug);
@@ -337,6 +339,25 @@ internal abstract class Llm
         int n_predict = 2048, 
         string cacheContext = "", 
         bool allowRetry = true);
+
+    /// <summary>
+    /// 可取消的推理入口（B2）。默认实现委托给 RunInference 并忽略令牌：
+    /// 未覆盖的实现者（Dummy / Claude / Gemini）行为与改动前完全一致。
+    /// 覆盖者把令牌贯穿到 HTTP 与重试等待——取消不再是"弃等"，后台请求不再空跑。
+    /// </summary>
+    internal virtual Task<LlmResponse> RunInferenceAsync(
+        string systemPromptString,
+        string gameCacheString,
+        string npcCacheString,
+        string promptString,
+        CancellationToken ct,
+        string responseStart = "",
+        int n_predict = 2048,
+        string cacheContext = "",
+        bool allowRetry = true)
+    {
+        return RunInference(systemPromptString, gameCacheString, npcCacheString, promptString, responseStart, n_predict, cacheContext, allowRetry);
+    }
 
     internal abstract Dictionary<string, double>[] RunInferenceProbabilities(string fullPrompt, int n_predict = 1);
 
