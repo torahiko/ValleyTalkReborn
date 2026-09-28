@@ -14,7 +14,6 @@ namespace ValleytalkReborn
         private static readonly Regex MoveRegex    = new(@"\[ACTION:(STEP:FORWARD|STEP:BACKWARD|STEP:LEFT|STEP:RIGHT|STEP:UP|STEP:DOWN)\]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex FollowRegex  = new(@"\[ACTION:FOLLOW\]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex GotoRegex    = new(@"\[ACTION:GOTO:(-?\d+),(-?\d+)\]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        private static readonly Regex InviteRegex  = new(@"\[ACTION:INVITE:([A-Za-z]+)\]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex EndDateRegex = new(@"\[ACTION:END_DATE\]",            RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex StayHomeRegex    = new(@"\[ACTION:STAY_HOME\]",    RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex AllDayFollowRegex = new(@"\[ACTION:ALL_DAY_FOLLOW\]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -176,27 +175,6 @@ namespace ValleytalkReborn
                         catch (Exception ex)
                         {
                             ModEntry.SMonitor?.Log($"[EmbodiedActionParser] ALL_DAY_FOLLOW error: {ex.Message}", LogLevel.Error);
-                        }
-                    }, 200);
-                    return string.Empty;
-                });
-
-                lines[i] = InviteRegex.Replace(lines[i], match =>
-                {
-                    string locationId = match.Groups[1].Value;
-                    ModEntry.SMonitor?.Log($"[EmbodiedActionParser] INVITE dispatched: {npc.Name} → {locationId}", LogLevel.Debug);
-                    StardewValley.DelayedAction.functionAfterDelay(() =>
-                    {
-                        try
-                        {
-                            bool ok = DateManager.Instance.TryScheduleDate(npc, locationId);
-                            ModEntry.SMonitor?.Log(
-                                ok  ? $"[EmbodiedActionParser] Date scheduled: {npc.Name} -> {locationId}" : $"[EmbodiedActionParser] Date scheduling failed: {npc.Name} -> {locationId}",
-                                ok  ? LogLevel.Info : LogLevel.Warn);
-                        }
-                        catch (Exception ex)
-                        {
-                            ModEntry.SMonitor?.Log($"[EmbodiedActionParser] INVITE error: {ex.Message}", LogLevel.Error);
                         }
                     }, 200);
                     return string.Empty;
