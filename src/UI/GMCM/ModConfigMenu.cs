@@ -743,8 +743,8 @@ namespace ValleytalkReborn
         {
             // 公共 Provider 空 Key：不发无效请求，前置返回 MissingApiKey 诊断。
             // 本地服务商（Ollama / LMStudio）与回环地址放行无 Key 模型列表拉取。
-            if (string.IsNullOrWhiteSpace(ModEntry.Config.ApiKey)
-                && !ProviderDefaults.IsLocalTarget(ModEntry.Config.Provider, ModEntry.Config.ServerAddress))
+            if (ProviderDefaults.IsMissingApiKeyBlocking(
+                    ModEntry.Config.Provider, ModEntry.Config.ServerAddress, ModEntry.Config.ApiKey))
                 return ModelDiscovery.Failed(ModelDiscoveryFailure.MissingApiKey, "API key is empty for a public provider.");
 
             if (!ModEntry.LlmMap.TryGetValue(ModEntry.Config.Provider, out var provider))

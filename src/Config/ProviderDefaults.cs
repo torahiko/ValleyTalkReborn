@@ -10,7 +10,8 @@ internal static class ProviderDefaults
     internal static bool IsLocalProvider(string provider)
     {
         return string.Equals(provider, "Ollama", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(provider, "LMStudio", StringComparison.OrdinalIgnoreCase);
+            || string.Equals(provider, "LMStudio", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(provider, "LlamaCpp", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -19,8 +20,7 @@ internal static class ProviderDefaults
     /// </summary>
     internal static bool IsLocalTarget(string provider, string configuredUrl)
     {
-        if (IsLocalProvider(provider)
-            || string.Equals(provider, "LlamaCpp", StringComparison.OrdinalIgnoreCase))
+        if (IsLocalProvider(provider))
         {
             return true;
         }

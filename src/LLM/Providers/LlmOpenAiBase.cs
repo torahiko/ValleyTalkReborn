@@ -194,6 +194,24 @@ namespace ValleytalkReborn
                 Log.Debug("[LlmOpenAiBase] Local endpoint, fetching models without API key.");
             }
 
+            // LOCAL-006：模型发现同样走本地请求闸门（云端 → 空租约旁路，零变化）。
+            // 本路径不发起推理请求，故不存在与推理互锁；闸门等待以 QueryTimeout 封顶，
+            // 排队超时按 Transport 失败，不伪造列表也不死等。
+            LocalRequestLease lease = null;
+            using var leaseCts = new CancellationTokenSource();
+            leaseCts.CancelAfter(TimeSpan.FromSeconds(ModEntry.Config.QueryTimeout));
+
+            try
+            {
+                lease = await LocalRequestThrottle.AcquireAsync(url, leaseCts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return LogFailure(ModelDiscovery.Failed(
+                    ModelDiscoveryFailure.Transport,
+                    "model discovery queued behind local inference"));
+            }
+
             try
             {
                 string modelsUrl = BuildEndpoint("models");
@@ -244,6 +262,10 @@ namespace ValleytalkReborn
             catch (Exception ex)
             {
                 return LogFailure(ModelDiscovery.Failed(ModelDiscoveryFailure.Transport, ex.Message));
+            }
+            finally
+            {
+                lease.Dispose();
             }
         }
 
@@ -860,7 +882,8 @@ namespace ValleytalkReborn
 
                     if (statusCode < 200 || statusCode >= 300)
                     {
-                        Log.Debug($"[LlmOpenAiBase] HTTP request failed. Status: {statusCode}, Response: {responseString}");
+                        // LOCAL-006：响应正文可能有敏感内容，日志只留截断片段。
+                        Log.Debug($"[LlmOpenAiBase] HTTP request failed. Status: {statusCode}, Response: {LlmTrafficLogger.TruncateForLog(responseString)}");
                         retryCount--;
                         if (retryCount > 0)
                         {
@@ -1143,7 +1166,8 @@ namespace ValleytalkReborn
                                         continue;
                                     }
 
-                                    Log.Debug($"[LlmOpenAiBase] Streaming failed: {status}, Response: {errContent}");
+                                    // LOCAL-006：同上，错误正文截断后入日志。
+                                    Log.Debug($"[LlmOpenAiBase] Streaming failed: {status}, Response: {LlmTrafficLogger.TruncateForLog(errContent)}");
 
                                     // LOCAL-004：本地端点且服务明确拒绝 SSE 且尚未下发 token → 最多降级一次非流式。
                                     // 已下发 token 或已取消时不降级（调用方已放弃本次请求），避免重复台词。
@@ -1183,6 +1207,8 @@ namespace ValleytalkReborn
                                     ? new MemoryStream(Encoding.UTF8.GetBytes(bufferedBody))
                                     : await response.Content.ReadAsStreamAsync();
                                 bool sawDataLine = false;
+                                // LOCAL-006：区分“服务器正常发 [DONE] 结束”与“读循环被超时静默打断”。
+                                bool streamCompletedByDone = false;
 
                                 using (var reader = new StreamReader(bodyStream, Encoding.UTF8))
                                 {
@@ -1197,7 +1223,11 @@ namespace ValleytalkReborn
 
                                         sawDataLine = true;
                                         string data = line.Substring(5).Trim();
-                                        if (data == "[DONE]") break;
+                                        if (data == "[DONE]")
+                                        {
+                                            streamCompletedByDone = true;
+                                            break;
+                                        }
 
                                         try
                                         {
@@ -1319,6 +1349,12 @@ namespace ValleytalkReborn
                                 if (ct.IsCancellationRequested)
                                 {
                                     finalResponse.EndReason = DialogueModels.LlmRequestEndReason.Cancelled;
+                                }
+                                else if (!streamCompletedByDone && linkedCts.IsCancellationRequested)
+                                {
+                                    // LOCAL-006：QueryTimeout 触发使读循环静默跳出 —— 部分文本必须标注 Timeout，
+                                    // IsSuccess 与文本维持原样（主对话展示部分文本，Bark / A2A 走既有 fallback）。
+                                    finalResponse.EndReason = DialogueModels.LlmRequestEndReason.Timeout;
                                 }
                                 return finalResponse;
                             }

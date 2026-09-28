@@ -19,6 +19,23 @@ namespace ValleytalkReborn;
 /// </summary>
 internal static class LlmTrafficLogger
 {
+    /// <summary>
+    /// LOCAL-006：无门控日志点的正文脱敏截断。超过 max 的部分丢弃，并追加真实长度后缀便于定位。
+    /// null / 空返回空串，不抛异常。
+    /// 豁免清单见文件头隐私声明与 LlmDialogueService 的 Config.Debug 门控点（LOCAL-006 决策：均不改）。
+    /// </summary>
+    internal static string TruncateForLog(string body, int max = 200)
+    {
+        if (string.IsNullOrEmpty(body) || max <= 0)
+        {
+            return string.Empty;
+        }
+
+        return body.Length <= max
+            ? body
+            : body.Substring(0, max) + $"…(len={body.Length})";
+    }
+
     // Gate: this channel only records traffic that has no module-level log of its own
     // (memory extraction / nightly consolidation). To extend: change ONLY this comparison,
     // never the call sites.
@@ -26,6 +43,8 @@ internal static class LlmTrafficLogger
         ModEntry.Config?.Debug == true
         && string.Equals(cacheContext, LlmContextTypes.NoTools, StringComparison.Ordinal);
 
+    // LOCAL-006 决策：本通道保持原样 —— 已由 Config.Debug + NO_TOOLS 白名单双重门控，改成截断会破坏
+    // 记忆抽取 / 夜间整理的完整对话重建能力（重建规则见文件头 ①）。
     public static void LogOutgoing(string cacheContext, string model, string endpoint,
         string systemPrompt, string gameCache, string npcCache, string userPrompt, string responseStart)
     {
@@ -110,6 +129,7 @@ internal static class LlmTrafficLogger
         }
     }
 
+    // LOCAL-006 决策：同上，维持全量。与 LlmDialogueService 的 [Raw API Response]（Config.Debug 门控）一并豁免。
     public static void LogIncoming(string cacheContext, string rawText)
     {
         if (!ShouldLog(cacheContext)) return;

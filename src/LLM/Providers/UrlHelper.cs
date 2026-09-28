@@ -101,12 +101,46 @@ internal static class UrlHelper
             host = colon >= 0 ? authority.Substring(0, colon) : authority;
         }
 
-        if (IsLocalHost(host))
+        // LOCAL-006：本地 / 私网 IPv4 默认 http，其余仍 https；显式 scheme 在上面已原样返回。
+        if (IsLocalHost(host) || IsPrivateIpv4Host(host))
         {
             return "http://" + url;
         }
 
         return "https://" + url;
+    }
+
+    /// <summary>
+    /// 判定主机名是否为 RFC1918 私网 IPv4（点分四段）。纯字符串解析，禁 DNS / 网络 / 文件 I/O；
+    /// 非法输入返回 false，不抛异常。与 URL vs Host 无关，仅供 EnsureScheme / IsPrivateNetworkUrl 复用。
+    /// </summary>
+    internal static bool IsPrivateIpv4Host(string host)
+    {
+        if (string.IsNullOrWhiteSpace(host))
+        {
+            return false;
+        }
+
+        string[] parts = host.Split('.');
+        if (parts.Length != 4)
+        {
+            return false;
+        }
+
+        byte[] octets = new byte[4];
+        for (int i = 0; i < 4; i++)
+        {
+            if (!byte.TryParse(parts[i], out octets[i]))
+            {
+                return false;
+            }
+        }
+
+        if (octets[0] == 10) return true;
+        if (octets[0] == 172 && octets[1] >= 16 && octets[1] <= 31) return true;
+        if (octets[0] == 192 && octets[1] == 168) return true;
+
+        return false;
     }
 
     internal static bool IsLocalHost(string host)
@@ -158,25 +192,6 @@ internal static class UrlHelper
             return false;
         }
 
-        string[] parts = uri.Host.Split('.');
-        if (parts.Length != 4)
-        {
-            return false;
-        }
-
-        byte[] octets = new byte[4];
-        for (int i = 0; i < 4; i++)
-        {
-            if (!byte.TryParse(parts[i], out octets[i]))
-            {
-                return false;
-            }
-        }
-
-        if (octets[0] == 10) return true;
-        if (octets[0] == 172 && octets[1] >= 16 && octets[1] <= 31) return true;
-        if (octets[0] == 192 && octets[1] == 168) return true;
-
-        return false;
+        return IsPrivateIpv4Host(uri.Host);
     }
 }

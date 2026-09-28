@@ -1109,7 +1109,7 @@ internal sealed class A2ASessionManager
             if (response == null || !response.IsSuccess || string.IsNullOrWhiteSpace(response.Text))
             {
                 ModEntry.SMonitor?.Log(
-                    $"[A2A] LLM 返回异常：{request.NamesLog} | Success={response?.IsSuccess} | Raw={response?.Text ?? "<null>"}",
+                    $"[A2A] LLM 返回异常：{request.NamesLog} | Success={response?.IsSuccess} | Raw={LlmTrafficLogger.TruncateForLog(response?.Text)}",
                     LogLevel.Warn);
 
                 EnqueueA2AFallback(sessionId, request.IsChinese);

@@ -26,6 +26,7 @@ public class LocalRequestThrottleTests : IDisposable
     private const string SecretKey = "sk-LOCAL-SECRET-DO-NOT-LOG";
     private const string SecretPrompt = "PROMPT-CANARY-DO-NOT-LOG";
     private const string LocalBody = "{\"choices\":[{\"message\":{\"content\":\"hello from local\"}}]}";
+    private const string ModelsBody = "{\"object\":\"list\",\"data\":[{\"id\":\"llama3.2:3b\"}]}";
 
     private readonly CapturingMonitor _monitor = new CapturingMonitor();
     private readonly ModConfig _originalConfig;
@@ -77,7 +78,7 @@ public class LocalRequestThrottleTests : IDisposable
         HttpStatusCode status = HttpStatusCode.OK,
         string body = LocalBody)
     {
-        var handler = new CountingHandler(delay, status, body);
+        var handler = new CountingHandler(delay, status, body, ModelsBody);
         SharedHttpClientField.SetValue(null, new HttpClient(handler)
         {
             Timeout = TimeSpan.FromSeconds(30)
@@ -311,6 +312,72 @@ public class LocalRequestThrottleTests : IDisposable
         }
     }
 
+    // ── LOCAL-006 验收：模型发现同样入闸（并发=1 时不死锁、云端零变化、可由 QueryTimeout 封顶）──
+
+    [Fact]
+    public async Task ModelDiscovery_QueuedBehindLocalInference_SucceedsAfterGateRelease()
+    {
+        CountingHandler handler = InstallFakeHttp(TimeSpan.FromMilliseconds(300));
+        LlmOAICompatible provider = LocalProvider();
+
+        Task<LlmResponse> holder = LocalRequest(provider, CancellationToken.None);
+        await Task.Delay(80);
+
+        ModelDiscoveryResult discovery = await WithTimeout(
+            provider.GetModelNamesWithDiagnosticsAsync(), 15000);
+
+        await WithTimeout(holder, 15000);
+
+        Assert.Equal(ModelDiscoveryFailure.None, discovery.Failure);
+        Assert.Equal(new[] { "llama3.2:3b" }, discovery.ModelNames);
+        Assert.Equal(2, handler.Total);
+        Assert.Equal(1, handler.MaxObserved);
+    }
+
+    [Fact]
+    public async Task ModelDiscovery_QueueWaitExceedsQueryTimeout_FailsAsTransportWithoutDeadlock()
+    {
+        ModEntry.Config.QueryTimeout = 1;
+
+        CountingHandler handler = InstallFakeHttp(TimeSpan.FromMilliseconds(50));
+        LlmOAICompatible provider = LocalProvider();
+
+        // 独占唯一许可：模型发现必然在闸门后排队（无推理自锁、无 HTTP 竞态）。
+        using LocalRequestLease heldPermit = await WithTimeout(
+            LocalRequestThrottle.AcquireAsync("http://127.0.0.1:1234/v1", CancellationToken.None), 5000);
+
+        ModelDiscoveryResult discovery = await WithTimeout(
+            provider.GetModelNamesWithDiagnosticsAsync(), 15000);
+
+        // 排队超过 QueryTimeout → 不伪造列表、不死等，按 Transport 失败返回。
+        Assert.Equal(ModelDiscoveryFailure.Transport, discovery.Failure);
+        Assert.Equal("model discovery queued behind local inference", discovery.Detail);
+        Assert.Empty(discovery.ModelNames);
+        Assert.Equal(0, handler.Total); // 模型请求根本没发出（不死锁的证据：请求已返回）。
+        Assert.Contains(_monitor.Messages,
+            m => m.Contains("[LlmOpenAiBase] Model discovery failed") && m.Contains("Transport"));
+    }
+
+    [Fact]
+    public async Task ModelDiscovery_CloudEndpoint_IsNotThrottled()
+    {
+        CountingHandler handler = InstallFakeHttp(TimeSpan.FromMilliseconds(50));
+        LlmOpenAi provider = CloudProvider();
+
+        Task<ModelDiscoveryResult>[] discoveries = new[]
+        {
+            provider.GetModelNamesWithDiagnosticsAsync(),
+            provider.GetModelNamesWithDiagnosticsAsync(),
+            provider.GetModelNamesWithDiagnosticsAsync()
+        };
+
+        ModelDiscoveryResult[] results = await WithTimeout(Task.WhenAll(discoveries), 15000);
+
+        Assert.All(results, r => Assert.Equal(ModelDiscoveryFailure.None, r.Failure));
+        Assert.Equal(3, handler.Total);
+        Assert.Equal(3, handler.MaxObserved);
+    }
+
     /// <summary>
     /// 统计并发与总次数的 Fake HTTP Handler：只观察，不发起任何真实网络请求。
     /// </summary>
@@ -319,17 +386,19 @@ public class LocalRequestThrottleTests : IDisposable
         private readonly TimeSpan _delay;
         private readonly HttpStatusCode _status;
         private readonly string _body;
+        private readonly string _modelsBody;
         private readonly object _sync = new object();
         private int _inFlight;
 
         internal int MaxObserved { get; private set; }
         internal int Total { get; private set; }
 
-        internal CountingHandler(TimeSpan delay, HttpStatusCode status, string body)
+        internal CountingHandler(TimeSpan delay, HttpStatusCode status, string body, string modelsBody)
         {
             _delay = delay;
             _status = status;
             _body = body;
+            _modelsBody = modelsBody;
         }
 
         protected override async Task<HttpResponseMessage> SendAsync(
@@ -348,9 +417,12 @@ public class LocalRequestThrottleTests : IDisposable
             {
                 await Task.Delay(_delay, cancellationToken);
 
+                // GET = 模型发现（LOCAL-006 起入同一闸门）；POST = 推理。
+                string body = request.Method == HttpMethod.Get ? _modelsBody : _body;
+
                 return new HttpResponseMessage(_status)
                 {
-                    Content = new StringContent(_body, Encoding.UTF8, "application/json")
+                    Content = new StringContent(body, Encoding.UTF8, "application/json")
                 };
             }
             finally

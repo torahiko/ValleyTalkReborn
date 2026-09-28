@@ -1,4 +1,5 @@
-// LocalResponseModeTests.cs
+// LocalEndpointAutoFallbackTests.cs
+// （LOCAL-006 由 LocalResponseModeTests.cs 改名，历史由 git mv 保留）
 // LOCAL-004（契约更正版）— 本地端点的 SSE 自动协商与降级契约测试。
 // 无配置面：本地端点（UrlHelper.IsPrivateNetworkUrl 命中）一律优先流式，
 // 仅在未产生任何 token 时最多降级一次非流式；云端端点零变化。
@@ -27,7 +28,7 @@ using Xunit;
 namespace ValleytalkReborn.Tests;
 
 [Collection("StaticGlobalStateCollection")]
-public class LocalResponseModeTests : IDisposable
+public class LocalEndpointAutoFallbackTests : IDisposable
 {
     private const string LocalUrl = "http://127.0.0.1:1234/v1";
     private const string CloudUrl = "https://api.example.com/v1";
@@ -46,7 +47,7 @@ public class LocalResponseModeTests : IDisposable
     private readonly HttpClient _originalClient;
     private readonly IMonitor _originalMonitor;
 
-    public LocalResponseModeTests()
+    public LocalEndpointAutoFallbackTests()
     {
         _originalConfig = ModEntry.Config;
         _originalClient = (HttpClient)SharedHttpClientField.GetValue(null);
@@ -492,6 +493,54 @@ public class LocalResponseModeTests : IDisposable
         Assert.Equal(1, handler.CallCount);
     }
 
+    // ── LOCAL-006：QueryTimeout 触发时读循环静默跳出 → 必须标 Timeout（部分文本不得是 Success）──
+
+    [Fact]
+    public async Task Streaming_Timeout_GracefulEofWithoutDone_MarksTimeoutKeepingPartialText()
+    {
+        // 首行立即下发 token，之后服务端既不发 [DONE]、也不在 QueryTimeout 之前断开：
+        // 读循环在下一轮条件判断处静默跳出 —— 既非 [DONE] 也非调用方取消，必须标注 Timeout。
+        var (provider, handler) = Install(LocalUrl, (_, _, _) =>
+            Task.FromResult(SseWithDelayedEof(
+                "data: {\"choices\":[{\"delta\":{\"content\":\"Half\"}}]}\n\n",
+                eofDelayMs: 1200)));
+
+        ModEntry.Config.QueryTimeout = 1;
+
+        var received = new List<string>();
+        using var cts = new CancellationTokenSource();
+
+        var result = await provider.RunStreamingChatInference("system", Messages(), received.Add, cts.Token);
+
+        Assert.Equal("Timeout", result.EndReason.ToString());
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Half", result.Text);
+        Assert.Equal(new[] { "Half" }, received);
+        Assert.Equal(1, handler.CallCount);
+    }
+
+    [Fact]
+    public async Task Streaming_ServerEofWithoutDoneAndNoCancellation_StaysSuccess()
+    {
+        // 服务器提前断流（无 [DONE]、无取消、无超时）维持既有 Success 语义（LOCAL-006 out_of_scope）。
+        var (provider, handler) = Install(LocalUrl, (_, _, _) =>
+            Task.FromResult(SseWithDelayedEof(
+                "data: {\"choices\":[{\"delta\":{\"content\":\"Whole\"}}]}\n\n",
+                eofDelayMs: 50)));
+
+        ModEntry.Config.QueryTimeout = 30;
+
+        var received = new List<string>();
+        using var cts = new CancellationTokenSource();
+
+        var result = await provider.RunStreamingChatInference("system", Messages(), received.Add, cts.Token);
+
+        Assert.Equal("Success", result.EndReason.ToString());
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Whole", result.Text);
+        Assert.Equal(1, handler.CallCount);
+    }
+
     // ── B1：门控收敛纯函数矩阵 ──
 
     [Theory]
@@ -549,6 +598,16 @@ public class LocalResponseModeTests : IDisposable
         {
             Content = new StringContent(body, Encoding.UTF8, "text/event-stream")
         };
+
+    private static HttpResponseMessage SseWithDelayedEof(string head, int eofDelayMs)
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StreamContent(new DelayedEofHeadStream(head, eofDelayMs))
+        };
+        response.Content.Headers.ContentType = new MediaTypeHeaderValue("text/event-stream");
+        return response;
+    }
 
     private static HttpResponseMessage SseInterrupted(string prefix)
     {
@@ -628,6 +687,54 @@ public class LocalResponseModeTests : IDisposable
             Buffer.BlockCopy(_bytes, _position, buffer, 0, n);
             _position += n;
             return n;
+        }
+    }
+
+    /// <summary>
+    /// LOCAL-006：确定性超时流 —— 首段立即返回，之后在 eofDelayMs 后才给出 EOF，且忽略取消令牌。
+    /// 用于复现“读循环因 QueryTimeout 静默跳出”的场景（时间由调用方桩控制，不依赖真实网络）。
+    /// </summary>
+    private sealed class DelayedEofHeadStream : Stream
+    {
+        private readonly byte[] _bytes;
+        private readonly int _eofDelayMs;
+        private int _position;
+
+        public DelayedEofHeadStream(string head, int eofDelayMs)
+        {
+            _bytes = Encoding.UTF8.GetBytes(head);
+            _eofDelayMs = eofDelayMs;
+        }
+
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => _position; set => throw new NotSupportedException(); }
+        public override void Flush() { }
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        public override int Read(byte[] buffer, int offset, int count)
+            => ReadCore(buffer, count).GetAwaiter().GetResult();
+
+        public override Task<int> ReadAsync(
+            byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+            => ReadCore(buffer, count);
+
+        private async Task<int> ReadCore(byte[] buffer, int count)
+        {
+            if (_position < _bytes.Length)
+            {
+                int n = Math.Min(count, _bytes.Length - _position);
+                Buffer.BlockCopy(_bytes, _position, buffer, 0, n);
+                _position += n;
+                return n;
+            }
+
+            await Task.Delay(_eofDelayMs);
+            return 0;
         }
     }
 }

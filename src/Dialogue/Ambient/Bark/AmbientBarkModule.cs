@@ -1099,7 +1099,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
             if (response == null || !response.IsSuccess || string.IsNullOrWhiteSpace(response.Text))
             {
                 ModEntry.SMonitor?.Log(
-                    $"[AmbientBark] LLM 返回异常：{request.NpcName} | Success={response?.IsSuccess} | Raw={response?.Text ?? "<null>"}",
+                    $"[AmbientBark] LLM 返回异常：{request.NpcName} | Success={response?.IsSuccess} | Raw={LlmTrafficLogger.TruncateForLog(response?.Text)}",
                     LogLevel.Warn);
 
                 EnqueueBarkFallback(request, requestId);
@@ -1115,7 +1115,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
             if (barks == null || barks.Length == 0)
             {
                 ModEntry.SMonitor?.Log(
-                    $"[AmbientBark] 五级解析全部失败，使用 fallback：{request.NpcName} | Raw={response.Text}",
+                    $"[AmbientBark] 五级解析全部失败，使用 fallback：{request.NpcName} | Raw={LlmTrafficLogger.TruncateForLog(response.Text)}",
                     LogLevel.Warn);
 
                 EnqueueBarkFallback(request, requestId);
