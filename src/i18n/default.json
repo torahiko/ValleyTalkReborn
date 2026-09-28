@@ -403,6 +403,8 @@
   "configTopPTooltip": "Nucleus sampling threshold for output diversity. Range: 0.0–1.0, default 0.9. Works together with Temperature. Recommended to leave at default.",
   "configMaxTokens": "Max Tokens (Response Length)",
   "configMaxTokensTooltip": "Maximum number of tokens (roughly characters) per response. Range: 100–8192, default 1024. NPC dialogue rarely exceeds 200 characters, so 1024 is already generous. Higher values increase API cost and wait time.",
+  "configLocalMaxConcurrentRequests": "Local Max Concurrent Requests",
+  "configLocalMaxConcurrentRequestsTooltip": "How many requests may be in flight against a local (loopback / private-network) LLM endpoint at the same time. Range: 1–4, default 1. Raise it only if your local backend genuinely serves parallel requests; most single-GPU backends queue anyway and a higher value only creates waiting requests.",
   "configCustomBodyJson": "Custom Body JSON (Advanced)",
   "configCustomBodyJsonTooltip": "For advanced users: enter a valid JSON object (e.g. {\"presence_penalty\": 0.5}) to deep-merge into the request payload.\n\nCan be used to inject provider-specific parameters or override thinking mode. Leave blank to use the default payload.\n\nNote: only applies to the 'Custom (OpenAI-Compatible)' provider, and only affects the main player-to-NPC dialogue \n\n— it does not affect ambient NPC chatter (Bark) or NPC-to-NPC conversations (A2A).",
   "configServerAddress": "Server Address",

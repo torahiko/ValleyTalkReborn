@@ -620,6 +620,18 @@ namespace ValleytalkReborn
                 interval: 50
             );
 
+            ConfigMenu.AddNumberOption(
+                mod: ModManifest,
+                name: () => GetUIString("configLocalMaxConcurrentRequests", "Local Max Concurrent Requests"),
+                tooltip: () => GetUIString("configLocalMaxConcurrentRequestsTooltip",
+                    "How many requests may be in flight against a local (loopback / private-network) LLM endpoint at the same time. Range: 1 ~ 4, default 1. Cloud providers are never limited by this value."),
+                getValue: () => ModEntry.Config.LocalMaxConcurrentRequests,
+                setValue: value => ModEntry.Config.LocalMaxConcurrentRequests = value,
+                min: 1,
+                max: 4,
+                interval: 1
+            );
+
             ConfigMenu.AddTextOption(
                 mod: ModManifest,
                 name: () => GetUIString("configCustomBodyJson", "Custom Body JSON (Geek Mode)"),

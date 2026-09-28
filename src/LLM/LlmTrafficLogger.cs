@@ -43,6 +43,73 @@ internal static class LlmTrafficLogger
         ModEntry.SMonitor?.Log("[LlmTraffic] ===== OUT END", StardewModdingAPI.LogLevel.Debug);
     }
 
+    /// <summary>
+    /// LOCAL-005：单次 LLM 请求的遥测快照（进程内 Memory 级，随请求生命周期存在，不持久化）。
+    /// 只承载可安全落盘的标量字段：provider / host / model / context / attempt /
+    /// HTTP status / 排队耗时 / TTFT / 总耗时 / 输出字符数。
+    /// 严禁写入 API Key、Authorization Header、完整 Prompt 或完整响应正文。
+    /// </summary>
+    internal sealed class LlmRequestTelemetry
+    {
+        internal string Provider { get; }
+        internal string Host { get; }
+        internal string Model { get; }
+        internal string Context { get; }
+        internal int Attempt { get; set; } = 1;
+        internal int StatusCode { get; set; }
+        internal long QueueWaitMs { get; set; }
+        internal long TtftMs { get; set; } = -1;
+        internal long TotalMs { get; set; }
+        internal int OutputChars { get; set; }
+
+        internal LlmRequestTelemetry(string provider, string host, string model, string context)
+        {
+            Provider = string.IsNullOrWhiteSpace(provider) ? "unknown" : provider;
+            Host = SafeHost(host);
+            Model = string.IsNullOrWhiteSpace(model) ? "unknown" : model;
+            Context = string.IsNullOrWhiteSpace(context) ? "(none)" : context;
+        }
+
+        /// <summary>
+        /// 输出单行遥测日志。字段生成失败时只记 Error，绝不回退到打印原始请求/响应。
+        /// </summary>
+        internal void Log()
+        {
+            try
+            {
+                ModEntry.SMonitor?.Log(
+                    "[LlmTraffic] REQUEST"
+                    + $" provider={Provider}"
+                    + $" | host={Host}"
+                    + $" | model={Model}"
+                    + $" | context={Context}"
+                    + $" | attempt={Attempt}"
+                    + $" | status={StatusCode}"
+                    + $" | queueWaitMs={QueueWaitMs}"
+                    + $" | ttftMs={(TtftMs >= 0 ? TtftMs.ToString() + "ms" : "n/a")}"
+                    + $" | totalMs={TotalMs}"
+                    + $" | chars={OutputChars}",
+                    StardewModdingAPI.LogLevel.Debug);
+            }
+            catch (Exception ex)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[LlmTraffic] Request telemetry generation failed: {ex.GetType().Name}. Request body and headers are never logged.",
+                    StardewModdingAPI.LogLevel.Error);
+            }
+        }
+
+        /// <summary>纯字符串/URI 解析取 Host；解析失败返回 unknown，不抛异常。</summary>
+        private static string SafeHost(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url)) return "unknown";
+
+            return Uri.TryCreate(UrlHelper.EnsureScheme(url.Trim()), UriKind.Absolute, out Uri uri)
+                ? uri.Host
+                : "unknown";
+        }
+    }
+
     public static void LogIncoming(string cacheContext, string rawText)
     {
         if (!ShouldLog(cacheContext)) return;

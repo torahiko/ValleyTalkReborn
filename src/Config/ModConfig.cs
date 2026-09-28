@@ -263,6 +263,13 @@ namespace ValleytalkReborn
         public bool EnableAmbientBarks { get; set; } = true;
         public bool EnableA2A { get; set; } = true;
         public int LlmTimeoutSeconds { get; set; } = 30;
+
+        /// <summary>
+        /// 本地（回环 / 私网）LLM 端点的进程内最大并发请求数（1~4）。
+        /// 安装级 Config：不进入存档、ModData 或多人同步；云端 Provider 不受此限制。
+        /// </summary>
+        public int LocalMaxConcurrentRequests { get; set; } = 1;
+
         public int BarkApiCooldownTicks { get; set; } = 300;
         public int BarkQueueSize { get; set; } = 3;
         public int A2AMaxParticipants { get; set; } = 4;
@@ -325,6 +332,7 @@ namespace ValleytalkReborn
         public void ValidateDialogueConfig(IMonitor monitor)
         {
             LlmTimeoutSeconds = Clamp(LlmTimeoutSeconds, 5, 120);
+            LocalMaxConcurrentRequests = Clamp(LocalMaxConcurrentRequests, 1, 4);
             BarkApiCooldownTicks = Clamp(BarkApiCooldownTicks, 30, 3600);
             BarkQueueSize = Clamp(BarkQueueSize, 1, 20);
             A2AMaxParticipants = Clamp(A2AMaxParticipants, 2, 4);

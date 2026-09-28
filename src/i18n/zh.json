@@ -403,6 +403,8 @@
   "configTopPTooltip": "控制输出多样性的核采样阈值。范围0.0~1.0，默认0.9。与温度参数共同作用。建议保持默认值。",
   "configMaxTokens": "最大Token数（最大长度）",
   "configMaxTokensTooltip": "单次生成的最大token数（大致相当于字符数）。范围100~8192，默认1024。NPC对话很少超过200字符，1024已相当充裕。数值越高，API费用越高，等待时间也越长。",
+  "configLocalMaxConcurrentRequests": "本地最大并发请求数",
+  "configLocalMaxConcurrentRequestsTooltip": "本地（回环/私网）LLM 端点的最大同时请求数。范围1~4，默认1。仅当本地后端确实支持并行推理时才调高；多数单卡后端本身仍会排队，调高只会产生更多排队等待的请求。云端服务商不受此项限制。",
   "configCustomBodyJson": "自定义请求体JSON（高级）",
   "configCustomBodyJsonTooltip": "面向高级用户：输入合法的JSON对象（例如{\"presence_penalty\": 0.5}），将深度合并进请求负载中。\n\n可用于注入特定服务商的专属参数，或覆盖思考模式设置。留空则使用默认标准负载。\n\n⚠️注意：仅对“自定义（OpenAI兼容）”服务商生效，且仅影响玩家与NPC的主对话，不影响NPC环境自语（Bark）或NPC互动闲聊（A2A）。",
   "configServerAddress": "服务器地址",

@@ -46,6 +46,108 @@ namespace ValleytalkReborn
         }
     }
 
+    /// <summary>
+    /// LOCAL-005：本地（回环 / 私网）LLM 请求的进程内并发闸门。
+    /// ① 仅对 UrlHelper.IsPrivateNetworkUrl 命中的端点生效；云端端点拿到的租约是空租约，零影响。
+    /// ② 容量取自 ModEntry.Config.LocalMaxConcurrentRequests（1~4），变更时重建信号量；
+    ///    旧信号量不 Dispose —— 在途请求仍持有它的 Release，Dispose 会让 Release 抛异常（与 Llm.RecreateHttpClient 同策略）。
+    /// ③ 一律 WaitAsync + 调用方 CancellationToken，禁止 Wait / Result 同步阻塞。
+    /// </summary>
+    internal static class LocalRequestThrottle
+    {
+        internal const int MinConcurrency = 1;
+        internal const int MaxConcurrency = 4;
+
+        private static SemaphoreSlim _gate = new SemaphoreSlim(MinConcurrency, MaxConcurrency);
+        private static int _capacity = MinConcurrency;
+        private static int _lastWarnedRaw = int.MinValue;
+
+        /// <summary>
+        /// 取当前闸门：容量随配置变化重建。云端点返回空租约，不占用信号量。
+        /// </summary>
+        internal static async Task<LocalRequestLease> AcquireAsync(string url, CancellationToken ct)
+        {
+            if (!UrlHelper.IsPrivateNetworkUrl(url))
+                return LocalRequestLease.None;
+
+            SemaphoreSlim gate = ResolveGate();
+            var waitWatch = System.Diagnostics.Stopwatch.StartNew();
+            await gate.WaitAsync(ct);
+            waitWatch.Stop();
+
+            return new LocalRequestLease(gate, waitWatch.ElapsedMilliseconds);
+        }
+
+        private static SemaphoreSlim ResolveGate()
+        {
+            int configured = ResolveCapacity();
+
+            if (configured == Volatile.Read(ref _capacity))
+                return Volatile.Read(ref _gate);
+
+            var created = new SemaphoreSlim(configured, MaxConcurrency);
+            Interlocked.Exchange(ref _gate, created);
+            Volatile.Write(ref _capacity, configured);
+
+            return Volatile.Read(ref _gate);
+        }
+
+        private static int ResolveCapacity()
+        {
+            int configured = ModEntry.Config?.LocalMaxConcurrentRequests ?? MinConcurrency;
+
+            if (configured < MinConcurrency || configured > MaxConcurrency)
+            {
+                int raw = configured;
+                configured = Math.Clamp(configured, MinConcurrency, MaxConcurrency);
+
+                if (Interlocked.Exchange(ref _lastWarnedRaw, raw) != raw)
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[LocalRequestThrottle] LocalMaxConcurrentRequests={raw} is out of range; clamped to {configured}.",
+                        StardewModdingAPI.LogLevel.Warn);
+                }
+            }
+
+            return configured;
+        }
+    }
+
+    /// <summary>
+    /// 一次本地请求的信号量租约。Dispose 精确释放一次；空租约（云端）不做任何事。
+    /// </summary>
+    internal sealed class LocalRequestLease : IDisposable
+    {
+        internal static readonly LocalRequestLease None = new LocalRequestLease(null, 0);
+
+        private readonly SemaphoreSlim _gate;
+        private int _released;
+
+        /// <summary>进入闸门前的排队耗时（毫秒）。</summary>
+        internal long QueueWaitMs { get; }
+
+        internal LocalRequestLease(SemaphoreSlim gate, long queueWaitMs)
+        {
+            _gate = gate;
+            QueueWaitMs = queueWaitMs;
+        }
+
+        public void Dispose()
+        {
+            if (_gate == null) return;
+
+            if (Interlocked.Exchange(ref _released, 1) != 0)
+            {
+                ModEntry.SMonitor?.Log(
+                    "[LocalRequestThrottle] Semaphore release count mismatch: lease disposed more than once.",
+                    StardewModdingAPI.LogLevel.Error);
+                return;
+            }
+
+            _gate.Release();
+        }
+    }
+
     internal abstract class LlmOpenAiBase : Llm, IModelDiscoveryDiagnostics
     {
         protected string apiKey;
@@ -612,6 +714,46 @@ namespace ValleytalkReborn
             bool allowRetry,
             CancellationToken callerToken)
         {
+            LocalRequestLease lease;
+
+            try
+            {
+                lease = await LocalRequestThrottle.AcquireAsync(url, callerToken);
+            }
+            catch (OperationCanceledException)
+            {
+                // BOUNDARY：排队阶段被取消 —— 不进入 HTTP，不记为服务故障。
+                Log.Debug($"[LlmOpenAiBase] Local request cancelled while queued; no HTTP sent. endpoint={url}");
+                return LlmResponse.Cancelled();
+            }
+
+            var telemetry = new LlmTrafficLogger.LlmRequestTelemetry(GetType().Name, url, modelName, cacheContext);
+
+            using (lease)
+            {
+                telemetry.QueueWaitMs = lease.QueueWaitMs;
+                var totalWatch = System.Diagnostics.Stopwatch.StartNew();
+
+                LlmResponse result = await ExecuteNonStreamingCoreAsync(
+                    messages, n_predict, cacheContext, allowRetry, callerToken, telemetry);
+
+                totalWatch.Stop();
+                telemetry.TotalMs = totalWatch.ElapsedMilliseconds;
+                telemetry.OutputChars = result?.Text?.Length ?? 0;
+                telemetry.Log();
+
+                return result;
+            }
+        }
+
+        private async Task<LlmResponse> ExecuteNonStreamingCoreAsync(
+            List<object> messages,
+            int n_predict,
+            string cacheContext,
+            bool allowRetry,
+            CancellationToken callerToken,
+            LlmTrafficLogger.LlmRequestTelemetry telemetry)
+        {
             Dictionary<string, object> requestBody = BuildRequestBody(messages, n_predict, stream: false, cacheContext);
             ThinkingSuppressionPlan plan = EvaluateThinkingSuppression(modelName, url, cacheContext);
             ApplyThinkingSuppression(requestBody, plan);
@@ -632,8 +774,12 @@ namespace ValleytalkReborn
             int statusCode = 500;
             bool strippedThinkingParameters = false;
 
+            int maxAttempts = retryCount;
+
             while (retryCount > 0)
             {
+                telemetry.Attempt = maxAttempts - retryCount + 1;
+
                 try
                 {
                     var genParams = ResolveParameters(cacheContext);
@@ -676,6 +822,8 @@ namespace ValleytalkReborn
                             }
                         }
                     }
+
+                    telemetry.StatusCode = statusCode;
 
                     bool isClientError = statusCode == 400 || statusCode == 422;
 
@@ -815,6 +963,46 @@ namespace ValleytalkReborn
             int n_predict,
             string cacheContext)
         {
+            LocalRequestLease lease;
+
+            try
+            {
+                lease = await LocalRequestThrottle.AcquireAsync(url, ct);
+            }
+            catch (OperationCanceledException)
+            {
+                // BOUNDARY：排队阶段被取消 —— 不进入 HTTP，不记为服务故障。
+                Log.Debug($"[LlmOpenAiBase] Local streaming request cancelled while queued; no HTTP sent. endpoint={url}");
+                return LlmResponse.Cancelled();
+            }
+
+            var telemetry = new LlmTrafficLogger.LlmRequestTelemetry(GetType().Name, url, modelName, cacheContext);
+
+            using (lease)
+            {
+                telemetry.QueueWaitMs = lease.QueueWaitMs;
+                var totalWatch = System.Diagnostics.Stopwatch.StartNew();
+
+                LlmResponse result = await ExecuteStreamingCoreAsync(
+                    messages, onToken, ct, n_predict, cacheContext, telemetry);
+
+                totalWatch.Stop();
+                telemetry.TotalMs = totalWatch.ElapsedMilliseconds;
+                telemetry.OutputChars = result?.Text?.Length ?? 0;
+                telemetry.Log();
+
+                return result;
+            }
+        }
+
+        private async Task<LlmResponse> ExecuteStreamingCoreAsync(
+            List<object> messages,
+            Action<string> onToken,
+            CancellationToken ct,
+            int n_predict,
+            string cacheContext,
+            LlmTrafficLogger.LlmRequestTelemetry telemetry)
+        {
             Dictionary<string, object> requestBody = BuildRequestBody(messages, n_predict, stream: true, cacheContext);
             ThinkingSuppressionPlan plan = EvaluateThinkingSuppression(modelName, url, cacheContext);
             ApplyThinkingSuppression(requestBody, plan);
@@ -877,6 +1065,7 @@ namespace ValleytalkReborn
             const int maxRetries = 3;
             while (retryAttempt < maxRetries)
             {
+                telemetry.Attempt = retryAttempt + 1;
                 ttftWatch.Restart();
 
                 using (var request = new HttpRequestMessage(HttpMethod.Post, endpointUrl))
@@ -896,6 +1085,8 @@ namespace ValleytalkReborn
                                 HttpCompletionOption.ResponseHeadersRead,
                                 linkedCts.Token))
                             {
+                                telemetry.StatusCode = (int)response.StatusCode;
+
                                 if (!response.IsSuccessStatusCode)
                                 {
                                     string errContent = await response.Content.ReadAsStringAsync();
@@ -942,7 +1133,7 @@ namespace ValleytalkReborn
                                         ModEntry.SMonitor?.Log(
                                             $"[LlmOpenAiBase] Local endpoint rejected SSE ({status}); retrying once without streaming.",
                                             StardewModdingAPI.LogLevel.Warn);
-                                        return await ExecuteLocalNonStreamingAsync(messages, emitToken, ct, n_predict, cacheContext);
+                                        return await ExecuteLocalNonStreamingAsync(messages, emitToken, ct, n_predict, cacheContext, telemetry);
                                     }
 
                                     return new LlmResponse(errContent, status);
@@ -1033,6 +1224,7 @@ namespace ValleytalkReborn
                                                 if (!ttftLogged)
                                                 {
                                                     ttftLogged = true;
+                                                    telemetry.TtftMs = ttftWatch.ElapsedMilliseconds;
                                                     ModEntry.SMonitor?.Log(
                                                         $"[LlmOpenAiBase] TTFT(content)={ttftWatch.ElapsedMilliseconds}ms | TTFT(reasoning)={(ttftReasoningMs >= 0 ? ttftReasoningMs + "ms" : "n/a")} | endpoint={endpointUrl}",
                                                         StardewModdingAPI.LogLevel.Debug);
@@ -1292,9 +1484,11 @@ namespace ValleytalkReborn
             Action<string> onToken,
             CancellationToken ct,
             int n_predict,
-            string cacheContext)
+            string cacheContext,
+            LlmTrafficLogger.LlmRequestTelemetry telemetry)
         {
-            LlmResponse result = await ExecuteNonStreamingRequestAsync(messages, n_predict, cacheContext, true, ct);
+            // 已在流式入口取得本地租约，此处直接走核心，绝不二次取租约（并发=1 时会自锁）。
+            LlmResponse result = await ExecuteNonStreamingCoreAsync(messages, n_predict, cacheContext, true, ct, telemetry);
 
             if (result.IsSuccess && !string.IsNullOrWhiteSpace(result.Text))
                 onToken?.Invoke(result.Text);

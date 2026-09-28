@@ -445,7 +445,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
             _globalRequestQueue.Enqueue(npc);
 
             ModEntry.SMonitor?.Log(
-                $"[AmbientBark] {npc.Name} added to queue (Priority: {candidate.Priority}).",
+                $"[AmbientBark] state=queued npc={npc.Name} priority={candidate.Priority} queueDepth={_globalRequestQueue.Count}",
                 LogLevel.Debug);
         }
     }
@@ -567,13 +567,19 @@ internal sealed class AmbientBarkModule : IDialogueModule
         bool canDispatch = false;
         CancellationToken token = default;
         int requestId = 0;
+        string skipReason = null;
 
         lock (st)
         {
-            if (request != null &&
-                !st.IsInCooldown() &&
-                st.BarkQueue.Count == 0 &&
-                !st.IsRequesting)
+            if (request == null)
+                skipReason = "no-prompt";
+            else if (st.IsInCooldown())
+                skipReason = "cooldown";
+            else if (st.BarkQueue.Count > 0)
+                skipReason = "lines-pending";
+            else if (st.IsRequesting)
+                skipReason = "request-in-flight";
+            else
             {
                 st.ReplaceCts();
                 st.IsRequesting = true;
@@ -586,10 +592,16 @@ internal sealed class AmbientBarkModule : IDialogueModule
         if (canDispatch)
         {
             ModEntry.SMonitor?.Log(
-                $"[AmbientBark] Dispatching API request for {npc.Name} (queue: {_globalRequestQueue.Count}).",
+                $"[AmbientBark] state=dispatched npc={npc.Name} requestId={requestId} queueDepth={_globalRequestQueue.Count}",
                 LogLevel.Debug);
 
             _ = Task.Run(() => FetchBarksAsync(request, token, requestId));
+        }
+        else
+        {
+            ModEntry.SMonitor?.Log(
+                $"[AmbientBark] state=skipped npc={npc.Name} reason={skipReason} queueDepth={_globalRequestQueue.Count}",
+                LogLevel.Debug);
         }
 
         _globalRequestCooldown = Config.BarkApiCooldownTicks;
@@ -1047,6 +1059,10 @@ internal sealed class AmbientBarkModule : IDialogueModule
 
             if (ct.IsCancellationRequested)
             {
+                ModEntry.SMonitor?.Log(
+                    $"[AmbientBark] state=cancelled npc={request.NpcName} requestId={requestId}",
+                    LogLevel.Debug);
+
                 _pendingBarkResults.Enqueue(new DialogueModels.BarkLlmResult
                 {
                     NpcName = request.NpcName,
@@ -1068,6 +1084,10 @@ internal sealed class AmbientBarkModule : IDialogueModule
             }
 
             var barks = DialogueParsing.ParseBarkJson(response.Text);
+
+            ModEntry.SMonitor?.Log(
+                $"[AmbientBark] state=success npc={request.NpcName} requestId={requestId} lines={barks?.Length ?? 0} chars={response.Text?.Length ?? 0}",
+                LogLevel.Debug);
 
             if (barks == null || barks.Length == 0)
             {
@@ -1093,6 +1113,10 @@ internal sealed class AmbientBarkModule : IDialogueModule
             var endReason = ct.IsCancellationRequested
                 ? DialogueModels.LlmRequestEndReason.Cancelled
                 : DialogueModels.LlmRequestEndReason.Timeout;
+
+            ModEntry.SMonitor?.Log(
+                $"[AmbientBark] state=cancelled npc={request.NpcName} requestId={requestId} endReason={endReason}",
+                LogLevel.Debug);
 
             _pendingBarkResults.Enqueue(new DialogueModels.BarkLlmResult
             {

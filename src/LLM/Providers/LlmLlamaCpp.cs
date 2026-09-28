@@ -37,14 +37,31 @@ internal class LlmLlamaCpp : Llm
     /// <summary>
     /// 非流式入口：保持既有调用链无取消令牌的语义，仅由 QueryTimeout 兜底。
     /// </summary>
-    internal override Task<LlmResponse> RunInference(
+    internal override async Task<LlmResponse> RunInference(
         string systemPromptString, string gameCacheString, string npcCacheString, 
         string promptString, string responseStart = "", int n_predict = 2048, 
         string cacheContext = "", bool allowRetry = true)
     {
-        return RunInferenceCoreAsync(
-            systemPromptString, gameCacheString, npcCacheString,
-            promptString, responseStart, n_predict, CancellationToken.None, allowRetry);
+        // LOCAL-005：本地端点（回环 / 私网）请求进入进程内并发闸门；云端地址拿到空租约。
+        LocalRequestLease lease = await LocalRequestThrottle.AcquireAsync(url, CancellationToken.None);
+        var telemetry = new LlmTrafficLogger.LlmRequestTelemetry(nameof(LlmLlamaCpp), url, null, string.Empty);
+
+        using (lease)
+        {
+            telemetry.QueueWaitMs = lease.QueueWaitMs;
+            var totalWatch = System.Diagnostics.Stopwatch.StartNew();
+
+            LlmResponse result = await RunInferenceCoreAsync(
+                systemPromptString, gameCacheString, npcCacheString,
+                promptString, responseStart, n_predict, CancellationToken.None, allowRetry, telemetry);
+
+            totalWatch.Stop();
+            telemetry.TotalMs = totalWatch.ElapsedMilliseconds;
+            telemetry.OutputChars = result?.Text?.Length ?? 0;
+            telemetry.Log();
+
+            return result;
+        }
     }
 
     /// <summary>
@@ -62,16 +79,43 @@ internal class LlmLlamaCpp : Llm
         int n_predict = 2048,
         string cacheContext = "")
     {
-        var result = await RunInferenceCoreAsync(
-            systemPromptString, gameCacheString, npcCacheString,
-            promptString, responseStart, n_predict, ct, allowRetry: true);
+        // LOCAL-005：本地端点（回环 / 私网）请求进入进程内并发闸门；云端地址拿到空租约。
+        LocalRequestLease lease;
 
-        if (result.IsSuccess && !string.IsNullOrWhiteSpace(result.Text))
+        try
         {
-            onToken(result.Text);
+            lease = await LocalRequestThrottle.AcquireAsync(url, ct);
+        }
+        catch (OperationCanceledException)
+        {
+            // BOUNDARY：排队阶段被取消 —— 不进入 HTTP，不记为服务故障。
+            Log.Debug($"[LlmLlamaCpp] Local request cancelled while queued; no HTTP sent. endpoint={url}");
+            return LlmResponse.Cancelled();
         }
 
-        return result;
+        var telemetry = new LlmTrafficLogger.LlmRequestTelemetry(nameof(LlmLlamaCpp), url, null, string.Empty);
+
+        using (lease)
+        {
+            telemetry.QueueWaitMs = lease.QueueWaitMs;
+            var totalWatch = System.Diagnostics.Stopwatch.StartNew();
+
+            var result = await RunInferenceCoreAsync(
+                systemPromptString, gameCacheString, npcCacheString,
+                promptString, responseStart, n_predict, ct, allowRetry: true, telemetry);
+
+            totalWatch.Stop();
+            telemetry.TotalMs = totalWatch.ElapsedMilliseconds;
+            telemetry.OutputChars = result?.Text?.Length ?? 0;
+            telemetry.Log();
+
+            if (result.IsSuccess && !string.IsNullOrWhiteSpace(result.Text))
+            {
+                onToken(result.Text);
+            }
+
+            return result;
+        }
     }
 
     /// <summary>
@@ -98,7 +142,8 @@ internal class LlmLlamaCpp : Llm
         string responseStart,
         int n_predict,
         CancellationToken ct,
-        bool allowRetry)
+        bool allowRetry,
+        LlmTrafficLogger.LlmRequestTelemetry telemetry)
     {
         promptString = gameCacheString + npcCacheString + promptString;
         var fullPrompt = BuildPrompt(systemPromptString, promptString, responseStart);
@@ -119,6 +164,7 @@ internal class LlmLlamaCpp : Llm
             bool exhausted = attemptsRemaining == 0;
             bool isRetry = attempt++ > 0;
             int statusCode = 0;
+            telemetry.Attempt = attempt;
 
             // 调用方令牌与 QueryTimeout 链接后进入 HTTP 与重试等待，二者都能被中断。
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -163,6 +209,7 @@ internal class LlmLlamaCpp : Llm
                     using var response = await SharedHttpClient.PostAsync(url, jsonContent, linkedToken);
 
                     statusCode = (int)response.StatusCode;
+                    telemetry.StatusCode = statusCode;
                     responseString = await response.Content.ReadAsStringAsync(linkedToken);
 
                     if (!response.IsSuccessStatusCode)
@@ -193,7 +240,9 @@ internal class LlmLlamaCpp : Llm
                     return new LlmResponse("llama.cpp response contained no content.", 502);
                 }
 
-                return new LlmResponse(contentToken.ToString());
+                string content = contentToken.ToString();
+                telemetry.OutputChars = content.Length;
+                return new LlmResponse(content);
             }
             catch (JsonException ex)
             {
