@@ -442,10 +442,6 @@ public class LlmDialogueService
             }
 
             // Handle final result
-            // speak_in_bubble sentinel: propagate null to caller (PerformGeneration handles it)
-            if (results == null)
-                return null;
-
             if (results.Length == 0 && lastException != null)
             {
                 ModEntry.SMonitor.Log($"Error generating AI response for {character.Name}: {lastException}",
