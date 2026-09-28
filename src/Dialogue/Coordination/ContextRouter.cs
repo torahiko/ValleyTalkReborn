@@ -863,11 +863,11 @@ public static class ContextRouter
     /// 纯决策核心：不读取 Game1 / NPC / 地图，只按给定的探测结果判定。
     /// 邻接优先于阻挡；阻挡判定复刻 MovementCoordinator 执行真相
     /// （pos1 不可走 ⇒ 执行端 faceGeneralDirection 仅转向）。
+    /// CTX-009：pos2 只决定执行端滑一格还是两格，不参与阻挡判定，故不作为入参。
     /// </summary>
     internal static MovementEvaluation ResolveDirectionalEvaluation(
         bool isAdjacentTarget,
         bool pos1Walkable,
-        bool pos2Walkable,
         BlockDirection requestedDirection)
     {
         if (isAdjacentTarget)
@@ -948,16 +948,13 @@ public static class ContextRouter
         var (dx, dy) = MovementPathfinding.ResolveStepDelta(step, npc.FacingDirection);
 
         Vector2 npcTile = npc.Tile;
-        Vector2 pos1 = new Vector2(npcTile.X + dx,     npcTile.Y + dy);
-        Vector2 pos2 = new Vector2(npcTile.X + dx * 2, npcTile.Y + dy * 2);
+        Vector2 pos1 = new Vector2(npcTile.X + dx, npcTile.Y + dy);
 
         bool pos1Walkable;
-        bool pos2Walkable;
 
         try
         {
             pos1Walkable = MovementPathfinding.IsTileWalkable(loc, pos1, npc);
-            pos2Walkable = MovementPathfinding.IsTileWalkable(loc, pos2, npc);
         }
         catch (Exception ex)
         {
@@ -973,7 +970,6 @@ public static class ContextRouter
         return ResolveDirectionalEvaluation(
             isAdjacentTarget,
             pos1Walkable,
-            pos2Walkable,
             ToBlockDirection(tag));
     }
 

@@ -712,6 +712,11 @@ public class Prompts
                 "down" => "下方",
                 "left" => "左侧",
                 "right" => "右侧",
+                // CTX-009：BlockDirection 首次可达 Forward/Backward，补齐 ZH 渲染
+                // （风格对齐既有 上方/下方/左侧/右侧）；EN 分支走 raw.ToLowerInvariant()，
+                // 六方向本就全覆盖，无需改动。
+                "forward" => "前方",
+                "backward" => "后方",
                 _ => raw
             };
         }
