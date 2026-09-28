@@ -81,7 +81,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using StardewModdingAPI;
 using StardewValley;
 
@@ -369,161 +368,11 @@ internal sealed record ContextRouteInput(
     bool IsActiveTurn);
 
 // ─────────────────────────────────────────────────────────
-// Intent Regex
-// ─────────────────────────────────────────────────────────
-
-internal static class IntentRegex
-{
-    public static readonly Regex Forward = new Regex(
-        @"(往|向|朝)前[走挪跨靠]?(一?小?大?步)?|过来|靠近|走近|近一点|朝我走|"
-        + @"\bcome\s+(here|closer)\b|\bstep\s+forward\b|\bmove\s+closer\b",
-        RegexOptions.Compiled
-        | RegexOptions.IgnoreCase
-        | RegexOptions.CultureInvariant);
-
-    public static readonly Regex Backward = new Regex(
-        @"(往|向|朝)后[退走挪靠]?(一?小?大?步)?|退后|后退|退一点|离远点|"
-        + @"\bback\s+up\b|\bstep\s+back\b|\bmove\s+back\b|\bgo\s+backward\b",
-        RegexOptions.Compiled
-        | RegexOptions.IgnoreCase
-        | RegexOptions.CultureInvariant);
-
-    public static readonly Regex Left = new Regex(
-        @"(往|向|朝)左[走挪靠]?(一?小?大?步)?|"
-        + @"\bgo\s+left\b|\bmove\s+left\b|\bstep\s+left\b|\bto\s+the\s+left\b",
-        RegexOptions.Compiled
-        | RegexOptions.IgnoreCase
-        | RegexOptions.CultureInvariant);
-
-    public static readonly Regex Right = new Regex(
-        @"(往|向|朝)右[走挪靠]?(一?小?大?步)?|"
-        + @"\bgo\s+right\b|\bmove\s+right\b|\bstep\s+right\b|\bto\s+the\s+right\b",
-        RegexOptions.Compiled
-        | RegexOptions.IgnoreCase
-        | RegexOptions.CultureInvariant);
-
-    public static readonly Regex Up = new Regex(
-        @"(往|向|朝)上[走挪靠]?(一?小?大?步)?|"
-        + @"\bgo\s+up\b|\bmove\s+up\b|\bstep\s+up\b",
-        RegexOptions.Compiled
-        | RegexOptions.IgnoreCase
-        | RegexOptions.CultureInvariant);
-
-    public static readonly Regex Down = new Regex(
-        @"(往|向|朝)下[走挪靠]?(一?小?大?步)?|"
-        + @"\bgo\s+down\b|\bmove\s+down\b|\bstep\s+down\b",
-        RegexOptions.Compiled
-        | RegexOptions.IgnoreCase
-        | RegexOptions.CultureInvariant);
-
-    public static readonly Regex Follow = new Regex(
-        @"(跟着我|跟我走|跟上我|一起走|跟我来|"
-        + @"\bfollow me\b|\bcome with me\b|\bstay with me\b)",
-        RegexOptions.Compiled
-        | RegexOptions.IgnoreCase
-        | RegexOptions.CultureInvariant);
-
-    public static readonly Regex StopFollow = new Regex(
-        @"(别跟了|不要跟了|不要跟着我|不要跟着|停止跟随|取消跟随|不用跟了|别跟着我|别跟着|不用跟着|回去吧|你走吧|"
-        + @"\bstop following( me)?\b|\bdon'?t follow( me)?\b|\bgo back\b|\byou can go now\b|\bstay here\b)",
-        RegexOptions.Compiled
-        | RegexOptions.IgnoreCase
-        | RegexOptions.CultureInvariant);
-
-        public static readonly Regex StayHome = new Regex(
-        @"(哪里也别去|今天别出门|今天留家|待在家里|不要出门|"
-        + @"stay home|don't go out|stay inside)",
-        RegexOptions.Compiled
-        | RegexOptions.IgnoreCase
-        | RegexOptions.CultureInvariant);
-
-    public static readonly Regex AllDayFollow = new Regex(
-        @"(陪我一整天|陪着我一整天|陪我一天|陪着我一天|陪我全天|"
-        + @"今天一直陪我|今天全程陪我|跟我一整天|跟着我一整天|"
-        + @"accompany me all day|accompany me today|"
-        + @"stay with me all day|stay with me today)",
-        RegexOptions.Compiled
-        | RegexOptions.IgnoreCase
-        | RegexOptions.CultureInvariant);
-
-    public static bool IsAnyAction(string text)
-    {
-        if (string.IsNullOrWhiteSpace(text))
-            return false;
-
-        return Forward.IsMatch(text)
-            || Backward.IsMatch(text)
-            || Left.IsMatch(text)
-            || Right.IsMatch(text)
-            || Up.IsMatch(text)
-            || Down.IsMatch(text)
-            || StopFollow.IsMatch(text)
-            || Follow.IsMatch(text)
-            || StayHome.IsMatch(text)
-            || AllDayFollow.IsMatch(text);
-    }
-
-    // 兼容旧代码
-    public static bool IsAnyMovement(string text)
-    {
-        return IsAnyAction(text);
-    }
-}
-
-// ─────────────────────────────────────────────────────────
 // Keyword library
 // ─────────────────────────────────────────────────────────
 
 internal static class Keywords
 {
-    internal static readonly HashSet<string> ExactGreetingsZh =
-        new HashSet<string>(StringComparer.Ordinal)
-        {
-            "早",
-            "早啊",
-            "早安",
-            "早上好",
-            "中午好",
-            "下午好",
-            "晚上好",
-            "晚安",
-            "你好",
-            "你好啊",
-            "您好",
-            "哈喽",
-            "嗨"
-        };
-
-    internal static readonly HashSet<string> ExactGreetingsEn =
-        new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "hi",
-            "hello",
-            "good morning",
-            "good evening",
-            "good afternoon",
-            "hey",
-            "howdy"
-        };
-
-    internal static readonly HashSet<string> ExactFarewellsZh =
-        new HashSet<string>(StringComparer.Ordinal)
-        {
-            "再见",
-            "拜拜",
-            "明天见",
-            "晚安"
-        };
-
-    internal static readonly HashSet<string> ExactFarewellsEn =
-        new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "bye",
-            "goodbye",
-            "see you",
-            "good night"
-        };
-
     internal static readonly string[] MemoryZh =
     {
         "还记得",
@@ -609,31 +458,6 @@ internal static class Keywords
         "what do you see",
         "surroundings"
     };
-
-    // 这里保留相对明确的 GoTo 触发词。
-    // “你去”“过去”“去一下”“帮我拿”等模糊词已移除，避免误判。
-    internal static readonly string[] GotoTriggerZh =
-    {
-        "你可以去",
-        "你能去",
-        "走到",
-        "移动到",
-        "前往",
-        "去那个",
-        "去那棵",
-        "去那里",
-        "走过去"
-    };
-
-    internal static readonly string[] GotoTriggerEn =
-    {
-        "can you go to",
-        "go to the",
-        "walk to",
-        "move to",
-        "head to",
-        "go over to"
-    };
 }
 
 // ─────────────────────────────────────────────────────────
@@ -707,17 +531,6 @@ public static class ContextRouter
         }
     }
 
-    private static readonly char[] PunctuationTrimChars =
-    {
-        ' ', '\t', '\n', '\r',
-        ',', '.', '!', '?', ';', ':',
-        '，', '。', '！', '？', '；', '：', '、',
-        '~', '～',
-        '“', '”', '"',
-        '‘', '’', '\'',
-        '(', ')', '（', '）'
-    };
-
     private static readonly char[] WordSeparators =
     {
         ' ', ',', '.', '!', '?', ';', ':',
@@ -725,13 +538,6 @@ public static class ContextRouter
         '，', '。', '！', '？', '；', '：', '、',
         '(', ')', '（', '）'
     };
-
-    private static readonly Regex NegationRegex = new Regex(
-        @"^(不要|别|不想|不必|不用|无需|没必要|"
-        + @"don't\b|dont\b|do not\b|not\b|never\b)",
-        RegexOptions.Compiled
-        | RegexOptions.IgnoreCase
-        | RegexOptions.CultureInvariant);
 
     // ─────────────────────────────────────────────────────
     // Route entry point
@@ -987,9 +793,7 @@ public static class ContextRouter
             return;
         }
 
-        ActionTag detectedTag = DetectActionTag(
-            cleanInput,
-            debugEnabled);
+        ActionTag detectedTag = ActionIntentClassifier.Detect(cleanInput);
 
         if (detectedTag != ActionTag.None)
         {
@@ -1010,7 +814,7 @@ public static class ContextRouter
         }
 
         string gotoText;
-        if (TryDetectGotoIntentInternal(cleanInput, out gotoText))
+        if (ActionIntentClassifier.TryDetectGoto(cleanInput, out gotoText))
         {
             flags.IsGotoRequested = true;
             flags.IsActionRequested = true;
@@ -1032,75 +836,6 @@ public static class ContextRouter
             "Action detection result: no explicit action.");
     }
 
-    private static ActionTag DetectActionTag(
-        string cleanInput,
-        bool debugEnabled)
-    {
-        if (string.IsNullOrWhiteSpace(cleanInput))
-            return ActionTag.None;
-
-        string stripped = cleanInput.Trim(PunctuationTrimChars);
-
-        // 语义优先级：
-        // StayHome / AllDayFollow
-        // → StopFollow（在否定词检查之前，确保"别跟着我"等能正常命中）
-        // → 否定词拦截（仅影响 Follow 及方向移动）
-        // → Follow
-        // → 方向移动
-        if (IntentRegex.StayHome.IsMatch(stripped))
-            return ActionTag.StayHome;
-
-        if (IntentRegex.AllDayFollow.IsMatch(stripped))
-            return ActionTag.AllDayFollow;
-
-        if (IntentRegex.StopFollow.IsMatch(stripped))
-            return ActionTag.StopFollow;
-
-        // 只有明显以否定词开头时才拦截后续动作。
-        // 例如"不要亲我""别往前走"不会触发动作。
-        // StopFollow 已在上方处理，不受此守卫影响。
-        if (IsNegatedCommand(cleanInput))
-        {
-            DebugLog(
-                debugEnabled,
-                $"Action ignored because input is negated: \"{cleanInput}\"");
-
-            return ActionTag.None;
-        }
-
-        if (IntentRegex.Follow.IsMatch(stripped))
-            return ActionTag.Follow;
-
-        if (IntentRegex.Forward.IsMatch(stripped))
-            return ActionTag.StepForward;
-
-        if (IntentRegex.Backward.IsMatch(stripped))
-            return ActionTag.StepBackward;
-
-        if (IntentRegex.Left.IsMatch(stripped))
-            return ActionTag.StepLeft;
-
-        if (IntentRegex.Right.IsMatch(stripped))
-            return ActionTag.StepRight;
-
-        if (IntentRegex.Up.IsMatch(stripped))
-            return ActionTag.StepUp;
-
-        if (IntentRegex.Down.IsMatch(stripped))
-            return ActionTag.StepDown;
-
-        return ActionTag.None;
-    }
-
-    private static bool IsNegatedCommand(string input)
-    {
-        if (string.IsNullOrWhiteSpace(input))
-            return false;
-
-        string text = input.Trim();
-        return NegationRegex.IsMatch(text);
-    }
-
     // ─────────────────────────────────────────────────────
     // Greeting
     // ─────────────────────────────────────────────────────
@@ -1115,11 +850,11 @@ public static class ContextRouter
         if (talkedToday || !hasInput)
             return false;
 
-        if (!IsSimpleGreeting(cleanInput))
+        if (!DialogueIntentClassifier.IsSimpleGreeting(cleanInput))
             return false;
 
         flags.IsSimpleGreeting = true;
-        flags.IsFarewell = IsFarewell(cleanInput);
+        flags.IsFarewell = DialogueIntentClassifier.IsFarewell(cleanInput);
 
         flags.IncludeSafetyRules =
             safetyMode != SafetyModeLevel.Off;
@@ -1151,30 +886,6 @@ public static class ContextRouter
             || flags.IsInviteRequested
             || flags.IsActionRequested
             || flags.IsFollowing;
-    }
-
-    private static bool IsSimpleGreeting(string cleanInput)
-    {
-        if (string.IsNullOrWhiteSpace(cleanInput))
-            return false;
-
-        string stripped = cleanInput.Trim(PunctuationTrimChars);
-
-        if (stripped.Length == 0)
-            return false;
-
-        return Keywords.ExactGreetingsZh.Contains(stripped)
-            || Keywords.ExactGreetingsEn.Contains(stripped)
-            || Keywords.ExactFarewellsZh.Contains(stripped)
-            || Keywords.ExactFarewellsEn.Contains(stripped);
-    }
-
-    private static bool IsFarewell(string cleanInput)
-    {
-        string stripped = cleanInput.Trim(PunctuationTrimChars);
-
-        return Keywords.ExactFarewellsZh.Contains(stripped)
-            || Keywords.ExactFarewellsEn.Contains(stripped);
     }
 
     // ─────────────────────────────────────────────────────
@@ -1390,36 +1101,13 @@ public static class ContextRouter
         return false;
     }
 
+    // internal 委托桥：保留以兼容外部对旧入口的引用（见票 CTX-003 REV A）。
+    // 编译器证实无外部引用后可删除。
     internal static bool TryDetectGotoIntentInternal(
         string cleanInput,
         out string intentText)
     {
-        intentText = string.Empty;
-
-        if (string.IsNullOrWhiteSpace(cleanInput))
-            return false;
-
-        // 避免明显疑问句或叙述句触发 GoTo。
-        if (cleanInput.EndsWith("吗", StringComparison.Ordinal)
-            || cleanInput.EndsWith("呢", StringComparison.Ordinal)
-            || cleanInput.EndsWith("？", StringComparison.Ordinal)
-            || cleanInput.EndsWith("?", StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        if (ContainsAny(
-                cleanInput,
-                Keywords.GotoTriggerZh)
-            || MatchesWordBoundaryAny(
-                cleanInput,
-                Keywords.GotoTriggerEn))
-        {
-            intentText = cleanInput;
-            return true;
-        }
-
-        return false;
+        return ActionIntentClassifier.TryDetectGoto(cleanInput, out intentText);
     }
 
     // ─────────────────────────────────────────────────────
