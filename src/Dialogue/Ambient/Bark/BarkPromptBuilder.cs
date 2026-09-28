@@ -860,7 +860,13 @@ Example 3 (Paranoia & Appetite):
             }
 
             // 7. Commit（上锁 + cap 登记；关系路径免 TryClaim）
-            if (!ProactiveDialogueManager.Commit(npc.Name, decision)) return null;
+            if (!ProactiveDialogueManager.Commit(npc.Name, decision))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[BarkPromptBuilder] MicroSocial Commit 失败（NPC={npc.Name}，sensoryTriggered={decision.SensoryTriggered}，sensoryType={decision.Sensory?.Type}）：感官条目已消费且不回滚（防雷达重复决策环）；本轮回落 Soliloquy。",
+                    LogLevel.Debug);
+                return null;
+            }
 
             // 8. 回写焦点状态（台账既定语义）
             lock (barkState)
