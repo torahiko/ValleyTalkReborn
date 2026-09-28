@@ -6,7 +6,7 @@
 // 锁定的契约（对应 src/Dialogue/Coordination/ContextRouter.cs 邀请边界）：
 //
 // 1. DateRules.CanScheduleDate 拒绝空地点——纯策略边界的白名单校验不得被削弱。
-//    （CTX-010 起 Router 不再调用它；该 API 保留为已测试的纯策略入口，去留另议。）
+//    （保留——DateManager.TryScheduleDate 的活跃生产闸门（CTX-013 E 项重裁）。）
 // 2. ContextRouter.TryDetectDateInvitation(input) 只做「邀约意向词判定」，
 //    无 out 地点参数，不做地点短语命中。
 // 3. CTX-010：含邀约意向 + 世界就绪 ⇒ 置位 IsInviteRequested；地点由玩家在
