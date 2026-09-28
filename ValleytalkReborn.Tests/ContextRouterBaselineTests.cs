@@ -30,8 +30,9 @@
 // 可观察并断言：null-NPC 早退、空输入、全部纯文本意图路径（含 greet/否定/
 // Follow/StopFollow/方向移动/GoTo 疑问句抑制），以及"无世界 ⇒ 不求值"
 // 的三个 flags 默认值契约。
-// 唯一仍会浮出的异常：邀请快照（"约你"）——属日期域 BOUNDARY，锚点保留并
-// 指向 CTX-005（见文件末尾锚点）。
+// CTX-005 起，邀请边界（"约你"）不再浮出异常：检测 → 地点解析 → 世界就绪
+// 三段守卫先于任何世界快照求值，锚点 B 已按新契约重钉。
+// 日期邀请的完整契约见 DateInvitationContractTests（CTX-005）。
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -373,17 +374,21 @@ public class ContextRouterBaselineTests
         }
     }
 
-    // ── 回归锚点 B（CTX-004 重钉）────────────────────────────────────────
+    // ── 回归锚点 B（CTX-005 重钉）────────────────────────────────────────
     //     CTX-004 实证（探针 2026-09-28）：移除位置守卫后，"约你" 仍在
     //     EvaluateDateState 的邀请快照处上抛
     //       System.NullReferenceException
     //       at Game1.get_temporaryContent() ← Utility.isFestivalDay(day, season)
     //       ← ContextRouter.EvaluateDateState（CTX-004 后 ContextRouter.cs:724）
     //     属日期域 BOUNDARY：`Utility.isFestivalDay` 需要已初始化的临时内容管理器。
-    //     按 CTX-004 裁定：保留异常锚点 + 注释指向 CTX-005，禁止为通过测试添加任何 catch。
+    //     CTX-005 裁定：邀请边界必须先做「检测 → 显式地点解析 → 世界就绪」三段守卫；
+    //     无显式受支持地点或世界未就绪时不得构建世界快照、不得求值、不得调度。
+    //     故本锚点重钉为：无世界时 "约你" **不抛异常**、不设已验证邀请标志、保持纯对白。
+    //     完整契约（含空地点拒绝、显式地点解析、系统关闭清标志）见
+    //     DateInvitationContractTests（CTX-005）。
 
     [Fact]
-    public void Evaluate_DateInviteInput_WithoutWorld_ThrowsAtDateSnapshot_BoundaryCTX005()
+    public void Evaluate_DateInviteInput_WithoutWorld_PreservesPlainDialogue()
     {
         NPC npc = NewTestNpc();
         using (UseModConfig())
@@ -392,8 +397,7 @@ public class ContextRouterBaselineTests
                 ContextRouter.Evaluate(new ContextRouteInput(
                     npc, "约你", SafetyModeLevel.Strict, null, false)));
 
-            // 只钉"异常浮出"这一契约，不钉具体异常类型/行号。
-            Assert.NotNull(ex);
+            Assert.Null(ex);
         }
     }
 }

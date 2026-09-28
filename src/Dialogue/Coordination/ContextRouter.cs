@@ -595,7 +595,7 @@ public static class ContextRouter
         // Phase 1: 日期、邀请、爽约和嫉妒状态
         EvaluateDateState(
             input.Npc,
-            cleanInput,
+            originalInput,
             hasInput,
             flags,
             debugEnabled);
@@ -656,7 +656,7 @@ public static class ContextRouter
 
     private static void EvaluateDateState(
         NPC npc,
-        string cleanInput,
+        string originalInput,
         bool hasInput,
         ContextFlags flags,
         bool debugEnabled)
@@ -715,40 +715,7 @@ public static class ContextRouter
 
         // 不因为正在约会或存在爽约记录而提前 return。
         // 这样可以同时保留当前输入中的邀请意图。
-        if (hasInput
-            && MatchesWithBoundary(
-                cleanInput,
-                Keywords.InviteZh,
-                Keywords.InviteEn))
-        {
-            var world = new DateWorldSnapshot(
-                TimeOfDay: Game1.timeOfDay,
-                PlayerLocationName: Game1.player?.currentLocation?.Name ?? "",
-                IsFestivalDay: Utility.isFestivalDay(Game1.dayOfMonth, Game1.season),
-                IsWorldReady: StardewModdingAPI.Context.IsWorldReady
-            );
-
-            // 🔧 前置路径校验：节日 / 时间晚于 18:00 / 当前有其他约会 → 从源头抑制邀约按钮。
-            if (!DateRules.CanScheduleDate(
-                    world,
-                    "",
-                    DateState?.ActiveDateNpcName ?? "",
-                    npcName,
-                    DateManager.WhitelistedLocations,
-                    1800))
-            {
-                DebugLog(
-                    debugEnabled,
-                    $"Date invitation ignored by router: time={world.TimeOfDay}, festival={world.IsFestivalDay}, busy={DateState?.ActiveDateNpcName}.");
-                return;
-            }
-
-            flags.IsInviteRequested = true;
-
-            DebugLog(
-                debugEnabled,
-                "Date intent: invitation detected and validated.");
-        }
+        EvaluateDateInvitation(npcName, originalInput, hasInput, flags, debugEnabled);
 
         // ── 约会系统关闭时，强制清除所有约会衍生状态，防止残留语境泄漏到 LLM ──
         if (!ModEntry.Config.EnableDateSystem)
@@ -759,6 +726,135 @@ public static class ContextRouter
             flags.HasStoodUpPending = false;
             flags.StoodUpDate = string.Empty;
         }
+    }
+
+    // ─────────────────────────────────────────────────────
+    // Date invitation boundary（CTX-005）
+    // ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// 邀请边界：检测语言 → 解析显式地点 → 交给 DateRules 校验，三段各自独立。
+    /// 只有输入显式给出受支持地点时才把该地点交给 CanScheduleDate 并置位 IsInviteRequested；
+    /// 无地点 / 世界未就绪 / 校验失败都不置位，保持纯对白。
+    /// 绝不向 CanScheduleDate 传入空地点，也绝不推断或发明地点。
+    /// </summary>
+    private static void EvaluateDateInvitation(
+        string npcName,
+        string originalInput,
+        bool hasInput,
+        ContextFlags flags,
+        bool debugEnabled)
+    {
+        if (!hasInput)
+            return;
+
+        if (!TryDetectDateInvitation(originalInput, out string requestedLocationId))
+            return;
+
+        if (string.IsNullOrEmpty(requestedLocationId))
+        {
+            // BOUNDARY：检测到邀请语言但无显式受支持地点，且不存在经核实的默认地点。
+            DebugLog(
+                debugEnabled,
+                "Date invitation detected but no explicit supported location; plain dialogue preserved.");
+            return;
+        }
+
+        // BOUNDARY：世界未就绪 ⇒ 不构建快照、不求值、不调度，保持纯对白。
+        if (!StardewModdingAPI.Context.IsWorldReady)
+        {
+            DebugLog(
+                debugEnabled,
+                "Date invitation not evaluated: world not ready.");
+            return;
+        }
+
+        var world = new DateWorldSnapshot(
+            TimeOfDay: Game1.timeOfDay,
+            PlayerLocationName: Game1.player?.currentLocation?.Name ?? "",
+            IsFestivalDay: Utility.isFestivalDay(Game1.dayOfMonth, Game1.season),
+            IsWorldReady: true
+        );
+
+        // 前置路径校验：节日 / 时间晚于 18:00 / 当前有其他约会 → 从源头抑制邀约按钮。
+        if (!DateRules.CanScheduleDate(
+                world,
+                requestedLocationId,
+                DateState?.ActiveDateNpcName ?? "",
+                npcName,
+                DateManager.WhitelistedLocations,
+                1800))
+        {
+            // BOUNDARY：地点非法或未白名单 / 节日 / 时间过晚 / 已有约会 ⇒ 不置位已验证邀请标志。
+            DebugLog(
+                debugEnabled,
+                $"Date invitation rejected: loc={requestedLocationId}, time={world.TimeOfDay}, "
+                + $"festival={world.IsFestivalDay}, busy={DateState?.ActiveDateNpcName}.");
+            return;
+        }
+
+        flags.IsInviteRequested = true;
+
+        DebugLog(
+            debugEnabled,
+            $"Date invitation validated: loc={requestedLocationId}.");
+    }
+
+    /// <summary>
+    /// 邀请检测（与可调度性校验分离）：判断输入是否包含邀请语言，并解析其中显式出现的受支持地点。
+    /// 仅检测语言、不判断可调度性；无显式受支持地点时 requestedLocationId 为空串。
+    /// </summary>
+    internal static bool TryDetectDateInvitation(string input, out string requestedLocationId)
+    {
+        requestedLocationId = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(input))
+            return false;
+
+        if (!MatchesWithBoundary(
+                input.ToLowerInvariant(),
+                Keywords.InviteZh,
+                Keywords.InviteEn))
+        {
+            return false;
+        }
+
+        requestedLocationId = ResolveExplicitDateLocation(input) ?? string.Empty;
+        return true;
+    }
+
+    /// <summary>
+    /// 从输入文本解析显式出现的受支持约会地点 ID。
+    /// 只认可 DateLocationRegistry 已注册的 LocationId / TargetMap 与中英文显示名，
+    /// 不引入别名表、默认地点或任何推断。未命中返回 null。
+    /// </summary>
+    internal static string ResolveExplicitDateLocation(string input)
+    {
+        var locations = DateLocationRegistry.Locations;
+
+        if (string.IsNullOrWhiteSpace(input) || locations == null)
+            return null;
+
+        foreach (var pair in locations)
+        {
+            var info = pair.Value;
+
+            if (info == null)
+                continue;
+
+            // ASCII 标识（地点 ID / 目标地图 / 英文名）按词边界匹配，避免 "town" 误命中 "downtown"。
+            if (MatchesWordBoundaryAny(input, pair.Key, info.TargetMap, info.DisplayNameEn))
+                return pair.Key;
+
+            // CJK 无词边界，按中文显示名子串匹配。
+            if (!string.IsNullOrWhiteSpace(info.DisplayNameZh)
+                && input.IndexOf(info.DisplayNameZh, StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return pair.Key;
+            }
+        }
+
+        return null;
     }
 
     // ─────────────────────────────────────────────────────
