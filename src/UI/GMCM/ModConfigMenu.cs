@@ -663,7 +663,9 @@ namespace ValleytalkReborn
             {
                 try
                 {
-                    var fetchedNames = await GetModelNamesAsync();
+                    ModelDiscoveryResult result = await GetModelNamesAsync();
+                    string[] fetchedNames = result.ModelNames;
+
                     if (fetchedNames != null && fetchedNames.Length > 0)
                     {
                         var namesList = fetchedNames.ToList();
@@ -674,7 +676,7 @@ namespace ValleytalkReborn
                     else
                     {
                         _cachedModelNames = Array.Empty<string>();
-                        _lastFetchErrorMessage = "Server returned empty model list";
+                        _lastFetchErrorMessage = BuildModelFetchErrorMessage(result);
                     }
                 }
                 catch (Exception ex)
@@ -702,15 +704,39 @@ namespace ValleytalkReborn
             }
         }
 
-        private static async Task<string[]> GetModelNamesAsync()
+        private static string BuildModelFetchErrorMessage(ModelDiscoveryResult result)
         {
-            // 本地服务商（Ollama / LMStudio）与回环地址放行无 Key 模型列表拉取；云端空 Key 仍拦截。
+            (string key, string fallback) = result.Failure switch
+            {
+                ModelDiscoveryFailure.MissingApiKey => ("configModelFetchMissingApiKey",
+                    "No API key: fill in the API key and save, or type the model name manually."),
+                ModelDiscoveryFailure.InvalidUrl => ("configModelFetchInvalidUrl",
+                    "Invalid server address: check the Server Address field (scheme, host and port), or type the model name manually."),
+                ModelDiscoveryFailure.Transport => ("configModelFetchTransport",
+                    "Cannot reach the server: start your local model service or check the address, then save to retry."),
+                ModelDiscoveryFailure.Http => ("configModelFetchHttp",
+                    $"Server returned HTTP {result.StatusCode}: check the address and API key. {result.Detail}"),
+                ModelDiscoveryFailure.InvalidJson => ("configModelFetchInvalidJson",
+                    $"Unreadable response: the server did not return valid JSON. {result.Detail}"),
+                ModelDiscoveryFailure.UnsupportedSchema => ("configModelFetchUnsupportedSchema",
+                    $"Unexpected response format: no model list found. {result.Detail}"),
+                _ => ("configModelFetchEmptyResponse",
+                    "Server returned an empty model list: you can type the model name manually.")
+            };
+
+            return GetUIString(key, fallback, new { statusCode = result.StatusCode, detail = result.Detail });
+        }
+
+        private static async Task<ModelDiscoveryResult> GetModelNamesAsync()
+        {
+            // 公共 Provider 空 Key：不发无效请求，前置返回 MissingApiKey 诊断。
+            // 本地服务商（Ollama / LMStudio）与回环地址放行无 Key 模型列表拉取。
             if (string.IsNullOrWhiteSpace(ModEntry.Config.ApiKey)
                 && !ProviderDefaults.IsLocalTarget(ModEntry.Config.Provider, ModEntry.Config.ServerAddress))
-                return Array.Empty<string>();
+                return ModelDiscovery.Failed(ModelDiscoveryFailure.MissingApiKey, "API key is empty for a public provider.");
 
             if (!ModEntry.LlmMap.TryGetValue(ModEntry.Config.Provider, out var provider))
-                return Array.Empty<string>();
+                return ModelDiscovery.Failed(ModelDiscoveryFailure.EmptyResponse, "Provider is not registered.");
 
             if (typeof(IGetModelNames).IsAssignableFrom(provider))
             {
@@ -729,7 +755,18 @@ namespace ValleytalkReborn
                 try
                 {
                     var instance = Llm.CreateInstance(provider, paramsDict);
-                    return await ((IGetModelNames)instance).GetModelNamesAsync();
+
+                    if (instance is IModelDiscoveryDiagnostics diagnostics)
+                    {
+                        return await diagnostics.GetModelNamesWithDiagnosticsAsync();
+                    }
+
+                    // 非 OpenAI 族 Provider（Claude / Gemini）保持 legacy 路径。
+                    string[] legacyNames = await ((IGetModelNames)instance).GetModelNamesAsync();
+
+                    return legacyNames != null && legacyNames.Length > 0
+                        ? ModelDiscovery.Success(legacyNames)
+                        : ModelDiscovery.Failed(ModelDiscoveryFailure.EmptyResponse, "Provider returned no models.");
                 }
                 catch (Exception ex)
                 {
@@ -738,7 +775,7 @@ namespace ValleytalkReborn
                 }
             }
 
-            return Array.Empty<string>();
+            return ModelDiscovery.Failed(ModelDiscoveryFailure.EmptyResponse, "Provider does not support model discovery.");
         }
 
         private static IGenericModConfigMenuApi GetConfigMenu(ModEntry modEntry)

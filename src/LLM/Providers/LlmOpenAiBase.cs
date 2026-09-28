@@ -46,7 +46,7 @@ namespace ValleytalkReborn
         }
     }
 
-    internal abstract class LlmOpenAiBase : Llm
+    internal abstract class LlmOpenAiBase : Llm, IModelDiscoveryDiagnostics
     {
         protected string apiKey;
         protected string modelName;
@@ -63,13 +63,30 @@ namespace ValleytalkReborn
 
         #region 模型列表
 
+        /// <summary>
+        /// 兼容旧契约：仅取模型名，失败返回空数组（8 个 IGetModelNames 实现者行为不变）。
+        /// </summary>
         protected async Task<string[]> CoreGetModelNamesAsync()
+        {
+            ModelDiscoveryResult result = await CoreGetModelNamesDiagnosticsAsync();
+            return result.ModelNames;
+        }
+
+        public async Task<ModelDiscoveryResult> GetModelNamesWithDiagnosticsAsync()
+        {
+            return await CoreGetModelNamesDiagnosticsAsync();
+        }
+
+        protected async Task<ModelDiscoveryResult> CoreGetModelNamesDiagnosticsAsync()
         {
             // 本地无 Key 端点（回环 / 私网）放行模型列表拉取；云端空 Key 仍拦截，避免无效请求。
             if (string.IsNullOrWhiteSpace(apiKey) && !UrlHelper.IsPrivateNetworkUrl(url))
             {
-                return Array.Empty<string>();
+                return LogFailure(ModelDiscovery.Failed(
+                    ModelDiscoveryFailure.MissingApiKey,
+                    "API key is empty for a non-local endpoint."));
             }
+
             if (string.IsNullOrWhiteSpace(apiKey))
             {
                 Log.Debug("[LlmOpenAiBase] Local endpoint, fetching models without API key.");
@@ -79,6 +96,13 @@ namespace ValleytalkReborn
             {
                 string modelsUrl = BuildEndpoint("models");
 
+                // URL 非法时不得回退云端默认地址，也不得发起请求。
+                if (!Uri.TryCreate(modelsUrl, UriKind.Absolute, out _))
+                {
+                    return LogFailure(ModelDiscovery.Failed(ModelDiscoveryFailure.InvalidUrl, modelsUrl));
+                }
+
+                // Android NetworkHelper 路径无法获得状态码：异常统一归 Transport。
                 if (AndroidHelper.IsAndroid && NetworkHelper.IsNetworkAvailable())
                 {
                     var headers = new Dictionary<string, string>
@@ -92,61 +116,43 @@ namespace ValleytalkReborn
                             null,
                             headers);
 
-                    return ParseModelNamesFromJson(responseString);
+                    return LogFailure(ModelDiscovery.ParseModelList(responseString));
                 }
-                else
-                {
-                    using (var request = new HttpRequestMessage(HttpMethod.Get, modelsUrl))
-                    {
-                        request.Headers.Add("Authorization", EffectiveBearer(apiKey));
 
-                        using (var response = await SharedHttpClient.SendAsync(request))
+                using (var request = new HttpRequestMessage(HttpMethod.Get, modelsUrl))
+                {
+                    request.Headers.Add("Authorization", EffectiveBearer(apiKey));
+
+                    using (var response = await SharedHttpClient.SendAsync(request))
+                    {
+                        string responseString = await response.Content.ReadAsStringAsync();
+
+                        if (!response.IsSuccessStatusCode)
                         {
-                            string responseString = await response.Content.ReadAsStringAsync();
-                            return ParseModelNamesFromJson(responseString);
+                            return LogFailure(ModelDiscovery.Failed(
+                                ModelDiscoveryFailure.Http,
+                                responseString,
+                                (int)response.StatusCode));
                         }
+
+                        return LogFailure(ModelDiscovery.ParseModelList(responseString));
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.Debug("[LlmOpenAiBase] GetModelNames failed: " + ex.Message);
-                return Array.Empty<string>();
+                return LogFailure(ModelDiscovery.Failed(ModelDiscoveryFailure.Transport, ex.Message));
             }
         }
 
-        private string[] ParseModelNamesFromJson(string jsonString)
+        private static ModelDiscoveryResult LogFailure(ModelDiscoveryResult result)
         {
-            if (string.IsNullOrWhiteSpace(jsonString)) return Array.Empty<string>();
-
-            try
+            if (result.Failure != ModelDiscoveryFailure.None)
             {
-                JObject responseJson = JObject.Parse(jsonString);
-                JArray modelsToken = responseJson["data"] as JArray;
-
-                if (modelsToken == null)
-                {
-                    return Array.Empty<string>();
-                }
-
-                var modelNames = new List<string>();
-
-                foreach (JToken model in modelsToken)
-                {
-                    JToken idToken = model["id"];
-                    if (idToken != null && !string.IsNullOrWhiteSpace(idToken.ToString()))
-                    {
-                        modelNames.Add(idToken.ToString());
-                    }
-                }
-
-                return modelNames.ToArray();
+                Log.Warning($"[LlmOpenAiBase] Model discovery failed: failure={result.Failure}, status={result.StatusCode}, detail={result.Detail}");
             }
-            catch (Exception ex)
-            {
-                Log.Debug("[LlmOpenAiBase] Parse model list failed: " + ex.Message);
-                return Array.Empty<string>();
-            }
+
+            return result;
         }
 
         #endregion
