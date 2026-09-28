@@ -104,6 +104,13 @@ internal static class DialogueModels
             new Queue<(string SpeakerName, string Line)>(2);
 
         /// <summary>
+        /// 已入 MainThreadOutputQueue、尚未结算的台词数量。
+        /// 会话在 Script/RoundsLeft 排空后仍需等待它归零才允许自然收尾，
+        /// 确保最后一句的投递结果（Displayed/Rejected/Failed）先落地。
+        /// </summary>
+        public int PendingOutputCount { get; set; }
+
+        /// <summary>
         /// Session generation counter, incremented each time a new session is created.
         /// </summary>
         public int Generation { get; set; } = 0;

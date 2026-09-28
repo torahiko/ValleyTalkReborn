@@ -76,6 +76,20 @@ internal sealed class AmbientBarkStateStore
         /// </summary>
         public Queue<string> RecentBarks { get; } = new Queue<string>(3);
 
+        // ── 输出投递对齐（Memory）──
+
+        /// <summary>
+        /// 已入输出队列、等待投递结果的一句台词原文。非 null 表示本 NPC 有一句
+        /// 正在等待 MainThreadOutputQueue 结算（Displayed/Rejected/Failed/Cleared）。
+        /// 纯运行时记忆，绝不写入存档。
+        /// </summary>
+        public string PendingBarkText { get; set; }
+
+        /// <summary>
+        /// PendingBarkText 是否为 MicroSocial 直出首句（决定 Displayed 时是否写 FreshBarkBridgeStore）。
+        /// </summary>
+        public bool PendingBarkIsMicroSocial { get; set; }
+
         // ── 注意力流转记忆（疲劳阻尼依据）──
 
         /// <summary>
@@ -154,6 +168,8 @@ internal sealed class AmbientBarkStateStore
             HasPlayedFirst = false;
             CooldownTicksRemaining = null; // 必须清空为 null，关闭 TickStates 分支 2 的触发条件
             BusyTicksRemaining = 0;
+            PendingBarkText = null;
+            PendingBarkIsMicroSocial = false;
         }
 
         /// <summary>

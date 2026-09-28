@@ -225,15 +225,24 @@ internal sealed class AmbientBarkModule : IDialogueModule
 
                 if (microDirect)
                 {
-                    state.BarkQueue.Clear();                                  // 决策 3：清空 + 覆盖重排
+                    // 决策 3：清空 + 覆盖重排。microLines[0] 作为队首等待投递结果——
+                    // HasPlayedFirst / RecentBarks / FreshBarkBridgeStore / 占用计时
+                    // 全部延迟到 MainThreadOutputQueue 实际显示成功后的 Displayed 回调。
+                    state.BarkQueue.Clear();
                     state.IsRequesting = false;
-                    state.HasPlayedFirst = true;                              // N6 状态回填
-                    state.AddRecentBark(microLines[0]);                       // N6：思绪记忆链不断裂
-                    state.BusyTicksRemaining = DISPLAY_LINE_VISIBLE_TICKS;    // N6：节日占用计时口径一致
-                    state.DisplayCountdown = DialogueUtilities.NextDisplayInterval(npcMicro, _rng);
-                    _outputQueue.Enqueue(npcMicro.Name, microLines[0], 3500, "Bark", isMicroSocialBark: true);
-                    for (int i = 1; i < microLines.Length; i++)
+                    for (int i = 0; i < microLines.Length; i++)
                         state.BarkQueue.Enqueue(microLines[i]);
+
+                    string microFirst = microLines[0];
+                    state.PendingBarkText = microFirst;
+                    state.PendingBarkIsMicroSocial = true;
+                    _outputQueue.Enqueue(
+                        npcMicro.Name,
+                        microFirst,
+                        3500,
+                        "Bark",
+                        isMicroSocialBark: true,
+                        onCompleted: result => OnBarkOutputCompleted(npcMicro.Name, microFirst, true, result));
                     continue;   // ★ 不设 CooldownTicksRemaining——冷却归 FinalizeThreadLocked，与 Soliloquy 口径一致
                 }
                 // microLines 非空但节日 / NPC 缺失 / 全空白 → 不分支，落入既有常规入队块
@@ -509,6 +518,8 @@ internal sealed class AmbientBarkModule : IDialogueModule
                 state.BarkQueue.Clear();
                 state.HasPlayedFirst = false;
                 state.DisplayCountdown = 0;
+                state.PendingBarkText = null;
+                state.PendingBarkIsMicroSocial = false;
                 state.CooldownTicksRemaining = cooldownTicks; // 始终刷新冷却
             }
 
@@ -703,6 +714,10 @@ internal sealed class AmbientBarkModule : IDialogueModule
     /// </summary>
     private void TickDisplayLocked(NPC npc, AmbientBarkStateStore.State state, bool festivalAnyBusy)
     {
+        // 已有一句等待 MainThreadOutputQueue 结算（同 Tick 内由 Process 结算）：不得重复入队
+        if (state.PendingBarkText != null)
+            return;
+
         if (Game1.activeClickableMenu != null || Game1.dialogueUp || DialogueUtilities.IsNpcSleeping(npc))
             return;
 
@@ -733,18 +748,107 @@ internal sealed class AmbientBarkModule : IDialogueModule
             return;
         }
 
-        // 出队台词
-        string bark = state.BarkQueue.Dequeue();
-        state.AddRecentBark(bark);
-        state.HasPlayedFirst = true;
+        // 仅 Peek，不 Dequeue：实际显示成功后由 Displayed 回调出队并提交状态
+        string bark = state.BarkQueue.Peek();
+        state.PendingBarkText = bark;
+        state.PendingBarkIsMicroSocial = false;
+        bool isMicroSocial = state.PendingBarkIsMicroSocial;
 
-        // 计算下一句间隔
-        state.DisplayCountdown = DialogueUtilities.NextDisplayInterval(npc, _rng);
+        _outputQueue.Enqueue(
+            npc.Name,
+            bark,
+            3500,
+            "Bark",
+            isMicroSocialBark: isMicroSocial,
+            onCompleted: result => OnBarkOutputCompleted(npc.Name, bark, isMicroSocial, result));
 
-        _outputQueue.Enqueue(npc.Name, bark, 3500, "Bark");
+        // 出队 / RecentBarks / HasPlayedFirst / DisplayCountdown / BusyTicksRemaining
+        // 全部延迟到 OnBarkOutputCompleted 的 Displayed 分支
+    }
 
-        // 标记本 NPC 进入播报占用态，占用期间其余节日 NPC 出队延迟
-        state.BusyTicksRemaining = DISPLAY_LINE_VISIBLE_TICKS;
+    /// <summary>
+    /// MainThreadOutputQueue 投递结果回调（主线程）。
+    /// 只有 Displayed 才提交 RecentBarks / HasPlayedFirst / DisplayCountdown /
+    /// BusyTicksRemaining / FreshBarkBridgeStore；Rejected 保留队首重新等待合法窗口；
+    /// Failed 丢弃当前线程并施加冷却；Cleared 只清理 Pending。
+    /// </summary>
+    private void OnBarkOutputCompleted(
+        string npcName,
+        string text,
+        bool isMicroSocial,
+        OutputDeliveryResult result)
+    {
+        if (!_stateStore.TryGet(npcName, out var state))
+        {
+            ModEntry.SMonitor?.Log(
+                $"[AmbientBark] Bark 投递回调时状态已移除：{npcName} ({result})",
+                LogLevel.Trace);
+            return;
+        }
+
+        lock (state)
+        {
+            if (!string.Equals(state.PendingBarkText, text, StringComparison.Ordinal))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[AmbientBark] Pending bark 与回调原文不一致：{npcName} | pending=\"{state.PendingBarkText}\" | callback=\"{text}\"",
+                    LogLevel.Error);
+                state.PendingBarkText = null;
+                state.PendingBarkIsMicroSocial = false;
+                return;
+            }
+
+            switch (result)
+            {
+                case OutputDeliveryResult.Displayed:
+                    // 队首即本句（PendingBarkText 设定时取自 Peek），仅当队首仍匹配时出队
+                    if (state.BarkQueue.Count > 0 &&
+                        string.Equals(state.BarkQueue.Peek(), text, StringComparison.Ordinal))
+                    {
+                        state.BarkQueue.Dequeue();
+                    }
+
+                    state.AddRecentBark(text);                                    // N6：思绪记忆链不断裂
+                    state.HasPlayedFirst = true;                                  // N6 状态回填
+                    state.DisplayCountdown = DialogueUtilities.NextDisplayInterval(
+                        Game1.getCharacterFromName(npcName), _rng);
+                    state.BusyTicksRemaining = DISPLAY_LINE_VISIBLE_TICKS;        // N6：节日占用计时口径一致
+
+                    if (isMicroSocial)
+                        FreshBarkBridgeStore.Record(npcName, text);
+
+                    ModEntry.SMonitor?.Log(
+                        $"[AmbientBark] Bark Displayed：{npcName} | \"{text}\"",
+                        LogLevel.Debug);
+                    break;
+
+                case OutputDeliveryResult.Rejected:
+                    // 不丢台词：保留队首，重新等待合法窗口
+                    state.DisplayCountdown = FIRST_BARK_POLL_TICKS;
+                    ModEntry.SMonitor?.Log(
+                        $"[AmbientBark] Bark Rejected：{npcName} | \"{text}\"",
+                        LogLevel.Debug);
+                    break;
+
+                case OutputDeliveryResult.Failed:
+                    // 丢弃当前失败线程并施加冷却，防止逐 Tick 无限重试（异常类型由 Process 以 Error 记录）
+                    state.BarkQueue.Clear();
+                    state.CooldownTicksRemaining = 1800; // 30 秒，与请求取消/回收路径同口径
+                    ModEntry.SMonitor?.Log(
+                        $"[AmbientBark] Bark Failed：{npcName} | Source=Bark | \"{text}\"",
+                        LogLevel.Error);
+                    break;
+
+                case OutputDeliveryResult.Cleared:
+                    ModEntry.SMonitor?.Log(
+                        $"[AmbientBark] Bark Cleared：{npcName}",
+                        LogLevel.Trace);
+                    break;
+            }
+
+            state.PendingBarkText = null;
+            state.PendingBarkIsMicroSocial = false;
+        }
     }
 
     /// <summary>
@@ -822,6 +926,8 @@ internal sealed class AmbientBarkModule : IDialogueModule
                     state.IsRequesting = false;
                     state.DisplayCountdown = 0;
                     state.BusyTicksRemaining = 0;
+                    state.PendingBarkText = null;
+                    state.PendingBarkIsMicroSocial = false;
                 }
             }
             catch (Exception ex)

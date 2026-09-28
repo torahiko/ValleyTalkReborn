@@ -21,6 +21,25 @@ internal interface IA2AOutputValidator
 }
 
 /// <summary>
+/// 单个输出条目的最终投递结果。每个条目（含被 Clear/ClearType 过滤丢弃的条目）
+/// 恰好结算一次。
+/// </summary>
+internal enum OutputDeliveryResult
+{
+    /// <summary>已在主线程实际调用 showTextAboveHead 成功。</summary>
+    Displayed,
+
+    /// <summary>因门禁（Bark 关闭 / A2A 会话失效 / 原版交互 / NPC 缺失或超范围）未播放。</summary>
+    Rejected,
+
+    /// <summary>投递过程失败（Game1.player 未就绪或 showTextAboveHead 抛异常）。</summary>
+    Failed,
+
+    /// <summary>被 Clear/ClearType 从队列中过滤丢弃，从未尝试播放。</summary>
+    Cleared
+}
+
+/// <summary>
 /// 主线程输出队列：统一收集 Bark 和 A2A 的气泡输出请求，
 /// 在主线程统一处理显示，确保所有游戏对象访问发生在主线程。
 /// </summary>
@@ -42,6 +61,9 @@ internal sealed class MainThreadOutputQueue
 
         // MicroSocial 直出标记（桥记录点守卫）
         public bool IsMicroSocialBark { get; set; }
+
+        // 投递结果回调（主线程，条目结算时恰好调用一次；null 表示调用方无需结果）
+        public Action<OutputDeliveryResult> OnCompleted { get; set; }
     }
 
     private readonly ConcurrentQueue<Item> _queue =
@@ -56,11 +78,16 @@ internal sealed class MainThreadOutputQueue
     /// <summary>
     /// 将输出请求加入队列。
     /// </summary>
-    internal void Enqueue(string npcName, string text, int duration, string source, bool isMicroSocialBark = false)
+    internal void Enqueue(string npcName, string text, int duration, string source, bool isMicroSocialBark = false, Action<OutputDeliveryResult> onCompleted = null)
     {
         if (string.IsNullOrWhiteSpace(npcName) ||
             string.IsNullOrWhiteSpace(text))
+        {
+            ModEntry.SMonitor?.Log(
+                $"[OutputQueue] 拒绝入队：NPC 名称或文本为空 (source={source ?? "?"}, npc={npcName ?? "?"})",
+                StardewModdingAPI.LogLevel.Warn);
             return;
+        }
 
         _queue.Enqueue(new Item
         {
@@ -68,19 +95,25 @@ internal sealed class MainThreadOutputQueue
             Text = text,
             Duration = duration,
             Source = source,
-            IsMicroSocialBark = isMicroSocialBark
+            IsMicroSocialBark = isMicroSocialBark,
+            OnCompleted = onCompleted
         });
     }
 
     /// <summary>
     /// 将 A2A 输出请求加入队列（带 SessionId/Generation 校验）。
     /// </summary>
-    internal void EnqueueA2A(string sessionId, int generation, string npcName, string text, int duration)
+    internal void EnqueueA2A(string sessionId, int generation, string npcName, string text, int duration, Action<OutputDeliveryResult> onCompleted = null)
     {
         if (string.IsNullOrWhiteSpace(sessionId) ||
             string.IsNullOrWhiteSpace(npcName) ||
             string.IsNullOrWhiteSpace(text))
+        {
+            ModEntry.SMonitor?.Log(
+                $"[OutputQueue] 拒绝入队 A2A：sessionId/NPC/文本为空 (sessionId={sessionId ?? "?"}, npc={npcName ?? "?"})",
+                StardewModdingAPI.LogLevel.Warn);
             return;
+        }
 
         _queue.Enqueue(new Item
         {
@@ -89,7 +122,8 @@ internal sealed class MainThreadOutputQueue
             NpcName = npcName,
             Text = text,
             Duration = duration,
-            Source = "A2A"
+            Source = "A2A",
+            OnCompleted = onCompleted
         });
     }
 
@@ -98,7 +132,10 @@ internal sealed class MainThreadOutputQueue
     /// </summary>
     internal void Clear()
     {
-        while (_queue.TryDequeue(out _)) { }
+        while (_queue.TryDequeue(out var item))
+        {
+            item?.OnCompleted?.Invoke(OutputDeliveryResult.Cleared);
+        }
     }
 
     /// <summary>
@@ -120,6 +157,7 @@ internal sealed class MainThreadOutputQueue
             if (item != null &&
                 string.Equals(item.Source, type, StringComparison.OrdinalIgnoreCase))
             {
+                item.OnCompleted?.Invoke(OutputDeliveryResult.Cleared);
                 continue; // 丢弃目标类型条目
             }
             _queue.Enqueue(item);
@@ -138,13 +176,24 @@ internal sealed class MainThreadOutputQueue
         {
             processed++;
 
-            if (item == null || Game1.player == null)
+            if (item == null)
                 continue;
+
+            // Game1.player 未就绪：Failed（可恢复），条目仍被消费
+            if (Game1.player == null)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[OutputQueue] 投递失败（Game1.player 为空）：{item.NpcName} ({item.Source})",
+                    StardewModdingAPI.LogLevel.Trace);
+                item.OnCompleted?.Invoke(OutputDeliveryResult.Failed);
+                continue;
+            }
 
             // ★ Bark 门禁：Bark 关闭时直接丢弃 Bark 条目，零副作用（不播放、不写历史、不触发状态）；A2A 条目不受影响
             if (string.Equals(item.Source, "Bark", StringComparison.OrdinalIgnoreCase)
                 && !ModEntry.Config.EnableAmbientBarks)
             {
+                item.OnCompleted?.Invoke(OutputDeliveryResult.Rejected);
                 continue;
             }
 
@@ -159,6 +208,7 @@ internal sealed class MainThreadOutputQueue
                     ModEntry.SMonitor?.Log(
                         $"[A2A] 输出丢弃：会话已失效或 Generation 不匹配 ({item.NpcName})",
                         StardewModdingAPI.LogLevel.Debug);
+                    item.OnCompleted?.Invoke(OutputDeliveryResult.Rejected);
                     continue;
                 }
 
@@ -171,6 +221,7 @@ internal sealed class MainThreadOutputQueue
                     ModEntry.SMonitor?.Log(
                         $"[A2A] 输出丢弃：原版交互中 ({item.NpcName})",
                         StardewModdingAPI.LogLevel.Debug);
+                    item.OnCompleted?.Invoke(OutputDeliveryResult.Rejected);
                     continue;
                 }
             }
@@ -179,6 +230,7 @@ internal sealed class MainThreadOutputQueue
             {
                 // Bark 输出在原版交互期间也丢弃；
                 // 节日漫游态（eventUp 单轴、无对话无菜单、CanMove）除外——放行节日 Bark 浮字
+                item.OnCompleted?.Invoke(OutputDeliveryResult.Rejected);
                 continue;
             }
 
@@ -196,8 +248,11 @@ internal sealed class MainThreadOutputQueue
                         Game1.player,
                         DialogueConstants.DisplayRangeSquared)))
             {
+                item.OnCompleted?.Invoke(OutputDeliveryResult.Rejected);
                 continue;
             }
+
+            OutputDeliveryResult result;
 
             try
             {
@@ -207,19 +262,23 @@ internal sealed class MainThreadOutputQueue
                     text,
                     duration: item.Duration);
 
-                if (item.IsMicroSocialBark)
-                    FreshBarkBridgeStore.Record(npc.Name, text);
-
                 ModEntry.SMonitor?.Log(
                     $"[{item.Source ?? "Dialogue"}] {npc.Name}: \"{text}\"",
                     StardewModdingAPI.LogLevel.Debug);
+
+                result = OutputDeliveryResult.Displayed;
             }
             catch (Exception ex)
             {
                 ModEntry.SMonitor?.Log(
-                    $"[DialogueOutput] 显示失败：{ex.Message}",
-                    StardewModdingAPI.LogLevel.Warn);
+                    $"[DialogueOutput] 显示失败：{item.NpcName} | {item.Source} | {ex.GetType().Name} | {ex.Message}",
+                    StardewModdingAPI.LogLevel.Error);
+
+                result = OutputDeliveryResult.Failed;
             }
+
+            // 回调放在 try 之外：保证每个条目恰好结算一次（回调自身异常不得触发二次结算）
+            item.OnCompleted?.Invoke(result);
         }
     }
 }

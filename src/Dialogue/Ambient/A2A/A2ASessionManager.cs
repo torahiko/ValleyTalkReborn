@@ -458,7 +458,9 @@ internal sealed class A2ASessionManager
                 continue; // 跳过本 Tick，静默等待玩家关闭对话框
             }
 
-            if (session.RoundsLeft <= 0 && session.Script.Count == 0)
+            // 排空判定额外要求输出队列已结算（PendingOutputCount == 0），
+            // 否则保持播放尾态，等待最后一句的投递结果落地
+            if (session.RoundsLeft <= 0 && session.Script.Count == 0 && session.PendingOutputCount == 0)
             {
                 string pairKey = DialogueUtilities.MakePairKey(session.ParticipantNames);
                 // 2 人配对拉长冷却；3+ 人群体维持原时长（群体再聚集概率低，保留活跃度）
@@ -490,7 +492,8 @@ internal sealed class A2ASessionManager
                 continue;
             }
 
-            if (session.Script.Count == 0)
+            // 输出队列未排空前保持尾态，不发起新一轮脚本请求
+            if (session.Script.Count == 0 && session.PendingOutputCount == 0)
             {
                 if (session.TryStartRequest())
                 {
@@ -562,27 +565,76 @@ internal sealed class A2ASessionManager
                         : npc.currentLocation == Game1.player.currentLocation
                           && DialogueUtilities.IsInRangeSquared(npc, (Farmer)Game1.player, DialogueConstants.DisplayRangeSquared)))
                 {
+                    string speakerName = npc.Name;
+                    string lineText = line.Line;
+                    session.PendingOutputCount++;
+
                     _outputQueue.EnqueueA2A(
                         session.SessionId,
                         session.Generation,
-                        npc.Name,
-                        line.Line,
-                        3500);
+                        speakerName,
+                        lineText,
+                        3500,
+                        onCompleted: result => OnA2AOutputCompleted(
+                            session.SessionId,
+                            session.Generation,
+                            speakerName,
+                            lineText,
+                            result));
 
-                    session.RecentSpokenLines.Enqueue((npc.Name, line.Line));
-                    if (session.RecentSpokenLines.Count > 2)
-                        session.RecentSpokenLines.Dequeue();
+                    // RecentSpokenLines 与 ReadCooldownTicks 均延迟到投递结果回调结算
                 }
                 else
                 {
                     ModEntry.SMonitor?.Log(
                         $"[A2A] {npc?.Name ?? line.SpeakerName} 离场或不在视野，跳过该句",
                         LogLevel.Trace);
-                }
 
-                session.ReadCooldownTicks = A2A_SPEAK_INTERVAL_TICKS;
+                    // 未入队（无投递结果），节奏仍需推进
+                    session.ReadCooldownTicks = A2A_SPEAK_INTERVAL_TICKS;
+                }
             }
         }
+    }
+
+    /// <summary>
+    /// MainThreadOutputQueue 投递结果回调（主线程）。
+    /// 只有 Displayed 才写 RecentSpokenLines（保持"最多存最后 2 句"的裁剪语义）；
+    /// Rejected/Failed/Cleared 不写历史。无论哪种结果都释放 PendingOutputCount 并推进节奏。
+    /// </summary>
+    private void OnA2AOutputCompleted(
+        string sessionId,
+        int generation,
+        string npcName,
+        string line,
+        OutputDeliveryResult result)
+    {
+        var session = _activeA2ASessions.FirstOrDefault(s => s.SessionId == sessionId);
+
+        if (session == null || session.IsCancelled || session.Generation != generation)
+        {
+            ModEntry.SMonitor?.Log(
+                $"[A2A] 输出回调时会话已取消/结束或 Generation 不匹配，停止状态写入：{sessionId} ({npcName}, {result})",
+                LogLevel.Trace);
+            return;
+        }
+
+        if (result == OutputDeliveryResult.Displayed)
+        {
+            session.RecentSpokenLines.Enqueue((npcName, line));
+            if (session.RecentSpokenLines.Count > 2)
+                session.RecentSpokenLines.Dequeue();
+        }
+
+        if (session.PendingOutputCount > 0)
+            session.PendingOutputCount--;
+
+        // 投递结算后才推进下一句节奏（仍为 240 ticks）
+        session.ReadCooldownTicks = A2A_SPEAK_INTERVAL_TICKS;
+
+        ModEntry.SMonitor?.Log(
+            $"[A2A] 输出 {result}：{npcName} | \"{line}\"",
+            result == OutputDeliveryResult.Displayed ? LogLevel.Trace : LogLevel.Debug);
     }
 
     /// <summary>
@@ -969,6 +1021,9 @@ internal sealed class A2ASessionManager
         session.MarkEnding();
 
         session.Cancel();
+
+        // 会话废弃：清空待结算输出计数，残留队列条目结算时按"会话已结束"处理
+        session.PendingOutputCount = 0;
 
         try
         {
