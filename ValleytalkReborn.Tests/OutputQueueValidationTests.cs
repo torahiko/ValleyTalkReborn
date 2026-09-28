@@ -266,9 +266,70 @@ public class OutputQueueValidationTests
         Assert.False(state.HasPlayedFirst);
     }
 
+    // ─────────── MicroSocial 首句标记（先拒后播的桥身份）───────────
+
+    // Rejected → 保留队首且保留首句标记，重派时仍可识别（不变量：标记非空 ⇒ Peek() == 标记）
+    [Fact]
+    public void UT15_BarkRejected_KeepsMicroFirstLineMarker()
+    {
+        var store = new AmbientBarkStateStore();
+        var module = NewBarkModule(store, NewQueue());
+        var state = store.GetOrCreate("Abigail");
+        state.BarkQueue.Enqueue("微社交首句");
+        state.BarkQueue.Enqueue("后续台词");
+        state.PendingBarkText = "微社交首句";
+        state.PendingBarkIsMicroSocial = true;
+        state.MicroFirstLineText = "微社交首句";
+
+        InvokeBarkCallback(module, "Abigail", "微社交首句", true, OutputDeliveryResult.Rejected);
+
+        Assert.Equal("微社交首句", state.MicroFirstLineText);
+        Assert.Collection(
+            state.BarkQueue,
+            line => Assert.Equal("微社交首句", line),
+            line => Assert.Equal("后续台词", line));
+        Assert.Equal(state.BarkQueue.Peek(), state.MicroFirstLineText);
+        Assert.Empty(state.RecentBarks);
+        Assert.Null(state.PendingBarkText);
+    }
+
+    // Cleared → 标记清空（宁漏录，不误录）
+    [Fact]
+    public void UT16_BarkCleared_ClearsMicroFirstLineMarker()
+    {
+        var store = new AmbientBarkStateStore();
+        var module = NewBarkModule(store, NewQueue());
+        var state = store.GetOrCreate("Abigail");
+        state.BarkQueue.Enqueue("微社交首句");
+        state.PendingBarkText = "微社交首句";
+        state.MicroFirstLineText = "微社交首句";
+
+        InvokeBarkCallback(module, "Abigail", "微社交首句", true, OutputDeliveryResult.Cleared);
+
+        Assert.Null(state.MicroFirstLineText);
+        Assert.Equal("微社交首句", state.BarkQueue.Peek());
+    }
+
+    // Failed → 线程整体丢弃，标记随之清空
+    [Fact]
+    public void UT17_BarkFailed_ClearsMicroFirstLineMarker()
+    {
+        var store = new AmbientBarkStateStore();
+        var module = NewBarkModule(store, NewQueue());
+        var state = store.GetOrCreate("Abigail");
+        state.BarkQueue.Enqueue("微社交首句");
+        state.PendingBarkText = "微社交首句";
+        state.MicroFirstLineText = "微社交首句";
+
+        InvokeBarkCallback(module, "Abigail", "微社交首句", true, OutputDeliveryResult.Failed);
+
+        Assert.Null(state.MicroFirstLineText);
+        Assert.Empty(state.BarkQueue);
+    }
+
     // ─────────────────── 清理路径：Pending 无残留 ───────────────────
 
-    // 运行态重置清空 Pending 字段
+    // 运行态重置清空 Pending 字段与 MicroSocial 首句标记
     [Fact]
     public void UT09_StateStore_ResetClearsPending()
     {
@@ -276,11 +337,13 @@ public class OutputQueueValidationTests
         var state = store.GetOrCreate("Abigail");
         state.PendingBarkText = "台词";
         state.PendingBarkIsMicroSocial = true;
+        state.MicroFirstLineText = "台词";
 
         state.ClearRuntimeState();
 
         Assert.Null(state.PendingBarkText);
         Assert.False(state.PendingBarkIsMicroSocial);
+        Assert.Null(state.MicroFirstLineText);
     }
 
     // CleanupAll（关闭 AmbientBarks / 换天 / 回标题）→ 队列条目以 Cleared 结算且 State 无残留
@@ -295,6 +358,7 @@ public class OutputQueueValidationTests
         var state = store.GetOrCreate("Abigail");
         state.BarkQueue.Enqueue("未播放台词");
         state.PendingBarkText = "未播放台词";
+        state.MicroFirstLineText = "未播放台词";
         queue.Enqueue("Abigail", "未播放台词", 3500, "Bark", false, cb.OnCompleted);
 
         module.CleanupAll();
@@ -302,6 +366,7 @@ public class OutputQueueValidationTests
         Assert.Equal(1, cb.Calls);
         Assert.Equal(OutputDeliveryResult.Cleared, cb.Last);
         Assert.Empty(store.Snapshot());
+        Assert.Null(state.MicroFirstLineText);   // reset 路径不得残留首句标记
     }
 
     // ─────────────────── A2A 回调：历史只在 Displayed 提交 ───────────────────

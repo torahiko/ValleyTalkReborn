@@ -90,6 +90,15 @@ internal sealed class AmbientBarkStateStore
         /// </summary>
         public bool PendingBarkIsMicroSocial { get; set; }
 
+        /// <summary>
+        /// 队首待播的 MicroSocial 首句原文；null = 队首不存在待播 MicroSocial 首句。
+        /// 用于在"先拒后播"（Rejected 保留队首、下一 Tick 重新入队）后仍能识别首句身份，
+        /// 使 FreshBarkBridgeStore 记录只在真正显示成功时发生。
+        /// 不变量：MicroFirstLineText != null ⇒ BarkQueue.Peek() == MicroFirstLineText。
+        /// 纯运行时记忆，绝不写入存档。
+        /// </summary>
+        public string MicroFirstLineText { get; set; }
+
         // ── 注意力流转记忆（疲劳阻尼依据）──
 
         /// <summary>
@@ -170,6 +179,7 @@ internal sealed class AmbientBarkStateStore
             BusyTicksRemaining = 0;
             PendingBarkText = null;
             PendingBarkIsMicroSocial = false;
+            MicroFirstLineText = null;
         }
 
         /// <summary>

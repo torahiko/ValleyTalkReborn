@@ -211,6 +211,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
                     SalvageToEchoStore();
                     state.IsRequesting = false;
                     state.BarkQueue.Clear();
+                    state.MicroFirstLineText = null;
                     state.CooldownTicksRemaining = 3600; // 60 秒
                     continue;
                 }
@@ -236,6 +237,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
                     string microFirst = microLines[0];
                     state.PendingBarkText = microFirst;
                     state.PendingBarkIsMicroSocial = true;
+                    state.MicroFirstLineText = microFirst;   // 首句身份落库：Rejected 保留队首后仍可识别
                     _outputQueue.Enqueue(
                         npcMicro.Name,
                         microFirst,
@@ -448,6 +450,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
                 npcState.HasPlayedFirst = false;
                 npcState.DisplayCountdown = FIRST_BARK_POLL_TICKS;
                 npcState.CooldownTicksRemaining = null;
+                npcState.MicroFirstLineText = null;
                 npcState.ReplaceCts();
             }
 
@@ -520,6 +523,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
                 state.DisplayCountdown = 0;
                 state.PendingBarkText = null;
                 state.PendingBarkIsMicroSocial = false;
+                state.MicroFirstLineText = null;
                 state.CooldownTicksRemaining = cooldownTicks; // 始终刷新冷却
             }
 
@@ -751,8 +755,11 @@ internal sealed class AmbientBarkModule : IDialogueModule
         // 仅 Peek，不 Dequeue：实际显示成功后由 Displayed 回调出队并提交状态
         string bark = state.BarkQueue.Peek();
         state.PendingBarkText = bark;
-        state.PendingBarkIsMicroSocial = false;
-        bool isMicroSocial = state.PendingBarkIsMicroSocial;
+
+        // MicroSocial 首句身份按队首文本派生（"先拒后播"重派时仍能识别首句）
+        bool isMicroSocial = state.MicroFirstLineText != null
+                             && string.Equals(bark, state.MicroFirstLineText, StringComparison.Ordinal);
+        state.PendingBarkIsMicroSocial = isMicroSocial;
 
         _outputQueue.Enqueue(
             npc.Name,
@@ -808,6 +815,10 @@ internal sealed class AmbientBarkModule : IDialogueModule
                         state.BarkQueue.Dequeue();
                     }
 
+                    // MicroSocial 首句身份已消费（队首不匹配的防御分支同样清标记：宁漏录，不误录）
+                    if (string.Equals(text, state.MicroFirstLineText, StringComparison.Ordinal))
+                        state.MicroFirstLineText = null;
+
                     state.AddRecentBark(text);                                    // N6：思绪记忆链不断裂
                     state.HasPlayedFirst = true;                                  // N6 状态回填
                     state.DisplayCountdown = DialogueUtilities.NextDisplayInterval(
@@ -833,6 +844,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
                 case OutputDeliveryResult.Failed:
                     // 丢弃当前失败线程并施加冷却，防止逐 Tick 无限重试（异常类型由 Process 以 Error 记录）
                     state.BarkQueue.Clear();
+                    state.MicroFirstLineText = null;
                     state.CooldownTicksRemaining = 1800; // 30 秒，与请求取消/回收路径同口径
                     ModEntry.SMonitor?.Log(
                         $"[AmbientBark] Bark Failed：{npcName} | Source=Bark | \"{text}\"",
@@ -840,6 +852,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
                     break;
 
                 case OutputDeliveryResult.Cleared:
+                    state.MicroFirstLineText = null;
                     ModEntry.SMonitor?.Log(
                         $"[AmbientBark] Bark Cleared：{npcName}",
                         LogLevel.Trace);
@@ -928,6 +941,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
                     state.BusyTicksRemaining = 0;
                     state.PendingBarkText = null;
                     state.PendingBarkIsMicroSocial = false;
+                    state.MicroFirstLineText = null;
                 }
             }
             catch (Exception ex)
@@ -1031,6 +1045,7 @@ internal sealed class AmbientBarkModule : IDialogueModule
             npcState.HasPlayedFirst = false;
             npcState.DisplayCountdown = FIRST_BARK_POLL_TICKS;
             npcState.CooldownTicksRemaining = null;
+            npcState.MicroFirstLineText = null;
             npcState.ReplaceCts();
         }
 
