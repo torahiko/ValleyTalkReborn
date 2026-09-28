@@ -20,6 +20,7 @@ using System.Text.Json;
 using StardewModdingAPI;
 using StardewValley;
 using ValleytalkReborn;
+using ValleytalkReborn.Dialogue.Coordination;
 using ValleytalkReborn.Tests;
 using Xunit;
 

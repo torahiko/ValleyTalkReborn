@@ -9,6 +9,7 @@ using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Menus;
 using StardewValley.Pathfinding;
+using ValleytalkReborn.Dialogue.Coordination;
 
 namespace ValleytalkReborn
 {
@@ -824,7 +825,7 @@ namespace ValleytalkReborn
 
                 targetNpc.doEmote(32);
                 targetNpc.CurrentDialogue.Clear();
-                targetNpc.CurrentDialogue.Push(new Dialogue(targetNpc, null, greeting));
+                targetNpc.CurrentDialogue.Push(new StardewValley.Dialogue(targetNpc, null, greeting));
                 Game1.drawDialogue(targetNpc);
                 RecordDateDialogue(targetNpc.Name, greeting);
             });
@@ -874,7 +875,7 @@ namespace ValleytalkReborn
             }
 
             npc.CurrentDialogue.Clear();
-            npc.CurrentDialogue.Push(new Dialogue(npc, null, line));
+            npc.CurrentDialogue.Push(new StardewValley.Dialogue(npc, null, line));
             Game1.drawDialogue(npc);
 
             // 记录正在等待关闭的 NPC，OnMenuChanged 事件会处理释放

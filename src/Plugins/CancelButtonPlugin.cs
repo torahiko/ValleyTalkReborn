@@ -247,7 +247,7 @@ namespace ValleytalkReborn.Plugins
                 string cancelMsg = translation.HasValue() ? translation.ToString() : fallback;
 
                 if (currentNpc != null)
-                    Game1.activeClickableMenu = new DialogueBox(new Dialogue(currentNpc, "", $"$s {cancelMsg}"));
+                    Game1.activeClickableMenu = new DialogueBox(new StardewValley.Dialogue(currentNpc, "", $"$s {cancelMsg}"));
                 else
                     Game1.activeClickableMenu = new DialogueBox(cancelMsg);
             }

@@ -5,6 +5,7 @@ using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Pathfinding;
+using ValleytalkReborn.Dialogue.Coordination;
 
 namespace ValleytalkReborn.Movement
 {

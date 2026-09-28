@@ -42,6 +42,7 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using StardewValley;
 using ValleytalkReborn;
+using ValleytalkReborn.Dialogue.Coordination;
 using Xunit;
 
 namespace ValleytalkReborn.Tests;

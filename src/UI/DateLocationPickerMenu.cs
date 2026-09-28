@@ -376,7 +376,7 @@ namespace ValleytalkReborn
                     : $"It's a date! See you at {locDisplayName} tonight!$h";
 
                 _targetNpc.CurrentDialogue.Clear();
-                _targetNpc.CurrentDialogue.Push(new Dialogue(_targetNpc, null, farewellLine));
+                _targetNpc.CurrentDialogue.Push(new StardewValley.Dialogue(_targetNpc, null, farewellLine));
                 Game1.drawDialogue(_targetNpc);
             }
         }

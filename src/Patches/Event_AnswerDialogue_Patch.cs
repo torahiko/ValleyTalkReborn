@@ -98,10 +98,10 @@ namespace ValleytalkReborn
     /// 事件/剧情中以 NPC 名义记录的 chooseResponse 路径（$y 带头像提问事件等）。
     /// 纯观察 Postfix：绝不 return false、不改 __result、不改原流程。
     /// </summary>
-    [HarmonyPatch(typeof(Dialogue), nameof(Dialogue.chooseResponse))]
+    [HarmonyPatch(typeof(StardewValley.Dialogue), nameof(StardewValley.Dialogue.chooseResponse))]
     public class Dialogue_ChooseResponse_EventCapture_Patch
     {
-        public static void Postfix(Dialogue __instance, Response response)
+        public static void Postfix(StardewValley.Dialogue __instance, Response response)
         {
             try
             {

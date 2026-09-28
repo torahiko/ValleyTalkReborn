@@ -10,6 +10,7 @@ using System.Text;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.GameData.Characters;
+using ValleytalkReborn.Dialogue.Coordination;
 
 namespace ValleytalkReborn;
 

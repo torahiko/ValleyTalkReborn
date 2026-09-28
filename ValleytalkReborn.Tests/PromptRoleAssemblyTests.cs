@@ -15,6 +15,7 @@ using System.Threading;
 using StardewModdingAPI;
 using StardewValley;
 using ValleytalkReborn;
+using ValleytalkReborn.Dialogue.Coordination;
 using Xunit;
 
 [Collection("StaticGlobalStateCollection")]

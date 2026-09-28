@@ -5,12 +5,12 @@ using StardewValley;
 
 namespace ValleytalkReborn
 {
-    [HarmonyPatch(typeof(Game1), nameof(Game1.DrawDialogue), new Type[] { typeof(Dialogue) })]
+    [HarmonyPatch(typeof(Game1), nameof(Game1.DrawDialogue), new Type[] { typeof(StardewValley.Dialogue) })]
     public class Game1_DrawDialogue_Patch
     {
         internal static bool DrawingDialogue = false;
 
-        public static bool Prefix(Dialogue dialogue)
+        public static bool Prefix(StardewValley.Dialogue dialogue)
         {
             if (dialogue?.dialogues == null || dialogue.dialogues.Count == 0)
             {

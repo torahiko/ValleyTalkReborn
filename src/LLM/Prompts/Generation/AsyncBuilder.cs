@@ -157,7 +157,7 @@ public class AsyncBuilder
                     {
                         // 🌟 使用纯空格占位，界面完全透明隐形，且触发 IsNullOrWhiteSpace 保护，绝不入库
                         SuppressHistory = true;
-                        var placeholder = new DialogueBox(new Dialogue(_speakingNpc, "", "   "));
+                        var placeholder = new DialogueBox(new StardewValley.Dialogue(_speakingNpc, "", "   "));
                         SuppressHistory = false;
                         Game1.activeClickableMenu = placeholder;
                         db = placeholder;
@@ -199,7 +199,7 @@ public class AsyncBuilder
                     {
                         // 🌟 使用纯空格占位，界面完全透明隐形，且触发 IsNullOrWhiteSpace 保护，绝不入库
                         SuppressHistory = true;
-                        var newDb = new DialogueBox(new Dialogue(_speakingNpc, "", "   "));
+                        var newDb = new DialogueBox(new StardewValley.Dialogue(_speakingNpc, "", "   "));
                         SuppressHistory = false;
                         Game1.activeClickableMenu = newDb;
                         db = newDb;
@@ -239,7 +239,7 @@ public class AsyncBuilder
 
         try
         {
-            Task<Dialogue> dialogueTask = currentType switch
+            Task<StardewValley.Dialogue> dialogueTask = currentType switch
             {
                 GenerationType.Basic => GenerateNpc(),
                 GenerationType.conversation => GenerateNpcResponse(),
@@ -260,7 +260,7 @@ public class AsyncBuilder
                             ? "（请求发生异常，请检查设置。）"
                             : "(An error occurred, please check your settings.)");
                     if (npc != null)
-                        Game1.activeClickableMenu = new DialogueBox(new Dialogue(npc, "", $"$s {errMsg}"));
+                        Game1.activeClickableMenu = new DialogueBox(new StardewValley.Dialogue(npc, "", $"$s {errMsg}"));
                     else
                         ShowFeedbackDialogue(menuToClose, errMsg);
                 });
@@ -411,7 +411,7 @@ public class AsyncBuilder
                         ? "（请求发生异常或超时，请检查网络与设置。）"
                         : "(Request timed out or encountered an error, please check network and settings.)");
                 if (npc != null)
-                    Game1.activeClickableMenu = new DialogueBox(new Dialogue(npc, "", $"$s {netMsg}"));
+                    Game1.activeClickableMenu = new DialogueBox(new StardewValley.Dialogue(npc, "", $"$s {netMsg}"));
                 else
                     ShowFeedbackDialogue(placeholder, netMsg);
             });
@@ -619,7 +619,7 @@ public class AsyncBuilder
     }
 
     // 🌟【业务逻辑 100% 完整保留】：流式回调委托正常注册与下发，保证 LlmDialogueService 正常走流式通道
-    private async Task<Dialogue> GenerateNpcGift()
+    private async Task<StardewValley.Dialogue> GenerateNpcGift()
     {
         _isStreaming = true;
         Action<string> streamCallback = token => _streamTokenQueue.Enqueue(token);
@@ -675,7 +675,7 @@ public class AsyncBuilder
             LogLevel.Debug);
     }
 
-    private async Task<Dialogue> GenerateNpcHandover()
+    private async Task<StardewValley.Dialogue> GenerateNpcHandover()
     {
         _isStreaming = true;
         Action<string> streamCallback = token => _streamTokenQueue.Enqueue(token);
@@ -683,14 +683,14 @@ public class AsyncBuilder
             _speakingNpc, _currentHandoverVerdict, _currentHandoverItem, streamCallback);
     }
 
-    private async Task<Dialogue> GenerateNpc()
+    private async Task<StardewValley.Dialogue> GenerateNpc()
     {
         _isStreaming = true;
         Action<string> streamCallback = token => _streamTokenQueue.Enqueue(token);
         return await DialogueBuilder.Instance.Generate(_speakingNpc, _currentDialogueKey, _originalLine, streamCallback);
     }
 
-    private async Task<Dialogue> GenerateNpcResponse()
+    private async Task<StardewValley.Dialogue> GenerateNpcResponse()
     {
         var npc = _speakingNpc;
         var conversationList = _currentConversation?.ToList() ?? new List<ConversationElement>();
@@ -700,7 +700,7 @@ public class AsyncBuilder
 
         var newDialogue = await DialogueBuilder.Instance.GenerateResponse(npc, conversationList, true, streamCallback);
         if (newDialogue == null) return null;
-        return new Dialogue(npc, _currentDialogueKey, newDialogue);
+        return new StardewValley.Dialogue(npc, _currentDialogueKey, newDialogue);
     }
 }
 

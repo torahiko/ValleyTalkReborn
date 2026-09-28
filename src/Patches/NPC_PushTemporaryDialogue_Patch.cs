@@ -54,7 +54,7 @@ namespace ValleytalkReborn
                 }
 
                 Game1.activeClickableMenu = new StardewValley.Menus.DialogueBox(
-                    new Dialogue(__instance, translationKey, "   "));
+                    new StardewValley.Dialogue(__instance, translationKey, "   "));
 
                 // ★ 日志降级：Trace
                 ModEntry.SMonitor.Log($"[PushTempDialogue] Placeholder created, awaiting={AsyncBuilder.Instance.AwaitingGeneration}", LogLevel.Trace);

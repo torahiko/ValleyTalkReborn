@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Characters;
+using ValleytalkReborn.Dialogue.Coordination;
 using ValleytalkReborn.Movement;
 
 namespace ValleytalkReborn
@@ -395,7 +396,7 @@ namespace ValleytalkReborn
             return $"{(dontSkipNext ? "" : "skip#")}{formattedLine}";
         }
 
-        internal async Task<Dialogue> GenerateGift(NPC instance, StardewValley.Object gift, int taste, Action<string> onStreamingToken = null)
+        internal async Task<StardewValley.Dialogue> GenerateGift(NPC instance, StardewValley.Object gift, int taste, Action<string> onStreamingToken = null)
         {
             var character = GetCharacter(instance);
             // ★ 兜底守卫：返回 null 交由调用方回退原版送礼台词（既有 null 语义）
@@ -464,11 +465,11 @@ namespace ValleytalkReborn
                 allowFallbackEmotes: !context.RoutingFlags.IsSimpleGreeting);
             
             string formattedLine = FormatLine(theLine, speakerName: instance.Name);
-            var newDialogue = new Dialogue(instance, $"Accept_{gift.Name}", formattedLine);
+            var newDialogue = new StardewValley.Dialogue(instance, $"Accept_{gift.Name}", formattedLine);
             return newDialogue;
         }
 
-        internal async Task<Dialogue> GenerateHandover(NPC instance, HandoverVerdict verdict,
+        internal async Task<StardewValley.Dialogue> GenerateHandover(NPC instance, HandoverVerdict verdict,
                                                        StardewValley.Object item,
                                                        Action<string> onStreamingToken = null)
         {
@@ -521,14 +522,14 @@ namespace ValleytalkReborn
                 allowFallbackEmotes: !context.RoutingFlags.IsSimpleGreeting);
 
             string formattedLine = FormatLine(theLine, speakerName: instance.Name);
-            return new Dialogue(instance, $"Handover_{verdict}", formattedLine);
+            return new StardewValley.Dialogue(instance, $"Handover_{verdict}", formattedLine);
         }
 
-        internal async Task<Dialogue> Generate(NPC instance, string dialogueKey, string originalLine = "", Action<string> onStreamingToken = null)
+        internal async Task<StardewValley.Dialogue> Generate(NPC instance, string dialogueKey, string originalLine = "", Action<string> onStreamingToken = null)
         {
             if (Game1.fadeToBlack || Game1.eventUp || !Game1.hasLoadedGame)
             {
-                return new Dialogue(instance, dialogueKey, originalLine ?? "...");
+                return new StardewValley.Dialogue(instance, dialogueKey, originalLine ?? "...");
             }
             var character = GetCharacter(instance);
             // ★ 兜底守卫：无有效 Bios 时直接返回原版台词，不进入任何 AI 流程
@@ -538,7 +539,7 @@ namespace ValleytalkReborn
                 {
                     ModEntry.SMonitor?.Log($"[DialogueBuilder] Generate 守卫：{instance?.Name} 无有效 Bios，返回原版台词。", LogLevel.Debug);
                 }
-                return new Dialogue(instance, dialogueKey, originalLine ?? "...");
+                return new StardewValley.Dialogue(instance, dialogueKey, originalLine ?? "...");
             }
             DialogueContext context = GetBasicContext(instance);
 
@@ -577,7 +578,7 @@ namespace ValleytalkReborn
                 allowFallbackEmotes: !context.RoutingFlags.IsSimpleGreeting);
 
             string formattedLine = FormatLine(theLine, speakerName: instance.Name);
-            return new Dialogue(instance, dialogueKey, formattedLine);
+            return new StardewValley.Dialogue(instance, dialogueKey, formattedLine);
         }
         
         private void ApplyEmbodiedActions(NPC instance, DialogueContext context, string[] theLine)

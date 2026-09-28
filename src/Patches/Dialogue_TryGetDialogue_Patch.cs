@@ -3,10 +3,10 @@ using StardewValley;
 
 namespace ValleytalkReborn
 {
-    [HarmonyPatch(typeof(Dialogue), nameof(Dialogue.TryGetDialogue))]
+    [HarmonyPatch(typeof(StardewValley.Dialogue), nameof(StardewValley.Dialogue.TryGetDialogue))]
     public class Dialogue_TryGetDialogue_Patch
     {
-        public static bool Prefix(ref Dialogue __instance, ref Dialogue __result, NPC speaker, string translationKey)
+        public static bool Prefix(ref StardewValley.Dialogue __instance, ref StardewValley.Dialogue __result, NPC speaker, string translationKey)
         {
             if (speaker == null || string.IsNullOrEmpty(translationKey))
             {

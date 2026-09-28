@@ -3,7 +3,7 @@
 using StardewModdingAPI;
 using StardewValley;
 
-namespace ValleytalkReborn;
+namespace ValleytalkReborn.Dialogue.Coordination;
 
 /// <summary>
 /// 仅主线程调用。从现有公共状态推导伴侣聚焦模式，不持有状态、不做任何写操作。

@@ -11,10 +11,10 @@ namespace ValleytalkReborn
     /// Game1.DrawDialogue is not always called for vanilla dialogue; the engine may construct
     /// a DialogueBox directly, so this is the reliable interception point.
     /// </summary>
-    [HarmonyPatch(typeof(DialogueBox), MethodType.Constructor, new[] { typeof(Dialogue) })]
+    [HarmonyPatch(typeof(DialogueBox), MethodType.Constructor, new[] { typeof(StardewValley.Dialogue) })]
     public class DialogueBox_Ctor_Patch
     {
-        public static void Postfix(Dialogue dialogue)
+        public static void Postfix(StardewValley.Dialogue dialogue)
         {
             if (dialogue?.speaker == null) return;
             if (dialogue.dialogues == null || dialogue.dialogues.Count == 0) return;

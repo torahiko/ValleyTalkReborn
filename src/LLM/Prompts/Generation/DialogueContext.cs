@@ -7,6 +7,7 @@ using StardewModdingAPI;
 using System.Data.SqlTypes;
 using System.Linq;
 using StardewValley.Characters;
+using ValleytalkReborn.Dialogue.Coordination;
 using ValleytalkReborn;
 
 namespace ValleytalkReborn;

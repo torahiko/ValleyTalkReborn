@@ -291,7 +291,7 @@ namespace ValleytalkReborn
             // 🌟 使用纯空格占位，界面完全透明隐形，且触发 IsNullOrWhiteSpace 保护，绝不入库
             AsyncBuilder.SuppressHistory = true;
             Game1.activeClickableMenu = new StardewValley.Menus.DialogueBox(
-                new Dialogue(__instance, "", "   "));
+                new StardewValley.Dialogue(__instance, "", "   "));
             AsyncBuilder.SuppressHistory = false;
 
             ModEntry.SHelper?.Input?.Suppress(SButton.MouseRight);
@@ -436,7 +436,7 @@ namespace ValleytalkReborn
                     npc.doEmote(HeartEmote);
                     string line = ModEntry.SHelper.Translation.Get("invite.spouse.accept");
                     npc.CurrentDialogue.Clear();
-                    npc.CurrentDialogue.Push(new Dialogue(npc, null, line));
+                    npc.CurrentDialogue.Push(new StardewValley.Dialogue(npc, null, line));
                     Game1.drawDialogue(npc);
                 }
                 else
@@ -452,7 +452,7 @@ namespace ValleytalkReborn
 
                 string line = ModEntry.SHelper.Translation.Get("invite.spouse.decline");
                 npc.CurrentDialogue.Clear();
-                npc.CurrentDialogue.Push(new Dialogue(npc, null, line));
+                npc.CurrentDialogue.Push(new StardewValley.Dialogue(npc, null, line));
                 Game1.drawDialogue(npc);
             }
         }

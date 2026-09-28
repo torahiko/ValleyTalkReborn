@@ -7,6 +7,7 @@ using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using ValleytalkReborn;
+using ValleytalkReborn.Dialogue.Coordination;
 using ValleytalkReborn.Services;
 using ValleytalkReborn.Services.Overlays;
 

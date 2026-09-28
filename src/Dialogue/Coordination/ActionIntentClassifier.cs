@@ -19,6 +19,7 @@
 
 using System;
 using System.Text.RegularExpressions;
+using ValleytalkReborn.Dialogue.Coordination;
 
 namespace ValleytalkReborn;
 

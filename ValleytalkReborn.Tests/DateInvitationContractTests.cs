@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using StardewValley;
 using ValleytalkReborn;
+using ValleytalkReborn.Dialogue.Coordination;
 using Xunit;
 
 namespace ValleytalkReborn.Tests;

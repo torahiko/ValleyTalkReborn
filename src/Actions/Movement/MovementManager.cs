@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
+using ValleytalkReborn.Dialogue.Coordination;
 using ValleytalkReborn.Movement;
 
 namespace ValleytalkReborn

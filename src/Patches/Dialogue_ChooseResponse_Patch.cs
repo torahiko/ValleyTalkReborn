@@ -6,14 +6,14 @@ using StardewValley;
 
 namespace ValleytalkReborn
 {
-    [HarmonyPatch(typeof(Dialogue), nameof(Dialogue.chooseResponse))]
+    [HarmonyPatch(typeof(StardewValley.Dialogue), nameof(StardewValley.Dialogue.chooseResponse))]
     public class Dialogue_ChooseResponse_Patch
     {
         // 【优化】使用 Harmony 高性能 FieldRef 替代传统 FieldInfo.SetValue，提升反射运行速度
-        private static readonly AccessTools.FieldRef<Dialogue, bool> FinishedLastDialogueRef =
-            AccessTools.FieldRefAccess<Dialogue, bool>("finishedLastDialogue");
+        private static readonly AccessTools.FieldRef<StardewValley.Dialogue, bool> FinishedLastDialogueRef =
+            AccessTools.FieldRefAccess<StardewValley.Dialogue, bool>("finishedLastDialogue");
 
-        public static bool Prefix(ref Dialogue __instance, ref bool __result, Response response)
+        public static bool Prefix(ref StardewValley.Dialogue __instance, ref bool __result, Response response)
         {
             if (__instance?.speaker == null || response == null)
             {

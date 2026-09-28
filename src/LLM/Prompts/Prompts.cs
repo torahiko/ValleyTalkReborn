@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
+using ValleytalkReborn.Dialogue.Coordination;
 using ValleytalkReborn;
 using StardewValley;
 using StardewValley.GameData.Characters;

@@ -8,7 +8,7 @@ namespace ValleytalkReborn
     {
         public static bool Prefix(
             ref NPC __instance,
-            ref Dialogue __result,
+            ref StardewValley.Dialogue __result,
             Farmer giver,
             StardewValley.Object gift,
             int taste)
@@ -69,7 +69,7 @@ namespace ValleytalkReborn
 
             AsyncBuilder.Instance.RequestNpcGiftResponse(__instance, gift, taste);
 
-            var result = new Dialogue(__instance, null, SldConstants.DialogueSkipTag);
+            var result = new StardewValley.Dialogue(__instance, null, SldConstants.DialogueSkipTag);
             result.exitCurrentDialogue();
             __result = result;
 

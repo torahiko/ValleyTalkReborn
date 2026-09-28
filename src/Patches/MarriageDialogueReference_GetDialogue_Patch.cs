@@ -11,7 +11,7 @@ namespace ValleytalkReborn
         public static readonly List<string> AddToNextDialogue = new List<string>();
         public static readonly object LockObj = new object();
 
-        public static bool Prefix(ref MarriageDialogueReference __instance, ref Dialogue __result, NPC n)
+        public static bool Prefix(ref MarriageDialogueReference __instance, ref StardewValley.Dialogue __result, NPC n)
         {
             if (n == null || __instance == null)
             {
@@ -40,7 +40,7 @@ namespace ValleytalkReborn
                 ModEntry.SMonitor.Log(
                     $"[MarriageDialogueReference_GetDialogue_Patch] Skipping Basic for {n.Name}: Gift interaction pending.",
                     StardewModdingAPI.LogLevel.Debug);
-                var skip = new Dialogue(n, __instance.DialogueKey, SldConstants.DialogueSkipTag);
+                var skip = new StardewValley.Dialogue(n, __instance.DialogueKey, SldConstants.DialogueSkipTag);
                 skip.exitCurrentDialogue();
                 __result = skip;
                 return false;
@@ -73,7 +73,7 @@ namespace ValleytalkReborn
                 }
             }
 
-            var placeholder = new Dialogue(n, __instance.DialogueKey, "   ");
+            var placeholder = new StardewValley.Dialogue(n, __instance.DialogueKey, "   ");
             AsyncBuilder.Instance.RequestNpcBasic(n, __instance.DialogueKey, nextDialogue ?? "");
 
             __result = placeholder;

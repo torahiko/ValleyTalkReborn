@@ -6,7 +6,7 @@ namespace ValleytalkReborn
     [HarmonyPatch(typeof(NPC), nameof(NPC.tryToGetMarriageSpecificDialogue))]
     public class NPC_TryToGetMarriageSpecificDialogue_Patch
     {
-        public static bool Prefix(ref NPC __instance, ref Dialogue __result, string dialogueKey)
+        public static bool Prefix(ref NPC __instance, ref StardewValley.Dialogue __result, string dialogueKey)
         {
             if (__instance == null || string.IsNullOrEmpty(dialogueKey))
             {
@@ -30,7 +30,7 @@ namespace ValleytalkReborn
             if (!ModEntry.Config.EnableVanillaFirst &&
                 (dialogueKey.StartsWith("funReturn_") || dialogueKey.StartsWith("jobReturn_")))
             {
-                __result = new Dialogue(__instance, dialogueKey, SldConstants.DialogueGenerationTag);
+                __result = new StardewValley.Dialogue(__instance, dialogueKey, SldConstants.DialogueGenerationTag);
                 return false;
             }
 
