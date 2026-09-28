@@ -15,8 +15,9 @@
 // 5. 约会系统关闭 ⇒ 不残留任何日期衍生标志。
 //
 // 环境事实：本文件沿用 TestEnvironment.InstallHeadlessContext() 无头 SMAPI
-// 前置（CTX-008）。该 fixture 不提供 Context.IsWorldReady 注入能力，
-// 故「世界就绪 + 意向 ⇒ 置位」正例按 BOUNDARY 如实 Skip（见文件内注释）。
+// 前置（CTX-008）。CTX-011 起该 fixture 提供 WithWorldReady(Action) 作用域注入；
+// 本类因此纳入 WorldReadyStateCollection（非并行），与断言"无世界"状态的
+// 用例集合互斥（TestCollections.cs 另有程序集级 DisableTestParallelization）。
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -29,6 +30,7 @@ using Xunit;
 
 namespace ValleytalkReborn.Tests;
 
+[Collection("WorldReadyStateCollection")]
 public class DateInvitationContractTests
 {
     static DateInvitationContractTests()
@@ -147,6 +149,8 @@ public class DateInvitationContractTests
     // ── 3. 路由边界：世界未就绪 ⇒ 不置位、不抛 ───────────────────────────────
     //     CTX-010 起 Router 不做地点解析，故「无地点」与「有地点」两条输入
     //     在无世界时走向同一条 BOUNDARY 早退，均保持纯对白。
+    //     CTX-011：用 WithoutWorldReady 显式钉定 false——CommunityChoreLedgerTests
+    //     置位后从不还原，进程内 ambient 值不可依赖（见 TestEnvironment 注释）。
 
     [Fact]
     public void Evaluate_InvitationIntentWithoutLocation_WithoutWorld_DoesNotSetInviteRequested()
@@ -155,8 +159,11 @@ public class DateInvitationContractTests
 
         using (UseModConfig(enableDateSystem: true))
         {
-            ContextFlags flags = ContextRouter.Evaluate(new ContextRouteInput(
-                npc, "约你", SafetyModeLevel.Strict, null, false));
+            ContextFlags flags = null;
+
+            TestEnvironment.WithoutWorldReady(() =>
+                flags = ContextRouter.Evaluate(new ContextRouteInput(
+                    npc, "约你", SafetyModeLevel.Strict, null, false)));
 
             Assert.False(flags.IsInviteRequested);
         }
@@ -169,53 +176,77 @@ public class DateInvitationContractTests
 
         using (UseModConfig(enableDateSystem: true))
         {
-            ContextFlags flags = ContextRouter.Evaluate(new ContextRouteInput(
-                npc, "let's go to the saloon tonight", SafetyModeLevel.Strict, null, false));
+            ContextFlags flags = null;
+
+            TestEnvironment.WithoutWorldReady(() =>
+                flags = ContextRouter.Evaluate(new ContextRouteInput(
+                    npc, "let's go to the saloon tonight", SafetyModeLevel.Strict, null, false)));
 
             Assert.False(flags.IsInviteRequested);
         }
     }
 
-    // ── 3b. 正例：世界就绪 + 意向 ⇒ 置位（CTX-010 核心契约）─────────────────
-    //     BOUNDARY（如实记录）：TestEnvironment（CTX-008 fixture）不提供
-    //     Context.IsWorldReady 注入能力，其 InstallHeadlessContext() 只装配
-    //     SMAPI Toolkit 的 AssemblyResolve 与空 GameRunner。
-    //     本票 allowed_files 不含 TestEnvironment.cs，不得为其新增基建；
-    //     亦不得为测试引入反射改私有 setter 之类的 hack（同类注入目前仅
-    //     CommunityChoreLedgerTests 内部私有助手所有，非共享 fixture）。
-    //     故以下两例按 BOUNDARY 如实 Skip，正文保留以便在 fixture 具备
-    //     注入能力后直接启用（另开独立票）。
+    // ── 3b. 正例：世界就绪 + 意向 ⇒ 置位（CTX-010 核心契约，CTX-011 启用）───
+    //     TestEnvironment.WithWorldReady 在作用域内置位并在 finally 还原；
+    //     本类在 WorldReadyStateCollection 中非并行运行。
 
-    private const string WorldReadyInjectionMissing =
-        "BOUNDARY: TestEnvironment (CTX-008 fixture) 无 Context.IsWorldReady 注入能力；" +
-        "待 fixture 扩展后启用（另开独立票），本票不得为测试引入新基建或反射 hack。";
-
-    [Fact(Skip = WorldReadyInjectionMissing)]
+    [Fact]
     public void Evaluate_InvitationIntent_WithWorldReady_SetsInviteRequested()
     {
         NPC npc = NewTestNpc();
 
         using (UseModConfig(enableDateSystem: true))
         {
-            ContextFlags flags = ContextRouter.Evaluate(new ContextRouteInput(
-                npc, "约你", SafetyModeLevel.Strict, null, false));
+            ContextFlags flags = null;
+
+            TestEnvironment.WithWorldReady(() =>
+                flags = ContextRouter.Evaluate(new ContextRouteInput(
+                    npc, "约你", SafetyModeLevel.Strict, null, false)));
 
             Assert.True(flags.IsInviteRequested);
         }
     }
 
-    [Fact(Skip = WorldReadyInjectionMissing)]
+    [Fact]
     public void Evaluate_NonInvitationInput_WithWorldReady_DoesNotSetInviteRequested()
     {
         NPC npc = NewTestNpc();
 
         using (UseModConfig(enableDateSystem: true))
         {
-            ContextFlags flags = ContextRouter.Evaluate(new ContextRouteInput(
-                npc, "今天天气不错", SafetyModeLevel.Strict, null, false));
+            ContextFlags flags = null;
+
+            TestEnvironment.WithWorldReady(() =>
+                flags = ContextRouter.Evaluate(new ContextRouteInput(
+                    npc, "今天天气不错", SafetyModeLevel.Strict, null, false)));
 
             Assert.False(flags.IsInviteRequested);
         }
+    }
+
+    // ── 3c. 注入助手自身的置位/还原契约（CTX-011 acceptance 1）──────────────
+
+    [Fact]
+    public void WithWorldReady_IsTrueInsideScope_AndRestoresOriginalValue()
+    {
+        bool before = StardewModdingAPI.Context.IsWorldReady;
+        bool inside = false;
+
+        TestEnvironment.WithWorldReady(() => inside = StardewModdingAPI.Context.IsWorldReady);
+
+        Assert.True(inside);
+        Assert.Equal(before, StardewModdingAPI.Context.IsWorldReady);
+    }
+
+    [Fact]
+    public void WithWorldReady_ActionThrows_StillRestoresOriginalValue()
+    {
+        bool before = StardewModdingAPI.Context.IsWorldReady;
+
+        Assert.Throws<InvalidOperationException>(() =>
+            TestEnvironment.WithWorldReady(() => throw new InvalidOperationException("probe")));
+
+        Assert.Equal(before, StardewModdingAPI.Context.IsWorldReady);
     }
 
     // ── 5. 约会系统关闭 ⇒ 无残留日期标志 ─────────────────────────────────────

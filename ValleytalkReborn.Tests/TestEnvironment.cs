@@ -12,17 +12,72 @@
 //      inject an empty GameRunner (empty instance list) so the check
 //      deterministically evaluates to "single-player".
 //
-// Registration is memory-only and process-level idempotent (static _installed).
+// CTX-011: additionally exposes WithWorldReady(Action) — a scoped injection of
+// Context.IsWorldReady that always restores the previous value in a finally.
+// The setter is non-public (see precedent in CommunityChoreLedgerTests), so it is
+// reached by reflection; this is the same mechanism already proven in-suite,
+// promoted to shared fixture level.
+//
+// HAZARD: Context.IsWorldReady is a process-level static. Any test that flips it
+// races with tests asserting the "no world" state (movement-baseline default
+// flags, date-invitation anchor B). Callers MUST live in a non-parallel xUnit
+// collection — see TestCollections.cs.
 
 using System;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Serialization;
+using StardewModdingAPI;
 using StardewValley;
 
 internal static class TestEnvironment
 {
     private static bool _installed;
+
+    /// <summary>
+    /// Runs <paramref name="action"/> with Context.IsWorldReady forced to true,
+    /// then restores the original value in a finally.
+    /// </summary>
+    internal static void WithWorldReady(Action action) => WithWorldReady(true, action);
+
+    /// <summary>
+    /// Counterpart of <see cref="WithWorldReady(Action)"/> that pins the flag to
+    /// false. Exists so tests asserting the "no world" boundary state do not
+    /// depend on ambient process state — CommunityChoreLedgerTests sets the flag
+    /// to true without ever restoring it, so the ambient value is unreliable
+    /// (CTX-011 finding; that class is outside this ticket's allowed_files).
+    /// </summary>
+    internal static void WithoutWorldReady(Action action) => WithWorldReady(false, action);
+
+    /// <summary>
+    /// Scoped injection of Context.IsWorldReady. Memory-only, restores the value
+    /// observed on entry in a finally, so reentrant use is safe. Reflection is
+    /// required because the setter is non-public (precedent:
+    /// CommunityChoreLedgerTests). No production code is touched.
+    /// </summary>
+    internal static void WithWorldReady(bool worldReady, Action action)
+    {
+        if (action == null) throw new ArgumentNullException(nameof(action));
+
+        // Guarantee the SMAPI Toolkit AssemblyResolve handler is registered
+        // before anything touches Context (idempotent).
+        InstallHeadlessContext();
+
+        MethodInfo setter = typeof(Context)
+            .GetProperty("IsWorldReady", BindingFlags.Public | BindingFlags.Static)!
+            .GetSetMethod(nonPublic: true)!;
+
+        bool original = Context.IsWorldReady;
+        try
+        {
+            setter.Invoke(null, new object[] { worldReady });
+            action();
+        }
+        finally
+        {
+            setter.Invoke(null, new object[] { original });
+        }
+    }
 
     internal static void InstallHeadlessContext()
     {
