@@ -4,6 +4,8 @@
 // private static fields: _entries, _entriesByNpcAndSchedule, _isSaveLoaded.
 // SMAPI Context is faked by InstallHeadlessContext (AssemblyResolve + GameRunner
 // injection); multiplayer is toggled by manipulating GameRunner.gameInstances count.
+// CTX-011.5: world-ready state is injected exclusively through
+// TestEnvironment.WithWorldReady (scoped, finally-restored) — no process-level set.
 
 using System;
 using System.Collections.Generic;
@@ -57,18 +59,12 @@ public class CommunityChoreLedgerTests
         add.Invoke(list, new[] { FormatterServices.GetUninitializedObject(typeof(Game1)) });
     }
 
-    private static void SetWorldReady(bool ready)
-    {
-        // Context.IsWorldReady only exposes a private setter; assign via reflection.
-        typeof(Context).GetProperty("IsWorldReady")!
-            .GetSetMethod(nonPublic: true)!
-            .Invoke(null, new object[] { ready });
-    }
-
-    private static void SetupContext(bool multiplayer, bool worldReady, bool saveLoaded)
+    // CTX-011.5: world-ready state is no longer set here. Callers wrap their
+    // assertions in TestEnvironment.WithWorldReady so the flag is restored in a
+    // finally instead of leaking into every later test in the process.
+    private static void SetupContext(bool multiplayer, bool saveLoaded)
     {
         SetMultiplayer(multiplayer);
-        SetWorldReady(worldReady);
         SetField("_isSaveLoaded", saveLoaded);
     }
 
@@ -250,22 +246,25 @@ public class CommunityChoreLedgerTests
             ValidEntry(choreId: "z-second", dayOfWeek: 1),
             ValidEntry(choreId: "a-first", dayOfWeek: 1),
         });
-        SetupContext(multiplayer: false, worldReady: true, saveLoaded: true);
-
-        CommunityChoreLedger.OnDayStarted();
-        var winner1 = GetField<Dictionary<string, ChoreLedgerEntry>>("_entriesByNpcAndSchedule");
-        Assert.True(winner1.TryGetValue("Gus", out var entry1), "Gus must be scheduled.");
-        Assert.Equal("a-first", entry1.ChoreId);
-
-        // 反转注入顺序，结果必须一致。
-        SetField("_entries", new List<ChoreLedgerEntry>
+        TestEnvironment.WithWorldReady(true, () =>
         {
-            ValidEntry(choreId: "a-first", dayOfWeek: 1),
-            ValidEntry(choreId: "z-second", dayOfWeek: 1),
+            SetupContext(multiplayer: false, saveLoaded: true);
+
+            CommunityChoreLedger.OnDayStarted();
+            var winner1 = GetField<Dictionary<string, ChoreLedgerEntry>>("_entriesByNpcAndSchedule");
+            Assert.True(winner1.TryGetValue("Gus", out var entry1), "Gus must be scheduled.");
+            Assert.Equal("a-first", entry1.ChoreId);
+
+            // 反转注入顺序，结果必须一致。
+            SetField("_entries", new List<ChoreLedgerEntry>
+            {
+                ValidEntry(choreId: "a-first", dayOfWeek: 1),
+                ValidEntry(choreId: "z-second", dayOfWeek: 1),
+            });
+            CommunityChoreLedger.OnDayStarted();
+            var winner2 = GetField<Dictionary<string, ChoreLedgerEntry>>("_entriesByNpcAndSchedule");
+            Assert.Equal("a-first", winner2["Gus"].ChoreId);
         });
-        CommunityChoreLedger.OnDayStarted();
-        var winner2 = GetField<Dictionary<string, ChoreLedgerEntry>>("_entriesByNpcAndSchedule");
-        Assert.Equal("a-first", winner2["Gus"].ChoreId);
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -275,10 +274,13 @@ public class CommunityChoreLedgerTests
     [Fact]
     public void UT07_PreSaveLoadedLookupReturnsFalse()
     {
-        SetupContext(multiplayer: false, worldReady: true, saveLoaded: false);
+        TestEnvironment.WithWorldReady(true, () =>
+        {
+            SetupContext(multiplayer: false, saveLoaded: false);
 
-        Assert.False(CommunityChoreLedger.TryGetTopic("Gus", out var topic));
-        Assert.Null(topic);
+            Assert.False(CommunityChoreLedger.TryGetTopic("Gus", out var topic));
+            Assert.Null(topic);
+        });
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -295,16 +297,19 @@ public class CommunityChoreLedgerTests
             ["Gus"] = entry,
             ["Robin"] = entry,
         });
-        SetupContext(multiplayer: true, worldReady: true, saveLoaded: true);
+        TestEnvironment.WithWorldReady(true, () =>
+        {
+            SetupContext(multiplayer: true, saveLoaded: true);
 
-        Assert.False(CommunityChoreLedger.TryGetTopic("Gus", out var topic),
-            "Multiplayer lookup must return false.");
-        Assert.Null(topic);
+            Assert.False(CommunityChoreLedger.TryGetTopic("Gus", out var topic),
+                "Multiplayer lookup must return false.");
+            Assert.Null(topic);
 
-        // 内存调度未被修改。
-        var after = GetField<Dictionary<string, ChoreLedgerEntry>>("_entriesByNpcAndSchedule");
-        Assert.True(after.ContainsKey("Gus"), "Schedule must remain unchanged in multiplayer.");
-        Assert.Equal("chore-test-01", after["Gus"].ChoreId);
+            // 内存调度未被修改。
+            var after = GetField<Dictionary<string, ChoreLedgerEntry>>("_entriesByNpcAndSchedule");
+            Assert.True(after.ContainsKey("Gus"), "Schedule must remain unchanged in multiplayer.");
+            Assert.Equal("chore-test-01", after["Gus"].ChoreId);
+        });
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -321,11 +326,14 @@ public class CommunityChoreLedgerTests
             ["Gus"] = entry,
             ["Robin"] = entry,
         });
-        SetupContext(multiplayer: false, worldReady: true, saveLoaded: true);
+        TestEnvironment.WithWorldReady(true, () =>
+        {
+            SetupContext(multiplayer: false, saveLoaded: true);
 
-        Assert.False(CommunityChoreLedger.TryGetTopic("Pierre", out var topic),
-            "Unscheduled NPC must return false.");
-        Assert.Null(topic);
+            Assert.False(CommunityChoreLedger.TryGetTopic("Pierre", out var topic),
+                "Unscheduled NPC must return false.");
+            Assert.Null(topic);
+        });
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -342,14 +350,17 @@ public class CommunityChoreLedgerTests
             ["Abigail"] = entry,
             ["Sebastian"] = entry,
         });
-        SetupContext(multiplayer: false, worldReady: true, saveLoaded: true);
+        TestEnvironment.WithWorldReady(true, () =>
+        {
+            SetupContext(multiplayer: false, saveLoaded: true);
 
-        Assert.True(CommunityChoreLedger.TryGetTopic("Abigail", out var topic),
-            "Scheduled source NPC Abigail must return a topic.");
-        Assert.Contains("[Community Chore]", topic);
-        Assert.Contains("Source motivation text.", topic);
-        Assert.Contains("Source public opinion text.", topic);
-        Assert.DoesNotContain("Target motivation text.", topic);
+            Assert.True(CommunityChoreLedger.TryGetTopic("Abigail", out var topic),
+                "Scheduled source NPC Abigail must return a topic.");
+            Assert.Contains("[Community Chore]", topic);
+            Assert.Contains("Source motivation text.", topic);
+            Assert.Contains("Source public opinion text.", topic);
+            Assert.DoesNotContain("Target motivation text.", topic);
+        });
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -366,14 +377,17 @@ public class CommunityChoreLedgerTests
             ["Abigail"] = entry,
             ["Sebastian"] = entry,
         });
-        SetupContext(multiplayer: false, worldReady: true, saveLoaded: true);
+        TestEnvironment.WithWorldReady(true, () =>
+        {
+            SetupContext(multiplayer: false, saveLoaded: true);
 
-        Assert.True(CommunityChoreLedger.TryGetTopic("Sebastian", out var topic),
-            "Scheduled target NPC Sebastian must return a topic.");
-        Assert.Contains("[Community Chore]", topic);
-        Assert.Contains("Target motivation text.", topic);
-        Assert.Contains("Target public opinion text.", topic);
-        Assert.DoesNotContain("Source motivation text.", topic);
+            Assert.True(CommunityChoreLedger.TryGetTopic("Sebastian", out var topic),
+                "Scheduled target NPC Sebastian must return a topic.");
+            Assert.Contains("[Community Chore]", topic);
+            Assert.Contains("Target motivation text.", topic);
+            Assert.Contains("Target public opinion text.", topic);
+            Assert.DoesNotContain("Source motivation text.", topic);
+        });
     }
 
     // ════════════════════════════════════════════════════════════════
