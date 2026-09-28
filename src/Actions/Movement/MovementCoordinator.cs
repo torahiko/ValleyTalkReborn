@@ -343,24 +343,8 @@ namespace ValleytalkReborn.Movement
 
             ClearNpcMovement(npc);
 
-            int dx = 0, dy = 0;
-
-            if      (type == MovementType.Left)  dx = -1;
-            else if (type == MovementType.Right)  dx =  1;
-            else if (type == MovementType.Up)     dy = -1;
-            else if (type == MovementType.Down)   dy =  1;
-            else
-            {
-                switch (npc.FacingDirection)
-                {
-                    case 0: dy = -1; break;
-                    case 1: dx =  1; break;
-                    case 2: dy =  1; break;
-                    case 3: dx = -1; break;
-                }
-
-                if (type == MovementType.Backward) { dx = -dx; dy = -dy; }
-            }
+            // CTX-004：delta 表已迁移至 MovementPathfinding.ResolveStepDelta（唯一实现）。
+            var (dx, dy) = MovementPathfinding.ResolveStepDelta(type, npc.FacingDirection);
 
             var loc = npc.currentLocation;
             if (loc == null || Game1.player == null) return;

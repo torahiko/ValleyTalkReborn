@@ -51,6 +51,40 @@ namespace ValleytalkReborn
         }
 
         // ═══════════════════════════════════════════════
+        //  步进位移表（单一实现）
+        // ═══════════════════════════════════════════════
+
+        /// <summary>
+        /// 由 MovementCoordinator 步进执行体等价迁移而来，是该 delta 表的唯一实现。
+        /// 绝对方向直接给位移；Forward/Backward 由 facingDirection（0=上 1=右 2=下 3=左）取位，
+        /// Backward 取反。
+        /// </summary>
+        internal static (int Dx, int Dy) ResolveStepDelta(
+            MovementType type,
+            int facingDirection)
+        {
+            if      (type == MovementType.Left)  return (-1,  0);
+            else if (type == MovementType.Right) return ( 1,  0);
+            else if (type == MovementType.Up)    return ( 0, -1);
+            else if (type == MovementType.Down)  return ( 0,  1);
+
+            int dx = 0;
+            int dy = 0;
+
+            switch (facingDirection)
+            {
+                case 0: dy = -1; break;
+                case 1: dx =  1; break;
+                case 2: dy =  1; break;
+                case 3: dx = -1; break;
+            }
+
+            if (type == MovementType.Backward) { dx = -dx; dy = -dy; }
+
+            return (dx, dy);
+        }
+
+        // ═══════════════════════════════════════════════
         //  Warp 落点（修复：优先使用地图 warp 入口，兜底返回 null）
         // ═══════════════════════════════════════════════
 

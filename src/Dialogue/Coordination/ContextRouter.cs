@@ -81,6 +81,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
 
@@ -96,7 +97,9 @@ public enum BlockDirection
     Forward,
     Backward,
     Left,
-    Right
+    Right,
+    Up,
+    Down
 }
 
 public enum ActionTag
@@ -273,6 +276,18 @@ public interface IDateStateProvider
     bool IsOnDate(string npcName);
     void ConsumeDate(string npcName);
 }
+
+// ─────────────────────────────────────────────────────────
+// Movement world evaluation
+// ─────────────────────────────────────────────────────────
+
+// Memory-only：只在一次对话回合内有效，不写入任何存档 / ModData / Config。
+// 由世界状态求值产生，是 IsPathBlocked / BlockDirection / IsAlreadyAdjacent 的唯一来源。
+internal sealed record MovementEvaluation(
+    bool IsEvaluated,
+    bool IsBlocked,
+    BlockDirection BlockDirection,
+    bool IsAlreadyAdjacent);
 
 // ─────────────────────────────────────────────────────────
 // ContextFlags
@@ -785,14 +800,8 @@ public static class ContextRouter
             return;
         }
 
-        if (npc.currentLocation == null)
-        {
-            DebugLog(
-                debugEnabled,
-                "Action detection skipped: npc has no current location.");
-            return;
-        }
-
+        // CTX-004：意图识别不得读取世界状态。原来的 npc.currentLocation 守卫已移除
+        // （它在无世界时会 NRE，且把纯文本意图与地图状态耦合在一起）。
         ActionTag detectedTag = ActionIntentClassifier.Detect(cleanInput);
 
         if (detectedTag != ActionTag.None)
@@ -809,6 +818,16 @@ public static class ContextRouter
                 $"Action detected: tag={detectedTag}, "
                 + $"isAction=true, "
                 + $"isMovement={flags.IsMovementRequested}");
+
+            // 方向移动进入世界求值；Follow / StopFollow / StayHome / AllDayFollow
+            // 不是方向移动，不产生任何阻挡或邻接标志。
+            if (flags.IsMovementRequested)
+            {
+                MovementEvaluation evaluation =
+                    EvaluateDirectionalMovement(npc, detectedTag, debugEnabled);
+
+                ApplyMovementEvaluation(flags, evaluation);
+            }
 
             return;
         }
@@ -834,6 +853,143 @@ public static class ContextRouter
         DebugLog(
             debugEnabled,
             "Action detection result: no explicit action.");
+    }
+
+    // ─────────────────────────────────────────────────────
+    // Movement world evaluation（主线程序求值边界）
+    // ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// 纯决策核心：不读取 Game1 / NPC / 地图，只按给定的探测结果判定。
+    /// 邻接优先于阻挡；阻挡判定复刻 MovementCoordinator 执行真相
+    /// （pos1 不可走 ⇒ 执行端 faceGeneralDirection 仅转向）。
+    /// </summary>
+    internal static MovementEvaluation ResolveDirectionalEvaluation(
+        bool isAdjacentTarget,
+        bool pos1Walkable,
+        bool pos2Walkable,
+        BlockDirection requestedDirection)
+    {
+        if (isAdjacentTarget)
+        {
+            return new MovementEvaluation(
+                IsEvaluated: true,
+                IsBlocked: false,
+                BlockDirection: BlockDirection.None,
+                IsAlreadyAdjacent: true);
+        }
+
+        bool isBlocked = !pos1Walkable;
+
+        return new MovementEvaluation(
+            IsEvaluated: true,
+            IsBlocked: isBlocked,
+            BlockDirection: isBlocked ? requestedDirection : BlockDirection.None,
+            IsAlreadyAdjacent: false);
+    }
+
+    private static MovementType ToStepMovementType(ActionTag tag)
+    {
+        switch (tag)
+        {
+            case ActionTag.StepForward:  return MovementType.Forward;
+            case ActionTag.StepBackward: return MovementType.Backward;
+            case ActionTag.StepLeft:     return MovementType.Left;
+            case ActionTag.StepRight:    return MovementType.Right;
+            case ActionTag.StepUp:       return MovementType.Up;
+            case ActionTag.StepDown:     return MovementType.Down;
+            default:                     return MovementType.None;
+        }
+    }
+
+    private static BlockDirection ToBlockDirection(ActionTag tag)
+    {
+        switch (tag)
+        {
+            case ActionTag.StepForward:  return BlockDirection.Forward;
+            case ActionTag.StepBackward: return BlockDirection.Backward;
+            case ActionTag.StepLeft:     return BlockDirection.Left;
+            case ActionTag.StepRight:    return BlockDirection.Right;
+            case ActionTag.StepUp:       return BlockDirection.Up;
+            case ActionTag.StepDown:     return BlockDirection.Down;
+            default:                     return BlockDirection.None;
+        }
+    }
+
+    /// <summary>
+    /// 主线程、对话期一次性调用，禁止进入 UpdateTicked / 每帧路径。
+    /// 未通过边界守卫时返回 IsEvaluated=false，调用方据此保持 flags 默认。
+    /// </summary>
+    private static MovementEvaluation EvaluateDirectionalMovement(
+        NPC npc,
+        ActionTag tag,
+        bool debugEnabled)
+    {
+        // 守卫顺序（CTX-001 实证）：IsWorldReady / Game1.player 必须早于 npc.currentLocation，
+        // 无世界时 currentLocation 的 getter 会 NRE。
+        if (!StardewModdingAPI.Context.IsWorldReady || Game1.player == null)
+        {
+            DebugLog(
+                debugEnabled,
+                "Movement evaluation not performed: world or player unavailable.");
+            return new MovementEvaluation(false, false, BlockDirection.None, false);
+        }
+
+        GameLocation loc = npc.currentLocation;
+        if (loc == null)
+        {
+            DebugLog(
+                debugEnabled,
+                "Movement evaluation not performed: npc has no current location.");
+            return new MovementEvaluation(false, false, BlockDirection.None, false);
+        }
+
+        MovementType step = ToStepMovementType(tag);
+        var (dx, dy) = MovementPathfinding.ResolveStepDelta(step, npc.FacingDirection);
+
+        Vector2 npcTile = npc.Tile;
+        Vector2 pos1 = new Vector2(npcTile.X + dx,     npcTile.Y + dy);
+        Vector2 pos2 = new Vector2(npcTile.X + dx * 2, npcTile.Y + dy * 2);
+
+        bool pos1Walkable;
+        bool pos2Walkable;
+
+        try
+        {
+            pos1Walkable = MovementPathfinding.IsTileWalkable(loc, pos1, npc);
+            pos2Walkable = MovementPathfinding.IsTileWalkable(loc, pos2, npc);
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log(
+                $"[ContextRouter] Movement evaluation failed for {npc.Name}: {ex.Message}",
+                LogLevel.Error);
+            throw;
+        }
+
+        // 邻接沿用既有等值语义：请求方向的下一格正是玩家所在格 ⇒ 已面对面。
+        bool isAdjacentTarget = pos1 == Game1.player.Tile;
+
+        return ResolveDirectionalEvaluation(
+            isAdjacentTarget,
+            pos1Walkable,
+            pos2Walkable,
+            ToBlockDirection(tag));
+    }
+
+    /// <summary>
+    /// MovementEvaluation 是这三个 flags 的唯一赋值来源；未求值时保持默认。
+    /// </summary>
+    private static void ApplyMovementEvaluation(
+        ContextFlags flags,
+        MovementEvaluation evaluation)
+    {
+        if (!evaluation.IsEvaluated)
+            return;
+
+        flags.IsPathBlocked = evaluation.IsBlocked;
+        flags.BlockDirection = evaluation.BlockDirection;
+        flags.IsAlreadyAdjacent = evaluation.IsAlreadyAdjacent;
     }
 
     // ─────────────────────────────────────────────────────
