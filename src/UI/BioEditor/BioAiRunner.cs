@@ -87,8 +87,7 @@ internal static class BioAiRunner
                         : new BioAiResult(BioAiResultKind.TimedOut, detail: "请求超时或已中断");
                 }
                 else if (response.IsSuccess
-                         && !string.IsNullOrWhiteSpace(response.Text)
-                         && response.ToolCalls.Count == 0)
+                         && !string.IsNullOrWhiteSpace(response.Text))
                 {
                     result = new BioAiResult(BioAiResultKind.Success, CleanAiResponse(response.Text));
                 }

@@ -227,8 +227,8 @@ public class GeminiRolePayloadTests
 
         var genConfig = new { maxOutputTokens = 1024, temperature = 0.9, topP = 0.9, thinkingConfig = new { thinkingBudget = 0 } };
 
-        var payload1 = LlmGemini.BuildGeminiRolePayload("SYS", messages, genConfig, null);
-        var payload2 = LlmGemini.BuildGeminiRolePayload("SYS", messages, genConfig, null);
+        var payload1 = LlmGemini.BuildGeminiRolePayload("SYS", messages, genConfig);
+        var payload2 = LlmGemini.BuildGeminiRolePayload("SYS", messages, genConfig);
 
         var j1 = JObject.Parse(payload1);
         var j2 = JObject.Parse(payload2);
@@ -249,7 +249,7 @@ public class GeminiRolePayloadTests
         };
 
         var genConfig = new { maxOutputTokens = 1024, temperature = 0.9, topP = 0.9 };
-        var payload = LlmGemini.BuildGeminiRolePayload("MySystemPrompt", messages, genConfig, null);
+        var payload = LlmGemini.BuildGeminiRolePayload("MySystemPrompt", messages, genConfig);
         var json = JObject.Parse(payload);
 
         Assert.Equal("MySystemPrompt", json["system_instruction"]?["parts"]?[0]?["text"]?.ToString());
@@ -274,7 +274,7 @@ public class GeminiRolePayloadTests
         };
 
         var genConfig = new { maxOutputTokens = 1024, temperature = 0.9, topP = 0.9 };
-        var payload = LlmGemini.BuildGeminiRolePayload("SYS", messages, genConfig, null);
+        var payload = LlmGemini.BuildGeminiRolePayload("SYS", messages, genConfig);
 
         Assert.DoesNotContain("responseStart", payload, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("[In-Character]", payload, StringComparison.OrdinalIgnoreCase);

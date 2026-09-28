@@ -111,9 +111,8 @@ public class LlmDialogueService
             // ══════════════════════════════════════════════════
             //  流式路径
             // ══════════════════════════════════════════════════
-            // 流式决策已上移至 DialogueBuilder：其根据当前回合是否需要工具调用以及
-            // Provider 是否支持"流式 + 工具调用"（SupportsStreamingWithTools）决定
-            // 是否传入回调。此处仅在有回调时走流式通道，否则回退到非流式推理。
+            // 流式决策已上移至 DialogueBuilder：其根据是否传入回调决定启用流式。
+            // 此处仅在有回调时走流式通道，否则回退到非流式推理。
             if (onStreamingToken != null)
             {
                 var tracker = new StreamLineTracker();
@@ -231,31 +230,7 @@ public class LlmDialogueService
                 if (streamResult == null || !streamResult.IsSuccess)
                     return new[] { "..." };
 
-                var streamToolCalls = streamResult.ToolCalls;
-                if (streamToolCalls?.Count > 0)
-                {
-                    var npc = character.StardewNpc;
-                    foreach (var tool in streamToolCalls)
-                    {
-                        bool usedBubble = AgentToolDispatcher.DispatchToolCall(npc, tool.FunctionName, tool.JsonArguments);
-                        if (usedBubble) streamResult.UsedBubble = true;
-                    }
-                }
-
-                // speak_in_bubble 与对话框互斥：气泡模式下跳过文本输出（与非流式分支保持一致）
-                if (streamResult.UsedBubble)
-                {
-                    ModEntry.SMonitor?.Log(
-                        $"[LlmDialogueService] {character.Name} used speak_in_bubble, skipping dialogue box (streaming).",
-                        LogLevel.Trace);
-                    return null;
-                }
-
                 var streamDialogueText = streamResult.Text;
-                if (streamToolCalls?.Count > 0 && string.IsNullOrWhiteSpace(streamDialogueText))
-                {
-                    streamDialogueText = "- ...";
-                }
 
                 if (string.IsNullOrWhiteSpace(streamDialogueText))
                     return new[] { "..." };
@@ -374,32 +349,7 @@ public class LlmDialogueService
 
                     if (result.IsSuccess)
                     {
-                        var toolCalls = result.ToolCalls;
-                        if (toolCalls?.Count > 0)
-                        {
-                            var npc = character.StardewNpc;
-                            foreach (var tool in toolCalls)
-                            {
-                                bool usedBubble = AgentToolDispatcher.DispatchToolCall(npc, tool.FunctionName, tool.JsonArguments);
-                                if (usedBubble) result.UsedBubble = true;
-                            }
-                        }
-
-                        // speak_in_bubble 与对话框互斥：气泡模式下跳过文本输出
-                        if (result.UsedBubble)
-                        {
-                            ModEntry.SMonitor?.Log(
-                                $"[LlmDialogueService] {character.Name} used speak_in_bubble, skipping dialogue box (non-streaming).",
-                                LogLevel.Trace);
-                            results = null;
-                            break;
-                        }
-
                         var dialogueText = result.Text;
-                        if (toolCalls?.Count > 0 && string.IsNullOrWhiteSpace(dialogueText))
-                        {
-                            dialogueText = "- ...";
-                        }
 
                         if (isDebug && !string.IsNullOrWhiteSpace(dialogueText))
                         {

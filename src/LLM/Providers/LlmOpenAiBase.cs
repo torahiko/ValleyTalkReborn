@@ -58,8 +58,6 @@ namespace ValleytalkReborn
         protected static string EffectiveBearer(string apiKey) =>
             string.IsNullOrWhiteSpace(apiKey) ? "Bearer local" : "Bearer " + apiKey;
 
-        public override bool SupportsStreamingWithTools => true;
-
         private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> StrictHostStage
             = new System.Collections.Concurrent.ConcurrentDictionary<string, byte>();
 
@@ -482,7 +480,6 @@ namespace ValleytalkReborn
             List<object> messages,
             int nPredict,
             bool stream = false,
-            bool includeTools = true,
             string cacheContext = "")
         {
             var genParams = ResolveParameters(cacheContext);
@@ -507,14 +504,6 @@ namespace ValleytalkReborn
                 requestBody["top_p"] = genParams.TopP;
             }
 
-            // 推理模型与后台环境气泡/剧本（Bark / A2A）均不挂载原生 tools
-            // ── VT-NOTOOLS-T6: 工具调用已全量移除；以 Count 守卫替换 UseNativeToolCalling ──
-            var openAiTools = AgentToolDefinitions.GetOpenAiToolsArray();
-            if (includeTools && !reasoningModel && openAiTools.Count > 0)
-            {
-                requestBody["tools"] = openAiTools;
-            }
-
             return requestBody;
         }
 
@@ -532,13 +521,6 @@ namespace ValleytalkReborn
             string cacheContext = "",
             bool allowRetry = true)
         {
-            // 排除 Bark 和 A2A 挂载工具调用
-            bool includeTools = cacheContext != LlmContextTypes.NoTools
-                             && cacheContext != LlmContextTypes.Bark
-                             && cacheContext != LlmContextTypes.A2A
-                             && (string.IsNullOrEmpty(cacheContext)
-                                 || !cacheContext.StartsWith(LlmContextTypes.Editor, StringComparison.OrdinalIgnoreCase));
-
             if (!AndroidHelper.IsAndroid)
             {
                 return await RunStreamingInference(
@@ -587,13 +569,7 @@ namespace ValleytalkReborn
             bool allowRetry,
             CancellationToken callerToken)
         {
-            bool includeTools = cacheContext != LlmContextTypes.NoTools
-                             && cacheContext != LlmContextTypes.Bark
-                             && cacheContext != LlmContextTypes.A2A
-                             && (string.IsNullOrEmpty(cacheContext)
-                                 || !cacheContext.StartsWith(LlmContextTypes.Editor, StringComparison.OrdinalIgnoreCase));
-
-            Dictionary<string, object> requestBody = BuildRequestBody(messages, n_predict, stream: false, includeTools, cacheContext);
+            Dictionary<string, object> requestBody = BuildRequestBody(messages, n_predict, stream: false, cacheContext);
             ThinkingSuppressionPlan plan = EvaluateThinkingSuppression(modelName, url, cacheContext);
             ApplyThinkingSuppression(requestBody, plan);
 
@@ -697,30 +673,6 @@ namespace ValleytalkReborn
                         continue;
                     }
 
-                    var toolResponse = new LlmResponse(string.Empty, true);
-                    JArray toolCallsArray = messageToken["tool_calls"] as JArray;
-
-                    if (toolCallsArray != null && toolCallsArray.Count > 0)
-                    {
-                        foreach (JToken toolCall in toolCallsArray)
-                        {
-                            JToken functionToken = toolCall["function"];
-                            if (functionToken == null) continue;
-
-                            string functionName = functionToken["name"]?.ToString();
-                            string functionArguments = functionToken["arguments"]?.ToString() ?? "{}";
-
-                            if (!string.IsNullOrWhiteSpace(functionName))
-                            {
-                                toolResponse.ToolCalls.Add(new ToolCallData
-                                {
-                                    FunctionName = functionName,
-                                    JsonArguments = functionArguments
-                                });
-                            }
-                        }
-                    }
-
                     string contentString = messageToken["content"]?.ToString();
 
                     if (!string.IsNullOrWhiteSpace(contentString))
@@ -737,12 +689,6 @@ namespace ValleytalkReborn
                             await Task.Delay(250);
                         }
                         continue;
-                    }
-
-                    if (toolResponse.ToolCalls.Count > 0)
-                    {
-                        toolResponse.Text = contentString ?? string.Empty;
-                        return toolResponse;
                     }
 
                     if (!string.IsNullOrWhiteSpace(contentString))
@@ -789,14 +735,7 @@ namespace ValleytalkReborn
             int n_predict,
             string cacheContext)
         {
-            // 排除 Bark 和 A2A 挂载工具调用
-            bool includeTools = cacheContext != LlmContextTypes.NoTools
-                             && cacheContext != LlmContextTypes.Bark
-                             && cacheContext != LlmContextTypes.A2A
-                             && (string.IsNullOrEmpty(cacheContext)
-                                 || !cacheContext.StartsWith(LlmContextTypes.Editor, StringComparison.OrdinalIgnoreCase));
-
-            Dictionary<string, object> requestBody = BuildRequestBody(messages, n_predict, stream: true, includeTools, cacheContext);
+            Dictionary<string, object> requestBody = BuildRequestBody(messages, n_predict, stream: true, cacheContext);
             ThinkingSuppressionPlan plan = EvaluateThinkingSuppression(modelName, url, cacheContext);
             ApplyThinkingSuppression(requestBody, plan);
 
@@ -894,7 +833,6 @@ namespace ValleytalkReborn
                                 }
 
                                 var fullContentBuilder = new StringBuilder();
-                                var toolCallsDict = new Dictionary<int, (string Name, StringBuilder Args)>();
                                 bool degenerateDetected = false;
                                 bool reasoningSeen = false;
                                 long ttftReasoningMs = -1;
@@ -951,37 +889,6 @@ namespace ValleytalkReborn
                                                 continue; // Do NOT append to fullContentBuilder
                                             }
 
-                                            var toolCalls = delta["tool_calls"] as JArray;
-                                            if (toolCalls != null)
-                                            {
-                                                foreach (var tc in toolCalls)
-                                                {
-                                                    int index = tc.Value<int?>("index") ?? 0;
-                                                    var fn = tc["function"];
-                                                    if (fn != null)
-                                                    {
-                                                        string fnName = fn.Value<string>("name");
-                                                        string fnArgs = fn.Value<string>("arguments");
-
-                                                        if (!toolCallsDict.ContainsKey(index))
-                                                        {
-                                                            toolCallsDict[index] = (fnName ?? string.Empty, new StringBuilder());
-                                                        }
-
-                                                        if (!string.IsNullOrEmpty(fnName) && string.IsNullOrEmpty(toolCallsDict[index].Name))
-                                                        {
-                                                            toolCallsDict[index] = (fnName, toolCallsDict[index].Args);
-                                                        }
-
-                                                        if (!string.IsNullOrEmpty(fnArgs))
-                                                        {
-                                                            toolCallsDict[index].Args.Append(fnArgs);
-                                                        }
-                                                    }
-                                                }
-                                                continue;
-                                            }
-
                                             string textToken = delta.Value<string>("content");
                                             if (!string.IsNullOrEmpty(textToken))
                                             {
@@ -1029,22 +936,6 @@ namespace ValleytalkReborn
                                 string completeText = fullContentBuilder.ToString();
 
                                 LlmTrafficLogger.LogIncoming(cacheContext, completeText);
-
-                                if (toolCallsDict.Count > 0)
-                                {
-                                    var toolResp = new LlmResponse(completeText, true);
-                                    foreach (var kvp in toolCallsDict)
-                                    {
-                                        toolResp.ToolCalls.Add(new ToolCallData
-                                        {
-                                            FunctionName = kvp.Value.Name,
-                                            JsonArguments = kvp.Value.Args.ToString()
-                                        });
-                                    }
-
-                                    LlmTrafficLogger.LogIncomingToolCalls(cacheContext, toolResp.ToolCalls);
-                                    return toolResp;
-                                }
 
                                 return new LlmResponse(completeText);
                             }

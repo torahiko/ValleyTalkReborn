@@ -526,34 +526,10 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
-        /// 注册用于测试 Agent 接口与物理分发器的 SMAPI 控制台指令
+        /// 注册 SMAPI 调试控制台指令
         /// </summary>
         private void RegisterDebugConsoleCommands(IModHelper helper)
         {
-            helper.ConsoleCommands.Add("vt_test_llm_tools", "测试大模型 Native Tool Calling 是否正确返回 JSON",
-                async (cmd, args) =>
-                {
-                    string npcName = args.Length > 0 ? args[0] : "Abigail";
-                    Monitor.Log($"[Test] 正在向大模型发送约会测试请求（Target: {npcName}）...", LogLevel.Info);
-
-                    var systemPrompt = $"You are {npcName} from Stardew Valley. Speak in character.";
-                    var userPrompt = "Hey, do you want to go on a date with me at the Saloon tonight at 20:00?";
-
-                    var response = await Llm.Instance.RunInference(systemPrompt, "", "", userPrompt);
-
-                    Monitor.Log($"[LLM 文本回应]: {response.Text}", LogLevel.Info);
-                    Monitor.Log($"[LLM 解析到的工具调用数量]: {response.ToolCalls?.Count ?? 0}", LogLevel.Info);
-
-                    if (response.ToolCalls != null && response.ToolCalls.Count > 0)
-                    {
-                        foreach (var tool in response.ToolCalls)
-                        {
-                            Monitor.Log($"  -> 工具名: {tool.FunctionName}", LogLevel.Warn);
-                            Monitor.Log($"  -> 参数: {tool.JsonArguments}", LogLevel.Warn);
-                        }
-                    }
-                });
-
         // ── Promise 管理控制台命令（MEM-08 新增）──
         helper.ConsoleCommands.Add("vt_promises", "查看指定 NPC 的待履约约定。用法: vt_promises <npcName>",
             async (cmd, args) =>

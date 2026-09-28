@@ -127,15 +127,11 @@ internal class LlmClaude : Llm, IGetModelNames
     public override string ExtraInstructions => "";
     public override bool IsHighlySensoredModel => true;
 
-    public override bool SupportsStreamingWithTools => true;
-
     internal override async Task<LlmResponse> RunInference(
         string systemPromptString, string gameCacheString, string npcCacheString,
         string promptString, string responseStart = "", int n_predict = 2048,
         string cacheContext = "", bool allowRetry = true)
     {
-        var anthropicTools = AgentToolDefinitions.GetAnthropicToolsArray();
-        var tools = anthropicTools.Count > 0 ? (object)anthropicTools : null;
         var genParams = ResolveParameters(cacheContext);
 
         var inputString = JsonConvert.SerializeObject(new
@@ -152,8 +148,7 @@ internal class LlmClaude : Llm, IGetModelNames
                 {
                     new { role = "user", content = promptString },
                     new { role = "assistant", content = responseStart }
-                },
-            tools
+                }
         }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
         return await ExecuteClaudeNonStreamingAsync(inputString, allowRetry, CancellationToken.None);
@@ -165,8 +160,6 @@ internal class LlmClaude : Llm, IGetModelNames
         string responseStart = "", int n_predict = 2048,
         string cacheContext = "")
     {
-        var anthropicTools = AgentToolDefinitions.GetAnthropicToolsArray();
-        var tools = anthropicTools.Count > 0 ? (object)anthropicTools : null;
         var genParams = ResolveParameters(cacheContext);
 
         var inputString = JsonConvert.SerializeObject(new
@@ -184,8 +177,7 @@ internal class LlmClaude : Llm, IGetModelNames
                 {
                     new { role = "user", content = promptString },
                     new { role = "assistant", content = responseStart }
-                },
-            tools
+                }
         }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
         return await ExecuteClaudeStreamingAsync(inputString, onToken, ct);
@@ -254,31 +246,15 @@ internal class LlmClaude : Llm, IGetModelNames
                     retry--; continue;
                 }
 
-                var toolResponse = new LlmResponse("", true);
                 string textContent = null;
 
                 foreach (var element in contentArray)
                 {
                     var elementType = element["type"]?.ToString();
-                    if (elementType == "tool_use")
-                    {
-                        var funcName = element["name"]?.ToString();
-                        var inputToken = element["input"];
-                        var funcArgs = inputToken != null ? inputToken.ToString(Formatting.None) : "{}";
-                        if (!string.IsNullOrEmpty(funcName))
-                            toolResponse.ToolCalls.Add(new ToolCallData { FunctionName = funcName, JsonArguments = funcArgs });
-                    }
-                    else if (elementType == "text" && textContent == null)
+                    if (elementType == "text" && textContent == null)
                     {
                         textContent = element["text"]?.ToString();
                     }
-                }
-
-                if (toolResponse.ToolCalls.Count > 0)
-                {
-                    toolResponse.Text = textContent ?? "";
-                    Log.Debug($"[LlmClaude] Tool calls received: {toolResponse.ToolCalls.Count}");
-                    return toolResponse;
                 }
 
                 if (!string.IsNullOrWhiteSpace(textContent))
@@ -308,8 +284,6 @@ internal class LlmClaude : Llm, IGetModelNames
             throw new InvalidOperationException("Network not available");
 
         var fullText = new StringBuilder();
-        var streamedToolCalls = new List<ToolCallData>();
-        var toolBlocksByIndex = new Dictionary<int, (string name, StringBuilder args)>();
 
         try
         {
@@ -346,18 +320,6 @@ internal class LlmClaude : Llm, IGetModelNames
                     var json = JObject.Parse(data);
                     var eventType = json["type"]?.ToString();
 
-                    if (eventType == "content_block_start")
-                    {
-                        var blockType = json["content_block"]?["type"]?.ToString();
-                        if (blockType == "tool_use")
-                        {
-                            int index = json["index"]?.Value<int>() ?? 0;
-                            var blockName = json["content_block"]?["name"]?.ToString();
-                            toolBlocksByIndex[index] = (blockName ?? "", new StringBuilder());
-                        }
-                        continue;
-                    }
-
                     if (eventType == "content_block_delta")
                     {
                         var delta = json["delta"];
@@ -372,38 +334,9 @@ internal class LlmClaude : Llm, IGetModelNames
                                 onToken(text);
                             }
                         }
-                        else if (deltaType == "input_json_delta")
-                        {
-                            int index = json["index"]?.Value<int>() ?? 0;
-                            var partialJson = delta["partial_json"]?.ToString();
-                            if (!string.IsNullOrEmpty(partialJson) && toolBlocksByIndex.TryGetValue(index, out var entry))
-                                entry.args.Append(partialJson);
-                        }
-                        continue;
-                    }
-
-                    if (eventType == "content_block_stop")
-                    {
-                        int index = json["index"]?.Value<int>() ?? 0;
-                        if (toolBlocksByIndex.TryGetValue(index, out var entry))
-                        {
-                            streamedToolCalls.Add(new ToolCallData
-                            {
-                                FunctionName = entry.name,
-                                JsonArguments = entry.args.ToString()
-                            });
-                            toolBlocksByIndex.Remove(index);
-                        }
                     }
                 }
                 catch { }
-            }
-
-            if (streamedToolCalls.Count > 0)
-            {
-                var toolResp = new LlmResponse(fullText.ToString(), true);
-                toolResp.ToolCalls.AddRange(streamedToolCalls);
-                return toolResp;
             }
 
             return new LlmResponse(fullText.ToString(), fullText.Length > 0);
@@ -444,8 +377,6 @@ internal class LlmClaude : Llm, IGetModelNames
         string cacheContext = "",
         bool allowRetry = true)
     {
-        var anthropicTools = AgentToolDefinitions.GetAnthropicToolsArray();
-        var tools = anthropicTools.Count > 0 ? (object)anthropicTools : null;
         var genParams = ResolveParameters(cacheContext);
 
         var inputString = JsonConvert.SerializeObject(new
@@ -456,8 +387,7 @@ internal class LlmClaude : Llm, IGetModelNames
             temperature = genParams.Temperature,
             top_p = genParams.TopP,
             system = BuildSystemBlocks(systemPromptString, gameCacheString, npcCacheString),
-            messages = BuildClaudeMessages(messages, responseStart),
-            tools
+            messages = BuildClaudeMessages(messages, responseStart)
         }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
         return await ExecuteClaudeNonStreamingAsync(inputString, allowRetry, ct);
@@ -477,8 +407,6 @@ internal class LlmClaude : Llm, IGetModelNames
         int n_predict = 2048,
         string cacheContext = "")
     {
-        var anthropicTools = AgentToolDefinitions.GetAnthropicToolsArray();
-        var tools = anthropicTools.Count > 0 ? (object)anthropicTools : null;
         var genParams = ResolveParameters(cacheContext);
 
         var inputString = JsonConvert.SerializeObject(new
@@ -490,8 +418,7 @@ internal class LlmClaude : Llm, IGetModelNames
             top_p = genParams.TopP,
             stream = true,
             system = BuildSystemBlocks(systemPromptString, gameCacheString, npcCacheString),
-            messages = BuildClaudeMessages(messages, responseStart),
-            tools
+            messages = BuildClaudeMessages(messages, responseStart)
         }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
         return await ExecuteClaudeStreamingAsync(inputString, onToken, ct);

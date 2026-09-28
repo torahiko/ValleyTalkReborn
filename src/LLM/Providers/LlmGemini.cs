@@ -30,8 +30,6 @@ internal class LlmGemini : Llm, IGetModelNames
     public override string ExtraInstructions => "";
     public override bool IsHighlySensoredModel => false;
 
-    public override bool SupportsStreamingWithTools => true;
-
     public async Task<string[]> GetModelNamesAsync()
     {
         try
@@ -85,11 +83,6 @@ internal class LlmGemini : Llm, IGetModelNames
         promptString = gameCacheString + npcCacheString + promptString;
 
         int thinkingBudget = 0;
-        // ── VT-NOTOOLS-T6: 工具调用已全量移除；恒空 → tools 字段整体省略 ──
-        var geminiTools = AgentToolDefinitions.GetGeminiToolsArray();
-        var toolsPayload = geminiTools.Count > 0
-            ? new[] { new { functionDeclarations = geminiTools } }
-            : null;
 
         bool isGemmaModel = !string.IsNullOrEmpty(modelName) && modelName.IndexOf("gemma", StringComparison.OrdinalIgnoreCase) >= 0;
 
@@ -110,8 +103,7 @@ internal class LlmGemini : Llm, IGetModelNames
             },
             system_instruction = new { parts = new[] { new { text = systemPromptString } } },
             contents = new[] { new { parts = new[] { new { text = promptString } } } },
-            generationConfig,
-            tools = toolsPayload
+            generationConfig
         }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
         int retry = allowRetry ? 3 : 1;
@@ -164,33 +156,6 @@ internal class LlmGemini : Llm, IGetModelNames
                 var partsToken = contentToken["parts"];
                 if (!(partsToken is JArray partsArray) || !partsArray.HasValues) { retry--; continue; }
 
-                var toolResponse = new LlmResponse("", true);
-                string textPart = null;
-
-                foreach (var part in partsArray)
-                {
-                    var funcCallToken = part["functionCall"];
-                    if (funcCallToken != null && funcCallToken.Type != JTokenType.Null)
-                    {
-                        var funcName = funcCallToken["name"]?.ToString();
-                        var argsToken = funcCallToken["args"];
-                        var funcArgs = argsToken != null ? argsToken.ToString(Formatting.None) : "{}";
-                        if (!string.IsNullOrEmpty(funcName))
-                            toolResponse.ToolCalls.Add(new ToolCallData { FunctionName = funcName, JsonArguments = funcArgs });
-                    }
-                    else if (part["text"] != null && textPart == null)
-                    {
-                        textPart = part["text"].ToString();
-                    }
-                }
-
-                if (toolResponse.ToolCalls.Count > 0)
-                {
-                    toolResponse.Text = textPart ?? "";
-                    Log.Debug($"[LlmGemini] Tool calls received: {toolResponse.ToolCalls.Count}");
-                    return toolResponse;
-                }
-
                 var firstPart = partsArray.FirstOrDefault();
                 if (firstPart == null) { retry--; continue; }
 
@@ -225,12 +190,6 @@ internal class LlmGemini : Llm, IGetModelNames
         if (AndroidHelper.IsAndroid && !NetworkHelper.IsNetworkAvailable())
             throw new InvalidOperationException("Network not available");
 
-        // ── VT-NOTOOLS-T6: 工具调用已全量移除；恒空 → tools 字段整体省略 ──
-        var geminiTools = AgentToolDefinitions.GetGeminiToolsArray();
-        var toolsPayload = geminiTools.Count > 0
-            ? new[] { new { functionDeclarations = geminiTools } }
-            : null;
-
         bool isGemmaModel = !string.IsNullOrEmpty(modelName) && modelName.IndexOf("gemma", StringComparison.OrdinalIgnoreCase) >= 0;
 
         // ★ 从单一数据源解析参数（自动完成 Bark/A2A 豁免）
@@ -249,16 +208,13 @@ internal class LlmGemini : Llm, IGetModelNames
             },
             system_instruction = new { parts = new[] { new { text = systemPromptString } } },
             contents = new[] { new { parts = new[] { new { text = gameCacheString + npcCacheString + promptString } } } },
-            generationConfig,
-            tools = toolsPayload
+            generationConfig
         }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
         var streamUrl = $"https://generativelanguage.googleapis.com/v1beta/models/" +
                         $"{modelName}:streamGenerateContent?alt=sse&key={apiKey}";
 
         var fullText = new StringBuilder();
-
-        var streamedToolCalls = new List<ToolCallData>();
 
         try
         {
@@ -297,19 +253,6 @@ internal class LlmGemini : Llm, IGetModelNames
 
                     foreach (var part in parts)
                     {
-                        var funcCallToken = part["functionCall"];
-                        if (funcCallToken != null)
-                        {
-                            var funcName = funcCallToken["name"]?.ToString();
-                            var argsToken = funcCallToken["args"];
-                            var funcArgs = argsToken != null ? argsToken.ToString(Formatting.None) : "{}";
-                            if (!string.IsNullOrEmpty(funcName))
-                            {
-                                streamedToolCalls.Add(new ToolCallData { FunctionName = funcName, JsonArguments = funcArgs });
-                            }
-                            continue;
-                        }
-
                         var text = part["text"]?.ToString();
                         if (!string.IsNullOrEmpty(text))
                         {
@@ -319,13 +262,6 @@ internal class LlmGemini : Llm, IGetModelNames
                     }
                 }
                 catch { }
-            }
-
-            if (streamedToolCalls.Count > 0)
-            {
-                var toolResp = new LlmResponse(fullText.ToString(), true);
-                toolResp.ToolCalls.AddRange(streamedToolCalls);
-                return toolResp;
             }
 
             return new LlmResponse(fullText.ToString(), fullText.Length > 0);
@@ -389,8 +325,7 @@ internal class LlmGemini : Llm, IGetModelNames
     internal static string BuildGeminiRolePayload(
         string systemPromptString,
         IReadOnlyList<LlmChatMessage> messages,
-        object generationConfig,
-        object toolsPayload)
+        object generationConfig)
     {
         return JsonConvert.SerializeObject(new
         {
@@ -401,8 +336,7 @@ internal class LlmGemini : Llm, IGetModelNames
             },
             system_instruction = new { parts = new[] { new { text = systemPromptString } } },
             contents = BuildGeminiContents(messages),
-            generationConfig,
-            tools = toolsPayload
+            generationConfig
         }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
     }
 
@@ -424,11 +358,6 @@ internal class LlmGemini : Llm, IGetModelNames
         string cacheContext = "",
         bool allowRetry = true)
     {
-        var geminiTools = AgentToolDefinitions.GetGeminiToolsArray();
-        var toolsPayload = geminiTools.Count > 0
-            ? new[] { new { functionDeclarations = geminiTools } }
-            : null;
-
         bool isGemmaModel = !string.IsNullOrEmpty(modelName) && modelName.IndexOf("gemma", StringComparison.OrdinalIgnoreCase) >= 0;
         var genParams = ResolveParameters(cacheContext);
 
@@ -437,7 +366,7 @@ internal class LlmGemini : Llm, IGetModelNames
             ? (object)new { maxOutputTokens = genParams.MaxTokens, temperature = genParams.Temperature, topP = genParams.TopP }
             : new { maxOutputTokens = genParams.MaxTokens, temperature = genParams.Temperature, topP = genParams.TopP, thinkingConfig = new { thinkingBudget } };
 
-        var jsonData = BuildGeminiRolePayload(systemPromptString, messages, generationConfig, toolsPayload);
+        var jsonData = BuildGeminiRolePayload(systemPromptString, messages, generationConfig);
 
         int retry = allowRetry ? 3 : 1;
         var fullUrl = url + apiKey;
@@ -488,33 +417,6 @@ internal class LlmGemini : Llm, IGetModelNames
 
                     var partsToken = contentToken["parts"];
                     if (!(partsToken is JArray partsArray) || !partsArray.HasValues) { retry--; continue; }
-
-                    var toolResponse = new LlmResponse("", true);
-                    string textPart = null;
-
-                    foreach (var part in partsArray)
-                    {
-                        var funcCallToken = part["functionCall"];
-                        if (funcCallToken != null && funcCallToken.Type != JTokenType.Null)
-                        {
-                            var funcName = funcCallToken["name"]?.ToString();
-                            var argsToken = funcCallToken["args"];
-                            var funcArgs = argsToken != null ? argsToken.ToString(Formatting.None) : "{}";
-                            if (!string.IsNullOrEmpty(funcName))
-                                toolResponse.ToolCalls.Add(new ToolCallData { FunctionName = funcName, JsonArguments = funcArgs });
-                        }
-                        else if (part["text"] != null && textPart == null)
-                        {
-                            textPart = part["text"].ToString();
-                        }
-                    }
-
-                    if (toolResponse.ToolCalls.Count > 0)
-                    {
-                        toolResponse.Text = textPart ?? "";
-                        Log.Debug($"[LlmGemini] Tool calls received: {toolResponse.ToolCalls.Count}");
-                        return toolResponse;
-                    }
 
                     var firstPart = partsArray.FirstOrDefault();
                     if (firstPart == null) { retry--; continue; }
@@ -569,11 +471,6 @@ internal class LlmGemini : Llm, IGetModelNames
         if (AndroidHelper.IsAndroid && !NetworkHelper.IsNetworkAvailable())
             throw new InvalidOperationException("Network not available");
 
-        var geminiTools = AgentToolDefinitions.GetGeminiToolsArray();
-        var toolsPayload = geminiTools.Count > 0
-            ? new[] { new { functionDeclarations = geminiTools } }
-            : null;
-
         bool isGemmaModel = !string.IsNullOrEmpty(modelName) && modelName.IndexOf("gemma", StringComparison.OrdinalIgnoreCase) >= 0;
         var genParams = ResolveParameters(cacheContext);
 
@@ -581,7 +478,7 @@ internal class LlmGemini : Llm, IGetModelNames
             ? (object)new { maxOutputTokens = genParams.MaxTokens, temperature = genParams.Temperature, topP = genParams.TopP }
             : new { maxOutputTokens = genParams.MaxTokens, temperature = genParams.Temperature, topP = genParams.TopP, thinkingConfig = new { thinkingBudget = 0 } };
 
-        var jsonData = BuildGeminiRolePayload(systemPromptString, messages, generationConfig, toolsPayload);
+        var jsonData = BuildGeminiRolePayload(systemPromptString, messages, generationConfig);
 
         var streamUrl = $"https://generativelanguage.googleapis.com/v1beta/models/" +
                         $"{modelName}:streamGenerateContent?alt=sse&key={apiKey}";
@@ -611,13 +508,6 @@ internal class LlmGemini : Llm, IGetModelNames
                 return BuildGeminiStreamingFailureResponse(sseResult.ParseError, sseResult.Text);
             }
 
-            if (sseResult.ToolCalls.Count > 0)
-            {
-                var toolResp = new LlmResponse(sseResult.Text, true);
-                toolResp.ToolCalls.AddRange(sseResult.ToolCalls);
-                return toolResp;
-            }
-
             return new LlmResponse(sseResult.Text, sseResult.Text.Length > 0);
         }
         catch (OperationCanceledException)
@@ -639,21 +529,19 @@ internal class LlmGemini : Llm, IGetModelNames
     {
         public bool Success { get; set; }
         public string Text { get; set; }
-        public List<ToolCallData> ToolCalls { get; set; } = new();
         public Exception ParseError { get; set; }
     }
 
     /// <summary>
-    /// 读取并解析 Gemini SSE 流（generateContent?alt=sse），提取文本与工具调用分片。
+    /// 读取并解析 Gemini SSE 流（generateContent?alt=sse），提取文本分片。
     /// 遇到首个无法解析的非空 data 分片时：记录 Error 日志并以 Success=false 返回
-    /// （不再静默忽略）。有效 JSON 但无文本/工具调用的空内容分片不视为失败。
+    /// （不再静默忽略）。有效 JSON 但无文本内容的空内容分片不视为失败。
     /// 测试隔离点：接受原始 Stream，供离线注入 SSE 数据行（无需真实 HTTP）。
     /// </summary>
     internal async Task<GeminiSseProcessResult> ProcessGeminiSseAsync(Stream stream, Action<string> onToken, CancellationToken ct)
     {
         var result = new GeminiSseProcessResult { Success = true };
         var fullText = new StringBuilder();
-        var toolCalls = new List<ToolCallData>();
 
         using var reader = new StreamReader(stream);
         while (!reader.EndOfStream && !ct.IsCancellationRequested)
@@ -687,17 +575,6 @@ internal class LlmGemini : Llm, IGetModelNames
 
                 foreach (var part in parts)
                 {
-                    var funcCallToken = part["functionCall"];
-                    if (funcCallToken != null)
-                    {
-                        var funcName = funcCallToken["name"]?.ToString();
-                        var argsToken = funcCallToken["args"];
-                        var funcArgs = argsToken != null ? argsToken.ToString(Formatting.None) : "{}";
-                        if (!string.IsNullOrEmpty(funcName))
-                            toolCalls.Add(new ToolCallData { FunctionName = funcName, JsonArguments = funcArgs });
-                        continue;
-                    }
-
                     var text = part["text"]?.ToString();
                     if (!string.IsNullOrEmpty(text))
                     {
@@ -712,13 +589,11 @@ internal class LlmGemini : Llm, IGetModelNames
                 result.Success = false;
                 result.ParseError = ex;
                 result.Text = fullText.ToString();
-                result.ToolCalls = toolCalls;
                 return result;
             }
         }
 
         result.Text = fullText.ToString();
-        result.ToolCalls = toolCalls;
         return result;
     }
 

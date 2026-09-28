@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Text;
 
 namespace ValleytalkReborn;
@@ -54,21 +53,5 @@ internal static class LlmTrafficLogger
         ModEntry.SMonitor?.Log(sb.ToString(), StardewModdingAPI.LogLevel.Debug);
         ModEntry.SMonitor?.Log($"{{{(rawText ?? "(empty)")}}}", StardewModdingAPI.LogLevel.Debug);
         ModEntry.SMonitor?.Log("[LlmTraffic] ===== IN END", StardewModdingAPI.LogLevel.Debug);
-    }
-
-    public static void LogIncomingToolCalls(string cacheContext, List<ToolCallData> toolCalls)
-    {
-        if (!ShouldLog(cacheContext) || toolCalls == null || toolCalls.Count == 0) return;
-
-        var sb = new StringBuilder();
-        sb.AppendLine("[LlmTraffic] ===== IN(tool_calls) <<<");
-        sb.Append($"context={cacheContext} | count={toolCalls.Count}");
-        ModEntry.SMonitor?.Log(sb.ToString(), StardewModdingAPI.LogLevel.Debug);
-        for (int i = 0; i < toolCalls.Count; i++)
-        {
-            var tc = toolCalls[i];
-            ModEntry.SMonitor?.Log($"  [{i}] {tc.FunctionName} args={tc.JsonArguments}", StardewModdingAPI.LogLevel.Debug);
-        }
-        ModEntry.SMonitor?.Log("[LlmTraffic] ===== IN(tool_calls) END", StardewModdingAPI.LogLevel.Debug);
     }
 }
