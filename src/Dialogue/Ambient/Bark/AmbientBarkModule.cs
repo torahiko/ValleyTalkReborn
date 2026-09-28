@@ -1073,6 +1073,29 @@ internal sealed class AmbientBarkModule : IDialogueModule
                 return;
             }
 
+            // B1：取消/超时不再经 OCE 传播，改由响应对象的 EndReason 携带 ——
+            // 构造值与下方 catch(OperationCanceledException) 区逐字段一致，仅数据来源不同。
+            if (response != null &&
+                (response.EndReason == DialogueModels.LlmRequestEndReason.Cancelled ||
+                 response.EndReason == DialogueModels.LlmRequestEndReason.Timeout))
+            {
+                bool isExplicitCancel = response.EndReason == DialogueModels.LlmRequestEndReason.Cancelled;
+
+                ModEntry.SMonitor?.Log(
+                    $"[AmbientBark] state=cancelled npc={request.NpcName} requestId={requestId} endReason={response.EndReason}",
+                    LogLevel.Debug);
+
+                _pendingBarkResults.Enqueue(new DialogueModels.BarkLlmResult
+                {
+                    NpcName = request.NpcName,
+                    RequestId = requestId,
+                    Cancelled = isExplicitCancel,
+                    IsChinese = request.IsChinese,
+                    EndReason = response.EndReason
+                });
+                return;
+            }
+
             if (response == null || !response.IsSuccess || string.IsNullOrWhiteSpace(response.Text))
             {
                 ModEntry.SMonitor?.Log(

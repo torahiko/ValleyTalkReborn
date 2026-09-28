@@ -732,6 +732,12 @@ namespace ValleytalkReborn
             using (lease)
             {
                 telemetry.QueueWaitMs = lease.QueueWaitMs;
+                if (lease.QueueWaitMs > ModEntry.Config.QueryTimeout * 1000)
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[LlmOpenAiBase] Local request waited {lease.QueueWaitMs}ms in queue, exceeding QueryTimeout={ModEntry.Config.QueryTimeout}s.",
+                        StardewModdingAPI.LogLevel.Warn);
+                }
                 var totalWatch = System.Diagnostics.Stopwatch.StartNew();
 
                 LlmResponse result = await ExecuteNonStreamingCoreAsync(
@@ -782,6 +788,9 @@ namespace ValleytalkReborn
 
                 try
                 {
+                    // B1：尝试前置取消检查（对齐 LlmLlamaCpp 模式）——云端预取消也零 HTTP。
+                    callerToken.ThrowIfCancellationRequested();
+
                     var genParams = ResolveParameters(cacheContext);
                     string jsonData = SerializePayloadWithCustomBody(requestBody, genParams.AllowCustomBody);
                     LogFinalPayloadSuppression(jsonData, endpointUrl);
@@ -855,7 +864,7 @@ namespace ValleytalkReborn
                         retryCount--;
                         if (retryCount > 0)
                         {
-                            await Task.Delay(250);
+                            await Task.Delay(250, callerToken);
                         }
                         continue;
                     }
@@ -988,6 +997,12 @@ namespace ValleytalkReborn
             using (lease)
             {
                 telemetry.QueueWaitMs = lease.QueueWaitMs;
+                if (lease.QueueWaitMs > ModEntry.Config.QueryTimeout * 1000)
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[LlmOpenAiBase] Local streaming request waited {lease.QueueWaitMs}ms in queue, exceeding QueryTimeout={ModEntry.Config.QueryTimeout}s.",
+                        StardewModdingAPI.LogLevel.Warn);
+                }
                 var totalWatch = System.Diagnostics.Stopwatch.StartNew();
 
                 LlmResponse result = await ExecuteStreamingCoreAsync(
@@ -1124,7 +1139,7 @@ namespace ValleytalkReborn
                                     {
                                         retryAttempt++;
                                         ModEntry.SMonitor?.Log($"[LlmOpenAiBase] Streaming got {status}, retrying (attempt {retryAttempt}/{maxRetries}).", StardewModdingAPI.LogLevel.Debug);
-                                        await Task.Delay(250);
+                                        await Task.Delay(250, ct);
                                         continue;
                                     }
 
@@ -1299,12 +1314,26 @@ namespace ValleytalkReborn
                                     }
                                 }
 
-                                return new LlmResponse(completeText);
+                                // B1：取消与流结束竞态 —— 调用方已取消时按 Cancelled 标注（IsSuccess 与文本不动）。
+                                var finalResponse = new LlmResponse(completeText);
+                                if (ct.IsCancellationRequested)
+                                {
+                                    finalResponse.EndReason = DialogueModels.LlmRequestEndReason.Cancelled;
+                                }
+                                return finalResponse;
                             }
+                        }
+                        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                        {
+                            // BOUNDARY：调用方取消 —— 立即返回，不消耗重试预算、不记为服务故障。
+                            Log.Debug($"[LlmOpenAiBase] Streaming request cancelled by caller. endpoint={endpointUrl}");
+                            return LlmResponse.Cancelled();
                         }
                         catch (OperationCanceledException)
                         {
-                            return new LlmResponse("Request timed out or cancelled.", 408);
+                            // BOUNDARY：QueryTimeout 触发 —— 立即返回，不重试。
+                            Log.Warning($"[LlmOpenAiBase] Streaming request timed out after {ModEntry.Config.QueryTimeout}s. endpoint={endpointUrl}");
+                            return LlmResponse.Timeout();
                         }
                         catch (Exception ex)
                         {

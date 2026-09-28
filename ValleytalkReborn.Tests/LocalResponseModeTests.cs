@@ -304,8 +304,10 @@ public class LocalResponseModeTests : IDisposable
     [Fact]
     public async Task NonStreaming_PreCancelledToken_CloudEndpoint_HasNoSecondAttempt()
     {
-        // 云端端点：无本地闸门，HttpClient 传输层会进入 handler 一次；执行器立即返回 Cancelled，
-        // 不消耗重试预算、无第二次请求（CallCount 恒 1，绝不出现 2）。
+        // 云端端点：无本地闸门，B1 在尝试循环开头加了前置取消检查（对齐 LlmLlamaCpp 模式）——
+        // 预取消令牌在第一次 HTTP 前即抛出 → Cancelled()，零 HTTP。
+        // (b′) 断言更新：CallCount 1 → 0。理由：旧断言依赖“传输层恰好进 handler 一次”，
+        // 前置检查取代了这一时序巧合，云端与本地预取消语义统一（均零请求）。
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
@@ -316,7 +318,7 @@ public class LocalResponseModeTests : IDisposable
 
         Assert.Equal("Cancelled", result.EndReason.ToString());
         Assert.False(result.IsSuccess);
-        Assert.Equal(1, handler.CallCount);
+        Assert.Equal(0, handler.CallCount);
     }
 
     [Fact]
@@ -423,6 +425,91 @@ public class LocalResponseModeTests : IDisposable
         Assert.Equal("Cancelled", result.EndReason.ToString());
         Assert.Equal(2, handler.CallCount);
         Assert.Empty(received);
+    }
+
+    // ── B1：流式核心取消 / 超时 / 竞态语义（取消/超时用例为强制验收项） ──
+
+    [Fact]
+    public async Task Streaming_CancelledDuringStream_ReturnsCancelledWithoutSecondRequest()
+    {
+        using var cts = new CancellationTokenSource();
+
+        var (provider, handler) = Install(LocalUrl, (_, token, _) =>
+        {
+            cts.Cancel();
+            return Task.FromException<HttpResponseMessage>(new OperationCanceledException(token));
+        });
+
+        var received = new List<string>();
+        var result = await provider.RunStreamingChatInference("system", Messages(), received.Add, cts.Token);
+
+        Assert.Equal("Cancelled", result.EndReason.ToString());
+        Assert.False(result.IsSuccess);
+        Assert.Empty(received);
+        Assert.Equal(1, handler.CallCount);
+    }
+
+    [Fact]
+    public async Task Streaming_Timeout_ReturnsTimeoutEndReason()
+    {
+        // 传输层 OCE 且调用方令牌未取消 → QueryTimeout 语义：Timeout() + Warn，非合并 408。
+        using var cts = new CancellationTokenSource();
+
+        var (provider, handler) = Install(LocalUrl, (_, token, _) =>
+            Task.FromException<HttpResponseMessage>(new OperationCanceledException(token)));
+
+        var received = new List<string>();
+        var result = await provider.RunStreamingChatInference("system", Messages(), received.Add, cts.Token);
+
+        Assert.Equal("Timeout", result.EndReason.ToString());
+        Assert.False(result.IsSuccess);
+        Assert.NotEqual(408, result.ResponseCode);
+        Assert.Empty(received);
+        Assert.Equal(1, handler.CallCount);
+    }
+
+    [Fact]
+    public async Task Streaming_CancelledThenGracefulStreamEnd_ReturnsCancelledEndReasonNotSuccessOr408()
+    {
+        // 竞态：调用方已取消但流优雅结束 —— 部分文本不得以 EndReason=Success / 408 返回；
+        // IsSuccess 与文本语义不动（此处读循环因取消而零消费，文本为空）。
+        using var cts = new CancellationTokenSource();
+
+        var (provider, handler) = Install(LocalUrl, (_, _, _) =>
+        {
+            cts.Cancel();
+            return Task.FromResult(Sse(
+                "data: {\"choices\":[{\"delta\":{\"content\":\"Tail\"}}]}\n\n" +
+                "data: [DONE]\n\n"));
+        });
+
+        var received = new List<string>();
+        var result = await provider.RunStreamingChatInference("system", Messages(), received.Add, cts.Token);
+
+        Assert.Equal("Cancelled", result.EndReason.ToString());
+        Assert.True(result.IsSuccess);
+        Assert.NotEqual(408, result.ResponseCode);
+        Assert.Equal(1, handler.CallCount);
+    }
+
+    // ── B1：门控收敛纯函数矩阵 ──
+
+    [Theory]
+    [InlineData("OpenAI", "https://api.example.com/v1", "", true)]
+    [InlineData("OpenAI", "https://api.example.com/v1", "   ", true)]
+    [InlineData("OpenAI", "https://api.example.com/v1", null, true)]
+    [InlineData("OpenAI", "https://api.example.com/v1", "sk-key", false)]
+    [InlineData("Ollama", "", "", false)]
+    [InlineData("LMStudio", "http://localhost:1234/v1", "", false)]
+    [InlineData("LlamaCpp", "", "", false)]
+    [InlineData("OpenAI", "http://127.0.0.1:1234/v1", "", false)]
+    [InlineData("OpenAI", "http://192.168.1.10:1234/v1", "", false)]
+    [InlineData("Ollama", "https://api.example.com/v1", "", false)]
+    [InlineData("Ollama", "https://api.example.com/v1", "sk-key", false)]
+    public void ProviderDefaults_IsMissingApiKeyBlocking_Matrix(
+        string provider, string serverAddress, string apiKey, bool expected)
+    {
+        Assert.Equal(expected, ProviderDefaults.IsMissingApiKeyBlocking(provider, serverAddress, apiKey));
     }
 
     // ── 测试脚手架 ──

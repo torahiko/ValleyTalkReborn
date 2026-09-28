@@ -644,8 +644,8 @@ namespace ValleytalkReborn
 
         private static string GetConnectionStatusText()
         {
-            if (string.IsNullOrWhiteSpace(ModEntry.Config.ApiKey)
-                && !ProviderDefaults.IsLocalTarget(ModEntry.Config.Provider, ModEntry.Config.ServerAddress))
+            if (ProviderDefaults.IsMissingApiKeyBlocking(
+                    ModEntry.Config.Provider, ModEntry.Config.ServerAddress, ModEntry.Config.ApiKey))
             {
                 return GetUIString("configStatusNotConfigured", "Not Configured: Enter API Key and save");
             }

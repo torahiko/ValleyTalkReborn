@@ -160,7 +160,7 @@ internal abstract class Llm
             ModEntry.SMonitor.Log("[Llm] Local LLM target detected, skipping API-key requirement.", StardewModdingAPI.LogLevel.Debug);
         }
 
-        if ((!isLocal && string.IsNullOrWhiteSpace(apiKey))
+        if (ProviderDefaults.IsMissingApiKeyBlocking(ModEntry.Config.Provider, ModEntry.Config.ServerAddress, apiKey)
             || (string.IsNullOrWhiteSpace(modelName) && !(Instance is LlmLlamaCpp)))
         {
             ModEntry.SMonitor.Log($"[ValleytalkReborn] API Key 或模型名称未填写，暂停模型连接测试。", StardewModdingAPI.LogLevel.Warn);

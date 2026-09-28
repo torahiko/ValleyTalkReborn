@@ -198,35 +198,19 @@ public class LlmDialogueService
                 }
                 catch (OperationCanceledException)
                 {
-                    Log.Debug($"Streaming cancelled for {character.Name}.");
-                    character.CurrentDialogueCts = null;
-                    ModEntry.CancelButtonPluginInstance?.SetActiveCharacter(null);
-                  
-                    // ══════════════════════════════════════════════════════════════════════
-                    // 🔧 [PERCEPTION CLEANUP] 即使取消，也要清理已注入的感知，避免重复
-                    // ══════════════════════════════════════════════════════════════════════
-                    // 业务逻辑：
-                    // 1. Prompt 已经组装完成（包含送礼、吃东西等感知）
-                    // 2. 这些感知已经"展示"给 LLM（即使 LLM 未返回完整响应）
-                    // 3. 如果不清理，下次对话会重复注入，导致"你刚刚收到礼物"反复出现
-                    // 4. 清理操作幂等且安全，不会影响正常流程
-                    // ══════════════════════════════════════════════════════════════════════
-                    try
-                    {
-                        ConfirmDynamicBlocksConsumed(context, character, plan);
-                        PerceptionManager.Instance?.MarkAsConsolidated(character.Name);
-                        PerceptionManager.Instance?.Evict("Eat");
-                    }
-                    catch (Exception cleanupEx)
-                    {
-                        Log.Warning($"Perception cleanup failed after streaming cancellation: {cleanupEx.Message}");
-                    }
-                  
+                    RunPerceptionCleanupAfterCancel(context, character, plan);
                     return new[] { "..." };
                 }
 
                 character.CurrentDialogueCts = null;
                 ModEntry.CancelButtonPluginInstance?.SetActiveCharacter(null);
+
+                if (streamResult != null && streamResult.EndReason == DialogueModels.LlmRequestEndReason.Cancelled)
+                {
+                    // B1：取消不再经 OCE 传播（Provider 返回 Cancelled() 或竞态标注）——与 catch 路径共用同一清理。
+                    RunPerceptionCleanupAfterCancel(context, character, plan);
+                    return new[] { "..." };
+                }
 
                 if (streamResult == null || !streamResult.IsSuccess)
                     return new[] { "..." };
@@ -462,6 +446,38 @@ public class LlmDialogueService
         {
             // 确保方法任何出口点都会释放标志位
             _isRequestInProgress = false;
+        }
+    }
+
+    /// <summary>
+    /// B1：流式取消后的统一清理体。
+    /// catch(OperationCanceledException) 路径与 streamResult.EndReason == Cancelled 路径
+    /// 共用本方法，两条取消路径行为逐字节一致。
+    /// </summary>
+    private static void RunPerceptionCleanupAfterCancel(DialogueContext context, Character character, InjectionPlan plan)
+    {
+        Log.Debug($"Streaming cancelled for {character.Name}.");
+        character.CurrentDialogueCts = null;
+        ModEntry.CancelButtonPluginInstance?.SetActiveCharacter(null);
+
+        // ══════════════════════════════════════════════════════════════════════
+        // 🔧 [PERCEPTION CLEANUP] 即使取消，也要清理已注入的感知，避免重复
+        // ══════════════════════════════════════════════════════════════════════
+        // 业务逻辑：
+        // 1. Prompt 已经组装完成（包含送礼、吃东西等感知）
+        // 2. 这些感知已经"展示"给 LLM（即使 LLM 未返回完整响应）
+        // 3. 如果不清理，下次对话会重复注入，导致"你刚刚收到礼物"反复出现
+        // 4. 清理操作幂等且安全，不会影响正常流程
+        // ══════════════════════════════════════════════════════════════════════
+        try
+        {
+            ConfirmDynamicBlocksConsumed(context, character, plan);
+            PerceptionManager.Instance?.MarkAsConsolidated(character.Name);
+            PerceptionManager.Instance?.Evict("Eat");
+        }
+        catch (Exception cleanupEx)
+        {
+            Log.Warning($"Perception cleanup failed after streaming cancellation: {cleanupEx.Message}");
         }
     }
 

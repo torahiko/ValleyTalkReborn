@@ -1080,6 +1080,32 @@ internal sealed class A2ASessionManager
                 request.UserPrompt,
                 ct);
 
+            // B1：取消/超时不再经 OCE 传播，改由响应对象的 EndReason 携带 ——
+            // 构造值与下方 catch(OperationCanceledException) 区逐字段一致，仅数据来源不同。
+            if (response != null &&
+                (response.EndReason == DialogueModels.LlmRequestEndReason.Cancelled ||
+                 response.EndReason == DialogueModels.LlmRequestEndReason.Timeout))
+            {
+                bool isExplicitCancel = response.EndReason == DialogueModels.LlmRequestEndReason.Cancelled;
+
+                if (!isExplicitCancel)
+                {
+                    ModEntry.SMonitor?.Log(
+                        "[A2A] 脚本请求超时，使用 fallback",
+                        LogLevel.Debug);
+                }
+
+                _pendingA2AResults.Enqueue(new DialogueModels.A2ACompletedResult
+                {
+                    SessionId = sessionId,
+                    Cancelled = isExplicitCancel,
+                    UseFallback = !isExplicitCancel,
+                    IsChinese = request?.IsChinese ?? false,
+                    EndReason = response.EndReason
+                });
+                return;
+            }
+
             if (response == null || !response.IsSuccess || string.IsNullOrWhiteSpace(response.Text))
             {
                 ModEntry.SMonitor?.Log(
