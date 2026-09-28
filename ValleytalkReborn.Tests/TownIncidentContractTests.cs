@@ -19,42 +19,7 @@ public class TownIncidentContractTests
 {
     public TownIncidentContractTests()
     {
-        InstallHeadlessMultiplayerContext();
-    }
-
-    private static bool _multiplayerContextInstalled;
-
-    /// <summary>
-    /// 无游戏进程环境下驱动 SMAPI Context / 游戏多人检查的两项前置：
-    /// 1) StardewModdingAPI.Context 的静态构造器依赖 SMAPI.Toolkit.dll（测试 bin 未复制），
-    ///    注册 AssemblyResolve 从游戏 smapi-internal 目录补载；
-    /// 2) Context.IsMultiplayer → LocalMultiplayer.IsLocalMultiplayer 读取
-    ///    GameRunner.instance.gameInstances.Count（instance 为 null 时 NRE），
-    ///    注入中空 GameRunner（空实例列表）使该检查确定性求值为“单人”。
-    /// </summary>
-    private static void InstallHeadlessMultiplayerContext()
-    {
-        if (_multiplayerContextInstalled) return;
-        _multiplayerContextInstalled = true;
-
-        AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
-        {
-            string assemblyName = new System.Reflection.AssemblyName(args.Name).Name;
-            string smapiInternal = System.IO.Path.Combine(
-                AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..",
-                "Stardew Valley", "smapi-internal", assemblyName + ".dll");
-            return System.IO.File.Exists(smapiInternal) ? System.Reflection.Assembly.LoadFrom(smapiInternal) : null;
-        };
-
-        StardewValley.Game1.hasLocalClientsOnly = false;
-        var runner = System.Runtime.Serialization.FormatterServices
-            .GetUninitializedObject(typeof(StardewValley.GameRunner));
-        var instancesField = typeof(StardewValley.GameRunner)
-            .GetField("gameInstances", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-        instancesField?.SetValue(runner, Activator.CreateInstance(instancesField.FieldType));
-        typeof(StardewValley.GameRunner)
-            .GetField("instance", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static)
-            ?.SetValue(null, runner);
+        TestEnvironment.InstallHeadlessContext();
     }
 
     // ── 反射助手：注入引擎内存态（_data / _isSaveLoaded / _isDirty）──

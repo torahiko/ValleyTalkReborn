@@ -8,7 +8,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -31,7 +30,7 @@ public class PromptRoleAssemblyTests : IDisposable
 
     public PromptRoleAssemblyTests()
     {
-        InstallHeadlessContext();
+        TestEnvironment.InstallHeadlessContext();
         // 在访问 Character 之前注入 SHelper，确保 PromptCache 静态构造器不因 SHelper 为 null 而失败。
         // 测试结束后恢复原始值，避免污染后续测试。
         var sHelperField = typeof(ModEntry).GetField("<SHelper>k__BackingField",
@@ -62,30 +61,6 @@ public class PromptRoleAssemblyTests : IDisposable
             sHelperField?.SetValue(null, null);
             ModEntry.SMonitor = _originalSMonitor;
         }
-    }
-
-    private static bool _ctxInstalled;
-    private static void InstallHeadlessContext()
-    {
-        if (_ctxInstalled) return;
-        _ctxInstalled = true;
-
-        AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
-        {
-            string name = new AssemblyName(args.Name).Name;
-            string path = Path.Combine(
-                AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..",
-                "Stardew Valley", "smapi-internal", name + ".dll");
-            return File.Exists(path) ? Assembly.LoadFrom(path) : null;
-        };
-
-        var runner = FormatterServices.GetUninitializedObject(typeof(GameRunner));
-        var instancesField = typeof(GameRunner).GetField("gameInstances",
-            BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-        instancesField.SetValue(runner, Activator.CreateInstance(instancesField.FieldType));
-        typeof(GameRunner).GetField("instance",
-            BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static)?.SetValue(null, runner);
-        Game1.hasLocalClientsOnly = false;
     }
 
     private static void SetLanguageEnvironment(string languageOverride, LocalizedContentManager.LanguageCode gameLanguage)

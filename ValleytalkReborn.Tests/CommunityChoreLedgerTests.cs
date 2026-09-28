@@ -24,33 +24,7 @@ public class CommunityChoreLedgerTests
 {
     public CommunityChoreLedgerTests()
     {
-        InstallHeadlessContext();
-    }
-
-    // ── 无游戏进程环境下驱动 SMAPI Context 的前置 ──
-
-    private static bool _ctxInstalled;
-    private static void InstallHeadlessContext()
-    {
-        if (_ctxInstalled) return;
-        _ctxInstalled = true;
-
-        AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
-        {
-            string name = new AssemblyName(args.Name).Name;
-            string path = Path.Combine(
-                AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..",
-                "Stardew Valley", "smapi-internal", name + ".dll");
-            return File.Exists(path) ? Assembly.LoadFrom(path) : null;
-        };
-
-        var runner = FormatterServices.GetUninitializedObject(typeof(GameRunner));
-        var instancesField = typeof(GameRunner).GetField("gameInstances",
-            BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-        instancesField.SetValue(runner, Activator.CreateInstance(instancesField.FieldType));
-        typeof(GameRunner).GetField("instance",
-            BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static)?.SetValue(null, runner);
-        Game1.hasLocalClientsOnly = false;
+        TestEnvironment.InstallHeadlessContext();
     }
 
     // ── 反射助手：读写账目管理器私有静态字段 ──
