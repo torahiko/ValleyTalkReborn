@@ -1,12 +1,13 @@
 // LocalResponseModeTests.cs
-// LOCAL-004 — 本地响应模式（Auto / Streaming / NonStreaming）与 SSE 降级契约测试。
-// 覆盖：Auto 成功流式、Auto 非 SSE 完整 JSON 就地解析（不重发）、
-// Auto 遇到“明确不支持流式”最多降级一次、SSE 已下发 token 后断连不重发、
-// Streaming 模式失败不降级、4xx 无流式信号不降级、NonStreaming 只发一次非流式请求、
-// 取消不触发降级请求、云端端点无视 LocalResponseMode、非法配置值归一化。
+// LOCAL-004（契约更正版）— 本地端点的 SSE 自动协商与降级契约测试。
+// 无配置面：本地端点（UrlHelper.IsPrivateNetworkUrl 命中）一律优先流式，
+// 仅在未产生任何 token 时最多降级一次非流式；云端端点零变化。
+// 覆盖：成功流式、非 SSE 完整 JSON 就地解析（不重发）、非 SSE 且不可解析的显式失败、
+// “明确不支持流式”降级恰一次、4xx 无流式信号不降级、部分 token 后断连不重发、
+// 取消不触发降级请求、云端端点回归。
 //
 // 纯内存测试：通过反射把 Llm 的共享 HttpClient 换成内存 HttpMessageHandler 桩，
-// 不发起真实网络请求；用例结束还原 Config 与 HttpClient。互斥依赖 assemblies 级
+// 不发起真实网络请求；用例结束还原 Config / HttpClient / SMonitor。互斥依赖 assemblies 级
 // DisableTestParallelization（TestCollections.cs）保护进程级静态字段。
 
 using System;
@@ -55,30 +56,12 @@ public class LocalResponseModeTests : IDisposable
         ModEntry.SMonitor = _originalMonitor;
     }
 
-    // ── 默认配置 ──
+    // ── 本地端点：成功的 SSE  ──
 
     [Fact]
-    public void DefaultConfig_UsesAutoMode()
+    public async Task LocalEndpoint_SseSuccess_StreamsTokensWithoutFallback()
     {
-        Assert.Equal(LocalResponseMode.Auto, new ModConfig().LocalResponseMode);
-    }
-
-    [Fact]
-    public void ValidateDialogueConfig_NormalizesInvalidModeToAuto()
-    {
-        var config = new ModConfig { LocalResponseMode = (LocalResponseMode)99 };
-
-        config.ValidateDialogueConfig(null);
-
-        Assert.Equal(LocalResponseMode.Auto, config.LocalResponseMode);
-    }
-
-    // ── Auto：成功的 SSE  ──
-
-    [Fact]
-    public async Task Auto_SseSuccess_DeliversTokensWithoutFallback()
-    {
-        var (provider, handler) = Install(LocalResponseMode.Auto, LocalUrl, (_, _, _) =>
+        var (provider, handler) = Install(LocalUrl, (_, _, _) =>
             Task.FromResult(Sse(
                 "data: {\"choices\":[{\"delta\":{\"content\":\"Hello\"}}]}\n\n" +
                 "data: {\"choices\":[{\"delta\":{\"content\":\" there\"}}]}\n\n" +
@@ -96,12 +79,12 @@ public class LocalResponseModeTests : IDisposable
         Assert.Contains("\"stream\":true", handler.Bodies[0]);
     }
 
-    // ── Auto：响应不是 SSE → 解析已收到的完整 JSON，不重复发送请求 ──
+    // ── 本地端点：响应不是 SSE → 降级恰一次（就地解析已收到的完整 JSON，不重复发送请求） ──
 
     [Fact]
-    public async Task Auto_NonSseJsonBody_ParsesReceivedBodyWithoutSecondRequest()
+    public async Task LocalEndpoint_NonSseJsonBody_ParsesReceivedBodyWithoutSecondRequest()
     {
-        var (provider, handler) = Install(LocalResponseMode.Auto, LocalUrl, (_, _, _) =>
+        var (provider, handler) = Install(LocalUrl, (_, _, _) =>
             Task.FromResult(Json("{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"Whole reply\"}}]}")));
 
         var received = new List<string>();
@@ -116,9 +99,9 @@ public class LocalResponseModeTests : IDisposable
     }
 
     [Fact]
-    public async Task Auto_NonSseUnparsableBody_ReturnsExplicitFailure()
+    public async Task LocalEndpoint_NonSseUnparsableBody_ReturnsExplicitFailure()
     {
-        var (provider, handler) = Install(LocalResponseMode.Auto, LocalUrl, (_, _, _) =>
+        var (provider, handler) = Install(LocalUrl, (_, _, _) =>
             Task.FromResult(Json("<html>not json</html>")));
 
         var received = new List<string>();
@@ -132,12 +115,12 @@ public class LocalResponseModeTests : IDisposable
         Assert.Equal(1, handler.CallCount);
     }
 
-    // ── Auto：服务明确拒绝 SSE → 恰好降级一次非流式 ──
+    // ── 本地端点：服务明确拒绝 SSE → 降级恰一次非流式 ──
 
     [Fact]
-    public async Task Auto_StreamUnsupported_DegradesExactlyOnceToNonStreaming()
+    public async Task LocalEndpoint_StreamUnsupported_DegradesExactlyOnceToNonStreaming()
     {
-        var (provider, handler) = Install(LocalResponseMode.Auto, LocalUrl, (_, _, call) =>
+        var (provider, handler) = Install(LocalUrl, (_, _, call) =>
             call == 1
                 ? Task.FromResult(Json(StreamUnsupportedBody, HttpStatusCode.BadRequest))
                 : Task.FromResult(Json("{\"choices\":[{\"message\":{\"content\":\"Fallback reply\"}}]}")));
@@ -155,12 +138,12 @@ public class LocalResponseModeTests : IDisposable
         Assert.Contains("\"stream\":false", handler.Bodies[1]);
     }
 
-    // ── Auto：4xx 但没有明确的流式不支持信号 → 不降级，返回原始失败 ──
+    // ── 本地端点：4xx 但没有明确的流式不支持信号 → 不降级，返回原始失败 ──
 
     [Fact]
-    public async Task Auto_Http400WithoutStreamSignal_ReturnsOriginalFailure()
+    public async Task LocalEndpoint_Http400WithoutStreamSignal_ReturnsOriginalFailure()
     {
-        var (provider, handler) = Install(LocalResponseMode.Auto, LocalUrl, (_, _, _) =>
+        var (provider, handler) = Install(LocalUrl, (_, _, _) =>
             Task.FromResult(Json("{\"error\":{\"message\":\"bad request\"}}", HttpStatusCode.BadRequest)));
 
         var received = new List<string>();
@@ -177,9 +160,9 @@ public class LocalResponseModeTests : IDisposable
     // ── 已下发 token 后失败：必须不再生成重复内容 ──
 
     [Fact]
-    public async Task Auto_PartialTokensThenBrokenStream_DoesNotResend()
+    public async Task LocalEndpoint_PartialTokensThenBrokenStream_DoesNotResend()
     {
-        var (provider, handler) = Install(LocalResponseMode.Auto, LocalUrl, (_, _, _) =>
+        var (provider, handler) = Install(LocalUrl, (_, _, _) =>
             Task.FromResult(SseInterrupted(
                 "data: {\"choices\":[{\"delta\":{\"content\":\"Half\"}}]}\n\n")));
 
@@ -193,53 +176,14 @@ public class LocalResponseModeTests : IDisposable
         Assert.Equal(1, handler.CallCount);
     }
 
-    // ── Streaming：失败即失败，不做非流式重试 ──
-
-    [Fact]
-    public async Task Streaming_StreamUnsupported_ReturnsFailureWithoutFallback()
-    {
-        var (provider, handler) = Install(LocalResponseMode.Streaming, LocalUrl, (_, _, _) =>
-            Task.FromResult(Json(StreamUnsupportedBody, HttpStatusCode.BadRequest)));
-
-        var received = new List<string>();
-        using var cts = new CancellationTokenSource();
-
-        var result = await provider.RunStreamingChatInference("system", Messages(), received.Add, cts.Token);
-
-        Assert.False(result.IsSuccess);
-        Assert.Equal(400, result.ResponseCode);
-        Assert.Empty(received);
-        Assert.Equal(1, handler.CallCount);
-    }
-
-    // ── NonStreaming：不发 SSE，成功后一次性下发完整文本 ──
-
-    [Fact]
-    public async Task NonStreaming_NeverRequestsSse_AndDeliversFullTextOnce()
-    {
-        var (provider, handler) = Install(LocalResponseMode.NonStreaming, LocalUrl, (_, _, _) =>
-            Task.FromResult(Json("{\"choices\":[{\"message\":{\"content\":\"Complete answer\"}}]}")));
-
-        var received = new List<string>();
-        using var cts = new CancellationTokenSource();
-
-        var result = await provider.RunStreamingChatInference("system", Messages(), received.Add, cts.Token);
-
-        Assert.True(result.IsSuccess);
-        Assert.Equal("Complete answer", result.Text);
-        Assert.Equal(new[] { "Complete answer" }, received);
-        Assert.Equal(1, handler.CallCount);
-        Assert.Contains("\"stream\":false", handler.Bodies[0]);
-    }
-
     // ── 取消：不得触发降级请求 ──
 
     [Fact]
-    public async Task Auto_CancelledDuringStreamRequest_DoesNotSendFallbackRequest()
+    public async Task LocalEndpoint_CancelledDuringStreamRequest_DoesNotSendFallbackRequest()
     {
         using var cts = new CancellationTokenSource();
 
-        var (provider, handler) = Install(LocalResponseMode.Auto, LocalUrl, (_, token, _) =>
+        var (provider, handler) = Install(LocalUrl, (_, token, _) =>
         {
             cts.Cancel();
             return Task.FromException<HttpResponseMessage>(new OperationCanceledException(token));
@@ -254,13 +198,13 @@ public class LocalResponseModeTests : IDisposable
     }
 
     [Fact]
-    public async Task Auto_CancelledBeforeFallback_DoesNotSendNonStreamingRequest()
+    public async Task LocalEndpoint_CancelledBeforeFallback_DoesNotSendNonStreamingRequest()
     {
         // 第一次调用明确拒绝 SSE，同时在返回响应后立刻取消；若实现仍然降级，
         // 第二次调用会返回成功文本，即可暴露契约违规。
         using var cts = new CancellationTokenSource();
 
-        var (provider, handler) = Install(LocalResponseMode.Auto, LocalUrl, (_, _, call) =>
+        var (provider, handler) = Install(LocalUrl, (_, _, call) =>
         {
             if (call == 1)
             {
@@ -279,12 +223,12 @@ public class LocalResponseModeTests : IDisposable
         Assert.Equal(1, handler.CallCount);
     }
 
-    // ── 云端端点：LocalResponseMode 不得改变既有行为 ──
+    // ── 云端端点：本地自动降级不得影响云端路径 ──
 
     [Fact]
-    public async Task CloudEndpoint_IgnoresLocalResponseMode()
+    public async Task CloudEndpoint_IsUnaffectedByLocalAutoFallback()
     {
-        var (provider, handler) = Install(LocalResponseMode.NonStreaming, CloudUrl, (_, _, _) =>
+        var (provider, handler) = Install(CloudUrl, (_, _, _) =>
             Task.FromResult(Sse(
                 "data: {\"choices\":[{\"delta\":{\"content\":\"Cloud\"}}]}\n\n" +
                 "data: [DONE]\n\n")));
@@ -301,6 +245,24 @@ public class LocalResponseModeTests : IDisposable
         Assert.Contains("\"stream\":true", handler.Bodies[0]);
     }
 
+    [Fact]
+    public async Task CloudEndpoint_NonSseBody_KeepsLegacyEmptySuccess()
+    {
+        // 云端回归：非 SSE 响应体不属于本地协商范围，保持改动前的既有行为。
+        var (provider, handler) = Install(CloudUrl, (_, _, _) =>
+            Task.FromResult(Json("{\"choices\":[{\"message\":{\"content\":\"Cloud whole\"}}]}")));
+
+        var received = new List<string>();
+        using var cts = new CancellationTokenSource();
+
+        var result = await provider.RunStreamingChatInference("system", Messages(), received.Add, cts.Token);
+
+        Assert.Equal(1, handler.CallCount);
+        Assert.Empty(received);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(string.Empty, result.Text);
+    }
+
     // ── 测试脚手架 ──
 
     private delegate Task<HttpResponseMessage> StubBehavior(
@@ -310,12 +272,11 @@ public class LocalResponseModeTests : IDisposable
         new[] { new LlmChatMessage("user", "hello") };
 
     private (LlmOAICompatible Provider, StubHandler Handler) Install(
-        LocalResponseMode mode,
         string baseUrl,
         StubBehavior behavior)
     {
         // ResolveParameters 需要可写的 Config 与非空 SMonitor（与其他 Provider 契约测试一致）。
-        ModEntry.Config = new ModConfig { QueryTimeout = 5, LocalResponseMode = mode };
+        ModEntry.Config = new ModConfig { QueryTimeout = 5 };
         ModEntry.SMonitor = new FakeMonitor();
 
         var handler = new StubHandler(behavior);

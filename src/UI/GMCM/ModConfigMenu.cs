@@ -299,21 +299,6 @@ namespace ValleytalkReborn
 
             ConfigMenu.AddTextOption(
                 mod: ModManifest,
-                name: () => GetUIString("configLocalResponseMode", "Local Response Mode"),
-                tooltip: () => GetUIString("configLocalResponseModeTooltip",
-                    "Local endpoints only (localhost / LAN), e.g. Ollama, LM Studio or llama.cpp. 'Auto' streams first and retries once without streaming only if the server refuses streaming before any text arrives; 'Streaming' always uses streaming (SSE) and fails if the server cannot stream; 'NonStreaming' always waits for the complete reply and delivers it in one piece. Cloud providers always ignore this option."),
-                getValue: () => ModEntry.Config.LocalResponseMode.ToString(),
-                setValue: value =>
-                {
-                    if (Enum.TryParse<LocalResponseMode>(value, out var parsed))
-                        ModEntry.Config.LocalResponseMode = parsed;
-                },
-                allowedValues: new[] { "Auto", "Streaming", "NonStreaming" },
-                formatAllowedValue: val => GetUIString($"configLocalResponseMode_{val}", val)
-            );
-
-            ConfigMenu.AddTextOption(
-                mod: ModManifest,
                 name: () => GetUIString("configProxyMode", "Proxy Mode"),
                 tooltip: () => GetUIString("configProxyModeTooltip", "Choose how the mod connects to LLM APIs. System uses OS settings, Direct bypasses any proxy, Custom lets you specify a proxy URL."),
                 getValue: () => ModEntry.Config.ProxyMode.ToString(),

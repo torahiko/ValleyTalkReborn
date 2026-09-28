@@ -830,23 +830,16 @@ namespace ValleytalkReborn
 
             string endpointUrl = BuildEndpoint("chat/completions");
 
-            // ── LOCAL-004：本地端点响应通道，收敛于此唯一流式入口 ──
+            // ── LOCAL-004：本地端点的 SSE 自动协商，收敛于此唯一流式入口 ──
             // 尚未发出任何请求，此刻尚未向 UI 下发任何 token。
-            LocalResponseMode localMode = ResolveLocalResponseMode();
+            // 本地端点默认优先流式，仅在未产生任何 token 时才可能降级一次非流式；云端端点零变化。
+            bool localEndpoint = UrlHelper.IsPrivateNetworkUrl(url);
             bool tokenEmitted = false;
             Action<string> emitToken = text =>
             {
                 tokenEmitted = true;
                 onToken?.Invoke(text);
             };
-
-            if (localMode == LocalResponseMode.NonStreaming)
-            {
-                ModEntry.SMonitor?.Log(
-                    $"[LlmOpenAiBase] LocalResponseMode=NonStreaming; SSE skipped for {endpointUrl}.",
-                    StardewModdingAPI.LogLevel.Debug);
-                return await ExecuteLocalNonStreamingAsync(messages, emitToken, ct, n_predict, cacheContext);
-            }
 
             var genParams = ResolveParameters(cacheContext);
             string jsonData = SerializePayloadWithCustomBody(requestBody, genParams.AllowCustomBody);
@@ -939,9 +932,9 @@ namespace ValleytalkReborn
 
                                     Log.Debug($"[LlmOpenAiBase] Streaming failed: {status}, Response: {errContent}");
 
-                                    // LOCAL-004：本地 Auto 模式且服务明确拒绝 SSE 且尚未下发 token → 最多降级一次非流式。
-                                    // 已取消时不降级（调用方已放弃本次请求），避免重新生成台词。
-                                    if (localMode == LocalResponseMode.Auto &&
+                                    // LOCAL-004：本地端点且服务明确拒绝 SSE 且尚未下发 token → 最多降级一次非流式。
+                                    // 已下发 token 或已取消时不降级（调用方已放弃本次请求），避免重复台词。
+                                    if (localEndpoint &&
                                         !tokenEmitted &&
                                         !ct.IsCancellationRequested &&
                                         LooksLikeStreamUnsupportedError(errContent))
@@ -968,9 +961,9 @@ namespace ValleytalkReborn
                                 bool reasoningEmitted = false;
                                 long ttftReasoningMs = -1;
 
-                                // LOCAL-004：Auto 模式下 Content-Type 不是 SSE 时，必须先读完整响应体才能定性。
+                                // LOCAL-004：本地端点且 Content-Type 不是 SSE 时，必须先读完整响应体才能定性。
                                 // 此处读取在流式解析之前，此刻尚未下发任何 token。
-                                bool probeNonSseBody = localMode == LocalResponseMode.Auto &&
+                                bool probeNonSseBody = localEndpoint &&
                                     !IsSseMediaType(response.Content.Headers.ContentType?.MediaType);
                                 string bufferedBody = probeNonSseBody ? await response.Content.ReadAsStringAsync() : null;
                                 Stream bodyStream = probeNonSseBody
@@ -1291,15 +1284,8 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
-        /// LOCAL-004：本地端点响应通道的决策。非私网 URL 恒定返回 Streaming，
-        /// 保证 LocalResponseMode 只影响本地端点。
-        /// </summary>
-        private LocalResponseMode ResolveLocalResponseMode() =>
-            UrlHelper.IsPrivateNetworkUrl(url) ? ModEntry.Config.LocalResponseMode : LocalResponseMode.Streaming;
-
-        /// <summary>
-        /// LOCAL-004：本地端点非流式取回。收到完整响应后最多调用 onToken 一次。
-        /// 用于 NonStreaming 模式，以及 Auto 模式在服务明确拒绝 SSE 时的单次降级。
+        /// LOCAL-004：本地端点 SSE 不可用时的非流式取回。收到完整响应后最多调用 onToken 一次。
+        /// 每次业务请求至多触发一次：调用方要么立刻返回，要么因守卫不进入此处。
         /// </summary>
         private async Task<LlmResponse> ExecuteLocalNonStreamingAsync(
             List<object> messages,

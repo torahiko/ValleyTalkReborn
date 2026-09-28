@@ -8,14 +8,6 @@ namespace ValleytalkReborn
     public enum SafetyModeLevel { Off, Loose, Moderate, Strict }
     public enum ProxyMode { System, Direct, Custom }
 
-    /// <summary>
-    /// 本地端点（回环 / 私网）单次推理结果的取回通道。
-    /// 仅作用于 OpenAI 兼容 Provider 的本地端点；云端端点始终使用流式通道。
-    /// （与 ProxyMode / SafetyModeLevel 同层可见性：必须是 public，
-    /// 否则 public 属性 ModConfig.LocalResponseMode 无法通过 SMAPI ReadConfig 持久化。）
-    /// </summary>
-    public enum LocalResponseMode { Auto, Streaming, NonStreaming }
-
     public class ProviderProfile
     {
         public string ApiKey { get; set; } = string.Empty;
@@ -129,13 +121,6 @@ namespace ValleytalkReborn
         public string PromptFormat { get; set; } = "[INST] {system}\\n{prompt}[/INST]\\n{response_start}";
         public int QueryTimeout { get; set; } = 60;
         public ProxyMode ProxyMode { get; set; } = ProxyMode.System;
-        /// <summary>
-        /// 本地端点（回环 / 私网）单次结果的取回通道。
-        /// 安装级 Config：不进入 ModData、存档或多人同步。
-        /// Auto = 优先流式，仅在未下发任何 token 且服务明确不支持流式时降级一次非流式；
-        /// Streaming = 只走 SSE，失败即失败；NonStreaming = 只走非流式，成功后一次性下发完整文本。
-        /// </summary>
-        public LocalResponseMode LocalResponseMode { get; set; } = LocalResponseMode.Auto;
         public string CustomProxyUrl { get; set; } = "http://127.0.0.1:7890";
         public bool ApplyTranslation { get; set; } = false;
         /// <summary>语言覆盖：非空时以 "zh" 前缀（忽略大小写）判定中文 Prompt 分支，优先于游戏语言；留空跟随游戏语言代码。</summary>
@@ -346,15 +331,6 @@ namespace ValleytalkReborn
             BarkDwellScans = Clamp(BarkDwellScans, 1, 10);
             MicroSocialMidFriendshipChance = Math.Clamp(MicroSocialMidFriendshipChance, 0.0f, 1.0f);
             PromptHistoryWindow = Clamp(PromptHistoryWindow, 1, 20);
-
-            // ── 本地响应模式：非法值归一化为 Auto（云端路径不受此值影响） ──
-            if (!Enum.IsDefined(typeof(LocalResponseMode), LocalResponseMode))
-            {
-                monitor?.Log(
-                    $"[ModConfig] Invalid LocalResponseMode value '{(int)LocalResponseMode}'; normalized to Auto.",
-                    LogLevel.Warn);
-                LocalResponseMode = LocalResponseMode.Auto;
-            }
 
             // ── 高级模型参数边界校验 ──
             Temperature = Math.Clamp(Temperature, 0.0f, 2.0f);
