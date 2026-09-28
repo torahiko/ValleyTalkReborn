@@ -829,6 +829,25 @@ namespace ValleytalkReborn
             }
 
             string endpointUrl = BuildEndpoint("chat/completions");
+
+            // ── LOCAL-004：本地端点响应通道，收敛于此唯一流式入口 ──
+            // 尚未发出任何请求，此刻尚未向 UI 下发任何 token。
+            LocalResponseMode localMode = ResolveLocalResponseMode();
+            bool tokenEmitted = false;
+            Action<string> emitToken = text =>
+            {
+                tokenEmitted = true;
+                onToken?.Invoke(text);
+            };
+
+            if (localMode == LocalResponseMode.NonStreaming)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[LlmOpenAiBase] LocalResponseMode=NonStreaming; SSE skipped for {endpointUrl}.",
+                    StardewModdingAPI.LogLevel.Debug);
+                return await ExecuteLocalNonStreamingAsync(messages, emitToken, ct, n_predict, cacheContext);
+            }
+
             var genParams = ResolveParameters(cacheContext);
             string jsonData = SerializePayloadWithCustomBody(requestBody, genParams.AllowCustomBody);
             LogFinalPayloadSuppression(jsonData, endpointUrl);
@@ -919,6 +938,20 @@ namespace ValleytalkReborn
                                     }
 
                                     Log.Debug($"[LlmOpenAiBase] Streaming failed: {status}, Response: {errContent}");
+
+                                    // LOCAL-004：本地 Auto 模式且服务明确拒绝 SSE 且尚未下发 token → 最多降级一次非流式。
+                                    // 已取消时不降级（调用方已放弃本次请求），避免重新生成台词。
+                                    if (localMode == LocalResponseMode.Auto &&
+                                        !tokenEmitted &&
+                                        !ct.IsCancellationRequested &&
+                                        LooksLikeStreamUnsupportedError(errContent))
+                                    {
+                                        ModEntry.SMonitor?.Log(
+                                            $"[LlmOpenAiBase] Local endpoint rejected SSE ({status}); retrying once without streaming.",
+                                            StardewModdingAPI.LogLevel.Warn);
+                                        return await ExecuteLocalNonStreamingAsync(messages, emitToken, ct, n_predict, cacheContext);
+                                    }
+
                                     return new LlmResponse(errContent, status);
                                 }
 
@@ -935,8 +968,17 @@ namespace ValleytalkReborn
                                 bool reasoningEmitted = false;
                                 long ttftReasoningMs = -1;
 
-                                using (var stream = await response.Content.ReadAsStreamAsync())
-                                using (var reader = new StreamReader(stream, Encoding.UTF8))
+                                // LOCAL-004：Auto 模式下 Content-Type 不是 SSE 时，必须先读完整响应体才能定性。
+                                // 此处读取在流式解析之前，此刻尚未下发任何 token。
+                                bool probeNonSseBody = localMode == LocalResponseMode.Auto &&
+                                    !IsSseMediaType(response.Content.Headers.ContentType?.MediaType);
+                                string bufferedBody = probeNonSseBody ? await response.Content.ReadAsStringAsync() : null;
+                                Stream bodyStream = probeNonSseBody
+                                    ? new MemoryStream(Encoding.UTF8.GetBytes(bufferedBody))
+                                    : await response.Content.ReadAsStreamAsync();
+                                bool sawDataLine = false;
+
+                                using (var reader = new StreamReader(bodyStream, Encoding.UTF8))
                                 {
                                     while (!reader.EndOfStream && !linkedCts.Token.IsCancellationRequested)
                                     {
@@ -947,6 +989,7 @@ namespace ValleytalkReborn
                                         if (string.IsNullOrWhiteSpace(line) || !line.StartsWith("data:"))
                                             continue;
 
+                                        sawDataLine = true;
                                         string data = line.Substring(5).Trim();
                                         if (data == "[DONE]") break;
 
@@ -1003,7 +1046,7 @@ namespace ValleytalkReborn
                                                 }
 
                                                 fullContentBuilder.Append(textToken);
-                                                onToken?.Invoke(textToken);
+                                                emitToken(textToken);
 
                                                 if (!degenerateDetected &&
                                                     LooksLikeDegenerateRepetition(fullContentBuilder.ToString()))
@@ -1035,6 +1078,12 @@ namespace ValleytalkReborn
                                 }
 
                                 string completeText = fullContentBuilder.ToString();
+
+                                // LOCAL-004：确认不是 SSE 且尚未下发任何 token → 解析已收到的完整 JSON，不重复发送请求。
+                                if (probeNonSseBody && !tokenEmitted && !sawDataLine && !ct.IsCancellationRequested)
+                                {
+                                    return ResolveLocalNonSseBody(bufferedBody, emitToken);
+                                }
 
                                 LlmTrafficLogger.LogIncoming(cacheContext, completeText);
 
@@ -1240,6 +1289,85 @@ namespace ValleytalkReborn
 
             return false;
         }
+
+        /// <summary>
+        /// LOCAL-004：本地端点响应通道的决策。非私网 URL 恒定返回 Streaming，
+        /// 保证 LocalResponseMode 只影响本地端点。
+        /// </summary>
+        private LocalResponseMode ResolveLocalResponseMode() =>
+            UrlHelper.IsPrivateNetworkUrl(url) ? ModEntry.Config.LocalResponseMode : LocalResponseMode.Streaming;
+
+        /// <summary>
+        /// LOCAL-004：本地端点非流式取回。收到完整响应后最多调用 onToken 一次。
+        /// 用于 NonStreaming 模式，以及 Auto 模式在服务明确拒绝 SSE 时的单次降级。
+        /// </summary>
+        private async Task<LlmResponse> ExecuteLocalNonStreamingAsync(
+            List<object> messages,
+            Action<string> onToken,
+            CancellationToken ct,
+            int n_predict,
+            string cacheContext)
+        {
+            LlmResponse result = await ExecuteNonStreamingRequestAsync(messages, n_predict, cacheContext, true, ct);
+
+            if (result.IsSuccess && !string.IsNullOrWhiteSpace(result.Text))
+                onToken?.Invoke(result.Text);
+
+            return result;
+        }
+
+        /// <summary>
+        /// LOCAL-004：解析本地端点返回的非 SSE 完整 JSON（已收到响应体，不再重发请求）。
+        /// 成功时 onToken 恰好被调用一次；解析失败返回失败 LlmResponse 并记 Warn。
+        /// </summary>
+        private LlmResponse ResolveLocalNonSseBody(string body, Action<string> emitToken)
+        {
+            try
+            {
+                string contentString = (JObject.Parse(body)["choices"] as JArray)?[0]?["message"]?["content"]?.ToString();
+
+                if (string.IsNullOrWhiteSpace(contentString))
+                {
+                    ModEntry.SMonitor?.Log(
+                        "[LlmOpenAiBase] Local endpoint answered without SSE: no message content in body.",
+                        StardewModdingAPI.LogLevel.Warn);
+                    return new LlmResponse("Local endpoint answered without SSE and without message content.", 502);
+                }
+
+                contentString = CleanRawResponse(contentString);
+                emitToken?.Invoke(contentString);
+                return new LlmResponse(contentString);
+            }
+            catch (JsonException ex)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[LlmOpenAiBase] Local endpoint answered without SSE and body is not valid chat/completions JSON: {ex.Message}",
+                    StardewModdingAPI.LogLevel.Warn);
+                return new LlmResponse("Local endpoint answered without SSE and body is not valid chat/completions JSON.", 502);
+            }
+        }
+
+        /// <summary>
+        /// LOCAL-004：服务端是否明确拒绝 SSE（Auto 模式降级非流式的唯一依据）。
+        /// </summary>
+        private static bool LooksLikeStreamUnsupportedError(string response)
+        {
+            if (string.IsNullOrWhiteSpace(response)) return false;
+
+            string text = response.ToLowerInvariant();
+            if (!text.Contains("stream")) return false;
+
+            return text.Contains("not supported") ||
+                   text.Contains("unsupported") ||
+                   text.Contains("not implemented") ||
+                   text.Contains("does not support") ||
+                   text.Contains("not enabled") ||
+                   text.Contains("disabled");
+        }
+
+        private static bool IsSseMediaType(string mediaType) =>
+            !string.IsNullOrEmpty(mediaType) &&
+            mediaType.Equals("text/event-stream", StringComparison.OrdinalIgnoreCase);
 
         private bool LooksLikeErrorResponse(string response)
         {
