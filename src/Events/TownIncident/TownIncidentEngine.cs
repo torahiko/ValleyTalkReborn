@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using StardewModdingAPI;
@@ -10,11 +11,12 @@ namespace ValleytalkReborn;
 
 /// <summary>
 /// TIE-001: Town Incident Engine. Owns the independent SaveData key
-/// "valleytalk.town-incidents", the deterministic Contest MVP shell
-/// (Host=Gus, Champion=Abigail, Skeptic=Alex), phase resolution and choice
-/// flags. Single-player only: in multiplayer no incident is created, mutated
-/// or persisted. All handlers run on the SMAPI main thread; no UpdateTicked
-/// subscription and no background work.
+/// "valleytalk.town-incidents", the deterministic shell of every archetype it
+/// schedules, phase resolution and choice flags. Single-player only: in
+/// multiplayer no incident is created, mutated or persisted. All handlers run
+/// on the SMAPI main thread; no UpdateTicked subscription and no background
+/// work. Scheduling happens only from DayStarted, where the engine reads the
+/// game date on the main thread.
 /// </summary>
 internal static class TownIncidentEngine
 {
@@ -23,6 +25,38 @@ internal static class TownIncidentEngine
     private const string ContestArchetypeId = "Contest";
     private const int ContestDurationDays = 8;
     private const int ContestTriggerDayOfMonth = 4;
+
+    /// <summary>
+    /// TIE-009B schedule ruling: one Contest slot every season starting on day 4
+    /// (occupying days 4-11) and two rotating slots starting on days 12 and 18,
+    /// each six days long (12-17 and 18-23). The derived start days keep the
+    /// rotating slots clear of the Contest span by construction.
+    /// </summary>
+    private const int RotatingSlotDurationDays = 6;
+    private const int FirstRotatingSlotStartDay = ContestTriggerDayOfMonth + ContestDurationDays;
+    private const int SecondRotatingSlotStartDay = FirstRotatingSlotStartDay + RotatingSlotDurationDays;
+
+    /// <summary>
+    /// TIE-009B: rotation order of the non-Contest archetypes, with
+    /// seasonIndex = (year - 1) * 4 + seasonNumber (0=Spring). Slot one takes
+    /// RotationOrder[seasonIndex % 3], slot two RotationOrder[(seasonIndex + 1) % 3].
+    /// </summary>
+    private static readonly string[] RotationOrder = { "Friction", "Mystery", "Collaboration" };
+
+    private static readonly string[] SeasonNames = { "Spring", "Summer", "Fall", "Winter" };
+
+    /// <summary>
+    /// TIE-009B: fixed cast per archetype, index-aligned with
+    /// <see cref="IncidentArchetypeDefinition.RequiredRoles"/> so no discovery
+    /// scan and no randomness is involved in assigning participants.
+    /// </summary>
+    private static readonly Dictionary<string, string[]> FixedCasts = new(StringComparer.Ordinal)
+    {
+        ["Contest"] = new[] { "Gus", "Abigail", "Alex" },       // Host, Champion, Skeptic
+        ["Friction"] = new[] { "George", "Marnie", "Alex" },    // Victim, Culprit, Witness
+        ["Mystery"] = new[] { "Pierre", "Sebastian", "Leah" },  // Loser, Suspect, Investigator
+        ["Collaboration"] = new[] { "Robin", "Sam", "Haley" },  // Organizer, Worker, Slacker
+    };
 
     private static IModHelper _helper;
     private static IMonitor _monitor;
@@ -178,14 +212,8 @@ internal static class TownIncidentEngine
             }
         }
 
-        if (_data.ActiveIncident == null && Game1.dayOfMonth == ContestTriggerDayOfMonth)
-        {
-            string scheduleKey = $"contest:{Game1.year}:{Game1.season}:{Game1.dayOfMonth}";
-            if (_data.LastScheduleKey == scheduleKey)
-                return;
-
-            TryCreateContestShell(scheduleKey);
-        }
+        if (_data.ActiveIncident == null)
+            TryCreateIncidentForSchedule(Game1.year, Game1.season.ToString(), Game1.dayOfMonth);
     }
 
     private static void OnSaving(object sender, SavingEventArgs e)
@@ -255,12 +283,97 @@ internal static class TownIncidentEngine
         return incident.AssignedRoles != null
             && incident.PhaseScripts != null
             && incident.BranchOutcomes != null
-            && incident.RuntimeFlags != null;
+            && incident.RuntimeFlags != null
+            // TIE-009B: a persisted archetype id the catalog cannot resolve is a
+            // structurally invalid slot (e.g. a hand-edited or future save).
+            && TownIncidentArchetypeCatalog.TryGetDefinition(incident.ArchetypeId, out _);
     }
 
-    private static bool TryCreateContestShell(string scheduleKey)
+    /// <summary>
+    /// TIE-009B: activates the scheduled archetype of one calendar day. Returns
+    /// true only when a new incident became active; every other outcome leaves
+    /// <see cref="TownIncidentData.ActiveIncident"/> and
+    /// <see cref="TownIncidentData.LastScheduleKey"/> untouched.
+    /// </summary>
+    internal static bool TryCreateIncidentForSchedule(int year, string season, int dayOfMonth)
     {
-        if (!TryResolvePilotRoles(out var assignedRoles))
+        if (!TryResolveSchedule(year, season, dayOfMonth, out string archetypeId, out string scheduleKey))
+            return false;
+
+        var active = _data.ActiveIncident;
+        if (active != null)
+        {
+            _monitor?.Log(
+                $"[TownIncident] Schedule slot '{scheduleKey}' skipped: incident '{active.IncidentId}' is still active.",
+                LogLevel.Info);
+            return false;
+        }
+
+        if (string.Equals(_data.LastScheduleKey, scheduleKey, StringComparison.Ordinal))
+            return false;
+
+        return TryActivateArchetype(archetypeId, scheduleKey);
+    }
+
+    /// <summary>
+    /// TIE-009B: the Contest slot fires every season on day 4; the two rotating
+    /// slots carry the rotation order. The schedule key keeps today's Contest
+    /// format and lowercases the archetype id of every other slot.
+    /// </summary>
+    private static bool TryResolveSchedule(
+        int year, string season, int dayOfMonth, out string archetypeId, out string scheduleKey)
+    {
+        archetypeId = null;
+        scheduleKey = null;
+
+        if (dayOfMonth == ContestTriggerDayOfMonth)
+            archetypeId = ContestArchetypeId;
+        else if (!TryResolveRotatingArchetype(year, season, dayOfMonth, out archetypeId))
+            return false;
+
+        scheduleKey = $"{archetypeId.ToLowerInvariant()}:{year}:{season}:{dayOfMonth}";
+        return true;
+    }
+
+    private static bool TryResolveRotatingArchetype(int year, string season, int dayOfMonth, out string archetypeId)
+    {
+        archetypeId = null;
+
+        int slotOffset;
+        if (dayOfMonth == FirstRotatingSlotStartDay)
+            slotOffset = 0;
+        else if (dayOfMonth == SecondRotatingSlotStartDay)
+            slotOffset = 1;
+        else
+            return false;
+
+        int seasonNumber = Array.IndexOf(SeasonNames, season);
+        if (seasonNumber < 0)
+            return false;
+
+        int seasonIndex = (year - 1) * 4 + seasonNumber;
+        archetypeId = RotationOrder[(seasonIndex + slotOffset) % RotationOrder.Length];
+        return true;
+    }
+
+    /// <summary>
+    /// TIE-009B: builds one shell from its archetype definition and activates it
+    /// through the hard order validate → fallback → persist → scriptwriter.
+    /// The shell is validated before the fallback is installed because the
+    /// fallback maps role keys onto the assigned NPCs and throws on an
+    /// incomplete cast.
+    /// </summary>
+    private static bool TryActivateArchetype(string archetypeId, string scheduleKey)
+    {
+        if (!TownIncidentArchetypeCatalog.TryGetDefinition(archetypeId, out var definition))
+        {
+            _monitor?.Log(
+                $"[TownIncident] Schedule slot '{scheduleKey}': unknown archetype id '{archetypeId}'; incident not activated.",
+                LogLevel.Error);
+            return false;
+        }
+
+        if (!TryResolveCast(definition, out var assignedRoles))
             return false;
 
         // TIE-002: language is Game1-dependent input — capture it here on the
@@ -270,15 +383,23 @@ internal static class TownIncidentEngine
         var incident = new EventSlotContract
         {
             IncidentId = scheduleKey,
-            ArchetypeId = ContestArchetypeId,
+            ArchetypeId = definition.ArchetypeId,
             StartGameDay = (int)Game1.Date.TotalDays,
-            DurationDays = ContestDurationDays,
-            ClimaxLocation = "Saloon",
-            ClimaxTimeOfDay = 1900,
+            DurationDays = definition.DefaultDurationDays,
+            ClimaxLocation = definition.DefaultClimaxLocation,
+            ClimaxTimeOfDay = definition.DefaultClimaxTimeOfDay,
             AssignedRoles = assignedRoles,
-            EventName = "Saloon Cook-Off",
-            IncidentTheme = "A friendly cooking contest strains old rivalries in Pelican Town.",
+            EventName = definition.EventName,
+            IncidentTheme = definition.IncidentTheme,
         };
+
+        if (!TownIncidentScriptwriter.TryValidateShell(incident, out string shellError))
+        {
+            _monitor?.Log(
+                $"[TownIncident] Schedule slot '{scheduleKey}': shell rejected: {shellError}; incident not activated.",
+                LogLevel.Error);
+            return false;
+        }
 
         // TIE-002: install the language-appropriate static fallback first —
         // the incident is fully usable before the LLM request starts.
@@ -287,7 +408,11 @@ internal static class TownIncidentEngine
         _data.ActiveIncident = incident;
         _data.LastScheduleKey = scheduleKey;
         MarkDirty();
-        _monitor?.Log($"[TownIncident] Created Contest incident '{scheduleKey}' (Host=Gus, Champion=Abigail, Skeptic=Alex), duration {ContestDurationDays} days.", LogLevel.Info);
+
+        string cast = string.Join(", ", incident.AssignedRoles.Select(kv => $"{kv.Key}={kv.Value}"));
+        _monitor?.Log(
+            $"[TownIncident] Created {definition.ArchetypeId} incident '{scheduleKey}' ({cast}), duration {incident.DurationDays} days.",
+            LogLevel.Info);
 
         KickOffScriptwriter(incident, isChinese);
         return true;
@@ -339,34 +464,63 @@ internal static class TownIncidentEngine
         });
     }
 
-    private static bool TryResolvePilotRoles(out Dictionary<string, string> assignedRoles)
+    /// <summary>
+    /// TIE-009B: resolves the fixed cast of an archetype onto its
+    /// <see cref="IncidentArchetypeDefinition.RequiredRoles"/> names.
+    /// </summary>
+    private static bool TryResolveCast(
+        IncidentArchetypeDefinition definition, out Dictionary<string, string> assignedRoles)
     {
-        assignedRoles = new Dictionary<string, string>(StringComparer.Ordinal)
-        {
-            ["Host"] = "Gus",
-            ["Champion"] = "Abigail",
-            ["Skeptic"] = "Alex",
-        };
+        assignedRoles = null;
 
-        bool valid = assignedRoles.Count == 3;
-        foreach (var npcName in assignedRoles.Values)
-            valid &= !string.IsNullOrWhiteSpace(npcName);
-
-        if (!valid)
+        if (!FixedCasts.TryGetValue(definition.ArchetypeId, out var cast)
+            || cast.Length != definition.RequiredRoles.Count)
         {
-            _monitor?.Log("[TownIncident] MVP Contest role assignment could not resolve valid role names; incident not activated.", LogLevel.Error);
+            _monitor?.Log(
+                $"[TownIncident] Archetype '{definition.ArchetypeId}' has no complete role assignment; incident not activated.",
+                LogLevel.Error);
             return false;
         }
 
+        var roles = new Dictionary<string, string>(StringComparer.Ordinal);
+        for (int i = 0; i < definition.RequiredRoles.Count; i++)
+            roles[definition.RequiredRoles[i]] = cast[i];
+
+        foreach (var npcName in roles.Values)
+        {
+            if (string.IsNullOrWhiteSpace(npcName))
+            {
+                _monitor?.Log(
+                    $"[TownIncident] Archetype '{definition.ArchetypeId}' role assignment could not resolve valid role names; incident not activated.",
+                    LogLevel.Error);
+                return false;
+            }
+        }
+
+        assignedRoles = roles;
         return true;
     }
 
     private static IncidentPhase GetCurrentPhase(EventSlotContract incident)
     {
         int elapsed = (int)Game1.Date.TotalDays - incident.StartGameDay;
-        if (elapsed <= 2)
+        return GetPhaseForElapsedDay(elapsed, incident.DurationDays);
+    }
+
+    /// <summary>
+    /// TIE-009B: duration-derived three-act boundary, shared arithmetic with the
+    /// scriptwriter prompt window
+    /// (<see cref="TownIncidentTemplateCatalog.BuildPhaseWindowText(int, bool)"/>):
+    /// boundary = ceil(D/3); Inception covers elapsed days below the boundary,
+    /// Escalation below twice the boundary, Climax the rest. An 8-day shell keeps
+    /// the pre-TIE-009B split of 0-2 / 3-5 / 6-7.
+    /// </summary>
+    internal static IncidentPhase GetPhaseForElapsedDay(int elapsedDay, int durationDays)
+    {
+        int boundary = (durationDays + 2) / 3;
+        if (elapsedDay < boundary)
             return IncidentPhase.Inception;
-        if (elapsed <= 5)
+        if (elapsedDay < 2 * boundary)
             return IncidentPhase.Escalation;
         return IncidentPhase.Climax;
     }
