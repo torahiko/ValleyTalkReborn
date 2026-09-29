@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ValleytalkReborn.Dialogue.Coordination;
 
 namespace ValleytalkReborn;
 
@@ -920,6 +921,10 @@ internal static class TownIncidentTemplateCatalog
             shell.AssignedRoles.Select(kv => $"{kv.Key}={kv.Value}"));
         string groupKeys = string.Join(", ", shell.BranchOutcomes.Keys);
         string phaseWindow = BuildPhaseWindowText(shell.DurationDays, isChinese);
+        string relationshipLines = BuildEstablishedRelationshipLines(shell, isChinese);
+        string relationshipBlock = string.IsNullOrEmpty(relationshipLines)
+            ? string.Empty
+            : (isChinese ? $"既有关系（参考）：\n{relationshipLines}\n" : $"Established relationships:\n{relationshipLines}\n");
 
         if (isChinese)
         {
@@ -928,7 +933,7 @@ internal static class TownIncidentTemplateCatalog
                 角色（原样回显）：{roles}。
                 时间线：自游戏第 {shell.StartGameDay} 天起共 {shell.DurationDays} 天。阶段：{phaseWindow}（决赛地点 {shell.ClimaxLocation}，时间 {shell.ClimaxTimeOfDay}）。
                 分支组键（必须原样使用）：{groupKeys}。
-                现在输出完整 JSON 对象。
+                {relationshipBlock}现在输出完整 JSON 对象。
                 """;
         }
 
@@ -937,7 +942,73 @@ internal static class TownIncidentTemplateCatalog
             Roles (echo exactly): {roles}.
             Timeline: {shell.DurationDays} days starting game day {shell.StartGameDay}. Phases: {phaseWindow} (finale at the {shell.ClimaxLocation}, {shell.ClimaxTimeOfDay}).
             Branch group keys (use exactly these): {groupKeys}.
-            Write the complete JSON object now.
+            {relationshipBlock}Write the complete JSON object now.
             """;
+    }
+
+    /// <summary>
+    /// TIE-CAST-001: gathers the established-relationship lines between the anchor
+    /// (the first RequiredRole's assigned NPC) and each non-anchor cast member,
+    /// using only hearts-active Descriptions (either direction). Returns null when
+    /// no active relationship text exists, so the prompt stays byte-identical.
+    /// </summary>
+    private static string BuildEstablishedRelationshipLines(EventSlotContract shell, bool isChinese)
+    {
+        if (shell?.AssignedRoles == null)
+            return null;
+
+        if (!TownIncidentArchetypeCatalog.TryGetDefinition(shell.ArchetypeId, out var definition)
+            || definition.RequiredRoles == null || definition.RequiredRoles.Count < 2)
+            return null;
+
+        string anchorRole = definition.RequiredRoles[0];
+        if (!shell.AssignedRoles.TryGetValue(anchorRole, out string anchor)
+            || string.IsNullOrWhiteSpace(anchor))
+            return null;
+
+        var lines = new List<string>();
+        for (int i = 1; i < definition.RequiredRoles.Count; i++)
+        {
+            string role = definition.RequiredRoles[i];
+            if (!shell.AssignedRoles.TryGetValue(role, out string member)
+                || string.IsNullOrWhiteSpace(member))
+                continue;
+
+            string description = NpcPersonaRelationScanner.GetActiveDescription(anchor, member)
+                              ?? NpcPersonaRelationScanner.GetActiveDescription(member, anchor);
+            string cleaned = CleanRelationshipLine(description);
+            if (cleaned == null)
+                continue;
+
+            lines.Add(isChinese ? $"{member}：{cleaned}" : $"{member}: {cleaned}");
+        }
+
+        return lines.Count == 0 ? null : string.Join("\n", lines);
+    }
+
+    /// <summary>
+    /// TIE-CAST-001: cleans a relationship Description for prompt injection —
+    /// newlines to spaces, '{'/'}' stripped, trimmed, then truncated to 120 chars.
+    /// Returns null when the input is blank or collapses to empty.
+    /// </summary>
+    internal static string CleanRelationshipLine(string description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            return null;
+
+        string cleaned = description
+            .Replace("\r", " ")
+            .Replace("\n", " ")
+            .Replace("{", "")
+            .Replace("}", "")
+            .Trim();
+
+        if (cleaned.Length == 0)
+            return null;
+
+        if (cleaned.Length > 120)
+            cleaned = cleaned.Substring(0, 120);
+
+        return cleaned;
     }
 }

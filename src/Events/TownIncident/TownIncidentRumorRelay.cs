@@ -29,6 +29,14 @@ internal static class TownIncidentRumorRelay
     private static readonly HashSet<string> OutsiderBlacklist =
         new(StringComparer.OrdinalIgnoreCase) { "Wizard", "Krobus", "Leo", "Dwarf", "Linus" };
 
+    /// <summary>
+    /// TIE-CAST-001: read-only view over the single-source outsider blacklist,
+    /// consumed by <see cref="TownIncidentEngine.IsValidCastNpc(string)"/> as the
+    /// cast eligibility gate. The backing set stays the single source of truth;
+    /// this property exposes it without allowing mutation through the interface.
+    /// </summary>
+    internal static IReadOnlyCollection<string> OutsiderBlacklistView => OutsiderBlacklist;
+
     // Consumer-agnostic: an NPC claimed by any consumer blocks every other
     // consumer for the rest of the day.
     private static HashSet<string> _claimedNpcs = new(StringComparer.OrdinalIgnoreCase);

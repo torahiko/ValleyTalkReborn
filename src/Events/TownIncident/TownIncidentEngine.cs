@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
+using ValleytalkReborn.Dialogue.Coordination;
 
 namespace ValleytalkReborn;
 
@@ -56,6 +57,20 @@ internal static class TownIncidentEngine
         ["Friction"] = new[] { "George", "Marnie", "Alex" },    // Victim, Culprit, Witness
         ["Mystery"] = new[] { "Pierre", "Sebastian", "Leah" },  // Loser, Suspect, Investigator
         ["Collaboration"] = new[] { "Robin", "Sam", "Haley" },  // Organizer, Worker, Slacker
+    };
+
+    /// <summary>
+    /// TIE-CAST-001: curated anchor pool per archetype, keyed by archetype id.
+    /// The pool's first entry is the anchor for the archetype's first RequiredRole
+    /// (Host/Victim/Loser/Organizer). Defaults equal the FixedCasts anchor names;
+    /// pool changes are ticket-gated data edits only — no all-town random selection.
+    /// </summary>
+    private static readonly Dictionary<string, string[]> AnchorPools = new(StringComparer.Ordinal)
+    {
+        ["Contest"] = new[] { "Gus" },          // Host
+        ["Friction"] = new[] { "George" },      // Victim
+        ["Mystery"] = new[] { "Pierre" },       // Loser
+        ["Collaboration"] = new[] { "Robin" },  // Organizer
     };
 
     private static IModHelper _helper;
@@ -379,7 +394,7 @@ internal static class TownIncidentEngine
             return false;
         }
 
-        if (!TryResolveCast(definition, out var assignedRoles))
+        if (!TryResolveCast(definition, scheduleKey, out var assignedRoles))
             return false;
 
         // TIE-002: language is Game1-dependent input — capture it here on the
@@ -471,10 +486,292 @@ internal static class TownIncidentEngine
     }
 
     /// <summary>
-    /// TIE-009B: resolves the fixed cast of an archetype onto its
-    /// <see cref="IncidentArchetypeDefinition.RequiredRoles"/> names.
+    /// TIE-CAST-001: cast eligibility gate. The name must resolve to a real NPC
+    /// (not an animal or unknown name), be a villager, and not sit on the rumor
+    /// outsider blacklist. Probe-proven on 1.6.15: NPC.isVillager() and
+    /// Game1.getCharacterFromName are the sanctioned lookups.
     /// </summary>
-    private static bool TryResolveCast(
+    internal static bool IsValidCastNpc(string npcName)
+    {
+        return Game1.getCharacterFromName(npcName) is NPC npc
+            && npc.IsVillager
+            && !TownIncidentRumorRelay.OutsiderBlacklistView.Contains(npcName);
+    }
+
+    /// <summary>
+    /// TIE-CAST-001: FNV-1a 64 over "{scheduleKey}|{uniqueGameId}". Deterministic
+    /// across processes (no string.GetHashCode / HashCode.Combine). The seed is
+    /// NOT persisted; the authoritative cast source is the persisted ActiveIncident.
+    /// </summary>
+    internal static long ComputeCastSeed(string scheduleKey, uint uniqueGameId)
+    {
+        const ulong FnvOffsetBasis = 14695981039346656037UL;
+        const ulong FnvPrime = 1099511628211UL;
+
+        string input = $"{scheduleKey}|{uniqueGameId}";
+        ulong hash = FnvOffsetBasis;
+        foreach (char c in input)
+        {
+            hash ^= c;
+            hash *= FnvPrime;
+        }
+
+        return unchecked((long)hash);
+    }
+
+    /// <summary>
+    /// TIE-CAST-001: production entry — wires the real providers (graph-scanner
+    /// neighbors with the hearts gate, the cast validity predicate, and the
+    /// friendship hearts provider) and delegates to the pure ladder.
+    /// </summary>
+    internal static bool TryResolveCast(
+        IncidentArchetypeDefinition definition, string scheduleKey,
+        out Dictionary<string, string> assignedRoles)
+    {
+        return TryResolveCastCore(
+            definition,
+            scheduleKey,
+            GetHeartsActiveNeighbors,
+            IsValidCastNpc,
+            NpcPersonaRelationScanner.GetFriendshipHearts,
+            out assignedRoles);
+    }
+
+    /// <summary>
+    /// TIE-CAST-001: pure, headless-runnable cast ladder.
+    /// L1: seeded anchor pick from the curated pool, then fill remaining roles from
+    /// the anchor's hearts-active neighbors (validity + hearts gates, seeded,
+    /// excluding the anchor). L2: 2-hop (neighbors-of-neighbors) with the same
+    /// filters. L3: FixedCasts verbatim.
+    /// </summary>
+    internal static bool TryResolveCastCore(
+        IncidentArchetypeDefinition definition, string scheduleKey,
+        Func<string, IReadOnlyList<string>> neighborsProvider,
+        Func<string, bool> validityPredicate,
+        Func<string, int> heartsProvider,
+        out Dictionary<string, string> assignedRoles)
+    {
+        assignedRoles = null;
+
+        if (!AnchorPools.TryGetValue(definition.ArchetypeId, out var anchorPool)
+            || anchorPool == null || anchorPool.Length == 0)
+        {
+            _monitor?.Log(
+                $"[TownIncident] Archetype '{definition.ArchetypeId}' has no complete anchor pool; incident not activated.",
+                LogLevel.Error);
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(scheduleKey))
+        {
+            _monitor?.Log(
+                $"[TownIncident] Archetype '{definition.ArchetypeId}': malformed schedule key; falling back to fixed cast.",
+                LogLevel.Error);
+            return TryApplyFixedCast(definition, out assignedRoles);
+        }
+
+        long seed = ComputeCastSeed(scheduleKey, 0);
+        int roleCount = definition.RequiredRoles.Count;
+
+        string anchor = anchorPool[StableIndex(seed, anchorPool.Length, 0)];
+
+        var roles = new Dictionary<string, string>(StringComparer.Ordinal);
+        var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { anchor };
+        roles[definition.RequiredRoles[0]] = anchor;
+
+        // L1: hearts-active 1-hop neighbors of the anchor.
+        var l1Neighbors = GetActiveNeighbors(anchor, neighborsProvider, validityPredicate, heartsProvider);
+        FillRemainingRoles(definition, roles, used, l1Neighbors, seed, 1);
+
+        // L2: 2-hop (neighbors-of-neighbors), same filters.
+        if (roles.Count < roleCount)
+        {
+            var l2Candidates = CollectTwoHop(anchor, l1Neighbors, neighborsProvider, validityPredicate, heartsProvider);
+            FillRemainingRoles(definition, roles, used, l2Candidates, seed, 2);
+        }
+
+        // L3: FixedCasts verbatim.
+        if (roles.Count < roleCount)
+        {
+            _monitor?.Log(
+                $"[TownIncident] Archetype '{definition.ArchetypeId}' graph could not fill all roles; falling back to fixed cast.",
+                LogLevel.Info);
+            return TryApplyFixedCast(definition, out assignedRoles);
+        }
+
+        assignedRoles = roles;
+        return true;
+    }
+
+    /// <summary>
+    /// TIE-CAST-001: production neighbor provider — raw scanner neighbors filtered
+    /// to edges that are hearts-active in either direction.
+    /// </summary>
+    private static IReadOnlyList<string> GetHeartsActiveNeighbors(string npcName)
+    {
+        if (!NpcPersonaRelationScanner.TryGetNeighbors(npcName, out var neighbors))
+            return Array.Empty<string>();
+
+        var active = new List<string>();
+        foreach (var neighbor in neighbors)
+        {
+            if (NpcPersonaRelationScanner.HasActiveRelationInAnyDirection(npcName, neighbor))
+                active.Add(neighbor);
+        }
+
+        return active;
+    }
+
+    /// <summary>
+    /// TIE-CAST-001: filters a raw neighbor list through the validity and hearts
+    /// gates. Provider throws are the declared BOUNDARY failure path — treat as
+    /// empty graph / hearts-0 and continue, logging at Debug.
+    /// </summary>
+    private static IReadOnlyList<string> GetActiveNeighbors(
+        string npcName,
+        Func<string, IReadOnlyList<string>> neighborsProvider,
+        Func<string, bool> validityPredicate,
+        Func<string, int> heartsProvider)
+    {
+        IReadOnlyList<string> raw;
+        try
+        {
+            raw = neighborsProvider(npcName);
+        }
+        catch (Exception ex)
+        {
+            _monitor?.Log(
+                $"[TownIncident] Neighbor provider threw for '{npcName}'; treating graph as empty: {ex.Message}",
+                LogLevel.Debug);
+            raw = Array.Empty<string>();
+        }
+
+        if (raw == null || raw.Count == 0)
+            return Array.Empty<string>();
+
+        var active = new List<string>(raw.Count);
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var candidate in raw)
+        {
+            if (string.IsNullOrWhiteSpace(candidate)) continue;
+            if (!seen.Add(candidate)) continue;
+            if (string.Equals(candidate, npcName, StringComparison.OrdinalIgnoreCase)) continue;
+
+            if (!validityPredicate(candidate)) continue;
+
+            int hearts;
+            try
+            {
+                hearts = heartsProvider(candidate);
+            }
+            catch (Exception ex)
+            {
+                _monitor?.Log(
+                    $"[TownIncident] Hearts provider threw for '{candidate}'; treating hearts as 0: {ex.Message}",
+                    LogLevel.Debug);
+                hearts = 0;
+            }
+
+            if (hearts < 0) continue;
+
+            active.Add(candidate);
+        }
+
+        return active;
+    }
+
+    /// <summary>
+    /// TIE-CAST-001: fills the remaining roles (RequiredRoles[roles.Count ..]) from
+    /// a deterministic, seeded ordering of the candidate list, excluding the anchor
+    /// and any already-assigned NPC.
+    /// </summary>
+    private static void FillRemainingRoles(
+        IncidentArchetypeDefinition definition,
+        Dictionary<string, string> roles,
+        HashSet<string> used,
+        IReadOnlyList<string> candidates,
+        long seed,
+        int salt)
+    {
+        int roleCount = definition.RequiredRoles.Count;
+        if (roles.Count >= roleCount)
+            return;
+
+        foreach (var candidate in OrderCandidates(candidates, seed, salt))
+        {
+            if (roles.Count >= roleCount)
+                break;
+            if (used.Add(candidate))
+                roles[definition.RequiredRoles[roles.Count]] = candidate;
+        }
+    }
+
+    /// <summary>
+    /// TIE-CAST-001: deterministic, seeded candidate ordering — sort OrdinalIgnoreCase
+    /// then rotate by a seed-derived offset. No Random, no string.GetHashCode,
+    /// no HashCode.Combine.
+    /// </summary>
+    private static List<string> OrderCandidates(IReadOnlyList<string> candidates, long seed, int salt)
+    {
+        var ordered = candidates
+            .Where(c => !string.IsNullOrWhiteSpace(c))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(c => c, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (ordered.Count <= 1)
+            return ordered;
+
+        int offset = StableIndex(seed, ordered.Count, salt);
+        var rotated = new List<string>(ordered.Count);
+        for (int i = 0; i < ordered.Count; i++)
+            rotated.Add(ordered[(i + offset) % ordered.Count]);
+
+        return rotated;
+    }
+
+    /// <summary>
+    /// TIE-CAST-001: deterministic 64-bit-seed-derived index (0..count-1) via pure
+    /// integer arithmetic only.
+    /// </summary>
+    private static int StableIndex(long seed, int count, int salt)
+    {
+        ulong x = unchecked((ulong)seed + unchecked((ulong)(uint)salt * 0x9E3779B9UL));
+        return (int)(x % (uint)count);
+    }
+
+    /// <summary>
+    /// TIE-CAST-001: 2-hop candidate collection — the active neighbors of each L1
+    /// neighbor, excluding the anchor. Already-used NPCs are excluded later during
+    /// <see cref="FillRemainingRoles"/>.
+    /// </summary>
+    private static List<string> CollectTwoHop(
+        string anchor,
+        IReadOnlyList<string> l1Neighbors,
+        Func<string, IReadOnlyList<string>> neighborsProvider,
+        Func<string, bool> validityPredicate,
+        Func<string, int> heartsProvider)
+    {
+        var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var n1 in l1Neighbors)
+        {
+            var n2List = GetActiveNeighbors(n1, neighborsProvider, validityPredicate, heartsProvider);
+            foreach (var n2 in n2List)
+            {
+                if (string.Equals(n2, anchor, StringComparison.OrdinalIgnoreCase)) continue;
+                result.Add(n2);
+            }
+        }
+
+        return result.ToList();
+    }
+
+    /// <summary>
+    /// TIE-009B (kept verbatim): installs the fixed cast of an archetype onto its
+    /// <see cref="IncidentArchetypeDefinition.RequiredRoles"/> names. This is the
+    /// TIE-CAST-001 level-3 fallback and the pre-existing failure behavior.
+    /// </summary>
+    private static bool TryApplyFixedCast(
         IncidentArchetypeDefinition definition, out Dictionary<string, string> assignedRoles)
     {
         assignedRoles = null;
