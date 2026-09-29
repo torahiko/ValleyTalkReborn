@@ -69,6 +69,15 @@ internal sealed class BarkPromptBuilder
             }
         }
 
+        // TIE-007：事件传闻候选被选定后立即认领（mirror MatchedPerception 消费块）。
+        // 认领恒定消费一次（即使后续 userPrompt 为空导致请求被丢弃），
+        // 属有界浪费：每 NPC 每天至多一次，超出范围不作补偿。
+        if (focusDecision.IsIncidentRumor)
+        {
+            TownIncidentRumorRelay.TryClaimIncidentRumor(
+                npc.Name, TownIncidentRumorConsumer.AmbientBark, out _);
+        }
+
         string systemPrompt = BuildSystemPrompt(isZh);
         string userPrompt = BuildUserPrompt(npc, bio, isZh, focusDecision);
 

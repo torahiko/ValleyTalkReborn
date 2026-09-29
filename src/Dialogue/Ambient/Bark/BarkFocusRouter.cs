@@ -20,6 +20,11 @@ internal sealed class BarkFocusDecision
     public string SensoryItemKey { get; init; }
     /// <summary>本轮若命中了 Perception 条目，记录于此以供组装后执行阅后即焚</summary>
     public PerceptionEntry MatchedPerception { get; init; }
+    /// <summary>
+    /// TIE-007：本决策是否来自镇事件传闻候选。为 true 时 Build 在选定后
+    /// 通过 <see cref="TownIncidentRumorRelay"/> 执行一次 AmbientBark 认领。
+    /// </summary>
+    public bool IsIncidentRumor { get; init; }
 }
 
 /// <summary>
@@ -372,6 +377,43 @@ internal static class BarkFocusRouter
                 MatchedPerception   = null
             }));
         }
+
+        // 2d. 镇事件传闻（TIE-007）：非消费预览——仅在候选构建阶段探测，
+        //     认领由 BarkPromptBuilder 在本决策被选定后执行。
+        TryAddIncidentRumor(npc, fatigueMult, isZh, list);
+    }
+
+    /// <summary>
+    /// TIE-007：当前事件存在且该 NPC 未被任何消费者认领时，加入唯一的
+    /// 事件传闻候选（Interactive 焦点，基准权重 0.8f，沿用 Interactive 疲劳阻尼）。
+    /// 预览为非变异操作；未通过资格链则不加候选、不认领、不写日志。
+    /// </summary>
+    private static void TryAddIncidentRumor(
+        NPC npc,
+        float fatigueMult,
+        bool isZh,
+        List<Candidate> list)
+    {
+        if (npc == null) return;
+
+        if (!TownIncidentRumorRelay.TryGetIncidentRumorPreview(npc.Name, out string preview))
+            return;
+
+        string contextLine = FormatIncidentRumorForBark(preview, isZh);
+        if (string.IsNullOrWhiteSpace(contextLine)) return;
+
+        float weight = 0.8f * fatigueMult;
+        if (weight <= 0.01f) return;
+
+        list.Add(new Candidate(weight, new BarkFocusDecision
+        {
+            FocusType           = BarkFocusType.Interactive,
+            InjectedContextLine = contextLine,
+            AllowThinkingLens   = false,
+            SensoryItemKey      = null,
+            MatchedPerception   = null,
+            IsIncidentRumor     = true
+        }));
     }
 
     /// <summary>
@@ -781,5 +823,26 @@ private static List<PersonCandidate> EvaluateNearbyPresence(NPC npc, bool isZh)
         }
 
         return string.IsNullOrWhiteSpace(s) ? null : s.Trim();
+    }
+
+    /// <summary>
+    /// TIE-007：将 relay 的事件传闻预览行改写为 Bark 自语语境的客观事实描述。
+    /// 剔除主对话面向农夫的第二人称前缀（"X has heard the talk of the town: " /
+    /// "X 听说了镇上最近的热议："），保留冒号后的事实主体，再包上自省式引子。
+    /// </summary>
+    internal static string FormatIncidentRumorForBark(string rumorPreview, bool isZh)
+    {
+        if (string.IsNullOrWhiteSpace(rumorPreview)) return null;
+
+        string fact = rumorPreview.Trim();
+        int separator = fact.IndexOf(isZh ? '：' : ':');
+        if (separator >= 0 && separator < fact.Length - 1)
+            fact = fact.Substring(separator + 1).Trim();
+
+        if (string.IsNullOrWhiteSpace(fact)) return null;
+
+        return isZh
+            ? $"你听过镇上最近在传的说法——{fact}"
+            : $"You've caught the talk going around town — {fact}";
     }
 }

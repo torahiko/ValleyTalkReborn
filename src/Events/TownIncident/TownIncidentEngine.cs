@@ -160,8 +160,8 @@ internal static class TownIncidentEngine
 
     private static void OnDayStarted(object sender, DayStartedEventArgs e)
     {
-        // TIE-004：每日传闻配额重置（内存态；多人模式下无认领，重置无害）。
-        TownIncidentRumorProvider.ResetDailyRumorQuota();
+        // TIE-004/TIE-007：每日传闻认领与配额重置（内存态；多人模式下无认领，重置无害）。
+        TownIncidentRumorRelay.ResetDailyClaims();
 
         if (CheckMultiplayerDisabled())
             return;
@@ -407,8 +407,8 @@ internal static class TownIncidentEngine
         _scriptwriterTask = null;
         _scriptwriterRequestedIncidentId = null;
 
-        // TIE-004：传闻配额随内存态一起重置（覆盖 SaveLoaded 与 ReturnedToTitle）。
-        TownIncidentRumorProvider.ResetDailyRumorQuota();
+        // TIE-004/TIE-007：传闻认领与配额随内存态一起重置（覆盖 SaveLoaded 与 ReturnedToTitle）。
+        TownIncidentRumorRelay.ResetDailyClaims();
 
         _data = null;
         _isSaveLoaded = false;
