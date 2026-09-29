@@ -315,4 +315,66 @@ public class TownIncidentRumorArchetypeTests
             .ToArray();
         Assert.Single(catalogBuilders);
     }
+
+    // ── 验收（TIE-009D-R1）：剥离器 / Bark 改写对所有原型往返成立 ──
+
+    private static string StripSubjectPrefix(string renderedLine)
+    {
+        var method = typeof(TownIncidentRumorRelay).GetMethod(
+            "StripSubjectPrefix", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+        return (string)method.Invoke(null, new object[] { renderedLine });
+    }
+
+    [Fact]
+    public void UT12_StripSubjectPrefix_RoundTrip_AllArchetypes()
+    {
+        foreach (string archetypeId in new[] { "Contest", "Friction", "Mystery", "Collaboration" })
+        {
+            var incident = BuildShell(archetypeId);
+
+            string en = Render(incident, RumorNpc, isChinese: false);
+            string strippedEn = StripSubjectPrefix(en);
+            Assert.False(string.IsNullOrWhiteSpace(strippedEn), archetypeId);
+            Assert.DoesNotContain("has heard the talk of the town", strippedEn);
+
+            string zh = Render(incident, RumorNpc, isChinese: true);
+            string strippedZh = StripSubjectPrefix(zh);
+            Assert.False(string.IsNullOrWhiteSpace(strippedZh), archetypeId);
+            Assert.DoesNotContain("听说了镇上最近的热议", strippedZh);
+        }
+    }
+
+    [Fact]
+    public void UT13_BarkRewrite_RoundTrip_AllArchetypes()
+    {
+        foreach (string archetypeId in new[] { "Contest", "Friction", "Mystery", "Collaboration" })
+        {
+            var incident = BuildShell(archetypeId);
+
+            string en = Render(incident, RumorNpc, isChinese: false);
+            string barkEn = BarkFocusRouter.FormatIncidentRumorForBark(en, isZh: false);
+            Assert.False(string.IsNullOrWhiteSpace(barkEn), archetypeId);
+            Assert.DoesNotContain("has heard the talk of the town", barkEn);
+            Assert.DoesNotContain("听说了镇上最近的热议", barkEn);
+            Assert.StartsWith("You've caught the talk going around town — ", barkEn);
+
+            string zh = Render(incident, RumorNpc, isChinese: true);
+            string barkZh = BarkFocusRouter.FormatIncidentRumorForBark(zh, isZh: true);
+            Assert.False(string.IsNullOrWhiteSpace(barkZh), archetypeId);
+            Assert.DoesNotContain("听说了镇上最近的热议", barkZh);
+            Assert.DoesNotContain("has heard the talk of the town", barkZh);
+            Assert.StartsWith("你听过镇上最近在传的说法——", barkZh);
+        }
+    }
+
+    [Fact]
+    public void UT14_StripSubjectPrefix_MissingSeparator_BugPath()
+    {
+        LocalizedContentManager.CurrentLanguageCode = LocalizedContentManager.LanguageCode.en;
+        Assert.Null(StripSubjectPrefix("no separator here"));
+
+        LocalizedContentManager.CurrentLanguageCode = LocalizedContentManager.LanguageCode.zh;
+        Assert.Null(StripSubjectPrefix("no separator here"));
+    }
 }
