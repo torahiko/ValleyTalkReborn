@@ -146,9 +146,13 @@ internal sealed class A2APromptBuilder
                 excludeNames: excludeNames.ToArray());
         }
 
-        string gossip = TryGetRecentGossip(participants);
-        if (!string.IsNullOrWhiteSpace(gossip) && isZh)
-            gossip = NpcNameLocalizer.LocalizeNamesInText(gossip);
+        // TIE-008：事件传闻优先；未命中时逐字节回落到原有普通八卦路径。
+        bool hasIncidentRumor = TrySelectA2ARumorContext(participants, isZh, out string gossip);
+
+        // 传闻已被决选进下方的请求语境 ⇒ 此刻才抢注共享认领（claim-after-accept，
+        // 与八卦 _usedA2AGossipKeys 的「返回前才 Add」语义对齐）。
+        if (hasIncidentRumor && !string.IsNullOrWhiteSpace(gossip))
+            TownIncidentRumorRelay.TryClaimA2AIncidentRumor(participants, out _);
         // gossip 为空时整行不输出，避免空标签污染模型注意力
 
         string lengthDesc = isZh ? "单句口语（10~25字）" : "snappy spoken lines (10-25 words)";
@@ -872,6 +876,25 @@ internal sealed class A2APromptBuilder
         }
 
         return lines.Count > 0 ? string.Join("\n", lines) : null;
+    }
+
+    /// <summary>
+    /// TIE-008：决选注入请求语境的一行传闻。事件传闻命中时返回 true，其文案来自
+    /// 零消耗的预览；否则逐字节回落到原有普通八卦路径（含其跨天 key 刷新与去重）。
+    /// </summary>
+    private static bool TrySelectA2ARumorContext(List<NPC> participants, bool isZh, out string line)
+    {
+        if (TownIncidentRumorRelay.TryGetIncidentRumorPreviewForA2A(participants, out var rumor))
+        {
+            line = isZh ? NpcNameLocalizer.LocalizeNamesInText(rumor) : rumor;
+            return true;
+        }
+
+        line = TryGetRecentGossip(participants);
+        if (!string.IsNullOrWhiteSpace(line) && isZh)
+            line = NpcNameLocalizer.LocalizeNamesInText(line);
+
+        return false;
     }
 
     private static string TryGetRecentGossip(List<NPC> participants)

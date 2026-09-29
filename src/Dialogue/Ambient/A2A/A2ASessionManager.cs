@@ -327,6 +327,9 @@ internal sealed class A2ASessionManager
 
         // 重置跨存档静态八卦缓存，避免旧存档的"当日已聊过"标记污染新日
         A2APromptBuilder.ResetGossipCache();
+
+        // TIE-008：A2A 的事件传闻认领落在 TIE-007 共享表上，随既有 lifecycle 撤离
+        TownIncidentRumorRelay.ResetDailyClaims();
     }
 
     /// <summary>
@@ -343,6 +346,7 @@ internal sealed class A2ASessionManager
 
         while (_pendingA2AResults.TryDequeue(out _)) { }
         A2APromptBuilder.ResetGossipCache();
+        TownIncidentRumorRelay.ResetDailyClaims();
     }
 
     /// <summary>
