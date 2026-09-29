@@ -132,7 +132,9 @@ public class TownIncidentArchetypeSchedulingTests : IDisposable
 
     private static string ExpectedRotatingArchetype(int year, string season, int slotDay)
     {
-        int seasonIndex = (year - 1) * 4 + Array.IndexOf(SeasonNames, season);
+        // Mirrors the engine's case-insensitive season lookup (TIE-009B-R1).
+        int seasonIndex = (year - 1) * 4 + Array.FindIndex(
+            SeasonNames, name => string.Equals(name, season, StringComparison.OrdinalIgnoreCase));
         int offset = slotDay == FirstRotatingSlotStartDay ? 0 : 1;
         return RotationOrder[(seasonIndex + offset) % RotationOrder.Length];
     }
@@ -225,7 +227,6 @@ public class TownIncidentArchetypeSchedulingTests : IDisposable
         Assert.Equal(SecondRotatingSlotStartDay, Constant<int>("SecondRotatingSlotStartDay"));
         Assert.Equal(RotatingSlotDurationDays, Constant<int>("RotatingSlotDurationDays"));
 
-        int contestStart = ContestTriggerDayOfMonth;
         int contestEnd = ContestTriggerDayOfMonth + ContestDurationDays - 1;
         int slotOneEnd = FirstRotatingSlotStartDay + RotatingSlotDurationDays - 1;
         int slotTwoEnd = SecondRotatingSlotStartDay + RotatingSlotDurationDays - 1;
@@ -615,6 +616,167 @@ public class TownIncidentArchetypeSchedulingTests : IDisposable
         }
 
         Assert.Equal(2, EngineSourceCallSiteCount("ResetDailyClaims"));
+    }
+
+    // ── TIE-009B-R1：季名大小写归一 ──
+
+    /// <summary>
+    /// R1a: UT01 的 seasonIndex 扫描用小写季名（游戏季键的 casing）重跑一遍，
+    /// 逐槽断言原型与 key 与大写跑法完全一致。
+    /// </summary>
+    [Fact]
+    public void UT19_SeasonIndexSweep_LowercaseCasing_ResolvesIdentically()
+    {
+        int created = 0;
+
+        for (int year = 1; year <= 3; year++)
+        {
+            for (int seasonNumber = 0; seasonNumber < SeasonNames.Length; seasonNumber++)
+            {
+                string capitalized = SeasonNames[seasonNumber];
+                string lowercase = capitalized.ToLowerInvariant();
+
+                foreach (int slotDay in new[] { FirstRotatingSlotStartDay, SecondRotatingSlotStartDay })
+                {
+                    string expectedArchetypeId = ExpectedRotatingArchetype(year, capitalized, slotDay);
+                    Assert.Equal(expectedArchetypeId, ExpectedRotatingArchetype(year, lowercase, slotDay));
+
+                    using (var scope = new EngineScope())
+                    {
+                        ResetEngine();
+
+                        Assert.True(TownIncidentEngine.TryCreateIncidentForSchedule(year, lowercase, slotDay));
+                        var incident = EngineData().ActiveIncident;
+
+                        Assert.Equal(expectedArchetypeId, incident.ArchetypeId);
+                        Assert.Equal(ExpectedKey(expectedArchetypeId, year, lowercase, slotDay), incident.IncidentId);
+                        Assert.Equal(
+                            ExpectedKey(expectedArchetypeId, year, lowercase, slotDay),
+                            EngineData().LastScheduleKey);
+                        Assert.Equal(RotatingSlotDurationDays, incident.DurationDays);
+                        Assert.Empty(scope.Monitor.Errors());
+                        created++;
+                    }
+                }
+            }
+        }
+
+        Assert.Equal(24, created);
+    }
+
+    /// <summary>
+    /// R1b: 同一槽位在 "SPRING"/"Spring"/"spring" 三种 casing 下解析出同一个原型。
+    /// </summary>
+    [Fact]
+    public void UT20_SeasonCasing_ResolvesTheSameArchetype()
+    {
+        string expected = ExpectedRotatingArchetype(2, "Fall", SecondRotatingSlotStartDay);
+        var keys = new List<string>();
+
+        foreach (string season in new[] { "FALL", "Fall", "fall" })
+        {
+            using (var scope = new EngineScope())
+            {
+                ResetEngine();
+                Assert.True(TownIncidentEngine.TryCreateIncidentForSchedule(2, season, SecondRotatingSlotStartDay));
+
+                var incident = EngineData().ActiveIncident;
+                Assert.Equal(expected, incident.ArchetypeId);
+                Assert.Equal(ExpectedKey(expected, 2, season, SecondRotatingSlotStartDay), incident.IncidentId);
+                keys.Add(incident.IncidentId);
+            }
+        }
+
+        // Only the season part differs; the archetype id and the day do not.
+        Assert.Equal(3, keys.Distinct(StringComparer.Ordinal).Count());
+        Assert.Single(keys.Select(k => k.ToLowerInvariant()).Distinct(StringComparer.Ordinal));
+    }
+
+    /// <summary>
+    /// R1c: key casing 钉死 —— key 逐字保留传入的季名，不做大小写改写
+    /// （老存档去重依赖这一点）。生产 casing 由 Game1.season 决定，此处按运行时
+    /// 读取值断言，不再硬编码某种假设。
+    /// </summary>
+    [Fact]
+    public void UT21_ScheduleKey_PreservesSeasonCasing()
+    {
+        using (var scope = new EngineScope())
+        {
+            ResetEngine();
+            Assert.True(TownIncidentEngine.TryCreateIncidentForSchedule(1, "spring", FirstRotatingSlotStartDay));
+            Assert.Equal(
+                "friction:1:spring:12",
+                EngineData().ActiveIncident.IncidentId);
+
+            EngineData().ActiveIncident = null;
+            EngineData().LastScheduleKey = null;
+
+            Assert.True(TownIncidentEngine.TryCreateIncidentForSchedule(1, "spring", ContestTriggerDayOfMonth));
+            Assert.Equal("contest:1:spring:4", EngineData().ActiveIncident.IncidentId);
+
+            // Capitalized input keeps the capitalized season part verbatim.
+            EngineData().ActiveIncident = null;
+            EngineData().LastScheduleKey = null;
+
+            Assert.True(TownIncidentEngine.TryCreateIncidentForSchedule(1, "Spring", ContestTriggerDayOfMonth));
+            Assert.Equal("contest:1:Spring:4", EngineData().ActiveIncident.IncidentId);
+        }
+    }
+
+    [Fact]
+    public void UT22_ProductionCasing_KeyUsesGame1SeasonVerbatim()
+    {
+        using (var scope = new EngineScope())
+        using (new DayScope(ContestTriggerDayOfMonth))
+        {
+            ResetEngine();
+            string season = CurrentSeasonName();
+            Assert.False(string.IsNullOrEmpty(season));
+
+            InvokePrivateStatic("OnDayStarted", new object[] { null, null });
+            Assert.Equal(
+                $"contest:{Game1.year}:{season}:{ContestTriggerDayOfMonth}",
+                EngineData().ActiveIncident.IncidentId);
+        }
+
+        using (var scope = new EngineScope())
+        using (new DayScope(FirstRotatingSlotStartDay))
+        {
+            ResetEngine();
+            string season = CurrentSeasonName();
+
+            InvokePrivateStatic("OnDayStarted", new object[] { null, null });
+            string incidentId = EngineData().ActiveIncident.IncidentId;
+            Assert.Equal(
+                $"{incidentId.Split(':')[0]}:{Game1.year}:{season}:{FirstRotatingSlotStartDay}",
+                incidentId);
+        }
+    }
+
+    /// <summary>
+    /// R1d: 哨兵 —— FixedCasts 的键集合与目录原型 id 集合双向等价，且每个卡司的
+    /// 长度等于该原型的 RequiredRoles 数量。
+    /// </summary>
+    [Fact]
+    public void UT23_FixedCasts_CoverEveryCatalogArchetype()
+    {
+        var casts = (Dictionary<string, string[]>)Field("FixedCasts").GetValue(null);
+        string[] catalogIds = TownIncidentArchetypeCatalog.Definitions
+            .Select(x => x.ArchetypeId).OrderBy(x => x, StringComparer.Ordinal).ToArray();
+
+        Assert.Equal(
+            catalogIds,
+            casts.Keys.OrderBy(x => x, StringComparer.Ordinal).ToArray());
+
+        foreach (var definition in TownIncidentArchetypeCatalog.Definitions)
+        {
+            Assert.True(casts.TryGetValue(definition.ArchetypeId, out var cast), definition.ArchetypeId);
+            Assert.Equal(definition.RequiredRoles.Count, cast.Length);
+            Assert.Equal(definition.RequiredRoles.Count, cast.Distinct(StringComparer.Ordinal).Count());
+            Assert.All(cast, npc => Assert.False(string.IsNullOrWhiteSpace(npc)));
+        }
+
+        Assert.Equal(4, catalogIds.Length);
     }
 
     private static int EngineSourceCallSiteCount(string memberName)

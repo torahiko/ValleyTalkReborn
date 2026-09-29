@@ -347,7 +347,13 @@ internal static class TownIncidentEngine
         else
             return false;
 
-        int seasonNumber = Array.IndexOf(SeasonNames, season);
+        // TIE-009B-R1: the season arrives as Game1.season.ToString(); resolve it
+        // case-insensitively so capitalized enum names and the lowercase season
+        // key of persisted schedule keys ("contest:1:spring:4") both match. The
+        // schedule key itself keeps the casing it was given — old-save dedup
+        // depends on it.
+        int seasonNumber = Array.FindIndex(
+            SeasonNames, name => string.Equals(name, season, StringComparison.OrdinalIgnoreCase));
         if (seasonNumber < 0)
             return false;
 
