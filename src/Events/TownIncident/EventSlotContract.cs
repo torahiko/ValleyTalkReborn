@@ -10,6 +10,19 @@ internal enum IncidentPhase
     Climax
 }
 
+/// <summary>
+/// TIE-009A: the four incident archetypes an event slot may be built from.
+/// The member name is the persisted <see cref="EventSlotContract.ArchetypeId"/>
+/// value and is matched with <see cref="System.StringComparison.Ordinal"/>.
+/// </summary>
+internal enum TownIncidentArchetype
+{
+    Contest,
+    Friction,
+    Mystery,
+    Collaboration
+}
+
 /// <summary>Per-role acting brief for one incident phase.</summary>
 internal sealed class RolePhaseBrief
 {
@@ -26,12 +39,24 @@ internal sealed class RolePhaseBrief
 internal sealed class EventSlotContract
 {
     public string IncidentId { get; set; }
+
+    /// <summary>
+    /// TIE-009A: exact, case-sensitive archetype identifier resolved by
+    /// <see cref="TownIncidentArchetypeCatalog.TryGetDefinition(string, out IncidentArchetypeDefinition)"/>.
+    /// </summary>
     public string ArchetypeId { get; set; }
+
     public int StartGameDay { get; set; }
     public int DurationDays { get; set; }
     public string ClimaxLocation { get; set; }
     public int ClimaxTimeOfDay { get; set; }
+
+    /// <summary>
+    /// Role name → NPC name. Runtime shape is unchanged by TIE-009A: the
+    /// dictionary stays <see cref="Dictionary{TKey, TValue}"/> of string→string.
+    /// </summary>
     public Dictionary<string, string> AssignedRoles { get; set; }
+
     public string EventName { get; set; }
     public string IncidentTheme { get; set; }
     public Dictionary<IncidentPhase, Dictionary<string, RolePhaseBrief>> PhaseScripts { get; set; }
