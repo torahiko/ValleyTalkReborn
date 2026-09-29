@@ -106,19 +106,88 @@ internal sealed class TownIncidentScriptwriter
     }
 
     /// <summary>
-    /// Installs the language-appropriate static Contest fallback into the
-    /// shell so the incident is immediately usable without any LLM.
+    /// Installs the language-appropriate static fallback of the shell's own
+    /// archetype so the incident is immediately usable without any LLM.
+    /// TIE-009C: dispatch is by <see cref="EventSlotContract.ArchetypeId"/>;
+    /// an archetype without a template is a BUG (logged, nothing installed)
+    /// and never borrows the Contest script.
     /// </summary>
     internal static EventSlotContract CreateFallback(EventSlotContract shell, bool isChinese)
     {
-        shell.PhaseScripts = isChinese
-            ? TownIncidentTemplateCatalog.BuildContestPhaseScriptsZh()
-            : TownIncidentTemplateCatalog.BuildContestPhaseScriptsEn();
-        shell.BranchOutcomes = isChinese
-            ? TownIncidentTemplateCatalog.BuildContestBranchOutcomesZh()
-            : TownIncidentTemplateCatalog.BuildContestBranchOutcomesEn();
+        if (!TownIncidentTemplateCatalog.TryGetFallback(
+                shell.ArchetypeId, isChinese, out var roleScripts, out var branchOutcomes))
+        {
+            ModEntry.SMonitor?.Log(
+                $"[{SourceIdentifier}] Incident '{shell.IncidentId}': archetype '{shell.ArchetypeId}' has no static fallback template; incident must not activate.",
+                LogLevel.Error);
+            return shell;
+        }
+
+        shell.PhaseScripts = ProjectRolesOntoNpcs(roleScripts, shell.AssignedRoles);
+        shell.BranchOutcomes = branchOutcomes;
         shell.RuntimeFlags ??= new Dictionary<string, bool>();
         return shell;
+    }
+
+    /// <summary>
+    /// TIE-009C: re-keys the role-keyed fallback onto the shell's assigned
+    /// NPC names, so one authored fallback serves any cast of the archetype.
+    /// </summary>
+    private static Dictionary<IncidentPhase, Dictionary<string, RolePhaseBrief>> ProjectRolesOntoNpcs(
+        Dictionary<IncidentPhase, Dictionary<string, RolePhaseBrief>> roleScripts,
+        Dictionary<string, string> assignedRoles)
+    {
+        var phaseScripts = new Dictionary<IncidentPhase, Dictionary<string, RolePhaseBrief>>();
+        foreach (var phaseKv in roleScripts)
+        {
+            var briefs = new Dictionary<string, RolePhaseBrief>(StringComparer.Ordinal);
+            foreach (var roleKv in phaseKv.Value)
+                briefs[assignedRoles[roleKv.Key]] = roleKv.Value;
+
+            phaseScripts[phaseKv.Key] = briefs;
+        }
+
+        return phaseScripts;
+    }
+
+    /// <summary>
+    /// TIE-009C: pure creation-time gate for a fresh shell — the archetype id
+    /// must resolve in the catalog and the assigned role keys must equal the
+    /// definition's RequiredRoles exactly (Ordinal). Called by the activation
+    /// path (TIE-009B) before any incident is activated; touches no game state.
+    /// </summary>
+    internal static bool TryValidateShell(EventSlotContract shell, out string shellError)
+    {
+        shellError = null;
+
+        if (!TownIncidentArchetypeCatalog.TryGetDefinition(shell.ArchetypeId, out var definition))
+        {
+            shellError = $"unknown archetype id '{shell.ArchetypeId}'";
+            return false;
+        }
+
+        if (shell.AssignedRoles == null)
+        {
+            shellError = "AssignedRoles is missing";
+            return false;
+        }
+
+        if (shell.AssignedRoles.Count != definition.RequiredRoles.Count)
+        {
+            shellError = $"assigned role count {shell.AssignedRoles.Count} does not match required role count {definition.RequiredRoles.Count}";
+            return false;
+        }
+
+        foreach (string requiredRole in definition.RequiredRoles)
+        {
+            if (!shell.AssignedRoles.ContainsKey(requiredRole))
+            {
+                shellError = $"required role '{requiredRole}' is not assigned";
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>

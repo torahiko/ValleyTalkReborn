@@ -34,7 +34,11 @@ internal sealed class RolePhaseBrief
 /// Persisted contract for one town incident event slot. PhaseScripts is keyed
 /// by phase then NPC name; BranchOutcomes is keyed by RuntimeFlags flag name
 /// then keyword, so both TryGetActorBrief and RecordChoice stay bounded
-/// dictionary lookups.
+/// dictionary lookups. TIE-009C: both are installed by
+/// <see cref="TownIncidentScriptwriter.CreateFallback(EventSlotContract, bool)"/>
+/// from the archetype's own static fallback — the phase scripts cover every
+/// <see cref="IncidentArchetypeDefinition.RequiredRoles"/> entry (re-keyed onto
+/// the assigned NPCs) and the branch group keys come from that archetype only.
 /// </summary>
 internal sealed class EventSlotContract
 {
