@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -201,6 +202,51 @@ internal static class TownIncidentTemplateCatalog
                 ["祝最好的赢"] = "玩家让全镇猜不透他的立场。",
             },
         };
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  TIE-009D — incident rumor line templates, one per archetype.
+    //  Positional placeholders: {0} = the NPC spreading the rumor,
+    //  {1}/{2}/{3} = the archetype's RequiredRoles in catalog order,
+    //  {4} = EventName. Contest entries keep the exact pre-TIE-009D
+    //  strings, so existing Contest output is byte-identical.
+    // ─────────────────────────────────────────────────────────────
+    private static readonly Dictionary<string, string> IncidentRumorTemplatesEn =
+        new(StringComparer.Ordinal)
+        {
+            ["Contest"] = "{0} has heard the talk of the town: {1} is hosting the {4}, {2} is out to defend the title, and {3} keeps telling anyone who will listen that the judging favors the regulars.",
+            ["Friction"] = "{0} has heard the talk of the town: {1} swears the {4} started with an order that never arrived, {2} insists the ledger has it right, and {3} says they saw the whole thing from the counter.",
+            ["Mystery"] = "{0} has heard the talk of the town: {1} has been hunting for the {4} all week, {2} goes quiet whenever it comes up, and {3} is asking everyone who was in the room.",
+            ["Collaboration"] = "{0} has heard the talk of the town: {1} keeps rounding up help for the {4}, {2} has hauled most of it alone so far, and {3} always has a reason to be somewhere else.",
+        };
+
+    private static readonly Dictionary<string, string> IncidentRumorTemplatesZh =
+        new(StringComparer.Ordinal)
+        {
+            ["Contest"] = "{0} 听说了镇上最近的热议：{1} 要在酒吧办一场烹饪大赛，{2} 准备卫冕冠军，而 {3} 见人就嘀咕评审偏袒熟面孔。",
+            ["Friction"] = "{0} 听说了镇上最近的热议：{1} 咬定「{4}」起于一批没送到的货，{2} 坚持账本从没记错，而 {3} 说当时就站在柜台边看得一清二楚。",
+            ["Mystery"] = "{0} 听说了镇上最近的热议：{1} 为「{4}」找了整整一周，{2} 一被问起就沉默，而 {3} 正在挨个盘问当晚在场的人。",
+            ["Collaboration"] = "{0} 听说了镇上最近的热议：{1} 还在为「{4}」四处招人，{2} 几乎一个人扛下了所有搬运，而 {3} 总有理由出现在别的地方。",
+        };
+
+    /// <summary>
+    /// TIE-009D: one deterministic rumor line for the given archetype, built
+    /// from the claiming NPC name, the archetype's assigned role NPCs (in
+    /// <see cref="IncidentArchetypeDefinition.RequiredRoles"/> order) and the
+    /// shell's EventName. Returns null when the archetype has no template.
+    /// </summary>
+    internal static string BuildIncidentRumor(
+        string archetypeId, bool isChinese, string npcName, IReadOnlyList<string> roleNpcs, string eventName)
+    {
+        var templates = isChinese ? IncidentRumorTemplatesZh : IncidentRumorTemplatesEn;
+        if (!templates.TryGetValue(archetypeId, out string template))
+            return null;
+
+        var args = new List<string>(roleNpcs.Count + 2) { npcName };
+        args.AddRange(roleNpcs);
+        args.Add(eventName);
+
+        return string.Format(template, args.ToArray());
     }
 
     // ─────────────────────────────────────────────────────────────

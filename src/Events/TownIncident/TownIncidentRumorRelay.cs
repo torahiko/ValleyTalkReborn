@@ -16,15 +16,13 @@ internal enum TownIncidentRumorConsumer { MainDialogue, AmbientBark, A2A }
 /// All state is memory-only: never persisted, never synced, reset through
 /// <see cref="ResetDailyClaims"/> at the two existing TownIncidentEngine
 /// lifecycle call sites (OnDayStarted, ResetMemoryState). Rendering stays
-/// deterministic and phase-neutral (one static Contest line).
+/// deterministic and phase-neutral — one archetype-aware line produced by
+/// <see cref="TownIncidentRumorProvider.TryRenderIncidentRumor(EventSlotContract, string, out string)"/>,
+/// the single renderer shared with the preview path.
 /// </summary>
 internal static class TownIncidentRumorRelay
 {
     internal const int MaxDailyRumors = 2;
-
-    private const string HostRole = "Host";
-    private const string ChampionRole = "Champion";
-    private const string SkepticRole = "Skeptic";
 
     // RFC outsider blacklist: these NPCs do not circulate town rumors.
     // Single source of truth — moved here from TownIncidentRumorProvider.
@@ -140,11 +138,12 @@ internal static class TownIncidentRumorRelay
         if (_claimedNpcs.Contains(npcName))
             return false;
 
-        string rumor = BuildContestRumor(incident, npcName);
-        if (string.IsNullOrWhiteSpace(rumor))
+        // TIE-009D: single renderer for every archetype — the claim path and
+        // both preview paths share it, so no surface can drift.
+        if (!TownIncidentRumorProvider.TryRenderIncidentRumor(incident, npcName, out string rumor))
         {
             ModEntry.SMonitor?.Log(
-                $"[TownIncidentRumor] Failed to build a Contest rumor line for incident '{incident.IncidentId}' (NPC '{npcName}'); no quota consumed.",
+                $"[TownIncidentRumor] No incident rumor for incident '{incident.IncidentId}' (archetype '{incident.ArchetypeId}', NPC '{npcName}'); no quota consumed.",
                 LogLevel.Error);
             return false;
         }
@@ -269,27 +268,4 @@ internal static class TownIncidentRumorRelay
         return false;
     }
 
-    /// <summary>
-    /// One deterministic phase-neutral Contest rumor line built from the
-    /// incident shell (roles, event name) and the claiming NPC's name.
-    /// Returns null when the shell is missing a pilot role (BUG path).
-    /// </summary>
-    private static string BuildContestRumor(EventSlotContract incident, string npcName)
-    {
-        if (!TryGetRoleNpc(incident, HostRole, out var host)
-            || !TryGetRoleNpc(incident, ChampionRole, out var champion)
-            || !TryGetRoleNpc(incident, SkepticRole, out var skeptic))
-            return null;
-
-        bool isZh = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
-        return isZh
-            ? $"{npcName} 听说了镇上最近的热议：{host} 要在酒吧办一场烹饪大赛，{champion} 准备卫冕冠军，而 {skeptic} 见人就嘀咕评审偏袒熟面孔。"
-            : $"{npcName} has heard the talk of the town: {host} is hosting the {incident.EventName}, {champion} is out to defend the title, and {skeptic} keeps telling anyone who will listen that the judging favors the regulars.";
-    }
-
-    private static bool TryGetRoleNpc(EventSlotContract incident, string role, out string npcName)
-    {
-        return incident.AssignedRoles.TryGetValue(role, out npcName)
-            && !string.IsNullOrWhiteSpace(npcName);
-    }
 }
