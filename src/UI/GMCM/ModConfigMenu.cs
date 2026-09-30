@@ -545,14 +545,6 @@ namespace ValleytalkReborn
 
             ConfigMenu.AddKeybind(
                 mod: ModManifest,
-                name: () => GetUIString("configQuickReplyKey", "Quick Reply Key"),
-                tooltip: () => GetUIString("configQuickReplyKeyTooltip", "Press this key within 5 seconds after an NPC speaks to send a quick follow-up reply."),
-                getValue: () => ModEntry.Config.QuickReplyKey,
-                setValue: value => ModEntry.Config.QuickReplyKey = value
-            );
-
-            ConfigMenu.AddKeybind(
-                mod: ModManifest,
                 name: () => GetUIString("configDismissFollowerKey", "Dismiss Follower Key"),
                 tooltip: () => GetUIString("configDismissFollowerKeyTooltip",
                     "Key used to stop the NPC currently following you, whether they're just tagging along or accompanying you on a date."),

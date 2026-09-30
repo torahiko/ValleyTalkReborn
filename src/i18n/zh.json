@@ -323,8 +323,6 @@
   "Memory.CallsignTitle": "设置{{npcName}}对你的称呼",
   "Memory.AddFailedFull": "记忆槽位已满（最多{{value}}条）。请先删除一条旧记忆。",
   "configSectionKeybinds": "按键与操作设置",
-  "configQuickReplyKey": "快速回复按键",
-  "configQuickReplyKeyTooltip": "在NPC说话后的5秒内按下此键，可快速发送一条后续回复。",
   "DialogueInput.DefaultTitleWithNpc": "与{{npcName}}对话",
   "configSectionAmbientDialogue": "环境与NPC互动",
   "configEnableBark": "启用环境自语",

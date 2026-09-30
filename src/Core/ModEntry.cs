@@ -126,8 +126,6 @@ namespace ValleytalkReborn
         /// <summary>世界概要覆盖层存储服务（GameSummary 资产挂接 + 自创纪念日读时合成）。</summary>
         internal static WorldSummaryOverlayService WorldSummaryOverlay { get; private set; }
 
-        private int _lastDialogueCloseTick = -9999;
-
         /// <summary>最近一次对话的 NPC（内部名 Name 用于记忆键）。跨存档必须在 OnSaveLoaded/Cleanup 置空。</summary>
         public static NPC LastSpokenNPC { get; internal set; }
 
@@ -678,36 +676,32 @@ namespace ValleytalkReborn
                 NPC_CheckAction_Patch.TriggerKeyWasDown = NPC_CheckAction_Patch.IsTriggerKeyDown();
             }
 
-            // 快捷键追问判定逻辑（原有代码不动）
-            if (Context.IsPlayerFree && e.Button == Config.QuickReplyKey)
+            // ── Enter：邻格发起打字对话（VT-UI-007，替代旧 QuickReply 5 秒窗口）──
+            // XNA/MonoGame 将小键盘 Enter 统一映射为 Keys.Enter，故无需单独的 NumPadEnter 分支
+            bool isChatKey = e.Button == SButton.Enter;
+            if (isChatKey)
             {
-                int tickDiff = Game1.ticks - _lastDialogueCloseTick;
-
-                if (tickDiff > 0 && tickDiff <= 300 && LastSpokenNPC != null)
-                {
-                    // ★ 确保目标 NPC 具备 AI 对话资格：无有效 Bios 时不弹输入框、不发请求。
-                    // 注意：此处直接 return 且不 Suppress，将按键交还原版处理。
-                    if (!DialogueBuilder.Instance.PatchNpc(LastSpokenNPC))
-                        return;
-                    bool sameLocation = Game1.player.currentLocation == LastSpokenNPC.currentLocation;
-                    float distance = sameLocation
-                        ? Vector2.Distance(Game1.player.Position, LastSpokenNPC.Position)
-                        : float.MaxValue;
-
-                    if (!sameLocation || distance > 256f)
-                    {
-                        Game1.addHUDMessage(new HUDMessage(
-                            I18n.Follower.TooFarAway(LastSpokenNPC.displayName), 3));
-                    }
-                    else
-                    {
-                        Game1.playSound("bigSelect");
-                        TextInputManager.RequestTextInput($"与 {LastSpokenNPC.displayName} 交谈", LastSpokenNPC);
-                    }
-
-                    Helper.Input.Suppress(e.Button);
+                // 打字态 / 菜单态 / 事件态一律静默放行（IsPlayerFree 已含世界就绪与可移动判定）
+                if (!Context.IsWorldReady || !Context.IsPlayerFree || Game1.activeClickableMenu != null)
                     return;
-                }
+
+                var target = FindTargetNpcForTypedChat();
+                if (target == null) return;
+
+                Helper.Input.Suppress(e.Button);
+
+                // 复核授权（漏斗内已过滤，此处为双保险）
+                if (!DialogueBuilder.Instance.PatchNpc(target)) return;
+
+                Game1.playSound("bigSelect");
+                var displayName = target.displayName ?? target.Name ?? "NPC";
+                var prompt = Util.GetString(DialogueBuilder.Instance.GetCharacter(target), "uiStartConversation",
+                                            new { Name = displayName })
+                             ?? (LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh
+                                 ? $"你想对 {displayName} 说什么？"
+                                 : $"What do you want to say to {displayName}?");
+
+                TextInputManager.RequestTextInput(prompt, target);
             }
 
             // ── Hub 综合中心菜单热键（支持按一次打开，再按一次关闭）──
@@ -952,6 +946,99 @@ namespace ValleytalkReborn
             }
 
             return best;
+        }
+
+        /// <summary>
+        /// 查找邻格范围内最适合发起打字对话的 NPC（Enter 键漏斗）。
+        /// 优先级：正前方格（含 0.8 格容差）> 1.5 格邻域最近者；同距时记忆惯性优先，其次名字序。
+        /// </summary>
+        private static NPC FindTargetNpcForTypedChat()
+        {
+            var loc = Game1.currentLocation;
+            if (loc == null) return null;
+
+            var characters = loc.characters;
+            if (characters == null || characters.Count == 0) return null;
+
+            var player = Game1.player;
+            var baseTile = player.Tile;
+
+            // 手工计算前方格子（与 FindRecruitableFacingNpc 同范式）
+            Vector2 frontTile = player.FacingDirection switch
+            {
+                0 => new Vector2(baseTile.X, baseTile.Y - 1), // Up
+                1 => new Vector2(baseTile.X + 1, baseTile.Y), // Right
+                2 => new Vector2(baseTile.X, baseTile.Y + 1), // Down
+                3 => new Vector2(baseTile.X - 1, baseTile.Y), // Left
+                _ => baseTile
+            };
+
+            // 邻域半径 96 像素 = 1.5 格；DistanceSqToPlayer 返回格²，故阈值取 1.5²
+            const float neighborhoodRangeSq = 1.5f * 1.5f;
+
+            var frontPool = new List<NPC>();
+            var nearPool = new List<NPC>();
+
+            foreach (var npc in characters)
+            {
+                if (npc == null || !npc.IsVillager || DialogueUtilities.IsNpcSleeping(npc))
+                    continue;
+
+                if (npc.IsInvisible || !DialogueBuilder.Instance.PatchNpc(npc))
+                    continue;
+
+                if (npc.Tile == frontTile || Vector2.Distance(npc.Tile, frontTile) <= 0.8f)
+                    frontPool.Add(npc);
+                else if (DialogueUtilities.DistanceSqToPlayer(npc) <= neighborhoodRangeSq)
+                    nearPool.Add(npc);
+            }
+
+            NPC PickNearest(List<NPC> pool)
+            {
+                NPC nearest = null;
+                long nearestDistSq = long.MaxValue;
+
+                foreach (var npc in pool)
+                {
+                    long distSq = DialogueUtilities.DistanceSqToPlayer(npc);
+
+                    if (nearest != null)
+                    {
+                        if (distSq > nearestDistSq)
+                            continue;
+
+                        if (distSq == nearestDistSq)
+                        {
+                            if (ReferenceEquals(nearest, LastSpokenNPC))
+                                continue;
+
+                            if (!ReferenceEquals(npc, LastSpokenNPC)
+                                && StringComparer.Ordinal.Compare(npc.Name, nearest.Name) >= 0)
+                                continue;
+                        }
+                    }
+
+                    nearest = npc;
+                    nearestDistSq = distSq;
+                }
+
+                return nearest;
+            }
+
+            // 第一层：直视格命中——记忆惯性优先，其次最近
+            if (frontPool.Count > 0)
+            {
+                foreach (var npc in frontPool)
+                {
+                    if (ReferenceEquals(npc, LastSpokenNPC))
+                        return npc;
+                }
+
+                return PickNearest(frontPool);
+            }
+
+            // 第二层：邻域最近
+            return nearPool.Count > 0 ? PickNearest(nearPool) : null;
         }
 
         /// <summary>
@@ -1450,7 +1537,6 @@ namespace ValleytalkReborn
                 if (speaker != null)
                 {
                     LastSpokenNPC = speaker;
-                    _lastDialogueCloseTick = Game1.ticks;
                 }
 
                 // VT-UI-002：关框瞬间消费待挂载跟随（pending 取出即清空，最多一次机会）

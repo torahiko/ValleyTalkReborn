@@ -131,12 +131,11 @@ namespace ValleytalkReborn
         public int GiftFrequency { get; set; } = 4;
         /// <summary>自定义输入按钮的挂载模式。VT-UI-002 起语义为"选项区是否附带自定义输入按钮"；设为 Never 时选项区整体不渲染（约会操作按钮不受影响）。</summary>
         public string TypedResponses { get; set; } = "With Generated";
-        /// <summary>开启时 AI 在台词后生成 2~3 个快速回复选项；关闭后除约会操作按钮外不渲染任何响应区，接话走 QuickReplyKey 追问通道。</summary>
+        /// <summary>开启时 AI 在台词后生成 2~3 个快速回复选项；关闭后除约会操作按钮外不渲染任何响应区，接话走 Enter 邻格追问通道。</summary>
         public bool EnableSuggestedResponses { get; set; } = true;
         /// <summary>NPC 选项呈现风格。Vanilla=原版对话框内嵌选项（Stage 1）；Custom=自研浮动选择框（Stage 2）。</summary>
         public ChoiceBoxStyle ChoiceBoxStyle { get; set; } = ChoiceBoxStyle.Custom;
         public SButton InitiateTypedDialogueKey { get; set; } = SButton.LeftAlt;
-        public SButton QuickReplyKey { get; set; } = SButton.Enter;
         /// <summary>面对面快捷招募 NPC / 主动取消 NPC 跟随的双向热键。</summary>
         public SButton DismissFollowerKey { get; set; } = SButton.G;
         /// <summary>唤起四合一综合管理面板（NPC记忆 / 世界记忆 / 农夫档案 / 高级设置），默认定位最近对话 NPC。</summary>

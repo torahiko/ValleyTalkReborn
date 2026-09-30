@@ -323,8 +323,6 @@
   "Memory.CallsignTitle": "Set what {{npcName}} calls you",
   "Memory.AddFailedFull": "Memory slots are full (max {{value}}). Please delete an old memory first.",
   "configSectionKeybinds": "Keybinds & Controls",
-  "configQuickReplyKey": "Quick Reply Key",
-  "configQuickReplyKeyTooltip": "Press this key within 5 seconds of an NPC speaking to send a quick follow-up reply.",
   "DialogueInput.DefaultTitleWithNpc": "Talking with {{npcName}}",
   "configSectionAmbientDialogue": "Ambient & NPC Interactions",
   "configEnableBark": "Enable Ambient Chatter",
