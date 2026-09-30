@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -395,22 +396,21 @@ namespace ValleytalkReborn.UI
             // 约会卡大字号绘制 (21f)
             if (_showDateOption)
             {
-                DrawStableActionButton(b, _dateRect, _dateLabel, ref _dateHoverScale, mx, my, isRomantic: true, fontSize: CardFontSize);
+                ActionButtonRenderer.Draw(b, _dateRect, _dateLabel, ref _dateHoverScale, mx, my, style: ActionButtonStyle.Romantic, fontSize: CardFontSize);
             }
 
             // 建议卡大字号绘制 (21f)
+            var scales = CollectionsMarshal.AsSpan(_suggestionHoverScales);
             for (int i = 0; i < _suggestionRects.Count; i++)
             {
-                float hoverScale = _suggestionHoverScales[i];
-                DrawStableActionButton(b, _suggestionRects[i], _suggestions[i], ref hoverScale, mx, my, fontSize: CardFontSize);
-                _suggestionHoverScales[i] = hoverScale;
+                ActionButtonRenderer.Draw(b, _suggestionRects[i], _suggestions[i], ref scales[i], mx, my, fontSize: CardFontSize);
             }
 
             _inputBox.Draw(b);
 
             // 动作按钮字号绘制 (18f)
-            DrawStableActionButton(b, _sendRect, _sendLabel, ref _sendHoverScale, mx, my, isPrimary: true, fontSize: ButtonFontSize);
-            DrawStableActionButton(b, _silenceRect, _silenceLabel, ref _silenceHoverScale, mx, my, isDanger: true, fontSize: ButtonFontSize);
+            ActionButtonRenderer.Draw(b, _sendRect, _sendLabel, ref _sendHoverScale, mx, my, style: ActionButtonStyle.Primary, fontSize: ButtonFontSize);
+            ActionButtonRenderer.Draw(b, _silenceRect, _silenceLabel, ref _silenceHoverScale, mx, my, style: ActionButtonStyle.Danger, fontSize: ButtonFontSize);
 
             // 悬停气泡提示处理
             if (_hasFriendship && !_friendshipJewel.IsEmpty && _friendshipJewel.Contains(mx, my))
@@ -499,112 +499,6 @@ namespace ValleytalkReborn.UI
             int xPositionOfPortraitArea = xPositionOnScreen + width - 448 + 4;
             int textWidth = (xPositionOfPortraitArea - 40 - 20) - textLeft;
             b.Draw(Game1.staminaRect, new Rectangle(textLeft, sepY, textWidth, 1), Color.Gray * 0.35f);
-        }
-
-        private static void DrawStableActionButton(
-            SpriteBatch b,
-            Rectangle rect,
-            string label,
-            ref float hoverScale,
-            int mx, int my,
-            bool isPrimary = false,
-            bool isRomantic = false,
-            bool isDanger = false,
-            float fontSize = 0f)
-        {
-            bool isHover = rect.Contains(mx, my);
-            bool isPressed = isHover && Game1.input.GetMouseState().LeftButton == ButtonState.Pressed;
-
-            float targetScale = (isHover && !isPressed) ? 1.025f : 1.0f;
-            hoverScale += (targetScale - hoverScale) * 0.25f;
-
-            int drawW = (int)MathF.Round(rect.Width * hoverScale);
-            int drawH = (int)MathF.Round(rect.Height * hoverScale);
-            int drawX = rect.X - (drawW - rect.Width) / 2;
-            int drawY = rect.Y - (drawH - rect.Height) / 2;
-            int pressOffset = isPressed ? 1 : 0;
-
-            if (!isPressed)
-            {
-                int shadowY = isHover ? 3 : 2;
-                b.Draw(Game1.staminaRect,
-                    new Rectangle(drawX + 1, drawY + shadowY, drawW, drawH),
-                    Color.Black * (isHover ? 0.20f : 0.12f));
-            }
-
-            Color bg;
-            if (isDanger)
-            {
-                bg = isHover ? new Color(245, 130, 125) : new Color(225, 100, 95);
-            }
-            else if (isRomantic)
-            {
-                bg = isHover ? new Color(255, 225, 235) : new Color(245, 205, 215);
-            }
-            else if (isPrimary)
-            {
-                bg = isHover ? new Color(255, 232, 120) : new Color(255, 210, 115);
-            }
-            else
-            {
-                bg = isHover ? new Color(255, 248, 235) : new Color(236, 215, 185);
-            }
-
-            if (isPressed)
-                bg = Color.Lerp(bg, Color.Black, 0.12f);
-
-            var dynamicBox = new Rectangle(drawX + pressOffset, drawY + pressOffset, drawW, drawH);
-            b.Draw(Game1.staminaRect,
-                new Rectangle(dynamicBox.X + 1, dynamicBox.Y + 1, dynamicBox.Width - 2, dynamicBox.Height - 2),
-                bg);
-
-            Color borderCol;
-            if (isDanger)
-            {
-                borderCol = isHover ? new Color(205, 65, 60) : new Color(175, 50, 45);
-            }
-            else if (isRomantic)
-            {
-                borderCol = isHover ? new Color(230, 110, 140) : new Color(200, 120, 140);
-            }
-            else if (isPrimary)
-            {
-                borderCol = isHover ? new Color(245, 160, 30) : new Color(205, 140, 45);
-            }
-            else
-            {
-                borderCol = isHover ? new Color(225, 150, 50) : new Color(190, 155, 115);
-            }
-
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-                dynamicBox.X, dynamicBox.Y, dynamicBox.Width, dynamicBox.Height,
-                borderCol, 3f, false);
-
-            var stableTextBounds = new Rectangle(rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height);
-
-            // ★ 支持显式字阶，精准居中绘制
-            if (fontSize > 0f)
-            {
-                Color textCol = isDanger ? BioEditorMenu.TextOnDarkBtn : BioEditorMenu.TextPrimary;
-                bool useBold = isPrimary || isRomantic;
-                Vector2 sz = useBold 
-                    ? CustomFontManager.MeasureStringBold(label, fontSize) 
-                    : CustomFontManager.MeasureString(label, fontSize);
-
-                Vector2 pos = new Vector2(
-                    stableTextBounds.X + (stableTextBounds.Width - sz.X) / 2f,
-                    stableTextBounds.Y + (stableTextBounds.Height - sz.Y) / 2f - 1f
-                );
-
-                if (useBold)
-                    CustomFontManager.DrawStringBold(b, label, pos, textCol, fontSize);
-                else
-                    CustomFontManager.DrawString(b, label, pos, textCol, fontSize);
-            }
-            else
-            {
-                ButtonTextRenderer.DrawButtonText(b, label, stableTextBounds, BioEditorMenu.TextPrimary, useBold: isPrimary || isRomantic);
-            }
         }
 
         private void Submit(string text)
