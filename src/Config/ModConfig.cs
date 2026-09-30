@@ -128,8 +128,9 @@ namespace ValleytalkReborn
         public int GeneralFrequency { get; set; } = 4;
         public int MarriageFrequency { get; set; } = 4;
         public int GiftFrequency { get; set; } = 4;
+        /// <summary>自定义输入按钮的挂载模式。VT-UI-002 起语义为"选项区是否附带自定义输入按钮"；设为 Never 时选项区整体不渲染（约会操作按钮不受影响）。</summary>
         public string TypedResponses { get; set; } = "With Generated";
-        /// <summary>开启时 AI 在台词后生成 2~3 个快速回复选项；关闭后仅保留"保持沉默"与手动输入，省 Token、降低小模型幻觉。</summary>
+        /// <summary>开启时 AI 在台词后生成 2~3 个快速回复选项；关闭后除约会操作按钮外不渲染任何响应区，接话走 QuickReplyKey 追问通道。</summary>
         public bool EnableSuggestedResponses { get; set; } = true;
         public SButton InitiateTypedDialogueKey { get; set; } = SButton.LeftAlt;
         public SButton QuickReplyKey { get; set; } = SButton.Enter;

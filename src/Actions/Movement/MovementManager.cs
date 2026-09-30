@@ -32,6 +32,12 @@ namespace ValleytalkReborn
 
         private readonly MovementCoordinator _coordinator = new();
 
+        /// <summary>
+        /// VT-UI-002：待挂载跟随的 NPC 名（Memory 域，会话瞬态，不持久化、不进 ModData）。
+        /// 由对话生成管线写入，由 Display.MenuChanged 主线程回调消费。
+        /// </summary>
+        private string _pendingFollowNpcName;
+
         // ─── Callback forwarding (DialogueCoordinator sets these) ───
 
         internal Action<NPC> OnFollowStartedCallback
@@ -57,6 +63,39 @@ namespace ValleytalkReborn
         public bool IsMoving            => _coordinator.GotoTracker.ActiveCount > 0;
 
         public bool IsFollowing(NPC npc) => _coordinator.FollowTracker.IsFollowing(npc);
+
+        /// <summary>
+        /// VT-UI-002：登记一个待挂载的跟随目标。直接赋值引用（原子），允许被后续对话覆盖。
+        /// </summary>
+        internal void SetPendingFollow(string npcName)
+        {
+            _pendingFollowNpcName = npcName;
+        }
+
+        /// <summary>
+        /// VT-UI-002：取出即清空——无论名字是否匹配，本次调用后 pending 一律清空，
+        /// 保证最多一次挂载机会；仅 OrdinalIgnoreCase 相等时返回 true。
+        /// </summary>
+        internal bool TryConsumePendingFollow(string npcName)
+        {
+            string pending = _pendingFollowNpcName;
+            _pendingFollowNpcName = null;
+
+            if (string.IsNullOrEmpty(pending) || string.IsNullOrEmpty(npcName))
+            {
+                return false;
+            }
+
+            bool matched = string.Equals(pending, npcName, StringComparison.OrdinalIgnoreCase);
+            if (!matched)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[MovementManager] Pending follow discarded: pending={pending}, speaker={npcName}",
+                    LogLevel.Trace);
+            }
+
+            return matched;
+        }
 
         // ─── Lifecycle (SMAPI events stay in shell) ───
 

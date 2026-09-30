@@ -1453,6 +1453,14 @@ namespace ValleytalkReborn
                     _lastDialogueCloseTick = Game1.ticks;
                 }
 
+                // VT-UI-002：关框瞬间消费待挂载跟随（pending 取出即清空，最多一次机会）
+                if (speaker != null
+                    && !MovementManager.Instance.HasActiveFollow
+                    && MovementManager.Instance.TryConsumePendingFollow(speaker.Name))
+                {
+                    DialogueBuilder.TryStartFollowForContext(speaker);
+                }
+
                 // 修复：对话框关闭后清除 currentSpeaker，防止原版引擎误判为可对话
                 if (Game1.currentSpeaker != null)
                 {

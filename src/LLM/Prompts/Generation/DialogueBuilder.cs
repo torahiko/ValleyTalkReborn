@@ -379,7 +379,9 @@ namespace ValleytalkReborn
                 {
                     if (theLine[i] == null) continue;
                     if (theLine[i].Contains("[UI:DATE_INVITE]")) { allowDateUI = true;  theLine[i] = theLine[i].Replace("[UI:DATE_INVITE]", "").Trim(); }
-                    if (theLine[i].Contains("[UI:FOLLOW]"))      { allowFollowUI = true; theLine[i] = theLine[i].Replace("[UI:FOLLOW]", "").Trim(); }
+                    // VT-UI-002：跟随不再渲染确认按钮，改为登记 pending，由对话框关闭时自动挂载。
+                    if (theLine[i].Contains("[UI:FOLLOW]"))      { allowFollowUI = true; theLine[i] = theLine[i].Replace("[UI:FOLLOW]", "").Trim();
+                        MovementManager.Instance.SetPendingFollow(instance.Name); }
                     if (theLine[i].Contains("[UI:DATE_INVITE_REJECT]")) { dateInviteRejected = true; theLine[i] = theLine[i].Replace("[UI:DATE_INVITE_REJECT]", "").Trim(); }
                 }
             }
@@ -689,8 +691,28 @@ namespace ValleytalkReborn
             // 确保截断预算只花在有效对白上，且泄漏内容绝不进入对话框与历史记录。
             theLine[0] = SanitizeAndValidateNpcSpeech(theLine[0], speakerName);
 
+            // 🌟【VT-UI-002 响应区渲染矩阵】先算出本轮到底要不要挂响应区，再决定分页预算。
+            // allowFollowUI：VT-UI-002 跟随转为 pending 自动挂载，此处不再参与按钮判定。
+            bool suggestionsEnabled = ModEntry.Config.EnableSuggestedResponses;
+            int suggestionCount = 0;
+            if (suggestionsEnabled)
+            {
+                int maxSuggestions = Math.Min(theLine.Length, 4); // 取 1 到 3
+                for (int i = 1; i < maxSuggestions; i++)
+                {
+                    if (string.IsNullOrWhiteSpace(theLine[i])) continue;
+                    suggestionCount++;
+                }
+            }
+            bool hasChoices = suggestionsEnabled && suggestionCount > 0 && ModEntry.Config.TypedResponses != "Never";
+            bool showDateBtn = allowDateUI && DateManager.Instance.Phase == DatePhase.None;
+            bool willAppendResponses = hasChoices || showDateBtn;
+
+            ModEntry.SMonitor?.Log(
+                $"[FormatLine] responses: choices={hasChoices}, count={suggestionCount}, silent=True, typed={hasChoices}, date={showDateBtn} for {speakerName}",
+                LogLevel.Trace);
+
             // 🌟【强力防抽风 1】：NPC 台词分页与超长字符限制
-            bool willAppendResponses = !(ModEntry.Config.TypedResponses == "Never" && !allowDateUI && !allowFollowUI);
             int npcPageBudget = willAppendResponses ? MaxDialoguePages - 1 : MaxDialoguePages;
 
             string npcSpeech = theLine[0];
@@ -732,7 +754,7 @@ namespace ValleytalkReborn
             }
             theLine[0] = npcSpeech;
 
-            if (ModEntry.Config.TypedResponses == "Never" && !allowDateUI && !allowFollowUI)
+            if (!willAppendResponses)
             {
                 return theLine[0];
             }
@@ -744,7 +766,7 @@ namespace ValleytalkReborn
             sb.Append($"#$r -999999 0 {SldConstants.DialogueKeyPrefix}Silent#{Util.GetString("outputStaySilent")}");
 
             // 🌟【强力防抽风 2】：限制快捷建议选项数量，最多只展示前 3 个，避免选项填满甚至超出屏幕
-            if (ModEntry.Config.EnableSuggestedResponses)
+            if (hasChoices)
             {
                 int maxSuggestions = Math.Min(theLine.Length, 4); // 取 1 到 3
                 for (int i = 1; i < maxSuggestions; i++)
@@ -754,7 +776,7 @@ namespace ValleytalkReborn
                     sb.Append(theLine[i]);
                 }
             }
-            if (ModEntry.Config.TypedResponses != "Never")
+            if (hasChoices)
             {
                 sb.Append($"#$r -999997 0 {SldConstants.DialogueKeyPrefix}TypedResponse#{Util.GetString("uiTypeYourResponse")}");
             }
@@ -762,16 +784,10 @@ namespace ValleytalkReborn
             bool isZh = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
 
             // 根据意图许可标记，动态追加确定性操作按键
-            if (allowDateUI && DateManager.Instance.Phase == DatePhase.None)
+            if (showDateBtn)
             {
                 string dateBtn = isZh ? "【敲定约会地点...】" : "【Choose Date Location...】";
                 sb.Append($"#$r -999994 0 {SldConstants.DialogueKeyPrefix}ActionOpenDateMenu#{dateBtn}");
-            }
-
-            if (allowFollowUI && MovementManager.Instance != null && !MovementManager.Instance.HasActiveFollow)
-            {
-                string followBtn = isZh ? "【好的，跟上我吧】" : "【Come with me then】";
-                sb.Append($"#$r -999995 0 {SldConstants.DialogueKeyPrefix}ActionConfirmFollow#{followBtn}");
             }
 
             return sb.ToString();
@@ -839,16 +855,6 @@ namespace ValleytalkReborn
                 Game1.player.forceCanMove();
 
                 Game1.activeClickableMenu = new DateLocationPickerMenu(npc);
-                return true;
-            }
-
-            if (responseKey.EndsWith("ActionConfirmFollow", StringComparison.OrdinalIgnoreCase))
-            {
-                Game1.dialogueUp = false;
-                Game1.activeClickableMenu = null;
-                Game1.player.forceCanMove();
-
-                TryStartFollowForContext(npc);
                 return true;
             }
 
