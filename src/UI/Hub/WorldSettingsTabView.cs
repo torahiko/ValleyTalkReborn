@@ -27,6 +27,8 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
     private Rectangle _rightPageWorkingArea;
     private Rectangle _saveBtnRect;
     private Rectangle _resetBtnRect;
+    private float _saveHoverScale = 1f;
+    private float _resetHoverScale = 1f;
 
     private WorldSettingsSubPage _currentSubPage;
     private readonly Rectangle[] _subPageRects = new Rectangle[3];
@@ -214,13 +216,8 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
         DrawLeftColumn(b, mx, my);
         DrawRightColumn(b, mx, my);
 
-        string saveBtnText = I18n.WorldSettings.SaveButton();
-        var (fittedSave, saveScale) = FitTextToWidth(saveBtnText, _saveBtnRect.Width - 16, CustomFontManager.SizeRegular, true);
-        DrawActionButton(b, _saveBtnRect, fittedSave, mx, my, isPrimary: true, scale: saveScale);
-
-        string resetBtnText = I18n.WorldSettings.ResetButton();
-        var (fittedReset, resetScale) = FitTextToWidth(resetBtnText, _resetBtnRect.Width - 16, CustomFontManager.SizeRegular, true);
-        DrawActionButton(b, _resetBtnRect, fittedReset, mx, my, isPrimary: false, scale: resetScale);
+        ActionButtonRenderer.Draw(b, _saveBtnRect, I18n.WorldSettings.SaveButton(), ref _saveHoverScale, mx, my, style: ActionButtonStyle.Primary, fontSize: CustomFontManager.SizeRegular, isEnabled: true);
+        ActionButtonRenderer.Draw(b, _resetBtnRect, I18n.WorldSettings.ResetButton(), ref _resetHoverScale, mx, my, style: ActionButtonStyle.Default, fontSize: CustomFontManager.SizeRegular, isEnabled: true);
     }
 
     private void DrawLeftColumn(SpriteBatch b, int mx, int my)
@@ -362,40 +359,6 @@ internal sealed class WorldSettingsTabView : HubTabViewBase
             RulesTheme.SurfacePanel);
         IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
             rect.X, rect.Y, rect.Width, rect.Height, RulesTheme.BorderSoft, 2f, false);
-    }
-
-    private static void DrawActionButton(SpriteBatch b, Rectangle rect, string label, int mx, int my,
-        bool isPrimary = false, bool isEnabled = true, float scale = 1f)
-    {
-        bool isHover = isEnabled && rect.Contains(mx, my);
-        bool isPressed = isHover && Mouse.GetState().LeftButton == ButtonState.Pressed;
-        int pressOffset = isPressed ? 1 : 0;
-
-        Color bg = !isEnabled ? new Color(225, 215, 200)
-                 : isPressed ? RulesTheme.SurfaceSunken
-                 : isPrimary ? (isHover ? RulesTheme.SurfaceHover : RulesTheme.SurfaceActive)
-                 : (isHover ? RulesTheme.SurfaceHover : RulesTheme.SurfaceCard);
-
-        Color borderCol = !isEnabled ? RulesTheme.BorderSoft
-                        : isPressed ? RulesTheme.BorderBold
-                        : isPrimary ? (isHover ? RulesTheme.BorderBold : RulesTheme.BorderMid)
-                        : (isHover ? RulesTheme.BorderMid : RulesTheme.BorderSoft);
-
-        if (!isPressed && isEnabled)
-        {
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1, rect.Y + 2, rect.Width, rect.Height), RulesTheme.Shadow);
-        }
-
-        var drawRect = new Rectangle(rect.X, rect.Y + pressOffset, rect.Width, rect.Height);
-
-        b.Draw(Game1.staminaRect, new Rectangle(drawRect.X + 1, drawRect.Y + 1, drawRect.Width - 2, drawRect.Height - 2), bg);
-        IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-            drawRect.X, drawRect.Y, drawRect.Width, drawRect.Height, borderCol, 2f, false);
-
-        var sz = CustomFontManager.MeasureStringBold(label, CustomFontManager.SizeRegular) * scale;
-        CustomFontManager.DrawStringBold(b, label,
-            new Vector2(drawRect.X + (drawRect.Width - sz.X) / 2f, drawRect.Y + (drawRect.Height - sz.Y) / 2f),
-            isEnabled ? RulesTheme.TextCharcoal : RulesTheme.TextMuted, CustomFontManager.SizeRegular, scale: scale);
     }
 
     private static string GetSubPageLabel(WorldSettingsSubPage page) => page switch

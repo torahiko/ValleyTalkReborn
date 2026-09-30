@@ -27,6 +27,7 @@ internal sealed class RulesTabView : IHubTabView
     private Rectangle _addBtnRect;
     private Rectangle _archiveBtnRect;
     private Rectangle _saveAndExitBtnRect;
+    private float _saveAndExitHoverScale = 1f;
 
     // ── 左栏状态（Scope） ──
     private record ScopeItem(string Id, string DisplayName, Texture2D? Sprite, Rectangle SourceRect, Rectangle? IconRect = null);
@@ -61,6 +62,8 @@ internal sealed class RulesTabView : IHubTabView
 
     private Rectangle _saveBtnRect;
     private Rectangle _deleteBtnRect;
+    private float _saveHoverScale = 1f;
+    private float _deleteHoverScale = 1f;
 
     public string HoveredTooltip { get; private set; } = "";
 
@@ -850,7 +853,7 @@ internal sealed class RulesTabView : IHubTabView
         DrawRightColumn(b, mx, my);
 
         // ── 底部操作区 ──
-        DrawActionButton(b, _saveAndExitBtnRect, "✔ 保存并退出", mx, my, isPrimary: true);
+        ActionButtonRenderer.Draw(b, _saveAndExitBtnRect, "✔ 保存并退出", ref _saveAndExitHoverScale, mx, my, style: ActionButtonStyle.Primary, fontSize: CustomFontManager.SizeRegular, isEnabled: true);
 
         string curScope = _scopeItems[_selectedScopeIndex].Id;
         int archivedCount = RuleArchiveManager.GetArchivedRules(curScope).Count;
@@ -1268,8 +1271,8 @@ internal sealed class RulesTabView : IHubTabView
             HoveredTooltip = isBehavior ? "行为准则属于核心长期约束，固定永久生效" : "【指定天数】设定在 N 天后过期并自动归档";
 
         // 3. 底部主操作按钮
-        DrawActionButton(b, _saveBtnRect, "✔ 保存修改", mx, my, isPrimary: true);
-        DrawActionButton(b, _deleteBtnRect, "删除规则", mx, my, isDanger: true);
+        ActionButtonRenderer.Draw(b, _saveBtnRect, "✔ 保存修改", ref _saveHoverScale, mx, my, style: ActionButtonStyle.Primary, fontSize: CustomFontManager.SizeRegular, isEnabled: true);
+        ActionButtonRenderer.Draw(b, _deleteBtnRect, "删除规则", ref _deleteHoverScale, mx, my, style: ActionButtonStyle.Danger, fontSize: CustomFontManager.SizeRegular, isEnabled: true);
     }
 
     private static void DrawMiniBadge(SpriteBatch b, ref int curX, int y, string text, Color bgCol, Color borderCol, Color textCol)
@@ -1338,54 +1341,6 @@ internal sealed class RulesTabView : IHubTabView
         CustomFontManager.DrawString(b, label,
             new Vector2(drawRect.X + (drawRect.Width - sz.X) / 2f, drawRect.Y + (drawRect.Height - sz.Y) / 2f),
             textCol, CustomFontManager.SizeSmall);
-    }
-
-    private static void DrawActionButton(SpriteBatch b, Rectangle rect, string label, int mx, int my,
-        bool isPrimary = false, bool isDanger = false)
-    {
-        bool isHover = rect.Contains(mx, my);
-        bool isPressed = isHover && Mouse.GetState().LeftButton == ButtonState.Pressed;
-        int pressOffset = isPressed ? 1 : 0;
-
-        Color bg;
-        if (isDanger)
-        {
-            bg = isPressed ? RulesTheme.SurfaceSunken
-               : isHover ? RulesTheme.SurfaceDangerHover
-               : RulesTheme.SurfaceDanger;
-        }
-        else if (isPrimary)
-        {
-            bg = isPressed ? RulesTheme.SurfaceSunken
-               : isHover ? RulesTheme.SurfaceHover
-               : RulesTheme.SurfaceActive;
-        }
-        else
-        {
-            bg = isPressed ? RulesTheme.SurfaceSunken
-               : isHover ? RulesTheme.SurfaceHover
-               : RulesTheme.SurfaceCard;
-        }
-
-        Color borderCol = isDanger ? (isPressed ? RulesTheme.BorderBold : RulesTheme.AccentRed)
-                        : isPrimary ? (isPressed ? RulesTheme.BorderBold : (isHover ? RulesTheme.BorderBold : RulesTheme.BorderMid))
-                        : (isPressed ? RulesTheme.BorderBold : (isHover ? RulesTheme.BorderMid : RulesTheme.BorderSoft));
-
-        if (!isPressed)
-        {
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1, rect.Y + 2, rect.Width, rect.Height), RulesTheme.Shadow);
-        }
-
-        var drawRect = new Rectangle(rect.X, rect.Y + pressOffset, rect.Width, rect.Height);
-
-        b.Draw(Game1.staminaRect, new Rectangle(drawRect.X + 1, drawRect.Y + 1, drawRect.Width - 2, drawRect.Height - 2), bg);
-        IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-            drawRect.X, drawRect.Y, drawRect.Width, drawRect.Height, borderCol, 2f, false);
-
-        var sz = CustomFontManager.MeasureStringBold(label, CustomFontManager.SizeRegular);
-        CustomFontManager.DrawStringBold(b, label,
-            new Vector2(drawRect.X + (drawRect.Width - sz.X) / 2f, drawRect.Y + (drawRect.Height - sz.Y) / 2f),
-            isDanger ? RulesTheme.AccentRed : RulesTheme.TextPrimary, CustomFontManager.SizeRegular);
     }
 
     private static void DrawArchiveButtonWithBadge(SpriteBatch b, Rectangle rect, string label, int count, int maxCapacity, int mx, int my)
