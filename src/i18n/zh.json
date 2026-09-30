@@ -186,7 +186,7 @@
   "Bio.StopHover": "立即停止模型推理，已生成的内容将保留供编辑。",
   "Bio.SuccessSubtitle": "生成完成：可在下方自由修改，满意后点击应用。",
   "Bio.Tab1": "1. 身份",
-  "Bio.Tab1Section": "身份与心理矛盾（保留 [IDENTITY] 与 [PSYCHOLOGICAL CONFLICTS] 分节符）",
+  "Bio.Tab1Section": "身份与心理矛盾",
   "Bio.Tab2": "2. 言行",
   "Bio.Tab2BehaviorSection": "行为规则 (BehavioralRules)",
   "Bio.Tab2DialogueSection": "对白范例 (Dialogue)",

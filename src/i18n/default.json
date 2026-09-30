@@ -186,7 +186,7 @@
   "Bio.StopHover": "Stops the model now; text generated so far is kept for editing.",
   "Bio.SuccessSubtitle": "Generation complete: edit freely below, then apply when satisfied.",
   "Bio.Tab1": "1. Identity",
-  "Bio.Tab1Section": "Identity & inner conflict — keep the [IDENTITY] and [PSYCHOLOGICAL CONFLICTS] sections",
+  "Bio.Tab1Section": "Identity & inner conflict",
   "Bio.Tab2": "2. Behavior",
   "Bio.Tab2BehaviorSection": "Behavior rules (BehavioralRules)",
   "Bio.Tab2DialogueSection": "Dialogue examples (Dialogue)",
