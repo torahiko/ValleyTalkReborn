@@ -121,6 +121,13 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
     private Rectangle _btnDelete;
     private Rectangle _btnNew;
 
+    private float _hover_ModeLocationsBtn = 1f;
+    private float _hover_ModeFestivalsBtn = 1f;
+    private float _hover_BtnSave = 1f;
+    private float _hover_BtnRevert = 1f;
+    private float _hover_BtnDelete = 1f;
+    private float _hover_BtnNew = 1f;
+
     private string? _statusMessage;
 
     private static bool IsZh => LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
@@ -639,35 +646,12 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
     private void DrawModeSwitcher(SpriteBatch b, int mx, int my)
     {
         string locModeText = I18n.WorldSettings.LocationFestivalPage.ModeLocations();
-        var (fittedLoc, locScale) = WorldSettingsTabView.FitTextToWidth(locModeText, _modeLocationsBtnRect.Width - 16, CustomFontManager.SizeSmall, true);
-        DrawTabPill(b, _modeLocationsBtnRect, fittedLoc, _currentMode == ViewMode.Locations, mx, my, locScale);
+        ActionButtonRenderer.Draw(b, _modeLocationsBtnRect, locModeText, ref _hover_ModeLocationsBtn, mx, my,
+            style: _currentMode == ViewMode.Locations ? ActionButtonStyle.Primary : ActionButtonStyle.Default, fontSize: CustomFontManager.SizeSmall);
 
         string festModeText = I18n.WorldSettings.LocationFestivalPage.ModeFestivals();
-        var (fittedFest, festScale) = WorldSettingsTabView.FitTextToWidth(festModeText, _modeFestivalsBtnRect.Width - 16, CustomFontManager.SizeSmall, true);
-        DrawTabPill(b, _modeFestivalsBtnRect, fittedFest, _currentMode == ViewMode.Festivals, mx, my, festScale);
-    }
-
-    private static void DrawTabPill(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my, float scale = 1f)
-    {
-        bool isHover = rect.Contains(mx, my);
-        Color bg = isActive ? RulesTheme.SurfaceActive : (isHover ? RulesTheme.SurfaceHover : RulesTheme.SurfaceCard);
-        Color border = isActive ? RulesTheme.BorderBold : (isHover ? RulesTheme.BorderMid : RulesTheme.BorderSoft);
-
-        b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1, rect.Y + 1, rect.Width - 2, rect.Height - 2), bg);
-        IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-            rect.X, rect.Y, rect.Width, rect.Height, border, 2f, false);
-
-        if (isActive)
-        {
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 3, rect.Bottom - 3, rect.Width - 6, 2), RulesTheme.AccentGold);
-        }
-
-        var sz = CustomFontManager.MeasureStringBold(label, CustomFontManager.SizeSmall) * scale;
-        Color textCol = isActive ? RulesTheme.TextCharcoal : DarkGrayText;
-
-        CustomFontManager.DrawStringBold(b, label,
-            new Vector2(rect.X + (rect.Width - sz.X) / 2f, rect.Y + (rect.Height - sz.Y) / 2f),
-            textCol, CustomFontManager.SizeSmall, scale: scale);
+        ActionButtonRenderer.Draw(b, _modeFestivalsBtnRect, festModeText, ref _hover_ModeFestivalsBtn, mx, my,
+            style: _currentMode == ViewMode.Festivals ? ActionButtonStyle.Primary : ActionButtonStyle.Default, fontSize: CustomFontManager.SizeSmall);
     }
 
     private void DrawLeftList(SpriteBatch b, int mx, int my)
@@ -832,8 +816,10 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
             DrawFieldLabel(b, "场景氛围与环境描写 (AI 将根据此描述感知周围)", lx, (int)_descBox.Position.Y - 22);
             _descBox.Draw(b);
 
-            DrawFormButton(b, _btnSave, "✔ 保存描述", mx, my, isPrimary: true);
-            DrawFormButton(b, _btnRevert, "↺ 还原原版", mx, my, isPrimary: false, isEnabled: loc.HasCustomOverlay);
+            ActionButtonRenderer.Draw(b, _btnSave, "✔ 保存描述", ref _hover_BtnSave, mx, my, style: ActionButtonStyle.Primary, fontSize: CustomFontManager.SizeSmall);
+            ActionButtonRenderer.Draw(b, _btnRevert, "↺ 还原原版", ref _hover_BtnRevert, mx, my,
+                style: loc.HasCustomOverlay ? ActionButtonStyle.Default : ActionButtonStyle.Disabled,
+                fontSize: CustomFontManager.SizeSmall, isEnabled: loc.HasCustomOverlay);
 
             if (!string.IsNullOrEmpty(_statusMessage))
             {
@@ -867,15 +853,23 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
             var conflictFest = GetConflictingFestival(_selectedSeason, _dayStepper.Value);
             bool canSave = !string.IsNullOrWhiteSpace(_festNameBox.Text);
 
-            DrawFormButton(b, _btnSave, "✔ 保存节日", mx, my, isPrimary: true, isEnabled: canSave && conflictFest == null);
-            DrawFormButton(b, _btnRevert, "↺ 还原节日", mx, my, isPrimary: false, isEnabled: !_isCreatingNewFest && fest?.IsBaseline == true);
+            ActionButtonRenderer.Draw(b, _btnSave, "✔ 保存节日", ref _hover_BtnSave, mx, my,
+                style: canSave && conflictFest == null ? ActionButtonStyle.Primary : ActionButtonStyle.Disabled,
+                fontSize: CustomFontManager.SizeSmall, isEnabled: canSave && conflictFest == null);
+            ActionButtonRenderer.Draw(b, _btnRevert, "↺ 还原节日", ref _hover_BtnRevert, mx, my,
+                style: !_isCreatingNewFest && fest?.IsBaseline == true ? ActionButtonStyle.Default : ActionButtonStyle.Disabled,
+                fontSize: CustomFontManager.SizeSmall, isEnabled: !_isCreatingNewFest && fest?.IsBaseline == true);
 
             // ★ 核心改动：原版节日不可删除（置灰呈现），仅自创节日支持删除
             string deleteBtnText = _isCreatingNewFest ? (IsZh ? "取消新建" : "Cancel") : (IsZh ? "删除节日" : "Delete Festival");
             bool canDelete = _isCreatingNewFest || (fest?.IsCustom == true);
-            DrawFormButton(b, _btnDelete, deleteBtnText, mx, my, isPrimary: false, isEnabled: canDelete, isDanger: fest?.IsCustom == true);
+            ActionButtonRenderer.Draw(b, _btnDelete, deleteBtnText, ref _hover_BtnDelete, mx, my,
+                style: !canDelete ? ActionButtonStyle.Disabled
+                     : (fest?.IsCustom == true) ? ActionButtonStyle.Danger
+                     : ActionButtonStyle.Default,
+                fontSize: CustomFontManager.SizeSmall, isEnabled: canDelete);
 
-            DrawFormButton(b, _btnNew, "+ 新建节日", mx, my, isPrimary: false);
+            ActionButtonRenderer.Draw(b, _btnNew, "+ 新建节日", ref _hover_BtnNew, mx, my, style: ActionButtonStyle.Default, fontSize: CustomFontManager.SizeSmall);
 
             Vector2 statusPos = new(lx + 5, _btnSave.Y - 27);
 
@@ -1042,41 +1036,6 @@ internal sealed class LocationFestivalPage : WorldSubPageBase
         {
             b.Draw(Game1.staminaRect, new Rectangle((int)(boxRect.X + 8 + sz.X + 1), boxRect.Y + 6, 2, boxRect.Height - 12), RulesTheme.TextPrimary);
         }
-    }
-
-    private static void DrawFormButton(SpriteBatch b, Rectangle rect, string label, int mx, int my,
-        bool isPrimary = false, bool isEnabled = true, bool isDanger = false)
-    {
-        bool isHover = isEnabled && rect.Contains(mx, my);
-        bool isPressed = isHover && Mouse.GetState().LeftButton == ButtonState.Pressed;
-        int pressOffset = isPressed ? 1 : 0;
-
-        Color bg = !isEnabled ? new Color(225, 215, 200)
-                 : isDanger ? (isHover ? RulesTheme.SurfaceDangerHover : RulesTheme.SurfaceDanger)
-                 : isPressed ? RulesTheme.SurfaceSunken
-                 : isPrimary ? (isHover ? RulesTheme.SurfaceHover : RulesTheme.SurfaceActive)
-                 : (isHover ? RulesTheme.SurfaceHover : RulesTheme.SurfaceCard);
-
-        Color border = !isEnabled ? RulesTheme.BorderSoft
-                     : isDanger ? RulesTheme.AccentRed
-                     : isPressed ? RulesTheme.BorderBold
-                     : isPrimary ? (isHover ? RulesTheme.BorderBold : RulesTheme.BorderMid)
-                     : (isHover ? RulesTheme.BorderMid : RulesTheme.BorderSoft);
-
-        if (!isPressed && isEnabled)
-        {
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1, rect.Y + 2, rect.Width, rect.Height), RulesTheme.Shadow);
-        }
-
-        var drawRect = new Rectangle(rect.X, rect.Y + pressOffset, rect.Width, rect.Height);
-        b.Draw(Game1.staminaRect, new Rectangle(drawRect.X + 1, drawRect.Y + 1, drawRect.Width - 2, drawRect.Height - 2), bg);
-        IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-            drawRect.X, drawRect.Y, drawRect.Width, drawRect.Height, border, 2f, false);
-
-        var sz = CustomFontManager.MeasureStringBold(label, CustomFontManager.SizeSmall);
-        CustomFontManager.DrawStringBold(b, label,
-            new Vector2(drawRect.X + (drawRect.Width - sz.X) / 2f, drawRect.Y + (drawRect.Height - sz.Y) / 2f),
-            isEnabled ? RulesTheme.TextCharcoal : RulesTheme.TextMuted, CustomFontManager.SizeSmall);
     }
 
     // ── 缓存与数据层同步 ──

@@ -68,6 +68,11 @@ internal sealed class DateAmbiencePage : WorldSubPageBase
     private Rectangle _btnDelete;
     private Rectangle _btnNew;
 
+    private float _hover_BtnSave = 1f;
+    private float _hover_BtnRevert = 1f;
+    private float _hover_BtnDelete = 1f;
+    private float _hover_BtnNew = 1f;
+
     // 表单工作数据
     private string _currentMap = "Town";
     private int _startVal = 1800;
@@ -497,20 +502,20 @@ internal sealed class DateAmbiencePage : WorldSubPageBase
 
         // 6. 底部四个按钮
         string saveBtnText = I18n.WorldSettings.DateAmbiencePage.SaveButton();
-        var (fittedSave, saveScale) = WorldSettingsTabView.FitTextToWidth(saveBtnText, _btnSave.Width - 16, CustomFontManager.SizeRegular, true);
-        DrawFormButton(b, _btnSave, fittedSave, mx, my, isPrimary: true, scale: saveScale);
+        ActionButtonRenderer.Draw(b, _btnSave, saveBtnText, ref _hover_BtnSave, mx, my, style: ActionButtonStyle.Primary, fontSize: CustomFontManager.SizeSmall);
 
         string revertBtnText = I18n.WorldSettings.DateAmbiencePage.RevertButton();
-        var (fittedRevert, revertScale) = WorldSettingsTabView.FitTextToWidth(revertBtnText, _btnRevert.Width - 16, CustomFontManager.SizeRegular, true);
-        DrawFormButton(b, _btnRevert, fittedRevert, mx, my, isPrimary: false, isEnabled: _baselineExists && !_isCustom, scale: revertScale);
+        ActionButtonRenderer.Draw(b, _btnRevert, revertBtnText, ref _hover_BtnRevert, mx, my,
+            style: _baselineExists && !_isCustom ? ActionButtonStyle.Default : ActionButtonStyle.Disabled,
+            fontSize: CustomFontManager.SizeSmall, isEnabled: _baselineExists && !_isCustom);
 
         string deleteBtnText = I18n.WorldSettings.DateAmbiencePage.DeleteButton();
-        var (fittedDelete, deleteScale) = WorldSettingsTabView.FitTextToWidth(deleteBtnText, _btnDelete.Width - 16, CustomFontManager.SizeRegular, true);
-        DrawFormButton(b, _btnDelete, fittedDelete, mx, my, isPrimary: false, isEnabled: _selectedId != null, scale: deleteScale);
+        ActionButtonRenderer.Draw(b, _btnDelete, deleteBtnText, ref _hover_BtnDelete, mx, my,
+            style: _selectedId != null ? ActionButtonStyle.Default : ActionButtonStyle.Disabled,
+            fontSize: CustomFontManager.SizeSmall, isEnabled: _selectedId != null);
 
         string newBtnText = I18n.WorldSettings.DateAmbiencePage.NewButton();
-        var (fittedNew, newScale) = WorldSettingsTabView.FitTextToWidth(newBtnText, _btnNew.Width - 16, CustomFontManager.SizeRegular, true);
-        DrawFormButton(b, _btnNew, fittedNew, mx, my, isPrimary: false, scale: newScale);
+        ActionButtonRenderer.Draw(b, _btnNew, newBtnText, ref _hover_BtnNew, mx, my, style: ActionButtonStyle.Default, fontSize: CustomFontManager.SizeSmall);
 
         if (!string.IsNullOrEmpty(_statusTip))
         {
@@ -657,38 +662,6 @@ internal sealed class DateAmbiencePage : WorldSubPageBase
     private static void DrawFieldLabel(SpriteBatch b, string text, int x, int y)
     {
         CustomFontManager.DrawStringBold(b, text, new Vector2(x, y), RulesTheme.TextDarkBrown, CustomFontManager.SizeRegular);
-    }
-
-    private static void DrawFormButton(SpriteBatch b, Rectangle rect, string label, int mx, int my, bool isPrimary = false, bool isEnabled = true, float scale = 1f)
-    {
-        bool isHover = isEnabled && rect.Contains(mx, my);
-        bool isPressed = isHover && Mouse.GetState().LeftButton == ButtonState.Pressed;
-        int pressOffset = isPressed ? 1 : 0;
-
-        Color bg = !isEnabled ? new Color(225, 215, 200)
-                 : isPressed ? RulesTheme.SurfaceSunken
-                 : isPrimary ? (isHover ? RulesTheme.SurfaceHover : RulesTheme.SurfaceActive)
-                 : (isHover ? RulesTheme.SurfaceHover : RulesTheme.SurfaceCard);
-
-        Color border = !isEnabled ? RulesTheme.BorderSoft
-                     : isPressed ? RulesTheme.BorderBold
-                     : isPrimary ? (isHover ? RulesTheme.BorderBold : RulesTheme.BorderMid)
-                     : (isHover ? RulesTheme.BorderMid : RulesTheme.BorderSoft);
-
-        if (!isPressed && isEnabled)
-        {
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1, rect.Y + 2, rect.Width, rect.Height), RulesTheme.Shadow);
-        }
-
-        var drawRect = new Rectangle(rect.X, rect.Y + pressOffset, rect.Width, rect.Height);
-        b.Draw(Game1.staminaRect, new Rectangle(drawRect.X + 1, drawRect.Y + 1, drawRect.Width - 2, drawRect.Height - 2), bg);
-        IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-            drawRect.X, drawRect.Y, drawRect.Width, drawRect.Height, border, 2f, false);
-
-        var sz = CustomFontManager.MeasureStringBold(label, CustomFontManager.SizeSmall) * scale;
-        CustomFontManager.DrawStringBold(b, label,
-            new Vector2(drawRect.X + (drawRect.Width - sz.X) / 2f, drawRect.Y + (drawRect.Height - sz.Y) / 2f),
-            isEnabled ? RulesTheme.TextCharcoal : RulesTheme.TextMuted, CustomFontManager.SizeSmall, scale: scale);
     }
 
     // ── 智能地图过滤引擎（排除功能性死角，保留大地图与拓展户外） ──

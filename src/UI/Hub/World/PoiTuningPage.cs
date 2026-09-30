@@ -127,6 +127,15 @@ internal sealed class PoiTuningPage : WorldSubPageBase
     private Rectangle _btnDelete;
     private Rectangle _btnNewPoi;
 
+    private float _hover_ModeNpcBtn = 1f;
+    private float _hover_ModePoiBtn = 1f;
+    private float _hover_BtnTeleport = 1f;
+    private float _hover_BtnCapture = 1f;
+    private float _hover_BtnSave = 1f;
+    private float _hover_BtnRevert = 1f;
+    private float _hover_BtnDelete = 1f;
+    private float _hover_BtnNewPoi = 1f;
+
     // ── 别名数据本地持久化 ──
     private static Dictionary<string, string> _poiAliases = new(StringComparer.OrdinalIgnoreCase);
     private static string AliasesFilePath => Path.Combine(Constants.SavesPath, "_ValleyTalkReborn_Global", "poi_aliases.json");
@@ -672,33 +681,12 @@ internal sealed class PoiTuningPage : WorldSubPageBase
     private void DrawModeSwitcher(SpriteBatch b, int mx, int my)
     {
         string npcModeText = I18n.WorldSettings.PoiTuningPage.ModeNpcWeights();
-        var (fittedNpc, npcScale) = WorldSettingsTabView.FitTextToWidth(npcModeText, _modeNpcBtnRect.Width - 16, CustomFontManager.SizeSmall, true);
-        DrawTabPill(b, _modeNpcBtnRect, fittedNpc, _currentMode == ViewMode.NpcWeights, mx, my, npcScale);
+        ActionButtonRenderer.Draw(b, _modeNpcBtnRect, npcModeText, ref _hover_ModeNpcBtn, mx, my,
+            style: _currentMode == ViewMode.NpcWeights ? ActionButtonStyle.Primary : ActionButtonStyle.Default, fontSize: CustomFontManager.SizeSmall);
 
         string poiModeText = I18n.WorldSettings.PoiTuningPage.ModePoiCatalog();
-        var (fittedPoi, poiScale) = WorldSettingsTabView.FitTextToWidth(poiModeText, _modePoiBtnRect.Width - 16, CustomFontManager.SizeSmall, true);
-        DrawTabPill(b, _modePoiBtnRect, fittedPoi, _currentMode == ViewMode.PoiCatalog, mx, my, poiScale);
-    }
-
-    private static void DrawTabPill(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my, float scale = 1f)
-    {
-        bool isHover = rect.Contains(mx, my);
-        Color bg = isActive ? RulesTheme.SurfaceActive : (isHover ? RulesTheme.SurfaceHover : RulesTheme.SurfaceCard);
-        Color border = isActive ? RulesTheme.BorderBold : (isHover ? RulesTheme.BorderMid : RulesTheme.BorderSoft);
-
-        b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1, rect.Y + 1, rect.Width - 2, rect.Height - 2), bg);
-        IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-            rect.X, rect.Y, rect.Width, rect.Height, border, 2f, false);
-
-        if (isActive)
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 3, rect.Bottom - 3, rect.Width - 6, 2), RulesTheme.AccentGold);
-
-        var sz = CustomFontManager.MeasureStringBold(label, CustomFontManager.SizeSmall) * scale;
-        Color textCol = isActive ? RulesTheme.TextCharcoal : DarkGrayText;
-
-        CustomFontManager.DrawStringBold(b, label,
-            new Vector2(rect.X + (rect.Width - sz.X) / 2f, rect.Y + (rect.Height - sz.Y) / 2f),
-            textCol, CustomFontManager.SizeSmall, scale: scale);
+        ActionButtonRenderer.Draw(b, _modePoiBtnRect, poiModeText, ref _hover_ModePoiBtn, mx, my,
+            style: _currentMode == ViewMode.PoiCatalog ? ActionButtonStyle.Primary : ActionButtonStyle.Default, fontSize: CustomFontManager.SizeSmall);
     }
 
     private void DrawLeftList(SpriteBatch b, int mx, int my)
@@ -943,8 +931,11 @@ internal sealed class PoiTuningPage : WorldSubPageBase
             DrawScrollbarVisual(b, trackRect, maxVisibleRows, _allPois.Count, _weightTableScroll, _isDraggingWeightScrollbar, mx, my);
         }
 
-        DrawFormButton(b, _btnSave, "✔ 保存伴侣偏好", mx, my, isPrimary: true);
-        DrawFormButton(b, _btnRevert, "↺ 恢复默认权重 (全 50)", mx, my, isPrimary: false, isEnabled: spouse.HasCustomWeights);
+        ActionButtonRenderer.Draw(b, _btnSave, "✔ 保存伴侣偏好", ref _hover_BtnSave, mx, my,
+            style: ActionButtonStyle.Primary, fontSize: CustomFontManager.SizeSmall);
+        ActionButtonRenderer.Draw(b, _btnRevert, "↺ 恢复默认权重 (全 50)", ref _hover_BtnRevert, mx, my,
+            style: spouse.HasCustomWeights ? ActionButtonStyle.Default : ActionButtonStyle.Disabled,
+            fontSize: CustomFontManager.SizeSmall, isEnabled: spouse.HasCustomWeights);
 
         string? msg = _errorMessage ?? _statusMessage;
         if (!string.IsNullOrEmpty(msg))
@@ -987,8 +978,11 @@ internal sealed class PoiTuningPage : WorldSubPageBase
             Color captureCol = _hasCapture ? RulesTheme.AccentGreen : RulesTheme.TextSecondary;
             CustomFontManager.DrawString(b, captureInfo, new Vector2(topCardRect.X + 14, topCardRect.Y + 32), captureCol, CustomFontManager.SizeSmall);
 
-            DrawFormButton(b, _btnTeleport, "🚀 传送测试", mx, my, isPrimary: false, isEnabled: false);
-            DrawFormButton(b, _btnCapture, "🎯 抓取当前坐标", mx, my, isPrimary: true, isEnabled: IsWorldReady);
+            ActionButtonRenderer.Draw(b, _btnTeleport, "🚀 传送测试", ref _hover_BtnTeleport, mx, my,
+                style: ActionButtonStyle.Disabled, fontSize: CustomFontManager.SizeSmall, isEnabled: false);
+            ActionButtonRenderer.Draw(b, _btnCapture, "🎯 抓取当前坐标", ref _hover_BtnCapture, mx, my,
+                style: IsWorldReady ? ActionButtonStyle.Primary : ActionButtonStyle.Disabled,
+                fontSize: CustomFontManager.SizeSmall, isEnabled: IsWorldReady);
         }
         else if (poi != null)
         {
@@ -1006,12 +1000,14 @@ internal sealed class PoiTuningPage : WorldSubPageBase
             CustomFontManager.DrawString(b, coordText, new Vector2(topCardRect.X + 14, topCardRect.Y + 32), RulesTheme.TextCharcoal, CustomFontManager.SizeSmall);
 
             string teleportText = I18n.WorldSettings.PoiTuningPage.TeleportButton();
-            var (fittedTeleport, teleportScale) = WorldSettingsTabView.FitTextToWidth(teleportText, _btnTeleport.Width - 16, CustomFontManager.SizeSmall, true);
-            DrawFormButton(b, _btnTeleport, fittedTeleport, mx, my, isPrimary: false, isEnabled: CanTeleport, scale: teleportScale);
+            ActionButtonRenderer.Draw(b, _btnTeleport, teleportText, ref _hover_BtnTeleport, mx, my,
+                style: CanTeleport ? ActionButtonStyle.Default : ActionButtonStyle.Disabled,
+                fontSize: CustomFontManager.SizeSmall, isEnabled: CanTeleport);
 
             string captureText = I18n.WorldSettings.PoiTuningPage.CaptureButton();
-            var (fittedCapture, captureScale) = WorldSettingsTabView.FitTextToWidth(captureText, _btnCapture.Width - 16, CustomFontManager.SizeSmall, true);
-            DrawFormButton(b, _btnCapture, fittedCapture, mx, my, isPrimary: false, isEnabled: IsWorldReady, scale: captureScale);
+            ActionButtonRenderer.Draw(b, _btnCapture, captureText, ref _hover_BtnCapture, mx, my,
+                style: IsWorldReady ? ActionButtonStyle.Default : ActionButtonStyle.Disabled,
+                fontSize: CustomFontManager.SizeSmall, isEnabled: IsWorldReady);
         }
 
         // 2. 别名输入项
@@ -1032,23 +1028,28 @@ internal sealed class PoiTuningPage : WorldSubPageBase
         string saveLabel = _isCreatingNewPoi
             ? I18n.WorldSettings.PoiTuningPage.SaveNewButton()
             : I18n.WorldSettings.PoiTuningPage.SaveButton();
-        var (fittedSave, saveScale) = WorldSettingsTabView.FitTextToWidth(saveLabel, _btnSave.Width - 16, CustomFontManager.SizeSmall, true);
-        DrawFormButton(b, _btnSave, fittedSave, mx, my, isPrimary: true, isEnabled: CanSaveCurrentPoi, scale: saveScale);
+        ActionButtonRenderer.Draw(b, _btnSave, saveLabel, ref _hover_BtnSave, mx, my,
+            style: CanSaveCurrentPoi ? ActionButtonStyle.Primary : ActionButtonStyle.Disabled,
+            fontSize: CustomFontManager.SizeSmall, isEnabled: CanSaveCurrentPoi);
 
         string revertText = I18n.WorldSettings.PoiTuningPage.RevertButton();
-        var (fittedRevert, revertScale) = WorldSettingsTabView.FitTextToWidth(revertText, _btnRevert.Width - 16, CustomFontManager.SizeSmall, true);
-        DrawFormButton(b, _btnRevert, fittedRevert, mx, my, isPrimary: false, isEnabled: CanRevertSelectedPoi, scale: revertScale);
+        ActionButtonRenderer.Draw(b, _btnRevert, revertText, ref _hover_BtnRevert, mx, my,
+            style: CanRevertSelectedPoi ? ActionButtonStyle.Default : ActionButtonStyle.Disabled,
+            fontSize: CustomFontManager.SizeSmall, isEnabled: CanRevertSelectedPoi);
 
         string deleteLabel = _isCreatingNewPoi
             ? I18n.WorldSettings.PoiTuningPage.CancelNewButton()
             : I18n.WorldSettings.PoiTuningPage.DeleteButton();
-        var (fittedDelete, deleteScale) = WorldSettingsTabView.FitTextToWidth(deleteLabel, _btnDelete.Width - 16, CustomFontManager.SizeSmall, true);
-        DrawFormButton(b, _btnDelete, fittedDelete, mx, my, isDanger: !_isCreatingNewPoi && CanDeleteSelectedPoi,
-            isEnabled: _isCreatingNewPoi || CanDeleteSelectedPoi, scale: deleteScale);
+        ActionButtonRenderer.Draw(b, _btnDelete, deleteLabel, ref _hover_BtnDelete, mx, my,
+            style: !(_isCreatingNewPoi || CanDeleteSelectedPoi) ? ActionButtonStyle.Disabled
+                 : (!_isCreatingNewPoi && CanDeleteSelectedPoi) ? ActionButtonStyle.Danger
+                 : ActionButtonStyle.Default,
+            fontSize: CustomFontManager.SizeSmall, isEnabled: _isCreatingNewPoi || CanDeleteSelectedPoi);
 
         string newPoiText = I18n.WorldSettings.PoiTuningPage.NewPoiButton();
-        var (fittedNew, newScale) = WorldSettingsTabView.FitTextToWidth(newPoiText, _btnNewPoi.Width - 16, CustomFontManager.SizeSmall, true);
-        DrawFormButton(b, _btnNewPoi, fittedNew, mx, my, isPrimary: false, isEnabled: !_isCreatingNewPoi, scale: newScale);
+        ActionButtonRenderer.Draw(b, _btnNewPoi, newPoiText, ref _hover_BtnNewPoi, mx, my,
+            style: !_isCreatingNewPoi ? ActionButtonStyle.Default : ActionButtonStyle.Disabled,
+            fontSize: CustomFontManager.SizeSmall, isEnabled: !_isCreatingNewPoi);
 
         string? msg = _errorMessage ?? _statusMessage;
         if (!string.IsNullOrEmpty(msg))
@@ -1084,39 +1085,6 @@ internal sealed class PoiTuningPage : WorldSubPageBase
         {
             b.Draw(Game1.staminaRect, new Rectangle((int)(boxRect.X + 8 + sz.X + 1), boxRect.Y + 6, 2, boxRect.Height - 12), RulesTheme.TextPrimary);
         }
-    }
-
-    private static void DrawFormButton(SpriteBatch b, Rectangle rect, string label, int mx, int my,
-        bool isPrimary = false, bool isEnabled = true, bool isDanger = false, float scale = 1f)
-    {
-        bool isHover = isEnabled && rect.Contains(mx, my);
-        bool isPressed = isHover && Mouse.GetState().LeftButton == ButtonState.Pressed;
-        int pressOffset = isPressed ? 1 : 0;
-
-        Color bg = !isEnabled ? new Color(225, 215, 200)
-                 : isDanger ? (isHover ? RulesTheme.SurfaceDangerHover : RulesTheme.SurfaceDanger)
-                 : isPressed ? RulesTheme.SurfaceSunken
-                 : isPrimary ? (isHover ? RulesTheme.SurfaceHover : RulesTheme.SurfaceActive)
-                 : (isHover ? RulesTheme.SurfaceHover : RulesTheme.SurfaceCard);
-
-        Color border = !isEnabled ? RulesTheme.BorderSoft
-                     : isDanger ? RulesTheme.AccentRed
-                     : isPressed ? RulesTheme.BorderBold
-                     : isPrimary ? (isHover ? RulesTheme.BorderBold : RulesTheme.BorderMid)
-                     : (isHover ? RulesTheme.BorderMid : RulesTheme.BorderSoft);
-
-        if (!isPressed && isEnabled)
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1, rect.Y + 2, rect.Width, rect.Height), RulesTheme.Shadow);
-
-        var drawRect = new Rectangle(rect.X, rect.Y + pressOffset, rect.Width, rect.Height);
-        b.Draw(Game1.staminaRect, new Rectangle(drawRect.X + 1, drawRect.Y + 1, drawRect.Width - 2, drawRect.Height - 2), bg);
-        IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-            drawRect.X, drawRect.Y, drawRect.Width, drawRect.Height, border, 2f, false);
-
-        var sz = CustomFontManager.MeasureStringBold(label, CustomFontManager.SizeSmall) * scale;
-        CustomFontManager.DrawStringBold(b, label,
-            new Vector2(drawRect.X + (drawRect.Width - sz.X) / 2f, drawRect.Y + (drawRect.Height - sz.Y) / 2f),
-            isEnabled ? (isDanger ? Color.White : RulesTheme.TextCharcoal) : RulesTheme.TextMuted, CustomFontManager.SizeSmall, scale: scale);
     }
 
     private static void DrawScrollbarVisual(SpriteBatch b, Rectangle trackRect, int visibleCount, int totalCount, int scrollOffset, bool isDragging, int mx, int my)
