@@ -33,6 +33,20 @@ public class StaticGlobalStateCollection
 }
 
 /// <summary>
+/// VT-STREAM-01: bucket for AiStreamingDialogueBoxTests, which installs a
+/// process-level Game1.game1 / Game1.options shim and rewrites Game1.uiViewport
+/// to drive the headless 720p fallback path. Both are engine statics shared
+/// with every other class in the assembly, so the shim must be installed and
+/// restored by a single non-parallel class. Kept separate from the other
+/// buckets so this surface stays identifiable.
+/// </summary>
+[CollectionDefinition("EngineStaticStateCollection", DisableParallelization = true)]
+public class EngineStaticStateCollection
+{
+    // Marker class only — xUnit uses the attribute to bucket test classes.
+}
+
+/// <summary>
 /// CTX-011: bucket for test classes that flip Context.IsWorldReady via
 /// TestEnvironment.WithWorldReady. Kept separate from StaticGlobalStateCollection
 /// so the world-ready surface stays identifiable; combined with the assembly-level
