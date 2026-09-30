@@ -116,7 +116,8 @@ public class LlmDialogueService
             // 此处仅在有回调时走流式通道，否则回退到非流式推理。
             if (onStreamingToken != null)
             {
-                var tracker = new StreamLineTracker();
+                // VT-STREAM-03: raw delta 直通下游流式管道（StreamTokenPipeline），
+                // 不再经 StreamLineTracker 按行整形——换行/标签/选项区的分流职责已下沉。
                 using var cts = new CancellationTokenSource(
                     TimeSpan.FromSeconds(ModEntry.Config.QueryTimeout));
                 character.CurrentDialogueCts = cts;
@@ -136,12 +137,7 @@ public class LlmDialogueService
                             string.Empty,
                             string.Empty,
                             roleMessages,
-                            delta =>
-                            {
-                                var displayText = tracker.Feed(delta);
-                                if (displayText != null)
-                                    onStreamingToken(displayText);
-                            },
+                            delta => onStreamingToken(delta),
                             cts.Token,
                             responseStart);
                     }
@@ -152,12 +148,7 @@ public class LlmDialogueService
                         streamResult = await openAi.RunStreamingChatInference(
                             runtimeSystemPrompt,
                             roleMessages,
-                            delta =>
-                            {
-                                var displayText = tracker.Feed(delta);
-                                if (displayText != null)
-                                    onStreamingToken(displayText);
-                            },
+                            delta => onStreamingToken(delta),
                             cts.Token,
                             responseStart);
                     }
@@ -170,12 +161,7 @@ public class LlmDialogueService
                             string.Empty,
                             string.Empty,
                             roleMessages,
-                            delta =>
-                            {
-                                var displayText = tracker.Feed(delta);
-                                if (displayText != null)
-                                    onStreamingToken(displayText);
-                            },
+                            delta => onStreamingToken(delta),
                             cts.Token,
                             responseStart);
                     }
@@ -186,12 +172,7 @@ public class LlmDialogueService
                             string.Empty,
                             string.Empty,
                             runtimeConversationPrompt,
-                            delta =>
-                            {
-                                var displayText = tracker.Feed(delta);
-                                if (displayText != null)
-                                    onStreamingToken(displayText);
-                            },
+                            delta => onStreamingToken(delta),
                             cts.Token,
                             responseStart);
                     }

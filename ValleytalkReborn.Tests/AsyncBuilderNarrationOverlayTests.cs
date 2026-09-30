@@ -4,7 +4,8 @@
 // PerformGeneration 为 private 且深度耦合游戏态（Game1/NPC/DialogueBox），
 // 无头环境无法直接驱动，故对源文件做契约断言：
 // 覆盖：display 路径不再引用 NarrationLine / 前置改写首页文本 / 叙事门副作用；
-//       rawText 捕获与 Game1.DrawDialogue 原样保留（生成文本不变）。
+//       VT-STREAM-03 起流式对白框取代原版占位框与 DrawDialogue 顶替；
+//       rawText 捕获与第 ④⑤ 步业务管道逐字保留。
 // 纯内存测试：无游戏实例、无 Provider、无网络。
 
 using System;
@@ -49,12 +50,44 @@ public class AsyncBuilderNarrationOverlayTests
         Assert.DoesNotContain("EmotionNarrationDoneToday", source);
     }
 
-    // AC：生成文本不变 —— rawText 捕获与 DrawDialogue 原样保留。
+    // AC：VT-STREAM-03 流式架构不变量 —— 流式对白框取代原版占位框，
+    // 成功路径不得再用 Game1.DrawDialogue 顶替流式界面。
     [Fact]
-    public void PerformGeneration_PreservesRawTextCaptureAndDrawDialogue()
+    public void PerformGeneration_UsesStreamingBoxWithoutDrawDialogueOverride()
     {
         var source = SourceOrFail();
+
+        Assert.Contains("AiStreamingDialogueBox", source);
+        Assert.DoesNotContain("Game1.DrawDialogue(newDialogue);", source);
+        Assert.DoesNotContain("new DialogueBox(\"   \")", source);
+    }
+
+    // AC：展示层换壳不得牵连业务管道 —— rawText 捕获与第 ④ 步（历史/偷听）、
+    // 第 ⑤ 步（情绪反馈结算与冷落衰减提交）必须与前序票逐字一致。
+    [Fact]
+    public void PerformGeneration_PreservesRawTextCaptureAndHistoryPipeline()
+    {
+        var source = SourceOrFail();
+
+        // ① rawText 捕获不变，保证入库文本与移除 narration 之前一致。
         Assert.Contains("string rawText = string.Join(\" \", newDialogue.dialogues.Select(d => d.Text));", source);
-        Assert.Contains("Game1.DrawDialogue(newDialogue);", source);
+
+        // ④ 历史记录与偷听广播
+        Assert.Contains(
+            "RecentConversationTracker.RecordResponse(npc.Name, cleanResponseText, lastPlayerChoice);",
+            source);
+        Assert.Contains(
+            "DialogueHistoryManager.Instance.RecordGiftReaction(npc.Name, cleanResponseText);",
+            source);
+        Assert.Contains(
+            "DialogueHistoryManager.Instance.RecordNpcDialogue(npc.Name, cleanResponseText, \"conversation\");",
+            source);
+        Assert.Contains("DialogueHistoryManager.Instance.RecordSystemEvent(", source);
+
+        // ⑤ 情绪反馈结算与冷落衰减提交
+        Assert.Contains(
+            "DialogueFeedbackService.EvaluateDialogueFeedback(character, character.PendingEmotion.Value, portraitCode);",
+            source);
+        Assert.Contains("EmotionalStateResolver.NotifyDialogueCommitted(character);", source);
     }
 }

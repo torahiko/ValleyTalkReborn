@@ -398,11 +398,14 @@ namespace ValleytalkReborn.UI
                     break;
 
                 case StreamingDialogueState.Faulted:
-                    SpriteText.drawString(b, _errorMessage, textX, textY, width: textWidth);
+                    SpriteText.drawString(b, _errorMessage ?? "...", textX, textY, width: textWidth);
                     break;
             }
 
-            if (_state == StreamingDialogueState.WaitingForPageTurn || _state == StreamingDialogueState.Complete)
+            // Faulted 与完成态同样点亮翻页箭头，作为「点击此处安全退出」的视觉凭据。
+            if (_state == StreamingDialogueState.WaitingForPageTurn
+                || _state == StreamingDialogueState.Complete
+                || _state == StreamingDialogueState.Faulted)
                 this.dialogueIcon?.draw(b, true, 0, 0, 1f);
 
             base.drawMouse(b);
@@ -426,7 +429,7 @@ namespace ValleytalkReborn.UI
                 return;
             }
 
-            if (_state == StreamingDialogueState.Complete)
+            if (_state == StreamingDialogueState.Complete || _state == StreamingDialogueState.Faulted)
             {
                 Game1.playSound("smallSelect");
                 Close();

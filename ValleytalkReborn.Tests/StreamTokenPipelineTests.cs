@@ -45,7 +45,7 @@ public class StreamTokenPipelineTests
         List<StreamSegment> texts = OfType(segments, StreamSegmentType.Text);
 
         Assert.Single(actions);
-        Assert.Equal("EMOTE:HEART", actions[0].Payload);
+        Assert.Equal("ACTION:EMOTE:HEART", actions[0].Payload);
         Assert.Single(texts);
         Assert.Equal("你好", texts[0].Payload);
     }
@@ -66,7 +66,7 @@ public class StreamTokenPipelineTests
 
         List<StreamSegment> actions = OfType(segments, StreamSegmentType.Action);
         Assert.Single(actions);
-        Assert.Equal("FOLLOW", actions[0].Payload);
+        Assert.Equal("ACTION:FOLLOW", actions[0].Payload);
     }
 
     [Fact]
@@ -93,7 +93,7 @@ public class StreamTokenPipelineTests
         List<StreamSegment> actions = OfType(RunOne("[action:EMOTE:HEART]"), StreamSegmentType.Action);
 
         Assert.Single(actions);
-        Assert.Equal("EMOTE:HEART", actions[0].Payload);
+        Assert.Equal("action:EMOTE:HEART", actions[0].Payload);
     }
 
     [Fact]
@@ -142,6 +142,63 @@ public class StreamTokenPipelineTests
         List<StreamSegment> segments = RunOne("折扣 50%\n继续");
 
         Assert.Contains("50%", ConcatText(segments));
+    }
+
+    // ── VT-STREAM-03：换行延迟判定 ──
+
+    [Fact]
+    public void Feed_CrossLineDialogue_PreservesNewlineAsText()
+    {
+        // 常规对白流中的换行必须作为正文字符保留，驱动 SpriteText 折行与
+        // 打字机 450ms 换行顿挫，防止词句跨行粘连。
+        List<StreamSegment> segments = RunOne("第一句\n第二句");
+
+        Assert.Equal("第一句\n第二句", ConcatText(segments));
+    }
+
+    [Fact]
+    public void Feed_CrossLineDialogue_EmitsNewlineAsDedicatedTextSegment()
+    {
+        List<StreamSegment> texts = OfType(RunOne("第一句\n第二句"), StreamSegmentType.Text);
+
+        Assert.Equal(3, texts.Count);
+        Assert.Equal("第一句", texts[0].Payload);
+        Assert.Equal("\n", texts[1].Payload);
+        Assert.Equal("第二句", texts[2].Payload);
+    }
+
+    [Fact]
+    public void Feed_CrossLineDialogue_CrlfCollapsesToSingleNewline()
+    {
+        // '\r' 与 '\n' 连续到达时待定标记幂等，不得产生两个换行片段。
+        List<StreamSegment> segments = RunOne("第一句\r\n第二句");
+
+        Assert.Equal("第一句\n第二句", ConcatText(segments));
+    }
+
+    [Fact]
+    public void Flush_TrailingNewline_IsNotDiscarded()
+    {
+        // 流以换行结尾：待定换行没有后继字符可供判定，Flush 必须释放而非丢弃。
+        var pipeline = new StreamTokenPipeline();
+        pipeline.Feed("正文\n").ToList();
+
+        List<StreamSegment> tail = OfType(pipeline.Flush(), StreamSegmentType.Text);
+
+        Assert.Equal("\n", Assert.Single(tail).Payload);
+    }
+
+    [Fact]
+    public void Reset_ClearsPendingNewlineForNextStream()
+    {
+        // 待定换行若跨轮残留，会在第二轮正文前凭空插入一个换行片段。
+        var pipeline = new StreamTokenPipeline();
+        pipeline.Feed("第一轮\n").ToList();
+        pipeline.Reset();
+
+        List<StreamSegment> second = OfType(pipeline.Feed("第二轮正文"), StreamSegmentType.Text);
+
+        Assert.Equal("第二轮正文", Assert.Single(second).Payload);
     }
 
     [Fact]
@@ -318,7 +375,7 @@ public class StreamTokenPipelineTests
         List<StreamSegment> actions = OfType(RunOne("[ACTION:EMOTE:HAPPY]"), StreamSegmentType.Action);
 
         Assert.Single(actions);
-        Assert.Equal("EMOTE:HAPPY", actions[0].Payload);
+        Assert.Equal("ACTION:EMOTE:HAPPY", actions[0].Payload);
     }
 
     // ── 首 chunk 前缀清洗 ──

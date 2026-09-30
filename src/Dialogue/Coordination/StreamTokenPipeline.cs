@@ -63,6 +63,13 @@ public sealed class StreamTokenPipeline
     /// <summary>上一个已处理字符之前是否位于行首（全流第一个字符的情形）。</summary>
     private bool _atLineStart = true;
 
+    /// <summary>
+    /// 换行延迟判定：读到 '\n' / '\r' 时只置位不释放，等下一个字符到来后再决定去留。
+    /// 若该字符是行首 '%'，则本换行是选项区的前导符，予以丢弃；否则作为正文字符释放。
+    /// 由此既保留跨行对白的折行与打字机 450ms 换行顿挫，又不让选项区边界漏出换行符。
+    /// </summary>
+    private bool _hasPendingNewline;
+
     /// <summary>已产出的片段数（诊断用）。</summary>
     public int EmittedSegmentCount { get; private set; }
 
@@ -102,8 +109,24 @@ public sealed class StreamTokenPipeline
             if (c == '%' && _atLineStart)
             {
                 _inOptionSection = true;
+
+                // 紧邻 '%' 的换行是选项区前导符，不再作为正文字符释放。
+                _hasPendingNewline = false;
+
                 AdvanceLineState(c);
                 continue;
+            }
+
+            // ── 分支 2.5：延迟换行释放 ──
+            // 上一字符是换行且本字符既不是选项区起始、也不是另一个换行符时，
+            // 先把换行作为独立正文字符释放，保留 SpriteText 折行与打字机 450ms 换行停顿。
+            // 排除换行符本身是必要的：'\r\n' 连续到达时若在此处释放，
+            // 第二个 '\n' 会先被消费为片段、随后又把待定标记置回，导致折行重复一次。
+            if (_hasPendingNewline && c != '\n' && c != '\r')
+            {
+                _hasPendingNewline = false;
+                yield return new StreamSegment(StreamSegmentType.Text, "\n");
+                EmittedSegmentCount++;
             }
 
             // ── 分支 3：标签缓冲模式 ──
@@ -174,8 +197,9 @@ public sealed class StreamTokenPipeline
                 continue;
             }
 
-            // 换行是行分隔符而非正文字符：释放已累积正文后丢弃该字符本身，
-            // 使 Text 片段不携带换行符（与 StreamLineTracker 的按行语义一致）。
+            // 换行符延迟判定：先释放已累积正文，再置位待定标记。
+            // 本字符本身不立即释放——若下一字符是行首 '%'，它只是选项区前导符，应被丢弃；
+            // 否则作为正文字符保留（见分支 2.5）。'\r\n' 连续出现时因标记幂等只产生一个换行。
             if (c == '\n' || c == '\r')
             {
                 if (_textBuffer.Length > 0)
@@ -185,6 +209,7 @@ public sealed class StreamTokenPipeline
                     EmittedSegmentCount++;
                 }
 
+                _hasPendingNewline = true;
                 AdvanceLineState(c);
                 continue;
             }
@@ -214,6 +239,14 @@ public sealed class StreamTokenPipeline
             _tagBuffer.Clear();
         }
 
+        // 流以换行结尾：待定换行没有后继字符可供判定，按正文字符释放，不得丢弃。
+        if (_hasPendingNewline)
+        {
+            _hasPendingNewline = false;
+            yield return new StreamSegment(StreamSegmentType.Text, "\n");
+            EmittedSegmentCount++;
+        }
+
         if (_textBuffer.Length > 0)
         {
             yield return new StreamSegment(StreamSegmentType.Text, _textBuffer.ToString());
@@ -238,6 +271,7 @@ public sealed class StreamTokenPipeline
         _isFirstChunk = true;
         _lastProcessedChar = '\0';
         _atLineStart = true;
+        _hasPendingNewline = false;
         EmittedSegmentCount = 0;
     }
 
@@ -248,9 +282,12 @@ public sealed class StreamTokenPipeline
     {
         if (StartsWith(tag, ActionTagPrefix))
         {
+            // 载荷保留 "ACTION:" 语义前缀（与 [UI:...] 分支一致）：下游以 "[" + Payload + "]"
+            // 复原标签后交给 EmbodiedActionParser，而其正则只识别完整的 [ACTION:...] 形式，
+            // 若在此剥离前缀将导致 FOLLOW / GOTO / STAY_HOME 等实体动作被静默丢弃。
             yield return new StreamSegment(
                 StreamSegmentType.Action,
-                tag.Substring(ActionTagPrefix.Length, tag.Length - ActionTagPrefix.Length - 1));
+                tag.Substring(1, tag.Length - 2));
             yield break;
         }
 

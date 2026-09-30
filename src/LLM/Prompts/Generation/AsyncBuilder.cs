@@ -11,6 +11,7 @@ using StardewValley;
 using StardewValley.Menus;
 using ValleytalkReborn.Platform;
 using ValleytalkReborn.Dialogue.Coordination;
+using ValleytalkReborn.UI;
 
 namespace ValleytalkReborn;
 
@@ -28,8 +29,19 @@ public class AsyncBuilder
     }
 
     private readonly ConcurrentQueue<Action> _mainThreadActionQueue = new ConcurrentQueue<Action>();
-    private readonly ConcurrentQueue<string> _streamTokenQueue = new ConcurrentQueue<string>();
-    private readonly System.Text.StringBuilder _streamAccumulator = new System.Text.StringBuilder();
+
+    /// <summary>
+    /// VT-STREAM-03：后台 Provider 线程产出的流式片段队列。
+    /// 后台只负责 Enqueue；UI 与实体动作一律由主线程 OnUpdateTicked 串行消费。
+    /// </summary>
+    private readonly ConcurrentQueue<StreamSegment> _streamSegmentQueue = new ConcurrentQueue<StreamSegment>();
+
+    /// <summary>当前挂载的流式对白框；null 表示未处于流式展示阶段。</summary>
+    private AiStreamingDialogueBox _streamingDialogueBox = null;
+
+    /// <summary>本轮流式分流器；Cleanup / ResetState 置空，使在途 chunk 停止入队。</summary>
+    private StreamTokenPipeline _activePipeline = null;
+
     private IClickableMenu _placeholderMenu = null;
     private bool _awaitingGeneration = false;
     private int _waitFrames = 0;
@@ -44,7 +56,6 @@ public class AsyncBuilder
     private int _currentTaste = 0;
     private readonly HashSet<string> _requestedThisFrame = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     private int _generationCooldownFrames = 0;
-    private bool _isStreaming = false;
     private int _generationId = 0;
     private readonly HashSet<string> _pendingGiftNpcs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -75,8 +86,9 @@ public class AsyncBuilder
         {
             AbortCurrentGeneration();
             while (_mainThreadActionQueue.TryDequeue(out _)) { }
-            while (_streamTokenQueue.TryDequeue(out _)) { }
-            _streamAccumulator.Clear();
+            while (_streamSegmentQueue.TryDequeue(out _)) { }
+            _streamingDialogueBox = null;
+            _activePipeline = null;
             _requestedThisFrame.Clear();
             _aiDialogueNpcNames.Clear();
         }
@@ -90,7 +102,6 @@ public class AsyncBuilder
     {
         _awaitingGeneration = false;
         IsGeneratingDialogue = false;
-        _isStreaming = false;
         _waitFrames = 0;
         _placeholderMenu = null;
         _speakingNpc = null;
@@ -102,8 +113,9 @@ public class AsyncBuilder
         _currentHandoverVerdict = HandoverVerdict.Passthrough_Vanilla;
         _currentTaste = 0;
         _awaitedType = GenerationType.None;
-        while (_streamTokenQueue.TryDequeue(out _)) { }
-        _streamAccumulator.Clear();
+        while (_streamSegmentQueue.TryDequeue(out _)) { }
+        _streamingDialogueBox = null;
+        _activePipeline = null;
         _pendingGiftNpcs.Clear();
     }
 
@@ -134,12 +146,25 @@ public class AsyncBuilder
                 _speakingNpc.facePlayer(Game1.player);
         }
 
-        // 🌟 修复：正常消耗并缓冲流式 Token，但绝不调用 new DialogueBox 刷新界面
-        // 杜绝因残缺符号导致原版 DialogueBox.closeDialogue() 触发自闭合与 NPC 解冻
-        if (_isStreaming && _streamTokenQueue.Count > 0)
+        // VT-STREAM-03：单帧批量消费流式片段。TryDequeue 无锁，
+        // 后台线程只入队、不触碰任何游戏态，实体动作一律在此主线程分发。
+        while (_streamSegmentQueue.TryDequeue(out var segment))
         {
-            while (_streamTokenQueue.TryDequeue(out var token))
-                _streamAccumulator.Append(token);
+            switch (segment.Type)
+            {
+                case StreamSegmentType.Text:
+                    _streamingDialogueBox?.AppendContent(segment.Payload, false);
+                    break;
+
+                case StreamSegmentType.Action:
+                    // 严禁在后台 Provider 回调中调用 EmbodiedActionParser / npc.doEmote / Game1。
+                    EmbodiedActionParser.ParseAndExecute(_speakingNpc, new[] { "[" + segment.Payload + "]" });
+                    break;
+
+                case StreamSegmentType.Portrait:
+                    // 立绘表情由对白框按页文本自行解析，流式阶段不额外覆盖。
+                    break;
+            }
         }
 
         while (_mainThreadActionQueue.TryDequeue(out var action))
@@ -157,30 +182,20 @@ public class AsyncBuilder
                 {
                     _awaitingGeneration = false;
                     _waitFrames = 0;
-                    IClickableMenu db;
-                    if (_speakingNpc != null)
-                    {
-                        // 🌟 使用纯空格占位，界面完全透明隐形，且触发 IsNullOrWhiteSpace 保护，绝不入库
-                        SuppressHistory = true;
-                        var placeholder = new DialogueBox(new StardewValley.Dialogue(_speakingNpc, "", "   "));
-                        SuppressHistory = false;
-                        Game1.activeClickableMenu = placeholder;
-                        db = placeholder;
-                    }
-                    else
-                    {
-                        SuppressHistory = true;
-                        var placeholder = new DialogueBox("   ");
-                        SuppressHistory = false;
-                        Game1.activeClickableMenu = placeholder;
-                        db = placeholder;
-                    }
-                    _placeholderMenu = db;
+
+                    // VT-STREAM-03：AI 对白统一挂载流式对白框，不再创建原版 DialogueBox 占位框。
+                    // AiStreamingDialogueBox 走 base(x, y, w, h)，不触发 DialogueBox 构造补丁，
+                    // 因此无需 SuppressHistory 包裹（该开关保留给 NPC_CheckAction_Patch 使用）。
+                    var streamingBox = new AiStreamingDialogueBox(_speakingNpc);
+                    Game1.activeClickableMenu = streamingBox;
+                    _placeholderMenu = streamingBox;
+                    _streamingDialogueBox = streamingBox;
                     IsGeneratingDialogue = true;
+                    _activePipeline = new StreamTokenPipeline();
                     ModEntry.SMonitor?.Log(
-                        $"[AsyncBuilder] ★ Starting PerformGeneration. type={_awaitedType}, npc={_speakingNpc?.Name}",
+                        $"[AsyncBuilder] ★ Starting PerformGeneration (streaming). type={_awaitedType}, npc={_speakingNpc?.Name}",
                         LogLevel.Debug);
-                    _ = PerformGeneration(db);
+                    _ = PerformGeneration(streamingBox);
                 }
                 else
                 {
@@ -200,21 +215,18 @@ public class AsyncBuilder
                     ModEntry.SMonitor?.Log($"[AsyncBuilder] Taking over DialogueBox, starting generation.", LogLevel.Trace);
                     _awaitingGeneration = false;
                     _waitFrames = 0;
-                    if (_speakingNpc != null)
-                    {
-                        // 🌟 使用纯空格占位，界面完全透明隐形，且触发 IsNullOrWhiteSpace 保护，绝不入库
-                        SuppressHistory = true;
-                        var newDb = new DialogueBox(new StardewValley.Dialogue(_speakingNpc, "", "   "));
-                        SuppressHistory = false;
-                        Game1.activeClickableMenu = newDb;
-                        db = newDb;
-                    }
-                    _placeholderMenu = db;
+
+                    // 接管既有原版框之后同样换成流式框，保持展示层统一。
+                    var streamingBox = new AiStreamingDialogueBox(_speakingNpc);
+                    Game1.activeClickableMenu = streamingBox;
+                    _placeholderMenu = streamingBox;
+                    _streamingDialogueBox = streamingBox;
                     IsGeneratingDialogue = true;
+                    _activePipeline = new StreamTokenPipeline();
                     ModEntry.SMonitor?.Log(
-                        $"[AsyncBuilder] ★ Starting PerformGeneration. type={_awaitedType}, npc={_speakingNpc?.Name}",
+                        $"[AsyncBuilder] ★ Starting PerformGeneration (streaming). type={_awaitedType}, npc={_speakingNpc?.Name}",
                         LogLevel.Debug);
-                    _ = PerformGeneration(db);
+                    _ = PerformGeneration(streamingBox);
                 }
                 else
                 {
@@ -231,7 +243,7 @@ public class AsyncBuilder
         }
     }
 
-    private async Task PerformGeneration(IClickableMenu placeholder)
+    private async Task PerformGeneration(AiStreamingDialogueBox streamingBox)
     {
         NPC npc = _speakingNpc;
         GenerationType currentType = _awaitedType;
@@ -287,10 +299,15 @@ public class AsyncBuilder
                     return;
                 }
                 var menuToClose = _placeholderMenu;
+
+                // 纪元内快照：ResetState 会把流式框与分流器置空，必须先取引用再复位。
+                var boxToFinalize = _streamingDialogueBox;
+                var pipelineToFlush = _activePipeline;
+
                 ResetState();
                 _generationCooldownFrames = 5;
 
-                // 🌟 修复：有台词产出时，直接原子化 DrawDialogue 接管，杜绝提前调用 exitActiveMenu() 产生单帧黑洞
+                // 🌟 修复：有台词产出时，页面守卫与历史/情绪管线照常执行；VT-STREAM-03 起不再切换对话框
                 if (newDialogue != null && newDialogue.dialogues.Count > 0)
                 {
                     if (npc != null)
@@ -320,7 +337,35 @@ public class AsyncBuilder
                     string portraitCode = DialogueFeedbackService.ExtractPortraitCode(
                         rawText, character?.ValidPortraits);
 
-                    Game1.DrawDialogue(newDialogue);
+                    // 🌟 VT-STREAM-03【核心动作】：流式对白框已在屏幕保持渲染，
+                    // 严禁再用原版 DrawDialogue 顶替流式界面——那会销毁流式框并回退原版非流式框。
+                    // 先刷新管道尾部（释放残缺缓冲 + 解析 '%' 候选项），随后标记流结束。
+                    if (pipelineToFlush != null)
+                    {
+                        foreach (StreamSegment tail in pipelineToFlush.Flush())
+                        {
+                            if (tail.Type == StreamSegmentType.Text)
+                                boxToFinalize?.AppendContent(tail.Payload, false);
+                        }
+
+                        List<string> suggestions = pipelineToFlush.GetCollectedSuggestions()?.ToList() ?? new List<string>();
+
+                        // Custom 风格换壳：待挂载载荷绑定流式框凭据，
+                        // 玩家关闭流式框时由 ModEntry.OnMenuChanged 消费并弹出选择面板。
+                        if (ModEntry.Config.ChoiceBoxStyle == ChoiceBoxStyle.Custom && suggestions.Count > 0)
+                        {
+                            PendingChoiceStore.Set(new PendingChoiceContext
+                            {
+                                Speaker = npc,
+                                NpcLineSanitized = SanitizeDialogueForHistory(boxToFinalize?.DisplayedPageText ?? ""),
+                                Suggestions = suggestions,
+                                ShowDateOption = false,
+                                BoxRef = boxToFinalize
+                            });
+                        }
+                    }
+
+                    boxToFinalize?.AppendContent("", isComplete: true);
 
                     // ④ 既有清洗/记录/偷听管线（一字不改）——输入为 ① 的 rawText 衍生，
                     //    天然不含肖像码
@@ -411,16 +456,31 @@ public class AsyncBuilder
             ModEntry.SMonitor?.Log($"Error generating NPC response: {ex.Message}", LogLevel.Error);
             EnqueueToMainThread(() =>
             {
+                // 先取引用再复位：ResetState 会把流式框置空。
+                var boxToFault = _streamingDialogueBox;
+
                 ResetState();
                 _generationCooldownFrames = 5;
                 var netMsg = Util.GetString("uiErrorNetwork")
                     ?? (LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh
                         ? "（请求发生异常或超时，请检查网络与设置。）"
                         : "(Request timed out or encountered an error, please check network and settings.)");
+
+                // 流式框仍是当前激活菜单时就地降级为 Faulted 态，不再弹出原版错误框：
+                // 玩家点左键或 ESC 即可安全退出，NPC 随之解冻。
+                if (boxToFault != null && Game1.activeClickableMenu == boxToFault)
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[AsyncBuilder] Streaming faulted in place for {npc?.Name}; streaming box retained for safe exit.",
+                        LogLevel.Warn);
+                    boxToFault.SetFaulted(netMsg);
+                    return;
+                }
+
                 if (npc != null)
                     Game1.activeClickableMenu = new DialogueBox(new StardewValley.Dialogue(npc, "", $"$s {netMsg}"));
                 else
-                    ShowFeedbackDialogue(placeholder, netMsg);
+                    ShowFeedbackDialogue(streamingBox, netMsg);
             });
         }
     }
@@ -625,11 +685,27 @@ public class AsyncBuilder
         _generationCooldownFrames = 0;
     }
 
+    /// <summary>
+    /// VT-STREAM-03：构造流式回调。后台 Provider 线程把 raw chunk 交给 StreamTokenPipeline 分流，
+    /// 产出的片段只做并发入队——此处严禁触碰 Game1 / NPC / UI，实体动作留待主线程消费。
+    /// </summary>
+    private Action<string> BuildStreamCallback()
+    {
+        return chunk =>
+        {
+            StreamTokenPipeline pipeline = _activePipeline;
+            if (pipeline == null)
+                return;
+
+            foreach (StreamSegment segment in pipeline.Feed(chunk))
+                _streamSegmentQueue.Enqueue(segment);
+        };
+    }
+
     // 🌟【业务逻辑 100% 完整保留】：流式回调委托正常注册与下发，保证 LlmDialogueService 正常走流式通道
     private async Task<StardewValley.Dialogue> GenerateNpcGift()
     {
-        _isStreaming = true;
-        Action<string> streamCallback = token => _streamTokenQueue.Enqueue(token);
+        Action<string> streamCallback = BuildStreamCallback();
         return await DialogueBuilder.Instance.GenerateGift(_speakingNpc, _currentGift, _currentTaste, streamCallback);
     }
 
@@ -684,16 +760,14 @@ public class AsyncBuilder
 
     private async Task<StardewValley.Dialogue> GenerateNpcHandover()
     {
-        _isStreaming = true;
-        Action<string> streamCallback = token => _streamTokenQueue.Enqueue(token);
+        Action<string> streamCallback = BuildStreamCallback();
         return await DialogueBuilder.Instance.GenerateHandover(
             _speakingNpc, _currentHandoverVerdict, _currentHandoverItem, streamCallback);
     }
 
     private async Task<StardewValley.Dialogue> GenerateNpc()
     {
-        _isStreaming = true;
-        Action<string> streamCallback = token => _streamTokenQueue.Enqueue(token);
+        Action<string> streamCallback = BuildStreamCallback();
         return await DialogueBuilder.Instance.Generate(_speakingNpc, _currentDialogueKey, _originalLine, streamCallback);
     }
 
@@ -702,8 +776,7 @@ public class AsyncBuilder
         var npc = _speakingNpc;
         var conversationList = _currentConversation?.ToList() ?? new List<ConversationElement>();
 
-        _isStreaming = true;
-        Action<string> streamCallback = token => _streamTokenQueue.Enqueue(token);
+        Action<string> streamCallback = BuildStreamCallback();
 
         var newDialogue = await DialogueBuilder.Instance.GenerateResponse(npc, conversationList, true, streamCallback);
         if (newDialogue == null) return null;
