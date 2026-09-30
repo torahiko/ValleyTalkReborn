@@ -40,7 +40,7 @@ namespace ValleytalkReborn.UI
         private const float ButtonFontSize = 18f;   // 发送/沉默等动作按钮放大至 18f
         private const float TipFontSize = CustomFontManager.SizeSmall;
 
-        private readonly NPC _speaker;
+        private readonly NPC _speaker = null!;
         private readonly string _npcLineSanitized;
         private readonly List<string> _suggestions;
         private readonly bool _showDateOption;
