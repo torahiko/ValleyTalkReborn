@@ -241,15 +241,16 @@ namespace ValleytalkReborn.UI
             Game1.activeClickableMenu = new DateLocationPickerMenu(_speaker);
         }
 
+        /// <summary>
+        /// 沉默 = 会话边界：对齐 6b48bf3a Vanilla Silent 语义，只落统一 i18n 会话结束标记，
+        /// 不再写入玩家沉默文本（该语义已由 6b48bf3a 废弃）。
+        /// </summary>
         private void Silence()
         {
             Game1.exitActiveMenu();
             _closed = true;
 
-            bool isZh = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
-            DialogueHistoryManager.Instance.RecordPlayerDialogue(
-                _speaker.Name,
-                isZh ? "*保持沉默，什么也没说*" : "remains silent");
+            DialogueHistoryManager.Instance.RecordSessionEnd(_speaker.Name);
 
             Game1.player.forceCanMove();
         }
