@@ -673,9 +673,9 @@ namespace ValleytalkReborn.UI
             DrawPillButton(b, _filterSelectedRect, selFilterLabel, _filterMode == NpcFilterMode.SelectedOnly, mx, my);
 
             // 快捷操作小按钮（无缝重构版）
-            ActionButtonRenderer.Draw(b, _btnSelectAllRect, "全选", ref _selectAllHoverScale, mx, my, style: ActionButtonStyle.Default, fontSize: TipFontSize, isEnabled: true);
-            ActionButtonRenderer.Draw(b, _btnInvertRect, "反选", ref _invertHoverScale, mx, my, style: ActionButtonStyle.Default, fontSize: TipFontSize, isEnabled: true);
-            ActionButtonRenderer.Draw(b, _btnClearRect, "清空", ref _clearHoverScale, mx, my, style: ActionButtonStyle.Default, fontSize: TipFontSize, isEnabled: true);
+            ActionButtonRenderer.Draw(b, _btnSelectAllRect, "全选", ref _selectAllHoverScale, mx, my, style: ActionButtonStyle.Default, fontSize: TipFontSize, isEnabled: true, isPressedFunc: () => IsLeftMouseDown());
+            ActionButtonRenderer.Draw(b, _btnInvertRect, "反选", ref _invertHoverScale, mx, my, style: ActionButtonStyle.Default, fontSize: TipFontSize, isEnabled: true, isPressedFunc: () => IsLeftMouseDown());
+            ActionButtonRenderer.Draw(b, _btnClearRect, "清空", ref _clearHoverScale, mx, my, style: ActionButtonStyle.Default, fontSize: TipFontSize, isEnabled: true, isPressedFunc: () => IsLeftMouseDown());
 
             // 6. NPC 网格底槽与卡片
             b.Draw(Game1.staminaRect, new Rectangle(_npcGridBounds.X + 1, _npcGridBounds.Y + 1, _npcGridBounds.Width - 2, _npcGridBounds.Height - 2), new Color(242, 230, 208) * 0.7f);
@@ -703,8 +703,8 @@ namespace ValleytalkReborn.UI
 
             // 7. 底部主操作按钮
 
-            ActionButtonRenderer.Draw(b, _btnCancelRect, I18n.AddRuleMenu.ButtonCancel(), ref _cancelHoverScale, mx, my, style: ActionButtonStyle.Default, fontSize: ButtonFontSize, isEnabled: true);
-            ActionButtonRenderer.Draw(b, _btnOkRect, I18n.AddRuleMenu.ButtonConfirm(), ref _okHoverScale, mx, my, style: ActionButtonStyle.Primary, fontSize: ButtonFontSize, isEnabled: true);
+            ActionButtonRenderer.Draw(b, _btnCancelRect, I18n.AddRuleMenu.ButtonCancel(), ref _cancelHoverScale, mx, my, style: ActionButtonStyle.Default, fontSize: ButtonFontSize, isEnabled: true, isPressedFunc: () => IsLeftMouseDown());
+            ActionButtonRenderer.Draw(b, _btnOkRect, I18n.AddRuleMenu.ButtonConfirm(), ref _okHoverScale, mx, my, style: ActionButtonStyle.Primary, fontSize: ButtonFontSize, isEnabled: true, isPressedFunc: () => IsLeftMouseDown());
 
             // 8. ★ 优化 4：悬停气泡精准提示解释
             if (_factCapsuleRect.Contains(mx, my))
