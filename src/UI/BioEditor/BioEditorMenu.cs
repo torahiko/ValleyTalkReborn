@@ -91,6 +91,38 @@ namespace ValleytalkReborn
         public static readonly Color TextOnLightBtn = new Color(52, 28, 16);  // 按钮专属深色文字（浅木底/金黄底）
         public static readonly Color TextOnDarkBtn  = new Color(255, 250, 242);// 按钮专属反白文字（深木底/暗红底）
 
+        // 按钮悬停缩放（ActionButtonRenderer 状态）
+        private float _hover_Cancel = 1f;
+        private float _hover_Save = 1f;
+        private float _hover_ResetPage = 1f;
+        private float _hover_ResetAll = 1f;
+        private float _hover_ScopeCapsule = 1f;
+        private float _hover_Import = 1f;
+        private float _hover_Export = 1f;
+        private float _hover_Wizard = 1f;
+        private float _hover_ScaffoldBio = 1f;
+        private float _hover_CopyBiography = 1f;
+        private float _hover_AiPolishBio = 1f;
+        private float _hover_ScaffoldBehavior = 1f;
+        private float _hover_CopyBehavior = 1f;
+        private float _hover_AiPolishBehavior = 1f;
+        private float _hover_InsertBreak = 1f;
+        private float _hover_InsertChoice = 1f;
+        private float _hover_CopyDialogueExamples = 1f;
+        private float _hover_AiPolishDialogue = 1f;
+        private float _hover_AiGenerateStages = 1f;
+        private float _hover_NewStage = 1f;
+        private float _hover_DeleteStage = 1f;
+        private float _hover_CopyStageText = 1f;
+        private float _hover_CopyStageBark = 1f;
+        private float _hover_RelAdd = 1f;
+        private float _hover_RelDel = 1f;
+        private float _hover_CopyRelDesc = 1f;
+        private float _hover_AiExtractAmbient = 1f;
+        private float _hover_CopyVoice = 1f;
+        private float _hover_CopyHabits = 1f;
+        private float _hover_CopyLenses = 1f;
+
         private static string[] TabTitles() => new[]
         {
             I18n.Get("Bio.Tab1"),
@@ -1147,10 +1179,12 @@ namespace ValleytalkReborn
             else if (_activeTab == 4) DrawTab5(b, mx, my);
 
             // 底部操作按钮（顺序：取消 -> 保存 -> 当前页恢复原版 -> 全部恢复原版）
-            DrawActionButton(b, _cancelRect, I18n.Get("Bio.CancelButton"), mx, my, isDanger: false);
-            DrawActionButton(b, _saveRect, I18n.Get("Bio.SaveButton"), mx, my, isPrimary: true);
-            DrawActionButton(b, _resetPageRect, I18n.Get("Bio.ResetPage"), mx, my, isDanger: false);
-            DrawActionButton(b, _resetAllRect, I18n.Get("Bio.ResetAll"), mx, my, isDanger: true, isEnabled: _vm.HasOverlay || _vm.IsDirty);
+            ActionButtonRenderer.Draw(b, _cancelRect, I18n.Get("Bio.CancelButton"), ref _hover_Cancel, mx, my, style: ActionButtonStyle.Default);
+            ActionButtonRenderer.Draw(b, _saveRect, I18n.Get("Bio.SaveButton"), ref _hover_Save, mx, my, style: ActionButtonStyle.Primary);
+            ActionButtonRenderer.Draw(b, _resetPageRect, I18n.Get("Bio.ResetPage"), ref _hover_ResetPage, mx, my, style: ActionButtonStyle.Default);
+            ActionButtonRenderer.Draw(b, _resetAllRect, I18n.Get("Bio.ResetAll"), ref _hover_ResetAll, mx, my,
+                style: (_vm.HasOverlay || _vm.IsDirty) ? ActionButtonStyle.Danger : ActionButtonStyle.Disabled,
+                isEnabled: _vm.HasOverlay || _vm.IsDirty);
 
             // ★ 关闭按钮平滑悬停动效（参考 IntegratedHubMenu）
             UiHelper.UpdateButtonScale(ref _closeButtonHoverScale, _closeButton, mx, my);
@@ -1234,10 +1268,12 @@ namespace ValleytalkReborn
             CustomFontManager.DrawString(b, status, new Vector2(headX + pSize + 14, headY + 30), statusCol, TipFontSize);
 
             string scopeLabel = _vm.TargetScope == BioStorageService.BioScope.Local ? I18n.Get("Bio.ScopeLocal") : I18n.Get("Bio.ScopeGlobal");
-            DrawActionButton(b, _scopeCapsuleRect, scopeLabel, mx, my, isPrimary: true);
-            DrawActionButton(b, _importRect, I18n.Get("Bio.Import"), mx, my, isPrimary: false);
-            DrawActionButton(b, _exportRect, I18n.Get("Bio.Export"), mx, my, isPrimary: false);
-            DrawActionButton(b, _wizardRect, I18n.Get("Bio.WizardButton"), mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy, hoverHighlight: false);
+            ActionButtonRenderer.Draw(b, _scopeCapsuleRect, scopeLabel, ref _hover_ScopeCapsule, mx, my, style: ActionButtonStyle.Primary);
+            ActionButtonRenderer.Draw(b, _importRect, I18n.Get("Bio.Import"), ref _hover_Import, mx, my, style: ActionButtonStyle.Default);
+            ActionButtonRenderer.Draw(b, _exportRect, I18n.Get("Bio.Export"), ref _hover_Export, mx, my, style: ActionButtonStyle.Default);
+            ActionButtonRenderer.Draw(b, _wizardRect, I18n.Get("Bio.WizardButton"), ref _hover_Wizard, mx, my,
+                style: BioAiRunner.IsBusy ? ActionButtonStyle.Disabled : ActionButtonStyle.Primary,
+                isEnabled: !BioAiRunner.IsBusy, hoverGlow: false);
         }
 
         // ── 各 Tab 具体渲染 ───────────────────────────────────────────────
@@ -1246,11 +1282,12 @@ namespace ValleytalkReborn
             CustomFontManager.DrawString(b, I18n.Get("Bio.Tab1Section"),
                 new Vector2(_biographyBox.Position.X, _biographyBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
 
-            DrawActionButton(b, _scaffoldBtnRect, I18n.Get("Bio.InsertIdentityTemplate"), mx, my, false);
-            DrawActionButton(b, _copyBiographyRect, I18n.Get("Bio.CopyAll"), mx, my, false);
+            ActionButtonRenderer.Draw(b, _scaffoldBtnRect, I18n.Get("Bio.InsertIdentityTemplate"), ref _hover_ScaffoldBio, mx, my, style: ActionButtonStyle.Default);
+            ActionButtonRenderer.Draw(b, _copyBiographyRect, I18n.Get("Bio.CopyAll"), ref _hover_CopyBiography, mx, my, style: ActionButtonStyle.Default);
             string aiLabel = BioAiRunner.IsBusy ? I18n.Get("Bio.AiBusy") : I18n.Get("Bio.AiPolish");
-            DrawActionButton(b, _aiPolishBioRect, aiLabel, mx, my,
-                isPrimary: true, isEnabled: !BioAiRunner.IsBusy, hoverHighlight: false);
+            ActionButtonRenderer.Draw(b, _aiPolishBioRect, aiLabel, ref _hover_AiPolishBio, mx, my,
+                style: BioAiRunner.IsBusy ? ActionButtonStyle.Disabled : ActionButtonStyle.Primary,
+                isEnabled: !BioAiRunner.IsBusy, hoverGlow: false);
             DrawStyledDialogueBox(b, _biographyBox);
         }
 
@@ -1258,17 +1295,21 @@ namespace ValleytalkReborn
         {
             CustomFontManager.DrawString(b, I18n.Get("Bio.Tab2BehaviorSection"),
                 new Vector2(_behaviorBox.Position.X, _behaviorBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
-            DrawActionButton(b, _behaviorScaffoldRect, I18n.Get("Bio.InsertRulesTemplate"), mx, my, false);
-            DrawActionButton(b, _copyBehaviorRect, I18n.Get("Bio.CopyAll"), mx, my, false);
-            DrawActionButton(b, _aiPolishBehaviorRect, BioAiRunner.IsBusy ? I18n.Get("Bio.AiBusy") : I18n.Get("Bio.AiPolish"), mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy, hoverHighlight: false);
+            ActionButtonRenderer.Draw(b, _behaviorScaffoldRect, I18n.Get("Bio.InsertRulesTemplate"), ref _hover_ScaffoldBehavior, mx, my, style: ActionButtonStyle.Default);
+            ActionButtonRenderer.Draw(b, _copyBehaviorRect, I18n.Get("Bio.CopyAll"), ref _hover_CopyBehavior, mx, my, style: ActionButtonStyle.Default);
+            ActionButtonRenderer.Draw(b, _aiPolishBehaviorRect, BioAiRunner.IsBusy ? I18n.Get("Bio.AiBusy") : I18n.Get("Bio.AiPolish"), ref _hover_AiPolishBehavior, mx, my,
+                style: BioAiRunner.IsBusy ? ActionButtonStyle.Disabled : ActionButtonStyle.Primary,
+                isEnabled: !BioAiRunner.IsBusy, hoverGlow: false);
             DrawStyledDialogueBox(b, _behaviorBox);
 
             CustomFontManager.DrawString(b, I18n.Get("Bio.Tab2DialogueSection"),
                 new Vector2(_dialogueExamplesBox.Position.X, _dialogueExamplesBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
-            DrawActionButton(b, _insertBreakRect, I18n.Get("Bio.InsertBreak"), mx, my, false);
-            DrawActionButton(b, _insertChoiceRect, I18n.Get("Bio.InsertChoice"), mx, my, false);
-            DrawActionButton(b, _copyDialogueExamplesRect, I18n.Get("Bio.CopyAll"), mx, my, false);
-            DrawActionButton(b, _aiPolishDialogueRect, BioAiRunner.IsBusy ? I18n.Get("Bio.AiBusy") : I18n.Get("Bio.AiPolish"), mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy, hoverHighlight: false);
+            ActionButtonRenderer.Draw(b, _insertBreakRect, I18n.Get("Bio.InsertBreak"), ref _hover_InsertBreak, mx, my, style: ActionButtonStyle.Default);
+            ActionButtonRenderer.Draw(b, _insertChoiceRect, I18n.Get("Bio.InsertChoice"), ref _hover_InsertChoice, mx, my, style: ActionButtonStyle.Default);
+            ActionButtonRenderer.Draw(b, _copyDialogueExamplesRect, I18n.Get("Bio.CopyAll"), ref _hover_CopyDialogueExamples, mx, my, style: ActionButtonStyle.Default);
+            ActionButtonRenderer.Draw(b, _aiPolishDialogueRect, BioAiRunner.IsBusy ? I18n.Get("Bio.AiBusy") : I18n.Get("Bio.AiPolish"), ref _hover_AiPolishDialogue, mx, my,
+                style: BioAiRunner.IsBusy ? ActionButtonStyle.Disabled : ActionButtonStyle.Primary,
+                isEnabled: !BioAiRunner.IsBusy, hoverGlow: false);
 
             if (_insertBreakRect.Contains(mx, my)) _hoverText = I18n.Get("Bio.InsertBreakHover");
             if (_insertChoiceRect.Contains(mx, my)) _hoverText = I18n.Get("Bio.InsertChoiceHover");
@@ -1285,7 +1326,9 @@ namespace ValleytalkReborn
             // 顶栏标题独立展示为分类小标，不再与按钮同排
             CustomFontManager.DrawString(b, I18n.Bio.StageCount(_vm.Bio.ProgressStates.Count, 8),
                 new Vector2(_stageLeftColRect.X + 12, _stageLeftColRect.Y + 10), TextSecondary, SectionHeaderSize);
-            DrawActionButton(b, _aiGenerateStagesRect, BioAiRunner.IsBusy ? I18n.Get("Bio.AiStageBusy") : I18n.Get("Bio.AiStageLadder"), mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy, hoverHighlight: false);
+            ActionButtonRenderer.Draw(b, _aiGenerateStagesRect, BioAiRunner.IsBusy ? I18n.Get("Bio.AiStageBusy") : I18n.Get("Bio.AiStageLadder"), ref _hover_AiGenerateStages, mx, my,
+                style: BioAiRunner.IsBusy ? ActionButtonStyle.Disabled : ActionButtonStyle.Primary,
+                isEnabled: !BioAiRunner.IsBusy, hoverGlow: false);
             if (_aiGenerateStagesRect.Contains(mx, my))
                 _hoverText = I18n.Get("Bio.AiStageLadderHover");
 
@@ -1309,7 +1352,7 @@ namespace ValleytalkReborn
             }
 
             if (_vm.CanAddStage)
-                DrawActionButton(b, _newStageRect, I18n.Get("Bio.AddStage"), mx, my, false);
+                ActionButtonRenderer.Draw(b, _newStageRect, I18n.Get("Bio.AddStage"), ref _hover_NewStage, mx, my, style: ActionButtonStyle.Default);
 
             if (_vm.SelectedStageIndex < 0 || _vm.SelectedStageIndex >= _vm.Bio.ProgressStates.Count)
             {
@@ -1347,7 +1390,7 @@ namespace ValleytalkReborn
                     : I18n.Get("Bio.GateSpouseHoverOn").Replace("{{spouse}}", spouseDisp).Replace("{{target}}", targetSpouse);
             }
 
-            DrawActionButton(b, _deleteStageRect, I18n.Get("Bio.DeleteStage"), mx, my, isDanger: true, hoverHighlight: false);
+            ActionButtonRenderer.Draw(b, _deleteStageRect, I18n.Get("Bio.DeleteStage"), ref _hover_DeleteStage, mx, my, style: ActionButtonStyle.Danger, hoverGlow: false);
 
             // ── 第 2 行：小镇世界线门禁 ──
             int row2Y = _stageRightColRect.Y + 32;
@@ -1380,12 +1423,12 @@ namespace ValleytalkReborn
             // ★ Tab3 复制按钮已移至标签右侧
             CustomFontManager.DrawString(b, I18n.Get("Bio.StageTextSection"),
                 new Vector2(_stageTextBox.Position.X, _stageTextBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
-            DrawActionButton(b, _copyStageTextRect, I18n.Get("Bio.CopyAll"), mx, my, false);
+            ActionButtonRenderer.Draw(b, _copyStageTextRect, I18n.Get("Bio.CopyAll"), ref _hover_CopyStageText, mx, my, style: ActionButtonStyle.Default);
             DrawStyledDialogueBox(b, _stageTextBox);
 
             CustomFontManager.DrawString(b, I18n.Get("Bio.StageBarkSection"),
                 new Vector2(_stageBarkBox.Position.X, _stageBarkBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
-            DrawActionButton(b, _copyStageBarkRect, I18n.Get("Bio.CopyAll"), mx, my, false);
+            ActionButtonRenderer.Draw(b, _copyStageBarkRect, I18n.Get("Bio.CopyAll"), ref _hover_CopyStageBark, mx, my, style: ActionButtonStyle.Default);
             DrawStyledDialogueBox(b, _stageBarkBox);
 
             CustomFontManager.DrawString(b, I18n.Get("Bio.StagePreoccSection"),
@@ -1546,8 +1589,8 @@ namespace ValleytalkReborn
                     thumbRect.X, thumbRect.Y, thumbRect.Width, thumbRect.Height, RulesTheme.BorderBold, 1f, false);
             }
 
-            DrawActionButton(b, _relAddRect, "+ 定制关系", mx, my, false);
-            DrawActionButton(b, _relDelRect, "- 清除", mx, my, isDanger: true);
+            ActionButtonRenderer.Draw(b, _relAddRect, "+ 定制关系", ref _hover_RelAdd, mx, my, style: ActionButtonStyle.Default);
+            ActionButtonRenderer.Draw(b, _relDelRect, "- 清除", ref _hover_RelDel, mx, my, style: ActionButtonStyle.Danger);
 
             if (string.IsNullOrEmpty(_vm.SelectedRelationshipNpc))
             {
@@ -1565,7 +1608,7 @@ namespace ValleytalkReborn
 
             CustomFontManager.DrawString(b, I18n.Get("Bio.RelDescSection"),
                 new Vector2(_relDescBox.Position.X, _relDescBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
-            DrawActionButton(b, _copyRelDescRect, I18n.Get("Bio.CopyAll"), mx, my, false);
+            ActionButtonRenderer.Draw(b, _copyRelDescRect, I18n.Get("Bio.CopyAll"), ref _hover_CopyRelDesc, mx, my, style: ActionButtonStyle.Default);
             DrawStyledDialogueBox(b, _relDescBox);
 
             CustomFontManager.DrawString(b, I18n.Get("Bio.RelTip"),
@@ -1578,7 +1621,9 @@ namespace ValleytalkReborn
             CustomFontManager.DrawString(b, I18n.Get("Bio.BarkSection"),
                 new Vector2(_tab5LeftColRect.X + 12, _tab5LeftColRect.Y + 8), TextSecondary, SectionHeaderSize);
             _enableBarkCheckbox.draw(b, 0, 0, this);
-            DrawActionButton(b, _aiExtractAmbientRect, BioAiRunner.IsBusy ? I18n.Get("Bio.AiExtractBusy") : I18n.Get("Bio.AiExtractAmbient"), mx, my, isPrimary: true, isEnabled: !BioAiRunner.IsBusy, hoverHighlight: false);
+            ActionButtonRenderer.Draw(b, _aiExtractAmbientRect, BioAiRunner.IsBusy ? I18n.Get("Bio.AiExtractBusy") : I18n.Get("Bio.AiExtractAmbient"), ref _hover_AiExtractAmbient, mx, my,
+                style: BioAiRunner.IsBusy ? ActionButtonStyle.Disabled : ActionButtonStyle.Primary,
+                isEnabled: !BioAiRunner.IsBusy, hoverGlow: false);
             if (_aiExtractAmbientRect.Contains(mx, my))
                 _hoverText = I18n.Get("Bio.AiExtractHover");
 
@@ -1589,19 +1634,19 @@ namespace ValleytalkReborn
             // ★ Tab5 复制按钮已移至标签右侧
             CustomFontManager.DrawString(b, I18n.Get("Bio.VoiceSection"),
                 new Vector2(_voiceBox.Position.X, _voiceBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
-            DrawActionButton(b, _copyVoiceRect, I18n.Get("Bio.CopyAll"), mx, my, false);
+            ActionButtonRenderer.Draw(b, _copyVoiceRect, I18n.Get("Bio.CopyAll"), ref _hover_CopyVoice, mx, my, style: ActionButtonStyle.Default);
             DrawStyledDialogueBox(b, _voiceBox);
             if (ContainsPoint(_voiceBox, mx, my)) _hoverText = I18n.Get("Bio.VoiceHover");
 
             CustomFontManager.DrawString(b, I18n.Get("Bio.HabitsSection"),
                 new Vector2(_habitsBox.Position.X, _habitsBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
-            DrawActionButton(b, _copyHabitsRect, I18n.Get("Bio.CopyAll"), mx, my, false);
+            ActionButtonRenderer.Draw(b, _copyHabitsRect, I18n.Get("Bio.CopyAll"), ref _hover_CopyHabits, mx, my, style: ActionButtonStyle.Default);
             DrawStyledDialogueBox(b, _habitsBox);
             if (ContainsPoint(_habitsBox, mx, my)) _hoverText = I18n.Get("Bio.HabitsHover");
 
             CustomFontManager.DrawString(b, I18n.Get("Bio.LensesSection"),
                 new Vector2(_lensesBox.Position.X, _lensesBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
-            DrawActionButton(b, _copyLensesRect, I18n.Get("Bio.CopyAll"), mx, my, false);
+            ActionButtonRenderer.Draw(b, _copyLensesRect, I18n.Get("Bio.CopyAll"), ref _hover_CopyLenses, mx, my, style: ActionButtonStyle.Default);
             DrawStyledDialogueBox(b, _lensesBox);
             if (ContainsPoint(_lensesBox, mx, my)) _hoverText = I18n.Get("Bio.LensesHover");
         }
@@ -1690,63 +1735,6 @@ namespace ValleytalkReborn
                     return false;
                 }
             }
-        }
-
-        private void DrawActionButton(SpriteBatch b, Rectangle rect, string label, int mx, int my,
-            bool isDanger = false, bool isPrimary = false, bool isEnabled = true, bool hoverHighlight = true)
-        {
-            bool isHover = isEnabled && rect.Contains(mx, my);
-            bool isPressed = isHover && IsLeftMouseDown();
-
-            Color bg;
-            if (!isEnabled) bg = Color.LightGray * 0.6f;
-            else if (isPrimary) bg = isHover ? Color.Gold : new Color(255, 220, 130);
-            else if (isDanger) bg = isHover ? new Color(245, 105, 105) : new Color(210, 85, 80);
-            else bg = isHover ? new Color(255, 240, 215) : new Color(225, 195, 155);
-
-            int pressOffset = isPressed ? 1 : 0;
-            if (isPressed) bg = Color.Lerp(bg, Color.Black, 0.14f);
-
-            // 1. 立体微阴影：未按下时投射，按下时完全收起
-            if (!isPressed)
-                b.Draw(Game1.staminaRect, new Rectangle(rect.X + 2, rect.Y + 2, rect.Width, rect.Height), Color.Black * 0.15f);
-
-            // 2. 底板填充：随按压下沉 1px
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1 + pressOffset, rect.Y + 1 + pressOffset, rect.Width - 2, rect.Height - 2), bg);
-
-            // 3. 边框：根据 hoverHighlight 参数决定悬停时是否泛光高亮
-            Color borderCol = isPrimary ? new Color(210, 160, 60)
-                            : (isDanger ? new Color(175, 60, 55) : new Color(185, 150, 110));
-
-            if (hoverHighlight && isHover && isEnabled)
-                borderCol = Color.Lerp(borderCol, new Color(255, 245, 220), 0.55f); // 暖白增亮泛光
-
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-                rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height,
-                borderCol, 3f, false);
-
-            // 文字颜色与按钮底色明暗自适应
-            Color btnTextCol;
-            if (!isEnabled)
-            {
-                btnTextCol = TextMuted;
-            }
-            else if (isDanger)
-            {
-                btnTextCol = TextOnDarkBtn;
-            }
-            else
-            {
-                btnTextCol = TextOnLightBtn;
-            }
-
-            var (fitLabel, fitScale) = BioLabelFitter.FitBold(label, rect.Width, ButtonFontSize);
-            var sz = CustomFontManager.MeasureStringBold(fitLabel, ButtonFontSize, fitScale);
-            Vector2 textPos = new Vector2(
-                rect.X + pressOffset + (rect.Width - sz.X) / 2f,
-                rect.Y + pressOffset + (rect.Height - sz.Y) / 2f);
-
-            CustomFontManager.DrawStringBold(b, fitLabel, textPos, btnTextCol, ButtonFontSize, fitScale);
         }
 
         private static void DrawPillButton(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my, bool isEnabled = true)
