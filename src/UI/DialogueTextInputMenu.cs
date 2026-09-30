@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using StardewValley;
+using StardewValley.BellsAndWhistles;
 using StardewValley.Menus;
 using ValleytalkReborn.UI;
 using ValleytalkReborn.Dialogue.Coordination;
@@ -12,46 +13,51 @@ using ValleytalkReborn.Dialogue.Coordination;
 namespace ValleytalkReborn
 {
     /// <summary>
-    /// 玩家对话自由文本输入菜单：
-    /// 遵循 BioEditorMenu 整体视觉与动效体系 —— 羊皮纸无缝底板、立体悬浮平滑缩放、
-    /// 仅主标题与主动作按钮使用 Bold 字体；集成角色肖像预览、历史记忆追溯与清空工具栏。
+    /// 自由文本输入菜单。
+    /// 右侧为 100% 原版原生立绘台与好感度宝石，左侧舒展对齐的原生风格自定义操作区。
     /// </summary>
     public class DialogueTextInputMenu : IClickableMenu
     {
         public delegate void TextSubmittedDelegate(string input);
 
-        // 统一整数字号（完全对齐 CustomFontManager 规范）
-        private const float TitleFontSize = CustomFontManager.SizeTitle;       // 24f Bold (顶栏主标题)
-        private const float ButtonFontSize = CustomFontManager.SizeRegular;    // 18f Bold (底部动作按钮)
-        private const float ContentFontSize = CustomFontManager.SizeRegular;   // 18f Medium (输入框文字)
-        private const float TipFontSize = CustomFontManager.SizeSmall;         // 15f Medium (副说明、提示与气泡)
+        // 像素级对齐原版 DialogueBox 规格
+        private const int DialogueWidth = 1200;
+        private const int DialogueHeight = 384;
 
-        private const int MenuWidth = 960;
-        private const int MenuHeight = 560;
-        private const int ContentPadding = 24;
-        private const int HeaderH = 68;
-        private const int FooterH = 56;
+        // 左侧文本区排版
+        private const int TextLeftPadding = 34;
+        private const int HeaderHeight = 44;
+        private const int BottomBarHeight = 40;
+
+        // 字阶配置
+        private const float TitleFontSize = 22f;
+        private const float SubtitleFontSize = 15f;
+        private const float InputFontSize = 21f;
+        private const float ButtonFontSize = 16f;
+        private const float TipFontSize = CustomFontManager.SizeSmall;
 
         private readonly string _title;
         private readonly string _npcName;
         private readonly string _npcDisplayName;
+        private readonly NPC? _currentNpc;
         private readonly TextSubmittedDelegate _onTextSubmitted;
         private readonly DialogueTextInputBox _inputTextBox;
 
-        // 肖像与关闭按钮
+        // 立绘与好感度数据
         private Texture2D? _npcPortrait;
-        private Rectangle _portraitSmileRect;
-        private ClickableTextureComponent _closeButton;
-        private float _closeButtonHoverScale;
-        private const float CloseButtonBaseScale = 3f;
+        private Rectangle _portraitSourceRect;
+        private Rectangle _friendshipJewel;
+        private bool _hasFriendship;
+        private int _friendshipHearts;
+        private int _maxHearts = 10;
 
-        // 底部动作按钮矩形
+        // 底部动作按钮
         private Rectangle _viewHistoryRect;
         private Rectangle _clearHistoryRect;
         private Rectangle _cancelButtonRect;
         private Rectangle _okButtonRect;
 
-        // ★ 按钮平滑悬停弹性动效系数
+        // 按钮悬停动效
         private float _viewHistoryHoverScale = 1f;
         private float _clearHistoryHoverScale = 1f;
         private float _cancelButtonHoverScale = 1f;
@@ -63,13 +69,9 @@ namespace ValleytalkReborn
         public Rectangle MenuBounds => new(xPositionOnScreen, yPositionOnScreen, width, height);
 
         public DialogueTextInputMenu(string title, TextSubmittedDelegate callback, NPC currentNpc)
-            : base(
-                (Game1.uiViewport.Width - Math.Clamp(Game1.uiViewport.Width - 100, 840, MenuWidth)) / 2,
-                (Game1.uiViewport.Height - Math.Clamp(Game1.uiViewport.Height - 80, 500, MenuHeight)) / 2,
-                Math.Clamp(Game1.uiViewport.Width - 100, 840, MenuWidth),
-                Math.Clamp(Game1.uiViewport.Height - 80, 500, MenuHeight),
-                showUpperRightCloseButton: false)
+            : base(0, 0, DialogueWidth, DialogueHeight, showUpperRightCloseButton: false)
         {
+            _currentNpc = currentNpc;
             _npcName = currentNpc?.Name ?? string.Empty;
             _npcDisplayName = currentNpc?.displayName ?? _npcName;
             _title = title ?? (string.IsNullOrEmpty(_npcName)
@@ -77,17 +79,17 @@ namespace ValleytalkReborn
                 : I18n.DialogueInput.DefaultTitleWithNpc(_npcDisplayName));
             _onTextSubmitted = callback;
 
-            // 文本框初始化（使用 18f 锐利字号，暖橘红木外框与内置占位符）
             string placeholder = !string.IsNullOrEmpty(_npcDisplayName)
                 ? I18n.DialogueInput.PlaceholderWithName(_npcDisplayName)
                 : I18n.DialogueInput.Placeholder();
 
-            _inputTextBox = new DialogueTextInputBox(300)
+            _inputTextBox = new DialogueTextInputBox(1000)
             {
                 AllowNewlines = false,
                 UseCustomFont = true,
-                CustomFontSize = ContentFontSize,
+                CustomFontSize = InputFontSize,
                 CounterFontSize = TipFontSize,
+                // ★ 启用控件自身的底板槽与聚焦光晕外框（温润羊皮纸底色 + 原版暖橘木边框）
                 DrawFrame = true,
                 ShowCharacterCount = true,
                 TextColor = BioEditorMenu.TextPrimary,
@@ -102,11 +104,8 @@ namespace ValleytalkReborn
                 Submit(sender.Text);
             };
 
-            _closeButton = new ClickableTextureComponent(
-                new Rectangle(xPositionOnScreen + width - 50, yPositionOnScreen + 16, 36, 36),
-                Game1.mouseCursors, new Rectangle(337, 494, 12, 12), CloseButtonBaseScale);
-
             LoadNpcPortrait();
+            LoadFriendshipData();
             Layout();
             RestoreFocus();
         }
@@ -115,63 +114,99 @@ namespace ValleytalkReborn
         {
             try
             {
-                var character = Game1.getCharacterFromName(_npcName);
-                _npcPortrait = (character?.Portrait != null && !character.Portrait.IsDisposed)
-                    ? character.Portrait
-                    : Game1.content.Load<Texture2D>("Portraits\\" + _npcName);
+                if (_currentNpc?.Portrait != null && !_currentNpc.Portrait.IsDisposed)
+                {
+                    _npcPortrait = _currentNpc.Portrait;
+                }
+                else
+                {
+                    var character = Game1.getCharacterFromName(_npcName);
+                    _npcPortrait = (character?.Portrait != null && !character.Portrait.IsDisposed)
+                        ? character.Portrait
+                        : Game1.content.Load<Texture2D>("Portraits/" + _npcName);
+                }
 
                 if (_npcPortrait != null)
                 {
-                    if (_npcPortrait.Width >= 128 && _npcPortrait.Height >= 64)
-                        _portraitSmileRect = new Rectangle(64, 0, 64, 64);
-                    else if (_npcPortrait.Width >= 64 && _npcPortrait.Height >= 128)
-                        _portraitSmileRect = new Rectangle(0, 64, 64, 64);
-                    else
-                        _portraitSmileRect = new Rectangle(0, 0, Math.Min(64, _npcPortrait.Width), Math.Min(64, _npcPortrait.Height));
+                    _portraitSourceRect = Game1.getSourceRectForStandardTileSheet(_npcPortrait, 0, 64, 64);
+                    if (!_npcPortrait.Bounds.Contains(_portraitSourceRect))
+                    {
+                        _portraitSourceRect = new Rectangle(0, 0, 64, 64);
+                    }
                 }
             }
             catch
             {
                 _npcPortrait = null;
-                _portraitSmileRect = Rectangle.Empty;
+                _portraitSourceRect = Rectangle.Empty;
+            }
+        }
+
+        private void LoadFriendshipData()
+        {
+            _hasFriendship = false;
+            _friendshipHearts = 0;
+            _maxHearts = 10;
+
+            if (string.IsNullOrEmpty(_npcName)) return;
+
+            var speaker = _currentNpc ?? Game1.getCharacterFromName(_npcName);
+
+            if (Game1.player != null && Game1.player.friendshipData.ContainsKey(_npcName))
+            {
+                _hasFriendship = true;
+                _friendshipHearts = Game1.player.getFriendshipHeartLevelForNPC(_npcName);
+                _maxHearts = Utility.GetMaximumHeartsForCharacter(speaker);
             }
         }
 
         private void Layout()
         {
-            _closeButton.bounds = new Rectangle(xPositionOnScreen + width - 50, yPositionOnScreen + 16, 36, 36);
+            width = DialogueWidth;
+            height = DialogueHeight;
 
-            int contentLeft = xPositionOnScreen + ContentPadding;
-            int contentW = width - ContentPadding * 2;
-            int bodyTop = yPositionOnScreen + HeaderH + 12;
+            // 原版绝对居中锚定
+            Vector2 centered = Utility.getTopLeftPositionForCenteringOnScreen(width, height, 0, 0);
+            xPositionOnScreen = (int)centered.X;
+            yPositionOnScreen = Game1.uiViewport.Height - height - 64;
 
-            int footerY = yPositionOnScreen + height - FooterH + 10;
-            const int btnH = 38;
+            // 原版好感度宝石定位（x + width - 64, y + 256, 44, 44）
+            _friendshipJewel = new Rectangle(xPositionOnScreen + width - 64, yPositionOnScreen + 256, 44, 44);
 
-            int boxH = footerY - 14 - bodyTop;
-            _inputTextBox.Position = new Vector2(contentLeft, bodyTop);
-            _inputTextBox.Extent = new Vector2(contentW, Math.Max(140, boxH));
+            // 原版立绘区起始 X 坐标与木梁分隔定位
+            int xPositionOfPortraitArea = xPositionOnScreen + width - 448 + 4;
+            int textLeft = xPositionOnScreen + TextLeftPadding;
+            int textRightBound = xPositionOfPortraitArea - 40 - 20;
+            int textWidth = textRightBound - textLeft;
+
+            // 1. 顶栏排版
+            int topY = yPositionOnScreen + 20;
+            int sepY = topY + HeaderHeight;
+
+            // 2. 底部动作条微调（贴紧对话框下缘木框）
+            int bottomBarY = yPositionOnScreen + height - BottomBarHeight - 16;
+            const int histBtnW = 126;
+            const int clearBtnW = 114;
+            const int sendBtnW = 110;
+            const int cancelBtnW = 96;
+
+            _viewHistoryRect = new Rectangle(textLeft, bottomBarY, histBtnW, BottomBarHeight);
+            _clearHistoryRect = new Rectangle(_viewHistoryRect.Right + 10, bottomBarY, clearBtnW, BottomBarHeight);
+
+            _cancelButtonRect = new Rectangle(textLeft + textWidth - cancelBtnW, bottomBarY, cancelBtnW, BottomBarHeight);
+            _okButtonRect = new Rectangle(_cancelButtonRect.X - sendBtnW - 10, bottomBarY, sendBtnW, BottomBarHeight);
+
+            // 3. 中间输入区高度自适应扩展
+            int inputY = sepY + 10;
+            int inputH = bottomBarY - 14 - inputY;
+
+            _inputTextBox.Position = new Vector2(textLeft, inputY);
+            _inputTextBox.Extent = new Vector2(textWidth, inputH);
             _inputTextBox.InvalidateLayout();
-
-            // 底部按钮布局
-            const int viewHistBtnW = 126;
-            const int clearHistBtnW = 116;
-            const int cancelBtnW = 120;
-            const int okBtnW = 190;
-
-            _viewHistoryRect = new Rectangle(contentLeft, footerY, viewHistBtnW, btnH);
-            _clearHistoryRect = new Rectangle(_viewHistoryRect.Right + 10, footerY, clearHistBtnW, btnH);
-
-            _okButtonRect = new Rectangle(xPositionOnScreen + width - ContentPadding - okBtnW, footerY, okBtnW, btnH);
-            _cancelButtonRect = new Rectangle(_okButtonRect.X - cancelBtnW - 12, footerY, cancelBtnW, btnH);
         }
 
         public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
         {
-            width = Math.Clamp(Game1.uiViewport.Width - 100, 840, MenuWidth);
-            height = Math.Clamp(Game1.uiViewport.Height - 80, 500, MenuHeight);
-            xPositionOnScreen = (Game1.uiViewport.Width - width) / 2;
-            yPositionOnScreen = (Game1.uiViewport.Height - height) / 2;
             Layout();
         }
 
@@ -213,7 +248,7 @@ namespace ValleytalkReborn
             _onTextSubmitted?.Invoke(text?.TrimEnd('\r', '\n') ?? string.Empty);
         }
 
-        // ── 交互输入分发与 Wrapper 适配 ──────────────────────────────────────────
+        // ── 交互分发 ──────────────────────────────────────────
 
         public override void leftClickHeld(int x, int y)
         {
@@ -245,13 +280,6 @@ namespace ValleytalkReborn
 
         public void ReceiveLeftClick(int x, int y)
         {
-            if (_closeButton.containsPoint(x, y))
-            {
-                Game1.playSound("bigDeSelect");
-                Submit(string.Empty);
-                return;
-            }
-
             if (_inputTextBox.ReceiveLeftClick(x, y))
             {
                 RestoreFocus();
@@ -285,12 +313,18 @@ namespace ValleytalkReborn
                                 I18n.DialogueInput.ClearScopeHudToday(dispName), HUDMessage.achievement_type));
                             break;
                         case ClearHistoryScopeMenu.ClearScope.CurrentNpcAll:
-                            ClearHistory(_npcName);
+                            DialogueHistoryManager.Instance.ClearHistory(_npcName);
+                            SessionCache.Instance.Reset(_npcName);
+                            RecentConversationTracker.Clear(_npcName);
+                            DialogueBuilder.Instance?.ClearContext(_npcName);
                             Game1.addHUDMessage(new HUDMessage(
                                 I18n.DialogueInput.ClearScopeHudCurrentNpcAll(dispName), HUDMessage.achievement_type));
                             break;
                         case ClearHistoryScopeMenu.ClearScope.GlobalAll:
-                            ClearHistory();
+                            DialogueHistoryManager.Instance.ClearAllHistory();
+                            SessionCache.Instance.ResetAll();
+                            RecentConversationTracker.Clear();
+                            DialogueBuilder.Instance?.ClearAllContexts();
                             Game1.addHUDMessage(new HUDMessage(
                                 I18n.DialogueInput.ClearScopeHudGlobalAll(), HUDMessage.achievement_type));
                             break;
@@ -301,15 +335,18 @@ namespace ValleytalkReborn
 
             if (_cancelButtonRect.Contains(x, y))
             {
-                Game1.playSound("cancel");
+                Game1.playSound("bigDeSelect");
                 Submit(string.Empty);
                 return;
             }
 
             if (_okButtonRect.Contains(x, y))
             {
-                Game1.playSound("coin");
-                Submit(_inputTextBox.Text);
+                if (!string.IsNullOrWhiteSpace(_inputTextBox.Text))
+                {
+                    Game1.playSound("coin");
+                    Submit(_inputTextBox.Text);
+                }
                 return;
             }
 
@@ -325,7 +362,7 @@ namespace ValleytalkReborn
         {
             if (key == Keys.Escape)
             {
-                Game1.playSound("cancel");
+                Game1.playSound("bigDeSelect");
                 Submit(string.Empty);
                 return;
             }
@@ -335,8 +372,11 @@ namespace ValleytalkReborn
 
             if (key == Keys.Enter)
             {
-                Game1.playSound("coin");
-                Submit(_inputTextBox.Text);
+                if (!string.IsNullOrWhiteSpace(_inputTextBox.Text))
+                {
+                    Game1.playSound("coin");
+                    Submit(_inputTextBox.Text);
+                }
                 return;
             }
 
@@ -358,62 +398,49 @@ namespace ValleytalkReborn
 
         protected override void cleanupBeforeExit()
         {
-            Game1.keyboardDispatcher.Subscriber = null;
+            if (Game1.keyboardDispatcher.Subscriber == _inputTextBox)
+                Game1.keyboardDispatcher.Subscriber = null;
+
             base.cleanupBeforeExit();
         }
 
-        private void ClearHistory()
-        {
-            DialogueHistoryManager.Instance.ClearAllHistory();
-            SessionCache.Instance.ResetAll();
-            RecentConversationTracker.Clear();
-            DialogueBuilder.Instance?.ClearAllContexts();
-        }
-
-        private void ClearHistory(string npcName)
-        {
-            DialogueHistoryManager.Instance.ClearHistory(npcName);
-            SessionCache.Instance.Reset(npcName);
-            RecentConversationTracker.Clear(npcName);
-            DialogueBuilder.Instance?.ClearContext(npcName);
-        }
-
-        // ── 渲染管线 ──────────────────────────────────────────────────────────
+        // ── 渲染管线 ──────────────────────────────────────────
 
         public override void draw(SpriteBatch b)
         {
             int mx = Game1.getMouseX();
             int my = Game1.getMouseY();
 
-            // ★ 核心修复 2：每一帧绘制开头无条件置空，彻底根治悬停气泡粘在鼠标上的 Bug
             _hoverText = null;
 
-            // 1. 全屏半透明遮罩
-            b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.5f);
+            // 1. 全屏微暗遮罩
+            b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.25f);
 
-            // 2. 双层羊皮纸木框底板（对齐 BioEditorMenu）
-            IClickableMenu.drawTextureBox(b, xPositionOnScreen - 8, yPositionOnScreen - 8, width + 16, height + 16, Color.White);
+            // 2. 原版 DialogueBox.drawBox 原生 9 切片大外框
+            DrawNativeDialogueBox(b, xPositionOnScreen, yPositionOnScreen, width, height);
 
-            b.Draw(Game1.staminaRect, new Rectangle(xPositionOnScreen, yPositionOnScreen, width, height), new Color(245, 230, 205));
-            b.Draw(
-                Game1.menuTexture,
-                new Rectangle(xPositionOnScreen, yPositionOnScreen, width, height),
-                new Rectangle(64, 128, 64, 64),
-                new Color(245, 230, 205));
+            // 3. 原版 DialogueBox.drawPortrait 原生立绘展台
+            DrawNativePortraitArea(b);
 
-            DrawHeader(b, mx, my);
+            // 4. 左侧顶栏
+            DrawHeader(b);
 
-            // 3. 绘制输入文本框（自带暖橘红木外框与自适应占位符）
+            // 5. 左侧文本输入区（直接委托给 DialogueTextInputBox 自带的温润羊皮纸底板和暖色原木边框）
             _inputTextBox.Draw(b);
 
-            // 4. ★ 核心修复 1：接入平滑弹性缩放、高亮边框与浮起阴影动效的现代化实体按钮
-            DrawAnimatedActionButton(b, _viewHistoryRect, I18n.DialogueInput.ButtonHistory(), ref _viewHistoryHoverScale, mx, my, isPrimary: false);
-            DrawAnimatedActionButton(b, _clearHistoryRect, I18n.DialogueInput.ButtonClearMemory(), ref _clearHistoryHoverScale, mx, my, isDanger: false);
-            DrawAnimatedActionButton(b, _cancelButtonRect, I18n.DialogueInput.ButtonCancel(), ref _cancelButtonHoverScale, mx, my, isDanger: false);
-            DrawAnimatedActionButton(b, _okButtonRect, I18n.DialogueInput.ButtonSend(), ref _okButtonHoverScale, mx, my, isPrimary: true);
+            // 6. 底部动作工具栏（沉底排列）
+            DrawAnimatedActionButton(b, _viewHistoryRect, I18n.DialogueInput.ButtonHistory(), ref _viewHistoryHoverScale, mx, my, isPrimary: false, fontSize: ButtonFontSize);
+            DrawAnimatedActionButton(b, _clearHistoryRect, I18n.DialogueInput.ButtonClearMemory(), ref _clearHistoryHoverScale, mx, my, isDanger: false, fontSize: ButtonFontSize);
+            DrawAnimatedActionButton(b, _okButtonRect, I18n.DialogueInput.ButtonSend(), ref _okButtonHoverScale, mx, my, isPrimary: true, fontSize: ButtonFontSize);
+            DrawAnimatedActionButton(b, _cancelButtonRect, I18n.DialogueInput.ButtonCancel(), ref _cancelButtonHoverScale, mx, my, isDanger: false, fontSize: ButtonFontSize);
+            
 
-            // 5. 悬停提示检测（鼠标离开感应区后当帧自然失效）
-            if (_viewHistoryRect.Contains(mx, my))
+            // 7. 悬停气泡提示
+            if (_hasFriendship && !_friendshipJewel.IsEmpty && _friendshipJewel.Contains(mx, my))
+            {
+                _hoverText = $"{_friendshipHearts}/{_maxHearts}<";
+            }
+            else if (_viewHistoryRect.Contains(mx, my))
             {
                 _hoverText = !string.IsNullOrEmpty(_npcDisplayName)
                     ? I18n.DialogueInput.TooltipHistory(_npcDisplayName)
@@ -435,53 +462,89 @@ namespace ValleytalkReborn
             }
 
             if (!string.IsNullOrEmpty(_hoverText))
-                DrawHoverTextCustom(b, _hoverText);
+            {
+                if (_hasFriendship && _friendshipJewel.Contains(mx, my))
+                {
+                    SpriteText.drawStringWithScrollBackground(b, _hoverText, _friendshipJewel.Center.X - SpriteText.getWidthOfString(_hoverText, 999999) / 2, _friendshipJewel.Y - 64, "", 1f, null, SpriteText.ScrollTextAlignment.Left);
+                }
+                else
+                {
+                    DrawHoverTextCustom(b, _hoverText);
+                }
+            }
 
             drawMouse(b);
         }
 
-        private void DrawHeader(SpriteBatch b, int mx, int my)
+        private static void DrawNativeDialogueBox(SpriteBatch b, int xPos, int yPos, int boxWidth, int boxHeight)
         {
-            int headX = xPositionOnScreen + ContentPadding;
-            int headY = yPositionOnScreen + 14;
+            b.Draw(Game1.mouseCursors, new Rectangle(xPos, yPos, boxWidth, boxHeight), new Rectangle(306, 320, 16, 16), Color.White);
 
-            // 肖像框
-            const int pSize = 44;
-            var portraitRect = new Rectangle(headX, headY, pSize, pSize);
+            b.Draw(Game1.mouseCursors, new Rectangle(xPos, yPos - 20, boxWidth, 24), new Rectangle(275, 313, 1, 6), Color.White);
+            b.Draw(Game1.mouseCursors, new Rectangle(xPos + 12, yPos + boxHeight, boxWidth - 20, 32), new Rectangle(275, 328, 1, 8), Color.White);
+            b.Draw(Game1.mouseCursors, new Rectangle(xPos - 32, yPos + 24, 32, boxHeight - 28), new Rectangle(264, 325, 8, 1), Color.White);
+            b.Draw(Game1.mouseCursors, new Rectangle(xPos + boxWidth, yPos, 28, boxHeight), new Rectangle(293, 324, 7, 1), Color.White);
 
-            b.Draw(Game1.staminaRect, new Rectangle(portraitRect.X - 1, portraitRect.Y - 1, portraitRect.Width + 2, portraitRect.Height + 2), new Color(225, 210, 185));
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6),
-                portraitRect.X - 2, portraitRect.Y - 2, portraitRect.Width + 4, portraitRect.Height + 4,
-                new Color(200, 175, 140), 2f, false);
+            b.Draw(Game1.mouseCursors, new Vector2(xPos - 44, yPos - 28), new Rectangle(261, 311, 14, 13), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 0.87f);
+            b.Draw(Game1.mouseCursors, new Vector2(xPos + boxWidth - 8, yPos - 28), new Rectangle(291, 311, 12, 11), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 0.87f);
+            b.Draw(Game1.mouseCursors, new Vector2(xPos + boxWidth - 8, yPos + boxHeight - 8), new Rectangle(291, 326, 12, 12), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 0.87f);
+            b.Draw(Game1.mouseCursors, new Vector2(xPos - 44, yPos + boxHeight - 4), new Rectangle(261, 327, 14, 11), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 0.87f);
+        }
 
-            if (_npcPortrait != null && !_portraitSmileRect.IsEmpty)
-                b.Draw(_npcPortrait, portraitRect, _portraitSmileRect, Color.White);
-            else
+        private void DrawNativePortraitArea(SpriteBatch b)
+        {
+            if (width < 642) return;
+
+            int xPositionOfPortraitArea = xPositionOnScreen + width - 448 + 4;
+            int widthOfPortraitArea = xPositionOnScreen + width - xPositionOfPortraitArea;
+
+            b.Draw(Game1.mouseCursors, new Rectangle(xPositionOfPortraitArea - 40, yPositionOnScreen, 36, height), new Rectangle(278, 324, 9, 1), Color.White);
+            b.Draw(Game1.mouseCursors, new Vector2(xPositionOfPortraitArea - 40, yPositionOnScreen - 20), new Rectangle(278, 313, 10, 7), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 0.88f);
+            b.Draw(Game1.mouseCursors, new Vector2(xPositionOfPortraitArea - 40, yPositionOnScreen + height), new Rectangle(278, 328, 10, 8), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 0.88f);
+
+            int portraitBoxX = xPositionOfPortraitArea + 76;
+            int portraitBoxY = yPositionOnScreen + height / 2 - 148 - 36;
+            b.Draw(Game1.mouseCursors, new Vector2(xPositionOfPortraitArea - 8, yPositionOnScreen), new Rectangle(583, 411, 115, 97), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 0.88f);
+
+            if (_npcPortrait != null && !_portraitSourceRect.IsEmpty)
             {
-                string avatarFallback = string.IsNullOrEmpty(_npcDisplayName) ? "?" : _npcDisplayName.Substring(0, 1);
-                var fsz = CustomFontManager.MeasureStringBold(avatarFallback, TitleFontSize);
-                CustomFontManager.DrawStringBold(b, avatarFallback,
-                    new Vector2(portraitRect.X + (pSize - fsz.X) / 2f, portraitRect.Y + (pSize - fsz.Y) / 2f - 1),
-                    BioEditorMenu.TextMuted, TitleFontSize);
+                b.Draw(_npcPortrait, new Vector2(portraitBoxX + 16, portraitBoxY + 24), _portraitSourceRect, Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 0.88f);
             }
 
-            // ★ 主标题：唯一使用 Bold，SizeTitle (24f)
-            CustomFontManager.DrawStringBold(b, _title, new Vector2(headX + pSize + 12, headY + 2), BioEditorMenu.TextPrimary, TitleFontSize);
+            if (!string.IsNullOrEmpty(_npcDisplayName))
+            {
+                SpriteText.drawStringHorizontallyCenteredAt(b, _npcDisplayName, xPositionOfPortraitArea + widthOfPortraitArea / 2, portraitBoxY + 296 + 16, 999999, -1, 999999, 1f, 0.88f, false, null, 99999);
+            }
 
-            // ★ 副说明：Medium 字体，SizeSmall (15f)
+            if (_hasFriendship && !_friendshipJewel.IsEmpty)
+            {
+                Rectangle jewelSource = (_friendshipHearts >= 10 || _friendshipHearts >= _maxHearts)
+                    ? new Rectangle(269, 494, 11, 11)
+                    : new Rectangle(
+                        Math.Max(140, 140 + (int)(Game1.currentGameTime.TotalGameTime.TotalMilliseconds % 1000.0 / 250.0) * 11),
+                        Math.Max(532, 532 + _friendshipHearts / 2 * 11),
+                        11, 11);
+
+                b.Draw(Game1.mouseCursors, new Vector2(_friendshipJewel.X, _friendshipJewel.Y), jewelSource, Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 0.88f);
+            }
+        }
+
+        private void DrawHeader(SpriteBatch b)
+        {
+            int textLeft = xPositionOnScreen + TextLeftPadding;
+            int topY = yPositionOnScreen + 20;
+
+            CustomFontManager.DrawStringBold(b, _title, new Vector2(textLeft, topY), BioEditorMenu.TextPrimary, TitleFontSize);
+
             string subtitle = !string.IsNullOrEmpty(_npcDisplayName)
                 ? I18n.DialogueInput.SubtitleWithName(_npcDisplayName)
                 : I18n.DialogueInput.SubtitleGeneric();
-            CustomFontManager.DrawString(b, subtitle, new Vector2(headX + pSize + 14, headY + 30), BioEditorMenu.TextMuted, TipFontSize);
+            CustomFontManager.DrawString(b, subtitle, new Vector2(textLeft, topY + 26), BioEditorMenu.TextMuted, SubtitleFontSize);
 
-            // 分割横线
-            int sepY = yPositionOnScreen + HeaderH + 4;
-            b.Draw(Game1.staminaRect, new Rectangle(headX, sepY, width - ContentPadding * 2, 2), Color.Gray * 0.35f);
-
-            // 关闭按钮平滑缩放
-            UiHelper.UpdateButtonScale(ref _closeButtonHoverScale, _closeButton, mx, my);
-            _closeButton.scale = CloseButtonBaseScale * _closeButtonHoverScale;
-            _closeButton.draw(b);
+            int sepY = topY + HeaderHeight;
+            int xPositionOfPortraitArea = xPositionOnScreen + width - 448 + 4;
+            int textWidth = (xPositionOfPortraitArea - 40 - 20) - textLeft;
+            b.Draw(Game1.staminaRect, new Rectangle(textLeft, sepY, textWidth, 1), Color.Gray * 0.35f);
         }
 
         private static bool IsLeftMouseDown()
@@ -490,9 +553,6 @@ namespace ValleytalkReborn
             catch { return false; }
         }
 
-        /// <summary>
-        /// 带有平滑插值悬浮放大、高光边框及按压立体反馈的现代化实体动作按钮。
-        /// </summary>
         internal static void DrawAnimatedActionButton(
             SpriteBatch b,
             Rectangle rect,
@@ -501,13 +561,13 @@ namespace ValleytalkReborn
             int mx, int my,
             bool isDanger = false,
             bool isPrimary = false,
-            bool isEnabled = true)
+            bool isEnabled = true,
+            float fontSize = 0f)
         {
             bool isHover = isEnabled && rect.Contains(mx, my);
             bool isPressed = isHover && IsLeftMouseDown();
 
-            // ★ 悬浮缩放平滑插值（0.25f 线性插值步进，悬浮时 1.04f 饱满微放大）
-            float targetScale = (isHover && !isPressed) ? 1.04f : 1.0f;
+            float targetScale = (isHover && !isPressed) ? 1.025f : 1.0f;
             hoverScale += (targetScale - hoverScale) * 0.25f;
 
             int drawW = (int)MathF.Round(rect.Width * hoverScale);
@@ -516,17 +576,14 @@ namespace ValleytalkReborn
             int drawY = rect.Y - (drawH - rect.Height) / 2;
             int pressOffset = isPressed ? 1 : 0;
 
-            // 1. 悬停浮起立体投影（悬停时阴影沉降展开，按下时收起）
             if (!isPressed)
             {
                 int shadowY = isHover ? 3 : 2;
-                float shadowAlpha = isHover ? 0.22f : 0.14f;
                 b.Draw(Game1.staminaRect,
                     new Rectangle(drawX + 1, drawY + shadowY, drawW, drawH),
-                    Color.Black * shadowAlpha);
+                    Color.Black * (isHover ? 0.20f : 0.12f));
             }
 
-            // 2. 悬停高亮底色反馈
             Color bg;
             if (!isEnabled)
             {
@@ -534,8 +591,7 @@ namespace ValleytalkReborn
             }
             else if (isPrimary)
             {
-                // 主按钮：常态金黄，悬浮时高亮灿金
-                bg = isHover ? new Color(255, 228, 105) : new Color(255, 208, 115);
+                bg = isHover ? new Color(255, 232, 120) : new Color(255, 210, 115);
             }
             else if (isDanger)
             {
@@ -543,19 +599,17 @@ namespace ValleytalkReborn
             }
             else
             {
-                // 普通按钮：常态温润麦木色，悬停时明显提亮为明润象牙暖白
-                bg = isHover ? new Color(255, 248, 235) : new Color(228, 202, 168);
+                bg = isHover ? new Color(255, 248, 235) : new Color(236, 215, 185);
             }
 
             if (isPressed)
-                bg = Color.Lerp(bg, Color.Black, 0.14f);
+                bg = Color.Lerp(bg, Color.Black, 0.12f);
 
-            var btnBounds = new Rectangle(drawX + pressOffset, drawY + pressOffset, drawW, drawH);
+            var dynamicBox = new Rectangle(drawX + pressOffset, drawY + pressOffset, drawW, drawH);
             b.Draw(Game1.staminaRect,
-                new Rectangle(btnBounds.X + 1, btnBounds.Y + 1, btnBounds.Width - 2, btnBounds.Height - 2),
+                new Rectangle(dynamicBox.X + 1, dynamicBox.Y + 1, dynamicBox.Width - 2, dynamicBox.Height - 2),
                 bg);
 
-            // 3. 边框：悬停时呈现鲜亮暖金橙发光边框，强化交互焦点
             Color borderCol;
             if (!isEnabled)
             {
@@ -571,19 +625,31 @@ namespace ValleytalkReborn
             }
             else
             {
-                borderCol = isHover ? new Color(215, 140, 50) : new Color(185, 145, 105);
+                borderCol = isHover ? new Color(225, 150, 50) : new Color(190, 155, 115);
             }
 
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-                btnBounds.X, btnBounds.Y, btnBounds.Width, btnBounds.Height,
+                dynamicBox.X, dynamicBox.Y, dynamicBox.Width, dynamicBox.Height,
                 borderCol, 3f, false);
 
-            // 4. 文字居中渲染
             Color textCol = !isEnabled ? BioEditorMenu.TextMuted
                           : isDanger ? BioEditorMenu.TextOnDarkBtn
                           : BioEditorMenu.TextOnLightBtn;
 
-            ButtonTextRenderer.DrawButtonText(b, label, btnBounds, textCol, useBold: true);
+            var stableTextBounds = new Rectangle(rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height);
+
+            if (fontSize > 0f)
+            {
+                var sz = CustomFontManager.MeasureString(label, fontSize);
+                var pos = new Vector2(
+                    stableTextBounds.X + (stableTextBounds.Width - sz.X) / 2f,
+                    stableTextBounds.Y + (stableTextBounds.Height - sz.Y) / 2f - 1);
+                CustomFontManager.DrawString(b, label, pos, textCol, fontSize);
+            }
+            else
+            {
+                ButtonTextRenderer.DrawButtonText(b, label, stableTextBounds, textCol, useBold: true);
+            }
         }
 
         internal static void DrawHoverTextCustom(SpriteBatch b, string text)

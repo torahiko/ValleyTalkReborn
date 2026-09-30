@@ -38,6 +38,21 @@ namespace ValleytalkReborn
             }
         }
 
+        /// <summary>
+        /// ★ 核心修复：每帧把时间流推给内部菜单与输入框，驱动按键长按连发与光标闪烁
+        /// </summary>
+        public override void update(GameTime time)
+        {
+            base.update(time);
+            _innerMenu.update(time);
+        }
+
+        public override void performHoverAction(int x, int y)
+        {
+            base.performHoverAction(x, y);
+            _innerMenu.performHoverAction(x, y);
+        }
+
         public override void draw(SpriteBatch b)
         {
             _innerMenu.draw(b);

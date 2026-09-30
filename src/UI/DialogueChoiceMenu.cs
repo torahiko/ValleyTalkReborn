@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,35 +8,37 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using StardewModdingAPI;
 using StardewValley;
+using StardewValley.BellsAndWhistles;
 using StardewValley.Menus;
 
 namespace ValleytalkReborn.UI
 {
     /// <summary>
     /// VT-UI-005 Stage 2：精致交互响应坞（Response Dock）。
-    /// 原版对话框播完纯台词后平滑接管，集成“NPC语境回显 + 建议卡片 + 坞内文本输入框”。
-    /// 全局字号全面上调一阶，与大画幅排版完美匹配。
+    /// 外观与 DialogueTextInputMenu 保持 100% 原版原生统一：
+    /// 右侧为原生立绘展台与好感度宝石，左侧集成大字号建议卡片、约会选项与坞内自由输入区。
     /// </summary>
     internal class DialogueChoiceMenu : IClickableMenu
     {
-        private const int MaxPanelWidth = 880;
-        private const int SideMargin = 64;
-        private const int BottomMargin = 28;
+        // 像素级对齐原版 DialogueBox 规格
+        private const int DialogueWidth = 1200;
+        private const int DialogueHeight = 384;
 
-        private const int HeaderHeight = 56;
-        private const int HeaderGap = 12;
-        private const int RowHeight = 60;
-        private const int RowGap = 10;
-        private const int PanelPadding = 22;
+        // 左侧文本排版常数
+        private const int TextLeftPadding = 34;
+        private const int HeaderHeight = 44;
+        private const int InputRowHeight = 44;
+        private const int SendButtonWidth = 92;
+        private const int SilenceButtonWidth = 114;
+        private const int RowGap = 8;
 
-        private const int InputRowHeight = 54;
-        private const int SendButtonWidth = 96;
-        private const int SilenceButtonWidth = 120;
-
-        // ★ 统一字体字阶配置（全面放大一号）
-        private const float TitleFontSize = 25f;    // 顶栏主标题（原 22f）
-        private const float SubtitleFontSize = 17f; // 顶栏副状态（原 15f）
-        private const float InputFontSize = 21f;    // 输入框与占位符（原 18f）
+        // ★ 统一字阶配置（全面放大）
+        private const float TitleFontSize = 22f;
+        private const float SubtitleFontSize = 15f;
+        private const float CardFontSize = 21f;     // ★ 建议选项卡与约会卡文字放大至 21f
+        private const float InputFontSize = 21f;    // 输入框文字
+        private const float ButtonFontSize = 18f;   // 发送/沉默等动作按钮放大至 18f
+        private const float TipFontSize = CustomFontManager.SizeSmall;
 
         private readonly NPC _speaker;
         private readonly string _npcLineSanitized;
@@ -43,13 +47,17 @@ namespace ValleytalkReborn.UI
 
         private readonly DialogueTextInputBox _inputBox;
 
-        // 肖像与头像框
-        private Texture2D _npcPortrait;
+        // 右侧原版立绘与好感度数据
+        private Texture2D? _npcPortrait;
         private Rectangle _portraitSourceRect;
-        private Rectangle _portraitDestRect;
+        private Rectangle _friendshipJewel;
+        private bool _hasFriendship;
+        private int _friendshipHearts;
+        private int _maxHearts = 10;
 
-        private readonly List<Rectangle> _suggestionRects = new List<Rectangle>();
-        private readonly List<float> _suggestionHoverScales = new List<float>();
+        // 交互卡片与按钮几何
+        private readonly List<Rectangle> _suggestionRects = new();
+        private readonly List<float> _suggestionHoverScales = new();
 
         private Rectangle _dateRect;
         private Rectangle _sendRect;
@@ -67,8 +75,10 @@ namespace ValleytalkReborn.UI
 
         private readonly GameLocation _openLocation;
         private bool _closed;
+        private string? _hoverText;
 
         public DialogueChoiceMenu(PendingChoiceContext context)
+            : base(0, 0, DialogueWidth, DialogueHeight, showUpperRightCloseButton: false)
         {
             _speaker = context.Speaker;
             _npcLineSanitized = context.NpcLineSanitized;
@@ -91,12 +101,12 @@ namespace ValleytalkReborn.UI
             _silenceLabel = Util.GetString("choiceMenuSilence", returnNull: true)
                             ?? (isZh ? "保持沉默" : "Stay silent");
 
-            // 输入框字号升级为 21f
-            _inputBox = new DialogueTextInputBox(200)
+            _inputBox = new DialogueTextInputBox(300)
             {
                 AllowNewlines = false,
                 UseCustomFont = true,
                 CustomFontSize = InputFontSize,
+                CounterFontSize = TipFontSize,
                 DrawFrame = true,
                 ShowCharacterCount = false,
                 Selected = true,
@@ -107,6 +117,7 @@ namespace ValleytalkReborn.UI
             };
 
             LoadNpcPortrait();
+            LoadFriendshipData();
             Layout();
 
             _openLocation = Game1.currentLocation;
@@ -125,17 +136,19 @@ namespace ValleytalkReborn.UI
                 }
                 else if (!string.IsNullOrEmpty(_speaker?.Name))
                 {
-                    _npcPortrait = Game1.content.Load<Texture2D>("Portraits\\" + _speaker.Name);
+                    var character = Game1.getCharacterFromName(_speaker.Name);
+                    _npcPortrait = (character?.Portrait != null && !character.Portrait.IsDisposed)
+                        ? character.Portrait
+                        : Game1.content.Load<Texture2D>("Portraits/" + _speaker.Name);
                 }
 
                 if (_npcPortrait != null)
                 {
-                    if (_npcPortrait.Width >= 128 && _npcPortrait.Height >= 64)
-                        _portraitSourceRect = new Rectangle(64, 0, 64, 64);
-                    else if (_npcPortrait.Width >= 64 && _npcPortrait.Height >= 128)
-                        _portraitSourceRect = new Rectangle(0, 64, 64, 64);
-                    else
-                        _portraitSourceRect = new Rectangle(0, 0, Math.Min(64, _npcPortrait.Width), Math.Min(64, _npcPortrait.Height));
+                    _portraitSourceRect = Game1.getSourceRectForStandardTileSheet(_npcPortrait, 0, 64, 64);
+                    if (!_npcPortrait.Bounds.Contains(_portraitSourceRect))
+                    {
+                        _portraitSourceRect = new Rectangle(0, 0, 64, 64);
+                    }
                 }
             }
             catch
@@ -145,65 +158,94 @@ namespace ValleytalkReborn.UI
             }
         }
 
+        private void LoadFriendshipData()
+        {
+            _hasFriendship = false;
+            _friendshipHearts = 0;
+            _maxHearts = 10;
+
+            if (string.IsNullOrEmpty(_speaker?.Name)) return;
+
+            if (Game1.player != null && Game1.player.friendshipData.ContainsKey(_speaker.Name))
+            {
+                _hasFriendship = true;
+                _friendshipHearts = Game1.player.getFriendshipHeartLevelForNPC(_speaker.Name);
+                _maxHearts = Utility.GetMaximumHeartsForCharacter(_speaker);
+            }
+        }
+
         private void Layout()
         {
-            width = Math.Min(MaxPanelWidth, Game1.uiViewport.Width - SideMargin);
+            width = DialogueWidth;
+            height = DialogueHeight;
 
-            height = PanelPadding 
-                     + HeaderHeight 
-                     + HeaderGap
-                     + (_showDateOption ? RowHeight + RowGap : 0)
-                     + _suggestions.Count * (RowHeight + RowGap)
-                     + InputRowHeight
-                     + PanelPadding;
+            Vector2 centered = Utility.getTopLeftPositionForCenteringOnScreen(width, height, 0, 0);
+            xPositionOnScreen = (int)centered.X;
+            yPositionOnScreen = Game1.uiViewport.Height - height - 64;
 
-            xPositionOnScreen = (Game1.uiViewport.Width - width) / 2;
-            yPositionOnScreen = Math.Max(16, Game1.uiViewport.Height - height - BottomMargin);
+            _friendshipJewel = new Rectangle(xPositionOnScreen + width - 64, yPositionOnScreen + 256, 44, 44);
 
-            int contentX = xPositionOnScreen + PanelPadding;
-            int contentW = width - PanelPadding * 2;
-            int currentY = yPositionOnScreen + PanelPadding;
+            int xPositionOfPortraitArea = xPositionOnScreen + width - 448 + 4;
+            int textLeft = xPositionOnScreen + TextLeftPadding;
+            int textRightBound = xPositionOfPortraitArea - 40 - 20;
+            int contentW = textRightBound - textLeft;
 
-            // 1. 顶栏区域（48x48 头像）
-            _portraitDestRect = new Rectangle(contentX, currentY + 3, 48, 48);
-            currentY += HeaderHeight + HeaderGap;
+            // 1. 顶栏排版
+            int topY = yPositionOnScreen + 20;
+            int sepY = topY + HeaderHeight;
 
-            // 2. 约会卡
-            if (_showDateOption)
+            // 2. 底部输入行与操作按钮
+            int bottomBarY = yPositionOnScreen + height - InputRowHeight - 16;
+            int inputW = contentW - SendButtonWidth - SilenceButtonWidth - RowGap * 2;
+
+            _inputBox.Position = new Vector2(textLeft, bottomBarY);
+            _inputBox.Extent = new Vector2(inputW, InputRowHeight);
+            _inputBox.InvalidateLayout();
+
+            _sendRect = new Rectangle(textLeft + inputW + RowGap, bottomBarY, SendButtonWidth, InputRowHeight);
+            _silenceRect = new Rectangle(_sendRect.Right + RowGap, bottomBarY, SilenceButtonWidth, InputRowHeight);
+
+            // 3. 中间选项卡区域自适应排布
+            int availableMiddleH = bottomBarY - 14 - (sepY + 10);
+            int totalCards = (_showDateOption ? 1 : 0) + _suggestions.Count;
+
+            int cardH = 50; // 调大卡片高度以契合 21f 字阶
+            if (totalCards > 0)
             {
-                _dateRect = new Rectangle(contentX, currentY, contentW, RowHeight);
-                currentY += RowHeight + RowGap;
+                cardH = Math.Clamp((availableMiddleH - (totalCards - 1) * RowGap) / totalCards, 40, 56);
             }
 
-            // 3. 建议卡列表
+            int currentY = sepY + 10;
+
+            if (_showDateOption)
+            {
+                _dateRect = new Rectangle(textLeft, currentY, contentW, cardH);
+                currentY += cardH + RowGap;
+            }
+
             _suggestionRects.Clear();
             _suggestionHoverScales.Clear();
             for (int i = 0; i < _suggestions.Count; i++)
             {
-                _suggestionRects.Add(new Rectangle(contentX, currentY, contentW, RowHeight));
+                _suggestionRects.Add(new Rectangle(textLeft, currentY, contentW, cardH));
                 _suggestionHoverScales.Add(1f);
-                currentY += RowHeight + RowGap;
+                currentY += cardH + RowGap;
             }
-
-            // 4. 输入行
-            int inputW = contentW - SendButtonWidth - SilenceButtonWidth - RowGap * 2;
-            _inputBox.Position = new Vector2(contentX, currentY);
-            _inputBox.Extent = new Vector2(inputW, InputRowHeight);
-            _inputBox.InvalidateLayout();
-
-            _sendRect = new Rectangle(contentX + inputW + RowGap, currentY, SendButtonWidth, InputRowHeight);
-            _silenceRect = new Rectangle(_sendRect.Right + RowGap, currentY, SilenceButtonWidth, InputRowHeight);
         }
 
         public override void update(GameTime time)
         {
             base.update(time);
 
+            _hoverText = null;
             _inputBox.Update(time);
 
-            _speaker.Halt();
-            _speaker.movementPause = 20;
-            _speaker.facePlayer(Game1.player);
+            if (_speaker != null)
+            {
+                _speaker.Halt();
+                _speaker.movementPause = 20;
+                _speaker.facePlayer(Game1.player);
+            }
 
             if (Game1.eventUp || Game1.currentLocation != _openLocation)
             {
@@ -260,7 +302,7 @@ namespace ValleytalkReborn.UI
                 }
             }
 
-            if (_dateRect.Contains(x, y))
+            if (_showDateOption && _dateRect.Contains(x, y))
             {
                 Game1.playSound("bigSelect");
                 OpenDateMenu();
@@ -335,83 +377,128 @@ namespace ValleytalkReborn.UI
             base.cleanupBeforeExit();
         }
 
+        // ── 渲染管线 ──────────────────────────────────────────
+
         public override void draw(SpriteBatch b)
         {
             int mx = Game1.getMouseX();
             int my = Game1.getMouseY();
 
+            _hoverText = null;
+
             b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.25f);
 
-            IClickableMenu.drawTextureBox(b, xPositionOnScreen - 8, yPositionOnScreen - 8, width + 16, height + 16, Color.White);
-            b.Draw(Game1.staminaRect, new Rectangle(xPositionOnScreen, yPositionOnScreen, width, height), new Color(245, 230, 205));
-            b.Draw(Game1.menuTexture,
-                new Rectangle(xPositionOnScreen, yPositionOnScreen, width, height),
-                new Rectangle(64, 128, 64, 64),
-                new Color(245, 230, 205));
-
+            DrawNativeDialogueBox(b, xPositionOnScreen, yPositionOnScreen, width, height);
+            DrawNativePortraitArea(b);
             DrawHeader(b);
 
+            // 约会卡大字号绘制 (21f)
             if (_showDateOption)
             {
-                DrawStableActionButton(b, _dateRect, _dateLabel, ref _dateHoverScale, mx, my, isRomantic: true);
+                DrawStableActionButton(b, _dateRect, _dateLabel, ref _dateHoverScale, mx, my, isRomantic: true, fontSize: CardFontSize);
             }
 
+            // 建议卡大字号绘制 (21f)
             for (int i = 0; i < _suggestionRects.Count; i++)
             {
                 float hoverScale = _suggestionHoverScales[i];
-                DrawStableActionButton(b, _suggestionRects[i], _suggestions[i], ref hoverScale, mx, my);
+                DrawStableActionButton(b, _suggestionRects[i], _suggestions[i], ref hoverScale, mx, my, fontSize: CardFontSize);
                 _suggestionHoverScales[i] = hoverScale;
             }
 
-            b.Draw(Game1.staminaRect,
-                new Rectangle((int)_inputBox.Position.X + 1, (int)_inputBox.Position.Y + 2, (int)_inputBox.Extent.X, (int)_inputBox.Extent.Y),
-                Color.Black * 0.12f);
-
             _inputBox.Draw(b);
 
-            DrawStableActionButton(b, _sendRect, _sendLabel, ref _sendHoverScale, mx, my, isPrimary: true);
-            DrawStableActionButton(b, _silenceRect, _silenceLabel, ref _silenceHoverScale, mx, my, isDanger: true);
+            // 动作按钮字号绘制 (18f)
+            DrawStableActionButton(b, _sendRect, _sendLabel, ref _sendHoverScale, mx, my, isPrimary: true, fontSize: ButtonFontSize);
+            DrawStableActionButton(b, _silenceRect, _silenceLabel, ref _silenceHoverScale, mx, my, isDanger: true, fontSize: ButtonFontSize);
 
-            for (int i = 0; i < _suggestionRects.Count; i++)
+            // 悬停气泡提示处理
+            if (_hasFriendship && !_friendshipJewel.IsEmpty && _friendshipJewel.Contains(mx, my))
             {
-                if (_suggestionRects[i].Contains(mx, my))
+                _hoverText = $"{_friendshipHearts}/{_maxHearts}<";
+                SpriteText.drawStringWithScrollBackground(b, _hoverText, _friendshipJewel.Center.X - SpriteText.getWidthOfString(_hoverText, 999999) / 2, _friendshipJewel.Y - 64, "", 1f, null, SpriteText.ScrollTextAlignment.Left);
+            }
+            else
+            {
+                for (int i = 0; i < _suggestionRects.Count; i++)
                 {
-                    DialogueTextInputMenu.DrawHoverTextCustom(b, _suggestions[i]);
-                    break;
+                    if (_suggestionRects[i].Contains(mx, my))
+                    {
+                        DialogueTextInputMenu.DrawHoverTextCustom(b, _suggestions[i]);
+                        break;
+                    }
                 }
             }
 
             drawMouse(b);
         }
 
-        private void DrawHeader(SpriteBatch b)
+        private static void DrawNativeDialogueBox(SpriteBatch b, int xPos, int yPos, int boxWidth, int boxHeight)
         {
-            b.Draw(Game1.staminaRect, new Rectangle(_portraitDestRect.X - 1, _portraitDestRect.Y - 1, _portraitDestRect.Width + 2, _portraitDestRect.Height + 2), new Color(225, 210, 185));
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6),
-                _portraitDestRect.X - 2, _portraitDestRect.Y - 2, _portraitDestRect.Width + 4, _portraitDestRect.Height + 4,
-                new Color(200, 175, 140), 2f, false);
+            b.Draw(Game1.mouseCursors, new Rectangle(xPos, yPos, boxWidth, boxHeight), new Rectangle(306, 320, 16, 16), Color.White);
+
+            b.Draw(Game1.mouseCursors, new Rectangle(xPos, yPos - 20, boxWidth, 24), new Rectangle(275, 313, 1, 6), Color.White);
+            b.Draw(Game1.mouseCursors, new Rectangle(xPos + 12, yPos + boxHeight, boxWidth - 20, 32), new Rectangle(275, 328, 1, 8), Color.White);
+            b.Draw(Game1.mouseCursors, new Rectangle(xPos - 32, yPos + 24, 32, boxHeight - 28), new Rectangle(264, 325, 8, 1), Color.White);
+            b.Draw(Game1.mouseCursors, new Rectangle(xPos + boxWidth, yPos, 28, boxHeight), new Rectangle(293, 324, 7, 1), Color.White);
+
+            b.Draw(Game1.mouseCursors, new Vector2(xPos - 44, yPos - 28), new Rectangle(261, 311, 14, 13), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 0.87f);
+            b.Draw(Game1.mouseCursors, new Vector2(xPos + boxWidth - 8, yPos - 28), new Rectangle(291, 311, 12, 11), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 0.87f);
+            b.Draw(Game1.mouseCursors, new Vector2(xPos + boxWidth - 8, yPos + boxHeight - 8), new Rectangle(291, 326, 12, 12), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 0.87f);
+            b.Draw(Game1.mouseCursors, new Vector2(xPos - 44, yPos + boxHeight - 4), new Rectangle(261, 327, 14, 11), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 0.87f);
+        }
+
+        private void DrawNativePortraitArea(SpriteBatch b)
+        {
+            if (width < 642) return;
+
+            int xPositionOfPortraitArea = xPositionOnScreen + width - 448 + 4;
+            int widthOfPortraitArea = xPositionOnScreen + width - xPositionOfPortraitArea;
+
+            b.Draw(Game1.mouseCursors, new Rectangle(xPositionOfPortraitArea - 40, yPositionOnScreen, 36, height), new Rectangle(278, 324, 9, 1), Color.White);
+            b.Draw(Game1.mouseCursors, new Vector2(xPositionOfPortraitArea - 40, yPositionOnScreen - 20), new Rectangle(278, 313, 10, 7), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 0.88f);
+            b.Draw(Game1.mouseCursors, new Vector2(xPositionOfPortraitArea - 40, yPositionOnScreen + height), new Rectangle(278, 328, 10, 8), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 0.88f);
+
+            int portraitBoxX = xPositionOfPortraitArea + 76;
+            int portraitBoxY = yPositionOnScreen + height / 2 - 148 - 36;
+            b.Draw(Game1.mouseCursors, new Vector2(xPositionOfPortraitArea - 8, yPositionOnScreen), new Rectangle(583, 411, 115, 97), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 0.88f);
 
             if (_npcPortrait != null && !_portraitSourceRect.IsEmpty)
             {
-                b.Draw(_npcPortrait, _portraitDestRect, _portraitSourceRect, Color.White);
+                b.Draw(_npcPortrait, new Vector2(portraitBoxX + 16, portraitBoxY + 24), _portraitSourceRect, Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 0.88f);
             }
-            else
+
+            string speakerName = _speaker?.displayName ?? _speaker?.Name ?? "";
+            if (!string.IsNullOrEmpty(speakerName))
             {
-                string fallback = _speaker?.displayName?.Substring(0, 1) ?? "?";
-                CustomFontManager.DrawStringBold(b, fallback,
-                    new Vector2(_portraitDestRect.X + 16, _portraitDestRect.Y + 12),
-                    BioEditorMenu.TextMuted, TitleFontSize);
+                SpriteText.drawStringHorizontallyCenteredAt(b, speakerName, xPositionOfPortraitArea + widthOfPortraitArea / 2, portraitBoxY + 296 + 16, 999999, -1, 999999, 1f, 0.88f, false, null, 99999);
             }
 
-            // 主标题放大至 25f Bold
-            int textLeft = _portraitDestRect.Right + 16;
-            CustomFontManager.DrawStringBold(b, _titleText, new Vector2(textLeft, _portraitDestRect.Y + 3), BioEditorMenu.TextPrimary, TitleFontSize);
+            if (_hasFriendship && !_friendshipJewel.IsEmpty)
+            {
+                Rectangle jewelSource = (_friendshipHearts >= 10 || _friendshipHearts >= _maxHearts)
+                    ? new Rectangle(269, 494, 11, 11)
+                    : new Rectangle(
+                        Math.Max(140, 140 + (int)(Game1.currentGameTime.TotalGameTime.TotalMilliseconds % 1000.0 / 250.0) * 11),
+                        Math.Max(532, 532 + _friendshipHearts / 2 * 11),
+                        11, 11);
 
-            // 副标题放大至 17f Medium
-            CustomFontManager.DrawString(b, _subtitleText, new Vector2(textLeft, _portraitDestRect.Y + 31), BioEditorMenu.TextMuted, SubtitleFontSize);
+                b.Draw(Game1.mouseCursors, new Vector2(_friendshipJewel.X, _friendshipJewel.Y), jewelSource, Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 0.88f);
+            }
+        }
 
-            int sepY = yPositionOnScreen + PanelPadding + HeaderHeight + 6;
-            b.Draw(Game1.staminaRect, new Rectangle(xPositionOnScreen + PanelPadding, sepY, width - PanelPadding * 2, 1), Color.Gray * 0.35f);
+        private void DrawHeader(SpriteBatch b)
+        {
+            int textLeft = xPositionOnScreen + TextLeftPadding;
+            int topY = yPositionOnScreen + 20;
+
+            CustomFontManager.DrawStringBold(b, _titleText, new Vector2(textLeft, topY), BioEditorMenu.TextPrimary, TitleFontSize);
+            CustomFontManager.DrawString(b, _subtitleText, new Vector2(textLeft, topY + 26), BioEditorMenu.TextMuted, SubtitleFontSize);
+
+            int sepY = topY + HeaderHeight;
+            int xPositionOfPortraitArea = xPositionOnScreen + width - 448 + 4;
+            int textWidth = (xPositionOfPortraitArea - 40 - 20) - textLeft;
+            b.Draw(Game1.staminaRect, new Rectangle(textLeft, sepY, textWidth, 1), Color.Gray * 0.35f);
         }
 
         private static void DrawStableActionButton(
@@ -422,7 +509,8 @@ namespace ValleytalkReborn.UI
             int mx, int my,
             bool isPrimary = false,
             bool isRomantic = false,
-            bool isDanger = false)
+            bool isDanger = false,
+            float fontSize = 0f)
         {
             bool isHover = rect.Contains(mx, my);
             bool isPressed = isHover && Game1.input.GetMouseState().LeftButton == ButtonState.Pressed;
@@ -493,7 +581,30 @@ namespace ValleytalkReborn.UI
                 borderCol, 3f, false);
 
             var stableTextBounds = new Rectangle(rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height);
-            ButtonTextRenderer.DrawButtonText(b, label, stableTextBounds, BioEditorMenu.TextPrimary, useBold: isPrimary || isRomantic);
+
+            // ★ 支持显式字阶，精准居中绘制
+            if (fontSize > 0f)
+            {
+                Color textCol = isDanger ? BioEditorMenu.TextOnDarkBtn : BioEditorMenu.TextPrimary;
+                bool useBold = isPrimary || isRomantic;
+                Vector2 sz = useBold 
+                    ? CustomFontManager.MeasureStringBold(label, fontSize) 
+                    : CustomFontManager.MeasureString(label, fontSize);
+
+                Vector2 pos = new Vector2(
+                    stableTextBounds.X + (stableTextBounds.Width - sz.X) / 2f,
+                    stableTextBounds.Y + (stableTextBounds.Height - sz.Y) / 2f - 1f
+                );
+
+                if (useBold)
+                    CustomFontManager.DrawStringBold(b, label, pos, textCol, fontSize);
+                else
+                    CustomFontManager.DrawString(b, label, pos, textCol, fontSize);
+            }
+            else
+            {
+                ButtonTextRenderer.DrawButtonText(b, label, stableTextBounds, BioEditorMenu.TextPrimary, useBold: isPrimary || isRomantic);
+            }
         }
 
         private void Submit(string text)

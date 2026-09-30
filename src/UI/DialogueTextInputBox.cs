@@ -613,6 +613,7 @@ namespace ValleytalkReborn
             if (inputChar == '\b')
             {
                 ExecuteBackspace();
+                StartKeyRepeat(Keys.Back); 
                 return;
             }
 
@@ -806,10 +807,12 @@ namespace ValleytalkReborn
             _isHoveringThumb = _needsScrolling && GetScrollThumbBounds().Contains(mouseX, mouseY);
 
             // 2. 键盘连发检测
+            // 2. 键盘连发检测
             if (_currentSpecialKey == Keys.None)
                 return;
 
-            var currentKeyState = Game1.input.GetKeyboardState();
+// ★ 改用 XNA 底层物理键盘状态，杜绝被星露谷框架拦截或清空
+            var currentKeyState = Microsoft.Xna.Framework.Input.Keyboard.GetState();
 
             if (!currentKeyState.IsKeyDown(_currentSpecialKey))
             {
