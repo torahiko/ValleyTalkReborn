@@ -77,6 +77,17 @@ namespace ValleytalkReborn.UI
         private float _invertHoverScale = 1f;
         private float _clearHoverScale = 1f;
 
+        // 胶囊（分类 / 时效 / 分派范围 / 筛选）
+        private float _factCapsuleHoverScale = 1f;
+        private float _behaviorCapsuleHoverScale = 1f;
+        private float _durPermHoverScale = 1f;
+        private float _durTodayHoverScale = 1f;
+        private float _durCustomHoverScale = 1f;
+        private float _worldScopePillHoverScale = 1f;
+        private float _filterAllHoverScale = 1f;
+        private float _filterDatableHoverScale = 1f;
+        private float _filterSelectedHoverScale = 1f;
+
         // NPC 网格与滚动
         private Rectangle _npcGridBounds;
         private int _npcScrollOffset = 0;
@@ -636,15 +647,15 @@ namespace ValleytalkReborn.UI
             // 4. 属性配置栏
             int padX = ContentPadding;
             CustomFontManager.DrawString(b, I18n.AddRuleMenu.CategoryLabel(), new Vector2(xPositionOnScreen + padX, _factCapsuleRect.Y + 5), BioEditorMenu.TextSecondary, SectionHeaderSize);
-            DrawPillButton(b, _factCapsuleRect, I18n.AddRuleMenu.CategoryFact(), _category == MemoryCategory.Fact, mx, my);
-            DrawPillButton(b, _behaviorCapsuleRect, I18n.AddRuleMenu.CategoryBehavior(), _category == MemoryCategory.Behavior, mx, my);
+            ActionButtonRenderer.Draw(b, _factCapsuleRect, I18n.AddRuleMenu.CategoryFact(), ref _factCapsuleHoverScale, mx, my, style: _category == MemoryCategory.Fact ? ActionButtonStyle.Primary : ActionButtonStyle.Default, fontSize: TipFontSize, isPressedFunc: () => IsLeftMouseDown());
+            ActionButtonRenderer.Draw(b, _behaviorCapsuleRect, I18n.AddRuleMenu.CategoryBehavior(), ref _behaviorCapsuleHoverScale, mx, my, style: _category == MemoryCategory.Behavior ? ActionButtonStyle.Primary : ActionButtonStyle.Default, fontSize: TipFontSize, isPressedFunc: () => IsLeftMouseDown());
 
             // ★ 优化 4：行为准则下时效锁定为永久有效，临时时效按钮置灰
             bool isBehavior = _category == MemoryCategory.Behavior;
 
             CustomFontManager.DrawString(b, "时效:", new Vector2(_durPermRect.Left - 44, _durPermRect.Y + 5), BioEditorMenu.TextSecondary, SectionHeaderSize);
-            DrawPillButton(b, _durPermRect, "永久有效", _durationMode == 2, mx, my);
-            DrawPillButton(b, _durTodayRect, "仅今天", !isBehavior && _durationMode == 0, mx, my, isEnabled: !isBehavior);
+            ActionButtonRenderer.Draw(b, _durPermRect, "永久有效", ref _durPermHoverScale, mx, my, style: _durationMode == 2 ? ActionButtonStyle.Primary : ActionButtonStyle.Default, fontSize: TipFontSize, isPressedFunc: () => IsLeftMouseDown());
+            ActionButtonRenderer.Draw(b, _durTodayRect, "仅今天", ref _durTodayHoverScale, mx, my, style: !isBehavior ? ActionButtonStyle.Disabled : (_durationMode == 0 ? ActionButtonStyle.Primary : ActionButtonStyle.Default), fontSize: TipFontSize, isEnabled: !isBehavior, isPressedFunc: () => IsLeftMouseDown());
 
             if (!isBehavior && _durationMode == 1)
             {
@@ -652,12 +663,12 @@ namespace ValleytalkReborn.UI
             }
             else
             {
-                DrawPillButton(b, _durCustomRect, "指定天", false, mx, my, isEnabled: !isBehavior);
+                ActionButtonRenderer.Draw(b, _durCustomRect, "指定天", ref _durCustomHoverScale, mx, my, style: !isBehavior ? ActionButtonStyle.Disabled : ActionButtonStyle.Default, fontSize: TipFontSize, isEnabled: !isBehavior, isPressedFunc: () => IsLeftMouseDown());
             }
 
             // 5. 分派范围总控栏
             bool isWorld = _selectedNpcIds.Contains("WORLD");
-            DrawWorldScopePill(b, _worldScopePillRect, isWorld, mx, my);
+            ActionButtonRenderer.Draw(b, _worldScopePillRect, isWorld ? "✔ 🌐 全镇共识" : "🌐 全镇共识", ref _worldScopePillHoverScale, mx, my, style: isWorld ? ActionButtonStyle.Primary : ActionButtonStyle.Default, fontSize: TipFontSize, isPressedFunc: () => IsLeftMouseDown());
 
             // 搜索框（带常驻闪烁光标）
             DrawSingleLineBox(b, _searchBox);
@@ -667,10 +678,10 @@ namespace ValleytalkReborn.UI
             }
 
             // 筛选标签
-            DrawPillButton(b, _filterAllRect, "全部", _filterMode == NpcFilterMode.All, mx, my);
-            DrawPillButton(b, _filterDatableRect, "可婚单身", _filterMode == NpcFilterMode.Datable, mx, my);
+            ActionButtonRenderer.Draw(b, _filterAllRect, "全部", ref _filterAllHoverScale, mx, my, style: _filterMode == NpcFilterMode.All ? ActionButtonStyle.Primary : ActionButtonStyle.Default, fontSize: TipFontSize, isPressedFunc: () => IsLeftMouseDown());
+            ActionButtonRenderer.Draw(b, _filterDatableRect, "可婚单身", ref _filterDatableHoverScale, mx, my, style: _filterMode == NpcFilterMode.Datable ? ActionButtonStyle.Primary : ActionButtonStyle.Default, fontSize: TipFontSize, isPressedFunc: () => IsLeftMouseDown());
             string selFilterLabel = $"已选({(_selectedNpcIds.Contains("WORLD") ? 0 : _selectedNpcIds.Count)})";
-            DrawPillButton(b, _filterSelectedRect, selFilterLabel, _filterMode == NpcFilterMode.SelectedOnly, mx, my);
+            ActionButtonRenderer.Draw(b, _filterSelectedRect, selFilterLabel, ref _filterSelectedHoverScale, mx, my, style: _filterMode == NpcFilterMode.SelectedOnly ? ActionButtonStyle.Primary : ActionButtonStyle.Default, fontSize: TipFontSize, isPressedFunc: () => IsLeftMouseDown());
 
             // 快捷操作小按钮（无缝重构版）
             ActionButtonRenderer.Draw(b, _btnSelectAllRect, "全选", ref _selectAllHoverScale, mx, my, style: ActionButtonStyle.Default, fontSize: TipFontSize, isEnabled: true, isPressedFunc: () => IsLeftMouseDown());
@@ -825,68 +836,10 @@ namespace ValleytalkReborn.UI
             }
         }
 
-        private static void DrawWorldScopePill(SpriteBatch b, Rectangle rect, bool isActive, int mx, int my)
-        {
-            bool isHover = rect.Contains(mx, my);
-            bool isPressed = isHover && IsLeftMouseDown();
-            int pressOffset = isPressed ? 1 : 0;
-
-            Color bg = isActive
-                ? (isHover ? Color.Gold : new Color(255, 220, 130))
-                : (isHover ? new Color(255, 240, 225) : new Color(250, 242, 230));
-
-            Color borderCol = isActive
-                ? new Color(210, 150, 40)
-                : (isHover ? new Color(210, 160, 60) : new Color(225, 205, 175));
-
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1 + pressOffset, rect.Y + 1 + pressOffset, rect.Width - 2, rect.Height - 2), bg);
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-                rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height, borderCol, 2f, false);
-
-            string label = isActive ? "✔ 🌐 全镇共识" : "🌐 全镇共识";
-            var sz = CustomFontManager.MeasureString(label, TipFontSize);
-            CustomFontManager.DrawString(b, label,
-                new Vector2(rect.X + pressOffset + (rect.Width - sz.X) / 2f, rect.Y + pressOffset + (rect.Height - sz.Y) / 2f - 1),
-                isActive ? BioEditorMenu.TextPrimary : BioEditorMenu.TextSecondary, TipFontSize);
-        }
-
         private static bool IsLeftMouseDown()
         {
             try { return Game1.input.GetMouseState().LeftButton == ButtonState.Pressed; }
             catch { return false; }
-        }
-
-        private static void DrawPillButton(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my, bool isEnabled = true)
-        {
-            bool isHover = isEnabled && rect.Contains(mx, my);
-            bool isPressed = isHover && IsLeftMouseDown();
-
-            Color bg;
-            if (!isEnabled)
-            {
-                bg = new Color(235, 228, 220) * 0.7f; // 禁用灰木底
-            }
-            else if (isActive)
-            {
-                bg = isHover ? Color.Gold : new Color(255, 220, 130);
-            }
-            else
-            {
-                bg = isHover ? new Color(255, 235, 205) : Color.White;
-            }
-
-            int pressOffset = isPressed ? 1 : 0;
-            if (isPressed) bg = Color.Lerp(bg, Color.Black, 0.14f);
-
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1 + pressOffset, rect.Y + 1 + pressOffset, rect.Width - 2, rect.Height - 2), bg);
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-                rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height,
-                !isEnabled ? new Color(215, 205, 195) * 0.8f : (isActive ? new Color(200, 150, 50) : Color.Wheat), 2f, false);
-
-            var sz = CustomFontManager.MeasureString(label, TipFontSize);
-            CustomFontManager.DrawString(b, label,
-                new Vector2(rect.X + pressOffset + (rect.Width - sz.X) / 2f, rect.Y + pressOffset + (rect.Height - sz.Y) / 2f - 1),
-                !isEnabled ? BioEditorMenu.TextMuted : (isActive ? BioEditorMenu.TextPrimary : BioEditorMenu.TextSecondary), TipFontSize);
         }
 
         // ★ 优化 3：修复搜索单行框光标闪烁
