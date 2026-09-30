@@ -13,7 +13,7 @@ namespace ValleytalkReborn.UI
     /// <summary>
     /// VT-UI-005 Stage 2：纯选择卡片面板。
     /// 原版对话框只播完纯台词，关闭瞬间由 OnMenuChanged 换壳到本面板，
-    /// 统一分发建议卡 / 自定义回复 / 保持沉默 / 约会四路出口。
+    /// 统一分发建议卡 / 坞内输入条 / 保持沉默 / 约会四路出口。
     /// </summary>
     internal class DialogueChoiceMenu : IClickableMenu
     {
@@ -207,7 +207,11 @@ namespace ValleytalkReborn.UI
 
             if (_sendRect.Contains(x, y))
             {
-                Submit(_inputBox.Text);
+                if (!string.IsNullOrWhiteSpace(_inputBox.Text))
+                {
+                    Game1.playSound("coin");
+                    Submit(_inputBox.Text);
+                }
                 return;
             }
 
