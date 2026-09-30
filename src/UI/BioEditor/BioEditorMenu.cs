@@ -122,6 +122,10 @@ namespace ValleytalkReborn
         private float _hover_CopyVoice = 1f;
         private float _hover_CopyHabits = 1f;
         private float _hover_CopyLenses = 1f;
+        private float _hover_GateMarriedPill = 1f;
+        private float _hover_GatePlayerMarriedToPill = 1f;
+        private float _hover_GateJojaClosedPill = 1f;
+        private float _hover_GateJojaMemberPill = 1f;
 
         private static string[] TabTitles() => new[]
         {
@@ -1369,7 +1373,7 @@ namespace ValleytalkReborn
 
             // 1. 自身已婚胶囊（不可结婚角色置灰禁用）
             string marriedLabel = !_isDatable ? I18n.Get("Bio.GateNotDatable") : (stage.RequireMarried ? I18n.Get("Bio.GateMarried") : I18n.Get("Bio.GateMarriageAny"));
-            DrawPillButton(b, _gateMarriedPillRect, marriedLabel, _isDatable && stage.RequireMarried, mx, my, isEnabled: _isDatable);
+            ActionButtonRenderer.Draw(b, _gateMarriedPillRect, marriedLabel, ref _hover_GateMarriedPill, mx, my, style: _isDatable && stage.RequireMarried ? ActionButtonStyle.Primary : ActionButtonStyle.Default, isEnabled: _isDatable);
             if (_gateMarriedPillRect.Contains(mx, my))
             {
                 _hoverText = !_isDatable
@@ -1382,7 +1386,7 @@ namespace ValleytalkReborn
             // 2. 农夫指定配偶胶囊 (RequirePlayerMarriedTo)
             string targetSpouse = stage.RequirePlayerMarriedTo;
             string spouseDisp = string.IsNullOrEmpty(targetSpouse) ? I18n.Get("Bio.GateNone") : (Game1.getCharacterFromName(targetSpouse)?.displayName ?? targetSpouse);
-            DrawPillButton(b, _gatePlayerMarriedToPillRect, I18n.Bio.GateSpouse(spouseDisp), !string.IsNullOrEmpty(targetSpouse), mx, my);
+            ActionButtonRenderer.Draw(b, _gatePlayerMarriedToPillRect, I18n.Bio.GateSpouse(spouseDisp), ref _hover_GatePlayerMarriedToPill, mx, my, style: !string.IsNullOrEmpty(targetSpouse) ? ActionButtonStyle.Primary : ActionButtonStyle.Default);
             if (_gatePlayerMarriedToPillRect.Contains(mx, my))
             {
                 _hoverText = string.IsNullOrEmpty(targetSpouse)
@@ -1397,7 +1401,7 @@ namespace ValleytalkReborn
             CustomFontManager.DrawString(b, I18n.Get("Bio.GateWorldLabel"), new Vector2(_stageRightColRect.X, row2Y + 4), TextSecondary, SectionHeaderSize);
 
             string jojaClosedText = stage.RequireJojaMartClosed.HasValue ? (stage.RequireJojaMartClosed.Value ? I18n.Get("Bio.GateJojaClosed") : I18n.Get("Bio.GateJojaOpen")) : I18n.Get("Bio.GateJojaAny");
-            DrawPillButton(b, _gateJojaClosedPillRect, jojaClosedText, stage.RequireJojaMartClosed.HasValue, mx, my);
+            ActionButtonRenderer.Draw(b, _gateJojaClosedPillRect, jojaClosedText, ref _hover_GateJojaClosedPill, mx, my, style: stage.RequireJojaMartClosed.HasValue ? ActionButtonStyle.Primary : ActionButtonStyle.Default);
             if (_gateJojaClosedPillRect.Contains(mx, my))
             {
                 if (stage.RequireJojaMartClosed == true)
@@ -1409,7 +1413,7 @@ namespace ValleytalkReborn
             }
 
             string jojaMemberText = stage.RequireJojaMember.HasValue ? (stage.RequireJojaMember.Value ? I18n.Get("Bio.GateJojaMemberYes") : I18n.Get("Bio.GateJojaMemberNo")) : I18n.Get("Bio.GateJojaMemberAny");
-            DrawPillButton(b, _gateJojaMemberPillRect, jojaMemberText, stage.RequireJojaMember.HasValue, mx, my);
+            ActionButtonRenderer.Draw(b, _gateJojaMemberPillRect, jojaMemberText, ref _hover_GateJojaMemberPill, mx, my, style: stage.RequireJojaMember.HasValue ? ActionButtonStyle.Primary : ActionButtonStyle.Default);
             if (_gateJojaMemberPillRect.Contains(mx, my))
             {
                 if (stage.RequireJojaMember == true)
@@ -1735,42 +1739,6 @@ namespace ValleytalkReborn
                     return false;
                 }
             }
-        }
-
-        private static void DrawPillButton(SpriteBatch b, Rectangle rect, string label, bool isActive, int mx, int my, bool isEnabled = true)
-        {
-            bool isHover = isEnabled && rect.Contains(mx, my);
-            bool isPressed = isHover && IsLeftMouseDown();
-
-            Color bg;
-            if (!isEnabled)
-            {
-                bg = new Color(225, 220, 215) * 0.75f; // ★ 置灰浅灰色底
-            }
-            else if (isActive)
-            {
-                bg = isHover ? Color.Gold : new Color(255, 220, 130);
-            }
-            else
-            {
-                bg = isHover ? new Color(255, 235, 205) : Color.White;
-            }
-
-            int pressOffset = isPressed ? 1 : 0;
-            if (isPressed) bg = Color.Lerp(bg, Color.Black, 0.14f);
-
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1 + pressOffset, rect.Y + 1 + pressOffset, rect.Width - 2, rect.Height - 2), bg);
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-                rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height,
-                !isEnabled ? Color.Gray * 0.4f : (isActive ? new Color(200, 150, 50) : Color.Wheat), 2f, false);
-
-            var (fitLabel, fitScale) = BioLabelFitter.FitBold(label, rect.Width, ContentFontSize);
-            var sz = CustomFontManager.MeasureString(fitLabel, ContentFontSize, fitScale);
-            Vector2 textPos = new Vector2(
-                rect.X + pressOffset + (rect.Width - sz.X) / 2f,
-                rect.Y + pressOffset + (rect.Height - sz.Y) / 2f);
-
-            CustomFontManager.DrawString(b, fitLabel, textPos, isEnabled ? TextPrimary : TextMuted, ContentFontSize, fitScale);
         }
 
         /// <summary>卡片：暖羊皮纸填充 + 星露谷式暖金棕边框（替代原灰调）。</summary>
