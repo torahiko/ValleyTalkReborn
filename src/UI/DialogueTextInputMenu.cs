@@ -429,10 +429,10 @@ public delegate void TextSubmittedDelegate(string input);
         _inputTextBox.Draw(b);
 
         // 6. 底部动作工具栏（沉底排列）
-        DrawAnimatedActionButton(b, _viewHistoryRect, I18n.DialogueInput.ButtonHistory(), ref _viewHistoryHoverScale, mx, my, isPrimary: false, fontSize: ButtonFontSize);
-        DrawAnimatedActionButton(b, _clearHistoryRect, I18n.DialogueInput.ButtonClearMemory(), ref _clearHistoryHoverScale, mx, my, isDanger: false, fontSize: ButtonFontSize);
-        DrawAnimatedActionButton(b, _okButtonRect, I18n.DialogueInput.ButtonSend(), ref _okButtonHoverScale, mx, my, isPrimary: true, fontSize: ButtonFontSize);
-        DrawAnimatedActionButton(b, _cancelButtonRect, I18n.DialogueInput.ButtonCancel(), ref _cancelButtonHoverScale, mx, my, isDanger: true, fontSize: ButtonFontSize);
+        ActionButtonRenderer.Draw(b, _viewHistoryRect, I18n.DialogueInput.ButtonHistory(), ref _viewHistoryHoverScale, mx, my, fontSize: ButtonFontSize, style: ActionButtonStyle.Default);
+        ActionButtonRenderer.Draw(b, _clearHistoryRect, I18n.DialogueInput.ButtonClearMemory(), ref _clearHistoryHoverScale, mx, my, fontSize: ButtonFontSize, style: ActionButtonStyle.Default);
+        ActionButtonRenderer.Draw(b, _okButtonRect, I18n.DialogueInput.ButtonSend(), ref _okButtonHoverScale, mx, my, fontSize: ButtonFontSize, style: ActionButtonStyle.Primary);
+        ActionButtonRenderer.Draw(b, _cancelButtonRect, I18n.DialogueInput.ButtonCancel(), ref _cancelButtonHoverScale, mx, my, fontSize: ButtonFontSize, style: ActionButtonStyle.Danger);
 
         // 7. 悬停气泡提示
         if (_hasFriendship && !_friendshipJewel.IsEmpty && _friendshipJewel.Contains(mx, my))
@@ -544,111 +544,6 @@ public delegate void TextSubmittedDelegate(string input);
         int xPositionOfPortraitArea = xPositionOnScreen + width - 448 + 4;
         int textWidth = (xPositionOfPortraitArea - 40 - 20) - textLeft;
         b.Draw(Game1.staminaRect, new Rectangle(textLeft, sepY, textWidth, 1), Color.Gray * 0.35f);
-    }
-
-    private static bool IsLeftMouseDown()
-    {
-        try { return Game1.input.GetMouseState().LeftButton == ButtonState.Pressed; }
-        catch { return false; }
-    }
-
-    internal static void DrawAnimatedActionButton(
-        SpriteBatch b,
-        Rectangle rect,
-        string label,
-        ref float hoverScale,
-        int mx, int my,
-        bool isDanger = false,
-        bool isPrimary = false,
-        bool isEnabled = true,
-        float fontSize = 0f)
-    {
-        bool isHover = isEnabled && rect.Contains(mx, my);
-        bool isPressed = isHover && IsLeftMouseDown();
-
-        float targetScale = (isHover && !isPressed) ? 1.025f : 1.0f;
-        hoverScale += (targetScale - hoverScale) * 0.25f;
-
-        int drawW = (int)MathF.Round(rect.Width * hoverScale);
-        int drawH = (int)MathF.Round(rect.Height * hoverScale);
-        int drawX = rect.X - (drawW - rect.Width) / 2;
-        int drawY = rect.Y - (drawH - rect.Height) / 2;
-        int pressOffset = isPressed ? 1 : 0;
-
-        if (!isPressed)
-        {
-            int shadowY = isHover ? 3 : 2;
-            b.Draw(Game1.staminaRect,
-                new Rectangle(drawX + 1, drawY + shadowY, drawW, drawH),
-                Color.Black * (isHover ? 0.20f : 0.12f));
-        }
-
-        Color bg;
-        if (!isEnabled)
-        {
-            bg = Color.LightGray * 0.6f;
-        }
-        else if (isDanger)
-        {
-            bg = isHover ? new Color(245, 130, 125) : new Color(225, 100, 95);
-        }
-        else if (isPrimary)
-        {
-            bg = isHover ? new Color(255, 232, 120) : new Color(255, 210, 115);
-        }
-        else
-        {
-            bg = isHover ? new Color(255, 248, 235) : new Color(236, 215, 185);
-        }
-
-        if (isPressed)
-            bg = Color.Lerp(bg, Color.Black, 0.12f);
-
-        var dynamicBox = new Rectangle(drawX + pressOffset, drawY + pressOffset, drawW, drawH);
-        b.Draw(Game1.staminaRect,
-            new Rectangle(dynamicBox.X + 1, dynamicBox.Y + 1, dynamicBox.Width - 2, dynamicBox.Height - 2),
-            bg);
-
-        Color borderCol;
-        if (!isEnabled)
-        {
-            borderCol = Color.Gray * 0.5f;
-        }
-        else if (isDanger)
-        {
-            borderCol = isHover ? new Color(205, 65, 60) : new Color(175, 50, 45);
-        }
-        else if (isPrimary)
-        {
-            borderCol = isHover ? new Color(245, 160, 30) : new Color(205, 140, 45);
-        }
-        else
-        {
-            borderCol = isHover ? new Color(225, 150, 50) : new Color(190, 155, 115);
-        }
-
-        IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-            dynamicBox.X, dynamicBox.Y, dynamicBox.Width, dynamicBox.Height,
-            borderCol, 3f, false);
-
-        Color textCol = !isEnabled ? BioEditorMenu.TextMuted
-                      : isDanger ? BioEditorMenu.TextOnDarkBtn
-                      : BioEditorMenu.TextOnLightBtn;
-
-        var stableTextBounds = new Rectangle(rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height);
-
-        if (fontSize > 0f)
-        {
-            var sz = CustomFontManager.MeasureString(label, fontSize);
-            var pos = new Vector2(
-                stableTextBounds.X + (stableTextBounds.Width - sz.X) / 2f,
-                stableTextBounds.Y + (stableTextBounds.Height - sz.Y) / 2f - 1);
-            CustomFontManager.DrawString(b, label, pos, textCol, fontSize);
-        }
-        else
-        {
-            ButtonTextRenderer.DrawButtonText(b, label, stableTextBounds, textCol, useBold: true);
-        }
     }
 
     internal static void DrawHoverTextCustom(SpriteBatch b, string text)
