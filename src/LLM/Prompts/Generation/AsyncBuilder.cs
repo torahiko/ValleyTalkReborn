@@ -65,11 +65,15 @@ public class AsyncBuilder
         }
     }
 
+    /// <summary>
+    /// 取消/紧急关闭 = 纪元失效：递增 _generationId 使在途完成回调被丢弃闸拦截。
+    /// 随后清空主线程动作队列/流式队列与残留状态，确保无陈旧回调残留。
+    /// </summary>
     public void Cleanup()
     {
         try
         {
-            ResetState();
+            AbortCurrentGeneration();
             while (_mainThreadActionQueue.TryDequeue(out _)) { }
             while (_streamTokenQueue.TryDequeue(out _)) { }
             _streamAccumulator.Clear();
@@ -253,6 +257,8 @@ public class AsyncBuilder
             {
                 EnqueueToMainThread(() =>
                 {
+                    // 纪元守卫：与成功路径对称，Cleanup/抢占后的陈旧代次不得再弹错误框
+                    if (_generationId != myGenerationId) return;
                     var menuToClose = _placeholderMenu;
                     ResetState();
                     _generationCooldownFrames = 5;
