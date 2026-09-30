@@ -80,7 +80,7 @@ namespace ValleytalkReborn.UI
             Func<bool>? isPressedFunc = null)
         {
             // 1. 状态
-            bool isHover = isEnabled && rect.Contains(mx, my);
+            bool isHover = isEnabled && style != ActionButtonStyle.Disabled && rect.Contains(mx, my);
             bool isPressed = isHover && (isPressedFunc != null ? isPressedFunc() : IsMouseDown());
 
             // 2. 动效
@@ -112,7 +112,7 @@ namespace ValleytalkReborn.UI
                 case ActionButtonStyle.Primary:
                     bg = isHover ? PrimaryBgHover : PrimaryBgRest;
                     border = PrimaryBorder;
-                    textCol = TextOnDarkBtn;
+                    textCol = TextOnLightBtn;
                     break;
 
                 case ActionButtonStyle.Danger:
@@ -130,7 +130,7 @@ namespace ValleytalkReborn.UI
                 case ActionButtonStyle.Romantic:
                     bg = isHover ? RomanticBgHover : RomanticBgRest;
                     border = RomanticBorder;
-                    textCol = TextOnDarkBtn;
+                    textCol = TextOnLightBtn;
                     break;
 
                 case ActionButtonStyle.Disabled:
@@ -207,7 +207,7 @@ namespace ValleytalkReborn.UI
                 return;
 
             _mouseProbeLogged = true;
-            ModEntry.SMonitor?.Log($"[ActionButtonRenderer] 鼠标状态探针 {probe} 失败，已降级为未按下: {ex.Message}", LogLevel.Trace);
+            ModEntry.SMonitor?.Log($"[ActionButtonRenderer] 鼠标状态探针 {probe} 失败，已降级为未按下: {ex.Message}");
         }
     }
 }
