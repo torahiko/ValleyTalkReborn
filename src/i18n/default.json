@@ -332,7 +332,7 @@
   "configEnableSuggestedResponses": "Enable Suggested Responses",
   "configEnableSuggestedResponsesTooltip": "When enabled, AI generates 2-3 dialogue reply choices. Disable to save tokens and prevent small model hallucinations. The dialogue box will only keep 'Stay silent' and custom typing options.",
   "configChoiceBoxStyle": "Choice Box Style",
-  "configChoiceBoxStyleTooltip": "ON = custom floating choice panel (Stage 2). OFF = vanilla in-dialogue choice buttons (best compatibility).",
+  "configChoiceBoxStyleTooltip": "ON = custom response dock: suggested cards and an input bar appear after a conversation (Stage 2). OFF = vanilla in-dialogue choice buttons (best compatibility).",
   "configRecordEventDialogue": "Record Event & Cutscene Dialogue",
   "configRecordEventDialogueTooltip": "Record NPC dialogue and farmer choices during events and cutscenes into the history.",
   "configEnableA2A": "Enable NPC-to-NPC Banter",

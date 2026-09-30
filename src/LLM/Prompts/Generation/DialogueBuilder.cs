@@ -776,7 +776,7 @@ namespace ValleytalkReborn
             // 选项/自定义/沉默/约会全部交给对话框关闭后弹出的 DialogueChoiceMenu。
             if (isCustomChoiceMode)
             {
-                if (suggestions.Count > 0 || showDateBtn)
+                if (suggestions.Count > 0 || showDateBtn || ModEntry.Config.TypedResponses != "Never")
                 {
                     PendingChoiceStore.Set(new PendingChoiceContext
                     {

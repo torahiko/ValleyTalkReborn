@@ -332,7 +332,7 @@
   "configEnableSuggestedResponses": "生成预设回复选项",
   "configEnableSuggestedResponsesTooltip": "开启时，AI 会在台词后生成 2~3 个快速回复选项。关闭后不再生成选项（可节省 Token 并减轻小模型幻觉），对话框仅保留\"保持沉默\"和自定义输入。",
   "configChoiceBoxStyle": "选项框风格",
-  "configChoiceBoxStyleTooltip": "开启=自研浮动选择框（Stage 2 动效卡片）；关闭=原版对话框内嵌选项（兼容性最佳）。",
+  "configChoiceBoxStyleTooltip": "开启=自研响应坞：对话结束后弹出建议卡与输入条（Stage 2）。关闭=原版对话框内嵌选项（兼容性最佳）。",
   "configRecordEventDialogue": "记录事件与过场对话",
   "configRecordEventDialogueTooltip": "在剧情事件与过场动画中，将 NPC 对白与农夫选项记录进历史。",
   "configEnableA2A": "启用NPC互动闲聊",
