@@ -49,6 +49,7 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
     private Rectangle _portraitSmileRect;
     private ClickableTextureComponent _closeButton = null!;
     private float _closeButtonHoverScale = 1f;
+    private float _collectHoverScale = 1f;
     private const float CloseButtonBaseScale = 3f;
 
     private DistillState _state = DistillState.Loading;
@@ -600,7 +601,9 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
                 // 收录按钮
                 var addRect = new Rectangle(btnRightX - 110, btnY, 110, 30);
                 string addText = $"✔ {I18n.TimelineDistill.CollectButton()}";
-                DrawActionButton(b, addRect, addText, mx, my, isPrimary: true);
+                ActionButtonRenderer.Draw(b, addRect, addText, ref _collectHoverScale, mx, my,
+                    style: ActionButtonStyle.Primary, fontSize: ButtonFontSize, isEnabled: true,
+                    isPressedFunc: () => IsLeftMouseDown());
 
                 // 微调按钮 (铅笔)
                 var editRect = new Rectangle(addRect.X - 36, btnY - 2, 30, 30);
@@ -662,42 +665,6 @@ internal class TimelineDistillMenu : IClickableMenu, IMemoryRefreshTarget
     {
         try { return Game1.input.GetMouseState().LeftButton == ButtonState.Pressed; }
         catch { return false; }
-    }
-
-    private static void DrawActionButton(SpriteBatch b, Rectangle rect, string label, int mx, int my,
-        bool isDanger = false, bool isPrimary = false, bool isEnabled = true)
-    {
-        bool isHover = isEnabled && rect.Contains(mx, my);
-        bool isPressed = isHover && IsLeftMouseDown();
-
-        Color bg;
-        if (!isEnabled) bg = Color.LightGray * 0.6f;
-        else if (isPrimary) bg = isHover ? Color.Gold : new Color(255, 220, 130);
-        else if (isDanger) bg = isHover ? new Color(245, 105, 105) : new Color(210, 85, 80);
-        else bg = isHover ? new Color(255, 240, 215) : new Color(225, 195, 155);
-
-        int pressOffset = isPressed ? 1 : 0;
-        if (isPressed) bg = Color.Lerp(bg, Color.Black, 0.14f);
-
-        if (!isPressed)
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 2, rect.Y + 2, rect.Width, rect.Height), Color.Black * 0.15f);
-
-        b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1 + pressOffset, rect.Y + 1 + pressOffset, rect.Width - 2, rect.Height - 2), bg);
-
-        IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-            rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height,
-            isPrimary ? new Color(210, 160, 60) : (isDanger ? new Color(175, 60, 55) : new Color(185, 150, 110)), 3f, false);
-
-        Color textCol = !isEnabled ? BioEditorMenu.TextMuted
-                      : isDanger ? BioEditorMenu.TextOnDarkBtn
-                      : BioEditorMenu.TextOnLightBtn;
-
-        var sz = CustomFontManager.MeasureStringBold(label, ButtonFontSize);
-        CustomFontManager.DrawStringBold(b, label,
-            new Vector2(
-                rect.X + pressOffset + (rect.Width - sz.X) / 2f,
-                rect.Y + pressOffset + (rect.Height - sz.Y) / 2f),
-            textCol, ButtonFontSize);
     }
 
     private static void DrawHoverTextCustom(SpriteBatch b, string text)

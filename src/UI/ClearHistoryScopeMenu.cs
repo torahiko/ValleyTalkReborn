@@ -57,6 +57,8 @@ namespace ValleytalkReborn
         // 底部动作按钮
         private Rectangle _cancelButtonRect;
         private Rectangle _confirmButtonRect;
+        private float _cancelHoverScale = 1f;
+        private float _confirmHoverScale = 1f;
 
         public ClearHistoryScopeMenu(string npcName, DialogueTextInputMenu ownerMenu, Action<ClearScope> onConfirm)
             : base(
@@ -259,8 +261,13 @@ namespace ValleytalkReborn
             bool isGlobalDanger = _selectedScope == ClearScope.GlobalAll;
             string confirmLabel = isGlobalDanger ? "⚠ 确认全部清除" : "✔ 确认清除";
 
-            DrawActionButton(b, _cancelButtonRect, "✕ 取消 (Esc)", mx, my, isDanger: false, isPrimary: false);
-            DrawActionButton(b, _confirmButtonRect, confirmLabel, mx, my, isDanger: isGlobalDanger, isPrimary: !isGlobalDanger);
+            ActionButtonRenderer.Draw(b, _cancelButtonRect, "✕ 取消 (Esc)", ref _cancelHoverScale, mx, my,
+                style: ActionButtonStyle.Default, fontSize: ButtonFontSize, isEnabled: true,
+                isPressedFunc: () => IsLeftMouseDown());
+            ActionButtonRenderer.Draw(b, _confirmButtonRect, confirmLabel, ref _confirmHoverScale, mx, my,
+                style: isGlobalDanger ? ActionButtonStyle.Danger : ActionButtonStyle.Primary,
+                fontSize: ButtonFontSize, isEnabled: true,
+                isPressedFunc: () => IsLeftMouseDown());
 
             drawMouse(b);
         }
@@ -386,40 +393,6 @@ namespace ValleytalkReborn
         {
             try { return Game1.input.GetMouseState().LeftButton == ButtonState.Pressed; }
             catch { return false; }
-        }
-
-        private static void DrawActionButton(SpriteBatch b, Rectangle rect, string label, int mx, int my,
-            bool isDanger = false, bool isPrimary = false, bool isEnabled = true)
-        {
-            bool isHover = isEnabled && rect.Contains(mx, my);
-            bool isPressed = isHover && IsLeftMouseDown();
-
-            Color bg;
-            if (!isEnabled) bg = Color.LightGray * 0.6f;
-            else if (isPrimary) bg = isHover ? Color.Gold : new Color(255, 220, 130);
-            else if (isDanger) bg = isHover ? new Color(245, 95, 95) : new Color(215, 75, 70);
-            else bg = isHover ? new Color(255, 240, 215) : new Color(225, 195, 155);
-
-            int pressOffset = isPressed ? 1 : 0;
-            if (isPressed) bg = Color.Lerp(bg, Color.Black, 0.14f);
-
-            if (!isPressed)
-                b.Draw(Game1.staminaRect, new Rectangle(rect.X + 2, rect.Y + 2, rect.Width, rect.Height), Color.Black * 0.15f);
-
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1 + pressOffset, rect.Y + 1 + pressOffset, rect.Width - 2, rect.Height - 2), bg);
-
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-                rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height,
-                isPrimary ? new Color(210, 160, 60) : (isDanger ? new Color(175, 60, 55) : new Color(185, 150, 110)), 3f, false);
-
-            Color textCol = !isEnabled ? BioEditorMenu.TextMuted
-                          : isDanger ? BioEditorMenu.TextOnDarkBtn
-                          : BioEditorMenu.TextOnLightBtn;
-
-            var sz = CustomFontManager.MeasureStringBold(label, ButtonFontSize);
-            CustomFontManager.DrawStringBold(b, label,
-                new Vector2(rect.X + pressOffset + (rect.Width - sz.X) / 2f, rect.Y + pressOffset + (rect.Height - sz.Y) / 2f),
-                textCol, ButtonFontSize);
         }
     }
 }

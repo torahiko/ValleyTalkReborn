@@ -81,6 +81,7 @@ namespace ValleytalkReborn
 
         // 顶栏操作区
         private Rectangle _clearButtonRect;
+        private float _clearButtonHoverScale = 1f;
         private Rectangle _capacityPillRect;
 
         private string? _hoverText;
@@ -784,7 +785,11 @@ namespace ValleytalkReborn
 
             // ★ 优化 2：清空按钮（无缝重构版，彻底根除右侧与底部白缝）
             string clearLabel = I18n.ArchiveMenu.ClearButton();
-            DrawActionButton(b, _clearButtonRect, clearLabel, mx, my, isDanger: true, isEnabled: _cachedEntries.Count > 0);
+            bool clearEnabled = _cachedEntries.Count > 0;
+            ActionButtonRenderer.Draw(b, _clearButtonRect, clearLabel, ref _clearButtonHoverScale, mx, my,
+                style: clearEnabled ? ActionButtonStyle.Danger : ActionButtonStyle.Disabled,
+                fontSize: ButtonFontSize, isEnabled: clearEnabled,
+                isPressedFunc: () => IsLeftMouseDown());
 
             // 分割横线
             int sepY = yPositionOnScreen + HeaderH + 4;
@@ -830,43 +835,6 @@ namespace ValleytalkReborn
         {
             try { return Game1.input.GetMouseState().LeftButton == ButtonState.Pressed; }
             catch { return false; }
-        }
-
-        // ★ 优化 2：彻底消灭白缝的动作按钮绘制方法
-        private static void DrawActionButton(SpriteBatch b, Rectangle rect, string label, int mx, int my,
-            bool isDanger = false, bool isPrimary = false, bool isEnabled = true)
-        {
-            bool isHover = isEnabled && rect.Contains(mx, my);
-            bool isPressed = isHover && IsLeftMouseDown();
-            int pressOffset = isPressed ? 1 : 0;
-
-            Color bg;
-            if (!isEnabled) bg = Color.LightGray * 0.6f;
-            else if (isPrimary) bg = isHover ? Color.Gold : new Color(255, 220, 130);
-            else if (isDanger) bg = isHover ? new Color(245, 105, 105) : new Color(210, 85, 80);
-            else bg = isHover ? new Color(255, 240, 215) : new Color(225, 195, 155);
-
-            if (isPressed) bg = Color.Lerp(bg, Color.Black, 0.14f);
-
-            // 1. 底层立体阴影
-            if (!isPressed)
-                b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1, rect.Y + 2, rect.Width, rect.Height), Color.Black * 0.15f);
-
-            var drawRect = new Rectangle(rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height);
-
-            // 2. 底板全覆盖，坚决不留 1px 裸露边距，防白缝
-            b.Draw(Game1.staminaRect, drawRect, bg);
-
-            // 3. 严格采用 2f 整像素 scale，杜绝浮点栅格断裂
-            Color borderCol = isPrimary ? new Color(210, 160, 60) : (isDanger ? new Color(175, 60, 55) : new Color(185, 150, 110));
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-                drawRect.X, drawRect.Y, drawRect.Width, drawRect.Height, borderCol, 2f, false);
-
-            Color textCol = !isEnabled ? BioEditorMenu.TextMuted
-                          : isDanger ? BioEditorMenu.TextOnDarkBtn
-                          : BioEditorMenu.TextOnLightBtn;
-
-            ButtonTextRenderer.DrawButtonText(b, label, drawRect, textCol, useBold: true);
         }
 
         private static void DrawHoverTextCustom(SpriteBatch b, string text)
