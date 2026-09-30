@@ -40,6 +40,10 @@ internal static class PoiInspectHud
     private static Rectangle _btnConfirm;
     private static Rectangle _btnUnstuck;
     private static Rectangle _btnClose;
+    private static float _captureAndTweakHoverScale = 1f;
+    private static float _confirmHoverScale = 1f;
+    private static float _unstuckHoverScale = 1f;
+    private static float _closeHoverScale = 1f;
 
     public static void Initialize(IModHelper helper, IMonitor monitor)
     {
@@ -177,10 +181,10 @@ internal static class PoiInspectHud
         _btnUnstuck = new Rectangle(_btnConfirm.Right + btnGap, btnY, btnW3, btnH);
         _btnClose = new Rectangle(_btnUnstuck.Right + btnGap, btnY, btnW4, btnH);
 
-        DrawWoodActionButton(b, _btnCaptureAndTweak, I18n.PoiHud.ButtonCapture(), _btnCaptureAndTweak.Contains(mx, my), isPassable, isPrimary: true);
-        DrawWoodActionButton(b, _btnConfirm, I18n.PoiHud.ButtonConfirm(), _btnConfirm.Contains(mx, my), isPassable);
-        DrawWoodActionButton(b, _btnUnstuck, I18n.PoiHud.ButtonUnstuck(), _btnUnstuck.Contains(mx, my), true, isPrimary: !isPassable);
-        DrawWoodActionButton(b, _btnClose, I18n.PoiHud.ButtonClose(), _btnClose.Contains(mx, my), true, isDanger: true);
+        ActionButtonRenderer.Draw(b, _btnCaptureAndTweak, I18n.PoiHud.ButtonCapture(), ref _captureAndTweakHoverScale, mx, my, style: ActionButtonStyle.Primary, fontSize: CustomFontManager.SizeRegular, isEnabled: isPassable);
+        ActionButtonRenderer.Draw(b, _btnConfirm, I18n.PoiHud.ButtonConfirm(), ref _confirmHoverScale, mx, my, style: ActionButtonStyle.Default, fontSize: CustomFontManager.SizeRegular, isEnabled: isPassable);
+        ActionButtonRenderer.Draw(b, _btnUnstuck, I18n.PoiHud.ButtonUnstuck(), ref _unstuckHoverScale, mx, my, style: isPassable ? ActionButtonStyle.Default : ActionButtonStyle.Primary, fontSize: CustomFontManager.SizeRegular, isEnabled: true);
+        ActionButtonRenderer.Draw(b, _btnClose, I18n.PoiHud.ButtonClose(), ref _closeHoverScale, mx, my, style: ActionButtonStyle.Danger, fontSize: CustomFontManager.SizeRegular, isEnabled: true);
     }
 
     private static void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
@@ -358,60 +362,5 @@ internal static class PoiInspectHud
             return false;
 
         return true;
-    }
-
-    /// <summary>
-    /// 标准木质浮雕按钮渲染（严格使用 2f 整像素比例与压边机制，彻底消除右下白缝）。
-    /// </summary>
-    private static void DrawWoodActionButton(SpriteBatch b, Rectangle rect, string label, bool isHover, bool isEnabled, bool isPrimary = false, bool isDanger = false)
-    {
-        bool isPressed = isEnabled && isHover && Mouse.GetState().LeftButton == ButtonState.Pressed;
-        int pressOffset = isPressed ? 1 : 0;
-
-        // 1. 按钮底色自适应
-        Color bg;
-        if (!isEnabled) bg = Color.LightGray * 0.65f;
-        else if (isPrimary) bg = isHover ? Color.Gold : new Color(255, 220, 130);
-        else if (isDanger) bg = isHover ? new Color(245, 105, 105) : new Color(210, 85, 80);
-        else bg = isHover ? new Color(255, 240, 215) : new Color(225, 195, 155);
-
-        // 2. 边框颜色
-        Color border;
-        if (!isEnabled) border = RulesTheme.BorderSoft;
-        else if (isPrimary) border = new Color(210, 160, 60);
-        else if (isDanger) border = new Color(175, 60, 55);
-        else border = isHover ? RulesTheme.BorderBold : new Color(185, 150, 110);
-
-        // 3. 底层微阴影
-        if (!isPressed && isEnabled)
-        {
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 2, rect.Y + 2, rect.Width, rect.Height), Color.Black * 0.2f);
-        }
-
-        var drawRect = new Rectangle(rect.X, rect.Y + pressOffset, rect.Width, rect.Height);
-
-        // 4. ★ 核心防白缝：采用整像素 2f 缩放与 3px 安全内衬
-        const float frameScale = 2f;
-        const int fillInset = 3;
-
-        // 4.1 先铺满一层与边框/深底色一致的防漏底垫，即使有半像素空隙也绝不会透出白色
-        b.Draw(Game1.staminaRect, drawRect, border * 0.5f);
-
-        // 4.2 内部纯色内衬（内缩 fillInset 像素，紧密锁死在 432 九宫格内边缘）
-        b.Draw(Game1.staminaRect,
-            new Rectangle(drawRect.X + fillInset, drawRect.Y + fillInset,
-                Math.Max(0, drawRect.Width - fillInset * 2), Math.Max(0, drawRect.Height - fillInset * 2)),
-            bg);
-
-        // 4.3 绘制 432 九宫格外框（严禁浮点数，强制 2f 整数缩放）
-        IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-            drawRect.X, drawRect.Y, drawRect.Width, drawRect.Height, border, frameScale, false);
-
-        // 5. 文字颜色与居中
-        Color btnTextCol = !isEnabled ? RulesTheme.TextMuted
-            : isDanger ? new Color(255, 250, 242)
-            : RulesTheme.TextCharcoal;
-
-        ButtonTextRenderer.DrawButtonText(b, label, drawRect, btnTextCol, useBold: true);
     }
 } 
