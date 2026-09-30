@@ -35,6 +35,10 @@ namespace ValleytalkReborn
         private readonly string _targetTitle;
         private readonly string _titleText;
         private readonly bool _allowEmptyDemand;
+
+        // 按钮悬停缩放（ActionButtonRenderer 状态）
+        private float _hover_Cancel = 1f;
+        private float _hover_Generate = 1f;
         private readonly DialogueTextInputBox _inputBox;
 
         // 顶栏关闭按钮
@@ -271,10 +275,11 @@ namespace ValleytalkReborn
             DrawThinkingToggleButton(b, _thinkingPillRect, BioAiUiPrefs.EnableThinking, mx, my);
 
             bool canSubmit = _allowEmptyDemand || !string.IsNullOrWhiteSpace(_inputBox.Text);
-            BioEditorMenu.DrawActionButton(b, _cancelBtnRect, I18n.Get("Bio.CancelEsc"), mx, my, ButtonFontSize,
-                isDanger: false, isPrimary: false, isLeftMouseDownFunc: () => IsLeftMouseDown());
-            BioEditorMenu.DrawActionButton(b, _okBtnRect, I18n.Get("Bio.GenerateButton"), mx, my, ButtonFontSize,
-                isDanger: false, isSoftRed: true, isEnabled: canSubmit, isLeftMouseDownFunc: () => IsLeftMouseDown());
+            ActionButtonRenderer.Draw(b, _cancelBtnRect, I18n.Get("Bio.CancelEsc"), ref _hover_Cancel, mx, my, fontSize: ButtonFontSize,
+                style: ActionButtonStyle.Default, isPressedFunc: () => IsLeftMouseDown());
+            ActionButtonRenderer.Draw(b, _okBtnRect, I18n.Get("Bio.GenerateButton"), ref _hover_Generate, mx, my, fontSize: ButtonFontSize,
+                style: canSubmit ? ActionButtonStyle.SoftRed : ActionButtonStyle.Disabled,
+                isEnabled: canSubmit, isPressedFunc: () => IsLeftMouseDown());
 
             // 5. 悬停提示文本处理
             if (_thinkingPillRect.Contains(mx, my))

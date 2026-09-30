@@ -50,6 +50,10 @@ namespace ValleytalkReborn
         private Rectangle _cancelRect;
         private Rectangle _acceptRect;
 
+        // 按钮悬停缩放（ActionButtonRenderer 状态）
+        private float _hover_Cancel = 1f;
+        private float _hover_Accept = 1f;
+
         private string? _hoverText;
 
         private static (string Header, string Body)[] Covenants()
@@ -221,10 +225,11 @@ namespace ValleytalkReborn
             _checkbox.draw(b, 0, 0, this);
 
             // 5. 底部动作按钮
-            BioEditorMenu.DrawActionButton(b, _cancelRect, I18n.Get("Bio.CancelEsc"), mx, my, ButtonFontSize,
-                isDanger: false, isPrimary: false, isLeftMouseDownFunc: () => IsLeftMouseDown());
-            BioEditorMenu.DrawActionButton(b, _acceptRect, I18n.Get("Bio.AcceptButton"), mx, my, ButtonFontSize,
-                isDanger: false, isPrimary: true, isEnabled: _checkbox.isChecked, isLeftMouseDownFunc: () => IsLeftMouseDown());
+            ActionButtonRenderer.Draw(b, _cancelRect, I18n.Get("Bio.CancelEsc"), ref _hover_Cancel, mx, my, fontSize: ButtonFontSize,
+                style: ActionButtonStyle.Default, isPressedFunc: () => IsLeftMouseDown());
+            ActionButtonRenderer.Draw(b, _acceptRect, I18n.Get("Bio.AcceptButton"), ref _hover_Accept, mx, my, fontSize: ButtonFontSize,
+                style: _checkbox.isChecked ? ActionButtonStyle.Primary : ActionButtonStyle.Disabled,
+                isEnabled: _checkbox.isChecked, isPressedFunc: () => IsLeftMouseDown());
 
             if (_cancelRect.Contains(mx, my))
                 _hoverText = I18n.Get("Bio.DisclaimerCancelHover");

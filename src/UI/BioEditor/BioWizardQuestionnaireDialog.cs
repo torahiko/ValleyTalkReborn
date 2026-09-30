@@ -50,6 +50,11 @@ namespace ValleytalkReborn
         private readonly Rectangle[] _cardRects;
         private int _focusedIndex;
 
+        // 按钮悬停缩放（ActionButtonRenderer 状态）
+        private float _hover_AiFree = 1f;
+        private float _hover_Cancel = 1f;
+        private float _hover_Generate = 1f;
+
         // 底部动作区域控件
         private Rectangle _thinkingPillRect; // ★ 思考模式 / 极速模式总控胶囊
         private Rectangle _aiFreeButtonRect;
@@ -414,12 +419,12 @@ namespace ValleytalkReborn
             // 4. ★ 底部动作区域控件（模式胶囊 + 自由发挥 + 取消 + 开始生成）
             DrawThinkingToggleButton(b, _thinkingPillRect, BioAiUiPrefs.EnableThinking, mx, my);
 
-            BioEditorMenu.DrawActionButton(b, _aiFreeButtonRect, I18n.Get("Bio.AiFreeButton"), mx, my, ButtonFontSize,
-                isPrimary: false, isLeftMouseDownFunc: () => IsLeftMouseDown());
-            BioEditorMenu.DrawActionButton(b, _cancelButtonRect, I18n.Get("Bio.CancelEsc"), mx, my, ButtonFontSize,
-                isDanger: false, isLeftMouseDownFunc: () => IsLeftMouseDown());
-            BioEditorMenu.DrawActionButton(b, _okButtonRect, I18n.Get("Bio.GenerateButton"), mx, my, ButtonFontSize,
-                isSoftRed: true, isLeftMouseDownFunc: () => IsLeftMouseDown());
+            ActionButtonRenderer.Draw(b, _aiFreeButtonRect, I18n.Get("Bio.AiFreeButton"), ref _hover_AiFree, mx, my, fontSize: ButtonFontSize,
+                style: ActionButtonStyle.Default, isPressedFunc: () => IsLeftMouseDown());
+            ActionButtonRenderer.Draw(b, _cancelButtonRect, I18n.Get("Bio.CancelEsc"), ref _hover_Cancel, mx, my, fontSize: ButtonFontSize,
+                style: ActionButtonStyle.Default, isPressedFunc: () => IsLeftMouseDown());
+            ActionButtonRenderer.Draw(b, _okButtonRect, I18n.Get("Bio.GenerateButton"), ref _hover_Generate, mx, my, fontSize: ButtonFontSize,
+                style: ActionButtonStyle.SoftRed, isPressedFunc: () => IsLeftMouseDown());
 
             // 5. 悬停气泡处理
             if (_thinkingPillRect.Contains(mx, my))

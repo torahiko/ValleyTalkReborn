@@ -54,6 +54,13 @@ namespace ValleytalkReborn
         // 底部动作按钮
         private Rectangle _stopButtonRect;
         private Rectangle _copyButtonRect;
+
+        // 按钮悬停缩放（ActionButtonRenderer 状态）
+        private float _hover_Stop = 1f;
+        private float _hover_CopyReview = 1f;
+        private float _hover_Refine = 1f;
+        private float _hover_Discard = 1f;
+        private float _hover_Apply = 1f;
         private Rectangle _refineButtonRect;
         private Rectangle _cancelButtonRect;
         private Rectangle _acceptButtonRect;
@@ -446,23 +453,23 @@ namespace ValleytalkReborn
             // 4. 底部动作按钮
             if (_phase != ReviewPhase.Settled)
             {
-                BioEditorMenu.DrawActionButton(b, _stopButtonRect, I18n.Get("Bio.StopButton"), mx, my, ButtonFontSize,
-                    isDanger: true, isLeftMouseDownFunc: () => IsLeftMouseDown());
+                ActionButtonRenderer.Draw(b, _stopButtonRect, I18n.Get("Bio.StopButton"), ref _hover_Stop, mx, my, fontSize: ButtonFontSize,
+                    style: ActionButtonStyle.Danger, isPressedFunc: () => IsLeftMouseDown());
                 if (_stopButtonRect.Contains(mx, my))
                     _hoverText = I18n.Get("Bio.StopHover");
             }
             else
             {
-                BioEditorMenu.DrawActionButton(b, _copyButtonRect, I18n.Get("Bio.CopyReview"), mx, my, ButtonFontSize,
-                    isLeftMouseDownFunc: () => IsLeftMouseDown());
+                ActionButtonRenderer.Draw(b, _copyButtonRect, I18n.Get("Bio.CopyReview"), ref _hover_CopyReview, mx, my, fontSize: ButtonFontSize,
+                    isPressedFunc: () => IsLeftMouseDown());
                 if (_onRequestRefine != null)
-                    BioEditorMenu.DrawActionButton(b, _refineButtonRect, I18n.Get("Bio.RefineButton"), mx, my, ButtonFontSize,
-                        isLeftMouseDownFunc: () => IsLeftMouseDown());
-                BioEditorMenu.DrawActionButton(b, _cancelButtonRect, I18n.Get("Bio.DiscardButton"), mx, my, ButtonFontSize,
-                    isLeftMouseDownFunc: () => IsLeftMouseDown());
+                    ActionButtonRenderer.Draw(b, _refineButtonRect, I18n.Get("Bio.RefineButton"), ref _hover_Refine, mx, my, fontSize: ButtonFontSize,
+                        isPressedFunc: () => IsLeftMouseDown());
+                ActionButtonRenderer.Draw(b, _cancelButtonRect, I18n.Get("Bio.DiscardButton"), ref _hover_Discard, mx, my, fontSize: ButtonFontSize,
+                    isPressedFunc: () => IsLeftMouseDown());
                 // ★ 确认按钮：偏红底色 + 黑色字体 + 悬浮暖光高亮
-                BioEditorMenu.DrawActionButton(b, _acceptButtonRect, I18n.Get("Bio.ApplyButton"), mx, my, ButtonFontSize,
-                    isDanger: false, isPrimary: false, isSoftRed: true, isLeftMouseDownFunc: () => IsLeftMouseDown());
+                ActionButtonRenderer.Draw(b, _acceptButtonRect, I18n.Get("Bio.ApplyButton"), ref _hover_Apply, mx, my, fontSize: ButtonFontSize,
+                    style: ActionButtonStyle.SoftRed, isPressedFunc: () => IsLeftMouseDown());
 
                 if (_copyButtonRect.Contains(mx, my))
                     _hoverText = I18n.Get("Bio.CopyReviewHover");

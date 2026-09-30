@@ -35,6 +35,10 @@ namespace ValleytalkReborn
         private readonly string _subtitle;
         private readonly List<string> _warnings;
         private readonly string _continueText;
+
+        // 按钮悬停缩放（ActionButtonRenderer 状态）
+        private float _hover_Fix = 1f;
+        private float _hover_Continue = 1f;
         private readonly Action _onContinue;
         private readonly string _fixText;
         private readonly Action _onFix;
@@ -238,11 +242,12 @@ namespace ValleytalkReborn
 
             // 4. 底部动作按钮
             // 完善按钮（常规浅木按钮）
-            BioEditorMenu.DrawActionButton(b, _fixBtnRect, _fixText, mx, my, ButtonFontSize,
-                isDanger: false, isPrimary: false, isLeftMouseDownFunc: () => IsLeftMouseDown());
+            ActionButtonRenderer.Draw(b, _fixBtnRect, _fixText, ref _hover_Fix, mx, my, fontSize: ButtonFontSize,
+                style: ActionButtonStyle.Default, isPressedFunc: () => IsLeftMouseDown());
             // ★ 继续按钮：风险场景标红背景（文字采用 TextOnDarkBtn 纯净白，绝不标红）；正面推进场景呈金黄主操作样式
-            BioEditorMenu.DrawActionButton(b, _continueBtnRect, _continueText, mx, my, ButtonFontSize,
-                isDanger: _continueIsDanger, isPrimary: !_continueIsDanger, isLeftMouseDownFunc: () => IsLeftMouseDown());
+            ActionButtonRenderer.Draw(b, _continueBtnRect, _continueText, ref _hover_Continue, mx, my, fontSize: ButtonFontSize,
+                style: _continueIsDanger ? ActionButtonStyle.Danger : ActionButtonStyle.Primary,
+                isPressedFunc: () => IsLeftMouseDown());
 
             drawMouse(b);
         }
