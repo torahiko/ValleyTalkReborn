@@ -1025,10 +1025,12 @@ namespace ValleytalkReborn
                             (ModEntry.Config.RecordVanillaDialogue || e.DialogueType != "vanilla") &&
                             e.DialogueType != "event" &&     // ← 剧情事件台词不进对话历史
                             e.DialogueType != "gift" &&      // ← 礼物系统条目不进对话历史
-                            e.SpeakerType != SpeakerType.System)
+                            // ← session-end 是唯一放行的 System 类型条目（会话边界标记）
+                            (e.SpeakerType != SpeakerType.System || e.DialogueType == "session-end"))
                         .Select(e => new ConversationElement(CleanHistoryText(e.Text), e.SpeakerType == SpeakerType.Player)
                         {
-                            FuzzyTime = DialogueHistoryAdapter.GetFuzzyTime(e.Timestamp, timeNow)
+                            FuzzyTime = DialogueHistoryAdapter.GetFuzzyTime(e.Timestamp, timeNow),
+                            IsSessionMarker = e.DialogueType == "session-end"
                         })
                         .Where(e => !string.IsNullOrWhiteSpace(e.Text) && 
                                     // ★ 剔除农夫历史中的无意义纯省略号占位

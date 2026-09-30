@@ -176,6 +176,19 @@ namespace ValleytalkReborn
             AddEntry(npcName, entry);
         }
 
+        public void RecordSessionEnd(string npcName)
+        {
+            string marker = Util.GetString("sessionEndMarker");
+            if (string.IsNullOrWhiteSpace(marker))
+            {
+                ModEntry.SMonitor?.Log(
+                    "[DialogueHistoryManager] sessionEndMarker i18n key missing - session-end not recorded.",
+                    LogLevel.Trace);
+                return;
+            }
+            AddEntry(npcName, new DialogueHistoryEntry("System", marker, SpeakerType.System, "session-end"));
+        }
+
         public void PurgeEavesdropEntries()
         {
             lock (_historyLock)

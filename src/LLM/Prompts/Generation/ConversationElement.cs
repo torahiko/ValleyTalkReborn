@@ -9,5 +9,6 @@ namespace ValleytalkReborn
 {
     public Guid Id { get; init; } = Guid.NewGuid();
     public string FuzzyTime { get; set; } = "";
+    public bool IsSessionMarker { get; init; } = false;
 }
 }

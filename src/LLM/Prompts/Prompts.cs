@@ -1604,9 +1604,12 @@ public class Prompts
                 {
                     string timePrefix = string.IsNullOrEmpty(elem.FuzzyTime) ? "" : $"[{elem.FuzzyTime}] ";
                     // VT-CONTEXT-01：玩家历史行以当前玩家名标注；NPC 标签与格式不变。
-                    prompt.AppendLine(elem.IsPlayerLine
-                        ? $"- {timePrefix}{promptPlayerName}: {elem.Text}"
-                        : $"- {timePrefix}{name}: {elem.Text}");
+                    // 会话边界标记独占一行，保留时间前缀、不带说话人标签。
+                    prompt.AppendLine(elem.IsSessionMarker
+                        ? $"- {timePrefix}{elem.Text}"
+                        : elem.IsPlayerLine
+                            ? $"- {timePrefix}{promptPlayerName}: {elem.Text}"
+                            : $"- {timePrefix}{name}: {elem.Text}");
                 }
             }
             else if (character.SpokeJustNow())

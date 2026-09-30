@@ -41,13 +41,10 @@ namespace ValleytalkReborn
                 return false;
             }
 
-            // 🌟【精准修复】：记录为明确的行为动作，避免被 DialogueBuilder 当作异常符号过滤，
-            // 同时赋予大模型真实的“冷场/沉默”剧情感知
+            // 沉默选项=会话边界：按钮外显文案与落库内容解耦，历史只写入统一 i18n 结束标记。
             if (response.responseKey == $"{SldConstants.DialogueKeyPrefix}Silent")
             {
-                bool isZh = LocalizedContentManager.CurrentLanguageCode.ToString().StartsWith("zh", StringComparison.OrdinalIgnoreCase);
-                string silentText = isZh ? "*保持沉默，什么也没说*" : "remains silent";
-                DialogueHistoryManager.Instance.RecordPlayerDialogue(__instance.speaker.Name, silentText);
+                DialogueHistoryManager.Instance.RecordSessionEnd(__instance.speaker.Name);
 
                 // 🌟【精准修复 1】：显式清理对话菜单并恢复玩家行动，防止悬挂导致用户再次点击空栈崩溃
                 Game1.dialogueUp = false;
