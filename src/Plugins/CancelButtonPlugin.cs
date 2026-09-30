@@ -19,8 +19,6 @@ namespace ValleytalkReborn.Plugins
         private Rectangle _closeButtonRect;
         private bool _isHoveringOverClose;
         private float _hoverScale = 1.0f;
-        private double _generationStartTime = -1.0;
-        private const double OverlayDelaySeconds = 0.25;
 
         public CancelButtonPlugin(IModHelper helper, IMonitor monitor)
         {
@@ -57,7 +55,7 @@ namespace ValleytalkReborn.Plugins
                 return;
             }
 
-            // 拦截所有可能导致 DialogueBox 翻页或关闭的按键（已移除 MouseRight）
+            // 拦截所有可能导致 DialogueBox 翻页或关闭的按键
             if (e.Button == SButton.MouseLeft || 
                 e.Button == SButton.Space    || e.Button == SButton.Enter ||
                 e.Button == SButton.ControllerA || e.Button.IsActionButton())
@@ -76,18 +74,14 @@ namespace ValleytalkReborn.Plugins
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
         {
             SyncCancellationToken();
-            if (!Context.IsWorldReady || !AsyncBuilder.Instance.IsGeneratingDialogue){
-                // 生成结束或未开始，重置计时
-                _generationStartTime = -1.0;
-        
+            if (!Context.IsWorldReady || !AsyncBuilder.Instance.IsGeneratingDialogue)
+            {
                 if (!Context.IsWorldReady ||
                     !AsyncBuilder.Instance.IsGeneratingDialogue ||
                     _currentCts == null || _currentCts.IsCancellationRequested)
                     return;
             }
-            // 记录开始时间（只记一次）
-            if (_generationStartTime < 0)
-                _generationStartTime = Game1.currentGameTime.TotalGameTime.TotalSeconds;
+
             _isHoveringOverClose = _closeButtonRect.Contains(Game1.getMouseX(), Game1.getMouseY());
             _hoverScale += ((_isHoveringOverClose ? 1.15f : 1.0f) - _hoverScale) * 0.2f;
         }
@@ -99,10 +93,9 @@ namespace ValleytalkReborn.Plugins
                 Game1.activeClickableMenu is not DialogueBox dialogueBox)
                 return;
 
-            // 延迟 0.5 秒再显示，等对话框缩放动画结束
-            if (_generationStartTime < 0) return;
-            double elapsed = Game1.currentGameTime.TotalGameTime.TotalSeconds - _generationStartTime;
-            if (elapsed < OverlayDelaySeconds) return;
+            // 监听对话框原生展开状态：若还在播放过渡动画（即使被 FastAnimations 加速也能精准捕捉），则先不渲染按钮
+            if (dialogueBox.transitioning)
+                return;
 
             DrawOverlay(e.SpriteBatch, dialogueBox);
         }
@@ -133,8 +126,6 @@ namespace ValleytalkReborn.Plugins
             double time = Game1.currentGameTime.TotalGameTime.TotalSeconds;
             bool isChinese = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
 
-            // DialogueBox.xPositionOnScreen/yPositionOnScreen 不可信（可能为0）
-            // 用视口尺寸手算实际位置
             int vpWidth  = Game1.uiViewport.Width;
             int vpHeight = Game1.uiViewport.Height;
             int boxW     = dialogueBox.width  > 0 ? dialogueBox.width  : 1200;
@@ -157,7 +148,7 @@ namespace ValleytalkReborn.Plugins
             string animatedMessage = message + new string('.', dotCount);
 
             float startX         = boxLeft + 16f;
-            float baseY          = boxTop  + 10f;
+            float baseY          = boxTop  - 15f;
             float amplitude      = 3f;
             float speed          = 5f;
             float charWaveOffset = 0.5f;
@@ -194,9 +185,8 @@ namespace ValleytalkReborn.Plugins
 
             float btnBounceY = (float)Math.Sin(time * 3f) * 4f;
             
-            //此处修改cancelbutton的按钮位置
             int   btnX       = boxRight  - displaySize - 485;
-            int   baseBtnY   = boxBottom - displaySize - margin;
+            int   baseBtnY   = boxBottom - displaySize - margin - 5;
             int   btnY       = (int)(baseBtnY + btnBounceY);
             
             _closeButtonRect = new Rectangle(btnX, btnY, displaySize, displaySize);
@@ -236,6 +226,8 @@ namespace ValleytalkReborn.Plugins
 
             try
             {
+                NPC currentNpc = AsyncBuilder.Instance.SpeakingNpc;
+
                 _currentCts.Cancel();
                 Game1.playSound("cancel");
                 AsyncBuilder.Instance.Cleanup();
@@ -245,7 +237,10 @@ namespace ValleytalkReborn.Plugins
                 string fallback = isChinese ? "请求已取消。" : "Request cancelled.";
                 string cancelMsg = translation.HasValue() ? translation.ToString() : fallback;
 
-                Game1.activeClickableMenu = new ReplicaDialogueBox(cancelMsg);
+                if (currentNpc != null)
+                    Game1.activeClickableMenu = new DialogueBox(new StardewValley.Dialogue(currentNpc, "", $"$s {cancelMsg}"));
+                else
+                    Game1.activeClickableMenu = new DialogueBox(cancelMsg);
             }
             catch (ObjectDisposedException) { }
             catch (Exception ex)
