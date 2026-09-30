@@ -1469,6 +1469,20 @@ namespace ValleytalkReborn
 
                 // VT3-B：对话框关闭 → 退役 active Tier 1 会话到 closed 软继承窗口
                 Tier1SnapshotStore.MarkCurrentDialogueClosed();
+
+                // VT-UI-005 Stage 2：Custom 风格换壳——原版框关闭同帧弹出浮动选择框。
+                // BoxRef 不匹配（事件打断/陈旧载荷）时 ConsumeMatching 内部作废，不弹面板。
+                if (Config.ChoiceBoxStyle == ChoiceBoxStyle.Custom && PendingChoiceStore.TryPeek(out _))
+                {
+                    var choiceContext = PendingChoiceStore.ConsumeMatching(e.OldMenu);
+                    if (choiceContext != null)
+                    {
+                        choiceContext.Speaker.Halt();
+                        choiceContext.Speaker.movementPause = 20;
+                        choiceContext.Speaker.facePlayer(Game1.player);
+                        Game1.activeClickableMenu = new DialogueChoiceMenu(choiceContext);
+                    }
+                }
             }
         }
 
@@ -1479,6 +1493,9 @@ namespace ValleytalkReborn
 
             // 会话级 Memory 重置：确保新存档的对话不会复用前一个存档的 Tier 1 / Gossip 会话。
             Tier1SnapshotStore.ClearAll();
+
+            // VT-UI-005 Stage 2：存档边界强制作废跨存档的待消费选择载荷
+            PendingChoiceStore.Clear();
 
             // [Save-scope rebuild] DialogueCoordinator owns per-save dialogue state; Cleanup
             // destroys it on title return. Rebuilt here by declared contract.
@@ -1535,6 +1552,9 @@ namespace ValleytalkReborn
         private void OnReturnedToTitle(object sender, ReturnedToTitleEventArgs e)
         {
             Cleanup();
+
+            // VT-UI-005 Stage 2：标题界面强制作废待消费选择载荷
+            PendingChoiceStore.Clear();
             // ── 情绪系统瞬态重置（返回标题） ──
             DialogueBuilder.Instance.ResetTransientEmotionState();
             SMonitor.Log("[ModEntry] Returned to title screen — all manager caches cleaned up.", LogLevel.Debug);

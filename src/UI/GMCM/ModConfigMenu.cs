@@ -348,6 +348,15 @@ namespace ValleytalkReborn
 
             ConfigMenu.AddBoolOption(
                 mod: ModManifest,
+                name: () => GetUIString("configChoiceBoxStyle", "Custom Choice Box"),
+                tooltip: () => GetUIString("configChoiceBoxStyleTooltip",
+                    "ON = custom floating choice panel (Stage 2). OFF = vanilla in-dialogue choice buttons (best compatibility)."),
+                getValue: () => ModEntry.Config.ChoiceBoxStyle == ChoiceBoxStyle.Custom,
+                setValue: value => ModEntry.Config.ChoiceBoxStyle = value ? ChoiceBoxStyle.Custom : ChoiceBoxStyle.Vanilla
+            );
+
+            ConfigMenu.AddBoolOption(
+                mod: ModManifest,
                 name: () => GetUIString("configRecordEventDialogue", "Record Event & Cutscene Dialogue"),
                 tooltip: () => GetUIString("configRecordEventDialogueTooltip",
                     "Record NPC dialogue and farmer choices during events and cutscenes into the history."),

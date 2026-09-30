@@ -14,6 +14,7 @@ using StardewValley;
 using StardewValley.Characters;
 using ValleytalkReborn.Dialogue.Coordination;
 using ValleytalkReborn.Movement;
+using ValleytalkReborn.UI;
 
 namespace ValleytalkReborn
 {
@@ -394,7 +395,7 @@ namespace ValleytalkReborn
                     LogLevel.Debug);
             }
 
-            string formattedLine = FormatLine(theLine, allowDateUI, allowFollowUI, speakerName: instance.Name);
+            string formattedLine = FormatLine(theLine, instance, allowDateUI, allowFollowUI, speakerName: instance.Name);
             return $"{(dontSkipNext ? "" : "skip#")}{formattedLine}";
         }
 
@@ -466,7 +467,7 @@ namespace ValleytalkReborn
                 theLine, 
                 allowFallbackEmotes: !context.RoutingFlags.IsSimpleGreeting);
             
-            string formattedLine = FormatLine(theLine, speakerName: instance.Name);
+            string formattedLine = FormatLine(theLine, instance, speakerName: instance.Name);
             var newDialogue = new StardewValley.Dialogue(instance, $"Accept_{gift.Name}", formattedLine);
             return newDialogue;
         }
@@ -523,7 +524,7 @@ namespace ValleytalkReborn
                 theLine,
                 allowFallbackEmotes: !context.RoutingFlags.IsSimpleGreeting);
 
-            string formattedLine = FormatLine(theLine, speakerName: instance.Name);
+            string formattedLine = FormatLine(theLine, instance, speakerName: instance.Name);
             return new StardewValley.Dialogue(instance, $"Handover_{verdict}", formattedLine);
         }
 
@@ -579,7 +580,7 @@ namespace ValleytalkReborn
                 theLine, 
                 allowFallbackEmotes: !context.RoutingFlags.IsSimpleGreeting);
 
-            string formattedLine = FormatLine(theLine, speakerName: instance.Name);
+            string formattedLine = FormatLine(theLine, instance, speakerName: instance.Name);
             return new StardewValley.Dialogue(instance, dialogueKey, formattedLine);
         }
         
@@ -670,7 +671,7 @@ namespace ValleytalkReborn
             return result;
         }
 
-        private string FormatLine(string[] theLine, bool allowDateUI = false, bool allowFollowUI = false, string speakerName = "NPC")
+        private string FormatLine(string[] theLine, NPC speaker, bool allowDateUI = false, bool allowFollowUI = false, string speakerName = "NPC")
         {
             if (theLine == null || theLine.Length == 0)
             {
@@ -708,12 +709,29 @@ namespace ValleytalkReborn
             bool showDateBtn = allowDateUI && DateManager.Instance.Phase == DatePhase.None;
             bool willAppendResponses = hasChoices || showDateBtn;
 
+            // 🌟【VT-UI-005 Stage 2 双轨】：Custom 模式下不再拼装 $q/$r 选项页，
+            // 改为把本轮载荷交给 PendingChoiceStore，由对话框关闭时的浮动选择框呈现。
+            bool isCustomChoiceMode = ModEntry.Config.ChoiceBoxStyle == ChoiceBoxStyle.Custom;
+            var suggestions = new List<string>();
+            if (isCustomChoiceMode && suggestionsEnabled)
+            {
+                int maxSuggestions = Math.Min(theLine.Length, 4); // 取 1 到 3
+                for (int i = 1; i < maxSuggestions; i++)
+                {
+                    if (string.IsNullOrWhiteSpace(theLine[i])) continue;
+                    suggestions.Add(theLine[i]);
+                    if (suggestions.Count >= 3) break;
+                }
+            }
+
             ModEntry.SMonitor?.Log(
-                $"[FormatLine] responses: choices={hasChoices}, count={suggestionCount}, silent=True, typed={hasChoices}, date={showDateBtn} for {speakerName}",
+                $"[FormatLine] responses: choices={hasChoices}, count={suggestionCount}, silent=True, typed={hasChoices}, date={showDateBtn}, customBox={isCustomChoiceMode}({suggestions.Count}) for {speakerName}",
                 LogLevel.Trace);
 
             // 🌟【强力防抽风 1】：NPC 台词分页与超长字符限制
-            int npcPageBudget = willAppendResponses ? MaxDialoguePages - 1 : MaxDialoguePages;
+            int npcPageBudget = isCustomChoiceMode
+                ? MaxDialoguePages
+                : (willAppendResponses ? MaxDialoguePages - 1 : MaxDialoguePages);
 
             string npcSpeech = theLine[0];
             if (string.IsNullOrWhiteSpace(npcSpeech))
@@ -753,6 +771,24 @@ namespace ValleytalkReborn
                 }
             }
             theLine[0] = npcSpeech;
+
+            // 🌟【VT-UI-005 Stage 2】：Custom 轨道到此为止——只吐纯台词，
+            // 选项/自定义/沉默/约会全部交给对话框关闭后弹出的 DialogueChoiceMenu。
+            if (isCustomChoiceMode)
+            {
+                if (suggestions.Count > 0 || showDateBtn)
+                {
+                    PendingChoiceStore.Set(new PendingChoiceContext
+                    {
+                        Speaker = speaker,
+                        NpcLineSanitized = AsyncBuilder.SanitizeDialogueForHistory(theLine[0]),
+                        Suggestions = suggestions,
+                        ShowDateOption = showDateBtn
+                    });
+                }
+
+                return theLine[0];
+            }
 
             if (!willAppendResponses)
             {

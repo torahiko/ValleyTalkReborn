@@ -422,7 +422,7 @@ public class AsyncBuilder
     /// <summary>
     /// 彻底剔除星露谷原版语法格式及未渲染模板标记
     /// </summary>
-    private static string SanitizeDialogueForHistory(string text)
+    internal static string SanitizeDialogueForHistory(string text)
     {
         if (string.IsNullOrWhiteSpace(text)) return string.Empty;
         // 🌟 修复：彻底剔除星露谷原版选项拼接残留（如 "{ 回应:"、"{ Respond:" 等）

@@ -493,7 +493,7 @@ namespace ValleytalkReborn
         /// <summary>
         /// 带有平滑插值悬浮放大、高光边框及按压立体反馈的现代化实体动作按钮。
         /// </summary>
-        private static void DrawAnimatedActionButton(
+        internal static void DrawAnimatedActionButton(
             SpriteBatch b,
             Rectangle rect,
             string label,
@@ -586,7 +586,7 @@ namespace ValleytalkReborn
             ButtonTextRenderer.DrawButtonText(b, label, btnBounds, textCol, useBold: true);
         }
 
-        private static void DrawHoverTextCustom(SpriteBatch b, string text)
+        internal static void DrawHoverTextCustom(SpriteBatch b, string text)
         {
             if (string.IsNullOrEmpty(text)) return;
 
