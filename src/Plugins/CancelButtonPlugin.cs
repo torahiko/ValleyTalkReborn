@@ -236,7 +236,6 @@ namespace ValleytalkReborn.Plugins
 
             try
             {
-                NPC currentNpc = AsyncBuilder.Instance.SpeakingNpc;
                 _currentCts.Cancel();
                 Game1.playSound("cancel");
                 AsyncBuilder.Instance.Cleanup();
@@ -246,10 +245,7 @@ namespace ValleytalkReborn.Plugins
                 string fallback = isChinese ? "请求已取消。" : "Request cancelled.";
                 string cancelMsg = translation.HasValue() ? translation.ToString() : fallback;
 
-                if (currentNpc != null)
-                    Game1.activeClickableMenu = new DialogueBox(new StardewValley.Dialogue(currentNpc, "", $"$s {cancelMsg}"));
-                else
-                    Game1.activeClickableMenu = new DialogueBox(cancelMsg);
+                Game1.activeClickableMenu = new ReplicaDialogueBox(cancelMsg);
             }
             catch (ObjectDisposedException) { }
             catch (Exception ex)
