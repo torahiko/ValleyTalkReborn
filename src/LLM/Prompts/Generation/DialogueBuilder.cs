@@ -776,7 +776,9 @@ namespace ValleytalkReborn
             // 选项/自定义/沉默/约会全部交给对话框关闭后弹出的 DialogueChoiceMenu。
             if (isCustomChoiceMode)
             {
-                if (suggestions.Count > 0 || showDateBtn || ModEntry.Config.TypedResponses != "Never")
+                // VT-UI-009：坞弹出语义 = 有建议卡 / 有约会卡 / 纯打党模式（建议生成关闭）；
+                // 建议开启且 0 选项 0 标签 → 自然收尾不弹坞。TypedResponses 不再参与 Custom 轨道判定。
+                if (suggestions.Count > 0 || showDateBtn || !suggestionsEnabled)
                 {
                     PendingChoiceStore.Set(new PendingChoiceContext
                     {
