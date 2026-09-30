@@ -1373,7 +1373,7 @@ namespace ValleytalkReborn
 
             // 1. 自身已婚胶囊（不可结婚角色置灰禁用）
             string marriedLabel = !_isDatable ? I18n.Get("Bio.GateNotDatable") : (stage.RequireMarried ? I18n.Get("Bio.GateMarried") : I18n.Get("Bio.GateMarriageAny"));
-            ActionButtonRenderer.Draw(b, _gateMarriedPillRect, marriedLabel, ref _hover_GateMarriedPill, mx, my, style: _isDatable && stage.RequireMarried ? ActionButtonStyle.Primary : ActionButtonStyle.Default, isEnabled: _isDatable);
+            ActionButtonRenderer.Draw(b, _gateMarriedPillRect, marriedLabel, ref _hover_GateMarriedPill, mx, my, style: !_isDatable ? ActionButtonStyle.Disabled : (stage.RequireMarried ? ActionButtonStyle.Primary : ActionButtonStyle.Default), isEnabled: _isDatable);
             if (_gateMarriedPillRect.Contains(mx, my))
             {
                 _hoverText = !_isDatable
