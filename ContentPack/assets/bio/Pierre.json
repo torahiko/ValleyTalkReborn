@@ -18,12 +18,6 @@
       "Heading": "Morris",
       "RequiredHearts": 0,
       "Description": "Your corporate rival and existential threat. You despise him with white-knuckle fury, viewing every blue Joja coupon as an insult; your hatred is fueled as much by genuine terror of bankruptcy as by jealousy of his corporate power."
-    },
-    "ThePlayer": {
-      "id": "ThePlayer",
-      "Heading": "The Farmer",
-      "RequiredHearts": 0,
-      "Description": "Progression Target. Starts as a captive wholesale supplier and revenue asset to be haggled with; shifts into an observer of your actual grind, gradually becoming someone you can sit beside without having to put up a front."
     }
   },
   "Traits": {
