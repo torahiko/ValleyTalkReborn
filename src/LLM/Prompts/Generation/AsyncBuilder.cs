@@ -40,7 +40,7 @@ public class AsyncBuilder
     private AiStreamingDialogueBox _streamingDialogueBox = null;
 
     /// <summary>本轮流式分流器；Cleanup / ResetState 置空，使在途 chunk 停止入队。</summary>
-    private StreamTokenPipeline _activePipeline = null;
+    private volatile StreamTokenPipeline _activePipeline = null;
 
     private IClickableMenu _placeholderMenu = null;
     private bool _awaitingGeneration = false;
@@ -162,7 +162,8 @@ public class AsyncBuilder
                     break;
 
                 case StreamSegmentType.Portrait:
-                    // 立绘表情由对白框按页文本自行解析，流式阶段不额外覆盖。
+                    // 立绘表情由主线程直接下发到流式框；未知码在对白框内部降级为默认表情。
+                    _streamingDialogueBox?.SetEmotion(segment.Payload);
                     break;
             }
         }
@@ -357,7 +358,8 @@ public class AsyncBuilder
                             PendingChoiceStore.Set(new PendingChoiceContext
                             {
                                 Speaker = npc,
-                                NpcLineSanitized = SanitizeDialogueForHistory(boxToFinalize?.DisplayedPageText ?? ""),
+                                NpcLineSanitized = SanitizeDialogueForHistory(
+                                    boxToFinalize?.GetFullDialogueText() ?? rawText),
                                 Suggestions = suggestions,
                                 ShowDateOption = false,
                                 BoxRef = boxToFinalize
@@ -367,10 +369,10 @@ public class AsyncBuilder
 
                     boxToFinalize?.AppendContent("", isComplete: true);
 
-                    // ④ 既有清洗/记录/偷听管线（一字不改）——输入为 ① 的 rawText 衍生，
-                    //    天然不含肖像码
+                    // ④ 既有清洗/记录/偷听管线——输入为跨页全文本，天然不含肖像码
                     // 🌟【核心修复】：清洗星露谷原版内部标记、选项占位符以及肖像指令，防止 ${ 回应: } 泄露至历史库
-                    string rawResponseText = rawText;
+                    // 🌟 VT-STREAM-04：分页后单页文本已不完整，统一取 GetFullDialogueText 复原全台词。
+                    string rawResponseText = boxToFinalize?.GetFullDialogueText() ?? rawText;
                     string cleanResponseText = SanitizeDialogueForHistory(rawResponseText);
 
                     if (Game1.player != null && cleanResponseText.Contains("@"))

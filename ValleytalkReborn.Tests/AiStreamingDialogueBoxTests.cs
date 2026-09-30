@@ -504,6 +504,281 @@ public class AiStreamingDialogueBoxTests : IDisposable
     }
 
     #endregion
+
+    #region 显式 '#' 分页
+
+    [Fact]
+    public void AppendContent_ExplicitHash_SealsCurrentPageAndQueuesRemainder()
+    {
+        AiStreamingDialogueBox box = NewBox();
+
+        box.AppendContent("第1页#第2页", false);
+
+        // '#' 之前的文本留在当前页并封口，之后的内容压入 backlog。
+        Assert.Equal("第1页", box.DisplayedPageText);
+        Assert.True(box.IsCurrentPageSealed);
+        Assert.Equal(1, box.PendingPageCount);
+        Assert.Equal("第1页 第2页", box.GetFullDialogueText());
+    }
+
+    [Fact]
+    public void AppendContent_ExplicitHash_EntersWaitingForPageTurnAfterPageIsDrained()
+    {
+        AiStreamingDialogueBox box = NewBox();
+
+        box.AppendContent("第1页#第2页", true);
+        Assert.Equal(StreamingDialogueState.Typing, box.State);
+
+        // 打完当前页 -> 等待翻页，而不是直接 Complete。
+        box.receiveLeftClick(0, 0);
+
+        Assert.Equal(StreamingDialogueState.WaitingForPageTurn, box.State);
+    }
+
+    [Fact]
+    public void ReceiveLeftClick_InWaitingForPageTurn_DequeuesNextPageAndResumesTyping()
+    {
+        AiStreamingDialogueBox box = NewBox();
+        box.AppendContent("第1页#第2页", true);
+        box.receiveLeftClick(0, 0);
+        Assert.Equal(StreamingDialogueState.WaitingForPageTurn, box.State);
+
+        box.receiveLeftClick(0, 0);
+
+        Assert.Equal("第2页", box.DisplayedPageText);
+        Assert.Equal(StreamingDialogueState.Typing, box.State);
+        Assert.Equal(0, box.CharacterIndex);
+        Assert.False(box.IsCurrentPageSealed);
+        Assert.Equal(0, box.PendingPageCount);
+    }
+
+    [Fact]
+    public void ReceiveLeftClick_InWaitingForPageTurn_ThenFinishLastPage_EntersComplete()
+    {
+        AiStreamingDialogueBox box = NewBox();
+        box.AppendContent("第1页#第2页", true);
+        box.receiveLeftClick(0, 0);
+        box.receiveLeftClick(0, 0);
+
+        Assert.Equal(StreamingDialogueState.Typing, box.State);
+
+        // 末页快进拉满 -> 无后续页 -> Complete。
+        box.receiveLeftClick(0, 0);
+
+        Assert.Equal(StreamingDialogueState.Complete, box.State);
+    }
+
+    [Fact]
+    public void ReceiveLeftClick_EmptyBacklogAtPageTurn_CollapsesToComplete()
+    {
+        // RECOVERABLE 路径：'#' 结尾使当前页封口但 backlog 为空，
+        // 打完本页后进入等待翻页，此时翻页必须收束为 Complete 而非死锁。
+        AiStreamingDialogueBox box = NewBox();
+        box.AppendContent("只有一页#", true);
+
+        box.receiveLeftClick(0, 0);
+        Assert.Equal(StreamingDialogueState.WaitingForPageTurn, box.State);
+        Assert.Equal(0, box.PendingPageCount);
+
+        box.receiveLeftClick(0, 0);
+
+        Assert.Equal(StreamingDialogueState.Complete, box.State);
+    }
+
+    #endregion
+
+    #region 高度溢出自动分页
+
+    /// <summary>
+    /// 构造必然超过 MaxPageHeight 的长文本：无头环境下 SpriteText 单行高 48，
+    /// 400 个汉字在 752 宽下实测高度 20028，远超 200。
+    /// </summary>
+    private static string VeryLongText(string marker)
+        => string.Concat(Enumerable.Repeat(marker, 400));
+
+    [Fact]
+    public void AppendContent_HeightOverflow_SealsPageAtMaxHeightAndQueuesRemainder()
+    {
+        AiStreamingDialogueBox box = NewBox();
+        string text = VeryLongText("字");
+
+        box.AppendContent(text, false);
+
+        Assert.True(box.IsCurrentPageSealed);
+        Assert.True(box.DisplayedPageText.Length < text.Length,
+            "超长文本必须在 200px 高度处截断，首屏不得吞下全文。");
+        Assert.True(box.PendingPageCount > 0, "溢出部分必须压入 backlog 等待翻页。");
+    }
+
+    [Fact]
+    public void AppendContent_HeightOverflow_DoesNotSplitAsciiWords()
+    {
+        AiStreamingDialogueBox box = NewBox();
+        string text = string.Join(" ", Enumerable.Repeat("hello", 2000));
+
+        box.AppendContent(text, false);
+
+        // 断行必须落在空格处：末字符不得是单词内部字符。
+        Assert.True(box.IsCurrentPageSealed);
+        char last = box.DisplayedPageText[box.DisplayedPageText.Length - 1];
+        Assert.True(char.IsWhiteSpace(last) || !char.IsLetter(last),
+            $"禁止从 ASCII 单词中间断行，实际末字符 '{last}'。");
+    }
+
+    [Fact]
+    public void AppendContent_HeightOverflow_EntersWaitingForPageTurnAfterDrain()
+    {
+        AiStreamingDialogueBox box = NewBox();
+        box.AppendContent(VeryLongText("字"), true);
+
+        box.receiveLeftClick(0, 0);
+
+        Assert.Equal(StreamingDialogueState.WaitingForPageTurn, box.State);
+    }
+
+    [Fact]
+    public void AppendContent_PageBudgetExhausted_TruncatesWithMarker()
+    {
+        // BOUNDARY 路径：显式 '#' 撑破 10 页上限时熔断，末页附加 "..."。
+        AiStreamingDialogueBox box = NewBox();
+
+        box.AppendContent(string.Join("#", Enumerable.Repeat("页", 15)), false);
+
+        // 当前页 + backlog 恰好封顶 10 页，第 11 页起被丢弃。
+        Assert.Equal(9, box.PendingPageCount);
+        Assert.Contains("...", box.GetFullDialogueText());
+        Assert.Equal(10, box.GetFullDialogueText().Split(new[] { '页' }, StringSplitOptions.RemoveEmptyEntries).Length);
+    }
+
+    [Fact]
+    public void AppendContent_AfterPageBudgetExhausted_DropsFurtherText()
+    {
+        AiStreamingDialogueBox box = NewBox();
+        box.AppendContent(string.Join("#", Enumerable.Repeat("页", 15)), false);
+
+        string afterTruncation = box.GetFullDialogueText();
+
+        box.AppendContent("#" + string.Join("#", Enumerable.Repeat("新", 10)), false);
+
+        // 熔断后不得再吞字，也不得重复追加截断标记。
+        Assert.Equal(afterTruncation, box.GetFullDialogueText());
+    }
+
+    [Fact]
+    public void AppendContent_LeadingHash_StillReachesPendingPageInsteadOfStalling()
+    {
+        // 首字符即 '#'：当前页为空、全量落在 backlog。此时不得停在 Thinking，
+        // 否则玩家永远等不到第一次翻页。
+        AiStreamingDialogueBox box = NewBox();
+
+        box.AppendContent("#后置内容", false);
+
+        Assert.Equal(StreamingDialogueState.WaitingForPageTurn, box.State);
+        Assert.Equal(1, box.PendingPageCount);
+
+        box.receiveLeftClick(0, 0);
+
+        Assert.Equal("后置内容", box.DisplayedPageText);
+        Assert.Equal(StreamingDialogueState.Typing, box.State);
+    }
+
+    [Fact]
+    public void SetContent_LeadingHash_DoesNotStallInThinking()
+    {
+        AiStreamingDialogueBox box = NewBox("初始");
+
+        box.SetContent("#后置内容", true);
+
+        Assert.Equal(StreamingDialogueState.WaitingForPageTurn, box.State);
+        box.receiveLeftClick(0, 0);
+        Assert.Equal("后置内容", box.DisplayedPageText);
+    }
+
+    #endregion
+
+    #region GetFullDialogueText / SetEmotion
+
+    [Fact]
+    public void GetFullDialogueText_JoinsHistoryCurrentAndBacklogAcrossPages()
+    {
+        AiStreamingDialogueBox box = NewBox();
+        box.AppendContent("第一段#第二段#第三段", true);
+
+        // 尚未翻页：当前页 + backlog 拼接即为全文本。
+        Assert.Equal("第一段 第二段 第三段", box.GetFullDialogueText());
+
+        // 点击序列：拉满第 1 页 -> 翻到第 2 页 -> 拉满第 2 页 -> 翻到第 3 页。
+        box.receiveLeftClick(0, 0);
+        Assert.Equal(StreamingDialogueState.WaitingForPageTurn, box.State);
+
+        box.receiveLeftClick(0, 0);
+        Assert.Equal("第二段", box.DisplayedPageText);
+
+        box.receiveLeftClick(0, 0);
+        Assert.Equal(StreamingDialogueState.WaitingForPageTurn, box.State);
+
+        box.receiveLeftClick(0, 0);
+
+        // 两页已归档，当前页为第三段。
+        Assert.Equal("第三段", box.DisplayedPageText);
+        Assert.Equal("第一段 第二段 第三段", box.GetFullDialogueText());
+    }
+
+    [Fact]
+    public void GetFullDialogueText_EmptyStream_ReturnsEmptyString()
+    {
+        Assert.Equal(string.Empty, NewBox().GetFullDialogueText());
+    }
+
+    [Fact]
+    public void SetEmotion_AddsDollarPrefix()
+    {
+        AiStreamingDialogueBox box = NewBox();
+
+        box.SetEmotion("happy");
+
+        Assert.Equal("$happy", box.characterDialogue.CurrentEmotion);
+    }
+
+    [Fact]
+    public void SetEmotion_KeepsExistingDollarPrefix()
+    {
+        AiStreamingDialogueBox box = NewBox();
+
+        box.SetEmotion("$sad");
+
+        Assert.Equal("$sad", box.characterDialogue.CurrentEmotion);
+    }
+
+    [Fact]
+    public void SetEmotion_UnknownCode_FallsBackToDefaultWithoutThrowing()
+    {
+        // RECOVERABLE 路径：未知码必须降级，不得阻断渲染。
+        AiStreamingDialogueBox box = NewBox();
+
+        box.SetEmotion("!!bogus!!");
+
+        Assert.Equal("$0", box.characterDialogue.CurrentEmotion);
+    }
+
+    [Fact]
+    public void SetEmotion_BlankOrNullSpeaker_IsIgnored()
+    {
+        AiStreamingDialogueBox withSpeaker = NewBox();
+        string before = withSpeaker.characterDialogue.CurrentEmotion;
+
+        withSpeaker.SetEmotion("   ");
+        withSpeaker.SetEmotion(null);
+
+        // 空白/空输入不得改动对白框表情（无头垫片的默认值恒为 $neutral）。
+        Assert.Equal(before, withSpeaker.characterDialogue.CurrentEmotion);
+
+        AiStreamingDialogueBox withoutSpeaker = new(null, "");
+        withoutSpeaker.SetEmotion("happy");
+        Assert.Null(withoutSpeaker.characterDialogue);
+    }
+
+    #endregion
 }
 
 /// <summary>xUnit 断言的零值简写，避免重复样板。</summary>

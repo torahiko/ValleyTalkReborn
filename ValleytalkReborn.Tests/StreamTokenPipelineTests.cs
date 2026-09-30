@@ -437,7 +437,7 @@ public class StreamTokenPipelineTests
         pipeline.Reset();
 
         Assert.Empty(pipeline.GetCollectedSuggestions());
-        Assert.Equal(StreamingProbeState(pipeline), "Thinking");
+        Assert.Equal("Thinking", StreamingProbeState(pipeline));
     }
 
     [Fact]

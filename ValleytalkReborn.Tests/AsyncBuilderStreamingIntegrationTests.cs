@@ -353,9 +353,65 @@ public class AsyncBuilderStreamingIntegrationTests : IDisposable
         Assert.Equal(string.Empty, streamingBox.DisplayedPageText);
     }
 
+    [Fact]
+    public void StreamingBox_MultiPageLine_IsPersistedWholeIntoChoicePayload()
+    {
+        // VT-STREAM-04：分页后单页文本不再等于全台词，
+        // 选择坞凭据必须取 GetFullDialogueText，否则前页在 UI 与历史中整段丢失。
+        var streamingBox = new AiStreamingDialogueBox(new NPC());
+        streamingBox.AppendContent("第一段#第二段", true);
+
+        Assert.NotEqual(streamingBox.DisplayedPageText, streamingBox.GetFullDialogueText());
+
+        string fullLine = AsyncBuilder.SanitizeDialogueForHistory(streamingBox.GetFullDialogueText());
+
+        PendingChoiceStore.Set(new PendingChoiceContext
+        {
+            Speaker = new NPC(),
+            NpcLineSanitized = fullLine,
+            Suggestions = new List<string> { "好的" },
+            ShowDateOption = false,
+            BoxRef = streamingBox
+        });
+
+        PendingChoiceContext consumed = PendingChoiceStore.ConsumeMatching(streamingBox);
+
+        Assert.NotNull(consumed);
+        Assert.Contains("第一段", consumed.NpcLineSanitized);
+        Assert.Contains("第二段", consumed.NpcLineSanitized);
+    }
+
     #endregion
 
     #region 3. AsyncBuilder 源码契约
+
+    [Fact]
+    public void AsyncBuilder_ExtractsFullDialogueTextForHistoryAndChoice()
+    {
+        var source = SourceOrFail();
+
+        // 历史入库与选择坞凭据必须统一走跨页全文本。
+        int fullTextUses = source.Split("boxToFinalize?.GetFullDialogueText()").Length - 1;
+        Assert.Equal(2, fullTextUses);
+        Assert.DoesNotContain("SanitizeDialogueForHistory(boxToFinalize?.DisplayedPageText", source);
+    }
+
+    [Fact]
+    public void AsyncBuilder_PortraitSegment_DrivesStreamingBoxEmotion()
+    {
+        var source = SourceOrFail();
+
+        Assert.Contains("case StreamSegmentType.Portrait:", source);
+        Assert.Contains("_streamingDialogueBox?.SetEmotion(segment.Payload);", source);
+    }
+
+    [Fact]
+    public void AsyncBuilder_ActivePipeline_IsVolatile()
+    {
+        var source = SourceOrFail();
+
+        Assert.Contains("private volatile StreamTokenPipeline _activePipeline = null;", source);
+    }
 
     [Fact]
     public void AsyncBuilder_MountsStreamingBoxWithoutVanillaPlaceholder()
