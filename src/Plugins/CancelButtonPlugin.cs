@@ -146,7 +146,7 @@ namespace ValleytalkReborn.Plugins
             int boxTop    = boxBottom - boxH;
 
             // ==========================================
-            // 1. "思考中" 波浪文字 —— 对话框顶部左侧
+            // 1. "思考中" 波浪文字 —— 对话框内左上角
             // ==========================================
             var translation = _helper.Translation.Get("ui.thinking");
             string message = translation.HasValue()
@@ -157,7 +157,7 @@ namespace ValleytalkReborn.Plugins
             string animatedMessage = message + new string('.', dotCount);
 
             float startX         = boxLeft + 16f;
-            float baseY          = boxTop  - 20f;
+            float baseY          = boxTop  + 10f;
             float amplitude      = 3f;
             float speed          = 5f;
             float charWaveOffset = 0.5f;
