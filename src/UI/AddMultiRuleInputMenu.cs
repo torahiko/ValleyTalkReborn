@@ -73,6 +73,9 @@ namespace ValleytalkReborn.UI
         private Rectangle _btnSelectAllRect;
         private Rectangle _btnInvertRect;
         private Rectangle _btnClearRect;
+        private float _selectAllHoverScale = 1f;
+        private float _invertHoverScale = 1f;
+        private float _clearHoverScale = 1f;
 
         // NPC 网格与滚动
         private Rectangle _npcGridBounds;
@@ -82,6 +85,8 @@ namespace ValleytalkReborn.UI
         // 底部动作按钮
         private Rectangle _btnCancelRect;
         private Rectangle _btnOkRect;
+        private float _cancelHoverScale = 1f;
+        private float _okHoverScale = 1f;
 
         private string? _hoverText;
 
@@ -668,9 +673,9 @@ namespace ValleytalkReborn.UI
             DrawPillButton(b, _filterSelectedRect, selFilterLabel, _filterMode == NpcFilterMode.SelectedOnly, mx, my);
 
             // 快捷操作小按钮（无缝重构版）
-            DrawQuickActionButton(b, _btnSelectAllRect, "全选", mx, my);
-            DrawQuickActionButton(b, _btnInvertRect, "反选", mx, my);
-            DrawQuickActionButton(b, _btnClearRect, "清空", mx, my);
+            ActionButtonRenderer.Draw(b, _btnSelectAllRect, "全选", ref _selectAllHoverScale, mx, my, style: ActionButtonStyle.Default, fontSize: TipFontSize, isEnabled: true);
+            ActionButtonRenderer.Draw(b, _btnInvertRect, "反选", ref _invertHoverScale, mx, my, style: ActionButtonStyle.Default, fontSize: TipFontSize, isEnabled: true);
+            ActionButtonRenderer.Draw(b, _btnClearRect, "清空", ref _clearHoverScale, mx, my, style: ActionButtonStyle.Default, fontSize: TipFontSize, isEnabled: true);
 
             // 6. NPC 网格底槽与卡片
             b.Draw(Game1.staminaRect, new Rectangle(_npcGridBounds.X + 1, _npcGridBounds.Y + 1, _npcGridBounds.Width - 2, _npcGridBounds.Height - 2), new Color(242, 230, 208) * 0.7f);
@@ -698,8 +703,8 @@ namespace ValleytalkReborn.UI
 
             // 7. 底部主操作按钮
 
-            DrawActionButton(b, _btnCancelRect, I18n.AddRuleMenu.ButtonCancel(), mx, my, isDanger: false, isPrimary: false);
-            DrawActionButton(b, _btnOkRect, I18n.AddRuleMenu.ButtonConfirm(), mx, my, isDanger: false, isPrimary: true);
+            ActionButtonRenderer.Draw(b, _btnCancelRect, I18n.AddRuleMenu.ButtonCancel(), ref _cancelHoverScale, mx, my, style: ActionButtonStyle.Default, fontSize: ButtonFontSize, isEnabled: true);
+            ActionButtonRenderer.Draw(b, _btnOkRect, I18n.AddRuleMenu.ButtonConfirm(), ref _okHoverScale, mx, my, style: ActionButtonStyle.Primary, fontSize: ButtonFontSize, isEnabled: true);
 
             // 8. ★ 优化 4：悬停气泡精准提示解释
             if (_factCapsuleRect.Contains(mx, my))
@@ -884,36 +889,6 @@ namespace ValleytalkReborn.UI
                 !isEnabled ? BioEditorMenu.TextMuted : (isActive ? BioEditorMenu.TextPrimary : BioEditorMenu.TextSecondary), TipFontSize);
         }
 
-        // ★ 优化 2：重写快捷按钮，使用整像素 2f 缩放与立体底层，彻底根除右侧和底部的白缝
-        private static void DrawQuickActionButton(SpriteBatch b, Rectangle rect, string label, int mx, int my)
-        {
-            bool isHover = rect.Contains(mx, my);
-            bool isPressed = isHover && IsLeftMouseDown();
-            int pressOffset = isPressed ? 1 : 0;
-
-            // 立体底层微阴影
-            if (!isPressed)
-                b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1, rect.Y + 2, rect.Width, rect.Height), Color.Black * 0.10f);
-
-            var drawRect = new Rectangle(rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height);
-
-            Color bg = isHover ? new Color(255, 238, 215) : new Color(246, 234, 216);
-            Color borderCol = isHover ? new Color(210, 160, 60) : new Color(225, 205, 175);
-
-            // 内衬全覆盖铺满，防止背景露出白缝
-            b.Draw(Game1.staminaRect, new Rectangle(drawRect.X + 1, drawRect.Y + 1, drawRect.Width - 2, drawRect.Height - 2), bg);
-
-            // 严格采用 2f 整像素 scale，消灭 1.6f 导致的浮点栅格断裂
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-                drawRect.X, drawRect.Y, drawRect.Width, drawRect.Height,
-                borderCol, 2f, false);
-
-            var sz = CustomFontManager.MeasureString(label, TipFontSize);
-            CustomFontManager.DrawString(b, label,
-                new Vector2(drawRect.X + (drawRect.Width - sz.X) / 2f, drawRect.Y + (drawRect.Height - sz.Y) / 2f - 1),
-                BioEditorMenu.TextPrimary, TipFontSize);
-        }
-
         // ★ 优化 3：修复搜索单行框光标闪烁
         private static void DrawSingleLineBox(SpriteBatch b, TextBox box)
         {
@@ -943,39 +918,6 @@ namespace ValleytalkReborn.UI
                 int cursorY = boxRect.Y + (boxRect.Height - cursorH) / 2;
                 b.Draw(Game1.staminaRect, new Rectangle((int)(tx + textW + 1), cursorY, 2, cursorH), BioEditorMenu.TextPrimary);
             }
-        }
-
-        private static void DrawActionButton(SpriteBatch b, Rectangle rect, string label, int mx, int my,
-            bool isDanger = false, bool isPrimary = false, bool isEnabled = true)
-        {
-            bool isHover = isEnabled && rect.Contains(mx, my);
-            bool isPressed = isHover && IsLeftMouseDown();
-
-            Color bg;
-            if (!isEnabled) bg = Color.LightGray * 0.6f;
-            else if (isPrimary) bg = isHover ? Color.Gold : new Color(255, 220, 130);
-            else if (isDanger) bg = isHover ? new Color(245, 105, 105) : new Color(210, 85, 80);
-            else bg = isHover ? new Color(255, 240, 215) : new Color(225, 195, 155);
-
-            int pressOffset = isPressed ? 1 : 0;
-            if (isPressed) bg = Color.Lerp(bg, Color.Black, 0.14f);
-
-            if (!isPressed)
-                b.Draw(Game1.staminaRect, new Rectangle(rect.X + 2, rect.Y + 2, rect.Width, rect.Height), Color.Black * 0.15f);
-
-            b.Draw(Game1.staminaRect, new Rectangle(rect.X + 1 + pressOffset, rect.Y + 1 + pressOffset, rect.Width - 2, rect.Height - 2), bg);
-
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
-                rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height,
-                isPrimary ? new Color(210, 160, 60) : (isDanger ? new Color(175, 60, 55) : new Color(185, 150, 110)), 3f, false);
-
-            Color textCol = !isEnabled ? BioEditorMenu.TextMuted
-                          : isDanger ? BioEditorMenu.TextOnDarkBtn
-                          : BioEditorMenu.TextOnLightBtn;
-
-            var drawRect = new Rectangle(rect.X + pressOffset, rect.Y + pressOffset, rect.Width, rect.Height);
-            ButtonTextRenderer.DrawButtonText(b, label, drawRect, textCol, useBold: true);
-
         }
 
         private static void DrawHoverTextCustom(SpriteBatch b, string text)
