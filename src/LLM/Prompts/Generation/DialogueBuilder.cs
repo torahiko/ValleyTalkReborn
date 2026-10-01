@@ -462,11 +462,25 @@ namespace ValleytalkReborn
             if (theLine == null)
                 return null;
 
+            // 🌟【GIFT HISTORY】送礼生成成功后，将 NPC 回复清洗回填 ChatHistory，
+            // 与上方种子行构成 [农夫送礼] -> [NPC 反应] 成对因果历史，供后续续聊轮次引用。
+            if (theLine.Length > 0 && !string.IsNullOrWhiteSpace(theLine[0]))
+            {
+                string cleanReply = AsyncBuilder.SanitizeDialogueForHistory(theLine[0]);
+                if (!string.IsNullOrWhiteSpace(cleanReply))
+                {
+                    context.ChatHistory.Add(new ConversationElement(cleanReply, false)
+                    {
+                        FuzzyTime = isZh ? "刚刚" : "Just now"
+                    });
+                }
+            }
+
             EmbodiedActionParser.ParseEmotesAndFaceOnly(
-                instance, 
-                theLine, 
+                instance,
+                theLine,
                 allowFallbackEmotes: !context.RoutingFlags.IsSimpleGreeting);
-            
+
             string formattedLine = FormatLine(theLine, instance, speakerName: instance.Name);
             var newDialogue = new StardewValley.Dialogue(instance, $"Accept_{gift.Name}", formattedLine);
             return newDialogue;
@@ -518,6 +532,20 @@ namespace ValleytalkReborn
             var theLine = await LlmDialogueService.Instance.GenerateDialogueAsync(character, context, onStreamingToken);
             if (theLine == null)
                 return null;
+
+            // 🌟【GIFT HISTORY】交付生成成功后，将 NPC 回复清洗回填 ChatHistory，
+            // 与上方种子行构成 [农夫交付] -> [NPC 反应] 成对因果历史，供后续续聊轮次引用。
+            if (theLine.Length > 0 && !string.IsNullOrWhiteSpace(theLine[0]))
+            {
+                string cleanReply = AsyncBuilder.SanitizeDialogueForHistory(theLine[0]);
+                if (!string.IsNullOrWhiteSpace(cleanReply))
+                {
+                    context.ChatHistory.Add(new ConversationElement(cleanReply, false)
+                    {
+                        FuzzyTime = isZh ? "刚刚" : "Just now"
+                    });
+                }
+            }
 
             EmbodiedActionParser.ParseEmotesAndFaceOnly(
                 instance,
