@@ -54,9 +54,16 @@ internal static class FarmStateScanner
         _cachedDay = Game1.dayOfMonth;
     }
 
+    // VT-FARM-CACHE-04: 清理覆盖全部缓存字段（四份摘要文本 + 三个日期标记），
+    // 保证跨存档后不会命中前一个存档的摘要；重复调用幂等，不读取 Game1。
     public static void InvalidateCache()
     {
+        _cachedSummaryZh = null;
+        _cachedSummaryEn = null;
+        _cachedSummaryWithoutGreenhouseZh = null;
+        _cachedSummaryWithoutGreenhouseEn = null;
         _cachedYear = -1;
+        _cachedSeason = null;
         _cachedDay = -1;
     }
 

@@ -387,6 +387,39 @@ public class FarmPromptAccessTests : IDisposable
         }
     }
 
+    // ── 11. VT-FARM-CACHE-04: 世界未就绪时 InvalidateCache 连续两次清理四份摘要
+    //        与三个日期标记（幂等）；探针退出恢复测试前全部七个缓存字段 ──
+
+    [Fact]
+    public void InvalidateCache_WorldNotReady_ClearsSummariesAndDateMarkers_Idempotently()
+    {
+        var fieldsBefore = new Dictionary<string, object>();
+        foreach (var f in FarmStateScannerCacheProbe.CacheFieldNames)
+            fieldsBefore[f] = FarmStateScannerCacheProbe.ReadField(f);
+
+        using (FarmStateScannerCacheProbe.SeedSentinelSummaries(FarmSummarySentinel, OutdoorFarmSummarySentinel))
+        {
+            TestEnvironment.WithoutWorldReady(() =>
+            {
+                for (int invocation = 1; invocation <= 2; invocation++)
+                {
+                    FarmStateScanner.InvalidateCache();
+
+                    Assert.Null(FarmStateScannerCacheProbe.ReadField("_cachedSummaryZh"));
+                    Assert.Null(FarmStateScannerCacheProbe.ReadField("_cachedSummaryEn"));
+                    Assert.Null(FarmStateScannerCacheProbe.ReadField("_cachedSummaryWithoutGreenhouseZh"));
+                    Assert.Null(FarmStateScannerCacheProbe.ReadField("_cachedSummaryWithoutGreenhouseEn"));
+                    Assert.Equal(-1, FarmStateScannerCacheProbe.CachedYear);
+                    Assert.Null(FarmStateScannerCacheProbe.ReadField("_cachedSeason"));
+                    Assert.Equal(-1, FarmStateScannerCacheProbe.ReadField("_cachedDay"));
+                }
+            });
+        }
+
+        foreach (var f in FarmStateScannerCacheProbe.CacheFieldNames)
+            Assert.Equal(fieldsBefore[f], FarmStateScannerCacheProbe.ReadField(f));
+    }
+
     // ── 测试辅助 ──
 
     private static Prompts MakePrompts(string npcName, bool includeFarmDetails)

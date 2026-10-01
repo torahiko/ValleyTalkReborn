@@ -1574,6 +1574,11 @@ namespace ValleytalkReborn
 
         private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
         {
+            // VT-FARM-CACHE-04: 读档即作废农场摘要缓存，防止新存档复用前一存档文本；
+            // 必须先于协调器重新装配等存档状态恢复执行。
+            FarmStateScanner.InvalidateCache();
+            SMonitor.Log("[FarmStateScanner] Farm summary cache invalidated on SaveLoaded.", LogLevel.Debug);
+
             LastSpokenNPC = null;
             Event_AnswerDialogue_Patch.LastEventSpeakerNpc = null;
 
@@ -1637,6 +1642,10 @@ namespace ValleytalkReborn
         /// </summary>
         private void OnReturnedToTitle(object sender, ReturnedToTitleEventArgs e)
         {
+            // VT-FARM-CACHE-04: 先于 Cleanup 作废农场摘要缓存，避免清理链异常时遗留前存档文本。
+            FarmStateScanner.InvalidateCache();
+            SMonitor.Log("[FarmStateScanner] Farm summary cache invalidated on ReturnedToTitle.", LogLevel.Debug);
+
             Cleanup();
 
             // VT-UI-005 Stage 2：标题界面强制作废待消费选择载荷
