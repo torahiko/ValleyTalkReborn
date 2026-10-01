@@ -83,7 +83,11 @@ namespace ValleytalkReborn.UI
         {
             _speaker = context.Speaker;
             _npcLineSanitized = context.NpcLineSanitized;
-            _suggestions = context.Suggestions ?? new List<string>();
+            _suggestions = context.Suggestions?
+                .Select(s => (s.Contains('@') && GetSafePlayerName() is string pName)
+                    ? s.Replace("@", pName)
+                    : s)
+                .ToList() ?? new List<string>();
             _showDateOption = context.ShowDateOption;
 
             bool isZh = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
@@ -509,9 +513,9 @@ namespace ValleytalkReborn.UI
             AsyncBuilder.Instance.ClearCooldown();
 
             string farmerResponse = text ?? string.Empty;
-            if (farmerResponse.Contains('@') && Game1.player != null)
+            if (farmerResponse.Contains('@') && GetSafePlayerName() is string pName)
             {
-                farmerResponse = farmerResponse.Replace("@", Game1.player.Name);
+                farmerResponse = farmerResponse.Replace("@", pName);
             }
 
             TownIncidentEngine.RecordChoice(_speaker.Name, farmerResponse);
@@ -576,6 +580,21 @@ namespace ValleytalkReborn.UI
             }
 
             return history;
+        }
+
+        /// <summary>安全获取玩家姓名（防止无头测试环境未初始化 Farmer.name NetField 抛 NRE）。</summary>
+        private static string? GetSafePlayerName()
+        {
+            try
+            {
+                if (Game1.player != null && !string.IsNullOrEmpty(Game1.player.Name))
+                    return Game1.player.Name;
+            }
+            catch (NullReferenceException)
+            {
+                // BOUNDARY：无头测试环境中未初始化 Name 字段的 Farmer 垫片
+            }
+            return null;
         }
     }
 }

@@ -1174,7 +1174,7 @@ namespace ValleytalkReborn.UI
         #region 工具
 
         /// <summary>
-        /// 纯文本回退：剥离对白控制标签（花括号标记），
+        /// 纯文本回退：替换原版农夫名字通配符 '@' 并剥离花括号标记，
         /// 避免生成内容中的标签意外进入本组件导致渲染异常。
         /// </summary>
         private static string Sanitize(string text)
@@ -1182,9 +1182,31 @@ namespace ValleytalkReborn.UI
             if (string.IsNullOrEmpty(text))
                 return string.Empty;
 
+            if (text.Contains('@'))
+            {
+                string playerName = GetSafePlayerName();
+                if (!string.IsNullOrEmpty(playerName))
+                    text = text.Replace("@", playerName);
+            }
+
             return text.IndexOf('{') < 0 && text.IndexOf('}') < 0
                 ? text
                 : text.Replace("{", "").Replace("}", "");
+        }
+
+        /// <summary>安全获取玩家姓名（防止无头测试环境未初始化 Farmer.name NetField 抛 NRE）。</summary>
+        private static string GetSafePlayerName()
+        {
+            try
+            {
+                if (Game1.player != null && !string.IsNullOrEmpty(Game1.player.Name))
+                    return Game1.player.Name;
+            }
+            catch (NullReferenceException)
+            {
+                // BOUNDARY：无头测试环境中未初始化 Name 字段的 Farmer 垫片
+            }
+            return null;
         }
 
         #endregion

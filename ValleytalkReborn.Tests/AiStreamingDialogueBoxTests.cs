@@ -1528,6 +1528,17 @@ public class AiStreamingDialogueBoxTests : IDisposable
     }
 
     [Fact]
+    public void AppendContent_ReplacesAtSymbolWithPlayerName()
+    {
+        using (FakePlayer.Install("虎彦"))
+        {
+            AiStreamingDialogueBox box = NewBox();
+            box.AppendContent("嘿，@！你好", false);
+            Assert.Equal("嘿，虎彦！你好", box.DisplayedPageText);
+        }
+    }
+
+    [Fact]
     public void SetEmotion_FootballAndGridball_MapToUniquePortrait()
     {
         // VT-STREAM-07：Alex 专属格球语义归一到 $u 专属立绘。
