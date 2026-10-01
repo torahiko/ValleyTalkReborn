@@ -938,9 +938,8 @@ namespace ValleytalkReborn.UI
                 || _state == StreamingDialogueState.Faulted)
                 this.dialogueIcon?.draw(b, true, 0, 0, 1f);
 
-            // 生成未完成期间常驻取消按钮：思考态与仍在打字的 Typing 态。
-            if (_state == StreamingDialogueState.Thinking
-                || (_state == StreamingDialogueState.Typing && !_isStreamComplete))
+            // 取消按钮仅在思考态可见并响应点击。一旦进入打字态，按钮立即消失。
+            if (_state == StreamingDialogueState.Thinking)
                 DrawNativeCancelButton(b);
 
             // 原版好感度悬浮条（hoverText 为基类 private 字段，此处用等价副本驱动）。
@@ -1030,7 +1029,7 @@ namespace ValleytalkReborn.UI
         /// <param name="mouseY">鼠标 Y。</param>
         public override void performHoverAction(int mouseX, int mouseY)
         {
-            _isHoveringOverClose = GetCancelButtonRect().Contains(mouseX, mouseY);
+            _isHoveringOverClose = IsCancelAvailable() && GetCancelButtonRect().Contains(mouseX, mouseY);
             _hoverScale += ((_isHoveringOverClose ? CancelButtonHoverScale : 1.0f) - _hoverScale) * HoverScaleLerp;
 
             _friendshipHoverText = string.Empty;
@@ -1105,10 +1104,11 @@ namespace ValleytalkReborn.UI
         {
             if (key == Keys.Escape)
             {
-                // 与取消按钮共用 IsCancelAvailable 判据：对白框还在消耗生成内容
-                // （思考中，或打字中且流未完成）时，Escape 必须掐断后台 LLM 请求，
-                // 否则框关了请求仍会挂到超时。流已完成/翻页/完成态走普通关闭。
-                if (IsCancelAvailable())
+                // 对白框还在消耗生成内容（思考中，或打字中且流未完成）时，
+                // Escape 必须掐断后台 LLM 请求，否则框关了请求仍会挂到超时。
+                // 流已完成/翻页/完成态走普通关闭。
+                if (_state == StreamingDialogueState.Thinking
+                    || (_state == StreamingDialogueState.Typing && !_isStreamComplete))
                 {
                     CancelCurrentDialogue();
                     return;
@@ -1122,10 +1122,9 @@ namespace ValleytalkReborn.UI
                 receiveLeftClick(0, 0);
         }
 
-        /// <summary>当前是否处于「生成尚未完成、取消按钮可见」的状态。</summary>
+        /// <summary>当前是否处于「思考态且取消按钮可见」的状态。</summary>
         private bool IsCancelAvailable()
-            => _state == StreamingDialogueState.Thinking
-            || (_state == StreamingDialogueState.Typing && !_isStreamComplete);
+            => _state == StreamingDialogueState.Thinking;
 
         /// <summary>
         /// 中止本轮流式对白：取消 CTS、播音效、清空 AsyncBuilder 队列并收束对白框。

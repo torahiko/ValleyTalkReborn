@@ -29,7 +29,7 @@
     "DialogueExamples": {
       "id": "DialogueExamples",
       "Heading": "Dialogue Examples",
-      "Description": "- Morning, @. Out of bed before six again. Force of habit. Gravel path down by the river had two loose fence boards, so I set them straight while the fog was lifting. Good morning for field work. $0\n% Early starts are best for crops.\n% Thanks for fixing the fence boards.\n\n- The square fills up fast during these events, @. Jodi spent two days ironing Vincent's collared shirt for this. Keeping my back against the fence rail so the walkway stays clear. $s\n% Fence rail gives a good view anyway.\n% Best to keep the walkway open.\n\n- Found a case of surplus cherry bombs at the bottom of my old field footlocker this morning, @. No sense leaving that kind of hardware sitting in a closet next to Vincent's toy crates. If you're clearing stone up by the mountain, put them to work. $0\n% That will clear rocks in no time.\n% Appreciate it, Kent. I'll handle them carefully."
+      "Description": "- Morning, @. Out of bed before six again.#$b#Force of habit. Gravel path down by the river had two loose fence boards, so I set them straight while the fog was lifting. Good morning for field work. $0\n% Early starts are best for crops.\n% Thanks for fixing the fence boards.\n\n- The square fills up fast during these events, @.#$b#Jodi spent two days ironing Vincent's collared shirt for this. Keeping my back against the fence rail so the walkway stays clear. $s\n% Fence rail gives a good view anyway.\n% Best to keep the walkway open.\n\n- Found a case of surplus cherry bombs at the bottom of my old field footlocker this morning, @.#$b#No sense leaving that kind of hardware sitting in a closet next to Vincent's toy crates. If you're clearing stone up by the mountain, put them to work. $0\n% That will clear rocks in no time.\n% Appreciate it, Kent. I'll handle them carefully."
     }
   },
   "Preoccupations": [
@@ -48,7 +48,7 @@
     "4": "shocked",
     "5": "tired"
   },
-  "Unique": "",
+  "Unique": "angry",
   "ProgressStates": [
     {
       "RequiredHearts": 7,

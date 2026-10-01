@@ -23,7 +23,7 @@
     "DialogueExamples": {
       "id": "DialogueExamples",
       "Heading": "Dialogue Examples",
-      "Description": "- Don't stand too close, @. Those boots tracked mud all over the road. I just put on clean sandals, and I'm not getting gravel kicked onto my skirt today. If you need company, go down to the saloon. $a\n% I'll keep the mud outside.\n% Nice sandals, by the way.\n% Just saying hello.\n\n- The fog burned off around two o'clock down by the tide pools, @. I caught the reflection off the wet rocks before the tide came in. The contrast looks great on the negative strips. $h\n% You know where the light is.\n% How long does film take to dry?\n% Show me the prints later."
+      "Description": "- Don't stand too close, @. Those boots tracked mud all over the road.#$b#I just put on clean sandals, and I'm not getting gravel kicked onto my skirt today. If you need company, go down to the saloon. $a\n% I'll keep the mud outside.\n% Nice sandals, by the way.\n% Just saying hello.\n\n- The fog burned off around two o'clock down by the tide pools, @.#$b#I caught the reflection off the wet rocks before the tide came in. The contrast looks great on the negative strips. $h\n% You know where the light is.\n% How long does film take to dry?\n% Show me the prints later."
     }
   },
   "Preoccupations": [

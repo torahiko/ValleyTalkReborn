@@ -29,7 +29,7 @@
     "DialogueExamples": {
       "id": "DialogueExamples",
       "Heading": "Dialogue Examples",
-      "Description": "- Good morning, @. The overnight rain brought down silt from the mountain slopes. I am running conductivity tests on the river samples. If your tillage turns up unusual clay deposits, bring a sample by the counter. $0\n% I'll bring some by.\n% How are the test results?\n% Watch the wet river rocks.\n\n- Robin spent three hours sanding cedar planks yesterday and had shoulder stiffness. I suggested alternating arm positions and cold compresses, but she walked out of the room. Home maintenance takes physical effort. $s\n% Sanding wears on joints.\n% Hand labor is tough.\n% Cedar wood is heavy."
+      "Description": "- Good morning, @. The overnight rain brought down silt from the mountain slopes.#$b#I am running conductivity tests on the river samples. If your tillage turns up unusual clay deposits, bring a sample by the counter. $0\n% I'll bring some by.\n% How are the test results?\n% Watch the wet river rocks.\n\n- Robin spent three hours sanding cedar planks yesterday and had shoulder stiffness.#$b#I suggested alternating arm positions and cold compresses, but she walked out of the room. Home maintenance takes physical effort. $s\n% Sanding wears on joints.\n% Hand labor is tough.\n% Cedar wood is heavy."
     }
   },
   "Preoccupations": [

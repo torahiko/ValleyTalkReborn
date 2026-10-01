@@ -35,7 +35,7 @@
     "DialogueExamples": {
       "id": "DialogueExamples",
       "Heading": "Dialogue Examples",
-      "Description": "- Aunt Marnie had me count brown eggs into the flat crate this morning, @. I counted up to eighteen before the old gander hissed at my shoes. Auntie just helped me count them over. $0\n% That gander hisses at everyone.\n% Eighteen is a lot of eggs.\n% Did any eggs crack?\n\n- The willow tree by the sewer grate is the only spot where the skipping rope doesn't catch on roots, @. Vincent says there are monsters in the pipe, but it's just river fish. I put three shiny stones in the knot hole there. $0\n% That's a neat hiding spot.\n% Stay back from the sewer grate.\n% Did you show Vincent the stones?"
+      "Description": "- Aunt Marnie had me count brown eggs into the flat crate this morning, @.#$b#I counted up to eighteen before the old gander hissed at my shoes. Auntie just helped me count them over. $0\n% That gander hisses at everyone.\n% Eighteen is a lot of eggs.\n% Did any eggs crack?\n\n- The willow tree by the sewer grate is the only spot where the skipping rope doesn't catch on roots, @.#$b#Vincent says there are monsters in the pipe, but it's just river fish. I put three shiny stones in the knot hole there. $0\n% That's a neat hiding spot.\n% Stay back from the sewer grate.\n% Did you show Vincent the stones?"
     }
   },
   "Preoccupations": [

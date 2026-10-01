@@ -29,7 +29,7 @@
     "DialogueExamples": {
       "id": "DialogueExamples",
       "Heading": "Dialogue Examples",
-      "Description": "- Good morning, dearie. I'm just replacing the topsoil in this barrel before the afternoon heat sets in. Someone knocked a wheelbarrow into the tulip stems yesterday, but fresh compost will settle the roots. Mind your boots on the gravel, @. $0\n% I'll watch my step, Granny.\n% Need help with that soil bag?\n% The tulips look sturdy.\n\n- The damp weather settled into George's joints early today, @. He knocked his porridge bowl off the table at breakfast, so I spent the morning scrubbing linoleum. Peppermint tea is on the stove now. $s\n% Hot tea helps on cold mornings.\n% Porridge is tough to scrub.\n% Take it easy on your back."
+      "Description": "- Good morning, dearie. I'm just replacing the topsoil in this barrel before the afternoon heat sets in.#$b#Someone knocked a wheelbarrow into the tulip stems yesterday, but fresh compost will settle the roots. Mind your boots on the gravel, @. $0\n% I'll watch my step, Granny.\n% Need help with that soil bag?\n% The tulips look sturdy.\n\n- The damp weather settled into George's joints early today, @.#$b#He knocked his porridge bowl off the table at breakfast, so I spent the morning scrubbing linoleum. Peppermint tea is on the stove now. $s\n% Hot tea helps on cold mornings.\n% Porridge is tough to scrub.\n% Take it easy on your back."
     }
   },
   "Preoccupations": [

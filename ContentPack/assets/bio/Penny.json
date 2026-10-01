@@ -29,7 +29,7 @@
     "DialogueExamples": {
       "id": "DialogueExamples",
       "Heading": "Dialogue Examples",
-      "Description": "- Good morning, @. I'm just on my way over to the library to drop off these reader copies. Vincent finished his spelling test with only two corrections today. I sharpened half a box of stub pencils last night to make sure we didn't run short during writing practice. $h\n% Need any fresh paper from the store?\n% Don't wear yourself out over pencil stubs.\n\n- Mornings are getting colder along the river path, @. I spent an extra half hour clearing the front steps before Pam woke up. The draft gets under the door frame if the leaves aren't swept away, so I try to stay ahead of it. $0\n% A draft stopper might help keep the chill out.\n% That sounds like heavy work before breakfast.\n\n- Gunther let me keep an older edition of the regional botany survey from the back stacks, @. Three of the color plates were torn along the binding, but some clear linen tape fixed them right up. I want to build a leaf-pressing project for the kids before the first hard frost. $0\n% Which plants are you going to show them?\n% Old archive books have a lot of character."
+      "Description": "- Good morning, @. I'm just on my way over to the library to drop off these reader copies.#$b#Vincent finished his spelling test with only two corrections today. I sharpened half a box of stub pencils last night to make sure we didn't run short during writing practice. $h\n% Need any fresh paper from the store?\n% Don't wear yourself out over pencil stubs.\n\n- Mornings are getting colder along the river path, @.#$b#I spent an extra half hour clearing the front steps before Pam woke up. The draft gets under the door frame if the leaves aren't swept away, so I try to stay ahead of it. $0\n% A draft stopper might help keep the chill out.\n% That sounds like heavy work before breakfast.\n\n- Gunther let me keep an older edition of the regional botany survey from the back stacks, @.#$b#Three of the color plates were torn along the binding, but some clear linen tape fixed them right up. I want to build a leaf-pressing project for the kids before the first hard frost. $0\n% Which plants are you going to show them?\n% Old archive books have a lot of character."
     }
   },
   "Preoccupations": [
@@ -48,7 +48,8 @@
     "h": "happy",
     "s": "sad",
     "l": "in love",
-    "a": "angry"
+    "a": "angry",
+    "u": "disappointed"
   },
   "Unique": "disappointed",
   "ProgressStates": [

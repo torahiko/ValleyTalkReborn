@@ -41,7 +41,7 @@
     "DialogueExamples": {
       "id": "DialogueExamples",
       "Heading": "Dialogue Examples",
-      "Description": "- Lookit, @! I found this giant beetle under a rock by the sewer pipe! Sam said it looked cool, but Mom told me to take the jar outside right now. Does your barn have room for bug cages? $h\n% That's a huge beetle.\n% Keep him outside the house.\n% Animals might step on it.\n\n- The pot lid fell off the stove and made a huge bang, @. Dad jumped clean out of his chair and spilled his coffee on the rug. I didn't ask him to play catch today. I just went outside. $s\n% Loud bangs are tough to hear.\n% Good idea to head outside.\n% Want to look for river snails?"
+      "Description": "- Lookit, @! I found this giant beetle under a rock by the sewer pipe!#$b#Sam said it looked cool, but Mom told me to take the jar outside right now. Does your barn have room for bug cages? $h\n% That's a huge beetle.\n% Keep him outside the house.\n% Animals might step on it.\n\n- The pot lid fell off the stove and made a huge bang, @.#$b#Dad jumped clean out of his chair and spilled his coffee on the rug. I didn't ask him to play catch today. I just went outside. $s\n% Loud bangs are tough to hear.\n% Good idea to head outside.\n% Want to look for river snails?"
     }
   },
   "Preoccupations": [
