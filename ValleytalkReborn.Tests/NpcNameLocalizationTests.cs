@@ -228,29 +228,66 @@ public class NpcNameLocalizationTests : IDisposable
         using var world = InstallMarriedFarmer("Alex");
         ModEntry.Config.EnablePerceptionSystem = true;
 
-        var farmer = Game1.player;
-        FindField(typeof(Farmer), "netSpouse")?.SetValue(farmer, new NetString("Alex"));
-        PrevSpouseField.SetValue(null, string.Empty);
+        // VT-TEST-ISOLATION-01：婚礼/离婚头条经 EnqueueGossip 写入 PerceptionManager
+        // 的全局八卦队列（进程级静态），_prevSpouse 亦为静态快照字段。两者在首次
+        // 触碰前记录快照，方法退出时按原序原对象恢复，避免污染后续传闻测试的
+        // "空快照"前提（此前全量批次中 TownIncident 系列读到残留离婚 LifeEvent）。
+        Queue<PerceptionEntry> gossipQueue;
+        PerceptionEntry[] originalGossip;
+        string originalPrevSpouse;
 
-        InvokeTryInjectLifeEvent();
-        var weddingEntry = PerceptionManager.Instance.GetGossipSnapshots()
-            .Single(e => string.Equals(e.Key, "LifeEvent", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains("亚历克斯", weddingEntry.Template);
-        Assert.Contains(FarmerName, weddingEntry.Template);
-        Assert.DoesNotContain("Alex", weddingEntry.Template);
+        var gossipField = typeof(PerceptionManager).GetField(
+            "_globalGossip", BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.True(gossipField != null, "契约字段缺失: PerceptionManager._globalGossip");
+        var gossipValue = gossipField.GetValue(PerceptionManager.Instance);
+        Assert.True(gossipValue is Queue<PerceptionEntry>,
+            "契约字段类型不符: PerceptionManager._globalGossip 应为 Queue<PerceptionEntry>");
+        gossipQueue = (Queue<PerceptionEntry>)gossipValue;
+        originalGossip = gossipQueue.ToArray();
+        Assert.True(PrevSpouseField != null, "契约字段缺失: DailyHeadlinedGenerator._prevSpouse");
+        originalPrevSpouse = (string)PrevSpouseField.GetValue(null);
 
-        // 离婚：快照比较使用内部名 _prevSpouse，但文案渲染必须本地化；
-        // EnqueueGossip 以 Key 去重替换（同键仅保留一条），故与婚礼模板互异即可。
-        FindField(typeof(Farmer), "netSpouse")?.SetValue(farmer, new NetString(string.Empty));
-        PrevSpouseField.SetValue(null, "Alex");
+        try
+        {
+            gossipQueue.Clear();
 
-        InvokeTryInjectLifeEvent();
-        var divorceEntry = PerceptionManager.Instance.GetGossipSnapshots()
-            .Single(e => string.Equals(e.Key, "LifeEvent", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains("亚历克斯", divorceEntry.Template);
-        Assert.Contains(FarmerName, divorceEntry.Template);
-        Assert.DoesNotContain("Alex", divorceEntry.Template);
-        Assert.NotEqual(weddingEntry.Template, divorceEntry.Template);
+            var farmer = Game1.player;
+            FindField(typeof(Farmer), "netSpouse")?.SetValue(farmer, new NetString("Alex"));
+            PrevSpouseField.SetValue(null, string.Empty);
+
+            InvokeTryInjectLifeEvent();
+            var weddingEntry = PerceptionManager.Instance.GetGossipSnapshots()
+                .Single(e => string.Equals(e.Key, "LifeEvent", StringComparison.OrdinalIgnoreCase));
+            Assert.Contains("亚历克斯", weddingEntry.Template);
+            Assert.Contains(FarmerName, weddingEntry.Template);
+            Assert.DoesNotContain("Alex", weddingEntry.Template);
+
+            // 离婚：快照比较使用内部名 _prevSpouse，但文案渲染必须本地化；
+            // EnqueueGossip 以 Key 去重替换（同键仅保留一条），故与婚礼模板互异即可。
+            FindField(typeof(Farmer), "netSpouse")?.SetValue(farmer, new NetString(string.Empty));
+            PrevSpouseField.SetValue(null, "Alex");
+
+            InvokeTryInjectLifeEvent();
+            var divorceEntry = PerceptionManager.Instance.GetGossipSnapshots()
+                .Single(e => string.Equals(e.Key, "LifeEvent", StringComparison.OrdinalIgnoreCase));
+            Assert.Contains("亚历克斯", divorceEntry.Template);
+            Assert.Contains(FarmerName, divorceEntry.Template);
+            Assert.DoesNotContain("Alex", divorceEntry.Template);
+            Assert.NotEqual(weddingEntry.Template, divorceEntry.Template);
+        }
+        finally
+        {
+            // 断言失败也必须恢复：清掉测试产生的条目后按原序回填，并还原 _prevSpouse。
+            gossipQueue.Clear();
+            foreach (var entry in originalGossip)
+                gossipQueue.Enqueue(entry);
+            PrevSpouseField.SetValue(null, originalPrevSpouse);
+        }
+
+        // 恢复一致性：队列条目顺序与对象身份、_prevSpouse 均须与方法进入时一致
+        // （PerceptionEntry 为引用相等，Equal 即逐位身份比较）。
+        Assert.Equal(originalGossip, gossipQueue.ToArray());
+        Assert.Equal(originalPrevSpouse, (string)PrevSpouseField.GetValue(null));
     }
 
     // ── 无头垫片 ──
