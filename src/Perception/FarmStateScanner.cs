@@ -14,14 +14,23 @@ internal static class FarmStateScanner
 {
     private static string _cachedSummaryZh;
     private static string _cachedSummaryEn;
+    private static string _cachedSummaryWithoutGreenhouseZh;
+    private static string _cachedSummaryWithoutGreenhouseEn;
     private static int _cachedYear = -1;
     private static string _cachedSeason;
     private static int _cachedDay = -1;
 
     public static string BuildFarmSummary(bool isZh)
     {
+        return BuildFarmSummary(isZh, includeGreenhouseInterior: true);
+    }
+
+    public static string BuildFarmSummary(bool isZh, bool includeGreenhouseInterior)
+    {
         EnsureCacheFreshness();
-        return isZh ? _cachedSummaryZh : _cachedSummaryEn;
+        return includeGreenhouseInterior
+            ? (isZh ? _cachedSummaryZh : _cachedSummaryEn)
+            : (isZh ? _cachedSummaryWithoutGreenhouseZh : _cachedSummaryWithoutGreenhouseEn);
     }
 
     private static void EnsureCacheFreshness()
@@ -32,8 +41,13 @@ internal static class FarmStateScanner
 
         if (!isStale) return;
 
-        _cachedSummaryZh = BuildFarmSummaryInternal(isZh: true);
-        _cachedSummaryEn = BuildFarmSummaryInternal(isZh: false);
+        string summaryZh = BuildFarmSummaryInternal(isZh: true, out string zhWithoutGreenhouse);
+        string summaryEn = BuildFarmSummaryInternal(isZh: false, out string enWithoutGreenhouse);
+
+        _cachedSummaryZh = summaryZh;
+        _cachedSummaryEn = summaryEn;
+        _cachedSummaryWithoutGreenhouseZh = zhWithoutGreenhouse;
+        _cachedSummaryWithoutGreenhouseEn = enWithoutGreenhouse;
 
         _cachedYear = Game1.year;
         _cachedSeason = Game1.currentSeason;
@@ -46,10 +60,14 @@ internal static class FarmStateScanner
         _cachedDay = -1;
     }
 
-    private static string BuildFarmSummaryInternal(bool isZh)
+    private static string BuildFarmSummaryInternal(bool isZh, out string summaryWithoutGreenhouse)
     {
         Farm farm = Game1.getFarm();
-        if (farm == null) return null;
+        if (farm == null)
+        {
+            summaryWithoutGreenhouse = null;
+            return null;
+        }
 
         var sb = new StringBuilder();
 
@@ -123,6 +141,10 @@ internal static class FarmStateScanner
         }
 
         // ── 6. 格式化输出 ──
+        // 温室段保留为局部字符串并记录插入偏移；先完成室外摘要，再回插生成完整摘要
+        int greenhouseInsertOffset = -1;
+        string greenhouseSection = null;
+
         if (isZh)
         {
             sb.AppendLine("### [农场经营状态]");
@@ -166,9 +188,10 @@ internal static class FarmStateScanner
             }
 
             // 温室展示
-            sb.Append(BuildGreenhouseSection(isZh: true, isGreenhouseUnlocked, ghLocation != null,
+            greenhouseSection = BuildGreenhouseSection(isZh: true, isGreenhouseUnlocked, ghLocation != null,
                 (ghReadyCrops, ghGrowingCrops, ghDeadCrops, ghTopReady, ghTopGrowing, ghTopDead),
-                (ghFruitProducing, ghFruitGrowing, ghFruitResting, ghTopProducingFruits, ghTopGrowingFruits, ghTopRestingFruits)));
+                (ghFruitProducing, ghFruitGrowing, ghFruitResting, ghTopProducingFruits, ghTopGrowingFruits, ghTopRestingFruits));
+            greenhouseInsertOffset = sb.Length;
 
             if (totalAnimals > 0)
             {
@@ -226,9 +249,10 @@ internal static class FarmStateScanner
                 sb.AppendLine($"- Outdoor Orchard: {restingTrees} mature fruit trees planted{sample}, currently out of season.");
             }
 
-            sb.Append(BuildGreenhouseSection(isZh: false, isGreenhouseUnlocked, ghLocation != null,
+            greenhouseSection = BuildGreenhouseSection(isZh: false, isGreenhouseUnlocked, ghLocation != null,
                 (ghReadyCrops, ghGrowingCrops, ghDeadCrops, ghTopReady, ghTopGrowing, ghTopDead),
-                (ghFruitProducing, ghFruitGrowing, ghFruitResting, ghTopProducingFruits, ghTopGrowingFruits, ghTopRestingFruits)));
+                (ghFruitProducing, ghFruitGrowing, ghFruitResting, ghTopProducingFruits, ghTopGrowingFruits, ghTopRestingFruits));
+            greenhouseInsertOffset = sb.Length;
 
             if (totalAnimals > 0)
             {
@@ -246,6 +270,14 @@ internal static class FarmStateScanner
             sb.AppendLine("</farm_state>");
         }
 
+        // VT-FARM-ACCESS-03: 室外摘要不含温室段；室外作物、室外果树、动物和鱼塘均无事实时
+        // 禁止输出仅含标题和标签的空背景
+        bool hasOutdoorFacts = readyCrops > 0 || growingCrops > 0 || deadCrops > 0
+            || fruitTreeProducing > 0 || fruitTreeGrowing > 0 || fruitTreeResting > 0
+            || totalAnimals > 0 || fishPondInfos.Count > 0;
+        summaryWithoutGreenhouse = hasOutdoorFacts ? sb.ToString() : null;
+
+        sb.Insert(greenhouseInsertOffset, greenhouseSection);
         return sb.Length > 30 ? sb.ToString() : null;
     }
 

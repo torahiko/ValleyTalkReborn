@@ -351,9 +351,13 @@ public class Prompts
         bool isHouseholdMember = includeFarmDetails && ResolveCurrentNpcHouseholdMembership();
         if (ShouldIncludeFarmSummary(includeFarmDetails, isHouseholdMember))
         {
-            string farmSummary = FarmStateScanner.BuildFarmSummary(IsChineseLanguage);
+            string farmSummary = FarmStateScanner.BuildFarmSummary(IsChineseLanguage, includeGreenhouseInterior: false);
             if (!string.IsNullOrEmpty(farmSummary))
                 gameConstantPrompt.AppendLine(farmSummary);
+            else
+                ModEntry.SMonitor?.Log(
+                    $"[Prompts] Farm summary omitted for '{Character.Name}': no injectable outdoor farm background.",
+                    StardewModdingAPI.LogLevel.Debug);
         }
         else
         {

@@ -1,15 +1,18 @@
 // FarmPromptAccessTests.cs
-// VT-FARM-ACCESS-01 — farm_state injection is gated to household members.
+// VT-FARM-ACCESS-01/03 — farm_state injection is gated to household members and
+// carries no greenhouse interior facts.
 // Verifies: ShouldIncludeFarmSummary is a pure AND of (includeFarmDetails,
 // isHouseholdMember); non-household NPCs (mine Abigail, beach Willy,
 // non-cohabiting Krobus) get no farm summary and never reach the scanner in
 // either the role-based payload (non-streaming) or the legacy conversation
 // payload (streaming); a spouse and a cohabiting roommate (Krobus) keep the
-// summary while the routing flag allows it and lose it when routing is off;
-// a household check reached while the world is not ready is a BUG (Error +
-// InvalidOperationException); world-ready-with-no-player is a BOUNDARY gap
-// (Warn + InvalidOperationException). No HTTP requests, no active LLM
-// Provider required.
+// outdoor-only summary (greenhouse interior withheld) while the routing flag
+// allows it and lose it when routing is off; the without-greenhouse cache is
+// selected per includeGreenhouseInterior and never falls back to the full
+// summary when null; a household check reached while the world is not ready is
+// a BUG (Error + InvalidOperationException); world-ready-with-no-player is a
+// BOUNDARY gap (Warn + InvalidOperationException). No HTTP requests, no active
+// LLM Provider required.
 //
 // 无头事实（沿用 FarmStateScannerFruitTreeTests / GiftPipelineHistoryTests 头注惯例）：
 //   1) BuildRuntimeChatMessages / BuildRuntimeConversationPrompt 不设
@@ -42,6 +45,7 @@ using Xunit;
 public class FarmPromptAccessTests : IDisposable
 {
     private const string FarmSummarySentinel = "FARM-STATE-SENTINEL";
+    private const string OutdoorFarmSummarySentinel = "OUTDOOR-FARM-SENTINEL";
     private const string PlayerName = "FarmAccessFarmer";
 
     private readonly ModConfig _originalConfig;
@@ -141,7 +145,7 @@ public class FarmPromptAccessTests : IDisposable
         }
     }
 
-    // ── 3. 配偶在路由允许时保留现有摘要（流式 + 非流式） ──
+    // ── 3. 配偶在路由允许时保留室外摘要（不含温室；流式 + 非流式） ──
 
     [Fact]
     public void SpouseNpc_KeepsFarmSummaryWhenRoutingAllows()
@@ -149,20 +153,22 @@ public class FarmPromptAccessTests : IDisposable
         var prompts = MakePrompts("Abigail", includeFarmDetails: true);
 
         using (InstallMarriedPlayer(PlayerName, "Abigail", roommate: false))
-        using (FarmStateScannerCacheProbe.SeedSentinelSummaries(FarmSummarySentinel))
+        using (FarmStateScannerCacheProbe.SeedSentinelSummaries(FarmSummarySentinel, OutdoorFarmSummarySentinel))
         {
             TestEnvironment.WithWorldReady(() =>
             {
                 var messages = prompts.BuildRuntimeChatMessages();
-                Assert.Contains(messages, m => m.Content.Contains(FarmSummarySentinel, StringComparison.Ordinal));
+                Assert.Contains(messages, m => m.Content.Contains(OutdoorFarmSummarySentinel, StringComparison.Ordinal));
+                Assert.All(messages, m => Assert.DoesNotContain(FarmSummarySentinel, m.Content, StringComparison.Ordinal));
 
                 string legacyPayload = LlmDialogueService.BuildRuntimeConversationPrompt(prompts);
-                Assert.Contains(FarmSummarySentinel, legacyPayload, StringComparison.Ordinal);
+                Assert.Contains(OutdoorFarmSummarySentinel, legacyPayload, StringComparison.Ordinal);
+                Assert.DoesNotContain(FarmSummarySentinel, legacyPayload, StringComparison.Ordinal);
             });
         }
     }
 
-    // ── 4. 同住室友（科罗布斯）在路由允许时保留现有摘要 ──
+    // ── 4. 同住室友（科罗布斯）在路由允许时保留室外摘要（不含温室） ──
 
     [Fact]
     public void CohabitingRoommateKrobus_KeepsFarmSummaryWhenRoutingAllows()
@@ -170,15 +176,17 @@ public class FarmPromptAccessTests : IDisposable
         var prompts = MakePrompts("Krobus", includeFarmDetails: true);
 
         using (InstallMarriedPlayer(PlayerName, "Krobus", roommate: true))
-        using (FarmStateScannerCacheProbe.SeedSentinelSummaries(FarmSummarySentinel))
+        using (FarmStateScannerCacheProbe.SeedSentinelSummaries(FarmSummarySentinel, OutdoorFarmSummarySentinel))
         {
             TestEnvironment.WithWorldReady(() =>
             {
                 var messages = prompts.BuildRuntimeChatMessages();
-                Assert.Contains(messages, m => m.Content.Contains(FarmSummarySentinel, StringComparison.Ordinal));
+                Assert.Contains(messages, m => m.Content.Contains(OutdoorFarmSummarySentinel, StringComparison.Ordinal));
+                Assert.All(messages, m => Assert.DoesNotContain(FarmSummarySentinel, m.Content, StringComparison.Ordinal));
 
                 string legacyPayload = LlmDialogueService.BuildRuntimeConversationPrompt(prompts);
-                Assert.Contains(FarmSummarySentinel, legacyPayload, StringComparison.Ordinal);
+                Assert.Contains(OutdoorFarmSummarySentinel, legacyPayload, StringComparison.Ordinal);
+                Assert.DoesNotContain(FarmSummarySentinel, legacyPayload, StringComparison.Ordinal);
             });
         }
     }
@@ -206,7 +214,117 @@ public class FarmPromptAccessTests : IDisposable
         }
     }
 
-    // ── 6. 世界未就绪却到达关系查询：BUG → Error → InvalidOperationException ──
+    // ── 6. VT-FARM-ACCESS-03: 同住人最终载荷含室外哨兵、不含温室哨兵，中英文均验证 ──
+
+    [Theory]
+    [InlineData("zh")]
+    [InlineData("en")]
+    public void HouseholdNpc_PayloadContainsOutdoorSentinel_NotGreenhouseSentinel(string languageOverride)
+    {
+        var prompts = MakePrompts("Abigail", includeFarmDetails: true);
+        string previousLanguage = ModEntry.Config.LanguageOverride;
+        ModEntry.Config.LanguageOverride = languageOverride;
+
+        using (new RestoreScope(() => ModEntry.Config.LanguageOverride = previousLanguage))
+        using (InstallMarriedPlayer(PlayerName, "Abigail", roommate: false))
+        using (FarmStateScannerCacheProbe.SeedSentinelSummaries(FarmSummarySentinel, OutdoorFarmSummarySentinel))
+        {
+            TestEnvironment.WithWorldReady(() =>
+            {
+                string expectedSentinel = languageOverride == "zh"
+                    ? OutdoorFarmSummarySentinel + "-ZH"
+                    : OutdoorFarmSummarySentinel + "-EN";
+
+                // 非流式（role-based）最终载荷
+                var messages = prompts.BuildRuntimeChatMessages();
+                Assert.Contains(messages, m => m.Content.Contains(expectedSentinel, StringComparison.Ordinal));
+                Assert.All(messages, m => Assert.DoesNotContain(FarmSummarySentinel, m.Content, StringComparison.Ordinal));
+
+                // 流式（legacy conversation）最终载荷
+                string legacyPayload = LlmDialogueService.BuildRuntimeConversationPrompt(prompts);
+                Assert.Contains(expectedSentinel, legacyPayload, StringComparison.Ordinal);
+                Assert.DoesNotContain(FarmSummarySentinel, legacyPayload, StringComparison.Ordinal);
+            });
+        }
+    }
+
+    // ── 7. VT-FARM-ACCESS-03: 无温室缓存为 null 时不回退完整摘要、不注入空标签，Debug 省略 ──
+
+    [Fact]
+    public void HouseholdNpc_NullOutdoorSummary_OmitsFarmState_NoFullSummaryFallback()
+    {
+        var prompts = MakePrompts("Abigail", includeFarmDetails: true);
+        var capture = new StringBuilder();
+        var originalMonitor = ModEntry.SMonitor;
+        ModEntry.SMonitor = new CaptureMonitor(capture);
+        try
+        {
+            using (InstallMarriedPlayer(PlayerName, "Abigail", roommate: false))
+            using (FarmStateScannerCacheProbe.SeedNullOutdoorSummaries(FarmSummarySentinel))
+            {
+                TestEnvironment.WithWorldReady(() =>
+                {
+                    var messages = prompts.BuildRuntimeChatMessages();
+                    Assert.All(messages, m =>
+                    {
+                        Assert.DoesNotContain(FarmSummarySentinel, m.Content, StringComparison.Ordinal);
+                        Assert.DoesNotContain("<farm_state>", m.Content, StringComparison.Ordinal);
+                    });
+
+                    string legacyPayload = LlmDialogueService.BuildRuntimeConversationPrompt(prompts);
+                    Assert.DoesNotContain(FarmSummarySentinel, legacyPayload, StringComparison.Ordinal);
+                    Assert.DoesNotContain("<farm_state>", legacyPayload, StringComparison.Ordinal);
+                });
+            }
+
+            Assert.Contains("[Debug]", capture.ToString(), StringComparison.Ordinal);
+            Assert.Contains("no injectable outdoor farm background", capture.ToString(), StringComparison.Ordinal);
+        }
+        finally
+        {
+            ModEntry.SMonitor = originalMonitor;
+        }
+    }
+
+    // ── 8. VT-FARM-ACCESS-03: 同一新鲜缓存交替请求 true/false/true 不串权限；
+    //         旧单参数入口仍返回完整摘要；探针退出恢复全部缓存字段 ──
+
+    [Fact]
+    public void CacheSelection_AlternatingViews_NoCrossContamination_AndProbeRestoresFields()
+    {
+        var fieldsBefore = new Dictionary<string, object>();
+        foreach (var f in FarmStateScannerCacheProbe.CacheFieldNames)
+            fieldsBefore[f] = FarmStateScannerCacheProbe.ReadField(f);
+
+        using (FarmStateScannerCacheProbe.SeedSentinelSummaries(FarmSummarySentinel, OutdoorFarmSummarySentinel))
+        {
+            TestEnvironment.WithWorldReady(() =>
+            {
+                Assert.Equal(FarmSummarySentinel + "-ZH",
+                    FarmStateScanner.BuildFarmSummary(isZh: true, includeGreenhouseInterior: true));
+                Assert.Equal(OutdoorFarmSummarySentinel + "-ZH",
+                    FarmStateScanner.BuildFarmSummary(isZh: true, includeGreenhouseInterior: false));
+                Assert.Equal(FarmSummarySentinel + "-ZH",
+                    FarmStateScanner.BuildFarmSummary(isZh: true, includeGreenhouseInterior: true));
+
+                Assert.Equal(FarmSummarySentinel + "-EN",
+                    FarmStateScanner.BuildFarmSummary(isZh: false, includeGreenhouseInterior: true));
+                Assert.Equal(OutdoorFarmSummarySentinel + "-EN",
+                    FarmStateScanner.BuildFarmSummary(isZh: false, includeGreenhouseInterior: false));
+                Assert.Equal(FarmSummarySentinel + "-EN",
+                    FarmStateScanner.BuildFarmSummary(isZh: false, includeGreenhouseInterior: true));
+
+                // 旧单参数入口仍返回完整摘要
+                Assert.Equal(FarmSummarySentinel + "-ZH", FarmStateScanner.BuildFarmSummary(isZh: true));
+                Assert.Equal(FarmSummarySentinel + "-EN", FarmStateScanner.BuildFarmSummary(isZh: false));
+            });
+        }
+
+        foreach (var f in FarmStateScannerCacheProbe.CacheFieldNames)
+            Assert.Equal(fieldsBefore[f], FarmStateScannerCacheProbe.ReadField(f));
+    }
+
+    // ── 9. 世界未就绪却到达关系查询：BUG → Error → InvalidOperationException ──
 
     [Fact]
     public void HouseholdCheckWhileWorldNotReady_LogsErrorAndThrows()
@@ -234,7 +352,7 @@ public class FarmPromptAccessTests : IDisposable
         }
     }
 
-    // ── 7. 世界就绪但无当前玩家：BOUNDARY → Warn → 契约缺口上报并停止 ──
+    // ── 10. 世界就绪但无当前玩家：BOUNDARY → Warn → 契约缺口上报并停止 ──
 
     [Fact]
     public void HouseholdCheckWithNoCurrentPlayer_LogsWarnAndThrows()
@@ -379,17 +497,24 @@ public class FarmPromptAccessTests : IDisposable
     /// <summary>
     /// FarmStateScanner 静态缓存探针：复位后 _cachedYear == -1 即"扫描器未被调用"；
     /// 注入正例以种子哨兵摘要绕开无头环境下 Game1.getFarm 的 KeyNotFoundException。
+    /// VT-FARM-ACCESS-03：完整与无温室四份文本缓存均纳入快照/种入/恢复范围，
+    /// 完整与无温室缓存使用不同哨兵。
     /// </summary>
     private static class FarmStateScannerCacheProbe
     {
-        private static readonly (string Field, object Value)[] Sentinels =
+        /// <summary>扫描器全部缓存字段（四份文本缓存 + 三个日期有效性标记）。</summary>
+        internal static readonly string[] CacheFieldNames =
         {
-            ("_cachedSummaryZh", FarmSummarySentinel + "-ZH"),
-            ("_cachedSummaryEn", FarmSummarySentinel + "-EN"),
+            "_cachedSummaryZh", "_cachedSummaryEn",
+            "_cachedSummaryWithoutGreenhouseZh", "_cachedSummaryWithoutGreenhouseEn",
+            "_cachedYear", "_cachedSeason", "_cachedDay",
         };
 
         internal static int CachedYear =>
             (int)GetField("_cachedYear").GetValue(null);
+
+        internal static object ReadField(string name) =>
+            GetField(name).GetValue(null);
 
         /// <summary>复位缓存至陈旧态；退出时复位再复位态（保证后续断言不受污染）。</summary>
         internal static IDisposable ResetForInvocationCountProbe()
@@ -398,23 +523,57 @@ public class FarmPromptAccessTests : IDisposable
             return new RestoreScope(() => FarmStateScanner.InvalidateCache());
         }
 
-        /// <summary>种子哨兵摘要并将缓存标记为新鲜（year/season/day 与当前游戏状态一致）。</summary>
-        internal static IDisposable SeedSentinelSummaries(string sentinel)
+        /// <summary>
+        /// 种入完整与无温室哨兵摘要（不同哨兵）并将缓存标记为新鲜
+        /// （year/season/day 与当前游戏状态一致）。
+        /// </summary>
+        internal static IDisposable SeedSentinelSummaries(string fullSentinel, string outdoorSentinel)
         {
-            var previous = new Dictionary<string, object>();
-            foreach (var f in new[] { "_cachedSummaryZh", "_cachedSummaryEn", "_cachedYear", "_cachedSeason", "_cachedDay" })
-                previous[f] = GetField(f).GetValue(null);
+            var previous = SnapshotFields();
 
-            GetField("_cachedSummaryZh").SetValue(null, sentinel + "-ZH");
-            GetField("_cachedSummaryEn").SetValue(null, sentinel + "-EN");
+            GetField("_cachedSummaryZh").SetValue(null, fullSentinel + "-ZH");
+            GetField("_cachedSummaryEn").SetValue(null, fullSentinel + "-EN");
+            GetField("_cachedSummaryWithoutGreenhouseZh").SetValue(null, outdoorSentinel + "-ZH");
+            GetField("_cachedSummaryWithoutGreenhouseEn").SetValue(null, outdoorSentinel + "-EN");
+            MarkCacheFresh();
+            return new RestoreScope(RestoreFields(previous));
+        }
+
+        /// <summary>
+        /// 种入完整哨兵摘要，同时把无温室缓存置为 null（无室外事实场景），
+        /// 并将缓存标记为新鲜；验证注入路径不得回退完整摘要。
+        /// </summary>
+        internal static IDisposable SeedNullOutdoorSummaries(string fullSentinel)
+        {
+            var previous = SnapshotFields();
+
+            GetField("_cachedSummaryZh").SetValue(null, fullSentinel + "-ZH");
+            GetField("_cachedSummaryEn").SetValue(null, fullSentinel + "-EN");
+            GetField("_cachedSummaryWithoutGreenhouseZh").SetValue(null, null);
+            GetField("_cachedSummaryWithoutGreenhouseEn").SetValue(null, null);
+            MarkCacheFresh();
+            return new RestoreScope(RestoreFields(previous));
+        }
+
+        private static Dictionary<string, object> SnapshotFields()
+        {
+            var snapshot = new Dictionary<string, object>();
+            foreach (var f in CacheFieldNames)
+                snapshot[f] = GetField(f).GetValue(null);
+            return snapshot;
+        }
+
+        private static Action RestoreFields(Dictionary<string, object> previous) => () =>
+        {
+            foreach (var kv in previous)
+                GetField(kv.Key).SetValue(null, kv.Value);
+        };
+
+        private static void MarkCacheFresh()
+        {
             GetField("_cachedYear").SetValue(null, Game1.year);
             GetField("_cachedSeason").SetValue(null, Game1.currentSeason);
             GetField("_cachedDay").SetValue(null, Game1.dayOfMonth);
-            return new RestoreScope(() =>
-            {
-                foreach (var kv in previous)
-                    GetField(kv.Key).SetValue(null, kv.Value);
-            });
         }
 
         private static FieldInfo GetField(string name) =>
