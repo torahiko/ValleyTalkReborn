@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -172,6 +172,10 @@ public class Character : IDisposable
         }
 
         ValidPortraits = new List<string>() { "h", "s", "l", "a" };
+        if (!string.IsNullOrWhiteSpace(_bioData.Unique) && !ValidPortraits.Contains("u"))
+        {
+            ValidPortraits.Add("u");
+        }
         ValidPortraits.AddRange(_bioData.ExtraPortraits.Keys);
 
         PossiblePreoccupations = new List<string>(_bioData.Preoccupations);

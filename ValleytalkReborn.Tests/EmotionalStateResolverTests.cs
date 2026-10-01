@@ -213,4 +213,48 @@ public class EmotionalStateResolverTests
         Assert.Null(DialogueFeedbackService.ExtractPortraitCode("没有任何代码", null));
         Assert.Null(DialogueFeedbackService.ExtractPortraitCode("", null));
     }
+
+    // VT-STREAM-07 语义标签双向转译：[MOOD:xxx] -> 原版肖像码。
+    [Fact]
+    public void ExtractPortraitCode_MoodTags_MapToVanillaCodes()
+    {
+        Assert.Equal("$h", DialogueFeedbackService.ExtractPortraitCode("你来看我啦 [MOOD:happy]", null));
+        Assert.Equal("$s", DialogueFeedbackService.ExtractPortraitCode("[MOOD:sad]", null));
+        Assert.Equal("$a", DialogueFeedbackService.ExtractPortraitCode("[MOOD:angry]", null));
+        Assert.Equal("$u", DialogueFeedbackService.ExtractPortraitCode("接住这个球 [MOOD:football]", null));
+        Assert.Equal("$u", DialogueFeedbackService.ExtractPortraitCode("[MOOD:gridball]", null));
+        Assert.Equal("$l", DialogueFeedbackService.ExtractPortraitCode("[MOOD:love]", null));
+    }
+
+    [Fact]
+    public void ExtractPortraitCode_MoodTagNeutralAndUnknown_FollowDollarZeroGating()
+    {
+        // neutral/未知语义标签转译为 "$0"，沿用既有 $0 白名单门禁（RECOVERABLE）。
+        Assert.Equal("$0", DialogueFeedbackService.ExtractPortraitCode("[MOOD:neutral]", new List<string> { "$0" }));
+        Assert.Equal("$0", DialogueFeedbackService.ExtractPortraitCode("[MOOD:bogus]", new List<string> { "$0" }));
+        Assert.Null(DialogueFeedbackService.ExtractPortraitCode("[MOOD:bogus]", null));
+    }
+
+    [Fact]
+    public void ExtractPortraitCode_MixedTagsAndCodes_TakesLastOccurrence()
+    {
+        // 语义标签与裸码混排时同样取末尾出现者。
+        Assert.Equal("$s", DialogueFeedbackService.ExtractPortraitCode("开头[MOOD:happy] 中间[MOOD:sad]", null));
+        Assert.Equal("$h", DialogueFeedbackService.ExtractPortraitCode("裸码在前 $h [MOOD:happy]", null));
+        Assert.Equal("$h", DialogueFeedbackService.ExtractPortraitCode("标签在前 [MOOD:sad] 收尾 $h", null));
+    }
+
+    [Fact]
+    public void DecideFeedback_SemanticMoodTag_TriggersComfortedScoring()
+    {
+        // 语义标签 100% 参与好感度/情感冲击打分：[MOOD:happy] 等价 $h。
+        var negative = Snap(-0.30f, 0.50f, 0.30f, 0.50f);
+        var comforted = DialogueFeedbackService.DecideFeedback(
+            negative, DialogueFeedbackService.ExtractPortraitCode("你来看我啦，太好了 [MOOD:happy]", null));
+
+        Assert.NotNull(comforted);
+        Assert.Equal("Comforted", comforted.Value.kind);
+        AssertFloat(0.35f, comforted.Value.dv, "semantic happy dv");
+        AssertFloat(-0.10f, comforted.Value.da, "semantic happy da");
+    }
 }

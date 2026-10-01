@@ -10,11 +10,15 @@ public static class DialogueFeedbackService
 {
     // 词边界防 $h 误匹配噪声（如 $house）。
     // 不用 \b：.NET \w 含 CJK 字符，"$h你好" 会被 \b 误杀；改用 ASCII 字母负向前瞻。
-    private static readonly Regex PortraitCodeRegex = new(@"\$([hsaul0])(?![a-zA-Z])", RegexOptions.Compiled);
+    // VT-STREAM-07：新增 [MOOD:xxx] 语义标签分支，交由 MapSemanticMoodTag 双向转译。
+    private static readonly Regex PortraitCodeRegex =
+        new(@"(\$([hsaul0])|\[MOOD:(\w+)\])(?![a-zA-Z])", RegexOptions.Compiled);
 
     /// <summary>
     /// 提取 rawText 中最后一个合法肖像码（pure）。
     /// $0 非原版肖像：白名单缺失或不含 "$0" 时降级 null（default）。
+    /// [MOOD:xxx] 语义标签经 MapSemanticMoodTag 转译为原版码，
+    /// 保证 DecideFeedback 能基于语义标签触发好感度与情感冲击打分。
     /// </summary>
     public static string ExtractPortraitCode(string rawText, IReadOnlyList<string> validPortraits)
     {
@@ -27,7 +31,9 @@ public static class DialogueFeedbackService
         }
         if (last == null) return null;
 
-        string code = "$" + last.Groups[1].Value;
+        string code = last.Groups[3].Success
+            ? MapSemanticMoodTag(last.Groups[3].Value)
+            : "$" + last.Groups[2].Value;
 
         if (code == "$0")
         {
@@ -36,6 +42,44 @@ public static class DialogueFeedbackService
         }
 
         return code;
+    }
+
+    /// <summary>
+    /// [MOOD:xxx] 语义标签 -> 原版肖像码转译（票 VT-STREAM-07）：
+    /// happy/smile/joy -> $h，sad/sorrow/cry -> $s，angry/annoyed/rage -> $a，
+    /// unique/football/gridball -> $u，love/blush/heart -> $l，neutral/default -> $0。
+    /// 未知标签按 RECOVERABLE 路径降级为 "$0"（中立），绝不抛异常。
+    /// </summary>
+    private static string MapSemanticMoodTag(string word)
+    {
+        switch ((word ?? string.Empty).ToLowerInvariant())
+        {
+            case "happy":
+            case "smile":
+            case "joy":
+                return "$h";
+            case "sad":
+            case "sorrow":
+            case "cry":
+                return "$s";
+            case "angry":
+            case "annoyed":
+            case "rage":
+                return "$a";
+            case "unique":
+            case "football":
+            case "gridball":
+                return "$u";
+            case "love":
+            case "blush":
+            case "heart":
+                return "$l";
+            case "neutral":
+            case "default":
+                return "$0";
+            default:
+                return "$0";
+        }
     }
 
     /// <summary>

@@ -1469,6 +1469,22 @@ public class AiStreamingDialogueBoxTests : IDisposable
         Assert.Equal("你好", box.DisplayedPageText);
     }
 
+    [Fact]
+    public void SetEmotion_FootballAndGridball_MapToUniquePortrait()
+    {
+        // VT-STREAM-07：Alex 专属格球语义归一到 $u 专属立绘。
+        AiStreamingDialogueBox box = NewBox();
+
+        box.SetEmotion("football");
+        Assert.Equal("$u", box.characterDialogue.CurrentEmotion);
+
+        box.SetEmotion("gridball");
+        Assert.Equal("$u", box.characterDialogue.CurrentEmotion);
+
+        box.SetEmotion("unique");
+        Assert.Equal("$u", box.characterDialogue.CurrentEmotion);
+    }
+
     #endregion
 }
 

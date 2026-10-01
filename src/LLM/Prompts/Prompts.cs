@@ -597,8 +597,12 @@ public class Prompts
         instructions.AppendLine($"## {Util.GetString(Character, "instructionsHeading", new { Language = TargetLanguageName })}");
         instructions.AppendLine(Util.GetString(Character, "instructionsIntro", new { Name = Name }));
         instructions.AppendLine(Util.GetString(Character, "instructionsFarmersName"));
-        instructions.AppendLine(Util.GetString(Character, "instructionsBreaks"));
-        instructions.AppendLine(Util.GetString(Character, "instructionsSingleLine"));
+        string breaks = Util.GetString(Character, "instructionsBreaks");
+        if (!string.IsNullOrWhiteSpace(breaks))
+            instructions.AppendLine(breaks);
+        string singleLine = Util.GetString(Character, "instructionsSingleLine");
+        if (!string.IsNullOrWhiteSpace(singleLine))
+            instructions.AppendLine(singleLine);
         if (enableResponses)
         {
             instructions.AppendLine(Util.GetString(Character, "instructionsResponses", new { Name = Name }));
@@ -639,6 +643,11 @@ public class Prompts
         if (!Character.Bio.ExtraPortraits.ContainsKey("!"))
         {
             var extraPortraits = new StringBuilder();
+            if (!string.IsNullOrWhiteSpace(Character.Bio.Unique))
+            {
+                extraPortraits.Append(Util.GetString(Character, "instructionsExtraPortraitLine",
+                    new { Key = "u", Value = Character.Bio.Unique }));
+            }
             foreach (var portrait in Character.Bio.ExtraPortraits)
             {
                 extraPortraits.Append(Util.GetString(Character, "instructionsExtraPortraitLine",

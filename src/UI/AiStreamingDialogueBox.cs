@@ -734,6 +734,8 @@ namespace ValleytalkReborn.UI
                 case "surprised":
                 case "shocked":
                 case "unique":
+                case "football":
+                case "gridball":
                 case "u":
                     return "$u";
 

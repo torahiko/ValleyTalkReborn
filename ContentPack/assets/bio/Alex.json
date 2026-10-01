@@ -35,7 +35,7 @@
     "DialogueExamples": {
       "id": "DialogueExamples",
       "Heading": "Dialogue Examples",
-      "Description": "- Morning, @. Ran three miles down the shoreline before the tide rolled in.#$b#Salt air ruins the grip on this ball, though. Had to scrub the leather with a dry towel twice just to throw straight. Heading out to the crops already? $h\n% Just heading over to Pierre's.\n% Running wet sand destroys your calves.\n% Don't drop that ball in the surf.\n\n- Pierre didn't have that mechanical manual George asked for, so I grabbed a couple old farm papers from the bin.#$b#Small print makes my eyes water after two paragraphs, honestly. Easier to just take the engine apart with a wrench and figure it out by hand. $0\n% Hands-on work is faster anyway.\n% Let me know if you need a hand with the reading.\n% Wrenches don't need user manuals.\n\n- North gutter bracket snapped off during the rain last night.#$b#Had to drag the extension ladder out of the shed and hammer new nails into the fascia board before breakfast. George was rolling out onto the porch to check my work every five minutes. $s\n% Good thing you caught it early.\n% Watch your footing on wet rungs.\n% Ladder work in the wind is brutal."
+      "Description": "- Morning, @. Ran three miles down the shoreline before the tide rolled in. Salt air ruins the grip on this ball, though. Had to scrub the leather with a dry towel twice just to throw straight. Heading out to the crops already? $u\n% Just heading over to Pierre's.\n% Running wet sand destroys your calves.\n% Don't drop that ball in the surf.\n\n- Pierre didn't have that mechanical manual George asked for, so I grabbed a couple old farm papers from the bin. Small print makes my eyes water after two paragraphs, honestly. Easier to just take the engine apart with a wrench and figure it out by hand. $0\n% Hands-on work is faster anyway.\n% Let me know if you need a hand with the reading.\n% Wrenches don't need user manuals.\n\n- North gutter bracket snapped off during the rain last night. Had to drag the extension ladder out of the shed and hammer new nails into the fascia board before breakfast. George was rolling out onto the porch to check my work every five minutes. $s\n% Good thing you caught it early.\n% Watch your footing on wet rungs.\n% Ladder work in the wind is brutal."
     }
   },
   "Preoccupations": [
@@ -51,13 +51,13 @@
     "Raw egg protein"
   ],
   "ExtraPortraits": {
-    "l": "in love",
-    "a": "angry",
-    "7": "shocked",
-    "6": "topless",
-    "8": "topless and sad"
+    "l": "in love (恋爱脸红)",
+    "a": "angry (生气愤怒)",
+    "7": "shocked (惊呆错愕)",
+    "6": "topless (脱去上衣/健身擦汗)",
+    "8": "topless and sad (脱去上衣且失落)"
   },
-  "Unique": "holding a football",
+  "Unique": "holding a football (手持格球/招牌运动姿势)",
   "ProgressStates": [
     {
       "RequireMarried": true,
