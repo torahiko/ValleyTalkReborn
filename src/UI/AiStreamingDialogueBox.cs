@@ -854,6 +854,21 @@ namespace ValleytalkReborn.UI
         }
 
         /// <summary>
+        /// 组装思考态波浪文字的最终字符串：先剥离本地化文案尾部的固定标点，
+        /// 再按时钟追加 0~3 个点号，使文案在「思考中」到「思考中...」之间匀速循环。
+        /// 剥离是必需的：i18n 的 "ui.thinking" 本身带尾点（"思考中..." / "Thinking..."），
+        /// 不剥离会在动点周期里拼出 4 个以上连续点号。
+        /// </summary>
+        /// <param name="message">已本地化且已回退的思考中文案。</param>
+        /// <param name="clockMs">思考态累计时钟（毫秒）。</param>
+        private static string BuildThinkingWaveText(string message, int clockMs)
+        {
+            string baseText = message.TrimEnd('.', '。', '…');
+            int dotCount = (int)(clockMs / (float)ThinkingDotIntervalMs) % 4;
+            return baseText + new string('.', dotCount);
+        }
+
+        /// <summary>
         /// 原版复刻的思考态波浪文字：逐字符按正弦上下浮动，并在末尾按帧时间追加 0~3 个点号。
         /// 严格在主线程 draw 中执行，SpriteBatch 与 SpriteText 不跨线程。
         /// </summary>
@@ -864,8 +879,7 @@ namespace ValleytalkReborn.UI
             if (string.IsNullOrEmpty(message) || message == "ui.thinking")
                 message = I18n.IsChinese ? "思考中" : "thinking";
 
-            int dotCount = (int)(_thinkingClockMs / (float)ThinkingDotIntervalMs) % 4;
-            string animated = message + new string('.', dotCount);
+            string animated = BuildThinkingWaveText(message, _thinkingClockMs);
 
             float currentX = textX;
             for (int i = 0; i < animated.Length; i++)

@@ -666,7 +666,7 @@ public class AiStreamingDialogueBoxTests : IDisposable
 
     /// <summary>
     /// 构造必然超过 MaxPageHeight 的长文本：无头环境下 SpriteText 单行高 48，
-    /// 400 个汉字在 752 宽下实测高度 20028，远超 200。
+    /// 400 个汉字在无立绘布局实测宽度 width - 16 = 1184 下高度 19056，远超 200。
     /// </summary>
     private static string VeryLongText(string marker)
         => string.Concat(Enumerable.Repeat(marker, 400));
@@ -1087,6 +1087,85 @@ public class AiStreamingDialogueBoxTests : IDisposable
         // 释放序列前半段（可无头求值部分）必须已经生效。
         Assert.True(Game1.player.CanMove);
         Assert.Empty(Game1.player.movementDirections);
+    }
+
+    #endregion
+
+    #region 思考态波浪文字标点规范化
+
+    /// <summary>
+    /// 经反射调用绘制路径上的私有文本组装方法。draw() 本身需要 SpriteBatch，
+    /// 无头环境无法构造，故只对其纯字符串部分建立断言。
+    /// </summary>
+    private static string BuildThinkingWaveTextForTest(string message, int clockMs)
+        => (string)typeof(AiStreamingDialogueBox)
+            .GetMethod("BuildThinkingWaveText", BindingFlags.Static | BindingFlags.NonPublic)
+            .Invoke(null, new object[] { message, clockMs });
+
+    /// <summary>返回字符串中最长的连续点号游程长度。</summary>
+    private static int MaxConsecutiveDots(string text)
+    {
+        int longest = 0;
+        int run = 0;
+        foreach (char c in text)
+        {
+            run = c == '.' ? run + 1 : 0;
+            if (run > longest)
+                longest = run;
+        }
+
+        return longest;
+    }
+
+    [Theory]
+    [InlineData("思考中...")]   // 仓库内 zh.json 的实际取值
+    [InlineData("Thinking...")] // 仓库内 default.json 的实际取值
+    [InlineData("思考中。")]
+    [InlineData("思考中…")]
+    [InlineData("思考中")]
+    [InlineData("thinking")]
+    public void BuildThinkingWaveText_AnyTrailingPunctuation_NeverExceedsThreeDots(string message)
+    {
+        // 覆盖整整两个动点周期（4 × 500ms），逐 100ms 采样。
+        for (int clockMs = 0; clockMs < 4000; clockMs += 100)
+        {
+            string animated = BuildThinkingWaveTextForTest(message, clockMs);
+            int longest = MaxConsecutiveDots(animated);
+            Assert.True(longest <= 3,
+                $"文案 '{message}' 在 {clockMs}ms 处产生了 {longest} 个连续点号：'{animated}'。");
+        }
+    }
+
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(400, 0)]
+    [InlineData(500, 1)]
+    [InlineData(1000, 2)]
+    [InlineData(1500, 3)]
+    [InlineData(2000, 0)] // 4 点一循环，回到 0
+    [InlineData(2500, 1)]
+    public void BuildThinkingWaveText_AppendsZeroToThreeDotsOnFixedCycle(int clockMs, int expectedDots)
+    {
+        // 尾部标点必须被剥离后重算，否则 "Thinking..." 在 1500ms 处会拼成 6 个点。
+        Assert.Equal(
+            "Thinking" + new string('.', expectedDots),
+            BuildThinkingWaveTextForTest("Thinking...", clockMs));
+    }
+
+    [Theory]
+    [InlineData("思考中...", "思考中")]
+    [InlineData("思考中。", "思考中")]
+    [InlineData("思考中…", "思考中")]
+    [InlineData("思考中", "思考中")]
+    public void BuildThinkingWaveText_PreservesBaseText_StripsOnlyTrailingPunctuation(string message, string expectedBase)
+    {
+        // 时钟取 500ms 的整数倍，使点号数量为 0 或正数，便于比对基干。
+        foreach (int clockMs in new[] { 0, 500, 1000, 1500 })
+        {
+            string animated = BuildThinkingWaveTextForTest(message, clockMs);
+            Assert.StartsWith(expectedBase, animated);
+            Assert.Equal(expectedBase.Length, animated.TrimEnd('.').Length);
+        }
     }
 
     #endregion

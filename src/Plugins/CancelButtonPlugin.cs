@@ -44,6 +44,12 @@ namespace ValleytalkReborn.Plugins
                 return;
             }
 
+            // 🌟【活动菜单让位守卫】：流式对白框活动时输入层彻底移交。
+            // 取消按钮点击、快进、翻页与退出全部由 AiStreamingDialogueBox 的
+            // receiveLeftClick / receiveKeyPress 原生响应，SMAPI 不得压制任何按键。
+            if (Game1.activeClickableMenu is AiStreamingDialogueBox)
+                return;
+
             // 正在生成中的原有取消逻辑（保持原样）
             if (!AsyncBuilder.Instance.IsGeneratingDialogue)
                 return;
@@ -74,6 +80,11 @@ namespace ValleytalkReborn.Plugins
 
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
         {
+            // 与 OnButtonPressed 同源的让位守卫：流式对白框自带取消按钮悬浮与
+            // 呼吸动画，此处跳过旧关闭按钮的悬浮命中与 Lerp，避免两套状态互相污染。
+            if (Game1.activeClickableMenu is AiStreamingDialogueBox)
+                return;
+
             SyncCancellationToken();
             if (!Context.IsWorldReady || !AsyncBuilder.Instance.IsGeneratingDialogue)
             {
