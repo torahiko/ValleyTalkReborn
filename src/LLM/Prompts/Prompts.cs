@@ -178,8 +178,8 @@ public class Prompts
     internal string BuildResponseTriggerSuffix(string promptPlayerName)
     {
         return IsChineseLanguage
-            ? $"<response_trigger>\n[IDENTITY] 玩家姓名为 {promptPlayerName}；上下文中标为该姓名的玩家发言，以及称作农夫/Farmer 的玩家身份，都是同一个人，不是两个角色。\n[RESPONSE_TRIGGER] 若农夫刚刚说了话：你的第一句必须直接回应他的最新发言。若农夫没有说话（现场触发或沉默）：直接从你当下的动作与环境自然开口，不要虚构农夫的发言。两种情形都只输出一轮，完成选项区后立即交回对话回合。\n</response_trigger>"
-            : $"<response_trigger>\n[IDENTITY] The player's name is {promptPlayerName}; player lines labelled with that name and the player identity called 农夫/Farmer are the same person, not two different characters.\n[RESPONSE_TRIGGER] If the farmer just spoke: your first line MUST directly reply to the farmer's latest words. If the farmer said nothing (ambient trigger or silence): open naturally from your current action and surroundings; do NOT invent farmer speech. In both cases output exactly one turn and hand the turn back right after the option block.\n</response_trigger>";
+            ? $"<response_trigger>\n[IDENTITY] 玩家姓名为 {promptPlayerName}；上下文中标为该姓名的玩家发言，以及称作农夫/Farmer 的玩家身份，都是同一个人，不是两个角色。\n[RESPONSE_TRIGGER] 若农夫刚刚说了话：你的第一句必须直接回应他的最新发言。若农夫没有说话（现场触发或沉默）：直接从你当下的动作与环境自然开口，不要虚构农夫的发言。两种情形都只输出一轮，完成选项区后立即交回对话回合。\n[SCENE_CONSISTENCY] 若历史对白中的场景假设与当前场景事实冲突，按当前事实自然接话即可，不要延续或扩展错误假设。\n</response_trigger>"
+            : $"<response_trigger>\n[IDENTITY] The player's name is {promptPlayerName}; player lines labelled with that name and the player identity called 农夫/Farmer are the same person, not two different characters.\n[RESPONSE_TRIGGER] If the farmer just spoke: your first line MUST directly reply to the farmer's latest words. If the farmer said nothing (ambient trigger or silence): open naturally from your current action and surroundings; do NOT invent farmer speech. In both cases output exactly one turn and hand the turn back right after the option block.\n[SCENE_CONSISTENCY] If scene assumptions in the dialogue history conflict with the current scene facts, pick up the conversation naturally from the current facts; do not extend the stale assumption.\n</response_trigger>";
     }
 
     /// <summary>
@@ -626,6 +626,9 @@ public class Prompts
         instructions.AppendLine(isZh
             ? "- [MOOD_SHIFT_RULE] 若本次交流导致你的情绪基调发生明显转换（如转为好奇/烦躁/欣喜），在台词末尾附带 [MOOD:curious] / [MOOD:annoyed] / [MOOD:happy] 等标签。"
             : "- [MOOD_SHIFT_RULE] If this turn causes a distinct emotional shift (e.g., to curious, annoyed, happy), append [MOOD:curious] / [MOOD:annoyed] / [MOOD:happy] at the end of the line.");
+        instructions.AppendLine(isZh
+            ? "- [SCENE_FACT_AUTHORITY] 当前场景（所在地点与现场条件）和当前与农夫的关系状态是唯一事实权威；角色卡、示例对白与历史记录若与此冲突，一律以当前事实为准。允许与现场吻合的细小动作，但不得凭空确定他人在场、特定设备或环境成因。"
+            : "- [SCENE_FACT_AUTHORITY] The current scene (your location and on-site conditions) and your current relationship with the farmer are the sole factual authority; your character card, sample lines, and past dialogue never override them. Small actions that fit the scene are fine, but never assert other people's presence, specific equipment, or environmental causes out of thin air.");
 
         if (enableResponses)
         {
@@ -903,6 +906,27 @@ public class Prompts
             prompt.AppendLine("<scene_context>");
             string friendlyLocation = EnvironmentScanner.GetLocationFriendlyName(context.Location);
             prompt.AppendLine(Util.GetString(character, "sceneLocation", new { Location = friendlyLocation }));
+
+            // VT-SCENE-01：空间类型权威行。地点缺失属 BUG——不猜室内/室外，直接升级。
+            var npcLocation = character.StardewNpc.currentLocation;
+            if (npcLocation == null)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[Prompts] BuildMicroEnvironment: NPC '{character.Name}' has no currentLocation during valid dialogue assembly; refusing to guess indoors/outdoors.",
+                    StardewModdingAPI.LogLevel.Error);
+                throw new InvalidOperationException(
+                    $"BuildMicroEnvironment requires a non-null NPC currentLocation during valid dialogue assembly (NPC: {character.Name}).");
+            }
+            bool isIndoors = !npcLocation.IsOutdoors
+                             || npcLocation is StardewValley.Locations.FarmHouse
+                             or StardewValley.Locations.IslandFarmHouse;
+            if (isIndoors)
+                prompt.AppendLine(IsZh()
+                    ? "- 空间类型: 室内。下方天气描述仅指室外条件，不得据此推断室内寒冷、特定取暖设备或农夫刚从户外进入。"
+                    : "- Space Type: Indoors. The weather description below reflects outdoor conditions only; do not infer indoor chill, specific heating equipment, or that the farmer just arrived from outside.");
+            else
+                prompt.AppendLine(IsZh() ? "- 空间类型: 室外。" : "- Space Type: Outdoors.");
+
             string festival = EnvironmentScanner.GetTodayFestivalName();
             if (!string.IsNullOrEmpty(festival))
             {
@@ -921,7 +945,7 @@ public class Prompts
             var nearbyObjects = EnvironmentScanner.ScanNearbyObjects(character.StardewNpc, 5, 8);
             if (nearbyObjects.Any())
                 prompt.AppendLine(Util.GetString(character, "sceneObjects", new { Objects = string.Join(", ", nearbyObjects) }));
-            string npcLocationName = character.StardewNpc.currentLocation?.Name ?? "";
+            string npcLocationName = npcLocation.Name;
             string playerLocationName = Game1.getPlayerOrEventFarmer().currentLocation?.Name ?? "";
             if (string.Equals(npcLocationName, playerLocationName, StringComparison.OrdinalIgnoreCase))
                 prompt.AppendLine(Util.GetString(character, "sceneSpatialCoPresent"));
