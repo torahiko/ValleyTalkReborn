@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Buildings;
 using StardewValley.TerrainFeatures;
@@ -65,8 +66,10 @@ internal static class FarmStateScanner
 
         int ghReadyCrops = 0;
         int ghGrowingCrops = 0;
+        int ghDeadCrops = 0;
         List<string> ghTopReady = new();
         List<string> ghTopGrowing = new();
+        List<string> ghTopDead = new();
 
         int ghFruitProducing = 0;
         int ghFruitGrowing = 0;
@@ -77,17 +80,14 @@ internal static class FarmStateScanner
 
         if (isGreenhouseUnlocked && ghLocation != null)
         {
-            (ghReadyCrops, ghGrowingCrops, _, ghTopReady, ghTopGrowing, _) = ScanCropsInLocation(ghLocation);
+            (ghReadyCrops, ghGrowingCrops, ghDeadCrops, ghTopReady, ghTopGrowing, ghTopDead) = ScanCropsInLocation(ghLocation);
             (ghFruitProducing, ghFruitGrowing, ghFruitResting, ghTopProducingFruits, ghTopGrowingFruits, ghTopRestingFruits) = ScanFruitTreesInLocation(ghLocation);
         }
-
-        // ── 3b. 温室果树并入室外果园统计，保证果园状态行统一呈现 ──
-        fruitTreeProducing += ghFruitProducing;
-        fruitTreeGrowing += ghFruitGrowing;
-        fruitTreeResting += ghFruitResting;
-        topProducingFruits = MergeFruitSamples(topProducingFruits, ghTopProducingFruits);
-        topGrowingFruits = MergeFruitSamples(topGrowingFruits, ghTopGrowingFruits);
-        topRestingFruits = MergeFruitSamples(topRestingFruits, ghTopRestingFruits);
+        else if (isGreenhouseUnlocked && isZh)
+        {
+            // BOUNDARY: 已解锁但温室地点不可用；中英两路缓存重建只记录一次
+            ModEntry.SMonitor?.Log("[FarmStateScanner] Greenhouse is unlocked but its location is unavailable; planting state omitted", LogLevel.Warn);
+        }
 
         // ── 4. 扫描动物 ──
         int totalAnimals = 0;
@@ -145,56 +145,30 @@ internal static class FarmStateScanner
                 sb.AppendLine($"- 农田异常: 发现了{GetDeadCropFuzzy(deadCrops, isZh: true)}枯萎死去的作物{sample}。");
             }
 
-            // 果树展示
+            // 果树展示（室外果园：不含温室输入）
             if (fruitTreeProducing > 0)
             {
                 string producingTrees = GetFruitTreeQuantityFuzzy(fruitTreeProducing, isZh: true);
-                if (topProducingFruits.Count > 3)
-                {
-                    string sample = $"（主要包括: {string.Join("、", topProducingFruits)} 等）";
-                    sb.AppendLine($"- 果园状态: 果树品种丰富，有{producingTrees}果树挂果待摘，涵盖多种不同品种{sample}。");
-                }
-                else
-                {
-                    string sample = topProducingFruits.Count > 0 ? $"（包含: {string.Join("、", topProducingFruits)}）" : "";
-                    sb.AppendLine($"- 果园状态: 有{producingTrees}果树果实累累{sample}。");
-                }
+                string sample = topProducingFruits.Count > 0 ? $"（包含: {string.Join("、", topProducingFruits)}）" : "";
+                sb.AppendLine($"- 室外果园: 有{producingTrees}果树果实累累{sample}。");
             }
             else if (fruitTreeGrowing > 0)
             {
                 string growingTrees = GetFruitTreeQuantityFuzzy(fruitTreeGrowing, isZh: true);
                 string sample = topGrowingFruits.Count > 0 ? $"（包含: {string.Join("、", topGrowingFruits)} 等）" : "";
-                sb.AppendLine($"- 果园状态: 有{growingTrees}幼年果树正在生长中{sample}。");
+                sb.AppendLine($"- 室外果园: 有{growingTrees}幼年果树正在生长中{sample}。");
             }
             else if (fruitTreeResting > 0)
             {
                 string restingTrees = GetFruitTreeQuantityFuzzy(fruitTreeResting, isZh: true);
                 string sample = topRestingFruits.Count > 0 ? $"（包含: {string.Join("、", topRestingFruits)} 等）" : "";
-                sb.AppendLine($"- 果园状态: 种植了{restingTrees}成年果树{sample}，目前非挂果期。");
+                sb.AppendLine($"- 室外果园: 种植了{restingTrees}成年果树{sample}，目前非挂果期。");
             }
 
             // 温室展示
-            if (isGreenhouseUnlocked)
-            {
-                if (ghReadyCrops > 0)
-                {
-                    string sample = ghTopReady.Count > 0 ? $"（包含: {string.Join("、", ghTopReady)} 等）" : "";
-                    sb.AppendLine($"- 室内温室: 温室内有{GetCropQuantityFuzzy(ghReadyCrops, isZh: true)}作物已成熟待收割{sample}。");
-                }
-                else if (ghGrowingCrops > 0)
-                {
-                    string sample = ghTopGrowing.Count > 0 ? $"（包含: {string.Join("、", ghTopGrowing)} 等）" : "";
-                    sb.AppendLine($"- 室内温室: 温室内有{GetCropQuantityFuzzy(ghGrowingCrops, isZh: true)}作物正在生长中{sample}。");
-                }
-                else
-                {
-                    sb.AppendLine("- 室内温室: 温室已修复但目前空置，里面什么也没种。");
-                }
-            }
-            else
-            {
-                sb.AppendLine("- 室内温室: 处于破损废弃状态（尚未修复）。");
-            }
+            sb.Append(BuildGreenhouseSection(isZh: true, isGreenhouseUnlocked, ghLocation != null,
+                (ghReadyCrops, ghGrowingCrops, ghDeadCrops, ghTopReady, ghTopGrowing, ghTopDead),
+                (ghFruitProducing, ghFruitGrowing, ghFruitResting, ghTopProducingFruits, ghTopGrowingFruits, ghTopRestingFruits)));
 
             if (totalAnimals > 0)
             {
@@ -236,51 +210,25 @@ internal static class FarmStateScanner
             if (fruitTreeProducing > 0)
             {
                 string producingTrees = GetFruitTreeQuantityFuzzy(fruitTreeProducing, isZh: false);
-                if (topProducingFruits.Count > 3)
-                {
-                    string sample = $" (mainly: {string.Join(", ", topProducingFruits)}, etc.)";
-                    sb.AppendLine($"- Orchard: Diverse orchard with {producingTrees} trees bearing ripe fruit across multiple varieties{sample}.");
-                }
-                else
-                {
-                    string sample = topProducingFruits.Count > 0 ? $" (including: {string.Join(", ", topProducingFruits)})" : "";
-                    sb.AppendLine($"- Orchard: {producingTrees} fruit trees are bearing ripe fruit{sample}.");
-                }
+                string sample = topProducingFruits.Count > 0 ? $" (including: {string.Join(", ", topProducingFruits)})" : "";
+                sb.AppendLine($"- Outdoor Orchard: {producingTrees} fruit trees are bearing ripe fruit{sample}.");
             }
             else if (fruitTreeGrowing > 0)
             {
                 string growingTrees = GetFruitTreeQuantityFuzzy(fruitTreeGrowing, isZh: false);
                 string sample = topGrowingFruits.Count > 0 ? $" (including: {string.Join(", ", topGrowingFruits)})" : "";
-                sb.AppendLine($"- Orchard: {growingTrees} young fruit trees are growing{sample}.");
+                sb.AppendLine($"- Outdoor Orchard: {growingTrees} young fruit trees are growing{sample}.");
             }
             else if (fruitTreeResting > 0)
             {
                 string restingTrees = GetFruitTreeQuantityFuzzy(fruitTreeResting, isZh: false);
                 string sample = topRestingFruits.Count > 0 ? $" (including: {string.Join(", ", topRestingFruits)})" : "";
-                sb.AppendLine($"- Orchard: {restingTrees} mature fruit trees planted{sample}, currently out of season.");
+                sb.AppendLine($"- Outdoor Orchard: {restingTrees} mature fruit trees planted{sample}, currently out of season.");
             }
 
-            if (isGreenhouseUnlocked)
-            {
-                if (ghReadyCrops > 0)
-                {
-                    string sample = ghTopReady.Count > 0 ? $" (including: {string.Join(", ", ghTopReady)})" : "";
-                    sb.AppendLine($"- Greenhouse: {GetCropQuantityFuzzy(ghReadyCrops, isZh: false)} crops ripe and ready to harvest{sample}.");
-                }
-                else if (ghGrowingCrops > 0)
-                {
-                    string sample = ghTopGrowing.Count > 0 ? $" (including: {string.Join(", ", ghTopGrowing)})" : "";
-                    sb.AppendLine($"- Greenhouse: {GetCropQuantityFuzzy(ghGrowingCrops, isZh: false)} crops growing{sample}.");
-                }
-                else
-                {
-                    sb.AppendLine("- Greenhouse: Repaired but currently empty with nothing planted.");
-                }
-            }
-            else
-            {
-                sb.AppendLine("- Greenhouse: Dilapidated and abandoned (not yet repaired).");
-            }
+            sb.Append(BuildGreenhouseSection(isZh: false, isGreenhouseUnlocked, ghLocation != null,
+                (ghReadyCrops, ghGrowingCrops, ghDeadCrops, ghTopReady, ghTopGrowing, ghTopDead),
+                (ghFruitProducing, ghFruitGrowing, ghFruitResting, ghTopProducingFruits, ghTopGrowingFruits, ghTopRestingFruits)));
 
             if (totalAnimals > 0)
             {
@@ -299,6 +247,106 @@ internal static class FarmStateScanner
         }
 
         return sb.Length > 30 ? sb.ToString() : null;
+    }
+
+    /// <summary>
+    /// 温室展示块纯格式化：仅整理传入的作物与果树事实，不读取 Game1、不写状态。
+    /// </summary>
+    internal static string BuildGreenhouseSection(
+        bool isZh,
+        bool isUnlocked,
+        bool isLocationAvailable,
+        (int readyCount, int growingCount, int deadCount,
+         List<string> topReady, List<string> topGrowing,
+         List<string> topDead) crops,
+        (int producingCount, int growingCount, int restingCount,
+         List<string> topProducing, List<string> topGrowing,
+         List<string> topResting) fruitTrees)
+    {
+        var sb = new StringBuilder();
+
+        if (!isUnlocked)
+        {
+            sb.AppendLine(isZh ? "- 室内温室: 处于破损废弃状态（尚未修复）。"
+                               : "- Greenhouse: Dilapidated and abandoned (not yet repaired).");
+            return sb.ToString();
+        }
+
+        if (!isLocationAvailable)
+        {
+            sb.AppendLine(isZh ? "- 室内温室: 温室已修复，当前无法确认内部种植情况。"
+                               : "- Greenhouse: Repaired; its planting state is currently unavailable.");
+            return sb.ToString();
+        }
+
+        // 作物：成熟优先于生长
+        if (crops.readyCount > 0)
+        {
+            string sample = crops.topReady.Count > 0
+                ? (isZh ? $"（包含: {string.Join("、", crops.topReady)} 等）" : $" (including: {string.Join(", ", crops.topReady)})")
+                : "";
+            sb.AppendLine(isZh
+                ? $"- 室内温室: 温室内有{GetCropQuantityFuzzy(crops.readyCount, isZh: true)}作物已成熟待收割{sample}。"
+                : $"- Greenhouse: {GetCropQuantityFuzzy(crops.readyCount, isZh: false)} crops ripe and ready to harvest{sample}.");
+        }
+        else if (crops.growingCount > 0)
+        {
+            string sample = crops.topGrowing.Count > 0
+                ? (isZh ? $"（包含: {string.Join("、", crops.topGrowing)} 等）" : $" (including: {string.Join(", ", crops.topGrowing)})")
+                : "";
+            sb.AppendLine(isZh
+                ? $"- 室内温室: 温室内有{GetCropQuantityFuzzy(crops.growingCount, isZh: true)}作物正在生长中{sample}。"
+                : $"- Greenhouse: {GetCropQuantityFuzzy(crops.growingCount, isZh: false)} crops growing{sample}.");
+        }
+
+        if (crops.deadCount > 0)
+        {
+            string sample = crops.topDead.Count > 0
+                ? (isZh ? $"（包含枯萎的: {string.Join("、", crops.topDead)} 等）" : $" (including withered: {string.Join(", ", crops.topDead)})")
+                : "";
+            sb.AppendLine(isZh
+                ? $"- 温室作物异常: 发现了{GetDeadCropFuzzy(crops.deadCount, isZh: true)}枯萎死去的作物{sample}。"
+                : $"- Greenhouse Crop Warning: {GetDeadCropFuzzy(crops.deadCount, isZh: false)} withered crops spotted{sample}.");
+        }
+
+        // 果树：挂果 → 幼树 → 成年树当前没有挂果（只描述事实，不推断非产果季）
+        if (fruitTrees.producingCount > 0)
+        {
+            string sample = fruitTrees.topProducing.Count > 0
+                ? (isZh ? $"（包含: {string.Join("、", fruitTrees.topProducing)}）" : $" (including: {string.Join(", ", fruitTrees.topProducing)})")
+                : "";
+            sb.AppendLine(isZh
+                ? $"- 温室果树: 有{GetFruitTreeQuantityFuzzy(fruitTrees.producingCount, isZh: true)}果树果实累累{sample}。"
+                : $"- Greenhouse Fruit Trees: {GetFruitTreeQuantityFuzzy(fruitTrees.producingCount, isZh: false)} fruit trees are bearing ripe fruit{sample}.");
+        }
+        else if (fruitTrees.growingCount > 0)
+        {
+            string sample = fruitTrees.topGrowing.Count > 0
+                ? (isZh ? $"（包含: {string.Join("、", fruitTrees.topGrowing)} 等）" : $" (including: {string.Join(", ", fruitTrees.topGrowing)})")
+                : "";
+            sb.AppendLine(isZh
+                ? $"- 温室果树: 有{GetFruitTreeQuantityFuzzy(fruitTrees.growingCount, isZh: true)}幼年果树正在生长中{sample}。"
+                : $"- Greenhouse Fruit Trees: {GetFruitTreeQuantityFuzzy(fruitTrees.growingCount, isZh: false)} young fruit trees are growing{sample}.");
+        }
+        else if (fruitTrees.restingCount > 0)
+        {
+            string sample = fruitTrees.topResting.Count > 0
+                ? (isZh ? $"（包含: {string.Join("、", fruitTrees.topResting)} 等）" : $" (including: {string.Join(", ", fruitTrees.topResting)})")
+                : "";
+            sb.AppendLine(isZh
+                ? $"- 温室果树: 种植了{GetFruitTreeQuantityFuzzy(fruitTrees.restingCount, isZh: true)}成年果树{sample}，目前没有挂果。"
+                : $"- Greenhouse Fruit Trees: {GetFruitTreeQuantityFuzzy(fruitTrees.restingCount, isZh: false)} mature fruit trees planted{sample}, currently bearing no fruit.");
+        }
+
+        bool hasNoCrops = crops.readyCount == 0 && crops.growingCount == 0 && crops.deadCount == 0;
+        bool hasNoFruitTrees = fruitTrees.producingCount == 0 && fruitTrees.growingCount == 0 && fruitTrees.restingCount == 0;
+        if (hasNoCrops && hasNoFruitTrees)
+        {
+            sb.AppendLine(isZh ? "- 室内温室: 温室已修复，目前没有作物或果树。"
+                               : "- Greenhouse: Repaired; currently contains no crops or fruit trees.");
+        }
+
+        return sb.ToString();
     }
 
     private static string GetCropQuantityFuzzy(int count, bool isZh)
@@ -670,12 +718,6 @@ internal static class FarmStateScanner
             case "834": name = isZh ? "芒果" : "Mango"; return true;
             default: return false;
         }
-    }
-
-    /// <summary>合并室外与温室两路品种采样，保持各自的频次降序并去重。</summary>
-    private static List<string> MergeFruitSamples(List<string> outdoor, List<string> greenhouse)
-    {
-        return outdoor.Concat(greenhouse).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
     }
 
     /// <summary>
