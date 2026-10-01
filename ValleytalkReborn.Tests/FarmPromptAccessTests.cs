@@ -420,6 +420,108 @@ public class FarmPromptAccessTests : IDisposable
             Assert.Equal(fieldsBefore[f], FarmStateScannerCacheProbe.ReadField(f));
     }
 
+    // ── 12. VT-FARM-OBSERVE-05: 同住人（配偶）与玩家同处温室 → 两种载荷均含
+    //        CURRENT_OBSERVATION 现场观察标记，且无室外缓存哨兵（不走全农场摘要） ──
+
+    [Fact]
+    public void HouseholdNpc_BothInGreenhouse_PayloadCarriesObservation_NotOutdoorSentinel()
+    {
+        var prompts = MakePrompts("Abigail", includeFarmDetails: true);
+        var greenhouse = GreenhouseObservationTestWorld.MakeGameLocation(isGreenhouse: true, name: "Greenhouse");
+        GreenhouseObservationTestWorld.InstallLocationRef(prompts.Character.StardewNpc, greenhouse);
+
+        using (InstallMarriedPlayer(PlayerName, "Abigail", roommate: false, greenhouse))
+        using (FarmStateScannerCacheProbe.SeedSentinelSummaries(FarmSummarySentinel, OutdoorFarmSummarySentinel))
+        {
+            TestEnvironment.WithWorldReady(() =>
+            {
+                // 非流式（role-based）最终载荷
+                var messages = prompts.BuildRuntimeChatMessages();
+                Assert.Contains(messages, m => m.Content.Contains("CURRENT_OBSERVATION", StringComparison.Ordinal));
+                Assert.Contains(messages, m => m.Content.Contains("<farm_state>", StringComparison.Ordinal));
+                Assert.All(messages, m =>
+                {
+                    Assert.DoesNotContain(OutdoorFarmSummarySentinel, m.Content, StringComparison.Ordinal);
+                    Assert.DoesNotContain(FarmSummarySentinel, m.Content, StringComparison.Ordinal);
+                });
+
+                // 流式（legacy conversation）最终载荷
+                string legacyPayload = LlmDialogueService.BuildRuntimeConversationPrompt(prompts);
+                Assert.Contains("CURRENT_OBSERVATION", legacyPayload, StringComparison.Ordinal);
+                Assert.Contains("<farm_state>", legacyPayload, StringComparison.Ordinal);
+                Assert.DoesNotContain(OutdoorFarmSummarySentinel, legacyPayload, StringComparison.Ordinal);
+                Assert.DoesNotContain(FarmSummarySentinel, legacyPayload, StringComparison.Ordinal);
+            });
+        }
+    }
+
+    // ── 13. VT-FARM-OBSERVE-05: 非同住人与玩家同处温室 → 现场观察同样注入（无需同住身份） ──
+
+    [Fact]
+    public void NonHouseholdNpc_BothInGreenhouse_StillGetsObservation()
+    {
+        var prompts = MakePrompts("Abigail", includeFarmDetails: true);
+        var greenhouse = GreenhouseObservationTestWorld.MakeGameLocation(isGreenhouse: true, name: "Greenhouse");
+        GreenhouseObservationTestWorld.InstallLocationRef(prompts.Character.StardewNpc, greenhouse);
+
+        using (InstallPlayerWithoutFriendship(PlayerName, greenhouse))
+        using (FarmStateScannerCacheProbe.SeedSentinelSummaries(FarmSummarySentinel, OutdoorFarmSummarySentinel))
+        {
+            TestEnvironment.WithWorldReady(() =>
+            {
+                var messages = prompts.BuildRuntimeChatMessages();
+                Assert.Contains(messages, m => m.Content.Contains("CURRENT_OBSERVATION", StringComparison.Ordinal));
+                Assert.All(messages, m => Assert.DoesNotContain(OutdoorFarmSummarySentinel, m.Content, StringComparison.Ordinal));
+
+                string legacyPayload = LlmDialogueService.BuildRuntimeConversationPrompt(prompts);
+                Assert.Contains("CURRENT_OBSERVATION", legacyPayload, StringComparison.Ordinal);
+                Assert.DoesNotContain(OutdoorFarmSummarySentinel, legacyPayload, StringComparison.Ordinal);
+            });
+        }
+    }
+
+    // ── 14. VT-FARM-OBSERVE-05: 离开温室（双方回到非温室房间，即使话题提到温室）
+    //        重新装配 Prompts → 不再注入现场观察，同住人恢复室外摘要注入 ──
+
+    [Fact]
+    public void LeftGreenhouse_RecreatedPrompts_NoObservation_HouseholdGetsOutdoorSummary()
+    {
+        var greenhouse = GreenhouseObservationTestWorld.MakeGameLocation(isGreenhouse: true, name: "Greenhouse");
+        var promptsInside = MakePrompts("Abigail", includeFarmDetails: true);
+        GreenhouseObservationTestWorld.InstallLocationRef(promptsInside.Character.StardewNpc, greenhouse);
+
+        // 重新创建 Prompts：NPC 夹具自带非温室默认地点（农舍）
+        var promptsAfterLeaving = MakePrompts("Abigail", includeFarmDetails: true);
+
+        // 同处温室：双方均在温室实例内
+        using (InstallMarriedPlayer(PlayerName, "Abigail", roommate: false, greenhouse))
+        using (FarmStateScannerCacheProbe.SeedSentinelSummaries(FarmSummarySentinel, OutdoorFarmSummarySentinel))
+        {
+            TestEnvironment.WithWorldReady(() =>
+            {
+                var insideMessages = promptsInside.BuildRuntimeChatMessages();
+                Assert.Contains(insideMessages, m => m.Content.Contains("CURRENT_OBSERVATION", StringComparison.Ordinal));
+            });
+        }
+
+        // 双方回到农舍（非温室）：即使玩家提到温室，也不授予现场权限；
+        // 同住人恢复室外摘要注入
+        using (InstallMarriedPlayer(PlayerName, "Abigail", roommate: false))
+        using (FarmStateScannerCacheProbe.SeedSentinelSummaries(FarmSummarySentinel, OutdoorFarmSummarySentinel))
+        {
+            TestEnvironment.WithWorldReady(() =>
+            {
+                var afterMessages = promptsAfterLeaving.BuildRuntimeChatMessages();
+                Assert.All(afterMessages, m => Assert.DoesNotContain("CURRENT_OBSERVATION", m.Content, StringComparison.Ordinal));
+                Assert.Contains(afterMessages, m => m.Content.Contains(OutdoorFarmSummarySentinel, StringComparison.Ordinal));
+
+                string legacyPayload = LlmDialogueService.BuildRuntimeConversationPrompt(promptsAfterLeaving);
+                Assert.DoesNotContain("CURRENT_OBSERVATION", legacyPayload, StringComparison.Ordinal);
+                Assert.Contains(OutdoorFarmSummarySentinel, legacyPayload, StringComparison.Ordinal);
+            });
+        }
+    }
+
     // ── 测试辅助 ──
 
     private static Prompts MakePrompts(string npcName, bool includeFarmDetails)
@@ -451,6 +553,9 @@ public class FarmPromptAccessTests : IDisposable
         var character = (ValleytalkReborn.Character)FormatterServices.GetUninitializedObject(typeof(ValleytalkReborn.Character));
         SetPrivateField(character, "<Name>k__BackingField", npcName);
         SetPrivateField(character, "_bioData", new BioData { Biography = "测试用人物设定", Missing = true });
+        // VT-FARM-OBSERVE-05：现场位置权限读取 Character.StardewNpc.currentLocation，
+        // 夹具补齐真实 NPC 引用（自带非温室默认地点）；缺失时测试显式失败。
+        SetPrivateField(character, "<StardewNpc>k__BackingField", GreenhouseObservationTestWorld.MakeHeadlessNpc());
         SetPrivateField(prompts, "<Character>k__BackingField", character);
         return prompts;
     }
@@ -462,13 +567,16 @@ public class FarmPromptAccessTests : IDisposable
         field.SetValue(target, value);
     }
 
-    /// <summary>安装当前玩家并注入与 npcName 的婚姻（可选室友标记）。</summary>
-    private static IDisposable InstallMarriedPlayer(string playerName, string npcName, bool roommate)
+    /// <summary>安装当前玩家并注入与 npcName 的婚姻（可选室友标记）。
+    /// VT-FARM-OBSERVE-05：玩家可携带现场地点；缺省为非温室地点。</summary>
+    private static IDisposable InstallMarriedPlayer(string playerName, string npcName, bool roommate,
+        GameLocation playerLocation = null)
     {
         IDisposable scope = FakePlayer.Install(playerName);
         try
         {
             InstallFriendship(Game1.player, npcName, roommate);
+            InstallPlayerLocation(Game1.player, playerLocation);
             return scope;
         }
         catch
@@ -479,12 +587,14 @@ public class FarmPromptAccessTests : IDisposable
     }
 
     /// <summary>安装当前玩家且无任何婚姻条目（非同住人场景）。</summary>
-    private static IDisposable InstallPlayerWithoutFriendship(string playerName)
+    private static IDisposable InstallPlayerWithoutFriendship(string playerName,
+        GameLocation playerLocation = null)
     {
         IDisposable scope = FakePlayer.Install(playerName);
         try
         {
             InstallFriendshipData(Game1.player);
+            InstallPlayerLocation(Game1.player, playerLocation);
             return scope;
         }
         catch
@@ -492,6 +602,16 @@ public class FarmPromptAccessTests : IDisposable
             scope.Dispose();
             throw;
         }
+    }
+
+    /// <summary>
+    /// VT-FARM-OBSERVE-05：为无头 Farmer 补齐基类 currentLocationRef，
+    /// 使 Game1.player.currentLocation 可解析；缺省为非温室地点。
+    /// </summary>
+    private static void InstallPlayerLocation(Farmer farmer, GameLocation playerLocation)
+    {
+        GreenhouseObservationTestWorld.InstallLocationRef(
+            farmer, playerLocation ?? GreenhouseObservationTestWorld.MakeGameLocation(isGreenhouse: false));
     }
 
     /// <summary>卸下当前玩家（Game1.player == null 的 BOUNDARY 场景）。</summary>

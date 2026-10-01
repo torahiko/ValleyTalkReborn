@@ -349,7 +349,25 @@ public class Prompts
 
         bool includeFarmDetails = CurrentFlags.IncludeFarmDetails;
         bool isHouseholdMember = includeFarmDetails && ResolveCurrentNpcHouseholdMembership();
-        if (ShouldIncludeFarmSummary(includeFarmDetails, isHouseholdMember))
+
+        // VT-FARM-OBSERVE-05: 路由开启且已通过世界就绪/玩家身份校验后，各读取一次
+        // NPC 与当前玩家的现场位置；路由关闭时短路，不读取位置、不执行扫描。
+        GameLocation npcLocation = null;
+        GameLocation playerLocation = null;
+        if (includeFarmDetails)
+        {
+            npcLocation = Character.StardewNpc.currentLocation;
+            playerLocation = Game1.player.currentLocation;
+        }
+
+        if (CanObserveGreenhouse(includeFarmDetails, npcLocation, playerLocation))
+        {
+            // 现场权限成立：只注入当前温室观察，不调用 BuildFarmSummary；
+            // 无需同住身份成立，也不使用室外缓存。
+            gameConstantPrompt.AppendLine(
+                FarmStateScanner.BuildObservedGreenhouseSummary(IsChineseLanguage, npcLocation));
+        }
+        else if (ShouldIncludeFarmSummary(includeFarmDetails, isHouseholdMember))
         {
             string farmSummary = FarmStateScanner.BuildFarmSummary(IsChineseLanguage, includeGreenhouseInterior: false);
             if (!string.IsNullOrEmpty(farmSummary))
@@ -367,6 +385,23 @@ public class Prompts
                 StardewModdingAPI.LogLevel.Debug);
         }
         return gameConstantPrompt.ToString();
+    }
+
+    /// <summary>
+    /// VT-FARM-OBSERVE-05: 温室现场观察权限。仅当路由允许、NPC 地点非 null、
+    /// 与当前玩家同处同一地点实例且该地点为温室时成立；房间标记使用原生
+    /// GameLocation.IsGreenhouse，不按地点名称推断。null 地点视为无法确认现场，
+    /// 不授予权限。纯判定，不携带状态。
+    /// </summary>
+    internal static bool CanObserveGreenhouse(
+        bool includeFarmDetails,
+        GameLocation npcLocation,
+        GameLocation playerLocation)
+    {
+        return includeFarmDetails
+            && npcLocation != null
+            && ReferenceEquals(npcLocation, playerLocation)
+            && npcLocation.IsGreenhouse;
     }
 
     /// <summary>

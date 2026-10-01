@@ -388,6 +388,41 @@ internal static class FarmStateScanner
         return sb.ToString();
     }
 
+    /// <summary>
+    /// VT-FARM-OBSERVE-05: 温室现场观察摘要。调用方权限判定保证传入地点非 null、
+    /// IsGreenhouse 为 true 且 NPC 与当前玩家同处该实例；本入口只对传入地点扫描
+    /// 作物与果树各一次，不访问 getFarm、主玩家邮件或其他地点，不读写全农场
+    /// 七个缓存字段。输出沿用 farm_state 外层标签并带 CURRENT_OBSERVATION 来源标记。
+    /// </summary>
+    internal static string BuildObservedGreenhouseSummary(bool isZh, GameLocation greenhouseLocation)
+    {
+        var crops = ScanCropsInLocation(greenhouseLocation);
+        var fruitTrees = ScanFruitTreesInLocation(greenhouseLocation);
+
+        var sb = new StringBuilder();
+        sb.AppendLine(isZh ? "### [温室现场观察]" : "### [GREENHOUSE OBSERVATION]");
+        sb.AppendLine("<farm_state>");
+        sb.AppendLine(isZh
+            ? "- CURRENT_OBSERVATION: 以下内容仅为当前所在房间（温室）种植概况的现场观察；话题无关时不必提及，也不要据此推断农场室外或其他建筑内部的状态。"
+            : "- CURRENT_OBSERVATION: The following is an on-site observation of the current room (the greenhouse) only. Skip it when off-topic; do not infer outdoor farm conditions or the interiors of other buildings from it.");
+
+        bool hasNoCrops = crops.readyCount == 0 && crops.growingCount == 0 && crops.deadCount == 0;
+        bool hasNoFruitTrees = fruitTrees.producingCount == 0 && fruitTrees.growingCount == 0 && fruitTrees.restingCount == 0;
+        if (hasNoCrops && hasNoFruitTrees)
+        {
+            sb.AppendLine(isZh ? "温室内目前没有作物或果树。"
+                               : "The greenhouse currently contains no crops or fruit trees.");
+        }
+        else
+        {
+            // 现场身在温室内，扫描事实即可见；传入可访问状态，不增加修复状态行
+            sb.Append(BuildGreenhouseSection(isZh, isUnlocked: true, isLocationAvailable: true, crops, fruitTrees));
+        }
+
+        sb.AppendLine("</farm_state>");
+        return sb.ToString();
+    }
+
     private static string GetCropQuantityFuzzy(int count, bool isZh)
     {
         if (isZh)
