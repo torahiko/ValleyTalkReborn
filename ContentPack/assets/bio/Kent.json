@@ -48,7 +48,7 @@
     "4": "shocked",
     "5": "tired"
   },
-  "Unique": "angry",
+  "Unique": "",
   "ProgressStates": [
     {
       "RequiredHearts": 7,
