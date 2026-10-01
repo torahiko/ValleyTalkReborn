@@ -844,16 +844,28 @@ namespace ValleytalkReborn.UI
 
             if (_state == StreamingDialogueState.Typing && !_isFastForwardActive)
             {
-                _typeTimerMs -= elapsed;
-                while (_typeTimerMs <= 0 && _characterIndex < _displayedPageText.Length)
+                if (_characterIndex < _displayedPageText.Length)
                 {
-                    _typeTimerMs += ComputeDelayMs(_displayedPageText, _characterIndex + 1);
-                    _characterIndex++;
+                    _typeTimerMs -= elapsed;
+                    while (_typeTimerMs <= 0 && _characterIndex < _displayedPageText.Length)
+                    {
+                        _characterIndex++;
+                        _typeTimerMs += ComputeDelayMs(_displayedPageText, _characterIndex);
 
-                    if (Game1.options.dialogueTyping
-                        && _characterIndex > 1
-                        && _characterIndex < _displayedPageText.Length)
-                        Game1.playSound("dialogueCharacter");
+                        if (Game1.options.dialogueTyping)
+                        {
+                            if (!_isStreamComplete || _characterIndex < _displayedPageText.Length)
+                            {
+                                Game1.playSound("dialogueCharacter");
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // 字符已全部打完，正在等待网络流后续 chunk 到达：
+                    // 计时器归零，严禁累积负时间，防止下一 chunk 到达时瞬间倾泻多个字符（一顿一顿）。
+                    _typeTimerMs = 0;
                 }
             }
 

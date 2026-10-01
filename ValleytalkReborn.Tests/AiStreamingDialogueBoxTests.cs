@@ -1485,6 +1485,35 @@ public class AiStreamingDialogueBoxTests : IDisposable
         Assert.Equal("$u", box.characterDialogue.CurrentEmotion);
     }
 
+    [Fact]
+    public void Update_StreamingBufferStarvation_DoesNotDumpMultipleCharsInSingleFrame()
+    {
+        // 验证打字机缓冲饥饿防一顿一顿倾泻：
+        // 当打字机追平当前流式文本末尾后，计时器必须归零，严禁累积负时间。
+        // 后续 chunk ("CD") 到达后，首帧（16ms）绝不得将 2 个字符瞬间倾泻完毕。
+        AiStreamingDialogueBox box = NewBox();
+
+        box.AppendContent("AB", false);
+        // 推进直至 "AB" 两个字符全部揭示（35ms * 2 = 70ms）
+        for (int i = 0; i < 6; i++)
+            UpdateBox(box, 16);
+
+        Assert.Equal(2, box.CharacterIndex);
+
+        // 模拟网络延迟：空等 10 帧（160ms），打字机已处于饥饿态
+        for (int i = 0; i < 10; i++)
+            UpdateBox(box, 16);
+
+        Assert.Equal(2, box.CharacterIndex);
+
+        // 新 chunk 到达（2 个字符）
+        box.AppendContent("CD", false);
+
+        // 单帧（16ms）推进：16ms < 35ms，绝不得直接揭示到末尾 4！
+        UpdateBox(box, 16);
+        Assert.True(box.CharacterIndex < 4, $"首帧不应瞬间揭示全部字符，当前 index: {box.CharacterIndex}");
+    }
+
     #endregion
 }
 
