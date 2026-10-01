@@ -16,17 +16,29 @@ namespace ValleytalkReborn.Movement
         public int EndTime;
     }
 
+    /// <summary>
+    /// 跟随开始时捕获的锚点（地图、地块、朝向）。值类型，随回调值传递，
+    /// 用于跟随结束后 NPC 离场时走回/传回出发点。
+    /// </summary>
+    internal struct FollowAnchorSnapshot
+    {
+        public string MapName;
+        public Vector2 Tile;
+        public int FacingDirection;
+    }
+
     internal sealed class FollowMovementTracker
     {
         private readonly GotoMovementTracker _gotoTracker;
         private readonly Action<NPC> _clearNpcMovement;
         private readonly Random _rng;
-        private readonly Action<NPC> _onFollowStopped;
+        private readonly Action<NPC, FollowAnchorSnapshot> _onFollowStopped;
 
         // ─── Follow core state ───
         private NPC _followingNpc;
         private int _followEndTime;
         private bool _isDateFollow;
+        private FollowAnchorSnapshot _anchorSnapshot;
 
         internal const int NightForcedUnbindTime = 2200;
 
@@ -135,7 +147,7 @@ namespace ValleytalkReborn.Movement
             GotoMovementTracker gotoTracker,
             Action<NPC> clearNpcMovement,
             Random sharedRng,
-            Action<NPC> onFollowStopped)
+            Action<NPC, FollowAnchorSnapshot> onFollowStopped)
         {
             _gotoTracker       = gotoTracker;
             _clearNpcMovement  = clearNpcMovement;
@@ -162,10 +174,18 @@ namespace ValleytalkReborn.Movement
             _followEndTime = endTime;
             _isDateFollow  = false;
 
+            _anchorSnapshot = new FollowAnchorSnapshot
+            {
+                MapName         = npc.currentLocation?.Name ?? "",
+                Tile            = npc.Tile,
+                FacingDirection = npc.FacingDirection
+            };
+
             TransitionTo(FollowState.Halted);
 
             ModEntry.SMonitor?.Log(
-                $"[FollowMovementTracker] Regular follow started: {npc.Name}, endTime={endTime}.",
+                $"[FollowMovementTracker] Regular follow started: {npc.Name}, endTime={endTime}, " +
+                $"anchor='{_anchorSnapshot.MapName}'({_anchorSnapshot.Tile.X},{_anchorSnapshot.Tile.Y}).",
                 LogLevel.Debug);
         }
 
@@ -192,11 +212,19 @@ namespace ValleytalkReborn.Movement
             _followEndTime = endTime;
             _isDateFollow  = true;
 
+            _anchorSnapshot = new FollowAnchorSnapshot
+            {
+                MapName         = npc.currentLocation?.Name ?? "",
+                Tile            = npc.Tile,
+                FacingDirection = npc.FacingDirection
+            };
+
             TransitionTo(FollowState.Halted);
             OnFollowStartedCallback?.Invoke(npc);
 
             ModEntry.SMonitor?.Log(
-                $"[FollowMovementTracker] Date follow started: {npc.Name}, endTime={endTime}.",
+                $"[FollowMovementTracker] Date follow started: {npc.Name}, endTime={endTime}, " +
+                $"anchor='{_anchorSnapshot.MapName}'({_anchorSnapshot.Tile.X},{_anchorSnapshot.Tile.Y}).",
                 LogLevel.Debug);
         }
 
@@ -208,16 +236,17 @@ namespace ValleytalkReborn.Movement
 
                 if (!silent)
                 {
-                    if (!_isDateFollow && !suppressScheduleRestore)
+                if (!_isDateFollow && !suppressScheduleRestore)
+                {
+                    // Capture npc/anchor before nulling _followingNpc; delay 30 frames
+                    // to match original StopFollowInternal semantics (MMR-05b Gate 0 fix)
+                    var departingNpc = _followingNpc;
+                    var anchor       = _anchorSnapshot;
+                    try
                     {
-                        // Capture npc before nulling _followingNpc; delay 30 frames
-                        // to match original StopFollowInternal semantics (MMR-05b Gate 0 fix)
-                        var departingNpc = _followingNpc;
-                        try
-                        {
-                            StardewValley.DelayedAction.functionAfterDelay(
-                                () => _onFollowStopped?.Invoke(departingNpc), 30);
-                        }
+                        StardewValley.DelayedAction.functionAfterDelay(
+                            () => _onFollowStopped?.Invoke(departingNpc, anchor), 30);
+                    }
                         catch (Exception ex)
                         {
                             ModEntry.SMonitor?.Log(

@@ -280,13 +280,13 @@ namespace ValleytalkReborn
 
         /// <summary>
         /// 获取配偶归宿地点与落脚点坐标（支持 SweetRooms 多配偶房间）。
+        /// 无 SweetRooms 时优先 npc.DefaultMap 的农场门 warp，其次 npc.DefaultPosition；
+        /// 最终保底为 FarmHouse 正门内侧 warp（不再使用 (8, 9) 魔数）。
         /// </summary>
         public (string MapName, Vector2 Tile) GetHomeDestination(NPC npc)
         {
-            if (npc == null) return ("FarmHouse", new Vector2(8, 9));
-
             // 1. SweetRooms API
-            if (_sweetRoomsApi != null)
+            if (npc != null && _sweetRoomsApi != null)
             {
                 try
                 {
@@ -300,7 +300,7 @@ namespace ValleytalkReborn
             }
 
             // 2. npc.DefaultMap
-            if (!string.IsNullOrWhiteSpace(npc.DefaultMap))
+            if (npc != null && !string.IsNullOrWhiteSpace(npc.DefaultMap))
             {
                 var homeLoc = Game1.getLocationFromName(npc.DefaultMap);
                 if (homeLoc != null)
@@ -310,20 +310,32 @@ namespace ValleytalkReborn
                     if (warpToFarm != null)
                         return (npc.DefaultMap, new Vector2(warpToFarm.X, warpToFarm.Y));
 
-                    return (npc.DefaultMap, new Vector2(8, 9));
+                    var defaultTile = new Vector2(npc.DefaultPosition.X / 64f, npc.DefaultPosition.Y / 64f);
+                    if (defaultTile.X < 0f || defaultTile.Y < 0f)
+                    {
+                        // BUG 类：外部 Mod 篡改 DefaultPosition，负坐标立即中止，转入农舍正门保底。
+                        ModEntry.SMonitor?.Log(
+                            $"[SpouseQuery] {npc.Name} DefaultPosition corrupted: ({npc.DefaultPosition.X},{npc.DefaultPosition.Y}) " +
+                            $"→ negative tile ({defaultTile.X},{defaultTile.Y}), aborting to FarmHouse entry.",
+                            LogLevel.Error);
+                    }
+                    else
+                    {
+                        return (npc.DefaultMap, defaultTile);
+                    }
                 }
             }
 
-            // 3. 原版农舍正门保底
-            try
-            {
-                var entry = Game1.getFarm().GetMainFarmHouseEntry();
-                return ("FarmHouse", new Vector2(entry.X, entry.Y));
-            }
-            catch
-            {
-                return ("FarmHouse", new Vector2(8, 9));
-            }
+            // 3. 原版农舍正门保底（npc 为空、DefaultMap 不可用或坐标异常时）
+            var farmhouseWarp = Game1.getLocationFromName("FarmHouse")?.warps?.FirstOrDefault(w =>
+                w != null && string.Equals(w.TargetName, "Farm", StringComparison.OrdinalIgnoreCase));
+            if (farmhouseWarp != null)
+                return ("FarmHouse", new Vector2(farmhouseWarp.X, farmhouseWarp.Y));
+
+            ModEntry.SMonitor?.Log(
+                "[SpouseQuery] FarmHouse front-door warp not found, returning origin tile.",
+                LogLevel.Warn);
+            return ("FarmHouse", Vector2.Zero);
         }
     }
 }

@@ -35,7 +35,7 @@ namespace ValleytalkReborn.Movement
 
             FollowTracker = new FollowMovementTracker(
                 GotoTracker, ClearNpcMovement, Rng,
-                npc => ScheduleRestorer.BeginSmoothDeparture(npc));
+                (npc, anchor) => ScheduleRestorer.BeginSmoothDeparture(npc, anchor));
 
             WireGotoTrackerCallbacks();
         }

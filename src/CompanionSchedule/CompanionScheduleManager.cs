@@ -58,6 +58,12 @@ namespace ValleytalkReborn
         public List<ScheduledPoiEntry> Queue                { get; } = new();
         public bool                    Dispatched           { get; set; } = false;
         public bool                    IsStayHome           { get; set; } = false;
+        /// <summary>
+        /// 跟随开始时该配偶是否处于居家游荡状态（IsStayHome 的生命周期快照）。
+        /// ClearScheduleForOverride 只置 true 不清 false；由 DispatchAllSchedules /
+        /// ResetAllStates / ResumeScheduleAfterFollow 重置。
+        /// </summary>
+        public bool                    PreFollowStayHome    { get; set; } = false;
         public bool                    IsReturningHome      { get; set; } = false;
         public bool                    WaitingForPlayerToLeave { get; set; } = false;
         /// <summary>明确区分"等待出发"和"等待回家"。</summary>
@@ -479,6 +485,8 @@ namespace ValleytalkReborn
                 var state = GetOrCreateState(npc);
                 if (state.Dispatched) continue;
 
+                state.PreFollowStayHome = false;
+
                 if (stayHomeNames.Contains(npc.Name))
                 {
                     state.Dispatched           = true;
@@ -812,6 +820,7 @@ namespace ValleytalkReborn
                 // 重置出门标志，防止跨日残留导致 TickWander 误判
                 s.IsDepartingToFarm = false;
                 s.HasDepartedToFarm = false;
+                s.PreFollowStayHome = false;
             }
             _states.Clear();
         }
@@ -844,6 +853,9 @@ namespace ValleytalkReborn
             {
                 foreach (var state in _states.Values)
                 {
+                    if (state.IsStayHome)
+                        state.PreFollowStayHome = true;
+
                     lock (state.Queue) { state.Queue.Clear(); }
                     state.IsReturningHome         = false;
                     state.WaitingForPlayerToLeave = false;
@@ -858,6 +870,9 @@ namespace ValleytalkReborn
             }
 
             if (!_states.TryGetValue(npcName, out var s)) return;
+
+            if (s.IsStayHome)
+                s.PreFollowStayHome = true;
 
             lock (s.Queue) { s.Queue.Clear(); }
             s.IsReturningHome         = false;
@@ -1034,10 +1049,24 @@ namespace ValleytalkReborn
         // ──────────────────────────────────────────────────────
         //  跟随结束后恢复日程
         // ──────────────────────────────────────────────────────
-        public void ResumeScheduleAfterFollow(NPC npc)
+        public void ResumeScheduleAfterFollow(NPC npc, bool restoreStayHome)
         {
             if (npc == null) return;
             if (!_states.TryGetValue(npc.Name, out var state)) return;
+
+            if (restoreStayHome)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[CSM] {npc.Name} follow ended — restoring stay-home wandering.", LogLevel.Info);
+
+                state.IsStayHome              = true;
+                state.PreFollowStayHome       = false;
+                state.IsReturningHome         = false;
+                state.WaitingForPlayerToLeave = false;
+                state.WanderCooldownTicks     = 120;
+                TransitionScheduleContext(state, ScheduleContextPhase.AllDayStayHome);
+                return;
+            }
 
             if (Game1.timeOfDay < 1800)
             {
@@ -1098,6 +1127,15 @@ namespace ValleytalkReborn
         {
             if (string.IsNullOrWhiteSpace(npcName)) return false;
             return _states.TryGetValue(npcName, out var s) && s.Dispatched;
+        }
+
+        /// <summary>
+        /// 该配偶是否在跟随开始前处于居家游荡状态（跟随生命周期内的快照标志）。
+        /// </summary>
+        public bool IsPreFollowStayHome(string npcName)
+        {
+            if (string.IsNullOrWhiteSpace(npcName)) return false;
+            return _states.TryGetValue(npcName, out var s) && s.PreFollowStayHome;
         }
 
         public bool IsStayHomeActive(string npcName = null)
