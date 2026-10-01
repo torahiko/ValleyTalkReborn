@@ -51,13 +51,13 @@
     "Raw egg protein"
   ],
   "ExtraPortraits": {
-    "l": "in love (恋爱脸红)",
-    "a": "angry (生气愤怒)",
-    "7": "shocked (惊呆错愕)",
-    "6": "topless (脱去上衣/健身擦汗)",
-    "8": "topless and sad (脱去上衣且失落)"
+    "l": "in love",
+    "a": "angry",
+    "7": "shocked",
+    "6": "topless",
+    "8": "topless and sad"
   },
-  "Unique": "holding a football (手持格球/招牌运动姿势)",
+  "Unique": "holding a football",
   "ProgressStates": [
     {
       "RequireMarried": true,

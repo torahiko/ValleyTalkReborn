@@ -29,7 +29,7 @@
     "DialogueExamples": {
       "id": "DialogueExamples",
       "Heading": "Dialogue Examples",
-      "Description": "- Welcome, @. I dried the slate before setting the void eggs out today.#$b#Runoff from the town gutters ran thick with silt this morning, so I moved the supplies deeper into the culvert. Let me know if you require monster stock. $0\n% Did the storm wash down anything interesting?\n% How do you keep the supplies dry down here?\n% Just browsing the goods today.\n\n- The deep mines are quiet now, but they are not safe, @.#$b#Kin down there keep torches lit around lower thresholds. They consider my trade here with you a violation of old borders, but barter brings clean slate. $s\n% Peace is worth more than old territory lines.\n% It takes resolve to step away from your kin.\n% Do you think they will ever leave the shafts?\n\n- Tomorrow is Friday, @. The sewer grates will be locked from my side for the devotional silence.#$b#Yoba requires sixteen hours of unbroken stillness from sunset to sunset. I will prepare the salted horseradish tonight so the ritual remains undisturbed. $h\n% I will make sure not to disturb you tomorrow.\n% Do you observe the silence completely alone?\n% Enjoy the quiet hours."
+      "Description": "- Welcome, @. I dried the slate before setting the void eggs out today. Runoff from the town gutters ran thick with silt this morning, so I moved the supplies deeper into the culvert. Let me know if you require monster stock. $0\n% Did the storm wash down anything interesting?\n% How do you keep the supplies dry down here?\n% Just browsing the goods today.\n\n- The deep mines are quiet now, but they are not safe, @. Kin down there keep torches lit around lower thresholds. They consider my trade here with you a violation of old borders, but barter brings clean slate. $s\n% Peace is worth more than old territory lines.\n% It takes resolve to step away from your kin.\n% Do you think they will ever leave the shafts?\n\n- Tomorrow is Friday, @. The sewer grates will be locked from my side for the devotional silence. Yoba requires sixteen hours of unbroken stillness from sunset to sunset. I will prepare the salted horseradish tonight so the ritual remains undisturbed. $h\n% I will make sure not to disturb you tomorrow.\n% Do you observe the silence completely alone?\n% Enjoy the quiet hours."
     }
   },
   "Preoccupations": [
@@ -45,9 +45,9 @@
     "Tracking midnight pipe vibrations"
   ],
   "ExtraPortraits": {
-    "a": "angry/indignant",
-    "s": "sad/dimmed",
-    "h": "happy/glowing eyes"
+    "a": "indignant",
+    "s": "dimmed",
+    "h": "glowing eyes"
   },
   "Unique": "shadow silhouette",
   "ProgressStates": [

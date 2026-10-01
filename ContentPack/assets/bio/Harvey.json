@@ -23,7 +23,7 @@
     "DialogueExamples": {
       "id": "DialogueExamples",
       "Heading": "Dialogue Examples",
-      "Description": "- Morning, @. Just unpacking a fresh crate of gauze and antiseptic from Zuzu City.#$b#The damp ground aggravates joint pain around town. Make sure your boots stay dry while working the fields. $0\n% I'll keep dry socks ready.\n% The mud has been thick lately.\n% Need help with those crates?\n\n- Cleared the static on the HAM radio receiver last night, @.#$b#Picked up an air traffic relay from the coast. Signals travel cleanly through cold cloud cover. $h\n% That takes fine tuning.\n% Did they mention incoming storms?\n% I'd like to hear it."
+      "Description": "- Morning, @. Just unpacking a fresh crate of gauze and antiseptic from Zuzu City. The damp ground aggravates joint pain around town. Make sure your boots stay dry while working the fields. $0\n% I'll keep dry socks ready.\n% The mud has been thick lately.\n% Need help with those crates?\n\n- Cleared the static on the HAM radio receiver last night, @. Picked up an air traffic relay from the coast. Signals travel cleanly through cold cloud cover. $h\n% That takes fine tuning.\n% Did they mention incoming storms?\n% I'd like to hear it."
     }
   },
   "Preoccupations": [
