@@ -11,6 +11,8 @@ namespace ValleytalkReborn
     /// <summary>
     /// 统一配偶查询单例服务。
     /// 三级降级策略：SMAPI API → PolyamorySweetLove 反射 → 原版 friendshipData / spouse 字段。
+    /// 跨 Mod 边界（BOUNDARY）的 API 与反射调用一旦抛出异常，立即记录 Warn 并熔断
+    /// （置空引用 / 关闭反射），后续查询确定性走下一级降级，避免主循环内反复跨边界与日志刷屏。
     /// </summary>
     public sealed class SpouseQueryService
     {
@@ -65,9 +67,9 @@ namespace ValleytalkReborn
             // 1. 解析多配偶恋爱关系 API
             foreach (var modId in PolyamoryModIds)
             {
-                if (!_helper.ModRegistry.IsLoaded(modId)) continue;
                 try
                 {
+                    if (!_helper.ModRegistry.IsLoaded(modId)) continue;
                     _psApi ??= _helper.ModRegistry.GetApi<IPolyamorySweetApi>(modId);
                     if (_psApi != null)
                     {
@@ -75,15 +77,19 @@ namespace ValleytalkReborn
                         break;
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    // BOUNDARY：第三方 Mod 的 Pintail 代理失配等，记录后继续尝试下一个候选 ID。
+                    ModEntry.SMonitor?.Log($"[SpouseQuery] Failed to resolve IPolyamorySweetApi from '{modId}': {ex.Message}", LogLevel.Warn);
+                }
             }
 
             // 2. 独立解析配偶房间 API
             foreach (var modId in SweetRoomsModIds)
             {
-                if (!_helper.ModRegistry.IsLoaded(modId)) continue;
                 try
                 {
+                    if (!_helper.ModRegistry.IsLoaded(modId)) continue;
                     _sweetRoomsApi ??= _helper.ModRegistry.GetApi<ISweetRoomsAPI>(modId);
                     if (_sweetRoomsApi != null)
                     {
@@ -91,7 +97,11 @@ namespace ValleytalkReborn
                         break;
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    // BOUNDARY：同上，继续尝试下一个候选 ID。
+                    ModEntry.SMonitor?.Log($"[SpouseQuery] Failed to resolve ISweetRoomsAPI from '{modId}': {ex.Message}", LogLevel.Warn);
+                }
             }
 
             // 二次兜底：Entry 阶段第三方程序集可能尚未加载到 AppDomain，
@@ -124,7 +134,75 @@ namespace ValleytalkReborn
             }
             catch (Exception ex)
             {
-                ModEntry.SMonitor?.Log($"[SpouseQuery] Reflection initialization exception: {ex.Message}", LogLevel.Debug);
+                // BOUNDARY：第三方程序集结构变更导致反射探测失败；保持原版降级可用。
+                ModEntry.SMonitor?.Log($"[SpouseQuery] Failed to initialize PolyamorySweetLove reflection fallback: {ex.Message}", LogLevel.Warn);
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        //  边界安全探测器（BOUNDARY probes）
+        // ══════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// 经 SMAPI API 读取配偶字典。API 抛错时记录 Warn 并熔断（置空 _psApi），
+        /// 后续调用确定性返回 false，不再跨边界。
+        /// </summary>
+        internal bool TryGetSpousesFromApi(Farmer player, bool all, out Dictionary<string, NPC> spouses)
+        {
+            if (_psApi == null || player == null)
+            {
+                spouses = null;
+                return false;
+            }
+
+            try
+            {
+                spouses = _psApi.GetSpouses(player, all: all);
+                return spouses != null;
+            }
+            catch (Exception ex)
+            {
+                // BOUNDARY：API 实例与 Mod 当前内部状态失配，熔断后走反射 / 原版降级。
+                ModEntry.SMonitor?.Log(
+                    $"[SpouseQuery] PolyamorySweet API GetSpouses(all={all}) threw {ex.GetType().Name}: {ex.Message}. Disabling API integration.",
+                    LogLevel.Warn);
+                _psApi = null;
+                spouses = null;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 经反射字段读取配偶字典。读取抛错时记录 Warn 并熔断（关闭 _reflectionAvailable），
+        /// 后续调用确定性返回 false，不再跨边界。
+        /// </summary>
+        internal bool TryGetSpousesFromReflection(FieldInfo field, Farmer player, out Dictionary<string, NPC> spouses)
+        {
+            if (!_reflectionAvailable || field == null || player == null)
+            {
+                spouses = null;
+                return false;
+            }
+
+            try
+            {
+                if (field.GetValue(null) is Dictionary<long, Dictionary<string, NPC>> dict
+                    && dict.TryGetValue(player.UniqueMultiplayerID, out spouses))
+                {
+                    return true;
+                }
+                spouses = null;
+                return false;
+            }
+            catch (Exception ex)
+            {
+                // BOUNDARY：第三方字段结构变更或线程态异常，熔断后走原版降级。
+                ModEntry.SMonitor?.Log(
+                    $"[SpouseQuery] Failed to read reflection field '{field.Name}': {ex.Message}. Disabling reflection fallback.",
+                    LogLevel.Warn);
+                _reflectionAvailable = false;
+                spouses = null;
+                return false;
             }
         }
 
@@ -142,18 +220,14 @@ namespace ValleytalkReborn
             player ??= Game1.player;
             if (player == null) return false;
 
-            // 1. SMAPI API
-            if (_psApi != null)
+            // 1. SMAPI API（all: true 覆盖官方与非官方配偶）
+            if (TryGetSpousesFromApi(player, all: true, out var spouses)
+                && spouses?.ContainsKey(npcName) == true)
             {
-                try
-                {
-                    var spouses = _psApi.GetSpouses(player, all: true);
-                    if (spouses?.ContainsKey(npcName) == true) return true;
-                }
-                catch { }
+                return true;
             }
 
-            // 2. 反射判定
+            // 2. 反射判定（经 IsOfficial / IsUnofficial 的安全探测器）
             var npc = Game1.getCharacterFromName(npcName);
             if (npc != null && (IsOfficialSpouse(npc, player) || IsUnofficialSpouse(npc, player)))
                 return true;
@@ -176,17 +250,21 @@ namespace ValleytalkReborn
             player ??= Game1.player;
             if (player == null) return false;
 
-            if (_reflectionAvailable && _currentSpousesField != null)
+            // 1. SMAPI API（all: false 即官方配偶语义）
+            if (TryGetSpousesFromApi(player, all: false, out var spouses)
+                && spouses?.ContainsKey(npc.Name) == true)
             {
-                try
-                {
-                    if (_currentSpousesField.GetValue(null) is Dictionary<long, Dictionary<string, NPC>> dict)
-                        if (dict.TryGetValue(player.UniqueMultiplayerID, out var spouses))
-                            return spouses.ContainsKey(npc.Name);
-                }
-                catch { }
+                return true;
             }
 
+            // 2. 反射
+            if (TryGetSpousesFromReflection(_currentSpousesField, player, out var refSpouses)
+                && refSpouses?.ContainsKey(npc.Name) == true)
+            {
+                return true;
+            }
+
+            // 3. 原版
             if (string.Equals(player.spouse, npc.Name, StringComparison.OrdinalIgnoreCase))
                 return true;
 
@@ -202,16 +280,22 @@ namespace ValleytalkReborn
             player ??= Game1.player;
             if (player == null) return false;
 
-            if (_reflectionAvailable && _unofficialSpousesField != null)
+            // 1. SMAPI API：在全部配偶中但不在官方配偶中即为非官方。
+            if (TryGetSpousesFromApi(player, all: true, out var allSpouses)
+                && allSpouses?.ContainsKey(npc.Name) == true
+                && !(TryGetSpousesFromApi(player, all: false, out var official)
+                     && official != null && official.ContainsKey(npc.Name)))
             {
-                try
-                {
-                    if (_unofficialSpousesField.GetValue(null) is Dictionary<long, Dictionary<string, NPC>> dict)
-                        if (dict.TryGetValue(player.UniqueMultiplayerID, out var spouses))
-                            return spouses.ContainsKey(npc.Name);
-                }
-                catch { }
+                return true;
             }
+
+            // 2. 反射
+            if (TryGetSpousesFromReflection(_unofficialSpousesField, player, out var refSpouses)
+                && refSpouses?.ContainsKey(npc.Name) == true)
+            {
+                return true;
+            }
+
             return false;
         }
 
@@ -226,31 +310,26 @@ namespace ValleytalkReborn
             var results = new Dictionary<string, NPC>(StringComparer.OrdinalIgnoreCase);
 
             // 1. SMAPI API
-            if (_psApi != null)
+            if (TryGetSpousesFromApi(player, all: true, out var apiSpouses) && apiSpouses != null)
             {
-                try
-                {
-                    var spouses = _psApi.GetSpouses(player, all: true);
-                    if (spouses != null)
-                        foreach (var kv in spouses)
-                            if (kv.Value != null) results.TryAdd(kv.Key, kv.Value);
-                }
-                catch { }
+                foreach (var kv in apiSpouses)
+                    if (kv.Value != null) results.TryAdd(kv.Key, kv.Value);
             }
 
-            // 2. 反射获取
-            if (results.Count == 0 && _reflectionAvailable && _currentSpousesField != null)
+            // 2. 反射获取（官方与非官方字段都读取）
+            if (results.Count == 0 && _reflectionAvailable)
             {
-                try
+                if (TryGetSpousesFromReflection(_currentSpousesField, player, out var currentSpouses) && currentSpouses != null)
                 {
-                    if (_currentSpousesField.GetValue(null) is Dictionary<long, Dictionary<string, NPC>> dict)
-                    {
-                        if (dict.TryGetValue(player.UniqueMultiplayerID, out var spouses))
-                            foreach (var kv in spouses)
-                                if (kv.Value != null) results.TryAdd(kv.Key, kv.Value);
-                    }
+                    foreach (var kv in currentSpouses)
+                        if (kv.Value != null) results.TryAdd(kv.Key, kv.Value);
                 }
-                catch { }
+
+                if (TryGetSpousesFromReflection(_unofficialSpousesField, player, out var unofficialSpouses) && unofficialSpouses != null)
+                {
+                    foreach (var kv in unofficialSpouses)
+                        if (kv.Value != null) results.TryAdd(kv.Key, kv.Value);
+                }
             }
 
             // 3. 原版降级
@@ -295,7 +374,11 @@ namespace ValleytalkReborn
                 }
                 catch (Exception ex)
                 {
-                    ModEntry.SMonitor?.Log($"[SpouseQuery] SweetRooms API 异常: {ex.Message}", LogLevel.Warn);
+                    // BOUNDARY：SweetRooms 内部状态异常，熔断后走 DefaultMap/FarmHouse 确定性降级。
+                    ModEntry.SMonitor?.Log(
+                        $"[SpouseQuery] SweetRooms API threw {ex.GetType().Name}: {ex.Message}. Disabling SweetRooms API.",
+                        LogLevel.Warn);
+                    _sweetRoomsApi = null;
                 }
             }
 
@@ -336,6 +419,37 @@ namespace ValleytalkReborn
                 "[SpouseQuery] FarmHouse front-door warp not found, returning origin tile.",
                 LogLevel.Warn);
             return ("FarmHouse", Vector2.Zero);
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        //  测试缝（仅测试环境使用；生产路径禁止调用）
+        // ══════════════════════════════════════════════════════════════
+
+        /// <summary>清空全部状态，用于单元测试隔离（无真实游戏环境）。</summary>
+        internal void ResetForTesting()
+        {
+            _helper = null;
+            _psApi = null;
+            _sweetRoomsApi = null;
+            _apiResolveAttempted = false;
+            _reflectionAvailable = false;
+            _currentSpousesField = null;
+            _unofficialSpousesField = null;
+        }
+
+        /// <summary>注入桩 API 实例，跳过 ModRegistry 解析。</summary>
+        internal void InjectApisForTesting(IPolyamorySweetApi psApi, ISweetRoomsAPI sweetRoomsApi = null)
+        {
+            _psApi = psApi;
+            _sweetRoomsApi = sweetRoomsApi;
+        }
+
+        /// <summary>注入桩反射字段并启用反射降级（任一字段非空即启用）。</summary>
+        internal void InjectReflectionForTesting(FieldInfo currentSpousesField, FieldInfo unofficialSpousesField)
+        {
+            _currentSpousesField = currentSpousesField;
+            _unofficialSpousesField = unofficialSpousesField;
+            _reflectionAvailable = currentSpousesField != null || unofficialSpousesField != null;
         }
     }
 }
