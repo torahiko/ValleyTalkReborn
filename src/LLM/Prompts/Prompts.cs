@@ -1112,20 +1112,31 @@ public class Prompts
         internal static string BuildSpouse(Character character, string name)
         {
             var prompt = new StringBuilder();
+            bool isZh = ResolveIsChinese();
+            // 比较必须用内部名（friendshipData 键恒为英文内部名），渲染必须本地化显示名
+            string currentInternalName = character.Name;
             var spouses = Game1.getPlayerOrEventFarmer().friendshipData.FieldDict
                 .Where(x => x.Value.Value.IsMarried() && !x.Value.Value.IsRoommate())
-                .Select(x => x.Key);
-            bool talkingToSpouse = spouses.Any(x => x == name);
-            spouses = spouses.Where(x => x != name);
-            if (spouses.Any())
+                .Select(x => x.Key)
+                .ToList();
+            bool talkingToSpouse = spouses.Any(x => string.Equals(x, currentInternalName, StringComparison.OrdinalIgnoreCase));
+            var otherSpouseKeys = spouses.Where(x => !string.Equals(x, currentInternalName, StringComparison.OrdinalIgnoreCase)).ToList();
+            var targetSpouseKeys = talkingToSpouse ? otherSpouseKeys : spouses;
+            if (targetSpouseKeys.Any())
             {
-                bool multipleOthers = spouses.Count() > 1;
-                var spouseList = string.Join(", ", spouses);
-                var nSpouses = spouses.Count();
+                bool multipleOthers = targetSpouseKeys.Count > 1;
+                var localizedSpouses = targetSpouseKeys.Select(NpcNameLocalizer.GetLocalizedName).ToList();
+                string separator = isZh ? "、" : ", ";
+                var spouseList = string.Join(separator, localizedSpouses);
+                int nSpouses = targetSpouseKeys.Count;
                 if (talkingToSpouse)
                 {
-                    var otherSpousesList = multipleOthers ? $"{Util.GetString(character, "spousesNOtherPeople", new { nSpouses = nSpouses })} {spouseList}" : spouses.First();
-                    var otherSpousesReference = multipleOthers ? Util.GetString(character, "spousesAllTheOthers") : spouses.First();
+                    var otherSpousesList = multipleOthers
+                        ? $"{Util.GetString(character, "spousesNOtherPeople", new { nSpouses = nSpouses })} {spouseList}"
+                        : localizedSpouses.FirstOrDefault() ?? "";
+                    var otherSpousesReference = multipleOthers
+                        ? Util.GetString(character, "spousesAllTheOthers")
+                        : localizedSpouses.FirstOrDefault() ?? "";
                     prompt.AppendLine(Util.GetString(character, "spousesMarriedToOthers", new { Name = name, otherSpousesList = otherSpousesList, otherSpousesReference = otherSpousesReference }));
                 }
                 else
@@ -1138,14 +1149,22 @@ public class Prompts
             }
             var roommates = Game1.getPlayerOrEventFarmer().friendshipData.FieldDict
                 .Where(x => x.Value.Value.IsMarried() && x.Value.Value.IsRoommate())
-                .Select(x => x.Key);
-            bool talkingToRoommate = roommates.Any(x => x == name);
-            roommates = roommates.Where(x => x != name);
-            if (roommates.Any())
+                .Select(x => x.Key)
+                .ToList();
+            bool talkingToRoommate = roommates.Any(x => string.Equals(x, currentInternalName, StringComparison.OrdinalIgnoreCase));
+            var otherRoommateKeys = roommates.Where(x => !string.Equals(x, currentInternalName, StringComparison.OrdinalIgnoreCase)).ToList();
+            var targetRoommateKeys = talkingToRoommate ? otherRoommateKeys : roommates;
+            if (targetRoommateKeys.Any())
             {
-                bool multipleOthers = roommates.Count() > 1;
-                var roommateList = multipleOthers ? $"{Util.GetString(character, "spousesNOtherPeople", new { nSpouses = roommates.Count() })} {string.Join(", ", roommates)}" : roommates.First();
-                var roommateReference = multipleOthers ? Util.GetString(character, "spouseRoommatesAllTheOthers") : roommates.First();
+                bool multipleOthers = targetRoommateKeys.Count > 1;
+                var localizedRoommates = targetRoommateKeys.Select(NpcNameLocalizer.GetLocalizedName).ToList();
+                string separator = isZh ? "、" : ", ";
+                var roommateList = multipleOthers
+                    ? $"{Util.GetString(character, "spousesNOtherPeople", new { nSpouses = targetRoommateKeys.Count })} {string.Join(separator, localizedRoommates)}"
+                    : localizedRoommates.FirstOrDefault() ?? "";
+                var roommateReference = multipleOthers
+                    ? Util.GetString(character, "spouseRoommatesAllTheOthers")
+                    : localizedRoommates.FirstOrDefault() ?? "";
                 if (talkingToRoommate)
                     prompt.AppendLine(Util.GetString(character, "spouseRoommatesWithOthers", new { Name = name, roommateList = roommateList, roommateReference = roommateReference }));
                 else
@@ -1157,15 +1176,17 @@ public class Prompts
                 }
             }
             var engaged = Game1.getPlayerOrEventFarmer().friendshipData.FieldDict
-                .Where(x => x.Value.Value.IsEngaged());
-            if (engaged.Any(x => x.Key != name))
+                .Where(x => x.Value.Value.IsEngaged())
+                .ToList();
+            var otherEngaged = engaged.Where(x => !string.Equals(x.Key, currentInternalName, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (otherEngaged.Any())
             {
-                var engagedFirst = engaged.First(x => x.Key != name);
-                var engagedTo = Game1.characterData[engagedFirst.Key].DisplayName;
+                var engagedFirst = otherEngaged.First();
+                var engagedTo = NpcNameLocalizer.GetLocalizedName(engagedFirst.Key);
                 var weddingDays = engagedFirst.Value.Value.CountdownToWedding;
                 prompt.AppendLine(Util.GetString(character, "spouseEngaged", new { engagedTo = engagedTo, weddingDays = weddingDays }));
             }
-            var total = spouses.Count() + engaged.Count();
+            var total = targetSpouseKeys.Count + engaged.Count;
             if (total > 1 && !talkingToSpouse && !talkingToRoommate)
                 prompt.AppendLine(Util.GetString(character, "spousePoly", new { Name = name }));
             else if (total >= 1 && (talkingToSpouse || talkingToRoommate))
@@ -1448,10 +1469,11 @@ public class Prompts
             var prompt = new StringBuilder();
             if (ModEntry.Config.EnableDateSystem && flags?.IsJealousy == true && DateManager.Instance != null)
             {
+                var dateNpcDisp = NpcNameLocalizer.GetLocalizedName(DateManager.Instance.ActiveDateNpcName);
                 prompt.AppendLine("<jealousy_trigger>");
                 prompt.AppendLine(isZh
-                    ? $"你注意到农夫今晚已经与 {DateManager.Instance.ActiveDateNpcName} 有约。"
-                    : $"You notice the farmer already has plans with {DateManager.Instance.ActiveDateNpcName} tonight.");
+                    ? $"你注意到农夫今晚已经与 {dateNpcDisp} 有约。"
+                    : $"You notice the farmer already has plans with {dateNpcDisp} tonight.");
                 prompt.AppendLine("</jealousy_trigger>\n");
             }
             return prompt.ToString();
@@ -1708,8 +1730,9 @@ public class Prompts
                 : "[REFERENCE_ONLY] Earlier conversation turns today, provided solely for conversational consistency:");
             foreach (var turn in previousTurns)
             {
-                // VT-CONTEXT-01：玩家历史行使用当前玩家名；NPC 标签不变。
-                string label = turn.IsPlayerLine ? promptPlayerName : character.Name;
+                // VT-CONTEXT-01：玩家历史行使用当前玩家名；NPC 标签与当前会话保持同一本地化显示名。
+                string npcLabel = character.StardewNpc?.displayName ?? NpcNameLocalizer.GetLocalizedName(character.Name);
+                string label = turn.IsPlayerLine ? promptPlayerName : npcLabel;
                 string timePrefix = string.IsNullOrEmpty(turn.FuzzyTime) ? "" : $"[{turn.FuzzyTime}] ";
                 prompt.AppendLine($"- {timePrefix}{label}: {turn.Text}");
             }

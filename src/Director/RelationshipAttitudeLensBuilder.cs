@@ -80,9 +80,7 @@ internal static class RelationshipAttitudeLensBuilder
         if (matchedEntry == null || string.IsNullOrWhiteSpace(matchedEntry.Description))
             return string.Empty;
 
-        string targetDisplayName = isZh
-            ? NpcNameLocalizer.GetZhName(matchedKey)
-            : matchedKey;
+        string targetDisplayName = NpcNameLocalizer.GetLocalizedName(matchedKey);
 
         string description = isZh
             ? NpcNameLocalizer.LocalizeNamesInText(matchedEntry.Description)

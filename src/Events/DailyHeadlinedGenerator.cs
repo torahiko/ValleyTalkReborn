@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
+using ValleytalkReborn.Dialogue.Coordination;
 
 namespace ValleytalkReborn;
 
@@ -336,36 +337,39 @@ internal static class DailyHeadlinedGenerator
         else if (!string.IsNullOrEmpty(_prevSpouse) && string.IsNullOrEmpty(curSpouse) && !curKrobus)
         {
             string ex = _prevSpouse;
+            // 头条文案使用本地化显示名；_prevSpouse 快照与比较仍使用内部名
+            string exDisp = NpcNameLocalizer.GetLocalizedName(ex);
             headline = isZh
                 ? PerceptionManager.PickVariant(new[]
                   {
-                      $"今早消息传遍全镇：{farmer}与{ex}昨日正式办理了离婚，两人已回归普通邻里关系。",
-                      $"鹈鹕镇悄悄传开了——{farmer}和{ex}的婚姻走到了尽头。",
-                      $"据说{farmer}与{ex}昨日正式离婚，镇上的人都没想到会走到这一步。",
+                      $"今早消息传遍全镇：{farmer}与{exDisp}昨日正式办理了离婚，两人已回归普通邻里关系。",
+                      $"鹈鹕镇悄悄传开了——{farmer}和{exDisp}的婚姻走到了尽头。",
+                      $"据说{farmer}与{exDisp}昨日正式离婚，镇上的人都没想到会走到这一步。",
                   })
                 : PerceptionManager.PickVariant(new[]
                   {
-                      $"Word spread through town this morning: {farmer} and {ex} have officially divorced.",
-                      $"Pelican Town is buzzing — {farmer} and {ex}'s marriage has come to an end.",
-                      $"Apparently {farmer} and {ex} finalized their divorce yesterday. Nobody saw it coming.",
+                      $"Word spread through town this morning: {farmer} and {exDisp} have officially divorced.",
+                      $"Pelican Town is buzzing — {farmer} and {exDisp}'s marriage has come to an end.",
+                      $"Apparently {farmer} and {exDisp} finalized their divorce yesterday. Nobody saw it coming.",
                   });
         }
         // ── New marriage ─────────────────────────────────────────
         else if (!string.IsNullOrEmpty(curSpouse) && !curKrobus 
                                                   && !string.Equals(_prevSpouse, curSpouse, StringComparison.OrdinalIgnoreCase))
         {
+            string curSpouseDisp = NpcNameLocalizer.GetLocalizedName(curSpouse);
             headline = isZh
                 ? PerceptionManager.PickVariant(new[]
                   {
-                      $"整个鹈鹕镇都沸腾了！{farmer}与{curSpouse}昨日在小镇广场举行了婚礼，喜气洋洋。",
-                      $"恭喜！{farmer}与{curSpouse}正式完婚，镇上居民纷纷送上了最诚挚的祝福。",
-                      $"大喜讯：{farmer}和{curSpouse}结婚了！据说婚礼现场笑声不断，热闹非凡。",
+                      $"整个鹈鹕镇都沸腾了！{farmer}与{curSpouseDisp}昨日在小镇广场举行了婚礼，喜气洋洋。",
+                      $"恭喜！{farmer}与{curSpouseDisp}正式完婚，镇上居民纷纷送上了最诚挚的祝福。",
+                      $"大喜讯：{farmer}和{curSpouseDisp}结婚了！据说婚礼现场笑声不断，热闹非凡。",
                   })
                 : PerceptionManager.PickVariant(new[]
                   {
-                      $"The whole town is celebrating — {farmer} and {curSpouse} got married yesterday!",
-                      $"Big news: {farmer} and {curSpouse} are officially married. Pelican Town turned out in full.",
-                      $"Everyone's talking about the wedding — {farmer} and {curSpouse} tied the knot. What a day.",
+                      $"The whole town is celebrating — {farmer} and {curSpouseDisp} got married yesterday!",
+                      $"Big news: {farmer} and {curSpouseDisp} are officially married. Pelican Town turned out in full.",
+                      $"Everyone's talking about the wedding — {farmer} and {curSpouseDisp} tied the knot. What a day.",
                   });
         }
         // ── Krobus moves in ──────────────────────────────────────

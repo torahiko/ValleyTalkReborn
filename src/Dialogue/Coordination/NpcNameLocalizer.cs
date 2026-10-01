@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using StardewValley;
+using StardewValley.TokenizableStrings;
 
 namespace ValleytalkReborn.Dialogue.Coordination;
 
@@ -67,31 +68,78 @@ internal static class NpcNameLocalizer
 };
 
     /// <summary>
-    /// 获取 NPC 当前真正生效的中文名字（完美兼容性转 Mod / 自定义更名 Mod）
+    /// 获取 NPC 当前语言环境下的本地化显示名（活跃实体 → 1.6 资产元数据 → 简中字典 → 内部名）。
+    /// </summary>
+    public static string GetLocalizedName(string npcInternalName)
+    {
+        if (string.IsNullOrWhiteSpace(npcInternalName)) return string.Empty;
+
+        bool isZh = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+
+        // 1. 活跃实体层：性转 Mod / 自定义更名 Mod 改名后优先采纳实体 displayName
+        try
+        {
+            var npc = Game1.getCharacterFromName(npcInternalName);
+            if (npc != null && !string.IsNullOrWhiteSpace(npc.displayName))
+            {
+                if (isZh)
+                {
+                    if (!string.Equals(npc.displayName, npcInternalName, StringComparison.OrdinalIgnoreCase))
+                        return npc.displayName;
+                }
+                else
+                {
+                    return npc.displayName;
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // BOUNDARY: 单测或未加载场景 Game1.getCharacterFromName 可能引发内部 NRE，安全进入下一层
+        }
+
+        // 2. 1.6 资产元数据层：经 TokenParser 解析多语言词条
+        try
+        {
+            if (Game1.characterData != null && Game1.characterData.TryGetValue(npcInternalName, out var charData))
+            {
+                if (!string.IsNullOrWhiteSpace(charData?.DisplayName))
+                {
+                    string parsed = TokenParser.ParseText(charData.DisplayName);
+                    if (!string.IsNullOrWhiteSpace(parsed) && !parsed.StartsWith("[LocalizedText", StringComparison.Ordinal))
+                    {
+                        if (isZh)
+                        {
+                            if (!string.Equals(parsed, npcInternalName, StringComparison.OrdinalIgnoreCase))
+                                return parsed;
+                        }
+                        else
+                        {
+                            return parsed;
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // BOUNDARY: 单测或离线环境 TokenParser / Game1.content 未就绪
+        }
+
+        // 3. 简中字典兜底层
+        if (isZh && FallbackZhNames.TryGetValue(npcInternalName, out var fallbackName))
+            return fallbackName;
+
+        // 4. 最终安全兜底
+        return npcInternalName;
+    }
+
+    /// <summary>
+    /// 获取 NPC 当前真正生效的中文名字（兼容别名，走统一 GetLocalizedName 流水线）
     /// </summary>
     public static string GetZhName(string npcInternalName)
     {
-        if (string.IsNullOrWhiteSpace(npcInternalName)) return "";
-
-        // 1. 优先从游戏引擎中获取 NPC 实体
-        var npc = Game1.getCharacterFromName(npcInternalName);
-        if (npc != null)
-        {
-            string currentDisplayName = npc.displayName;
-
-            // 如果被性转 Mod 改成了其他中文名字（例如“阿尔伯特”），且与内部名不同，直接采纳！
-            if (!string.IsNullOrWhiteSpace(currentDisplayName) 
-                && !string.Equals(currentDisplayName, npcInternalName, StringComparison.OrdinalIgnoreCase))
-            {
-                return currentDisplayName;
-            }
-        }
-
-        // 2. 兜底策略：如果游戏里读取到的是原名或英文，则走权威汉化字典
-        if (FallbackZhNames.TryGetValue(npcInternalName, out var fallbackName))
-            return fallbackName;
-
-        return npcInternalName;
+        return GetLocalizedName(npcInternalName);
     }
 
     /// <summary>
