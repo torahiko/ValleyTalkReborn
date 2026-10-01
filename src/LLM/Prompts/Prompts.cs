@@ -529,7 +529,7 @@ public class Prompts
         Tier1BlockIds.SpouseAction, Tier1BlockIds.EvolvedTraits,
     };
 
-    /// <summary>Tier 2b 拼装序列（17 项，顺序固定）。</summary>
+    /// <summary>Tier 2b 拼装序列（18 项，顺序固定）。</summary>
     private static readonly IReadOnlyList<string> Tier2bBlockSequence = new[]
     {
         Tier2bBlockIds.Gossip, Tier2bBlockIds.Interaction, Tier2bBlockIds.Jealousy, Tier2bBlockIds.Preoccupation,
@@ -537,7 +537,7 @@ public class Prompts
         Tier2bBlockIds.Echo, Tier2bBlockIds.Eavesdrop, Tier2bBlockIds.SpouseWaiting,
         Tier2bBlockIds.LocalPerception, Tier2bBlockIds.Emotion, Tier2bBlockIds.PlayerProfile,
         Tier2bBlockIds.DateInvite, Tier2bBlockIds.FollowProto, Tier2bBlockIds.DateEndProto,
-        Tier2bBlockIds.Movement,
+        Tier2bBlockIds.Movement, Tier2bBlockIds.SocialLens,
     };
 
     public void AssembleCore(InjectionPlan plan, DialogueContext context, Character character)
