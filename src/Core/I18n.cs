@@ -700,6 +700,19 @@ namespace ValleytalkReborn
 
             public static string ClearScopeHudGlobalAll() => Lookup("DialogueInput.ClearScopeHudGlobalAll");
 
+            public static string ClearScopeTodayDesc() => Lookup("DialogueInput.ClearScopeTodayDesc");
+
+            public static string ClearScopeCurrentNpcAllDesc(string npcName) =>
+                FormatNpc(Lookup("DialogueInput.ClearScopeCurrentNpcAllDesc"), npcName);
+
+            public static string ClearScopeGlobalAllDesc() => Lookup("DialogueInput.ClearScopeGlobalAllDesc");
+
+            public static string ClearScopeConfirm() => Lookup("DialogueInput.ClearScopeConfirm");
+
+            public static string ClearScopeConfirmDanger() => Lookup("DialogueInput.ClearScopeConfirmDanger");
+
+            public static string ClearScopeCancel() => Lookup("DialogueInput.ClearScopeCancel");
+
             // ── 输入框占位符 / 副标题 / 按钮 / 气泡（VT3-i18n-002B）──
             public static string Placeholder() => Lookup("DialogInput.Placeholder");
             public static string PlaceholderWithName(string name) =>

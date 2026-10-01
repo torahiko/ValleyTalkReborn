@@ -78,17 +78,17 @@ namespace ValleytalkReborn
             _scopeOptions.Add(new ScopeCardOption(
                 ClearScope.Today,
                 I18n.DialogueInput.ClearScopeToday(dispName),
-                "仅撤销今日互动，角色在明早将恢复今日之前的记忆状态。"));
+                I18n.DialogueInput.ClearScopeTodayDesc()));
 
             _scopeOptions.Add(new ScopeCardOption(
                 ClearScope.CurrentNpcAll,
                 I18n.DialogueInput.ClearScopeCurrentNpcAll(dispName),
-                $"抹平与 {dispName} 的全部对白与上下文，重新建立初次印象。"));
+                I18n.DialogueInput.ClearScopeCurrentNpcAllDesc(dispName)));
 
             _scopeOptions.Add(new ScopeCardOption(
                 ClearScope.GlobalAll,
                 I18n.DialogueInput.ClearScopeGlobalAll(),
-                "【全局高危】重置全镇所有 NPC 的聊天上下文与所有历史对白。"));
+                I18n.DialogueInput.ClearScopeGlobalAllDesc()));
 
             _closeButton = new ClickableTextureComponent(
                 new Rectangle(xPositionOnScreen + width - 50, yPositionOnScreen + 16, 36, 36),
@@ -259,9 +259,11 @@ namespace ValleytalkReborn
 
             // 4. 底部动作按钮（仅在选中国际危险选项时，确认按钮变红警示）
             bool isGlobalDanger = _selectedScope == ClearScope.GlobalAll;
-            string confirmLabel = isGlobalDanger ? "⚠ 确认全部清除" : "✔ 确认清除";
+            string confirmLabel = isGlobalDanger
+                ? I18n.DialogueInput.ClearScopeConfirmDanger()
+                : I18n.DialogueInput.ClearScopeConfirm();
 
-            ActionButtonRenderer.Draw(b, _cancelButtonRect, "✕ 取消 (Esc)", ref _cancelHoverScale, mx, my,
+            ActionButtonRenderer.Draw(b, _cancelButtonRect, I18n.DialogueInput.ClearScopeCancel(), ref _cancelHoverScale, mx, my,
                 style: ActionButtonStyle.Default, fontSize: ButtonFontSize, isEnabled: true,
                 isPressedFunc: () => IsLeftMouseDown());
             ActionButtonRenderer.Draw(b, _confirmButtonRect, confirmLabel, ref _confirmHoverScale, mx, my,
