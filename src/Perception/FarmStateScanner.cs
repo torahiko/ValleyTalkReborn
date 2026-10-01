@@ -5,6 +5,7 @@ using System.Text;
 using StardewValley;
 using StardewValley.Buildings;
 using StardewValley.TerrainFeatures;
+using StardewValley.TokenizableStrings;
 
 namespace ValleytalkReborn;
 
@@ -67,10 +68,26 @@ internal static class FarmStateScanner
         List<string> ghTopReady = new();
         List<string> ghTopGrowing = new();
 
+        int ghFruitProducing = 0;
+        int ghFruitGrowing = 0;
+        int ghFruitResting = 0;
+        List<string> ghTopProducingFruits = new();
+        List<string> ghTopGrowingFruits = new();
+        List<string> ghTopRestingFruits = new();
+
         if (isGreenhouseUnlocked && ghLocation != null)
         {
             (ghReadyCrops, ghGrowingCrops, _, ghTopReady, ghTopGrowing, _) = ScanCropsInLocation(ghLocation);
+            (ghFruitProducing, ghFruitGrowing, ghFruitResting, ghTopProducingFruits, ghTopGrowingFruits, ghTopRestingFruits) = ScanFruitTreesInLocation(ghLocation);
         }
+
+        // ── 3b. 温室果树并入室外果园统计，保证果园状态行统一呈现 ──
+        fruitTreeProducing += ghFruitProducing;
+        fruitTreeGrowing += ghFruitGrowing;
+        fruitTreeResting += ghFruitResting;
+        topProducingFruits = MergeFruitSamples(topProducingFruits, ghTopProducingFruits);
+        topGrowingFruits = MergeFruitSamples(topGrowingFruits, ghTopGrowingFruits);
+        topRestingFruits = MergeFruitSamples(topRestingFruits, ghTopRestingFruits);
 
         // ── 4. 扫描动物 ──
         int totalAnimals = 0;
@@ -459,23 +476,7 @@ internal static class FarmStateScanner
         {
             if (pair.Value is FruitTree tree)
             {
-                // 1. 优先从当前挂果实体获取名称
-                string fruitName = null;
-                if (tree.fruit != null && tree.fruit.Count > 0 && tree.fruit[0] != null)
-                {
-                    fruitName = SafeGetDisplayName(tree.fruit[0].QualifiedItemId);
-                }
-
-                // 2. 若未挂果，通过 1.6 的 FruitTreeData 获取该树种的果实名称
-                if (string.IsNullOrWhiteSpace(fruitName))
-                {
-                    var data = tree.GetData();
-                    var fruitData = data?.Fruit?.FirstOrDefault();
-                    if (fruitData != null && !string.IsNullOrWhiteSpace(fruitData.ItemId))
-                    {
-                        fruitName = SafeGetDisplayName(fruitData.ItemId);
-                    }
-                }
+                string fruitName = ResolveFruitTreeName(tree);
 
                 // 1.6 挂果判定：直接依据 tree.fruit 列表
                 bool hasFruit = tree.fruit != null && tree.fruit.Count > 0;
@@ -517,6 +518,167 @@ internal static class FarmStateScanner
     }
 
     /// <summary>
+    /// 四级容错果实名称解析：活跃挂果实体 → 1.6 FruitTreeData 元数据 → 树苗 ID 原版常数 → 空值。
+    /// </summary>
+    private static string ResolveFruitTreeName(FruitTree tree)
+    {
+        // Step 1 [活跃实体挂果]: 当前挂果列表是果实名称的第一权威来源
+        if (tree.fruit != null && tree.fruit.Count > 0)
+        {
+            foreach (var item in tree.fruit)
+            {
+                if (item == null) continue;
+
+                if (!string.IsNullOrWhiteSpace(item.DisplayName))
+                {
+                    return item.DisplayName;
+                }
+
+                if (!string.IsNullOrWhiteSpace(item.QualifiedItemId))
+                {
+                    string disp = SafeGetDisplayName(item.QualifiedItemId);
+                    if (!string.IsNullOrWhiteSpace(disp)) return disp;
+                }
+            }
+        }
+
+        // Step 2 [1.6 FruitTreeData 元数据]: 未挂果时按树种元数据推导果实名
+        try
+        {
+            var data = tree.GetData();
+            if (data != null)
+            {
+                if (data.Fruit != null)
+                {
+                    foreach (var fruitDrop in data.Fruit)
+                    {
+                        string targetId = fruitDrop.ItemId ?? fruitDrop.Id;
+                        if (string.IsNullOrWhiteSpace(targetId) && fruitDrop.RandomItemId?.Count > 0)
+                        {
+                            targetId = fruitDrop.RandomItemId[0];
+                        }
+                        if (!string.IsNullOrWhiteSpace(targetId))
+                        {
+                            string fruitDisp = SafeGetDisplayName(targetId);
+                            if (!string.IsNullOrWhiteSpace(fruitDisp)) return fruitDisp;
+                        }
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(data.DisplayName))
+                {
+                    string treeDisp = TokenParser.ParseText(data.DisplayName);
+                    string clean = ExtractFruitNameFromTreeName(treeDisp);
+                    if (!string.IsNullOrWhiteSpace(clean)) return clean;
+                }
+            }
+        }
+        catch
+        {
+            // BOUNDARY: 离线或 FruitTreeData 数据异常，降级到 treeId 层解析
+        }
+
+        // Step 3 [TreeId / 树苗解析]: 树苗展示名剥离后缀，再回退原版常数映射
+        string treeId = tree.treeId?.Value;
+        if (!string.IsNullOrWhiteSpace(treeId))
+        {
+            string saplingDisp = SafeGetDisplayName(treeId);
+            if (!string.IsNullOrWhiteSpace(saplingDisp))
+            {
+                string clean = ExtractFruitNameFromTreeName(saplingDisp);
+                if (!string.IsNullOrWhiteSpace(clean)) return clean;
+            }
+
+            if (TryGetVanillaFruitName(treeId, out string fallbackFruit))
+            {
+                return fallbackFruit;
+            }
+        }
+
+        // Step 4 [返回空]: 各层均无法解析时交由上层按空品种省略括号
+        return null;
+    }
+
+    /// <summary>按当前语言剥离树苗/果树名称中的品种后缀，返回主体果实名。</summary>
+    private static string ExtractFruitNameFromTreeName(string treeOrSaplingName)
+    {
+        if (string.IsNullOrWhiteSpace(treeOrSaplingName)) return null;
+
+        bool isZh = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+        string name = treeOrSaplingName.Trim();
+
+        if (isZh)
+        {
+            if (name.EndsWith("树苗"))
+            {
+                name = name[..^"树苗".Length];
+            }
+            else
+            {
+                // "苹果树" 同时以 "果树" 与 "树" 结尾；中文果实名主体至少两字，
+                // 剥去 "果树" 后不足两字时按 "树" 后缀处理（"苹果树" -> "苹果"）
+                if (name.EndsWith("果树") && name.Length - "果树".Length >= 2)
+                {
+                    name = name[..^"果树".Length];
+                }
+                else if (name.EndsWith("树"))
+                {
+                    name = name[..^"树".Length];
+                }
+            }
+            return name.Trim();
+        }
+
+        if (name.EndsWith("Sapling", StringComparison.OrdinalIgnoreCase))
+        {
+            name = name[..^"Sapling".Length];
+        }
+        if (name.EndsWith("Tree", StringComparison.OrdinalIgnoreCase))
+        {
+            name = name[..^"Tree".Length];
+        }
+        return name.Trim();
+    }
+
+    /// <summary>原版果树常数权威映射：覆盖 1.6 全部树苗与果实 ID 的双语果实名。</summary>
+    private static bool TryGetVanillaFruitName(string id, out string name)
+    {
+        name = null;
+        if (string.IsNullOrWhiteSpace(id)) return false;
+
+        bool isZh = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+
+        switch (id)
+        {
+            // 树苗 ID（Data/FruitTrees 键位）
+            case "628": name = isZh ? "樱桃" : "Cherry"; return true;
+            case "629": name = isZh ? "杏子" : "Apricot"; return true;
+            case "630": name = isZh ? "橙子" : "Orange"; return true;
+            case "631": name = isZh ? "桃子" : "Peach"; return true;
+            case "632": name = isZh ? "石榴" : "Pomegranate"; return true;
+            case "633": name = isZh ? "苹果" : "Apple"; return true;
+            case "69": name = isZh ? "香蕉" : "Banana"; return true;
+            case "835": name = isZh ? "芒果" : "Mango"; return true;
+            // 果实 ID（物品 ID，与树苗一一对应）
+            case "613": name = isZh ? "樱桃" : "Cherry"; return true;
+            case "634": name = isZh ? "杏子" : "Apricot"; return true;
+            case "635": name = isZh ? "橙子" : "Orange"; return true;
+            case "636": name = isZh ? "桃子" : "Peach"; return true;
+            case "637": name = isZh ? "石榴" : "Pomegranate"; return true;
+            case "638": name = isZh ? "苹果" : "Apple"; return true;
+            case "91": name = isZh ? "香蕉" : "Banana"; return true;
+            case "834": name = isZh ? "芒果" : "Mango"; return true;
+            default: return false;
+        }
+    }
+
+    /// <summary>合并室外与温室两路品种采样，保持各自的频次降序并去重。</summary>
+    private static List<string> MergeFruitSamples(List<string> outdoor, List<string> greenhouse)
+    {
+        return outdoor.Concat(greenhouse).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    /// <summary>
     /// 星露谷 1.6 原生只读元数据获取，免实体实例化且原生拦截 Error 物品
     /// </summary>
     private static string SafeGetDisplayName(string itemId)
@@ -542,6 +704,12 @@ internal static class FarmStateScanner
                 displayName.Contains("Error", StringComparison.OrdinalIgnoreCase))
             {
                 return null;
+            }
+
+            // 1.6 展示名可能仍是 [LocalizedText ...] 令牌串，返回前解析为自然语言
+            if (displayName.Contains('['))
+            {
+                displayName = TokenParser.ParseText(displayName);
             }
 
             return displayName;
