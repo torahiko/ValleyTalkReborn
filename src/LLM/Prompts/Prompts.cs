@@ -346,13 +346,61 @@ public class Prompts
         var gameConstantPrompt = new StringBuilder();
         gameConstantPrompt.AppendLine(Util.GetString(Character, "gameContext"));
         gameConstantPrompt.AppendLine(BuildStardewSummary());
-        if (CurrentFlags.IncludeFarmDetails)
+
+        bool includeFarmDetails = CurrentFlags.IncludeFarmDetails;
+        bool isHouseholdMember = includeFarmDetails && ResolveCurrentNpcHouseholdMembership();
+        if (ShouldIncludeFarmSummary(includeFarmDetails, isHouseholdMember))
         {
             string farmSummary = FarmStateScanner.BuildFarmSummary(IsChineseLanguage);
             if (!string.IsNullOrEmpty(farmSummary))
                 gameConstantPrompt.AppendLine(farmSummary);
         }
+        else
+        {
+            ModEntry.SMonitor?.Log(
+                $"[Prompts] Farm summary omitted for '{Character.Name}': " +
+                (includeFarmDetails ? "not a spouse/roommate of the current player." : "farm details routing is off."),
+                StardewModdingAPI.LogLevel.Debug);
+        }
         return gameConstantPrompt.ToString();
+    }
+
+    /// <summary>
+    /// VT-FARM-ACCESS-01：农场摘要注入门禁。路由开关与同住人身份同时为 true 才允许注入，
+    /// 其余组合一律省略整个农场摘要；纯逻辑与判定，不携带字段、集合或持久化状态。
+    /// </summary>
+    internal static bool ShouldIncludeFarmSummary(bool includeFarmDetails, bool isHouseholdMember)
+    {
+        return includeFarmDetails && isHouseholdMember;
+    }
+
+    /// <summary>
+    /// 判定当前对话 NPC 是否为当前玩家的同住人（配偶或室友，含多婚 Mod 感知）。
+    /// 仅在提示词装配入口（MonoGame 主线程、存档已加载）执行；关系判定委托
+    /// SpouseQueryService.IsMarried，查询主体为当前对话玩家 Game1.player。
+    /// </summary>
+    private bool ResolveCurrentNpcHouseholdMembership()
+    {
+        if (!StardewModdingAPI.Context.IsWorldReady)
+        {
+            ModEntry.SMonitor?.Log(
+                $"[Prompts] Farm summary household check reached for '{Character.Name}' while the world is not ready; refusing to query relationships outside a loaded save.",
+                StardewModdingAPI.LogLevel.Error);
+            throw new InvalidOperationException(
+                "Farm summary household check requires Context.IsWorldReady; the relationship query was reached outside a loaded save.");
+        }
+
+        var player = Game1.player;
+        if (player == null)
+        {
+            ModEntry.SMonitor?.Log(
+                $"[Prompts] Household membership of '{Character.Name}' cannot be reliably determined: no current player although the world reports ready.",
+                StardewModdingAPI.LogLevel.Warn);
+            throw new InvalidOperationException(
+                "Farm summary household check cannot reliably determine household identity: Context.IsWorldReady is true but Game1.player is null.");
+        }
+
+        return SpouseQueryService.Instance.IsMarried(Character.Name, player);
     }
 
     private string GetNpcConstantContext()
