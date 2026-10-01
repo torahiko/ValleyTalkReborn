@@ -102,11 +102,11 @@ ValleyTalk Reborn features an independent profile architecture—each provider s
 
 | Provider | Type | Recommended Models | Description |
 | :--- | :--- | :--- | :--- |
-| **OpenAI** | Cloud | `gpt-4o`, `gpt-4o-mini` | Official OpenAI API. High response speed and roleplay quality. |
-| **Anthropic Claude** | Cloud | `claude-3-5-sonnet-latest`, `claude-3-haiku` | Exceptional character nuance and creative writing depth. |
-| **Google Gemini** | Cloud | `gemini-1.5-flash`, `gemini-1.5-pro` | Fast throughput and cost-effective performance. |
-| **DeepSeek** | Cloud | `deepseek-chat` (V3), `deepseek-reasoner` (R1) | High intelligence-to-cost ratio and bilingual fluency. |
-| **xAI Grok** | Cloud | `grok-beta`, `grok-2` | Native xAI Grok provider integration. |
+| **OpenAI** | Cloud | `gpt-5`, `gpt-6` | Official OpenAI API. High response speed and roleplay quality. |
+| **Anthropic Claude** | Cloud | `claude-5-sonnet-latest`, `claude-4.5-haiku` | Exceptional character nuance and creative writing depth. |
+| **Google Gemini** | Cloud | `gemini-3.8-flash`, `gemini-3.1-pro` | Fast throughput and cost-effective performance. |
+| **DeepSeek** | Cloud | `deepseek-V4.1-Flash`| High intelligence-to-cost ratio and bilingual fluency. |
+| **xAI Grok** | Cloud | `grok-latest`| Native xAI Grok provider integration. |
 | **Mistral AI** | Cloud | `mistral-large-latest`, `mistral-small` | Official Mistral platform endpoints. |
 | **VolcEngine (Doubao)** | Cloud | `doubao-pro-32k`, `doubao-lite-32k` | ByteDance Volcano Engine platform models. |
 | **Ollama** | Local / Offline | `qwen2.5:7b`, `llama3.1:8b`, `mistral` | One-click local inference. Completely private and offline. |
