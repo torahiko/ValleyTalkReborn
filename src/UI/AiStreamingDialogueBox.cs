@@ -109,10 +109,10 @@ namespace ValleytalkReborn.UI
         private const int PortraitShakeDurationMs = 250;
 
         /// <summary>
-        /// 单页允许的最大文字高度（像素）。约 4 行 SpriteText 高度，
-        /// 用于避让对白框底边与金黄色翻页小箭头。
+        /// 单页允许的最大文字高度（像素）。精确容纳 6 行 SpriteText（单行 48px），
+        /// 留出 44px 避让对白框底边与金黄色翻页小箭头（票 VT-STREAM-07 容量翻倍）。
         /// </summary>
-        public const int MaxPageHeight = 200;
+        public const int MaxPageHeight = 300;
 
         /// <summary>
         /// 单次输入允许的最大页数（含已翻页、当前页与 backlog）。
@@ -133,6 +133,20 @@ namespace ValleytalkReborn.UI
         /// </summary>
         private static readonly Regex EmotionRegex =
             new(@"(\$([a-zA-Z0-9]+)|\[MOOD:([^\]]+)\])", RegexOptions.Compiled);
+
+        /// <summary>
+        /// 通用分屏标记（票 VT-STREAM-07 大模型友好断页）：兼容原版
+        /// "#$b#" 全串、"#$b"、"$b#" 残缺形态、"[PAGE]" 显式标记与单 '#'。
+        /// 匹配项整体吞掉，绝不让 "$b" 控制符碎片残留在页面上。
+        /// </summary>
+        private static readonly Regex PageBreakRegex =
+            new(@"(#\$[a-zA-Z0-9]+#|#\$[a-zA-Z0-9]+|\$[a-zA-Z0-9]+#|\[PAGE\]|#)", RegexOptions.Compiled);
+
+        /// <summary>句末软断行回溯窗口宽度（字符数，票 VT-STREAM-07）。</summary>
+        private const int SentenceBreakLookback = 24;
+
+        /// <summary>句末标点集：句末软断行的截断点紧随其标点之后。</summary>
+        private const string SentenceEnders = "。！？.!?\n";
 
         private const string LightPunctuation = ",，、;；";
         private const string LongPunctuation = ".。!！?？";
@@ -430,50 +444,53 @@ namespace ValleytalkReborn.UI
         }
 
         /// <summary>
-        /// 把一段文本灌入分页管线：先做情绪标记纵深清洗（票 VT-STREAM-05），
-        /// 再按显式 '#' 封口 + 高度溢出封口把文本灌入当前页或 backlog；
-        /// 溢出部分压入 backlog 队尾。纯字符串处理，不触碰任何游戏态。
+        /// 把一段文本灌入分页管线（票 VT-STREAM-07 大模型友好断页）：
+        /// 以 <see cref="PageBreakRegex"/> 定位分屏标记（"#$b#" 全串、"#$b"、"$b#"、
+        /// "[PAGE]" 与单 '#'），命中时把匹配前的文本并入当前页并封口，整个匹配项
+        /// 被彻底吃掉（绝不留存 "$b" 控制符碎片），后续内容进入下一页。
+        /// 段内再做情绪标记纵深清洗与首屏引导线净化。纯字符串处理，不触碰任何游戏态。
         /// </summary>
         private void IngestText(string text)
         {
-            string body = ExtractAndStripEmotions(text, out List<string> extractedEmotions);
-            foreach (string emotion in extractedEmotions)
-                SetEmotion(emotion);
-
-            // 前导引导线纵深清洗（票 VT-STREAM-07）：当前对白的首屏首字尚未写入时，
-            // 剥离 " - " / "— " / "– " 与孤立 "-" 结构前缀；句中破折号不受影响。
-            if (_displayedPageText.Length == 0)
-                body = StripLeadingDialogueDash(body);
-
             int cursor = 0;
-            // 首段延续 backlog 尾页（流式增量语义）；'#' 之后的每段都另起新页。
+            // 首段延续 backlog 尾页（流式增量语义）；每个分屏标记之后另起新页。
             bool startNewPage = false;
 
-            while (cursor < body.Length)
+            while (cursor <= text.Length)
             {
-                int hash = body.IndexOf('#', cursor);
-                string segment = hash < 0
-                    ? body.Substring(cursor)
-                    : body.Substring(cursor, hash - cursor);
+                Match match = PageBreakRegex.Match(text, cursor);
+                string segment = match.Success
+                    ? text.Substring(cursor, match.Index - cursor)
+                    : text.Substring(cursor);
 
-                if (_isCurrentPageSealed)
+                string body = ExtractAndStripEmotions(segment, out List<string> extractedEmotions);
+                foreach (string emotion in extractedEmotions)
+                    SetEmotion(emotion);
+
+                if (_displayedPageText.Length == 0)
+                    body = StripLeadingDialogueDash(body);
+
+                if (body.Length > 0)
                 {
-                    EnqueueToBacklog(segment, startNewPage);
-                }
-                else
-                {
-                    // 高度溢出封口后，溢出段必须先于 '#' 之后的内容入页。
-                    string overflow = TryFillCurrentPage(segment);
-                    if (overflow.Length > 0)
-                        EnqueueToBacklog(overflow, startNewPage);
+                    if (_isCurrentPageSealed)
+                    {
+                        EnqueueToBacklog(body, startNewPage);
+                    }
+                    else
+                    {
+                        // 高度溢出封口后，溢出段必须先于分屏标记之后的内容入页。
+                        string overflow = TryFillCurrentPage(body);
+                        if (overflow.Length > 0)
+                            EnqueueToBacklog(overflow, startNewPage);
+                    }
                 }
 
-                if (hash < 0)
+                if (!match.Success)
                     return;
 
-                // 显式 '#' 强制封口当前页。
+                // 分屏标记强制封口当前页；游标跳过整个匹配项（含 "#$b#" 全串）。
                 _isCurrentPageSealed = true;
-                cursor = hash + 1;
+                cursor = match.Index + match.Length;
                 startNewPage = true;
             }
         }
@@ -518,13 +535,25 @@ namespace ValleytalkReborn.UI
         }
 
         /// <summary>
-        /// 安全断点：严禁从 ASCII 单词中间断开。逐字回退出词尾，使断行落在词间空格处
-        /// （该空格留在本页行尾，符合「在空格处断行」语义）；中文等无词边界字符
-        /// 允许就近断行。无解时至少保留 1 字符以保证推进。
+        /// 安全断点（票 VT-STREAM-07 语义句末优先软断行）：
+        /// 1) 优先在 [upperBound - 24, upperBound] 窗口内反向查找句末标点
+        ///    （。！？.!?\n），截断点选在标点紧随的后一位——标点留在当前页，
+        ///    不留悬挂残句；2) 窗口内无句末标点时，回退到 ASCII 词边界回退，
+        ///    严禁从 ASCII 单词中间断开（中文等无词边界字符允许就近断行）。
+        /// 无解时至少保留 1 字符以保证推进。
         /// </summary>
         private static int ComputeSafeBreakIndex(string text, int upperBound)
         {
-            int cut = Math.Max(1, Math.Min(upperBound, text.Length));
+            int limit = Math.Min(upperBound, text.Length);
+
+            int windowStart = Math.Max(0, limit - SentenceBreakLookback);
+            for (int i = limit - 1; i >= windowStart; i--)
+            {
+                if (SentenceEnders.IndexOf(text[i]) >= 0)
+                    return Math.Max(1, i + 1);
+            }
+
+            int cut = Math.Max(1, limit);
             while (cut > 1 && IsAsciiWordChar(text[cut - 1]))
                 cut--;
             return cut;

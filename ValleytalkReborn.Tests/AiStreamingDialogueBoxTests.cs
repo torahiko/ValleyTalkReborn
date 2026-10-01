@@ -1313,6 +1313,163 @@ public class AiStreamingDialogueBoxTests : IDisposable
     }
 
     #endregion
+
+    #region VT-STREAM-07 大模型友好断页
+
+    [Fact]
+    public void AppendContent_VanillaHashDollarB_SplitsPagesWithoutLeakingControlChars()
+    {
+        AiStreamingDialogueBox box = NewBox();
+
+        box.AppendContent("第一页内容#$b#第二页内容", false);
+
+        // "#$b#" 全串被整体吃掉：当前页封口，后续内容进入下一页。
+        Assert.Equal("第一页内容", box.DisplayedPageText);
+        Assert.True(box.IsCurrentPageSealed);
+        Assert.Equal(1, box.PendingPageCount);
+        Assert.Equal("第一页内容 第二页内容", box.GetFullDialogueText());
+
+        // 任何一页正文都不得残留 "#$b#" 或 "$b" 控制符碎片。
+        string full = box.GetFullDialogueText();
+        Assert.DoesNotContain("#", full);
+        Assert.DoesNotContain("$b", full);
+    }
+
+    [Fact]
+    public void AppendContent_TrickleHashDollarB_Variant_IsConsumedWhole()
+    {
+        // 残缺形态 "#$b"（无尾 #）：同样整体吞掉，不留 "$b" 碎片。
+        AiStreamingDialogueBox box = NewBox();
+
+        box.AppendContent("第一页#$b", false);
+        box.AppendContent("第二页", false);
+
+        Assert.Equal("第一页", box.DisplayedPageText);
+        string full = box.GetFullDialogueText();
+        Assert.Equal("第一页 第二页", full);
+        Assert.DoesNotContain("$b", full);
+    }
+
+    [Fact]
+    public void AppendContent_LeadingDollarBHash_IsConsumedWithoutEmptyCrash()
+    {
+        // RECOVERABLE 路径：分屏标记命中下标 0 时跳过游标并封口，不崩不发空串。
+        AiStreamingDialogueBox box = NewBox();
+
+        box.AppendContent("$b#第二页内容", false);
+
+        Assert.Equal(1, box.PendingPageCount);
+        Assert.Equal("第二页内容", box.GetFullDialogueText());
+        Assert.DoesNotContain("$b", box.GetFullDialogueText());
+    }
+
+    [Fact]
+    public void AppendContent_ExplicitPageTag_SplitsPages()
+    {
+        AiStreamingDialogueBox box = NewBox();
+
+        box.AppendContent("第一页内容[PAGE]第二页内容", false);
+
+        Assert.Equal("第一页内容", box.DisplayedPageText);
+        Assert.Equal(1, box.PendingPageCount);
+        Assert.DoesNotContain("[PAGE]", box.GetFullDialogueText());
+    }
+
+    [Fact]
+    public void AppendContent_MaxPageHeight300_KeepsMediumCjkSentenceOnFirstPage()
+    {
+        // 52 个汉字（无空格）实测高度 264px：旧 200px 阈值下必然截断，
+        // 新 300px 阈值下整段留在首屏——容量翻倍的直接证据。
+        AiStreamingDialogueBox box = NewBox();
+        string sentence = new string('字', 52);
+
+        box.AppendContent(sentence, false);
+
+        Assert.False(box.IsCurrentPageSealed);
+        Assert.Equal(0, box.PendingPageCount);
+        Assert.Equal(sentence, box.DisplayedPageText);
+    }
+
+    [Fact]
+    public void AppendContent_75CharChineseSentence_StaysOnFirstPage()
+    {
+        // 75 字中文复合长句整段留在首屏。注意：无头 SpriteText 的测高对
+        // 无换行点的连续汉字串会纵向爆量（实测 69 连串 = 1182px），只有
+        // 空格提供断词点；故本句按分句自然留出空格（与 LLM 实际输出一致）。
+        AiStreamingDialogueBox box = NewBox();
+        string sentence = string.Join(" ", Enumerable.Repeat("今天天气很不错呀，", 7)) + " 好吧再见。";
+        Assert.Equal(75, sentence.Length);
+
+        box.AppendContent(sentence, false);
+
+        Assert.False(box.IsCurrentPageSealed);
+        Assert.Equal(0, box.PendingPageCount);
+        Assert.Equal(sentence, box.DisplayedPageText);
+    }
+
+    [Fact]
+    public void AppendContent_SentenceSoftBreak_CutsRightAfterSentenceEnder()
+    {
+        // 语义句末软断行：高度溢出封口时截断点紧随句末标点，标点留在当前页。
+        AiStreamingDialogueBox box = NewBox();
+        string sentence = string.Concat(Enumerable.Repeat("我们聊了很久，今天真的很开心。", 30));
+
+        box.AppendContent(sentence, false);
+
+        Assert.True(box.IsCurrentPageSealed);
+        Assert.EndsWith("。", box.DisplayedPageText);
+        Assert.True(box.DisplayedPageText.Length < sentence.Length);
+        Assert.True(box.PendingPageCount > 0);
+    }
+
+    /// <summary>经反射调用私有静态安全断点方法（纯字符串计算，无游戏态）。</summary>
+    private static int ComputeSafeBreakIndexForTest(string text, int upperBound)
+        => (int)typeof(AiStreamingDialogueBox)
+            .GetMethod("ComputeSafeBreakIndex", BindingFlags.Static | BindingFlags.NonPublic)
+            .Invoke(null, new object[] { text, upperBound });
+
+    [Fact]
+    public void ComputeSafeBreakIndex_SentenceEnderWithinWindow_CutsAfterPunctuation()
+    {
+        // "今天天气真好。我们去钓鱼吧" 句号在下标 6：upperBound=14 时截断点 = 7。
+        Assert.Equal(7, ComputeSafeBreakIndexForTest("今天天气真好。我们去钓鱼吧", 14));
+    }
+
+    [Fact]
+    public void ComputeSafeBreakIndex_SentenceEnder_PREFERREDOverWordBoundary()
+    {
+        // "Hello there. World"：句点在下标 11 -> 截断点 12，优先于词边界 13。
+        Assert.Equal(12, ComputeSafeBreakIndexForTest("Hello there. World", 18));
+    }
+
+    [Fact]
+    public void ComputeSafeBreakIndex_NoEnderInWindow_FallsBackToWordBoundary()
+    {
+        // 窗口内无句末标点：回退既有 ASCII 词边界断行。
+        Assert.Equal(6, ComputeSafeBreakIndexForTest("hello world", 11));
+    }
+
+    [Fact]
+    public void ComputeSafeBreakIndex_EnderOutsideWindow_IsIgnored()
+    {
+        // 句末标点落在 [upperBound - 24, upperBound] 窗口之外时不得回溯命中。
+        string text = "。" + new string('好', 24);
+        Assert.Equal(25, ComputeSafeBreakIndexForTest(text, 25));
+    }
+
+    [Fact]
+    public void AppendContent_DashAfterEmotionCode_IsStillStripped()
+    {
+        // "$h - " 形态：情绪码剥离后首屏仍以引导线开头，前导破折号必须被洗净。
+        AiStreamingDialogueBox box = NewBox();
+
+        box.AppendContent("$h - 你好", false);
+
+        Assert.Equal("$h", box.characterDialogue.CurrentEmotion);
+        Assert.Equal("你好", box.DisplayedPageText);
+    }
+
+    #endregion
 }
 
 /// <summary>xUnit 断言的零值简写，避免重复样板。</summary>
