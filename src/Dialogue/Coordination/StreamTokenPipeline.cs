@@ -46,6 +46,16 @@ public sealed class StreamTokenPipeline
     /// <summary>星露谷原版情绪码字母（对应 Dialogue.checkEmotions 的 $h/$s/$u/$l/$a）。</summary>
     private const string MoodLetters = "hsula";
 
+    /// <summary>
+    /// LLM 语义情绪词 -> 原版情绪码的等价词表（票 VT-STREAM-05）。
+    /// 单字母码必须带非 ASCII 字母前瞻，故 '$happy' 不能被切成 '$h' + "appy"，
+    /// 只有整段字母串精确命中本表时才按情绪码发射。
+    /// </summary>
+    private static readonly string[] SemanticMoodWords =
+    {
+        "neutral", "happy", "sad", "angry", "surprised", "love"
+    };
+
     private readonly StringBuilder _textBuffer = new StringBuilder();
     private readonly StringBuilder _tagBuffer = new StringBuilder();
     private readonly StringBuilder _optionBuffer = new StringBuilder();
@@ -69,6 +79,13 @@ public sealed class StreamTokenPipeline
     /// 由此既保留跨行对白的折行与打字机 450ms 换行顿挫，又不让选项区边界漏出换行符。
     /// </summary>
     private bool _hasPendingNewline;
+
+    /// <summary>
+    /// 跨 chunk 延迟判定的 '$'（票 VT-STREAM-05）。
+    /// 读到落在 chunk 末尾的 '$' 时不立即并入正文，等下一 chunk 到达后
+    /// 再以 '$' 为首前缀试读情绪码：命中则发射 Portrait，未命中才回落为正文字符。
+    /// </summary>
+    private bool _hasPendingDollar;
 
     /// <summary>已产出的片段数（诊断用）。</summary>
     public int EmittedSegmentCount { get; private set; }
@@ -95,6 +112,29 @@ public sealed class StreamTokenPipeline
         for (int i = 0; i < chunk.Length; i++)
         {
             char c = chunk[i];
+
+            // ── 分支 0：上一 chunk 遗留的 '$' 判定（票 VT-STREAM-05） ──
+            // 先以 '$' 为首前缀试读本 chunk 的首字符：命中情绪码则整体发射 Portrait，
+            // 未命中才把 '$' 并入正文并按常规流程重新处理当前字符。
+            if (_hasPendingDollar)
+            {
+                _hasPendingDollar = false;
+
+                if (TryReadMoodCode(chunk, i, out string pendingMoodCode, out int pendingConsumed))
+                {
+                    yield return new StreamSegment(StreamSegmentType.Portrait, pendingMoodCode);
+                    EmittedSegmentCount++;
+
+                    for (int k = 0; k < pendingConsumed; k++)
+                        AdvanceLineState(chunk[i + k]);
+
+                    i += pendingConsumed - 1;
+                    continue;
+                }
+
+                _textBuffer.Append('$');
+                AdvanceLineState('$');
+            }
 
             // ── 分支 1：选项区模式。此后不再产出任何片段。 ──
             if (_inOptionSection)
@@ -179,20 +219,28 @@ public sealed class StreamTokenPipeline
             if (c == '$')
             {
                 // 2 字符窗口捕获：'$' 之后若为情绪码，则整体转为 Portrait 片段
-                if (i + 1 < chunk.Length && TryReadMoodCode(chunk, i + 1, out string moodCode, out int consumed))
+                if (i + 1 < chunk.Length)
                 {
-                    yield return new StreamSegment(StreamSegmentType.Portrait, moodCode);
-                    EmittedSegmentCount++;
+                    if (TryReadMoodCode(chunk, i + 1, out string moodCode, out int consumed))
+                    {
+                        yield return new StreamSegment(StreamSegmentType.Portrait, moodCode);
+                        EmittedSegmentCount++;
 
-                    for (int k = 0; k < consumed; k++)
-                        AdvanceLineState(chunk[i + 1 + k]);
+                        for (int k = 0; k < consumed; k++)
+                            AdvanceLineState(chunk[i + 1 + k]);
 
-                    i += consumed;
+                        i += consumed;
+                        continue;
+                    }
+
+                    // 窗口内但未命中：作为普通文本处理并继续
+                    _textBuffer.Append(c);
+                    AdvanceLineState(c);
                     continue;
                 }
 
-                // 窗口不足（'$' 落在 chunk 末尾）：作为普通文本处理并继续
-                _textBuffer.Append(c);
+                // 窗口不足（'$' 落在 chunk 末尾）：置位延迟判定，不并入正文。
+                _hasPendingDollar = true;
                 AdvanceLineState(c);
                 continue;
             }
@@ -247,6 +295,14 @@ public sealed class StreamTokenPipeline
             EmittedSegmentCount++;
         }
 
+        // 流以 '$' 结尾：待定 '$' 永远等不到后继字符，按正文字符释放，不得丢弃。
+        if (_hasPendingDollar)
+        {
+            _hasPendingDollar = false;
+            yield return new StreamSegment(StreamSegmentType.Text, "$");
+            EmittedSegmentCount++;
+        }
+
         if (_textBuffer.Length > 0)
         {
             yield return new StreamSegment(StreamSegmentType.Text, _textBuffer.ToString());
@@ -272,6 +328,7 @@ public sealed class StreamTokenPipeline
         _lastProcessedChar = '\0';
         _atLineStart = true;
         _hasPendingNewline = false;
+        _hasPendingDollar = false;
         EmittedSegmentCount = 0;
     }
 
@@ -317,8 +374,11 @@ public sealed class StreamTokenPipeline
         => value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// 在 <paramref name="start"/> 处尝试读取原版情绪码。
-    /// 支持 $h/$s/$u/$l/$a 单字母、$neutral 与 $0-$9 数字序列。
+    /// 在 <paramref name="start"/> 处尝试读取情绪码。
+    /// 支持 $h/$s/$u/$l/$a 单字母、$neutral、语义情绪词 $happy/$sad/$angry/$surprised/$love
+    /// 与 $0-$9 数字序列（票 VT-STREAM-05）。
+    /// 字母类情绪码先吃满整个连续 [a-zA-Z] 段再判定：只有整段恰为单个原版字母，
+    /// 或整段精确命中语义词表时才发射情绪码；'$house' 一类普通单词因此原样放行为正文。
     /// </summary>
     /// <param name="chunk">当前 chunk。</param>
     /// <param name="start">'$' 之后的首字符下标。</param>
@@ -334,21 +394,7 @@ public sealed class StreamTokenPipeline
 
         char c = chunk[start];
 
-        if (MoodLetters.IndexOf(c) >= 0)
-        {
-            moodCode = c.ToString();
-            consumed = 1;
-            return true;
-        }
-
-        if (c == 'n' && chunk.Length - start >= 6
-            && string.CompareOrdinal(chunk, start, "neutral", 0, 6) == 0)
-        {
-            moodCode = "neutral";
-            consumed = 6;
-            return true;
-        }
-
+        // 数字序列：沿用原版 $0-$9 语义，消费连续数字（保留 '$123' 整段判定）。
         if (c >= '0' && c <= '9')
         {
             int digits = 0;
@@ -359,14 +405,48 @@ public sealed class StreamTokenPipeline
                 digits++;
             }
 
-            // 单个数字可能是普通金额/序号的一部分，仅在长度 >= 2 或紧跟非数字时按情绪码处理
             moodCode = chunk.Substring(start, digits);
             consumed = digits;
             return true;
         }
 
+        // 字母序列：先吃满整段，再判定是情绪码还是普通单词。
+        int letters = 0;
+        while (start + letters < chunk.Length && IsAsciiLetter(chunk[start + letters]))
+            letters++;
+
+        if (letters == 0)
+            return false;
+
+        string word = chunk.Substring(start, letters);
+
+        // 单字母原版情绪码：整段恰好只有这一个字母时命中，等价于「后继字符非 ASCII 字母」。
+        if (letters == 1)
+        {
+            if (MoodLetters.IndexOf(word[0]) < 0)
+                return false;
+
+            moodCode = word;
+            consumed = 1;
+            return true;
+        }
+
+        foreach (string candidate in SemanticMoodWords)
+        {
+            if (string.Equals(word, candidate, StringComparison.OrdinalIgnoreCase))
+            {
+                moodCode = word;
+                consumed = letters;
+                return true;
+            }
+        }
+
         return false;
     }
+
+    /// <summary>是否为 ASCII 字母。</summary>
+    private static bool IsAsciiLetter(char c)
+        => (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 
     #endregion
 

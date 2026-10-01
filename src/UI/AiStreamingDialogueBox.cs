@@ -8,6 +8,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -51,11 +54,17 @@ namespace ValleytalkReborn.UI
         /// <summary>无头/未初始化视口时使用的标称视口高度。</summary>
         private const int FallbackViewportHeight = 720;
 
-        /// <summary>文字区相对对白框的左/上内边距。</summary>
-        private const int TextPadding = 32;
+        /// <summary>文字区相对对白框的左/上内边距（原版 DialogueBox 文本路径 x+8 / y+8）。</summary>
+        private const int TextPadding = 8;
 
-        /// <summary>有头像布局时右侧预留的头像区宽度。</summary>
-        private const int PortraitReserve = 448;
+        /// <summary>
+        /// 有立绘布局时右侧预留的相框总宽（原版 448 + 12 装饰）。
+        /// 立绘文字区宽度 = width - 460 - 24 = 716，与原版 draw 完全一致。
+        /// </summary>
+        private const int PortraitTextReserve = 460 + 24;
+
+        /// <summary>无立绘布局时右侧扣除的内边距（原版纯文本路径 width - 16）。</summary>
+        private const int WideTextGutter = 16;
 
         /// <summary>基础打字间隔（毫秒）。</summary>
         private const int BaseTypeDelayMs = 35;
@@ -65,8 +74,39 @@ namespace ValleytalkReborn.UI
         private const int DashPunctuationDelayMs = 320;
         private const int NewlineDelayMs = 450;
 
-        /// <summary>思考态小圆点切换间隔（毫秒）。</summary>
-        private const int ThinkingDotsIntervalMs = 400;
+        /// <summary>
+        /// 思考态波浪文字的点号追加节奏：每 500ms 递增一点，0~3 循环。
+        /// 与 CancelButtonPlugin 的原版复刻保持同一时间基。
+        /// </summary>
+        private const int ThinkingDotIntervalMs = 500;
+
+        /// <summary>思考态波浪文字的正弦振幅（像素）。</summary>
+        private const float ThinkingWaveAmplitude = 3f;
+
+        /// <summary>思考态波浪文字的正弦角速度。</summary>
+        private const float ThinkingWaveSpeed = 5f;
+
+        /// <summary>思考态波浪文字相邻字符的相位差。</summary>
+        private const float ThinkingWaveCharPhase = 0.5f;
+
+        /// <summary>取消按钮贴图区域（原版 Cursors 红叉）。</summary>
+        private static readonly Rectangle CancelButtonSource = new Rectangle(337, 494, 12, 12);
+
+        /// <summary>取消按钮基准缩放（与原版立绘装饰同量级的 4x）。</summary>
+        private const float CancelButtonBaseScale = 4f;
+
+        /// <summary>取消按钮悬浮缩放目标值。</summary>
+        private const float CancelButtonHoverScale = 1.15f;
+
+        /// <summary>悬浮缩放插值系数（每帧向目标靠拢的比例）。</summary>
+        private const float HoverScaleLerp = 0.2f;
+
+        /// <summary>取消按钮锚点相对文字区的右/下偏移（票 VT-STREAM-05）。</summary>
+        private const int CancelButtonAnchorX = 64;
+        private const int CancelButtonAnchorY = 68;
+
+        /// <summary>设置立绘表情时触发的原版立绘晃动时长（毫秒）。</summary>
+        private const int PortraitShakeDurationMs = 250;
 
         /// <summary>
         /// 单页允许的最大文字高度（像素）。约 4 行 SpriteText 高度，
@@ -87,8 +127,12 @@ namespace ValleytalkReborn.UI
 
         #region 静态数据（热路径零分配）
 
-        /// <summary>思考态三段小圆点，预分配以避免 update 内字符串拼接。</summary>
-        private static readonly string[] ThinkingDotsTexts = { ".", "..", "..." };
+        /// <summary>
+        /// 情绪码 / [MOOD:...] 标签的纵深清洗正则（票 VT-STREAM-05）。
+        /// 预编译并常驻，避免每帧或每个 chunk 的高频正则构造。
+        /// </summary>
+        private static readonly Regex EmotionRegex =
+            new(@"(\$([a-zA-Z0-9]+)|\[MOOD:([^\]]+)\])", RegexOptions.Compiled);
 
         private const string LightPunctuation = ",，、;；";
         private const string LongPunctuation = ".。!！?？";
@@ -105,8 +149,19 @@ namespace ValleytalkReborn.UI
         private bool _isFastForwardActive;
         private int _typeTimerMs;
         private int _thinkingClockMs;
-        private int _thinkingDotsIndex;
         private string _errorMessage;
+
+        /// <summary>鼠标是否悬浮于对白框内建的取消按钮上。</summary>
+        private bool _isHoveringOverClose;
+
+        /// <summary>取消按钮的悬浮缩放插值（1.0 = 静止）。</summary>
+        private float _hoverScale = 1.0f;
+
+        /// <summary>
+        /// 好感度宝石悬浮文本（原版 DialogueBox.hoverText 为 private 字段，
+        /// 派生类不可写，故本类持有等价副本并据此驱动 drawStringWithScrollBackground）。
+        /// </summary>
+        private string _friendshipHoverText = string.Empty;
 
         /// <summary>已封口、等待玩家翻页才能继续显示的后续页面。</summary>
         private readonly Queue<string> _backlogPages = new();
@@ -195,6 +250,10 @@ namespace ValleytalkReborn.UI
                         System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(StardewValley.Dialogue));
                     this.characterDialogue.speaker = speaker;
                 }
+
+                // 原版 Dialogue.prepareCurrentDialogueForDisplay 会在解析对白时置位 showPortrait；
+                // 本类绕过整段解析，故在此显式复刻，使 isPortraitBox() 与相框绘制得以生效。
+                this.characterDialogue.showPortrait = true;
             }
 
             this.friendshipJewel = new Rectangle(this.x + this.width - 64, this.y + 256, 44, 44);
@@ -299,13 +358,17 @@ namespace ValleytalkReborn.UI
         /// <summary>
         /// 设置立绘表情码。未知/非法码降级为默认表情，绝不阻断渲染。
         /// </summary>
-        /// <param name="emotionCode">情绪码，可带或不带 '$' 前缀。</param>
+        /// <param name="emotionCode">情绪码，可带或不带 '$' 前缀，可为语义词。</param>
         public void SetEmotion(string emotionCode)
         {
             if (string.IsNullOrWhiteSpace(emotionCode) || this.characterDialogue == null)
                 return;
 
             this.characterDialogue.CurrentEmotion = NormalizeEmotionCode(emotionCode);
+
+            // BOUNDARY：无头环境（Game1.content == null）没有立绘可晃，跳过。
+            if (Game1.content != null)
+                this.newPortaitShakeTimer = PortraitShakeDurationMs;
         }
 
         /// <summary>
@@ -340,26 +403,53 @@ namespace ValleytalkReborn.UI
 
         #region 分页
 
-        /// <summary>文字区可用宽度：立绘布局扣 PortraitReserve，宽布局扣左右内边距。</summary>
+        /// <summary>
+        /// 文字区可用宽度（原版 DialogueBox.draw 的 1:1 对齐，票 VT-STREAM-05）：
+        /// 立绘布局扣 460 + 24（716px），无立绘布局扣 16。
+        /// 分页高度熔断与实际绘制共用本值，保证折行位置与渲染一致。
+        /// </summary>
         private int GetTextWidth()
-            => this.isPortraitBox() ? (this.width - PortraitReserve) : (this.width - TextPadding * 2);
+            => this.isPortraitBox() ? (this.width - PortraitTextReserve) : (this.width - WideTextGutter);
+
+        /// <summary>文字区左上角坐标（原版 x + 8 / y + 8）。</summary>
+        private void GetTextOrigin(out int textX, out int textY)
+        {
+            textX = this.x + TextPadding;
+            textY = this.y + TextPadding;
+        }
+
+        /// <summary>取消按钮命中矩形：锚在文字区右下角，尺寸随基准缩放固定。</summary>
+        private Rectangle GetCancelButtonRect()
+        {
+            int size = (int)(CancelButtonSource.Width * CancelButtonBaseScale);
+            return new Rectangle(
+                this.x + GetTextWidth() - CancelButtonAnchorX,
+                this.y + this.height - CancelButtonAnchorY,
+                size,
+                size);
+        }
 
         /// <summary>
-        /// 把一段文本灌入分页管线：显式 '#' 封口 + 高度溢出封口，
+        /// 把一段文本灌入分页管线：先做情绪标记纵深清洗（票 VT-STREAM-05），
+        /// 再按显式 '#' 封口 + 高度溢出封口把文本灌入当前页或 backlog；
         /// 溢出部分压入 backlog 队尾。纯字符串处理，不触碰任何游戏态。
         /// </summary>
         private void IngestText(string text)
         {
+            string body = ExtractAndStripEmotions(text, out List<string> extractedEmotions);
+            foreach (string emotion in extractedEmotions)
+                SetEmotion(emotion);
+
             int cursor = 0;
             // 首段延续 backlog 尾页（流式增量语义）；'#' 之后的每段都另起新页。
             bool startNewPage = false;
 
-            while (cursor < text.Length)
+            while (cursor < body.Length)
             {
-                int hash = text.IndexOf('#', cursor);
+                int hash = body.IndexOf('#', cursor);
                 string segment = hash < 0
-                    ? text.Substring(cursor)
-                    : text.Substring(cursor, hash - cursor);
+                    ? body.Substring(cursor)
+                    : body.Substring(cursor, hash - cursor);
 
                 if (_isCurrentPageSealed)
                 {
@@ -488,7 +578,44 @@ namespace ValleytalkReborn.UI
         }
 
         /// <summary>
-        /// 规范化情绪码：补 '$' 前缀；非法 token 降级为默认表情 "$0"，不阻断渲染。
+        /// 提取并剔除文本中的情绪标记（票 VT-STREAM-05）。作为分流器之上的纵深防御：
+        /// 即使上游漏切，正文也绝不残留 '$h' / '$s' / '[MOOD:xxx]'。
+        /// </summary>
+        /// <param name="text">待清洗文本。</param>
+        /// <param name="extractedEmotions">按出现顺序输出的情绪码（不含 '$' 与标签括号）。</param>
+        /// <returns>剔除全部情绪标记后的正文。</returns>
+        private static string ExtractAndStripEmotions(string text, out List<string> extractedEmotions)
+        {
+            extractedEmotions = new List<string>();
+            if (string.IsNullOrEmpty(text))
+                return text;
+
+            MatchCollection matches = EmotionRegex.Matches(text);
+            if (matches.Count == 0)
+                return text;
+
+            var stripped = new StringBuilder(text.Length);
+            int cursor = 0;
+
+            foreach (Match match in matches)
+            {
+                stripped.Append(text, cursor, match.Index - cursor);
+
+                // 组 2 = '$xxx' 载荷；组 3 = '[MOOD:xxx]' 载荷。
+                extractedEmotions.Add(match.Groups[2].Success ? match.Groups[2].Value : match.Groups[3].Value);
+
+                cursor = match.Index + match.Length;
+            }
+
+            stripped.Append(text, cursor, text.Length - cursor);
+            return stripped.ToString();
+        }
+
+        /// <summary>
+        /// 规范化情绪码（票 VT-STREAM-05）：把 LLM 语义词归一到原版立绘表情。
+        /// happy/smile/joy/h -> $h，sad/sorrow/cry/s -> $s，surprised/shocked/unique/u -> $u，
+        /// love/blush/heart/l -> $l，angry/annoyed/rage/a -> $a，neutral/default/0 -> $neutral，
+        /// 纯数字串 -> "$" + 数字；其余一律降级为 $neutral，绝不阻断渲染。
         /// </summary>
         private static string NormalizeEmotionCode(string emotionCode)
         {
@@ -497,15 +624,68 @@ namespace ValleytalkReborn.UI
                 code = code.Substring(1);
 
             if (code.Length == 0)
-                return "$0";
+                return "$neutral";
 
+            // 数字串：原版立绘帧索引，保留原值。'0' 是原版的 neutral 帧，别名优先于数字规则。
+            if (code == "0")
+                return "$neutral";
+
+            bool allDigits = true;
             foreach (char c in code)
             {
-                if (!IsAsciiWordChar(c))
-                    return "$0";
+                if (c < '0' || c > '9')
+                {
+                    allDigits = false;
+                    break;
+                }
             }
 
-            return "$" + code;
+            if (allDigits)
+                return "$" + code;
+
+            switch (code.ToLowerInvariant())
+            {
+                case "happy":
+                case "smile":
+                case "joy":
+                case "h":
+                    return "$h";
+
+                case "sad":
+                case "sorrow":
+                case "cry":
+                case "s":
+                    return "$s";
+
+                case "surprised":
+                case "shocked":
+                case "unique":
+                case "u":
+                    return "$u";
+
+                case "love":
+                case "blush":
+                case "heart":
+                case "l":
+                    return "$l";
+
+                case "angry":
+                case "annoyed":
+                case "rage":
+                case "a":
+                    return "$a";
+
+                case "neutral":
+                case "default":
+                    return "$neutral";
+
+                default:
+                    // RECOVERABLE：未映射的 token 降级为默认表情，保证渲染链路不中断。
+                    ModEntry.SMonitor?.Log(
+                        $"[AiStreamingDialogueBox] Unmapped emotion '{emotionCode}'; falling back to $neutral.",
+                        LogLevel.Trace);
+                    return "$neutral";
+            }
         }
 
         #endregion
@@ -566,12 +746,8 @@ namespace ValleytalkReborn.UI
 
             if (_state == StreamingDialogueState.Thinking)
             {
+                // 思考态只推进时钟，波浪文字在 draw 中按同一时钟求正弦偏移。
                 _thinkingClockMs += elapsed;
-                if (_thinkingClockMs >= ThinkingDotsIntervalMs)
-                {
-                    _thinkingClockMs = 0;
-                    _thinkingDotsIndex = (_thinkingDotsIndex + 1) % ThinkingDotsTexts.Length;
-                }
                 return;
             }
 
@@ -623,24 +799,22 @@ namespace ValleytalkReborn.UI
 
         #region 绘制
 
-        /// <summary>绘制对白框、头像、文本与翻页箭头。绝不调用 base.draw(b)。</summary>
+        /// <summary>绘制对白框、立绘、文本、思考波浪、取消按钮与好感度悬浮条。绝不调用 base.draw(b)。</summary>
         /// <param name="b">精灵批次。</param>
         public override void draw(SpriteBatch b)
         {
             this.drawBox(b, this.x, this.y, this.width, this.height);
 
-            bool portrait = this.isPortraitBox();
-            if (portrait)
+            if (this.isPortraitBox())
                 this.drawPortrait(b);
 
-            int textX = this.x + TextPadding;
-            int textY = this.y + TextPadding;
+            GetTextOrigin(out int textX, out int textY);
             int textWidth = GetTextWidth();
 
             switch (_state)
             {
                 case StreamingDialogueState.Thinking:
-                    SpriteText.drawString(b, ThinkingDotsTexts[_thinkingDotsIndex], textX, textY, width: textWidth);
+                    DrawNativeThinkingWave(b, textX, textY);
                     break;
 
                 case StreamingDialogueState.Typing:
@@ -661,7 +835,93 @@ namespace ValleytalkReborn.UI
                 || _state == StreamingDialogueState.Faulted)
                 this.dialogueIcon?.draw(b, true, 0, 0, 1f);
 
+            // 生成未完成期间常驻取消按钮：思考态与仍在打字的 Typing 态。
+            if (_state == StreamingDialogueState.Thinking
+                || (_state == StreamingDialogueState.Typing && !_isStreamComplete))
+                DrawNativeCancelButton(b);
+
+            // 原版好感度悬浮条（hoverText 为基类 private 字段，此处用等价副本驱动）。
+            if (_friendshipHoverText.Length > 0)
+            {
+                SpriteText.drawStringWithScrollBackground(
+                    b,
+                    _friendshipHoverText,
+                    this.friendshipJewel.Center.X - SpriteText.getWidthOfString(_friendshipHoverText) / 2,
+                    this.friendshipJewel.Y - 64);
+            }
+
             base.drawMouse(b);
+        }
+
+        /// <summary>
+        /// 原版复刻的思考态波浪文字：逐字符按正弦上下浮动，并在末尾按帧时间追加 0~3 个点号。
+        /// 严格在主线程 draw 中执行，SpriteBatch 与 SpriteText 不跨线程。
+        /// </summary>
+        private void DrawNativeThinkingWave(SpriteBatch b, int textX, int textY)
+        {
+            float seconds = _thinkingClockMs / 1000f;
+            string message = I18n.Get("ui.thinking");
+            if (string.IsNullOrEmpty(message) || message == "ui.thinking")
+                message = I18n.IsChinese ? "思考中" : "thinking";
+
+            int dotCount = (int)(_thinkingClockMs / (float)ThinkingDotIntervalMs) % 4;
+            string animated = message + new string('.', dotCount);
+
+            float currentX = textX;
+            for (int i = 0; i < animated.Length; i++)
+            {
+                string character = animated[i].ToString();
+                float yOffset = (float)Math.Sin(seconds * ThinkingWaveSpeed + i * ThinkingWaveCharPhase)
+                    * ThinkingWaveAmplitude;
+
+                SpriteText.drawString(
+                    b, character, (int)currentX, textY + (int)yOffset,
+                    characterPosition: 999999, width: -1, height: 999999,
+                    alpha: 1f, layerDepth: 1f);
+
+                currentX += SpriteText.getWidthOfString(character);
+            }
+        }
+
+        /// <summary>
+        /// 原版复刻的取消按钮：绘制 Cursors 红叉，叠加悬浮缩放与呼吸浮动。
+        /// </summary>
+        private void DrawNativeCancelButton(SpriteBatch b)
+        {
+            Rectangle slot = GetCancelButtonRect();
+
+            float seconds = _thinkingClockMs / 1000f;
+            float drawScale = CancelButtonBaseScale * _hoverScale;
+            float visualSize = CancelButtonSource.Width * drawScale;
+            float offset = (visualSize - slot.Width) / 2f;
+            float bounceY = (float)Math.Sin(seconds * 3f) * 4f;
+
+            b.Draw(
+                Game1.mouseCursors,
+                new Vector2(slot.X - offset, slot.Y - offset + bounceY),
+                CancelButtonSource,
+                Color.White, 0f, Vector2.Zero, drawScale,
+                SpriteEffects.None, 0.99f);
+        }
+
+        /// <summary>
+        /// 悬浮检测：好感度宝石（复刻原版表达式）+ 对白框内建的取消按钮。
+        /// 原版 DialogueBox.hoverText 为 private 字段，派生类不可写，
+        /// 故把同一表达式求值到本类的等价副本上。
+        /// </summary>
+        /// <param name="mouseX">鼠标 X。</param>
+        /// <param name="mouseY">鼠标 Y。</param>
+        public override void performHoverAction(int mouseX, int mouseY)
+        {
+            _isHoveringOverClose = GetCancelButtonRect().Contains(mouseX, mouseY);
+            _hoverScale += ((_isHoveringOverClose ? CancelButtonHoverScale : 1.0f) - _hoverScale) * HoverScaleLerp;
+
+            _friendshipHoverText = string.Empty;
+            if (this.shouldDrawFriendshipJewel() && this.friendshipJewel.Contains(mouseX, mouseY))
+            {
+                _friendshipHoverText = Game1.player.getFriendshipHeartLevelForNPC(this.characterDialogue.speaker.Name)
+                    + "/" + Utility.GetMaximumHeartsForCharacter(this.characterDialogue.speaker) + "<";
+            }
         }
 
         #endregion
@@ -674,6 +934,13 @@ namespace ValleytalkReborn.UI
         /// <param name="playSound">是否播放音效。</param>
         public override void receiveLeftClick(int x, int y, bool playSound = true)
         {
+            // 取消按钮优先于打字快进：生成未完成期间点它必须中止本轮，而不是跳过当前页。
+            if (IsCancelAvailable() && GetCancelButtonRect().Contains(x, y))
+            {
+                CancelCurrentDialogue();
+                return;
+            }
+
             if (_state == StreamingDialogueState.Typing)
             {
                 _isFastForwardActive = true;
@@ -715,18 +982,56 @@ namespace ValleytalkReborn.UI
             }
         }
 
-        /// <summary>Escape 关闭；Space 或 Action 键等同左键。</summary>
+        /// <summary>Escape 关闭；Space 或 Action 键等同左键。思考态下 Escape 改为中止本轮生成。</summary>
         /// <param name="key">按下的按键。</param>
         public override void receiveKeyPress(Keys key)
         {
             if (key == Keys.Escape)
             {
+                if (_state == StreamingDialogueState.Thinking)
+                {
+                    CancelCurrentDialogue();
+                    return;
+                }
+
                 Close();
                 return;
             }
 
             if (key == Keys.Space || Game1.options.doesInputListContain(Game1.options.actionButton, key))
                 receiveLeftClick(0, 0);
+        }
+
+        /// <summary>当前是否处于「生成尚未完成、取消按钮可见」的状态。</summary>
+        private bool IsCancelAvailable()
+            => _state == StreamingDialogueState.Thinking
+            || (_state == StreamingDialogueState.Typing && !_isStreamComplete);
+
+        /// <summary>
+        /// 中止本轮流式对白：取消 CTS、播音效、清空 AsyncBuilder 队列并收束对白框。
+        /// CTS 缺失或已取消时按 RECOVERABLE 记录 Trace 日志后照常关框，绝不抛异常。
+        /// </summary>
+        public void CancelCurrentDialogue()
+        {
+            Character character = DialogueBuilder.Instance?.GetCharacter(AsyncBuilder.Instance.SpeakingNpc);
+            CancellationTokenSource cts = character?.CurrentDialogueCts;
+
+            if (cts == null || cts.IsCancellationRequested)
+            {
+                ModEntry.SMonitor?.Log(
+                    "[AiStreamingDialogueBox] Cancel requested with no live CTS; closing box and releasing player movement.",
+                    LogLevel.Trace);
+            }
+            else
+            {
+                cts.Cancel();
+            }
+
+            Game1.playSound("cancel");
+            AsyncBuilder.Instance.Cleanup();
+
+            SetFaulted(I18n.Get("ui.cancelled"));
+            Close();
         }
 
         /// <summary>原子关闭：退出菜单并复原对白序列与玩家移动状态。</summary>

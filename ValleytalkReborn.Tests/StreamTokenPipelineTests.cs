@@ -498,4 +498,101 @@ public class StreamTokenPipelineTests
         bool isFirst = (bool)field.GetValue(pipeline);
         return isFirst ? "Thinking" : "Typing";
     }
+
+    // ── VT-STREAM-05：跨 chunk '$' 缓冲与语义情绪词 ──
+
+    [Fact]
+    public void Feed_DollarSplitFromSingleLetterCode_AcrossChunks_EmitsPortrait()
+    {
+        // '$' 落在 chunk 末尾，'h' 在下一 chunk：延迟判定后仍须命中单字母情绪码。
+        List<StreamSegment> segments = Run("心情 $", "h 很好");
+
+        List<StreamSegment> portraits = OfType(segments, StreamSegmentType.Portrait);
+        Assert.Single(portraits);
+        Assert.Equal("h", portraits[0].Payload);
+        Assert.Equal("心情  很好", ConcatText(segments));
+    }
+
+    [Fact]
+    public void Feed_DollarSplitFromSemanticWord_AcrossChunks_EmitsPortrait()
+    {
+        List<StreamSegment> segments = Run("He said $", "happy loudly");
+
+        List<StreamSegment> portraits = OfType(segments, StreamSegmentType.Portrait);
+        Assert.Single(portraits);
+        Assert.Equal("happy", portraits[0].Payload);
+        Assert.Equal("He said  loudly", ConcatText(segments));
+    }
+
+    [Fact]
+    public void Feed_SemanticMoodWords_InSingleChunk_EmitPortrait()
+    {
+        Assert.Equal("happy", OfType(RunOne("$happy"), StreamSegmentType.Portrait).Single().Payload);
+        Assert.Equal("sad", OfType(RunOne("$sad"), StreamSegmentType.Portrait).Single().Payload);
+        Assert.Equal("angry", OfType(RunOne("$angry"), StreamSegmentType.Portrait).Single().Payload);
+        Assert.Equal("surprised", OfType(RunOne("$surprised"), StreamSegmentType.Portrait).Single().Payload);
+        Assert.Equal("love", OfType(RunOne("$love"), StreamSegmentType.Portrait).Single().Payload);
+    }
+
+    [Fact]
+    public void Feed_SemanticMoodWord_IsNotSplitIntoSingleLetterPrefix()
+    {
+        // 回归：'$happy' 不得被切成 '$h' + "appy"。
+        List<StreamSegment> segments = RunOne("$happy");
+
+        Assert.Empty(OfType(segments, StreamSegmentType.Text));
+        Assert.Equal("happy", OfType(segments, StreamSegmentType.Portrait).Single().Payload);
+    }
+
+    [Fact]
+    public void Feed_NonEmotionDollarWord_IsPassedThroughAsText()
+    {
+        // '$house' 的字母段 'house' 不在情绪词表内，必须整段放行为正文。
+        List<StreamSegment> segments = RunOne("a $house");
+
+        Assert.Empty(OfType(segments, StreamSegmentType.Portrait));
+        Assert.Equal("a $house", ConcatText(segments));
+    }
+
+    [Fact]
+    public void Feed_NonEmotionDollarWord_SplitAcrossChunks_StillPassesThrough()
+    {
+        List<StreamSegment> segments = Run("a $", "house");
+
+        Assert.Empty(OfType(segments, StreamSegmentType.Portrait));
+        Assert.Equal("a $house", ConcatText(segments));
+    }
+
+    [Fact]
+    public void Feed_SingleLetterCode_StillEmitsPortraitWhenFollowedByPunctuation()
+    {
+        List<StreamSegment> segments = RunOne("$h, hello");
+
+        Assert.Equal("h", OfType(segments, StreamSegmentType.Portrait).Single().Payload);
+        Assert.Equal(", hello", ConcatText(segments));
+    }
+
+    [Fact]
+    public void Flush_DollarAtEndOfStream_EmitsItAsText()
+    {
+        // 流以 '$' 结尾：待定 '$' 永远等不到后继字符，Flush 必须按正文字符释放，不得丢字。
+        List<StreamSegment> segments = Run("价格 $");
+
+        Assert.Empty(OfType(segments, StreamSegmentType.Portrait));
+        Assert.Equal("价格 $", ConcatText(segments));
+    }
+
+    [Fact]
+    public void Reset_ClearsPendingDollarFlag()
+    {
+        var pipeline = new StreamTokenPipeline();
+        pipeline.Feed("第一轮 $").ToList();
+
+        pipeline.Reset();
+        List<StreamSegment> second = pipeline.Feed("第二轮").ToList();
+
+        // 若待定 '$' 未随 Reset 清除，第二轮的 '第' 会被误判为情绪码前缀而吞掉。
+        Assert.Empty(OfType(second, StreamSegmentType.Portrait));
+        Assert.Equal("第二轮", ConcatText(second));
+    }
 }

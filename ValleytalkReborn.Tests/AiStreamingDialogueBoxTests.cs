@@ -18,6 +18,7 @@
 // 污染同进程内其他用例，因此本类固定为非并行集合（见 TestCollections）。
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -40,6 +41,9 @@ public class AiStreamingDialogueBoxTests : IDisposable
     private static readonly FieldInfo UiViewportField =
         typeof(Game1).GetField("uiViewport", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
 
+    private static readonly FieldInfo Game1PlayerField =
+        typeof(Game1).GetField("_player", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+
     /// <summary>基类 public friendshipJewel 字段（类型为 xTile.Dimensions.Rectangle）。</summary>
     private static readonly FieldInfo FriendshipJewelField =
         typeof(DialogueBox).GetField("friendshipJewel", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
@@ -47,12 +51,14 @@ public class AiStreamingDialogueBoxTests : IDisposable
     private readonly object _previousGame1;
     private readonly object _previousOptions;
     private readonly object _previousViewport;
+    private readonly object _previousPlayer;
 
     public AiStreamingDialogueBoxTests()
     {
         _previousGame1 = Game1InstanceField?.GetValue(null);
         _previousOptions = _previousGame1 == null ? null : Game1OptionsField?.GetValue(_previousGame1);
         _previousViewport = UiViewportField?.GetValue(null);
+        _previousPlayer = Game1PlayerField?.GetValue(null);
 
         InstallHeadlessShims();
     }
@@ -70,6 +76,7 @@ public class AiStreamingDialogueBoxTests : IDisposable
         }
 
         UiViewportField?.SetValue(null, _previousViewport);
+        Game1PlayerField?.SetValue(null, _previousPlayer);
     }
 
     /// <summary>
@@ -136,6 +143,74 @@ public class AiStreamingDialogueBoxTests : IDisposable
     private static void SetStaticField(Type type, string name, object value)
         => type.GetField(name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
             ?.SetValue(null, value);
+
+    /// <summary>翻转 Game1.options.showPortraits，驱动 isPortraitBox() 的原版门禁。</summary>
+    private static void SetShowPortraits(bool value)
+    {
+        object game1 = Game1InstanceField?.GetValue(null);
+        object options = game1 == null ? null : Game1OptionsField?.GetValue(game1);
+        SetField(options, "showPortraits", value);
+    }
+
+    /// <summary>
+    /// 给 NPC 装上非空 Portrait 贴图占位。isPortraitBox() 只判空不触碰纹理内容，
+    /// 而测试项目未引用 MonoGame.Framework，故经反射取类型并造无初始化实例。
+    /// </summary>
+    private static void GiveNpcPortrait(NPC npc)
+    {
+        // Texture2D 定义在 MonoGame.Framework 而非 Stardew Valley 程序集里，
+        // 故经 Game1.mouseCursors 的声明类型直接取到该 Type 实例。
+        // NPC.Portrait 在 1.6 是可写属性而非字段，故走 PropertyInfo。
+        Type textureType = typeof(Game1)
+            .GetField("mouseCursors", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+            .FieldType;
+
+        typeof(NPC)
+            .GetProperty("Portrait", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+            .SetValue(npc, FormatterServices.GetUninitializedObject(textureType));
+    }
+
+    /// <summary>
+    /// 装上最小 Farmer 垫片，让 Close() 能走到「强制释放玩家移动」为止。
+    /// 注意：forceCanMove() 内部还链着多个 NetField 支撑的 Player 状态，
+    /// 无头垫片无法全部补齐，尾段的空引用由 <see cref="IgnoringHeadlessPlayerRelease"/> 吸收。
+    /// </summary>
+    private static void InstallFarmerShim()
+    {
+        var farmer = (Farmer)FormatterServices.GetUninitializedObject(typeof(Farmer));
+        SetField(farmer, "movementDirections", new List<int>());
+
+        // Character.Sprite 走 NetField 字段链，其 setter 在无头垫片上会空引用。
+        // 故直接装配 NetField.Value，使 FarmerSprite getter 返回可写实例。
+        Type farmerSpriteType = typeof(Farmer)
+            .GetProperty("FarmerSprite", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+            .PropertyType;
+        FieldInfo spriteRefField = typeof(StardewValley.Character)
+            .GetField("sprite", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+        object spriteRef = Activator.CreateInstance(spriteRefField.FieldType);
+        spriteRefField.FieldType.GetProperty("Value")
+            .SetValue(spriteRef, FormatterServices.GetUninitializedObject(farmerSpriteType));
+        spriteRefField.SetValue(farmer, spriteRef);
+
+        SetStaticField(typeof(Game1), "_player", farmer);
+    }
+
+    /// <summary>
+    /// 执行一次「会走到 Close() 的强制释放玩家移动」序列，并吸收无头垫片在
+    /// Farmer.forceCanMove() 尾段（NetField 支撑的 UsingTool / CurrentTool 等）的空引用。
+    /// 释放序列本身不在本工单的无头验证范围内，此处只保证取消路由可被断言。
+    /// </summary>
+    private static void IgnoringHeadlessPlayerRelease(Action action)
+    {
+        try
+        {
+            action();
+        }
+        catch (NullReferenceException)
+        {
+            // 无头环境无法补齐 Farmer 的 NetField 状态，止步于 forceCanMove() 尾段。
+        }
+    }
 
     private static AiStreamingDialogueBox NewBox(string initialText = "")
     {
@@ -731,34 +806,66 @@ public class AiStreamingDialogueBoxTests : IDisposable
     }
 
     [Fact]
-    public void SetEmotion_AddsDollarPrefix()
+    public void SetEmotion_MapsSemanticWordToVanillaPortraitCode()
     {
+        // VT-STREAM-05：语义词归一到原版立绘表情码，不再原样透传。
         AiStreamingDialogueBox box = NewBox();
 
         box.SetEmotion("happy");
 
-        Assert.Equal("$happy", box.characterDialogue.CurrentEmotion);
+        Assert.Equal("$h", box.characterDialogue.CurrentEmotion);
     }
 
     [Fact]
-    public void SetEmotion_KeepsExistingDollarPrefix()
+    public void SetEmotion_MapsDollarPrefixedSemanticWordToVanillaPortraitCode()
     {
         AiStreamingDialogueBox box = NewBox();
 
         box.SetEmotion("$sad");
 
-        Assert.Equal("$sad", box.characterDialogue.CurrentEmotion);
+        Assert.Equal("$s", box.characterDialogue.CurrentEmotion);
     }
 
     [Fact]
-    public void SetEmotion_UnknownCode_FallsBackToDefaultWithoutThrowing()
+    public void SetEmotion_MapsAliasesToVanillaPortraitCodes()
+    {
+        AiStreamingDialogueBox box = NewBox();
+
+        box.SetEmotion("joy");
+        Assert.Equal("$h", box.characterDialogue.CurrentEmotion);
+
+        box.SetEmotion("unique");
+        Assert.Equal("$u", box.characterDialogue.CurrentEmotion);
+
+        box.SetEmotion("heart");
+        Assert.Equal("$l", box.characterDialogue.CurrentEmotion);
+
+        box.SetEmotion("rage");
+        Assert.Equal("$a", box.characterDialogue.CurrentEmotion);
+
+        box.SetEmotion("neutral");
+        Assert.Equal("$neutral", box.characterDialogue.CurrentEmotion);
+    }
+
+    [Fact]
+    public void SetEmotion_NumericFrameIndex_KeepsDigits()
+    {
+        AiStreamingDialogueBox box = NewBox();
+
+        box.SetEmotion("6");
+
+        Assert.Equal("$6", box.characterDialogue.CurrentEmotion);
+    }
+
+    [Fact]
+    public void SetEmotion_UnknownCode_FallsBackToNeutralWithoutThrowing()
     {
         // RECOVERABLE 路径：未知码必须降级，不得阻断渲染。
         AiStreamingDialogueBox box = NewBox();
 
         box.SetEmotion("!!bogus!!");
 
-        Assert.Equal("$0", box.characterDialogue.CurrentEmotion);
+        Assert.Equal("$neutral", box.characterDialogue.CurrentEmotion);
     }
 
     [Fact]
@@ -776,6 +883,210 @@ public class AiStreamingDialogueBoxTests : IDisposable
         AiStreamingDialogueBox withoutSpeaker = new(null, "");
         withoutSpeaker.SetEmotion("happy");
         Assert.Null(withoutSpeaker.characterDialogue);
+    }
+
+    #endregion
+
+    #region VT-STREAM-05 情绪标记纵深清洗
+
+    [Fact]
+    public void AppendContent_StripsDollarEmotionCodeFromBody()
+    {
+        AiStreamingDialogueBox box = NewBox();
+
+        box.AppendContent("$a Grrr", false);
+
+        // 正文绝不能残留情绪码，裸文本内容必须完整保留。
+        Assert.Equal(" Grrr", box.DisplayedPageText);
+        Assert.Equal("$a", box.characterDialogue.CurrentEmotion);
+    }
+
+    [Fact]
+    public void AppendContent_StripsSadEmotionCodeFromBody()
+    {
+        AiStreamingDialogueBox box = NewBox();
+
+        box.AppendContent("Oh no $s", false);
+
+        Assert.Equal("Oh no ", box.DisplayedPageText);
+        Assert.Equal("$s", box.characterDialogue.CurrentEmotion);
+    }
+
+    [Fact]
+    public void AppendContent_StripsBracketMoodTagFromBody()
+    {
+        AiStreamingDialogueBox box = NewBox();
+
+        box.AppendContent("[MOOD:happy]Hi there", false);
+
+        Assert.Equal("Hi there", box.DisplayedPageText);
+        Assert.Equal("$h", box.characterDialogue.CurrentEmotion);
+    }
+
+    [Fact]
+    public void SetContent_StripsEmotionCodesFromBody()
+    {
+        AiStreamingDialogueBox box = NewBox();
+
+        box.SetContent("$a Grrr", true);
+
+        Assert.Equal(" Grrr", box.DisplayedPageText);
+        Assert.Equal("$a", box.characterDialogue.CurrentEmotion);
+    }
+
+    [Fact]
+    public void AppendContent_EmotionOnlyChunk_StillDrivesEmotionWithoutTouchingText()
+    {
+        AiStreamingDialogueBox box = NewBox();
+
+        box.AppendContent("$l", false);
+
+        // 纯情绪 chunk 洗练后正文为空，不得因此把对白框打回思考态停滞。
+        Assert.Equal("$l", box.characterDialogue.CurrentEmotion);
+        Assert.Equal(StreamingDialogueState.Typing, box.State);
+    }
+
+    #endregion
+
+    #region VT-STREAM-05 立绘区域
+
+    [Fact]
+    public void Constructor_WithSpeaker_EnablesPortraitFlag()
+    {
+        AiStreamingDialogueBox box = NewBox();
+
+        Assert.True(box.characterDialogue.showPortrait);
+    }
+
+    [Fact]
+    public void Constructor_WithoutSpeaker_LeavesDialogueUnbound()
+    {
+        AiStreamingDialogueBox box = new(null, "");
+
+        Assert.Null(box.characterDialogue);
+        Assert.False(box.isPortraitBox());
+    }
+
+    [Fact]
+    public void IsPortraitBox_WithPortraitTextureAndOption_ReportsTrue()
+    {
+        SetShowPortraits(true);
+        var npc = new NPC();
+        GiveNpcPortrait(npc);
+
+        AiStreamingDialogueBox box = new(npc, "");
+
+        Assert.True(box.isPortraitBox());
+    }
+
+    [Fact]
+    public void IsPortraitBox_WithoutPortraitTexture_FallsBackToNonPortraitLayout()
+    {
+        // BOUNDARY 路径：说话者没有立绘纹理时降级为非立绘宽布局，不得抛异常。
+        SetShowPortraits(true);
+
+        AiStreamingDialogueBox box = new(new NPC(), "");
+
+        Assert.False(box.isPortraitBox());
+    }
+
+    [Fact]
+    public void IsPortraitBox_WithPortraitDisabled_ReportsFalse()
+    {
+        SetShowPortraits(false);
+        var npc = new NPC();
+        GiveNpcPortrait(npc);
+
+        AiStreamingDialogueBox box = new(npc, "");
+
+        // 原版门禁：Game1.options.showPortraits 关闭时一律走非立绘布局。
+        Assert.False(box.isPortraitBox());
+    }
+
+    [Fact]
+    public void AppendContent_PortraitMode_SyncsEmotionAndKeepsBody()
+    {
+        SetShowPortraits(true);
+        var npc = new NPC();
+        GiveNpcPortrait(npc);
+        AiStreamingDialogueBox box = new(npc, "");
+
+        box.AppendContent("$l Love that", false);
+
+        Assert.Equal("$l", box.characterDialogue.CurrentEmotion);
+        Assert.Equal(" Love that", box.DisplayedPageText);
+    }
+
+    #endregion
+
+    #region VT-STREAM-05 悬浮检测与取消按钮
+
+    [Fact]
+    public void PerformHoverAction_Headless_DoesNotThrow()
+    {
+        // BOUNDARY：无头环境无玩家/好感度数据，悬浮检测必须短路而不是空引用。
+        AiStreamingDialogueBox box = NewBox();
+
+        box.performHoverAction(10, 10);
+            box.performHoverAction(box.x + box.width - 32, box.y + 320);
+    }
+
+    [Fact]
+    public void ReceiveLeftClick_InsideCancelButton_InThinking_CancelsDialogue()
+    {
+        InstallFarmerShim();
+        AiStreamingDialogueBox box = NewBox();
+        Assert.Equal(StreamingDialogueState.Thinking, box.State);
+
+        // 取消按钮锚在文字区右下角：点击命中矩形即中止本轮。
+        int btnX = box.x + (box.width - 16) - 64;
+        int btnY = box.y + box.height - 68;
+        IgnoringHeadlessPlayerRelease(() => box.receiveLeftClick(btnX + 10, btnY + 10));
+
+        Assert.Equal(StreamingDialogueState.Faulted, box.State);
+    }
+
+    [Fact]
+    public void ReceiveLeftClick_InsideCancelButton_WhenStreamComplete_KeepsPageTurnBehaviour()
+    {
+        InstallFarmerShim();
+        AiStreamingDialogueBox box = NewBox("abc");
+        box.SetContent("abc", true);
+
+        int btnX = box.x + (box.width - 16) - 64;
+        int btnY = box.y + box.height - 68;
+        box.receiveLeftClick(btnX + 10, btnY + 10);
+
+        // 流已结束：取消按钮不再响应，退回原有的「拉满当前页」语义。
+        Assert.Equal(StreamingDialogueState.Complete, box.State);
+    }
+
+    [Fact]
+    public void ReceiveLeftClick_OutsideCancelButton_InThinking_DoesNotCancel()
+    {
+        InstallFarmerShim();
+        AiStreamingDialogueBox box = NewBox();
+
+        box.receiveLeftClick(box.x + 4, box.y + 4);
+
+        Assert.Equal(StreamingDialogueState.Thinking, box.State);
+    }
+
+    [Fact]
+    public void CancelCurrentDialogue_WithoutLiveCts_EntersFaultedWithoutThrowing()
+    {
+        // RECOVERABLE 路径：CTS 缺失时不得抛异常，仍须收束对白框并继续释放玩家移动。
+        InstallFarmerShim();
+        AiStreamingDialogueBox box = NewBox("partial");
+
+        IgnoringHeadlessPlayerRelease(() => box.CancelCurrentDialogue());
+
+        Assert.Equal(StreamingDialogueState.Faulted, box.State);
+        Assert.Equal(string.Empty, box.DisplayedPageText);
+
+        // 释放序列前半段（可无头求值部分）必须已经生效。
+        Assert.True(Game1.player.CanMove);
+        Assert.Empty(Game1.player.movementDirections);
     }
 
     #endregion

@@ -7,6 +7,7 @@ using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Menus;
 using StardewValley.BellsAndWhistles;
+using ValleytalkReborn.UI;
 
 namespace ValleytalkReborn.Plugins
 {
@@ -88,6 +89,11 @@ namespace ValleytalkReborn.Plugins
         
         private void OnRenderedActiveMenu(object sender, RenderedActiveMenuEventArgs e)
         {
+            // AI 流式对白框自带原版复刻的思考中波浪文字与取消按钮。
+            // 此处必须让位，否则两套绘制会叠在同一像素上产生撕裂。
+            if (Game1.activeClickableMenu is AiStreamingDialogueBox)
+                return;
+
             if (!Context.IsWorldReady ||
                 !AsyncBuilder.Instance.IsGeneratingDialogue ||
                 Game1.activeClickableMenu is not DialogueBox dialogueBox)
