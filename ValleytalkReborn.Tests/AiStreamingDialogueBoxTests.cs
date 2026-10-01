@@ -1090,6 +1090,64 @@ public class AiStreamingDialogueBoxTests : IDisposable
         Assert.Empty(Game1.player.movementDirections);
     }
 
+    /// <summary>
+    /// 无头调用 receiveKeyPress(Keys.Escape)。测试项目不引用 MonoGame（Keys 不可静态书写），
+    /// 故经方法参数类型反射取得枚举并解析。
+    /// </summary>
+    private static void PressEscape(AiStreamingDialogueBox box)
+    {
+        MethodInfo press = typeof(AiStreamingDialogueBox)
+            .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+            .Single(m => m.Name == "receiveKeyPress"
+                && m.GetParameters().Length == 1
+                && m.GetParameters()[0].ParameterType.Name == "Keys");
+
+        object escape = Enum.Parse(press.GetParameters()[0].ParameterType, "Escape");
+
+        try
+        {
+            press.Invoke(box, new[] { escape });
+        }
+        catch (System.Reflection.TargetInvocationException ex)
+            when (ex.InnerException is NullReferenceException)
+        {
+            // 还原为裸 NRE，让调用侧的 IgnoringHeadlessPlayerRelease 能按既有约定吸收。
+            throw ex.InnerException;
+        }
+    }
+
+    [Fact]
+    public void ReceiveKeyPress_EscapeDuringIncompleteTyping_CancelsDialogue()
+    {
+        // 打字中且流未完成：Escape 与取消按钮同权，必须掐断后台 LLM 请求进入 Faulted，
+        // 而不是只关框让请求在后台挂到超时。
+        InstallFarmerShim();
+        AiStreamingDialogueBox box = NewBox();
+        box.AppendContent("partial", false);
+        Assert.Equal(StreamingDialogueState.Typing, box.State);
+
+        IgnoringHeadlessPlayerRelease(() => PressEscape(box));
+
+        Assert.Equal(StreamingDialogueState.Faulted, box.State);
+        Assert.Equal(string.Empty, box.DisplayedPageText);
+    }
+
+    [Fact]
+    public void ReceiveKeyPress_EscapeDuringTypingWithCompleteStream_ClosesWithoutCancel()
+    {
+        // 打字中但流已完成：已无生成内容可取消，Escape 走普通关闭路径，
+        // 不得误入取消分支（SetFaulted 会清空页面文本，可作为甄别凭据）。
+        InstallFarmerShim();
+        AiStreamingDialogueBox box = NewBox("abc");
+        box.SetContent("abc", true);
+        Assert.Equal(StreamingDialogueState.Typing, box.State);
+
+        IgnoringHeadlessPlayerRelease(() => PressEscape(box));
+
+        Assert.Equal(StreamingDialogueState.Typing, box.State);
+        Assert.Equal("abc", box.DisplayedPageText);
+    }
+
     #endregion
 
     #region 思考态波浪文字标点规范化

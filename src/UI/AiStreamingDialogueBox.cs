@@ -1099,13 +1099,16 @@ namespace ValleytalkReborn.UI
             }
         }
 
-        /// <summary>Escape 关闭；Space 或 Action 键等同左键。思考态下 Escape 改为中止本轮生成。</summary>
+        /// <summary>Escape 关闭；Space 或 Action 键等同左键。生成未完成期间（思考中或流式打字中）Escape 与取消按钮同权，中止本轮生成。</summary>
         /// <param name="key">按下的按键。</param>
         public override void receiveKeyPress(Keys key)
         {
             if (key == Keys.Escape)
             {
-                if (_state == StreamingDialogueState.Thinking)
+                // 与取消按钮共用 IsCancelAvailable 判据：对白框还在消耗生成内容
+                // （思考中，或打字中且流未完成）时，Escape 必须掐断后台 LLM 请求，
+                // 否则框关了请求仍会挂到超时。流已完成/翻页/完成态走普通关闭。
+                if (IsCancelAvailable())
                 {
                     CancelCurrentDialogue();
                     return;
