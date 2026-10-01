@@ -404,6 +404,64 @@ public class StreamTokenPipelineTests
         Assert.Equal("-你好", ConcatText(Run("-你好")));
     }
 
+    // ── VT-STREAM-07：前导引导线清洗窗口（_hasSeenFirstDialogueText） ──
+
+    [Fact]
+    public void Feed_PortraitCodeThenDashPrefix_DashIsDiscarded()
+    {
+        // 前置 $h 后带有 "- " 的文本：破折号被正确丢弃，发射 Portrait + 纯正文。
+        List<StreamSegment> segments = Run("$h", "- 你好");
+
+        List<StreamSegment> portraits = OfType(segments, StreamSegmentType.Portrait);
+        Assert.Single(portraits);
+        Assert.Equal("h", portraits[0].Payload);
+        Assert.Equal("你好", ConcatText(segments));
+    }
+
+    [Fact]
+    public void Feed_LeadingDashWithSpace_ChunkedAcrossChunks_IsSmoothlyFiltered()
+    {
+        // 句首 " - " 分块送达（空白、引导线、空格分散在多个 chunk）：破折号被平滑过滤。
+        Assert.Equal("你好", ConcatText(Run(" - ", "你好")));
+    }
+
+    [Fact]
+    public void Feed_DashPrefix_SplitBetweenDashAndSpace_IsFiltered()
+    {
+        // 引导线落在 chunk 末尾、空格在下一 chunk 的跨 chunk 延迟判定。
+        Assert.Equal("你好", ConcatText(Run("-", " 你好")));
+    }
+
+    [Fact]
+    public void Feed_OnlyDashAndSpaces_EmitsNoBrokenDialogue()
+    {
+        // RECOVERABLE 路径：整段仅由 '-' 与空格组成时全部剥除，不发残缺对白。
+        Assert.Equal(string.Empty, ConcatText(RunOne("-  ")));
+        Assert.Equal(string.Empty, ConcatText(RunOne(" - ")));
+    }
+
+    [Fact]
+    public void Feed_EmDashAndEnDashLeads_AreStrippedLikeHyphen()
+    {
+        Assert.Equal("你好", ConcatText(RunOne("— 你好")));
+        Assert.Equal("你好", ConcatText(RunOne("– 你好")));
+    }
+
+    [Fact]
+    public void Feed_DoubleEmDashLead_IsStripped()
+    {
+        // 中文惯用的 "——" 引导线：连续引导线一起吞掉
+        Assert.Equal("你好", ConcatText(RunOne("—— 你好")));
+    }
+
+    [Fact]
+    public void Feed_MidSentenceDash_AfterFirstDialogueText_IsPreserved()
+    {
+        // 首个实质性字符出现后，句中破折号属合法正文，不再清洗
+        Assert.Equal("嗯——好", ConcatText(RunOne("嗯——好")));
+        Assert.Equal("第一段 - 第二段", ConcatText(Run("第一段", " - 第二段")));
+    }
+
     // ── 边界与 Reset ──
 
     [Fact]
@@ -416,12 +474,12 @@ public class StreamTokenPipelineTests
     }
 
     [Fact]
-    public void Feed_NullChunk_DoesNotConsumeFirstChunkFlag()
+    public void Feed_NullChunk_DoesNotConsumeFirstDialogueTextFlag()
     {
         var pipeline = new StreamTokenPipeline();
         pipeline.Feed(null).ToList();
 
-        // null chunk 不应把 _isFirstChunk 置否
+        // null chunk 不应推进清洗窗口状态
         Assert.Equal("你好", ConcatText(pipeline.Feed("- 你好")));
     }
 
@@ -493,10 +551,10 @@ public class StreamTokenPipelineTests
     private static string StreamingProbeState(StreamTokenPipeline pipeline)
     {
         System.Reflection.FieldInfo field = typeof(StreamTokenPipeline).GetField(
-            "_isFirstChunk",
+            "_hasSeenFirstDialogueText",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-        bool isFirst = (bool)field.GetValue(pipeline);
-        return isFirst ? "Thinking" : "Typing";
+        bool hasSeenText = (bool)field.GetValue(pipeline);
+        return hasSeenText ? "Typing" : "Thinking";
     }
 
     // ── VT-STREAM-05：跨 chunk '$' 缓冲与语义情绪词 ──

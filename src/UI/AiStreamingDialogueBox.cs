@@ -440,6 +440,11 @@ namespace ValleytalkReborn.UI
             foreach (string emotion in extractedEmotions)
                 SetEmotion(emotion);
 
+            // 前导引导线纵深清洗（票 VT-STREAM-07）：当前对白的首屏首字尚未写入时，
+            // 剥离 " - " / "— " / "– " 与孤立 "-" 结构前缀；句中破折号不受影响。
+            if (_displayedPageText.Length == 0)
+                body = StripLeadingDialogueDash(body);
+
             int cursor = 0;
             // 首段延续 backlog 尾页（流式增量语义）；'#' 之后的每段都另起新页。
             bool startNewPage = false;
@@ -612,6 +617,46 @@ namespace ValleytalkReborn.UI
         }
 
         /// <summary>
+        /// 剥离首屏正文的前导对白引导线（票 VT-STREAM-07）：文本以空白字符加上
+        /// "- " / "— " / "– " 开头，或仅由 '-' 与空白组成时予以剔除；
+        /// 引导线后直接跟实质性字符（如 "-你好"）时按正文保留，与管道层语义一致。
+        /// </summary>
+        /// <param name="text">待净化文本。</param>
+        /// <returns>剔除引导线后的正文；整段仅为引导线与空白时返回空串。</returns>
+        private static string StripLeadingDialogueDash(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return text;
+
+            int index = 0;
+            while (index < text.Length && char.IsWhiteSpace(text[index]))
+                index++;
+
+            // 纯空白或首个非空白字符不是引导线：交回原样
+            if (index >= text.Length || !IsDialogueLeadDash(text[index]))
+                return text;
+
+            // 引导线后必须紧跟空白才构成结构前缀；后无任何字符（孤立 "-"）时
+            // 整段剥空，避免发出残缺对白；后直接跟实质性字符（如 "-你好"）
+            // 则按正文保留，与管道层语义一致。
+            int cursor = index + 1;
+            if (cursor >= text.Length)
+                return string.Empty;
+
+            if (!char.IsWhiteSpace(text[cursor]))
+                return text;
+
+            while (cursor < text.Length && char.IsWhiteSpace(text[cursor]))
+                cursor++;
+
+            return text.Substring(cursor);
+        }
+
+        /// <summary>是否为对白引导线字符：半角 '-'、全角破折号 “—” 与短破折号 “–”。</summary>
+        private static bool IsDialogueLeadDash(char c)
+            => c == '-' || c == '—' || c == '–';
+
+        /// <summary>
         /// 规范化情绪码（票 VT-STREAM-05）：把 LLM 语义词归一到原版立绘表情。
         /// happy/smile/joy/h -> $h，sad/sorrow/cry/s -> $s，surprised/shocked/unique/u -> $u，
         /// love/blush/heart/l -> $l，angry/annoyed/rage/a -> $a，neutral/default/0 -> $neutral，
@@ -701,6 +746,11 @@ namespace ValleytalkReborn.UI
         /// <param name="revealedCount">已揭示的字符数（刚揭示的字符下标为 revealedCount - 1）。</param>
         internal static int ComputeDelayMs(string text, int revealedCount)
         {
+            // 玩家关闭节奏开关时无视标点与换行，一律恒定原版等间隔打字速度。
+            // Config 为 null（无头测试环境）时按开启处理，保持既有节奏行为。
+            if (ModEntry.Config != null && !ModEntry.Config.EnableRhythmicTyping)
+                return BaseTypeDelayMs;
+
             if (text == null || revealedCount <= 0 || revealedCount > text.Length)
                 return BaseTypeDelayMs;
 
@@ -741,6 +791,16 @@ namespace ValleytalkReborn.UI
         public override void update(GameTime time)
         {
             int elapsed = time.ElapsedGameTime.Milliseconds;
+
+            // 原版同款立绘晃动计时器递减（票 VT-STREAM-07）：SetEmotion 触发的
+            // 250ms 晃动耗尽后必须归零，否则 newPortaitShakeTimer 恒大于 0
+            // 导致立绘无休止抖动。仅在游戏主线程 Update 中安全递减。
+            if (this.newPortaitShakeTimer > 0)
+            {
+                this.newPortaitShakeTimer -= elapsed;
+                if (this.newPortaitShakeTimer < 0)
+                    this.newPortaitShakeTimer = 0;
+            }
 
             dialogueIcon?.update(time);
 

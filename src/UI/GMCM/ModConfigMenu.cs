@@ -348,6 +348,15 @@ namespace ValleytalkReborn
 
             ConfigMenu.AddBoolOption(
                 mod: ModManifest,
+                name: () => GetUIString("configEnableRhythmicTyping", "Rhythmic Dialogue Typing"),
+                tooltip: () => GetUIString("configEnableRhythmicTypingTooltip",
+                    "When enabled, dialogues pause naturally at punctuation and line breaks for realistic speech rhythm. Disable for uniform vanilla-speed typing."),
+                getValue: () => ModEntry.Config.EnableRhythmicTyping,
+                setValue: value => ModEntry.Config.EnableRhythmicTyping = value
+            );
+
+            ConfigMenu.AddBoolOption(
+                mod: ModManifest,
                 name: () => GetUIString("configChoiceBoxStyle", "Custom Choice Box"),
                 tooltip: () => GetUIString("configChoiceBoxStyleTooltip",
                     "ON = custom floating choice panel (Stage 2). OFF = vanilla in-dialogue choice buttons (best compatibility)."),

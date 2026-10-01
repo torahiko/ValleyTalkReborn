@@ -133,6 +133,8 @@ namespace ValleytalkReborn
         public string TypedResponses { get; set; } = "With Generated";
         /// <summary>开启时 AI 在台词后生成 2~3 个快速回复选项；关闭后除约会操作按钮外不渲染任何响应区，接话走 Enter 邻格追问通道。</summary>
         public bool EnableSuggestedResponses { get; set; } = true;
+        /// <summary>开启=依据标点符号与换行自动注入差异化停顿，营造真实 NPC 说话语感；关闭=使用原版等间隔均匀打字机速度（每字 35ms）。</summary>
+        public bool EnableRhythmicTyping { get; set; } = true;
         /// <summary>NPC 选项呈现风格。Vanilla=原版对话框内嵌选项（Stage 1）；Custom=自研浮动选择框（Stage 2）。</summary>
         public ChoiceBoxStyle ChoiceBoxStyle { get; set; } = ChoiceBoxStyle.Custom;
         public SButton InitiateTypedDialogueKey { get; set; } = SButton.LeftAlt;

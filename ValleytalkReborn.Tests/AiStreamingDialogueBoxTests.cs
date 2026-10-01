@@ -24,6 +24,7 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using StardewValley;
 using StardewValley.Menus;
+using ValleytalkReborn;
 using ValleytalkReborn.UI;
 using Xunit;
 
@@ -1165,6 +1166,149 @@ public class AiStreamingDialogueBoxTests : IDisposable
             string animated = BuildThinkingWaveTextForTest(message, clockMs);
             Assert.StartsWith(expectedBase, animated);
             Assert.Equal(expectedBase.Length, animated.TrimEnd('.').Length);
+        }
+    }
+
+    #endregion
+
+    #region VT-STREAM-07 立绘晃动计时器
+
+    /// <summary>
+    /// 无头调用 update()。测试项目不直接引用 MonoGame.Framework（GameTime 不可静态书写），
+    /// 故经 update 的参数类型反射取得该类型；两参同值规避构造函数参数次序差异，
+    /// 确保 ElapsedGameTime 恒为 elapsedMs。
+    /// </summary>
+    private static void UpdateBox(AiStreamingDialogueBox box, int elapsedMs)
+    {
+        MethodInfo update = typeof(AiStreamingDialogueBox)
+            .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+            .Single(m => m.Name == "update"
+                && m.GetParameters().Length == 1
+                && m.GetParameters()[0].ParameterType.Name == "GameTime");
+
+        Type gameTimeType = update.GetParameters()[0].ParameterType;
+        object time = Activator.CreateInstance(gameTimeType,
+            new object[] { TimeSpan.FromMilliseconds(elapsedMs), TimeSpan.FromMilliseconds(elapsedMs) });
+
+        update.Invoke(box, new[] { time });
+    }
+
+    [Fact]
+    public void Update_DecrementsPortraitShakeTimerToZero_EndlessShakeFixed()
+    {
+        // 原版 DialogueBox 从不递减 newPortaitShakeTimer 的缺陷复现：
+        // SetEmotion 置入 250ms 晃动后，update() 必须逐帧递减并精确归零。
+        AiStreamingDialogueBox box = NewBox();
+        FieldInfo shakeField = typeof(DialogueBox).GetField(
+            "newPortaitShakeTimer", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.NotNull(shakeField);
+        shakeField.SetValue(box, 250);
+
+        for (int frame = 0; frame < 40 && (int)shakeField.GetValue(box) > 0; frame++)
+            UpdateBox(box, 16);
+
+        // 40 帧 × 16ms = 640ms > 250ms：计时器必须已耗尽且归零（不残留、不为负）。
+        Assert.Equal(0, (int)shakeField.GetValue(box));
+    }
+
+    [Fact]
+    public void Update_ZeroShakeTimer_StaysZero()
+    {
+        AiStreamingDialogueBox box = NewBox();
+        FieldInfo shakeField = typeof(DialogueBox).GetField(
+            "newPortaitShakeTimer", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+
+        UpdateBox(box, 16);
+
+        Assert.Equal(0, (int)shakeField.GetValue(box));
+    }
+
+    #endregion
+
+    #region VT-STREAM-07 前导引导线纵深清洗
+
+    [Fact]
+    public void AppendContent_FirstScreenWhitespaceDashPrefix_IsFullyStripped()
+    {
+        AiStreamingDialogueBox box = NewBox();
+
+        box.AppendContent(" - 你好", false);
+
+        Assert.Equal("你好", box.DisplayedPageText);
+    }
+
+    [Fact]
+    public void SetContent_FirstScreenDashPrefix_IsFullyStripped()
+    {
+        AiStreamingDialogueBox box = NewBox();
+
+        box.SetContent("- 很高兴见到你", true);
+
+        Assert.Equal("很高兴见到你", box.DisplayedPageText);
+    }
+
+    [Fact]
+    public void AppendContent_DashOnlyChunk_DoesNotEmitBrokenDialogue()
+    {
+        // RECOVERABLE 路径：整段仅由 '-' 与空白组成时整体剥空。
+        AiStreamingDialogueBox box = NewBox();
+
+        box.AppendContent("-", false);
+
+        Assert.Equal(string.Empty, box.DisplayedPageText);
+    }
+
+    [Fact]
+    public void AppendContent_DashAfterFirstScreenText_IsPreserved()
+    {
+        // 首屏首字已写入后，句中破折号属合法正文，不再清洗。
+        AiStreamingDialogueBox box = NewBox();
+
+        box.AppendContent("第一句", false);
+        box.AppendContent(" - 第二句", false);
+
+        Assert.Equal("第一句 - 第二句", box.DisplayedPageText);
+    }
+
+    #endregion
+
+    #region VT-STREAM-07 按节奏显示文字开关
+
+    [Fact]
+    public void ComputeDelay_RhythmicTypingDisabled_ReturnsConstantBaseDelay()
+    {
+        ModConfig original = ModEntry.Config;
+        try
+        {
+            ModEntry.Config = new ModConfig { EnableRhythmicTyping = false };
+
+            // 开关闭合时无视标点与换行，一律恒定 35ms 原版等间隔速度。
+            Assert.Equal(35, AiStreamingDialogueBox.ComputeDelayMs("a, b", 2));   // 逗号
+            Assert.Equal(35, AiStreamingDialogueBox.ComputeDelayMs("Done.", 5));  // 句号
+            Assert.Equal(35, AiStreamingDialogueBox.ComputeDelayMs("a\nb", 2));   // 换行
+            Assert.Equal(35, AiStreamingDialogueBox.ComputeDelayMs("嗯——", 3));   // 破折号
+        }
+        finally
+        {
+            ModEntry.Config = original;
+        }
+    }
+
+    [Fact]
+    public void ComputeDelay_NullConfig_PreservesRhythmicBehaviour()
+    {
+        // RECOVERABLE 路径：无头测试环境 Config 为 null 时按开启处理。
+        ModConfig original = ModEntry.Config;
+        try
+        {
+            ModEntry.Config = null;
+
+            Assert.Equal(175, AiStreamingDialogueBox.ComputeDelayMs("a, b", 2));
+            Assert.Equal(450, AiStreamingDialogueBox.ComputeDelayMs("a\nb", 2));
+        }
+        finally
+        {
+            ModEntry.Config = original;
         }
     }
 

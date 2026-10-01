@@ -64,8 +64,28 @@ public sealed class StreamTokenPipeline
     /// <summary>是否已切入 '%' 选项区；切入后不再产出任何片段。</summary>
     private bool _inOptionSection;
 
-    /// <summary>是否仍为首个 chunk；用于清洗开头的 "- " 结构前缀。</summary>
-    private bool _isFirstChunk = true;
+    /// <summary>
+    /// 是否已遇到第一个实质性对白字符（非空格、非换行、非引导线）。
+    /// 置位前，'-'/“—”/“–” 一律视为对白引导线而非正文（票 VT-STREAM-07）；
+    /// 置位后出现的破折号（句中省略号或破折号）按合法正文保留。
+    /// </summary>
+    private bool _hasSeenFirstDialogueText;
+
+    /// <summary>
+    /// 跨 chunk 延迟判定的对白引导线：读到引导线时不立即并入正文，
+    /// 等下一字符到达后再判定——后随空格则连同空格一起吞掉，
+    /// 后随实质性字符则回落为正文字符（如 "-你好" 的连字符属于正文）。
+    /// </summary>
+    private bool _hasPendingLeadingDash;
+
+    /// <summary>待定引导线的原始字符（'-'/“—”/“–”），回落为正文时按原字符释放。</summary>
+    private char _pendingLeadingDashChar;
+
+    /// <summary>清洗窗口内滞留未定性的空格数（其后是引导线则丢弃，是实质性字符则原样释放）。</summary>
+    private int _heldLeadingWhitespace;
+
+    /// <summary>本流窗口内是否已吞掉过引导线；Flush 时据此丢弃残留的结构空白。</summary>
+    private bool _swallowedLeadingDash;
 
     /// <summary>上一个已处理字符，用于判定 '%' 是否处于行首（跨 chunk 保持）。</summary>
     private char _lastProcessedChar;
@@ -100,15 +120,6 @@ public sealed class StreamTokenPipeline
         if (string.IsNullOrEmpty(chunk))
             yield break;
 
-        if (_isFirstChunk)
-        {
-            // 清洗首 chunk 开头的结构前缀 "- "（Provider 常见的对白行前缀）
-            if (chunk.StartsWith("- ", StringComparison.Ordinal))
-                chunk = chunk.Substring(2);
-
-            _isFirstChunk = false;
-        }
-
         for (int i = 0; i < chunk.Length; i++)
         {
             char c = chunk[i];
@@ -134,6 +145,66 @@ public sealed class StreamTokenPipeline
 
                 _textBuffer.Append('$');
                 AdvanceLineState('$');
+            }
+
+            // ── 分支 0.5：前导引导线清洗窗口（票 VT-STREAM-07） ──
+            // 在第一个实质性对白字符出现之前，'-'/“—”/“–” 是结构引导线而非正文：
+            // 连同其后紧随的空格一并吞掉；只有当引导线后直接跟着实质性字符时
+            // 才回落为正文字符。跨 chunk 用延迟判定保持与 '$' 情绪码同样的无缝拼接语义。
+            if (!_hasSeenFirstDialogueText && !_inOptionSection && _tagBuffer.Length == 0)
+            {
+                if (_hasPendingLeadingDash)
+                {
+                    if (c == ' ' || c == '\t')
+                    {
+                        // 引导线 + 紧随空格：双双吞掉，窗口继续保持
+                        _hasPendingLeadingDash = false;
+                        _swallowedLeadingDash = true;
+                        continue;
+                    }
+
+                    if (c == '\n' || c == '\r')
+                    {
+                        // 引导线后接换行：吞掉引导线，换行交由常规延迟判定释放
+                        _hasPendingLeadingDash = false;
+                        _swallowedLeadingDash = true;
+                    }
+                    else if (IsDialogueLeadDash(c))
+                    {
+                        // 连续引导线（如 "——"）：丢弃当前字符，继续等待后继字符定性
+                        continue;
+                    }
+                    else
+                    {
+                        // 引导线后直接跟实质性字符：不是结构前缀，回落为正文字符
+                        _hasPendingLeadingDash = false;
+                        _textBuffer.Append(_pendingLeadingDashChar);
+                        AdvanceLineState(_pendingLeadingDashChar);
+                    }
+                }
+                else if (c == ' ' || c == '\t')
+                {
+                    // 尚未定性的空白滞留不释放：其后是引导线则属结构前缀整体丢弃，
+                    // 是实质性字符则原样释放（保持既有实现的空格输出）。
+                    _heldLeadingWhitespace++;
+                    continue;
+                }
+                else if (IsDialogueLeadDash(c))
+                {
+                    _hasPendingLeadingDash = true;
+                    _pendingLeadingDashChar = c;
+
+                    // 引导线之前的空白同属结构前缀，一并丢弃
+                    _heldLeadingWhitespace = 0;
+                    continue;
+                }
+                else if (_heldLeadingWhitespace > 0)
+                {
+                    // 实质性对白字符：先释放滞留空白，再按常规流程处理本字符
+                    _textBuffer.Append(' ', _heldLeadingWhitespace);
+                    AdvanceLineState(' ');
+                    _heldLeadingWhitespace = 0;
+                }
             }
 
             // ── 分支 1：选项区模式。此后不再产出任何片段。 ──
@@ -262,6 +333,8 @@ public sealed class StreamTokenPipeline
                 continue;
             }
 
+            // 实质性对白字符：置位清洗窗口出口，后续破折号按合法正文保留
+            _hasSeenFirstDialogueText = true;
             _textBuffer.Append(c);
             AdvanceLineState(c);
         }
@@ -285,6 +358,23 @@ public sealed class StreamTokenPipeline
         {
             _textBuffer.Append(_tagBuffer);
             _tagBuffer.Clear();
+        }
+
+        // 引导线悬空（流以引导线结尾）：永远等不到后继字符可供定性，视同吞掉。
+        // 若窗口内已吞过引导线，滞留空白同属结构前缀一并丢弃——
+        // "仅 '-' 与空格" 的流整段净化，不发残缺对白。
+        if (_hasPendingLeadingDash)
+        {
+            _hasPendingLeadingDash = false;
+            _swallowedLeadingDash = true;
+        }
+
+        if (_heldLeadingWhitespace > 0)
+        {
+            if (!_swallowedLeadingDash)
+                _textBuffer.Append(' ', _heldLeadingWhitespace);
+
+            _heldLeadingWhitespace = 0;
         }
 
         // 流以换行结尾：待定换行没有后继字符可供判定，按正文字符释放，不得丢弃。
@@ -324,7 +414,11 @@ public sealed class StreamTokenPipeline
         _optionBuffer.Clear();
         _collectedSuggestions.Clear();
         _inOptionSection = false;
-        _isFirstChunk = true;
+        _hasSeenFirstDialogueText = false;
+        _hasPendingLeadingDash = false;
+        _pendingLeadingDashChar = '\0';
+        _heldLeadingWhitespace = 0;
+        _swallowedLeadingDash = false;
         _lastProcessedChar = '\0';
         _atLineStart = true;
         _hasPendingNewline = false;
@@ -447,6 +541,10 @@ public sealed class StreamTokenPipeline
     /// <summary>是否为 ASCII 字母。</summary>
     private static bool IsAsciiLetter(char c)
         => (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+
+    /// <summary>是否为对白引导线字符：半角 '-'、全角破折号 “—” 与短破折号 “–”（票 VT-STREAM-07）。</summary>
+    private static bool IsDialogueLeadDash(char c)
+        => c == '-' || c == '—' || c == '–';
 
     #endregion
 
