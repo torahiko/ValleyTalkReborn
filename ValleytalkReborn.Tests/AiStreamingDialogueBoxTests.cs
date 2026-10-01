@@ -1514,6 +1514,47 @@ public class AiStreamingDialogueBoxTests : IDisposable
         Assert.True(box.CharacterIndex < 4, $"首帧不应瞬间揭示全部字符，当前 index: {box.CharacterIndex}");
     }
 
+    /// <summary>翻转 Options.dialogueTyping 门禁（构造垫片默认 false）。</summary>
+    private static void SetDialogueTyping(bool value)
+    {
+        object game1 = Game1InstanceField?.GetValue(null);
+        object options = game1 == null ? null : Game1OptionsField?.GetValue(game1);
+        SetField(options, "dialogueTyping", value);
+    }
+
+    /// <summary>安装计数音效桩并清零计数（下一用例的 InstallHeadlessShims 会复位回空音效桩）。</summary>
+    private static void InstallCountingSounds()
+    {
+        Type soundsType = typeof(Game1)
+            .GetField("sounds", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+            .FieldType;
+
+        MethodInfo generic = typeof(DispatchProxy)
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .First(m => m.Name == "Create" && m.IsGenericMethodDefinition)
+            .MakeGenericMethod(soundsType, typeof(CountingSoundsHelper));
+
+        CountingSoundsHelper.PlayCount = 0;
+        SetStaticField(typeof(Game1), "sounds", generic.Invoke(null, null));
+    }
+
+    [Fact]
+    public void Update_StreamingTyping_PlaysStepSoundForEachRevealedChar()
+    {
+        // 音效门禁（票 VT-TYPEWRITER-PROMPT-CALIBRATION）：流未完成时，
+        // 本页每个步进字符都播放打字音——含首字与页尾字。旧门禁
+        // (_characterIndex > 1 && index < length) 只会为中间字符播音。
+        SetDialogueTyping(true);
+        InstallCountingSounds();
+        AiStreamingDialogueBox box = NewBox("abc");
+
+        for (int i = 0; i < 12 && box.CharacterIndex < 3; i++)
+            UpdateBox(box, 16);
+
+        Assert.Equal(3, box.CharacterIndex);
+        Assert.Equal(3, CountingSoundsHelper.PlayCount);
+    }
+
     #endregion
 }
 
@@ -1542,6 +1583,49 @@ internal class NullSoundsHelper : DispatchProxy
         if (targetMethod.ReturnType.IsByRef)
         {
             // out ICue / out IAudioSource：交出同一个无操作桩实例
+            Type elementType = targetMethod.ReturnType.GetElementType();
+            args[Array.IndexOf(targetMethod.GetParameters(), targetMethod.ReturnParameter)] =
+                Create(elementType);
+            return null;
+        }
+
+        return targetMethod.ReturnType.IsValueType
+            ? Activator.CreateInstance(targetMethod.ReturnType)
+            : null;
+    }
+
+    private static object Create(Type type)
+        => type.GetConstructor(Type.EmptyTypes) != null
+            ? Activator.CreateInstance(type)
+            : CreateUninitialized(type);
+
+    private static object CreateUninitialized(Type type)
+        => FormatterServices.GetUninitializedObject(
+            type.GetInterfaces().FirstOrDefault() ?? type);
+}
+
+/// <summary>
+/// 计数音效桩：与 NullSoundsHelper 同构，但统计 Play* 调用次数，
+/// 用于验证打字机步进音效门禁（票 VT-TYPEWRITER-PROMPT-CALIBRATION）。
+/// 测试类固定为非并行集合，静态计数器安全。
+/// </summary>
+internal class CountingSoundsHelper : DispatchProxy
+{
+    public static int PlayCount;
+
+    protected override object Invoke(MethodInfo targetMethod, object[] args)
+    {
+        if (targetMethod.Name.StartsWith("Play", StringComparison.Ordinal))
+            PlayCount++;
+
+        if (targetMethod.ReturnType == typeof(void))
+            return null;
+
+        if (targetMethod.ReturnType == typeof(bool))
+            return false;
+
+        if (targetMethod.ReturnType.IsByRef)
+        {
             Type elementType = targetMethod.ReturnType.GetElementType();
             args[Array.IndexOf(targetMethod.GetParameters(), targetMethod.ReturnParameter)] =
                 Create(elementType);
