@@ -376,6 +376,15 @@ namespace ValleytalkReborn
                 setValue: value => ModEntry.Config.RecordEventDialogue = value
             );
 
+            ConfigMenu.AddBoolOption(
+                mod: ModManifest,
+                name: () => GetUIString("configDirectorEnableThinking", "Director Deep Thinking"),
+                tooltip: () => GetUIString("configDirectorEnableThinkingTooltip",
+                    "When enabled, AI cutscene director uses deep reasoning for richer drama (slower). When disabled, uses fast mode with thinking suppressed."),
+                getValue: () => ModEntry.Config.DirectorEnableThinking,
+                setValue: value => ModEntry.Config.DirectorEnableThinking = value
+            );
+
             ConfigMenu.AddTextOption(
                 mod: ModManifest,
                 name: () => GetUIString("configFrequencyGeneral", "Frequency of general lines"),

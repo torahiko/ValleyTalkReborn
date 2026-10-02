@@ -101,14 +101,20 @@ namespace ValleytalkReborn.Cutscene.Generation
                 Game1.addHUDMessage(new HUDMessage("🎬 虚拟导演正在构思即兴剧本中... (按 ESC 取消)", HUDMessage.newQuest_type));
 
                 // 3. 异步调用大模型推理（不卡主线程）
+                bool enableThinking = ModEntry.Config?.DirectorEnableThinking ?? false;
+                string cacheContext = enableThinking
+                    ? $"{LlmContextTypes.Director}_Think"
+                    : $"{LlmContextTypes.Director}_Fast";
+                int nPredict = enableThinking ? 4096 : 2048;
+
                 var llmResp = await Llm.Instance.RunInference(
                     systemPromptString: sysPrompt,
                     gameCacheString: string.Empty,
                     npcCacheString: string.Empty,
                     promptString: userPrompt,
                     responseStart: string.Empty,
-                    n_predict: 2048,
-                    cacheContext: LlmContextTypes.Director
+                    n_predict: nPredict,
+                    cacheContext: cacheContext
                 );
 
                 if (_generationCts.IsCancellationRequested)

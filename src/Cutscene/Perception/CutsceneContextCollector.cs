@@ -140,6 +140,47 @@ namespace ValleytalkReborn.Cutscene.Perception
                 ModEntry.SMonitor?.Log($"[CutsceneContextCollector] POI scan failed: {ex.Message}", StardewModdingAPI.LogLevel.Warn);
             }
 
+            // 3.5 优先注入农夫（玩家）身旁的合法互动交谈位，确保单人互动或对手戏能够精准走向农夫身旁
+            try
+            {
+                if (Game1.player != null && location != null)
+                {
+                    var farmerTile = Game1.player.Tile;
+                    var anchorNpc = actors?.FirstOrDefault();
+                    Vector2[] offsets = new[]
+                    {
+                        new Vector2(0, 1),   // 正前方/下方
+                        new Vector2(0, -1),  // 正上方
+                        new Vector2(1, 0),   // 右侧
+                        new Vector2(-1, 0)   // 左侧
+                    };
+
+                    int addedCount = 0;
+                    foreach (var offset in offsets)
+                    {
+                        var cand = farmerTile + offset;
+                        var safeFarmerAdj = MovementPathfinding.FindNearestWalkableTile(location, cand, anchorNpc, radius: 1);
+                        if (safeFarmerAdj != Vector2.Zero &&
+                            safeFarmerAdj != farmerTile &&
+                            !ctx.NearbyPois.Any(p => p.Tile == safeFarmerAdj))
+                        {
+                            string dirDesc = offset.Y > 0 ? "农夫前方" : (offset.Y < 0 ? "农夫后方" : (offset.X > 0 ? "农夫右侧" : "农夫左侧"));
+                            ctx.NearbyPois.Insert(addedCount, new PoiInfo
+                            {
+                                Description = $"【农夫互动交谈位】{dirDesc}（面对面站立互动）",
+                                Tile = safeFarmerAdj
+                            });
+                            addedCount++;
+                            if (addedCount >= 2) break;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ModEntry.SMonitor?.Log($"[CutsceneContextCollector] Farmer adjacent POI injection failed: {ex.Message}", StardewModdingAPI.LogLevel.Warn);
+            }
+
             return ctx;
         }
     }

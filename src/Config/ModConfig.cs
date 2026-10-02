@@ -148,6 +148,8 @@ namespace ValleytalkReborn
         public SButton OpenTimelineMenuKey { get; set; } = SButton.J;
         public bool SuppressConnectionCheck { get; set; } = false;
         public bool EnableMemoryCompression { get; set; } = true;
+        /// <summary>虚拟导演剧本生成是否启用深度思考模式（开启时大模型展开长链推理，关闭时走极速抑制模式）。</summary>
+        public bool DirectorEnableThinking { get; set; } = false;
         public int MemoryRecentCount { get; set; } = 10;
 
         /// <summary>

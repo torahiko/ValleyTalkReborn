@@ -34,7 +34,8 @@ namespace ValleytalkReborn.Cutscene.Prompt
 }");
             sb.AppendLine();
             sb.AppendLine("【导演纪律与视听技巧】：");
-            sb.AppendLine("- 【镜头开场铁律】：全剧第 1 个动作必须通常安排 camera 动作，将 target 设定为开场说话或行动的 NPC（如 target: \"NPC英文名\"），将镜头平滑推向舞台主角！严禁把镜头停留在无关的玩家身上！");
+            sb.AppendLine("- 【镜头开场铁律】：全剧第 1 个动作必须通常安排 camera 动作，将 target 设定为开场说话或行动的 NPC（如 target: \"NPC英文名\"），将镜头平滑推向舞台主角！");
+            sb.AppendLine("- 【玩家互动规则】：当只有 1 位 NPC 参演时，剧情是该 NPC 与农夫（farmer）的面对面对手戏。NPC 必须移动走向农夫身旁（targetTile 选用【农夫互动交谈位】坐标），停在农夫身边并面向农夫（lookAt target: \"farmer\"），再对农夫说话。");
             sb.AppendLine("- 【空间锚定铁律】：move 动作的 targetTile 必须且只能选用用户提示中给出的【现场可用地标坐标】或其临近格子，绝对禁止捏造不存在或越界的坐标！");
             sb.AppendLine("- 【视听并发法则】：积极运用 \"waitForCompletion\": false 编排并行演出（例如镜头推向角色的同时角色冒出感叹号并起步走位；或者说话的同时播放音效并冒爱心）。");
             sb.AppendLine("- 【角色互动运镜】：在多角色对话中，积极运用 camera 动作在不同角色间切换对焦，使观众视线始终聚焦在当前核心演出的角色身上。");
@@ -100,6 +101,15 @@ namespace ValleytalkReborn.Cutscene.Prompt
             if (ctx.Actors.Count > 0)
             {
                 sb.AppendLine($"【运镜指引】：首个动作请用 camera 动作将镜头切向开场主角（如 target: \"{ctx.Actors[0].Name}\"），使观众视线正对舞台中心。");
+            }
+
+            if (ctx.Actors.Count == 1)
+            {
+                var soloActor = ctx.Actors[0];
+                sb.AppendLine();
+                sb.AppendLine("【单人互动核心导演纪律】：");
+                sb.AppendLine($"- 当前场景仅有 1 位参演村民（{soloActor.DisplayName}），这场戏是 {soloActor.DisplayName} 与农夫（玩家/farmer）之间的专属对手戏！");
+                sb.AppendLine($"- 走位铁律：{soloActor.DisplayName} 必须主动走向农夫身旁（move 动作的 targetTile 必须选用【农夫互动交谈位】坐标），停在农夫身边（1~2 格距离），然后执行 lookAt target: \"farmer\" 面对农夫，再表达问候、关心或倾诉！");
             }
 
             sb.AppendLine();

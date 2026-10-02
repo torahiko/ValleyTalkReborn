@@ -68,18 +68,30 @@ namespace ValleytalkReborn.Cutscene
             var currentLoc = actor.currentLocation;
             var startTile = actor.Tile;
 
-            // 计算目标点：NPC 前方 3 格（根据朝向）
+            // 计算目标点：优先走向农夫（玩家）身旁的合法互动交谈位
             Vector2 targetTile = startTile;
-            switch (actor.FacingDirection)
+            if (Game1.player != null)
             {
-                case 0: targetTile += new Vector2(0, -3); break; // 上
-                case 1: targetTile += new Vector2(3, 0); break;  // 右
-                case 2: targetTile += new Vector2(0, 3); break;  // 下
-                case 3: targetTile += new Vector2(-3, 0); break; // 左
+                // 搜索距离玩家 1~2 格内的就近连通格
+                var safePlayerAdj = MovementPathfinding.FindNearestWalkableTile(currentLoc, Game1.player.Tile, actor, radius: 2);
+                if (safePlayerAdj != Vector2.Zero && safePlayerAdj != Game1.player.Tile)
+                {
+                    targetTile = safePlayerAdj;
+                }
             }
 
-            // 确保目标点可通行
-            targetTile = MovementPathfinding.FindNearestWalkableTile(currentLoc, targetTile, actor, radius: 5);
+            if (targetTile == startTile)
+            {
+                // 兜底回退：若农夫周边暂无合法格，延展自身朝向
+                switch (actor.FacingDirection)
+                {
+                    case 0: targetTile += new Vector2(0, -2); break;
+                    case 1: targetTile += new Vector2(2, 0); break;
+                    case 2: targetTile += new Vector2(0, 2); break;
+                    case 3: targetTile += new Vector2(-2, 0); break;
+                }
+                targetTile = MovementPathfinding.FindNearestWalkableTile(currentLoc, targetTile, actor, radius: 5);
+            }
 
             bool isChinese = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
             string speak1 = isChinese

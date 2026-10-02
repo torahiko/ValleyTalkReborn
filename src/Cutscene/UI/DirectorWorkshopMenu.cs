@@ -60,9 +60,11 @@ namespace ValleytalkReborn.Cutscene.UI
         // 自由命题输入框
         private readonly DialogueTextInputBox _intentInputBox;
 
-        // 开拍按钮
+        // 开拍按钮与深度思考切换
         private Rectangle _actionButtonRect;
         private float _actionButtonHoverScale = 1f;
+        private Rectangle _thinkingToggleRect;
+        private float _thinkingToggleHoverScale = 1f;
 
         // ── Tab 1: 历史剧目归档数据与组件 ──
         private List<ArchivedCutscene> _archivedCutscenes = new();
@@ -176,7 +178,12 @@ namespace ValleytalkReborn.Cutscene.UI
             _toneButtonRects[3] = new Rectangle(rightColX + toneBtnW + 12, toneTop + toneBtnH + 8, toneBtnW, toneBtnH);
 
             // 自由命题输入框排版
-            int inputTop = _toneButtonRects[2].Bottom + 40;
+            int labelY = _toneButtonRects[2].Bottom + 14;
+            int toggleW = 126;
+            int toggleH = 26;
+            _thinkingToggleRect = new Rectangle(rightColX + rightColW - toggleW, labelY - 2, toggleW, toggleH);
+
+            int inputTop = _toneButtonRects[2].Bottom + 42;
             int inputH = 110;
             _intentInputBox.Position = new Vector2(rightColX, inputTop);
             _intentInputBox.Extent = new Vector2(rightColW, inputH);
@@ -309,6 +316,14 @@ namespace ValleytalkReborn.Cutscene.UI
                     Game1.playSound("smallSelect");
                     return;
                 }
+            }
+
+            // 深度思考 / 极速模式切换胶囊
+            if (_thinkingToggleRect.Contains(x, y))
+            {
+                ModEntry.Config.DirectorEnableThinking = !ModEntry.Config.DirectorEnableThinking;
+                Game1.playSound("drumkit6");
+                return;
             }
 
             // 自由命题文本框聚焦
@@ -623,10 +638,22 @@ namespace ValleytalkReborn.Cutscene.UI
                 }
             }
 
-            // 自由命题标签
+            // 自由命题标签与深度思考切换胶囊
             CustomFontManager.DrawString(b, "自定义命题与细节指导 (可选)",
                 new Vector2(rightColX, _toneButtonRects[2].Bottom + 16),
                 BioEditorMenu.TextPrimary, RegularFontSize);
+
+            bool thinkingOn = ModEntry.Config?.DirectorEnableThinking ?? false;
+            string toggleText = thinkingOn ? "🧠 深度思考: 开" : "⚡ 极速模式: 开";
+            var toggleStyle = thinkingOn ? ActionButtonStyle.Romantic : ActionButtonStyle.Default;
+            ActionButtonRenderer.Draw(b, _thinkingToggleRect, toggleText, ref _thinkingToggleHoverScale, mx, my, fontSize: SmallFontSize, style: toggleStyle);
+
+            if (_thinkingToggleRect.Contains(mx, my))
+            {
+                _hoverText = thinkingOn
+                    ? "【深度思考模式：已开启】\n允许大模型展开长链推理构思，情节更具戏剧性，但生成耗时稍长（30~60 秒）。点击可切换为极速模式。"
+                    : "【极速生成模式：已开启】\n抑制大模型思考过程，直接生成剧本，响应极快（通常 5~15 秒）。点击可切换为深度思考模式。";
+            }
 
             // 输入框
             DrawStyledDialogueBox(b, _intentInputBox);
