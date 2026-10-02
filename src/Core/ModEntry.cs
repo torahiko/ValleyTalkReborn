@@ -479,6 +479,17 @@ namespace ValleytalkReborn
             Config = SHelper.ReadConfig<ModConfig>();
             Config.NormalizeDailyDistillationConfig(SMonitor);
 
+            // DD408 流程10：配置开关变化 → 幂等失效调度器配置快照（在途完成重验后丢弃，
+            // 候选保留待探针重验；不破坏 drain 与存档队列）。
+            try
+            {
+                TimelineAutoSummaryScheduler.Instance?.InvalidateConfiguration();
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"[ValleyTalkReborn] Error invalidating scheduler configuration: {ex.Message}");
+            }
+
             DialogueBuilder.Instance.Config = Config;
 
             if (!Config.EnableMod)
@@ -1688,6 +1699,18 @@ namespace ValleytalkReborn
             // VT-FARM-CACHE-04: 先于 Cleanup 作废农场摘要缓存，避免清理链异常时遗留前存档文本。
             FarmStateScanner.InvalidateCache();
             SMonitor.Log("[FarmStateScanner] Farm summary cache invalidated on ReturnedToTitle.", LogLevel.Debug);
+
+            // DD408：返回标题在 ModEntry.Cleanup 之前先失效自动总结调度器存档会话
+            // （epoch 递增、Memory 候选/高层队列清空、未完成 drain 保留由旧回调丢弃）。
+            try
+            {
+                TimelineAutoSummaryScheduler.Instance?.InvalidateSaveSession();
+                SMonitor.Log("[TimelineAutoSummary] Save session invalidated on ReturnedToTitle.", LogLevel.Debug);
+            }
+            catch (Exception ex)
+            {
+                SMonitor.Log($"[ValleyTalkReborn] Error invalidating TimelineAutoSummaryScheduler session: {ex.Message}", LogLevel.Error);
+            }
 
             Cleanup();
 

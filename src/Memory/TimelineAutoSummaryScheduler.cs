@@ -38,7 +38,9 @@ internal sealed class AutoSummaryTask
 /// 由 OneSecondUpdateTicked 的节流器逐条触发生成。
 /// 队列/处理标志/冷却为进程内 Memory；日哨兵写入 player.modData（存档持久）。
 /// 仅主机（Context.IsMainPlayer）启用。
-/// DD406 起为 partial：日记蒸馏候选规划与请求准入辅助共存于本类（DD408 才接入事件循环）。
+/// DD406 起为 partial：日记蒸馏候选规划与请求准入辅助共存于本类。
+/// DD408 接入事件循环：SaveLoaded 延后重建、跨天日间任务取消、高层依赖闭环
+/// （Daily 最终整理 → Weekly → Season → Yearly）与 DD404B 保源提交。
 /// </summary>
 internal sealed partial class TimelineAutoSummaryScheduler
 {
@@ -65,25 +67,68 @@ internal sealed partial class TimelineAutoSummaryScheduler
 
     public void Cleanup()
     {
-        _queue.Clear();
-        _isProcessing = false;
+        // DD408 流程10：清理具有幂等失效效果——复用会话失效（不同 handler 重复调用安全：
+        // epoch 递增、Memory 候选清空、未完成 drain 句柄保留由旧回调丢弃路径处理）。
+        InvalidateSaveSession();
         _cooldownSecondsRemaining = 0;
     }
 
-    private void OnDayStarted(object sender, DayStartedEventArgs e) => TryScanAndEnqueue();
-    private void OnSaveLoaded(object sender, SaveLoadedEventArgs e) => TryScanAndEnqueue();
+    private void OnDayStarted(object sender, DayStartedEventArgs e)
+    {
+        // DD408 流程3：跨天先使旧日期日间运行任务失效并请求最终整理重规划（主线程）。
+        HandleDayRollover();
+        TryScanAndEnqueue();
+    }
+
+    private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
+    {
+        // DD408 流程1：SaveLoaded 不立即扫描或写 ledger——其他订阅者（History.Load/
+        // MemoryManager.Load）尚未完成；先失效会话（Memory 候选清空、同档已保存尝试次数
+        // 不复位），再请求重建，由首个世界就绪且 Memory 已加载的一秒事件执行。
+        InvalidateSaveSession();
+        _dailyNeedsRebuild = true;
+    }
 
     private void OnOneSecondUpdateTicked(object sender, OneSecondUpdateTickedEventArgs e)
     {
         if (!Context.IsWorldReady || !ModEntry.Config.EnableMod) return;
 
+        // DD408 流程4：35 秒冷却逐秒倒数，与 10 秒连续交互空闲分别判断。
         if (_cooldownSecondsRemaining > 0)
-        {
             _cooldownSecondsRemaining--;
-            return;
+
+        // DD408 流程1：存档加载后的首个安全一秒事件重建（此时 History.Load/MemoryManager.Load
+        // 已完成）。新存档必定核对——高层重发现由 PeriodAlreadyCovered/去重键去重，
+        // 扫描哨兵不阻止恢复丢失的 Memory 队列。
+        if (_dailyNeedsRebuild && Context.IsMainPlayer && MemoryManager.Instance.IsLoaded)
+        {
+            _dailyNeedsRebuild = false;
+            _dailyProbeTicks = 0;      // 本次重建立即全量扫描
+            TryScanAndEnqueue();       // 高层周期任务重发现（幂等）
         }
 
-        if (!_isProcessing && _queue.Count > 0)
+        // DD406：候选规划扫描（每 5 个一秒事件；零扣费零网络）。
+        ProbeDailyWork();
+
+        // DD407：交互暂存的完成结果在玩家空闲的一秒事件消费（重验 epoch/跨日后处理）。
+        ConsumeDeferredDailyCompletions();
+
+        // DD408 流程4：每秒更新交互闲置计数并给出 10 秒连续空闲准入窗口。
+        bool dailyAdmitted = CanAdmitDailyWork();
+
+        // DD408 流程5 优先级：Daily 最终整理 → 高层（Weekly/Season/Yearly）→ 今日 Daily。
+        if (dailyAdmitted && !_isProcessing && _dailyPending.Count > 0)
+        {
+            var ordered = OrderedDailyPending();
+            var dailyTask = ordered.FirstOrDefault(t => t.IsFinalDaily)
+                ?? (_queue.Count > 0 ? null : ordered.FirstOrDefault());
+            if (dailyTask != null) StartDailyTask(dailyTask);
+        }
+
+        // DD408 流程4：高层入场同样使用交互空闲守卫；LLM 整体禁用时 IsInteractionIdleFree
+        // 不放行 → 全部生成暂停、候选保留在队列。
+        if (!_isProcessing && _queue.Count > 0
+            && _cooldownSecondsRemaining == 0 && IsInteractionIdleFree())
         {
             _isProcessing = true;
             _ = ProcessNextTaskAsync();
@@ -96,12 +141,10 @@ internal sealed partial class TimelineAutoSummaryScheduler
 
         var now = new StardewTime(Game1.Date, Game1.timeOfDay);
         int today = MemoryManager.StardewTimeToGameDay(now);
+        // DD408 流程1/5：日哨兵仅保留扫描提示，不再拦截扫描——新存档必定核对、重读档
+        // 重新发现当天周期任务（PeriodAlreadyCovered 与规范化去重键去重，Memory 队列
+        // 在会话失效后由此恢复）。
         string sentinel = Game1.player.modData.TryGetValue(LastScanDayKey, out var s) ? s : "";
-        if (sentinel == today.ToString())
-        {
-            ModEntry.SMonitor?.Log($"[TimelineAutoSummary] Scan already ran for game day {today}; skipping.", LogLevel.Trace);
-            return;
-        }
 
         var candidates = new List<(NPC npc, string name, string displayName, bool married, int hearts)>();
         foreach (var name in Game1.player.friendshipData.Keys)
@@ -125,7 +168,7 @@ internal sealed partial class TimelineAutoSummaryScheduler
             // a. 季报（Day 1 of any season → 覆盖上一整个季节的周报）
             if (ModEntry.Config.AutoSummarizeSeason && now.DayOfMonth == 1)
             {
-                _queue.Enqueue(new AutoSummaryTask
+                EnqueueHighTier(new AutoSummaryTask
                 {
                     NpcName = name,
                     NpcDisplayName = displayName,
@@ -138,7 +181,7 @@ internal sealed partial class TimelineAutoSummaryScheduler
             // b. 年报（Spring 1, year >= 2 → 覆盖上一整年的季报）
             if (ModEntry.Config.AutoSummarizeYearly && now.Year >= 2 && now.Season == Season.Spring && now.DayOfMonth == 1)
             {
-                _queue.Enqueue(new AutoSummaryTask
+                EnqueueHighTier(new AutoSummaryTask
                 {
                     NpcName = name,
                     NpcDisplayName = displayName,
@@ -151,7 +194,7 @@ internal sealed partial class TimelineAutoSummaryScheduler
             // c. 周报（每周一）
             if (ModEntry.Config.AutoSummarizeWeekly && now.DayOfMonth % 7 == 1)
             {
-                _queue.Enqueue(new AutoSummaryTask
+                EnqueueHighTier(new AutoSummaryTask
                 {
                     NpcName = name,
                     NpcDisplayName = displayName,
@@ -161,169 +204,275 @@ internal sealed partial class TimelineAutoSummaryScheduler
                 enqueued++;
             }
 
-            // d. 日报（昨日与农夫互动 >= 3 次，且昨日无日记）
-            if (ModEntry.Config.AutoSummarizeDaily)
-            {
-                bool hasDailyForYesterday = MemoryManager.Instance.GetTimelineMemories(name, MemoryTier.Daily)
-                    .Any(e =>
-                    {
-                        if (e.CreatedDay <= 0) return false;
-                        var t = MemoryManager.GameDayToStardewTime(e.CreatedDay);
-                        return t.Year == yesterday.Year && t.Season == yesterday.Season && t.DayOfMonth == yesterday.DayOfMonth;
-                    });
-
-                if (!hasDailyForYesterday)
-                {
-                    int playerLines = DialogueHistoryManager.Instance.GetRecentHistory(name, 30)
-                        .Count(e => e.SpeakerType == SpeakerType.Player
-                            && e.Timestamp.Year == yesterday.Year
-                            && e.Timestamp.Season == yesterday.Season
-                            && e.Timestamp.DayOfMonth == yesterday.DayOfMonth);
-                    if (playerLines >= 3)
-                    {
-                        _queue.Enqueue(new AutoSummaryTask
-                        {
-                            NpcName = name,
-                            NpcDisplayName = displayName,
-                            Type = AutoSummaryType.Daily,
-                            TargetDate = yesterday
-                        });
-                        enqueued++;
-                    }
-                }
-            }
+            // d. 日报：DD408 流程2 移除旧扫描与 ExtractAsync 路径——Daily 由 DD406/407 的
+            //    规划/请求/提交路径接管（ProbeDailyWork → StartDailyTask → CommitDailyTimeline），
+            //    不经过 PeriodAlreadyCovered 的"已有卡片就跳过"守卫，也不进入高层队列。
         }
 
         Game1.player.modData[LastScanDayKey] = today.ToString();
         if (enqueued > 0)
         {
-            ModEntry.SMonitor?.Log($"[TimelineAutoSummary] Enqueued {enqueued} automatic summary task(s) (game day {today}).", LogLevel.Info);
+            ModEntry.SMonitor?.Log($"[TimelineAutoSummary] Enqueued {enqueued} automatic summary task(s) (game day {today}, previous sentinel {sentinel}).", LogLevel.Info);
+        }
+        else
+        {
+            ModEntry.SMonitor?.Log($"[TimelineAutoSummary] Scan ran for game day {today} (previous sentinel {sentinel}); no periodic candidate.", LogLevel.Trace);
         }
     }
 
+    /// <summary>
+    /// 高层（Weekly/Season/Yearly）执行路径。await 前的守卫/捕获运行在一秒事件主线程；
+    /// LLM await 续体仅投递主线程回调；运行标志/冷却的复位统一在主线程完成区
+    /// （DD408：既有 finally 复位调整为主线程完成回调复位）。
+    /// </summary>
     private async Task ProcessNextTaskAsync()
     {
         AutoSummaryTask task = null;
         try
         {
-            if (_queue.Count == 0) return;
+            // 流程7：LLM 整体禁用 → 暂停全部生成、保留候选（出队前拦截）。
+            if (DialogueBuilder.Instance?.LlmDisabled == true)
+            {
+                ModEntry.SMonitor?.Log("[TimelineAutoSummary] High-tier generation paused: LLM disabled; candidates kept.", LogLevel.Debug);
+                ReleaseAutoRun();
+                return;
+            }
+
+            if (_queue.Count == 0)
+            {
+                ReleaseAutoRun();
+                return;
+            }
             task = _queue.Dequeue();
 
-            // 守卫链：任一命中即丢弃任务（已出队），finally 复位节流。
+            // 守卫链：任一命中即终止本次尝试（键释放，冷却在主线程复位）。
             if (!Context.IsWorldReady || !Context.IsMainPlayer)
             {
                 ModEntry.SMonitor?.Log($"[TimelineAutoSummary] Task [{task.Type}] for [{task.NpcName}] dropped: world not ready or not main player.", LogLevel.Debug);
+                SettleHigherKey(task);
+                ReleaseAutoRun();
                 return;
             }
-            if (DialogueBuilder.Instance?.LlmDisabled == true)
+
+            // 流程6：依赖闭环——Weekly 先等待该 NPC 7 日窗口的 Daily 最终整理闭合；
+            // Season 等待同 NPC 相关 Weekly 候选结束；Yearly 等待相关 Season 结束。
+            // 任一待排队/执行/未完成 ack → 延后该高层任务（Trace 变化时一次）。
+            if (HasUnsettledDailyDependency(task) || HasUnsettledHigherDependency(task))
             {
-                ModEntry.SMonitor?.Log($"[TimelineAutoSummary] Task [{task.Type}] for [{task.NpcName}] dropped: LLM disabled.", LogLevel.Debug);
+                DeferHighTierTask(task);
+                ReleaseAutoRun();
                 return;
             }
+            _higherDeferralTraced.Remove(HigherKeyOf(task));
+
+            // 既有守卫：周期已有卡片 → 丢弃（重读档重发现任务的去重路径；Daily 不经过本守卫）。
             if (PeriodAlreadyCovered(task))
             {
                 ModEntry.SMonitor?.Log($"[TimelineAutoSummary] Task [{task.Type}] for [{task.NpcName}] dropped: period already covered.", LogLevel.Debug);
+                SettleHigherKey(task);
+                ReleaseAutoRun();
                 return;
             }
 
-            int targetDay = MemoryManager.StardewTimeToGameDay(task.TargetDate);
-            MemoryExtractResult result;
-
-            if (task.Type == AutoSummaryType.Daily)
+            // 流程8（主线程捕获）：解析实际源实体、记录 ID/hash、分配固定 NewEntryId；
+            // TargetDay 统一为 DateToDayNumber(TargetDate)+1（绝对日历日）。
+            var sourceEntities = ResolveSourceEntities(task);
+            int targetDay = DateToDayNumber(task.TargetDate) + 1;
+            if (sourceEntities.Count < 2)
             {
-                var existingContents = MemoryManager.Instance.GetTimelineMemories(task.NpcName, MemoryTier.Daily)
-                    .Select(e => e.Content).Take(10).ToList();
-                result = await MemoryExtractService.ExtractAsync(
-                    task.NpcName, task.NpcDisplayName, existingContents, task.TargetDate, CancellationToken.None);
-            }
-            else
-            {
-                var sourceEntities = ResolveSourceEntities(task);
-                var sourceContents = sourceEntities.Select(e => e.Content).ToList();
-                if (sourceContents.Count < 2)
-                {
-                    ModEntry.SMonitor?.Log($"[TimelineAutoSummary] Task [{task.Type}] for [{task.NpcName}] dropped: only {sourceContents.Count} source(s) (need >= 2).", LogLevel.Debug);
-                    return;
-                }
-                result = await MemoryExtractService.CondenseAsync(
-                    task.NpcName, task.NpcDisplayName, sourceContents, CondenseTier(task.Type), CancellationToken.None);
-            }
-
-            if (result == null || result.Status != MemoryExtractStatus.Success
-                || result.Candidates == null || result.Candidates.Count == 0)
-            {
-                ModEntry.SMonitor?.Log($"[TimelineAutoSummary] Task [{task.Type}] for [{task.NpcName}] produced no result (status={result?.Status}, error={result?.ErrorDetail}).", LogLevel.Debug);
+                // 流程8：少于 2 条只在依赖全部闭合后判定终止（依赖闸门已放行）。
+                ModEntry.SMonitor?.Log($"[TimelineAutoSummary] Task [{task.Type}] for [{task.NpcName}] day {targetDay} dropped: only {sourceEntities.Count} source(s) (need >= 2).", LogLevel.Debug);
+                SettleHigherKey(task);
+                ReleaseAutoRun();
                 return;
+            }
+
+            task.NewEntryId = Guid.NewGuid().ToString();
+            task.SourceEntryIds = sourceEntities.Select(e => e.Id).ToList();
+            task.SourceContentHashes = sourceEntities
+                .Select(e => DailyDistillationSnapshotBuilder.HashText(e.Content ?? "")).ToList();
+            task.SaveSessionEpoch = _saveSessionEpoch;
+            task.ConfigurationEpoch = _configurationEpoch;
+
+            // 流程6：最终整理未完全完成（预算耗尽 FailedBudget / 手动暂停关闭等）→
+            // 明确允许使用保留的旧正文继续升档，并记录原因。
+            string incomplete = DescribeIncompleteFinalization(task);
+            if (!string.IsNullOrEmpty(incomplete))
+            {
+                ModEntry.SMonitor?.Log($"[TimelineAutoSummary] [{task.Type}] for [{task.NpcName}] day {targetDay}: final daily pass incomplete ({incomplete}); using retained sources.", LogLevel.Info);
             }
 
             var capturedTask = task;
-            var capturedResult = result;
-            MainThreadActionQueue.EnqueueMainThread(() => CompleteTask(capturedTask, capturedResult, targetDay));
+            var sourceContents = sourceEntities.Select(e => e.Content).ToList();
+            MemoryExtractResult result = await MemoryExtractService.CondenseAsync(
+                capturedTask.NpcName, capturedTask.NpcDisplayName, sourceContents,
+                CondenseTier(capturedTask.Type), CancellationToken.None).ConfigureAwait(false);
+
+            MainThreadActionQueue.EnqueueMainThread(() =>
+            {
+                if (result == null || result.Status != MemoryExtractStatus.Success
+                    || result.Candidates == null || result.Candidates.Count == 0)
+                {
+                    ModEntry.SMonitor?.Log($"[TimelineAutoSummary] Task [{capturedTask.Type}] for [{capturedTask.NpcName}] produced no result (status={result?.Status}, error={result?.ErrorDetail}).", LogLevel.Debug);
+                    SettleHigherKey(capturedTask);
+                    ReleaseAutoRun();
+                    return;
+                }
+                CompleteTask(capturedTask, result, targetDay);
+            });
         }
         catch (Exception ex)
         {
             ModEntry.SMonitor?.Log($"[TimelineAutoSummary] ProcessNextTaskAsync error: {ex}", LogLevel.Warn);
-        }
-        finally
-        {
-            _isProcessing = false;
-            _cooldownSecondsRemaining = ThrottleSeconds;
+            MainThreadActionQueue.EnqueueMainThread(ReleaseAutoRun);
         }
     }
 
-    /// <summary>主线程完成区：复查 → 写入 → 归档+删除源 → Toast。</summary>
+    /// <summary>
+    /// 主线程完成区（流程8/9）：复查 epoch、目标周期与每个捕获源 ID/hash →
+    /// DD404B.CommitTimelineCondensation 原子保源提交（取代旧 Add→Archive→Remove 链）→
+    /// 按结果分支释放占用。只有 Applied 产生成功日志与 HUD；任何分支均不再调用
+    /// RemoveTimelineMemories——完成时新解析出的非捕获源条目全部保留。
+    /// </summary>
     private void CompleteTask(AutoSummaryTask task, MemoryExtractResult result, int targetDay)
     {
+        bool staleSession = task.SaveSessionEpoch != _saveSessionEpoch;
         try
         {
-            if (!Context.IsWorldReady)
+            // 旧存档回调：直接丢弃，不释放新会话运行标志（失效清理已复位，冷却保持）。
+            if (staleSession)
             {
-                ModEntry.SMonitor?.Log($"[TimelineAutoSummary] CompleteTask [{task.Type}] for [{task.NpcName}] skipped: world not ready.", LogLevel.Debug);
+                ModEntry.SMonitor?.Log($"[TimelineAutoSummary] High-tier completion for [{task.NpcName}] dropped: stale save session.", LogLevel.Debug);
                 return;
             }
 
-            var targetTier = TargetTier(task.Type);
-            string bestText = result.Candidates.FirstOrDefault();
-            if (string.IsNullOrWhiteSpace(bestText)) return;
-
-            var addResult = MemoryManager.Instance.AddTimelineMemory(task.NpcName, bestText, targetTier, null, targetDay);
-
-            if (addResult == MemoryOperationResult.Success)
+            string content = result.Candidates.FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(content))
             {
-                var sourceEntities = ResolveSourceEntities(task);
-                if (sourceEntities.Count > 0)
+                ModEntry.SMonitor?.Log($"[TimelineAutoSummary] High-tier bug for [{task.NpcName}] day {targetDay}: success payload without candidate.", LogLevel.Error);
+                SettleHigherKey(task);
+                return;
+            }
+
+            // 配置 epoch（同会话内 GMCM 变化）→ 丢弃并释放（捕获源保留，等待重新发现）。
+            if (task.ConfigurationEpoch != _configurationEpoch)
+            {
+                ModEntry.SMonitor?.Log($"[TimelineAutoSummary] High-tier completion for [{task.NpcName}] day {targetDay} dropped: configuration epoch changed.", LogLevel.Debug);
+                SettleHigherKey(task);
+                return;
+            }
+
+            if (!Context.IsWorldReady || !Context.IsMainPlayer)
+            {
+                ModEntry.SMonitor?.Log($"[TimelineAutoSummary] High-tier completion for [{task.NpcName}] day {targetDay} dropped: world/host not ready.", LogLevel.Debug);
+                SettleHigherKey(task);
+                return;
+            }
+
+            // 目标周期复查：同周期已有卡片 → 撤销本次候选，等待下一次发现（RECOVERABLE）。
+            if (PeriodAlreadyCovered(task))
+            {
+                ModEntry.SMonitor?.Log($"[TimelineAutoSummary] High-tier completion for [{task.NpcName}] day {targetDay} revoked: target period already covered; awaiting rediscovery.", LogLevel.Info);
+                SettleHigherKey(task);
+                return;
+            }
+
+            // 捕获源逐项复查：ID 仍存在且内容 hash 一致。任一源消失或变化 → 保留全部源、
+            // 丢弃该生成并撤销本次候选（Info 记录、等待下一次发现、不写错误聚合）。
+            var sources = MemoryManager.Instance.GetTimelineMemories(task.NpcName, SourceTierOf(task.Type));
+            for (int i = 0; i < task.SourceEntryIds.Count; i++)
+            {
+                string sourceId = task.SourceEntryIds[i];
+                var source = sources.FirstOrDefault(e => e != null && string.Equals(e.Id, sourceId, StringComparison.Ordinal));
+                if (source == null
+                    || !string.Equals(DailyDistillationSnapshotBuilder.HashText(source.Content ?? ""), task.SourceContentHashes[i], StringComparison.Ordinal))
                 {
-                    MemoryManager.Instance.ArchiveTimelineMemories(task.NpcName, sourceEntities, "Distilled");
-                    MemoryManager.Instance.RemoveTimelineMemories(task.NpcName, sourceEntities.Select(e => e.Id).ToList());
+                    ModEntry.SMonitor?.Log($"[TimelineAutoSummary] High-tier [{task.Type}] for [{task.NpcName}] day {targetDay} revoked: captured source {sourceId} missing or changed; all sources retained.", LogLevel.Info);
+                    SettleHigherKey(task);
+                    return;
+                }
+            }
+
+            // 流程9：保源原子提交——传固定 NewEntryId、捕获源 ID/hash、正文与目标日期/tier。
+            var commitResult = MemoryManager.Instance.CommitTimelineCondensation(new TimelineCondensationCommitRequest
+            {
+                NpcName = task.NpcName,
+                TargetDay = targetDay,
+                TargetTier = TargetTier(task.Type),
+                EntryId = task.NewEntryId,
+                NewContent = content,
+                SourceEntryIds = task.SourceEntryIds,
+                SourceContentHashes = task.SourceContentHashes
+            });
+
+            switch (commitResult?.Status)
+            {
+                case TimelineCondensationCommitStatus.Applied:
+                {
+                    string layerName = (task.Type, I18n.IsChinese) switch
+                    {
+                        (AutoSummaryType.Weekly, true) => "周报",
+                        (AutoSummaryType.Weekly, false) => "weekly",
+                        (AutoSummaryType.Season, true) => "季报",
+                        (AutoSummaryType.Season, false) => "season",
+                        (AutoSummaryType.Yearly, true) => "年报",
+                        (AutoSummaryType.Yearly, false) => "yearly",
+                        _ => task.Type.ToString()
+                    };
+                    string msg = I18n.IsChinese
+                        ? $"【{task.NpcDisplayName}】为你写下了一篇{layerName}回忆……"
+                        : $"{task.NpcDisplayName} wrote a new {layerName} memory for you...";
+                    Game1.addHUDMessage(new HUDMessage(msg, 1));
+
+                    ModEntry.SMonitor?.Log($"[TimelineAutoSummary] Applied [{task.Type}] for [{task.NpcName}] day {targetDay} epoch {task.SaveSessionEpoch} fingerprint {FingerprintPrefix(task.NewEntryId)}: \"{TrimForLog(content)}\" (sources archived: {task.SourceEntryIds.Count}).", LogLevel.Info);
+                    SettleHigherKey(task);
+                    break;
                 }
 
-                string layerName = (task.Type, I18n.IsChinese) switch
-                {
-                    (AutoSummaryType.Daily, true) => "日记",
-                    (AutoSummaryType.Daily, false) => "daily",
-                    (AutoSummaryType.Weekly, true) => "周报",
-                    (AutoSummaryType.Weekly, false) => "weekly",
-                    (AutoSummaryType.Season, true) => "季报",
-                    (AutoSummaryType.Season, false) => "season",
-                    (AutoSummaryType.Yearly, true) => "年报",
-                    (AutoSummaryType.Yearly, false) => "yearly",
-                    _ => task.Type.ToString()
-                };
-                string msg = I18n.IsChinese
-                    ? $"【{task.NpcDisplayName}】为你写下了一篇{layerName}回忆……"
-                    : $"{task.NpcDisplayName} wrote a new {layerName} memory for you...";
-                Game1.addHUDMessage(new HUDMessage(msg, 1));
+                case TimelineCondensationCommitStatus.Unchanged:
+                    // 内容一致幂等：仅日志，无 HUD、无新卡片。
+                    ModEntry.SMonitor?.Log($"[TimelineAutoSummary] Unchanged [{task.Type}] for [{task.NpcName}] day {targetDay} epoch {task.SaveSessionEpoch}: identical aggregate already present.", LogLevel.Info);
+                    SettleHigherKey(task);
+                    break;
 
-                ModEntry.SMonitor?.Log($"[TimelineAutoSummary] Completed [{task.Type}] for [{task.NpcName}]: \"{TrimForLog(bestText)}\".", LogLevel.Info);
-            }
-            else
-            {
-                ModEntry.SMonitor?.Log($"[TimelineAutoSummary] AddTimelineMemory [{task.Type}] for [{task.NpcName}] returned {addResult}; source entries retained.", LogLevel.Info);
+                case TimelineCondensationCommitStatus.Conflict:
+                    // 冲突 → 撤销结果并待重新发现（键释放，下一次扫描/重建可再入队）。
+                    ModEntry.SMonitor?.Log($"[TimelineAutoSummary] Conflict [{task.Type}] for [{task.NpcName}] day {targetDay}: {commitResult.ErrorDetail}; revoked, awaiting rediscovery.", LogLevel.Info);
+                    SettleHigherKey(task);
+                    break;
+
+                case TimelineCondensationCommitStatus.CapacityFull:
+                case TimelineCondensationCommitStatus.Duplicate:
+                    // 源保留；结束该周期本会话尝试（依赖释放并记录原因）。
+                    BlockHigherCycle(task, commitResult.Status.ToString());
+                    ModEntry.SMonitor?.Log($"[TimelineAutoSummary] {commitResult.Status} [{task.Type}] for [{task.NpcName}] day {targetDay}: sources retained; cycle attempt ended for this session.", LogLevel.Info);
+                    break;
+
+                case TimelineCondensationCommitStatus.Unavailable:
+                    // 存档/加载状态不满足 → RECOVERABLE → 撤销并等待下一次发现。
+                    ModEntry.SMonitor?.Log($"[TimelineAutoSummary] Unavailable [{task.Type}] for [{task.NpcName}] day {targetDay}: {commitResult.ErrorDetail}; revoked, awaiting rediscovery.", LogLevel.Info);
+                    SettleHigherKey(task);
+                    break;
+
+                case TimelineCondensationCommitStatus.StorageFailed:
+                case TimelineCondensationCommitStatus.Invalid:
+                default:
+                    // 存储失败/非法请求 → Error 升级；本会话 block 该 NPC 周期，源保留零删除。
+                    BlockHigherCycle(task, $"{commitResult?.Status}: {commitResult?.ErrorDetail}");
+                    ModEntry.SMonitor?.Log($"[TimelineAutoSummary] {commitResult?.Status} [{task.Type}] for [{task.NpcName}] day {targetDay}: {commitResult?.ErrorDetail}; sources retained, cycle blocked for session.", LogLevel.Error);
+                    break;
             }
         }
         catch (Exception ex)
         {
-            ModEntry.SMonitor?.Log($"[TimelineAutoSummary] CompleteTask error for [{task.NpcName}]: {ex}", LogLevel.Warn);
+            // 主线程完成区异常：BUG → Error → 明确失败并保留源；按任务身份释放占用，Supervisor 升级。
+            ModEntry.SMonitor?.Log($"[TimelineAutoSummary] CompleteTask error for [{task.NpcName}]: {ex}", LogLevel.Error);
+            SettleHigherKey(task);
+        }
+        finally
+        {
+            if (!staleSession)
+                ReleaseAutoRun();
         }
     }
 
@@ -415,6 +564,232 @@ internal sealed partial class TimelineAutoSummaryScheduler
         string.IsNullOrEmpty(s) ? "" : (s.Length <= 40 ? s : s.Substring(0, 40) + "…");
 
     // ════════════════════════════════════════════════════════════
+    // DD408：生命周期接线、依赖闭环与高层保源提交消费。
+    // 高层队列/去重键/捕获源 ID+hash/会话终态均为 Memory；日哨兵仅扫描提示；
+    // Daily 权威状态仍为 NPC ModData（ledger）。全部状态变更在主线程。
+    // ════════════════════════════════════════════════════════════
+
+    /// <summary>高层候选规范化去重键：(NPC代码名.ToUpperInvariant(), 类型, 目标日)。</summary>
+    private static (string NpcName, AutoSummaryType Type, int TargetDay) HigherKeyOf(AutoSummaryTask task) =>
+        (task?.NpcName?.ToUpperInvariant() ?? "", task?.Type ?? AutoSummaryType.Daily,
+         task == null ? 0 : DateToDayNumber(task.TargetDate) + 1);
+
+    /// <summary>流程5：高层候选入队——规范化键去重；本会话已终态周期不再重新入队。主线程调用。</summary>
+    private void EnqueueHighTier(AutoSummaryTask task)
+    {
+        if (task == null) return;
+        var key = HigherKeyOf(task);
+        if (_higherSessionBlocked.Contains(key))
+        {
+            ModEntry.SMonitor?.Log($"[TimelineAutoSummary] High-tier candidate [{key.Type}] for [{task.NpcName}] day {key.TargetDay} skipped: cycle blocked for this session.", LogLevel.Debug);
+            return;
+        }
+        if (!_higherPendingKeys.Add(key)) return;   // 已在队列/执行中，不重复入队
+        _queue.Enqueue(task);
+    }
+
+    /// <summary>高层候选依赖未闭合 → 重新入队延后；Trace 变化时一次（恢复后重新布防）。</summary>
+    private void DeferHighTierTask(AutoSummaryTask task)
+    {
+        var key = HigherKeyOf(task);
+        _queue.Enqueue(task);
+        if (_higherDeferralTraced.Add(key))
+        {
+            ModEntry.SMonitor?.Log($"[TimelineAutoSummary] High-tier [{key.Type}] for [{task.NpcName}] day {key.TargetDay} deferred: lower dependency unsettled.", LogLevel.Trace);
+        }
+    }
+
+    /// <summary>高层周期已 settled/撤销（等待重新发现）→ 释放去重键。</summary>
+    private void SettleHigherKey(AutoSummaryTask task) => _higherPendingKeys.Remove(HigherKeyOf(task));
+
+    /// <summary>高层周期终态（容量满/重复/存储失败/非法）→ 释放依赖键并记录本会话终态。</summary>
+    private void BlockHigherCycle(AutoSummaryTask task, string reason)
+    {
+        var key = HigherKeyOf(task);
+        _higherPendingKeys.Remove(key);
+        if (_higherSessionBlocked.Add(key))
+        {
+            ModEntry.SMonitor?.Log($"[TimelineAutoSummary] High-tier cycle [{key.Type}] for [{task.NpcName}] day {key.TargetDay} blocked for session: {reason}.", LogLevel.Info);
+        }
+    }
+
+    /// <summary>主线程释放高层运行占用：复位运行标志并设置 35 个一秒事件冷却。</summary>
+    private void ReleaseAutoRun()
+    {
+        _isProcessing = false;
+        _cooldownSecondsRemaining = ThrottleSeconds;
+    }
+
+    /// <summary>
+    /// 流程3（主线程）：跨天处理——旧日期日间（今日型）运行任务跨天取消（轮换会话 CTS；
+    /// 对应旧日期日间完成由 DD407 CompleteDailyTask 的跨日复查失效，零覆盖、旧日
+    /// ledger/attempts 保留），过去日期由重建探针重新规划为最终整理；闲置计数归零。
+    /// 最终整理型任务不受影响（其完成在新一天窗口内正常处理）。
+    /// </summary>
+    private void HandleDayRollover()
+    {
+        if (!Context.IsWorldReady || !Context.IsMainPlayer) return;
+
+        int justEndedDay = (int)Game1.Date.TotalDays + 1 - 1;
+        if (_dailyInFlight.Any(k => k.TargetDay == justEndedDay))
+        {
+            // 跨天取消：取消会话令牌并更换新 CTS 承载新一天任务；完成回调将因跨日
+            // 复查被丢弃（次数不退，正文零写入）。
+            try { _dailySessionCts?.Cancel(); }
+            catch (ObjectDisposedException)
+            {
+                // 并发取消竞态：句柄即将被替换，忽略。
+            }
+            _dailySessionCts?.Dispose();
+            _dailySessionCts = new CancellationTokenSource();
+            ModEntry.SMonitor?.Log($"[TimelineAutoSummary] Day rolled over: intraday run(s) for day {justEndedDay} cancelled; ledger attempts preserved.", LogLevel.Debug);
+        }
+
+        _dailyIdleSeconds = 0;
+        _dailyNeedsRebuild = true;   // 请求重建：刚结束的一天进入最终整理窗口（下一一秒事件生效）
+    }
+
+    /// <summary>配置开关变化（GMCM 保存）→ 幂等递增配置 epoch（流程10）；在途完成重验后丢弃，候选保留待探针重验。不触碰 drain 与存档队列。</summary>
+    public void InvalidateConfiguration() => _configurationEpoch++;
+
+    /// <summary>
+    /// D5/流程6：高层任务的下层 Daily 最终整理依赖是否未闭合。Weekly 检查其 7 日窗口
+    /// （目标日 D 及其前 6 个一基日历日）内该 NPC 的 Daily 依赖：待排队（_dailyPending）、
+    /// 执行中（_dailyInFlight）、交互暂存未 ack（_dailyCompletions）、本会话 blocked、
+    /// prepared journal 未清（ledger PendingCommit）、台账内未关闭且仍在探针窗口
+    /// （currentDay-7..currentDay-1）内、或无台账的昨日（探针每轮必查）——任一存在即未闭合。
+    /// 终局关闭（含 FailedBudget/SkippedManual）、探针窗口外的过老台账日期与更早的无台账
+    /// 日期按缺省闭合（探针不再处理，避免全新安装场景高层被永久阻塞）。
+    /// Disabled 模式依赖在 Memory 中视为 SkippedDisabled（不持久写 FinalizationClosed）。
+    /// </summary>
+    private bool HasUnsettledDailyDependency(AutoSummaryTask task)
+    {
+        if (task == null || task.Type != AutoSummaryType.Weekly) return false;
+
+        // 流程7：Disabled → 依赖视为 SkippedDisabled，允许高层沿用现有卡片（零持久写入）。
+        if (string.Equals(ModEntry.Config.DailyDistillMode, "Disabled", StringComparison.OrdinalIgnoreCase)) return false;
+        if (!MemoryManager.Instance.IsLoaded) return true;   // 存档依赖尚未加载 → RECOVERABLE → 延后
+
+        int targetDay = DateToDayNumber(task.TargetDate) + 1;
+        string upper = task.NpcName?.ToUpperInvariant() ?? "";
+        int currentDay = Context.IsWorldReady ? (int)Game1.Date.TotalDays + 1 : 0;
+        int windowStart = targetDay - 6;
+
+        var npc = Context.IsWorldReady ? Game1.getCharacterFromName(task.NpcName) : null;
+        if (npc == null) return true;                       // 对象未解析 → 延后（零写入）
+        if (!DailyDistillationStateStore.TryRead(npc, out var ledger)) return true;   // 台账不可读 → 延后
+
+        for (int day = windowStart; day <= targetDay; day++)
+        {
+            var key = (upper, day);
+            if (_dailyPending.ContainsKey(key)) return true;    // 待排队
+            if (_dailyInFlight.Contains(key)) return true;      // 执行中
+            if (_dailyCompletions.Any(c => c.Task != null
+                && string.Equals(c.Task.NpcName?.ToUpperInvariant() ?? "", upper, StringComparison.Ordinal)
+                && DayNumberOf(c.Task.TargetDate) == day)) return true;   // 交互暂存未 ack
+
+            if (_settledDailyDependencies.Contains(key)) continue;   // 已 settled（含终局关闭）
+            if (_dailyBlocked.Contains(key)) return true;            // 存储/BUG 本会话 blocked → 保守延后
+
+            if (currentDay <= 0 || day >= currentDay) return true;   // 未来日期尚未最终整理
+
+            bool isYesterday = day == currentDay - 1;                // 探针每轮必查昨日（含无台账日）
+            if (!ledger.Days.TryGetValue(day, out var dayState))
+            {
+                // 无台账状态：仅昨日仍待探针规划/关闭；更早日期探针不再发现（候选=
+                // 昨日∪台账日期）→ 按缺省闭合，避免全新安装场景高层被永久阻塞。
+                if (isYesterday) return true;
+                continue;
+            }
+            if (dayState.FinalizationClosed) continue;               // 终局关闭（任意 outcome）→ 闭合
+            if (dayState.PendingCommit != null) return true;         // prepared journal 未 ack
+            // 未关闭：探针窗口（currentDay-7..currentDay-1）内的台账日期仍会被探针
+            // 处理 → 未闭合；窗口外的过老台账日期探针已不再处理 → 按缺省闭合。
+            if (day >= currentDay - 7) return true;
+            continue;
+        }
+
+        return false;
+    }
+
+    /// <summary>流程6：同 NPC 下层高层候选是否未闭合——Season 等待相关 Weekly 候选；Yearly 等待相关 Season 候选。</summary>
+    private bool HasUnsettledHigherDependency(AutoSummaryTask task)
+    {
+        if (task == null) return false;
+        string upper = task.NpcName?.ToUpperInvariant() ?? "";
+        var targetDate = task.TargetDate;
+        return task.Type switch
+        {
+            AutoSummaryType.Season => _higherPendingKeys.Any(k =>
+                string.Equals(k.NpcName, upper, StringComparison.Ordinal)
+                && k.Type == AutoSummaryType.Weekly
+                && IsWithinSeason(k.TargetDay, targetDate)),
+            AutoSummaryType.Yearly => _higherPendingKeys.Any(k =>
+                string.Equals(k.NpcName, upper, StringComparison.Ordinal)
+                && k.Type == AutoSummaryType.Season
+                && MemoryManager.GameDayToStardewTime(k.TargetDay).Year == targetDate.Year),
+            _ => false
+        };
+    }
+
+    private static bool IsWithinSeason(int oneBasedDay, StardewTime seasonDate)
+    {
+        var t = MemoryManager.GameDayToStardewTime(oneBasedDay);
+        return t.Year == seasonDate.Year && t.Season == seasonDate.Season;
+    }
+
+    /// <summary>高层任务的源 tier（与 ResolveSourceEntities 的解析一致）。</summary>
+    private static MemoryTier SourceTierOf(AutoSummaryType type) => type switch
+    {
+        AutoSummaryType.Weekly => MemoryTier.Daily,
+        AutoSummaryType.Season => MemoryTier.Weekly,
+        AutoSummaryType.Yearly => MemoryTier.Chronicle,
+        _ => MemoryTier.Daily
+    };
+
+    /// <summary>
+    /// 流程6：Weekly 窗口内最终整理未完全完成的日期清单（预算耗尽 FailedBudget、
+    /// 手动暂停 SkippedManual、NoHistory、容量/重复终局）。空串表示全部闭合且完整。
+    /// </summary>
+    private string DescribeIncompleteFinalization(AutoSummaryTask task)
+    {
+        if (task == null || task.Type != AutoSummaryType.Weekly) return "";
+        if (string.Equals(ModEntry.Config.DailyDistillMode, "Disabled", StringComparison.OrdinalIgnoreCase)) return "";
+        if (!MemoryManager.Instance.IsLoaded) return "";
+
+        var npc = Context.IsWorldReady ? Game1.getCharacterFromName(task.NpcName) : null;
+        if (npc == null || !DailyDistillationStateStore.TryRead(npc, out var ledger)) return "";
+
+        int targetDay = DateToDayNumber(task.TargetDate) + 1;
+        var incomplete = new List<string>();
+        for (int day = targetDay - 6; day <= targetDay; day++)
+        {
+            if (!ledger.Days.TryGetValue(day, out var dayState) || !dayState.FinalizationClosed) continue;
+            bool incompleteOutcome = dayState.FinalizationOutcome is "FailedBudget" or "SkippedManual" or "NoHistory" or "CapacityFull" or "Duplicate";
+            if (incompleteOutcome)
+                incomplete.Add($"day {day}={dayState.FinalizationOutcome}");
+        }
+        return string.Join(", ", incomplete);
+    }
+
+    /// <summary>覆盖 fingerprint/条目标识的日志前缀（只取前 8 位，不输出对话资料）。</summary>
+    private static string FingerprintPrefix(string value) =>
+        string.IsNullOrEmpty(value) ? "-" : (value.Length <= 8 ? value : value.Substring(0, 8));
+
+    /// <summary>
+    /// DD407 交互暂存结果的空闲消费（主线程）：玩家退出交互后每秒消费一条；
+    /// CompleteDailyTask 内部重验 epoch/跨日并释放运行占用，不再次生成/计费。
+    /// </summary>
+    private void ConsumeDeferredDailyCompletions()
+    {
+        if (_dailyCompletions.Count == 0) return;
+        if (IsPlayerInteracting()) return;   // 仍在交互 → 继续暂存
+
+        var deferred = _dailyCompletions.Dequeue();
+        CompleteDailyTask(deferred.Task, deferred.Request, deferred.Result);
+    }
+
+    // ════════════════════════════════════════════════════════════
     // DD406：日记蒸馏候选规划与请求准入（主线程辅助，DD408 才接入一秒事件循环）。
     // 本票不启用新事件路径、不发送网络、不推进 CoveredRowKeys、不执行扣费；
     // 统一键一律为 (NPC代码名.ToUpperInvariant(), TargetDay)，不使用展示名作身份。
@@ -445,6 +820,13 @@ internal sealed partial class TimelineAutoSummaryScheduler
     private readonly HashSet<(string NpcName, int TargetDay)> _dailyBlocked = new();
     private readonly HashSet<(string NpcName, int TargetDay)> _settledDailyDependencies = new();
     private readonly HashSet<(string NpcName, AutoSummaryType Type, int TargetDay)> _higherPendingKeys = new();
+
+    // ── DD408 高层状态（Memory；会话失效时清空）──
+    /// <summary>本会话已终态的高层周期（容量满/重复/存储失败/非法），不再重新入队。</summary>
+    private readonly HashSet<(string NpcName, AutoSummaryType Type, int TargetDay)> _higherSessionBlocked = new();
+    /// <summary>高层延后 Trace 的去重（变化时一次；依赖恢复后重新布防）。</summary>
+    private readonly HashSet<(string NpcName, AutoSummaryType Type, int TargetDay)> _higherDeferralTraced = new();
+
     private readonly Queue<(AutoSummaryTask Task, DailyDistillationRequest Request, MemoryExtractResult Result)> _dailyCompletions = new();
 
     /// <summary>一基日历日（(Year-1)*112 + Season*28 + DayOfMonth；Game1.Date.TotalDays 为 0 基，需 +1）。</summary>
@@ -813,12 +1195,16 @@ internal sealed partial class TimelineAutoSummaryScheduler
     }
 
     /// <summary>
-    /// 流程 7：准入闸门（主线程）。任一交互条件不满足 → 闲置计数立即归零并延后；
+    /// 流程 7/ DD408 流程4：准入闸门（主线程）。35 秒冷却与 10 秒连续空闲分别判断——
+    /// 冷却倒数不重置交互闲置计数；任一交互条件不满足 → 闲置计数立即归零并延后；
     /// 连续 DailyAdmissionIdleSeconds 个一秒事件全部空闲才准入一次（准入后归零重计）。
     /// 本方法不发网络、不改游戏状态、不推进任何进度。
     /// </summary>
     private bool CanAdmitDailyWork()
     {
+        // 冷却单独判断（DD408 流程4）：冷却期间闲置计数照常累计，冷却结束即可准入。
+        if (_cooldownSecondsRemaining > 0) return false;
+
         if (!IsDailyInteractionFree())
         {
             if (_dailyIdleSeconds > 0)
@@ -833,12 +1219,24 @@ internal sealed partial class TimelineAutoSummaryScheduler
         return true;
     }
 
-    /// <summary>准入交互条件全量清单（flow 7）。</summary>
+    /// <summary>Daily 准入交互条件全量清单（flow 7）：共享交互条件 + Daily 模式允许。</summary>
     private bool IsDailyInteractionFree()
+    {
+        if (!IsInteractionIdleFree()) return false;
+        // Daily 模式允许（Disabled → Daily 不准入；高层不受 Daily 模式限制）。
+        if (string.Equals(ModEntry.Config.DailyDistillMode, "Disabled", StringComparison.OrdinalIgnoreCase)) return false;
+        return true;
+    }
+
+    /// <summary>
+    /// DD408 流程4：高层与 Daily 共享的交互空闲条件（世界就绪/主机/模组开启/LLM 可用/
+    /// 无弹窗菜单/无对话/无过场事件/无生成中/无待挂载选择框/无运行任务/无未结束 drain）。
+    /// 冷却由各调用方独立判断。
+    /// </summary>
+    private bool IsInteractionIdleFree()
     {
         if (!Context.IsWorldReady || !Context.IsMainPlayer) return false;                     // 主机世界就绪
         if (!ModEntry.Config.EnableMod) return false;                                         // 模组开启
-        if (string.Equals(ModEntry.Config.DailyDistillMode, "Disabled", StringComparison.OrdinalIgnoreCase)) return false;   // Daily 模式允许
         if (DialogueBuilder.Instance?.LlmDisabled == true) return false;                      // LlmDisabled 不为 true
         if (Game1.activeClickableMenu != null) return false;                                  // 无弹窗菜单
         if (Game1.dialogueUp) return false;                                                   // 无对话
@@ -848,7 +1246,6 @@ internal sealed partial class TimelineAutoSummaryScheduler
         if (PendingChoiceStore.TryPeek(out _)) return false;                                  // 无待挂载自定义选择框
         if (_isProcessing) return false;                                                      // 自动调度器无运行任务
         if (_dailyTransportDrain != null && !_dailyTransportDrain.IsCompleted) return false;  // 无底层 drain
-        if (_cooldownSecondsRemaining > 0) return false;                                      // 冷却为 0
         return true;
     }
 
@@ -863,11 +1260,13 @@ internal sealed partial class TimelineAutoSummaryScheduler
     /// <summary>
     /// 存档会话失效：递增存档/配置 epoch、取消会话 CTS、清理存档队列/运行键/闲置计数；
     /// 保留未完成 drain 句柄（其回调将因 epoch 不匹配被丢弃）。世界加载后由新 CTS 承载新任务。
+    /// DD408：同时清空高层队列与去重/终态键（切档/重载清 Memory 候选并从 ModData 重建；
+    /// 同档已保存的尝试次数不复位）。幂等——重复调用安全。
     /// </summary>
     public void InvalidateSaveSession()
     {
         _saveSessionEpoch++;
-        _configurationEpoch++;   // 会话边界同时刷新配置快照；会话内 GMCM 变化的接线在 DD408
+        _configurationEpoch++;   // 会话边界同时刷新配置快照；会话内 GMCM 变化由 InvalidateConfiguration 接线
         try
         {
             _dailySessionCts?.Cancel();
@@ -884,6 +1283,10 @@ internal sealed partial class TimelineAutoSummaryScheduler
         _dailyInFlight.Clear();         // 运行键
         _dailyBlocked.Clear();          // 本会话 blocked 随存档切换重置
         _settledDailyDependencies.Clear();
+        _queue.Clear();                 // DD408：高层队列随存档切换清空（重建时重新发现）
+        _higherPendingKeys.Clear();     // DD408：高层去重键
+        _higherSessionBlocked.Clear();  // DD408：本会话终态
+        _higherDeferralTraced.Clear();  // DD408：延后 Trace 去重
         _dailyIdleSeconds = 0;          // 闲置计数
         _dailyNeedsRebuild = false;
         _isProcessing = false;
@@ -1474,12 +1877,12 @@ internal sealed partial class TimelineAutoSummaryScheduler
             Game1.addHUDMessage(new HUDMessage(message, 1));
 
             string verb = task.IsFinalDaily ? "Finalized" : (hasExisting ? "Updated" : "Committed");
-            ModEntry.SMonitor?.Log($"[DailyDistill] {verb} for [{task.NpcName}] day {targetDay}: \"{TrimForLog(content)}\".", LogLevel.Info);
+            ModEntry.SMonitor?.Log($"[DailyDistill] {verb} for [{task.NpcName}] day {targetDay} epoch {task.SaveSessionEpoch} attempts(intraday={day.IntradayAttempts},final={day.FinalAttempts}) fingerprint {FingerprintPrefix(request.Snapshot.InputFingerprint)}: \"{TrimForLog(content)}\".", LogLevel.Info);
         }
         else
         {
             // Unchanged：内容一致幂等——进度已推进，不新增卡片、不弹 HUD，预算不再增加。
-            ModEntry.SMonitor?.Log($"[DailyDistill] Unchanged for [{task.NpcName}] day {targetDay}; identical content, progress advanced without a new card.", LogLevel.Info);
+            ModEntry.SMonitor?.Log($"[DailyDistill] Unchanged for [{task.NpcName}] day {targetDay} epoch {task.SaveSessionEpoch} attempts(intraday={day.IntradayAttempts},final={day.FinalAttempts}) fingerprint {FingerprintPrefix(request.Snapshot.InputFingerprint)}; identical content, progress advanced without a new card.", LogLevel.Info);
         }
     }
 

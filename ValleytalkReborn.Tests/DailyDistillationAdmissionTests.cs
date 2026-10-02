@@ -16,7 +16,8 @@
 //   7) 重复探测唯一任务——唯一键合并且替换候选数据（新资料刷新快照），不累积。
 //   8) 恢复核对接入——Reconcile 在规划前执行并回写恢复变化。
 //   9) 准入闸门——连续 10 个一秒事件空闲才准入；菜单/对话/事件/生成中/自定义选项/
-//      调度器运行/drain/冷却/Provider 禁用/模组关闭任一命中立即归零闲置计数。
+//      调度器运行/drain/Provider 禁用/模组关闭任一命中立即归零闲置计数；
+//      冷却与闲置分别判断（DD408 流程4：冷却阻断准入但不重置闲置计数）。
 //
 // 无头垫片：netWorldState（Game1.Date）、game1+_locations（getCharacterFromName）、
 // FakePlayer+INetObject 补齐（friendshipData）、MemoryManager._isLoaded 直置、
@@ -1034,7 +1035,13 @@ public class DailyDistillationAdmissionTests : IDisposable
             () => ValleytalkReborn.UI.PendingChoiceStore.Set(new ValleytalkReborn.UI.PendingChoiceContext()),
             () => ValleytalkReborn.UI.PendingChoiceStore.Clear());
         AssertBlocked(() => IsProcessingField.SetValue(S, true), () => IsProcessingField.SetValue(S, false));
-        AssertBlocked(() => CooldownField.SetValue(S, 7), () => CooldownField.SetValue(S, 0));
+        // DD408 流程4：35 秒冷却与 10 秒连续空闲分别判断——冷却阻断准入但不再重置闲置计数。
+        for (int i = 0; i < 3; i++) Assert.False(CanAdmit());
+        Assert.Equal(3, Idle);
+        CooldownField.SetValue(S, 7);
+        Assert.False(CanAdmit());
+        Assert.Equal(3, Idle);            // 冷却不重置闲置计数
+        CooldownField.SetValue(S, 0);
         AssertBlocked(() => DrainField.SetValue(S, tcs.Task), () => DrainField.SetValue(S, null));
         AssertBlocked(() => DialogueBuilder.Instance.LlmDisabled = true, () => DialogueBuilder.Instance.LlmDisabled = false);
         AssertBlocked(() => ModEntry.Config.EnableMod = false, () => ModEntry.Config.EnableMod = true);
