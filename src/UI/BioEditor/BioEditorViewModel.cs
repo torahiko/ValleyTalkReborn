@@ -175,7 +175,8 @@ internal sealed class BioEditorViewModel
                             id = kvp.Value.id,
                             Heading = kvp.Value.Heading,
                             Description = kvp.Value.Description,
-                            RequiredHearts = kvp.Value.RequiredHearts
+                            RequiredHearts = kvp.Value.RequiredHearts,
+                            PublicIdentity = kvp.Value.PublicIdentity
                         };
                     }
                 }
