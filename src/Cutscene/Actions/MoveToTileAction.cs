@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
@@ -20,6 +20,7 @@ namespace ValleytalkReborn.Cutscene.Actions
         private int _stuckTicks;
         private float _elapsedSeconds;
         private bool _hasRetried;
+        private bool _isCompleted;
 
         public MoveToTileAction(NPC npc, Vector2 targetTile, float timeoutSeconds = 5f)
         {
@@ -34,6 +35,7 @@ namespace ValleytalkReborn.Cutscene.Actions
             _stuckTicks = 0;
             _elapsedSeconds = 0f;
             _hasRetried = false;
+            _isCompleted = false;
 
             if (!MovementPathfinding.TryCreatePath(_npc, _npc.currentLocation, _targetTile, out _controller, out var finalTarget))
             {
@@ -41,9 +43,10 @@ namespace ValleytalkReborn.Cutscene.Actions
                     $"[MoveToTileAction] Initial pathfinding failed for {_npc.Name} to ({_targetTile.X},{_targetTile.Y})",
                     LogLevel.Debug);
                 
-                // 寻路失败：直接瞬移到位
+                // 寻路失败：直接瞬移到位并标记完成，避免发呆超时
                 WarpToTargetSafely();
                 _controller = null;
+                _isCompleted = true;
             }
             else
             {
@@ -53,6 +56,8 @@ namespace ValleytalkReborn.Cutscene.Actions
 
         public bool Update(GameTime time)
         {
+            if (_isCompleted) return true;
+
             _elapsedSeconds += (float)time.ElapsedGameTime.TotalSeconds;
 
             // 超时熔断：强制瞬移到位

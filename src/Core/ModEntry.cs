@@ -682,6 +682,7 @@ namespace ValleytalkReborn
             {
                 if (e.Button == SButton.Escape
                     || e.Button == SButton.F8
+                    || e.Button == SButton.Space
                     || e.Button == SButton.MouseLeft
                     || e.Button == SButton.MouseRight)
                 {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
@@ -19,15 +19,16 @@ namespace ValleytalkReborn.Cutscene.Actions
         // 表情映射表（复用自 EmbodiedActionParser）
         private static readonly Dictionary<string, int> EmoteMap = new(StringComparer.OrdinalIgnoreCase)
         {
-            { "SURPRISE",   8 },  // 惊讶/叹号
-            { "QUESTION",  56 },  // 问号
+            { "SURPRISE",  16 },  // 惊讶/叹号 (原版 ID 16)
+            { "QUESTION",   8 },  // 问号 (原版 ID 8)
             { "HAPPY",     32 },  // 开心/音符
             { "SAD",       28 },  // 悲伤
             { "HEART",     20 },  // 爱心
             { "ANGRY",     12 },  // 愤怒
             { "SLEEP",     24 },  // ZZZ
             { "SICK",      28 },  // 生病
-            { "IDEA",       8 },  // 灵感/灯泡（使用惊讶）
+            { "IDEA",      16 },  // 灵感/灯泡（使用惊叹号）
+            { "BLUSH",     60 },  // 害羞/红晕
         };
 
         /// <summary>
@@ -42,7 +43,7 @@ namespace ValleytalkReborn.Cutscene.Actions
                 ModEntry.SMonitor?.Log(
                     $"[EmoteAction] Unknown emote name '{emoteName}', defaulting to SURPRISE.",
                     LogLevel.Warn);
-                _emoteId = 8;
+                _emoteId = 16;
             }
         }
 

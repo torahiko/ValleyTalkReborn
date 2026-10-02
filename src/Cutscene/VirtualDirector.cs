@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -324,7 +324,7 @@ namespace ValleytalkReborn.Cutscene
         {
             if (Game1.player != null)
             {
-                Game1.player.CanMove = true;
+                // 玩家移动控制权（CanMove）已由 CutsceneSnapshot.Restore() 依据真实快照幂等还原
                 Game1.player.freezePause = 0;
             }
 
