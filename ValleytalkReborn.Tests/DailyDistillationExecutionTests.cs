@@ -1195,7 +1195,7 @@ public class DailyDistillationExecutionTests : IDisposable
         StartDailyTask(task);
         PumpAfterDrain();
 
-        Assert.Equal(1, Completions().Count);   // 结果保留待消费
+        Assert.Single(Completions());   // 结果保留待消费
         Assert.Empty(MemoryManager.Instance.GetTimelineMemories(NpcA, MemoryTier.Daily));
         Assert.Contains(Key(NpcA, 5), InFlight());   // 运行键保持占用（防重复规划）
         Assert.True(IsProcessing);
@@ -1209,7 +1209,7 @@ public class DailyDistillationExecutionTests : IDisposable
         var card = MemoryManager.Instance.GetTimelineMemories(NpcA, MemoryTier.Daily).Single();
         Assert.Equal(NewDiary, card.Content);
         Assert.Equal(1, _stub.CallCount);            // 不再次生成/计费
-        Assert.Equal(0, Completions().Count);
+        Assert.Empty(Completions());
         Assert.Equal(35, Cooldown);
         Assert.Empty(InFlight());
     }

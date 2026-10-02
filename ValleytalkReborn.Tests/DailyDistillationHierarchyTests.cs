@@ -663,7 +663,7 @@ public class DailyDistillationHierarchyTests : IDisposable
         ModEntry.Config.AutoSummarizeWeekly = true;
 
         Scan();                                  // 首次扫描：入队第 7 日周报
-        Assert.Equal(1, Queue().Count);
+        Assert.Single(Queue());
         Assert.Contains(Key(NpcA, AutoSummaryType.Weekly, 7), HigherPending());
 
         S.InvalidateSaveSession();               // 模拟同档重载：Memory 队列清空
@@ -671,11 +671,11 @@ public class DailyDistillationHierarchyTests : IDisposable
         Assert.Empty(HigherPending());
 
         Scan();                                  // 同日重扫描：哨兵相同也不拦截 → 恢复队列
-        Assert.Equal(1, Queue().Count);
+        Assert.Single(Queue());
         Assert.Contains(Key(NpcA, AutoSummaryType.Weekly, 7), HigherPending());
 
         Scan();                                  // 再次扫描（未失效）：规范化键去重，不重复入队
-        Assert.Equal(1, Queue().Count);
+        Assert.Single(Queue());
     }
 
     [Fact]
@@ -704,11 +704,11 @@ public class DailyDistillationHierarchyTests : IDisposable
         _stub.SetCondense("[\"" + WeeklyContent + "\"]");
 
         Scan();   // 第 8 日（周一）→ 第 7 日周报入队
-        Assert.Equal(1, Queue().Count);
+        Assert.Single(Queue());
 
         // 台账第 7 日未关闭（探针可规划窗口内）→ 依赖未闭合 → 延后，零生成。
         RunProcessNext();
-        Assert.Equal(1, Queue().Count);            // 延后：重新入队
+        Assert.Single(Queue());            // 延后：重新入队
         Assert.Equal(0, _stub.CondenseCallCount);
         Assert.Contains(Key(NpcA, AutoSummaryType.Weekly, 7), HigherPending());
 
@@ -907,7 +907,7 @@ public class DailyDistillationHierarchyTests : IDisposable
         int hudBefore = HudCount;
         CompleteHighTier(task, SuccessResult(WeeklyContent), 7);
 
-        Assert.Equal(1, ActiveCards(MemoryTier.Weekly).Count);              // 无第二张周报
+        Assert.Single(ActiveCards(MemoryTier.Weekly));              // 无第二张周报
         Assert.Equal(2, ActiveCards(MemoryTier.Daily).Count);               // 源保留
         Assert.Equal(hudBefore, HudCount);
         Assert.Empty(HigherPending());
@@ -1059,7 +1059,7 @@ public class DailyDistillationHierarchyTests : IDisposable
         PumpAfterDrain();
 
         var completions = (Queue<(AutoSummaryTask, DailyDistillationRequest, MemoryExtractResult)>)CompletionsField.GetValue(S);
-        Assert.Equal(1, completions.Count);
+        Assert.Single(completions);
         Assert.Empty(MemoryManager.Instance.GetTimelineMemories(NpcA, MemoryTier.Daily));
         Assert.True(IsProcessing);
 
@@ -1069,7 +1069,7 @@ public class DailyDistillationHierarchyTests : IDisposable
 
         var card = MemoryManager.Instance.GetTimelineMemories(NpcA, MemoryTier.Daily).Single();
         Assert.Equal("I spent a quiet day by the river.", card.Content);
-        Assert.Equal(0, completions.Count);
+        Assert.Empty(completions);
         Assert.Equal(1, _stub.DailyCallCount);
         Assert.Equal(35, Cooldown);
         Assert.Empty(InFlight());
@@ -1229,7 +1229,7 @@ public class DailyDistillationHierarchyTests : IDisposable
         Assert.Equal(1, ReadLedger().Days[4].FinalAttempts);
         Assert.False(Pending().ContainsKey(DailyKey(NpcA, 4)));
         Assert.True(Pending().ContainsKey(DailyKey(NpcA, 5)));
-        Assert.Equal(1, Queue().Count);
+        Assert.Single(Queue());
         Assert.True(IsProcessing);
         Assert.Equal(1, _stub.DailyCallCount);
 

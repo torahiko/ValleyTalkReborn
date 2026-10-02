@@ -843,7 +843,7 @@ public class DailyDistillationAdmissionTests : IDisposable
         // 重复扫描：任务不累积。
         RequestRebuild();
         Probe();
-        Assert.Equal(1, Pending().Count);
+        Assert.Single(Pending());
 
         // 新材料到达后的下一轮规划：同一键替换候选数据，不产生第二个任务。
         var history = (Dictionary<string, List<DialogueHistoryEntry>>)HistoryField.GetValue(DialogueHistoryManager.Instance);
@@ -854,7 +854,7 @@ public class DailyDistillationAdmissionTests : IDisposable
         RequestRebuild();
         Probe();
 
-        Assert.Equal(1, Pending().Count);
+        Assert.Single(Pending());
         var merged = Pending()[Key(NpcA, 5)];
         Assert.Same(merged, first);   // 同一任务对象（合并），数据被替换
         Assert.Equal(6, merged.DailyRequest.Snapshot.QualifyingCount);
