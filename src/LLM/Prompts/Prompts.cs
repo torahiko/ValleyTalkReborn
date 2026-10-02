@@ -178,8 +178,8 @@ public class Prompts
     internal string BuildResponseTriggerSuffix(string promptPlayerName)
     {
         return IsChineseLanguage
-            ? $"<response_trigger>\n[IDENTITY] 玩家姓名为 {promptPlayerName}；上下文中标为该姓名的玩家发言，以及称作农夫/Farmer 的玩家身份，都是同一个人，不是两个角色。\n[RESPONSE_TRIGGER] 若农夫刚刚说了话：你的第一句必须直接回应他的最新发言。若农夫没有说话（现场触发或沉默）：直接从你当下的动作与环境自然开口，不要虚构农夫的发言。两种情形都只输出一轮，完成选项区后立即交回对话回合。\n[SCENE_CONSISTENCY] 若历史对白中的场景假设与当前场景事实冲突，按当前事实自然接话即可，不要延续或扩展错误假设。\n</response_trigger>"
-            : $"<response_trigger>\n[IDENTITY] The player's name is {promptPlayerName}; player lines labelled with that name and the player identity called 农夫/Farmer are the same person, not two different characters.\n[RESPONSE_TRIGGER] If the farmer just spoke: your first line MUST directly reply to the farmer's latest words. If the farmer said nothing (ambient trigger or silence): open naturally from your current action and surroundings; do NOT invent farmer speech. In both cases output exactly one turn and hand the turn back right after the option block.\n[SCENE_CONSISTENCY] If scene assumptions in the dialogue history conflict with the current scene facts, pick up the conversation naturally from the current facts; do not extend the stale assumption.\n</response_trigger>";
+            ? $"<response_trigger>\n[IDENTITY] 玩家姓名为 {promptPlayerName}；上下文中标为该姓名的玩家发言，以及称作农夫/Farmer 的玩家身份，都是同一个人。\n[RESPONSE_TRIGGER] 若农夫刚刚说了话：你的第一句必须直接回应他的最新发言。若农夫没有说话（现场触发或沉默）：直接从你当下的动作与环境自然开口。两种情形都只输出一轮，完成选项区后立即交回对话回合。\n[SCENE_CONSISTENCY] 若历史对白中的场景假设与当前场景事实冲突，以当前事实为接话起点。\n</response_trigger>"
+            : $"<response_trigger>\n[IDENTITY] The player's name is {promptPlayerName}; player lines labelled with that name and the player identity called 农夫/Farmer refer to the same person.\n[RESPONSE_TRIGGER] If the farmer just spoke: your first line MUST directly reply to the farmer's latest words. If the farmer said nothing (ambient trigger or silence): open naturally from your current action and surroundings. In both cases output exactly one turn and hand the turn back right after the option block.\n[SCENE_CONSISTENCY] If scene assumptions in the dialogue history conflict with the current scene facts, pick up the conversation from the current facts.\n</response_trigger>";
     }
 
     /// <summary>
@@ -650,7 +650,7 @@ public class Prompts
             commandPrompt.AppendLine("- 肖像表情代码（如 $h, $0, $u, $s, $a 等）允许且鼓励随语境在台词中实时插入（支持单句及跨屏多次插入），打字机将在打印到对应字符时即时切换立绘。");
             commandPrompt.AppendLine("- 多标签排布流水线：[带表情码的台词正文] [ACTION标签] [UI标签] [MOOD标签]");
             commandPrompt.AppendLine("  示例：\"(挠头) $0这事儿... $h哈哈，交给我吧！\" [ACTION:FACE:FARMER]");
-            commandPrompt.AppendLine("[NEGATIVE_CONSTRAINT] 严禁在对白台词中输出、提及或解释上述任何系统指令标签。");
+            commandPrompt.AppendLine("[OUTPUT_DOMAIN] 对白台词区域承载角色言语与神态描写；上方系统指令标签位于回复末尾的独立区域，与台词正文分离。");
         }
         else
         {
@@ -663,7 +663,7 @@ public class Prompts
             commandPrompt.AppendLine("- Portrait emotion codes (e.g. $h, $0, $u, $s, $a) are allowed and encouraged to be inserted inline wherever the mood shifts (multiple times within a sentence and across screen boxes); the typewriter switches the portrait the instant it prints that character.");
             commandPrompt.AppendLine("- Multi-tag sequence pipeline: [Dialogue body with inline portrait codes] [ACTION tag] [UI tag] [MOOD tag]");
             commandPrompt.AppendLine("  Example: \"(scratches head) $0Well... $haha, leave it to me!\" [ACTION:FACE:FARMER]");
-            commandPrompt.AppendLine("[NEGATIVE_CONSTRAINT] Strictly forbid outputting, mentioning, or explaining any action/system tags in character dialogue.");
+            commandPrompt.AppendLine("[OUTPUT_DOMAIN] The dialogue area carries the character's spoken lines and manner descriptions; the system action tags above live in a separate region at the end of the reply, apart from the dialogue body.");
         }
         commandPrompt.AppendLine("</system_action_reference>");
 
@@ -704,20 +704,20 @@ public class Prompts
 
         // LLM 注意力引导词规范化
         instructions.AppendLine(isZh
-            ? "- [CORE_PERSPECTIVE] 仅输出你自身角色的言语、动作与神态反应。完成当前台词表达后立即停下，交出对话回合，绝不代替玩家说话或行动。"
-            : "- [CORE_PERSPECTIVE] Output only your own character's speech, actions, and reactions. Yield the dialogue turn immediately after your line; never generate actions or speech for the farmer.");
+            ? "- [CORE_PERSPECTIVE] 你的输出域是你自身角色的言语、动作与神态反应。完成当前台词表达后，对话回合交回玩家。"
+            : "- [CORE_PERSPECTIVE] Your output domain is your own character's speech, actions, and reactions. Yield the dialogue turn back to the player after your line.");
         instructions.AppendLine(isZh
             ? "- [IMMEDIATE_RESPONSE_RULE] 农夫刚说的话具有最高注意力优先级。第一句话必须直接承接、回复农夫的输入；完成直接反馈后，方可顺承个人日常思绪或生活事项。"
             : "- [IMMEDIATE_RESPONSE_RULE] The farmer's latest words have top attention priority. Your very first sentence MUST directly address or answer their input before transitioning to personal thoughts or ambient chores.");
         instructions.AppendLine(isZh
-            ? "- [FAMILIARITY_BOUNDARIES] 人际边界与抗性随熟悉度动态分流。面对突兀、无用或不合心意之事展现市井本能：对生人保持明确边界感与干脆拒收；对密友与配偶展现防备卸除的熟稔调侃、日常嗔怪或叹气。禁止机械客套与 AI 客服腔。"
-            : "- [FAMILIARITY_BOUNDARIES] Scale interpersonal distance and emotional friction to relationship depth. Reject unwanted things with raw everyday instinct: maintain crisp boundaries and blunt refusals with acquaintances; display effortless banter, comfortable teasing, or casual exasperation with spouses and close friends. Avoid robotic politeness.");
+            ? "- [FAMILIARITY_BOUNDARIES] 人际边界与抗性随熟悉度动态分流。面对突兀、无用或不合心意之事展现市井本能：对生人保持明确边界感与干脆拒收；对密友与配偶展现防备卸除的熟稔调侃、日常嗔怪或叹气。两种语域都保持角色自己的说话习惯。"
+            : "- [FAMILIARITY_BOUNDARIES] Scale interpersonal distance and emotional friction to relationship depth. Reject unwanted things with raw everyday instinct: maintain crisp boundaries and blunt refusals with acquaintances; display effortless banter, comfortable teasing, or casual exasperation with spouses and close friends. Both registers carry the character's own speaking habits.");
         instructions.AppendLine(isZh
             ? "- [MOOD_SHIFT_RULE] 若本次交流导致你的情绪基调发生明显转换（如转为好奇/烦躁/欣喜），在台词末尾附带 [MOOD:curious] / [MOOD:annoyed] / [MOOD:happy] 等标签。"
             : "- [MOOD_SHIFT_RULE] If this turn causes a distinct emotional shift (e.g., to curious, annoyed, happy), append [MOOD:curious] / [MOOD:annoyed] / [MOOD:happy] at the end of the line.");
         instructions.AppendLine(isZh
-            ? "- [SCENE_FACT_AUTHORITY] 当前场景（所在地点与现场条件）和当前与农夫的关系状态是唯一事实权威；角色卡、示例对白与历史记录若与此冲突，一律以当前事实为准。允许与现场吻合的细小动作，但不得凭空确定他人在场、特定设备或环境成因。"
-            : "- [SCENE_FACT_AUTHORITY] The current scene (your location and on-site conditions) and your current relationship with the farmer are the sole factual authority; your character card, sample lines, and past dialogue never override them. Small actions that fit the scene are fine, but never assert other people's presence, specific equipment, or environmental causes out of thin air.");
+            ? "- [SCENE_FACT_AUTHORITY] 当前场景（所在地点与现场条件）和当前与农夫的关系状态是唯一事实权威；角色卡、示例对白与历史记录若与此冲突，一律以当前事实为准。你可以做出与现场吻合的细小动作，这些动作取材于你直接感知到的信息。"
+            : "- [SCENE_FACT_AUTHORITY] The current scene (your location and on-site conditions) and your current relationship with the farmer are the sole factual authority; your character card, sample lines, and past dialogue never override them. You may take small actions that fit the scene; those actions draw from what you directly perceive right now.");
         instructions.AppendLine(isZh
             ? "- [PROGRESSION_MOMENTUM] 推动事态向前演进：日常交谈具有连贯的生活推进力。当上一轮的话题、提议或询问已被对方承接后，角色应自信推进到下一步具体行动、细节决策或现场分工（例如直接动身起手、商量偏好分工、交代当下收尾），让交互像真实生活一样往前走。"
             : "- [PROGRESSION_MOMENTUM] Keep the moment moving forward: everyday exchanges carry a coherent sense of life progression. Once the previous topic, proposal, or question has been picked up, confidently advance to the next concrete step, detail decision, or on-the-spot division of labor (e.g., get moving right away, settle who does what, hand off the wrap-up), letting the interaction walk forward like real life.");
@@ -725,17 +725,17 @@ public class Prompts
         if (enableResponses)
         {
             instructions.AppendLine(isZh
-                ? "- [OPTION_DIVERGENCE] 选项态度三棱镜：若本轮提出 '%' 回复选项，确保每个选项代表鲜明的态度倾向与行动差异（例如：一条积极推进细节、一条生活幽默打趣、一条表达独立节奏或分工协助），让每个选项都能引出不同的互动走向；若当前交流已自然达成默契或行动已定，直接以干脆自信的生活话语收尾，无需强行反问。"
-                : "- [OPTION_DIVERGENCE] Attitudinal prism for options: if you offer '%' reply options this turn, make each option carry a distinct attitude and action difference (e.g., one pushing the details forward, one daily-life quip, one voicing an independent pace or lending a hand), so every option opens a different direction; when the exchange has naturally settled into agreement or the plan is set, close with crisp, confident everyday words instead of a forced follow-up question.");
+                ? "- [OPTION_DIVERGENCE] 选项态度三棱镜：若本轮提出 '%' 回复选项，确保每个选项代表鲜明的态度倾向与行动差异（例如：一条积极推进细节、一条生活幽默打趣、一条表达独立节奏或分工协助），让每个选项都能引出不同的互动走向；若当前交流已自然达成默契或行动已定，直接以干脆自信的生活话语收尾。"
+                : "- [OPTION_DIVERGENCE] Attitudinal prism for options: if you offer '%' reply options this turn, make each option carry a distinct attitude and action difference (e.g., one pushing the details forward, one daily-life quip, one voicing an independent pace or lending a hand), so every option opens a different direction; when the exchange has naturally settled into agreement or the plan is set, close with crisp, confident everyday words.");
             instructions.AppendLine(isZh
-                ? "- [SUGGESTION_SCOPE_RULE] 以 '%' 开头的发言选项，取材范围仅严格限于你已经在本次台词中亲口说出的信息。未说出口的潜意识、私密挂念与偷听内容严禁作为选项线索。"
-                : "- [SUGGESTION_SCOPE_RULE] Any suggested response options prefixed with '%' MUST draw solely from what you have explicitly voiced aloud. Unspoken inner thoughts and overheard gossip are strictly excluded until you voice them.");
+                ? "- [SUGGESTION_SCOPE_RULE] 以 '%' 开头的发言选项，取材自你本次台词中已经亲口说出的信息。"
+                : "- [SUGGESTION_SCOPE_RULE] Any suggested response options prefixed with '%' draw from what you have explicitly voiced aloud in this turn.");
         }
         else
         {
             instructions.AppendLine(isZh
-                ? "- [NEGATIVE_CONSTRAINT] 绝对禁止输出任何以 '%' 开头的玩家选项、分支回答或格式解释。"
-                : "- [NEGATIVE_CONSTRAINT] Strictly forbid outputting any player options, branches, or formatting notes prefixed with '%'.");
+                ? "- [OUTPUT_DOMAIN] 你的输出为角色台词与神态描写；'%' 前缀的玩家选项在本轮不启用。"
+                : "- [OUTPUT_DOMAIN] Your output is character dialogue and manner descriptions; player options prefixed with '%' are not enabled this turn.");
         }
 
         if (!Character.Bio.ExtraPortraits.ContainsKey("!"))
@@ -1017,8 +1017,8 @@ public class Prompts
                              or StardewValley.Locations.IslandFarmHouse;
             if (isIndoors)
                 prompt.AppendLine(IsZh()
-                    ? "- 空间类型: 室内。农夫处于室内日常状态（常温），聚焦当前的室内农务与活动本身。"
-                    : "- Space Type: Indoors. The farmer is in a settled indoor routine at normal room temperature. Focus entirely on indoor actions.");
+                    ? "- 空间类型: 室内。你此刻的感知域是室内温度、光线、声音与近处的人与物。天气进入对话时，只作为窗外所见或他人提及出现。"
+                    : "- Space Type: Indoors. Your perception right now covers indoor temperature, light, sound, and the people or objects near you. Weather enters dialogue only as something seen through a window or mentioned by someone else.");
             else
                 prompt.AppendLine(IsZh() ? "- 空间类型: 室外。" : "- Space Type: Outdoors.");
 
@@ -1516,8 +1516,8 @@ public class Prompts
             prompt.AppendLine("<inner_preoccupation status=\"confidential\">");
             prompt.AppendLine(Util.GetString(character, "preoccupation", new { Name = name, preoccupation = preoccupation }));
             prompt.AppendLine(isZh
-                ? "[NEGATIVE_CONSTRAINT] 这是未公开的潜意识思绪，农夫毫不知情。绝对严禁在开场白中假定农夫已知；严禁直接展开讨论，除非你自己先在对白中主动坦白。"
-                : "[NEGATIVE_CONSTRAINT] CONFIDENTIAL UNSPOKEN THOUGHT. The farmer has zero knowledge of this. Strictly forbid assuming the farmer knows; do NOT elaborate on it unless you explicitly voice it first in dialogue.");
+                ? "[VISIBILITY] 这是你内心未说出口的思绪，农夫不知晓。当你在对白中主动说出后，它才进入农夫已知的范围。"
+                : "[VISIBILITY] This is your unspoken inner thought; the farmer is unaware of it. It enters the farmer's knowledge only after you voice it in dialogue.");
             prompt.AppendLine("</inner_preoccupation>\n");
             return prompt.ToString();
         }
