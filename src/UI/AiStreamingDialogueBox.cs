@@ -93,6 +93,28 @@ namespace ValleytalkReborn.UI
         /// <summary>无立绘布局时右侧扣除的内边距（原版纯文本路径 width - 16）。</summary>
         private const int WideTextGutter = 16;
 
+        /// <summary>
+        /// 立绘布局下翻页小箭头在 <see cref="WideIconOffset"/> 之外的额外内缩
+        /// （票 VT-STREAM-09）。取自原版 <c>DialogueBox.setUpCloseDialogueIcon</c>
+        /// 的 <c>position.X -= 492f</c>：该减法作用在 <c>x + width - 40</c> 之上，
+        /// 故立绘布局的总内缩为 40 + 492 = 532。
+        /// 11x12 贴图按 4x 绘制占 44px 宽，右缘落在 x + width - 488，恰在立绘相框
+        /// 装饰左缘（<c>drawPortrait</c> 的 num = x + width - 448 + 4，再左移 40
+        /// 即 x + width - 484）外侧 4px，不压框。
+        /// </summary>
+        private const int PortraitIconExtraInset = 492;
+
+        /// <summary>无立绘布局下翻页小箭头的右侧内缩偏移（原版 x + width - 40）。</summary>
+        private const int WideIconOffset = 40;
+
+        /// <summary>翻页小箭头的底边内缩偏移（原版 y + height - 44）。</summary>
+        private const int IconVerticalOffset = 44;
+
+        /// <summary>好感度宝石命中区相对对白框的右/上偏移与尺寸（原版推导）。</summary>
+        private const int FriendshipJewelRightOffset = 64;
+        private const int FriendshipJewelTopOffset = 256;
+        private const int FriendshipJewelSize = 44;
+
         /// <summary>基础打字间隔（毫秒）。</summary>
         private const int BaseTypeDelayMs = 35;
 
@@ -309,18 +331,22 @@ namespace ValleytalkReborn.UI
                 this.characterDialogue.showPortrait = true;
             }
 
-            this.friendshipJewel = new Rectangle(this.x + this.width - 64, this.y + 256, 44, 44);
             this.transitioning = false;
             this.transitionInitialized = true;
 
             // 翻页小箭头沿用基类 public dialogueIcon 字段；无头环境无内容管线，跳过纹理载入。
+            // X 坐标按立绘布局动态判定，让开右侧相框，与原版 setUpCloseDialogueIcon 对齐。
             if (Game1.content != null)
             {
                 this.dialogueIcon = new TemporaryAnimatedSprite("LooseSprites\\Cursors",
                     new Rectangle(289, 342, 11, 12), 80f, 11, 999999,
-                    new Vector2(this.x + this.width - 40, this.y + this.height - 44),
+                    new Vector2(ComputeIconX(), this.y + this.height - IconVerticalOffset),
                     false, false, 0.89f, 0f, Color.White, 4f, 0f, 0f, 0f, true);
             }
+
+            // 统一应用初始布局：对白框坐标、好感度宝石命中区与小箭头位置。
+            // 必须在 characterDialogue.showPortrait 置位之后调用，isPortraitBox 才判得准。
+            this.UpdatePosition();
 
             _displayedPageText = string.Empty;
             _typeTimerMs = BaseTypeDelayMs;
@@ -1193,6 +1219,63 @@ namespace ValleytalkReborn.UI
             _state = StreamingDialogueState.Complete;
             Game1.playSound("dialogueCharacterClose");
         }
+
+        #endregion
+
+        #region 窗口与布局自适应
+
+        /// <summary>
+        /// 游戏视口分辨率 / 窗口尺寸变化时重新校准对白框及其子组件坐标（票 VT-STREAM-09）。
+        /// </summary>
+        /// <remarks>
+        /// BOUNDARY：无头环境（Game1.content == null）必须跳过基类调用。基类
+        /// gameWindowSizeChanged 末尾会走 setUpIcons() → setUpCloseDialogueIcon() →
+        /// new TemporaryAnimatedSprite("LooseSprites\Cursors", …) → loadTexture() 内的
+        /// Game1.content.Load&lt;Texture2D&gt;，content 为 null 时必抛 NullReferenceException。
+        /// 跳过基类对本类无任何损失：width/height 恒为 DialogueWidth/DialogueHeight（与基类
+        /// 重置的 1200/384 相同），friendshipJewel 由 UpdatePosition 统一重算，
+        /// setUpIcons 的 gamepad/safetyTimer 副作用本类完全不消费。
+        /// </remarks>
+        public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
+        {
+            if (Game1.content != null)
+                base.gameWindowSizeChanged(oldBounds, newBounds);
+
+            this.UpdatePosition();
+        }
+
+        /// <summary>
+        /// 重算对白框自身与内部各子组件（好感度宝石命中区、翻页小箭头）的屏幕坐标（票 VT-STREAM-09）。
+        /// 纯赋值、无副作用，可在构造期与每次视口变动时安全重入。
+        /// </summary>
+        public void UpdatePosition()
+        {
+            this.x = ComputeBoxX();
+            this.y = ComputeBoxY();
+
+            // 好感度宝石命中矩形：与原版构造器 / gameWindowSizeChanged 的推导一致。
+            this.friendshipJewel = new Rectangle(
+                this.x + this.width - FriendshipJewelRightOffset,
+                this.y + FriendshipJewelTopOffset,
+                FriendshipJewelSize,
+                FriendshipJewelSize);
+
+            // BOUNDARY：无头环境未构造 dialogueIcon（无内容管线），跳过坐标回写。
+            if (this.dialogueIcon != null)
+            {
+                this.dialogueIcon.position = new Vector2(
+                    ComputeIconX(),
+                    this.y + this.height - IconVerticalOffset);
+            }
+        }
+
+        /// <summary>
+        /// 翻页小箭头的屏幕 X 坐标：立绘布局按原版在 -40 基础上再内缩 492px（合计 532px）
+        /// 让开相框，无立绘布局贴纯文本框右下角内缩 40px。
+        /// </summary>
+        private int ComputeIconX()
+            => this.x + this.width
+                - (this.isPortraitBox() ? WideIconOffset + PortraitIconExtraInset : WideIconOffset);
 
         #endregion
 
