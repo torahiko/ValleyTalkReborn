@@ -5,32 +5,28 @@
       "id": "George",
       "Heading": "George",
       "RequiredHearts": 0,
-      "PublicIdentityEn": "grandfather",
-      "PublicIdentityZh": "祖父辈亲属",
+      "PublicIdentity": "grandfather",
       "Description": "Your grandfather. You endure his bitter, abrasive rants with tight-jawed tolerance. You repay a lifetime of family debt through heavy timber, gutter repairs, and yard upkeep, refusing to talk back."
     },
     "Evelyn": {
       "id": "Evelyn",
       "Heading": "Evelyn",
       "RequiredHearts": 0,
-      "PublicIdentityEn": "grandmother",
-      "PublicIdentityZh": "祖母辈亲属",
+      "PublicIdentity": "grandmother",
       "Description": "Your grandmother. You drop the loud athletic bravado the instant you speak to her. Your tone turns soft, protective, and clumsy, terrified of causing her sorrow or disappointing her."
     },
     "Dusty": {
       "id": "Dusty",
       "Heading": "Dusty",
       "RequiredHearts": 0,
-      "PublicIdentityEn": "family dog",
-      "PublicIdentityZh": "家犬",
+      "PublicIdentity": "family dog",
       "Description": "The fenced backyard dog. Your silent confidant. You sit against the kennel planks in private to share scraps and speak the doubts you would never dare voice to another living soul."
     },
     "Haley": {
       "id": "Haley",
       "Heading": "Haley",
       "RequiredHearts": 0,
-      "PublicIdentityEn": "town peer",
-      "PublicIdentityZh": "同镇伙伴",
+      "PublicIdentity": "peer",
       "Description": "Town peer. You share an easy, shallow camaraderie grounded in vanity and mutual small-town boredom. Banter stays strictly on the surface of appearances, seaside wind, and passing trends."
     }
   },

@@ -1,9 +1,10 @@
 // SocialBackboneBuilder.cs
-// REL-002 — 已知关系骨架（Known Relationship Backbone）。
-// 从 BioData.Relationships 的显式公开身份标签确定性拼装一个独立提示词段。
-// 纯内存装配：输入字典与显示名委托，输出单条字符串；不读取心数、Description、
-// Heading、id，不做持久化、事件订阅、Harmony 或反射。排序与语言选择规则唯一
-// 决定输出，保证同一角色卡在多次请求间逐字符相同。
+// REL-002/002B — 已知关系骨架（Known Relationship Backbone）。
+// 从 BioData.Relationships 的单一公开身份标签（PublicIdentity）确定性拼装
+// 一个独立提示词段。纯内存装配：输入字典与显示名委托，输出单条字符串；
+// 不读取心数、Description、Heading、id，不做持久化、事件订阅、Harmony 或反射。
+// 排序规则唯一决定输出，保证同一角色卡在多次请求间逐字符相同；
+// 语言差异仅影响条目格式，不引入任何语言后缀字段。
 
 using System;
 using System.Collections.Generic;
@@ -65,11 +66,11 @@ internal static class SocialBackboneBuilder
                 throw new InvalidOperationException(
                     $"SocialBackbone found an invalid relationship entry for speaker '{speakerName}' target '{pair.Key}': the entry value is null.");
             }
-            ValidateLabel(speakerName, pair.Key, pair.Value.PublicIdentityEn, nameof(BioData.ListEntry.PublicIdentityEn));
-            ValidateLabel(speakerName, pair.Key, pair.Value.PublicIdentityZh, nameof(BioData.ListEntry.PublicIdentityZh));
+            ValidateLabel(speakerName, pair.Key, pair.Value.PublicIdentity);
         }
 
         // 公开候选：任一公开身份标签非空，或 RequiredHearts 等于 0。
+        // 标签 null 或空白按 RECOVERABLE 降级处理（不抛出，参与仅显示名/排除分支）。
         // 排除与说话者同名的目标；不读取心数、Description、Heading、id。
         var candidates = new List<KeyValuePair<string, BioData.ListEntry>>();
         foreach (var pair in relationships)
@@ -77,10 +78,8 @@ internal static class SocialBackboneBuilder
             if (string.Equals(pair.Key, speakerName, StringComparison.OrdinalIgnoreCase))
                 continue;
             var entry = pair.Value;
-            bool hasLabel = NonEmpty(entry.PublicIdentityEn) || NonEmpty(entry.PublicIdentityZh);
-            if (!hasLabel && entry.RequiredHearts != 0)
-                continue;
-            candidates.Add(pair);
+            if (NonEmpty(entry.PublicIdentity) || entry.RequiredHearts == 0)
+                candidates.Add(pair);
         }
 
         if (candidates.Count == 0)
@@ -98,47 +97,9 @@ internal static class SocialBackboneBuilder
         foreach (var pair in candidates)
         {
             string key = pair.Key;
-            var entry = pair.Value;
-            string zhLabel = entry.PublicIdentityZh?.Trim() ?? string.Empty;
-            string enLabel = entry.PublicIdentityEn?.Trim() ?? string.Empty;
-
-            string label;
-            if (isZh)
-            {
-                if (zhLabel.Length > 0)
-                {
-                    label = zhLabel;
-                }
-                else if (enLabel.Length > 0)
-                {
-                    ModEntry.SMonitor?.Log(
-                        $"[SocialBackbone] Cross-language label fallback for speaker '{speakerName}' target '{key}': Chinese label missing, using the declared English label.",
-                        StardewModdingAPI.LogLevel.Trace);
-                    label = enLabel;
-                }
-                else
-                {
-                    label = null;
-                }
-            }
-            else
-            {
-                if (enLabel.Length > 0)
-                {
-                    label = enLabel;
-                }
-                else if (zhLabel.Length > 0)
-                {
-                    ModEntry.SMonitor?.Log(
-                        $"[SocialBackbone] Cross-language label fallback for speaker '{speakerName}' target '{key}': English label missing, using the declared Chinese label.",
-                        StardewModdingAPI.LogLevel.Trace);
-                    label = zhLabel;
-                }
-                else
-                {
-                    label = null;
-                }
-            }
+            string label = pair.Value.PublicIdentity?.Trim();
+            if (label != null && label.Length == 0)
+                label = null;
 
             string displayName;
             try
@@ -192,7 +153,7 @@ internal static class SocialBackboneBuilder
 
     private static bool NonEmpty(string label) => !string.IsNullOrWhiteSpace(label);
 
-    private static void ValidateLabel(string speakerName, string targetKey, string label, string fieldName)
+    private static void ValidateLabel(string speakerName, string targetKey, string label)
     {
         string trimmed = label?.Trim() ?? string.Empty;
         if (trimmed.Length == 0)
@@ -200,18 +161,18 @@ internal static class SocialBackboneBuilder
         if (trimmed.IndexOf('\n') >= 0 || trimmed.IndexOf('\r') >= 0)
         {
             ModEntry.SMonitor?.Log(
-                $"[SocialBackbone] Invalid public identity label for speaker '{speakerName}' target '{targetKey}' on {fieldName}: label must be single-line.",
+                $"[SocialBackbone] Invalid public identity label for speaker '{speakerName}' target '{targetKey}': label must be single-line.",
                 StardewModdingAPI.LogLevel.Error);
             throw new InvalidOperationException(
-                $"SocialBackbone label validation failed for speaker '{speakerName}' target '{targetKey}' on {fieldName}: the label must be single-line.");
+                $"SocialBackbone label validation failed for speaker '{speakerName}' target '{targetKey}': the label must be single-line.");
         }
         if (trimmed.Length > MaxLabelLength)
         {
             ModEntry.SMonitor?.Log(
-                $"[SocialBackbone] Invalid public identity label for speaker '{speakerName}' target '{targetKey}' on {fieldName}: label exceeds {MaxLabelLength} UTF-16 characters.",
+                $"[SocialBackbone] Invalid public identity label for speaker '{speakerName}' target '{targetKey}': label exceeds {MaxLabelLength} UTF-16 characters.",
                 StardewModdingAPI.LogLevel.Error);
             throw new InvalidOperationException(
-                $"SocialBackbone label validation failed for speaker '{speakerName}' target '{targetKey}' on {fieldName}: the label exceeds {MaxLabelLength} UTF-16 characters.");
+                $"SocialBackbone label validation failed for speaker '{speakerName}' target '{targetKey}': the label exceeds {MaxLabelLength} UTF-16 characters.");
         }
     }
 }

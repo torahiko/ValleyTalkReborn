@@ -1,8 +1,8 @@
 // SocialBackboneBuilderTests.cs
-// REL-002 — Unit tests for SocialBackboneBuilder.Build.
+// REL-002/002B — Unit tests for SocialBackboneBuilder.Build.
 // 纯内存装配路径：不读取任何游戏状态，显示名解析走纯委托。
-// 覆盖票面验收 1-8：插入顺序无关性、候选选择、双语标签与回退、
-// 私密哨兵隔离、非法输入可观察失败、序列化兼容、空候选返回空串。
+// 覆盖票面验收：插入顺序一致性、单一公开标签候选选择（有标签/无标签/心数门禁）、
+// 私密哨兵隔离、非法多行与超长标签可观察失败、空候选返回空串、序列化兼容。
 
 using System;
 using System.Collections.Generic;
@@ -15,15 +15,13 @@ public class SocialBackboneBuilderTests
     private static BioData.ListEntry Entry(
         string description = null,
         int requiredHearts = 0,
-        string en = null,
-        string zh = null)
+        string label = null)
     {
         return new BioData.ListEntry
         {
             Description = description ?? "desc-" + Guid.NewGuid().ToString("N"),
             RequiredHearts = requiredHearts,
-            PublicIdentityEn = en ?? string.Empty,
-            PublicIdentityZh = zh ?? string.Empty,
+            PublicIdentity = label ?? string.Empty,
         };
     }
 
@@ -33,22 +31,22 @@ public class SocialBackboneBuilderTests
     private static string BuildZh(Dictionary<string, BioData.ListEntry> relationships, string speaker = "Alex")
         => SocialBackboneBuilder.Build(speaker, relationships, isZh: true, resolveDisplayName: key => "名字_" + key);
 
-    // ── 验收 1：字典插入顺序不影响输出 ──
+    // ── 排序一致性：字典插入顺序不影响输出 ──
 
     [Fact]
     public void InsertionOrderIndependence_OutputIsIdentical()
     {
         var orderA = new Dictionary<string, BioData.ListEntry>
         {
-            ["George"] = Entry(en: "grandfather", zh: "祖父辈亲属"),
-            ["Evelyn"] = Entry(en: "grandmother", zh: "祖母辈亲属"),
-            ["Dusty"] = Entry(en: "family dog", zh: "家犬"),
+            ["George"] = Entry(label: "grandfather"),
+            ["Evelyn"] = Entry(label: "grandmother"),
+            ["Dusty"] = Entry(label: "family dog"),
         };
         var orderB = new Dictionary<string, BioData.ListEntry>
         {
-            ["Dusty"] = Entry(en: "family dog", zh: "家犬"),
-            ["Evelyn"] = Entry(en: "grandmother", zh: "祖母辈亲属"),
-            ["George"] = Entry(en: "grandfather", zh: "祖父辈亲属"),
+            ["Dusty"] = Entry(label: "family dog"),
+            ["Evelyn"] = Entry(label: "grandmother"),
+            ["George"] = Entry(label: "grandfather"),
         };
 
         string enA = BuildEn(orderA);
@@ -60,19 +58,19 @@ public class SocialBackboneBuilderTests
         Assert.Equal(zhA, zhB, StringComparer.Ordinal);
     }
 
-    // ── 验收 2：显式公开标签不受心数门槛抑制；无标签且心数大于 0 不输出 ──
+    // ── 候选选择：显式标签不受心数门槛抑制；无标签且心数大于 0 不输出 ──
 
     [Fact]
     public void ExplicitLabel_EmittedEvenWhenRequiredHeartsAboveZero()
     {
         var relationships = new Dictionary<string, BioData.ListEntry>
         {
-            ["Haley"] = Entry(requiredHearts: 6, en: "town peer", zh: "同镇伙伴"),
+            ["Haley"] = Entry(requiredHearts: 6, label: "peer"),
         };
 
         string output = BuildEn(relationships);
 
-        Assert.Contains("Name_Haley (town peer)", output, StringComparison.Ordinal);
+        Assert.Contains("Name_Haley (peer)", output, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -89,7 +87,7 @@ public class SocialBackboneBuilderTests
         Assert.DoesNotContain("SECRET-SENTINEL", output);
     }
 
-    // ── 验收 3：无标签且 RequiredHearts 等于 0 只输出名字 ──
+    // ── 标签 null 或空白：RECOVERABLE 降级 ──
 
     [Fact]
     public void NoLabel_RequiredHeartsZero_NameOnly()
@@ -105,14 +103,47 @@ public class SocialBackboneBuilderTests
         Assert.DoesNotContain("(", output);
     }
 
-    // ── 验收 4：Description 私密内容绝不进入骨架段 ──
+    [Fact]
+    public void NullLabel_RequiredHeartsZero_NameOnly()
+    {
+        var relationships = new Dictionary<string, BioData.ListEntry>
+        {
+            ["Haley"] = new BioData.ListEntry
+            {
+                Description = "desc",
+                RequiredHearts = 0,
+                PublicIdentity = null, // JSON null 按 RECOVERABLE 降级为仅显示名
+            },
+        };
+
+        string output = BuildEn(relationships);
+
+        Assert.Contains("Name_Haley", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("(", output);
+    }
+
+    [Fact]
+    public void WhitespaceLabel_IsTrimmedToNullAndDegradesToNameOnly()
+    {
+        var relationships = new Dictionary<string, BioData.ListEntry>
+        {
+            ["Haley"] = Entry(requiredHearts: 0, label: "   "),
+        };
+
+        string output = BuildEn(relationships);
+
+        Assert.Contains("Name_Haley", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("(", output);
+    }
+
+    // ── 私密内容隔离：Description 绝不进入骨架段 ──
 
     [Fact]
     public void PrivateDescriptionSentinel_NeverLeaksIntoBackbone()
     {
         var relationships = new Dictionary<string, BioData.ListEntry>
         {
-            ["George"] = Entry(description: "PUBLIC-OK PRIVATE-SENTINEL", en: "grandfather", zh: "祖父辈亲属"),
+            ["George"] = Entry(description: "PUBLIC-OK PRIVATE-SENTINEL", label: "grandfather"),
             ["Evelyn"] = Entry(description: "another PRIVATE-SENTINEL line", requiredHearts: 0),
         };
 
@@ -123,34 +154,34 @@ public class SocialBackboneBuilderTests
         Assert.DoesNotContain("PRIVATE-SENTINEL", en);
     }
 
-    // ── 验收 5：中英文标签优先级与跨语言回退 ──
+    // ── 双语条目格式：同一标签，中文括号与英文括号 ──
 
     [Fact]
-    public void ChineseMode_PrefersZhLabel_ThenEnLabel_ThenNameOnly()
+    public void ChineseMode_FormatsWithFullWidthParensAndSemicolons()
     {
         var relationships = new Dictionary<string, BioData.ListEntry>
         {
-            ["George"] = Entry(en: "grandfather", zh: "祖父辈亲属"),
-            ["Evelyn"] = Entry(en: "grandmother"),
+            ["George"] = Entry(label: "grandfather"),
+            ["Evelyn"] = Entry(label: "grandmother"),
             ["Dusty"] = Entry(),
         };
 
         string output = BuildZh(relationships);
 
         Assert.Contains("## 已知关系骨架", output, StringComparison.Ordinal);
-        Assert.Contains("名字_George（祖父辈亲属）", output, StringComparison.Ordinal);
+        Assert.Contains("名字_George（grandfather）", output, StringComparison.Ordinal);
         Assert.Contains("名字_Evelyn（grandmother）", output, StringComparison.Ordinal);
         Assert.Contains("名字_Dusty", output, StringComparison.Ordinal);
         Assert.Contains("；", output, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void EnglishMode_PrefersEnLabel_ThenZhLabel_ThenNameOnly()
+    public void EnglishMode_FormatsWithAsciiParensAndSemicolons()
     {
         var relationships = new Dictionary<string, BioData.ListEntry>
         {
-            ["George"] = Entry(en: "grandfather", zh: "祖父辈亲属"),
-            ["Evelyn"] = Entry(zh: "祖母辈亲属"),
+            ["George"] = Entry(label: "grandfather"),
+            ["Evelyn"] = Entry(label: "grandmother"),
             ["Dusty"] = Entry(),
         };
 
@@ -158,19 +189,19 @@ public class SocialBackboneBuilderTests
 
         Assert.Contains("## Known Relationship Backbone", output, StringComparison.Ordinal);
         Assert.Contains("Name_George (grandfather)", output, StringComparison.Ordinal);
-        Assert.Contains("Name_Evelyn (祖母辈亲属)", output, StringComparison.Ordinal);
+        Assert.Contains("Name_Evelyn (grandmother)", output, StringComparison.Ordinal);
         Assert.Contains("Name_Dusty", output, StringComparison.Ordinal);
         Assert.Contains("; ", output, StringComparison.Ordinal);
     }
 
-    // ── 验收 6：自身排除与非法输入可观察失败 ──
+    // ── 自身排除与参数校验 ──
 
     [Fact]
     public void SelfEntry_ExcludedCaseInsensitively()
     {
         var relationships = new Dictionary<string, BioData.ListEntry>
         {
-            ["alex"] = Entry(en: "self label"),
+            ["alex"] = Entry(label: "self label"),
         };
 
         string output = BuildEn(relationships, speaker: "Alex");
@@ -201,12 +232,14 @@ public class SocialBackboneBuilderTests
             SocialBackboneBuilder.Build("Alex", new Dictionary<string, BioData.ListEntry>(), isZh: false, resolveDisplayName: null));
     }
 
+    // ── 非法条目可观察失败 ──
+
     [Fact]
     public void NullEntryValue_ThrowsInvalidOperation_EvenWhenExcludedAsCandidate()
     {
         var relationships = new Dictionary<string, BioData.ListEntry>
         {
-            ["George"] = Entry(en: "grandfather"),
+            ["George"] = Entry(label: "grandfather"),
             ["Ghost"] = null, // RequiredHearts 默认 0 本可入选，但值校验先行
         };
 
@@ -220,7 +253,7 @@ public class SocialBackboneBuilderTests
     {
         var relationships = new Dictionary<string, BioData.ListEntry>
         {
-            ["   "] = Entry(en: "label"),
+            ["   "] = Entry(label: "label"),
         };
 
         Assert.Throws<InvalidOperationException>(() => BuildEn(relationships));
@@ -231,7 +264,7 @@ public class SocialBackboneBuilderTests
     {
         var relationships = new Dictionary<string, BioData.ListEntry>
         {
-            ["George"] = Entry(en: "grand\nfather"),
+            ["George"] = Entry(label: "grand\nfather"),
         };
 
         Assert.Throws<InvalidOperationException>(() => BuildEn(relationships));
@@ -242,14 +275,14 @@ public class SocialBackboneBuilderTests
     {
         var relationships = new Dictionary<string, BioData.ListEntry>
         {
-            ["George"] = Entry(en: new string('x', 49)),
+            ["George"] = Entry(label: new string('x', 49)),
         };
 
         Assert.Throws<InvalidOperationException>(() => BuildEn(relationships));
 
         var atLimit = new Dictionary<string, BioData.ListEntry>
         {
-            ["George"] = Entry(en: new string('x', 48)),
+            ["George"] = Entry(label: new string('x', 48)),
         };
         Assert.Contains("Name_George", BuildEn(atLimit), StringComparison.Ordinal);
     }
@@ -259,7 +292,7 @@ public class SocialBackboneBuilderTests
     {
         var relationships = new Dictionary<string, BioData.ListEntry>
         {
-            ["George"] = Entry(en: "grandfather"),
+            ["George"] = Entry(label: "grandfather"),
         };
 
         var ex = Assert.Throws<InvalidOperationException>(() =>
@@ -272,7 +305,7 @@ public class SocialBackboneBuilderTests
     {
         var relationships = new Dictionary<string, BioData.ListEntry>
         {
-            ["George"] = Entry(en: "grandfather"),
+            ["George"] = Entry(label: "grandfather"),
         };
         var original = new InvalidTimeZoneException("resolver blew up");
 
@@ -282,10 +315,10 @@ public class SocialBackboneBuilderTests
         Assert.Same(original, thrown);
     }
 
-    // ── 验收 7：序列化往返与旧卡兼容 ──
+    // ── 序列化兼容 ──
 
     [Fact]
-    public void PublicIdentityFields_SurviveNewtonsoftRoundTrip()
+    public void PublicIdentity_SurvivesNewtonsoftRoundTrip()
     {
         var entry = new BioData.ListEntry
         {
@@ -293,43 +326,39 @@ public class SocialBackboneBuilderTests
             Heading = "George",
             Description = "Your grandfather.",
             RequiredHearts = 2,
-            PublicIdentityEn = "grandfather",
-            PublicIdentityZh = "祖父辈亲属",
+            PublicIdentity = "grandfather",
         };
 
         string json = JsonConvert.SerializeObject(entry);
         var restored = JsonConvert.DeserializeObject<BioData.ListEntry>(json);
 
-        Assert.Equal("grandfather", restored.PublicIdentityEn);
-        Assert.Equal("祖父辈亲属", restored.PublicIdentityZh);
+        Assert.Equal("grandfather", restored.PublicIdentity);
         Assert.Equal(2, restored.RequiredHearts);
         Assert.Equal("Your grandfather.", restored.Description);
     }
 
     [Fact]
-    public void LegacyJsonWithoutNewFields_DeserializesToBlankLabels()
+    public void LegacyJsonWithoutPublicIdentity_DeserializesToBlankLabel()
     {
         const string legacyJson = @"{ ""id"": ""George"", ""Heading"": ""George"", ""RequiredHearts"": 0, ""Description"": ""Old card."" }";
 
         var restored = JsonConvert.DeserializeObject<BioData.ListEntry>(legacyJson);
 
-        Assert.Equal(string.Empty, restored.PublicIdentityEn);
-        Assert.Equal(string.Empty, restored.PublicIdentityZh);
+        Assert.Equal(string.Empty, restored.PublicIdentity);
         Assert.Equal("Old card.", restored.Description);
     }
 
     [Fact]
-    public void BioDataRelationships_WithPublicIdentityLabels_Deserializes()
+    public void BioDataRelationships_WithPublicIdentity_Deserializes()
     {
-        const string bioJson = @"{ ""Relationships"": { ""George"": { ""PublicIdentityEn"": ""grandfather"", ""PublicIdentityZh"": ""祖父辈亲属"" } } }";
+        const string bioJson = @"{ ""Relationships"": { ""George"": { ""PublicIdentity"": ""grandfather"" } } }";
 
         var bio = JsonConvert.DeserializeObject<BioData>(bioJson);
 
-        Assert.Equal("grandfather", bio.Relationships["George"].PublicIdentityEn);
-        Assert.Equal("祖父辈亲属", bio.Relationships["George"].PublicIdentityZh);
+        Assert.Equal("grandfather", bio.Relationships["George"].PublicIdentity);
     }
 
-    // ── 验收 8：无公开候选返回空串 ──
+    // ── 空候选返回空串 ──
 
     [Fact]
     public void NoPublicCandidates_ReturnsEmptyString()

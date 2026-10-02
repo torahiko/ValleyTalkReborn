@@ -119,11 +119,10 @@ public class BioData
         // 注入此条目所需的最低好感度（心数）。默认 0 = 始终注入。
         public int RequiredHearts { get; set; } = 0;
 
-        // REL-002：显式公开身份标签（如 grandfather / 祖父辈亲属）。
+        // REL-002B：统一单一公开身份标签（如 grandfather / wife）。
         // 角色卡 JSON 显式声明，仅供 SocialBackboneBuilder 拼装"已知关系骨架"；
         // 反序列化后属于 Memory，运行时不写回。未配置或 JSON null 均按空白标签处理。
-        public string PublicIdentityEn { get; set; } = string.Empty;
-        public string PublicIdentityZh { get; set; } = string.Empty;
+        public string PublicIdentity { get; set; } = string.Empty;
     }
 
     /// <summary>
