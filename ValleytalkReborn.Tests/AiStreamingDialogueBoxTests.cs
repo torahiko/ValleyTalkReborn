@@ -1050,7 +1050,7 @@ public class AiStreamingDialogueBoxTests : IDisposable
         box.receiveLeftClick(btnX + 10, btnY + 10);
 
         Assert.Equal(StreamingDialogueState.Faulted, box.State);
-        Assert.Equal("$s", box.characterDialogue.CurrentEmotion);
+        Assert.Equal("$u", box.characterDialogue.CurrentEmotion);
         Assert.False(string.IsNullOrEmpty(box.ErrorMessage));
     }
 
@@ -1083,7 +1083,7 @@ public class AiStreamingDialogueBoxTests : IDisposable
     [Fact]
     public void CancelCurrentDialogue_WithoutLiveCts_EntersFaultedWithoutThrowing()
     {
-        // RECOVERABLE 路径：CTS 缺失时不得抛异常，转入 Faulted 状态并切至悲伤立绘。
+        // RECOVERABLE 路径：CTS 缺失时不得抛异常，转入 Faulted 状态并切至惊讶立绘。
         InstallFarmerShim();
         AiStreamingDialogueBox box = NewBox("partial");
 
@@ -1091,7 +1091,7 @@ public class AiStreamingDialogueBoxTests : IDisposable
 
         Assert.Equal(StreamingDialogueState.Faulted, box.State);
         Assert.Equal(string.Empty, box.DisplayedPageText);
-        Assert.Equal("$s", box.characterDialogue.CurrentEmotion);
+        Assert.Equal("$u", box.characterDialogue.CurrentEmotion);
         Assert.False(string.IsNullOrEmpty(box.ErrorMessage));
 
         // 随后玩家点击退出，触发 Close() 释放玩家移动。
@@ -1101,7 +1101,7 @@ public class AiStreamingDialogueBoxTests : IDisposable
     }
 
     [Fact]
-    public void CancelCurrentDialogue_SetsSadEmotion_AndKeepsBoxOpenWithCancelledMessage()
+    public void CancelCurrentDialogue_SetsSurprisedEmotion_AndKeepsBoxOpenWithCancelledMessage()
     {
         InstallFarmerShim();
         Game1.player.CanMove = false;
@@ -1110,9 +1110,9 @@ public class AiStreamingDialogueBoxTests : IDisposable
 
         box.CancelCurrentDialogue();
 
-        // 验证：对白框停留在 Faulted 态未被立刻关闭，立绘切至悲伤，展示取消提示
+        // 验证：对白框停留在 Faulted 态未被立刻关闭，立绘切至惊讶，展示取消提示
         Assert.Equal(StreamingDialogueState.Faulted, box.State);
-        Assert.Equal("$s", box.characterDialogue.CurrentEmotion);
+        Assert.Equal("$u", box.characterDialogue.CurrentEmotion);
         Assert.True(Game1.dialogueUp, "取消后对白框必须继续保持在屏幕上，不得立即关闭");
         Assert.False(Game1.player.CanMove, "取消提示展示期间玩家移动仍保持锁定");
         Assert.True(box.ErrorMessage == "请求已取消。" || box.ErrorMessage == "Request cancelled.");

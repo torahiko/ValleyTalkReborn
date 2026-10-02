@@ -1526,7 +1526,7 @@ namespace ValleytalkReborn.UI
 
         /// <summary>
         /// 中止本轮流式对白：设置用户取消标记、取消 CTS、播取消音效、清空 AsyncBuilder 队列，
-        /// 切换立绘至悲伤表情（$s），并就地进入 Faulted 状态显示取消提示，等待玩家点击退出。
+        /// 切换立绘至惊讶/打断表情（$u），并就地进入 Faulted 状态显示取消提示，等待玩家点击退出。
         /// CTS 缺失或已取消时按 RECOVERABLE 记录 Trace 日志后照常进入取消态，绝不抛异常。
         /// </summary>
         public void CancelCurrentDialogue()
@@ -1556,7 +1556,7 @@ namespace ValleytalkReborn.UI
             Game1.playSound("cancel");
             AsyncBuilder.Instance.Cleanup();
 
-            ApplyEmotionInternal("$s");
+            ApplyEmotionInternal("$u");
 
             string cancelMsg = I18n.Get("ui.cancelled");
             if (string.IsNullOrEmpty(cancelMsg) || cancelMsg == "ui.cancelled")
