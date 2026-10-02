@@ -940,6 +940,369 @@ internal class MemoryManager : IMemoryProvider
         };
     }
 
+    /// <summary>
+    /// DD404B：自动周/季/年浓缩专用的两阶段保源提交（D6）。阶段一先写归档库副本
+    /// （安全备份），确认成功并发布后才以一次 WriteSaveData 写活跃副本（新聚合与
+    /// 移除捕获源在同一 payload）。不调用吞异常的 SaveTimeline/SaveArchivedTimeline，
+    /// 不外调 RemoveTimelineMemories；任何阶段失败均不物理删除活跃源；
+    /// 第二阶段失败时归档副本保留作为安全备份（archivePrepared）。
+    /// </summary>
+    internal TimelineCondensationCommitResult CommitTimelineCondensation(TimelineCondensationCommitRequest request)
+    {
+        if (request == null
+            || (request.TargetTier != MemoryTier.Weekly
+                && request.TargetTier != MemoryTier.Chronicle
+                && request.TargetTier != MemoryTier.Yearly)
+            || string.IsNullOrWhiteSpace(request.NpcName)
+            || string.IsNullOrWhiteSpace(request.EntryId)
+            || request.TargetDay <= 0
+            || string.IsNullOrWhiteSpace(request.NewContent)
+            || request.SourceEntryIds == null
+            || request.SourceContentHashes == null
+            || request.SourceEntryIds.Count < 2
+            || request.SourceEntryIds.Count != request.SourceContentHashes.Count
+            || request.SourceEntryIds.Any(id => string.IsNullOrWhiteSpace(id))
+            || request.SourceContentHashes.Any(h => string.IsNullOrWhiteSpace(h))
+            || request.SourceEntryIds.Distinct(StringComparer.Ordinal).Count() != request.SourceEntryIds.Count)
+        {
+            ModEntry.SMonitor?.Log(
+                "[MemoryManager] CommitTimelineCondensation rejected: invalid request (tier/npc/entry/day/content/sources).",
+                LogLevel.Error);
+            return new TimelineCondensationCommitResult
+            {
+                Status = TimelineCondensationCommitStatus.Invalid,
+                EntryId = request?.EntryId,
+                ErrorDetail = "Invalid request: tier must be Weekly/Chronicle/Yearly, NpcName/EntryId/NewContent required, source ids/hashes equal-length unique lists of at least 2."
+            };
+        }
+
+        // 沿用旧高层长度规则：SmartTruncate 后作为正式待写值
+        string content = SmartTruncate(request.NewContent.Trim(), MaxMemoryLength);
+
+        if (!Context.IsWorldReady || !Context.IsMainPlayer || ModEntry.SHelper == null)
+        {
+            ModEntry.SMonitor?.Log(
+                "[MemoryManager] CommitTimelineCondensation skipped: save not ready (worldReady/mainPlayer/helper).",
+                LogLevel.Debug);
+            return new TimelineCondensationCommitResult
+            {
+                Status = TimelineCondensationCommitStatus.Unavailable,
+                EntryId = request.EntryId,
+                ErrorDetail = "Save not ready: world not ready, not main player or helper missing."
+            };
+        }
+
+        if (_loadFailed)
+        {
+            ModEntry.SMonitor?.Log(
+                "[MemoryManager] CommitTimelineCondensation refused: last load failed, refusing to overwrite SaveData.",
+                LogLevel.Error);
+            return new TimelineCondensationCommitResult
+            {
+                Status = TimelineCondensationCommitStatus.Unavailable,
+                EntryId = request.EntryId,
+                ErrorDetail = "Last load failed; refusing to overwrite SaveData."
+            };
+        }
+
+        if (!IsLoaded)
+        {
+            ModEntry.SMonitor?.Log(
+                "[MemoryManager] CommitTimelineCondensation skipped: memory not loaded.",
+                LogLevel.Debug);
+            return new TimelineCondensationCommitResult
+            {
+                Status = TimelineCondensationCommitStatus.Unavailable,
+                EntryId = request.EntryId,
+                ErrorDetail = "MemoryManager is not loaded."
+            };
+        }
+
+        bool hasActive = _timelineMemories.TryGetValue(request.NpcName, out var active);
+        var sourceIdSet = new HashSet<string>(request.SourceEntryIds, StringComparer.Ordinal);
+
+        // ── 重放：聚合已存在且 tier/目标日/正文相同、捕获源均已不在活跃列表 ──
+        if (hasActive)
+        {
+            var existingAggregate = active.FirstOrDefault(m =>
+                m != null && string.Equals(m.Id, request.EntryId, StringComparison.Ordinal));
+            if (existingAggregate != null
+                && existingAggregate.Tier == request.TargetTier
+                && existingAggregate.CreatedDay == request.TargetDay
+                && string.Equals(existingAggregate.Content, content, StringComparison.OrdinalIgnoreCase)
+                && !active.Any(m => m != null && sourceIdSet.Contains(m.Id)))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[MemoryManager] CommitTimelineCondensation Unchanged [{request.NpcName}] {request.TargetTier}: identical aggregate already present.",
+                    LogLevel.Debug);
+                return new TimelineCondensationCommitResult
+                {
+                    Status = TimelineCondensationCommitStatus.Unchanged,
+                    EntryId = request.EntryId
+                };
+            }
+        }
+
+        // ── 捕获源逐项核对：ID 存在、正文 hash、源 tier 与日期窗口 ──
+        MemoryTier expectedSourceTier = request.TargetTier switch
+        {
+            MemoryTier.Weekly => MemoryTier.Daily,
+            MemoryTier.Chronicle => MemoryTier.Weekly,
+            _ => MemoryTier.Chronicle // Yearly
+        };
+
+        var sources = new List<MemoryEntry>();
+        for (int i = 0; i < request.SourceEntryIds.Count; i++)
+        {
+            string sourceId = request.SourceEntryIds[i];
+            var source = hasActive
+                ? active.FirstOrDefault(m => m != null && string.Equals(m.Id, sourceId, StringComparison.Ordinal))
+                : null;
+            if (source == null)
+            {
+                return CondensationConflict(request, $"captured source {sourceId} is missing from the active timeline.");
+            }
+
+            if (!string.Equals(
+                    DailyDistillationSnapshotBuilder.HashText(source.Content),
+                    request.SourceContentHashes[i],
+                    StringComparison.Ordinal))
+            {
+                return CondensationConflict(request, $"captured source {sourceId} content hash mismatch.");
+            }
+
+            if (source.Tier != expectedSourceTier)
+            {
+                return CondensationConflict(request, $"captured source {sourceId} tier {source.Tier} does not match expected {expectedSourceTier}.");
+            }
+
+            if (!SourceWithinCondensationPeriod(request, source))
+            {
+                return CondensationConflict(request, $"captured source {sourceId} day {source.CreatedDay} is outside the target {request.TargetTier} period.");
+            }
+
+            sources.Add(source);
+        }
+
+        // ── 同目标周期已有聚合（沿用 PeriodAlreadyCovered 的周期定义）或 ID 重复 → Conflict ──
+        var targetDate = GameDayToStardewTime(request.TargetDay);
+        if (hasActive && active.Any(m =>
+                m != null && m.Tier == request.TargetTier && m.CreatedDay > 0
+                && CondensationPeriodMatches(request.TargetTier, m.CreatedDay, targetDate)))
+        {
+            return CondensationConflict(request, $"target {request.TargetTier} period already covered.");
+        }
+
+        if (hasActive && active.Any(m =>
+                m != null && string.Equals(m.Id, request.EntryId, StringComparison.Ordinal)))
+        {
+            return CondensationConflict(request, $"entry id {request.EntryId} already used by this NPC's timeline.");
+        }
+
+        int tierCount = hasActive ? active.Count(m => m != null && m.Tier == request.TargetTier) : 0;
+        if (tierCount >= GetTierCapacity(request.TargetTier))
+        {
+            ModEntry.SMonitor?.Log(
+                $"[MemoryManager] CommitTimelineCondensation CapacityFull [{request.NpcName}] {request.TargetTier}: {tierCount} entries at limit.",
+                LogLevel.Info);
+            return new TimelineCondensationCommitResult
+            {
+                Status = TimelineCondensationCommitStatus.CapacityFull,
+                EntryId = request.EntryId,
+                ErrorDetail = $"{request.TargetTier} tier at capacity ({tierCount}/{GetTierCapacity(request.TargetTier)})."
+            };
+        }
+
+        if (hasActive && active.Any(m =>
+                m != null && m.Tier == request.TargetTier
+                && string.Equals(m.Content, content, StringComparison.OrdinalIgnoreCase)))
+        {
+            ModEntry.SMonitor?.Log(
+                $"[MemoryManager] CommitTimelineCondensation Duplicate [{request.NpcName}] {request.TargetTier}: identical content already present.",
+                LogLevel.Info);
+            return new TimelineCondensationCommitResult
+            {
+                Status = TimelineCondensationCommitStatus.Duplicate,
+                EntryId = request.EntryId,
+                ErrorDetail = "Identical content already present in the target tier."
+            };
+        }
+
+        // ── 归档副本：完整属性副本 + 同一个 ArchivedAt + ArchiveReason="Distilled"；不改活跃源 ──
+        var newArchiveDict = new Dictionary<string, List<MemoryEntry>>(_archivedTimelineMemories, StringComparer.OrdinalIgnoreCase);
+        bool hasArchiveList = newArchiveDict.TryGetValue(request.NpcName, out var archiveList) && archiveList != null;
+        var newArchiveList = hasArchiveList ? new List<MemoryEntry>(archiveList) : new List<MemoryEntry>();
+        DateTime archivedAt = DateTime.Now;
+        foreach (var source in sources)
+        {
+            var archivedTwin = newArchiveList.FirstOrDefault(m =>
+                m != null && string.Equals(m.Id, source.Id, StringComparison.Ordinal));
+            if (archivedTwin != null)
+            {
+                if (!string.Equals(archivedTwin.Content, source.Content, StringComparison.OrdinalIgnoreCase))
+                {
+                    return CondensationConflict(request, $"archived entry {source.Id} already exists with different content.");
+                }
+                continue; // 同ID且同正文的已有归档只保留一份（archivePrepared 重放不重复归档）
+            }
+
+            var archiveCopy = CloneTimelineEntry(source);
+            archiveCopy.ArchivedAt = archivedAt;
+            archiveCopy.ArchiveReason = "Distilled";
+            newArchiveList.Insert(0, archiveCopy);
+        }
+        while (newArchiveList.Count > MaxArchivedTimelineMemoriesPerNpc)
+            newArchiveList.RemoveAt(newArchiveList.Count - 1);
+        newArchiveDict[request.NpcName] = newArchiveList;
+
+        // ── 活跃副本：加入聚合，删除且仅删除捕获源；生成期间新增的其他源保留 ──
+        var newActiveDict = new Dictionary<string, List<MemoryEntry>>(_timelineMemories, StringComparer.OrdinalIgnoreCase);
+        var newActiveList = hasActive ? new List<MemoryEntry>(active) : new List<MemoryEntry>();
+        var aggregate = new MemoryEntry
+        {
+            Id = request.EntryId,
+            NpcName = request.NpcName,
+            Content = content,
+            CreatedAt = DateTime.Now,
+            CreatedDay = request.TargetDay,
+            Source = "Timeline",
+            Category = MemoryCategory.Fact,
+            Type = MemoryType.Fact,
+            Tier = request.TargetTier,
+            DateLabel = GenerateDateLabel(request.TargetTier, targetDate),
+            Importance = request.TargetTier == MemoryTier.Yearly ? 5
+                : request.TargetTier == MemoryTier.Chronicle ? 5
+                : 4
+        };
+        newActiveList.Insert(0, aggregate);
+        newActiveList.RemoveAll(m => m != null && sourceIdSet.Contains(m.Id));
+        newActiveDict[request.NpcName] = newActiveList;
+
+        // ── 阶段一：写归档库副本；失败即 StorageFailed，零活跃写入 ──
+        try
+        {
+            ModEntry.SHelper.Data.WriteSaveData(TimelineArchiveSaveDataKey, newArchiveDict);
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log(
+                $"[MemoryManager] CommitTimelineCondensation StorageFailed (archive phase) [{request.NpcName}]: {ex.Message}; active sources preserved, zero active writes.",
+                LogLevel.Error);
+            return new TimelineCondensationCommitResult
+            {
+                Status = TimelineCondensationCommitStatus.StorageFailed,
+                EntryId = request.EntryId,
+                ErrorDetail = $"Archive phase write failed: {ex.Message}"
+            };
+        }
+
+        // 阶段一成功后发布归档副本
+        _archivedTimelineMemories = newArchiveDict;
+
+        // ── 阶段二：一次 WriteSaveData 写活跃副本（新聚合与移除源在同一 payload）──
+        try
+        {
+            ModEntry.SHelper.Data.WriteSaveData(TimelineSaveDataKey, newActiveDict);
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log(
+                $"[MemoryManager] CommitTimelineCondensation StorageFailed (active phase) [{request.NpcName}]: {ex.Message}; active sources preserved; archivePrepared=true.",
+                LogLevel.Error);
+            return new TimelineCondensationCommitResult
+            {
+                Status = TimelineCondensationCommitStatus.StorageFailed,
+                EntryId = request.EntryId,
+                ErrorDetail = $"Active phase write failed: {ex.Message}; archivePrepared=true, active sources preserved."
+            };
+        }
+
+        // 成功才发布活跃副本；不声称两库物理原子
+        _timelineMemories = newActiveDict;
+        ModEntry.SMonitor?.Log(
+            $"[MemoryManager] CommitTimelineCondensation Applied [{request.TargetTier}] [{request.NpcName}]: {TrimForLog(content)} (sources archived: {sources.Count})",
+            LogLevel.Info);
+        return new TimelineCondensationCommitResult
+        {
+            Status = TimelineCondensationCommitStatus.Applied,
+            EntryId = request.EntryId
+        };
+    }
+
+    private TimelineCondensationCommitResult CondensationConflict(TimelineCondensationCommitRequest request, string detail)
+    {
+        ModEntry.SMonitor?.Log(
+            $"[MemoryManager] CommitTimelineCondensation Conflict [{request.NpcName}] {request.TargetTier}: {detail}",
+            LogLevel.Info);
+        return new TimelineCondensationCommitResult
+        {
+            Status = TimelineCondensationCommitStatus.Conflict,
+            EntryId = request.EntryId,
+            ErrorDetail = detail
+        };
+    }
+
+    /// <summary>源日期窗口（流程第2条）：Weekly 源在 TargetDay-6..TargetDay；Chronicle 同目标年/季；Yearly 同目标年。</summary>
+    private static bool SourceWithinCondensationPeriod(TimelineCondensationCommitRequest request, MemoryEntry source)
+    {
+        switch (request.TargetTier)
+        {
+            case MemoryTier.Weekly:
+                return source.CreatedDay >= request.TargetDay - 6 && source.CreatedDay <= request.TargetDay;
+            case MemoryTier.Chronicle:
+            {
+                var s = GameDayToStardewTime(source.CreatedDay);
+                var t = GameDayToStardewTime(request.TargetDay);
+                return s.Year == t.Year && s.Season == t.Season;
+            }
+            case MemoryTier.Yearly:
+                return GameDayToStardewTime(source.CreatedDay).Year == GameDayToStardewTime(request.TargetDay).Year;
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>同周期判定（沿用调度器 PeriodAlreadyCovered 的周期定义）：Weekly 为季内周桶，Chronicle 同年/季，Yearly 同年。</summary>
+    private static bool CondensationPeriodMatches(MemoryTier tier, int entryDay, StardewTime targetDate)
+    {
+        var t = GameDayToStardewTime(entryDay);
+        return tier switch
+        {
+            MemoryTier.Weekly => t.Year == targetDate.Year && t.Season == targetDate.Season
+                && (t.DayOfMonth - 1) / 7 == (targetDate.DayOfMonth - 1) / 7,
+            MemoryTier.Chronicle => t.Year == targetDate.Year && t.Season == targetDate.Season,
+            MemoryTier.Yearly => t.Year == targetDate.Year,
+            _ => false
+        };
+    }
+
+    /// <summary>MemoryEntry 全属性副本：归档与更新路径共享，避免共享可变引用。</summary>
+    private static MemoryEntry CloneTimelineEntry(MemoryEntry source)
+    {
+        return new MemoryEntry
+        {
+            Id = source.Id,
+            NpcName = source.NpcName,
+            Content = source.Content,
+            CreatedAt = source.CreatedAt,
+            Source = source.Source,
+            Category = source.Category,
+            Type = source.Type,
+            Importance = source.Importance,
+            CreatedDay = source.CreatedDay,
+            ExpireDay = source.ExpireDay,
+            TriggerLocation = source.TriggerLocation,
+            TargetDayHint = source.TargetDayHint,
+            IsFulfilled = source.IsFulfilled,
+            LastPromptedDay = source.LastPromptedDay,
+            ArchivedAt = source.ArchivedAt,
+            Tier = source.Tier,
+            DateLabel = source.DateLabel,
+            ArchiveReason = source.ArchiveReason,
+            AutoArchive = source.AutoArchive
+        };
+    }
+
     public bool RemoveTimelineMemory(string npcName, string entryId)
     {
         if (string.IsNullOrWhiteSpace(npcName) || string.IsNullOrWhiteSpace(entryId)) return false;
