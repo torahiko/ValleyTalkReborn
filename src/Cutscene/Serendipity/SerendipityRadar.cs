@@ -69,7 +69,20 @@ namespace ValleytalkReborn.Cutscene.Serendipity
                     if (i == j) continue;
                     var npcB = candidates[j];
 
-                    if (Vector2.Distance(npcA.Tile, npcB.Tile) <= MaxClusterDistanceTiles)
+                    // 全对内聚：新成员必须与簇内每一个成员都彼此邻近。
+                    // 只校验与轴心 A 的距离会产出两两间距最大可达 2×MaxClusterDistanceTiles 的散簇，
+                    // 而 SerendipityBeacon 的存活判据要求所有两两间距 ≤ 7 格，散簇会导致浮标激活当帧即被静默退场。
+                    bool cohesive = true;
+                    for (int k = 0; k < cluster.Count; k++)
+                    {
+                        if (Vector2.Distance(cluster[k].Tile, npcB.Tile) > MaxClusterDistanceTiles)
+                        {
+                            cohesive = false;
+                            break;
+                        }
+                    }
+
+                    if (cohesive)
                     {
                         cluster.Add(npcB);
                         if (cluster.Count >= 3) break; // 最多取 3 人小团体，保证分镜紧凑精致

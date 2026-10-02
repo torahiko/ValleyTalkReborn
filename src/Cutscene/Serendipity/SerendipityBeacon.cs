@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using StardewModdingAPI;
 using StardewValley;
 
 namespace ValleytalkReborn.Cutscene.Serendipity
@@ -49,10 +50,15 @@ namespace ValleytalkReborn.Cutscene.Serendipity
         }
 
         /// <summary>
-        /// 关闭浮标
+        /// 关闭浮标（可选附带关闭原因用于日志观测）
         /// </summary>
-        public void Dismiss()
+        public void Dismiss(string reason = null)
         {
+            if (IsActive && !string.IsNullOrEmpty(reason))
+            {
+                ModEntry.SMonitor?.Log($"[SerendipityBeacon] Beacon dismissed: {reason}", LogLevel.Debug);
+            }
+
             IsActive = false;
             TargetActors.Clear();
             Situation = null;
@@ -94,14 +100,14 @@ namespace ValleytalkReborn.Cutscene.Serendipity
             _remainingSeconds -= dt;
             if (_remainingSeconds <= 0f)
             {
-                Dismiss();
+                Dismiss("wait timeout elapsed");
                 return;
             }
 
             // 1. 参演角色合法性与换图检测：若有角色离开当前场景，微标自然隐退
             if (TargetActors == null || TargetActors.Count < 2 || Game1.currentLocation == null)
             {
-                Dismiss();
+                Dismiss("target actors invalid or current location null");
                 return;
             }
 
@@ -110,7 +116,7 @@ namespace ValleytalkReborn.Cutscene.Serendipity
                 var actor = TargetActors[i];
                 if (actor == null || actor.currentLocation != Game1.currentLocation)
                 {
-                    Dismiss();
+                    Dismiss($"actor '{actor?.Name ?? "null"}' left the current location");
                     return;
                 }
             }
@@ -122,7 +128,7 @@ namespace ValleytalkReborn.Cutscene.Serendipity
                 {
                     if (Vector2.Distance(TargetActors[i].Tile, TargetActors[j].Tile) > 7.0f)
                     {
-                        Dismiss();
+                        Dismiss($"actors '{TargetActors[i].Name}' and '{TargetActors[j].Name}' drifted beyond 7 tiles");
                         return;
                     }
                 }
@@ -140,7 +146,7 @@ namespace ValleytalkReborn.Cutscene.Serendipity
             // 4. 距离超限守护：若玩家走远超过 20 格，浮标自然静默取消
             if (Game1.player != null && Vector2.Distance(Game1.player.Position, WorldPosition) > 20f * 64f)
             {
-                Dismiss();
+                Dismiss("player moved beyond 20 tiles");
             }
         }
 
