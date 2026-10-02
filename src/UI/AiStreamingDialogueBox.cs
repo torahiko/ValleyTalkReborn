@@ -263,6 +263,9 @@ namespace ValleytalkReborn.UI
         /// <summary>当前页已缓冲的完整文本。</summary>
         public string DisplayedPageText => _displayedPageText;
 
+        /// <summary>错误或取消提示文本。</summary>
+        public string ErrorMessage => _errorMessage;
+
         /// <summary>是否处于快速跳过（游标吸附）模式。</summary>
         public bool IsFastForwardActive => _isFastForwardActive;
 
@@ -1522,18 +1525,27 @@ namespace ValleytalkReborn.UI
             => _state == StreamingDialogueState.Thinking;
 
         /// <summary>
-        /// 中止本轮流式对白：取消 CTS、播音效、清空 AsyncBuilder 队列并收束对白框。
-        /// CTS 缺失或已取消时按 RECOVERABLE 记录 Trace 日志后照常关框，绝不抛异常。
+        /// 中止本轮流式对白：设置用户取消标记、取消 CTS、播取消音效、清空 AsyncBuilder 队列，
+        /// 切换立绘至悲伤表情（$s），并就地进入 Faulted 状态显示取消提示，等待玩家点击退出。
+        /// CTS 缺失或已取消时按 RECOVERABLE 记录 Trace 日志后照常进入取消态，绝不抛异常。
         /// </summary>
         public void CancelCurrentDialogue()
         {
-            Character character = DialogueBuilder.Instance?.GetCharacter(AsyncBuilder.Instance.SpeakingNpc);
+            NPC speaker = AsyncBuilder.Instance.SpeakingNpc ?? this.characterDialogue?.speaker;
+            Character character = !string.IsNullOrWhiteSpace(speaker?.Name)
+                ? DialogueBuilder.Instance?.GetCharacter(speaker)
+                : null;
+            if (character != null)
+            {
+                character.IsUserCancelled = true;
+            }
+
             CancellationTokenSource cts = character?.CurrentDialogueCts;
 
             if (cts == null || cts.IsCancellationRequested)
             {
                 ModEntry.SMonitor?.Log(
-                    "[AiStreamingDialogueBox] Cancel requested with no live CTS; closing box and releasing player movement.",
+                    "[AiStreamingDialogueBox] Cancel requested with no live CTS; transitioning to cancelled state in place.",
                     LogLevel.Trace);
             }
             else
@@ -1544,8 +1556,17 @@ namespace ValleytalkReborn.UI
             Game1.playSound("cancel");
             AsyncBuilder.Instance.Cleanup();
 
-            SetFaulted(I18n.Get("ui.cancelled"));
-            Close();
+            ApplyEmotionInternal("$s");
+
+            string cancelMsg = I18n.Get("ui.cancelled");
+            if (string.IsNullOrEmpty(cancelMsg) || cancelMsg == "ui.cancelled")
+            {
+                cancelMsg = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh
+                    ? "请求已取消。"
+                    : "Request cancelled.";
+            }
+
+            SetFaulted(cancelMsg);
         }
 
         /// <summary>原子关闭：退出菜单并复原对白序列与玩家移动状态。</summary>

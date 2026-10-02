@@ -1047,9 +1047,11 @@ public class AiStreamingDialogueBoxTests : IDisposable
         // 取消按钮锚在文字区右下角：点击命中矩形即中止本轮。
         int btnX = box.x + (box.width - 16) - 64;
         int btnY = box.y + box.height - 68;
-        IgnoringHeadlessPlayerRelease(() => box.receiveLeftClick(btnX + 10, btnY + 10));
+        box.receiveLeftClick(btnX + 10, btnY + 10);
 
         Assert.Equal(StreamingDialogueState.Faulted, box.State);
+        Assert.Equal("$s", box.characterDialogue.CurrentEmotion);
+        Assert.False(string.IsNullOrEmpty(box.ErrorMessage));
     }
 
     [Fact]
@@ -1081,18 +1083,44 @@ public class AiStreamingDialogueBoxTests : IDisposable
     [Fact]
     public void CancelCurrentDialogue_WithoutLiveCts_EntersFaultedWithoutThrowing()
     {
-        // RECOVERABLE 路径：CTS 缺失时不得抛异常，仍须收束对白框并继续释放玩家移动。
+        // RECOVERABLE 路径：CTS 缺失时不得抛异常，转入 Faulted 状态并切至悲伤立绘。
         InstallFarmerShim();
         AiStreamingDialogueBox box = NewBox("partial");
 
-        IgnoringHeadlessPlayerRelease(() => box.CancelCurrentDialogue());
+        box.CancelCurrentDialogue();
 
         Assert.Equal(StreamingDialogueState.Faulted, box.State);
         Assert.Equal(string.Empty, box.DisplayedPageText);
+        Assert.Equal("$s", box.characterDialogue.CurrentEmotion);
+        Assert.False(string.IsNullOrEmpty(box.ErrorMessage));
 
-        // 释放序列前半段（可无头求值部分）必须已经生效。
+        // 随后玩家点击退出，触发 Close() 释放玩家移动。
+        IgnoringHeadlessPlayerRelease(() => box.receiveLeftClick(0, 0));
         Assert.True(Game1.player.CanMove);
         Assert.Empty(Game1.player.movementDirections);
+    }
+
+    [Fact]
+    public void CancelCurrentDialogue_SetsSadEmotion_AndKeepsBoxOpenWithCancelledMessage()
+    {
+        InstallFarmerShim();
+        Game1.player.CanMove = false;
+        Game1.dialogueUp = true;
+        AiStreamingDialogueBox box = NewBox();
+
+        box.CancelCurrentDialogue();
+
+        // 验证：对白框停留在 Faulted 态未被立刻关闭，立绘切至悲伤，展示取消提示
+        Assert.Equal(StreamingDialogueState.Faulted, box.State);
+        Assert.Equal("$s", box.characterDialogue.CurrentEmotion);
+        Assert.True(Game1.dialogueUp, "取消后对白框必须继续保持在屏幕上，不得立即关闭");
+        Assert.False(Game1.player.CanMove, "取消提示展示期间玩家移动仍保持锁定");
+        Assert.True(box.ErrorMessage == "请求已取消。" || box.ErrorMessage == "Request cancelled.");
+
+        // 验证：再次点击对白框，正常关闭菜单并释放移动
+        IgnoringHeadlessPlayerRelease(() => box.receiveLeftClick(box.x + 10, box.y + 10));
+        Assert.False(Game1.dialogueUp, "玩家点击后对白框正常收起");
+        Assert.True(Game1.player.CanMove, "玩家点击退出后移动权限恢复");
     }
 
     /// <summary>
