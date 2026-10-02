@@ -19,7 +19,7 @@ namespace ValleytalkReborn.Cutscene.Actions
         private readonly float _timeoutSeconds;
 
         private PathFindController _controller;
-        private Vector2 _lastTile;
+        private Vector2 _lastPosition;
         private int _stuckTicks;
         private float _elapsedSeconds;
         private bool _hasRetried;
@@ -35,7 +35,7 @@ namespace ValleytalkReborn.Cutscene.Actions
 
         public void Enter()
         {
-            _lastTile = _npc.Tile;
+            _lastPosition = _npc.Position;
             _stuckTicks = 0;
             _elapsedSeconds = 0f;
             _hasRetried = false;
@@ -104,8 +104,8 @@ namespace ValleytalkReborn.Cutscene.Actions
                 return true;
             }
 
-            // 已到达目标
-            if (Vector2.Distance(_npc.Tile, _targetTile) < 0.5f)
+            // 已到达目标或处于有效交互站位范围内（智能宽松到达容差，避免误杀瞬移）
+            if (Vector2.Distance(_npc.Tile, _targetTile) <= 1.0f)
             {
                 return true;
             }
@@ -113,20 +113,27 @@ namespace ValleytalkReborn.Cutscene.Actions
             // 路径失效：可能已经到达
             if (_controller == null || MovementPathfinding.IsPathDone(_controller))
             {
-                return Vector2.Distance(_npc.Tile, _targetTile) < 1.5f;
+                return Vector2.Distance(_npc.Tile, _targetTile) <= 1.5f;
             }
 
-            // 静止检测：卡住超过 60 帧（1 秒）
-            if (Vector2.Distance(_npc.Tile, _lastTile) < 0.1f)
+            // 像素级静止检测：真正卡住超过 120 帧（2 秒）才进入脱困流程
+            if (Vector2.Distance(_npc.Position, _lastPosition) < 2.0f)
             {
                 _stuckTicks++;
                 
-                if (_stuckTicks > 45)
+                if (_stuckTicks > 120)
                 {
+                    // 终点宽松容差保护：若已经走到目标 1.5 格以内，直接优雅就位，绝不瞬移
+                    if (Vector2.Distance(_npc.Tile, _targetTile) <= 1.5f)
+                    {
+                        _isCompleted = true;
+                        return true;
+                    }
+
                     if (!_hasRetried)
                     {
                         ModEntry.SMonitor?.Log(
-                            $"[MoveToTileAction] {_npc.Name} stuck, attempting recovery and repath.",
+                            $"[MoveToTileAction] {_npc.Name} stuck (0 displacement for 2s), attempting recovery and repath.",
                             LogLevel.Debug);
                         
                         _hasRetried = true;
@@ -140,12 +147,19 @@ namespace ValleytalkReborn.Cutscene.Actions
                                 _npc.addedSpeed = 2;
                                 _npc.controller = _controller;
                                 _stuckTicks = 0;
-                                _lastTile = _npc.Tile;
+                                _lastPosition = _npc.Position;
                                 return false;
                             }
                         }
                         
-                        // 重寻路失败：瞬移到位并标记完成
+                        // 若重寻路失败但已在 1.8 格附近，直接就位免瞬移
+                        if (Vector2.Distance(_npc.Tile, _targetTile) <= 1.8f)
+                        {
+                            _isCompleted = true;
+                            return true;
+                        }
+
+                        // 确实远离目标且重寻路失败：瞬移到位并标记完成
                         ModEntry.SMonitor?.Log(
                             $"[MoveToTileAction] Recovery failed, warping {_npc.Name} to target.",
                             LogLevel.Debug);
@@ -155,7 +169,13 @@ namespace ValleytalkReborn.Cutscene.Actions
                     }
                     else
                     {
-                        // 已经重试过依然受阻（如玩家站在必经之路上）：在触发原版 3 秒流汗穿透前，立即熔断安全瞬移到位
+                        // 已经重试过依然受阻：若已近身则平稳收工，否则在触发原版 3 秒流汗穿透前熔断瞬移
+                        if (Vector2.Distance(_npc.Tile, _targetTile) <= 1.8f)
+                        {
+                            _isCompleted = true;
+                            return true;
+                        }
+
                         ModEntry.SMonitor?.Log(
                             $"[MoveToTileAction] {_npc.Name} blocked repeatedly (player or dynamic obstacle), warping safely before vanilla charge-through.",
                             LogLevel.Debug);
@@ -168,7 +188,7 @@ namespace ValleytalkReborn.Cutscene.Actions
             else
             {
                 _stuckTicks = 0;
-                _lastTile = _npc.Tile;
+                _lastPosition = _npc.Position;
             }
 
             return false;

@@ -137,7 +137,16 @@ namespace ValleytalkReborn.Cutscene.Serendipity
                 return;
 
             if (VirtualDirector.Instance.IsActive || CutsceneGeneratorService.IsGenerating)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[SerendipityManager] Skipping encounter '{situation.Title}' — director active or generating.",
+                    LogLevel.Debug);
                 return;
+            }
+
+            ModEntry.SMonitor?.Log(
+                $"[SerendipityManager] Triggering encounter cutscene '{situation.Title}' with {string.Join(", ", actors.Select(a => a.Name))}.",
+                LogLevel.Info);
 
             // 1. 记录冷却与每日计数
             SerendipityCooldownStore.Instance.RecordTrigger(

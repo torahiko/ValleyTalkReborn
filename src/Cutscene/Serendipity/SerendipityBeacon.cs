@@ -21,7 +21,7 @@ namespace ValleytalkReborn.Cutscene.Serendipity
 
         private float _remainingSeconds = 0f;
         private const float DefaultTimeoutSeconds = 30f;
-        private const float InteractionRadiusPixels = 3.5f * 64f; // 约 3.5 格内可按键激活
+        private const float InteractionRadiusPixels = 4.0f * 64f; // 约 4.0 格内可按键激活
 
         private SerendipityBeacon() { }
 
@@ -60,16 +60,32 @@ namespace ValleytalkReborn.Cutscene.Serendipity
         }
 
         /// <summary>
-        /// 玩家当前是否处于可按键交互的有效半径内
+        /// 玩家当前是否处于可按键交互的有效半径内（支持双重锚点：微标中心或任意参演NPC）
         /// </summary>
         public bool IsPlayerInRange()
         {
             if (!IsActive || Game1.player == null) return false;
-            return Vector2.Distance(Game1.player.Position, WorldPosition) <= InteractionRadiusPixels;
+
+            // 1. 距离浮标物理中心 4 格以内
+            if (Vector2.Distance(Game1.player.Position, WorldPosition) <= InteractionRadiusPixels)
+                return true;
+
+            // 2. 双重锚点防护：距离任意一名参演角色 4 格以内均判定在交互范围内
+            if (TargetActors != null)
+            {
+                for (int i = 0; i < TargetActors.Count; i++)
+                {
+                    var actor = TargetActors[i];
+                    if (actor != null && Vector2.Distance(Game1.player.Tile, actor.Tile) <= 4.0f)
+                        return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
-        /// 帧更新：倒计时与距离防护
+        /// 帧更新：倒计时、动态跟随移动与离散/换图自毁
         /// </summary>
         public void Update(float dt)
         {
@@ -82,8 +98,47 @@ namespace ValleytalkReborn.Cutscene.Serendipity
                 return;
             }
 
-            // 距离超限守护：若玩家走远超过 22 格，浮标自然静默取消
-            if (Game1.player != null && Vector2.Distance(Game1.player.Position, WorldPosition) > 22f * 64f)
+            // 1. 参演角色合法性与换图检测：若有角色离开当前场景，微标自然隐退
+            if (TargetActors == null || TargetActors.Count < 2 || Game1.currentLocation == null)
+            {
+                Dismiss();
+                return;
+            }
+
+            for (int i = 0; i < TargetActors.Count; i++)
+            {
+                var actor = TargetActors[i];
+                if (actor == null || actor.currentLocation != Game1.currentLocation)
+                {
+                    Dismiss();
+                    return;
+                }
+            }
+
+            // 2. 演员离散检测：若 NPC 之间走散（距离 > 7 格），说明偶遇已结束，微标静默退场
+            for (int i = 0; i < TargetActors.Count; i++)
+            {
+                for (int j = i + 1; j < TargetActors.Count; j++)
+                {
+                    if (Vector2.Distance(TargetActors[i].Tile, TargetActors[j].Tile) > 7.0f)
+                    {
+                        Dismiss();
+                        return;
+                    }
+                }
+            }
+
+            // 3. 动态跟随演员群体中心物理坐标（NPC 边走微标边动）
+            Vector2 sumPos = Vector2.Zero;
+            foreach (var actor in TargetActors)
+            {
+                sumPos += actor.Position;
+            }
+            Vector2 center = sumPos / TargetActors.Count;
+            WorldPosition = center + new Vector2(32f, -48f);
+
+            // 4. 距离超限守护：若玩家走远超过 20 格，浮标自然静默取消
+            if (Game1.player != null && Vector2.Distance(Game1.player.Position, WorldPosition) > 20f * 64f)
             {
                 Dismiss();
             }
@@ -115,8 +170,8 @@ namespace ValleytalkReborn.Cutscene.Serendipity
             float pulse = 0.85f + (float)Math.Sin(totalSec * 4.5) * 0.15f;
 
             string mainText = inRange
-                ? "🌟 [按 E 驻足观摩]"
-                : "💬 附近有故事正在发生 [走近按 E]";
+                ? "🌟 [ 右键 / E 驻足观摩 ]"
+                : "💬 附近有故事正在发生 [靠近即可观摩]";
             string subText = $"《{Situation.Title}》";
 
             var mainSize = Game1.smallFont.MeasureString(mainText);

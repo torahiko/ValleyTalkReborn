@@ -773,12 +773,12 @@ namespace ValleytalkReborn
                 }
             }
 
-            // 🎬 Phase 4: 驻足观摩浮标交互（E 键或操作键）
+            // 🎬 Phase 4: 驻足观摩浮标交互（右键、E 键或操作键）
             if (ValleytalkReborn.Cutscene.Serendipity.SerendipityBeacon.Instance.IsActive
                 && ValleytalkReborn.Cutscene.Serendipity.SerendipityBeacon.Instance.IsPlayerInRange()
                 && Context.IsPlayerFree)
             {
-                if (e.Button == SButton.E || e.Button.IsActionButton())
+                if (e.Button == SButton.E || e.Button.IsActionButton() || e.Button == SButton.MouseRight)
                 {
                     Helper.Input.Suppress(e.Button);
                     var actors = ValleytalkReborn.Cutscene.Serendipity.SerendipityBeacon.Instance.TargetActors;
@@ -787,6 +787,7 @@ namespace ValleytalkReborn
 
                     if (actors != null && actors.Count > 0 && situation != null)
                     {
+                        SMonitor?.Log($"[SerendipityBeacon] Player triggered encounter '{situation.Title}' via {e.Button}.", LogLevel.Info);
                         ValleytalkReborn.Cutscene.Serendipity.SerendipityManager.Instance.TriggerEncounter(actors, situation);
                         return;
                     }

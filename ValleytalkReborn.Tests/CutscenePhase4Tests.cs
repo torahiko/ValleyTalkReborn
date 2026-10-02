@@ -122,5 +122,27 @@ namespace ValleytalkReborn.Tests
             Assert.Empty(beacon.TargetActors);
             Assert.Null(beacon.Situation);
         }
+
+        [Fact]
+        public void SerendipityBeacon_IsPlayerInRange_FalseWhenInactive()
+        {
+            var beacon = SerendipityBeacon.Instance;
+            beacon.Dismiss();
+
+            Assert.False(beacon.IsActive);
+            Assert.False(beacon.IsPlayerInRange());
+        }
+
+        [Fact]
+        public void SerendipityBeacon_Update_InactiveBeaconRemainsInactive()
+        {
+            var beacon = SerendipityBeacon.Instance;
+            beacon.Dismiss();
+
+            // Calling Update when inactive should be a clean no-op
+            beacon.Update(5.0f);
+            Assert.False(beacon.IsActive);
+            Assert.Empty(beacon.TargetActors);
+        }
     }
 }
