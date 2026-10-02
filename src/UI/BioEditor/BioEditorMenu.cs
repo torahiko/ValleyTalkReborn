@@ -2374,10 +2374,21 @@ namespace ValleytalkReborn
 
         private void SelectRelationshipView(string npc)
         {
-            if (_vm.FilteredNpcs.Count == 0) return;
-            _relHeadingBox.Text = _vm.GetRelationshipHeadingOrNull(npc) ?? string.Empty;
-            _relDescBox.SetText(_vm.GetRelationshipDescriptionOrNull(npc) ?? string.Empty);
-            _relIdentityBox.Text = _vm.GetRelationshipPublicIdentityOrNull(npc) ?? string.Empty;
+            // REL-002D-FIX：重载以传入目标为依据，不按 FilteredNpcs.Count 提前返回——
+            // 搜索无结果时确认删除，目标键仍在 _relSelectedNpc 上，必须把三个输入框清空，
+            // 否则旧文本会被每帧同步重新建成已删除的关系条目。
+            if (string.IsNullOrEmpty(npc))
+            {
+                _relHeadingBox.Text = string.Empty;
+                _relIdentityBox.Text = string.Empty;
+                _relDescBox.SetText(string.Empty);
+            }
+            else
+            {
+                _relHeadingBox.Text = _vm.GetRelationshipHeadingOrNull(npc) ?? string.Empty;
+                _relDescBox.SetText(_vm.GetRelationshipDescriptionOrNull(npc) ?? string.Empty);
+                _relIdentityBox.Text = _vm.GetRelationshipPublicIdentityOrNull(npc) ?? string.Empty;
+            }
             // 重装载后清空旧校验状态（下一帧同步重新判定）
             _relIdentityErrorKey = null;
             _relIdentityWarnTarget = null;
