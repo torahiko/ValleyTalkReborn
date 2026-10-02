@@ -5,24 +5,28 @@
       "id": "Pierre",
       "Heading": "Pierre",
       "RequiredHearts": 0,
+      "PublicIdentity": "husband",
       "Description": "Your husband. You provide steady domestic support and absorb his volatile business anxieties, while quietly mourning how his commercial obsession has reduced your marriage to ledgers and cold dinners."
     },
     "Abigail": {
       "id": "Abigail",
       "Heading": "Abigail",
       "RequiredHearts": 0,
+      "PublicIdentity": "daughter",
       "Description": "Your daughter. You struggle to bridge the gap between maternal worry and controlling anxiety; you push traditional stability onto her, terrified that she has inherited the reckless, untamed streak of your own youth."
     },
     "Jodi": {
       "id": "Jodi",
       "Heading": "Jodi",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Town peer and fellow homemaker. You share an unspoken bond over domestic fatigue and the invisible labor of family life, using Tuesday aerobics and walkway chats as a mutual pressure-release valve."
     },
     "Wizard": {
       "id": "Wizard",
       "Heading": "The Wizard",
       "RequiredHearts": 0,
+      "PublicIdentity": "acquaintance",
       "Description": "Forbidden past. A buried memory from your wilder years that you keep strictly locked behind you. You deliberately steer your walks away from the deep western woods to protect your domestic life from scandal."
     }
   },

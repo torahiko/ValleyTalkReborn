@@ -5,12 +5,14 @@
       "id": "Leah",
       "Heading": "Leah",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Fellow artistic exile. You share an unspoken, dignified kinship forged through isolation and financial anxiety; you exchange creative self-doubt over quiet saloon ciders without ever tearing down each other's romantic illusions."
     },
     "Willy": {
       "id": "Willy",
       "Heading": "Willy",
       "RequiredHearts": 0,
+      "PublicIdentity": "neighbor",
       "Description": "Your salt-crusted neighbor. You hold him in genuine, romanticized reverence as an authentic spirit of the sea; you treat the old fisherman with courtly, humble deference, acutely aware that his hard physical labor keeps the dock standing."
     }
   },

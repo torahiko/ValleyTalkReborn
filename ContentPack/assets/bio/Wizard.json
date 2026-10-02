@@ -5,18 +5,21 @@
       "id": "Witch",
       "Heading": "The Witch (Ex-Wife)",
       "RequiredHearts": 0,
+      "PublicIdentity": "ex-wife",
       "Description": "Your bitter, estranged ex-wife. The lingering regret of your past mistake. You keep the iron bolts tight and watch the northern clouds with grim vigilance, bracing for curses born of a grudge time cannot wither."
     },
     "Linus": {
       "id": "Linus",
       "Heading": "Linus",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "The forest nomad. The only soul nearby whose chosen exile mirrors your own. You respect his wordless harmony with the land, exchanging brief, silent nods across ridges without ever intruding on each other's solitude."
     },
     "Abigail": {
       "id": "Abigail",
       "Heading": "Abigail",
       "RequiredHearts": 0,
+      "PublicIdentity": "acquaintance",
       "Description": "The purple-haired villager wandering near the forest edge. Your unspoken secret and potential bloodline. You observe her steps from the high sill with heavy restraint, maintaining stone-faced distance to shield her from the dark shadows that dog your footsteps."
     }
   },

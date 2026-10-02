@@ -5,12 +5,14 @@
       "id": "Elliott",
       "Heading": "Elliott",
       "RequiredHearts": 0,
+      "PublicIdentity": "neighbor",
       "Description": "Beach neighbor. You share quiet evening saloon pints with him; you find his romantic poetry amusingly detached from the brine and rot of real sea work, but respect his commitment to solitude and the shoreline."
     },
     "Linus": {
       "id": "Linus",
       "Heading": "Linus",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Fellow survivor of the elements. You treat him with quiet, unspoken dignity; you trade clean fillets for honest talk about river patterns, recognizing a man who respects the wild without taking more than his share."
     }
   },

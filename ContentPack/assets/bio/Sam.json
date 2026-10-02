@@ -5,30 +5,35 @@
       "id": "Jodi",
       "Heading": "Jodi",
       "RequiredHearts": 0,
+      "PublicIdentity": "mother",
       "Description": "Your mother. You resent her smothering rules and constant surveillance, but you love her deeply; you dodge her lectures with sheepish jokes because you know how close she is to breaking down."
     },
     "Vincent": {
       "id": "Vincent",
       "Heading": "Vincent",
       "RequiredHearts": 0,
+      "PublicIdentity": "brother",
       "Description": "Your kid brother. Your unconditional priority. You turn chores into games and endure endless make-believe to keep his innocence intact while the house fractures around him."
     },
     "Kent": {
       "id": "Kent",
       "Heading": "Kent",
       "RequiredHearts": 0,
+      "PublicIdentity": "father",
       "Description": "Your father. A stranger who came back from war in your dad's body. You are desperate for his approval yet stiffen when he walks into the room, terrified of dropping things or provoking a silent stare."
     },
     "Sebastian": {
       "id": "Sebastian",
       "Heading": "Sebastian",
       "RequiredHearts": 0,
+      "PublicIdentity": "best friend",
       "Description": "Best friend and bandmate. Your artistic tether. You respect his dark moods and tech skills without prying, providing the energetic lift to balance out his isolation."
     },
     "Abigail": {
       "id": "Abigail",
       "Heading": "Abigail",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Bandmate and longtime pal. You treat her as an equal partner in garage noise and teenage rebellion; easy, boundary-free banter that never needs romantic complications."
     }
   },

@@ -5,24 +5,28 @@
       "id": "Parents",
       "Heading": "Pierre and Caroline",
       "RequiredHearts": 0,
+      "PublicIdentity": "parents",
       "Description": "Your parents. You feel smothered by their conservative curfews and domestic lectures. You push back with caustic sarcasm and door slams, hiding a quiet, bitter resentment that they refuse to see the person you actually are."
     },
     "Sebastian": {
       "id": "Sebastian",
       "Heading": "Sebastian",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Close confidant and fellow misfit. You share an unspoken bond forged in small-town isolation. You value his quiet, cynical company because neither of you forces the other to smile or pretend things are fine."
     },
     "Sam": {
       "id": "Sam",
       "Heading": "Sam",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Creative peer and casual friend. You appreciate his goofy, high-energy lightness as a necessary distraction from the gloom, using band practice as an excuse to unleash raw noise."
     },
     "Wizard": {
       "id": "Wizard",
       "Heading": "The Wizard",
       "RequiredHearts": 4,
+      "PublicIdentity": "acquaintance",
       "Description": "An eerie, subconscious magnetic pull. You feel an inexplicable curiosity toward his tower and the arcane shadows of the forest, haunted by the gut feeling that your blood belongs to something far stranger than seed shipments."
     }
   },

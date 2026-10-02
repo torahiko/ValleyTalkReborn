@@ -10,7 +10,10 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Text;
 using StardewModdingAPI;
 using StardewValley;
 using ValleytalkReborn;
@@ -595,5 +598,127 @@ public class RelationshipAttitudeLensBuilderTests : IDisposable
         Assert.Contains("target=\"Haley\"", result);
         Assert.Contains("cheerful photographer", result);
         Assert.DoesNotContain("grumpy old man", result);
+    }
+
+    // ── BIO-001 UT23: Daughter kinship matches in both EN and ZH ──
+    [Fact]
+    public void UT23_Kinship_Daughter_MatchesEnAndZh()
+    {
+        using var _ = TestEnv.UseIsolatedLocale("en");
+        var characterEn = MakeCharacter("Caroline", new Dictionary<string, BioData.ListEntry>
+        {
+            ["Abigail"] = RelEntry("Abigail", "Abigail", "Your adventurous daughter.", publicIdentity: "daughter"),
+        });
+        var ctxEn = MakeContext(0, new ConversationElement("How is your daughter doing?", IsPlayerLine: true));
+        string resEn = RelationshipAttitudeLensBuilder.Build(characterEn, ctxEn);
+        Assert.Contains("target=\"Abigail\"", resEn);
+        Assert.Contains("adventurous daughter", resEn);
+
+        using (TestEnv.UseIsolatedLocale("zh"))
+        {
+            EnterZhHeadless();
+            var characterZh = MakeCharacter("Caroline", new Dictionary<string, BioData.ListEntry>
+            {
+                ["Abigail"] = RelEntry("Abigail", "Abigail", "你那个喜欢冒险的女儿。", publicIdentity: "daughter"),
+            });
+            var ctxZh = MakeContext(0, new ConversationElement("你女儿最近怎么样了？", IsPlayerLine: true));
+            string resZh = RelationshipAttitudeLensBuilder.Build(characterZh, ctxZh);
+            Assert.Contains("target=\"阿比盖尔\"", resZh);
+            Assert.Contains("喜欢冒险的女儿", resZh);
+        }
+    }
+
+    // ── BIO-001 UT24: Son kinship matches in both EN and ZH ──
+    [Fact]
+    public void UT24_Kinship_Son_MatchesEnAndZh()
+    {
+        using var _ = TestEnv.UseIsolatedLocale("en");
+        var characterEn = MakeCharacter("Robin", new Dictionary<string, BioData.ListEntry>
+        {
+            ["Sebastian"] = RelEntry("Sebastian", "Sebastian", "Your introverted son.", publicIdentity: "son"),
+        });
+        var ctxEn = MakeContext(0, new ConversationElement("Is your son at home?", IsPlayerLine: true));
+        string resEn = RelationshipAttitudeLensBuilder.Build(characterEn, ctxEn);
+        Assert.Contains("target=\"Sebastian\"", resEn);
+
+        using (TestEnv.UseIsolatedLocale("zh"))
+        {
+            EnterZhHeadless();
+            var characterZh = MakeCharacter("Robin", new Dictionary<string, BioData.ListEntry>
+            {
+                ["Sebastian"] = RelEntry("Sebastian", "Sebastian", "你内向的儿子。", publicIdentity: "son"),
+            });
+            var ctxZh = MakeContext(0, new ConversationElement("你儿子在家吗？", IsPlayerLine: true));
+            string resZh = RelationshipAttitudeLensBuilder.Build(characterZh, ctxZh);
+            Assert.Contains("target=\"塞巴斯蒂安\"", resZh);
+        }
+    }
+
+    // ── BIO-001 UT25: Sister and brother kinships match ──
+    [Fact]
+    public void UT25_Kinship_SisterAndBrother_Matches()
+    {
+        using var _ = TestEnv.UseIsolatedLocale("en");
+        var characterHaley = MakeCharacter("Haley", new Dictionary<string, BioData.ListEntry>
+        {
+            ["Emily"] = RelEntry("Emily", "Emily", "Your eccentric sister.", publicIdentity: "sister"),
+        });
+        var ctxSister = MakeContext(0, new ConversationElement("Where is your sister?", IsPlayerLine: true));
+        string resSister = RelationshipAttitudeLensBuilder.Build(characterHaley, ctxSister);
+        Assert.Contains("target=\"Emily\"", resSister);
+
+        var characterSam = MakeCharacter("Sam", new Dictionary<string, BioData.ListEntry>
+        {
+            ["Vincent"] = RelEntry("Vincent", "Vincent", "Your little brother.", publicIdentity: "brother"),
+        });
+        var ctxBrother = MakeContext(0, new ConversationElement("How is your brother?", IsPlayerLine: true));
+        string resBrother = RelationshipAttitudeLensBuilder.Build(characterSam, ctxBrother);
+        Assert.Contains("target=\"Vincent\"", resBrother);
+    }
+
+    // ── BIO-001 UT26: All 33 character bio JSON cards parse successfully with non-empty PublicIdentity ──
+    [Fact]
+    public void UT26_AllCharacterBioCards_HaveNonEmptyPublicIdentityAndValidJson()
+    {
+        string bioDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "ContentPack", "assets", "bio"));
+        if (!Directory.Exists(bioDir))
+            bioDir = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "ContentPack", "assets", "bio"));
+        if (!Directory.Exists(bioDir))
+            bioDir = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "ContentPack", "assets", "bio"));
+
+        Assert.True(Directory.Exists(bioDir), $"Bio directory must exist at {bioDir}");
+
+        var jsonFiles = Directory.GetFiles(bioDir, "*.json")
+            .Where(f => !Path.GetFileName(f).StartsWith("#", StringComparison.Ordinal))
+            .ToList();
+
+        Assert.Equal(33, jsonFiles.Count);
+
+        foreach (string file in jsonFiles)
+        {
+            string fileName = Path.GetFileName(file);
+            string content = File.ReadAllText(file, Encoding.UTF8);
+            var bio = Newtonsoft.Json.JsonConvert.DeserializeObject<BioData>(content);
+
+            Assert.NotNull(bio);
+            Assert.False(string.IsNullOrWhiteSpace(bio.Biography), $"{fileName} must have a non-empty Biography");
+            Assert.NotNull(bio.Relationships);
+            Assert.NotEmpty(bio.Relationships);
+
+            foreach (var kvp in bio.Relationships)
+            {
+                string targetKey = kvp.Key;
+                var entry = kvp.Value;
+                Assert.NotNull(entry);
+                Assert.False(
+                    string.IsNullOrWhiteSpace(entry.PublicIdentity),
+                    $"{fileName} relationship entry '{targetKey}' must have a non-empty PublicIdentity");
+                Assert.True(
+                    entry.PublicIdentity.Length <= 48,
+                    $"{fileName} relationship entry '{targetKey}' PublicIdentity must be <= 48 chars");
+                Assert.DoesNotContain("\n", entry.PublicIdentity);
+                Assert.DoesNotContain("\r", entry.PublicIdentity);
+            }
+        }
     }
 }

@@ -5,12 +5,14 @@
       "id": "Emily",
       "Heading": "Emily",
       "RequiredHearts": 0,
+      "PublicIdentity": "sister",
       "Description": "Your sister. You bicker relentlessly over division of chores and clashing domestic philosophies. You roll your eyes at her crystals and eccentricities, but harbor a stubborn, protective familial bond you refuse to openly voice."
     },
     "Alex": {
       "id": "Alex",
       "Heading": "Alex",
       "RequiredHearts": 0,
+      "PublicIdentity": "peer",
       "Description": "Town peer. You share an effortless, breezy rapport based on mutual aesthetic pride and superficial small-town status. Flirtatious on the surface, but kept strictly shallow to avoid messy emotional entanglements."
     }
   },

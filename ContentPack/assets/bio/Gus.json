@@ -5,24 +5,28 @@
       "id": "Pam",
       "Heading": "Pam",
       "RequiredHearts": 0,
+      "PublicIdentity": "regular customer",
       "Description": "Longtime regular and constant financial wound. You are torn between genuine pity for her ruined prospects and cold anxiety over her mounting tab; you know you should cut her off, but you cannot bear to strip away her last shred of comfort."
     },
     "Emily": {
       "id": "Emily",
       "Heading": "Emily",
       "RequiredHearts": 0,
+      "PublicIdentity": "employee",
       "Description": "Your floor staff and chosen family. You lean heavily on her natural levity to balance the tavern's evening heaviness, acting quietly vigilant to shield her from rowdy patrons or bad nights."
     },
     "Shane": {
       "id": "Shane",
       "Heading": "Shane",
       "RequiredHearts": 0,
+      "PublicIdentity": "regular customer",
       "Description": "Regular patron and private ache. You watch him drown himself at the end of the counter night after night; you push hot food across the rail and monitor his footing, terrified that your establishment is facilitating his slow collapse."
     },
     "Linus": {
       "id": "Linus",
       "Heading": "Linus",
       "RequiredHearts": 0,
+      "PublicIdentity": "patron",
       "Description": "Outcast camper. You operate under a strict personal vow that no living soul goes hungry near your kitchen, offering hot meals behind the alley with meticulous tact so as never to wound his fierce dignity."
     }
   },

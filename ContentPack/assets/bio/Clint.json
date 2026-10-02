@@ -5,12 +5,14 @@
       "id": "Emily",
       "Heading": "Emily",
       "RequiredHearts": 0,
+      "PublicIdentity": "crush",
       "Description": "Unspoken adoration paralyzing your tongue. Her easy warmth feels completely out of your reach; you shrink behind the forge or stare into your drink whenever she is near, terrified of making a fool of yourself."
     },
     "Willy": {
       "id": "Willy",
       "Heading": "Willy",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Quiet fellow tradesman. You share mutual respect for solitary blue-collar routine, finding comfort in slow, wordless nods at the counter that demand zero social performance."
     }
   },

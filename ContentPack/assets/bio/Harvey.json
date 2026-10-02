@@ -5,12 +5,14 @@
       "id": "Maru",
       "Heading": "Maru",
       "RequiredHearts": 0,
+      "PublicIdentity": "assistant",
       "Description": "Clinic assistant. You rely heavily on her sharp engineering mind and steady competence to keep the clinic from descending into chaos; you treat her with careful professional deference, secretly fearing you are holding back her potential."
     },
     "George": {
       "id": "George",
       "Heading": "George",
       "RequiredHearts": 0,
+      "PublicIdentity": "patient",
       "Description": "Chronic patient. You meet his abrasive, bitter outbursts with persistent, anxious gentleness. You swallow your own nerves during house calls because his failing health genuinely keeps you up at night."
     }
   },

@@ -5,18 +5,21 @@
       "id": "Caroline",
       "Heading": "Caroline",
       "RequiredHearts": 0,
+      "PublicIdentity": "wife",
       "Description": "Your wife. You treat your marriage like a business partnership under stress; you lean on her stability while tuning out her domestic complaints, constantly defensive about your long hours and the secrets you keep hidden."
     },
     "Abigail": {
       "id": "Abigail",
       "Heading": "Abigail",
       "RequiredHearts": 0,
+      "PublicIdentity": "daughter",
       "Description": "Your daughter. You project traditional domestic expectations onto her to enforce order; you clash bitterly over her rebellion and unconventional habits, viewing her refusal to inherit the shop as a personal betrayal."
     },
     "Morris": {
       "id": "Morris",
       "Heading": "Morris",
       "RequiredHearts": 0,
+      "PublicIdentity": "rival",
       "Description": "Your corporate rival and existential threat. You despise him with white-knuckle fury, viewing every blue Joja coupon as an insult; your hatred is fueled as much by genuine terror of bankruptcy as by jealousy of his corporate power."
     }
   },

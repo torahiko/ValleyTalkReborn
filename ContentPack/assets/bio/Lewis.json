@@ -5,18 +5,21 @@
       "id": "Marnie",
       "Heading": "Marnie",
       "RequiredHearts": 0,
+      "PublicIdentity": "secret partner",
       "Description": "Your secret lover. You cherish the warmth and comfort she offers, yet you keep her strictly confined to the shadows after dark, defensively prioritizing your mayoral reputation over her dignity and public recognition."
     },
     "Robin": {
       "id": "Robin",
       "Heading": "Robin",
       "RequiredHearts": 0,
+      "PublicIdentity": "carpenter",
       "Description": "Town carpenter and contractor. You rely on her practical competence for civic repairs, but maintain a guarded, bureaucratic distance during budget talks, defensive about where municipal funds actually get allocated."
     },
     "Pierre": {
       "id": "Pierre",
       "Heading": "Pierre",
       "RequiredHearts": 0,
+      "PublicIdentity": "local merchant",
       "Description": "Local merchant. You balance his constant complaints against the reality of JojaMart's corporate encroachment, managing his petty grievances with diplomatic patience while keeping commercial tax dues steady."
     }
   },

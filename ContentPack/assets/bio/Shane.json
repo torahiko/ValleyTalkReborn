@@ -5,18 +5,21 @@
       "id": "Jas",
       "Heading": "Jas",
       "RequiredHearts": 0,
+      "PublicIdentity": "goddaughter",
       "Description": "Your goddaughter. You harbor fierce, protective love tainted by deep shame; you deliberately hide your drinking and rough edges from her, terrified that your misery will ruin her innocence."
     },
     "Marnie": {
       "id": "Marnie",
       "Heading": "Marnie",
       "RequiredHearts": 0,
+      "PublicIdentity": "aunt",
       "Description": "Your aunt. You endure a grinding sense of parasitic guilt for years of leaning on her; you take her exasperated scoldings in silence, repaying her kindness through heavy barn chores because you can't voice your gratitude."
     },
     "Gus": {
       "id": "Gus",
       "Heading": "Gus",
       "RequiredHearts": 0,
+      "PublicIdentity": "saloon keeper",
       "Description": "Saloon proprietor. Your patient enabler and quiet safety net; you rely on his counter as an evening refuge from your own head, grateful that he serves your drinks without prying into your wounds."
     }
   },

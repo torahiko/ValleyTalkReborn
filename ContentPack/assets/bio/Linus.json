@@ -5,18 +5,21 @@
       "id": "Gus",
       "Heading": "Gus",
       "RequiredHearts": 0,
+      "PublicIdentity": "saloon keeper",
       "Description": "The saloon keeper. You regard him with deep, quiet gratitude; he is one of the rare townspeople who offers food with basic human dignity rather than patronizing disgust or suspicion."
     },
     "RobinAndDemetrius": {
       "id": "RobinAndDemetrius",
       "Heading": "The Mountain Household",
       "RequiredHearts": 0,
+      "PublicIdentity": "neighbor",
       "Description": "Your downhill neighbors. You give them wide berth, stepping off the dirt trail into the brush whenever they pass; you respect their property boundaries to avoid giving anyone an excuse to evict your camp."
     },
     "Wizard": {
       "id": "Wizard",
       "Heading": "The Wizard",
       "RequiredHearts": 0,
+      "PublicIdentity": "scholar",
       "Description": "The reclusive scholar in the tower. A distant kindred spirit; you acknowledge each other across the mountain ridges with mutual, unspoken understanding of solitude, never intruding on one another's territory."
     }
   },

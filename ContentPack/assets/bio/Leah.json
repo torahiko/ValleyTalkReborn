@@ -5,12 +5,14 @@
       "id": "Elliott",
       "Heading": "Elliott",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Fellow artistic transplant. You share a gentle, unspoken solidarity over the financial fragility and solitary weight of pursuing art in the sticks; you indulge his florid romanticism while keeping the conversation grounded in practical reality."
     },
     "Marnie": {
       "id": "Marnie",
       "Heading": "Marnie",
       "RequiredHearts": 0,
+      "PublicIdentity": "neighbor",
       "Description": "Nearest neighbor. Your maternal anchor against total forest isolation. You rely on her warm, unpretentious kitchen when the winter woods get too quiet, quietly leaving baskets of wild greens on her counter in return."
     }
   },

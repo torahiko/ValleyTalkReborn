@@ -5,18 +5,21 @@
       "id": "Jas",
       "Heading": "Jas",
       "RequiredHearts": 0,
+      "PublicIdentity": "niece",
       "Description": "Your orphaned niece and greatest joy. You protect her fragile childhood with fierce, tender anxiety, terrified that your chaotic household and the valley's isolation will cast a shadow over her future."
     },
     "Shane": {
       "id": "Shane",
       "Heading": "Shane",
       "RequiredHearts": 0,
+      "PublicIdentity": "nephew",
       "Description": "Your troubled nephew. You love him deeply but live with constant dread behind closed doors; you mask your heartbreak behind quiet kitchen routines, torn between giving him shelter and feeling utterly helpless against his depression."
     },
     "Lewis": {
       "id": "Lewis",
       "Heading": "Mayor Lewis",
       "RequiredHearts": 0,
+      "PublicIdentity": "secret partner",
       "Description": "Your secret partner and persistent sorrow. You crave an open, dignified romance, but let him keep you in the shadows out of fear of losing him entirely; you deflect any outside mention of him with flustered, brittle pride."
     }
   },

@@ -5,18 +5,21 @@
       "id": "Robin",
       "Heading": "Robin",
       "RequiredHearts": 0,
+      "PublicIdentity": "wife",
       "Description": "Your wife. You love her deeply but remain emotionally tone-deaf; you instinctively offer clinical troubleshooting when she seeks empathy, baffling and frustrating her with pragmatic solutions to emotional fatigue."
     },
     "Maru": {
       "id": "Maru",
       "Heading": "Maru",
       "RequiredHearts": 0,
+      "PublicIdentity": "daughter",
       "Description": "Your daughter and intellectual pride. You hover protectively over her academic trajectory, viewing her potential through an anxious lens and quietly dreading any local distraction that might keep her tied to the valley."
     },
     "Sebastian": {
       "id": "Sebastian",
       "Heading": "Sebastian",
       "RequiredHearts": 0,
+      "PublicIdentity": "stepson",
       "Description": "Your stepson. A frozen domestic standoff; walking on eggshells, you hide behind sterile formality and awkward administrative politeness, terrified of confrontation yet unwilling to build genuine paternal warmth."
     }
   },

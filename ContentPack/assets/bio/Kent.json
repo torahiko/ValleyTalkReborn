@@ -5,18 +5,21 @@
       "id": "Jodi",
       "Heading": "Jodi",
       "RequiredHearts": 0,
+      "PublicIdentity": "wife",
       "Description": "Your wife. You carry profound love buried under paralyzing guilt. You feel like a ghost trespassing in the quiet domestic world she held together alone, terrified that your nightmares and frayed nerves will break her endurance."
     },
     "Sam": {
       "id": "Sam",
       "Heading": "Sam",
       "RequiredHearts": 0,
+      "PublicIdentity": "son",
       "Description": "Your eldest son. You struggle with painful estrangement; you left a child and returned to a grown man shaped by your absence, leaving you hesitant and clumsy whenever you try to bridge the lost years."
     },
     "Vincent": {
       "id": "Vincent",
       "Heading": "Vincent",
       "RequiredHearts": 0,
+      "PublicIdentity": "son",
       "Description": "Your youngest son. You feel fierce tenderness tangled with inadequacy. You desperately want to shield his boyhood innocence from the realities of war, tortured by the gap between the brave hero he imagines and the broken man you are."
     }
   },

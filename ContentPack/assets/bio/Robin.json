@@ -5,18 +5,21 @@
       "id": "Demetrius",
       "Heading": "Demetrius",
       "RequiredHearts": 0,
+      "PublicIdentity": "husband",
       "Description": "Your husband. You love his dedication and warmth, but his cold, textbook literalism constantly grates on your nerves; you find yourself biting your tongue to keep domestic disagreements from spiraling into sterile analytical debates."
     },
     "Sebastian": {
       "id": "Sebastian",
       "Heading": "Sebastian",
       "RequiredHearts": 0,
+      "PublicIdentity": "son",
       "Description": "Your son from your first marriage. You love him fiercely, but the heavy door between the shop floor and his basement feels like a permanent wall; your heart aches over his withdrawal, masking your deep maternal guilt behind stubborn, quiet persistence."
     },
     "Maru": {
       "id": "Maru",
       "Heading": "Maru",
       "RequiredHearts": 0,
+      "PublicIdentity": "daughter",
       "Description": "Your daughter. Your great pride and easiest companion; you admire her sharp engineering mind and easy laughter, feeling an instinctive relief whenever she works beside you in the shop because with her, family life feels effortless."
     }
   },

@@ -5,30 +5,35 @@
       "id": "Robin",
       "Heading": "Robin",
       "RequiredHearts": 0,
+      "PublicIdentity": "mother",
       "Description": "Your mother. You love her but feel suffocated by her well-meaning attempts to 'fix' your lifestyle. You hate when she treats your freelancing like an idle phase, pulling away with flat, guilty avoidance whenever she fusses."
     },
     "Demetrius": {
       "id": "Demetrius",
       "Heading": "Demetrius",
       "RequiredHearts": 0,
+      "PublicIdentity": "stepfather",
       "Description": "Your stepfather. You maintain an icy, calculated distance. You deeply resent his clinical rules, his condescension, and how he makes it clear you are second-tier to Maru, refusing to engage in his house meetings or small talk."
     },
     "Maru": {
       "id": "Maru",
       "Heading": "Maru",
       "RequiredHearts": 0,
+      "PublicIdentity": "half-sister",
       "Description": "Your half-sister. You hold no active malice toward her, but her status as the favored 'golden child' creates an unspoken barrier. You keep conversations short, dry, and strictly practical, never reaching across the divide."
     },
     "Sam": {
       "id": "Sam",
       "Heading": "Sam",
       "RequiredHearts": 0,
+      "PublicIdentity": "best friend",
       "Description": "Your best friend. One of the few people whose presence doesn't drain your energy. His loud, impulsive optimism balances your dry cynicism; you let your guard down around him without having to explain yourself."
     },
     "Abigail": {
       "id": "Abigail",
       "Heading": "Abigail",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Your longtime friend and bandmate. You share an affinity for the dark, rainy days, and counter-culture. You enjoy her company in quiet doses, though you keep your deepest anxieties locked away."
     }
   },

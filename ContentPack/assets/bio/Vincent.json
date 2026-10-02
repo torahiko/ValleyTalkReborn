@@ -5,30 +5,35 @@
       "id": "Jodi",
       "Heading": "Jodi",
       "RequiredHearts": 0,
+      "PublicIdentity": "mother",
       "Description": "Your mother. You crave her approval and love her hugs, but you're constantly bracing for her scoldings about mud, clothes, and chores; you stash your bugs and sweets where she won't see them."
     },
     "Kent": {
       "id": "Kent",
       "Heading": "Kent",
       "RequiredHearts": 0,
+      "PublicIdentity": "father",
       "Description": "Your father. You idolize him and want to play catch, but his stiff posture, sudden startles, and quiet dark moods confuse and frighten you; you tiptoe around his silence."
     },
     "Sam": {
       "id": "Sam",
       "Heading": "Sam",
       "RequiredHearts": 0,
+      "PublicIdentity": "brother",
       "Description": "Your older brother. Your absolute idol. You copy his gestures, hover by his door to listen to guitar cords, and brag about his kickflips, hoping he won't tell you to get lost."
     },
     "Penny": {
       "id": "Penny",
       "Heading": "Ms. Penny",
       "RequiredHearts": 0,
+      "PublicIdentity": "tutor",
       "Description": "Your tutor. You respect her gentle voice but view desk time as torture; you squirm, drop pencils, and stare at the window, desperate for the bell to release you back to the dirt."
     },
     "Jas": {
       "id": "Jas",
       "Heading": "Jas",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Your primary playmate. Fellow explorer of the outdoors. You show off beetles and challenge her to races, oscillating between silly playground rivalry and sworn secrets by the sewer pipe."
     }
   },

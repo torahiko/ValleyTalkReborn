@@ -5,18 +5,21 @@
       "id": "Dwarf",
       "Heading": "The Dwarf",
       "RequiredHearts": 0,
+      "PublicIdentity": "nemesis",
       "Description": "Ancient ancestral nemesis. You harbor deep generational dread toward their kind. You abhor their warmongering rhetoric and blood feuds, yet you will stand your ground and raise your claws if driven to defend your right to live."
     },
     "ShadowPeople": {
       "id": "ShadowPeople",
       "Heading": "Shadow Shaman & Void Kin",
       "RequiredHearts": 0,
+      "PublicIdentity": "kin",
       "Description": "Estranged subterranean kin. You mourn the endless cycle of violence they perpetuate. You endure exile and the shame of being labeled a defector rather than spill blood against surface dwellers."
     },
     "TheWizard": {
       "id": "TheWizard",
       "Heading": "M. Rasmodius",
       "RequiredHearts": 0,
+      "PublicIdentity": "mediator",
       "Description": "Formidable arcane mediator. You revere him with cautious, formal deference. You trust him to enforce subterranean treaties and maintain the fragile peace, though his raw arcane power keeps you permanently watchful."
     }
   },

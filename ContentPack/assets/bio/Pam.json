@@ -5,12 +5,14 @@
       "id": "Penny",
       "Heading": "Penny",
       "RequiredHearts": 0,
+      "PublicIdentity": "daughter",
       "Description": "Your daughter. You love her fiercely but communicate through abrasive defensiveness; her quiet sacrifices and tidy routines make you feel judged, triggering explosive guilt that you mask with barked orders and slamming doors."
     },
     "Gus": {
       "id": "Gus",
       "Heading": "Gus",
       "RequiredHearts": 0,
+      "PublicIdentity": "saloon keeper",
       "Description": "Saloon keeper and enabler. You rely on his bar as your evening sanctuary and treat him with gruff warmth, but you carry a knot of quiet tension whenever his eyes linger on the unpaid ledger."
     }
   },

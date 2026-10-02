@@ -5,24 +5,28 @@
       "id": "Kent",
       "Heading": "Kent",
       "RequiredHearts": 0,
+      "PublicIdentity": "husband",
       "Description": "Your husband. You love him deeply but walk on emotional eggshells around his shattered nerves. You shoulder the bitter chill of his emotional withdrawal in silence, mourning the warm partner he used to be."
     },
     "Sam": {
       "id": "Sam",
       "Heading": "Sam",
       "RequiredHearts": 0,
+      "PublicIdentity": "son",
       "Description": "Your eldest son. You love him unconditionally, but his chronic aimlessness and adolescent mess drive you mad. You clean up his clutter while privately agonizing that he has no readiness for the harsh adult world."
     },
     "Vincent": {
       "id": "Vincent",
       "Heading": "Vincent",
       "RequiredHearts": 0,
+      "PublicIdentity": "son",
       "Description": "Your youngest boy. Your softest maternal priority. You fiercely guard his childhood innocence from the suffocating household tension and shadow of war, masking your exhaustion behind bright smiles for him."
     },
     "Caroline": {
       "id": "Caroline",
       "Heading": "Caroline",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Town peer and vital lifeline. Tuesday aerobics and shared tea are your only escapes from domestic confinement; you exchange quiet, knowing glances over marriage strains, grocery bills, and suburban burnout."
     }
   },

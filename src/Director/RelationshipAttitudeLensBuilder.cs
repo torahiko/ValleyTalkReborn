@@ -200,6 +200,66 @@ internal static class RelationshipAttitudeLensBuilder
                 return isZh
                     ? new[] { "你妈", "你母亲", "你的母亲" }
                     : new[] { "your mother", "your mom" };
+            case "daughter":
+                return isZh
+                    ? new[] { "你女儿", "你的女儿" }
+                    : new[] { "your daughter" };
+            case "son":
+                return isZh
+                    ? new[] { "你儿子", "你的儿子" }
+                    : new[] { "your son" };
+            case "sister":
+                return isZh
+                    ? new[] { "你姐", "你妹", "你姐姐", "你妹妹", "你的姐姐", "你的妹妹" }
+                    : new[] { "your sister" };
+            case "brother":
+                return isZh
+                    ? new[] { "你哥", "你弟", "你哥哥", "你弟弟", "你的哥哥", "你的弟弟" }
+                    : new[] { "your brother" };
+            case "grandson":
+                return isZh
+                    ? new[] { "你孙子", "你外孙", "你的孙子", "你的外孙" }
+                    : new[] { "your grandson" };
+            case "granddaughter":
+                return isZh
+                    ? new[] { "你孙女", "你外孙女", "你的孙女", "你的外孙女" }
+                    : new[] { "your granddaughter" };
+            case "aunt":
+                return isZh
+                    ? new[] { "你姑姑", "你阿姨", "你婶婶", "你伯母", "你的阿姨", "你的姑姑", "你的婶婶" }
+                    : new[] { "your aunt" };
+            case "uncle":
+                return isZh
+                    ? new[] { "你叔叔", "你伯伯", "你舅舅", "你的叔叔", "你的舅舅" }
+                    : new[] { "your uncle" };
+            case "nephew":
+                return isZh
+                    ? new[] { "你侄子", "你外甥", "你的侄子", "你的外甥" }
+                    : new[] { "your nephew" };
+            case "niece":
+                return isZh
+                    ? new[] { "你侄女", "你外甥女", "你的侄女", "你的外甥女" }
+                    : new[] { "your niece" };
+            case "stepfather":
+                return isZh
+                    ? new[] { "你继父", "你的继父" }
+                    : new[] { "your stepfather" };
+            case "stepson":
+                return isZh
+                    ? new[] { "你继子", "你的继子" }
+                    : new[] { "your stepson" };
+            case "half-brother":
+                return isZh
+                    ? new[] { "你哥哥", "你弟弟", "你哥", "你弟", "你同母异父的哥哥", "你同母异父的弟弟" }
+                    : new[] { "your half-brother", "your brother" };
+            case "half-sister":
+                return isZh
+                    ? new[] { "你姐姐", "你妹妹", "你姐", "你妹", "你同母异父的姐姐", "你同母异父的妹妹" }
+                    : new[] { "your half-sister", "your sister" };
+            case "parents":
+                return isZh
+                    ? new[] { "你爸妈", "你父母", "你的爸妈", "你的父母" }
+                    : new[] { "your parents" };
             case "wife":
                 return isZh
                     ? new[] { "你妻子", "你老婆", "你媳妇" }

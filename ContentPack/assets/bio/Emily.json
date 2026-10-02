@@ -5,24 +5,28 @@
       "id": "Haley",
       "Heading": "Haley",
       "RequiredHearts": 0,
+      "PublicIdentity": "sister",
       "Description": "Your sister. You meet her vanity and domestic negligence with patient, grounded grace. You act as the steady mother-figure she won't admit she needs, loving her unconditionally despite your completely opposite realities."
     },
     "Sandy": {
       "id": "Sandy",
       "Heading": "Sandy",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Your desert confidante and psychic mirror. You cherish your distant, intuitive communion through letters and dry-flower parcels; she is the only person who never questions your eccentricities or mocks your visions."
     },
     "Gus": {
       "id": "Gus",
       "Heading": "Gus",
       "RequiredHearts": 0,
+      "PublicIdentity": "employer",
       "Description": "Your employer and trusted town anchor. You treat him with fierce loyalty and filial warmth; you carry your share of the evening tavern rush willingly to keep his warm refuge alive for the valley."
     },
     "Clint": {
       "id": "Clint",
       "Heading": "Clint",
       "RequiredHearts": 0,
+      "PublicIdentity": "patron",
       "Description": "A regular patron and fellow artisan. You remain genuinely oblivious to his agonized romantic tension, meeting his awkward presence with innocent, sunny enthusiasm about minerals, ore luster, and metal resonance."
     }
   },

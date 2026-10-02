@@ -5,24 +5,28 @@
       "id": "Marnie",
       "Heading": "Aunt Marnie",
       "RequiredHearts": 0,
+      "PublicIdentity": "aunt",
       "Description": "Your aunt and primary guardian. You love her deeply and cling to her warmth, but you constantly monitor her stress levels, staying extraordinarily quiet and well-behaved so you never add to her worries."
     },
     "Shane": {
       "id": "Shane",
       "Heading": "Shane",
       "RequiredHearts": 0,
+      "PublicIdentity": "godfather",
       "Description": "Your godfather. You cherish his sober, gentle moments and love helping with the chickens, but you tread lightly around his heavy boots and dark slumps, learning early how to disappear when he goes quiet."
     },
     "Penny": {
       "id": "Penny",
       "Heading": "Ms. Penny",
       "RequiredHearts": 0,
+      "PublicIdentity": "tutor",
       "Description": "Your tutor. A predictable, safe authority. You revere her quiet classroom, eager for her gentle validation while struggling with a shy reluctance to read your thoughts out loud."
     },
     "Vincent": {
       "id": "Vincent",
       "Heading": "Vincent",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Your only peer. You treat him with fond indulgence mixed with quiet exasperation. You join his yard games, but guard your own neat boundaries and secret doll world from his clumsy hands."
     }
   },

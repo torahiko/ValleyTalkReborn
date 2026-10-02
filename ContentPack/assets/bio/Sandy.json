@@ -5,12 +5,14 @@
       "id": "Emily",
       "Heading": "Emily",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Your dearest friend and emotional lifeline. You treasure every letter and dried token she sends through the bus driver, clinging to her vibrant warmth as proof that a greener, kinder world still exists outside this sandstorm."
     },
     "Bouncer": {
       "id": "Bouncer",
       "Heading": "The Bouncer",
       "RequiredHearts": 0,
+      "PublicIdentity": "co-tenant",
       "Description": "Your silent, immovable co-tenant. You maintain a strictly professional truce; you collect Mr. Qi's rent on time and never ask what happens behind that curtain, valuing business stability over dangerous curiosity."
     }
   },

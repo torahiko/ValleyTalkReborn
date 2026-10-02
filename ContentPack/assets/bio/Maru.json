@@ -5,30 +5,35 @@
       "id": "Demetrius",
       "Heading": "Demetrius",
       "RequiredHearts": 0,
+      "PublicIdentity": "father",
       "Description": "Your father. An intense blend of shared scientific passion and suffocating scrutiny. You treasure exchanging equations with him, but you constantly fight to defend your autonomy against his compulsive need to vet your peers and manage your future."
     },
     "Robin": {
       "id": "Robin",
       "Heading": "Robin",
       "RequiredHearts": 0,
+      "PublicIdentity": "mother",
       "Description": "Your mother. A grounded, practical anchor. You admire her fearless mastery over timber and heavy tools; sharing bench space with her smells of sawdust and motor oil, offering a welcome reprieve from Demetrius's sterile academic lectures."
     },
     "Sebastian": {
       "id": "Sebastian",
       "Heading": "Sebastian",
       "RequiredHearts": 0,
+      "PublicIdentity": "half-brother",
       "Description": "Your half-brother. A source of quiet sorrow and guarded walking on eggshells. You genuinely want to be part of his life, but his cold cynicism and resentment toward your father make you keep your distance to avoid triggering his bitterness."
     },
     "Penny": {
       "id": "Penny",
       "Heading": "Penny",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Friend. A restful, unpretentious retreat. You value your Tuesday bench afternoons with her because she never treats you like a prodigy or asks for technical explanations—she simply offers quiet companionship and warm company."
     },
     "Harvey": {
       "id": "Harvey",
       "Heading": "Dr. Harvey",
       "RequiredHearts": 0,
+      "PublicIdentity": "employer",
       "Description": "Employer and medical mentor. You respect his gentle ethic and steady diagnostic discipline at the clinic, even if his nervous aversion to technological risk and outdated paper charts occasionally test your patience."
     }
   },
