@@ -229,6 +229,17 @@ namespace ValleytalkReborn
             }
         }
 
+        /// <summary>
+        /// 在既有 _historyLock 中返回全部有历史 NPC 的字典键副本，供快照采集迭代。
+        /// </summary>
+        public List<string> GetHistoryNpcNames()
+        {
+            lock (_historyLock)
+            {
+                return _history.Keys.ToList();
+            }
+        }
+
         public List<string> GetFormattedHistory(string npcName)
         {
             var entries = GetHistory(npcName);
