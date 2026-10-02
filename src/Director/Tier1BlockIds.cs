@@ -8,7 +8,7 @@ using System.Collections.Generic;
 namespace ValleytalkReborn;
 
 /// <summary>
-/// Tier 1 块标识符（11 项）。这些块内容在单次对话会话内稳定，
+/// Tier 1 块标识符（12 项）。这些块内容在单次对话会话内稳定，
 /// 构成 Tier1SnapshotContext 的缓存键空间。
 /// </summary>
 public static class Tier1BlockIds
@@ -24,11 +24,12 @@ public static class Tier1BlockIds
     public const string SpecialDates = "SpecialDates";
     public const string SpouseAction = "SpouseAction";
     public const string EvolvedTraits = "EvolvedTraits";
+    public const string DailySalience = "DailySalience";
 
     /// <summary>Tier 1 全部块 Id 集合（有序）。</summary>
     public static readonly IReadOnlyList<string> All = new[]
     {
         GameState, EventHistory, BranchTheme, Scene, CompanionFocus, GreetingContext,
-        RelationBase, RecentEvents, SpecialDates, SpouseAction, EvolvedTraits,
+        RelationBase, RecentEvents, SpecialDates, SpouseAction, EvolvedTraits, DailySalience,
     };
 }

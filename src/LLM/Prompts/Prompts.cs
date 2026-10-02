@@ -514,39 +514,18 @@ public class Prompts
                 npcConstantPrompt.AppendLine(progressState);
             }
 
-            if (Character.Bio.Relationships?.Any() ?? false)
-            {
-                int currentHearts = Context.Hearts ?? 0;
-                var dailyPicks = RelationshipRotationResolver.SelectDailyRelationships(
-                    Character.Name, Character.Bio.Relationships, currentHearts);
-                if (dailyPicks.Count > 0)
-                {
-                    npcConstantPrompt.AppendLine($"## {Util.GetString("biographyRelationships")}:");
-                    foreach (var relationship in dailyPicks)
-                    {
-                        string heading = relationship.Heading;
-                        string desc = relationship.Description;
-                        if (IsChineseLanguage)
-                        {
-                            heading = NpcNameLocalizer.GetZhName(heading);
-                            desc = NpcNameLocalizer.LocalizeNamesInText(desc);
-                        }
-                        npcConstantPrompt.AppendLine($"* **{heading}**: {desc}");
-                    }
-                }
-            }
             npcConstantPrompt.AppendLine(Character.Bio.BiographyEnd);
         }
         return npcConstantPrompt.ToString();
     }
 
-    /// <summary>Tier 1 拼装序列（11 项，顺序固定）。</summary>
+    /// <summary>Tier 1 拼装序列（12 项，顺序固定；DailySalience 追加在尾部，既有 11 项前置顺序不变）。</summary>
     private static readonly IReadOnlyList<string> Tier1BlockSequence = new[]
     {
         Tier1BlockIds.GameState, Tier1BlockIds.EventHistory, Tier1BlockIds.BranchTheme,
         Tier1BlockIds.Scene, Tier1BlockIds.CompanionFocus, Tier1BlockIds.GreetingContext,
         Tier1BlockIds.RelationBase, Tier1BlockIds.RecentEvents, Tier1BlockIds.SpecialDates,
-        Tier1BlockIds.SpouseAction, Tier1BlockIds.EvolvedTraits,
+        Tier1BlockIds.SpouseAction, Tier1BlockIds.EvolvedTraits, Tier1BlockIds.DailySalience,
     };
 
     /// <summary>Tier 2b 拼装序列（18 项，顺序固定）。</summary>
@@ -854,6 +833,48 @@ public class Prompts
             return !(flags?.IsOnDate == true)
                 && !(flags?.IsJealousy == true)
                 && ((flags?.IsActionRequested ?? false) || (flags?.IsFollowing ?? false));
+        }
+
+        /// <summary>
+        /// REL-005：今日社交关注（DailySalience，Tier 1）。由 BuildTier1Snapshot 在
+        /// 对话会话建立时调用一次，从 RelationshipRotationResolver 的当日轮换子集
+        /// （1~2 位）拼装；无符合条目返回 string.Empty（SetTier1 跳过，不进快照）。
+        /// 不进入 NpcConstantContext（Tier 0），保证常量上下文前缀的跨日稳定。
+        /// </summary>
+        internal static string BuildDailySalience(Character character, DialogueContext context)
+        {
+            var relationships = character?.Bio?.Relationships;
+            if (relationships == null) return string.Empty;
+
+            var dailyPicks = RelationshipRotationResolver.SelectDailyRelationships(
+                character.Name, relationships, context?.Hearts ?? 0);
+            if (dailyPicks == null || dailyPicks.Count == 0) return string.Empty;
+
+            bool isZh = IsZh();
+            var salience = new StringBuilder();
+            if (isZh)
+            {
+                salience.AppendLine("## 今日社交关注");
+                salience.AppendLine("今天在日常闲聊中，你更容易顺带联想到或提及以下人物的相关琐事：");
+            }
+            else
+            {
+                salience.AppendLine("## Today's Social Salience");
+                salience.AppendLine("In casual conversation today, you are more inclined to naturally bring up or think about these people:");
+            }
+
+            foreach (var relationship in dailyPicks)
+            {
+                string heading = relationship.Heading;
+                string desc = relationship.Description;
+                if (isZh)
+                {
+                    heading = NpcNameLocalizer.GetLocalizedName(heading);
+                    desc = NpcNameLocalizer.LocalizeNamesInText(desc);
+                }
+                salience.AppendLine($"* **{heading}**: {desc}");
+            }
+            return salience.ToString();
         }
 
         internal static string SelectGiftGiven(Character character)

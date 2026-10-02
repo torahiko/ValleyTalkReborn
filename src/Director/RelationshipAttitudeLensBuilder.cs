@@ -142,18 +142,18 @@ internal static class RelationshipAttitudeLensBuilder
             // Blank description → ineligible (skip this target, others unaffected).
             if (string.IsNullOrWhiteSpace(entry.Description)) continue;
 
-            // Alias set: base names + possessive kinship aliases.
+            // Alias set: base names + official localized display name
+            // (unconditional, REL-005 — zh gets 译名, en gets display name or
+            // internal fallback, so official localized names match in every
+            // language) + possessive kinship aliases.
             var aliases = new List<string>();
             AddIfNonEmpty(aliases, key);
             AddIfNonEmpty(aliases, entry.id);
             AddIfNonEmpty(aliases, entry.Heading);
 
-            if (isZh)
-            {
-                AddIfNonEmpty(aliases, NpcNameLocalizer.GetZhName(key));
-                if (!string.IsNullOrEmpty(entry.id))
-                    AddIfNonEmpty(aliases, NpcNameLocalizer.GetZhName(entry.id));
-            }
+            AddIfNonEmpty(aliases, NpcNameLocalizer.GetLocalizedName(key));
+            if (!string.IsNullOrEmpty(entry.id))
+                AddIfNonEmpty(aliases, NpcNameLocalizer.GetLocalizedName(entry.id));
 
             aliases.AddRange(GetPossessiveKinshipAliases(entry.PublicIdentity, isZh));
 

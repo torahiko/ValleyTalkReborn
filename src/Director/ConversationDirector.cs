@@ -158,9 +158,9 @@ public sealed class ConversationDirector : IConversationDirector
         return InstructionsBranch.Normal;
     }
 
-    // ── Step 3: 构建 Tier 1 快照（11 项，顺序固定 = Tier1BlockSequence）──
-    // 按分支门控填充：FULL 全 11；StoodUp/Date/Greeting 仅填充公共前缀
-    // （GameState/EventHistory/BranchTheme/Scene/EvolvedTraits），剔除 FULL-only 块。
+    // ── Step 3: 构建 Tier 1 快照（12 项，顺序固定 = Tier1BlockSequence）──
+    // 按分支门控填充：FULL 全量；StoodUp/Date/Greeting 仅填充公共前缀
+    // （GameState/EventHistory/BranchTheme/Scene/EvolvedTraits/DailySalience），剔除 FULL-only 块。
     // 权威 = 薄壳 GetCorePrompt 调用点（审计 §2.1）。
     private Tier1SnapshotContext BuildTier1Snapshot(
         DialogueContext context, Character character, InstructionsBranch branch, string milestoneBlock)
@@ -207,6 +207,10 @@ public sealed class ConversationDirector : IConversationDirector
         }
 
         SetTier1(snapshot, Tier1BlockIds.EvolvedTraits, EvolvedTraitManager.GetPromptBlock(character.Name, context));
+
+        // REL-005：今日社交关注（当日轮换子集）。会话建立时求值一次，
+        // 同一会话内逐字符稳定，不随轮次重排，天然对 Tier 1 缓存友好。
+        SetTier1(snapshot, Tier1BlockIds.DailySalience, Prompts.PromptsBlocks.BuildDailySalience(character, context));
 
         return new Tier1SnapshotContext(snapshot);
     }
