@@ -104,6 +104,12 @@ namespace ValleytalkReborn.Cutscene.Model
         public List<CutsceneChoiceOptionIR> Options { get; set; }
 
         /// <summary>
+        /// choice 动作提示文本 (如 "你要如何回答？")
+        /// </summary>
+        [JsonProperty("prompt")]
+        public string Prompt { get; set; }
+
+        /// <summary>
         /// 将 TargetTileToken 安全解析为瓦片坐标 Vector2
         /// </summary>
         public Vector2? ResolveTargetTile()
@@ -201,6 +207,12 @@ namespace ValleytalkReborn.Cutscene.Model
     {
         [JsonProperty("text")]
         public string Text { get; set; } = string.Empty;
+
+        [JsonProperty("friendship")]
+        public int Friendship { get; set; } = 0;
+
+        [JsonProperty("feedback")]
+        public string Feedback { get; set; }
 
         [JsonProperty("actions")]
         public List<CutsceneActionIR> Actions { get; set; } = new();

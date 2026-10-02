@@ -516,6 +516,21 @@ namespace ValleytalkReborn
                 interval: 5
             );
 
+            // ── 虚拟导演与过场演出 ──
+            ConfigMenu.AddSectionTitle(
+                mod: ModManifest,
+                text: () => GetUIString("configSectionVirtualDirector", "Virtual Cutscene Director")
+            );
+
+            ConfigMenu.AddBoolOption(
+                mod: ModManifest,
+                name: () => GetUIString("configEnableCutsceneFriendshipChange", "Enable Cutscene Friendship Impact"),
+                tooltip: () => GetUIString("configEnableCutsceneFriendshipChangeTooltip",
+                    "Allows player choices during serendipity cutscenes to affect NPC friendship points (capped at ±20 per NPC per day). Sandbox rehearsal (F9) never affects save data."),
+                getValue: () => ModEntry.Config.EnableCutsceneFriendshipChange,
+                setValue: value => ModEntry.Config.EnableCutsceneFriendshipChange = value
+            );
+
             // ── 伴侣日程与出游系统 ──
             ConfigMenu.AddSectionTitle(
                 mod: ModManifest,

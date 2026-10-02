@@ -1525,6 +1525,7 @@ namespace ValleytalkReborn
                 try
                 {
                     ValleytalkReborn.Cutscene.Serendipity.SerendipityManager.Instance.OnReturnedToTitle();
+                    ValleytalkReborn.Cutscene.Services.FriendshipSettlementService.Instance.Reset();
                 }
                 catch (Exception ex)
                 {
@@ -1805,6 +1806,9 @@ namespace ValleytalkReborn
 
             // 🎬 Phase 4: 偶遇微电影每日重置
             ValleytalkReborn.Cutscene.Serendipity.SerendipityManager.Instance.OnDayStarted();
+
+            // 🎬 Phase 5: 剧情好感度防刷累计计数每日重置
+            ValleytalkReborn.Cutscene.Services.FriendshipSettlementService.Instance.OnDayStarted();
         }
 
         /// <summary>

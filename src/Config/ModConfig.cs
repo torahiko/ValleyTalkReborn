@@ -156,6 +156,8 @@ namespace ValleytalkReborn
         public string SerendipityTriggerMode { get; set; } = "Prompt";
         /// <summary>每日偶遇剧情最大触发上限（默认 1 次，可选 0~3 次）。</summary>
         public int SerendipityMaxDailyCount { get; set; } = 1;
+        /// <summary>剧情互动选项是否影响好感度（默认开启，带每日防刷硬顶；关闭时仅保留文字反馈不改数值）。</summary>
+        public bool EnableCutsceneFriendshipChange { get; set; } = true;
         public int MemoryRecentCount { get; set; } = 10;
 
         /// <summary>

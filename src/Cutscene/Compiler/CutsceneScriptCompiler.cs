@@ -129,227 +129,17 @@ namespace ValleytalkReborn.Cutscene.Compiler
             {
                 if (actionIr == null) continue;
 
-                string actionType = actionIr.Type?.Trim().ToLowerInvariant() ?? string.Empty;
-
                 try
                 {
-                    switch (actionType)
+                    var action = CompileSingleAction(actionIr, location, FindNpc, result);
+                    if (action != null)
                     {
-                        case "camera":
-                        {
-                            IDirectorAction camAction = null;
-                            if (string.Equals(actionIr.Target, "farmer", StringComparison.OrdinalIgnoreCase) ||
-                                string.Equals(actionIr.Target, "player", StringComparison.OrdinalIgnoreCase))
-                            {
-                                camAction = new CameraAction(targetPlayer: true);
-                            }
-                            else if (!string.IsNullOrWhiteSpace(actionIr.Target))
-                            {
-                                var npc = FindNpc(actionIr.Target);
-                                if (npc != null)
-                                {
-                                    camAction = new CameraAction(npc);
-                                    if (!result.ResolvedActors.Contains(npc))
-                                        result.ResolvedActors.Add(npc);
-                                }
-                            }
-
-                            if (camAction == null)
-                            {
-                                var tile = actionIr.ResolveTargetTile();
-                                if (tile.HasValue)
-                                    camAction = new CameraAction(tile.Value);
-                            }
-
-                            if (camAction != null)
-                            {
-                                camAction.WaitForCompletion = actionIr.WaitForCompletion;
-                                result.Actions.Add(camAction);
-                            }
-                            else
-                            {
-                                result.Warnings.Add($"[Compiler] Camera target '{actionIr.Target}' could not be resolved, skipping.");
-                            }
-                            break;
-                        }
-
-                        case "move":
-                        {
-                            var npc = FindNpc(actionIr.Actor);
-                            if (npc == null)
-                            {
-                                result.Warnings.Add($"[Compiler] Move actor '{actionIr.Actor}' not found, skipping.");
-                                break;
-                            }
-                            if (!result.ResolvedActors.Contains(npc))
-                                result.ResolvedActors.Add(npc);
-
-                            var rawTile = actionIr.ResolveTargetTile();
-                            if (!rawTile.HasValue)
-                            {
-                                result.Warnings.Add($"[Compiler] Move target tile for '{actionIr.Actor}' is invalid or missing, skipping.");
-                                break;
-                            }
-
-                            // ★ 红线 #2：强制经过 FindNearestWalkableTile 换算可通行格子，绝不死锁！
-                            var safeTile = MovementPathfinding.FindNearestWalkableTile(location, rawTile.Value, npc, radius: 5);
-                            var moveAction = new MoveToTileAction(npc, safeTile, actionIr.Timeout ?? 6f)
-                            {
-                                WaitForCompletion = actionIr.WaitForCompletion
-                            };
-                            result.Actions.Add(moveAction);
-                            break;
-                        }
-
-                        case "lookat":
-                        {
-                            var npc = FindNpc(actionIr.Actor);
-                            if (npc == null)
-                            {
-                                result.Warnings.Add($"[Compiler] LookAt actor '{actionIr.Actor}' not found, skipping.");
-                                break;
-                            }
-                            if (!result.ResolvedActors.Contains(npc))
-                                result.ResolvedActors.Add(npc);
-
-                            IDirectorAction lookAction = null;
-                            if (string.Equals(actionIr.Target, "farmer", StringComparison.OrdinalIgnoreCase) ||
-                                string.Equals(actionIr.Target, "player", StringComparison.OrdinalIgnoreCase))
-                            {
-                                if (Game1.player != null)
-                                    lookAction = new LookAtAction(npc, Game1.player);
-                            }
-                            else if (!string.IsNullOrWhiteSpace(actionIr.Target))
-                            {
-                                var targetNpc = FindNpc(actionIr.Target);
-                                if (targetNpc != null)
-                                {
-                                    lookAction = new LookAtAction(npc, targetNpc);
-                                    if (!result.ResolvedActors.Contains(targetNpc))
-                                        result.ResolvedActors.Add(targetNpc);
-                                }
-                            }
-
-                            if (lookAction == null)
-                            {
-                                var tile = actionIr.ResolveTargetTile();
-                                if (tile.HasValue)
-                                    lookAction = new LookAtAction(npc, tile.Value);
-                            }
-
-                            if (lookAction != null)
-                            {
-                                lookAction.WaitForCompletion = actionIr.WaitForCompletion;
-                                result.Actions.Add(lookAction);
-                            }
-                            else
-                            {
-                                result.Warnings.Add($"[Compiler] LookAt target '{actionIr.Target}' could not be resolved, skipping.");
-                            }
-                            break;
-                        }
-
-                        case "face":
-                        {
-                            var npc = FindNpc(actionIr.Actor);
-                            if (npc == null)
-                            {
-                                result.Warnings.Add($"[Compiler] Face actor '{actionIr.Actor}' not found, skipping.");
-                                break;
-                            }
-                            if (!result.ResolvedActors.Contains(npc))
-                                result.ResolvedActors.Add(npc);
-
-                            var dir = actionIr.ResolveDirection();
-                            if (!dir.HasValue)
-                            {
-                                result.Warnings.Add($"[Compiler] Face direction for '{actionIr.Actor}' invalid, defaulting to Down(2).");
-                                dir = 2;
-                            }
-
-                            var faceAction = new FaceAction(npc, dir.Value)
-                            {
-                                WaitForCompletion = actionIr.WaitForCompletion
-                            };
-                            result.Actions.Add(faceAction);
-                            break;
-                        }
-
-                        case "emote":
-                        {
-                            var npc = FindNpc(actionIr.Actor);
-                            if (npc == null)
-                            {
-                                result.Warnings.Add($"[Compiler] Emote actor '{actionIr.Actor}' not found, skipping.");
-                                break;
-                            }
-                            if (!result.ResolvedActors.Contains(npc))
-                                result.ResolvedActors.Add(npc);
-
-                            string emote = string.IsNullOrWhiteSpace(actionIr.Emote) ? "SURPRISE" : actionIr.Emote;
-                            var emoteAction = new EmoteAction(npc, emote)
-                            {
-                                WaitForCompletion = actionIr.WaitForCompletion
-                            };
-                            result.Actions.Add(emoteAction);
-                            break;
-                        }
-
-                        case "speak":
-                        {
-                            var npc = FindNpc(actionIr.Actor);
-                            if (npc == null)
-                            {
-                                result.Warnings.Add($"[Compiler] Speak actor '{actionIr.Actor}' not found, skipping.");
-                                break;
-                            }
-                            if (!result.ResolvedActors.Contains(npc))
-                                result.ResolvedActors.Add(npc);
-
-                            string text = actionIr.Text ?? string.Empty;
-                            var speakAction = new SpeakAction(npc, text)
-                            {
-                                WaitForCompletion = actionIr.WaitForCompletion
-                            };
-                            result.Actions.Add(speakAction);
-                            break;
-                        }
-
-                        case "wait":
-                        {
-                            float dur = actionIr.Duration ?? 1.0f;
-                            var waitAction = new WaitAction(dur)
-                            {
-                                WaitForCompletion = actionIr.WaitForCompletion
-                            };
-                            result.Actions.Add(waitAction);
-                            break;
-                        }
-
-                        case "sound":
-                        {
-                            if (string.IsNullOrWhiteSpace(actionIr.SoundName))
-                            {
-                                result.Warnings.Add("[Compiler] Sound name is empty, skipping.");
-                                break;
-                            }
-
-                            var soundAction = new SoundAction(actionIr.SoundName)
-                            {
-                                WaitForCompletion = actionIr.WaitForCompletion
-                            };
-                            result.Actions.Add(soundAction);
-                            break;
-                        }
-
-                        default:
-                            result.Warnings.Add($"[Compiler] Unknown action type '{actionIr.Type}', skipping.");
-                            break;
+                        result.Actions.Add(action);
                     }
                 }
                 catch (Exception ex)
                 {
-                    result.Warnings.Add($"[Compiler] Failed to compile action '{actionType}': {ex.Message}");
+                    result.Warnings.Add($"[Compiler] Failed to compile action '{actionIr.Type}': {ex.Message}");
                 }
             }
 
@@ -361,6 +151,286 @@ namespace ValleytalkReborn.Cutscene.Compiler
 
             result.Success = true;
             return result;
+        }
+
+        /// <summary>
+        /// 编译单个动作节点，支持递归编译选项中的子动作
+        /// </summary>
+        private static IDirectorAction CompileSingleAction(
+            CutsceneActionIR actionIr,
+            GameLocation location,
+            Func<string, NPC> findNpc,
+            CompiledCutsceneResult result)
+        {
+            if (actionIr == null) return null;
+
+            string actionType = actionIr.Type?.Trim().ToLowerInvariant() ?? string.Empty;
+
+            switch (actionType)
+            {
+                case "camera":
+                {
+                    IDirectorAction camAction = null;
+                    if (string.Equals(actionIr.Target, "farmer", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(actionIr.Target, "player", StringComparison.OrdinalIgnoreCase))
+                    {
+                        camAction = new CameraAction(targetPlayer: true);
+                    }
+                    else if (!string.IsNullOrWhiteSpace(actionIr.Target))
+                    {
+                        var npc = findNpc(actionIr.Target);
+                        if (npc != null)
+                        {
+                            camAction = new CameraAction(npc);
+                            if (!result.ResolvedActors.Contains(npc))
+                                result.ResolvedActors.Add(npc);
+                        }
+                    }
+
+                    if (camAction == null)
+                    {
+                        var tile = actionIr.ResolveTargetTile();
+                        if (tile.HasValue)
+                            camAction = new CameraAction(tile.Value);
+                    }
+
+                    if (camAction != null)
+                    {
+                        camAction.WaitForCompletion = actionIr.WaitForCompletion;
+                        return camAction;
+                    }
+                    else
+                    {
+                        result.Warnings.Add($"[Compiler] Camera target '{actionIr.Target}' could not be resolved, skipping.");
+                        return null;
+                    }
+                }
+
+                case "move":
+                {
+                    var npc = findNpc(actionIr.Actor);
+                    if (npc == null)
+                    {
+                        result.Warnings.Add($"[Compiler] Move actor '{actionIr.Actor}' not found, skipping.");
+                        return null;
+                    }
+                    if (!result.ResolvedActors.Contains(npc))
+                        result.ResolvedActors.Add(npc);
+
+                    var rawTile = actionIr.ResolveTargetTile();
+                    if (!rawTile.HasValue)
+                    {
+                        result.Warnings.Add($"[Compiler] Move target tile for '{actionIr.Actor}' is invalid or missing, skipping.");
+                        return null;
+                    }
+
+                    // ★ 红线 #2：强制经过 FindNearestWalkableTile 换算可通行格子，绝不死锁！
+                    var safeTile = MovementPathfinding.FindNearestWalkableTile(location, rawTile.Value, npc, radius: 5);
+                    return new MoveToTileAction(npc, safeTile, actionIr.Timeout ?? 6f)
+                    {
+                        WaitForCompletion = actionIr.WaitForCompletion
+                    };
+                }
+
+                case "lookat":
+                {
+                    var npc = findNpc(actionIr.Actor);
+                    if (npc == null)
+                    {
+                        result.Warnings.Add($"[Compiler] LookAt actor '{actionIr.Actor}' not found, skipping.");
+                        return null;
+                    }
+                    if (!result.ResolvedActors.Contains(npc))
+                        result.ResolvedActors.Add(npc);
+
+                    IDirectorAction lookAction = null;
+                    if (string.Equals(actionIr.Target, "farmer", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(actionIr.Target, "player", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (Game1.player != null)
+                            lookAction = new LookAtAction(npc, Game1.player);
+                    }
+                    else if (!string.IsNullOrWhiteSpace(actionIr.Target))
+                    {
+                        var targetNpc = findNpc(actionIr.Target);
+                        if (targetNpc != null)
+                        {
+                            lookAction = new LookAtAction(npc, targetNpc);
+                            if (!result.ResolvedActors.Contains(targetNpc))
+                                result.ResolvedActors.Add(targetNpc);
+                        }
+                    }
+
+                    if (lookAction == null)
+                    {
+                        var tile = actionIr.ResolveTargetTile();
+                        if (tile.HasValue)
+                            lookAction = new LookAtAction(npc, tile.Value);
+                    }
+
+                    if (lookAction != null)
+                    {
+                        lookAction.WaitForCompletion = actionIr.WaitForCompletion;
+                        return lookAction;
+                    }
+                    else
+                    {
+                        result.Warnings.Add($"[Compiler] LookAt target '{actionIr.Target}' could not be resolved, skipping.");
+                        return null;
+                    }
+                }
+
+                case "face":
+                {
+                    var npc = findNpc(actionIr.Actor);
+                    if (npc == null)
+                    {
+                        result.Warnings.Add($"[Compiler] Face actor '{actionIr.Actor}' not found, skipping.");
+                        return null;
+                    }
+                    if (!result.ResolvedActors.Contains(npc))
+                        result.ResolvedActors.Add(npc);
+
+                    var dir = actionIr.ResolveDirection();
+                    if (!dir.HasValue)
+                    {
+                        result.Warnings.Add($"[Compiler] Face direction for '{actionIr.Actor}' invalid, defaulting to Down(2).");
+                        dir = 2;
+                    }
+
+                    return new FaceAction(npc, dir.Value)
+                    {
+                        WaitForCompletion = actionIr.WaitForCompletion
+                    };
+                }
+
+                case "emote":
+                {
+                    var npc = findNpc(actionIr.Actor);
+                    if (npc == null)
+                    {
+                        result.Warnings.Add($"[Compiler] Emote actor '{actionIr.Actor}' not found, skipping.");
+                        return null;
+                    }
+                    if (!result.ResolvedActors.Contains(npc))
+                        result.ResolvedActors.Add(npc);
+
+                    string emote = string.IsNullOrWhiteSpace(actionIr.Emote) ? "SURPRISE" : actionIr.Emote;
+                    return new EmoteAction(npc, emote)
+                    {
+                        WaitForCompletion = actionIr.WaitForCompletion
+                    };
+                }
+
+                case "speak":
+                {
+                    var npc = findNpc(actionIr.Actor);
+                    if (npc == null)
+                    {
+                        result.Warnings.Add($"[Compiler] Speak actor '{actionIr.Actor}' not found, skipping.");
+                        return null;
+                    }
+                    if (!result.ResolvedActors.Contains(npc))
+                        result.ResolvedActors.Add(npc);
+
+                    string text = actionIr.Text ?? string.Empty;
+                    return new SpeakAction(npc, text)
+                    {
+                        WaitForCompletion = actionIr.WaitForCompletion
+                    };
+                }
+
+                case "wait":
+                {
+                    float dur = actionIr.Duration ?? 1.0f;
+                    return new WaitAction(dur)
+                    {
+                        WaitForCompletion = actionIr.WaitForCompletion
+                    };
+                }
+
+                case "sound":
+                {
+                    if (string.IsNullOrWhiteSpace(actionIr.SoundName))
+                    {
+                        result.Warnings.Add("[Compiler] Sound name is empty, skipping.");
+                        return null;
+                    }
+
+                    return new SoundAction(actionIr.SoundName)
+                    {
+                        WaitForCompletion = actionIr.WaitForCompletion
+                    };
+                }
+
+                case "choice":
+                {
+                    return CompileChoiceAction(actionIr, location, findNpc, result);
+                }
+
+                default:
+                    result.Warnings.Add($"[Compiler] Unknown action type '{actionIr.Type}', skipping.");
+                    return null;
+            }
+        }
+
+        private static ChoiceAction CompileChoiceAction(
+            CutsceneActionIR actionIr,
+            GameLocation location,
+            Func<string, NPC> findNpc,
+            CompiledCutsceneResult result)
+        {
+            NPC targetNpc = null;
+            if (!string.IsNullOrWhiteSpace(actionIr.Actor))
+            {
+                targetNpc = findNpc(actionIr.Actor);
+                if (targetNpc != null && !result.ResolvedActors.Contains(targetNpc))
+                {
+                    result.ResolvedActors.Add(targetNpc);
+                }
+            }
+
+            var choiceOptions = new List<ChoiceOption>();
+            if (actionIr.Options != null && actionIr.Options.Count > 0)
+            {
+                foreach (var optIr in actionIr.Options)
+                {
+                    if (optIr == null) continue;
+
+                    var subActions = new List<IDirectorAction>();
+                    if (optIr.Actions != null && optIr.Actions.Count > 0)
+                    {
+                        foreach (var subIr in optIr.Actions)
+                        {
+                            var compiledSub = CompileSingleAction(subIr, location, findNpc, result);
+                            if (compiledSub != null)
+                            {
+                                subActions.Add(compiledSub);
+                            }
+                        }
+                    }
+
+                    choiceOptions.Add(new ChoiceOption(
+                        optIr.Text,
+                        optIr.Friendship,
+                        optIr.Feedback,
+                        subActions));
+                }
+            }
+
+            if (choiceOptions.Count == 0)
+            {
+                choiceOptions.Add(new ChoiceOption("继续"));
+            }
+
+            string prompt = !string.IsNullOrWhiteSpace(actionIr.Prompt)
+                ? actionIr.Prompt
+                : actionIr.Text ?? string.Empty;
+
+            return new ChoiceAction(prompt, choiceOptions, targetNpc)
+            {
+                WaitForCompletion = actionIr.WaitForCompletion
+            };
         }
 
         /// <summary>
