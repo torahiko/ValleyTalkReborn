@@ -65,7 +65,7 @@ namespace ValleytalkReborn.Movement
                     LogLevel.Trace);
             }
 
-            if (TryCollectPendingStops(npc, out int nextStopTime, out _))
+            if (TryCollectPendingStops(npc, out int nextStopTime, out _, out _))
             {
                 ModEntry.SMonitor?.Log(
                     $"[ScheduleRestorer] Schedule restored for {npc.Name}: next stop @{nextStopTime}.",
@@ -84,10 +84,11 @@ namespace ValleytalkReborn.Movement
         /// and loads them into npc.queuedSchedulePaths so the game drives the NPC along its
         /// remaining daily route. Returns false (nextStopTime = -1) when no stops remain.
         /// </summary>
-        private static bool TryCollectPendingStops(NPC npc, out int nextStopTime, out string nextStopMap)
+        private static bool TryCollectPendingStops(NPC npc, out int nextStopTime, out string nextStopMap, out Point nextStopTile)
         {
             nextStopTime = -1;
             nextStopMap  = null;
+            nextStopTile = Point.Zero;
 
             try
             {
@@ -135,6 +136,42 @@ namespace ValleytalkReborn.Movement
             npc.followSchedule = true;
             nextStopTime = pending[0].Key;
             nextStopMap  = pending[0].Value?.targetLocationName;
+            nextStopTile = pending[0].Value?.targetTile ?? Point.Zero;
+            return true;
+        }
+
+        /// <summary>
+        /// 尝试获取当前时间应当所处的原版日程停靠点（即最新一条 time &lt;= now 的记录）。
+        /// 若不存在（如当天首个日程时刻之前），返回 false。
+        /// </summary>
+        private static bool TryGetCurrentScheduleStop(
+            NPC npc,
+            out int stopTime,
+            out string stopMap,
+            out Point stopTile,
+            out int facingDir)
+        {
+            stopTime  = -1;
+            stopMap   = null;
+            stopTile  = Point.Zero;
+            facingDir = 2;
+
+            if (npc.Schedule == null || npc.Schedule.Count == 0)
+                return false;
+
+            int now = Game1.timeOfDay;
+            var pastOrCurrent = npc.Schedule
+                .Where(kv => kv.Key <= now)
+                .OrderByDescending(kv => kv.Key)
+                .FirstOrDefault();
+
+            if (pastOrCurrent.Value == null)
+                return false;
+
+            stopTime  = pastOrCurrent.Key;
+            stopMap   = pastOrCurrent.Value.targetLocationName;
+            stopTile  = pastOrCurrent.Value.targetTile;
+            facingDir = pastOrCurrent.Value.facingDirection;
             return true;
         }
 
@@ -171,14 +208,30 @@ namespace ValleytalkReborn.Movement
             if (string.IsNullOrEmpty(anchor.MapName) || Game1.getLocationFromName(anchor.MapName) == null)
             {
                 ModEntry.SMonitor?.Log(
-                    $"[ScheduleRestorer] {npc.Name} anchor map '{anchor.MapName}' invalid, falling back to home destination.",
+                    $"[ScheduleRestorer] {npc.Name} anchor map '{anchor.MapName}' invalid, determining fallback destination.",
                     LogLevel.Warn);
 
-                var (homeMap, homeTile) = CompanionScheduleManager.GetHomeDestinationPublic(npc);
+                string fallbackMap;
+                Vector2 fallbackTile;
+
+                if (CompanionScheduleManager.IsLegalSpouse(npc.Name))
+                {
+                    (fallbackMap, fallbackTile) = CompanionScheduleManager.GetHomeDestinationPublic(npc);
+                }
+                else if (!string.IsNullOrWhiteSpace(npc.DefaultMap) && Game1.getLocationFromName(npc.DefaultMap) != null)
+                {
+                    fallbackMap  = npc.DefaultMap;
+                    fallbackTile = new Vector2(npc.DefaultPosition.X / 64f, npc.DefaultPosition.Y / 64f);
+                }
+                else
+                {
+                    (fallbackMap, fallbackTile) = CompanionScheduleManager.GetHomeDestinationPublic(npc);
+                }
+
                 anchor = new FollowAnchorSnapshot
                 {
-                    MapName         = homeMap,
-                    Tile            = homeTile,
+                    MapName         = fallbackMap,
+                    Tile            = fallbackTile,
                     FacingDirection = npc.FacingDirection
                 };
             }
@@ -187,6 +240,7 @@ namespace ValleytalkReborn.Movement
             DepartureRouteType route;
             int                nextStopTime = -1;
             string             nextStopMap  = null;
+            Point              nextStopTile = Point.Zero;
 
             if (CompanionScheduleManager.IsLegalSpouse(npc.Name))
             {
@@ -198,7 +252,7 @@ namespace ValleytalkReborn.Movement
                 {
                     route = DepartureRouteType.CsmSchedule;
                 }
-                else if (TryCollectPendingStops(npc, out nextStopTime, out nextStopMap))
+                else if (TryCollectPendingStops(npc, out nextStopTime, out nextStopMap, out nextStopTile))
                 {
                     route = DepartureRouteType.VanillaSchedule;
                 }
@@ -207,7 +261,7 @@ namespace ValleytalkReborn.Movement
                     route = DepartureRouteType.AnchorFallback;
                 }
             }
-            else if (TryCollectPendingStops(npc, out nextStopTime, out nextStopMap))
+            else if (TryCollectPendingStops(npc, out nextStopTime, out nextStopMap, out nextStopTile))
             {
                 route = DepartureRouteType.VanillaSchedule;
             }
@@ -227,18 +281,58 @@ namespace ValleytalkReborn.Movement
             {
                 case DepartureRouteType.VanillaSchedule:
                 {
-                    if (string.Equals(npc.currentLocation.Name, nextStopMap, StringComparison.OrdinalIgnoreCase))
+                    string  targetMap;
+                    Vector2 targetTile;
+                    int     targetFacing;
+
+                    if (TryGetCurrentScheduleStop(npc, out _, out string currMap, out Point currTile, out int currFacing)
+                        && !string.IsNullOrWhiteSpace(currMap)
+                        && Game1.getLocationFromName(currMap) != null)
                     {
-                        // 同图：queuedSchedulePaths 已由决策阶段装载，交还游戏 checkSchedule 接管。
+                        targetMap    = currMap;
+                        targetTile   = new Vector2(currTile.X, currTile.Y);
+                        targetFacing = currFacing;
+                    }
+                    else if (!string.IsNullOrWhiteSpace(nextStopMap) && Game1.getLocationFromName(nextStopMap) != null)
+                    {
+                        targetMap    = nextStopMap;
+                        targetTile   = new Vector2(nextStopTile.X, nextStopTile.Y);
+                        targetFacing = 2;
+                    }
+                    else
+                    {
+                        targetMap    = anchor.MapName;
+                        targetTile   = anchor.Tile;
+                        targetFacing = anchor.FacingDirection;
+                    }
+
+                    if (string.Equals(npc.currentLocation.Name, targetMap, StringComparison.OrdinalIgnoreCase))
+                    {
+                        // 同图：已在目标地图，queuedSchedulePaths 已由决策阶段装载，交还游戏 checkSchedule 接管。
                         npc.followSchedule = true;
                         ModEntry.SMonitor?.Log(
-                            $"[ScheduleRestorer] Schedule restored for {npc.Name}: next stop @{nextStopTime}.",
+                            $"[ScheduleRestorer] Schedule restored for {npc.Name} in-place on '{targetMap}': next stop @{nextStopTime}.",
                             LogLevel.Info);
                     }
                     else
                     {
-                        // 跨图：走向最近出口，离场后再恢复原版日程。
-                        DepartViaNearestWarp(npc, () => TryRestoreSchedule(npc));
+                        // 跨图：走向最近出口，到达后传送到目标地图并恢复日程。
+                        DepartViaNearestWarp(npc, () =>
+                        {
+                            var targetLoc = !string.IsNullOrWhiteSpace(targetMap) ? Game1.getLocationFromName(targetMap) : null;
+                            if (targetLoc != null)
+                            {
+                                var landingTile = MovementPathfinding.FindWalkableTileNear(targetLoc, targetTile, npc) ?? targetTile;
+                                MultiMapNavigator.WarpDirectTo(npc, targetMap, landingTile);
+                                npc.faceDirection(targetFacing);
+                            }
+                            else
+                            {
+                                MultiMapNavigator.WarpDirectTo(npc, anchor.MapName, anchor.Tile);
+                                npc.faceDirection(anchor.FacingDirection);
+                            }
+                            TryRestoreSchedule(npc);
+                        });
                     }
                     break;
                 }
@@ -257,7 +351,13 @@ namespace ValleytalkReborn.Movement
                         {
                             var (homeMap, homeTile) = CompanionScheduleManager.GetHomeDestinationPublic(npc);
                             if (!string.Equals(npc.currentLocation?.Name, homeMap, StringComparison.OrdinalIgnoreCase))
-                                Game1.warpCharacter(npc, homeMap, new Point((int)homeTile.X, (int)homeTile.Y));
+                            {
+                                var homeLoc = Game1.getLocationFromName(homeMap);
+                                var landingTile = homeLoc != null
+                                    ? (MovementPathfinding.FindWalkableTileNear(homeLoc, homeTile, npc) ?? homeTile)
+                                    : homeTile;
+                                MultiMapNavigator.WarpDirectTo(npc, homeMap, landingTile);
+                            }
 
                             CompanionScheduleManager.Instance.ResumeScheduleAfterFollow(npc, restoreStayHome: false);
                         });
@@ -284,7 +384,11 @@ namespace ValleytalkReborn.Movement
                     {
                         DepartViaNearestWarp(npc, () =>
                         {
-                            Game1.warpCharacter(npc, anchor.MapName, new Point((int)anchor.Tile.X, (int)anchor.Tile.Y));
+                            var targetLoc = Game1.getLocationFromName(anchor.MapName);
+                            var landingTile = targetLoc != null
+                                ? (MovementPathfinding.FindWalkableTileNear(targetLoc, anchor.Tile, npc) ?? anchor.Tile)
+                                : anchor.Tile;
+                            MultiMapNavigator.WarpDirectTo(npc, anchor.MapName, landingTile);
                             CompanionScheduleManager.Instance.ResumeScheduleAfterFollow(npc, restoreStayHome: true);
                         });
                     }
@@ -306,7 +410,11 @@ namespace ValleytalkReborn.Movement
                     {
                         DepartViaNearestWarp(npc, () =>
                         {
-                            Game1.warpCharacter(npc, anchor.MapName, new Point((int)anchor.Tile.X, (int)anchor.Tile.Y));
+                            var targetLoc = Game1.getLocationFromName(anchor.MapName);
+                            var landingTile = targetLoc != null
+                                ? (MovementPathfinding.FindWalkableTileNear(targetLoc, anchor.Tile, npc) ?? anchor.Tile)
+                                : anchor.Tile;
+                            MultiMapNavigator.WarpDirectTo(npc, anchor.MapName, landingTile);
                             npc.faceDirection(anchor.FacingDirection);
                         });
                     }
@@ -317,7 +425,7 @@ namespace ValleytalkReborn.Movement
 
         /// <summary>
         /// 走向当前地图最近出口 Warp，到达或寻路失败时执行续接回调；
-        /// 地图 30 格内没有可用 Warp 时立即执行续接回调。
+        /// 地图 50 格内没有可用 Warp 时立即执行续接回调。
         /// </summary>
         private void DepartViaNearestWarp(NPC npc, Action onArrivedOrFailed)
         {
@@ -336,10 +444,10 @@ namespace ValleytalkReborn.Movement
                 }
             }
 
-            if (nearestWarp == null || nearestDist > 30f)
+            if (nearestWarp == null || nearestDist > 50f)
             {
                 ModEntry.SMonitor?.Log(
-                    $"[ScheduleRestorer] {npc.Name} no warp within 30 tiles on '{loc.Name}', continuing in place.",
+                    $"[ScheduleRestorer] {npc.Name} no warp within 50 tiles on '{loc.Name}', continuing in place.",
                     LogLevel.Debug);
                 onArrivedOrFailed();
                 return;
