@@ -13,6 +13,7 @@ using ValleytalkReborn.Services;
 using ValleytalkReborn.UI;
 using Microsoft.Xna.Framework;
 using ValleytalkReborn.Dialogue.Coordination;
+using ValleytalkReborn.Cutscene;
 
 namespace ValleytalkReborn
 {
@@ -322,6 +323,9 @@ namespace ValleytalkReborn
 
             // 🌟 Agent tool dispatcher thread-safe queue: process pending actions on main thread
             helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
+
+            // 🎬 Virtual Director: render overlay
+            helper.Events.Display.RenderedHud += OnRenderedHud;
 
             // 拦截外部输入，防止打字时触发其他MOD的热键
             helper.Events.Input.ButtonPressed += OnButtonPressed;
@@ -671,6 +675,35 @@ namespace ValleytalkReborn
         private void OnButtonPressed(object sender, ButtonPressedEventArgs e)
         {
             if (!Config.EnableMod) return;
+
+            // 🎬 过场演出中：吞掉游戏性输入，防止 ESC 拉起暂停菜单 / 点击穿透 NPC 交互。
+            // （SpeakAction 的跳过检测读取硬件态，不受 SMAPI Suppress 影响）
+            if (VirtualDirector.Instance?.IsActive == true)
+            {
+                if (e.Button == SButton.Escape
+                    || e.Button == SButton.F8
+                    || e.Button == SButton.MouseLeft
+                    || e.Button == SButton.MouseRight)
+                {
+                    Helper.Input.Suppress(e.Button);
+
+                    if (e.Button == SButton.Escape)
+                    {
+                        SMonitor?.Log("[ModEntry] ESC during cutscene — aborting.", LogLevel.Debug);
+                        VirtualDirector.Instance.Abort();
+                    }
+                    return;
+                }
+            }
+
+            // 🎬 Phase 0 测试快捷键: F8 触发过场演示
+            // 门禁：玩家完全自由（无事件/无菜单）且过场未在播
+            if (e.Button == SButton.F8
+                && Context.IsPlayerFree
+                && VirtualDirector.Instance?.IsActive != true)
+            {
+                CutsceneTestHelper.RunTestCutscene();
+            }
 
             // 在任何点击事件触发时，记录此刻 ALT 键是否按下
             // 必须在这里记录，因为 checkAction 执行时 ALT 状态已丢失
@@ -1577,6 +1610,9 @@ namespace ValleytalkReborn
 
         private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
         {
+            // 🎬 读档即强制复位导演状态：防跨存档残留旧世界对象引用
+            VirtualDirector.Instance?.ForceStop();
+
             // VT-FARM-CACHE-04: 读档即作废农场摘要缓存，防止新存档复用前一存档文本；
             // 必须先于协调器重新装配等存档状态恢复执行。
             FarmStateScanner.InvalidateCache();
@@ -1645,6 +1681,9 @@ namespace ValleytalkReborn
         /// </summary>
         private void OnReturnedToTitle(object sender, ReturnedToTitleEventArgs e)
         {
+            // 🎬 回标题即强制复位导演状态：不执行快照复原——世界即将销毁
+            VirtualDirector.Instance?.ForceStop();
+
             // VT-FARM-CACHE-04: 先于 Cleanup 作废农场摘要缓存，避免清理链异常时遗留前存档文本。
             FarmStateScanner.InvalidateCache();
             SMonitor.Log("[FarmStateScanner] Farm summary cache invalidated on ReturnedToTitle.", LogLevel.Debug);
@@ -1671,6 +1710,17 @@ namespace ValleytalkReborn
             {
                 Tier1SnapshotStore.PeriodicCleanup();
             }
+
+            // 🎬 Virtual Director: update cutscene state
+            VirtualDirector.Instance?.Update(e);
+        }
+
+        /// <summary>
+        /// 渲染虚拟导演的电影黑边遮罩
+        /// </summary>
+        private void OnRenderedHud(object sender, RenderedHudEventArgs e)
+        {
+            VirtualDirector.Instance?.DrawOverlay(e.SpriteBatch);
         }
 
         /// <summary>
