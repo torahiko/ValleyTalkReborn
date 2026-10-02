@@ -910,6 +910,11 @@ public class AiStreamingDialogueBoxTests : IDisposable
         box.AppendContent("Oh no $s", false);
 
         Assert.Equal("Oh no ", box.DisplayedPageText);
+
+        // VT-STREAM-08：行内情绪进入打字机时间轴——游标推进至 Cue 位置（页尾）才生效。
+        for (int i = 0; i < 20 && box.CharacterIndex < box.DisplayedPageText.Length; i++)
+            UpdateBox(box, 40);
+
         Assert.Equal("$s", box.characterDialogue.CurrentEmotion);
     }
 
@@ -1622,6 +1627,168 @@ public class AiStreamingDialogueBoxTests : IDisposable
 
         Assert.Equal(3, box.CharacterIndex);
         Assert.Equal(3, CountingSoundsHelper.PlayCount);
+    }
+
+    #endregion
+
+    #region VT-STREAM-08 情绪时间轴
+
+    [Fact]
+    public void EmotionCues_TwoInlineEmotions_AppliedStepwiseAsTypewriterAdvances()
+    {
+        // "啊哈 $h 真开心 $s 罢了"：情绪码剥离后净文本为 "啊哈  真开心  罢了"，
+        // Cue 1（$h）位于下标 3，Cue 2（$s）位于下标 8。
+        AiStreamingDialogueBox box = NewBox();
+        box.AppendContent("啊哈 $h 真开心 $s 罢了", false);
+
+        Assert.Equal("啊哈  真开心  罢了", box.DisplayedPageText);
+        Assert.NotEqual("$h", box.characterDialogue.CurrentEmotion);
+        Assert.NotEqual("$s", box.characterDialogue.CurrentEmotion);
+
+        // 游标推进越过下标 3：第一个表情生效。
+        for (int i = 0; i < 8 && box.CharacterIndex < 3; i++)
+            UpdateBox(box, 40);
+        Assert.True(box.CharacterIndex >= 3, $"游标应已越过 3，实际 {box.CharacterIndex}");
+        Assert.Equal("$h", box.characterDialogue.CurrentEmotion);
+
+        // 游标尚未越过下标 8：第二个表情不得提前生效。
+        Assert.True(box.CharacterIndex < 8, "首批推进不应越过第二个 Cue");
+        Assert.NotEqual("$s", box.characterDialogue.CurrentEmotion);
+
+        // 继续推进越过下标 8：第二个表情生效。
+        for (int i = 0; i < 12 && box.CharacterIndex < 8; i++)
+            UpdateBox(box, 40);
+        Assert.True(box.CharacterIndex >= 8, $"游标应已越过 8，实际 {box.CharacterIndex}");
+        Assert.Equal("$s", box.characterDialogue.CurrentEmotion);
+    }
+
+    [Fact]
+    public void EmotionCues_FastForward_AppliesTrailingEmotionImmediately()
+    {
+        // 尾部情绪（下标 4）尚未随游标生效；快进激活后必须立即与最终台词对齐。
+        AiStreamingDialogueBox box = NewBox();
+        box.AppendContent("慢慢说 $l", false);
+
+        Assert.Equal("慢慢说 ", box.DisplayedPageText);
+        Assert.NotEqual("$l", box.characterDialogue.CurrentEmotion);
+
+        box.receiveLeftClick(0, 0);
+
+        Assert.True(box.IsFastForwardActive);
+        Assert.Equal("$l", box.characterDialogue.CurrentEmotion);
+    }
+
+    [Fact]
+    public void EmotionCues_PageTurn_LoadsBacklogTimelineAndAppliesIndexZeroCue()
+    {
+        // 第二页的情绪 Cue 随 BacklogPage 归档；翻页后索引 0 的 Cue 立即生效。
+        AiStreamingDialogueBox box = NewBox();
+        box.AppendContent("第一页#$b#$s 第二页开场", false);
+
+        Assert.Equal("第一页", box.DisplayedPageText);
+        Assert.Equal(1, box.PendingPageCount);
+        Assert.NotEqual("$s", box.characterDialogue.CurrentEmotion);
+
+        box.receiveLeftClick(0, 0);  // 快进当前页
+        box.receiveLeftClick(0, 0);  // 翻页
+
+        Assert.Equal(" 第二页开场", box.DisplayedPageText);
+        Assert.Equal("$s", box.characterDialogue.CurrentEmotion);
+    }
+
+    [Fact]
+    public void EmotionCues_EmotionOnlyChunk_InThinking_AppliesImmediatelyWithoutText()
+    {
+        // 纯情绪 chunk 在 Thinking 态下位置 0 立即生效，正文保持为空。
+        AiStreamingDialogueBox box = NewBox();
+
+        box.AppendContent("$l", false);
+
+        Assert.Equal(string.Empty, box.DisplayedPageText);
+        Assert.Equal("$l", box.characterDialogue.CurrentEmotion);
+        Assert.Equal(StreamingDialogueState.Typing, box.State);
+    }
+
+    #endregion
+
+    #region VT-STREAM-08 断粮代偿与 runway 自适应
+
+    [Fact]
+    public void ComputeDelay_StarvationBudget_LargerThanPause_FullyOffsetsPause()
+    {
+        // 断粮预算 200ms ≥ 逗号停顿 140ms：停顿被全额抵扣（仅剩基准延迟），
+        // 预算扣至余额 60ms 供下一个标点继续抵扣。
+        int starvationMs = 200;
+        Assert.Equal(35, AiStreamingDialogueBox.ComputeDelayMs("a, b", 2, 2, true, ref starvationMs));
+        Assert.Equal(60, starvationMs);
+
+        // 余额 60ms 抵扣句号停顿 380ms：剩余 320ms，预算归零。
+        Assert.Equal(35 + 320, AiStreamingDialogueBox.ComputeDelayMs("a. b", 2, 2, true, ref starvationMs));
+        Assert.Equal(0, starvationMs);
+    }
+
+    [Fact]
+    public void ComputeDelay_StarvationBudget_SmallerThanPause_IsFullyConsumed()
+    {
+        // 断粮预算 100ms < 逗号停顿 140ms：预算清零，停顿保留剩余 40ms。
+        int starvationMs = 100;
+        Assert.Equal(75, AiStreamingDialogueBox.ComputeDelayMs("a, b", 2, 2, true, ref starvationMs));
+        Assert.Equal(0, starvationMs);
+    }
+
+    [Fact]
+    public void ComputeDelay_StarvationBudget_NonPunctuationChar_IsNotConsumed()
+    {
+        int starvationMs = 500;
+        Assert.Equal(35, AiStreamingDialogueBox.ComputeDelayMs("ab", 1, 1, true, ref starvationMs));
+        Assert.Equal(500, starvationMs);
+    }
+
+    [Fact]
+    public void ComputeDelay_LiveStreamRunway_AdaptsBaseDelay()
+    {
+        int starvationMs = 0;
+        const string text = "abcdefghijklmnopqrstuvwxyz";
+
+        // 流未完成 + runway >= 16：0.8x 轻微追赶（35 * 4 / 5 = 28）。
+        Assert.Equal(28, AiStreamingDialogueBox.ComputeDelayMs(text, 4, 22, false, ref starvationMs));
+        // 流未完成 + 2 <= runway <= 15：原速。
+        Assert.Equal(35, AiStreamingDialogueBox.ComputeDelayMs(text, 4, 8, false, ref starvationMs));
+        // 流未完成 + runway <= 1：1.5x 阻尼平滑防骤停（35 * 3 / 2 = 52）。
+        Assert.Equal(52, AiStreamingDialogueBox.ComputeDelayMs(text, 4, 1, false, ref starvationMs));
+        // 流已结束：恒定原速，不受 runway 影响。
+        Assert.Equal(35, AiStreamingDialogueBox.ComputeDelayMs(text, 4, 1, true, ref starvationMs));
+    }
+
+    [Fact]
+    public void Update_TypewriterCaughtUpWithLiveStream_AccumulatesStarvationBudget()
+    {
+        AiStreamingDialogueBox box = NewBox();
+        box.AppendContent("ab", false);
+
+        // 2 字符打完后，游标追平流末尾且流未结束：后续帧累积断粮预算。
+        for (int i = 0; i < 7; i++)
+            UpdateBox(box, 40);
+
+        Assert.Equal(2, box.CharacterIndex);
+        FieldInfo starvationField = typeof(AiStreamingDialogueBox).GetField(
+            "_starvationMs", BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.True((int)starvationField.GetValue(box) > 0, "断粮期间必须累积代偿预算");
+    }
+
+    [Fact]
+    public void Update_StreamComplete_DoesNotAccumulateStarvationBudget()
+    {
+        AiStreamingDialogueBox box = NewBox();
+        box.AppendContent("ab", true);
+
+        for (int i = 0; i < 7; i++)
+            UpdateBox(box, 40);
+
+        Assert.Equal(2, box.CharacterIndex);
+        FieldInfo starvationField = typeof(AiStreamingDialogueBox).GetField(
+            "_starvationMs", BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.Equal(0, (int)starvationField.GetValue(box));
     }
 
     #endregion

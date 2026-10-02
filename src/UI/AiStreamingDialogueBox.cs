@@ -41,6 +41,33 @@ namespace ValleytalkReborn.UI
     }
 
     /// <summary>
+    /// 情绪 Cue（票 VT-STREAM-08）：一个情绪标记在净文本页内的字符偏移量
+    /// 及其情绪码。结构体零分配，随页面存入 <see cref="BacklogPage.Cues"/>
+    /// 或当前页的 _currentCues 时间轴。
+    /// </summary>
+    internal readonly struct EmotionCue
+    {
+        public readonly int CharIndex;
+        public readonly string EmotionCode;
+
+        public EmotionCue(int charIndex, string emotionCode)
+        {
+            CharIndex = charIndex;
+            EmotionCode = emotionCode;
+        }
+    }
+
+    /// <summary>
+    /// 已封口、等待玩家翻页的 backlog 页（票 VT-STREAM-08）：页文本连同其
+    /// 情绪 Cue 时间轴一起归档，翻页时装载为当前页并重建打字机时间轴。
+    /// </summary>
+    internal sealed class BacklogPage
+    {
+        public string Text;
+        public readonly List<EmotionCue> Cues = new();
+    }
+
+    /// <summary>
     /// AI 流式对白框：以打字机方式逐字揭示 LLM 流式返回的文本，
     /// 并在标点处注入可变停顿以获得自然的朗读节奏。
     /// </summary>
@@ -178,7 +205,19 @@ namespace ValleytalkReborn.UI
         private string _friendshipHoverText = string.Empty;
 
         /// <summary>已封口、等待玩家翻页才能继续显示的后续页面。</summary>
-        private readonly Queue<string> _backlogPages = new();
+        private readonly Queue<BacklogPage> _backlogPages = new();
+
+        /// <summary>
+        /// 当前页的情绪 Cue 时间轴（票 VT-STREAM-08）：按净文本字符偏移存放，
+        /// 打字机游标越过即生效；List 预分配容量并随页面复位复用。
+        /// </summary>
+        private readonly List<EmotionCue> _currentCues = new(8);
+
+        /// <summary>已生效的最后一个 Cue 在 _currentCues 中的下标；-1 表示尚未生效任何 Cue。</summary>
+        private int _appliedCueIndex = -1;
+
+        /// <summary>网络断粮代偿预算（毫秒）：游标追平流末尾后累积，标点停顿处扣减。</summary>
+        private int _starvationMs = 0;
 
         /// <summary>已翻过的页面归档，仅供 GetFullDialogueText 复原全文本。</summary>
         private readonly List<string> _pageHistory = new();
@@ -311,6 +350,9 @@ namespace ValleytalkReborn.UI
             _isFastForwardActive = false;
             _typeTimerMs = BaseTypeDelayMs;
             _isStreamComplete = isComplete;
+            _currentCues.Clear();
+            _appliedCueIndex = -1;
+            _starvationMs = 0;
 
             IngestText(Sanitize(fullText));
 
@@ -370,15 +412,32 @@ namespace ValleytalkReborn.UI
         }
 
         /// <summary>
-        /// 设置立绘表情码。未知/非法码降级为默认表情，绝不阻断渲染。
+        /// 设置立绘表情码（票 VT-STREAM-08）：外部下发的标记进入当前页情绪
+        /// 时间轴，生效点为打字机游标当前位置——游标已停驻/越过该位置时
+        /// 经时间轴立即切换立绘。未知/非法码降级为默认表情，绝不阻断渲染。
         /// </summary>
         /// <param name="emotionCode">情绪码，可带或不带 '$' 前缀，可为语义词。</param>
         public void SetEmotion(string emotionCode)
         {
-            if (string.IsNullOrWhiteSpace(emotionCode) || this.characterDialogue == null)
+            if (string.IsNullOrWhiteSpace(emotionCode))
                 return;
 
-            this.characterDialogue.CurrentEmotion = NormalizeEmotionCode(emotionCode);
+            _currentCues.Add(new EmotionCue(_characterIndex, emotionCode));
+            ApplyPendingEmotionCues();
+        }
+
+        /// <summary>
+        /// 应用情绪码到立绘（票 VT-STREAM-08）：全部情绪生效路径的唯一出口，
+        /// 主线程专属。空码降级 $neutral，未映射码由 NormalizeEmotionCode 降级。
+        /// </summary>
+        private void ApplyEmotionInternal(string emotionCode)
+        {
+            string normalized = string.IsNullOrWhiteSpace(emotionCode)
+                ? "$neutral"
+                : NormalizeEmotionCode(emotionCode);
+
+            if (this.characterDialogue != null)
+                this.characterDialogue.CurrentEmotion = normalized;
 
             // BOUNDARY：无头环境（Game1.content == null）没有立绘可晃，跳过。
             if (Game1.content != null)
@@ -394,7 +453,7 @@ namespace ValleytalkReborn.UI
             var sb = new System.Text.StringBuilder();
             foreach (var page in _pageHistory) sb.Append(page).Append(' ');
             if (!string.IsNullOrEmpty(_displayedPageText)) sb.Append(_displayedPageText).Append(' ');
-            foreach (var page in _backlogPages) sb.Append(page).Append(' ');
+            foreach (BacklogPage page in _backlogPages) sb.Append(page.Text).Append(' ');
             return sb.ToString().Trim();
         }
 
@@ -406,6 +465,9 @@ namespace ValleytalkReborn.UI
             _displayedPageText = string.Empty;
             _backlogPages.Clear();
             _pageHistory.Clear();
+            _currentCues.Clear();
+            _appliedCueIndex = -1;
+            _starvationMs = 0;
             _isCurrentPageSealed = false;
             _characterIndex = 0;
             _isStreamComplete = true;
@@ -463,26 +525,36 @@ namespace ValleytalkReborn.UI
                     ? text.Substring(cursor, match.Index - cursor)
                     : text.Substring(cursor);
 
-                string body = ExtractAndStripEmotions(segment, out List<string> extractedEmotions);
-                foreach (string emotion in extractedEmotions)
-                    SetEmotion(emotion);
+                string body = ExtractAndStripEmotions(segment, out List<EmotionCue> segmentCues);
 
                 if (_displayedPageText.Length == 0)
+                {
+                    int beforeStrip = body.Length;
                     body = StripLeadingDialogueDash(body);
+                    if (body.Length != beforeStrip)
+                        ShiftEmotionCues(segmentCues, beforeStrip - body.Length);
+                }
 
                 if (body.Length > 0)
                 {
                     if (_isCurrentPageSealed)
                     {
-                        EnqueueToBacklog(body, startNewPage);
+                        EnqueueToBacklog(body, startNewPage, segmentCues);
                     }
                     else
                     {
-                        // 高度溢出封口后，溢出段必须先于分屏标记之后的内容入页。
-                        string overflow = TryFillCurrentPage(body);
+                        // 高度溢出封口后，溢出段必须先于分屏标记之后的内容入页；
+                        // 情绪 Cue 按截断点拆分归属两页。
+                        List<EmotionCue> overflowCues;
+                        string overflow = TryFillCurrentPage(body, segmentCues, out overflowCues);
                         if (overflow.Length > 0)
-                            EnqueueToBacklog(overflow, startNewPage);
+                            EnqueueToBacklog(overflow, startNewPage, overflowCues);
                     }
+                }
+                else if (segmentCues.Count > 0)
+                {
+                    // 纯情绪 chunk（正文洗空）：Cue 仍须进入对应页面的时间轴。
+                    RouteCuesWithoutBody(segmentCues);
                 }
 
                 if (!match.Success)
@@ -498,21 +570,28 @@ namespace ValleytalkReborn.UI
         /// <summary>
         /// 尝试把 <paramref name="text"/> 全部并入当前页；
         /// 返回未能容纳的剩余部分（空串表示全部容纳）。高度溢出时在安全位置截断并封口。
+        /// 情绪 Cue 按截断点拆分：截断点之前挂当前页时间轴，其余重定基后随溢出段输出。
         /// </summary>
-        private string TryFillCurrentPage(string text)
+        private string TryFillCurrentPage(string text, List<EmotionCue> cues, out List<EmotionCue> overflowCues)
         {
+            overflowCues = new List<EmotionCue>();
             if (text.Length == 0)
                 return string.Empty;
 
             if (_isCurrentPageSealed)
+            {
+                overflowCues.AddRange(cues);
                 return text;
+            }
 
+            int pageStart = _displayedPageText.Length;
             string candidate = _displayedPageText + text;
             int textWidth = GetTextWidth();
 
             if (SpriteText.getHeightOfString(candidate, textWidth) <= MaxPageHeight)
             {
                 _displayedPageText = candidate;
+                RegisterCurrentPageCues(cues, pageStart);
                 return string.Empty;
             }
 
@@ -531,7 +610,21 @@ namespace ValleytalkReborn.UI
             int cut = ComputeSafeBreakIndex(candidate, low);
             _displayedPageText = candidate.Substring(0, cut);
             _isCurrentPageSealed = true;
-            return candidate.Substring(cut).TrimStart(' ', '\t', '\r', '\n');
+
+            string rawOverflow = candidate.Substring(cut);
+            string overflow = rawOverflow.TrimStart(' ', '\t', '\r', '\n');
+            int trimCount = rawOverflow.Length - overflow.Length;
+
+            foreach (EmotionCue cue in cues)
+            {
+                int absolute = pageStart + cue.CharIndex;
+                if (absolute < cut)
+                    RegisterCurrentPageCue(absolute, cue.EmotionCode);
+                else
+                    overflowCues.Add(new EmotionCue(Math.Max(0, absolute - cut - trimCount), cue.EmotionCode));
+            }
+
+            return overflow;
         }
 
         /// <summary>
@@ -565,18 +658,24 @@ namespace ValleytalkReborn.UI
 
         /// <summary>
         /// 封口后的增量写入 backlog。流式续写并入队尾页；'#' 分页另起新页。
+        /// 情绪 Cue 重定基到目标页文本内并随页归档。
         /// 触发 BOUNDARY 熔断时强行在末页截断并追加标记。
         /// </summary>
         /// <param name="text">待入页文本。</param>
         /// <param name="startNewPage">是否另起新页（'#' 之后为 true）。</param>
-        private void EnqueueToBacklog(string text, bool startNewPage)
+        /// <param name="cues">随文本入页的情绪 Cue（页内相对偏移）。</param>
+        private void EnqueueToBacklog(string text, bool startNewPage, List<EmotionCue> cues)
         {
             if (text.Length == 0 || _isPageBudgetExhausted)
                 return;
 
             if (_backlogPages.Count > 0 && !startNewPage)
             {
-                _backlogPages.Enqueue(_backlogPages.Dequeue() + text);
+                // Queue 无索引器：出队尾页拼接后重入队。
+                BacklogPage tail = _backlogPages.Dequeue();
+                AppendCuesToPage(tail, cues, tail.Text.Length);
+                tail.Text += text;
+                _backlogPages.Enqueue(tail);
                 return;
             }
 
@@ -591,7 +690,16 @@ namespace ValleytalkReborn.UI
                 return;
             }
 
-            _backlogPages.Enqueue(text);
+            BacklogPage page = new BacklogPage { Text = text };
+            AppendCuesToPage(page, cues, 0);
+            _backlogPages.Enqueue(page);
+        }
+
+        /// <summary>把情绪 Cue 重定基到 backlog 页文本内（offset 为并入点在页内的偏移）。</summary>
+        private static void AppendCuesToPage(BacklogPage page, List<EmotionCue> cues, int offset)
+        {
+            for (int i = 0; i < cues.Count; i++)
+                page.Cues.Add(new EmotionCue(Math.Max(0, offset + cues[i].CharIndex), cues[i].EmotionCode));
         }
 
         /// <summary>在最后一张页面（backlog 尾页，无尾页时为当前页）末尾追加截断标记。</summary>
@@ -600,10 +708,10 @@ namespace ValleytalkReborn.UI
             if (_backlogPages.Count > 0)
             {
                 // Queue 无索引器：必须出队后重入队，否则会在队尾追加出第二份副本。
-                string tail = _backlogPages.Dequeue();
-                _backlogPages.Enqueue(tail.EndsWith(TruncationMarker, StringComparison.Ordinal)
-                    ? tail
-                    : tail + TruncationMarker);
+                BacklogPage tail = _backlogPages.Dequeue();
+                if (!tail.Text.EndsWith(TruncationMarker, StringComparison.Ordinal))
+                    tail.Text += TruncationMarker;
+                _backlogPages.Enqueue(tail);
                 return;
             }
 
@@ -616,11 +724,14 @@ namespace ValleytalkReborn.UI
         /// 即使上游漏切，正文也绝不残留 '$h' / '$s' / '[MOOD:xxx]'。
         /// </summary>
         /// <param name="text">待清洗文本。</param>
-        /// <param name="extractedEmotions">按出现顺序输出的情绪码（不含 '$' 与标签括号）。</param>
+        /// <param name="extractedEmotions">
+        /// 按出现顺序输出的情绪 Cue（票 VT-STREAM-08）：CharIndex 为剥离后的
+        /// 净文本内字符偏移，EmotionCode 为不含 '$' 与标签括号的情绪码。
+        /// </param>
         /// <returns>剔除全部情绪标记后的正文。</returns>
-        private static string ExtractAndStripEmotions(string text, out List<string> extractedEmotions)
+        private static string ExtractAndStripEmotions(string text, out List<EmotionCue> extractedEmotions)
         {
-            extractedEmotions = new List<string>();
+            extractedEmotions = new List<EmotionCue>();
             if (string.IsNullOrEmpty(text))
                 return text;
 
@@ -636,13 +747,30 @@ namespace ValleytalkReborn.UI
                 stripped.Append(text, cursor, match.Index - cursor);
 
                 // 组 2 = '$xxx' 载荷；组 3 = '[MOOD:xxx]' 载荷。
-                extractedEmotions.Add(match.Groups[2].Success ? match.Groups[2].Value : match.Groups[3].Value);
+                // Cue 偏移 = 净文本当前长度（即该标记在剥离后正文中的落点）。
+                extractedEmotions.Add(new EmotionCue(
+                    stripped.Length,
+                    match.Groups[2].Success ? match.Groups[2].Value : match.Groups[3].Value));
 
                 cursor = match.Index + match.Length;
             }
 
             stripped.Append(text, cursor, text.Length - cursor);
             return stripped.ToString();
+        }
+
+        /// <summary>
+        /// 前导引导线剥离后正文整体左移，情绪 Cue 偏移同步左移并钳制在 0
+        /// （落在被剥离前缀内的 Cue 收敛到页首，保证开口仍带表情）。
+        /// </summary>
+        private static void ShiftEmotionCues(List<EmotionCue> cues, int removedCount)
+        {
+            for (int i = 0; i < cues.Count; i++)
+            {
+                int shifted = Math.Max(0, cues[i].CharIndex - removedCount);
+                if (shifted != cues[i].CharIndex)
+                    cues[i] = new EmotionCue(shifted, cues[i].EmotionCode);
+            }
         }
 
         /// <summary>
@@ -766,16 +894,151 @@ namespace ValleytalkReborn.UI
 
         #endregion
 
+        #region 情绪时间轴（票 VT-STREAM-08）
+
+        /// <summary>把一批页内相对偏移的情绪 Cue 挂到当前页时间轴上。</summary>
+        private void RegisterCurrentPageCues(List<EmotionCue> cues, int pageStartOffset)
+        {
+            for (int i = 0; i < cues.Count; i++)
+                RegisterCurrentPageCue(pageStartOffset + cues[i].CharIndex, cues[i].EmotionCode);
+        }
+
+        /// <summary>
+        /// 把单个情绪 Cue 挂到当前页时间轴。若处于 Thinking 态或第 0 字符阶段
+        /// （首字尚未打印）且 Cue 位置为 0，则立即生效，确保开口即带表情。
+        /// </summary>
+        private void RegisterCurrentPageCue(int charIndex, string emotionCode)
+        {
+            if (charIndex < 0)
+                charIndex = 0;
+
+            _currentCues.Add(new EmotionCue(charIndex, emotionCode));
+
+            if (charIndex != 0)
+                return;
+            if (_state != StreamingDialogueState.Thinking && _characterIndex != 0)
+                return;
+
+            // 从队列前沿顺推：连续的位置 0 Cue（可能含本条）全部立即生效。
+            for (int i = _appliedCueIndex + 1;
+                 i < _currentCues.Count && _currentCues[i].CharIndex == 0;
+                 i++)
+            {
+                _appliedCueIndex = i;
+                ApplyEmotionInternal(_currentCues[i].EmotionCode);
+            }
+        }
+
+        /// <summary>纯情绪 chunk（正文洗空）的情绪路由：未封口挂当前页末端；已封口并入 backlog 尾页末端。</summary>
+        private void RouteCuesWithoutBody(List<EmotionCue> cues)
+        {
+            if (!_isCurrentPageSealed || _backlogPages.Count == 0)
+            {
+                // 已封口且无尾页时下一页尚未创建：同样挂在当前页末端，
+                // 游标已停驻页尾，经时间轴立即生效。
+                RegisterCurrentPageCues(cues, _displayedPageText.Length);
+                return;
+            }
+
+            BacklogPage tail = _backlogPages.Dequeue();
+            AppendCuesToPage(tail, cues, tail.Text.Length);
+            _backlogPages.Enqueue(tail);
+        }
+
+        /// <summary>
+        /// 推进情绪时间轴：顺序生效所有 CharIndex &lt;= 游标且尚未生效的 Cue。
+        /// 顺序扫描（不提前折断）以容忍外部 SetEmotion 造成的乱序插入。
+        /// </summary>
+        private void ApplyPendingEmotionCues()
+        {
+            for (int i = _appliedCueIndex + 1; i < _currentCues.Count; i++)
+            {
+                if (_currentCues[i].CharIndex > _characterIndex)
+                    continue;
+
+                _appliedCueIndex = i;
+                ApplyEmotionInternal(_currentCues[i].EmotionCode);
+            }
+        }
+
+        /// <summary>快进激活：时间轴直接推进至最后一个 Cue 并生效，立绘与最终台词一致。</summary>
+        private void FastForwardEmotionCues()
+        {
+            if (_currentCues.Count == 0)
+                return;
+
+            SanitizeCurrentCues();
+            _appliedCueIndex = _currentCues.Count - 1;
+            ApplyEmotionInternal(_currentCues[_appliedCueIndex].EmotionCode);
+        }
+
+        /// <summary>
+        /// 失败路径守卫（票 VT-STREAM-08）：Cue 越界或乱序时钳制到
+        /// [0, 当前页长度] 并按 CharIndex 排序，记 Trace 日志。仅在
+        /// _appliedCueIndex 语义允许重排的时机调用（翻页装载、快进跳转）。
+        /// </summary>
+        private void SanitizeCurrentCues()
+        {
+            if (_currentCues.Count == 0)
+                return;
+
+            int limit = _displayedPageText?.Length ?? 0;
+            bool clamped = false;
+            for (int i = 0; i < _currentCues.Count; i++)
+            {
+                int index = _currentCues[i].CharIndex;
+                if (index >= 0 && index <= limit)
+                    continue;
+
+                clamped = true;
+                _currentCues[i] = new EmotionCue(Math.Clamp(index, 0, limit), _currentCues[i].EmotionCode);
+            }
+
+            for (int i = 1; i < _currentCues.Count; i++)
+            {
+                if (_currentCues[i].CharIndex >= _currentCues[i - 1].CharIndex)
+                    continue;
+
+                _currentCues.Sort((a, b) => a.CharIndex.CompareTo(b.CharIndex));
+                clamped = true;
+                break;
+            }
+
+            if (clamped)
+                ModEntry.SMonitor?.Log(
+                    "[AiStreamingDialogueBox] Emotion cues out of range/order; clamped and sorted by CharIndex.",
+                    LogLevel.Trace);
+        }
+
+        #endregion
+
         #region 标点阻尼
 
         /// <summary>
+        /// 旧签名兼容重载：以真实 runway、流已完成（不触发 runway 自适应与
+        /// 断粮代偿）的语义求值，供既有节奏断言与外部纯函数测试使用。
+        /// </summary>
+        internal static int ComputeDelayMs(string text, int revealedCount)
+        {
+            int starvationMs = 0;
+            return ComputeDelayMs(text, revealedCount, (text?.Length ?? 0) - revealedCount, true, ref starvationMs);
+        }
+
+        /// <summary>
         /// 计算揭示第 <paramref name="revealedCount"/> 个字符之后，到揭示下一个字符
-        /// 之前应当等待的毫秒数。连续同类标点折叠：若后一字符仍为标点，
-        /// 当前标点不注入额外停顿，仅在标点组末字触发长停顿。
+        /// 之前应当等待的毫秒数（票 VT-STREAM-08）。连续同类标点折叠：若后一字符
+        /// 仍为标点，当前标点不注入额外停顿，仅在标点组末字触发长停顿。
+        /// 在此之上叠加：流式 runway 自适应基准（runway &lt;= 1 时 1.5x 阻尼防骤停、
+        /// runway &gt;= 16 时 0.8x 轻微追赶、流已结束时恒定原速），以及断粮代偿——
+        /// 网络断粮期间积累的 <paramref name="starvationMs"/> 预算优先抵扣本字符的
+        /// 标点停顿，预算与停顿至少一方归零，彻底消灭延迟叠加冲突。
         /// </summary>
         /// <param name="text">当前页文本。</param>
         /// <param name="revealedCount">已揭示的字符数（刚揭示的字符下标为 revealedCount - 1）。</param>
-        internal static int ComputeDelayMs(string text, int revealedCount)
+        /// <param name="runway">未揭示的剩余缓冲字符数（text.Length - revealedCount）。</param>
+        /// <param name="isStreamComplete">流是否已结束。</param>
+        /// <param name="starvationMs">断粮代偿预算（毫秒），按实际抵扣量递减。</param>
+        internal static int ComputeDelayMs(string text, int revealedCount, int runway, bool isStreamComplete, ref int starvationMs)
         {
             // 玩家关闭节奏开关时无视标点与换行，一律恒定原版等间隔打字速度。
             // Config 为 null（无头测试环境）时按开启处理，保持既有节奏行为。
@@ -792,13 +1055,34 @@ namespace ValleytalkReborn.UI
 
             int punctuationDelay = GetPunctuationDelayMs(current);
             if (punctuationDelay == 0)
-                return BaseTypeDelayMs;
+                return ScaleBaseDelayMs(runway, isStreamComplete);
 
             // 折叠：下一个字符仍是标点时，本字符不注入停顿。
             if (revealedCount < text.Length && GetPunctuationDelayMs(text[revealedCount]) != 0)
-                return BaseTypeDelayMs;
+                return ScaleBaseDelayMs(runway, isStreamComplete);
 
-            return BaseTypeDelayMs + punctuationDelay;
+            // 断粮代偿：标点停顿先被断粮预算抵扣（扣减后归零或扣至 0）。
+            int effectivePunctuation = punctuationDelay;
+            if (starvationMs > 0)
+            {
+                int consumed = Math.Min(punctuationDelay, starvationMs);
+                effectivePunctuation = punctuationDelay - consumed;
+                starvationMs -= consumed;
+            }
+
+            return ScaleBaseDelayMs(runway, isStreamComplete) + effectivePunctuation;
+        }
+
+        /// <summary>流式 runway 自适应基准延迟（票 VT-STREAM-08）。</summary>
+        private static int ScaleBaseDelayMs(int runway, bool isStreamComplete)
+        {
+            if (isStreamComplete)
+                return BaseTypeDelayMs;
+            if (runway <= 1)
+                return BaseTypeDelayMs * 3 / 2;   // 52：阻尼平滑防骤停
+            if (runway >= 16)
+                return BaseTypeDelayMs * 4 / 5;   // 28：轻微追赶
+            return BaseTypeDelayMs;
         }
 
         /// <summary>返回单字符的标点停顿毫秒数；非标点返回 0。</summary>
@@ -850,7 +1134,9 @@ namespace ValleytalkReborn.UI
                     while (_typeTimerMs <= 0 && _characterIndex < _displayedPageText.Length)
                     {
                         _characterIndex++;
-                        _typeTimerMs += ComputeDelayMs(_displayedPageText, _characterIndex);
+                        int runway = _displayedPageText.Length - _characterIndex;
+                        _typeTimerMs += ComputeDelayMs(
+                            _displayedPageText, _characterIndex, runway, _isStreamComplete, ref _starvationMs);
 
                         if (Game1.options.dialogueTyping)
                         {
@@ -861,13 +1147,23 @@ namespace ValleytalkReborn.UI
                         }
                     }
                 }
+                else if (!_isStreamComplete)
+                {
+                    // 网络断粮（票 VT-STREAM-08）：游标已追平流缓冲末尾而流未结束，
+                    // 累积断粮代偿预算供后续标点停顿抵扣；计时器归零，严禁累积
+                    // 负时间，防止下一 chunk 到达时瞬间倾泻多个字符（一顿一顿）。
+                    _starvationMs += elapsed;
+                    _typeTimerMs = 0;
+                }
                 else
                 {
-                    // 字符已全部打完，正在等待网络流后续 chunk 到达：
-                    // 计时器归零，严禁累积负时间，防止下一 chunk 到达时瞬间倾泻多个字符（一顿一顿）。
                     _typeTimerMs = 0;
                 }
             }
+
+            // 情绪时间轴推进（票 VT-STREAM-08）：游标越过 Cue 位置即切换立绘；
+            // 对 WaitingForPageTurn 态同样生效（外部 SetEmotion 可在等待翻页时下发）。
+            ApplyPendingEmotionCues();
 
             TryEnterWaitingForPageTurnState();
             TryEnterCompleteState();
@@ -1060,6 +1356,10 @@ namespace ValleytalkReborn.UI
             if (_state == StreamingDialogueState.Typing)
             {
                 _isFastForwardActive = true;
+
+                // 快进激活（票 VT-STREAM-08）：Cue 时间轴直接推进至最后一个并生效，
+                // 确保跳过后立绘状态与最终台词一致。
+                FastForwardEmotionCues();
                 _characterIndex = _displayedPageText.Length;
                 TryEnterWaitingForPageTurnState();
                 TryEnterCompleteState();
@@ -1081,13 +1381,25 @@ namespace ValleytalkReborn.UI
                 Game1.playSound("smallSelect");
 
                 _pageHistory.Add(_displayedPageText);
-                _displayedPageText = _backlogPages.Dequeue();
+                BacklogPage page = _backlogPages.Dequeue();
+                _displayedPageText = page.Text;
+
+                // 翻页装载（票 VT-STREAM-08）：连同情绪 Cue 时间轴一起重建，
+                // 断粮代偿预算按页复位，避免跨页污染后续节奏。
+                _currentCues.Clear();
+                _currentCues.AddRange(page.Cues);
+                _appliedCueIndex = -1;
+                _starvationMs = 0;
+                SanitizeCurrentCues();
 
                 _characterIndex = 0;
                 _typeTimerMs = BaseTypeDelayMs;
                 _isFastForwardActive = false;
                 _isCurrentPageSealed = false;
                 _state = StreamingDialogueState.Typing;
+
+                // 新页索引 0 存在 Cue：开口即带表情，立即触发立绘更新。
+                ApplyPendingEmotionCues();
                 return;
             }
 
