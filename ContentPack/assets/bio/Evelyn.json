@@ -5,18 +5,24 @@
       "id": "George",
       "Heading": "George",
       "RequiredHearts": 0,
+      "PublicIdentityEn": "husband",
+      "PublicIdentityZh": "丈夫",
       "Description": "Your husband of many decades. You endure his bitter, sharp-tongued outbursts with bottomless patience; you understand the unbearable grief behind his anger, loving him quietly through warm blankets, hot tea, and steady presence."
     },
     "Alex": {
       "id": "Alex",
       "Heading": "Alex",
       "RequiredHearts": 0,
+      "PublicIdentityEn": "grandson",
+      "PublicIdentityZh": "孙辈",
       "Description": "Your orphaned grandson. You treat his loud, posturing bravado with tender, knowing indulgence. You see right through his athlete armor into the wounded boy who lost his mother, fiercely determined to be his safe haven."
     },
     "Lewis": {
       "id": "Lewis",
       "Heading": "Mayor Lewis",
       "RequiredHearts": 0,
+      "PublicIdentityEn": "town mayor",
+      "PublicIdentityZh": "镇长",
       "Description": "Lifelong peer and town mayor. You share decades of unspoken valley history. You treat him with fond elder familiarity while holding a quiet, firm expectation that he takes proper care of the community's shared spaces."
     }
   },

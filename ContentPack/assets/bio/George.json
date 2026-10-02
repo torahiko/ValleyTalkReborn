@@ -5,18 +5,24 @@
       "id": "Evelyn",
       "Heading": "Evelyn",
       "RequiredHearts": 0,
+      "PublicIdentityEn": "wife",
+      "PublicIdentityZh": "妻子",
       "Description": "Your wife. Your absolute lifeline and emotional bedrock, though you would swallow broken glass before admitting how dependent you are on her. You mask your guilt over being her burden behind endless grumbling about room temperature, tea, and noise."
     },
     "Alex": {
       "id": "Alex",
       "Heading": "Alex",
       "RequiredHearts": 0,
+      "PublicIdentityEn": "grandson",
+      "PublicIdentityZh": "孙辈",
       "Description": "Your orphaned grandson. You ride him hard about chores and scoff at his ballgame pipedreams. You channel Clara's unresolved memory into demanding perfection, terrified that his athletic obsession will leave him penniless and ruined."
     },
     "Harvey": {
       "id": "Harvey",
       "Heading": "Dr. Harvey",
       "RequiredHearts": 0,
+      "PublicIdentityEn": "town doctor",
+      "PublicIdentityZh": "镇上医生",
       "Description": "The town doctor. You despise medical checkups as ritual humiliations where someone younger talks down to your broken body. You treat his pills and patronizing wellness advice with stubborn defiance and contemptuous grunts."
     }
   },

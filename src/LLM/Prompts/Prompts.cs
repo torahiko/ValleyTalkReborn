@@ -459,6 +459,26 @@ public class Prompts
             }
             npcConstantPrompt.AppendLine(bio);
 
+            // REL-002：已知关系骨架。世界就绪校验置于新增接入代码最前面，
+            // 未就绪时不读取角色卡或游戏实体，直接拒绝构建。
+            if (!StardewModdingAPI.Context.IsWorldReady)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[SocialBackbone] Known-relationship backbone reached for '{Character.Name}' while the world is not ready; refusing to read character card data outside a loaded save.",
+                    StardewModdingAPI.LogLevel.Error);
+                throw new InvalidOperationException(
+                    "Known-relationship backbone requires Context.IsWorldReady; the constant context was built outside a loaded save.");
+            }
+            string relationshipBackbone = SocialBackboneBuilder.Build(
+                Character.Name,
+                Character.Bio.Relationships,
+                IsChineseLanguage,
+                NpcNameLocalizer.GetLocalizedName);
+            if (!string.IsNullOrWhiteSpace(relationshipBackbone))
+            {
+                npcConstantPrompt.AppendLine(relationshipBackbone);
+            }
+
             if (Character.Bio.Traits?.Any() ?? false)
             {
                 int currentHearts = Context.Hearts ?? 0;
