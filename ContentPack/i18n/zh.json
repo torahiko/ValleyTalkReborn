@@ -91,7 +91,7 @@
   "greetingLongTime": "- 今天头一回跟农夫说话，你们有 {{DayGap}} 天没交流了。他最近怎么样，你心里有数；问不问，按你俩现在的交情来。",
   "greetingYesterday": "- 今天头一回跟农夫说话。昨天你们聊过，你记得那茬，接着提也行，只点个头也行。",
   "instructionsBreaks": "输出格式：两段，中间用 '#$b#' 分开。总字数 75~150。第二屏自然停留在眼前的动作、当下的反应或手头的琐碎事上。",
-  "instructionsEmotion": "肖像代码：可在台词中或末尾附带表情标签，例如 [MOOD:happy]、[MOOD:curious]、[MOOD:football] 或原版代码（$h 高兴、$s 难过、$a 生气、$0 中立），以及该角色的专属代码（{{extraPortraits}}）。",
+  "instructionsEmotion": "肖像代码：根据句意在台词中实时插入表情代码（可在一个回复中多次插入，不必局限于句尾），例如在角色大笑前插入 $h、恢复严肃时插入 $0、难过时插入 $s、震惊时插入 $u 等，打字机将在打印到该字符时即时切换立绘。支持原版代码（$h 高兴、$s 难过、$u 震惊、$a 生气、$0 中立、$l 脸红）及角色专属代码（{{extraPortraits}}）。",
   "instructionsExtraPortraitLine": "${{Key}} 代表 {{Value}}, ",
   "instructionsFarmersName": "农夫的名字写成 @。",
   "instructionsFallback": "要是农夫冷不丁说了句难以理解的怪话，直接按本能反应：愣一下、皱眉反问，或者随手扯回眼前的活计。",

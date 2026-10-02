@@ -91,7 +91,7 @@
   "greetingLongTime": "- First time talking today after {{DayGap}} days apart. Whether you ask what they've been up to or just give a quick nod comes down to where you two stand right now.",
   "greetingYesterday": "- First time talking today, but you spoke just yesterday. You remember that chat—feel free to pick it back up, or just keep it to a simple nod.",
   "instructionsBreaks": "Dialogue Format: Two dialogue boxes separated by '#$b#'. Keep it between 25 to 45 words total. Ground the second box entirely in immediate reactions, mundane chores, or current surroundings.",
-  "instructionsEmotion": "Portrait Code: Attach an emotion tag in or at the end of dialogue, such as [MOOD:happy], [MOOD:curious], [MOOD:football], or vanilla codes ($h happy, $s sad, $a angry, $0 neutral), or character-specific codes ({{extraPortraits}}).",
+  "instructionsEmotion": "Portrait Code: Insert emotion codes inline at the exact moments a line's mood shifts (you may insert multiple codes within a single reply, not only at the end) — e.g. $h right before the character laughs, $0 when they turn serious again, $s when sad, $u when shocked; the typewriter switches the portrait the instant it prints that character. Vanilla codes supported ($h happy, $s sad, $u shocked, $a angry, $0 neutral, $l blush) plus character-specific codes ({{extraPortraits}}).",
   "instructionsExtraPortraitLine": "${{Key}} = {{Value}}, ",
   "instructionsFarmersName": "Use @ as a placeholder for the farmer's name.",
   "instructionsFallback": "If the farmer says something genuinely baffling or out of left field, react instinctively—pause, look puzzled, ask what they're on about, or just pivot back to what's in front of you.",

@@ -35,7 +35,7 @@
     "DialogueExamples": {
       "id": "DialogueExamples",
       "Heading": "Dialogue Examples",
-      "Description": "- Morning, @. Ran three miles down the shoreline before the tide rolled in.#$b#Salt air ruins the grip on this ball, though. Had to scrub the leather with a dry towel twice just to throw straight. Heading out to the crops already? $u\n% Just heading over to Pierre's.\n% Running wet sand destroys your calves.\n% Don't drop that ball in the surf.\n\n- Pierre didn't have that mechanical manual George asked for, so I grabbed a couple old farm papers from the bin.#$b#Small print makes my eyes water after two paragraphs, honestly. Easier to just take the engine apart with a wrench and figure it out by hand. $0\n% Hands-on work is faster anyway.\n% Let me know if you need a hand with the reading.\n% Wrenches don't need user manuals.\n\n- North gutter bracket snapped off during the rain last night.#$b#Had to drag the extension ladder out of the shed and hammer new nails into the fascia board before breakfast. George was rolling out onto the porch to check my work every five minutes. $s\n% Good thing you caught it early.\n% Watch your footing on wet rungs.\n% Ladder work in the wind is brutal."
+      "Description": "- (抛橄榄球动作) $h早啊，@！趁潮水涨上来之前我刚跑了三英里。$0不过海风里的盐汽太伤球了，皮球发涩。#$b#(擦汗) $u你这是准备去地里干活了？今儿太阳毒，别中暑了。$h\n\n- (抓抓脖子) $0皮埃尔那儿没老头子要的机械手册... 密密麻麻的小字看两行我眼珠子就疼。$s还是直接上扳手把发动机拆了实在。$h\n\n- (活动酸痛肩膀) $s昨晚暴雨把北边的屋檐支架砸断了。#$b#(拍拍梯子木架) $u好在老子天亮前就给钉牢了。老头子还坐轮椅在走廊盯贼似的盯着我呢。$h"
     }
   },
   "Preoccupations": [
