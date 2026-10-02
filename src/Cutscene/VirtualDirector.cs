@@ -8,6 +8,7 @@ using StardewModdingAPI.Events;
 using StardewValley;
 using ValleytalkReborn.Cutscene.Compiler;
 using ValleytalkReborn.Cutscene.Model;
+using ValleytalkReborn.Cutscene.UI;
 
 namespace ValleytalkReborn.Cutscene
 {
@@ -51,6 +52,30 @@ namespace ValleytalkReborn.Cutscene
         private bool _cameraTargetPlayer;
         private Vector2? _cameraTargetPixel;
         private const float CameraLerpSpeed = 0.10f;
+
+        // 视觉表现：电影级沉浸对白横幅
+        private CinematicDialogueBanner _activeDialogueBanner;
+
+        /// <summary>
+        /// 激活沉浸式电影对白横幅
+        /// </summary>
+        public void ShowDialogue(NPC speaker, string text)
+        {
+            _activeDialogueBanner = new CinematicDialogueBanner(speaker, text);
+        }
+
+        /// <summary>
+        /// 关闭沉浸式电影对白横幅
+        /// </summary>
+        public void HideDialogue()
+        {
+            _activeDialogueBanner = null;
+        }
+
+        /// <summary>
+        /// 当前对白横幅是否已被玩家跳过或自然播放完毕
+        /// </summary>
+        public bool IsDialogueCompleted => _activeDialogueBanner == null || _activeDialogueBanner.IsCompleted;
 
         // ESC 键状态
         private KeyboardState _lastKeyState;
@@ -244,6 +269,7 @@ namespace ValleytalkReborn.Cutscene
                 _cameraTargetPixel = null;
                 _cameraTargetNpc = null;
                 _cameraTargetPlayer = false;
+                _activeDialogueBanner = null;
                 _participatingActors.Clear();
                 _fadeAlpha = 0f;
                 _phase = DirectorPhase.Idle;
@@ -257,6 +283,7 @@ namespace ValleytalkReborn.Cutscene
             {
                 ModEntry.SMonitor?.Log($"[VirtualDirector] ImmediateRestore failed: {ex}", LogLevel.Error);
                 _phase = DirectorPhase.Idle;
+                _activeDialogueBanner = null;
                 IsActive = false;
                 _snapshot = null;
             }
@@ -272,6 +299,7 @@ namespace ValleytalkReborn.Cutscene
 
             ModEntry.SMonitor?.Log("[VirtualDirector] Beginning fade-out transition...", LogLevel.Debug);
             _phase = DirectorPhase.FadingOut;
+            _activeDialogueBanner = null;
 
             foreach (var action in _activeActions)
             {
@@ -299,6 +327,7 @@ namespace ValleytalkReborn.Cutscene
             _actionQueue.Clear();
             _snapshot = null;
             _participatingActors.Clear();
+            _activeDialogueBanner = null;
             _blackBarHeight = 0f;
             _cameraTargetPixel = null;
             _cameraTargetNpc = null;
@@ -481,6 +510,9 @@ namespace ValleytalkReborn.Cutscene
             // 3. 维持时钟静止
             Game1.gameTimeInterval = 0;
 
+            // 3.5 驱动沉浸式电影对白横幅
+            _activeDialogueBanner?.Update(Game1.currentGameTime);
+
             // 4. 黑边平滑过渡
             if (_blackBarHeight < TargetBarHeight)
             {
@@ -633,6 +665,12 @@ namespace ValleytalkReborn.Cutscene
                         new Rectangle(0, viewport.Height - barHeight, viewport.Width, barHeight),
                         Color.Black
                     );
+                }
+
+                // 1.5 绘制沉浸式电影对白横幅（黑边之上、全屏渐变黑幕之下）
+                if (_phase == DirectorPhase.Playing)
+                {
+                    _activeDialogueBanner?.Draw(b, _blackBarHeight);
                 }
 
                 // 2. 绘制全屏黑幕渐变（FadingOut / FadingIn 阶段）

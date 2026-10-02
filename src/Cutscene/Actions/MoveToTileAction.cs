@@ -49,13 +49,34 @@ namespace ValleytalkReborn.Cutscene.Actions
             CutsceneActorHelper.WakeupActor(_npc);
             _npc.addedSpeed = 2;
 
+            // 若已经处于目标点，直接标记完成，无需折腾寻路
+            if (Vector2.Distance(_npc.Tile, _targetTile) < 0.5f)
+            {
+                _isCompleted = true;
+                return;
+            }
+
+            // 1. 起点弹性微吸附：若 NPC 起步时正处于椅子、桌椅边缘等阻挡判定格，先自动微移至就近连通格
+            MovementPathfinding.TryRecoverStartingTile(_npc, _npc.currentLocation, radius: 3);
+
+            // 2. 尝试标准寻路
             if (!MovementPathfinding.TryCreatePath(_npc, _npc.currentLocation, _targetTile, out _controller, out var finalTarget))
             {
+                // 3. 多阶回退：若目标格微受阻，以更宽半径（5格）向外搜寻连通可达格
+                var expandedTarget = MovementPathfinding.FindNearestWalkableTile(_npc.currentLocation, _targetTile, _npc, radius: 5);
+                if (expandedTarget != _targetTile)
+                {
+                    MovementPathfinding.TryCreatePath(_npc, _npc.currentLocation, expandedTarget, out _controller, out finalTarget);
+                }
+            }
+
+            if (_controller == null || MovementPathfinding.IsPathDead(_controller))
+            {
                 ModEntry.SMonitor?.Log(
-                    $"[MoveToTileAction] Initial pathfinding failed for {_npc.Name} to ({_targetTile.X},{_targetTile.Y})",
+                    $"[MoveToTileAction] All path attempts failed for {_npc.Name} to ({_targetTile.X},{_targetTile.Y}), warping safely.",
                     LogLevel.Debug);
                 
-                // 寻路失败：直接瞬移到位并标记完成，避免发呆超时
+                // 实在无可通行路径：熔断瞬移到位
                 WarpToTargetSafely();
                 _controller = null;
                 _isCompleted = true;

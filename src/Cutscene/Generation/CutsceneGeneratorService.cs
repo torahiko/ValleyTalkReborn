@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using StardewModdingAPI;
@@ -7,6 +8,7 @@ using StardewValley;
 using ValleytalkReborn.Cutscene.Compiler;
 using ValleytalkReborn.Cutscene.Perception;
 using ValleytalkReborn.Cutscene.Prompt;
+using ValleytalkReborn.Cutscene.Storage;
 using ValleytalkReborn;
 
 namespace ValleytalkReborn.Cutscene.Generation
@@ -128,6 +130,26 @@ namespace ValleytalkReborn.Cutscene.Generation
                     ModEntry.SMonitor?.Log($"[CutsceneGenerator] Script compilation failed: {compileResult.ErrorMessage}", LogLevel.Warn);
                     Game1.addHUDMessage(new HUDMessage($"🎬 剧本解析失败: {compileResult.ErrorMessage}", HUDMessage.error_type));
                     return (false, $"剧本编译失败: {compileResult.ErrorMessage}");
+                }
+
+                // 4.5 自动归档至本地剧本库
+                try
+                {
+                    var archived = new ArchivedCutscene
+                    {
+                        Title = compileResult.Title,
+                        LocationName = location.NameOrUniqueName,
+                        ActorNames = compileResult.ResolvedActors.Select(a => a.Name).ToList(),
+                        UserIntent = userIntent ?? string.Empty,
+                        RawJson = llmResp.Text,
+                        ActionCount = compileResult.Actions.Count,
+                        CreatedAt = DateTime.Now
+                    };
+                    CutsceneStorageService.Save(archived);
+                }
+                catch (Exception archiveEx)
+                {
+                    ModEntry.SMonitor?.Log($"[CutsceneGenerator] Failed to auto-archive cutscene: {archiveEx.Message}", LogLevel.Debug);
                 }
 
                 // 5. 跨线程安全派发到主线程开演

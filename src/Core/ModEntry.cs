@@ -685,6 +685,31 @@ namespace ValleytalkReborn
                 Monitor.Log($"[Director] Triggering AI cutscene generation with intent: {(intent ?? "<auto>")}", LogLevel.Info);
                 CutsceneTestHelper.RunDynamicCutscene(intent);
             });
+
+        // ── 虚拟导演工坊可视化面板指令（Phase 3 新增）──
+        helper.ConsoleCommands.Add("vt_director", "Open Virtual Director Workshop Menu.",
+            (cmd, args) =>
+            {
+                if (!Context.IsWorldReady || Game1.player?.currentLocation == null)
+                {
+                    Monitor.Log("Save not loaded.", LogLevel.Warn);
+                    return;
+                }
+
+                if (VirtualDirector.Instance?.IsActive == true)
+                {
+                    Monitor.Log("A cutscene is already running.", LogLevel.Warn);
+                    return;
+                }
+
+                if (!Context.IsPlayerFree)
+                {
+                    Monitor.Log("Player is not free (menu or event active).", LogLevel.Warn);
+                    return;
+                }
+
+                Game1.activeClickableMenu = new ValleytalkReborn.Cutscene.UI.DirectorWorkshopMenu();
+            });
         }
 
         /// <summary>
@@ -715,6 +740,7 @@ namespace ValleytalkReborn
                 if (e.Button == SButton.Escape
                     || e.Button == SButton.F8
                     || e.Button == SButton.F9
+                    || e.Button == SButton.F10
                     || e.Button == SButton.Space
                     || e.Button == SButton.MouseLeft
                     || e.Button == SButton.MouseRight)
@@ -740,7 +766,7 @@ namespace ValleytalkReborn
                     Game1.addHUDMessage(new HUDMessage("🎬 即兴剧本构思已取消", HUDMessage.error_type));
                     return;
                 }
-                else if (e.Button == SButton.Space || e.Button == SButton.MouseLeft || e.Button == SButton.MouseRight || e.Button == SButton.F9)
+                else if (e.Button == SButton.Space || e.Button == SButton.MouseLeft || e.Button == SButton.MouseRight || e.Button == SButton.F9 || e.Button == SButton.F10)
                 {
                     Helper.Input.Suppress(e.Button);
                     return;
@@ -764,6 +790,16 @@ namespace ValleytalkReborn
                 && !ValleytalkReborn.Cutscene.Generation.CutsceneGeneratorService.IsGenerating)
             {
                 CutsceneTestHelper.RunDynamicCutscene();
+            }
+
+            // 🎬 Phase 3 虚拟导演工坊快捷键: F10 打开可视化编导工坊
+            // 门禁：玩家完全自由（无事件/无菜单）且过场未在播且未处于构思态
+            if (e.Button == SButton.F10
+                && Context.IsPlayerFree
+                && VirtualDirector.Instance?.IsActive != true
+                && !ValleytalkReborn.Cutscene.Generation.CutsceneGeneratorService.IsGenerating)
+            {
+                Game1.activeClickableMenu = new ValleytalkReborn.Cutscene.UI.DirectorWorkshopMenu();
             }
 
             // 在任何点击事件触发时，记录此刻 ALT 键是否按下

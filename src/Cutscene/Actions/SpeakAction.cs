@@ -6,7 +6,7 @@ using StardewValley;
 namespace ValleytalkReborn.Cutscene.Actions
 {
     /// <summary>
-    /// NPC 头顶对白气泡动作（MVP 实现）
+    /// NPC 电影级对白动作：驱动底部沉浸字幕横幅、高清立绘与打字机动效，兼顾原版头顶冒泡
     /// </summary>
     public sealed class SpeakAction : IDirectorAction
     {
@@ -25,7 +25,7 @@ namespace ValleytalkReborn.Cutscene.Actions
             _npc = npc ?? throw new ArgumentNullException(nameof(npc));
             _text = text ?? string.Empty;
             
-            // 动态计算阅读时长：120ms/字符，范围 2000ms~5000ms
+            // 动态计算兜底阅读时长：120ms/字符，范围 2000ms~5000ms
             _durationMs = Math.Clamp(text.Length * 120f, 2000f, 5000f);
         }
 
@@ -36,14 +36,24 @@ namespace ValleytalkReborn.Cutscene.Actions
             _lastKeyState = Keyboard.GetState();
             _lastMouseState = Mouse.GetState();
             
+            // 1. 头顶简易气泡（兼顾远景观察）
             _npc?.showTextAboveHead(_text);
+
+            // 2. 电影级底部字幕立绘横幅
+            VirtualDirector.Instance?.ShowDialogue(_npc, _text);
         }
 
         public bool Update(GameTime time)
         {
+            // 优先由电影级字幕系统掌控推进与跳过
+            if (VirtualDirector.Instance != null && VirtualDirector.Instance.IsActive)
+            {
+                return VirtualDirector.Instance.IsDialogueCompleted;
+            }
+
+            // 兜底逻辑：常规计时与按键检测
             _elapsedMs += (float)time.ElapsedGameTime.TotalMilliseconds;
 
-            // 检测跳过输入（Space 或鼠标左键）
             if (!_skipped)
             {
                 var currentKeyState = Keyboard.GetState();
@@ -67,7 +77,7 @@ namespace ValleytalkReborn.Cutscene.Actions
 
         public void Exit()
         {
-            // 无需清理，气泡会自动消失
+            VirtualDirector.Instance?.HideDialogue();
         }
     }
 }
