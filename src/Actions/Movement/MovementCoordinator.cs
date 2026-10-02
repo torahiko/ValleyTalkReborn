@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
@@ -431,13 +431,37 @@ namespace ValleytalkReborn.Movement
             return true;
         }
 
-        private static void ClearNpcMovement(NPC npc)
+        internal static void ClearNpcMovement(NPC npc) => ClearNpcMovement(npc, suppressSchedule: true);
+
+        internal static void ClearNpcMovement(NPC npc, bool suppressSchedule)
         {
             if (npc == null) return;
 
-            npc.controller = null;
-            npc.addedSpeed = 0;
             npc.Halt();
+            npc.controller = null;
+            npc.temporaryController = null;
+            npc.addedSpeed = 0;
+            npc.movementPause = 0;
+            npc.isCharging = false;
+
+            try
+            {
+                typeof(Character).GetField("freezeMotion", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)
+                    ?.SetValue(npc, false);
+            }
+            catch (Exception ex)
+            {
+                ModEntry.SMonitor?.Log($"[MovementCoordinator] Failed to reset freezeMotion for {npc.Name}: {ex.Message}", LogLevel.Trace);
+            }
+
+            if (suppressSchedule)
+            {
+                npc.ignoreScheduleToday = true;
+                npc.followSchedule = false;
+                npc.queuedSchedulePaths?.Clear();
+                npc.DirectionsToNewLocation = null;
+                npc.isMovingOnPathFindPath.Value = false;
+            }
         }
     }
 }

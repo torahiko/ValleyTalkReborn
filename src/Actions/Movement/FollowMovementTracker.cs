@@ -170,6 +170,8 @@ namespace ValleytalkReborn.Movement
             if (_followingNpc != null)
                 Unbind(silent: true);
 
+            _clearNpcMovement(npc);
+
             _followingNpc  = npc;
             _followEndTime = endTime;
             _isDateFollow  = false;
@@ -194,6 +196,7 @@ namespace ValleytalkReborn.Movement
             if (npc == null) return;
 
             Unbind(silent: false);
+            _clearNpcMovement(npc);
 
             // ─── 新增：同步玩家初始位置与速度，消除首帧速度脉冲 ───
             if (Game1.player != null)
@@ -841,6 +844,13 @@ namespace ValleytalkReborn.Movement
                     _retargetCooldown     = 0;
                     _wanderPathCooldown   = 0;
                     _idleGazeTimer        = 0;
+                    _followingNpc.movementPause = 0;
+                    try
+                    {
+                        typeof(Character).GetField("freezeMotion", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)
+                            ?.SetValue(_followingNpc, false);
+                    }
+                    catch { }
 
                     if (Game1.player != null)
                         ApplyDynamicSpeed(Vector2.Distance(_followingNpc.Tile, Game1.player.Tile));
@@ -964,6 +974,14 @@ namespace ValleytalkReborn.Movement
 
             if (MovementPathfinding.TryCreatePath(_followingNpc, loc, target, out var controller, out _))
             {
+                _followingNpc.movementPause = 0;
+                try
+                {
+                    typeof(Character).GetField("freezeMotion", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)
+                        ?.SetValue(_followingNpc, false);
+                }
+                catch { }
+
                 _followingNpc.controller = controller;
                 _followPathFailCount = 0;
                 return true;

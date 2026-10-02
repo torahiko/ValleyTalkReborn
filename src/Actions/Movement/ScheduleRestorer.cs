@@ -65,7 +65,10 @@ namespace ValleytalkReborn.Movement
                     LogLevel.Trace);
             }
 
-            if (TryCollectPendingStops(npc, out int nextStopTime, out _, out _))
+            MovementCoordinator.ClearNpcMovement(npc, suppressSchedule: false);
+            npc.ignoreScheduleToday = false;
+
+            if (TryCollectPendingStops(npc, out int nextStopTime, out _, out _, applyToNpc: true))
             {
                 ModEntry.SMonitor?.Log(
                     $"[ScheduleRestorer] Schedule restored for {npc.Name}: next stop @{nextStopTime}.",
@@ -80,11 +83,18 @@ namespace ValleytalkReborn.Movement
         }
 
         /// <summary>
-        /// Collects all schedule stops at or after the current time-of-day, sorted ascending,
-        /// and loads them into npc.queuedSchedulePaths so the game drives the NPC along its
-        /// remaining daily route. Returns false (nextStopTime = -1) when no stops remain.
+        /// Collects all schedule stops at or after the current time-of-day, sorted ascending.
+        /// When applyToNpc is true, loads them into npc.queuedSchedulePaths so the game drives the NPC
+        /// along its remaining daily route. When applyToNpc is false, performs a read-only query without
+        /// mutating npc.queuedSchedulePaths or npc.followSchedule.
+        /// Returns false (nextStopTime = -1) when no stops remain.
         /// </summary>
-        private static bool TryCollectPendingStops(NPC npc, out int nextStopTime, out string nextStopMap, out Point nextStopTile)
+        private static bool TryCollectPendingStops(
+            NPC npc,
+            out int nextStopTime,
+            out string nextStopMap,
+            out Point nextStopTile,
+            bool applyToNpc = true)
         {
             nextStopTime = -1;
             nextStopMap  = null;
@@ -116,27 +126,32 @@ namespace ValleytalkReborn.Movement
             if (pending.Count == 0)
                 return false;
 
-            npc.queuedSchedulePaths.Clear();
-            foreach (var kv in pending)
-            {
-                // Defensive re-filter: skip any stale entry that slipped past the query.
-                if (kv.Key < now)
-                {
-                    ModEntry.SMonitor?.Log(
-                        $"[ScheduleRestorer] {npc.Name} skipping stale schedule stop @{kv.Key} (now={now}).",
-                        LogLevel.Trace);
-                    continue;
-                }
-                npc.queuedSchedulePaths.Add(kv.Value);
-            }
-
-            if (npc.queuedSchedulePaths.Count == 0)
-                return false;
-
-            npc.followSchedule = true;
             nextStopTime = pending[0].Key;
             nextStopMap  = pending[0].Value?.targetLocationName;
             nextStopTile = pending[0].Value?.targetTile ?? Point.Zero;
+
+            if (applyToNpc)
+            {
+                npc.queuedSchedulePaths.Clear();
+                foreach (var kv in pending)
+                {
+                    // Defensive re-filter: skip any stale entry that slipped past the query.
+                    if (kv.Key < now)
+                    {
+                        ModEntry.SMonitor?.Log(
+                            $"[ScheduleRestorer] {npc.Name} skipping stale schedule stop @{kv.Key} (now={now}).",
+                            LogLevel.Trace);
+                        continue;
+                    }
+                    npc.queuedSchedulePaths.Add(kv.Value);
+                }
+
+                if (npc.queuedSchedulePaths.Count == 0)
+                    return false;
+
+                npc.followSchedule = true;
+            }
+
             return true;
         }
 
@@ -252,7 +267,7 @@ namespace ValleytalkReborn.Movement
                 {
                     route = DepartureRouteType.CsmSchedule;
                 }
-                else if (TryCollectPendingStops(npc, out nextStopTime, out nextStopMap, out nextStopTile))
+                else if (TryCollectPendingStops(npc, out nextStopTime, out nextStopMap, out nextStopTile, applyToNpc: false))
                 {
                     route = DepartureRouteType.VanillaSchedule;
                 }
@@ -261,7 +276,7 @@ namespace ValleytalkReborn.Movement
                     route = DepartureRouteType.AnchorFallback;
                 }
             }
-            else if (TryCollectPendingStops(npc, out nextStopTime, out nextStopMap, out nextStopTile))
+            else if (TryCollectPendingStops(npc, out nextStopTime, out nextStopMap, out nextStopTile, applyToNpc: false))
             {
                 route = DepartureRouteType.VanillaSchedule;
             }
@@ -308,7 +323,9 @@ namespace ValleytalkReborn.Movement
 
                     if (string.Equals(npc.currentLocation.Name, targetMap, StringComparison.OrdinalIgnoreCase))
                     {
-                        // 同图：已在目标地图，queuedSchedulePaths 已由决策阶段装载，交还游戏 checkSchedule 接管。
+                        // 同图：已在目标地图，现在安全装载 queuedSchedulePaths，交还游戏 checkSchedule 接管。
+                        npc.ignoreScheduleToday = false;
+                        TryCollectPendingStops(npc, out _, out _, out _, applyToNpc: true);
                         npc.followSchedule = true;
                         ModEntry.SMonitor?.Log(
                             $"[ScheduleRestorer] Schedule restored for {npc.Name} in-place on '{targetMap}': next stop @{nextStopTime}.",
@@ -316,7 +333,11 @@ namespace ValleytalkReborn.Movement
                     }
                     else
                     {
-                        // 跨图：走向最近出口，到达后传送到目标地图并恢复日程。
+                        // 跨图：保持日程压制，走向最近出口，到达后传送到目标地图并恢复日程。
+                        npc.ignoreScheduleToday = true;
+                        npc.followSchedule = false;
+                        npc.queuedSchedulePaths?.Clear();
+
                         DepartViaNearestWarp(npc, () =>
                         {
                             var targetLoc = !string.IsNullOrWhiteSpace(targetMap) ? Game1.getLocationFromName(targetMap) : null;

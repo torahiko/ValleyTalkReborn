@@ -56,6 +56,8 @@ namespace ValleytalkReborn.Movement
             if (_activeGotos.ContainsKey(npc.Name))
                 EndGoto(_activeGotos[npc.Name], success: false, invokeCallbacks: false, facePlayer: false);
 
+            MovementCoordinator.ClearNpcMovement(npc, suppressSchedule: true);
+
             var loc = npc.currentLocation ?? Game1.player?.currentLocation;
             if (loc == null)
             {
@@ -146,55 +148,54 @@ namespace ValleytalkReborn.Movement
                         MovementPathfinding.IsPathDead(npc.controller) ||
                         MovementPathfinding.IsPathDone(npc.controller);
 
-                    bool nearTarget = Vector2.Distance(npc.Tile, ctx.Target) <= 1.75f;
+                    float distToTarget = Vector2.Distance(npc.Tile, ctx.Target);
+                    bool nearTarget = distToTarget <= 1.75f;
+                    bool reachedTarget = distToTarget <= 1.0f;
+
+                    if (npc.Tile == ctx.LastTile)
+                    {
+                        ctx.StuckTicks++;
+                    }
+                    else
+                    {
+                        ctx.LastTile = npc.Tile;
+                        ctx.StuckTicks = 0;
+                    }
+
+                    if (pathEnded || (nearTarget && (reachedTarget || ctx.StuckTicks >= 15)))
+                    {
+                        EndGoto(ctx, success: nearTarget, invokeCallbacks: true, facePlayer: true);
+                        continue;
+                    }
 
                     // 卡死检测
                     if (!nearTarget && !pathEnded)
                     {
-                        if (npc.Tile == ctx.LastTile)
+                        if (ctx.StuckTicks >= 90)
                         {
-                            ctx.StuckTicks++;
-                            if (ctx.StuckTicks >= 90)
+                            ctx.StuckTicks = 0;
+                            ctx.RepathAttempts++;
+
+                            if (ctx.RepathAttempts > 2)
                             {
-                                ctx.StuckTicks = 0;
-                                ctx.RepathAttempts++;
+                                ModEntry.SMonitor?.Log(
+                                    $"[GotoMovementTracker] {npc.Name} stuck too many times, failing GoTo.",
+                                    LogLevel.Warn);
+                                EndGoto(ctx, success: false, invokeCallbacks: true, facePlayer: false);
+                                continue;
+                            }
 
-                                if (ctx.RepathAttempts > 2)
-                                {
-                                    ModEntry.SMonitor?.Log(
-                                        $"[GotoMovementTracker] {npc.Name} stuck too many times, failing GoTo.",
-                                        LogLevel.Warn);
-                                    EndGoto(ctx, success: false, invokeCallbacks: true, facePlayer: false);
-                                    continue;
-                                }
-
-                                MovementPathfinding.TryRecoverStartingTile(npc, ctx.ExpectedLocation);
-                                if (MovementPathfinding.TryCreatePath(npc, ctx.ExpectedLocation, ctx.Target, out var rep, out var ft))
-                                {
-                                    ctx.Target = ft;
-                                    npc.controller = rep;
-                                    npc.addedSpeed = 2;
-                                    ModEntry.SMonitor?.Log(
-                                        $"[GotoMovementTracker] {npc.Name} repath attempt #{ctx.RepathAttempts} success.",
-                                        LogLevel.Debug);
-                                }
+                            MovementPathfinding.TryRecoverStartingTile(npc, ctx.ExpectedLocation);
+                            if (MovementPathfinding.TryCreatePath(npc, ctx.ExpectedLocation, ctx.Target, out var rep, out var ft))
+                            {
+                                ctx.Target = ft;
+                                npc.controller = rep;
+                                npc.addedSpeed = 2;
+                                ModEntry.SMonitor?.Log(
+                                    $"[GotoMovementTracker] {npc.Name} repath attempt #{ctx.RepathAttempts} success.",
+                                    LogLevel.Debug);
                             }
                         }
-                        else
-                        {
-                            ctx.LastTile = npc.Tile;
-                            ctx.StuckTicks = 0;
-                        }
-                    }
-                    else
-                    {
-                        ctx.StuckTicks = 0;
-                    }
-
-                    if (pathEnded)
-                    {
-                        EndGoto(ctx, success: nearTarget, invokeCallbacks: true, facePlayer: true);
-                        continue;
                     }
 
                     if (ctx.Timeout.Tick())
@@ -255,9 +256,7 @@ namespace ValleytalkReborn.Movement
             foreach (var ctx in _activeGotos.Values)
             {
                 var npc = ctx.Npc;
-                npc.controller = null;
-                npc.addedSpeed = 0;
-                npc.Halt();
+                MovementCoordinator.ClearNpcMovement(npc, suppressSchedule: false);
             }
             _activeGotos.Clear();
         }
@@ -279,9 +278,7 @@ namespace ValleytalkReborn.Movement
             if (_activeGotos.TryGetValue(npc.Name, out var current) && ReferenceEquals(current, ctx))
                 _activeGotos.Remove(npc.Name);
 
-            npc.controller = null;
-            npc.addedSpeed = 0;
-            npc.Halt();
+            MovementCoordinator.ClearNpcMovement(npc, suppressSchedule: false);
 
             if (facePlayer && Game1.player != null && npc.currentLocation == Game1.player.currentLocation)
                 npc.faceGeneralDirection(Game1.player.getStandingPosition(), 0, false, false);
