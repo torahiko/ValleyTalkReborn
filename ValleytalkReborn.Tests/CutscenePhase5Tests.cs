@@ -230,9 +230,65 @@ namespace ValleytalkReborn.Tests
         }
 
         [Fact]
+        public void CutscenePromptBuilder_SystemPrompt_ChoiceRuleAnchorsFarmerInvolvement()
+        {
+            string systemPrompt = CutscenePromptBuilder.BuildSystemPrompt();
+
+            // 可验证边界：choice 的受话人是农夫本人，且剧情走向取决于农夫的表态
+            Assert.Contains("受话人始终是农夫本人", systemPrompt);
+            // 焦点锚定：村民之间的交流以村民为镜头焦点，不强制卷入农夫
+            Assert.Contains("镜头与台词始终聚焦在村民身上", systemPrompt);
+        }
+
+        [Fact]
+        public void CutscenePromptBuilder_UserPrompt_SoloActor_ChoiceConditionalOnFarmerInvolvement()
+        {
+            var ctx = BuildSoloContext();
+
+            string userPrompt = CutscenePromptBuilder.BuildUserPrompt(ctx, "测试日常");
+
+            // 回归守卫：旧的"请适时编排 1 个 choice 动作"强制措辞必须移除
+            Assert.DoesNotContain("请适时编排", userPrompt);
+            Assert.Contains("只有农夫才能回答", userPrompt);
+            Assert.Contains("亚历克斯更喜欢你了。", userPrompt);
+        }
+
+        [Fact]
+        public void CutscenePromptBuilder_UserPrompt_MultiActor_ChoiceOnlyWhenFarmerAddressed()
+        {
+            var ctx = BuildSoloContext();
+            ctx.Actors.Add(new ActorProfile
+            {
+                Name = "Haley",
+                DisplayName = "海莉",
+                CurrentTile = new Microsoft.Xna.Framework.Vector2(24, 31),
+                FacingDirection = 3,
+                HeartLevel = 2,
+                FriendshipPoints = 500
+            });
+
+            string userPrompt = CutscenePromptBuilder.BuildUserPrompt(ctx, null);
+
+            Assert.Contains("choice 动作只属于", userPrompt);
+            Assert.Contains("镜头始终聚焦交流中的村民", userPrompt);
+            Assert.DoesNotContain("增强农夫的临场参与感", userPrompt);
+        }
+
+        [Fact]
         public void CutscenePromptBuilder_UserPrompt_ContainsChoiceGuidance_WhenSoloActor()
         {
-            var ctx = new CutsceneContext
+            var ctx = BuildSoloContext();
+
+            string userPrompt = CutscenePromptBuilder.BuildUserPrompt(ctx, "测试日常");
+
+            Assert.Contains("互动分支", userPrompt);
+            Assert.Contains("choice", userPrompt);
+            Assert.Contains("亚历克斯更喜欢你了。", userPrompt);
+        }
+
+        private static CutsceneContext BuildSoloContext()
+        {
+            return new CutsceneContext
             {
                 LocationName = "Town",
                 LocationFriendlyName = "鹈鹕镇",
@@ -254,12 +310,6 @@ namespace ValleytalkReborn.Tests
                     }
                 }
             };
-
-            string userPrompt = CutscenePromptBuilder.BuildUserPrompt(ctx, "测试日常");
-
-            Assert.Contains("互动分支", userPrompt);
-            Assert.Contains("choice", userPrompt);
-            Assert.Contains("亚历克斯更喜欢你了。", userPrompt);
         }
     }
 }
