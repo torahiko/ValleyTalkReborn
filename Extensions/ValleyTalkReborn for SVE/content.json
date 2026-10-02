@@ -34,10 +34,10 @@
       "FromFile": "assets/bio/Claire.json"
     },
     {
-      "LogName": "Load Bio Gunther",
+      "LogName": "Load Bio GuntherSilvian",
       "Action": "Load",
-      "Target": "ValleytalkReborn/Bios/Gunther",
-      "FromFile": "assets/bio/Gunther.json"
+      "Target": "ValleytalkReborn/Bios/GuntherSilvian",
+      "FromFile": "assets/bio/GuntherSilvian.json"
     },
     {
       "LogName": "Load Bio Isaac",
