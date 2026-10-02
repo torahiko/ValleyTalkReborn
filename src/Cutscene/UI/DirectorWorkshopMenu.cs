@@ -368,12 +368,18 @@ namespace ValleytalkReborn.Cutscene.UI
 
                 if (i < _replayPlayButtonRects.Count && _replayPlayButtonRects[i].Contains(x, y))
                 {
-                    // 重播剧目
+                    // 录像式回放：先关闭本菜单（Context.IsPlayerFree 要求无激活菜单），
+                    // 再依据归档站位把剧组带入当前场景开演
                     Game1.playSound("bigSelect");
+
+                    if (Game1.keyboardDispatcher.Subscriber == _intentInputBox)
+                        Game1.keyboardDispatcher.Subscriber = null;
+
+                    exitThisMenu(playSound: false);
+
                     if (CutsceneStorageService.Replay(cutscene, out string error))
                     {
                         Game1.addHUDMessage(new HUDMessage($"🎬 正在重播《{cutscene.Title}》", HUDMessage.achievement_type));
-                        exitThisMenu();
                     }
                     else
                     {

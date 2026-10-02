@@ -24,6 +24,13 @@ namespace ValleytalkReborn.Cutscene.Storage
         /// <summary>参演 NPC 内部名列表</summary>
         public List<string> ActorNames { get; set; } = new();
 
+        /// <summary>
+        /// 录制时各演员的站位（瓦片坐标与朝向）。
+        /// 回放时据此在当前场景复现开场站位：同图按录制坐标落位，跨图以玩家为锚点复现相对队形，
+        /// 实现与录制现场解耦的"录像式"回放。
+        /// </summary>
+        public List<ArchivedActorStance> ActorStances { get; set; } = new();
+
         /// <summary>用户意图或剧本基调提示词</summary>
         public string UserIntent { get; set; } = string.Empty;
 
@@ -32,5 +39,23 @@ namespace ValleytalkReborn.Cutscene.Storage
 
         /// <summary>动作数量</summary>
         public int ActionCount { get; set; }
+    }
+
+    /// <summary>
+    /// 归档演员站位记录：回放时的落位锚点
+    /// </summary>
+    public sealed class ArchivedActorStance
+    {
+        /// <summary>NPC 内部名</summary>
+        public string Name { get; set; } = string.Empty;
+
+        /// <summary>录制时的瓦片 X 坐标</summary>
+        public int TileX { get; set; }
+
+        /// <summary>录制时的瓦片 Y 坐标</summary>
+        public int TileY { get; set; }
+
+        /// <summary>录制时的朝向 (0=上, 1=右, 2=下, 3=左)</summary>
+        public int Facing { get; set; }
     }
 }
