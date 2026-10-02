@@ -489,7 +489,16 @@ namespace ValleytalkReborn.Cutscene
 
         private void UpdatePlaying(float dt)
         {
-            // 1. 维护参演 Actor 保活（关键：防止时间冻结时 NPC 物理更新被跳过）
+            // 1. 维护参演 Actor 保活与移动压制
+            HashSet<NPC> activelyMovingActors = new();
+            for (int i = 0; i < _activeActions.Count; i++)
+            {
+                if (_activeActions[i] is Actions.MoveToTileAction moveAction && moveAction.Actor != null)
+                {
+                    activelyMovingActors.Add(moveAction.Actor);
+                }
+            }
+
             foreach (var actor in _participatingActors)
             {
                 if (actor?.currentLocation != null)
@@ -497,6 +506,17 @@ namespace ValleytalkReborn.Cutscene
                     actor.forceUpdateTimer = 1000;
                     if (actor.movementPause > 0)
                         actor.movementPause = 0;
+
+                    // 核心压制：非主动移动动作中的参演演员，必须彻底定身压制，杜绝原版日程游走或物理穿墙
+                    if (!activelyMovingActors.Contains(actor))
+                    {
+                        if (actor.controller != null)
+                        {
+                            actor.controller = null;
+                            actor.Halt();
+                        }
+                        actor.isCharging = false;
+                    }
                 }
             }
 

@@ -19,9 +19,12 @@ namespace ValleytalkReborn.Cutscene
             try
             {
                 npc.Halt();
+                npc.controller = null;
+                npc.temporaryController = null;
+                npc.isCharging = false;
+                npc.addedSpeed = 0;
                 npc.movementPause = 0;
                 npc.doingEndOfRouteAnimation.Value = false;
-                npc.temporaryController = null;
                 npc.Sprite?.StopAnimation();
 
                 // 还原可能的精灵图拉伸尺寸（如待机动作改变了宽高）

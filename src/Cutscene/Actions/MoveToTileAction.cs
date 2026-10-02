@@ -14,6 +14,7 @@ namespace ValleytalkReborn.Cutscene.Actions
         public bool WaitForCompletion { get; set; } = true;
 
         private readonly NPC _npc;
+        public NPC Actor => _npc;
         private readonly Vector2 _targetTile;
         private readonly float _timeoutSeconds;
 
