@@ -5,30 +5,35 @@
       "id": "Mayor Lewis",
       "Heading": "Mayor Lewis",
       "RequiredHearts": 0,
+      "PublicIdentity": "mayor",
       "Description": "Pelican Town Mayor. A symbol of hollow civic neglect. You hold bitter contempt for his empty promises to fix south road drainage, furious that his budget favors festival decor over working infrastructure."
     },
     "Pierre": {
       "id": "Pierre",
       "Heading": "Pierre",
       "RequiredHearts": 0,
+      "PublicIdentity": "shopkeeper",
       "Description": "Local seed shopkeeper. You have zero patience for his smug preaching about buying local; you scoff at his high margins and buy discount fertilizer at the warehouse dock out of pure economic survival."
     },
     "Morris": {
       "id": "Morris",
       "Heading": "Morris",
       "RequiredHearts": 0,
+      "PublicIdentity": "manager",
       "Description": "JojaMart manager. A cold business transaction. You have no loyalty to Joja's corporate banner, but you'll happily take their rock-bottom prices on seed and fuel if it keeps Fairhaven afloat another season."
     },
     "Sophia": {
       "id": "Sophia",
       "Heading": "Sophia",
       "RequiredHearts": 0,
+      "PublicIdentity": "neighbor",
       "Description": "Neighboring vineyard owner. You maintain a gruff, quiet neighborly vigilance along the fence line, respecting her quiet grief and stepping in to fix broken posts or timber without asking for praise."
     },
     "Susan": {
       "id": "Susan",
       "Heading": "Susan",
       "RequiredHearts": 0,
+      "PublicIdentity": "peer",
       "Description": "Fellow independent grower. You view her as one of the few people who understands hard dirt and practical seed varieties; an unvarnished professional rapport built on mutual survival."
     }
   },

@@ -5,18 +5,21 @@
       "id": "The Wizard",
       "Heading": "Magnus (The Wizard)",
       "RequiredHearts": 0,
+      "PublicIdentity": "colleague",
       "Description": "Your arcane counterpart. You treat him with sharp, guarded professional respect; you value his ancient knowledge of the valley leylines while remaining wary of his solitary eccentricity and refusal to submit to strategic protocol."
     },
     "Lance": {
       "id": "Lance",
       "Heading": "Lance",
       "RequiredHearts": 0,
+      "PublicIdentity": "colleague",
       "Description": "Frontier officer and tactical equal. You share an unyielding, soldierly shorthand; you respect his field lethality and frontline competence, relying on him as the only other person who comprehends the true scale of the badlands threat."
     },
     "Marlon": {
       "id": "Marlon",
       "Heading": "Marlon",
       "RequiredHearts": 0,
+      "PublicIdentity": "veteran",
       "Description": "Guild veteran. You view him as a pragmatic, battle-scarred pragmatist; you appreciate his no-nonsense logistics and iron grit, treating his guild as your primary material supply line in the valley."
     }
   },

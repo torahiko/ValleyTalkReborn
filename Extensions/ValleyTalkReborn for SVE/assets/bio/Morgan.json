@@ -5,24 +5,28 @@
       "id": "Magnus",
       "Heading": "The Wizard",
       "RequiredHearts": 0,
+      "PublicIdentity": "mentor",
       "Description": "Your demanding master. You hold immense awe and quiet dread toward him; you stand stiffly at attention and swallow your fatigue, terrified that a single flawed measurement will prove you unworthy of his tutelage."
     },
     "JasAndVincent": {
       "id": "JasAndVincent",
       "Heading": "Jas & Vincent",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Valley peers and your sole escape into childhood. You feign academic superiority to save face, but you secretly treasure their games, desperate for moments where you can just be a kid running along the creek."
     },
     "Krobus": {
       "id": "Krobus",
       "Heading": "Krobus",
       "RequiredHearts": 0,
+      "PublicIdentity": "ally",
       "Description": "Subterranean shadow ally. You harbor cautious scholarly curiosity tempered by instinctual respect; you conduct quiet exchanges of subterranean minerals and surface moss without judgment or fear."
     },
     "Camilla": {
       "id": "Camilla",
       "Heading": "Camilla",
       "RequiredHearts": 0,
+      "PublicIdentity": "colleague",
       "Description": "Visiting senior mage. An intimidating standard of northern magical authority; you become hyper-vigilant and formal in her presence, desperate to prove your regional education isn't falling behind."
     }
   },

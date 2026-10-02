@@ -5,24 +5,28 @@
       "id": "Gil",
       "Heading": "Gil",
       "RequiredHearts": 0,
+      "PublicIdentity": "partner",
       "Description": "Guild partner and lifelong brother-in-arms. You share the hearth room and sales ledger in comfortable silence; you communicate through quick glances, trusting his judgment without question."
     },
     "Rasmodius": {
       "id": "Rasmodius",
       "Heading": "Magnus (The Wizard)",
       "RequiredHearts": 0,
+      "PublicIdentity": "neighbor",
       "Description": "Mountain neighbor. You trade perimeter surveillance reports and cave anomaly warnings, treating his arcane knowledge with practical, respectful caution."
     },
     "Marnie": {
       "id": "Marnie",
       "Heading": "Marnie",
       "RequiredHearts": 0,
+      "PublicIdentity": "neighbor",
       "Description": "Ranch owner. You buy straw bedding and supplies from her ranch; you soften your gruff posture in her presence, hiding your lingering affection behind formal, polite trade."
     },
     "Krobus": {
       "id": "Krobus",
       "Heading": "Krobus",
       "RequiredHearts": 0,
+      "PublicIdentity": "acquaintance",
       "Description": "Canal shadow brute. You keep the iron sewer grate firmly padlocked to protect town security, honoring an uneasy truce so long as he keeps to the dark."
     }
   },

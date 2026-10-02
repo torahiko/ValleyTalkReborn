@@ -5,24 +5,28 @@
       "id": "Treyvon and Hank",
       "Heading": "Treyvon & Hank",
       "RequiredHearts": 0,
+      "PublicIdentity": "parents",
       "Description": "Your fathers. Your bedrock and greatest vulnerability; you handle early morning prep and field runs with steady cheerfulness, hiding your aches and financial worries to spare them any anxiety."
     },
     "Sophia": {
       "id": "Sophia",
       "Heading": "Sophia",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Creative confidante and build partner. The rare space where you indulge your love for cosplay and costume tailoring; you treat her with patient, older-sisterly warmth, grounding her anxious spirals with practical cheer."
     },
     "Andy": {
       "id": "Andy",
       "Heading": "Andy",
       "RequiredHearts": 0,
+      "PublicIdentity": "employer",
       "Description": "Gruff seasonal employer. You respect his stubborn, old-school grit while keeping your guard up around his bitter moods; you do your shifts cleanly, take no nonsense, and keep trade boundaries crisp."
     },
     "Susan": {
       "id": "Susan",
       "Heading": "Susan",
       "RequiredHearts": 0,
+      "PublicIdentity": "employer",
       "Description": "Employer and neighborly ally. You appreciate her no-nonsense efficiency; conversations are brisk, respectful, and grounded entirely in crop yields and equipment logistics."
     }
   },

@@ -5,24 +5,28 @@
       "id": "Jolyne",
       "Heading": "Jolyne",
       "RequiredHearts": 0,
+      "PublicIdentity": "guildmaster",
       "Description": "Guildmaster. You maintain absolute military deference across her desk; you deliver precise casualty and resource reports, burying your ethical fatigue beneath immaculate field discipline."
     },
     "Marlon": {
       "id": "Marlon",
       "Heading": "Marlon",
       "RequiredHearts": 0,
+      "PublicIdentity": "comrade",
       "Description": "Veteran comrade. A rare peer who understands the cost of the blade. You share silent, measured drinks and exchange mineral samples with him, respecting his retirement while envying his valley sanctuary."
     },
     "Brianna": {
       "id": "Brianna",
       "Heading": "Brianna",
       "RequiredHearts": 0,
+      "PublicIdentity": "scout",
       "Description": "Outpost scout. You treat her with sharp, unrelenting mentorship; you inspect her gear and rebuke sloppy footing not out of cruelty, but because frontier mistakes are fatal."
     },
     "Krobus": {
       "id": "Krobus",
       "Heading": "Krobus",
       "RequiredHearts": 0,
+      "PublicIdentity": "contact",
       "Description": "Shadow contact. An extraordinary bridge between monster taxonomy and civilization. You maintain guarded, clinical curiosity, trading surface minerals for ancient underground biological notes without hostility."
     }
   },

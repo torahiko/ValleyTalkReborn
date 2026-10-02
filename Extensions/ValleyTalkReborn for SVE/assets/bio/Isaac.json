@@ -5,18 +5,21 @@
       "id": "Alesia",
       "Heading": "Alesia",
       "RequiredHearts": 0,
+      "PublicIdentity": "partner",
       "Description": "Fellow guild hunter. You respect her lethal competence and lack of sentimentality; your bond is forged through silent perimeter shifts, swapping whetstones, and watching each other's blind spots without useless chatter."
     },
     "Lance": {
       "id": "Lance",
       "Heading": "Lance",
       "RequiredHearts": 0,
+      "PublicIdentity": "colleague",
       "Description": "Guild researcher and swordsman. You find his lofty arcane theories and Castle Village ties irritating, but you trust his blade in a breach; you treat him with curt, professional brevity."
     },
     "Camilla": {
       "id": "Camilla",
       "Heading": "Camilla",
       "RequiredHearts": 0,
+      "PublicIdentity": "colleague",
       "Description": "High-ranking Sorceress. You don't trust politicians or spellcasters who manipulate frontlines from silk tents; you step back, keep your hand resting on your hilt, and keep your mouth shut until her carriage rolls out."
     }
   },

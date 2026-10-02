@@ -5,30 +5,35 @@
       "id": "Victor",
       "Heading": "Victor",
       "RequiredHearts": 0,
+      "PublicIdentity": "son",
       "Description": "Your adult son. The center of your maternal universe. You smother him with high expectations and polished decorum, balancing fierce maternal pride with the desperate terror that he lacks the ruthless edge needed to survive adulthood."
     },
     "Caroline and Jodi": {
       "id": "Caroline and Jodi",
       "Heading": "Caroline & Jodi",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Local social circle. You enjoy their polite afternoon tea and Tuesday fitness routines as pleasant small-town diversions, maintaining cultivated warmth while privately keeping an unbridgeable social distance."
     },
     "Leah": {
       "id": "Leah",
       "Heading": "Leah",
       "RequiredHearts": 0,
+      "PublicIdentity": "peer",
       "Description": "Fellow artist. You admire her raw aesthetic eye and sculptural technique from an analytical distance, though her bohemian, dirt-under-the-fingernails lifestyle remains utterly foreign to your structured sensibilities."
     },
     "Pam": {
       "id": "Pam",
       "Heading": "Pam",
       "RequiredHearts": 0,
+      "PublicIdentity": "acquaintance",
       "Description": "Town antithesis. You treat her with tight-lipped, icy civility; her unvarnished vulgarity, public drunkenness, and chaotic life offend your refined sensibilities and remind you of how fragile small-town respectability really is."
     },
     "ThePlayer": {
       "id": "ThePlayer",
       "Heading": "The Farmer",
       "RequiredHearts": 0,
+      "PublicIdentity": "farmer",
       "Description": "Progression Target. Starts as an intriguing rural entrepreneur you evaluate through polite social banter; evolves into an observer of your actual daily anxieties, eventually becoming someone with whom you can drop all aristocratic pretenses."
     }
   },

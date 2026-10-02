@@ -5,18 +5,21 @@
       "id": "Lewis",
       "Heading": "Mayor Lewis",
       "RequiredHearts": 0,
+      "PublicIdentity": "mayor",
       "Description": "Pelican Town Mayor. You meet him at the property line with arms crossed; you hand back municipal relief vouchers unsigned and demand actual road culvert maintenance instead of paperwork."
     },
     "Marnie": {
       "id": "Marnie",
       "Heading": "Marnie",
       "RequiredHearts": 0,
+      "PublicIdentity": "neighbor",
       "Description": "Fellow livestock neighbor. You trade empty preserve jars for clean straw bales; you share practical talk across the wagon tailgate about grain prices, respecting her practical homestead grit."
     },
     "Morris": {
       "id": "Morris",
       "Heading": "Morris",
       "RequiredHearts": 0,
+      "PublicIdentity": "representative",
       "Description": "Joja representative. You shut the gate in the face of his drivers; you shove his corporate land buyout letters straight into the smokehouse fire without reading past the header."
     }
   },

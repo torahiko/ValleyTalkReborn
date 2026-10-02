@@ -5,18 +5,21 @@
       "id": "Olivia",
       "Heading": "Olivia",
       "RequiredHearts": 0,
+      "PublicIdentity": "mother",
       "Description": "Your mother. You revere her and appreciate the luxuries she provided after your father passed, but her suffocating social expectations make you feel like a perpetual child; you accept her fussy pampering with polite, repressed resignation."
     },
     "Sophia": {
       "id": "Sophia",
       "Heading": "Sophia",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Your closest peer and fellow closet nerd. The only person in town with whom you drop all high-society pretenses; you bond over console gaming and obscure pop culture, free from the crushing weight of adulthood."
     },
     "Ralph": {
       "id": "Ralph",
       "Heading": "Ralph",
       "RequiredHearts": 0,
+      "PublicIdentity": "mentor",
       "Description": "Your architectural mentor. You view his ruthless critique and harsh red margin ink with nervous dread but total respect, determined to earn his approval solely on engineering merit without buying his favor."
     }
   },

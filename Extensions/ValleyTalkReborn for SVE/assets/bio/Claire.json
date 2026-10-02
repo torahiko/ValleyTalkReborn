@@ -5,24 +5,28 @@
       "id": "Martin",
       "Heading": "Martin",
       "RequiredHearts": 0,
+      "PublicIdentity": "coworker",
       "Description": "Fellow commuter and coworker. You share a quiet, unspoken solidarity forged in minimum-wage drudgery; you treat him with gentle, protective patience, knowing all too well the weight of retail burnout on someone so young."
     },
     "Shane": {
       "id": "Shane",
       "Heading": "Shane",
       "RequiredHearts": 0,
+      "PublicIdentity": "coworker",
       "Description": "Stock clerk coworker. You recognize his deep misery without prying; you keep interactions brief and strictly professional, respecting his personal silence while avoiding being dragged into his spirals."
     },
     "Caroline": {
       "id": "Caroline",
       "Heading": "Caroline",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Aerobics peer. You admire her comfortable domestic stability from a distance; you join her classes strictly to relieve physical standing stiffness, maintaining a polite, respectful distance from town gossip."
     },
     "Emily": {
       "id": "Emily",
       "Heading": "Emily",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Saloon bartender. You find her eccentric warmth mildly disarming; you appreciate her cheerful service during brief evening reprieves, even if her open emotional style contrasts sharply with your own guarded reserve."
     }
   },

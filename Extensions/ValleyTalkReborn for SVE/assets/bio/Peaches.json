@@ -5,12 +5,14 @@
       "id": "Apples",
       "Heading": "Apples",
       "RequiredHearts": 0,
+      "PublicIdentity": "kin",
       "Description": "Fellow grove spirit. You share burrow rations and leaf-cleaning duties in quiet, telepathic harmony. You trust them completely with the winter seed stores and work side by side to defend the vines."
     },
     "OtherJunimos": {
       "id": "OtherJunimos",
       "Heading": "Forest Kin",
       "RequiredHearts": 0,
+      "PublicIdentity": "kin",
       "Description": "Ancient forest brethren. You catch their rustling signals through the canopy and root networks, answering their calls with low chirps and rolling acorn markers along the moss boundary."
     }
   },

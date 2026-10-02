@@ -721,4 +721,50 @@ public class RelationshipAttitudeLensBuilderTests : IDisposable
             }
         }
     }
+
+    // ── BIO-001/SVE UT27: All 18 SVE character bio JSON cards parse successfully with non-empty PublicIdentity ──
+    [Fact]
+    public void UT27_AllSveCharacterBioCards_HaveNonEmptyPublicIdentityAndValidJson()
+    {
+        string sveBioDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "Extensions", "ValleyTalkReborn for SVE", "assets", "bio"));
+        if (!Directory.Exists(sveBioDir))
+            sveBioDir = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "Extensions", "ValleyTalkReborn for SVE", "assets", "bio"));
+        if (!Directory.Exists(sveBioDir))
+            sveBioDir = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "Extensions", "ValleyTalkReborn for SVE", "assets", "bio"));
+
+        Assert.True(Directory.Exists(sveBioDir), $"SVE Bio directory must exist at {sveBioDir}");
+
+        var jsonFiles = Directory.GetFiles(sveBioDir, "*.json")
+            .Where(f => !Path.GetFileName(f).StartsWith("#", StringComparison.Ordinal))
+            .ToList();
+
+        Assert.Equal(18, jsonFiles.Count);
+
+        foreach (string file in jsonFiles)
+        {
+            string fileName = Path.GetFileName(file);
+            string content = File.ReadAllText(file, Encoding.UTF8);
+            var bio = Newtonsoft.Json.JsonConvert.DeserializeObject<BioData>(content);
+
+            Assert.NotNull(bio);
+            Assert.False(string.IsNullOrWhiteSpace(bio.Biography), $"{fileName} must have a non-empty Biography");
+            Assert.NotNull(bio.Relationships);
+            Assert.NotEmpty(bio.Relationships);
+
+            foreach (var kvp in bio.Relationships)
+            {
+                string targetKey = kvp.Key;
+                var entry = kvp.Value;
+                Assert.NotNull(entry);
+                Assert.False(
+                    string.IsNullOrWhiteSpace(entry.PublicIdentity),
+                    $"{fileName} relationship entry '{targetKey}' must have a non-empty PublicIdentity");
+                Assert.True(
+                    entry.PublicIdentity.Length <= 48,
+                    $"{fileName} relationship entry '{targetKey}' PublicIdentity must be <= 48 chars");
+                Assert.DoesNotContain("\n", entry.PublicIdentity);
+                Assert.DoesNotContain("\r", entry.PublicIdentity);
+            }
+        }
+    }
 }

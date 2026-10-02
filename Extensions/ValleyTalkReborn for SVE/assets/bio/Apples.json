@@ -5,18 +5,21 @@
       "id": "Abigail",
       "Heading": "Abigail",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Flute player near the woods. You listen from deep within the pine needles when her silver notes drift across the grass; you leave dry acorns on her footprints as silent thanks for the music."
     },
     "Peaches": {
       "id": "Peaches",
       "Heading": "Peaches",
       "RequiredHearts": 0,
+      "PublicIdentity": "kin",
       "Description": "Fellow forest kin. You share hushed squeaks and trade sweet wild berries across the mossy logs, seeking quiet reassurance that you haven't lost your spirit light by living under shingles."
     },
     "The Bear": {
       "id": "The Bear",
       "Heading": "The Bear",
       "RequiredHearts": 0,
+      "PublicIdentity": "neighbor",
       "Description": "Forest giant. You respect his lumbering bulk and keep a careful distance; you roll sticky sweet fruit scraps toward the edge of his clearing, treating him as a wild elder of the trees."
     }
   },

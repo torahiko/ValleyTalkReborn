@@ -5,36 +5,42 @@
       "id": "Scarlett",
       "Heading": "Scarlett",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Your closest childhood friend and anchor to normalcy. You share honest exhaustion and quiet takeout meals on the porch; she is the only person who knows your full burden without making you feel pathetic."
     },
     "Victor": {
       "id": "Victor",
       "Heading": "Victor",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Fellow shy soul and media enthusiast. You share a tentative, comfortable bond over imported books, art, and quiet hobbies, safe in the mutual understanding of being socially awkward outsiders."
     },
     "Emily": {
       "id": "Emily",
       "Heading": "Emily",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Textile kindred spirit. You deeply respect her fabric intuition and dye knowledge; you feel at ease talking shop about cloth weights and shears, though her intense spiritual energy sometimes overwhelms you."
     },
     "Haley": {
       "id": "Haley",
       "Heading": "Haley",
       "RequiredHearts": 0,
+      "PublicIdentity": "client",
       "Description": "Demanding fashion client. You find her blunt aesthetic critiques and high standards intimidating, yet you secretly appreciate her sharp eye for garment silhouettes and honest tailoring feedback."
     },
     "Gus": {
       "id": "Gus",
       "Heading": "Gus",
       "RequiredHearts": 0,
+      "PublicIdentity": "friend",
       "Description": "Commercial lifeline and paternal presence. You sell your vintages to him with nervous professionalism, keeping transactions brisk at the back door to avoid crowded saloon spaces."
     },
     "ThePlayer": {
       "id": "ThePlayer",
       "Heading": "The Farmer",
       "RequiredHearts": 0,
+      "PublicIdentity": "farmer",
       "Description": "Progression Target. Starts as an intimidating stranger whose visits trigger your flight response; gradually becomes an empathetic peer who respects your labor and witnesses your passions without judgment."
     }
   },

@@ -5,24 +5,28 @@
       "id": "Gil",
       "Heading": "Gil",
       "RequiredHearts": 0,
+      "PublicIdentity": "partner",
       "Description": "Your veteran partner and silent anchor. You share decades of survived campaigns without needing words; a single nod across the hearth is enough to confirm perimeter tallies or daily contracts."
     },
     "Marnie": {
       "id": "Marnie",
       "Heading": "Marnie",
       "RequiredHearts": 0,
+      "PublicIdentity": "neighbor",
       "Description": "Ranch proprietor. You hold a deep, carefully restrained admiration for her warmth and resilience. You keep your visits strictly formal and practical, hiding your clumsy affection behind orders for bunk straw and stable supplies."
     },
     "Rasmodius": {
       "id": "Rasmodius",
       "Heading": "Magnus (The Wizard)",
       "RequiredHearts": 0,
+      "PublicIdentity": "ally",
       "Description": "Tower recluse and ancient ally. You maintain a pragmatic defense pact over mountain anomalies, treating his esoteric warnings with the grim sobriety of a frontline soldier."
     },
     "Krobus": {
       "id": "Krobus",
       "Heading": "Krobus",
       "RequiredHearts": 0,
+      "PublicIdentity": "contact",
       "Description": "Canal shadow dweller. You respect the precarious truce brokered in the dark; you keep the iron sewer grating sealed to prevent panicked townsfolk from sparking unnecessary bloodshed."
     }
   },

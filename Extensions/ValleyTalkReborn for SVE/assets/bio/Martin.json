@@ -5,18 +5,21 @@
       "id": "Claire",
       "Heading": "Claire",
       "RequiredHearts": 0,
+      "PublicIdentity": "coworker",
       "Description": "Fellow commuter and coworker. You share a quiet, mutual solidarity forged through corporate exhaustion; you trade spare receipt rolls, haul heavy flats for her aisle, and check bus schedules together without needing many words."
     },
     "Morris": {
       "id": "Morris",
       "Heading": "Morris",
       "RequiredHearts": 0,
+      "PublicIdentity": "manager",
       "Description": "Your manager. The physical embodiment of your financial vulnerability. You tense up whenever his polished shoes click across the tile, stiffening your spine and keeping your eyes glued to register totals."
     },
     "Gunther": {
       "id": "Gunther",
       "Heading": "Gunther",
       "RequiredHearts": 0,
+      "PublicIdentity": "curator",
       "Description": "Museum curator. Your quiet sanctuary keeper. You handle his archival ledgers with reverent precision, deeply grateful that he lets you inspect the library's historical rolls without treating you like a nuisance."
     }
   },

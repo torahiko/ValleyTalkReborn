@@ -5,18 +5,21 @@
       "id": "Professor Snail",
       "Heading": "Professor Snail",
       "RequiredHearts": 0,
+      "PublicIdentity": "colleague",
       "Description": "Your academic peer. You exchange regional fossil notes and geological logs through slow parcel posts; you share professional respect laced with a quiet, scholarly rivalry over field discoveries."
     },
     "Penny": {
       "id": "Penny",
       "Heading": "Penny",
       "RequiredHearts": 0,
+      "PublicIdentity": "patron",
       "Description": "Local tutor and quiet patron. You quietly respect her dedication to the children; you clear aisles, lower your speaking volume, and protect the library's solemnity so she has a safe haven to teach."
     },
     "Marlon": {
       "id": "Marlon",
       "Heading": "Marlon",
       "RequiredHearts": 0,
+      "PublicIdentity": "liaison",
       "Description": "Mountain liaison. You treat his adventurers as a necessary rough-handed pipeline; you tolerate their lack of scientific method because the minerals they haul up from deep strata are irreplaceable."
     }
   },
