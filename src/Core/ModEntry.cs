@@ -773,6 +773,26 @@ namespace ValleytalkReborn
                 }
             }
 
+            // 🎬 Phase 4: 驻足观摩浮标交互（E 键或操作键）
+            if (ValleytalkReborn.Cutscene.Serendipity.SerendipityBeacon.Instance.IsActive
+                && ValleytalkReborn.Cutscene.Serendipity.SerendipityBeacon.Instance.IsPlayerInRange()
+                && Context.IsPlayerFree)
+            {
+                if (e.Button == SButton.E || e.Button.IsActionButton())
+                {
+                    Helper.Input.Suppress(e.Button);
+                    var actors = ValleytalkReborn.Cutscene.Serendipity.SerendipityBeacon.Instance.TargetActors;
+                    var situation = ValleytalkReborn.Cutscene.Serendipity.SerendipityBeacon.Instance.Situation;
+                    ValleytalkReborn.Cutscene.Serendipity.SerendipityBeacon.Instance.Dismiss();
+
+                    if (actors != null && actors.Count > 0 && situation != null)
+                    {
+                        ValleytalkReborn.Cutscene.Serendipity.SerendipityManager.Instance.TriggerEncounter(actors, situation);
+                        return;
+                    }
+                }
+            }
+
             // 🎬 Phase 0/1 测试快捷键: F8 触发固定过场演示
             // 门禁：玩家完全自由（无事件/无菜单）且过场未在播
             if (e.Button == SButton.F8
@@ -1500,6 +1520,16 @@ namespace ValleytalkReborn
                     Log.Error($"[ValleyTalkReborn] Error cleaning InvitationManager: {ex.Message}");
                 }
 
+                // ★ 清理虚拟导演偶遇事件管理器
+                try
+                {
+                    ValleytalkReborn.Cutscene.Serendipity.SerendipityManager.Instance.OnReturnedToTitle();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[ValleyTalkReborn] Error cleaning SerendipityManager: {ex.Message}");
+                }
+
                 try
                 {
                     _llmMap = null;
@@ -1771,6 +1801,9 @@ namespace ValleytalkReborn
             {
                 DialogueBuilder.Instance.EnsureDailyEmotionState(character, character.StardewNpc);
             }
+
+            // 🎬 Phase 4: 偶遇微电影每日重置
+            ValleytalkReborn.Cutscene.Serendipity.SerendipityManager.Instance.OnDayStarted();
         }
 
         /// <summary>
@@ -1822,14 +1855,18 @@ namespace ValleytalkReborn
 
             // 🎬 Virtual Director: update cutscene state
             VirtualDirector.Instance?.Update(e);
+
+            // 🎬 Phase 4: Serendipity cutscene manager update
+            ValleytalkReborn.Cutscene.Serendipity.SerendipityManager.Instance.Update(e);
         }
 
         /// <summary>
-        /// 渲染虚拟导演的电影黑边遮罩
+        /// 渲染虚拟导演的电影黑边遮罩与偶遇剧情浮标
         /// </summary>
         private void OnRenderedHud(object sender, RenderedHudEventArgs e)
         {
             VirtualDirector.Instance?.DrawOverlay(e.SpriteBatch);
+            ValleytalkReborn.Cutscene.Serendipity.SerendipityManager.Instance.Draw(e.SpriteBatch);
         }
 
         /// <summary>

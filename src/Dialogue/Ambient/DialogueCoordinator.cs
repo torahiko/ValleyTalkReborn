@@ -26,6 +26,7 @@ internal sealed class DialogueCoordinator
     private readonly A2AModule _a2a;
     private readonly MainThreadOutputQueue _outputQueue;
     private readonly NpcReservationService _reservations;
+    internal NpcReservationService Reservations => _reservations;
 
     private bool _subscribed;
 

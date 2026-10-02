@@ -150,6 +150,12 @@ namespace ValleytalkReborn
         public bool EnableMemoryCompression { get; set; } = true;
         /// <summary>虚拟导演剧本生成是否启用深度思考模式（开启时大模型展开长链推理，关闭时走极速抑制模式）。</summary>
         public bool DirectorEnableThinking { get; set; } = false;
+        /// <summary>是否启用街头偶遇自主微电影（NPC 聚集时自发根据时空情境形成小故事）。</summary>
+        public bool EnableSerendipityCutscenes { get; set; } = true;
+        /// <summary>偶遇微电影触发模式："Prompt"（默认，NPC 旁显示悬浮微标按 E 驻足观摩，不打扰赶路）/ "Auto"（直接切入电影黑边开映）。</summary>
+        public string SerendipityTriggerMode { get; set; } = "Prompt";
+        /// <summary>每日偶遇剧情最大触发上限（默认 1 次，可选 0~3 次）。</summary>
+        public int SerendipityMaxDailyCount { get; set; } = 1;
         public int MemoryRecentCount { get; set; } = 10;
 
         /// <summary>

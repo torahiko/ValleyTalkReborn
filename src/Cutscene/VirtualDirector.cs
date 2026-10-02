@@ -826,6 +826,13 @@ namespace ValleytalkReborn.Cutscene
 
             Game1.displayHUD = true;
             Game1.viewportFreeze = false;
+
+            // 释放由虚拟导演持有的 NPC 预约
+            try
+            {
+                ModEntry.Coordinator?.Reservations?.ReleaseOwner("VirtualDirector");
+            }
+            catch { }
         }
 
         /// <summary>

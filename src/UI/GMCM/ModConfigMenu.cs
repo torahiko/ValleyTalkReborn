@@ -385,6 +385,38 @@ namespace ValleytalkReborn
                 setValue: value => ModEntry.Config.DirectorEnableThinking = value
             );
 
+            ConfigMenu.AddBoolOption(
+                mod: ModManifest,
+                name: () => GetUIString("configEnableSerendipity", "街头偶遇微电影 (Autonomous Cutscenes)"),
+                tooltip: () => GetUIString("configEnableSerendipityTooltip",
+                    "当村民在特定时空聚集时，自发触发充满生活气息的微剧场事件。"),
+                getValue: () => ModEntry.Config.EnableSerendipityCutscenes,
+                setValue: value => ModEntry.Config.EnableSerendipityCutscenes = value
+            );
+
+            ConfigMenu.AddTextOption(
+                mod: ModManifest,
+                name: () => GetUIString("configSerendipityTriggerMode", "偶遇触发方式 (Trigger Mode)"),
+                tooltip: () => GetUIString("configSerendipityTriggerModeTooltip",
+                    "【Prompt】NPC 旁悬浮提示，走近按 E 驻足观摩（推荐，绝不打扰赶路）；【Auto】直接平滑切入黑边开映。"),
+                getValue: () => ModEntry.Config.SerendipityTriggerMode,
+                setValue: value => ModEntry.Config.SerendipityTriggerMode = value,
+                allowedValues: new[] { "Prompt", "Auto" },
+                formatAllowedValue: v => v == "Prompt" ? "驻足观摩 (按E观看)" : "自动切入 (直接开演)"
+            );
+
+            ConfigMenu.AddNumberOption(
+                mod: ModManifest,
+                name: () => GetUIString("configSerendipityMaxDailyCount", "每日偶遇上限 (Max Daily Count)"),
+                tooltip: () => GetUIString("configSerendipityMaxDailyCountTooltip",
+                    "游戏内每日自发触发偶遇微电影的次数上限（推荐 1 次，可选 0~3 次）。"),
+                getValue: () => ModEntry.Config.SerendipityMaxDailyCount,
+                setValue: value => ModEntry.Config.SerendipityMaxDailyCount = value,
+                min: 0,
+                max: 3,
+                interval: 1
+            );
+
             ConfigMenu.AddTextOption(
                 mod: ModManifest,
                 name: () => GetUIString("configFrequencyGeneral", "Frequency of general lines"),
