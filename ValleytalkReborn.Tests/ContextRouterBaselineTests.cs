@@ -165,9 +165,9 @@ public class ContextRouterBaselineTests
             Assert.False(flags.IsMovementRequested);
             Assert.False(flags.IsGotoRequested);
             Assert.False(flags.IsSimpleGreeting);
-            Assert.False(flags.IncludeMemories);
             Assert.True(flags.IncludeEnvironment);
-            Assert.True(flags.IncludeFarmDetails);
+            Assert.False(flags.IncludeFarmDetails);
+            Assert.True(flags.IsColdOpening);
             Assert.True(flags.IncludeSafetyRules);
         }
     }

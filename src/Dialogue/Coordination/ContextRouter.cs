@@ -301,6 +301,7 @@ public sealed class ContextFlags
     public bool IncludeMemories = false;
     public bool IncludeEnvironment = true;
     public bool IncludeFarmDetails = true;
+    public bool IsColdOpening = false;
 
     // Dialogue intent
     public bool IsSimpleGreeting = false;
@@ -343,6 +344,7 @@ public sealed class ContextFlags
             IncludeMemories = IncludeMemories,
             IncludeEnvironment = IncludeEnvironment,
             IncludeFarmDetails = IncludeFarmDetails,
+            IsColdOpening = IsColdOpening,
 
             IsSimpleGreeting = IsSimpleGreeting,
             IsFarewell = IsFarewell,
@@ -1098,8 +1100,11 @@ public static class ContextRouter
         // 没有任何记忆时不注入 Memory Prompt。
         flags.IncludeMemories = memoryCount > 0;
 
+        bool isColdOpening = !isActiveTurn && !hasInput;
+        flags.IsColdOpening = isColdOpening;
+
         flags.IncludeEnvironment = true;
-        flags.IncludeFarmDetails = true;
+        flags.IncludeFarmDetails = !isColdOpening;
 
         flags.IncludeShortTermContext =
             ShouldIncludeShortTermContext(
@@ -1115,8 +1120,9 @@ public static class ContextRouter
 
         DebugLog(
             debugEnabled,
-            $"Context switches: memoryCount={memoryCount}, "
+            $"Context switches: isColdOpening={isColdOpening}, memoryCount={memoryCount}, "
             + $"includeMemories={flags.IncludeMemories}, "
+            + $"includeFarmDetails={flags.IncludeFarmDetails}, "
             + $"includeShortTerm={flags.IncludeShortTermContext}");
     }
 
@@ -1310,6 +1316,7 @@ public static class ContextRouter
         ModEntry.SMonitor.Log(
             $"[ContextRouter] Result npc={npcName} | "
             + $"Greeting={flags.IsSimpleGreeting} "
+            + $"ColdOpening={flags.IsColdOpening} "
             + $"Farewell={flags.IsFarewell} | "
             + $"Action={flags.IsActionRequested}"
             + $"({flags.RequestedAction}) "

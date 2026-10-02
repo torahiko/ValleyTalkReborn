@@ -171,7 +171,7 @@ internal static class PerceptionInjector
         return lines.Count > 1 ? string.Join("\n", lines) : string.Empty;
     }
 
-    public static string BuildLocalBlock(string npcName)
+    public static string BuildLocalBlock(string npcName, bool isColdOpening = false)
     {
         var perceptions = PerceptionManager.Instance.GetFilteredBucketFor(npcName, 3);
         if (perceptions == null || perceptions.Count == 0) return string.Empty;
@@ -190,6 +190,14 @@ internal static class PerceptionInjector
             .Where(p => p?.Key != "Gift" ||
                         (p.Key == "Gift" && !string.Equals(p.NpcName, npcName, StringComparison.OrdinalIgnoreCase)))
             .ToList();
+
+        // 🔒 冷启动剪枝：冷启动开场时过滤掉非危机的普通随身手持工具/物品（早于渲染、消费与疲劳标记）
+        if (isColdOpening)
+        {
+            otherPerceptions = otherPerceptions
+                .Where(p => p?.Key != "PlayerActiveItem")
+                .ToList();
+        }
 
         var lines = new List<string>();
 

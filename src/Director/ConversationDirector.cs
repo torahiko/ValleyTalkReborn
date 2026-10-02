@@ -309,7 +309,7 @@ public sealed class ConversationDirector : IConversationDirector
 
         if (whitelist.Contains(Tier2bBlockIds.LocalPerception))
             SetImpulse(impulses, Tier2bBlockIds.LocalPerception,
-                PerceptionInjector.BuildLocalBlock(character.Name));
+                PerceptionInjector.BuildLocalBlock(character.Name, flags?.IsColdOpening == true));
 
         // Emotion：遗留 try/catch 保留，异常 → 空串 + 日志；副作用 character.PendingEmotion = snapshot。
         if (whitelist.Contains(Tier2bBlockIds.Emotion)

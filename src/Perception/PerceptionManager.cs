@@ -119,9 +119,19 @@ internal class PerceptionManager
             }
         }
 
-        string resolvedLocation = locationName
-            ?? Game1.currentLocation?.Name
-            ?? string.Empty;
+        string resolvedLocation;
+        if (!string.IsNullOrEmpty(locationName))
+        {
+            resolvedLocation = locationName;
+        }
+        else if (isGossip || isLandmark)
+        {
+            resolvedLocation = string.Empty;
+        }
+        else
+        {
+            resolvedLocation = Game1.currentLocation?.Name ?? string.Empty;
+        }
 
         var entry = new PerceptionEntry
         {
@@ -323,7 +333,7 @@ internal class PerceptionManager
 
         lock (_lock)
         {
-            foreach (var e in _playerStateBucket.Concat(_activityBucket).Concat(_globalGossip))
+            foreach (var e in _playerStateBucket.Concat(_activityBucket))
             {
                 if (!string.IsNullOrEmpty(e.NpcName) && e.NpcName.Equals(npcName, StringComparison.OrdinalIgnoreCase))
                 {
@@ -349,7 +359,6 @@ internal class PerceptionManager
         {
             var validCandidates = _playerStateBucket
                 .Concat(_activityBucket)
-                .Concat(_globalGossip)
                 .Where(IsPerceptionTimeValid)
                 .Where(e => !e.IsConsumedBy(npcName))
                 .Where(e => PassesEyewitnessFilter(e, npcName, npcLocation))
