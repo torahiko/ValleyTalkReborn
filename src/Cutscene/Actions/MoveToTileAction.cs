@@ -23,6 +23,7 @@ namespace ValleytalkReborn.Cutscene.Actions
         private float _elapsedSeconds;
         private bool _hasRetried;
         private bool _isCompleted;
+        private float _effectiveTimeoutSeconds;
 
         public MoveToTileAction(NPC npc, Vector2 targetTile, float timeoutSeconds = 5f)
         {
@@ -38,6 +39,11 @@ namespace ValleytalkReborn.Cutscene.Actions
             _elapsedSeconds = 0f;
             _hasRetried = false;
             _isCompleted = false;
+
+            // 依据距离动态换算充裕的超时阈值（防止长距离正常行走向导看门狗误杀瞬移）
+            float distanceTiles = Vector2.Distance(_npc.Tile, _targetTile);
+            float distanceTimeout = distanceTiles * 0.8f + 4.0f;
+            _effectiveTimeoutSeconds = Math.Max(_timeoutSeconds, distanceTimeout);
 
             // 彻底打断日程动作与待机状态，解除 freezeMotion 封锁，注入正常寻路移速
             CutsceneActorHelper.WakeupActor(_npc);
@@ -67,10 +73,10 @@ namespace ValleytalkReborn.Cutscene.Actions
             _elapsedSeconds += (float)time.ElapsedGameTime.TotalSeconds;
 
             // 超时熔断：强制瞬移到位
-            if (_elapsedSeconds >= _timeoutSeconds)
+            if (_elapsedSeconds >= _effectiveTimeoutSeconds)
             {
                 ModEntry.SMonitor?.Log(
-                    $"[MoveToTileAction] Timeout watchdog triggered for {_npc.Name}, warping to target.",
+                    $"[MoveToTileAction] Timeout watchdog triggered for {_npc.Name} (elapsed {_elapsedSeconds:F1}s >= limit {_effectiveTimeoutSeconds:F1}s), warping to target.",
                     LogLevel.Debug);
                 WarpToTargetSafely();
                 return true;

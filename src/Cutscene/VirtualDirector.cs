@@ -46,9 +46,11 @@ namespace ValleytalkReborn.Cutscene
         private float _fadeAlpha = 0f;
         private const float FadeSpeed = 2.5f; // ~0.4s 渐出，~0.4s 渐入，总耗时约 0.8s 电影级过渡
 
-        // 视觉表现：相机平滑插值
+        // 视觉表现：相机平滑插值与动态跟随
+        private NPC _cameraTargetNpc;
+        private bool _cameraTargetPlayer;
         private Vector2? _cameraTargetPixel;
-        private const float CameraLerpSpeed = 0.08f;
+        private const float CameraLerpSpeed = 0.10f;
 
         // ESC 键状态
         private KeyboardState _lastKeyState;
@@ -146,6 +148,9 @@ namespace ValleytalkReborn.Cutscene
                 IsActive = true;
                 _phase = DirectorPhase.Playing;
                 _fadeAlpha = 0f;
+                _cameraTargetPixel = null;
+                _cameraTargetNpc = null;
+                _cameraTargetPlayer = false;
 
                 // 1. 捕获初始快照与唤醒参演角色
                 _snapshot = CutsceneSnapshot.Capture(actors ?? new List<NPC>());
@@ -229,6 +234,8 @@ namespace ValleytalkReborn.Cutscene
 
                 _blackBarHeight = 0f;
                 _cameraTargetPixel = null;
+                _cameraTargetNpc = null;
+                _cameraTargetPlayer = false;
                 _participatingActors.Clear();
                 _fadeAlpha = 0f;
                 _phase = DirectorPhase.Idle;
@@ -286,6 +293,8 @@ namespace ValleytalkReborn.Cutscene
             _participatingActors.Clear();
             _blackBarHeight = 0f;
             _cameraTargetPixel = null;
+            _cameraTargetNpc = null;
+            _cameraTargetPlayer = false;
             _fadeAlpha = 0f;
             _phase = DirectorPhase.Idle;
 
@@ -398,6 +407,8 @@ namespace ValleytalkReborn.Cutscene
                 // 2. 解除游戏视口冻结与相机跟随，恢复 HUD
                 RestoreGame();
                 _cameraTargetPixel = null;
+                _cameraTargetNpc = null;
+                _cameraTargetPlayer = false;
                 _blackBarHeight = 0f;
                 _participatingActors.Clear();
 
@@ -468,27 +479,76 @@ namespace ValleytalkReborn.Cutscene
                 _blackBarHeight = Math.Min(_blackBarHeight + BlackBarTransitionSpeed, TargetBarHeight);
             }
 
-            // 5. 相机平滑插值
-            if (_cameraTargetPixel.HasValue)
+            // 5. 相机平滑插值与动态跟随
+            Vector2? currentTargetPixel = null;
+            if (_cameraTargetNpc != null && _cameraTargetNpc.currentLocation != null)
+            {
+                currentTargetPixel = _cameraTargetNpc.Position + new Vector2(32f, 32f);
+            }
+            else if (_cameraTargetPlayer && Game1.player?.currentLocation != null)
+            {
+                currentTargetPixel = Game1.player.Position + new Vector2(32f, 32f);
+            }
+            else if (_cameraTargetPixel.HasValue)
+            {
+                currentTargetPixel = _cameraTargetPixel.Value;
+            }
+
+            if (currentTargetPixel.HasValue)
             {
                 var targetViewport = new Vector2(
-                    _cameraTargetPixel.Value.X - Game1.viewport.Width / 2f,
-                    _cameraTargetPixel.Value.Y - Game1.viewport.Height / 2f
+                    currentTargetPixel.Value.X - Game1.viewport.Width / 2f,
+                    currentTargetPixel.Value.Y - Game1.viewport.Height / 2f
                 );
 
-                // Clamp 边界限制：防止相机滑出地图
+                // Clamp 边界限制：防止相机滑出地图，并在小地图中居中
                 var currentLoc = Game1.currentLocation;
-                if (currentLoc != null && currentLoc.map != null)
+                if (currentLoc != null && currentLoc.map != null && currentLoc.map.Layers.Count > 0)
                 {
                     int mapWidthPixels = currentLoc.map.Layers[0].LayerWidth * 64;
                     int mapHeightPixels = currentLoc.map.Layers[0].LayerHeight * 64;
 
-                    targetViewport.X = Math.Clamp(targetViewport.X, 0, mapWidthPixels - Game1.viewport.Width);
-                    targetViewport.Y = Math.Clamp(targetViewport.Y, 0, mapHeightPixels - Game1.viewport.Height);
+                    if (mapWidthPixels < Game1.viewport.Width)
+                    {
+                        targetViewport.X = (mapWidthPixels - Game1.viewport.Width) / 2f;
+                    }
+                    else
+                    {
+                        targetViewport.X = Math.Clamp(targetViewport.X, 0, mapWidthPixels - Game1.viewport.Width);
+                    }
+
+                    if (mapHeightPixels < Game1.viewport.Height)
+                    {
+                        targetViewport.Y = (mapHeightPixels - Game1.viewport.Height) / 2f;
+                    }
+                    else
+                    {
+                        targetViewport.Y = Math.Clamp(targetViewport.Y, 0, mapHeightPixels - Game1.viewport.Height);
+                    }
                 }
 
-                Game1.viewport.X = (int)MathHelper.Lerp(Game1.viewport.X, targetViewport.X, CameraLerpSpeed);
-                Game1.viewport.Y = (int)MathHelper.Lerp(Game1.viewport.Y, targetViewport.Y, CameraLerpSpeed);
+                float deltaX = targetViewport.X - Game1.viewport.X;
+                float deltaY = targetViewport.Y - Game1.viewport.Y;
+
+                if (Math.Abs(deltaX) > 0.5f)
+                {
+                    float lerpedX = MathHelper.Lerp(Game1.viewport.X, targetViewport.X, CameraLerpSpeed);
+                    if ((int)Math.Round(lerpedX) == Game1.viewport.X)
+                    {
+                        lerpedX += Math.Sign(deltaX);
+                    }
+                    Game1.viewport.X = (int)Math.Round(lerpedX);
+                }
+
+                if (Math.Abs(deltaY) > 0.5f)
+                {
+                    float lerpedY = MathHelper.Lerp(Game1.viewport.Y, targetViewport.Y, CameraLerpSpeed);
+                    if ((int)Math.Round(lerpedY) == Game1.viewport.Y)
+                    {
+                        lerpedY += Math.Sign(deltaY);
+                    }
+                    Game1.viewport.Y = (int)Math.Round(lerpedY);
+                }
             }
 
             // 6. 驱动所有活跃动作（支持并发执行）
@@ -585,22 +645,93 @@ namespace ValleytalkReborn.Cutscene
         }
 
         /// <summary>
-        /// 设置相机对焦目标（由 CameraAction 调用）
+        /// 设置相机动态对焦目标 NPC（持续平滑跟随）
         /// </summary>
         public void SetCameraTarget(NPC npc)
         {
-            if (npc?.currentLocation != null)
-            {
-                _cameraTargetPixel = npc.Position + new Vector2(32f, 32f); // NPC 中心点
-            }
+            _cameraTargetNpc = npc;
+            _cameraTargetPlayer = false;
+            _cameraTargetPixel = null;
         }
 
         /// <summary>
-        /// 设置相机对焦坐标
+        /// 设置相机动态对焦玩家农夫（持续平滑跟随）
+        /// </summary>
+        public void SetCameraTargetPlayer()
+        {
+            _cameraTargetPlayer = true;
+            _cameraTargetNpc = null;
+            _cameraTargetPixel = null;
+        }
+
+        /// <summary>
+        /// 设置相机固定对焦坐标（瓦片）
         /// </summary>
         public void SetCameraTarget(Vector2 tilePosition)
         {
             _cameraTargetPixel = tilePosition * 64f + new Vector2(32f, 32f);
+            _cameraTargetNpc = null;
+            _cameraTargetPlayer = false;
+        }
+
+        /// <summary>
+        /// 判定当前相机视口中心是否已平滑接近对焦目标
+        /// </summary>
+        public bool HasCameraArrivedAtTarget(float thresholdPixels = 48f)
+        {
+            Vector2? targetPixel = null;
+            if (_cameraTargetNpc != null && _cameraTargetNpc.currentLocation != null)
+            {
+                targetPixel = _cameraTargetNpc.Position + new Vector2(32f, 32f);
+            }
+            else if (_cameraTargetPlayer && Game1.player?.currentLocation != null)
+            {
+                targetPixel = Game1.player.Position + new Vector2(32f, 32f);
+            }
+            else if (_cameraTargetPixel.HasValue)
+            {
+                targetPixel = _cameraTargetPixel.Value;
+            }
+
+            if (!targetPixel.HasValue) return true;
+
+            var currentCenter = new Vector2(
+                Game1.viewport.X + Game1.viewport.Width / 2f,
+                Game1.viewport.Y + Game1.viewport.Height / 2f
+            );
+
+            // 若地图较小或目标位于边缘，以夹紧后的预期中心作为到达依据
+            Vector2 expectedCenter = targetPixel.Value;
+            var currentLoc = Game1.currentLocation;
+            if (currentLoc != null && currentLoc.map != null && currentLoc.map.Layers.Count > 0)
+            {
+                int mapWidthPixels = currentLoc.map.Layers[0].LayerWidth * 64;
+                int mapHeightPixels = currentLoc.map.Layers[0].LayerHeight * 64;
+
+                if (mapWidthPixels < Game1.viewport.Width)
+                {
+                    expectedCenter.X = mapWidthPixels / 2f;
+                }
+                else
+                {
+                    float minX = Game1.viewport.Width / 2f;
+                    float maxX = mapWidthPixels - Game1.viewport.Width / 2f;
+                    expectedCenter.X = Math.Clamp(expectedCenter.X, minX, maxX);
+                }
+
+                if (mapHeightPixels < Game1.viewport.Height)
+                {
+                    expectedCenter.Y = mapHeightPixels / 2f;
+                }
+                else
+                {
+                    float minY = Game1.viewport.Height / 2f;
+                    float maxY = mapHeightPixels - Game1.viewport.Height / 2f;
+                    expectedCenter.Y = Math.Clamp(expectedCenter.Y, minY, maxY);
+                }
+            }
+
+            return Vector2.Distance(currentCenter, expectedCenter) <= thresholdPixels;
         }
 
         // ══════════════════════════════════════════════════════════════

@@ -141,8 +141,7 @@ namespace ValleytalkReborn.Cutscene.Compiler
                             if (string.Equals(actionIr.Target, "farmer", StringComparison.OrdinalIgnoreCase) ||
                                 string.Equals(actionIr.Target, "player", StringComparison.OrdinalIgnoreCase))
                             {
-                                if (Game1.player != null)
-                                    camAction = new CameraAction(Game1.player.Tile);
+                                camAction = new CameraAction(targetPlayer: true);
                             }
                             else if (!string.IsNullOrWhiteSpace(actionIr.Target))
                             {
