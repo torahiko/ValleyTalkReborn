@@ -336,6 +336,7 @@ namespace ValleytalkReborn
             helper.Events.Content.AssetRequested += OnAssetRequested;
 
            Config = Helper.ReadConfig<ModConfig>();
+            Config.NormalizeDailyDistillationConfig(Monitor);
 
             // ── 老版本配置自动迁移（一次性执行） ──
             if (Config.ProviderProfiles == null || Config.ProviderProfiles.Count == 0)
@@ -422,6 +423,7 @@ namespace ValleytalkReborn
 
             // ★ 装配对话协调器（唯一 SMAPI GameLoop 事件订阅入口）
             Config = Helper.ReadConfig<ModConfig>();
+            Config.NormalizeDailyDistillationConfig(Monitor);
             Config.ValidateDialogueConfig(Monitor);
 
             InitializeDialogueCoordinator();
@@ -471,6 +473,7 @@ namespace ValleytalkReborn
         public static void OnConfigChanged()
         {
             Config = SHelper.ReadConfig<ModConfig>();
+            Config.NormalizeDailyDistillationConfig(SMonitor);
 
             DialogueBuilder.Instance.Config = Config;
 

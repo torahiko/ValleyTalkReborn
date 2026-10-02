@@ -230,10 +230,136 @@ namespace ValleytalkReborn
         /// </summary>
         public bool EnableDateSystem { get; set; } = false;
 
+        // ── 日记蒸馏配置（DD401）：模式以规范字符串存储，未知值可进入明确的 Disabled 错误状态而不重置整份配置 ──
+        private string _dailyDistillMode = "Intraday";
+        private bool _dailyModeWasProvided;
+        private bool? _legacyDailyEnabled;
+
         /// <summary>
-        /// 时间线自动总结：每日 8 点判定，昨日互动 >=3 自动写日记。默认开启。
+        /// 日记蒸馏模式。规范值 "Disabled"（关闭）/ "Overnight"（隔夜整理）/ "Intraday"（日间即时），默认 "Intraday"。
+        /// 以字符串存储：未知模式可在规范化时进入明确的 Disabled 错误状态，而不导致整份配置重置。
         /// </summary>
-        public bool AutoSummarizeDaily { get; set; } = true;
+        public string DailyDistillMode
+        {
+            get => _dailyDistillMode;
+            set
+            {
+                _dailyDistillMode = value;
+                _dailyModeWasProvided = true;
+            }
+        }
+
+        /// <summary>
+        /// 触发每日日记蒸馏的昨日互动次数阈值（clamp 2–10，默认 3）。
+        /// </summary>
+        public int DailyDistillThreshold { get; set; } = 3;
+
+        /// <summary>
+        /// 单个 NPC 每日日记生成的 LLM 请求预算（clamp 1–5，默认 2），含首次生成与失败重试。
+        /// </summary>
+        public int DailyMaxRequestsPerNpc { get; set; } = 2;
+
+        /// <summary>
+        /// 【兼容代理】旧日记开关：运行期返回日记蒸馏是否开启（非 Disabled 即开启）。
+        /// 赋值 false 映射 Disabled；赋值 true 仅将 Disabled 映射回 Overnight，不覆盖既有开启模式。
+        /// 不再输出到 JSON；旧配置中的布尔值由 <see cref="LegacyAutoSummarizeDaily"/> 只读收集。
+        /// </summary>
+        [Newtonsoft.Json.JsonIgnore]
+        public bool AutoSummarizeDaily
+        {
+            get => !string.Equals(_dailyDistillMode, "Disabled", StringComparison.OrdinalIgnoreCase);
+            set
+            {
+                if (!value)
+                {
+                    _dailyDistillMode = "Disabled";
+                }
+                else if (string.Equals(_dailyDistillMode, "Disabled", StringComparison.OrdinalIgnoreCase))
+                {
+                    _dailyDistillMode = "Overnight";
+                }
+            }
+        }
+
+        /// <summary>
+        /// 旧版本 JSON 中的 AutoSummarizeDaily 布尔开关，仅收集用于迁移，永不输出（无 getter）。
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("AutoSummarizeDaily")]
+        private bool LegacyAutoSummarizeDaily
+        {
+            set => _legacyDailyEnabled = value;
+        }
+
+        /// <summary>
+        /// 反序列化后的日记模式统一决议（与 JSON 字段排列顺序无关）：
+        /// 存在新模式字段则用新值；否则旧 true→Overnight、旧 false→Disabled；两者都不存在→Intraday。
+        /// 决议后清空迁移暂存，不进行 I/O。
+        /// </summary>
+        [System.Runtime.Serialization.OnDeserialized]
+        private void OnDailyConfigDeserialized(System.Runtime.Serialization.StreamingContext context)
+        {
+            if (!_dailyModeWasProvided)
+            {
+                if (_legacyDailyEnabled.HasValue)
+                {
+                    _dailyDistillMode = _legacyDailyEnabled.Value ? "Overnight" : "Disabled";
+                }
+                else
+                {
+                    _dailyDistillMode = "Intraday";
+                }
+            }
+
+            _dailyModeWasProvided = false;
+            _legacyDailyEnabled = null;
+        }
+
+        /// <summary>
+        /// 规范化日记蒸馏配置：模式按忽略大小写映射规范值（未知或空值设 Disabled 并记录配置错误）；
+        /// 阈值 clamp 2–10、单 NPC 每日请求预算 clamp 1–5。有修改时记录原值与新值，其他配置保留。
+        /// </summary>
+        internal void NormalizeDailyDistillationConfig(IMonitor monitor)
+        {
+            if (string.IsNullOrWhiteSpace(_dailyDistillMode))
+            {
+                monitor?.Log("[ModConfig] DailyDistillMode is empty; falling back to 'Disabled' (valid: Disabled/Overnight/Intraday).", LogLevel.Warn);
+                _dailyDistillMode = "Disabled";
+            }
+            else
+            {
+                string trimmed = _dailyDistillMode.Trim();
+                string canonical =
+                    string.Equals(trimmed, "Overnight", StringComparison.OrdinalIgnoreCase) ? "Overnight" :
+                    string.Equals(trimmed, "Intraday", StringComparison.OrdinalIgnoreCase) ? "Intraday" :
+                    string.Equals(trimmed, "Disabled", StringComparison.OrdinalIgnoreCase) ? "Disabled" :
+                    null;
+
+                if (canonical == null)
+                {
+                    monitor?.Log($"[ModConfig] Unknown DailyDistillMode '{_dailyDistillMode}'; falling back to 'Disabled' (valid: Disabled/Overnight/Intraday).", LogLevel.Warn);
+                    _dailyDistillMode = "Disabled";
+                }
+                else if (!string.Equals(_dailyDistillMode, canonical, StringComparison.Ordinal))
+                {
+                    monitor?.Log($"[ModConfig] Normalized DailyDistillMode '{_dailyDistillMode}' → '{canonical}'.", LogLevel.Debug);
+                    _dailyDistillMode = canonical;
+                }
+            }
+
+            if (DailyDistillThreshold < 2 || DailyDistillThreshold > 10)
+            {
+                int original = DailyDistillThreshold;
+                DailyDistillThreshold = Clamp(DailyDistillThreshold, 2, 10);
+                monitor?.Log($"[ModConfig] DailyDistillThreshold {original} out of range [2, 10]; clamped to {DailyDistillThreshold}.", LogLevel.Warn);
+            }
+
+            if (DailyMaxRequestsPerNpc < 1 || DailyMaxRequestsPerNpc > 5)
+            {
+                int original = DailyMaxRequestsPerNpc;
+                DailyMaxRequestsPerNpc = Clamp(DailyMaxRequestsPerNpc, 1, 5);
+                monitor?.Log($"[ModConfig] DailyMaxRequestsPerNpc {original} out of range [1, 5]; clamped to {DailyMaxRequestsPerNpc}.", LogLevel.Warn);
+            }
+        }
 
         /// <summary>
         /// 时间线自动总结：每周一，近 7 天日记 >=3 自动浓缩周报。默认开启。

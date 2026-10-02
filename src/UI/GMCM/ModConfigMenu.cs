@@ -129,6 +129,9 @@ namespace ValleytalkReborn
                 reset: () => ModEntry.Config = new ModConfig(),
                 save: () =>
                 {
+                    // ★ 写盘前规范化日记蒸馏配置（未知模式/越界数值先落定为明确值）
+                    ModEntry.Config.NormalizeDailyDistillationConfig(modEntry.Monitor);
+
                     modEntry.Helper.WriteConfig(ModEntry.Config);
 
                     ModEntry.CleanupOnConfigToggle();
@@ -502,13 +505,49 @@ namespace ValleytalkReborn
                 text: () => GetUIString("configSectionAutoSummarize", "Timeline Auto-Summary")
             );
 
-            ConfigMenu.AddBoolOption(
+            // ── 日记蒸馏（DD401）：三选一模式 + 触发阈值 + 单 NPC 每日请求预算 ──
+            ConfigMenu.AddTextOption(
                 mod: ModManifest,
-                name: () => GetUIString("configAutoSummarizeDaily", "Auto-write Daily Diary"),
-                tooltip: () => GetUIString("configAutoSummarizeDailyTooltip",
-                    "Every day at 8:00, if yesterday's interactions >= 3, automatically write a diary entry."),
-                getValue: () => ModEntry.Config.AutoSummarizeDaily,
-                setValue: value => ModEntry.Config.AutoSummarizeDaily = value
+                name: () => GetUIString("configDailyDistillMode", "Daily Diary Distillation"),
+                tooltip: () => GetUIString("configDailyDistillModeTooltip",
+                    "How daily diary entries are produced: Intraday generates during the day, Overnight consolidates overnight, Disabled turns automatic daily diaries off."),
+                getValue: () => ModEntry.Config.DailyDistillMode,
+                setValue: value => ModEntry.Config.DailyDistillMode = value,
+                allowedValues: new[] { "Disabled", "Overnight", "Intraday" },
+                formatAllowedValue: value => value switch
+                {
+                    "Disabled" => GetUIString("configDailyDistillModeDisabled", "Disabled"),
+                    "Overnight" => GetUIString("configDailyDistillModeOvernight", "Overnight"),
+                    "Intraday" => GetUIString("configDailyDistillModeIntraday", "Intraday"),
+                    _ => value
+                },
+                fieldId: "DailyDistillMode"
+            );
+
+            ConfigMenu.AddNumberOption(
+                mod: ModManifest,
+                name: () => GetUIString("configDailyDistillThreshold", "Daily Diary Trigger Threshold"),
+                tooltip: () => GetUIString("configDailyDistillThresholdTooltip",
+                    "Minimum interactions with an NPC yesterday required before a daily diary is distilled (2-10)."),
+                getValue: () => ModEntry.Config.DailyDistillThreshold,
+                setValue: value => ModEntry.Config.DailyDistillThreshold = value,
+                min: 2,
+                max: 10,
+                interval: 1,
+                fieldId: "DailyDistillThreshold"
+            );
+
+            ConfigMenu.AddNumberOption(
+                mod: ModManifest,
+                name: () => GetUIString("configDailyMaxRequestsPerNpc", "Daily Request Budget per NPC"),
+                tooltip: () => GetUIString("configDailyMaxRequestsPerNpcTooltip",
+                    "Maximum LLM requests per NPC per day for daily diary generation, including the first generation and failed attempts; up to two final consolidation passes may run the next day. The 35-second window is a request limit, not a completion promise."),
+                getValue: () => ModEntry.Config.DailyMaxRequestsPerNpc,
+                setValue: value => ModEntry.Config.DailyMaxRequestsPerNpc = value,
+                min: 1,
+                max: 5,
+                interval: 1,
+                fieldId: "DailyMaxRequestsPerNpc"
             );
 
             ConfigMenu.AddBoolOption(
