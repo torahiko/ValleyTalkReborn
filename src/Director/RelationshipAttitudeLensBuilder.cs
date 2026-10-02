@@ -1,8 +1,9 @@
 // RelationshipAttitudeLensBuilder.cs
 // VT-SOCIAL-LENS-01 — Player-triggered NPC relationship attitude lens (Tier 2b).
-// Memory-only, per-request dynamic evaluation. Inspects only the latest player line;
-// emits one compact, explicitly attributed prompt block when it unambiguously
-// matches exactly one eligible relationship target. Zero Bio mutations, zero
+// REL-003 — Reactive enhancement: up to MaxInjectedLenses explicit targets per
+// player line, matched by base name aliases OR possessive kinship aliases
+// derived from the unified PublicIdentity label (e.g. "grandfather" -> "你爷爷").
+// Memory-only, per-request dynamic evaluation. Zero Bio mutations, zero
 // persistence, zero Harmony.
 
 using System;
@@ -15,6 +16,9 @@ namespace ValleytalkReborn;
 
 internal static class RelationshipAttitudeLensBuilder
 {
+    // 预算上限：单轮最多支持 2 个明确目标的即时透镜。
+    internal const int MaxInjectedLenses = 2;
+
     internal static string Build(Character character, DialogueContext context)
     {
         if (character == null) return string.Empty;
@@ -36,7 +40,8 @@ internal static class RelationshipAttitudeLensBuilder
 
         int hearts = context.Hearts ?? 0;
 
-        var matchedKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        // 命中记录：每个合法目标一条，IndexInText = 该目标全部别名在发言中的首次出现位置。
+        var matches = new List<MatchRecord>();
 
         foreach (var kvp in bio.Relationships)
         {
@@ -51,10 +56,10 @@ internal static class RelationshipAttitudeLensBuilder
             // 3. Visibility gate (null hearts treated as 0).
             if (hearts < entry.RequiredHearts) continue;
 
-            // Blank description → ineligible.
+            // Blank description → ineligible (skip this target, others unaffected).
             if (string.IsNullOrWhiteSpace(entry.Description)) continue;
 
-            // 4. Alias set.
+            // 4. Alias set: base names + possessive kinship aliases.
             var aliases = new List<string>();
             AddIfNonEmpty(aliases, key);
             AddIfNonEmpty(aliases, entry.id);
@@ -67,24 +72,87 @@ internal static class RelationshipAttitudeLensBuilder
                     AddIfNonEmpty(aliases, NpcNameLocalizer.GetZhName(entry.id));
             }
 
-            // 5. Match against player line.
-            if (aliases.Any(a => MatchesAlias(playerLine, a)))
-                matchedKeys.Add(key);
+            aliases.AddRange(GetPossessiveKinshipAliases(entry.PublicIdentity, isZh));
+
+            // 5. First-occurrence index across all aliases.
+            int indexInText = -1;
+            foreach (string alias in aliases)
+            {
+                int aliasIndex = FindAliasIndex(playerLine, alias);
+                if (aliasIndex >= 0 && (indexInText < 0 || aliasIndex < indexInText))
+                    indexInText = aliasIndex;
+            }
+
+            if (indexInText >= 0)
+                matches.Add(new MatchRecord(key, entry, indexInText));
         }
 
-        // 6. Strict disambiguation: exactly one distinct relationship key.
-        if (matchedKeys.Count != 1) return string.Empty;
+        // 6. Budget: order by first occurrence in the utterance (deterministic
+        //    ordinal tie-break), dedupe is inherent (one record per relationship
+        //    key), then cap at MaxInjectedLenses.
+        if (matches.Count == 0) return string.Empty;
 
-        string matchedKey = matchedKeys.First();
-        var matchedEntry = bio.Relationships[matchedKey];
-        if (matchedEntry == null || string.IsNullOrWhiteSpace(matchedEntry.Description))
-            return string.Empty;
+        var selected = matches
+            .OrderBy(m => m.IndexInText)
+            .ThenBy(m => m.Key, StringComparer.Ordinal)
+            .Take(MaxInjectedLenses)
+            .ToList();
 
+        return string.Join("\n\n", selected.Select(m => BuildLensBlock(m.Key, m.Entry, isZh)));
+    }
+
+    // ───────────────────────────────────────────────────────────────────────
+    // 所属亲属别名（REL-003）：把统一的 PublicIdentity 英文小写标签映射为
+    // "带第二人称所有格" 的召回别名（"你爷爷" / "your grandfather"）。
+    // 严格排除第一人称（"我爷爷"）与无所有格泛指（"爷爷/老爷子"）——
+    // 泛指多义词绝不绑定特定 NPC，第一人称亲属绝不命中说话者的亲族。
+    // 无匹配或空白标签返回空序列。
+    // ───────────────────────────────────────────────────────────────────────
+    internal static IEnumerable<string> GetPossessiveKinshipAliases(string publicIdentity, bool isZh)
+    {
+        switch (publicIdentity?.Trim().ToLowerInvariant())
+        {
+            case "grandfather":
+                return isZh
+                    ? new[] { "你外公", "你爷爷", "你的外公", "你的爷爷" }
+                    : new[] { "your grandfather", "your grandpa" };
+            case "grandmother":
+                return isZh
+                    ? new[] { "你外婆", "你奶奶", "你的外婆", "你的奶奶" }
+                    : new[] { "your grandmother", "your grandma" };
+            case "father":
+                return isZh
+                    ? new[] { "你爸", "你父亲", "你的父亲" }
+                    : new[] { "your father", "your dad" };
+            case "mother":
+                return isZh
+                    ? new[] { "你妈", "你母亲", "你的母亲" }
+                    : new[] { "your mother", "your mom" };
+            case "wife":
+                return isZh
+                    ? new[] { "你妻子", "你老婆", "你媳妇" }
+                    : new[] { "your wife" };
+            case "husband":
+                return isZh
+                    ? new[] { "你丈夫", "你老公" }
+                    : new[] { "your husband" };
+            case "dog":
+            case "family dog":
+                return isZh
+                    ? new[] { "你的狗", "你家的狗" }
+                    : new[] { "your dog" };
+            default:
+                return Array.Empty<string>();
+        }
+    }
+
+    private static string BuildLensBlock(string matchedKey, BioData.ListEntry entry, bool isZh)
+    {
         string targetDisplayName = NpcNameLocalizer.GetLocalizedName(matchedKey);
 
         string description = isZh
-            ? NpcNameLocalizer.LocalizeNamesInText(matchedEntry.Description)
-            : matchedEntry.Description;
+            ? NpcNameLocalizer.LocalizeNamesInText(entry.Description)
+            : entry.Description;
 
         if (isZh)
         {
@@ -96,17 +164,29 @@ internal static class RelationshipAttitudeLensBuilder
                 + "切勿机械背诵人设资料，严禁当作客观事实宣讲。\n"
                 + "</social_lens>";
         }
-        else
+
+        return "### [REACTIVE SOCIAL LENS: Player mentioned '" + targetDisplayName + "']\n"
+            + "<social_lens target=\"" + targetDisplayName + "\">\n"
+            + "- Your subjective stance toward them: " + description + "\n"
+            + "- Instruction: The player explicitly brought up this person in their latest line. "
+            + "Reflect this subjective attitude naturally in your response to project your own mood, "
+            + "values, or concerns. Do NOT recite this as an objective biographical entry "
+            + "or encyclopedic fact.\n"
+            + "</social_lens>";
+    }
+
+    private sealed class MatchRecord
+    {
+        internal MatchRecord(string key, BioData.ListEntry entry, int indexInText)
         {
-            return "### [REACTIVE SOCIAL LENS: Player mentioned '" + targetDisplayName + "']\n"
-                + "<social_lens target=\"" + targetDisplayName + "\">\n"
-                + "- Your subjective stance toward them: " + description + "\n"
-                + "- Instruction: The player explicitly brought up this person in their latest line. "
-                + "Reflect this subjective attitude naturally in your response to project your own mood, "
-                + "values, or concerns. Do NOT recite this as an objective biographical entry "
-                + "or encyclopedic fact.\n"
-                + "</social_lens>";
+            Key = key;
+            Entry = entry;
+            IndexInText = indexInText;
         }
+
+        internal string Key { get; }
+        internal BioData.ListEntry Entry { get; }
+        internal int IndexInText { get; }
     }
 
     private static void AddIfNonEmpty(List<string> list, string value)
@@ -114,17 +194,18 @@ internal static class RelationshipAttitudeLensBuilder
         if (!string.IsNullOrWhiteSpace(value)) list.Add(value);
     }
 
-    private static bool MatchesAlias(string text, string alias)
+    private static int FindAliasIndex(string text, string alias)
     {
         if (IsAscii(alias))
         {
             // Word-boundary regex prevents substring false positives (Sam/same, Gus/gust, Leo/leopard).
             string pattern = @"\b" + Regex.Escape(alias) + @"\b";
-            return Regex.IsMatch(text, pattern, RegexOptions.IgnoreCase);
+            Match match = Regex.Match(text, pattern, RegexOptions.IgnoreCase);
+            return match.Success ? match.Index : -1;
         }
 
         // CJK aliases: case-insensitive substring match.
-        return text.IndexOf(alias, StringComparison.OrdinalIgnoreCase) >= 0;
+        return text.IndexOf(alias, StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsAscii(string value)
