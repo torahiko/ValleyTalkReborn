@@ -35,6 +35,9 @@ internal static class LlmContextTypes
 
     /// <summary>人设编辑器：AI 润色与生成上下文基前缀（实际传入值为 {Editor}_Think / {Editor}_Fast）。</summary>
     public const string Editor = "BioEditor";
+
+    /// <summary>虚拟导演系统：动态剧情与分镜剧本生成上下文。</summary>
+    public const string Director = "Director";
 }
 
 internal abstract class Llm
@@ -265,6 +268,14 @@ internal abstract class Llm
             ? new GenerationParameters(temperature: 0.75f, topP: 0.9f, maxTokens: 8192, allowCustomBody: false)
             : new GenerationParameters(temperature: 0.75f, topP: 0.9f, maxTokens: 4096, allowCustomBody: false);
 
+        /// <summary>虚拟导演剧本生成预设：充分的 JSON Token 空间、富戏剧性、隔离自定义 Body。</summary>
+        public static GenerationParameters ForDirector() => new GenerationParameters(
+            temperature: 0.8f,
+            topP: 0.9f,
+            maxTokens: 2048,
+            allowCustomBody: false
+        );
+
         /// <summary>
         /// 玩家主对话：尊崇 ModConfig 单一数据源，允许极客 Custom Body 注入。
         /// - 所有参数从 ModEntry.Config 读取（玩家在 GMCM 高级页面设置）
@@ -323,6 +334,12 @@ internal abstract class Llm
         {
             ModEntry.SMonitor.Log("[Llm] Resolving parameters for Editor (bio polishing).", StardewModdingAPI.LogLevel.Debug);
             return GenerationParametersPresets.ForEditor(cacheContext.Contains("_Think", StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (string.Equals(cacheContext, LlmContextTypes.Director, StringComparison.OrdinalIgnoreCase))
+        {
+            ModEntry.SMonitor.Log("[Llm] Resolving parameters for Director (cutscene script generation).", StardewModdingAPI.LogLevel.Debug);
+            return GenerationParametersPresets.ForDirector();
         }
 
         // 主对话或其他未知上下文，统一回退到主对话配置

@@ -93,35 +93,48 @@ namespace ValleytalkReborn.Cutscene.Actions
             {
                 _stuckTicks++;
                 
-                if (_stuckTicks > 60 && !_hasRetried)
+                if (_stuckTicks > 45)
                 {
-                    ModEntry.SMonitor?.Log(
-                        $"[MoveToTileAction] {_npc.Name} stuck, attempting recovery and repath.",
-                        LogLevel.Debug);
-                    
-                    _hasRetried = true;
-                    
-                    // 尝试脱困与重寻路
-                    if (MovementPathfinding.TryRecoverStartingTile(_npc, _npc.currentLocation, radius: 4))
+                    if (!_hasRetried)
                     {
-                        CutsceneActorHelper.WakeupActor(_npc);
-                        if (MovementPathfinding.TryCreatePath(_npc, _npc.currentLocation, _targetTile, out _controller, out _))
+                        ModEntry.SMonitor?.Log(
+                            $"[MoveToTileAction] {_npc.Name} stuck, attempting recovery and repath.",
+                            LogLevel.Debug);
+                        
+                        _hasRetried = true;
+                        
+                        // 尝试脱困与重寻路
+                        if (MovementPathfinding.TryRecoverStartingTile(_npc, _npc.currentLocation, radius: 4))
                         {
-                            _npc.addedSpeed = 2;
-                            _npc.controller = _controller;
-                            _stuckTicks = 0;
-                            _lastTile = _npc.Tile;
-                            return false;
+                            CutsceneActorHelper.WakeupActor(_npc);
+                            if (MovementPathfinding.TryCreatePath(_npc, _npc.currentLocation, _targetTile, out _controller, out _))
+                            {
+                                _npc.addedSpeed = 2;
+                                _npc.controller = _controller;
+                                _stuckTicks = 0;
+                                _lastTile = _npc.Tile;
+                                return false;
+                            }
                         }
+                        
+                        // 重寻路失败：瞬移到位并标记完成
+                        ModEntry.SMonitor?.Log(
+                            $"[MoveToTileAction] Recovery failed, warping {_npc.Name} to target.",
+                            LogLevel.Debug);
+                        WarpToTargetSafely();
+                        _isCompleted = true;
+                        return true;
                     }
-                    
-                    // 重寻路失败：瞬移到位并标记完成
-                    ModEntry.SMonitor?.Log(
-                        $"[MoveToTileAction] Recovery failed, warping {_npc.Name} to target.",
-                        LogLevel.Debug);
-                    WarpToTargetSafely();
-                    _isCompleted = true;
-                    return true;
+                    else
+                    {
+                        // 已经重试过依然受阻（如玩家站在必经之路上）：在触发原版 3 秒流汗穿透前，立即熔断安全瞬移到位
+                        ModEntry.SMonitor?.Log(
+                            $"[MoveToTileAction] {_npc.Name} blocked repeatedly (player or dynamic obstacle), warping safely before vanilla charge-through.",
+                            LogLevel.Debug);
+                        WarpToTargetSafely();
+                        _isCompleted = true;
+                        return true;
+                    }
                 }
             }
             else
@@ -144,6 +157,10 @@ namespace ValleytalkReborn.Cutscene.Actions
 
             var safeTile = MovementPathfinding.FindNearestWalkableTile(loc, _targetTile, _npc, radius: 3);
             Game1.warpCharacter(_npc, loc.NameOrUniqueName, safeTile);
+            if (_npc != null)
+            {
+                _npc.isCharging = false;
+            }
         }
 
         public void Exit()
@@ -153,6 +170,7 @@ namespace ValleytalkReborn.Cutscene.Actions
                 _npc.Halt();
                 _npc.controller = null;
                 _npc.addedSpeed = 0;
+                _npc.isCharging = false;
             }
         }
     }

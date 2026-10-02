@@ -121,5 +121,39 @@ namespace ValleytalkReborn.Cutscene
                 ModEntry.SMonitor?.Log($"[CutsceneTest] PlayScript failed: {error}", LogLevel.Error);
             }
         }
+
+        /// <summary>
+        /// 运行 Phase 2 动态编剧剧本：由大语言模型根据当前场景与 NPC 人设即兴创作
+        /// </summary>
+        public static void RunDynamicCutscene(string userIntent = null)
+        {
+            if (!Context.IsWorldReady || Game1.player?.currentLocation == null)
+            {
+                ModEntry.SMonitor?.Log("[CutsceneTest] World not ready.", LogLevel.Warn);
+                return;
+            }
+
+            var currentLoc = Game1.player.currentLocation;
+
+            // 搜索玩家附近的村民（最多 2 名）
+            var nearbyNpcs = currentLoc.characters
+                .Where(n => n != null && n.IsVillager && Vector2.Distance(n.Tile, Game1.player.Tile) < 15f)
+                .OrderBy(n => Vector2.Distance(n.Tile, Game1.player.Tile))
+                .Take(2)
+                .ToList();
+
+            if (nearbyNpcs.Count == 0)
+            {
+                ModEntry.SMonitor?.Log("[CutsceneTest] No NPC found nearby (within 15 tiles).", LogLevel.Warn);
+                Game1.addHUDMessage(new HUDMessage("附近 15 格内没有 NPC 可参演即兴剧目！", HUDMessage.error_type));
+                return;
+            }
+
+            ModEntry.SMonitor?.Log(
+                $"[CutsceneTest] Initiating dynamic cutscene with {string.Join(", ", nearbyNpcs.Select(n => n.Name))}, intent: {userIntent ?? "(default)"}",
+                LogLevel.Info);
+
+            _ = Generation.CutsceneGeneratorService.GenerateAndPlayAsync(nearbyNpcs, userIntent);
+        }
     }
 }

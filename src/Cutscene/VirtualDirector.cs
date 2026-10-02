@@ -298,11 +298,52 @@ namespace ValleytalkReborn.Cutscene
             }
         }
 
+        private static readonly Queue<Action> _mainThreadQueue = new();
+        private static readonly object _queueLock = new();
+
+        /// <summary>
+        /// 跨线程派发任务到游戏主循环安全执行（如异步 AI 剧本生成后在主线程开演）
+        /// </summary>
+        public static void EnqueueMainThread(Action action)
+        {
+            if (action == null) return;
+            lock (_queueLock)
+            {
+                _mainThreadQueue.Enqueue(action);
+            }
+        }
+
         /// <summary>
         /// 每帧更新：驱动动作队列、维护演员保活、相机插值、黑屏过渡与 ESC 监听
         /// </summary>
         public void Update(UpdateTickedEventArgs e)
         {
+            // 优先消费跨线程派发的主线程任务
+            Action[] queued = null;
+            lock (_queueLock)
+            {
+                if (_mainThreadQueue.Count > 0)
+                {
+                    queued = _mainThreadQueue.ToArray();
+                    _mainThreadQueue.Clear();
+                }
+            }
+
+            if (queued != null)
+            {
+                foreach (var action in queued)
+                {
+                    try
+                    {
+                        action();
+                    }
+                    catch (Exception ex)
+                    {
+                        ModEntry.SMonitor?.Log($"[VirtualDirector] MainThread action failed: {ex}", LogLevel.Error);
+                    }
+                }
+            }
+
             if (!IsActive) return;
 
             try

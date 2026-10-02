@@ -664,6 +664,27 @@ namespace ValleytalkReborn
 
                 Monitor.Log($"[Test] status={result.Status}; candidates={result.Candidates.Count}; error={result.ErrorDetail}", LogLevel.Info);
             });
+
+        // ── 虚拟导演动态过场指令（Phase 2 新增）──
+        helper.ConsoleCommands.Add("vt_director_play", "Trigger AI cutscene generation. Usage: vt_director_play [optional intent prompt]",
+            (cmd, args) =>
+            {
+                if (!Context.IsWorldReady)
+                {
+                    Monitor.Log("Save not loaded.", LogLevel.Warn);
+                    return;
+                }
+
+                if (VirtualDirector.Instance?.IsActive == true)
+                {
+                    Monitor.Log("A cutscene is already running.", LogLevel.Warn);
+                    return;
+                }
+
+                string intent = args.Length > 0 ? string.Join(" ", args) : null;
+                Monitor.Log($"[Director] Triggering AI cutscene generation with intent: {(intent ?? "<auto>")}", LogLevel.Info);
+                CutsceneTestHelper.RunDynamicCutscene(intent);
+            });
         }
 
         /// <summary>
@@ -693,6 +714,7 @@ namespace ValleytalkReborn
             {
                 if (e.Button == SButton.Escape
                     || e.Button == SButton.F8
+                    || e.Button == SButton.F9
                     || e.Button == SButton.Space
                     || e.Button == SButton.MouseLeft
                     || e.Button == SButton.MouseRight)
@@ -708,13 +730,22 @@ namespace ValleytalkReborn
                 }
             }
 
-            // 🎬 Phase 0 测试快捷键: F8 触发过场演示
+            // 🎬 Phase 0/1 测试快捷键: F8 触发固定过场演示
             // 门禁：玩家完全自由（无事件/无菜单）且过场未在播
             if (e.Button == SButton.F8
                 && Context.IsPlayerFree
                 && VirtualDirector.Instance?.IsActive != true)
             {
                 CutsceneTestHelper.RunTestCutscene();
+            }
+
+            // 🎬 Phase 2 动态导演快捷键: F9 触发大模型动态过场生成
+            // 门禁：玩家完全自由（无事件/无菜单）且过场未在播
+            if (e.Button == SButton.F9
+                && Context.IsPlayerFree
+                && VirtualDirector.Instance?.IsActive != true)
+            {
+                CutsceneTestHelper.RunDynamicCutscene();
             }
 
             // 在任何点击事件触发时，记录此刻 ALT 键是否按下
