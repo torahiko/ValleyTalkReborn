@@ -259,7 +259,7 @@ public class PromptPlayerIdentityTests : IDisposable
             Assert.Equal("user", messages[messages.Count - 1].Role);
             Assert.Contains(PlayerName, trigger);
             Assert.Contains("农夫/Farmer", trigger);
-            Assert.Contains("不是两个角色", trigger);
+            Assert.Contains("都是同一个人", trigger);
             Assert.Contains("RESPONSE_TRIGGER", trigger);
         }
     }
