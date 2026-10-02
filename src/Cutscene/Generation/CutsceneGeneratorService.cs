@@ -13,12 +13,32 @@ namespace ValleytalkReborn.Cutscene.Generation
 {
     /// <summary>
     /// 虚拟导演异步编剧服务：串联感知、Prompt 构建、LLM 推理、编译器解析与主线程开演
+    /// 具备筹备态（时空锚定）、ESC 取消防御与场景变动安全门禁
     /// </summary>
     public static class CutsceneGeneratorService
     {
         private static bool _isGenerating = false;
+        private static CancellationTokenSource _generationCts;
 
         public static bool IsGenerating => _isGenerating;
+
+        /// <summary>
+        /// 中止当前正在进行的剧本构思，安全归还玩家自由
+        /// </summary>
+        public static void Cancel()
+        {
+            if (_isGenerating)
+            {
+                ModEntry.SMonitor?.Log("[CutsceneGenerator] User requested cancellation of cutscene generation.", LogLevel.Info);
+                _generationCts?.Cancel();
+                _isGenerating = false;
+
+                if (VirtualDirector.Instance?.IsActive != true && Game1.player != null)
+                {
+                    Game1.player.CanMove = true;
+                }
+            }
+        }
 
         /// <summary>
         /// 异步根据当前场景与角色人设生成微剧本并自动开演
@@ -58,6 +78,15 @@ namespace ValleytalkReborn.Cutscene.Generation
             try
             {
                 _isGenerating = true;
+                _generationCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+
+                // ★ 时空锚定：锁定玩家并播放沉思表情，保持与采样上下文时空绝对对齐，
+                // 防止构思期间玩家随意走远导致开演时发生严重时空错位与镜头挂空。
+                if (Game1.player != null)
+                {
+                    Game1.player.CanMove = false;
+                    Game1.player.doEmote(24); // 思考表情 (think)
+                }
 
                 // 1. 采集当下场景与演员上下文
                 var ctx = CutsceneContextCollector.Collect(actors, location);
@@ -67,7 +96,7 @@ namespace ValleytalkReborn.Cutscene.Generation
                 string userPrompt = CutscenePromptBuilder.BuildUserPrompt(ctx, userIntent);
 
                 ModEntry.SMonitor?.Log("[CutsceneGenerator] Requesting LLM for dynamic cutscene script...", LogLevel.Info);
-                Game1.addHUDMessage(new HUDMessage("🎬 虚拟导演正在构思即兴剧本中...", HUDMessage.newQuest_type));
+                Game1.addHUDMessage(new HUDMessage("🎬 虚拟导演正在构思即兴剧本中... (按 ESC 取消)", HUDMessage.newQuest_type));
 
                 // 3. 异步调用大模型推理（不卡主线程）
                 var llmResp = await Llm.Instance.RunInference(
@@ -79,6 +108,11 @@ namespace ValleytalkReborn.Cutscene.Generation
                     n_predict: 2048,
                     cacheContext: LlmContextTypes.Director
                 );
+
+                if (_generationCts.IsCancellationRequested)
+                {
+                    return (false, "剧本构思已被用户取消");
+                }
 
                 if (llmResp == null || string.IsNullOrWhiteSpace(llmResp.Text))
                 {
@@ -99,9 +133,18 @@ namespace ValleytalkReborn.Cutscene.Generation
                 // 5. 跨线程安全派发到主线程开演
                 VirtualDirector.EnqueueMainThread(() =>
                 {
-                    if (!Context.IsPlayerFree || VirtualDirector.Instance.IsActive)
+                    // 门禁：校验玩家是否依然在原场景（若中途发生了切图则熔断取消）
+                    if (Game1.player?.currentLocation != location)
                     {
-                        ModEntry.SMonitor?.Log("[CutsceneGenerator] Main thread busy when attempting to play cutscene.", LogLevel.Warn);
+                        ModEntry.SMonitor?.Log("[CutsceneGenerator] Player location changed during generation, aborting.", LogLevel.Warn);
+                        if (Game1.player != null) Game1.player.CanMove = true;
+                        return;
+                    }
+
+                    if (VirtualDirector.Instance.IsActive)
+                    {
+                        ModEntry.SMonitor?.Log("[CutsceneGenerator] Cutscene already active when attempting to play.", LogLevel.Warn);
+                        if (Game1.player != null) Game1.player.CanMove = true;
                         return;
                     }
 
@@ -120,6 +163,14 @@ namespace ValleytalkReborn.Cutscene.Generation
             finally
             {
                 _isGenerating = false;
+                _generationCts?.Dispose();
+                _generationCts = null;
+
+                // 若因报错或取消未能成功拉起演出，立刻归还玩家控制权
+                if (VirtualDirector.Instance?.IsActive != true && Game1.player != null)
+                {
+                    Game1.player.CanMove = true;
+                }
             }
         }
     }

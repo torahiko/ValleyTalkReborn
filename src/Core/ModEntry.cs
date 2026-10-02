@@ -730,6 +730,23 @@ namespace ValleytalkReborn
                 }
             }
 
+            // 🎬 剧本构思阶段：监听 ESC 快速取消构思并释放玩家，抑制其余输入
+            if (ValleytalkReborn.Cutscene.Generation.CutsceneGeneratorService.IsGenerating)
+            {
+                if (e.Button == SButton.Escape)
+                {
+                    Helper.Input.Suppress(e.Button);
+                    ValleytalkReborn.Cutscene.Generation.CutsceneGeneratorService.Cancel();
+                    Game1.addHUDMessage(new HUDMessage("🎬 即兴剧本构思已取消", HUDMessage.error_type));
+                    return;
+                }
+                else if (e.Button == SButton.Space || e.Button == SButton.MouseLeft || e.Button == SButton.MouseRight || e.Button == SButton.F9)
+                {
+                    Helper.Input.Suppress(e.Button);
+                    return;
+                }
+            }
+
             // 🎬 Phase 0/1 测试快捷键: F8 触发固定过场演示
             // 门禁：玩家完全自由（无事件/无菜单）且过场未在播
             if (e.Button == SButton.F8
@@ -740,10 +757,11 @@ namespace ValleytalkReborn
             }
 
             // 🎬 Phase 2 动态导演快捷键: F9 触发大模型动态过场生成
-            // 门禁：玩家完全自由（无事件/无菜单）且过场未在播
+            // 门禁：玩家完全自由（无事件/无菜单）且过场未在播且未处于构思态
             if (e.Button == SButton.F9
                 && Context.IsPlayerFree
-                && VirtualDirector.Instance?.IsActive != true)
+                && VirtualDirector.Instance?.IsActive != true
+                && !ValleytalkReborn.Cutscene.Generation.CutsceneGeneratorService.IsGenerating)
             {
                 CutsceneTestHelper.RunDynamicCutscene();
             }

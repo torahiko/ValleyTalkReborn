@@ -167,6 +167,14 @@ namespace ValleytalkReborn.Cutscene
                 // 2. 压制游戏原生系统
                 SuppressGame();
 
+                // 2.5 智能默认舞台焦点（Auto Stage Framing）：
+                // 绝不能默认留在玩家身上！开演首帧默认将镜头推向主要参演角色，
+                // 后续动作若有明确的 CameraAction 将自然接管并覆盖此默认目标。
+                if (_participatingActors.Count > 0)
+                {
+                    SetCameraTarget(_participatingActors[0]);
+                }
+
                 // 3. 加载动作队列并派发首批动作（支持并发启动）
                 _activeActions.Clear();
                 _actionQueue.Clear();
