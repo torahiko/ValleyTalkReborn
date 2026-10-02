@@ -623,6 +623,323 @@ internal class MemoryManager : IMemoryProvider
         return MemoryOperationResult.Success;
     }
 
+    /// <summary>
+    /// DD404：Daily 专用比较提交（CAS）。重放识别优先于容量/重复/旧hash检查；
+    /// 建立字典与列表副本及被更新条目的属性副本，WriteSaveData 成功后才发布副本
+    /// （Copy-on-Write）。不调用吞掉异常的 SaveTimeline；不迁移全局存储、不扩容、
+    /// 不自动淘汰，只操作 MemoryTier.Daily。
+    /// </summary>
+    internal DailyTimelineCommitResult CommitDailyTimeline(DailyTimelineCommitRequest request)
+    {
+        if (request == null
+            || string.IsNullOrWhiteSpace(request.NpcName)
+            || string.IsNullOrWhiteSpace(request.EntryId)
+            || request.TargetDay <= 0
+            || string.IsNullOrWhiteSpace(request.NewContent)
+            || request.NewContent.Length > MaxMemoryLength)
+        {
+            ModEntry.SMonitor?.Log(
+                "[DailyDistill] CommitDailyTimeline rejected: request must carry non-empty NpcName/EntryId, positive TargetDay and NewContent within MaxMemoryLength.",
+                LogLevel.Error);
+            return new DailyTimelineCommitResult
+            {
+                Status = DailyTimelineCommitStatus.Invalid,
+                EntryId = request?.EntryId,
+                ErrorDetail = "Invalid request: NpcName/EntryId empty, TargetDay non-positive or NewContent missing/over-length."
+            };
+        }
+
+        string newHash = DailyDistillationSnapshotBuilder.HashText(request.NewContent);
+
+        if (!Context.IsWorldReady || !Context.IsMainPlayer || ModEntry.SHelper == null)
+        {
+            ModEntry.SMonitor?.Log(
+                "[DailyDistill] CommitDailyTimeline skipped: save not ready (worldReady/mainPlayer/helper).",
+                LogLevel.Debug);
+            return new DailyTimelineCommitResult
+            {
+                Status = DailyTimelineCommitStatus.Unavailable,
+                EntryId = request.EntryId,
+                ContentHash = newHash,
+                ErrorDetail = "Save not ready: world not ready, not main player or helper missing."
+            };
+        }
+
+        if (_loadFailed)
+        {
+            ModEntry.SMonitor?.Log(
+                "[DailyDistill] CommitDailyTimeline refused: last load failed, refusing to overwrite SaveData.",
+                LogLevel.Error);
+            return new DailyTimelineCommitResult
+            {
+                Status = DailyTimelineCommitStatus.Unavailable,
+                EntryId = request.EntryId,
+                ContentHash = newHash,
+                ErrorDetail = "Last load failed; refusing to overwrite SaveData."
+            };
+        }
+
+        if (!IsLoaded)
+        {
+            ModEntry.SMonitor?.Log(
+                "[DailyDistill] CommitDailyTimeline skipped: memory not loaded.",
+                LogLevel.Debug);
+            return new DailyTimelineCommitResult
+            {
+                Status = DailyTimelineCommitStatus.Unavailable,
+                EntryId = request.EntryId,
+                ContentHash = newHash,
+                ErrorDetail = "MemoryManager is not loaded."
+            };
+        }
+
+        bool hasList = _timelineMemories.TryGetValue(request.NpcName, out var existing);
+        var dayEntries = existing?
+            .Where(m => m != null && m.Tier == MemoryTier.Daily && m.CreatedDay == request.TargetDay)
+            .ToList() ?? new List<MemoryEntry>();
+        MemoryEntry updateTarget = null;
+
+        // ── 重放识别（优先于容量、重复正文和旧hash检查）──
+        if (hasList && dayEntries.Count == 1)
+        {
+            var single = dayEntries[0];
+            if (string.Equals(single.Id, request.EntryId, StringComparison.Ordinal)
+                && string.Equals(
+                    DailyDistillationSnapshotBuilder.HashText(single.Content),
+                    newHash,
+                    StringComparison.Ordinal))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[DailyDistill] CommitDailyTimeline Unchanged [{request.NpcName}] day {request.TargetDay}: identical content already present.",
+                    LogLevel.Debug);
+                return new DailyTimelineCommitResult
+                {
+                    Status = DailyTimelineCommitStatus.Unchanged,
+                    EntryId = single.Id,
+                    ContentHash = newHash
+                };
+            }
+        }
+
+        // ── 创建分支：目标日无卡片、ID未占用、Daily未满、正文不重复 ──
+        if (request.IsCreate)
+        {
+            if (dayEntries.Count != 0)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[DailyDistill] CommitDailyTimeline Conflict [{request.NpcName}] day {request.TargetDay}: day already has {dayEntries.Count} daily entry(ies).",
+                    LogLevel.Info);
+                return new DailyTimelineCommitResult
+                {
+                    Status = DailyTimelineCommitStatus.Conflict,
+                    EntryId = request.EntryId,
+                    ContentHash = newHash,
+                    ErrorDetail = $"Target day already has {dayEntries.Count} daily entry(ies)."
+                };
+            }
+
+            if (existing != null && existing.Any(m =>
+                    m != null && string.Equals(m.Id, request.EntryId, StringComparison.Ordinal)))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[DailyDistill] CommitDailyTimeline Conflict [{request.NpcName}]: entry id {request.EntryId} already used by this NPC's timeline.",
+                    LogLevel.Info);
+                return new DailyTimelineCommitResult
+                {
+                    Status = DailyTimelineCommitStatus.Conflict,
+                    EntryId = request.EntryId,
+                    ContentHash = newHash,
+                    ErrorDetail = "Entry id already used by this NPC's timeline."
+                };
+            }
+
+            int dailyCount = existing?.Count(m => m != null && m.Tier == MemoryTier.Daily) ?? 0;
+            if (dailyCount >= GetTierCapacity(MemoryTier.Daily))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[DailyDistill] CommitDailyTimeline CapacityFull [{request.NpcName}]: {dailyCount} daily entries at limit.",
+                    LogLevel.Info);
+                return new DailyTimelineCommitResult
+                {
+                    Status = DailyTimelineCommitStatus.CapacityFull,
+                    EntryId = request.EntryId,
+                    ContentHash = newHash,
+                    ErrorDetail = $"Daily tier at capacity ({dailyCount}/{GetTierCapacity(MemoryTier.Daily)})."
+                };
+            }
+
+            if (existing != null && existing.Any(m =>
+                    m != null && m.Tier == MemoryTier.Daily
+                    && string.Equals(m.Content, request.NewContent, StringComparison.OrdinalIgnoreCase)))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[DailyDistill] CommitDailyTimeline Duplicate [{request.NpcName}]: identical daily content already present.",
+                    LogLevel.Info);
+                return new DailyTimelineCommitResult
+                {
+                    Status = DailyTimelineCommitStatus.Duplicate,
+                    EntryId = request.EntryId,
+                    ContentHash = newHash,
+                    ErrorDetail = "Identical daily content already present."
+                };
+            }
+        }
+        else
+        {
+            // ── 更新分支：目标日恰好1条、ID匹配、旧正文hash匹配 ──
+            if (dayEntries.Count != 1)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[DailyDistill] CommitDailyTimeline Conflict [{request.NpcName}] day {request.TargetDay}: expected exactly 1 daily entry, found {dayEntries.Count}.",
+                    LogLevel.Info);
+                return new DailyTimelineCommitResult
+                {
+                    Status = DailyTimelineCommitStatus.Conflict,
+                    EntryId = request.EntryId,
+                    ContentHash = newHash,
+                    ErrorDetail = $"Target day has {dayEntries.Count} daily entry(ies), expected exactly 1."
+                };
+            }
+
+            var target = dayEntries[0];
+            if (!string.Equals(target.Id, request.EntryId, StringComparison.Ordinal))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[DailyDistill] CommitDailyTimeline Conflict [{request.NpcName}] day {request.TargetDay}: entry id mismatch (owned {target.Id}).",
+                    LogLevel.Info);
+                return new DailyTimelineCommitResult
+                {
+                    Status = DailyTimelineCommitStatus.Conflict,
+                    EntryId = request.EntryId,
+                    ContentHash = newHash,
+                    ErrorDetail = $"Entry id mismatch: target day is owned by {target.Id}."
+                };
+            }
+
+            if (!string.Equals(
+                    DailyDistillationSnapshotBuilder.HashText(target.Content),
+                    request.ExpectedContentHash ?? string.Empty,
+                    StringComparison.Ordinal))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[DailyDistill] CommitDailyTimeline Conflict [{request.NpcName}] day {request.TargetDay}: content hash mismatch.",
+                    LogLevel.Info);
+                return new DailyTimelineCommitResult
+                {
+                    Status = DailyTimelineCommitStatus.Conflict,
+                    EntryId = request.EntryId,
+                    ContentHash = newHash,
+                    ErrorDetail = "Content hash mismatch: entry was edited or is not the expected revision."
+                };
+            }
+
+            if (existing.Any(m =>
+                    m != null && !string.Equals(m.Id, request.EntryId, StringComparison.Ordinal)
+                    && m.Tier == MemoryTier.Daily
+                    && string.Equals(m.Content, request.NewContent, StringComparison.OrdinalIgnoreCase)))
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[DailyDistill] CommitDailyTimeline Duplicate [{request.NpcName}]: another daily entry already has this content.",
+                    LogLevel.Info);
+                return new DailyTimelineCommitResult
+                {
+                    Status = DailyTimelineCommitStatus.Duplicate,
+                    EntryId = request.EntryId,
+                    ContentHash = newHash,
+                    ErrorDetail = "Another daily entry already has this content."
+                };
+            }
+
+            // 目标条目仅作引用捕获，属性副本延迟到副本列表构建阶段（不改已发布列表）
+            updateTarget = target;
+        }
+
+        // ── 副本构建：字典副本 + 目标NPC列表副本 + 被更新条目的属性副本；全程不改已发布列表 ──
+        var newDict = new Dictionary<string, List<MemoryEntry>>(_timelineMemories, StringComparer.OrdinalIgnoreCase);
+        var newList = hasList ? new List<MemoryEntry>(existing) : new List<MemoryEntry>();
+
+        if (request.IsCreate)
+        {
+            // 沿用现有 Daily 建立规则：Source/类型/类别/重要度与 AddTimelineMemory 一致，日期与标签基于 TargetDay
+            var entry = new MemoryEntry
+            {
+                Id = request.EntryId,
+                NpcName = request.NpcName,
+                Content = request.NewContent,
+                CreatedAt = DateTime.Now,
+                CreatedDay = request.TargetDay,
+                Source = "Timeline",
+                Category = MemoryCategory.Fact,
+                Type = MemoryType.Fact,
+                Tier = MemoryTier.Daily,
+                DateLabel = GenerateDateLabel(MemoryTier.Daily, GameDayToStardewTime(request.TargetDay)),
+                Importance = 3
+            };
+            newList.Insert(0, entry);
+        }
+        else
+        {
+            // 保留 Id/CreatedDay/CreatedAt/DateLabel 及其他属性，仅改 Content
+            int index = newList.FindIndex(m => ReferenceEquals(m, updateTarget));
+            var copy = new MemoryEntry
+            {
+                Id = updateTarget.Id,
+                NpcName = updateTarget.NpcName,
+                Content = request.NewContent,
+                CreatedAt = updateTarget.CreatedAt,
+                Source = updateTarget.Source,
+                Category = updateTarget.Category,
+                Type = updateTarget.Type,
+                Importance = updateTarget.Importance,
+                CreatedDay = updateTarget.CreatedDay,
+                ExpireDay = updateTarget.ExpireDay,
+                TriggerLocation = updateTarget.TriggerLocation,
+                TargetDayHint = updateTarget.TargetDayHint,
+                IsFulfilled = updateTarget.IsFulfilled,
+                LastPromptedDay = updateTarget.LastPromptedDay,
+                ArchivedAt = updateTarget.ArchivedAt,
+                Tier = updateTarget.Tier,
+                DateLabel = updateTarget.DateLabel,
+                ArchiveReason = updateTarget.ArchiveReason,
+                AutoArchive = updateTarget.AutoArchive
+            };
+            newList[index] = copy;
+        }
+
+        newDict[request.NpcName] = newList;
+
+        // ── 直接写既有 SaveData 权威（不调用吞异常的 SaveTimeline）──
+        try
+        {
+            ModEntry.SHelper.Data.WriteSaveData(TimelineSaveDataKey, newDict);
+        }
+        catch (Exception ex)
+        {
+            ModEntry.SMonitor?.Log(
+                $"[DailyDistill] CommitDailyTimeline StorageFailed [{request.NpcName}] day {request.TargetDay}: {ex.Message}",
+                LogLevel.Error);
+            return new DailyTimelineCommitResult
+            {
+                Status = DailyTimelineCommitStatus.StorageFailed,
+                EntryId = request.EntryId,
+                ContentHash = newHash,
+                ErrorDetail = ex.Message
+            };
+        }
+
+        // ── 成功后才发布副本（Copy-on-Write）；此返回不承诺跨存储物理原子性 ──
+        _timelineMemories = newDict;
+        ModEntry.SMonitor?.Log(
+            $"[DailyDistill] CommitDailyTimeline Applied [{request.NpcName}] day {request.TargetDay}: {TrimForLog(request.NewContent)}",
+            LogLevel.Info);
+        return new DailyTimelineCommitResult
+        {
+            Status = DailyTimelineCommitStatus.Applied,
+            EntryId = request.EntryId,
+            ContentHash = newHash
+        };
+    }
+
     public bool RemoveTimelineMemory(string npcName, string entryId)
     {
         if (string.IsNullOrWhiteSpace(npcName) || string.IsNullOrWhiteSpace(entryId)) return false;
