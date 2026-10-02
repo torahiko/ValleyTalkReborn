@@ -809,9 +809,9 @@ namespace ValleytalkReborn
                 NPC_CheckAction_Patch.TriggerKeyWasDown = NPC_CheckAction_Patch.IsTriggerKeyDown();
             }
 
-            // ── Enter：邻格发起打字对话（VT-UI-007，替代旧 QuickReply 5 秒窗口）──
+            // ── 邻格发起打字对话（VT-UI-007，替代旧 QuickReply 5 秒窗口，默认 Enter）──
             // XNA/MonoGame 将小键盘 Enter 统一映射为 Keys.Enter，故无需单独的 NumPadEnter 分支
-            bool isChatKey = e.Button == SButton.Enter;
+            bool isChatKey = Config.QuickChatKey != SButton.None && e.Button == Config.QuickChatKey;
             if (isChatKey)
             {
                 // 打字态 / 菜单态 / 事件态一律静默放行（IsPlayerFree 已含世界就绪与可移动判定）

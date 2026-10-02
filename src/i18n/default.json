@@ -271,6 +271,8 @@
   "Memory.CloseButton": "Close",
   "configInitiateKey": "Start Conversation Key",
   "configInitiateKeyTooltip": "Hold this key and click an NPC to open the custom chat box.",
+  "configQuickChatKey": "Quick Chat Key",
+  "configQuickChatKeyTooltip": "Press this key when facing or near an NPC to open the custom chat box directly.",
   "DialogueInput.DefaultTitle": "Dialogue Input",
   "DialogueInput.ClearScopeTitle": "Clear History",
   "DialogueInput.ClearScopeHint": "Choose the scope to clear:",

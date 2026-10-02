@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using StardewModdingAPI;
@@ -138,6 +138,8 @@ namespace ValleytalkReborn
         /// <summary>NPC 选项呈现风格。Vanilla=原版对话框内嵌选项（Stage 1）；Custom=自研浮动选择框（Stage 2）。</summary>
         public ChoiceBoxStyle ChoiceBoxStyle { get; set; } = ChoiceBoxStyle.Custom;
         public SButton InitiateTypedDialogueKey { get; set; } = SButton.LeftAlt;
+        /// <summary>快捷发起对话热键：身处 NPC 邻格或正对 NPC 时按下，直接唤起打字输入框（默认 Enter）。</summary>
+        public SButton QuickChatKey { get; set; } = SButton.Enter;
         /// <summary>面对面快捷招募 NPC / 主动取消 NPC 跟随的双向热键。</summary>
         public SButton DismissFollowerKey { get; set; } = SButton.G;
         /// <summary>唤起四合一综合管理面板（NPC记忆 / 世界记忆 / 农夫档案 / 高级设置），默认定位最近对话 NPC。</summary>

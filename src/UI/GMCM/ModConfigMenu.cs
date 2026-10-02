@@ -593,6 +593,14 @@ namespace ValleytalkReborn
 
             ConfigMenu.AddKeybind(
                 mod: ModManifest,
+                name: () => GetUIString("configQuickChatKey", "Quick Chat Key"),
+                tooltip: () => GetUIString("configQuickChatKeyTooltip", "Press this key when facing or near an NPC to open the custom chat box directly."),
+                getValue: () => ModEntry.Config.QuickChatKey,
+                setValue: value => ModEntry.Config.QuickChatKey = value
+            );
+
+            ConfigMenu.AddKeybind(
+                mod: ModManifest,
                 name: () => GetUIString("configDismissFollowerKey", "Dismiss Follower Key"),
                 tooltip: () => GetUIString("configDismissFollowerKeyTooltip",
                     "Key used to stop the NPC currently following you, whether they're just tagging along or accompanying you on a date."),

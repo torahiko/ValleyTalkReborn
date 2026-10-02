@@ -271,6 +271,8 @@
   "Memory.CloseButton": "关闭",
   "configInitiateKey": "发起对话按键",
   "configInitiateKeyTooltip": "按住此键并点击NPC，打开自定义聊天输入框。",
+  "configQuickChatKey": "快速对话按键",
+  "configQuickChatKeyTooltip": "身处NPC邻格或正对NPC时按下此键，可直接打开自定义聊天输入框。",
   "DialogueInput.DefaultTitle": "对话输入",
   "DialogueInput.ClearScopeTitle": "清除历史记录",
   "DialogueInput.ClearScopeHint": "请选择需要清除的对话范围：",
