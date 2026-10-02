@@ -153,20 +153,20 @@ public static class EmotionalStateResolver
         if (v < -0.25f && a > 0.60f)
         {
             directives.Add(zh
-                ? "[PORTRAIT_MAPPING] 语气高度紧绷且具防御性。强制优先指定肖像标记: $a"
-                : "[PORTRAIT_MAPPING] Tone is tense, defensive, and hostile. Prioritize portrait token: $a");
+                ? "[PORTRAIT_MAPPING] 语气高度紧绷且具防御性。情绪主轴以 $a 为基准（台词中可随具体语境自然穿插其他表情代码）"
+                : "[PORTRAIT_MAPPING] Tone is tense, defensive, and hostile. Primary mood baseline is $a (feel free to inline other codes as the line's mood shifts).");
         }
         else if (v < -0.25f && a <= 0.60f)
         {
             directives.Add(zh
-                ? "[PORTRAIT_MAPPING] 情绪处于低落疲惫状态。强制优先指定肖像标记: $s"
-                : "[PORTRAIT_MAPPING] Tone is dejected, drained, and weary. Prioritize portrait token: $s");
+                ? "[PORTRAIT_MAPPING] 情绪处于低落疲惫状态。情绪主轴以 $s 为基准（台词中可随具体语境自然穿插其他表情代码）"
+                : "[PORTRAIT_MAPPING] Tone is dejected, drained, and weary. Primary mood baseline is $s (feel free to inline other codes as the line's mood shifts).");
         }
         else if (v > 0.35f)
         {
             directives.Add(zh
-                ? "[PORTRAIT_MAPPING] 语气轻快随和、积极开放。强制优先指定肖像标记: $h"
-                : "[PORTRAIT_MAPPING] Tone is lighthearted, approachable, and warm. Prioritize portrait token: $h");
+                ? "[PORTRAIT_MAPPING] 语气轻快随和、积极开放。情绪主轴以 $h 为基准（台词中可随具体语境自然穿插 $0、$u 等表情代码）"
+                : "[PORTRAIT_MAPPING] Tone is lighthearted, approachable, and warm. Primary mood baseline is $h (feel free to inline $0, $u, and other codes as the line's mood shifts).");
         }
 
         // 状态平滑转移触发器：仅 V<-0.25 注入

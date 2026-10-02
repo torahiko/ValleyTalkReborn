@@ -646,9 +646,10 @@ public class Prompts
             commandPrompt.AppendLine("- 物理位移: [ACTION:STEP:FORWARD], [ACTION:STEP:BACKWARD], [ACTION:STEP:LEFT], [ACTION:STEP:RIGHT]");
             commandPrompt.AppendLine();
             commandPrompt.AppendLine("[OUTPUT_FORMAT_RULE]");
-            commandPrompt.AppendLine("- 所有控制标签必须统一置于台词对白的最末尾，禁止穿插在句子中间。");
-            commandPrompt.AppendLine("- 多标签排布统一流水线：[台词正文] [肖像标记(如$h)] [ACTION标签] [UI标签] [MOOD标签]");
-            commandPrompt.AppendLine("  示例：\"好的，我们走吧。\" $h [ACTION:FACE:FARMER] [UI:FOLLOW] [MOOD:happy]");
+            commandPrompt.AppendLine("- [ACTION:...] 与 [UI:...] 等实体行为与界面指令标签必须统一置于回复的最末尾，禁止穿插在台词中。");
+            commandPrompt.AppendLine("- 肖像表情代码（如 $h, $0, $u, $s, $a 等）允许且鼓励随语境在台词中实时插入（支持单句及跨屏多次插入），打字机将在打印到对应字符时即时切换立绘。");
+            commandPrompt.AppendLine("- 多标签排布流水线：[带表情码的台词正文] [ACTION标签] [UI标签] [MOOD标签]");
+            commandPrompt.AppendLine("  示例：\"(挠头) $0这事儿... $h哈哈，交给我吧！\" [ACTION:FACE:FARMER]");
             commandPrompt.AppendLine("[NEGATIVE_CONSTRAINT] 严禁在对白台词中输出、提及或解释上述任何系统指令标签。");
         }
         else
@@ -658,9 +659,10 @@ public class Prompts
             commandPrompt.AppendLine("- Movement steps: [ACTION:STEP:FORWARD], [ACTION:STEP:BACKWARD], [ACTION:STEP:LEFT], [ACTION:STEP:RIGHT]");
             commandPrompt.AppendLine();
             commandPrompt.AppendLine("[OUTPUT_FORMAT_RULE]");
-            commandPrompt.AppendLine("- All control tags MUST be placed at the absolute end of the dialogue line. NEVER inline tags inside sentences.");
-            commandPrompt.AppendLine("- Multi-tag sequence pipeline: [Dialogue] [Portrait token(e.g. $h)] [ACTION tag] [UI tag] [MOOD tag]");
-            commandPrompt.AppendLine("  Example: \"Sure, let's head out.\" $h [ACTION:FACE:FARMER] [UI:FOLLOW] [MOOD:happy]");
+            commandPrompt.AppendLine("- Entity behavior and UI tags such as [ACTION:...] and [UI:...] MUST be placed together at the absolute end of the reply. Never interleave them inside dialogue.");
+            commandPrompt.AppendLine("- Portrait emotion codes (e.g. $h, $0, $u, $s, $a) are allowed and encouraged to be inserted inline wherever the mood shifts (multiple times within a sentence and across screen boxes); the typewriter switches the portrait the instant it prints that character.");
+            commandPrompt.AppendLine("- Multi-tag sequence pipeline: [Dialogue body with inline portrait codes] [ACTION tag] [UI tag] [MOOD tag]");
+            commandPrompt.AppendLine("  Example: \"(scratches head) $0Well... $haha, leave it to me!\" [ACTION:FACE:FARMER]");
             commandPrompt.AppendLine("[NEGATIVE_CONSTRAINT] Strictly forbid outputting, mentioning, or explaining any action/system tags in character dialogue.");
         }
         commandPrompt.AppendLine("</system_action_reference>");
