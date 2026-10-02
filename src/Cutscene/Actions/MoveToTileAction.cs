@@ -37,6 +37,10 @@ namespace ValleytalkReborn.Cutscene.Actions
             _hasRetried = false;
             _isCompleted = false;
 
+            // 彻底打断日程动作与待机状态，解除 freezeMotion 封锁，注入正常寻路移速
+            CutsceneActorHelper.WakeupActor(_npc);
+            _npc.addedSpeed = 2;
+
             if (!MovementPathfinding.TryCreatePath(_npc, _npc.currentLocation, _targetTile, out _controller, out var finalTarget))
             {
                 ModEntry.SMonitor?.Log(
@@ -98,8 +102,10 @@ namespace ValleytalkReborn.Cutscene.Actions
                     // 尝试脱困与重寻路
                     if (MovementPathfinding.TryRecoverStartingTile(_npc, _npc.currentLocation, radius: 4))
                     {
+                        CutsceneActorHelper.WakeupActor(_npc);
                         if (MovementPathfinding.TryCreatePath(_npc, _npc.currentLocation, _targetTile, out _controller, out _))
                         {
+                            _npc.addedSpeed = 2;
                             _npc.controller = _controller;
                             _stuckTicks = 0;
                             _lastTile = _npc.Tile;
@@ -107,11 +113,12 @@ namespace ValleytalkReborn.Cutscene.Actions
                         }
                     }
                     
-                    // 重寻路失败：瞬移到位
+                    // 重寻路失败：瞬移到位并标记完成
                     ModEntry.SMonitor?.Log(
                         $"[MoveToTileAction] Recovery failed, warping {_npc.Name} to target.",
                         LogLevel.Debug);
                     WarpToTargetSafely();
+                    _isCompleted = true;
                     return true;
                 }
             }

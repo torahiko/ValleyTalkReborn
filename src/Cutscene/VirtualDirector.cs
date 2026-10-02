@@ -75,11 +75,17 @@ namespace ValleytalkReborn.Cutscene
             {
                 IsActive = true;
 
-                // 1. 捕获初始快照
+                // 1. 捕获初始快照与唤醒参演角色
                 _snapshot = CutsceneSnapshot.Capture(actors ?? new List<NPC>());
                 _participatingActors.Clear();
                 if (actors != null)
+                {
                     _participatingActors.AddRange(actors);
+                    foreach (var actor in _participatingActors)
+                    {
+                        CutsceneActorHelper.WakeupActor(actor);
+                    }
+                }
 
                 // 2. 压制游戏原生系统
                 SuppressGame();
@@ -182,7 +188,11 @@ namespace ValleytalkReborn.Cutscene
                 foreach (var actor in _participatingActors)
                 {
                     if (actor?.currentLocation != null)
-                        actor.forceUpdateTimer = 60;
+                    {
+                        actor.forceUpdateTimer = 1000;
+                        if (actor.movementPause > 0)
+                            actor.movementPause = 0;
+                    }
                 }
 
                 // 2. 维持玩家定身
