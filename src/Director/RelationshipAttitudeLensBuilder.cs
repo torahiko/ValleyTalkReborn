@@ -3,6 +3,9 @@
 // REL-003 — Reactive enhancement: up to MaxInjectedLenses explicit targets per
 // player line, matched by base name aliases OR possessive kinship aliases
 // derived from the unified PublicIdentity label (e.g. "grandfather" -> "你爷爷").
+// REL-004 — Topic continuity: when the latest line carries a third-person
+// pronoun and no explicit target, inherit the single target named by the
+// immediately prior player line (strict single-antecedent gate; never guessed).
 // Memory-only, per-request dynamic evaluation. Zero Bio mutations, zero
 // persistence, zero Harmony.
 
@@ -31,17 +34,97 @@ internal static class RelationshipAttitudeLensBuilder
         if (string.IsNullOrWhiteSpace(playerLine)) return string.Empty;
 
         bool isZh = Prompts.PromptsBlocks.IsZh();
+        int hearts = context.Hearts ?? 0;
 
-        // 2. Speaker self-filter names.
+        // 2. Current-turn explicit matching — absolute priority, never
+        //    overridden by an older topic.
+        var currentMatches = MatchTargetsInText(playerLine, character, isZh, hearts);
+        if (currentMatches.Count > 0)
+        {
+            // Budget: order by first occurrence in the utterance (deterministic
+            // ordinal tie-break), dedupe is inherent (one record per relationship
+            // key), then cap at MaxInjectedLenses.
+            var selected = currentMatches
+                .OrderBy(m => m.IndexInText)
+                .ThenBy(m => m.Key, StringComparer.Ordinal)
+                .Take(MaxInjectedLenses)
+                .ToList();
+
+            return string.Join("\n\n", selected.Select(m => BuildLensBlock(m.Key, m.Entry, isZh)));
+        }
+
+        // 3. Pronoun-topic continuity: no explicit target this turn, but a
+        //    third-person pronoun may refer back to the prior player topic.
+        if (!ContainsThirdPersonPronoun(playerLine, isZh)) return string.Empty;
+
+        // 4. The immediately prior player utterance (skip the latest one; NPC
+        //    lines in between are not a continuity break).
+        string priorPlayerLine = null;
+        bool latestSkipped = false;
+        for (int i = context.ChatHistory.Count - 1; i >= 0; i--)
+        {
+            if (context.ChatHistory[i].IsPlayerLine != true) continue;
+            if (!latestSkipped)
+            {
+                latestSkipped = true;
+                continue;
+            }
+            priorPlayerLine = context.ChatHistory[i].Text;
+            break;
+        }
+        if (string.IsNullOrWhiteSpace(priorPlayerLine)) return string.Empty;
+
+        // 5. Strict single-antecedent gate: inherit only when the prior line
+        //    names exactly one target; 0 or >= 2 is ambiguous and never guessed.
+        var priorMatches = MatchTargetsInText(priorPlayerLine, character, isZh, hearts);
+        if (priorMatches.Count != 1) return string.Empty;
+
+        MatchRecord inherited = priorMatches[0];
+        return BuildLensBlock(inherited.Key, inherited.Entry, isZh);
+    }
+
+    // ───────────────────────────────────────────────────────────────────────
+    // 第三人称代词判定（REL-004）。
+    // 中文：先整体移除复合干扰词（"吉他/其他/他们"等），再检测独立代词
+    // "他/她"（"他的/她的" 天然被 "他/她" 包含）；英文：词边界正则。
+    // ───────────────────────────────────────────────────────────────────────
+    internal static bool ContainsThirdPersonPronoun(string text, bool isZh)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return false;
+
+        if (isZh)
+        {
+            string[] compounds = { "吉他", "其他", "其它", "他们", "她们", "他人", "利他", "排他" };
+            foreach (string compound in compounds)
+                text = text.Replace(compound, string.Empty);
+
+            return text.IndexOf("他", StringComparison.Ordinal) >= 0
+                || text.IndexOf("她", StringComparison.Ordinal) >= 0;
+        }
+
+        return Regex.IsMatch(text, @"\b(he|him|his|she|her|hers)\b", RegexOptions.IgnoreCase);
+    }
+
+    // ───────────────────────────────────────────────────────────────────────
+    // 内部匹配扫描器：对单句台词做目标匹配（基础别名 + 所属亲属别名），
+    // 每个命中目标记录其在文本中的首次出现位置。纯函数式：仅从入参
+    // character 的 Bio 读取，不引入任何全局可变状态；供当前轮与代词
+    // 承接的回溯轮复用。前置条件：调用方已确认 Bio.Relationships 非空。
+    // ───────────────────────────────────────────────────────────────────────
+    private static List<MatchRecord> MatchTargetsInText(
+        string text,
+        Character character,
+        bool isZh,
+        int hearts)
+    {
+        var matches = new List<MatchRecord>();
+        if (string.IsNullOrWhiteSpace(text)) return matches;
+
+        var bio = character.Bio;
         var speakerNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (!string.IsNullOrEmpty(character.Name)) speakerNames.Add(character.Name);
         if (!string.IsNullOrEmpty(character.StardewNpc?.displayName))
             speakerNames.Add(character.StardewNpc.displayName);
-
-        int hearts = context.Hearts ?? 0;
-
-        // 命中记录：每个合法目标一条，IndexInText = 该目标全部别名在发言中的首次出现位置。
-        var matches = new List<MatchRecord>();
 
         foreach (var kvp in bio.Relationships)
         {
@@ -49,17 +132,17 @@ internal static class RelationshipAttitudeLensBuilder
             var entry = kvp.Value;
             if (entry == null) continue;
 
-            // 2. Speaker self-filter: exclude entries whose key or id is the speaking NPC.
+            // Speaker self-filter: exclude entries whose key or id is the speaking NPC.
             if (speakerNames.Contains(key)) continue;
             if (!string.IsNullOrEmpty(entry.id) && speakerNames.Contains(entry.id)) continue;
 
-            // 3. Visibility gate (null hearts treated as 0).
+            // Visibility gate (null hearts treated as 0).
             if (hearts < entry.RequiredHearts) continue;
 
             // Blank description → ineligible (skip this target, others unaffected).
             if (string.IsNullOrWhiteSpace(entry.Description)) continue;
 
-            // 4. Alias set: base names + possessive kinship aliases.
+            // Alias set: base names + possessive kinship aliases.
             var aliases = new List<string>();
             AddIfNonEmpty(aliases, key);
             AddIfNonEmpty(aliases, entry.id);
@@ -74,11 +157,11 @@ internal static class RelationshipAttitudeLensBuilder
 
             aliases.AddRange(GetPossessiveKinshipAliases(entry.PublicIdentity, isZh));
 
-            // 5. First-occurrence index across all aliases.
+            // First-occurrence index across all aliases.
             int indexInText = -1;
             foreach (string alias in aliases)
             {
-                int aliasIndex = FindAliasIndex(playerLine, alias);
+                int aliasIndex = FindAliasIndex(text, alias);
                 if (aliasIndex >= 0 && (indexInText < 0 || aliasIndex < indexInText))
                     indexInText = aliasIndex;
             }
@@ -87,18 +170,7 @@ internal static class RelationshipAttitudeLensBuilder
                 matches.Add(new MatchRecord(key, entry, indexInText));
         }
 
-        // 6. Budget: order by first occurrence in the utterance (deterministic
-        //    ordinal tie-break), dedupe is inherent (one record per relationship
-        //    key), then cap at MaxInjectedLenses.
-        if (matches.Count == 0) return string.Empty;
-
-        var selected = matches
-            .OrderBy(m => m.IndexInText)
-            .ThenBy(m => m.Key, StringComparer.Ordinal)
-            .Take(MaxInjectedLenses)
-            .ToList();
-
-        return string.Join("\n\n", selected.Select(m => BuildLensBlock(m.Key, m.Entry, isZh)));
+        return matches;
     }
 
     // ───────────────────────────────────────────────────────────────────────

@@ -2,6 +2,9 @@
 // VT-SOCIAL-LENS-01 — Unit tests for RelationshipAttitudeLensBuilder.Build.
 // REL-003 — multi-target budget (UT04), possessive kinship recall (UT16),
 // first-person rejection (UT17), and the 2-slot cap (UT18).
+// REL-004 — topic continuity: single-antecedent inheritance (UT19), ambiguous
+// antecedent refusal (UT20), zh compound-word pronoun guard (UT21), explicit
+// mention priority (UT22).
 // Covers all positive, negative, and edge cases from the ticket's acceptance criteria.
 
 using System;
@@ -500,5 +503,97 @@ public class RelationshipAttitudeLensBuilderTests : IDisposable
         Assert.True(
             result.IndexOf("target=\"George\"", StringComparison.Ordinal)
                 < result.IndexOf("target=\"Haley\"", StringComparison.Ordinal));
+    }
+
+    // ── REL-004 UT19: Pronoun with a single prior antecedent inherits the topic. ──
+    [Fact]
+    public void UT19_TopicContinuity_SingleAntecedent_Inherited()
+    {
+        using var _ = TestEnv.UseIsolatedLocale("en");
+        var character = MakeCharacter("Alex", new Dictionary<string, BioData.ListEntry>
+        {
+            ["George"] = RelEntry("George", "George", "A grumpy old man."),
+        });
+        var ctx = MakeContext(0,
+            new ConversationElement("How is George?", IsPlayerLine: true),
+            new ConversationElement("He is doing fine.", IsPlayerLine: false),
+            new ConversationElement("Is he still watching TV?", IsPlayerLine: true));
+
+        string result = RelationshipAttitudeLensBuilder.Build(character, ctx);
+
+        Assert.False(string.IsNullOrEmpty(result));
+        Assert.Equal(1, CountOccurrences(result, "<social_lens"));
+        Assert.Contains("target=\"George\"", result);
+        Assert.Contains("grumpy old man", result);
+    }
+
+    // ── REL-004 UT20: Multiple prior antecedents -> pronoun is never guessed. ──
+    [Fact]
+    public void UT20_TopicContinuity_MultipleAntecedents_NotGuessed()
+    {
+        using var _ = TestEnv.UseIsolatedLocale("en");
+        var character = MakeCharacter("Alex", new Dictionary<string, BioData.ListEntry>
+        {
+            ["George"] = RelEntry("George", "George", "A grumpy old man."),
+            ["Haley"] = RelEntry("Haley", "Haley", "A cheerful photographer."),
+        });
+        var ctx = MakeContext(0,
+            new ConversationElement("Did you see George and Haley?", IsPlayerLine: true),
+            new ConversationElement("Is he doing okay?", IsPlayerLine: true));
+
+        string result = RelationshipAttitudeLensBuilder.Build(character, ctx);
+
+        Assert.Equal(string.Empty, result);
+    }
+
+    // ── REL-004 UT21: zh compound words containing 他/她 are not pronouns. ──
+    [Fact]
+    public void UT21_TopicContinuity_ChinesePronounCompoundWords_Guarded()
+    {
+        using (TestEnv.UseIsolatedLocale("zh"))
+        {
+            EnterZhHeadless();
+            var character = MakeCharacter("Alex", new Dictionary<string, BioData.ListEntry>
+            {
+                ["George"] = RelEntry("George", "George", "脾气暴躁却嘴硬心软的老人。"),
+            });
+
+            // "吉他" 含 "他" 字形但不是代词：无承接，返回空。
+            var ctxGuitar = MakeContext(0,
+                new ConversationElement("How is George?", IsPlayerLine: true),
+                new ConversationElement("我最近在学弹吉他", IsPlayerLine: true));
+            Assert.Equal(string.Empty, RelationshipAttitudeLensBuilder.Build(character, ctxGuitar));
+
+            // "其他" 同理：不误判为第三人称代词，返回空。
+            var ctxOthers = MakeContext(0,
+                new ConversationElement("How is George?", IsPlayerLine: true),
+                new ConversationElement("其他人的情况呢", IsPlayerLine: true));
+            Assert.Equal(string.Empty, RelationshipAttitudeLensBuilder.Build(character, ctxOthers));
+        }
+    }
+
+    // ── REL-004 UT22: Explicit mention outranks the older pronoun topic. ──
+    [Fact]
+    public void UT22_TopicContinuity_ExplicitMentionOverridesPronoun()
+    {
+        using var _ = TestEnv.UseIsolatedLocale("en");
+        var character = MakeCharacter("Alex", new Dictionary<string, BioData.ListEntry>
+        {
+            ["George"] = RelEntry("George", "George", "A grumpy old man."),
+            ["Haley"] = RelEntry("Haley", "Haley", "A cheerful photographer."),
+        });
+        var ctx = MakeContext(0,
+            new ConversationElement("How is George?", IsPlayerLine: true),
+            new ConversationElement("She is at home.", IsPlayerLine: false),
+            new ConversationElement("How is Haley? He told me about her.", IsPlayerLine: true));
+
+        string result = RelationshipAttitudeLensBuilder.Build(character, ctx);
+
+        // Explicit Haley this turn wins; the prior George topic is ignored.
+        Assert.False(string.IsNullOrEmpty(result));
+        Assert.Equal(1, CountOccurrences(result, "<social_lens"));
+        Assert.Contains("target=\"Haley\"", result);
+        Assert.Contains("cheerful photographer", result);
+        Assert.DoesNotContain("grumpy old man", result);
     }
 }
