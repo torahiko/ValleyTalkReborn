@@ -519,4 +519,193 @@ public class BioEditorViewModelTests
             Assert.Equal("grandfather", second["George"].PublicIdentity); // 篡改被基线值覆盖
         });
     }
+
+    // ── H. 公开身份校验与关系三项同步（REL-002D） ─────────────────────
+    // TryValidatePublicIdentity 为纯静态函数（无 Game1/存储依赖）；
+    // TrySyncRelationshipEditor/TrySave 用 Vm(npc, storage, bio) 垫片构造：
+    // storage 仅占位（校验失败路径先于存储调用返回），不触盘、不触 Game1。
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("\n")] // Trim 后为空 → 先判空再判行，合法（与 SocialBackboneBuilder.ValidateLabel 一致）
+    [InlineData("grandfather")]
+    [InlineData("  grandfather  ")]
+    [InlineData("祖母")]
+    public void H1_Validate_AcceptsOptionalAndPlainValues(string value)
+    {
+        Assert.True(BioEditorViewModel.TryValidatePublicIdentity(value, out string errorKey));
+        Assert.Null(errorKey);
+    }
+
+    [Fact]
+    public void H1b_Validate_Accepts48Utf16Units_AsciiAndSurrogatePairs()
+    {
+        Assert.True(BioEditorViewModel.TryValidatePublicIdentity(new string('x', 48), out _));
+
+        // 24 个代理对字符 = 48 个 UTF-16 单元
+        string pairs = string.Concat(Enumerable.Repeat("\uD83D\uDC77", 24));
+        Assert.Equal(48, pairs.Length);
+        Assert.True(BioEditorViewModel.TryValidatePublicIdentity(pairs, out _));
+
+        // 混合：46 ASCII + 1 代理对 = 48 单元
+        Assert.True(BioEditorViewModel.TryValidatePublicIdentity(new string('a', 46) + "\uD83D\uDC77", out _));
+    }
+
+    [Theory]
+    [InlineData("a\nb")]
+    [InlineData("a\rb")]
+    [InlineData(" x\r\ny ")]
+    [InlineData("第一行\n第二行")]
+    public void H2_Validate_RejectsMultiline_AfterTrim(string value)
+    {
+        Assert.False(BioEditorViewModel.TryValidatePublicIdentity(value, out string errorKey));
+        Assert.Equal(BioEditorViewModel.PublicIdentitySingleLineKey, errorKey);
+    }
+
+    [Fact]
+    public void H3_Validate_Rejects49Utf16Units_AsciiAndSurrogatePairs()
+    {
+        Assert.False(BioEditorViewModel.TryValidatePublicIdentity(new string('x', 49), out string keyA));
+        Assert.Equal(BioEditorViewModel.PublicIdentityTooLongKey, keyA);
+
+        // 25 个代理对字符 = 50 单元
+        string pairs = string.Concat(Enumerable.Repeat("\uD83D\uDC77", 25));
+        Assert.False(BioEditorViewModel.TryValidatePublicIdentity(pairs, out string keyB));
+        Assert.Equal(BioEditorViewModel.PublicIdentityTooLongKey, keyB);
+
+        // 边界：47 ASCII + 1 代理对 = 49 单元
+        Assert.False(BioEditorViewModel.TryValidatePublicIdentity(new string('a', 47) + "\uD83D\uDC77", out string keyC));
+        Assert.Equal(BioEditorViewModel.PublicIdentityTooLongKey, keyC);
+    }
+
+    [Theory]
+    [InlineData("  grandfather  ")]
+    [InlineData("祖母")]
+    public void H4_Sync_PreservesRawValueUntrimmed(string raw)
+    {
+        var bio = new BioData();
+        bio.Relationships["George"] = new BioData.ListEntry { id = "George", Heading = "George", Description = "d", PublicIdentity = "old" };
+        var vm = Vm("RelNpc", new BioStorageService(null, null), bio);
+
+        Assert.True(vm.TrySyncRelationshipEditor("George", "H", "D", raw, out string errorKey));
+        Assert.Null(errorKey);
+        Assert.Equal(raw, vm.Bio.Relationships["George"].PublicIdentity); // 不 Trim、不翻译、不截断
+    }
+
+    [Fact]
+    public void H10_Getter_ReturnsRawOrNull()
+    {
+        var bio = new BioData();
+        bio.Relationships["George"] = new BioData.ListEntry { id = "George", Heading = "H", Description = "D", PublicIdentity = "  padded  " };
+        var vm = Vm("RelNpc", new BioStorageService(null, null), bio);
+
+        Assert.Equal("  padded  ", vm.GetRelationshipPublicIdentityOrNull("George"));
+        Assert.Null(vm.GetRelationshipPublicIdentityOrNull("Missing"));
+    }
+
+    [Fact]
+    public void H5_InvalidSync_LeavesFieldsKeysAndDirtyUntouched()
+    {
+        var bio = new BioData();
+        bio.Relationships["George"] = new BioData.ListEntry { id = "George", Heading = "H0", Description = "D0", RequiredHearts = 2, PublicIdentity = "grandfather" };
+        var vm = Vm("RelNpc", new BioStorageService(null, null), bio);
+
+        Assert.False(vm.TrySyncRelationshipEditor("George", "H1", "D1", "bad\nlabel", out string key1));
+        Assert.Equal(BioEditorViewModel.PublicIdentitySingleLineKey, key1);
+
+        Assert.False(vm.TrySyncRelationshipEditor("George", "H1", "D1", new string('x', 49), out string key2));
+        Assert.Equal(BioEditorViewModel.PublicIdentityTooLongKey, key2);
+
+        var rel = vm.Bio.Relationships["George"];
+        Assert.Equal("H0", rel.Heading);
+        Assert.Equal("D0", rel.Description);
+        Assert.Equal("grandfather", rel.PublicIdentity);
+        Assert.Single(vm.Bio.Relationships); // 键集合不变
+        Assert.False(vm.IsDirty);            // dirty 不变
+    }
+
+    [Fact]
+    public void H6_IdentityOnly_CreatesEntry_AllEmptyDoesNot()
+    {
+        var bio = new BioData();
+        var vm = Vm("RelNpc", new BioStorageService(null, null), bio);
+
+        // 无条目且仅身份非空：创建条目
+        Assert.True(vm.TrySyncRelationshipEditor("Dusty", "", "", "doctor", out _));
+        var entry = vm.Bio.Relationships["Dusty"];
+        Assert.Equal("Dusty", entry.id);
+        Assert.Equal("", entry.Heading);
+        Assert.Equal("", entry.Description);
+        Assert.Equal("doctor", entry.PublicIdentity);
+        Assert.True(vm.IsDirty);
+
+        // 无条目且三项全空：不创建条目
+        Assert.True(vm.TrySyncRelationshipEditor("Nobody", "", "", "", out _));
+        Assert.DoesNotContain("Nobody", vm.Bio.Relationships.Keys);
+    }
+
+    [Fact]
+    public void H7_ClearIdentity_RepeatSyncNoExtraDirty()
+    {
+        var bio = new BioData();
+        bio.Relationships["George"] = new BioData.ListEntry { id = "George", Heading = "H", Description = "D", PublicIdentity = "doctor" };
+        var vm = Vm("RelNpc", new BioStorageService(null, null), bio);
+        var entry = vm.Bio.Relationships["George"];
+
+        // 同值重复同步：重置 dirty 后再次同步仍为 false → 无额外状态变化
+        Assert.True(vm.TrySyncRelationshipEditor("George", "H", "D", "doctor", out _));
+        typeof(BioEditorViewModel).GetField("_dirty", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(vm, false);
+        Assert.True(vm.TrySyncRelationshipEditor("George", "H", "D", "doctor", out _));
+        Assert.False(vm.IsDirty);
+
+        // 清空身份：条目保留，身份写为空串
+        Assert.True(vm.TrySyncRelationshipEditor("George", "H2", "D2", "", out _));
+        Assert.Equal("", entry.PublicIdentity);
+        Assert.Equal("H2", entry.Heading);
+        Assert.Equal("D2", entry.Description);
+        Assert.True(vm.IsDirty);
+    }
+
+    [Fact]
+    public void H8_EmptyNpc_IsNoOpReturnsTrue()
+    {
+        var bio = new BioData();
+        bio.Relationships["George"] = new BioData.ListEntry { id = "George", Heading = "H", Description = "D", PublicIdentity = "p" };
+        var vm = Vm("RelNpc", new BioStorageService(null, null), bio);
+
+        Assert.True(vm.TrySyncRelationshipEditor("", "X", "Y", "bad\nlabel", out _));
+        Assert.Equal("H", vm.Bio.Relationships["George"].Heading);
+        Assert.Single(vm.Bio.Relationships);
+        Assert.False(vm.IsDirty);
+    }
+
+    [Fact]
+    public void H9_TrySave_BlockedBeforeStorage_ForInvalidExistingIdentity()
+    {
+        var bio = new BioData();
+        bio.Relationships["George"] = new BioData.ListEntry { id = "George", Heading = "H", Description = "D", PublicIdentity = "bad\nlabel" };
+        var vm = Vm("RelNpc", new BioStorageService(null, null), bio);
+        // 直接置脏（有效同步会覆盖待测的无效身份，故用反射置位）
+        typeof(BioEditorViewModel).GetField("_dirty", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(vm, true);
+
+        Assert.False(vm.TrySave(out string error));
+        Assert.Contains("George", error);                                     // error 含目标键
+        Assert.Contains(I18n.Get(BioEditorViewModel.PublicIdentitySingleLineKey), error); // 含本地化失败原因
+        Assert.True(vm.IsDirty);                                              // 不清除 dirty
+        // 存储调用前返回：若 SaveOverlay 被执行，错误信息不会呈现「目标键 + 校验原因」形态
+    }
+
+    [Fact]
+    public void H9b_TrySave_Blocked_ForTooLongExistingIdentity()
+    {
+        var bio = new BioData();
+        bio.Relationships["George"] = new BioData.ListEntry { id = "George", Heading = "H", Description = "D", PublicIdentity = new string('x', 49) };
+        var vm = Vm("RelNpc", new BioStorageService(null, null), bio);
+
+        Assert.False(vm.TrySave(out string error));
+        Assert.Contains("George", error);
+        Assert.Contains(I18n.Get(BioEditorViewModel.PublicIdentityTooLongKey), error);
+    }
 }

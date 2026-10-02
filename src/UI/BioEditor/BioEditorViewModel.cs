@@ -28,6 +28,14 @@ internal sealed class BioEditorViewModel
         "[IDENTITY]\n- Identity: You are {NPC}.\n- Social Anchor: \n- Living Situation: \n\n" +
         "[PSYCHOLOGICAL CONFLICTS]\n- ";
 
+    // ── REL-002D 公开身份校验（规则与 SocialBackboneBuilder.ValidateLabel 保持一致） ──
+    /// <summary>非空公开身份标签允许的最大长度（UTF-16 字符），对齐 SocialBackboneBuilder.MaxLabelLength。</summary>
+    private const int MaxPublicIdentityLength = 48;
+
+    /// <summary>公开身份校验失败的 i18n 键（I18n.Get 直接消费）。</summary>
+    public const string PublicIdentitySingleLineKey = "Bio.RelPublicIdentitySingleLine";
+    public const string PublicIdentityTooLongKey = "Bio.RelPublicIdentityTooLong";
+
     /********** 构造 **********/
     public BioEditorViewModel(string npcName, BioStorageService storage)
     {
@@ -85,6 +93,23 @@ internal sealed class BioEditorViewModel
     /********** 持久化 **********/
     public bool TrySave(out string error)
     {
+        // REL-002D：落盘前校验全部已有关系身份（覆盖导入等途径进入 VM 的无效值）。
+        // 校验失败在调用存储服务前返回：不调用 SaveOverlay、不清除 dirty。
+        if (_bio.Relationships != null)
+        {
+            foreach (var pair in _bio.Relationships)
+            {
+                if (pair.Value != null && !TryValidatePublicIdentity(pair.Value.PublicIdentity, out string identityKey))
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[BioEditor.PublicIdentity] speaker='{_npcName}' target='{pair.Key}' reason={identityKey}",
+                        LogLevel.Warn);
+                    error = $"{pair.Key}: {I18n.Get(identityKey)}";
+                    return false;
+                }
+            }
+        }
+
         if (!_storage.SaveOverlay(_npcName, _bio, _targetScope, out string err))
         {
             error = err;
@@ -642,6 +667,72 @@ internal sealed class BioEditorViewModel
         if (_bio.Relationships.TryGetValue(npc, out var r) && r != null)
             return r.Description;
         return null;
+    }
+
+    /// <summary>获取指定关系条目的 PublicIdentity 原文；条目不存在或为 null 时返回 null。</summary>
+    public string GetRelationshipPublicIdentityOrNull(string npc)
+    {
+        if (_bio.Relationships.TryGetValue(npc, out var r) && r != null)
+            return r.PublicIdentity;
+        return null;
+    }
+
+    /// <summary>
+    /// 校验公开身份标签，规则与 SocialBackboneBuilder.ValidateLabel 一致：
+    /// 对 value 的 Trim 结果判定；null 或 Trim 后空串合法；
+    /// Trim 后含 CR/LF → false + SingleLine 键；Length 超 48（UTF-16 单元）→ false + TooLong 键；
+    /// 其余合法（errorKey=null）。不修改原值。
+    /// </summary>
+    public static bool TryValidatePublicIdentity(string value, out string errorKey)
+    {
+        errorKey = null;
+        string trimmed = value?.Trim() ?? string.Empty;
+        if (trimmed.Length == 0)
+            return true;
+        if (trimmed.IndexOf('\n') >= 0 || trimmed.IndexOf('\r') >= 0)
+        {
+            errorKey = PublicIdentitySingleLineKey;
+            return false;
+        }
+        if (trimmed.Length > MaxPublicIdentityLength)
+        {
+            errorKey = PublicIdentityTooLongKey;
+            return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// 关系三项同步（REL-002D）：写任何字段前先校验身份，无效时返回 false（errorKey 为 i18n 键），
+    /// Heading/Description/PublicIdentity、关系键集合与 dirty 均保持调用前状态；
+    /// 有效时沿用 SyncRelationshipEditor 的同步语义并按值变化同步 PublicIdentity
+    /// （无条目且仅身份非空时也创建条目）。npc 空 → no-op 返回 true；同值重复同步不产生额外状态变化。
+    /// </summary>
+    public bool TrySyncRelationshipEditor(
+        string npc, string heading, string desc,
+        string publicIdentity, out string errorKey)
+    {
+        errorKey = null;
+        if (string.IsNullOrEmpty(npc))
+            return true;
+        if (!TryValidatePublicIdentity(publicIdentity, out errorKey))
+            return false;
+
+        if (_bio.Relationships.TryGetValue(npc, out var rel) && rel != null)
+        {
+            if (rel.Heading != heading) { rel.Heading = heading; MarkDirty(); }
+            if (rel.Description != desc) { rel.Description = desc; MarkDirty(); }
+            if (rel.PublicIdentity != publicIdentity) { rel.PublicIdentity = publicIdentity; MarkDirty(); }
+        }
+        else if (!string.IsNullOrEmpty(heading) || !string.IsNullOrEmpty(desc) || !string.IsNullOrEmpty(publicIdentity))
+        {
+            var entry = EnsureRelationshipEntry(npc);
+            entry.Heading = heading;
+            entry.Description = desc;
+            entry.PublicIdentity = publicIdentity;
+            MarkDirty();
+        }
+        return true;
     }
 
     /// <summary>原子复刻原编辑器同步逻辑：npc 空→no-op；有条目逐字段比对写+脏；无条目且任一非空建条目赋值+脏;其余 no-op。</summary>

@@ -199,7 +199,13 @@ namespace ValleytalkReborn
         private bool _isDraggingTab4Scrollbar = false; // ★ 添加拖拽状态标记
         private TextBox _relSearchBox;
         private TextBox _relHeadingBox;
+        private TextBox _relIdentityBox;   // REL-002D 公开身份（Heading 与 Description 之间）
         private DialogueTextInputBox _relDescBox;
+
+        // REL-002D 校验状态（Memory，随菜单实例生灭）：_relIdentityErrorKey 为 null 时显示常规提示
+        private string? _relIdentityErrorKey;
+        private string? _relIdentityWarnTarget; // 警告去重：上次 Warn 的目标
+        private string? _relIdentityWarnRaw;    // 警告去重：上次 Warn 的无效原文
 
         private Rectangle _relLeftColRect;
         private Rectangle _relRightColRect;
@@ -273,6 +279,9 @@ namespace ValleytalkReborn
             _relHeadingBox = new TextBox(boxTex, null, Game1.smallFont, Game1.textColor);
             // 关闭原版 TextBox 的像素宽度截断（Text setter 内置递归截断会静默损毁程序化赋值的长文本）
             _relHeadingBox.limitWidth = false;
+            _relIdentityBox = new TextBox(boxTex, null, Game1.smallFont, Game1.textColor);
+            // 关闭原版 TextBox 的像素宽度截断（Text setter 内置递归截断会静默损毁程序化赋值的长文本）
+            _relIdentityBox.limitWidth = false;
 
             _enableBarkCheckbox = new SimpleCheckbox(I18n.Get("Bio.EnableBarks"), -1, 0, 0);
 
@@ -531,6 +540,15 @@ namespace ValleytalkReborn
                 _relHeadingBox.Height = 32;
                 flowY = _relHeadingBox.Y + _relHeadingBox.Height + 16;
 
+                // REL-002D 公开身份行（Heading 与 Description 之间）：标签 + 单行框 + 提示/校验行
+                const int identityBoxH = 32;
+                const int identityTipH = 22; // 提示/校验文本行预留高度
+                _relIdentityBox.X = rightX;
+                _relIdentityBox.Y = flowY + labelH + LabelRowGap;
+                _relIdentityBox.Width = rightColW;
+                _relIdentityBox.Height = identityBoxH;
+                flowY = _relIdentityBox.Y + identityBoxH + identityTipH + 8;
+
                 int bottomTipH = 26;
                 int descH = bodyBottom - flowY - labelH - bottomTipH - LabelRowGap - 6;
                 SetBoxBounds(_relDescBox, rightX, flowY + labelH + LabelRowGap, rightColW, Math.Max(90, descH));
@@ -641,7 +659,8 @@ namespace ValleytalkReborn
             }
             else if (_activeTab == 3)
             {
-                _vm.SyncRelationshipEditor(_vm.SelectedRelationshipNpc, _relHeadingBox.Text ?? string.Empty, _relDescBox.Text ?? string.Empty);
+                // REL-002D：每帧同步三项文本；身份无效时保留输入原文并显示校验提示（不阻断浏览）
+                SyncCurrentRelationshipEditor();
             }
             else if (_activeTab == 4)
             {
@@ -933,6 +952,12 @@ namespace ValleytalkReborn
             {
                 if (rect.Contains(x, y))
                 {
+                    // REL-002D：关系选择前同步当前编辑；身份无效时保留当前目标与分页，等待修正
+                    if (!SyncCurrentRelationshipEditor())
+                    {
+                        Game1.playSound("cancel");
+                        return;
+                    }
                     _vm.SelectRelationship(idx);
                     SelectRelationshipView(_vm.SelectedRelationshipNpc);
                     Game1.playSound("smallSelect");
@@ -943,6 +968,11 @@ namespace ValleytalkReborn
             if (new Rectangle(_relHeadingBox.X, _relHeadingBox.Y, _relHeadingBox.Width, _relHeadingBox.Height).Contains(x, y))
             {
                 FocusTextBox(_relHeadingBox);
+                return;
+            }
+            if (new Rectangle(_relIdentityBox.X, _relIdentityBox.Y, _relIdentityBox.Width, _relIdentityBox.Height).Contains(x, y))
+            {
+                FocusTextBox(_relIdentityBox);
                 return;
             }
             if (ContainsPoint(_relDescBox, x, y)) { FocusDialogueBox(_relDescBox, x, y); return; }
@@ -1035,7 +1065,7 @@ namespace ValleytalkReborn
 
             bool isAnyTextFocused = Game1.keyboardDispatcher.Subscriber != null
                                     || activeBox != null
-                                    || (_activeTab == 3 && (_relSearchBox.Selected || _relHeadingBox.Selected));
+                                    || (_activeTab == 3 && (_relSearchBox.Selected || _relHeadingBox.Selected || _relIdentityBox.Selected));
 
             // 2. 文本框/输入控件处于激活输入状态
             if (isAnyTextFocused)
@@ -1609,6 +1639,16 @@ namespace ValleytalkReborn
             CustomFontManager.DrawString(b, I18n.Get("Bio.RelHeadingSection"),
                 new Vector2(_relHeadingBox.X, _relHeadingBox.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
             DrawSingleLineBox(b, _relHeadingBox);
+
+            // REL-002D 公开身份：栏目标题 + 单行输入 + 常规提示/校验提示（错误态红色）
+            CustomFontManager.DrawString(b, I18n.Get("Bio.RelPublicIdentitySection"),
+                new Vector2(_relIdentityBox.X, _relIdentityBox.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
+            DrawSingleLineBox(b, _relIdentityBox);
+            bool identityInvalid = _relIdentityErrorKey != null;
+            CustomFontManager.DrawString(b,
+                identityInvalid ? I18n.Get(_relIdentityErrorKey) : I18n.Get("Bio.RelPublicIdentityTip"),
+                new Vector2(_relIdentityBox.X, _relIdentityBox.Y + _relIdentityBox.Height + 4),
+                identityInvalid ? TextDanger : TextMuted, TipFontSize);
 
             CustomFontManager.DrawString(b, I18n.Get("Bio.RelDescSection"),
                 new Vector2(_relDescBox.Position.X, _relDescBox.Position.Y - RowBtnH - LabelRowGap), TextSecondary, SectionHeaderSize);
@@ -2248,6 +2288,7 @@ namespace ValleytalkReborn
             _stageBarkBox.Selected = false;
             _relSearchBox.Selected = false;
             _relHeadingBox.Selected = false;
+            _relIdentityBox.Selected = false;
             _relDescBox.Selected = false;
             _voiceBox.Selected = false;
             _habitsBox.Selected = false;
@@ -2259,6 +2300,12 @@ namespace ValleytalkReborn
         private void SwitchTab(int tab)
         {
             if (_activeTab == tab) return;
+            // REL-002D：离开社交分页前同步当前关系编辑；身份无效时保留当前分页，等待修正
+            if (_activeTab == 3 && !SyncCurrentRelationshipEditor())
+            {
+                Game1.playSound("cancel");
+                return;
+            }
             UnfocusAll();
             _activeTab = tab;
  
@@ -2284,11 +2331,57 @@ namespace ValleytalkReborn
             _heartsStepper.Value = s.RequiredHearts;
         }
 
+        // ── REL-002D 公开身份同步与校验门禁 ──────────────────────────────
+        /// <summary>
+        /// 同步当前关系三项文本（每帧或导航前）。身份无效时保留输入原文、显示校验提示，
+        /// 并按（目标, 无效原文）去重 Warn；有效时清除提示并重置去重状态。
+        /// 返回 false 表示存在无效身份，调用方应保留当前目标/分页等待修正。
+        /// </summary>
+        private bool SyncCurrentRelationshipEditor()
+        {
+            bool ok = _vm.TrySyncRelationshipEditor(
+                _vm.SelectedRelationshipNpc,
+                _relHeadingBox.Text ?? string.Empty,
+                _relDescBox.Text ?? string.Empty,
+                _relIdentityBox.Text ?? string.Empty,
+                out string errorKey);
+
+            if (ok)
+            {
+                _relIdentityErrorKey = null;
+                _relIdentityWarnTarget = null;
+                _relIdentityWarnRaw = null;
+                return true;
+            }
+
+            _relIdentityErrorKey = errorKey;
+            WarnIdentityOnce(_vm.SelectedRelationshipNpc, _relIdentityBox.Text, errorKey);
+            return false;
+        }
+
+        /// <summary>同一目标 + 同一无效原文仅 Warn 一次；有效输入或目标改变后由 SyncCurrentRelationshipEditor 重置。</summary>
+        private void WarnIdentityOnce(string target, string? rawIdentity, string errorKey)
+        {
+            if (string.Equals(_relIdentityWarnTarget, target, StringComparison.Ordinal) &&
+                string.Equals(_relIdentityWarnRaw, rawIdentity, StringComparison.Ordinal))
+                return;
+            _relIdentityWarnTarget = target;
+            _relIdentityWarnRaw = rawIdentity;
+            ModEntry.SMonitor?.Log(
+                $"[BioEditor.PublicIdentity] speaker='{_npcName}' target='{target}' reason={errorKey}",
+                LogLevel.Warn);
+        }
+
         private void SelectRelationshipView(string npc)
         {
             if (_vm.FilteredNpcs.Count == 0) return;
             _relHeadingBox.Text = _vm.GetRelationshipHeadingOrNull(npc) ?? string.Empty;
             _relDescBox.SetText(_vm.GetRelationshipDescriptionOrNull(npc) ?? string.Empty);
+            _relIdentityBox.Text = _vm.GetRelationshipPublicIdentityOrNull(npc) ?? string.Empty;
+            // 重装载后清空旧校验状态（下一帧同步重新判定）
+            _relIdentityErrorKey = null;
+            _relIdentityWarnTarget = null;
+            _relIdentityWarnRaw = null;
         }
 
         private void SyncTab5BarkBoxes()
@@ -2308,6 +2401,9 @@ namespace ValleytalkReborn
 
         private void SaveAndClose()
         {
+            // REL-002D：社交分页先同步三项输入；身份无效时显示校验提示并返回，菜单保持打开，不调用 TrySave
+            if (_activeTab == 3 && !SyncCurrentRelationshipEditor())
+                return;
             if (!_vm.TrySave(out string err)) { Game1.addHUDMessage(new HUDMessage(I18n.Bio.WithErr("Bio.SaveFailed", err), HUDMessage.error_type)); return; }
             Game1.playSound("achievement");
             ExitAndReturn();
@@ -2417,6 +2513,7 @@ namespace ValleytalkReborn
         private bool AnyTextBoxHasFocus() =>
             _biographyBox.Selected || _behaviorBox.Selected || _dialogueExamplesBox.Selected ||
             _stageTextBox.Selected || _stageBarkBox.Selected || _relSearchBox.Selected || _relHeadingBox.Selected ||
+            _relIdentityBox.Selected ||
             _relDescBox.Selected || _voiceBox.Selected || _habitsBox.Selected || _lensesBox.Selected;
 
         private void TryCancel()
@@ -2473,7 +2570,11 @@ namespace ValleytalkReborn
             else
             {
                 _relHeadingBox.Text = string.Empty;
+                _relIdentityBox.Text = string.Empty;
                 _relDescBox.SetText(string.Empty);
+                _relIdentityErrorKey = null;
+                _relIdentityWarnTarget = null;
+                _relIdentityWarnRaw = null;
             }
 
 // ── Tab 5 初始数据 ──
@@ -2543,7 +2644,11 @@ namespace ValleytalkReborn
                     else
                     {
                         _relHeadingBox.Text = string.Empty;
+                        _relIdentityBox.Text = string.Empty;
                         _relDescBox.SetText(string.Empty);
+                        _relIdentityErrorKey = null;
+                        _relIdentityWarnTarget = null;
+                        _relIdentityWarnRaw = null;
                     }
                     break;
                 case 4:
