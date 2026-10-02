@@ -1,15 +1,18 @@
-﻿using System;
+using System;
 using Microsoft.Xna.Framework;
 using StardewValley;
 
 namespace ValleytalkReborn.Cutscene.Actions
 {
     /// <summary>
-    /// 相机对焦动作：平滑移动相机到目标 NPC
+    /// 相机对焦动作：平滑移动相机到目标 NPC 或指定瓦片坐标（如农夫坐标）
     /// </summary>
     public sealed class CameraAction : IDirectorAction
     {
+        public bool WaitForCompletion { get; set; } = true;
+
         private readonly NPC _npc;
+        private readonly Vector2? _tilePosition;
         private bool _completed;
 
         public CameraAction(NPC npc)
@@ -17,17 +20,28 @@ namespace ValleytalkReborn.Cutscene.Actions
             _npc = npc ?? throw new ArgumentNullException(nameof(npc));
         }
 
+        public CameraAction(Vector2 tilePosition)
+        {
+            _tilePosition = tilePosition;
+        }
+
         public void Enter()
         {
             _completed = false;
-            // 通知导演设置相机目标
-            VirtualDirector.Instance?.SetCameraTarget(_npc);
+            if (_npc != null)
+            {
+                VirtualDirector.Instance?.SetCameraTarget(_npc);
+            }
+            else if (_tilePosition.HasValue)
+            {
+                VirtualDirector.Instance?.SetCameraTarget(_tilePosition.Value);
+            }
         }
 
         public bool Update(GameTime time)
         {
             // 相机平滑插值由 VirtualDirector 每帧处理
-            // 这里简单延迟几帧让相机完成插值
+            // 这里简单延迟一帧确保相机插值目标生效
             if (!_completed)
             {
                 _completed = true;

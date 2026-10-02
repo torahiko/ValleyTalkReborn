@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using StardewValley;
@@ -10,6 +10,8 @@ namespace ValleytalkReborn.Cutscene.Actions
     /// </summary>
     public sealed class SpeakAction : IDirectorAction
     {
+        public bool WaitForCompletion { get; set; } = true;
+
         private readonly NPC _npc;
         private readonly string _text;
         private readonly float _durationMs;

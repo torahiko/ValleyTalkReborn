@@ -11,6 +11,8 @@ namespace ValleytalkReborn.Cutscene.Actions
     /// </summary>
     public sealed class EmoteAction : IDirectorAction
     {
+        public bool WaitForCompletion { get; set; } = true;
+
         private readonly NPC _npc;
         private readonly int _emoteId;
         private float _elapsedMs;

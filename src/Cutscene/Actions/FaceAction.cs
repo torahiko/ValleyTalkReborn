@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.Xna.Framework;
 using StardewValley;
 
@@ -9,6 +9,8 @@ namespace ValleytalkReborn.Cutscene.Actions
     /// </summary>
     public sealed class FaceAction : IDirectorAction
     {
+        public bool WaitForCompletion { get; set; } = true;
+
         private readonly NPC _npc;
         private readonly int _direction;
 
@@ -44,6 +46,8 @@ namespace ValleytalkReborn.Cutscene.Actions
     /// </summary>
     public sealed class LookAtAction : IDirectorAction
     {
+        public bool WaitForCompletion { get; set; } = true;
+
         private readonly NPC _npc;
         private readonly StardewValley.Character _target;
         private readonly Vector2? _targetPos;

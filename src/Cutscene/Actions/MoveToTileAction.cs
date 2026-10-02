@@ -11,6 +11,8 @@ namespace ValleytalkReborn.Cutscene.Actions
     /// </summary>
     public sealed class MoveToTileAction : IDirectorAction
     {
+        public bool WaitForCompletion { get; set; } = true;
+
         private readonly NPC _npc;
         private readonly Vector2 _targetTile;
         private readonly float _timeoutSeconds;

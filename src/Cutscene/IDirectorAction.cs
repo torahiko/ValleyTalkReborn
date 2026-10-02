@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 
 namespace ValleytalkReborn.Cutscene
 {
@@ -21,5 +21,10 @@ namespace ValleytalkReborn.Cutscene
         /// 动作完成或被强制中断时调用（清理临时控制器、速度重置等）
         /// </summary>
         void Exit();
+
+        /// <summary>
+        /// 是否阻塞等待该动作完成。为 false 时立即启动后续动作以实现并发。
+        /// </summary>
+        bool WaitForCompletion { get; set; }
     }
 }

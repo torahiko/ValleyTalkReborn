@@ -6,12 +6,14 @@ using Microsoft.Xna.Framework.Input;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
+using ValleytalkReborn.Cutscene.Compiler;
+using ValleytalkReborn.Cutscene.Model;
 
 namespace ValleytalkReborn.Cutscene
 {
     /// <summary>
-    /// 虚拟导演中控：单例存在于主线程，负责接管游戏状态、驱动动作队列、控制相机与电影黑边，
-    /// 并提供无缝黑屏渐变遮罩（Fade-to-Black）优雅复原现场。
+    /// 虚拟导演中控：单例存在于主线程，负责接管游戏状态、调度动作队列、控制相机与电影黑边，
+    /// 支持并发动作（Parallel Actions）与无缝黑屏渐变遮罩（Fade-to-Black）优雅复原现场。
     /// </summary>
     public sealed class VirtualDirector
     {
@@ -29,9 +31,9 @@ namespace ValleytalkReborn.Cutscene
 
         private DirectorPhase _phase = DirectorPhase.Idle;
 
-        // 状态与队列
+        // 状态与队列（升级支持并发动作集合）
         private readonly Queue<IDirectorAction> _actionQueue = new();
-        private IDirectorAction _currentAction;
+        private readonly List<IDirectorAction> _activeActions = new();
         private CutsceneSnapshot _snapshot;
         private readonly List<NPC> _participatingActors = new();
 
@@ -52,6 +54,59 @@ namespace ValleytalkReborn.Cutscene
         private KeyboardState _lastKeyState;
 
         private VirtualDirector() { }
+
+        /// <summary>
+        /// 从原始 JSON 字符串编译并播放剧本
+        /// </summary>
+        public bool PlayScript(string rawJson, out string errorMessage)
+        {
+            errorMessage = string.Empty;
+            if (!Context.IsWorldReady || Game1.player?.currentLocation == null)
+            {
+                errorMessage = "World not ready or player location null.";
+                return false;
+            }
+
+            var compileResult = CutsceneScriptCompiler.Compile(rawJson, Game1.player.currentLocation);
+            if (!compileResult.Success)
+            {
+                errorMessage = compileResult.ErrorMessage;
+                ModEntry.SMonitor?.Log($"[VirtualDirector] PlayScript compile failed: {errorMessage}", LogLevel.Warn);
+                return false;
+            }
+
+            foreach (var warn in compileResult.Warnings)
+            {
+                ModEntry.SMonitor?.Log($"[VirtualDirector] Compile warning: {warn}", LogLevel.Warn);
+            }
+
+            Play(compileResult.Actions, compileResult.ResolvedActors);
+            return true;
+        }
+
+        /// <summary>
+        /// 从 CutsceneScriptIR 编译并播放剧本
+        /// </summary>
+        public bool PlayScript(CutsceneScriptIR ir, out string errorMessage)
+        {
+            errorMessage = string.Empty;
+            if (!Context.IsWorldReady || Game1.player?.currentLocation == null)
+            {
+                errorMessage = "World not ready or player location null.";
+                return false;
+            }
+
+            var compileResult = CutsceneScriptCompiler.Compile(ir, Game1.player.currentLocation);
+            if (!compileResult.Success)
+            {
+                errorMessage = compileResult.ErrorMessage;
+                ModEntry.SMonitor?.Log($"[VirtualDirector] PlayScript compile failed: {errorMessage}", LogLevel.Warn);
+                return false;
+            }
+
+            Play(compileResult.Actions, compileResult.ResolvedActors);
+            return true;
+        }
 
         /// <summary>
         /// 开始播放过场：接管游戏控制、捕获快照、压制原生 UI、启动黑边过渡
@@ -107,12 +162,13 @@ namespace ValleytalkReborn.Cutscene
                 // 2. 压制游戏原生系统
                 SuppressGame();
 
-                // 3. 加载动作队列并启动第一个动作
+                // 3. 加载动作队列并派发首批动作（支持并发启动）
+                _activeActions.Clear();
                 _actionQueue.Clear();
                 foreach (var action in actions)
                     _actionQueue.Enqueue(action);
 
-                AdvanceToNextAction();
+                AdvanceToNextActions();
 
                 // 4. 启动黑边平滑升起
                 _blackBarHeight = 0f;
@@ -161,8 +217,11 @@ namespace ValleytalkReborn.Cutscene
             {
                 ModEntry.SMonitor?.Log("[VirtualDirector] Immediate restore requested.", LogLevel.Debug);
 
-                _currentAction?.Exit();
-                _currentAction = null;
+                foreach (var action in _activeActions)
+                {
+                    try { action.Exit(); } catch { }
+                }
+                _activeActions.Clear();
                 _actionQueue.Clear();
 
                 _snapshot?.Restore();
@@ -199,16 +258,19 @@ namespace ValleytalkReborn.Cutscene
             ModEntry.SMonitor?.Log("[VirtualDirector] Beginning fade-out transition...", LogLevel.Debug);
             _phase = DirectorPhase.FadingOut;
 
-            try
+            foreach (var action in _activeActions)
             {
-                _currentAction?.Exit();
-            }
-            catch (Exception ex)
-            {
-                ModEntry.SMonitor?.Log($"[VirtualDirector] Error exiting current action: {ex.Message}", LogLevel.Warn);
+                try
+                {
+                    action.Exit();
+                }
+                catch (Exception ex)
+                {
+                    ModEntry.SMonitor?.Log($"[VirtualDirector] Error exiting action: {ex.Message}", LogLevel.Warn);
+                }
             }
 
-            _currentAction = null;
+            _activeActions.Clear();
             _actionQueue.Clear();
         }
 
@@ -218,7 +280,7 @@ namespace ValleytalkReborn.Cutscene
         /// </summary>
         public void ForceStop()
         {
-            _currentAction = null;
+            _activeActions.Clear();
             _actionQueue.Clear();
             _snapshot = null;
             _participatingActors.Clear();
@@ -388,15 +450,39 @@ namespace ValleytalkReborn.Cutscene
                 Game1.viewport.Y = (int)MathHelper.Lerp(Game1.viewport.Y, targetViewport.Y, CameraLerpSpeed);
             }
 
-            // 6. 驱动当前动作
-            if (_currentAction != null)
+            // 6. 驱动所有活跃动作（支持并发执行）
+            for (int i = _activeActions.Count - 1; i >= 0; i--)
             {
-                bool completed = _currentAction.Update(Game1.currentGameTime);
+                var action = _activeActions[i];
+                bool completed = false;
+                try
+                {
+                    completed = action.Update(Game1.currentGameTime);
+                }
+                catch (Exception ex)
+                {
+                    ModEntry.SMonitor?.Log($"[VirtualDirector] Action update error: {ex.Message}", LogLevel.Warn);
+                    completed = true; // 异常时当作完成，防止死锁卡死
+                }
+
                 if (completed)
                 {
-                    _currentAction.Exit();
-                    AdvanceToNextAction();
+                    try
+                    {
+                        action.Exit();
+                    }
+                    catch (Exception ex)
+                    {
+                        ModEntry.SMonitor?.Log($"[VirtualDirector] Action exit error: {ex.Message}", LogLevel.Warn);
+                    }
+                    _activeActions.RemoveAt(i);
                 }
+            }
+
+            // 若当前批次所有活跃动作（包含并发动作与阻塞动作）全部运行完成，派发下一批动作
+            if (_activeActions.Count == 0)
+            {
+                AdvanceToNextActions();
             }
 
             // 7. ESC 键监听：随时可中止
@@ -504,19 +590,37 @@ namespace ValleytalkReborn.Cutscene
             Game1.viewportFreeze = false;
         }
 
-        private void AdvanceToNextAction()
+        /// <summary>
+        /// 派发下一批动作：连续出队直至遇到 WaitForCompletion == true 的动作，或队列为空
+        /// </summary>
+        private void AdvanceToNextActions()
         {
-            if (_actionQueue.Count > 0)
+            while (_actionQueue.Count > 0)
             {
-                _currentAction = _actionQueue.Dequeue();
-                _currentAction?.Enter();
-                ModEntry.SMonitor?.Log(
-                    $"[VirtualDirector] Advanced to action: {_currentAction?.GetType().Name}",
-                    LogLevel.Debug);
+                var action = _actionQueue.Dequeue();
+                try
+                {
+                    action.Enter();
+                    _activeActions.Add(action);
+                    ModEntry.SMonitor?.Log(
+                        $"[VirtualDirector] Started action: {action.GetType().Name} (WaitForCompletion: {action.WaitForCompletion})",
+                        LogLevel.Debug);
+                }
+                catch (Exception ex)
+                {
+                    ModEntry.SMonitor?.Log($"[VirtualDirector] Action Enter error: {ex.Message}", LogLevel.Warn);
+                }
+
+                if (action.WaitForCompletion)
+                {
+                    // 遇到阻塞动作，停止本轮并发派发，等待活跃动作更新完成
+                    break;
+                }
             }
-            else
+
+            if (_activeActions.Count == 0 && _actionQueue.Count == 0)
             {
-                // 剧本播毕：平滑黑屏过渡并恢复
+                // 剧本全部动作播毕：平滑黑屏过渡并恢复
                 ModEntry.SMonitor?.Log("[VirtualDirector] All actions completed, starting fade-out transition.", LogLevel.Info);
                 StartFadeOutAndRestore();
             }

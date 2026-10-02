@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
+using Newtonsoft.Json;
 using StardewModdingAPI;
 using StardewValley;
 using ValleytalkReborn.Cutscene.Actions;
@@ -9,12 +10,12 @@ using ValleytalkReborn.Cutscene.Actions;
 namespace ValleytalkReborn.Cutscene
 {
     /// <summary>
-    /// Phase 0 测试辅助器：提供硬编码的验证剧本
+    /// Phase 1 测试辅助器：提供基于 JSON IR 声明式协议与并发引擎驱动的验证剧本
     /// </summary>
     public static class CutsceneTestHelper
     {
         /// <summary>
-        /// 运行 Phase 0 验证剧本："15 秒概念验证"
+        /// 运行 Phase 1 验证剧本："声明式 JSON 编译器与并发动作验证"
         /// 在当前地图找一个 NPC 执行测试序列
         /// </summary>
         public static void RunTestCutscene()
@@ -54,7 +55,7 @@ namespace ValleytalkReborn.Cutscene
         }
 
         /// <summary>
-        /// 对指定 NPC 执行测试剧本
+        /// 对指定 NPC 执行测试剧本（基于 JSON IR 协议与并发驱动）
         /// </summary>
         public static void RunTestCutsceneWithActor(NPC actor)
         {
@@ -80,103 +81,45 @@ namespace ValleytalkReborn.Cutscene
             // 确保目标点可通行
             targetTile = MovementPathfinding.FindNearestWalkableTile(currentLoc, targetTile, actor, radius: 5);
 
-            // 构建测试剧本
-            var script = new List<IDirectorAction>
-            {
-                // 第 1 步：相机缓慢对焦该 NPC
-                new CameraAction(actor),
-
-                // 第 2 步：NPC 头顶冒惊叹号
-                new EmoteAction(actor, "SURPRISE"),
-
-                // 第 3 步：NPC 自主走位至目标格子（带 6 秒超时瞬移兜底）
-                new MoveToTileAction(actor, targetTile, timeoutSeconds: 6f),
-
-                // 第 4 步：转身看向农夫
-                new LookAtAction(actor, (StardewValley.Character)Game1.player),
-
-                // 第 5 步：说一句测试台词
-                new SpeakAction(actor, GetTestDialogue(actor.Name)),
-
-                // 第 6 步：开心地冒个爱心
-                new EmoteAction(actor, "HEART"),
-
-                // 第 7 步：再说一句
-                new SpeakAction(actor, "按 ESC 可随时退出过场演出！")
-            };
-
-            ModEntry.SMonitor?.Log(
-                $"[CutsceneTest] Starting test cutscene with {actor.Name} at ({startTile.X},{startTile.Y}) -> ({targetTile.X},{targetTile.Y})",
-                LogLevel.Info);
-
-            VirtualDirector.Instance.Play(script, new List<NPC> { actor });
-        }
-
-        private static string GetTestDialogue(string npcName)
-        {
-            // 根据语言返回测试台词
             bool isChinese = LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.zh;
+            string speak1 = isChinese
+                ? $"你好！我是 {actor.Name}，现在已经完全由 JSON 编译器和并发引擎驱动了！"
+                : $"Hey! I'm {actor.Name}, now fully driven by the JSON IR compiler and parallel action engine!";
+            string speak2 = isChinese
+                ? "按下 ESC 可以随时退出，而且动作完全不会卡死！"
+                : "Press ESC anytime to exit smoothly — zero deadlocks!";
 
-            if (isChinese)
-            {
-                return $"你好！我是 {npcName}，这是虚拟导演系统的测试演出！";
-            }
-            else
-            {
-                return $"Hey! I'm {npcName}, and this is a Virtual Director test cutscene!";
-            }
-        }
-
-        /// <summary>
-        /// 多 NPC 协作测试剧本（Phase 0 扩展验证）
-        /// </summary>
-        public static void RunMultiActorTest()
-        {
-            if (!Context.IsWorldReady || Game1.player?.currentLocation == null)
-            {
-                ModEntry.SMonitor?.Log("[CutsceneTest] World not ready.", LogLevel.Warn);
-                return;
-            }
-
-            var currentLoc = Game1.player.currentLocation;
-            var nearbyNpcs = currentLoc.characters
-                .Where(n => n != null && n.IsVillager && Vector2.Distance(n.Tile, Game1.player.Tile) < 12f)
-                .Take(2)
-                .ToList();
-
-            if (nearbyNpcs.Count < 2)
-            {
-                ModEntry.SMonitor?.Log("[CutsceneTest] Need at least 2 NPCs nearby for multi-actor test.", LogLevel.Warn);
-                Game1.addHUDMessage(new HUDMessage("Need 2+ NPCs nearby!", HUDMessage.error_type));
-                return;
-            }
-
-            var npc1 = nearbyNpcs[0];
-            var npc2 = nearbyNpcs[1];
-
-            // 让两个 NPC 互相看向对方并交流
-            var script = new List<IDirectorAction>
-            {
-                new CameraAction(npc1),
-                new EmoteAction(npc1, "SURPRISE"),
-                new LookAtAction(npc1, (StardewValley.Character)npc2),
-                new SpeakAction(npc1, $"嘿，{npc2.Name}！"),
-                
-                new CameraAction(npc2),
-                new LookAtAction(npc2, (StardewValley.Character)npc1),
-                new EmoteAction(npc2, "QUESTION"),
-                new SpeakAction(npc2, $"怎么了，{npc1.Name}？"),
-                
-                new CameraAction(npc1),
-                new EmoteAction(npc1, "HEART"),
-                new SpeakAction(npc1, "虚拟导演系统运行正常！"),
-            };
+            // 构造真实的声明式 JSON 剧本（带 Markdown 围栏，验证编译器的容错剔除能力）
+            string jsonScript = $@"
+            ```json
+            {{
+                ""title"": ""{actor.Name} 的并发演练"",
+                ""actors"": [""{actor.Name}""],
+                ""actions"": [
+                    {{ ""type"": ""camera"", ""target"": ""{actor.Name}"", ""waitForCompletion"": false }},
+                    {{ ""type"": ""sound"", ""soundName"": ""dwop"", ""waitForCompletion"": false }},
+                    {{ ""type"": ""emote"", ""actor"": ""{actor.Name}"", ""emote"": ""SURPRISE"", ""waitForCompletion"": false }},
+                    {{ ""type"": ""move"", ""actor"": ""{actor.Name}"", ""targetTile"": [{(int)targetTile.X}, {(int)targetTile.Y}], ""timeout"": 6.0, ""waitForCompletion"": true }},
+                    {{ ""type"": ""lookAt"", ""actor"": ""{actor.Name}"", ""target"": ""farmer"", ""waitForCompletion"": true }},
+                    {{ ""type"": ""wait"", ""duration"": 0.5, ""waitForCompletion"": true }},
+                    {{ ""type"": ""speak"", ""actor"": ""{actor.Name}"", ""text"": ""{speak1}"", ""waitForCompletion"": true }},
+                    {{ ""type"": ""sound"", ""soundName"": ""coin"", ""waitForCompletion"": false }},
+                    {{ ""type"": ""emote"", ""actor"": ""{actor.Name}"", ""emote"": ""HEART"", ""waitForCompletion"": false }},
+                    {{ ""type"": ""speak"", ""actor"": ""{actor.Name}"", ""text"": ""{speak2}"", ""waitForCompletion"": true }}
+                ]
+            }}
+            ```
+            ";
 
             ModEntry.SMonitor?.Log(
-                $"[CutsceneTest] Starting multi-actor test with {npc1.Name} and {npc2.Name}",
+                $"[CutsceneTest] Starting JSON-compiled cutscene with {actor.Name} at ({startTile.X},{startTile.Y}) -> ({targetTile.X},{targetTile.Y})",
                 LogLevel.Info);
 
-            VirtualDirector.Instance.Play(script, new List<NPC> { npc1, npc2 });
+            bool success = VirtualDirector.Instance.PlayScript(jsonScript, out string error);
+            if (!success)
+            {
+                ModEntry.SMonitor?.Log($"[CutsceneTest] PlayScript failed: {error}", LogLevel.Error);
+            }
         }
     }
 }
