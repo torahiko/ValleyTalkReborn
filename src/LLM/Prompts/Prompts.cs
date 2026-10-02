@@ -718,9 +718,15 @@ public class Prompts
         instructions.AppendLine(isZh
             ? "- [SCENE_FACT_AUTHORITY] 当前场景（所在地点与现场条件）和当前与农夫的关系状态是唯一事实权威；角色卡、示例对白与历史记录若与此冲突，一律以当前事实为准。允许与现场吻合的细小动作，但不得凭空确定他人在场、特定设备或环境成因。"
             : "- [SCENE_FACT_AUTHORITY] The current scene (your location and on-site conditions) and your current relationship with the farmer are the sole factual authority; your character card, sample lines, and past dialogue never override them. Small actions that fit the scene are fine, but never assert other people's presence, specific equipment, or environmental causes out of thin air.");
+        instructions.AppendLine(isZh
+            ? "- [PROGRESSION_MOMENTUM] 推动事态向前演进：日常交谈具有连贯的生活推进力。当上一轮的话题、提议或询问已被对方承接后，角色应自信推进到下一步具体行动、细节决策或现场分工（例如直接动身起手、商量偏好分工、交代当下收尾），让交互像真实生活一样往前走。"
+            : "- [PROGRESSION_MOMENTUM] Keep the moment moving forward: everyday exchanges carry a coherent sense of life progression. Once the previous topic, proposal, or question has been picked up, confidently advance to the next concrete step, detail decision, or on-the-spot division of labor (e.g., get moving right away, settle who does what, hand off the wrap-up), letting the interaction walk forward like real life.");
 
         if (enableResponses)
         {
+            instructions.AppendLine(isZh
+                ? "- [OPTION_DIVERGENCE] 选项态度三棱镜：若本轮提出 '%' 回复选项，确保每个选项代表鲜明的态度倾向与行动差异（例如：一条积极推进细节、一条生活幽默打趣、一条表达独立节奏或分工协助），让每个选项都能引出不同的互动走向；若当前交流已自然达成默契或行动已定，直接以干脆自信的生活话语收尾，无需强行反问。"
+                : "- [OPTION_DIVERGENCE] Attitudinal prism for options: if you offer '%' reply options this turn, make each option carry a distinct attitude and action difference (e.g., one pushing the details forward, one daily-life quip, one voicing an independent pace or lending a hand), so every option opens a different direction; when the exchange has naturally settled into agreement or the plan is set, close with crisp, confident everyday words instead of a forced follow-up question.");
             instructions.AppendLine(isZh
                 ? "- [SUGGESTION_SCOPE_RULE] 以 '%' 开头的发言选项，取材范围仅严格限于你已经在本次台词中亲口说出的信息。未说出口的潜意识、私密挂念与偷听内容严禁作为选项线索。"
                 : "- [SUGGESTION_SCOPE_RULE] Any suggested response options prefixed with '%' MUST draw solely from what you have explicitly voiced aloud. Unspoken inner thoughts and overheard gossip are strictly excluded until you voice them.");
@@ -1011,8 +1017,8 @@ public class Prompts
                              or StardewValley.Locations.IslandFarmHouse;
             if (isIndoors)
                 prompt.AppendLine(IsZh()
-                    ? "- 空间类型: 室内。下方天气描述仅指室外条件，不得据此推断室内寒冷、特定取暖设备或农夫刚从户外进入。"
-                    : "- Space Type: Indoors. The weather description below reflects outdoor conditions only; do not infer indoor chill, specific heating equipment, or that the farmer just arrived from outside.");
+                    ? "- 空间类型: 室内。农夫处于室内日常状态（常温），聚焦当前的室内农务与活动本身。"
+                    : "- Space Type: Indoors. The farmer is in a settled indoor routine at normal room temperature. Focus entirely on indoor actions.");
             else
                 prompt.AppendLine(IsZh() ? "- 空间类型: 室外。" : "- Space Type: Outdoors.");
 
