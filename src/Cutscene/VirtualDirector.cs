@@ -10,13 +10,24 @@ using StardewValley;
 namespace ValleytalkReborn.Cutscene
 {
     /// <summary>
-    /// 虚拟导演中控：单例存在于主线程，负责接管游戏状态、驱动动作队列、控制相机与电影黑边。
+    /// 虚拟导演中控：单例存在于主线程，负责接管游戏状态、驱动动作队列、控制相机与电影黑边，
+    /// 并提供无缝黑屏渐变遮罩（Fade-to-Black）优雅复原现场。
     /// </summary>
     public sealed class VirtualDirector
     {
         public static VirtualDirector Instance { get; } = new();
 
         public bool IsActive { get; private set; }
+
+        private enum DirectorPhase
+        {
+            Idle,
+            Playing,
+            FadingOut,
+            FadingIn
+        }
+
+        private DirectorPhase _phase = DirectorPhase.Idle;
 
         // 状态与队列
         private readonly Queue<IDirectorAction> _actionQueue = new();
@@ -28,6 +39,10 @@ namespace ValleytalkReborn.Cutscene
         private float _blackBarHeight;
         private const float TargetBarHeight = 70f;
         private const float BlackBarTransitionSpeed = 4f; // 像素/帧
+
+        // 视觉表现：全屏黑幕过渡
+        private float _fadeAlpha = 0f;
+        private const float FadeSpeed = 2.5f; // ~0.4s 渐出，~0.4s 渐入，总耗时约 0.8s 电影级过渡
 
         // 视觉表现：相机平滑插值
         private Vector2? _cameraTargetPixel;
@@ -74,6 +89,8 @@ namespace ValleytalkReborn.Cutscene
             try
             {
                 IsActive = true;
+                _phase = DirectorPhase.Playing;
+                _fadeAlpha = 0f;
 
                 // 1. 捕获初始快照与唤醒参演角色
                 _snapshot = CutsceneSnapshot.Capture(actors ?? new List<NPC>());
@@ -109,48 +126,90 @@ namespace ValleytalkReborn.Cutscene
             catch (Exception ex)
             {
                 ModEntry.SMonitor?.Log($"[VirtualDirector] Play failed: {ex}", LogLevel.Error);
-                Abort();
+                Abort(immediate: true);
             }
         }
 
         /// <summary>
-        /// 随时中止过场：ESC 键触发或内部错误时调用，零延迟优雅复原
+        /// 中止过场：默认走优雅黑屏过渡（~0.8s），也可在异常或重置时立即硬复原。
         /// </summary>
-        public void Abort()
+        public void Abort(bool immediate = false)
         {
             if (!IsActive) return;
 
+            if (immediate)
+            {
+                ImmediateRestore();
+                return;
+            }
+
+            if (_phase == DirectorPhase.FadingOut || _phase == DirectorPhase.FadingIn)
+            {
+                // 已经在过渡收尾中，忽略重复触发
+                return;
+            }
+
+            StartFadeOutAndRestore();
+        }
+
+        /// <summary>
+        /// 立即硬复原：在未预期的异常分支或强制停止时跳过渐变动画。
+        /// </summary>
+        private void ImmediateRestore()
+        {
             try
             {
-                ModEntry.SMonitor?.Log("[VirtualDirector] Aborting cutscene...", LogLevel.Debug);
+                ModEntry.SMonitor?.Log("[VirtualDirector] Immediate restore requested.", LogLevel.Debug);
 
-                // 1. 退出当前动作
                 _currentAction?.Exit();
                 _currentAction = null;
-
-                // 2. 清空剩余动作
                 _actionQueue.Clear();
 
-                // 3. 恢复快照
                 _snapshot?.Restore();
-
-                // 4. 恢复游戏控制
                 RestoreGame();
 
-                // 5. 重置视觉状态
                 _blackBarHeight = 0f;
                 _cameraTargetPixel = null;
                 _participatingActors.Clear();
+                _fadeAlpha = 0f;
+                _phase = DirectorPhase.Idle;
+                _snapshot = null;
 
                 IsActive = false;
 
-                ModEntry.SMonitor?.Log("[VirtualDirector] Cutscene aborted successfully.", LogLevel.Info);
+                ModEntry.SMonitor?.Log("[VirtualDirector] Cutscene immediately restored.", LogLevel.Info);
             }
             catch (Exception ex)
             {
-                ModEntry.SMonitor?.Log($"[VirtualDirector] Abort failed: {ex}", LogLevel.Error);
+                ModEntry.SMonitor?.Log($"[VirtualDirector] ImmediateRestore failed: {ex}", LogLevel.Error);
+                _phase = DirectorPhase.Idle;
                 IsActive = false;
+                _snapshot = null;
             }
+        }
+
+        /// <summary>
+        /// 启动黑屏渐出过渡，准备幕后复原
+        /// </summary>
+        private void StartFadeOutAndRestore()
+        {
+            if (_phase != DirectorPhase.Playing)
+                return;
+
+            ModEntry.SMonitor?.Log("[VirtualDirector] Beginning fade-out transition...", LogLevel.Debug);
+            _phase = DirectorPhase.FadingOut;
+
+            try
+            {
+                _currentAction?.Exit();
+            }
+            catch (Exception ex)
+            {
+                ModEntry.SMonitor?.Log($"[VirtualDirector] Error exiting current action: {ex.Message}", LogLevel.Warn);
+            }
+
+            _currentAction = null;
+            _actionQueue.Clear();
         }
 
         /// <summary>
@@ -165,6 +224,8 @@ namespace ValleytalkReborn.Cutscene
             _participatingActors.Clear();
             _blackBarHeight = 0f;
             _cameraTargetPixel = null;
+            _fadeAlpha = 0f;
+            _phase = DirectorPhase.Idle;
 
             if (IsActive)
             {
@@ -176,7 +237,7 @@ namespace ValleytalkReborn.Cutscene
         }
 
         /// <summary>
-        /// 每帧更新：驱动动作队列、维护演员保活、相机插值、ESC 监听
+        /// 每帧更新：驱动动作队列、维护演员保活、相机插值、黑屏过渡与 ESC 监听
         /// </summary>
         public void Update(UpdateTickedEventArgs e)
         {
@@ -184,109 +245,211 @@ namespace ValleytalkReborn.Cutscene
 
             try
             {
-                // 1. 维护参演 Actor 保活（关键：防止时间冻结时 NPC 物理更新被跳过）
-                foreach (var actor in _participatingActors)
+                float dt = (float)Game1.currentGameTime.ElapsedGameTime.TotalSeconds;
+
+                if (_phase == DirectorPhase.FadingOut)
                 {
-                    if (actor?.currentLocation != null)
-                    {
-                        actor.forceUpdateTimer = 1000;
-                        if (actor.movementPause > 0)
-                            actor.movementPause = 0;
-                    }
+                    UpdateFadingOut(dt);
+                    return;
                 }
 
-                // 2. 维持玩家定身
-                if (Game1.player != null)
+                if (_phase == DirectorPhase.FadingIn)
                 {
-                    Game1.player.freezePause = 100;
-                    Game1.player.CanMove = false;
+                    UpdateFadingIn(dt);
+                    return;
                 }
 
-                // 3. 维持时钟静止
-                Game1.gameTimeInterval = 0;
-
-                // 4. 黑边平滑过渡
-                if (_blackBarHeight < TargetBarHeight)
+                if (_phase == DirectorPhase.Playing)
                 {
-                    _blackBarHeight = Math.Min(_blackBarHeight + BlackBarTransitionSpeed, TargetBarHeight);
+                    UpdatePlaying(dt);
                 }
-
-                // 5. 相机平滑插值
-                if (_cameraTargetPixel.HasValue)
-                {
-                    var targetViewport = new Vector2(
-                        _cameraTargetPixel.Value.X - Game1.viewport.Width / 2f,
-                        _cameraTargetPixel.Value.Y - Game1.viewport.Height / 2f
-                    );
-
-                    // Clamp 边界限制：防止相机滑出地图
-                    var currentLoc = Game1.currentLocation;
-                    if (currentLoc != null && currentLoc.map != null)
-                    {
-                        int mapWidthPixels = currentLoc.map.Layers[0].LayerWidth * 64;
-                        int mapHeightPixels = currentLoc.map.Layers[0].LayerHeight * 64;
-
-                        targetViewport.X = Math.Clamp(targetViewport.X, 0, mapWidthPixels - Game1.viewport.Width);
-                        targetViewport.Y = Math.Clamp(targetViewport.Y, 0, mapHeightPixels - Game1.viewport.Height);
-                    }
-
-                    Game1.viewport.X = (int)MathHelper.Lerp(Game1.viewport.X, targetViewport.X, CameraLerpSpeed);
-                    Game1.viewport.Y = (int)MathHelper.Lerp(Game1.viewport.Y, targetViewport.Y, CameraLerpSpeed);
-                }
-
-                // 6. 驱动当前动作
-                if (_currentAction != null)
-                {
-                    bool completed = _currentAction.Update(Game1.currentGameTime);
-                    if (completed)
-                    {
-                        _currentAction.Exit();
-                        AdvanceToNextAction();
-                    }
-                }
-
-                // 7. ESC 键监听：随时可中止
-                var currentKeyState = Keyboard.GetState();
-                if (currentKeyState.IsKeyDown(Keys.Escape) && _lastKeyState.IsKeyUp(Keys.Escape))
-                {
-                    ModEntry.SMonitor?.Log("[VirtualDirector] ESC pressed, aborting cutscene.", LogLevel.Debug);
-                    Abort();
-                }
-                _lastKeyState = currentKeyState;
             }
             catch (Exception ex)
             {
                 ModEntry.SMonitor?.Log($"[VirtualDirector] Update error: {ex}", LogLevel.Error);
-                Abort();
+                Abort(immediate: true);
             }
         }
 
+        private void UpdateFadingOut(float dt)
+        {
+            // 渐变黑屏过程中保持玩家定身与时钟静止
+            if (Game1.player != null)
+            {
+                Game1.player.freezePause = 100;
+                Game1.player.CanMove = false;
+            }
+            Game1.gameTimeInterval = 0;
+
+            _fadeAlpha += dt * FadeSpeed;
+            if (_fadeAlpha >= 1f)
+            {
+                _fadeAlpha = 1f;
+
+                // ★ 核心：黑幕完全掩盖视线（100% 纯黑）后，在幕后神不知鬼不觉地复原现场
+                ModEntry.SMonitor?.Log("[VirtualDirector] Screen fully black — restoring snapshot behind curtain.", LogLevel.Debug);
+
+                // 1. 恢复快照（NPC 归位、重置控制器与原版日程）
+                _snapshot?.Restore();
+
+                // 2. 解除游戏视口冻结与相机跟随，恢复 HUD
+                RestoreGame();
+                _cameraTargetPixel = null;
+                _blackBarHeight = 0f;
+                _participatingActors.Clear();
+
+                // 3. 转入淡入阶段，保持玩家定身直到淡入完成
+                if (Game1.player != null)
+                {
+                    Game1.player.freezePause = 10;
+                    Game1.player.CanMove = false;
+                }
+                _phase = DirectorPhase.FadingIn;
+            }
+        }
+
+        private void UpdateFadingIn(float dt)
+        {
+            // 淡入过程中保持玩家定身，避免在黑屏尚未完全退去时误触移动
+            if (Game1.player != null)
+            {
+                Game1.player.freezePause = 10;
+                Game1.player.CanMove = false;
+            }
+
+            _fadeAlpha -= dt * FadeSpeed;
+            if (_fadeAlpha <= 0f)
+            {
+                _fadeAlpha = 0f;
+                _phase = DirectorPhase.Idle;
+                IsActive = false;
+
+                // 最终归还玩家控制权（依据快照真实记录的值还原）
+                if (Game1.player != null && _snapshot != null)
+                {
+                    Game1.player.CanMove = _snapshot.PlayerCanMove;
+                    Game1.player.freezePause = 0;
+                }
+                _snapshot = null;
+
+                ModEntry.SMonitor?.Log("[VirtualDirector] Cutscene transition completed, control returned.", LogLevel.Info);
+            }
+        }
+
+        private void UpdatePlaying(float dt)
+        {
+            // 1. 维护参演 Actor 保活（关键：防止时间冻结时 NPC 物理更新被跳过）
+            foreach (var actor in _participatingActors)
+            {
+                if (actor?.currentLocation != null)
+                {
+                    actor.forceUpdateTimer = 1000;
+                    if (actor.movementPause > 0)
+                        actor.movementPause = 0;
+                }
+            }
+
+            // 2. 维持玩家定身
+            if (Game1.player != null)
+            {
+                Game1.player.freezePause = 100;
+                Game1.player.CanMove = false;
+            }
+
+            // 3. 维持时钟静止
+            Game1.gameTimeInterval = 0;
+
+            // 4. 黑边平滑过渡
+            if (_blackBarHeight < TargetBarHeight)
+            {
+                _blackBarHeight = Math.Min(_blackBarHeight + BlackBarTransitionSpeed, TargetBarHeight);
+            }
+
+            // 5. 相机平滑插值
+            if (_cameraTargetPixel.HasValue)
+            {
+                var targetViewport = new Vector2(
+                    _cameraTargetPixel.Value.X - Game1.viewport.Width / 2f,
+                    _cameraTargetPixel.Value.Y - Game1.viewport.Height / 2f
+                );
+
+                // Clamp 边界限制：防止相机滑出地图
+                var currentLoc = Game1.currentLocation;
+                if (currentLoc != null && currentLoc.map != null)
+                {
+                    int mapWidthPixels = currentLoc.map.Layers[0].LayerWidth * 64;
+                    int mapHeightPixels = currentLoc.map.Layers[0].LayerHeight * 64;
+
+                    targetViewport.X = Math.Clamp(targetViewport.X, 0, mapWidthPixels - Game1.viewport.Width);
+                    targetViewport.Y = Math.Clamp(targetViewport.Y, 0, mapHeightPixels - Game1.viewport.Height);
+                }
+
+                Game1.viewport.X = (int)MathHelper.Lerp(Game1.viewport.X, targetViewport.X, CameraLerpSpeed);
+                Game1.viewport.Y = (int)MathHelper.Lerp(Game1.viewport.Y, targetViewport.Y, CameraLerpSpeed);
+            }
+
+            // 6. 驱动当前动作
+            if (_currentAction != null)
+            {
+                bool completed = _currentAction.Update(Game1.currentGameTime);
+                if (completed)
+                {
+                    _currentAction.Exit();
+                    AdvanceToNextAction();
+                }
+            }
+
+            // 7. ESC 键监听：随时可中止
+            var currentKeyState = Keyboard.GetState();
+            if (currentKeyState.IsKeyDown(Keys.Escape) && _lastKeyState.IsKeyUp(Keys.Escape))
+            {
+                ModEntry.SMonitor?.Log("[VirtualDirector] ESC pressed, beginning fade-out abort.", LogLevel.Debug);
+                StartFadeOutAndRestore();
+            }
+            _lastKeyState = currentKeyState;
+        }
+
         /// <summary>
-        /// 绘制电影黑边遮罩
+        /// 绘制电影黑边遮罩与全屏转场黑幕
         /// </summary>
         public void DrawOverlay(SpriteBatch b)
         {
             if (!IsActive) return;
-            if (_blackBarHeight <= 0f) return;
 
             try
             {
-                int barHeight = (int)_blackBarHeight;
                 var viewport = Game1.graphics.GraphicsDevice.Viewport;
 
-                // 上黑边
-                b.Draw(
-                    Game1.staminaRect,
-                    new Rectangle(0, 0, viewport.Width, barHeight),
-                    Color.Black
-                );
+                // 1. 绘制电影上下黑边（当黑边高度 > 0）
+                if (_blackBarHeight > 0f)
+                {
+                    int barHeight = (int)_blackBarHeight;
 
-                // 下黑边
-                b.Draw(
-                    Game1.staminaRect,
-                    new Rectangle(0, viewport.Height - barHeight, viewport.Width, barHeight),
-                    Color.Black
-                );
+                    // 上黑边
+                    b.Draw(
+                        Game1.staminaRect,
+                        new Rectangle(0, 0, viewport.Width, barHeight),
+                        Color.Black
+                    );
+
+                    // 下黑边
+                    b.Draw(
+                        Game1.staminaRect,
+                        new Rectangle(0, viewport.Height - barHeight, viewport.Width, barHeight),
+                        Color.Black
+                    );
+                }
+
+                // 2. 绘制全屏黑幕渐变（FadingOut / FadingIn 阶段）
+                if (_fadeAlpha > 0f)
+                {
+                    float alpha = Math.Clamp(_fadeAlpha, 0f, 1f);
+                    b.Draw(
+                        Game1.staminaRect,
+                        new Rectangle(0, 0, viewport.Width, viewport.Height),
+                        Color.Black * alpha
+                    );
+                }
             }
             catch (Exception ex)
             {
@@ -334,7 +497,6 @@ namespace ValleytalkReborn.Cutscene
         {
             if (Game1.player != null)
             {
-                // 玩家移动控制权（CanMove）已由 CutsceneSnapshot.Restore() 依据真实快照幂等还原
                 Game1.player.freezePause = 0;
             }
 
@@ -354,9 +516,9 @@ namespace ValleytalkReborn.Cutscene
             }
             else
             {
-                // 剧本播毕：自动恢复
-                ModEntry.SMonitor?.Log("[VirtualDirector] All actions completed, restoring game.", LogLevel.Info);
-                Abort();
+                // 剧本播毕：平滑黑屏过渡并恢复
+                ModEntry.SMonitor?.Log("[VirtualDirector] All actions completed, starting fade-out transition.", LogLevel.Info);
+                StartFadeOutAndRestore();
             }
         }
     }
