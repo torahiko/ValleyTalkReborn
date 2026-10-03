@@ -106,12 +106,11 @@ public class SocialCrystallizationTests
         var close = SocialGraphService.Instance.GetProfile(farmer, "Hakan", 0, isMarried: false);
         Assert.Equal(SocialArchetype.CloseConfidant, close.Archetype);
 
-        // 冷启动播种自愈：6 心种子（Affection 60/Trust 40）服从九宫格重判 → Stranger
-        // （CreateDefault 的 4~7 心 GuardedAcquaintance 标记与九宫格阈值本就不自洽，
-        //   自愈后以九宫格为单一真理源）。
+        // 冷启动播种自愈（VT-SOCIAL-04 A3 新阈值）：6 心种子（Affection 60/Trust 40）
+        // 落入拓宽后的 GuardedAcquaintance 区间（Aff>=40 && Trust<60），种子语义与九宫格归一。
         var fresh = NewFarmer();
-        var seeded = SocialGraphService.Instance.GetProfile(fresh, "Alex", 6);
-        Assert.Equal(SocialArchetype.Stranger, seeded.Archetype);
+        var seeded = SocialGraphService.Instance.GetProfile(fresh, "Alex", 6, isMarried: false);
+        Assert.Equal(SocialArchetype.GuardedAcquaintance, seeded.Archetype);
         Assert.Equal(60, seeded.Affection);
         Assert.Equal(40, seeded.Trust);
     }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using StardewModdingAPI;
 using StardewValley;
+using ValleytalkReborn.Social;
 
 namespace ValleytalkReborn.Cutscene.Services
 {
@@ -101,6 +102,39 @@ namespace ValleytalkReborn.Cutscene.Services
                 {
                     ModEntry.SMonitor?.Log(
                         $"[FriendshipSettlement] Daily cap reached for {npcName} (Current today: {currentToday}), skipping delta {rawDelta}.",
+                        LogLevel.Debug);
+                }
+            }
+
+            // 3.5 VT-SOCIAL-04：即时刺激分流 — 自然偶遇（非 F9 沙盒）同步演化高维 SocialProfile，
+            // 原版 points 的每日 ±20 硬顶保持不变。
+            if (isSerendipity
+                && !string.IsNullOrWhiteSpace(npcName)
+                && rawDelta != 0
+                && Context.IsWorldReady
+                && Game1.player != null)
+            {
+                try
+                {
+                    SocialProfile profile = SocialGraphService.Instance.GetProfile(Game1.player, npcName);
+                    if (rawDelta > 0)
+                    {
+                        profile.Affection = Math.Clamp(profile.Affection + Math.Max(1, rawDelta / 5), 0, 100);
+                        profile.Trust = Math.Clamp(profile.Trust + (rawDelta >= 20 ? 2 : 1), 0, 100);
+                        profile.UnresolvedFriction = Math.Clamp(profile.UnresolvedFriction - (rawDelta >= 20 ? 15 : 5), 0, 100);
+                    }
+                    else
+                    {
+                        profile.Affection = Math.Clamp(profile.Affection + rawDelta / 4, 0, 100);
+                        profile.UnresolvedFriction = Math.Clamp(profile.UnresolvedFriction + Math.Abs(rawDelta) / 2, 0, 100);
+                    }
+                    SocialGraphService.Instance.SaveProfile(Game1.player, npcName, profile);
+                }
+                catch (Exception ex)
+                {
+                    // [RECOVERABLE] 非就绪/测试环境空引用：仅记录，保证 HUD 与原返回路径不崩。
+                    ModEntry.SMonitor?.Log(
+                        $"[FriendshipSettlement] Social profile ingestion skipped for '{npcName}': {ex.Message}",
                         LogLevel.Debug);
                 }
             }

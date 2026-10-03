@@ -29,13 +29,15 @@ public sealed class SocialGraphService
 
     /// <summary>
     /// 读取 NPC 心理档案；键缺失/空白时按原版心级冷启动播种并写回 ModData。
+    /// VT-SOCIAL-04 (A2)：isMarried 缺省时经 SpouseQueryService 解析，与 SaveProfile 对称，
+    /// 杜绝外部调用方漏传参数导致的九宫格翻转。
     /// </summary>
-    public SocialProfile GetProfile(Farmer farmer, string npcName, int vanillaHearts = 0, bool isMarried = false)
+    public SocialProfile GetProfile(Farmer farmer, string npcName, int vanillaHearts = 0, bool? isMarried = null)
     {
         if (farmer == null)
         {
             Log.Error("[SocialGraphService] GetProfile called with null farmer (SaveLoaded 未完成?) — 返回安全回退档案。");
-            return SocialProfile.CreateDefault(vanillaHearts, isMarried);
+            return SocialProfile.CreateDefault(vanillaHearts, isMarried ?? false);
         }
         if (string.IsNullOrWhiteSpace(npcName))
         {
@@ -43,11 +45,12 @@ public sealed class SocialGraphService
             return SocialProfile.CreateDefault();
         }
 
+        bool married = isMarried ?? SpouseQueryService.Instance.IsMarried(npcName, farmer);
         string key = ModDataPrefix + npcName;
         if (!farmer.modData.TryGetValue(key, out string raw) || string.IsNullOrWhiteSpace(raw))
         {
-            var seeded = SocialProfile.CreateDefault(vanillaHearts, isMarried);
-            seeded.Archetype = EvaluateArchetype(seeded, isMarried);
+            var seeded = SocialProfile.CreateDefault(vanillaHearts, married);
+            seeded.Archetype = EvaluateArchetype(seeded, married);
             farmer.modData[key] = JsonSerializer.Serialize(seeded, JsonOptions);
             return seeded;
         }
@@ -57,7 +60,7 @@ public sealed class SocialGraphService
             var profile = JsonSerializer.Deserialize<SocialProfile>(raw, JsonOptions);
             if (profile != null)
             {
-                profile.Archetype = EvaluateArchetype(profile, isMarried);
+                profile.Archetype = EvaluateArchetype(profile, married);
                 return profile;
             }
             Log.Warning($"[SocialGraphService] Null social profile payload for '{npcName}' — 视为损坏，重置为默认档案并写回修复。");
@@ -67,8 +70,8 @@ public sealed class SocialGraphService
             Log.Warning($"[SocialGraphService] Corrupt social profile for '{npcName}' ({ex.Message}) — 重置为默认档案并写回修复。");
         }
 
-        var repaired = SocialProfile.CreateDefault(vanillaHearts, isMarried);
-        repaired.Archetype = EvaluateArchetype(repaired, isMarried);
+        var repaired = SocialProfile.CreateDefault(vanillaHearts, married);
+        repaired.Archetype = EvaluateArchetype(repaired, married);
         farmer.modData[key] = JsonSerializer.Serialize(repaired, JsonOptions);
         return repaired;
     }
@@ -90,7 +93,7 @@ public sealed class SocialGraphService
 
     /// <summary>
     /// 九宫格判定：婚后 UnresolvedFriction > DomesticDistance > 默认和谐；
-    /// 未婚按 Affection × Trust 阈值交叉判定。
+    /// 未婚按 Affection × Trust 阈值交叉判定（VT-SOCIAL-04 A3 裁决阈值，全平面无缝覆盖）。
     /// </summary>
     public SocialArchetype EvaluateArchetype(SocialProfile profile, bool isMarried)
     {
@@ -101,8 +104,8 @@ public sealed class SocialGraphService
             return SocialArchetype.DomesticHarmonious;
         }
         if (profile.Affection >= 60 && profile.Trust >= 60) return SocialArchetype.CloseConfidant;
-        if (profile.Affection >= 50 && profile.Trust < 35) return SocialArchetype.GuardedAcquaintance;
-        if (profile.Affection < 40 && profile.Trust >= 55) return SocialArchetype.ReluctantConfidant;
+        if (profile.Affection >= 40 && profile.Trust < 60) return SocialArchetype.GuardedAcquaintance;
+        if (profile.Affection < 40 && profile.Trust >= 50) return SocialArchetype.ReluctantConfidant;
         return SocialArchetype.Stranger;
     }
 

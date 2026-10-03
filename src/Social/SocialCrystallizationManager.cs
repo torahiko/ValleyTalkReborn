@@ -6,7 +6,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -86,7 +85,8 @@ public sealed class SocialCrystallizationManager
                 // [BUG] ModData 写入失败须被捕获记录，防止阻断入睡存档。
                 SocialProfile profile = SocialGraphService.Instance.GetProfile(
                     farmer, npcName, farmer.getFriendshipHeartLevelForNPC(npcName), isMarried: true);
-                SettleSpouseDailyMetrics(profile, friendship.TalkedToToday, HasActiveNeglectShock(npcName));
+                SettleSpouseDailyMetrics(profile, friendship.TalkedToToday,
+                    MoodShockStore.HasActiveShock(npcName, EmotionShockIds.Neglect(npcName)));
                 SocialGraphService.Instance.SaveProfile(farmer, npcName, profile, isMarried: true);
             }
             catch (Exception ex)
@@ -148,38 +148,5 @@ public sealed class SocialCrystallizationManager
             // [RECOVERABLE] 无头/异常环境：静默跳过，严禁阻断游戏循环。
             Log.Debug($"[SocialCrystallization] HUD message skipped ({ex.Message}).");
         }
-    }
-
-    /// <summary>
-    /// 探测 NPC 是否带有未过期的 Neglect 冲击（工单授权的等价检查：
-    /// MoodShockStore 未公开按 SourceId 的活性探测 API 且不在本工单范围，
-    /// 过期判定与 store 的惰性清除规则一致）。
-    /// </summary>
-    private static bool HasActiveNeglectShock(string npcName)
-    {
-        var shocks = typeof(MoodShockStore).GetField("_shocks", BindingFlags.Static | BindingFlags.NonPublic)
-            ?.GetValue(null) as Dictionary<string, List<MoodShock>>;
-        if (shocks == null)
-        {
-            Log.Warning("[SocialCrystallization] MoodShockStore._shocks unavailable — neglect probe skipped.");
-            return false;
-        }
-
-        string neglectId = EmotionShockIds.Neglect(npcName);
-        int now = MoodShockStore.NowProvider();
-        foreach (var kvp in shocks)
-        {
-            if (!string.Equals(kvp.Key, npcName, StringComparison.OrdinalIgnoreCase)) continue;
-            foreach (MoodShock shock in kvp.Value)
-            {
-                if (string.Equals(shock.SourceId, neglectId, StringComparison.OrdinalIgnoreCase)
-                    && shock.DurationMinutes > 0
-                    && now - shock.StartGameMinutes < shock.DurationMinutes)
-                {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 }

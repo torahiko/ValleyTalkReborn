@@ -163,6 +163,26 @@ public static class MoodShockStore
         }
     }
 
+    /// <summary>
+    /// VT-SOCIAL-04：按 SourceId 探测 NPC 是否携带未过期冲击（先惰性清除过期项，规则与聚合一致）。
+    /// </summary>
+    public static bool HasActiveShock(string npcName, string sourceId)
+    {
+        if (string.IsNullOrWhiteSpace(npcName) || string.IsNullOrWhiteSpace(sourceId)) return false;
+
+        int now = NowProvider();
+        lock (_lock)
+        {
+            if (!_shocks.TryGetValue(npcName, out var list) || list.Count == 0)
+                return false;
+
+            list.RemoveAll(s =>
+                s.DurationMinutes <= 0 || now - s.StartGameMinutes >= s.DurationMinutes);
+
+            return list.Any(s => string.Equals(s.SourceId, sourceId, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
     public static void OnGiftDelivered(string npcName, int giftTasteCategory)
     {
         if (string.IsNullOrWhiteSpace(npcName)) return;

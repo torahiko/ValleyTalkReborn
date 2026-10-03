@@ -1179,6 +1179,10 @@ public class Prompts
 
         internal static string BuildMarriageFeelings(Character character, DialogueContext context, string name, bool suppressBlindSentiment = false)
         {
+            // VT-SOCIAL-04 (A1 裁决)：冷战/室友态下婚姻感知完全让位于 <relationship_lens>，
+            // Good/Neutral/Bad 全部静音，杜绝同轮语义杂音。
+            if (suppressBlindSentiment) return string.Empty;
+
             var prompt = new StringBuilder();
             if (!Game1.getPlayerOrEventFarmer().friendshipData.TryGetValue(character.Name, out var marriageFriendship))
                 return prompt.ToString();
@@ -1187,9 +1191,7 @@ public class Prompts
             switch (context.Hearts)
             {
                 case > 12:
-                    // VT-SOCIAL-02：冷战/室友态下抑制盲目 marriageSentimentGood，婚姻感知听从 <relationship_lens>。
-                    if (!suppressBlindSentiment)
-                        prompt.AppendLine(Util.GetString(character, "marriageSentimentGood", new { Name = name, marriageOrRoommate = marriageOrRoommate }));
+                    prompt.AppendLine(Util.GetString(character, "marriageSentimentGood", new { Name = name, marriageOrRoommate = marriageOrRoommate }));
                     break;
                 case < 10:
                     prompt.AppendLine(Util.GetString(character, "marriageSentimentBad", new { Name = name, marriageOrRoommate = marriageOrRoommate }));

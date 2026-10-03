@@ -126,7 +126,7 @@ public class SocialGraphStoreTests
         Assert.False(HasKey(farmer, "Alex"));
 
         // VT-SOCIAL-03 自愈后种子原型服从九宫格：8 心（80/70）→ CloseConfidant。
-        var profile = SocialGraphService.Instance.GetProfile(farmer, "Alex", 8);
+        var profile = SocialGraphService.Instance.GetProfile(farmer, "Alex", 8, isMarried: false);
 
         Assert.Equal(SocialArchetype.CloseConfidant, profile.Archetype);
         Assert.Equal(80, profile.Affection);
@@ -134,7 +134,7 @@ public class SocialGraphStoreTests
         Assert.True(HasKey(farmer, "Alex"));
 
         // 二次读取从 ModData 反序列化，数值一致（单一数据源证明）。
-        var reloaded = SocialGraphService.Instance.GetProfile(farmer, "Alex", 8);
+        var reloaded = SocialGraphService.Instance.GetProfile(farmer, "Alex", 8, isMarried: false);
         Assert.Equal(profile.Affection, reloaded.Affection);
         Assert.Equal(profile.Trust, reloaded.Trust);
         Assert.Equal(profile.Archetype, reloaded.Archetype);
@@ -197,7 +197,7 @@ public class SocialGraphStoreTests
         try
         {
             // VT-SOCIAL-03：9 心修复种子（90/70）经自愈后仍为 CloseConfidant（九宫格自洽）。
-            var profile = SocialGraphService.Instance.GetProfile(farmer, "Alex", 9);
+            var profile = SocialGraphService.Instance.GetProfile(farmer, "Alex", 9, isMarried: false);
 
             Assert.Equal(SocialArchetype.CloseConfidant, profile.Archetype);
             Assert.Equal(90, profile.Affection);
@@ -205,7 +205,7 @@ public class SocialGraphStoreTests
             Assert.Contains(capture.Entries, e => e.Level == LogLevel.Warn && e.Message.Contains("Alex"));
 
             // 修复已写回：再次读取不再告警且数值一致。
-            var again = SocialGraphService.Instance.GetProfile(farmer, "Alex", 9);
+            var again = SocialGraphService.Instance.GetProfile(farmer, "Alex", 9, isMarried: false);
             Assert.Equal(profile.Affection, again.Affection);
             Assert.Equal(1, capture.Entries.Count(e => e.Level == LogLevel.Warn));
         }
@@ -225,7 +225,7 @@ public class SocialGraphStoreTests
         var capture = InstallCapture();
         try
         {
-            var profile = SocialGraphService.Instance.GetProfile(farmer, "Alex", 0);
+            var profile = SocialGraphService.Instance.GetProfile(farmer, "Alex", 0, isMarried: false);
 
             Assert.Equal(SocialArchetype.Stranger, profile.Archetype);
             Assert.Equal(10, profile.Affection);
@@ -288,11 +288,14 @@ public class SocialGraphStoreTests
 
     [Theory]
     [InlineData(60, 60, SocialArchetype.CloseConfidant)]
-    [InlineData(59, 59, SocialArchetype.Stranger)]
+    [InlineData(59, 59, SocialArchetype.GuardedAcquaintance)]   // A3 拓宽：Aff>=40 && Trust<60
+    [InlineData(50, 40, SocialArchetype.GuardedAcquaintance)]   // 4~7 心种子 (50/40) 正确落位
     [InlineData(50, 34, SocialArchetype.GuardedAcquaintance)]
-    [InlineData(50, 35, SocialArchetype.Stranger)]
+    [InlineData(40, 0, SocialArchetype.GuardedAcquaintance)]    // Aff 下界恰好 40
+    [InlineData(40, 60, SocialArchetype.Stranger)]              // Trust<60 在 60 处闭合
     [InlineData(39, 55, SocialArchetype.ReluctantConfidant)]
-    [InlineData(40, 55, SocialArchetype.Stranger)]
+    [InlineData(39, 50, SocialArchetype.ReluctantConfidant)]    // RC 下界恰好 50
+    [InlineData(39, 49, SocialArchetype.Stranger)]
     [InlineData(10, 10, SocialArchetype.Stranger)]
     public void UT09_EvaluateArchetype_UnmarriedNineGridBoundaries(int affection, int trust, SocialArchetype expected)
     {
@@ -400,13 +403,13 @@ public class SocialGraphStoreTests
         var farmerB = NewFarmer();
         var service = SocialGraphService.Instance;
 
-        var aFirst = service.GetProfile(farmerA, "Alex", 8);
+        var aFirst = service.GetProfile(farmerA, "Alex", 8, isMarried: false);
         Assert.Equal(SocialArchetype.CloseConfidant, aFirst.Archetype);
 
-        var bFirst = service.GetProfile(farmerB, "Alex", 0);
+        var bFirst = service.GetProfile(farmerB, "Alex", 0, isMarried: false);
         Assert.Equal(SocialArchetype.Stranger, bFirst.Archetype);
 
-        var aAgain = service.GetProfile(farmerA, "Alex", 8);
+        var aAgain = service.GetProfile(farmerA, "Alex", 8, isMarried: false);
         Assert.Equal(80, aAgain.Affection);
         Assert.Equal(70, aAgain.Trust);
     }
