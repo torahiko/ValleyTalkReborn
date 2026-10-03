@@ -267,12 +267,11 @@ namespace ValleytalkReborn.Movement
                 {
                     route = DepartureRouteType.CsmSchedule;
                 }
-                else if (TryCollectPendingStops(npc, out nextStopTime, out nextStopMap, out nextStopTile, applyToNpc: false))
-                {
-                    route = DepartureRouteType.VanillaSchedule;
-                }
                 else
                 {
+                    // MMR-06：配偶常态归属锚点（农舍/木屋），无 CSM 日程时确定性收敛于此。
+                    // 原版早晨不会为合法配偶排发日程，但多婚环境下的非首位配偶（isMarried()==false）
+                    // 仍保有单身日程文件——绝不可将其派发为 VanillaSchedule 跨图外勤。
                     route = DepartureRouteType.AnchorFallback;
                 }
             }
@@ -319,6 +318,30 @@ namespace ValleytalkReborn.Movement
                         targetMap    = anchor.MapName;
                         targetTile   = anchor.Tile;
                         targetFacing = anchor.FacingDirection;
+                    }
+
+                    // MMR-06 同图招募保护（配偶已不再进入本分支，此处均为非配偶）：
+                    // 同图招募并同图解散时，NPC 的空间归属即当前地图锚点；
+                    // 即使日程目标在别的地图，也走回锚点留守，绝不触发平滑离场跨图传送。
+                    // ignoreScheduleToday 由原版 resetForNewDay 次日清晨自动复位。
+                    if (string.Equals(npc.currentLocation.Name, anchor.MapName, StringComparison.OrdinalIgnoreCase)
+                        && !string.Equals(npc.currentLocation.Name, targetMap, StringComparison.OrdinalIgnoreCase))
+                    {
+                        npc.ignoreScheduleToday = true;
+                        npc.followSchedule = false;
+                        npc.queuedSchedulePaths?.Clear();
+
+                        ModEntry.SMonitor?.Log(
+                            $"[ScheduleRestorer] {npc.Name} recruited and dismissed on anchor map '{anchor.MapName}' " +
+                            $"while schedule targets '{targetMap}' — walking back to anchor instead of warping.",
+                            LogLevel.Info);
+
+                        _moveToTile(
+                            npc,
+                            anchor.Tile,
+                            () => npc.faceDirection(anchor.FacingDirection),
+                            () => npc.faceDirection(anchor.FacingDirection));
+                        break;
                     }
 
                     if (string.Equals(npc.currentLocation.Name, targetMap, StringComparison.OrdinalIgnoreCase))
