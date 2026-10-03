@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using Netcode;
 using StardewValley;
 using StardewValley.Menus;
+using StardewValley.Mods;
 using StardewValley.Network;
 using ValleytalkReborn.Cutscene;
 using ValleytalkReborn.Cutscene.Storage;
@@ -156,6 +157,14 @@ namespace ValleytalkReborn.Tests
         /// <summary>菜单哨兵：IClickableMenu 抽象类的空派生（其无参构造为空体，无头安全）。</summary>
         private sealed class MenuSentinel : IClickableMenu
         {
+        }
+
+        /// <summary>极简作用域复位器：Dispose 时执行注入的还原动作。</summary>
+        private sealed class RestoreScope : IDisposable
+        {
+            private readonly Action _restore;
+            public RestoreScope(Action restore) => _restore = restore;
+            public void Dispose() => _restore();
         }
 
         private static readonly BindingFlags InstanceFlags =
@@ -348,6 +357,186 @@ namespace ValleytalkReborn.Tests
                 SetStaticField(typeof(Game1), "game1", previousGame1);
                 Game1.eventUp = previousEventUp;
                 SetStaticField(typeof(Game1), "_activeClickableMenu", previousMenu);
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // VT-CUTSCENE-BACKSTAGE-SUSPEND-02：同图孪生避让与复原
+        // ─────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// 未初始化 NPC：补齐避让/复原路径读写的 Character/NPC 成员
+        /// （name、position+瓦格缓存对、facingDirection、isInvisible、sprite NetRef
+        /// ——faceDirection 的空检查需要非 null NetRef——simpleNonVillagerNPC、modData 背板）。
+        /// </summary>
+        private static NPC MakeSuspendableNpc(string name, Vector2 tile, int facing)
+        {
+            var npc = (NPC)FormatterServices.GetUninitializedObject(typeof(NPC));
+            var characterType = typeof(StardewValley.Character);
+            characterType.GetField("name", InstanceFlags).SetValue(npc, new NetString(name));
+            characterType.GetField("position", InstanceFlags).SetValue(npc, new NetPosition());
+            npc.Position = tile * 64f;
+            characterType.GetField("cachedTile", InstanceFlags).SetValue(npc, tile);
+            characterType.GetField("pixelPositionForCachedTile", InstanceFlags).SetValue(npc, tile * 64f);
+            characterType.GetField("facingDirection", InstanceFlags).SetValue(npc, new NetDirection(facing));
+            typeof(NPC).GetField("isInvisible", InstanceFlags).SetValue(npc, new NetBool());
+            characterType.GetField("sprite", InstanceFlags).SetValue(npc, new NetRef<AnimatedSprite>());
+            characterType.GetField("simpleNonVillagerNPC", InstanceFlags).SetValue(npc, new NetBool());
+            characterType.GetField("<modData>k__BackingField", InstanceFlags)
+                .SetValue(npc, new ModDataDictionary());
+            return npc;
+        }
+
+        /// <summary>把地点的 characters（NetCollection）指向全新集合并注入传入角色。</summary>
+        private static void InstallCharacters(GameLocation location, params NPC[] npcs)
+        {
+            var characters = new NetCollection<NPC>();
+            foreach (var npc in npcs)
+                characters.Add(npc);
+            location.GetType().GetField("characters", InstanceFlags).SetValue(location, characters);
+        }
+
+        /// <summary>game1 实例垫片：_locations 指入传入地点列表（Game1.locations 读取）。</summary>
+        private static IDisposable InstallGame1Locations(params GameLocation[] locations)
+        {
+            var game1Shim = (Game1)FormatterServices.GetUninitializedObject(typeof(Game1));
+            typeof(Game1).GetField("_locations", InstanceFlags).SetValue(game1Shim, new List<GameLocation>(locations));
+            SetStaticField(typeof(Game1), "game1", game1Shim);
+            return new RestoreScope(() => SetStaticField(typeof(Game1), "game1", null));
+        }
+
+        /// <summary>netWorldState 垫片：NetPosition.Value 读写（Game1.HostPaused）与 setTilePosition 依赖。</summary>
+        private static IDisposable InstallNetWorldState()
+        {
+            object previous = GetStaticField(typeof(Game1), "netWorldState");
+            SetStaticField(typeof(Game1), "netWorldState",
+                Activator.CreateInstance(typeof(NetRoot<NetWorldState>), new NetWorldState()));
+            return new RestoreScope(() => SetStaticField(typeof(Game1), "netWorldState", previous));
+        }
+
+        private static bool ReadFreezeMotion(StardewValley.Character character) =>
+            (bool)typeof(StardewValley.Character)
+                .GetField("freezeMotion", InstanceFlags)
+                .GetValue(character);
+
+        [Fact]
+        public void SuspendPrototypesIfPresent_HidesAndMarksSameMapPrototypes_LeavesOthersUntouched()
+        {
+            using var _ = InstallNetWorldState();
+            var stage = MakeHeadlessLocation("FarmHouse");
+            var haley = MakeSuspendableNpc("Haley", new Vector2(3f, 5f), 2);
+            var sam = MakeSuspendableNpc("Sam", new Vector2(6f, 5f), 1);
+            var clone = MakeSuspendableNpc("Haley", new Vector2(9f, 9f), 2);
+            clone.modData[CutsceneCloneService.CloneMarkerKey] = "1";
+            InstallCharacters(stage, haley, sam, clone);
+
+            try
+            {
+                CutsceneCloneService.SuspendPrototypesIfPresent(new List<string> { "Haley" }, stage);
+
+                // 同图同名真人原型：可见性 + 运动学双压制 + 标记键
+                Assert.True(haley.IsInvisible);
+                Assert.Equal("1", haley.modData[CutsceneCloneService.SuspendedMarkerKey]);
+                Assert.True(ReadFreezeMotion(haley));
+                // 同图其他真人：零接触
+                Assert.False(sam.IsInvisible);
+                Assert.False(ReadFreezeMotion(sam));
+                Assert.False(sam.modData.ContainsKey(CutsceneCloneService.SuspendedMarkerKey));
+                // 克隆演员（带克隆标记键）：不在避让谓词内
+                Assert.False(clone.IsInvisible);
+                Assert.False(clone.modData.ContainsKey(CutsceneCloneService.SuspendedMarkerKey));
+            }
+            finally
+            {
+                // 清空注册表，避免跨用例泄漏
+                CutsceneCloneService.RestoreSuspendedPrototypes();
+            }
+        }
+
+        [Fact]
+        public void RestoreSuspendedPrototypes_ReversesSuspensionCleanly()
+        {
+            // HostPaused（NetPosition 读写）与 setTilePosition（Position 写）依赖
+            using var _ = InstallNetWorldState();
+            var stage = MakeHeadlessLocation("FarmHouse");
+            var haley = MakeSuspendableNpc("Haley", new Vector2(3f, 5f), 2);
+            InstallCharacters(stage, haley);
+
+            CutsceneCloneService.SuspendPrototypesIfPresent(new List<string> { "Haley" }, stage);
+            Assert.True(haley.IsInvisible);
+
+            CutsceneCloneService.RestoreSuspendedPrototypes();
+
+            Assert.False(haley.IsInvisible);
+            Assert.False(haley.modData.ContainsKey(CutsceneCloneService.SuspendedMarkerKey));
+            Assert.False(ReadFreezeMotion(haley));
+            Assert.Equal(new Vector2(3f, 5f) * 64f, haley.Position); // 原瓦格归位
+            Assert.Equal(2, haley.FacingDirection);                  // 原朝向复原
+
+            // 注册表已清空：再次复原为静默无操作
+            CutsceneCloneService.RestoreSuspendedPrototypes();
+        }
+
+        [Fact]
+        public void SweepAll_ClearsSuspendedMarkerResidue_AndCloneResidue()
+        {
+            using var _ = InstallNetWorldState();
+            var stage = MakeHeadlessLocation("FarmHouse");
+            var leftoverClone = MakeSuspendableNpc("LeftoverClone", new Vector2(1f, 1f), 0);
+            leftoverClone.modData[CutsceneCloneService.CloneMarkerKey] = "1";
+            var haley = MakeSuspendableNpc("Haley", new Vector2(3f, 5f), 2);
+            haley.IsInvisible = true;
+            typeof(StardewValley.Character).GetField("freezeMotion", InstanceFlags).SetValue(haley, true);
+            haley.modData[CutsceneCloneService.SuspendedMarkerKey] = "1";
+            InstallCharacters(stage, leftoverClone, haley);
+
+            using var world = InstallGame1Locations(stage);
+            CutsceneCloneService.SweepAll();
+
+            // 克隆残留：移出成员（既有克隆清扫语义不变）
+            Assert.Same(haley, Assert.Single(stage.characters));
+            // 压制残留：仅凭标记键确定性复原
+            Assert.False(haley.IsInvisible);
+            Assert.False(haley.modData.ContainsKey(CutsceneCloneService.SuspendedMarkerKey));
+            Assert.False(ReadFreezeMotion(haley));
+        }
+
+        [Fact]
+        public void StageClones_FullConstructionFailure_StillClosesSuspensionOnDisposeAll()
+        {
+            // 无头下克隆构造必然逐个失败（无地图/无内容/无 villager 数据）：
+            // 克隆入图前的避让须在 DisposeAll 的零克隆路径上闭合复原
+            using var _ = InstallNetWorldState();
+            var stage = MakeHeadlessLocation("FarmHouse");
+            var haley = MakeSuspendableNpc("Haley", new Vector2(3f, 5f), 2);
+            InstallCharacters(stage, haley);
+
+            using var world = InstallGame1Locations(stage);
+            try
+            {
+                var cutscene = new ArchivedCutscene
+                {
+                    Title = "避让闭合验证",
+                    LocationName = "FarmHouse",
+                    ActorStances = new List<ArchivedActorStance>
+                    {
+                        new ArchivedActorStance { Name = "Haley", TileX = 3, TileY = 5, Facing = 2 }
+                    },
+                    RawJson = @"{""title"":""避让闭合验证"",""actions"":[]}"
+                };
+
+                var clones = CutsceneCloneService.StageClones(cutscene, stage);
+                Assert.Empty(clones);
+                Assert.True(haley.IsInvisible); // 克注入图前已避让
+
+                CutsceneCloneService.DisposeAll(); // 零克隆路径仍须复原
+                Assert.False(haley.IsInvisible);
+                Assert.False(haley.modData.ContainsKey(CutsceneCloneService.SuspendedMarkerKey));
+                Assert.False(ReadFreezeMotion(haley));
+            }
+            finally
+            {
+                CutsceneCloneService.RestoreSuspendedPrototypes();
             }
         }
     }

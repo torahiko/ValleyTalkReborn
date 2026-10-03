@@ -19,8 +19,18 @@ namespace ValleytalkReborn.Cutscene
         /// <summary>克隆演员标记键：写入 modData 即视为临时克隆，绝不落业务键</summary>
         internal const string CloneMarkerKey = "ValleytalkReborn.EphemeralCutsceneActor";
 
+        /// <summary>原型压制标记键：同图孪生避让时写入原型 modData，SweepAll 据此确定性复原</summary>
+        internal const string SuspendedMarkerKey = "ValleytalkReborn.SuspendedCutscenePrototype";
+
         /// <summary>当前存活克隆注册表（Memory 瞬态，仅"回放受理 → SceneEnded"窗口内有条目）</summary>
         private static readonly List<NPC> _activeClones = new();
+
+        /// <summary>同图避让的原型注册表（Memory 瞬态）：谢幕/异常终止/清扫时复原压制态</summary>
+        private static readonly List<SuspendedPrototypeState> _suspendedPrototypes = new();
+
+        /// <summary>单条原型避让记录：复原时按原瓦格/朝向归位</summary>
+        internal sealed record SuspendedPrototypeState(NPC Prototype, GameLocation StageLocation,
+            Vector2 OriginalTile, int OriginalFacing);
 
         static CutsceneCloneService()
         {
@@ -51,6 +61,9 @@ namespace ValleytalkReborn.Cutscene
                 .GroupBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
                 .Select(g => g.First())
                 .ToList() ?? new List<ArchivedActorStance>();
+
+            // 同图孪生避让：克隆入图前先把本场景同名真人原型转入幕后压制
+            SuspendPrototypesIfPresent(stances.Select(s => s.Name).ToList(), stage);
 
             foreach (var stance in stances)
             {
@@ -99,13 +112,89 @@ namespace ValleytalkReborn.Cutscene
         }
 
         /// <summary>
+        /// 同图孪生避让：克隆入图前，把本场景中与站位名单同名的真人原型转入幕后压制
+        /// （可见性 + 运动学双压制；实体位置成员关系零变动，不动 controller 与日程）。
+        /// 单个原型避让失败仅跳过该原型（RECOVERABLE，保持可见，孪生风险留观），其余继续。
+        /// </summary>
+        internal static void SuspendPrototypesIfPresent(IReadOnlyCollection<string> actorNames, GameLocation stage)
+        {
+            foreach (var npc in stage.characters)
+            {
+                // 命中谓词：非克隆、且在去重站位名单中（克隆构造绝不触碰同名真人本体）
+                if (npc == null || IsClone(npc) ||
+                    !actorNames.Contains(npc.Name, StringComparer.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    _suspendedPrototypes.Add(new SuspendedPrototypeState(npc, stage, npc.Tile, npc.FacingDirection));
+                    npc.IsInvisible = true;
+                    CutsceneActorHelper.SetFreezeMotion(npc, true);
+                    npc.modData[SuspendedMarkerKey] = "1";
+                }
+                catch (Exception ex)
+                {
+                    // RECOVERABLE：单个原型避让失败仅跳过该原型，其余继续
+                    ModEntry.SMonitor?.Log(
+                        $"[CutsceneClone] Failed to suspend prototype '{npc?.Name}': {ex.Message}",
+                        LogLevel.Warn);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 复原被避让的原型（DisposeAll 于克隆摘除后调用）：解除压制并按原瓦格/朝向归位
+        /// （归位为防御性幂等写入）。无避让记录时静默返回。
+        /// 单个复原失败记录 Error 并继续复原其余（SweepAll 是最后兜底）。
+        /// </summary>
+        internal static void RestoreSuspendedPrototypes()
+        {
+            if (_suspendedPrototypes.Count == 0)
+                return;
+
+            int restored = 0;
+            foreach (var state in _suspendedPrototypes)
+            {
+                try
+                {
+                    state.Prototype.IsInvisible = false;
+                    CutsceneActorHelper.SetFreezeMotion(state.Prototype, false);
+                    state.Prototype.modData.Remove(SuspendedMarkerKey);
+                    state.Prototype.setTilePosition(new Point((int)state.OriginalTile.X, (int)state.OriginalTile.Y));
+                    state.Prototype.faceDirection(state.OriginalFacing);
+                    restored++;
+                }
+                catch (Exception ex)
+                {
+                    // BUG 路径：逐个记录并继续复原其余
+                    ModEntry.SMonitor?.Log(
+                        $"[CutsceneClone] Failed to restore suspended prototype '{state.Prototype?.Name}': {ex}",
+                        LogLevel.Error);
+                }
+            }
+            _suspendedPrototypes.Clear();
+
+            if (restored > 0)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[CutsceneClone] Suspended prototypes restored ({restored}).", LogLevel.Info);
+            }
+        }
+
+        /// <summary>
         /// 幕后摘除全部克隆演员（SceneEnded 触发）：移出场景、断开位置引用并清空注册表。
-        /// 无存活克隆时静默返回（真人偶遇场景同样会触发 SceneEnded，不得刷日志）。
+        /// 无存活克隆时静默返回（真人偶遇场景同样会触发 SceneEnded，不得刷日志），
+        /// 但仍须复原克隆入图前已避让的原型（克隆全量构造失败路径）。
         /// </summary>
         internal static void DisposeAll()
         {
             if (_activeClones.Count == 0)
+            {
+                RestoreSuspendedPrototypes();
                 return;
+            }
 
             int count = _activeClones.Count;
             foreach (var clone in _activeClones)
@@ -127,33 +216,62 @@ namespace ValleytalkReborn.Cutscene
             _activeClones.Clear();
 
             ModEntry.SMonitor?.Log($"[CutsceneClone] Cutscene clones disposed ({count}).", LogLevel.Info);
+
+            // 克隆摘除后复原被避让的原型（幂等；无避让记录时静默）
+            RestoreSuspendedPrototypes();
         }
 
         /// <summary>
         /// 存档污染恢复（DayStarted/SaveLoaded 调用）：遍历全部场景摘除带标记键的克隆残留
-        /// （克隆若曾存活到存档写入，读档后凭标记键确定性清除）。
+        /// （克隆若曾存活到存档写入，读档后凭标记键确定性清除）；
+        /// 同时复原带压制标记键的崩溃遗留原型（最终兜底）。
         /// </summary>
         internal static void SweepAll()
         {
             int swept = 0;
+            int restored = 0;
             foreach (var location in Game1.locations)
             {
                 for (int i = location.characters.Count - 1; i >= 0; i--)
                 {
                     NPC npc = location.characters[i];
-                    if (npc != null && IsClone(npc))
+                    if (npc == null)
+                        continue;
+
+                    if (IsClone(npc))
                     {
                         location.characters.RemoveAt(i);
                         swept++;
+                        continue;
+                    }
+
+                    // 崩溃遗留的压制态复原：仅凭标记键识别，确定性解除可见性与运动学压制
+                    if (npc.modData.ContainsKey(SuspendedMarkerKey))
+                    {
+                        try
+                        {
+                            npc.IsInvisible = false;
+                            CutsceneActorHelper.SetFreezeMotion(npc, false);
+                            npc.modData.Remove(SuspendedMarkerKey);
+                            restored++;
+                        }
+                        catch (Exception ex)
+                        {
+                            // RECOVERABLE：单个清扫失败记录后继续其余
+                            ModEntry.SMonitor?.Log(
+                                $"[CutsceneClone] Failed to sweep suspended prototype '{npc.Name}': {ex.Message}",
+                                LogLevel.Warn);
+                        }
                     }
                 }
             }
             _activeClones.Clear();
+            _suspendedPrototypes.Clear();
 
-            if (swept > 0)
+            if (swept > 0 || restored > 0)
             {
                 ModEntry.SMonitor?.Log(
-                    $"[CutsceneClone] Swept {swept} leftover clone actor(s) from world (save contamination recovery).",
+                    $"[CutsceneClone] Swept {swept} leftover clone actor(s) and restored {restored} suspended prototype(s) from world (save contamination recovery).",
                     LogLevel.Warn);
             }
         }
