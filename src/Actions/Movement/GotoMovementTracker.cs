@@ -194,7 +194,7 @@ namespace ValleytalkReborn.Movement
                                 npc.movementPause = 0;
                                 try
                                 {
-                                    typeof(Character).GetField("freezeMotion", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)
+                                    typeof(StardewValley.Character).GetField("freezeMotion", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)
                                         ?.SetValue(npc, false);
                                 }
                                 catch { }

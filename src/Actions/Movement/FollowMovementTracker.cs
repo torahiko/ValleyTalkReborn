@@ -847,7 +847,7 @@ namespace ValleytalkReborn.Movement
                     _followingNpc.movementPause = 0;
                     try
                     {
-                        typeof(Character).GetField("freezeMotion", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)
+                        typeof(StardewValley.Character).GetField("freezeMotion", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)
                             ?.SetValue(_followingNpc, false);
                     }
                     catch { }
@@ -977,7 +977,7 @@ namespace ValleytalkReborn.Movement
                 _followingNpc.movementPause = 0;
                 try
                 {
-                    typeof(Character).GetField("freezeMotion", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)
+                    typeof(StardewValley.Character).GetField("freezeMotion", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)
                         ?.SetValue(_followingNpc, false);
                 }
                 catch { }
