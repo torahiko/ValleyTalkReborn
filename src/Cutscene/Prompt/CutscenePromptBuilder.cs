@@ -60,7 +60,7 @@ namespace ValleytalkReborn.Cutscene.Prompt
             sb.AppendLine();
             sb.AppendLine("【导演纪律与视听技巧】：");
             sb.AppendLine("- 【镜头开场铁律】：全剧第 1 个动作必须通常安排 camera 动作，将 target 设定为开场说话或行动的 NPC（如 target: \"NPC英文名\"），将镜头平滑推向舞台主角！");
-            sb.AppendLine("- 【玩家互动规则】：当只有 1 位 NPC 参演时，剧情是该 NPC 与农夫（farmer）的面对面对手戏。NPC 必须移动走向农夫身旁（targetTile 选用【农夫互动交谈位】坐标），停在农夫身边并面向农夫（lookAt target: \"farmer\"），再对农夫说话。");
+            sb.AppendLine("- 【开场定格铁律】：参演角色在全剧第 0 帧已自动就位于农夫身前/身旁（半径 2 格内）并面向农夫，无需任何入场移动；剧本应直接以 camera 对焦 + emote/face/speak 开场；move 仅是叙事演进中的情绪调度（踱步、凑近耳语、转身离开），单次位移不超过 3~4 格。");
             sb.AppendLine("- 【分支选择规则（choice）】：choice 动作代表剧情在此刻需要农夫亲口表态才能继续——受话人始终是农夫本人。在编排 choice 前，先确认剧情确实发展到了农夫被卷入的节点，例如村民向农夫发出邀请、请求帮助或询问农夫本人的看法；choice 的 prompt 必须是向农夫（\"你\"）提出的问题或请求。当演出是村民之间的自然交流、或村民的问候与单向倾诉时，镜头与台词始终聚焦在村民身上，以村民的表情、走位与对白自然收尾。options 提供 2 个性格鲜明的分支选项（一正一负或不同态度），每个选项包含 text、friendship（好感增减，-20 ~ +20）、feedback（左下角浮动提示，格式必须类似'NPC名更喜欢你了。'或'NPC名有点难过。'）以及被选后触发的 actions 子动作列表（通常 1~2 个 emote/speak 动作）。");
             sb.AppendLine("- 【空间锚定铁律】：move 动作的 targetTile 必须且只能选用用户提示中给出的【现场可用地标坐标】或其临近格子，绝对禁止捏造不存在或越界的坐标！");
             sb.AppendLine("- 【视听并发法则】：积极运用 \"waitForCompletion\": false 编排并行演出（例如镜头推向角色的同时角色冒出感叹号并起步走位；或者说话的同时播放音效并冒爱心）。");
@@ -135,7 +135,7 @@ namespace ValleytalkReborn.Cutscene.Prompt
                 sb.AppendLine();
                 sb.AppendLine("【单人互动核心导演纪律】：");
                 sb.AppendLine($"- 当前场景仅有 1 位参演村民（{soloActor.DisplayName}），这场戏是 {soloActor.DisplayName} 与农夫（玩家/farmer）之间的专属对手戏！");
-                sb.AppendLine($"- 走位铁律：{soloActor.DisplayName} 必须主动走向农夫身旁（move 动作的 targetTile 必须选用【农夫互动交谈位】坐标），停在农夫身边（1~2 格距离），然后执行 lookAt target: \"farmer\" 面对农夫，再表达问候、关心或倾诉！");
+                sb.AppendLine($"- 开场定格：{soloActor.DisplayName} 开场即已立于农夫身旁并面向农夫，直接以表情（emote）与台词（speak）开场，无需任何入场移动；如需走位仅作 3 格内的情绪性移动（踱步、凑近耳语、转身离开）。");
                 sb.AppendLine($"- 互动分支：当 {soloActor.DisplayName} 向农夫提出只有农夫才能回答的问题（如邀请、请求或询问农夫的看法）时，在提问后编排 1 个 choice 动作（2 个选项，附带合理的 friendship [-20~+20] 与 feedback 提示，例如'{soloActor.DisplayName}更喜欢你了。'），并为每个选项编写 NPC 的后续反应动作；当这场戏是 {soloActor.DisplayName} 的问候、关怀或单向倾诉时，以 {soloActor.DisplayName} 的表情与台词自然收尾即可。");
             }
             else if (ctx.Actors.Count > 1)

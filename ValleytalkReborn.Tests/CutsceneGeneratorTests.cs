@@ -28,6 +28,52 @@ namespace ValleytalkReborn.Tests
         }
 
         [Fact]
+        public void BuildSystemPrompt_ContainsOpeningFreezeDiscipline_WithoutCommuteWording()
+        {
+            string prompt = CutscenePromptBuilder.BuildSystemPrompt();
+
+            // 开场定格铁律：第 0 帧已就位面向农夫，剧本直接以 camera/emote/face/speak 开场
+            Assert.Contains("【开场定格铁律】", prompt);
+            Assert.Contains("无需任何入场移动", prompt);
+            // 通勤式走位纪律必须移除
+            Assert.DoesNotContain("必须移动走向农夫", prompt);
+            Assert.DoesNotContain("必须主动走向", prompt);
+        }
+
+        [Fact]
+        public void BuildUserPrompt_SoloActor_OpeningFreezeReplacesCommuteWording()
+        {
+            var ctx = new CutsceneContext
+            {
+                LocationName = "Town",
+                LocationFriendlyName = "鹈鹕镇",
+                Season = "spring",
+                DayOfMonth = 15,
+                TimeOfDay = 1900,
+                Weather = "Sun",
+                FarmerTile = new Vector2(10, 20),
+                Actors = new List<ActorProfile>
+                {
+                    new ActorProfile
+                    {
+                        Name = "Abigail",
+                        DisplayName = "阿比盖尔",
+                        CurrentTile = new Vector2(12, 22),
+                        FacingDirection = 2,
+                        FriendshipPoints = 1500,
+                        HeartLevel = 6
+                    }
+                }
+            };
+
+            string userPrompt = CutscenePromptBuilder.BuildUserPrompt(ctx, null);
+
+            Assert.Contains("开场即已立于农夫身旁", userPrompt);
+            Assert.Contains("无需任何入场移动", userPrompt);
+            Assert.DoesNotContain("必须主动走向", userPrompt);
+        }
+
+        [Fact]
         public void BuildUserPrompt_IncludesAllContextElementsAndIntent()
         {
             var ctx = new CutsceneContext

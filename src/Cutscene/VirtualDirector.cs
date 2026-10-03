@@ -53,6 +53,7 @@ namespace ValleytalkReborn.Cutscene
         private enum DirectorPhase
         {
             Idle,
+            Opening,
             Playing,
             FadingOut,
             ReturningHome,
@@ -60,6 +61,10 @@ namespace ValleytalkReborn.Cutscene
         }
 
         private DirectorPhase _phase = DirectorPhase.Idle;
+
+        // 开演定格环绕偏移：优先农夫正前方（下侧），次选左右斜前与近前方，最后身后（Memory 常量）
+        private static readonly Vector2[] OpeningRingOffsets =
+            { new(0, 2), new(-2, 1), new(2, 1), new(-1, 2), new(1, 2), new(0, -2) };
 
         // 状态与队列（升级支持并发动作集合）
         private readonly Queue<IDirectorAction> _actionQueue = new();
@@ -299,8 +304,8 @@ namespace ValleytalkReborn.Cutscene
             try
             {
                 IsActive = true;
-                _phase = DirectorPhase.Playing;
-                _fadeAlpha = 0f;
+                _phase = DirectorPhase.Opening; // 黑幕掩护下的开演定格窗口，退净后才进入 Playing
+                _fadeAlpha = 1f;
                 _cameraTargetPixel = null;
                 _cameraTargetNpc = null;
                 _cameraTargetPlayer = false;
@@ -342,13 +347,15 @@ namespace ValleytalkReborn.Cutscene
                     SetCameraTarget(_participatingActors[0]);
                 }
 
-                // 3. 加载动作队列并派发首批动作（支持并发启动）
+                // 2.6 开场定格：黑幕掩护下把参演演员吸附到农夫身旁站位并面向农夫
+                // （回放路径的克隆已按录制站位落位，SnapActors 内部跳过克隆；仅即兴路径真实吸附）
+                SnapActorsToOpeningMarks(_participatingActors);
+
+                // 3. 加载动作队列（派发移至 Opening 黑幕退净时：动作必须在可见后才开始）
                 _activeActions.Clear();
                 _actionQueue.Clear();
                 foreach (var action in actions)
                     _actionQueue.Enqueue(action);
-
-                AdvanceToNextActions();
 
                 // 4. 启动黑边平滑升起
                 _blackBarHeight = 0f;
@@ -547,6 +554,12 @@ namespace ValleytalkReborn.Cutscene
             {
                 float dt = (float)Game1.currentGameTime.ElapsedGameTime.TotalSeconds;
 
+                if (_phase == DirectorPhase.Opening)
+                {
+                    UpdateOpening(dt);
+                    return;
+                }
+
                 if (_phase == DirectorPhase.ReturningHome)
                 {
                     UpdateReturningHome(dt);
@@ -677,45 +690,79 @@ namespace ValleytalkReborn.Cutscene
             _phase = DirectorPhase.FadingIn;
         }
 
-        private void UpdateFadingIn(float dt)
+        /// <summary>
+        /// 开演定格窗口（~0.4s 黑幕淡入）：维持共享压制；黑幕退净后进入 Playing 并派发首批动作。
+        /// 本相位不监听 ESC（窗口极短，且此刻尚无任何可见演出）
+        /// </summary>
+        private void UpdateOpening(float dt)
         {
-            // 淡入过程中保持玩家定身，避免在黑屏尚未完全退去时误触移动
-            if (Game1.player != null)
-            {
-                Game1.player.freezePause = 10;
-                Game1.player.CanMove = false;
-            }
+            MaintainSuppression(dt);
 
             _fadeAlpha -= dt * FadeSpeed;
             if (_fadeAlpha <= 0f)
             {
                 _fadeAlpha = 0f;
-                _phase = DirectorPhase.Idle;
-                IsActive = false;
-
-                // 最终归还玩家控制权（依据快照真实记录的值还原）
-                if (Game1.player != null && _snapshot != null)
-                {
-                    if (Game1.eventUp || Game1.CurrentEvent != null)
-                    {
-                        // 原版事件已接管玩家：导演不得越权解锁，控制权归还原版事件链
-                        ModEntry.SMonitor?.Log(
-                            "[VirtualDirector] Vanilla event owns the player at fade-in end — control return skipped.",
-                            LogLevel.Info);
-                    }
-                    else
-                    {
-                        Game1.player.CanMove = _snapshot.PlayerCanMove;
-                        Game1.player.freezePause = 0;
-                    }
-                }
-                _snapshot = null;
-
-                ModEntry.SMonitor?.Log("[VirtualDirector] Cutscene transition completed, control returned.", LogLevel.Info);
+                _phase = DirectorPhase.Playing;
+                AdvanceToNextActions();
             }
         }
 
-        private void UpdatePlaying(float dt)
+        /// <summary>
+        /// 开场定格：黑幕掩护下把参演演员吸附到农夫身旁站位并面向农夫。
+        /// a. 距农夫 ≤3 格仅转向不瞬移；b. 否则按 OpeningRingOffsets 环绕偏移找可走格落位
+        /// （跳过与农夫格或已被其他演员占用的格子重合的解）；c. 全部偏移不可走则原地仅面向农夫，剧本继续。
+        /// 克隆演员（回放路径已按录制站位落位）与无位置演员不参与定格。
+        /// </summary>
+        private void SnapActorsToOpeningMarks(IReadOnlyList<NPC> actors)
+        {
+            if (actors == null || actors.Count == 0 || Game1.player?.currentLocation == null)
+                return;
+
+            var playerTile = Game1.player.Tile;
+            var playerLocation = Game1.player.currentLocation;
+            var occupied = new HashSet<Vector2> { playerTile };
+
+            foreach (var actor in actors)
+            {
+                if (actor?.currentLocation == null || CutsceneCloneService.IsClone(actor))
+                    continue;
+
+                bool snapped = false;
+                if (Vector2.Distance(actor.Tile, playerTile) > 3f)
+                {
+                    foreach (var offset in OpeningRingOffsets)
+                    {
+                        var candidate = playerTile + offset;
+                        var resolved = MovementPathfinding.FindNearestWalkableTile(playerLocation, candidate, actor, radius: 1);
+                        // FindNearestWalkableTile 失败时原样返回不可走的 target：以可走性复核甄别
+                        if (occupied.Contains(resolved) || !MovementPathfinding.IsTileWalkable(playerLocation, resolved, actor))
+                            continue;
+                        actor.setTilePosition(new Point((int)resolved.X, (int)resolved.Y));
+                        occupied.Add(resolved);
+                        snapped = true;
+                        break;
+                    }
+                }
+
+                if (!snapped && Vector2.Distance(actor.Tile, playerTile) > 3f)
+                {
+                    // [RECOVERABLE] 全部环绕偏移不可走：原地不动仅面向农夫，剧本继续
+                    ModEntry.SMonitor?.Log(
+                        $"[VirtualDirector] Opening snap: no walkable ring spot for '{actor.Name}', keeping original tile.",
+                        LogLevel.Debug);
+                }
+
+                // 面向农夫（≤3 格仅转向、就位成功、就位失败兜底三种情形共用）
+                float dx = playerTile.X - actor.Tile.X;
+                float dy = playerTile.Y - actor.Tile.Y;
+                actor.faceDirection(Math.Abs(dx) > Math.Abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0));
+            }
+        }
+
+        /// <summary>
+        /// 共享压制块（UpdateOpening/UpdatePlaying 复用）：参演演员保活与移动压制、玩家定身、时钟静止
+        /// </summary>
+        private void MaintainSuppression(float dt)
         {
             // 1. 维护参演 Actor 保活与移动压制
             _activelyMovingActors.Clear();
@@ -757,6 +804,50 @@ namespace ValleytalkReborn.Cutscene
 
             // 3. 维持时钟静止
             Game1.gameTimeInterval = 0;
+        }
+
+        private void UpdateFadingIn(float dt)
+        {
+            // 淡入过程中保持玩家定身，避免在黑屏尚未完全退去时误触移动
+            if (Game1.player != null)
+            {
+                Game1.player.freezePause = 10;
+                Game1.player.CanMove = false;
+            }
+
+            _fadeAlpha -= dt * FadeSpeed;
+            if (_fadeAlpha <= 0f)
+            {
+                _fadeAlpha = 0f;
+                _phase = DirectorPhase.Idle;
+                IsActive = false;
+
+                // 最终归还玩家控制权（依据快照真实记录的值还原）
+                if (Game1.player != null && _snapshot != null)
+                {
+                    if (Game1.eventUp || Game1.CurrentEvent != null)
+                    {
+                        // 原版事件已接管玩家：导演不得越权解锁，控制权归还原版事件链
+                        ModEntry.SMonitor?.Log(
+                            "[VirtualDirector] Vanilla event owns the player at fade-in end — control return skipped.",
+                            LogLevel.Info);
+                    }
+                    else
+                    {
+                        Game1.player.CanMove = _snapshot.PlayerCanMove;
+                        Game1.player.freezePause = 0;
+                    }
+                }
+                _snapshot = null;
+
+                ModEntry.SMonitor?.Log("[VirtualDirector] Cutscene transition completed, control returned.", LogLevel.Info);
+            }
+        }
+
+        private void UpdatePlaying(float dt)
+        {
+            // 1-3. 共享压制块：演员保活定身、玩家定身、时钟静止
+            MaintainSuppression(dt);
 
             // 3.5 驱动沉浸式电影对白横幅与互动选项覆盖层
             _activeDialogueBanner?.Update(Game1.currentGameTime);

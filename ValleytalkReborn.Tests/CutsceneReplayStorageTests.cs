@@ -306,7 +306,22 @@ namespace ValleytalkReborn.Tests
                 // 谢幕终态无条件可动：Capture 盲读的 CanMove（垫片下为 false）不得成为唯一终态
                 Assert.True(snapshot.PlayerCanMove);
                 Assert.True(director.IsActive); // 演出确已开演（而非门槛拒绝或异常中止）
-                Assert.True(((StubDirectorAction)actions[0]).Entered); // 首批动作已派发
+
+                // Opening 相位：动作在黑幕退净后才派发——以单次大 dt 驱动 Update 走完淡入
+                var gameTimeField = typeof(Game1).GetField("currentGameTime",
+                    BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+                object previousGameTime = gameTimeField.GetValue(null);
+                gameTimeField.SetValue(null, new GameTime(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1)));
+                try
+                {
+                    director.Update(null);
+                }
+                finally
+                {
+                    gameTimeField.SetValue(null, previousGameTime);
+                }
+
+                Assert.True(((StubDirectorAction)actions[0]).Entered); // Opening 退净后首批动作已派发
             }
             finally
             {
