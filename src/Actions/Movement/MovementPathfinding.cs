@@ -381,6 +381,117 @@ namespace ValleytalkReborn
         }
 
         /// <summary>
+        /// 尝试为 npc 创建绕开指定阻挡格（如定身玩家）的路径：4 向 BFS + 阻挡格排除，
+        /// 命中后经公开构造器注入自算路径栈（栈序与 vanilla reconstructPath 同构：底=终点，顶=起点）。
+        /// 仅过场动作（MoveToTileAction）调用；MovementManager 系调用点与 vanilla 寻路不受影响。
+        /// 终点格沿用 vanilla 语义无条件可达（findPath 邻接判定先例）；
+        /// 无绕行通路或达 BFS 迭代上限（地图首层面积）时返回 false，调用方回退原 TryCreatePath 与熔断链。
+        /// </summary>
+        internal static bool TryCreatePathAvoiding(
+            NPC npc,
+            GameLocation loc,
+            Vector2 target,
+            IReadOnlyCollection<Vector2> blockedTiles,
+            out PathFindController controller,
+            out Vector2 finalTarget)
+        {
+            controller = null;
+            finalTarget = target;
+
+            if (npc == null || loc == null)
+                return false;
+
+            Point start = npc.TilePoint;
+            Point goal = new Point((int)target.X, (int)target.Y);
+            if (start == goal)
+                return false; // 已在目标格：无可注入路径，交由调用方原逻辑收尾
+
+            // 阻挡格取整比对集合
+            var blocked = new HashSet<Point>();
+            if (blockedTiles != null)
+            {
+                foreach (var t in blockedTiles)
+                    blocked.Add(new Point((int)t.X, (int)t.Y));
+            }
+
+            // BFS 迭代上限：地图首层面积
+            int maxIterations = loc.map.Layers[0].LayerWidth * loc.map.Layers[0].LayerHeight;
+
+            var cameFrom = new Dictionary<Point, Point>();
+            var visited = new HashSet<Point> { start };
+            var frontier = new Queue<Point>();
+            frontier.Enqueue(start);
+
+            int[] dxs = { 0, 0, -1, 1 };
+            int[] dys = { -1, 1, 0, 0 };
+            bool found = false;
+            int iterations = 0;
+
+            while (frontier.Count > 0 && iterations < maxIterations && !found)
+            {
+                iterations++;
+                Point current = frontier.Dequeue();
+
+                for (int i = 0; i < 4; i++)
+                {
+                    var next = new Point(current.X + dxs[i], current.Y + dys[i]);
+                    if (visited.Contains(next))
+                        continue;
+
+                    // 终点格无条件可达（vanilla findPath 邻接判定先例）；其余格须可走且不在阻挡集
+                    bool isGoal = next == goal;
+                    if (!isGoal)
+                    {
+                        if (blocked.Contains(next))
+                            continue;
+                        if (!IsTileWalkable(loc, new Vector2(next.X, next.Y), npc))
+                            continue;
+                    }
+
+                    visited.Add(next);
+                    cameFrom[next] = current;
+
+                    if (isGoal)
+                    {
+                        found = true;
+                        break;
+                    }
+                    frontier.Enqueue(next);
+                }
+            }
+
+            if (!found)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[Pathfinding] Avoidance path unavailable for {npc.Name} to ({goal.X},{goal.Y}), falling back.",
+                    LogLevel.Debug);
+                return false;
+            }
+
+            // 回溯 route：起点→终点序列
+            var route = new List<Point>();
+            for (Point p = goal; ; p = cameFrom[p])
+            {
+                route.Add(p);
+                if (p == start)
+                    break;
+            }
+
+            // 栈序与 vanilla reconstructPath 同构：自终点向起点倒序 Push（栈顶=起点）
+            var stack = new Stack<Point>();
+            for (int i = route.Count - 1; i >= 0; i--)
+                stack.Push(route[i]);
+
+            controller = new PathFindController(stack, npc, loc)
+            {
+                // finalFacingDirection 字段默认 0（反编译 :566 无初始化）：显式还原 TryCreatePath 的到点不转向语义
+                endPoint = goal,
+                finalFacingDirection = -1
+            };
+            return true;
+        }
+
+        /// <summary>
         /// 若 targetTile 与玩家重叠，找附近不与玩家重叠的可通行格。
         /// </summary>
         internal static Vector2 ResolveTargetAvoidingPlayer(

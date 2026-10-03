@@ -60,8 +60,14 @@ namespace ValleytalkReborn.Cutscene.Actions
             // 1. 起点弹性微吸附：若 NPC 起步时正处于椅子、桌椅边缘等阻挡判定格，先自动微移至就近连通格
             MovementPathfinding.TryRecoverStartingTile(_npc, _npc.currentLocation, radius: 3);
 
-            // 2. 尝试标准寻路
-            if (!MovementPathfinding.TryCreatePath(_npc, _npc.currentLocation, _targetTile, out _controller, out var finalTarget))
+            // 2. 先试绕行寻路：玩家在场且同图时以其瓦片为排除格，命中即注入，杜绝"穿越定身农夫"路径
+            Vector2[] blockedTiles = ResolveBlockedTiles();
+            if (blockedTiles.Length > 0 &&
+                MovementPathfinding.TryCreatePathAvoiding(_npc, _npc.currentLocation, _targetTile, blockedTiles, out _controller, out _))
+            {
+                _npc.controller = _controller;
+            }
+            else if (!MovementPathfinding.TryCreatePath(_npc, _npc.currentLocation, _targetTile, out _controller, out var finalTarget))
             {
                 // 3. 多阶回退：若目标格微受阻，以更宽半径（5格）向外搜寻连通可达格
                 var expandedTarget = MovementPathfinding.FindNearestWalkableTile(_npc.currentLocation, _targetTile, _npc, radius: 5);
@@ -138,11 +144,15 @@ namespace ValleytalkReborn.Cutscene.Actions
                         
                         _hasRetried = true;
                         
-                        // 尝试脱困与重寻路
+                        // 尝试脱困与重寻路（同样先试绕行，排除定身玩家格）
                         if (MovementPathfinding.TryRecoverStartingTile(_npc, _npc.currentLocation, radius: 4))
                         {
                             CutsceneActorHelper.WakeupActor(_npc);
-                            if (MovementPathfinding.TryCreatePath(_npc, _npc.currentLocation, _targetTile, out _controller, out _))
+                            Vector2[] blockedTiles = ResolveBlockedTiles();
+                            bool repathed = (blockedTiles.Length > 0 &&
+                                MovementPathfinding.TryCreatePathAvoiding(_npc, _npc.currentLocation, _targetTile, blockedTiles, out _controller, out _))
+                                || MovementPathfinding.TryCreatePath(_npc, _npc.currentLocation, _targetTile, out _controller, out _);
+                            if (repathed)
                             {
                                 _npc.addedSpeed = 2;
                                 _npc.controller = _controller;
@@ -192,6 +202,18 @@ namespace ValleytalkReborn.Cutscene.Actions
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// 绕行排除格：定身玩家所在瓦片（仅当玩家在场且与演员同图）；否则空数组（无排除，走原寻路）。
+        /// </summary>
+        private Vector2[] ResolveBlockedTiles()
+        {
+            if (Game1.player != null && Game1.player.currentLocation == _npc.currentLocation)
+            {
+                return new[] { Game1.player.Tile };
+            }
+            return Array.Empty<Vector2>();
         }
 
         /// <summary>
