@@ -146,6 +146,8 @@ namespace ValleytalkReborn
         public SButton OpenHubMenuKey { get; set; } = SButton.K;
         /// <summary>唤起时间线手账面板（按日对话记录 + 分层记忆），自动定位最近聊天的 NPC。</summary>
         public SButton OpenTimelineMenuKey { get; set; } = SButton.J;
+        /// <summary>唤起信件抽屉（仅 ValleyTalk 归档信件重读），自由状态响应。</summary>
+        public SButton OpenMailDrawerKey { get; set; } = SButton.L;
         public bool SuppressConnectionCheck { get; set; } = false;
         public bool EnableMemoryCompression { get; set; } = true;
         /// <summary>虚拟导演剧本生成是否启用深度思考模式（开启时大模型展开长链推理，关闭时走极速抑制模式）。</summary>

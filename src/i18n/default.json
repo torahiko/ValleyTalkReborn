@@ -714,5 +714,9 @@
   "ArchiveMenu.RestoreNotFound": "This item no longer exists.",
   "ArchiveMenu.RestoreCapacityFull": "Active memory is full (max {{max}}).",
   "ArchiveMenu.EmptyPrompt": "The archive is empty. Old memories will be archived here automatically.",
-  "ArchiveMenu.EmptyPromptTimeline": "The archive is empty. Condensed or deleted journal entries will appear here."
+  "ArchiveMenu.EmptyPromptTimeline": "The archive is empty. Condensed or deleted journal entries will appear here.",
+  "configOpenMailDrawerKey": "Open Mail Drawer Key",
+  "configOpenMailDrawerKeyTooltip": "Open the archived-mail drawer (ValleyTalk letters only).",
+  "drawerEmptyTitle": "Mail Drawer",
+  "drawerEmptyBody": "No archived letters yet."
 }

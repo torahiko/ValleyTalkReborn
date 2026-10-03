@@ -927,6 +927,31 @@ namespace ValleytalkReborn
                 }
             }
 
+            // ── 信件抽屉热键（VM-004R：仅 ValleyTalk 归档信件重读，自由状态响应）──
+            if (e.Button == Config.OpenMailDrawerKey)
+            {
+                // 打字时不触发热键，防止按键输入冲突（镜像 Hub 段守卫）
+                if (Game1.keyboardDispatcher?.Subscriber is DialogueTextInputBox)
+                    return;
+
+                // 门禁：读档完成 + 玩家自由 + 无菜单 + 非虚拟导演演出 + 非过场
+                if (!(Context.IsWorldReady && Context.IsPlayerFree && Game1.activeClickableMenu == null
+                      && VirtualDirector.Instance?.IsActive != true && !Game1.eventUp))
+                    return;
+
+                try
+                {
+                    Game1.playSound("shwip", null);
+                    Game1.activeClickableMenu = new ValleyMailDrawerMenu(ValleyMailManager.GetArchivedMails());
+                    Helper.Input.Suppress(e.Button);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[ValleyMail] Failed to open the mail drawer: {ex}");
+                }
+                return;
+            }
+
             // ── 原有 DialogueTextInputBox 打字态守卫 ────────────────────────
             if (Game1.keyboardDispatcher?.Subscriber is DialogueTextInputBox)
             {

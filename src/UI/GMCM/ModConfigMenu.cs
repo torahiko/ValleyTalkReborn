@@ -682,6 +682,14 @@ namespace ValleytalkReborn
                 setValue: value => ModEntry.Config.OpenTimelineMenuKey = value
             );
 
+            ConfigMenu.AddKeybind(
+                mod: ModManifest,
+                name: () => GetUIString("configOpenMailDrawerKey", "Open Mail Drawer Key"),
+                tooltip: () => GetUIString("configOpenMailDrawerKeyTooltip", "Open the archived-mail drawer (ValleyTalk letters only)."),
+                getValue: () => ModEntry.Config.OpenMailDrawerKey,
+                setValue: value => ModEntry.Config.OpenMailDrawerKey = value
+            );
+
             // =========================================================================
             // ── 二级子页面：高级参数（Page: "advanced"）────────────────────────────
             // =========================================================================

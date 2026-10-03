@@ -714,5 +714,9 @@
   "ArchiveMenu.RestoreNotFound": "该条目已不存在（可能已被淘汰），列表已刷新。",
   "ArchiveMenu.RestoreCapacityFull": "活跃记忆槽已满（最多 {{max}} 条）。",
   "ArchiveMenu.EmptyPrompt": "归档箱是空的。超过 3 天的琐碎回忆会自动归档到这里。",
-  "ArchiveMenu.EmptyPromptTimeline": "时间线归档箱是空的。被浓缩提炼或手动删除的手账记录会存入这里。"
+  "ArchiveMenu.EmptyPromptTimeline": "时间线归档箱是空的。被浓缩提炼或手动删除的手账记录会存入这里。",
+  "configOpenMailDrawerKey": "打开信件抽屉快捷键",
+  "configOpenMailDrawerKeyTooltip": "打开归档信件抽屉（仅限 ValleyTalk 信件）。",
+  "drawerEmptyTitle": "信件抽屉",
+  "drawerEmptyBody": "还没有已归档的信件。"
 }
