@@ -176,6 +176,10 @@ namespace ValleytalkReborn.Movement
             _followEndTime = endTime;
             _isDateFollow  = false;
 
+            // 玩家规则对齐：跟随期间禁用“被挡路就拆障”（vanilla NPC 默认开启，
+            // 会当场摧毁栅栏等 Object 继续走）。Unbind 时恢复 vanilla 默认。
+            npc.willDestroyObjectsUnderfoot = false;
+
             _anchorSnapshot = new FollowAnchorSnapshot
             {
                 MapName         = npc.currentLocation?.Name ?? "",
@@ -215,6 +219,9 @@ namespace ValleytalkReborn.Movement
             _followEndTime = endTime;
             _isDateFollow  = true;
 
+            // 同 StartRegularFollow：跟随期间禁用拆障穿行，Unbind 时恢复。
+            npc.willDestroyObjectsUnderfoot = false;
+
             _anchorSnapshot = new FollowAnchorSnapshot
             {
                 MapName         = npc.currentLocation?.Name ?? "",
@@ -236,6 +243,7 @@ namespace ValleytalkReborn.Movement
             if (_followingNpc != null)
             {
                 _clearNpcMovement(_followingNpc);
+                _followingNpc.willDestroyObjectsUnderfoot = true;
 
                 if (!silent)
                 {
@@ -413,11 +421,43 @@ namespace ValleytalkReborn.Movement
             else if (_followingNpc != null && _followingNpc.currentLocation != null
                      && !MovementPathfinding.IsTileWalkable(_followingNpc.currentLocation, _followingNpc.Tile, _followingNpc))
             {
-                MovementPathfinding.TryRecoverStartingTile(_followingNpc, _followingNpc.currentLocation);
+                // 先就近落回可走格；开阔水面中央等无邻近落脚点（超出 radius 4）时，
+                // 就近传回玩家身侧兜底，彻底杜绝“跑进河里卡住出不来”。
+                bool recovered = MovementPathfinding.TryRecoverStartingTile(_followingNpc, _followingNpc.currentLocation);
+
+                if (!recovered && Game1.player?.currentLocation != null)
+                {
+                    var safeTile = MovementPathfinding.FindSafeFollowTile(
+                        Game1.player.currentLocation, Game1.player.Tile, _followingNpc);
+
+                    if (safeTile.HasValue)
+                    {
+                        Game1.warpCharacter(_followingNpc, Game1.player.currentLocation, safeTile.Value);
+                        _clearNpcMovement(_followingNpc);
+                        TransitionTo(FollowState.Halted);
+
+                        ModEntry.SMonitor?.Log(
+                            $"[FollowMovementTracker] {_followingNpc.Name} stuck on unreachable tile " +
+                            $"({_followingNpc.Tile.X},{_followingNpc.Tile.Y}) with no walkable neighbor, " +
+                            $"warped to ({safeTile.Value.X},{safeTile.Value.Y}) near player.",
+                            LogLevel.Warn);
+                    }
+                    else
+                    {
+                        ModEntry.SMonitor?.Log(
+                            $"[FollowMovementTracker] {_followingNpc.Name} stuck on unreachable tile " +
+                            $"({_followingNpc.Tile.X},{_followingNpc.Tile.Y}) and no safe warp found.",
+                            LogLevel.Warn);
+                    }
+                }
+                else if (recovered)
+                {
+                    ModEntry.SMonitor?.Log(
+                        $"[FollowMovementTracker] {_followingNpc.Name} detected out-of-bounds/wall-phasing, forced recovery.",
+                        LogLevel.Warn);
+                }
+
                 _wallCheckCooldown = RECOVERY_COOLDOWN_TICKS;
-                ModEntry.SMonitor?.Log(
-                    $"[FollowMovementTracker] {_followingNpc.Name} detected out-of-bounds/wall-phasing, forced recovery.",
-                    LogLevel.Warn);
             }
 
             if (_isDateFollow && _followState == FollowState.Pathing)
@@ -452,6 +492,9 @@ namespace ValleytalkReborn.Movement
             _followEndTime = s.EndTime;
             _isDateFollow  = true;
 
+            // 同 StartDateFollow：恢复跟随时延续禁拆障窗口。
+            s.Npc.willDestroyObjectsUnderfoot = false;
+
             TransitionTo(FollowState.Halted);
 
             ModEntry.SMonitor?.Log(
@@ -466,6 +509,9 @@ namespace ValleytalkReborn.Movement
                 LogLevel.Debug);
 
             _clearNpcMovement(_followingNpc);
+
+            if (_followingNpc != null)
+                _followingNpc.willDestroyObjectsUnderfoot = true;
 
             _followingNpc              = null;
             _isDateFollow              = false;
@@ -982,6 +1028,9 @@ namespace ValleytalkReborn.Movement
                 }
                 catch { }
 
+                // 玩家规则对齐：禁用控制器的破坏性寻路（vanilla 默认放行拆障）。
+                // 被栅栏等 Object 挡路时闸门自动开启，其余障碍 Halt 并交回重寻路。
+                controller.nonDestructivePathing = true;
                 _followingNpc.controller = controller;
                 _followPathFailCount = 0;
                 return true;
@@ -1058,6 +1107,7 @@ namespace ValleytalkReborn.Movement
 
                 if (MovementPathfinding.TryCreatePath(_followingNpc, loc, target, out var controller, out _))
                 {
+                    controller.nonDestructivePathing = true;
                     _followingNpc.controller = controller;
                     _wanderPathCooldown      = WANDER_PAUSE;
 

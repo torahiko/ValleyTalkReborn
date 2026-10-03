@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using StardewValley;
 using StardewModdingAPI;
 using StardewValley.Pathfinding;
@@ -32,7 +33,14 @@ namespace ValleytalkReborn
             if (tx < 0 || ty < 0 || tx >= loc.map.Layers[0].LayerWidth || ty >= loc.map.Layers[0].LayerHeight)
                 return false;
 
-            // Terrain passability check (water, cliffs, etc.).
+            // 玩家规则对齐：开阔水面不可走。1.6 的 isTilePassable 与 isCollidingPosition 均
+            // 不把 Back 层 "Water" 属性当作移动碰撞（仅 rafting/弹道特例），NPC 寻路与物理
+            // 因此可穿行河面。水面上有 Buildings 层 tile（桥面、码头）时不受此规则影响，
+            // 交由下方 isTilePassable / isCollidingPosition 的 Buildings 层判定正常放行。
+            if (IsOpenWater(loc.isWaterTile(tx, ty), loc.hasTileAt(tx, ty, "Buildings")))
+                return false;
+
+            // Terrain passability check (cliffs, Back/Buildings 层属性等).
             if (!loc.isTilePassable(new xTile.Dimensions.Location(tx, ty), Game1.viewport))
                 return false;
 
@@ -49,6 +57,14 @@ namespace ValleytalkReborn
 
             return true;
         }
+
+        /// <summary>
+        /// 开阔水面判定（纯函数，无头可测）：Back 层带 "Water" 属性且其上方没有
+        /// Buildings 层 tile（桥面、码头板）时视为不可走；有覆盖 tile 时交由
+        /// isTilePassable / isCollidingPosition 的 Buildings 层判定决定（如 Passable 桥板可走）。
+        /// </summary>
+        internal static bool IsOpenWater(bool isWaterBackTile, bool hasBuildingsLayerTile)
+            => isWaterBackTile && !hasBuildingsLayerTile;
 
         // ═══════════════════════════════════════════════
         //  步进位移表（单一实现）
@@ -305,7 +321,36 @@ namespace ValleytalkReborn
             => ctrl == null || ctrl.pathToEndPoint == null || ctrl.pathToEndPoint.Count == 0;
 
         /// <summary>
+        /// 路线内点校验（纯函数，无头可测）：vanilla A* 与其移动物理都不把水面当碰撞，
+        /// 生成的路径可能直接过河。此校验按玩家通行规则（tileWalkable，含水面）检查内点。
+        /// 起点与终点沿用 vanilla 语义豁免：终点无条件可达（findPath 邻接判定先例），
+        /// 起点即 NPC 当前所在格。入参顺序 = Stack 枚举序 = Pop 序（栈顶=起点）。
+        /// </summary>
+        internal static bool RouteRespectsPlayerPassability(
+            IReadOnlyList<Point> route,
+            Func<Vector2, bool> tileWalkable)
+        {
+            if (route == null || route.Count == 0)
+                return false;
+
+            for (int i = 0; i < route.Count; i++)
+            {
+                bool isStartOrEnd = i == 0 || i == route.Count - 1;
+                if (!isStartOrEnd && !tileWalkable(new Vector2(route[i].X, route[i].Y)))
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// 尝试为 npc 创建到 target 的路径，失败时自动尝试邻近偏移格。
+        /// ① 目标格可走：先走 vanilla A*（保留其终格无条件可达语义与朝向目标的 tie-break），
+        ///    但 vanilla 寻路不识别水面，路线可能直接过河 —— 以
+        ///    RouteRespectsPlayerPassability 校验内点，违例即弃用；
+        /// ② vanilla 无解（如迭代上限下的跨河大绕路）或路线违例 → 自算 4 向 BFS
+        ///    （TryCreatePathAvoiding，全程 IsTileWalkable 把关，迭代上限为地图首层面积）；
+        /// ③ 目标格本身不可走（或上述全败）→ 邻近偏移兜底（保留原语义）。
         /// </summary>
         internal static bool TryCreatePath(
             NPC npc,
@@ -320,59 +365,44 @@ namespace ValleytalkReborn
             if (npc == null || loc == null)
                 return false;
 
-            // If the target itself is not walkable, try nearby offsets first.
-            if (!IsTileWalkable(loc, target, npc))
+            if (IsTileWalkable(loc, target, npc))
             {
-                int[] offsets = { 1, -1, 2, -2 };
-                foreach (int dy in offsets)
-                foreach (int dx in offsets)
+                var vanilla = new PathFindController(
+                    npc, loc,
+                    new Microsoft.Xna.Framework.Point((int)target.X, (int)target.Y), -1);
+
+                if (!IsPathDead(vanilla)
+                    && RouteRespectsPlayerPassability(
+                        vanilla.pathToEndPoint?.ToList(),
+                        tile => IsTileWalkable(loc, tile, npc)))
                 {
-                    if (dx == 0 && dy == 0) continue;
-                    var alt = new Vector2(target.X + dx, target.Y + dy);
-                    if (!IsTileWalkable(loc, alt, npc))
-                        continue;
-
-                    controller = new PathFindController(
-                        npc, loc,
-                        new Microsoft.Xna.Framework.Point((int)alt.X, (int)alt.Y), -1);
-
-                    if (!IsPathDead(controller))
-                    {
-                        finalTarget = alt;
-                        return true;
-                    }
+                    controller = vanilla;
+                    return true;
                 }
 
-                return false;
+                // vanilla 无解或路线内点含水/违例：改走自算 BFS（走玩家规则）。
+                if (TryCreatePathAvoiding(npc, loc, target, null, out controller, out finalTarget))
+                    return true;
             }
 
-            controller = new PathFindController(
-                npc, loc,
-                new Microsoft.Xna.Framework.Point((int)target.X, (int)target.Y), -1);
-
-            if (!IsPathDead(controller))
-                return true;
-
-            // Target is walkable but path is unreachable; try nearby offsets.
+            // Target is not walkable (or the above failed): try nearby offsets.
+            int[] offsets = { 1, -1, 2, -2 };
+            foreach (int dy in offsets)
+            foreach (int dx in offsets)
             {
-                int[] offsets = { 1, -1, 2, -2 };
-                foreach (int dy in offsets)
-                foreach (int dx in offsets)
+                if (dx == 0 && dy == 0) continue;
+                var alt = new Vector2(target.X + dx, target.Y + dy);
+                if (!IsTileWalkable(loc, alt, npc))
+                    continue;
+
+                controller = new PathFindController(
+                    npc, loc,
+                    new Microsoft.Xna.Framework.Point((int)alt.X, (int)alt.Y), -1);
+
+                if (!IsPathDead(controller))
                 {
-                    if (dx == 0 && dy == 0) continue;
-                    var alt = new Vector2(target.X + dx, target.Y + dy);
-                    if (!IsTileWalkable(loc, alt, npc))
-                        continue;
-
-                    controller = new PathFindController(
-                        npc, loc,
-                        new Microsoft.Xna.Framework.Point((int)alt.X, (int)alt.Y), -1);
-
-                    if (!IsPathDead(controller))
-                    {
-                        finalTarget = alt;
-                        return true;
-                    }
+                    finalTarget = alt;
+                    return true;
                 }
             }
 
