@@ -119,6 +119,12 @@ namespace ValleytalkReborn.Cutscene.Storage
         private static ArchivedCutscene? _pendingReplay;
 
         /// <summary>
+        /// 跨图回放的原点锚：发起 warp 前以玩家真实状态捕获，开演时覆写快照玩家字段，
+        /// 谢幕后经快照 Restore 的跨图分支归还原点（Memory 瞬态，与 _pendingReplay 同步消费）
+        /// </summary>
+        private static VirtualDirector.PlayerAnchor? _pendingOriginReturn;
+
+        /// <summary>
         /// 录像式回放归档剧本：回放回归录制现场——农夫按归档 PlayerStance 落回录制地图，
         /// 克隆演员按归档站位在录制现场复现开场队形后开演（真人本体零接触）。
         /// 同图直接就位；跨图先经原版 warpFarmer 换图，落地后于 OnPlayerWarped 接续开演。
@@ -160,11 +166,11 @@ namespace ValleytalkReborn.Cutscene.Storage
                 return false;
             }
 
-            // 同图快路径：玩家已身处录制现场，克隆演员就地摆位开演
+            // 同图快路径：玩家已身处录制现场，克隆演员就地摆位开演（无原点锚，快照保持真实现场）
             var current = Game1.player.currentLocation;
             if (string.Equals(current.NameOrUniqueName, cutscene.LocationName, StringComparison.Ordinal))
             {
-                return StartReplayOnStage(cutscene, current, out errorMessage);
+                return StartReplayOnStage(cutscene, current, null, out errorMessage);
             }
 
             // 跨图路径：解析录制现场，农夫经原版 warpFarmer 换图，落地后接续开演
@@ -180,6 +186,10 @@ namespace ValleytalkReborn.Cutscene.Storage
 
             ComputePlayerLanding(cutscene, stage, out int landingX, out int landingY, out int landingFacing);
 
+            // 原点锚：发起 warp 前以玩家真实状态捕获，供谢幕归还原点；
+            // 同图快速路径不设置锚（保持 null，快照沿用 Capture 的真实现场）
+            _pendingOriginReturn = new VirtualDirector.PlayerAnchor(
+                current.NameOrUniqueName, Game1.player.Tile, Game1.player.FacingDirection);
             _pendingReplay = cutscene;
             Game1.warpFarmer(stage.NameOrUniqueName, landingX, landingY, landingFacing);
             ModEntry.SMonitor?.Log(
@@ -204,6 +214,8 @@ namespace ValleytalkReborn.Cutscene.Storage
                 if (!e.IsLocalPlayer)
                     return;
                 _pendingReplay = null;
+                var originAnchor = _pendingOriginReturn;
+                _pendingOriginReturn = null;
 
                 // 到达地图与录制现场不符：warp 被原版事件/剧情改道，丢弃本次回放
                 if (e.NewLocation == null ||
@@ -217,7 +229,10 @@ namespace ValleytalkReborn.Cutscene.Storage
                     return;
                 }
 
-                if (!Context.IsPlayerFree)
+                // BOUNDARY: 换图落地的淡入窗口是本模组主动发起 warp 的预期瞬态，
+                // 不构成阻断（Context.IsPlayerFree 的 fading 判定会在此确定性误杀）；
+                // 仅原版事件/剧情/菜单才是真阻断
+                if (VirtualDirector.IsPlayerBlockedByVanillaState())
                 {
                     ModEntry.SMonitor?.Log(
                         $"[CutsceneStorage] Pending replay of '{pending.Title}' aborted: player not free after warp.",
@@ -234,7 +249,7 @@ namespace ValleytalkReborn.Cutscene.Storage
                     return;
                 }
 
-                if (!StartReplayOnStage(pending, e.NewLocation, out var playError))
+                if (!StartReplayOnStage(pending, e.NewLocation, originAnchor, out var playError))
                 {
                     ModEntry.SMonitor?.Log(
                         $"[CutsceneStorage] Pending replay of '{pending.Title}' failed to start: {playError}",
@@ -281,9 +296,11 @@ namespace ValleytalkReborn.Cutscene.Storage
 
         /// <summary>
         /// 在录制现场以克隆演员开演回放：克隆摆位 → 编译（演员覆盖表阻断真人解析）→ 播放。
+        /// originAnchor 非空时为跨图回放：开演时以原点锚覆写快照玩家字段，谢幕后归还原点。
         /// 开演失败时幕后摘除全部克隆；开演成功后的摘除由 SceneEnded → DisposeAll 承担。
         /// </summary>
-        private static bool StartReplayOnStage(ArchivedCutscene cutscene, GameLocation stage, out string errorMessage)
+        private static bool StartReplayOnStage(ArchivedCutscene cutscene, GameLocation stage,
+            VirtualDirector.PlayerAnchor? originAnchor, out string errorMessage)
         {
             errorMessage = string.Empty;
 
@@ -308,7 +325,7 @@ namespace ValleytalkReborn.Cutscene.Storage
                 }
             }
 
-            if (!VirtualDirector.Instance.PlayScript(cutscene.RawJson, stage, actorOverrides, out errorMessage))
+            if (!VirtualDirector.Instance.PlayScript(cutscene.RawJson, stage, actorOverrides, originAnchor, out errorMessage))
             {
                 CutsceneCloneService.DisposeAll();
                 return false;

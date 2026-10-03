@@ -44,11 +44,18 @@ namespace ValleytalkReborn.Cutscene
             }
         }
 
+        /// <summary>
+        /// 回放原点锚：跨图回放发起 warp 前捕获的玩家真实状态（地图、瓦格、朝向），
+        /// 开演时覆写快照玩家字段，谢幕后经快照 <see cref="CutsceneSnapshot.Restore"/> 的跨图分支归还原点
+        /// </summary>
+        public readonly record struct PlayerAnchor(string LocationName, Vector2 Tile, int Facing);
+
         private enum DirectorPhase
         {
             Idle,
             Playing,
             FadingOut,
+            ReturningHome,
             FadingIn
         }
 
@@ -70,6 +77,9 @@ namespace ValleytalkReborn.Cutscene
         // 视觉表现：全屏黑幕过渡
         private float _fadeAlpha = 0f;
         private const float FadeSpeed = 2.5f; // ~0.4s 渐出，~0.4s 渐入，总耗时约 0.8s 电影级过渡
+
+        // 归位等待：纯黑下逐帧等待原版归位换图落地的超时预算（秒，Memory 瞬态）
+        private float _returningTimeout;
 
         // 视觉表现：相机平滑插值与动态跟随
         private NPC _cameraTargetNpc;
@@ -156,6 +166,16 @@ namespace ValleytalkReborn.Cutscene
         private VirtualDirector() { }
 
         /// <summary>
+        /// 玩家是否被原版真实占用（事件/剧情/菜单）：仅这些构成演出所有权阻断。
+        /// 换图落地的淡入窗口不在此列——Context.IsPlayerFree 会把 fading 态误判为占用，
+        /// 从而确定性丢弃跨图回放的落地接续
+        /// </summary>
+        internal static bool IsPlayerBlockedByVanillaState()
+        {
+            return Game1.eventUp || Game1.CurrentEvent != null || Game1.activeClickableMenu != null;
+        }
+
+        /// <summary>
         /// 从原始 JSON 字符串编译并播放剧本
         /// </summary>
         public bool PlayScript(string rawJson, out string errorMessage)
@@ -210,9 +230,11 @@ namespace ValleytalkReborn.Cutscene
 
         /// <summary>
         /// 从原始 JSON 字符串编译并播放剧本（回放路径：显式舞台地图 + 演员覆盖表，
-        /// 使编译器把同名解析显式阻断到克隆演员，永不触碰真人）
+        /// 使编译器把同名解析显式阻断到克隆演员，永不触碰真人）。
+        /// originAnchor 非空时为跨图回放：开演时以原点锚覆写快照玩家字段，谢幕后归还原点
         /// </summary>
-        public bool PlayScript(string rawJson, GameLocation stageLocation, IReadOnlyDictionary<string, NPC> actorOverrides, out string errorMessage)
+        public bool PlayScript(string rawJson, GameLocation stageLocation,
+            IReadOnlyDictionary<string, NPC> actorOverrides, PlayerAnchor? originAnchor, out string errorMessage)
         {
             errorMessage = string.Empty;
             if (!Context.IsWorldReady || stageLocation == null)
@@ -234,14 +256,15 @@ namespace ValleytalkReborn.Cutscene
                 ModEntry.SMonitor?.Log($"[VirtualDirector] Compile warning: {warn}", LogLevel.Warn);
             }
 
-            Play(compileResult.Actions, compileResult.ResolvedActors);
+            Play(compileResult.Actions, compileResult.ResolvedActors, originAnchor);
             return true;
         }
 
         /// <summary>
-        /// 开始播放过场：接管游戏控制、捕获快照、压制原生 UI、启动黑边过渡
+        /// 开始播放过场：接管游戏控制、捕获快照、压制原生 UI、启动黑边过渡。
+        /// originAnchor 非空时为跨图回放：以原点锚覆写快照玩家字段（谢幕后归还原点）
         /// </summary>
-        public void Play(List<IDirectorAction> actions, List<NPC> actors)
+        public void Play(List<IDirectorAction> actions, List<NPC> actors, PlayerAnchor? originAnchor = null)
         {
             if (IsActive)
             {
@@ -261,9 +284,11 @@ namespace ValleytalkReborn.Cutscene
                 return;
             }
 
-            // BOUNDARY: 过场仅允许在玩家完全自由时启动（无事件/无菜单/未被强制控制），
+            // BOUNDARY: 过场仅允许在玩家完全自由时启动（无事件/无菜单），
             // 否则快照-复原语义会被外部状态破坏。
-            if (!Context.IsPlayerFree)
+            // 换图落地的淡入窗口不构成阻断——那是本模组主动发起的 warp 预期瞬态，
+            // Context.IsPlayerFree 的 fading 判定会在此误伤跨图回放的落地接续。
+            if (IsPlayerBlockedByVanillaState())
             {
                 ModEntry.SMonitor?.Log(
                     "[VirtualDirector] Player not free (event/menu active) — cutscene refused.",
@@ -282,6 +307,20 @@ namespace ValleytalkReborn.Cutscene
 
                 // 1. 捕获初始快照与唤醒参演角色
                 _snapshot = CutsceneSnapshot.Capture(actors ?? new List<NPC>());
+
+                // 谢幕后玩家必须可动：Capture 盲读的 CanMove 会被切图/工具瞬态污染
+                // （跨图 warp 落地淡入未完成时为 false，演出期间本导演每帧强制定身，
+                // 快照值即谢幕唯一终态）
+                _snapshot.PlayerCanMove = true;
+                if (originAnchor is PlayerAnchor anchor)
+                {
+                    // 跨图回放：以发起 warp 前捕获的原点锚覆写快照玩家字段，
+                    // Restore 的跨图分支据此在谢幕黑幕后把农夫送回原点
+                    _snapshot.PlayerLocationName = anchor.LocationName;
+                    _snapshot.PlayerTile = anchor.Tile;
+                    _snapshot.PlayerFacing = anchor.Facing;
+                }
+
                 _participatingActors.Clear();
                 if (actors != null)
                 {
@@ -508,6 +547,12 @@ namespace ValleytalkReborn.Cutscene
             {
                 float dt = (float)Game1.currentGameTime.ElapsedGameTime.TotalSeconds;
 
+                if (_phase == DirectorPhase.ReturningHome)
+                {
+                    UpdateReturningHome(dt);
+                    return;
+                }
+
                 if (_phase == DirectorPhase.FadingOut)
                 {
                     UpdateFadingOut(dt);
@@ -570,8 +615,66 @@ namespace ValleytalkReborn.Cutscene
                     Game1.player.freezePause = 10;
                     Game1.player.CanMove = false;
                 }
-                _phase = DirectorPhase.FadingIn;
+
+                // 跨图归位：Restore 已发现快照锚点地图与当前图不一致并发起归位 warp，
+                // 在纯黑下等待原版换图落地后再淡入，避免归位 warp 的画面穿帮与提前解锁
+                if (_snapshot != null &&
+                    !string.IsNullOrEmpty(_snapshot.PlayerLocationName) &&
+                    !string.Equals(
+                        Game1.player?.currentLocation?.NameOrUniqueName,
+                        _snapshot.PlayerLocationName,
+                        StringComparison.Ordinal))
+                {
+                    _phase = DirectorPhase.ReturningHome;
+                    _returningTimeout = 3f;
+                }
+                else
+                {
+                    _phase = DirectorPhase.FadingIn;
+                }
             }
+        }
+
+        /// <summary>
+        /// 归位等待：纯黑下逐帧等待原版归位换图落地（快照跨图分支发起的 warp），
+        /// 落地后转入淡入；超时兜底按当前位置淡入，绝不卡死玩家
+        /// </summary>
+        private void UpdateReturningHome(float dt)
+        {
+            // 纯黑等待期间保持玩家定身与时钟静止
+            if (Game1.player != null)
+            {
+                Game1.player.freezePause = 100;
+                Game1.player.CanMove = false;
+            }
+            Game1.gameTimeInterval = 0;
+            _fadeAlpha = 1f;
+
+            // 落地谓词：农夫已回到快照锚点地图，且原版换图流程（isWarping）已结束
+            bool landed = _snapshot != null &&
+                string.Equals(
+                    Game1.player?.currentLocation?.NameOrUniqueName,
+                    _snapshot.PlayerLocationName,
+                    StringComparison.Ordinal) &&
+                !Game1.isWarping;
+            _returningTimeout -= dt;
+            if (!landed && _returningTimeout > 0f)
+                return;
+
+            if (!landed)
+            {
+                ModEntry.SMonitor?.Log(
+                    "[VirtualDirector] Origin return warp did not land within timeout, fading in at current position.",
+                    LogLevel.Warn);
+            }
+
+            // 落地（或超时兜底）：沿用 FadingIn 初始化，保持玩家定身直到淡入完成
+            if (Game1.player != null)
+            {
+                Game1.player.freezePause = 10;
+                Game1.player.CanMove = false;
+            }
+            _phase = DirectorPhase.FadingIn;
         }
 
         private void UpdateFadingIn(float dt)
@@ -593,8 +696,18 @@ namespace ValleytalkReborn.Cutscene
                 // 最终归还玩家控制权（依据快照真实记录的值还原）
                 if (Game1.player != null && _snapshot != null)
                 {
-                    Game1.player.CanMove = _snapshot.PlayerCanMove;
-                    Game1.player.freezePause = 0;
+                    if (Game1.eventUp || Game1.CurrentEvent != null)
+                    {
+                        // 原版事件已接管玩家：导演不得越权解锁，控制权归还原版事件链
+                        ModEntry.SMonitor?.Log(
+                            "[VirtualDirector] Vanilla event owns the player at fade-in end — control return skipped.",
+                            LogLevel.Info);
+                    }
+                    else
+                    {
+                        Game1.player.CanMove = _snapshot.PlayerCanMove;
+                        Game1.player.freezePause = 0;
+                    }
                 }
                 _snapshot = null;
 

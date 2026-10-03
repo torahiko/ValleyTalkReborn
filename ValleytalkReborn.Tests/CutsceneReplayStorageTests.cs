@@ -1,6 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
+using System.Runtime.Serialization;
+using Microsoft.Xna.Framework;
 using Newtonsoft.Json;
+using Netcode;
+using StardewValley;
+using StardewValley.Menus;
+using StardewValley.Network;
+using ValleytalkReborn.Cutscene;
 using ValleytalkReborn.Cutscene.Storage;
 using ValleytalkReborn.Services;
 using Xunit;
@@ -8,7 +17,8 @@ using Xunit;
 namespace ValleytalkReborn.Tests
 {
     /// <summary>
-    /// 归档剧本录像式回放契约测试：站位记录的持久化往返与旧档兼容语义
+    /// 归档剧本录像式回放契约测试：站位记录的持久化往返与旧档兼容语义；
+    /// VT-CUTSCENE-REPLAY-ORIGIN-01：原点锚开演覆写与原版阻断真值表
     /// </summary>
     public class CutsceneReplayStorageTests
     {
@@ -126,6 +136,219 @@ namespace ValleytalkReborn.Tests
             Assert.NotNull(loaded.PlayerStance);
             Assert.Equal(0, loaded.PlayerStance.TileX);
             Assert.Equal(0, loaded.PlayerStance.TileY);
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // VT-CUTSCENE-REPLAY-ORIGIN-01
+        // ─────────────────────────────────────────────────────────────────────
+
+        /// <summary>极简导演动作桩：Enter 记录进入即完成，供无头开演派发。</summary>
+        private sealed class StubDirectorAction : IDirectorAction
+        {
+            public bool Entered { get; private set; }
+            public bool WaitForCompletion { get; set; }
+
+            public void Enter() => Entered = true;
+            public bool Update(Microsoft.Xna.Framework.GameTime time) => true;
+            public void Exit() { }
+        }
+
+        /// <summary>菜单哨兵：IClickableMenu 抽象类的空派生（其无参构造为空体，无头安全）。</summary>
+        private sealed class MenuSentinel : IClickableMenu
+        {
+        }
+
+        private static readonly BindingFlags InstanceFlags =
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
+        private static object GetStaticField(Type type, string name) =>
+            type.GetField(name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(null);
+
+        private static void SetStaticField(Type type, string name, object value) =>
+            type.GetField(name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+                .SetValue(null, value);
+
+        /// <summary>
+        /// 未初始化 GameLocation：装 name 与 uniqueName 两个 NetString。
+        /// NameOrUniqueName 直读 uniqueName.Value（null 字段会 NRE），两者都不可缺。
+        /// </summary>
+        private static GameLocation MakeHeadlessLocation(string name)
+        {
+            var location = (GameLocation)FormatterServices.GetUninitializedObject(typeof(GameLocation));
+            location.GetType().GetField("name", InstanceFlags).SetValue(location, new NetString(name));
+            location.GetType().GetField("uniqueName", InstanceFlags).SetValue(location, new NetString());
+            return location;
+        }
+
+        /// <summary>
+        /// 未初始化 Farmer：补 Character.position（NetPosition）、瓦格缓存对（令 Tile 短路返回，
+        /// 绕开 StandingPixel 的 Sprite 依赖）与 facingDirection（NetInt）。
+        /// </summary>
+        private static Farmer MakeHeadlessFarmer(Vector2 tile, int facing)
+        {
+            var farmer = (Farmer)FormatterServices.GetUninitializedObject(typeof(Farmer));
+            var characterType = typeof(StardewValley.Character);
+            characterType.GetField("position", InstanceFlags).SetValue(farmer, new NetPosition());
+            farmer.Position = tile * 64f;
+            characterType.GetField("cachedTile", InstanceFlags).SetValue(farmer, tile);
+            characterType.GetField("pixelPositionForCachedTile", InstanceFlags).SetValue(farmer, tile * 64f);
+            characterType.GetField("facingDirection", InstanceFlags)
+                .SetValue(farmer, new NetDirection(facing));
+            // Farmer.FacingDirection 重写版经 IsLocalPlayer 读 uniqueMultiplayerID（NetInt64）
+            typeof(Farmer).GetField("uniqueMultiplayerID", InstanceFlags)
+                .SetValue(farmer, new NetLong(0));
+            return farmer;
+        }
+
+        /// <summary>
+        /// 把 Character（含 Farmer 派生）的 currentLocationRef 指向传入地点实例
+        /// （直接写 _gameLocation 并复位 _dirty，绕开 NetLocationRef.Set 的地图名解析，先例：
+        /// FarmGreenhouseObservationTests.InstallLocationRef）。
+        /// </summary>
+        private static void InstallCharacterLocation(StardewValley.Character character, GameLocation location)
+        {
+            var locationRef = new NetLocationRef();
+            locationRef.GetType().GetField("_gameLocation", InstanceFlags).SetValue(locationRef, location);
+            locationRef.GetType().GetField("_dirty", InstanceFlags).SetValue(locationRef, false);
+            typeof(StardewValley.Character).GetField("currentLocationRef", InstanceFlags)
+                .SetValue(character, locationRef);
+        }
+
+        /// <summary>把导演复位到空闲态（IsActive 私有 setter、私有 _phase/_snapshot/队列）。</summary>
+        private static void ResetDirector(VirtualDirector director)
+        {
+            var directorType = typeof(VirtualDirector);
+            directorType.GetField("<IsActive>k__BackingField", InstanceFlags).SetValue(director, false);
+            var phaseField = directorType.GetField("_phase", InstanceFlags);
+            phaseField.SetValue(director, Enum.Parse(phaseField.FieldType, "Idle"));
+            directorType.GetField("_snapshot", InstanceFlags).SetValue(director, null);
+            ((Queue<IDirectorAction>)directorType.GetField("_actionQueue", InstanceFlags).GetValue(director)).Clear();
+            ((List<IDirectorAction>)directorType.GetField("_activeActions", InstanceFlags).GetValue(director)).Clear();
+        }
+
+        /// <summary>
+        /// Play 终点的 Keyboard.GetState 会触发 MonoGame 的 SDL2 本机库加载：无头测试进程
+        /// 探测路径上缺 SDL2.dll 时（Clean 重建后的 bin），从仓库游戏目录补一份，保证用例可复现
+        /// </summary>
+        private static void EnsureHeadlessSdl2()
+        {
+            const string probeName = "SDL2.dll";
+            string baseDir = AppContext.BaseDirectory;
+            if (File.Exists(Path.Combine(baseDir, probeName)))
+                return;
+
+            for (var dir = new DirectoryInfo(baseDir); dir != null; dir = dir.Parent)
+            {
+                string candidate = Path.Combine(dir.FullName, "Stardew Valley", probeName);
+                if (!File.Exists(candidate))
+                    continue;
+                File.Copy(candidate, Path.Combine(baseDir, probeName));
+                return;
+            }
+        }
+
+        [Fact]
+        public void Play_WithOriginAnchor_OverridesSnapshotPlayerFields_AndForcesPlayerCanMove()
+        {
+            EnsureHeadlessSdl2();
+            var director = VirtualDirector.Instance;
+            object previousPlayer = GetStaticField(typeof(Game1), "_player");
+            object previousGame1 = GetStaticField(typeof(Game1), "game1");
+            object previousNetWorldState = GetStaticField(typeof(Game1), "netWorldState");
+            bool previousEventUp = Game1.eventUp;
+            object previousMenu = GetStaticField(typeof(Game1), "_activeClickableMenu");
+            bool previousDisplayHud = Game1.displayHUD;
+            bool previousViewportFreeze = Game1.viewportFreeze;
+
+            try
+            {
+                ResetDirector(director);
+
+                // IsPlayerBlockedByVanillaState → Game1.CurrentEvent → currentLocation → game1.instanceGameLocation
+                var stageLocation = MakeHeadlessLocation("Farm");
+                var game1Shim = (Game1)FormatterServices.GetUninitializedObject(typeof(Game1));
+                typeof(Game1).GetField("instanceGameLocation", InstanceFlags).SetValue(game1Shim, stageLocation);
+                SetStaticField(typeof(Game1), "game1", game1Shim);
+                // NetPosition.Value 读写经 NetPosition.Get → Game1.HostPaused → netWorldState
+                SetStaticField(typeof(Game1), "netWorldState",
+                    Activator.CreateInstance(typeof(NetRoot<NetWorldState>), new NetWorldState()));
+
+                var farmer = MakeHeadlessFarmer(new Vector2(25f, 40f), 2);
+                InstallCharacterLocation(farmer, stageLocation);
+                SetStaticField(typeof(Game1), "_player", farmer);
+                Game1.eventUp = false;
+                SetStaticField(typeof(Game1), "_activeClickableMenu", null);
+
+                var actions = new List<IDirectorAction> { new StubDirectorAction() };
+                var anchor = new VirtualDirector.PlayerAnchor("OriginFarm", new Vector2(25f, 40f), 1);
+
+                TestEnvironment.WithWorldReady(() =>
+                    director.Play(actions, new List<NPC>(), anchor));
+
+                var snapshot = (CutsceneSnapshot)typeof(VirtualDirector)
+                    .GetField("_snapshot", InstanceFlags)
+                    .GetValue(director);
+                Assert.NotNull(snapshot); // 为 null 意味着 Play 途中异常自愈，锚点链路未达成
+
+                // 锚点覆写三字段：Capture 盲读的是 "Farm"，终态必须是原点锚 "OriginFarm"
+                Assert.Equal("OriginFarm", snapshot.PlayerLocationName);
+                Assert.Equal(new Vector2(25f, 40f), snapshot.PlayerTile);
+                Assert.Equal(1, snapshot.PlayerFacing);
+                // 谢幕终态无条件可动：Capture 盲读的 CanMove（垫片下为 false）不得成为唯一终态
+                Assert.True(snapshot.PlayerCanMove);
+                Assert.True(director.IsActive); // 演出确已开演（而非门槛拒绝或异常中止）
+                Assert.True(((StubDirectorAction)actions[0]).Entered); // 首批动作已派发
+            }
+            finally
+            {
+                ResetDirector(director);
+                SetStaticField(typeof(Game1), "_player", previousPlayer);
+                SetStaticField(typeof(Game1), "game1", previousGame1);
+                SetStaticField(typeof(Game1), "netWorldState", previousNetWorldState);
+                Game1.eventUp = previousEventUp;
+                SetStaticField(typeof(Game1), "_activeClickableMenu", previousMenu);
+                Game1.displayHUD = previousDisplayHud;
+                Game1.viewportFreeze = previousViewportFreeze;
+            }
+        }
+
+        [Fact]
+        public void IsPlayerBlockedByVanillaState_TruthTableOverVanillaBlockers()
+        {
+            object previousGame1 = GetStaticField(typeof(Game1), "game1");
+            bool previousEventUp = Game1.eventUp;
+            object previousMenu = GetStaticField(typeof(Game1), "_activeClickableMenu");
+
+            try
+            {
+                // CurrentEvent 为 get-only 属性（currentLocation.currentEvent）：
+                // 经未初始化 game1 实例指入无头地点后，写其公共字段 currentEvent
+                var location = MakeHeadlessLocation("Farm");
+                var game1Shim = (Game1)FormatterServices.GetUninitializedObject(typeof(Game1));
+                typeof(Game1).GetField("instanceGameLocation", InstanceFlags).SetValue(game1Shim, location);
+                SetStaticField(typeof(Game1), "game1", game1Shim);
+
+                foreach (bool eventUp in new[] { false, true })
+                foreach (bool hasEvent in new[] { false, true })
+                foreach (bool hasMenu in new[] { false, true })
+                {
+                    Game1.eventUp = eventUp;
+                    location.currentEvent = hasEvent
+                        ? (Event)FormatterServices.GetUninitializedObject(typeof(Event))
+                        : null;
+                    SetStaticField(typeof(Game1), "_activeClickableMenu", hasMenu ? new MenuSentinel() : null);
+
+                    bool blocked = VirtualDirector.IsPlayerBlockedByVanillaState();
+                    Assert.True(blocked == (eventUp || hasEvent || hasMenu),
+                        $"eventUp={eventUp}, CurrentEvent!=null={hasEvent}, menu!=null={hasMenu} → blocked={blocked}");
+                }
+            }
+            finally
+            {
+                SetStaticField(typeof(Game1), "game1", previousGame1);
+                Game1.eventUp = previousEventUp;
+                SetStaticField(typeof(Game1), "_activeClickableMenu", previousMenu);
+            }
         }
     }
 }
