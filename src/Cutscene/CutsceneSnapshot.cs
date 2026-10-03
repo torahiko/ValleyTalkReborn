@@ -40,6 +40,7 @@ namespace ValleytalkReborn.Cutscene
         public Vector2 PlayerTile;
         public int PlayerFacing;
         public bool PlayerCanMove;
+        public string PlayerLocationName; // Capture 时玩家所在地图（瞬态，Play gate 保证 currentLocation 非空）
         public List<ActorState> ActorStates = new();
 
         /// <summary>
@@ -51,7 +52,8 @@ namespace ValleytalkReborn.Cutscene
             {
                 PlayerTile = Game1.player.Tile,
                 PlayerFacing = Game1.player.FacingDirection,
-                PlayerCanMove = Game1.player.CanMove
+                PlayerCanMove = Game1.player.CanMove,
+                PlayerLocationName = Game1.player.currentLocation.NameOrUniqueName
             };
 
             foreach (var npc in actors)
@@ -101,7 +103,28 @@ namespace ValleytalkReborn.Cutscene
                 // 1. 恢复玩家
                 if (Game1.player != null)
                 {
-                    Game1.player.Position = PlayerTile * 64f;
+                    if (string.IsNullOrEmpty(PlayerLocationName))
+                    {
+                        // 防御兜底：快照缺失地图名，退回同图直赋值语义
+                        ModEntry.SMonitor?.Log(
+                            "[CutsceneSnapshot] Snapshot missing PlayerLocationName — falling back to direct reposition.",
+                            LogLevel.Warn);
+                        Game1.player.Position = PlayerTile * 64f;
+                    }
+                    else if (!string.Equals(Game1.player.currentLocation?.NameOrUniqueName, PlayerLocationName, StringComparison.Ordinal))
+                    {
+                        // BOUNDARY：跨图恢复路径（当前无玩家位移动作类，不可达）——经原版 warpFarmer 异步换图归位；
+                        // 此刻黑幕全遮视线且 FadingIn 每帧重设 freezePause，异步换图安全
+                        ModEntry.SMonitor?.Log(
+                            $"[CutsceneSnapshot] Player on '{Game1.player.currentLocation?.NameOrUniqueName}' but snapshot captured '{PlayerLocationName}' — warping back.",
+                            LogLevel.Info);
+                        Game1.warpFarmer(PlayerLocationName, (int)PlayerTile.X, (int)PlayerTile.Y, PlayerFacing);
+                    }
+                    else
+                    {
+                        Game1.player.Position = PlayerTile * 64f;
+                    }
+
                     Game1.player.faceDirection(PlayerFacing);
                     Game1.player.CanMove = PlayerCanMove; // 快照保真：还原接管前的真实值
                     Game1.player.freezePause = 0;
@@ -178,18 +201,18 @@ namespace ValleytalkReborn.Cutscene
                         {
                             npc.EndActivityRouteEndBehavior();
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            ModEntry.SMonitor?.Log(
+                                $"[CutsceneSnapshot] Failed to end activity behavior for {npc.Name}: {ex.Message}",
+                                LogLevel.Warn);
+                        }
                         npc.doingEndOfRouteAnimation.Value = false;
                         npc.goingToDoEndOfRouteAnimation.Value = false;
                         npc.movementPause = 0;
                         npc.isCharging = false;
                         npc.Sprite?.StopAnimation();
-                        try
-                        {
-                            typeof(Character).GetField("freezeMotion", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)
-                                ?.SetValue(npc, false);
-                        }
-                        catch { }
+                        CutsceneActorHelper.SetFreezeMotion(npc, false);
                     }
 
                     // 2.2 恢复在途移动（若演出前正在日程行进中）

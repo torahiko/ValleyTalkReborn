@@ -9,6 +9,28 @@ namespace ValleytalkReborn.Cutscene
     /// </summary>
     internal static class CutsceneActorHelper
     {
+        // 全仓 Cutscene 域唯一反射点：StardewValley.Character.freezeMotion（protected bool，1.6 API 契约）。
+        // 必须全限定：本仓 ValleytalkReborn.Character（Core/Character.cs）会遮蔽 using 导入的 StardewValley.Character
+        internal static readonly System.Reflection.FieldInfo FreezeMotionField =
+            typeof(StardewValley.Character).GetField("freezeMotion",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
+
+        /// <summary>
+        /// 穿透重置 protected freezeMotion 字段；反射契约失效时记录 Error 并放弃（演员可能保持冻结，可观测），不抛异常。
+        /// </summary>
+        internal static void SetFreezeMotion(StardewValley.Character character, bool value)
+        {
+            if (FreezeMotionField == null)
+            {
+                ModEntry.SMonitor?.Log(
+                    "[CutsceneActorHelper] Character.freezeMotion reflection failed — API contract broken",
+                    LogLevel.Error);
+                return;
+            }
+
+            FreezeMotionField.SetValue(character, value);
+        }
+
         /// <summary>
         /// 全面唤醒 NPC：重置待机动画、清空暂停、穿透解除 freezeMotion 封锁
         /// </summary>
@@ -43,8 +65,7 @@ namespace ValleytalkReborn.Cutscene
                 }
 
                 // 核心关键：穿透重置 protected freezeMotion 字段，防止引擎跳过 controller.update
-                typeof(Character).GetField("freezeMotion", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)
-                    ?.SetValue(npc, false);
+                SetFreezeMotion(npc, false);
             }
             catch (Exception ex)
             {
