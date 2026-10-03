@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -123,7 +123,7 @@ internal static class FarmStateScanner
             totalAnimals++;
 
             string typeName = animal.displayType;
-            if (!string.IsNullOrWhiteSpace(typeName))
+            if (!string.IsNullOrWhiteSpace(typeName) && !IsErrorDisplayName(typeName))
             {
                 animalCounts[typeName] = animalCounts.GetValueOrDefault(typeName, 0) + 1;
             }
@@ -600,9 +600,17 @@ internal static class FarmStateScanner
             {
                 string fruitName = ResolveFruitTreeName(tree);
 
-                // 1.6 挂果判定：直接依据 tree.fruit 列表
-                bool hasFruit = tree.fruit != null && tree.fruit.Count > 0;
+                // 1.6 挂果判定：必须含有至少一个非 Error 的有效果实
+                bool hasFruit = tree.fruit != null && tree.fruit.Any(item => item != null && !IsErrorItem(item));
                 bool isGrowing = tree.growthStage.Value < FruitTree.treeStage;
+
+                // 若果树本身元数据彻底丢失、树苗与果实常数皆无，且挂果皆为 Error 物品，判定为卸载 Mod 残留孤立实体，直接跳过
+                if (fruitName == null && !hasFruit && !isGrowing && tree.GetData() == null &&
+                    !TryGetVanillaFruitName(tree.treeId?.Value, out _) &&
+                    string.IsNullOrWhiteSpace(SafeGetDisplayName(tree.treeId?.Value)))
+                {
+                    continue;
+                }
 
                 if (hasFruit)
                 {
@@ -641,6 +649,7 @@ internal static class FarmStateScanner
 
     /// <summary>
     /// 四级容错果实名称解析：活跃挂果实体 → 1.6 FruitTreeData 元数据 → 树苗 ID 原版常数 → 空值。
+    /// 严格过滤 Error 物品与未命名占位符，避免残留或损坏 Mod 物品污染农场摘要。
     /// </summary>
     private static string ResolveFruitTreeName(FruitTree tree)
     {
@@ -651,15 +660,28 @@ internal static class FarmStateScanner
             {
                 if (item == null) continue;
 
-                if (!string.IsNullOrWhiteSpace(item.DisplayName))
-                {
-                    return item.DisplayName;
-                }
-
+                // 优先通过 QualifiedItemId 从 ItemRegistry 权威只读校验
                 if (!string.IsNullOrWhiteSpace(item.QualifiedItemId))
                 {
                     string disp = SafeGetDisplayName(item.QualifiedItemId);
                     if (!string.IsNullOrWhiteSpace(disp)) return disp;
+                }
+
+                // 实体 DisplayName 回退前必须通过错误物品判定
+                if (!IsErrorItem(item))
+                {
+                    string disp = item.DisplayName;
+                    if (!string.IsNullOrWhiteSpace(disp))
+                    {
+                        if (disp.Contains('['))
+                        {
+                            disp = TokenParser.ParseText(disp);
+                        }
+                        if (!IsErrorDisplayName(disp))
+                        {
+                            return disp;
+                        }
+                    }
                 }
             }
         }
@@ -691,7 +713,7 @@ internal static class FarmStateScanner
                 {
                     string treeDisp = TokenParser.ParseText(data.DisplayName);
                     string clean = ExtractFruitNameFromTreeName(treeDisp);
-                    if (!string.IsNullOrWhiteSpace(clean)) return clean;
+                    if (!string.IsNullOrWhiteSpace(clean) && !IsErrorDisplayName(clean)) return clean;
                 }
             }
         }
@@ -708,7 +730,7 @@ internal static class FarmStateScanner
             if (!string.IsNullOrWhiteSpace(saplingDisp))
             {
                 string clean = ExtractFruitNameFromTreeName(saplingDisp);
-                if (!string.IsNullOrWhiteSpace(clean)) return clean;
+                if (!string.IsNullOrWhiteSpace(clean) && !IsErrorDisplayName(clean)) return clean;
             }
 
             if (TryGetVanillaFruitName(treeId, out string fallbackFruit))
@@ -717,7 +739,7 @@ internal static class FarmStateScanner
             }
         }
 
-        // Step 4 [返回空]: 各层均无法解析时交由上层按空品种省略括号
+        // Step 4 [返回空]: 各层均无法解析或为 Error 物品时交由上层按空品种省略括号
         return null;
     }
 
@@ -795,6 +817,93 @@ internal static class FarmStateScanner
     }
 
     /// <summary>
+    /// 判定展示名称是否包含中英文原生报错词或占位符标记。
+    /// </summary>
+    internal static bool IsErrorDisplayName(string displayName)
+    {
+        if (string.IsNullOrWhiteSpace(displayName)) return true;
+
+        if (displayName.Contains("Error", StringComparison.OrdinalIgnoreCase) ||
+            displayName.Contains("错误物品", StringComparison.OrdinalIgnoreCase) ||
+            displayName.Contains("未命名的物品", StringComparison.OrdinalIgnoreCase) ||
+            displayName.Contains("Unnamed Item", StringComparison.OrdinalIgnoreCase) ||
+            displayName.StartsWith("???", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        try
+        {
+            string localizedError = ItemRegistry.GetErrorItemName();
+            if (!string.IsNullOrWhiteSpace(localizedError) &&
+                displayName.Contains(localizedError, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            string localizedUnnamed = ItemRegistry.GetUnnamedItemName();
+            if (!string.IsNullOrWhiteSpace(localizedUnnamed) &&
+                displayName.Contains(localizedUnnamed, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+        catch
+        {
+            // BOUNDARY: 无头单测或 Game1.content 尚未装载时降级忽略动态本地化查询
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// 判定一个物品实体是否为损坏的 Error 物品或未注册的未知物品。
+    /// </summary>
+    internal static bool IsErrorItem(Item item)
+    {
+        if (item == null) return true;
+
+        if (string.Equals(item.Name, "ErrorItem", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(item.Name, Item.ErrorItemName, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (!string.IsNullOrEmpty(item.QualifiedItemId))
+        {
+            if (item.QualifiedItemId.Contains("Error", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            try
+            {
+                var parsedData = ItemRegistry.GetData(item.QualifiedItemId);
+                if (parsedData != null && parsedData.IsErrorItem)
+                {
+                    return true;
+                }
+            }
+            catch
+            {
+                // BOUNDARY: ItemRegistry 离线或解析异常时忽略
+            }
+        }
+
+        string displayName = null;
+        try
+        {
+            displayName = item.DisplayName;
+        }
+        catch
+        {
+            return true;
+        }
+
+        return IsErrorDisplayName(displayName);
+    }
+
+    /// <summary>
     /// 星露谷 1.6 原生只读元数据获取，免实体实例化且原生拦截 Error 物品
     /// </summary>
     private static string SafeGetDisplayName(string itemId)
@@ -816,8 +925,7 @@ internal static class FarmStateScanner
             }
 
             string displayName = parsedData.DisplayName;
-            if (string.IsNullOrWhiteSpace(displayName) ||
-                displayName.Contains("Error", StringComparison.OrdinalIgnoreCase))
+            if (IsErrorDisplayName(displayName))
             {
                 return null;
             }
@@ -826,6 +934,11 @@ internal static class FarmStateScanner
             if (displayName.Contains('['))
             {
                 displayName = TokenParser.ParseText(displayName);
+            }
+
+            if (IsErrorDisplayName(displayName))
+            {
+                return null;
             }
 
             return displayName;

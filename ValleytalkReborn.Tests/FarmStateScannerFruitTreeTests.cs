@@ -191,4 +191,69 @@ public class FarmStateScannerFruitTreeTests
 
         ItemRegistry.AddTypeDefinition(new StardewValley.ItemTypeDefinitions.ObjectDataDefinition());
     }
+
+    private class MockTestFruitItem : StardewValley.Object
+    {
+        private readonly string _displayName;
+
+        public MockTestFruitItem(string name, string displayName)
+        {
+            this.Name = name;
+            _displayName = displayName;
+        }
+
+        public override string DisplayName => _displayName;
+    }
+
+    [Theory]
+    [InlineData("Error Item", true)]
+    [InlineData("Error Item (Cornucopia_Yuzu)", true)]
+    [InlineData("错误物品", true)]
+    [InlineData("错误物品 (Cornucopia_Yuzu)", true)]
+    [InlineData("错误物品 (DomTSVG.PlentifulHarvestCP_Frostfruit)", true)]
+    [InlineData("未命名的物品", true)]
+    [InlineData("Unnamed Item", true)]
+    [InlineData("???", true)]
+    [InlineData("", true)]
+    [InlineData("   ", true)]
+    [InlineData(null, true)]
+    [InlineData("苹果", false)]
+    [InlineData("Apple", false)]
+    [InlineData("香蕉", false)]
+    [InlineData("Yuzu", false)]
+    public void IsErrorDisplayName_DetectsChineseAndEnglishErrors(string displayName, bool expected)
+    {
+        Assert.Equal(expected, FarmStateScanner.IsErrorDisplayName(displayName));
+    }
+
+    [Fact]
+    public void IsErrorItem_ValidatesNullAndErrorObjects()
+    {
+        Assert.True(FarmStateScanner.IsErrorItem(null));
+
+        var errorObj = new StardewValley.Object { Name = "ErrorItem" };
+        Assert.True(FarmStateScanner.IsErrorItem(errorObj));
+
+        var mockErrorFruit = new MockTestFruitItem("Cornucopia_Yuzu", "错误物品 (Cornucopia_Yuzu)");
+        Assert.True(FarmStateScanner.IsErrorItem(mockErrorFruit));
+
+        var normalFruit = new MockTestFruitItem("Apple", "苹果");
+        Assert.False(FarmStateScanner.IsErrorItem(normalFruit));
+    }
+
+    [Fact]
+    public void ResolveFruitTreeName_WithCorruptedFruit_DoesNotReturnErrorString()
+    {
+        var tree = new StardewValley.TerrainFeatures.FruitTree();
+        tree.fruit.Add(new MockTestFruitItem("Cornucopia_Yuzu", "错误物品 (Cornucopia_Yuzu)"));
+        tree.fruit.Add(new MockTestFruitItem("DomTSVG.PlentifulHarvestCP_Frostfruit", "错误物品 (DomTSVG.PlentifulHarvestCP_Frostfruit)"));
+
+        string result = (string)InvokePrivate("ResolveFruitTreeName", tree);
+        Assert.Null(result);
+
+        // 当挂果中混有正常果实实体时，能够正确跳过错误果实并提取正常果名
+        tree.fruit.Add(new MockTestFruitItem("Apple", "苹果"));
+        string mixedResult = (string)InvokePrivate("ResolveFruitTreeName", tree);
+        Assert.Equal("苹果", mixedResult);
+    }
 }
