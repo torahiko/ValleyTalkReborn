@@ -317,6 +317,10 @@ namespace ValleytalkReborn
             // CHORE-001: 社区家务账目管理器（内存态调度索引 + 双面话题查询）。
             CommunityChoreLedger.Initialize(helper, Monitor);
 
+            // VM-001R: ValleyMail 引擎（Outbox/PendingInbox/Archive 三列表整体走
+            // SaveData "valleytalk.mailbox" 持久化；多人模式整体惰性）。
+            ValleyMailManager.Initialize(helper, Monitor);
+
             // Subscribe to game lifecycle events（DialogueCoordinator 将订阅 GameLoop 事件）
             helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
             helper.Events.Display.MenuChanged += OnMenuChanged;
@@ -1328,6 +1332,9 @@ namespace ValleytalkReborn
         /// </summary>
         private void Cleanup()
         {
+            // VM-001R: ValleyMail 引擎退订 GameLoop 事件并清空内存态。
+            ValleyMailManager.Cleanup();
+
             // VT-SOCIAL-03: 日结结晶器退订 GameLoop 事件并清空跨日冷战追踪。
             SocialCrystallizationManager.Instance.Cleanup();
 
