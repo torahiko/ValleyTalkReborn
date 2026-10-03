@@ -89,6 +89,17 @@ namespace ValleytalkReborn.Cutscene.Serendipity
                 }
                 else
                 {
+                    // ★ 浮标退避：该剧本刚被自毁类 Dismiss（超时/离散/走远）时，30 游戏分钟内不再点亮
+                    //（仅 Prompt 模式；Auto 模式照旧直触，由 RecordTrigger 管控频次）
+                    if (SerendipityCooldownStore.Instance.IsBeaconSuppressed(
+                            matchedSituation.Title, Game1.currentLocation.Name, totalDays, Game1.timeOfDay))
+                    {
+                        ModEntry.SMonitor?.Log(
+                            $"[SerendipityManager] 浮标退避中：'{matchedSituation.Title}' 刚被自毁，暂不点亮。",
+                            LogLevel.Debug);
+                        return;
+                    }
+
                     ModEntry.SMonitor?.Log(
                         $"[SerendipityManager] Found serendipity candidate '{matchedSituation.Title}', displaying beacon.",
                         LogLevel.Debug);

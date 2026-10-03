@@ -53,6 +53,48 @@ namespace ValleytalkReborn.Tests
         }
 
         [Fact]
+        public void SerendipityCooldownStore_BeaconDismissal_SuppressesWithinWindow()
+        {
+            var store = SerendipityCooldownStore.Instance;
+            store.ResetDay();
+
+            store.RecordBeaconDismissal("雪山偶遇", "Farm", currentTotalDays: 100, timeOfDay: 1240);
+
+            // 记录后 10 游戏分钟：抑制
+            Assert.True(store.IsBeaconSuppressed("雪山偶遇", "Farm", currentTotalDays: 100, timeOfDay: 1250));
+            // 跨小时进位（1240 → 1305 实际为 25 分钟）：仍抑制
+            Assert.True(store.IsBeaconSuppressed("雪山偶遇", "Farm", currentTotalDays: 100, timeOfDay: 1305));
+        }
+
+        [Fact]
+        public void SerendipityCooldownStore_BeaconDismissal_ReleasesAfterSuppressWindow()
+        {
+            var store = SerendipityCooldownStore.Instance;
+            store.ResetDay();
+
+            store.RecordBeaconDismissal("雪山偶遇", "Farm", currentTotalDays: 100, timeOfDay: 1240);
+
+            // 满 30 游戏分钟（1240 → 1310）：放行（窗口判定为差值 < 30）
+            Assert.False(store.IsBeaconSuppressed("雪山偶遇", "Farm", currentTotalDays: 100, timeOfDay: 1310));
+
+            // 不同剧本或不同地点：互不影响
+            Assert.False(store.IsBeaconSuppressed("酒馆夜晚", "Farm", currentTotalDays: 100, timeOfDay: 1250));
+            Assert.False(store.IsBeaconSuppressed("雪山偶遇", "Town", currentTotalDays: 100, timeOfDay: 1250));
+        }
+
+        [Fact]
+        public void SerendipityCooldownStore_BeaconDismissal_ReleasesAcrossDays()
+        {
+            var store = SerendipityCooldownStore.Instance;
+            store.ResetDay();
+
+            store.RecordBeaconDismissal("雪山偶遇", "Farm", currentTotalDays: 100, timeOfDay: 2550);
+
+            // 跨天（次日清晨，timeOfDay 早于自毁时刻）：Day 键校验自然失效
+            Assert.False(store.IsBeaconSuppressed("雪山偶遇", "Farm", currentTotalDays: 101, timeOfDay: 610));
+        }
+
+        [Fact]
         public void SituationMatcher_MatchesFridaySaloon_Accurately()
         {
             var situation = SituationMatcher.MatchSituation(

@@ -26,6 +26,13 @@ namespace ValleytalkReborn.Cutscene.Serendipity
         /// </summary>
         private readonly Dictionary<string, int> _npcLastTriggeredDays = new(StringComparer.OrdinalIgnoreCase);
 
+        /// <summary>
+        /// 浮标自毁退避表：key = "{situationTitle}|{locationName}"（OrdinalIgnoreCase），
+        /// value = 自毁时的 (游戏天数, timeOfDay)。Memory 瞬态，ResetDay/Clear 清空。
+        /// </summary>
+        private readonly Dictionary<string, (int Day, int TimeOfDay)> _beaconDismissals
+            = new(StringComparer.OrdinalIgnoreCase);
+
         private SerendipityCooldownStore() { }
 
         /// <summary>
@@ -73,12 +80,50 @@ namespace ValleytalkReborn.Cutscene.Serendipity
         }
 
         /// <summary>
+        /// 记录一次浮标自毁（超时/离散/演员离场/玩家走远等自毁类 Dismiss；交互与门禁类不记录）。
+        /// situationTitle 或 locationName 为空时跳过（RECOVERABLE：退避不生效一秒，无碍）。
+        /// </summary>
+        public void RecordBeaconDismissal(string situationTitle, string locationName, int currentTotalDays, int timeOfDay)
+        {
+            if (string.IsNullOrWhiteSpace(situationTitle) || string.IsNullOrWhiteSpace(locationName))
+                return;
+
+            _beaconDismissals[$"{situationTitle}|{locationName}"] = (currentTotalDays, timeOfDay);
+        }
+
+        /// <summary>
+        /// 判定浮标是否仍在退避窗口内：同日且 timeOfDay 差值 &lt; suppressMinutes 游戏分钟。
+        /// timeOfDay 为 HHMM 格式（600-2600），按游戏时钟换算分钟差，正确处理跨小时进位；
+        /// 跨天由 Day 键校验自然失效。
+        /// </summary>
+        public bool IsBeaconSuppressed(string situationTitle, string locationName, int currentTotalDays, int timeOfDay, int suppressMinutes = 30)
+        {
+            if (string.IsNullOrWhiteSpace(situationTitle) || string.IsNullOrWhiteSpace(locationName))
+                return false;
+
+            if (!_beaconDismissals.TryGetValue($"{situationTitle}|{locationName}", out var dismissedAt))
+                return false;
+
+            if (dismissedAt.Day != currentTotalDays)
+                return false;
+
+            return ToGameMinutes(timeOfDay) - ToGameMinutes(dismissedAt.TimeOfDay) < suppressMinutes;
+        }
+
+        /// <summary>
+        /// HHMM 游戏时刻换算为当日分钟数（游戏时钟无 1260：1250 → 1300 是 10 分钟而非 50）。
+        /// </summary>
+        private static int ToGameMinutes(int timeOfDay)
+            => (timeOfDay / 100) * 60 + (timeOfDay % 100);
+
+        /// <summary>
         /// 换天时重置每日计数
         /// </summary>
         public void ResetDay()
         {
             DailyTriggeredCount = 0;
             LastTriggerTimeOfDay = -1;
+            _beaconDismissals.Clear();
         }
 
         /// <summary>
@@ -89,6 +134,7 @@ namespace ValleytalkReborn.Cutscene.Serendipity
             DailyTriggeredCount = 0;
             LastTriggerTimeOfDay = -1;
             _npcLastTriggeredDays.Clear();
+            _beaconDismissals.Clear();
         }
     }
 }

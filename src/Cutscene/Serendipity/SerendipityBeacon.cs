@@ -100,6 +100,7 @@ namespace ValleytalkReborn.Cutscene.Serendipity
             _remainingSeconds -= dt;
             if (_remainingSeconds <= 0f)
             {
+                RecordSelfDismissal();
                 Dismiss("wait timeout elapsed");
                 return;
             }
@@ -107,6 +108,7 @@ namespace ValleytalkReborn.Cutscene.Serendipity
             // 1. 参演角色合法性与换图检测：若有角色离开当前场景，微标自然隐退
             if (TargetActors == null || TargetActors.Count < 2 || Game1.currentLocation == null)
             {
+                RecordSelfDismissal();
                 Dismiss("target actors invalid or current location null");
                 return;
             }
@@ -116,6 +118,7 @@ namespace ValleytalkReborn.Cutscene.Serendipity
                 var actor = TargetActors[i];
                 if (actor == null || actor.currentLocation != Game1.currentLocation)
                 {
+                    RecordSelfDismissal();
                     Dismiss($"actor '{actor?.Name ?? "null"}' left the current location");
                     return;
                 }
@@ -128,6 +131,7 @@ namespace ValleytalkReborn.Cutscene.Serendipity
                 {
                     if (Vector2.Distance(TargetActors[i].Tile, TargetActors[j].Tile) > 7.0f)
                     {
+                        RecordSelfDismissal();
                         Dismiss($"actors '{TargetActors[i].Name}' and '{TargetActors[j].Name}' drifted beyond 7 tiles");
                         return;
                     }
@@ -146,8 +150,24 @@ namespace ValleytalkReborn.Cutscene.Serendipity
             // 4. 距离超限守护：若玩家走远超过 20 格，浮标自然静默取消
             if (Game1.player != null && Vector2.Distance(Game1.player.Position, WorldPosition) > 20f * 64f)
             {
+                RecordSelfDismissal();
                 Dismiss("player moved beyond 20 tiles");
             }
+        }
+
+        /// <summary>
+        /// 自毁类 Dismiss 的统一退避记录（交互与门禁类 Dismiss 不记录）：
+        /// Situation/currentLocation 缺一即跳过（RECOVERABLE：退避不生效一秒，无碍）。
+        /// </summary>
+        private void RecordSelfDismissal()
+        {
+            var situation = Situation;
+            var location = Game1.currentLocation;
+            if (situation == null || location == null)
+                return;
+
+            SerendipityCooldownStore.Instance.RecordBeaconDismissal(
+                situation.Title, location.Name, Game1.Date.TotalDays, Game1.timeOfDay);
         }
 
         /// <summary>
