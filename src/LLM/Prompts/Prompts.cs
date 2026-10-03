@@ -954,9 +954,14 @@ public class Prompts
                     if (dateMode == DateManager.DateMode.Follow)
                     {
                         prompt.AppendLine("<date_context mode=\"walking\">");
+                        // VT-FOCUS-03：优先取 NPC 实时所在地点的友好名；NPC 无位置时回落会话地点原值（组装热路径，静默回落）。
+                        var npcWalkingLoc = character?.StardewNpc?.currentLocation;
+                        string walkingLocation = npcWalkingLoc != null
+                            ? EnvironmentScanner.GetLocationFriendlyName(npcWalkingLoc.Name)
+                            : (DateManager.Instance.ActiveDateLocation ?? "");
                         prompt.AppendLine(isZh
-                            ? $"- 当前地点：{DateManager.Instance.ActiveDateLocation ?? ""}"
-                            : $"- Location: {DateManager.Instance.ActiveDateLocation ?? ""}");
+                            ? $"- 当前地点：{walkingLocation}"
+                            : $"- Location: {walkingLocation}");
                         if (digest is { IsValid: true })
                             prompt.AppendLine(isZh
                                 ? $"- 约会进行中：你们已经一起走了{FormatDateElapsed(digest.StartGameTime, isZh)}。"
@@ -1130,9 +1135,15 @@ public class Prompts
             prompt.AppendLine(isZh
                 ? $"- 当前状态：你正与农夫在{locationName}一同散步同行。"
                 : $"- Current state: You're out walking together with the farmer at {locationName}.");
+            // 无可靠起点信息（会话不存在/名字不匹配）时跳过进度行，不虚构时长。
+            var digest = DateManager.Instance.BuildSessionDigest(character.Name);
+            if (digest is { IsValid: true })
+                prompt.AppendLine(isZh
+                    ? $"- 你们已经同行了{FormatDateElapsed(digest.StartGameTime, isZh)}。"
+                    : $"- You've been walking together for {FormatDateElapsed(digest.StartGameTime, isZh)}.");
             prompt.AppendLine(isZh
-                ? "- [ATTENTION_FOCUS] 这是你们俩的共处时光。本轮对话默认从你们的同行相处取材：沿途的景物、彼此的近况、随口的闲聊。你依然保有自己的生活与心事，但\"此刻\"发生在与农夫同行的路上。"
-                : "- [ATTENTION_FOCUS] This is your shared time together. This turn's dialogue draws from the walk itself: the scenery along the way, each other's recent lives, casual small talk. You still have your own life and private thoughts, but \"right now\" is happening on the road beside the farmer.");
+                ? "- [ATTENTION_FOCUS] 这是你们俩的共处时光。本轮对话默认从你们的同行相处取材：沿途的景物与天气、路过的行人与声响、彼此的近况和感受。眼前的一切都是你们共同的经历，可以随手拿来说。"
+                : "- [ATTENTION_FOCUS] This is your shared time together. This turn's dialogue draws from the walk itself: the scenery and weather along the way, the passersby and sounds around you, each other's recent lives and feelings. Everything in front of you is an experience you're sharing — something you can bring up freely at any moment.");
             prompt.AppendLine("</companion_context>\n");
             return prompt.ToString();
         }
