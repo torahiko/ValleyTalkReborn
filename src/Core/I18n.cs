@@ -786,13 +786,10 @@ namespace ValleytalkReborn
 
             public static string UnknownMap() => Lookup("PoiHud.UnknownMap");
 
-            public static string ButtonCapture() => Lookup("PoiHud.ButtonCapture");
             public static string ButtonConfirm() => Lookup("PoiHud.ButtonConfirm");
             public static string ButtonUnstuck() => Lookup("PoiHud.ButtonUnstuck");
             public static string ButtonClose() => Lookup("PoiHud.ButtonClose");
 
-            public static string CaptureFailedHud(string reason)
-                => Lookup("PoiHud.CaptureFailedHud").Replace("{{reason}}", reason ?? string.Empty);
             public static string ConfirmFailedHud(string reason)
                 => Lookup("PoiHud.ConfirmFailedHud").Replace("{{reason}}", reason ?? string.Empty);
             public static string ConfirmSuccessHud(string name, int x, int y)
@@ -800,6 +797,8 @@ namespace ValleytalkReborn
                     .Replace("{{name}}", name ?? string.Empty)
                     .Replace("{{x}}", x.ToString())
                     .Replace("{{y}}", y.ToString());
+            public static string ReturnFailedHud(string reason)
+                => Lookup("PoiHud.ReturnFailedHud").Replace("{{reason}}", reason ?? string.Empty);
             public static string UnstuckSuccessHud(int x, int y)
                 => Lookup("PoiHud.UnstuckSuccessHud")
                     .Replace("{{x}}", x.ToString())

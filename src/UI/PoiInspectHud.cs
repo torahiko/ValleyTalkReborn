@@ -34,13 +34,18 @@ internal static class PoiInspectHud
     private static int _origTileY;
     private static int _hubTab = 2;
 
+    // 回程上下文：玩家传送前的所在地图与瓦片（BeginSession 发起时捕获）
+    private static string _returnMap = "";
+    private static int _returnTileX;
+    private static int _returnTileY;
+    private static bool _pendingHomeWarp;
+    private static bool _openEditorOnArrival;
+
     // 控件几何区域
     private static Rectangle _cardRect;
-    private static Rectangle _btnCaptureAndTweak;
     private static Rectangle _btnConfirm;
     private static Rectangle _btnUnstuck;
     private static Rectangle _btnClose;
-    private static float _captureAndTweakHoverScale = 1f;
     private static float _confirmHoverScale = 1f;
     private static float _unstuckHoverScale = 1f;
     private static float _closeHoverScale = 1f;
@@ -70,6 +75,13 @@ internal static class PoiInspectHud
         _origTileY = origY;
         _hubTab = hubTab;
 
+        // 捕获回程原地点（调用时玩家仍在出发地），并撤销任何未完成的回程承诺
+        _returnMap = Game1.currentLocation?.Name ?? "";
+        _returnTileX = Game1.player?.TilePoint.X ?? 0;
+        _returnTileY = Game1.player?.TilePoint.Y ?? 0;
+        _pendingHomeWarp = false;
+        _openEditorOnArrival = false;
+
         // 2. 边界检测：若玩家肉身本就位于目标地图和坐标，不等待过图黑屏，直接原地唤醒
         if (Context.IsWorldReady &&
             Game1.currentLocation != null &&
@@ -95,6 +107,21 @@ internal static class PoiInspectHud
 
     private static void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
     {
+        // 回程闸门：等待 warpFarmer 黑屏结束、玩家恢复自由后再弹编辑页
+        if (_pendingHomeWarp)
+        {
+            if (Context.IsPlayerFree && !Game1.fadeToBlack && !Game1.eventUp)
+            {
+                _pendingHomeWarp = false;
+                if (_openEditorOnArrival)
+                {
+                    _openEditorOnArrival = false;
+                    OpenEditorAfterReturn();
+                }
+            }
+            return;
+        }
+
         if (!_isWaitingForWarp) return;
 
         // 判定黑屏淡入完全结束且玩家恢复自由控制
@@ -115,7 +142,7 @@ internal static class PoiInspectHud
         int mx = Game1.getMouseX();
         int my = Game1.getMouseY();
 
-        int cardW = 580;
+        int cardW = 444;
         int cardH = 108;
         int cardX = (Game1.uiViewport.Width - cardW) / 2;
         int cardY = 16;
@@ -171,18 +198,15 @@ internal static class PoiInspectHud
         int btnH = 30;
         int btnY = _cardRect.Bottom - btnH - 12;
         int btnGap = 8;
-        int btnW1 = 168; // 抓取并微调
-        int btnW2 = 132; // 确认点位
-        int btnW3 = 125; // 智能脱困
-        int btnW4 = 85;  // 退出
+        int btnW1 = 190; // 确认此点位
+        int btnW2 = 125; // 智能脱困
+        int btnW3 = 85;  // 退出
 
-        _btnCaptureAndTweak = new Rectangle(contentX, btnY, btnW1, btnH);
-        _btnConfirm = new Rectangle(_btnCaptureAndTweak.Right + btnGap, btnY, btnW2, btnH);
-        _btnUnstuck = new Rectangle(_btnConfirm.Right + btnGap, btnY, btnW3, btnH);
-        _btnClose = new Rectangle(_btnUnstuck.Right + btnGap, btnY, btnW4, btnH);
+        _btnConfirm = new Rectangle(contentX, btnY, btnW1, btnH);
+        _btnUnstuck = new Rectangle(_btnConfirm.Right + btnGap, btnY, btnW2, btnH);
+        _btnClose = new Rectangle(_btnUnstuck.Right + btnGap, btnY, btnW3, btnH);
 
-        ActionButtonRenderer.Draw(b, _btnCaptureAndTweak, I18n.PoiHud.ButtonCapture(), ref _captureAndTweakHoverScale, mx, my, style: ActionButtonStyle.Primary, fontSize: CustomFontManager.SizeRegular, isEnabled: isPassable);
-        ActionButtonRenderer.Draw(b, _btnConfirm, I18n.PoiHud.ButtonConfirm(), ref _confirmHoverScale, mx, my, style: ActionButtonStyle.Default, fontSize: CustomFontManager.SizeRegular, isEnabled: isPassable);
+        ActionButtonRenderer.Draw(b, _btnConfirm, I18n.PoiHud.ButtonConfirm(), ref _confirmHoverScale, mx, my, style: ActionButtonStyle.Primary, fontSize: CustomFontManager.SizeRegular, isEnabled: isPassable);
         ActionButtonRenderer.Draw(b, _btnUnstuck, I18n.PoiHud.ButtonUnstuck(), ref _unstuckHoverScale, mx, my, style: isPassable ? ActionButtonStyle.Default : ActionButtonStyle.Primary, fontSize: CustomFontManager.SizeRegular, isEnabled: true);
         ActionButtonRenderer.Draw(b, _btnClose, I18n.PoiHud.ButtonClose(), ref _closeHoverScale, mx, my, style: ActionButtonStyle.Danger, fontSize: CustomFontManager.SizeRegular, isEnabled: true);
     }
@@ -203,12 +227,6 @@ internal static class PoiInspectHud
 
         _helper?.Input.Suppress(e.Button);
 
-        if (_btnCaptureAndTweak.Contains(mx, my))
-        {
-            HandleCaptureAndTweak();
-            return;
-        }
-
         if (_btnConfirm.Contains(mx, my))
         {
             HandleConfirmDirectly();
@@ -227,22 +245,6 @@ internal static class PoiInspectHud
             Game1.playSound("bigDeSelect");
             return;
         }
-    }
-
-    private static void HandleCaptureAndTweak()
-    {
-        if (!PoiSamplingService.TryCaptureCurrentTile(out string mapName, out int tx, out int ty, out string reason))
-        {
-            Game1.addHUDMessage(new HUDMessage(I18n.PoiHud.CaptureFailedHud(reason), HUDMessage.error_type));
-            Game1.playSound("cancel");
-            return;
-        }
-
-        Close();
-        Game1.playSound("coin");
-
-        PoiTuningPage.SetPendingContext(_poiId, mapName, tx, ty);
-        ModEntry.OpenHubMenu(_hubTab);
     }
 
     private static void HandleConfirmDirectly()
@@ -283,6 +285,59 @@ internal static class PoiInspectHud
         Close();
         Game1.playSound("achievement");
         Game1.addHUDMessage(new HUDMessage(I18n.PoiHud.ConfirmSuccessHud(_poiDisplayName, tx, ty), HUDMessage.newQuest_type));
+
+        RequestReturnAndEdit();
+    }
+
+    /// <summary>
+    /// 确认落盘后的闭环：回传至传送前原地点，黑屏结束后自动弹出点位编辑页。
+    /// </summary>
+    private static void RequestReturnAndEdit()
+    {
+        _openEditorOnArrival = true;
+
+        // BOUNDARY：发起传送时玩家必在世界内，此为理论不可达防御分支
+        if (string.IsNullOrEmpty(_returnMap))
+        {
+            _monitor?.Log("[PoiInspectHud] 回程上下文缺失，跳过回程直接打开编辑页", LogLevel.Warn);
+            _pendingHomeWarp = false;
+            OpenEditorAfterReturn();
+            return;
+        }
+
+        bool alreadyHome =
+            !string.IsNullOrEmpty(_returnMap) &&
+            Game1.currentLocation != null &&
+            string.Equals(Game1.currentLocation.Name, _returnMap, StringComparison.OrdinalIgnoreCase) &&
+            Game1.player != null &&
+            Game1.player.TilePoint == new Point(_returnTileX, _returnTileY);
+
+        if (alreadyHome)
+        {
+            _pendingHomeWarp = false;
+            OpenEditorAfterReturn();
+            return;
+        }
+
+        try
+        {
+            Game1.warpFarmer(_returnMap, _returnTileX, _returnTileY, 2);
+            _pendingHomeWarp = true;
+        }
+        catch (Exception ex)
+        {
+            // BOUNDARY：回程失败时坐标落盘已完成，留在原地并照常打开编辑页
+            _monitor?.Log($"[PoiInspectHud] 返回原地点失败 ({_returnMap} {_returnTileX},{_returnTileY}): {ex}", LogLevel.Warn);
+            Game1.addHUDMessage(new HUDMessage(I18n.PoiHud.ReturnFailedHud(ex.Message), HUDMessage.error_type));
+            _pendingHomeWarp = false;
+            OpenEditorAfterReturn();
+        }
+    }
+
+    private static void OpenEditorAfterReturn()
+    {
+        PoiTuningPage.SetPendingContext(_poiId);
+        ModEntry.OpenHubMenu(_hubTab);
     }
 
     private static void HandleUnstuck()

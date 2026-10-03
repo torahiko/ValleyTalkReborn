@@ -83,18 +83,12 @@ internal sealed class PoiTuningPage : WorldSubPageBase
     private string? _selectedSpouseId;
     private static readonly Dictionary<string, (Texture2D? Texture, Rectangle SourceRect)> _avatarCache = new(StringComparer.OrdinalIgnoreCase);
 
-    // ── 现场踩点回弹上下文 ──
+    // ── 现场踩点回弹上下文（坐标已在 HUD 确认时落盘，此处仅携带选中项） ──
     private static string? _pendingReturnPoiId;
-    private static string? _pendingReturnMap;
-    private static int? _pendingReturnX;
-    private static int? _pendingReturnY;
 
-    public static void SetPendingContext(string poiId, string mapName, int x, int y)
+    public static void SetPendingContext(string poiId)
     {
         _pendingReturnPoiId = poiId;
-        _pendingReturnMap = mapName;
-        _pendingReturnX = x;
-        _pendingReturnY = y;
     }
 
     // ── 权重表状态机 ──
@@ -177,25 +171,12 @@ internal sealed class PoiTuningPage : WorldSubPageBase
         SelectInitialSpouse();
         RefreshCaptureState();
 
-        // 优先处理现场踩点回弹
+        // 优先处理现场踩点回弹（坐标已在 HUD 确认时落盘，这里只做选中定位）
         if (!string.IsNullOrEmpty(_pendingReturnPoiId))
         {
             _currentMode = ViewMode.PoiCatalog;
             SelectPoi(_pendingReturnPoiId);
-
-            if (_pendingReturnMap != null && _pendingReturnX.HasValue && _pendingReturnY.HasValue)
-            {
-                _pendingMapName = _pendingReturnMap;
-                _pendingTileX = _pendingReturnX.Value;
-                _pendingTileY = _pendingReturnY.Value;
-                _hasPendingCoordChange = true;
-                _statusMessage = $"✔ 已应用实地抓取坐标: {GetLocalizedMapName(_pendingMapName)} ({_pendingTileX}, {_pendingTileY})，点击保存落盘";
-            }
-
             _pendingReturnPoiId = null;
-            _pendingReturnMap = null;
-            _pendingReturnX = null;
-            _pendingReturnY = null;
             LayoutRightForm();
             return;
         }
