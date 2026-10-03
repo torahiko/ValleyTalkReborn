@@ -43,6 +43,14 @@
       <HintPath>..\Stardew Valley\smapi-internal\0Harmony.dll</HintPath>
       <Private>true</Private>
     </Reference>
+    <Reference Include="SMAPI.Toolkit">
+      <HintPath>..\Stardew Valley\smapi-internal\SMAPI.Toolkit.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="SMAPI.Toolkit.CoreInterfaces">
+      <HintPath>..\Stardew Valley\smapi-internal\SMAPI.Toolkit.CoreInterfaces.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
     <Reference Include="MonoGame.Framework">
       <HintPath>..\Stardew Valley\MonoGame.Framework.dll</HintPath>
       <Private>true</Private>

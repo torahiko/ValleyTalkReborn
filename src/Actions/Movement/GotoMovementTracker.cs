@@ -191,6 +191,13 @@ namespace ValleytalkReborn.Movement
                                 ctx.Target = ft;
                                 npc.controller = rep;
                                 npc.addedSpeed = 2;
+                                npc.movementPause = 0;
+                                try
+                                {
+                                    typeof(Character).GetField("freezeMotion", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)
+                                        ?.SetValue(npc, false);
+                                }
+                                catch { }
                                 ModEntry.SMonitor?.Log(
                                     $"[GotoMovementTracker] {npc.Name} repath attempt #{ctx.RepathAttempts} success.",
                                     LogLevel.Debug);

@@ -152,7 +152,8 @@ namespace ValleytalkReborn.Cutscene
                         }
                     }
 
-                    if (!string.IsNullOrEmpty(behaviorToRestore) && (state.DoingEndOfRouteAnimation || state.GoingToDoEndOfRouteAnimation || !string.IsNullOrEmpty(state.EndOfRouteBehaviorName)))
+                    // 仅当 NPC 在进入过场前确实处于动作态中时，才还原特殊动作，绝不根据残留历史行为名误判强行恢复
+                    if (!string.IsNullOrEmpty(behaviorToRestore) && (state.DoingEndOfRouteAnimation || state.GoingToDoEndOfRouteAnimation))
                     {
                         try
                         {
@@ -168,6 +169,27 @@ namespace ValleytalkReborn.Cutscene
                                 $"[CutsceneSnapshot] Failed to restore activity '{behaviorToRestore}' for {npc.Name}: {ex.Message}",
                                 LogLevel.Warn);
                         }
+                    }
+
+                    if (!restoredAnimation)
+                    {
+                        // 动作未恢复时，必须彻底解除动作态与定身封锁，杜绝物理锁死
+                        try
+                        {
+                            npc.EndActivityRouteEndBehavior();
+                        }
+                        catch { }
+                        npc.doingEndOfRouteAnimation.Value = false;
+                        npc.goingToDoEndOfRouteAnimation.Value = false;
+                        npc.movementPause = 0;
+                        npc.isCharging = false;
+                        npc.Sprite?.StopAnimation();
+                        try
+                        {
+                            typeof(Character).GetField("freezeMotion", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)
+                                ?.SetValue(npc, false);
+                        }
+                        catch { }
                     }
 
                     // 2.2 恢复在途移动（若演出前正在日程行进中）
@@ -216,20 +238,23 @@ namespace ValleytalkReborn.Cutscene
                         }
                     }
 
-                    // 2.3 唤醒 NPC 后续日常日程（装载未来停靠点，如 14:00、18:00）
-                    try
+                    // 2.3 唤醒 NPC 后续日常日程（若未恢复在途移动与停靠动作，装载未来停靠点，如 14:00、18:00）
+                    if (!restoredAnimation && !state.HadActiveController)
                     {
-                        Movement.ScheduleRestorer restorer = new Movement.ScheduleRestorer(
-                            (n, tile, onSuccess, onFail) => { },
-                            n => false
-                        );
-                        restorer.TryRestoreSchedule(npc);
-                    }
-                    catch (Exception ex)
-                    {
-                        ModEntry.SMonitor?.Log(
-                            $"[CutsceneSnapshot] Failed to restore schedule for {npc.Name}: {ex.Message}",
-                            LogLevel.Warn);
+                        try
+                        {
+                            Movement.ScheduleRestorer restorer = new Movement.ScheduleRestorer(
+                                (n, tile, onSuccess, onFail) => { },
+                                n => false
+                            );
+                            restorer.TryRestoreSchedule(npc);
+                        }
+                        catch (Exception ex)
+                        {
+                            ModEntry.SMonitor?.Log(
+                                $"[CutsceneSnapshot] Failed to restore schedule for {npc.Name}: {ex.Message}",
+                                LogLevel.Warn);
+                        }
                     }
                 }
             }

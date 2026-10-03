@@ -24,7 +24,13 @@ namespace ValleytalkReborn.Cutscene
                 npc.isCharging = false;
                 npc.addedSpeed = 0;
                 npc.movementPause = 0;
+                try
+                {
+                    npc.EndActivityRouteEndBehavior();
+                }
+                catch { }
                 npc.doingEndOfRouteAnimation.Value = false;
+                npc.goingToDoEndOfRouteAnimation.Value = false;
                 npc.Sprite?.StopAnimation();
 
                 // 还原可能的精灵图拉伸尺寸（如待机动作改变了宽高）
@@ -37,15 +43,8 @@ namespace ValleytalkReborn.Cutscene
                 }
 
                 // 核心关键：穿透重置 protected freezeMotion 字段，防止引擎跳过 controller.update
-                if (ModEntry.SHelper != null)
-                {
-                    ModEntry.SHelper.Reflection.GetField<bool>(npc, "freezeMotion", required: false)?.SetValue(false);
-                }
-                else
-                {
-                    typeof(Character).GetField("freezeMotion", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)
-                        ?.SetValue(npc, false);
-                }
+                typeof(Character).GetField("freezeMotion", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)
+                    ?.SetValue(npc, false);
             }
             catch (Exception ex)
             {

@@ -437,6 +437,14 @@ namespace ValleytalkReborn.Movement
         {
             if (npc == null) return;
 
+            try
+            {
+                npc.EndActivityRouteEndBehavior();
+            }
+            catch { }
+            npc.doingEndOfRouteAnimation.Value = false;
+            npc.goingToDoEndOfRouteAnimation.Value = false;
+
             npc.Halt();
             npc.controller = null;
             npc.temporaryController = null;
