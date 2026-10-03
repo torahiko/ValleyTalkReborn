@@ -23,6 +23,27 @@ namespace ValleytalkReborn.Cutscene
 
         public bool IsActive { get; private set; }
 
+        /// <summary>
+        /// 场景终止事件：立即复原收尾、黑幕后快照复原完成、ForceStop 三处触发。
+        /// 克隆演员服务据此在幕后摘除临时演员。
+        /// </summary>
+        public event Action SceneEnded;
+
+        /// <summary>
+        /// 触发 SceneEnded：订阅者异常不中断导演收尾流程
+        /// </summary>
+        private void FireSceneEnded()
+        {
+            try
+            {
+                SceneEnded?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                ModEntry.SMonitor?.Log($"[VirtualDirector] SceneEnded subscriber failed: {ex.Message}", LogLevel.Warn);
+            }
+        }
+
         private enum DirectorPhase
         {
             Idle,
@@ -188,6 +209,36 @@ namespace ValleytalkReborn.Cutscene
         }
 
         /// <summary>
+        /// 从原始 JSON 字符串编译并播放剧本（回放路径：显式舞台地图 + 演员覆盖表，
+        /// 使编译器把同名解析显式阻断到克隆演员，永不触碰真人）
+        /// </summary>
+        public bool PlayScript(string rawJson, GameLocation stageLocation, IReadOnlyDictionary<string, NPC> actorOverrides, out string errorMessage)
+        {
+            errorMessage = string.Empty;
+            if (!Context.IsWorldReady || stageLocation == null)
+            {
+                errorMessage = "World not ready or stage location null.";
+                return false;
+            }
+
+            var compileResult = CutsceneScriptCompiler.Compile(rawJson, stageLocation, actorOverrides);
+            if (!compileResult.Success)
+            {
+                errorMessage = compileResult.ErrorMessage;
+                ModEntry.SMonitor?.Log($"[VirtualDirector] PlayScript compile failed: {errorMessage}", LogLevel.Warn);
+                return false;
+            }
+
+            foreach (var warn in compileResult.Warnings)
+            {
+                ModEntry.SMonitor?.Log($"[VirtualDirector] Compile warning: {warn}", LogLevel.Warn);
+            }
+
+            Play(compileResult.Actions, compileResult.ResolvedActors);
+            return true;
+        }
+
+        /// <summary>
         /// 开始播放过场：接管游戏控制、捕获快照、压制原生 UI、启动黑边过渡
         /// </summary>
         public void Play(List<IDirectorAction> actions, List<NPC> actors)
@@ -331,6 +382,7 @@ namespace ValleytalkReborn.Cutscene
                 IsActive = false;
 
                 ModEntry.SMonitor?.Log("[VirtualDirector] Cutscene immediately restored.", LogLevel.Info);
+                FireSceneEnded();
             }
             catch (Exception ex)
             {
@@ -340,6 +392,7 @@ namespace ValleytalkReborn.Cutscene
                 _activeChoiceOverlay = null;
                 IsActive = false;
                 _snapshot = null;
+                FireSceneEnded();
             }
         }
 
@@ -398,6 +451,9 @@ namespace ValleytalkReborn.Cutscene
                     "[VirtualDirector] Force stopped (world teardown).",
                     LogLevel.Debug);
             }
+
+            // ★ 场景终止点：世界销毁路径同样通知克隆演员服务清空注册表
+            FireSceneEnded();
         }
 
         private static readonly Queue<Action> _mainThreadQueue = new();
@@ -504,6 +560,9 @@ namespace ValleytalkReborn.Cutscene
                 _cameraTargetPlayer = false;
                 _blackBarHeight = 0f;
                 _participatingActors.Clear();
+
+                // ★ 场景终止点：快照复原已在幕后完成，通知克隆演员服务摘除临时演员
+                FireSceneEnded();
 
                 // 3. 转入淡入阶段，保持玩家定身直到淡入完成
                 if (Game1.player != null)

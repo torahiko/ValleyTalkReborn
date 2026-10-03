@@ -60,6 +60,9 @@ namespace ValleytalkReborn.Cutscene
             {
                 if (npc?.currentLocation == null) continue;
 
+                // 克隆演员不入快照：Restore 的日程/状态复原链绝不触碰克隆（克隆无 Schedule）
+                if (CutsceneCloneService.IsClone(npc)) continue;
+
                 var state = new ActorState
                 {
                     Npc = npc,

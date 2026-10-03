@@ -1753,6 +1753,9 @@ namespace ValleytalkReborn
             // 🎬 读档即强制复位导演状态：防跨存档残留旧世界对象引用
             VirtualDirector.Instance?.ForceStop();
 
+            // ★ VT-REP-CLONE-02: 清扫存档中意外残留的回放克隆演员（modData 标记键识别）
+            CutsceneCloneService.SweepAll();
+
             // VT-FARM-CACHE-04: 读档即作废农场摘要缓存，防止新存档复用前一存档文本；
             // 必须先于协调器重新装配等存档状态恢复执行。
             FarmStateScanner.InvalidateCache();
@@ -1799,6 +1802,9 @@ namespace ValleytalkReborn
 
         private void OnDayStarted(object sender, DayStartedEventArgs e)
         {
+            // ★ VT-REP-CLONE-02: 跨日清扫意外残留的回放克隆演员（modData 标记键识别）
+            CutsceneCloneService.SweepAll();
+
             PlayerStateScanner.OnDayStarted();
             RecentConversationTracker.Clear();
             // 跨天 Memory 重置：前一个游戏日的 Tier 1 / Gossip 会话不得延续到新的一天。

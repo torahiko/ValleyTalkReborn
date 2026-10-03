@@ -69,9 +69,59 @@ namespace ValleytalkReborn.Cutscene.Compiler
         }
 
         /// <summary>
+        /// 从原始字符串（可能带有 Markdown 围栏或前后杂质）编译剧本（回放路径：携带演员覆盖表）
+        /// </summary>
+        public static CompiledCutsceneResult Compile(string rawJson, GameLocation location, IReadOnlyDictionary<string, NPC> actorOverrides)
+        {
+            var result = new CompiledCutsceneResult();
+
+            if (string.IsNullOrWhiteSpace(rawJson))
+            {
+                result.ErrorMessage = "Script input is null or empty.";
+                return result;
+            }
+
+            string cleanJson = ExtractJson(rawJson);
+            if (string.IsNullOrWhiteSpace(cleanJson))
+            {
+                result.ErrorMessage = "Failed to extract valid JSON payload from input.";
+                return result;
+            }
+
+            CutsceneScriptIR ir;
+            try
+            {
+                ir = JsonConvert.DeserializeObject<CutsceneScriptIR>(cleanJson);
+            }
+            catch (Exception ex)
+            {
+                result.ErrorMessage = $"JSON Deserialization failed: {ex.Message}";
+                return result;
+            }
+
+            if (ir == null)
+            {
+                result.ErrorMessage = "Deserialized CutsceneScriptIR is null.";
+                return result;
+            }
+
+            return Compile(ir, location, actorOverrides);
+        }
+
+        /// <summary>
         /// 从已反序列化的 CutsceneScriptIR 编译为运行时动作序列
         /// </summary>
         public static CompiledCutsceneResult Compile(CutsceneScriptIR ir, GameLocation location)
+        {
+            return Compile(ir, location, actorOverrides: null);
+        }
+
+        /// <summary>
+        /// 从已反序列化的 CutsceneScriptIR 编译为运行时动作序列（回放路径：
+        /// FindNpc 先查演员覆盖表（OrdinalIgnoreCase），未命中再走原 location.characters 解析，
+        /// 覆盖表用于把同名解析显式阻断到克隆演员）
+        /// </summary>
+        public static CompiledCutsceneResult Compile(CutsceneScriptIR ir, GameLocation location, IReadOnlyDictionary<string, NPC> actorOverrides)
         {
             var result = new CompiledCutsceneResult();
 
@@ -89,10 +139,22 @@ namespace ValleytalkReborn.Cutscene.Compiler
 
             result.Title = ir.Title ?? "Untitled Cutscene";
 
-            // 1. 辅助方法：在当前地图中按内部名或本地化显示名匹配 NPC
+            // 1. 辅助方法：在当前地图中按内部名或本地化显示名匹配 NPC（回放路径：演员覆盖表优先）
             NPC FindNpc(string name)
             {
                 if (string.IsNullOrWhiteSpace(name)) return null;
+
+                if (actorOverrides != null)
+                {
+                    foreach (var pair in actorOverrides)
+                    {
+                        if (pair.Value != null &&
+                            string.Equals(pair.Key, name, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return pair.Value;
+                        }
+                    }
+                }
 
                 return location.characters?.FirstOrDefault(n =>
                     n != null &&

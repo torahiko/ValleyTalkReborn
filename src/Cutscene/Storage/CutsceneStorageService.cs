@@ -120,7 +120,7 @@ namespace ValleytalkReborn.Cutscene.Storage
 
         /// <summary>
         /// 录像式回放归档剧本：回放回归录制现场——农夫按归档 PlayerStance 落回录制地图，
-        /// 剧组按归档站位在录制现场复现开场队形后开演。
+        /// 克隆演员按归档站位在录制现场复现开场队形后开演（真人本体零接触）。
         /// 同图直接就位；跨图先经原版 warpFarmer 换图，落地后于 OnPlayerWarped 接续开演。
         /// 调用方须先关闭激活菜单（Context.IsPlayerFree 含 activeClickableMenu == null 判定）。
         /// 返回 true 语义为"回放已受理"（跨图路径含 warp 在途）。
@@ -160,22 +160,11 @@ namespace ValleytalkReborn.Cutscene.Storage
                 return false;
             }
 
-            // 同图快路径：玩家已身处录制现场，就地摆位开演
+            // 同图快路径：玩家已身处录制现场，克隆演员就地摆位开演
             var current = Game1.player.currentLocation;
             if (string.Equals(current.NameOrUniqueName, cutscene.LocationName, StringComparison.Ordinal))
             {
-                var staged = StageRecordingActors(cutscene, current);
-                if (!VirtualDirector.Instance.PlayScript(cutscene.RawJson, out errorMessage))
-                {
-                    RollbackStagedActors(staged);
-                    return false;
-                }
-
-                ModEntry.SMonitor?.Log(
-                    $"[CutsceneStorage] Replaying cutscene '{cutscene.Title}' in {current.NameOrUniqueName} " +
-                    $"(recorded in {cutscene.LocationName}, staged {staged.Count} actors).",
-                    LogLevel.Info);
-                return true;
+                return StartReplayOnStage(cutscene, current, out errorMessage);
             }
 
             // 跨图路径：解析录制现场，农夫经原版 warpFarmer 换图，落地后接续开演
@@ -245,21 +234,14 @@ namespace ValleytalkReborn.Cutscene.Storage
                     return;
                 }
 
-                var staged = StageRecordingActors(pending, e.NewLocation);
-                if (!VirtualDirector.Instance.PlayScript(pending.RawJson, out var playError))
+                if (!StartReplayOnStage(pending, e.NewLocation, out var playError))
                 {
-                    RollbackStagedActors(staged);
                     ModEntry.SMonitor?.Log(
                         $"[CutsceneStorage] Pending replay of '{pending.Title}' failed to start: {playError}",
                         LogLevel.Warn);
                     Game1.addHUDMessage(new HUDMessage($"🎬 回放开演失败: {playError}", HUDMessage.error_type));
                     return;
                 }
-
-                ModEntry.SMonitor?.Log(
-                    $"[CutsceneStorage] Replaying cutscene '{pending.Title}' in {e.NewLocation.NameOrUniqueName} " +
-                    $"(recorded in {pending.LocationName}, staged {staged.Count} actors).",
-                    LogLevel.Info);
             }
             catch (Exception ex)
             {
@@ -298,103 +280,45 @@ namespace ValleytalkReborn.Cutscene.Storage
         }
 
         /// <summary>
-        /// 依据归档站位把录制演员带入录制现场并落位（调用点保证已身处录制地图：
-        /// 同图就地就位，跨图经农夫 warp 落地后到达）。
-        /// 旧归档（无站位记录）依据演员名单在农夫四周合成环形替补站位。
+        /// 在录制现场以克隆演员开演回放：克隆摆位 → 编译（演员覆盖表阻断真人解析）→ 播放。
+        /// 开演失败时幕后摘除全部克隆；开演成功后的摘除由 SceneEnded → DisposeAll 承担。
         /// </summary>
-        private static List<(NPC Npc, GameLocation Location, Vector2 Tile, int Facing)> StageRecordingActors(
-            ArchivedCutscene cutscene, GameLocation targetLocation)
+        private static bool StartReplayOnStage(ArchivedCutscene cutscene, GameLocation stage, out string errorMessage)
         {
-            var staged = new List<(NPC Npc, GameLocation Location, Vector2 Tile, int Facing)>();
-            if (targetLocation == null || Game1.player == null)
-                return staged;
+            errorMessage = string.Empty;
 
-            // 站位来源：优先归档站位（按名字去重，首个为准）；旧归档以演员名单合成环形替补站位
-            var stances = cutscene.ActorStances?
-                .Where(s => s != null && !string.IsNullOrWhiteSpace(s.Name))
-                .GroupBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
-                .Select(g => g.First())
-                .ToList() ?? new List<ArchivedActorStance>();
-
-            if (stances.Count == 0 && cutscene.ActorNames != null)
+            var clones = CutsceneCloneService.StageClones(cutscene, stage);
+            if (clones.Count == 0)
             {
-                Vector2 playerTile = Game1.player.Tile;
-                Vector2[] ringOffsets = { new Vector2(2, 0), new Vector2(-2, 0), new Vector2(0, 2), new Vector2(-1, -2) };
-                for (int i = 0; i < cutscene.ActorNames.Count; i++)
+                errorMessage = "无法召集任何录制演员";
+                ModEntry.SMonitor?.Log(
+                    $"[CutsceneStorage] Replay of '{cutscene.Title}' aborted: no clone actors could be staged.",
+                    LogLevel.Warn);
+                return false;
+            }
+
+            // 演员覆盖表：以克隆内部名与显示名双键映射，确保 FindNpc 永不解析到同图真人
+            var actorOverrides = new Dictionary<string, NPC>(StringComparer.OrdinalIgnoreCase);
+            foreach (var clone in clones)
+            {
+                actorOverrides[clone.Name] = clone;
+                if (!string.IsNullOrEmpty(clone.displayName))
                 {
-                    stances.Add(new ArchivedActorStance
-                    {
-                        Name = cutscene.ActorNames[i],
-                        TileX = (int)playerTile.X + (int)ringOffsets[i % ringOffsets.Length].X,
-                        TileY = (int)playerTile.Y + (int)ringOffsets[i % ringOffsets.Length].Y,
-                        Facing = 2
-                    });
+                    actorOverrides[clone.displayName] = clone;
                 }
             }
 
-            if (stances.Count == 0)
-                return staged;
-
-            foreach (var stance in stances)
+            if (!VirtualDirector.Instance.PlayScript(cutscene.RawJson, stage, actorOverrides, out errorMessage))
             {
-                NPC npc = Game1.getCharacterFromName(stance.Name);
-                if (npc == null)
-                {
-                    ModEntry.SMonitor?.Log(
-                        $"[CutsceneStorage] Recorded actor '{stance.Name}' not found in world, skipped.",
-                        LogLevel.Warn);
-                    continue;
-                }
-
-                // 恒按录制坐标落位（回放已回归录制现场），红线：强制换算到可通行格子，杜绝卡墙
-                var candidateTile = new Vector2(stance.TileX, stance.TileY);
-                Vector2 safeTile = MovementPathfinding.FindNearestWalkableTile(targetLocation, candidateTile, npc, radius: 5);
-
-                // 记录摆位前的真实状态，供开演失败时回滚
-                staged.Add((npc, npc.currentLocation, npc.Tile, npc.FacingDirection));
-
-                if (npc.currentLocation != targetLocation)
-                {
-                    Game1.warpCharacter(npc, targetLocation.NameOrUniqueName, safeTile);
-                }
-                else
-                {
-                    npc.setTilePosition(new Point((int)safeTile.X, (int)safeTile.Y));
-                }
-                npc.faceDirection(Math.Clamp(stance.Facing, 0, 3));
+                CutsceneCloneService.DisposeAll();
+                return false;
             }
 
-            return staged;
-        }
-
-        /// <summary>
-        /// 回滚已摆位的演员：把每个演员送回摆位前的场景与坐标
-        /// </summary>
-        private static void RollbackStagedActors(List<(NPC Npc, GameLocation Location, Vector2 Tile, int Facing)> staged)
-        {
-            foreach (var entry in staged)
-            {
-                try
-                {
-                    if (entry.Npc == null) continue;
-
-                    if (entry.Location != null && entry.Npc.currentLocation != entry.Location)
-                    {
-                        Game1.warpCharacter(entry.Npc, entry.Location.NameOrUniqueName, entry.Tile);
-                    }
-                    else
-                    {
-                        entry.Npc.setTilePosition(new Point((int)entry.Tile.X, (int)entry.Tile.Y));
-                    }
-                    entry.Npc.faceDirection(Math.Clamp(entry.Facing, 0, 3));
-                }
-                catch (Exception ex)
-                {
-                    ModEntry.SMonitor?.Log(
-                        $"[CutsceneStorage] Failed to rollback staged actor '{entry.Npc?.Name}': {ex.Message}",
-                        LogLevel.Warn);
-                }
-            }
+            ModEntry.SMonitor?.Log(
+                $"[CutsceneStorage] Replaying cutscene '{cutscene.Title}' in {stage.NameOrUniqueName} " +
+                $"(recorded in {cutscene.LocationName}, staged {clones.Count} clone actors).",
+                LogLevel.Info);
+            return true;
         }
     }
 }
