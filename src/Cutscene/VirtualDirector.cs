@@ -38,11 +38,13 @@ namespace ValleytalkReborn.Cutscene
         private readonly List<IDirectorAction> _activeActions = new();
         private CutsceneSnapshot _snapshot;
         private readonly List<NPC> _participatingActors = new();
+        private const int MaxActionsPerDispatch = 64; // 单轮派发上限，防止自前置动作造成单轮无限派发
+        private readonly HashSet<NPC> _activelyMovingActors = new(); // UpdatePlaying 每帧复用的主动移动集合（瞬态）
 
         // 视觉表现：电影黑边
         private float _blackBarHeight;
         private const float TargetBarHeight = 70f;
-        private const float BlackBarTransitionSpeed = 4f; // 像素/帧
+        private const float BlackBarPixelsPerSecond = 240f; // 像素/秒（240 = 4×60Hz，保速不变）
 
         // 视觉表现：全屏黑幕过渡
         private float _fadeAlpha = 0f;
@@ -544,12 +546,12 @@ namespace ValleytalkReborn.Cutscene
         private void UpdatePlaying(float dt)
         {
             // 1. 维护参演 Actor 保活与移动压制
-            HashSet<NPC> activelyMovingActors = new();
+            _activelyMovingActors.Clear();
             for (int i = 0; i < _activeActions.Count; i++)
             {
                 if (_activeActions[i] is Actions.MoveToTileAction moveAction && moveAction.Actor != null)
                 {
-                    activelyMovingActors.Add(moveAction.Actor);
+                    _activelyMovingActors.Add(moveAction.Actor);
                 }
             }
 
@@ -562,7 +564,7 @@ namespace ValleytalkReborn.Cutscene
                         actor.movementPause = 0;
 
                     // 核心压制：非主动移动动作中的参演演员，必须彻底定身压制，杜绝原版日程游走或物理穿墙
-                    if (!activelyMovingActors.Contains(actor))
+                    if (!_activelyMovingActors.Contains(actor))
                     {
                         if (actor.controller != null)
                         {
@@ -591,7 +593,7 @@ namespace ValleytalkReborn.Cutscene
             // 4. 黑边平滑过渡
             if (_blackBarHeight < TargetBarHeight)
             {
-                _blackBarHeight = Math.Min(_blackBarHeight + BlackBarTransitionSpeed, TargetBarHeight);
+                _blackBarHeight = Math.Min(_blackBarHeight + BlackBarPixelsPerSecond * dt, TargetBarHeight);
             }
 
             // 5. 相机平滑插值与动态跟随
@@ -892,11 +894,12 @@ namespace ValleytalkReborn.Cutscene
         }
 
         /// <summary>
-        /// 派发下一批动作：连续出队直至遇到 WaitForCompletion == true 的动作，或队列为空
+        /// 派发下一批动作：连续出队直至遇到 WaitForCompletion == true 的动作、队列为空，或达到单轮派发上限
         /// </summary>
         private void AdvanceToNextActions()
         {
-            while (_actionQueue.Count > 0)
+            int dispatched = 0;
+            while (_actionQueue.Count > 0 && dispatched < MaxActionsPerDispatch)
             {
                 var action = _actionQueue.Dequeue();
                 try
@@ -911,12 +914,20 @@ namespace ValleytalkReborn.Cutscene
                 {
                     ModEntry.SMonitor?.Log($"[VirtualDirector] Action Enter error: {ex.Message}", LogLevel.Warn);
                 }
+                dispatched++;
 
                 if (action.WaitForCompletion)
                 {
                     // 遇到阻塞动作，停止本轮并发派发，等待活跃动作更新完成
                     break;
                 }
+            }
+
+            if (dispatched >= MaxActionsPerDispatch && _actionQueue.Count > 0)
+            {
+                ModEntry.SMonitor?.Log(
+                    $"[VirtualDirector] Dispatch cap ({MaxActionsPerDispatch}) reached in one advance — possible self-prepending action; remaining queue: {_actionQueue.Count}",
+                    LogLevel.Warn);
             }
 
             if (_activeActions.Count == 0 && _actionQueue.Count == 0)
