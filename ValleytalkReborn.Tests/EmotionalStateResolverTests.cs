@@ -2,6 +2,7 @@
 
 using System.Collections.Generic;
 using ValleytalkReborn;
+using ValleytalkReborn.Social;
 using Xunit;
 
 // 全部驱动 pure 核心（ComposeBaseline/CompileCore/DecideFeedback/ExtractPortraitCode），
@@ -256,5 +257,59 @@ public class EmotionalStateResolverTests
         Assert.Equal("Comforted", comforted.Value.kind);
         AssertFloat(0.35f, comforted.Value.dv, "semantic happy dv");
         AssertFloat(-0.10f, comforted.Value.da, "semantic happy da");
+    }
+
+    // UT-17 VT-SOCIAL-02：SocialProfile 非 null → 按九宫格原型偏置 V-A-O，取代婚姻/心数硬编码
+    // （14 心死锁修复：已婚+冷战不再叠加 +0.15V/+0.20O）；null → 原版兼容回退（UT13 契约不变）。
+    // 基准 (authored=null, optimism=1, socialAnxiety=1, 未婚, 0 心) = V0.05 / A0.50 / O0.50。
+    [Fact]
+    public void UT17_ComposeBaseline_SocialProfileArchetypeBiases()
+    {
+        // 兼容门：显式传 null 与既有 5 参调用行为完全一致。
+        var (lv, la, lo) = EmotionalStateResolver.ComposeBaseline(null, 1, 1, true, 0, null);
+        AssertFloat(0.20f, lv, "null profile 已婚 V 兼容");
+        AssertFloat(0.50f, la, "null profile 已婚 A 兼容");
+        AssertFloat(0.70f, lo, "null profile 已婚 O 兼容");
+
+        static SocialProfile Profile(SocialArchetype archetype) =>
+            new SocialProfile { Archetype = archetype, Affection = 80, Trust = 80 };
+
+        // 已婚 14 心 + DomesticColdSpell：-0.20V / +0.10A / -0.25O（不叠加旧已婚分支）。
+        var cold = EmotionalStateResolver.ComposeBaseline(null, 1, 1, true, 14, Profile(SocialArchetype.DomesticColdSpell));
+        AssertFloat(-0.15f, cold.v, "冷战 V (0.05-0.20)");
+        AssertFloat(0.60f, cold.a, "冷战 A (0.50+0.10)");
+        AssertFloat(0.25f, cold.o, "冷战 O (0.50-0.25)");
+
+        // 已婚 14 心 + DomesticRoommate：-0.05V / -0.15O，A 不变。
+        var roommate = EmotionalStateResolver.ComposeBaseline(null, 1, 1, true, 14, Profile(SocialArchetype.DomesticRoommate));
+        AssertFloat(0.00f, roommate.v, "室友 V (0.05-0.05)");
+        AssertFloat(0.50f, roommate.a, "室友 A 不变");
+        AssertFloat(0.35f, roommate.o, "室友 O (0.50-0.15)");
+
+        // 已婚 + DomesticHarmonious：+0.15V / +0.20O（数值等同旧已婚分支）。
+        var harmonious = EmotionalStateResolver.ComposeBaseline(null, 1, 1, true, 14, Profile(SocialArchetype.DomesticHarmonious));
+        AssertFloat(0.20f, harmonious.v, "和谐 V (0.05+0.15)");
+        AssertFloat(0.70f, harmonious.o, "和谐 O (0.50+0.20)");
+
+        // 未婚 10 心 + CloseConfidant：+0.10V / +0.20O（旧 8 心仅 +0.10O，动态档案接管）。
+        var close = EmotionalStateResolver.ComposeBaseline(null, 1, 1, false, 10, Profile(SocialArchetype.CloseConfidant));
+        AssertFloat(0.15f, close.v, "知己 V (0.05+0.10)");
+        AssertFloat(0.70f, close.o, "知己 O (0.50+0.20)");
+
+        // GuardedAcquaintance：+0.10V / -0.15O。
+        var guarded = EmotionalStateResolver.ComposeBaseline(null, 1, 1, false, 5, Profile(SocialArchetype.GuardedAcquaintance));
+        AssertFloat(0.15f, guarded.v, "假面 V (0.05+0.10)");
+        AssertFloat(0.35f, guarded.o, "假面 O (0.50-0.15)");
+
+        // ReluctantConfidant：-0.10V / +0.10O。
+        var reluctant = EmotionalStateResolver.ComposeBaseline(null, 1, 1, false, 5, Profile(SocialArchetype.ReluctantConfidant));
+        AssertFloat(-0.05f, reluctant.v, "嘴硬 V (0.05-0.10)");
+        AssertFloat(0.60f, reluctant.o, "嘴硬 O (0.50+0.10)");
+
+        // Stranger：不修饰。
+        var stranger = EmotionalStateResolver.ComposeBaseline(null, 1, 1, false, 0, Profile(SocialArchetype.Stranger));
+        AssertFloat(0.05f, stranger.v, "陌生 V 不变");
+        AssertFloat(0.50f, stranger.a, "陌生 A 不变");
+        AssertFloat(0.50f, stranger.o, "陌生 O 不变");
     }
 }

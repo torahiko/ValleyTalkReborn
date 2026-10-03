@@ -4,6 +4,7 @@ using System.Text;
 using StardewModdingAPI;
 using StardewValley;
 using ValleytalkReborn.Dialogue.Coordination;
+using ValleytalkReborn.Social;
 
 namespace ValleytalkReborn;
 
@@ -28,9 +29,12 @@ public static class EmotionalStateResolver
     /// <summary>
     /// 三轴基线合成（pure）。authored 非 null → 直接采用；null → 原生映射。
     /// ProgressStates 修正与基线来源无关（婚姻/心数是关系态，不是性格来源）。
+    /// VT-SOCIAL-02：socialProfile 非 null → 按九宫格原型动态偏置并取代婚姻/心数硬编码
+    /// （14 心死锁修复）；null → 保持原版兼容回退。
     /// </summary>
     public static (float v, float a, float o) ComposeBaseline(
-        EmotionalBaseline authored, int optimism, int socialAnxiety, bool marriedOrEngaged, int heartLevel)
+        EmotionalBaseline authored, int optimism, int socialAnxiety, bool marriedOrEngaged, int heartLevel,
+        SocialProfile socialProfile = null)
     {
         float v, a, o;
         if (authored != null)
@@ -46,7 +50,20 @@ public static class EmotionalStateResolver
             a = socialAnxiety switch { 0 => 0.65f, 1 => 0.50f, 2 => 0.35f, _ => 0.50f };
         }
 
-        if (marriedOrEngaged)
+        if (socialProfile != null)
+        {
+            switch (socialProfile.Archetype)
+            {
+                case SocialArchetype.DomesticColdSpell: v -= 0.20f; o -= 0.25f; a += 0.10f; break; // 冷战：低落、封闭、紧绷
+                case SocialArchetype.DomesticRoommate: v -= 0.05f; o -= 0.15f; break;              // 室友化：平淡、不愿深聊
+                case SocialArchetype.DomesticHarmonious: v += 0.15f; o += 0.20f; break;            // 婚后和谐
+                case SocialArchetype.CloseConfidant: v += 0.10f; o += 0.20f; break;                // 挚友高信任
+                case SocialArchetype.GuardedAcquaintance: v += 0.10f; o -= 0.15f; break;           // 假面亲热：表面愉快，防御关门
+                case SocialArchetype.ReluctantConfidant: v -= 0.10f; o += 0.10f; break;            // 嘴硬心软：不耐烦但吐实
+                // Stranger: 不修饰
+            }
+        }
+        else if (marriedOrEngaged)
         {
             v += 0.15f;
             o += 0.20f;
@@ -72,7 +89,8 @@ public static class EmotionalStateResolver
             : 0;
 
         var baseline = ComposeBaseline(
-            character?.Bio?.EmotionalBaseline, optimism, socialAnxiety, marriedOrEngaged, heartLevel);
+            character?.Bio?.EmotionalBaseline, optimism, socialAnxiety, marriedOrEngaged, heartLevel,
+            FetchSocialProfile(rawNpc, heartLevel, marriedOrEngaged));
 
         var scene = character?.CurrentTodayScene;
         var (sv, sa, so) = MoodShockStore.GetAggregatedDeltas(character?.Name ?? rawNpc?.Name);
@@ -82,6 +100,20 @@ public static class EmotionalStateResolver
         float o = Math.Clamp(baseline.o + (scene?.Bias?.Openness ?? 0f) + so, 0f, 1f);
 
         return new EmotionSnapshot(v, a, o, Math.Clamp(baseline.o, 0f, 1f));
+    }
+
+    /// <summary>
+    /// VT-SOCIAL-02：从影子关系档案读取当前原型供基线偏置。
+    /// Game1.player / NPC 缺位（如无存档单测）→ Log.Debug 并返回 null，走原版兼容回退。
+    /// </summary>
+    private static SocialProfile FetchSocialProfile(NPC rawNpc, int heartLevel, bool marriedOrEngaged)
+    {
+        if (rawNpc == null || Game1.player == null)
+        {
+            Log.Debug("[EmotionalStateResolver] Game1.player/NPC unavailable — social profile skipped, legacy baseline retained.");
+            return null;
+        }
+        return SocialGraphService.Instance.GetProfile(Game1.player, rawNpc.Name, heartLevel, marriedOrEngaged);
     }
 
     /// <summary>

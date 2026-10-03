@@ -10,6 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using ValleytalkReborn.Dialogue.Coordination;
+using ValleytalkReborn.Social;
 using ValleytalkReborn;
 using StardewValley;
 using StardewValley.GameData.Characters;
@@ -1176,7 +1177,7 @@ public class Prompts
             return prompt.ToString();
         }
 
-        internal static string BuildMarriageFeelings(Character character, DialogueContext context, string name)
+        internal static string BuildMarriageFeelings(Character character, DialogueContext context, string name, bool suppressBlindSentiment = false)
         {
             var prompt = new StringBuilder();
             if (!Game1.getPlayerOrEventFarmer().friendshipData.TryGetValue(character.Name, out var marriageFriendship))
@@ -1186,7 +1187,9 @@ public class Prompts
             switch (context.Hearts)
             {
                 case > 12:
-                    prompt.AppendLine(Util.GetString(character, "marriageSentimentGood", new { Name = name, marriageOrRoommate = marriageOrRoommate }));
+                    // VT-SOCIAL-02：冷战/室友态下抑制盲目 marriageSentimentGood，婚姻感知听从 <relationship_lens>。
+                    if (!suppressBlindSentiment)
+                        prompt.AppendLine(Util.GetString(character, "marriageSentimentGood", new { Name = name, marriageOrRoommate = marriageOrRoommate }));
                     break;
                 case < 10:
                     prompt.AppendLine(Util.GetString(character, "marriageSentimentBad", new { Name = name, marriageOrRoommate = marriageOrRoommate }));
@@ -1391,9 +1394,33 @@ public class Prompts
             var prompt = new StringBuilder();
             bool npcIsMale = npcData.Gender == StardewValley.Gender.Male;
 
+            var farmer = Game1.getPlayerOrEventFarmer();
             Friendship friendship = null;
-            Game1.getPlayerOrEventFarmer()?.friendshipData?.TryGetValue(character.Name, out friendship);
+            farmer?.friendshipData?.TryGetValue(character.Name, out friendship);
             bool isMarriedOrRoommate = friendship != null && (friendship.IsMarried() || friendship.IsRoommate());
+
+            // VT-SOCIAL-02：影子关系档案 → 长效 <relationship_lens> 态度透镜；
+            // 冷战/室友态抑制原版盲目 marriageSentimentGood，婚姻感知听从动态透镜。
+            bool suppressBlindSentiment = false;
+            string lensBlock = null;
+            var socialProfile = farmer != null
+                ? SocialGraphService.Instance.GetProfile(farmer, character.Name, context.Hearts ?? 0, isMarriedOrRoommate)
+                : null;
+            if (socialProfile != null)
+            {
+                suppressBlindSentiment = socialProfile.Archetype == SocialArchetype.DomesticColdSpell
+                    || socialProfile.Archetype == SocialArchetype.DomesticRoommate;
+                try
+                {
+                    lensBlock = SocialGraphService.Instance.CompileAttitudeLens(
+                        name, socialProfile, ResolveIsChinese(), isMarriedOrRoommate);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning($"[Prompts] CompileAttitudeLens failed for '{name}' ({ex.Message}) — skip lens injection.");
+                    lensBlock = null;
+                }
+            }
 
             if (isMarriedOrRoommate)
             {
@@ -1410,7 +1437,7 @@ public class Prompts
                 prompt.Append(BuildSpouse(character, name));
                 if (flags?.IncludeFarmDetails == true)
                     prompt.Append(BuildTrinkets(character, name));
-                prompt.Append(BuildMarriageFeelings(character, context, name));
+                prompt.Append(BuildMarriageFeelings(character, context, name, suppressBlindSentiment));
             }
             else
             {
@@ -1418,6 +1445,9 @@ public class Prompts
                 prompt.Append(BuildSpouse(character, name));
                 prompt.Append(BuildSpecialRelationshipStatus(character, context, friendship, milestoneBlock, name));
             }
+
+            if (lensBlock != null)
+                prompt.Append(lensBlock);
 
             return prompt.ToString();
         }
