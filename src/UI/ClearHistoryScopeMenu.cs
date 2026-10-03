@@ -26,16 +26,17 @@ namespace ValleytalkReborn
         }
 
         // ── 尺寸与布局常量 ──
-        private const int MenuWidth = 660;
-        private const int MenuHeight = 450;
+        private const int MenuWidth = 760;
+        private const int MenuHeight = 460;
         private const int ContentPadding = 24;
         private const int HeaderH = 62;
         private const int FooterH = 56;
 
         private const float TitleFontSize = CustomFontManager.SizeTitle;       // 24f Bold (顶栏标题)
         private const float ButtonFontSize = CustomFontManager.SizeRegular;    // 18f Bold (底部主按钮)
-        private const float CardHeaderSize = CustomFontManager.SizeRegular;    // 18f Medium (选项主标题)
-        private const float TipFontSize = CustomFontManager.SizeSmall;         // 15f Medium (说明、提示气泡)
+        private const float CardHeaderSize = CustomFontManager.SizeRegular;    // 18f Bold (选项主标题)
+        private const float TipFontSize = CustomFontManager.SizeSmall;         // 15f Medium (顶栏副提示)
+        private const float DescFontSize = 15.5f;                              // 15.5f Medium (选项说明文字，清晰辨识)
 
         private readonly string _npcName;
         private readonly DialogueTextInputMenu _ownerMenu;
@@ -62,10 +63,10 @@ namespace ValleytalkReborn
 
         public ClearHistoryScopeMenu(string npcName, DialogueTextInputMenu ownerMenu, Action<ClearScope> onConfirm)
             : base(
-                (Game1.uiViewport.Width - MenuWidth) / 2,
-                (Game1.uiViewport.Height - MenuHeight) / 2,
-                MenuWidth,
-                MenuHeight,
+                (Game1.uiViewport.Width - Math.Min(MenuWidth, Game1.uiViewport.Width - 40)) / 2,
+                (Game1.uiViewport.Height - Math.Min(MenuHeight, Game1.uiViewport.Height - 40)) / 2,
+                Math.Min(MenuWidth, Game1.uiViewport.Width - 40),
+                Math.Min(MenuHeight, Game1.uiViewport.Height - 40),
                 showUpperRightCloseButton: false)
         {
             _npcName = npcName;
@@ -130,20 +131,20 @@ namespace ValleytalkReborn
 
             int contentLeft = xPositionOnScreen + ContentPadding;
             int contentW = width - ContentPadding * 2;
-            int startY = yPositionOnScreen + HeaderH + 12;
+            int startY = yPositionOnScreen + HeaderH + 16;
 
-            const int cardH = 62;
-            const int cardGap = 10;
+            const int cardH = 80;
+            const int cardGap = 12;
 
             for (int i = 0; i < 3; i++)
             {
                 _cardRects[i] = new Rectangle(contentLeft, startY + i * (cardH + cardGap), contentW, cardH);
             }
 
-            int footerY = yPositionOnScreen + height - FooterH + 10;
-            const int btnH = 38;
-            const int cancelBtnW = 130;
-            const int confirmBtnW = 180;
+            int footerY = yPositionOnScreen + height - FooterH + 8;
+            const int btnH = 40;
+            const int cancelBtnW = 140;
+            const int confirmBtnW = 200;
 
             _cancelButtonRect = new Rectangle(contentLeft, footerY, cancelBtnW, btnH);
             _confirmButtonRect = new Rectangle(xPositionOnScreen + width - ContentPadding - confirmBtnW, footerY, confirmBtnW, btnH);
@@ -151,10 +152,10 @@ namespace ValleytalkReborn
 
         public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
         {
-            xPositionOnScreen = (Game1.uiViewport.Width - MenuWidth) / 2;
-            yPositionOnScreen = (Game1.uiViewport.Height - MenuHeight) / 2;
-            width = MenuWidth;
-            height = MenuHeight;
+            width = Math.Min(MenuWidth, Game1.uiViewport.Width - 40);
+            height = Math.Min(MenuHeight, Game1.uiViewport.Height - 40);
+            xPositionOnScreen = (Game1.uiViewport.Width - width) / 2;
+            yPositionOnScreen = (Game1.uiViewport.Height - height) / 2;
             Layout();
         }
 
@@ -303,9 +304,9 @@ namespace ValleytalkReborn
             string title = I18n.DialogueInput.ClearScopeTitle();
             CustomFontManager.DrawStringBold(b, title, new Vector2(headX + pSize + 12, headY), BioEditorMenu.TextPrimary, TitleFontSize);
 
-            // 副提示
+            // 副提示（高对比度浓郁深茶褐，彻底告别与羊皮纸底板融为一体）
             string hint = I18n.DialogueInput.ClearScopeHint();
-            CustomFontManager.DrawString(b, hint, new Vector2(headX + pSize + 14, headY + 26), BioEditorMenu.TextMuted, TipFontSize);
+            CustomFontManager.DrawString(b, hint, new Vector2(headX + pSize + 14, headY + 28), new Color(75, 50, 32), TipFontSize);
 
             // 顶栏分割横线
             int sepY = yPositionOnScreen + HeaderH + 2;
@@ -331,28 +332,28 @@ namespace ValleytalkReborn
 
             var drawRect = new Rectangle(rect.X, rect.Y + pressOffset, rect.Width, rect.Height);
 
-            // 2. 底色处理（普通选项为蜜金底，全镇危险项激活时为极淡暖粉底）
+            // 2. 底色处理（高透亮清爽底色，与文字形成极高视觉反差）
             Color bg;
             if (isSelected)
             {
                 bg = isDangerOption
-                    ? (isHover ? new Color(255, 232, 228) : new Color(255, 240, 236))
-                    : (isHover ? new Color(255, 226, 160) : new Color(252, 218, 145));
+                    ? (isHover ? new Color(255, 235, 230) : new Color(255, 244, 240))
+                    : (isHover ? new Color(255, 248, 232) : new Color(255, 244, 222));
             }
             else
             {
-                bg = isHover ? new Color(255, 246, 232) : new Color(248, 240, 226);
+                bg = isHover ? new Color(255, 255, 250) : new Color(254, 251, 244);
             }
 
             // 3. 边框颜色
             Color borderCol;
             if (isSelected)
             {
-                borderCol = isDangerOption ? new Color(205, 65, 55) : new Color(210, 110, 15);
+                borderCol = isDangerOption ? new Color(215, 60, 50) : new Color(210, 110, 15);
             }
             else
             {
-                borderCol = isHover ? new Color(210, 160, 60) : new Color(225, 205, 175);
+                borderCol = isHover ? new Color(195, 150, 85) : new Color(210, 185, 150);
             }
 
             b.Draw(Game1.staminaRect, new Rectangle(drawRect.X + 1, drawRect.Y + 1, drawRect.Width - 2, drawRect.Height - 2), bg);
@@ -367,9 +368,10 @@ namespace ValleytalkReborn
             }
 
             // 5. 单选圆点指示器（Radio Indicator）
+            const int radioSize = 20;
             int radioX = drawRect.X + 16;
-            int radioY = drawRect.Y + (drawRect.Height - 18) / 2;
-            var radioRect = new Rectangle(radioX, radioY, 18, 18);
+            int radioY = drawRect.Y + (drawRect.Height - radioSize) / 2;
+            var radioRect = new Rectangle(radioX, radioY, radioSize, radioSize);
 
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(432, 439, 9, 9),
                 radioRect.X, radioRect.Y, radioRect.Width, radioRect.Height,
@@ -381,14 +383,14 @@ namespace ValleytalkReborn
                 b.Draw(Game1.staminaRect, new Rectangle(radioRect.X + 4, radioRect.Y + 4, radioRect.Width - 8, radioRect.Height - 8), dotColor);
             }
 
-            // 6. ★ 选项文本渲染（固定为高清晰字体颜色，不再变红发虚）
-            int textLeft = radioRect.Right + 12;
+            // 6. ★ 选项文本渲染（加粗标题 + 纯正深焦褐/暗绯红说明，杜绝融于底色）
+            int textLeft = radioRect.Right + 14;
 
-            // 主标题固定为纯正深焦褐（TextPrimary）
-            CustomFontManager.DrawString(b, opt.Title, new Vector2(textLeft, drawRect.Y + 10), BioEditorMenu.TextPrimary, CardHeaderSize);
+            Color titleColor = isSelected && isDangerOption ? new Color(185, 45, 35) : BioEditorMenu.TextPrimary;
+            CustomFontManager.DrawStringBold(b, opt.Title, new Vector2(textLeft, drawRect.Y + 14), titleColor, CardHeaderSize);
 
-            // 解释副文固定为清晰暖棕色（TextSecondary）
-            CustomFontManager.DrawString(b, opt.Description, new Vector2(textLeft, drawRect.Y + 32), BioEditorMenu.TextSecondary, TipFontSize);
+            Color descColor = isSelected && isDangerOption ? new Color(125, 40, 30) : new Color(68, 48, 34);
+            CustomFontManager.DrawString(b, opt.Description, new Vector2(textLeft, drawRect.Y + 44), descColor, DescFontSize);
         }
 
         private static bool IsLeftMouseDown()

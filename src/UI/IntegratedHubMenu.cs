@@ -59,8 +59,8 @@ namespace ValleytalkReborn
 
         public IntegratedHubMenu(string initialNpcName, int initialTab)
         {
-            width = Math.Max(700, Math.Min(1000, Game1.uiViewport.Width - 80));
-            height = Math.Max(520, Math.Min(680, Game1.uiViewport.Height - 80));
+            width = Math.Max(760, Math.Min(1160, Game1.uiViewport.Width - 80));
+            height = Math.Max(560, Math.Min(760, Game1.uiViewport.Height - 80));
             xPositionOnScreen = (Game1.uiViewport.Width - width) / 2;
             yPositionOnScreen = (Game1.uiViewport.Height - height) / 2;
 
@@ -328,8 +328,8 @@ namespace ValleytalkReborn
 
         public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
         {
-            width = Math.Max(700, Math.Min(1000, Game1.uiViewport.Width - 80));
-            height = Math.Max(520, Math.Min(680, Game1.uiViewport.Height - 80));
+            width = Math.Max(760, Math.Min(1160, Game1.uiViewport.Width - 80));
+            height = Math.Max(560, Math.Min(760, Game1.uiViewport.Height - 80));
             xPositionOnScreen = (Game1.uiViewport.Width - width) / 2;
             yPositionOnScreen = (Game1.uiViewport.Height - height) / 2;
 

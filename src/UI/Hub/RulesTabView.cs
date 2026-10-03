@@ -190,8 +190,33 @@ internal sealed class RulesTabView : IHubTabView
 
         int editPad = 14;
         int inputY = _rightColRect.Y + 64;
-        // 适度调整输入框高度范围，为下方的时效栏留出舒适垂直间距
-        int inputH = Math.Clamp(h - 225, 95, 135);
+        int usableW = _rightColRect.Width - editPad * 2;
+
+        // 3. 底部主操作按钮（吸底对齐）
+        int btnY = _rightColRect.Bottom - 44;
+        int btnW = (usableW - 10) / 2;
+        _saveBtnRect = new Rectangle(_rightColRect.X + editPad, btnY, btnW, 34);
+        _deleteBtnRect = new Rectangle(_rightColRect.X + editPad + btnW + 10, btnY, btnW, 34);
+
+        // 2. 时效胶囊行（永久有效 / 仅今天 / 指定天）
+        int durY = btnY - 14 - 28;
+        int durBtnW = (usableW - 12) / 3;
+        _editDurPermRect = new Rectangle(_rightColRect.X + editPad, durY, durBtnW, 28);
+        _editDurTodayRect = new Rectangle(_editDurPermRect.Right + 6, durY, durBtnW, 28);
+        _editDurCustomRect = new Rectangle(_editDurTodayRect.Right + 6, durY, usableW - durBtnW * 2 - 12, 28);
+
+        _editDayStepper = new NumberStepper(
+            new Rectangle(_editDurCustomRect.X + 1, _editDurCustomRect.Y, _editDurCustomRect.Width - 2, 28),
+            Math.Max(1, _editDaysValue), 1, 99, 1, "d");
+
+        // 1. 规则分类行（既定事实 / 行为准则）
+        int catY = durY - 10 - 28;
+        int catW = (usableW - 8) / 2;
+        _editFactCapsuleRect = new Rectangle(_rightColRect.X + editPad, catY, catW, 28);
+        _editBehaviorCapsuleRect = new Rectangle(_rightColRect.X + editPad + catW + 8, catY, catW, 28);
+
+        // 输入框高度自动填充顶部信息与分类行之间的全部可用空间
+        int inputH = Math.Max(95, catY - 12 - inputY);
 
         _editInputBox = new DialogueTextInputBox(RuleManager.MaxRuleLength, (int)(RuleManager.MaxRuleLength * 0.9f))
         {
@@ -206,31 +231,6 @@ internal sealed class RulesTabView : IHubTabView
             TextColor = RulesTheme.TextPrimary,
             Selected = false
         };
-
-        int usableW = _rightColRect.Width - editPad * 2;
-
-        // 1. 规则分类行（既定事实 / 行为准则）
-        int catY = inputY + inputH + 12;
-        int catW = (usableW - 8) / 2;
-        _editFactCapsuleRect = new Rectangle(_rightColRect.X + editPad, catY, catW, 28);
-        _editBehaviorCapsuleRect = new Rectangle(_rightColRect.X + editPad + catW + 8, catY, catW, 28);
-
-        // 2. ★ 新增：时效胶囊行（永久有效 / 仅今天 / 指定天）
-        int durY = catY + 28 + 10;
-        int durBtnW = (usableW - 12) / 3;
-        _editDurPermRect = new Rectangle(_rightColRect.X + editPad, durY, durBtnW, 28);
-        _editDurTodayRect = new Rectangle(_editDurPermRect.Right + 6, durY, durBtnW, 28);
-        _editDurCustomRect = new Rectangle(_editDurTodayRect.Right + 6, durY, usableW - durBtnW * 2 - 12, 28);
-
-        _editDayStepper = new NumberStepper(
-            new Rectangle(_editDurCustomRect.X + 1, _editDurCustomRect.Y, _editDurCustomRect.Width - 2, 28),
-            Math.Max(1, _editDaysValue), 1, 99, 1, "d");
-
-        // 3. 底部主操作按钮
-        int btnY = _rightColRect.Bottom - 44;
-        int btnW = (usableW - 10) / 2;
-        _saveBtnRect = new Rectangle(_rightColRect.X + editPad, btnY, btnW, 34);
-        _deleteBtnRect = new Rectangle(_rightColRect.X + editPad + btnW + 10, btnY, btnW, 34);
 
         int saveExitW = 200;
         int saveExitH = 40;
