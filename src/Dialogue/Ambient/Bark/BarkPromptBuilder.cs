@@ -355,6 +355,10 @@ Example 3 (Paranoia & Appetite):
 
         var sb = new StringBuilder();
 
+        // VT-FOCUS-04：共处态以 CompanionFocusResolver 为唯一权威渲染常驻句，
+        // 取代旧的 IsOnDate/IsFollowingSafe 二选一薄句（时序窗口不做二次兜底）。
+        var companionFocus = CompanionFocusResolver.Resolve(npc);
+
         if (isZh)
         {
             sb.Append($"你在 {locName}");
@@ -362,13 +366,9 @@ Example 3 (Paranoia & Appetite):
             else           sb.Append($"（室外，{weather}）");
             sb.Append($"，{timeDesc}。");
 
-            if (DialogueUtilities.IsOnDate(npc))
+            if (companionFocus != CompanionFocusMode.None)
             {
-                sb.Append(" 和玩家出来走走。");
-            }
-            else if (DialogueUtilities.IsFollowingSafe(npc))
-            {
-                sb.Append(" 陪着玩家走着。");
+                sb.Append($" {BuildCompanionStandingSentence(npc, companionFocus, isZh)}");
             }
             else
             {
@@ -397,13 +397,9 @@ Example 3 (Paranoia & Appetite):
             else           sb.Append($" (outdoors, {weather})");
             sb.Append($", {timeDesc}.");
 
-            if (DialogueUtilities.IsOnDate(npc))
+            if (companionFocus != CompanionFocusMode.None)
             {
-                sb.Append(" Out with the player.");
-            }
-            else if (DialogueUtilities.IsFollowingSafe(npc))
-            {
-                sb.Append(" Walking with the player.");
+                sb.Append($" {BuildCompanionStandingSentence(npc, companionFocus, isZh)}");
             }
             else
             {
@@ -426,6 +422,58 @@ Example 3 (Paranoia & Appetite):
         }
 
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// VT-FOCUS-04：共处常驻句。以 CompanionFocusMode 三态渲染共处语境；
+    /// 约会两态追加会话进度行与礼物行（digest 无效时跳过，不输出占位）。
+    /// 返回值永不为 null（未预期模式回落通用共处文案）。
+    /// </summary>
+    private static string BuildCompanionStandingSentence(NPC npc, CompanionFocusMode focus, bool isZh)
+    {
+        var digest = DateManager.Instance?.BuildSessionDigest(npc.Name);
+
+        string sentence;
+        string progress = string.Empty;
+        switch (focus)
+        {
+            case CompanionFocusMode.DateWalking:
+                sentence = isZh
+                    ? "你和农夫正在这里边走边约会——这一路同行本身就是你现在的主旋律。"
+                    : "You and the farmer are out on a walking date right here — the walk itself is your main event right now.";
+                if (digest is { IsValid: true })
+                    progress = isZh
+                        ? $"你们已经一起走了{Prompts.PromptsBlocks.FormatDateElapsed(digest.StartGameTime, isZh)}。"
+                        : $"You've been walking together for {Prompts.PromptsBlocks.FormatDateElapsed(digest.StartGameTime, isZh)}.";
+                break;
+
+            case CompanionFocusMode.DateSettled:
+                sentence = isZh
+                    ? "你正和农夫在这里约会，眼前的相处就是你此刻的全部。"
+                    : "You're on a date with the farmer right here — being together in this moment is all that matters right now.";
+                if (digest is { IsValid: true })
+                    progress = isZh
+                        ? $"你们已经相处了{Prompts.PromptsBlocks.FormatDateElapsed(digest.StartGameTime, isZh)}。"
+                        : $"You've been together for {Prompts.PromptsBlocks.FormatDateElapsed(digest.StartGameTime, isZh)}.";
+                break;
+
+            case CompanionFocusMode.RegularFollow:
+                sentence = isZh
+                    ? "你正陪着农夫在这里散步同行，脚步跟着他的节奏。"
+                    : "You're walking alongside the farmer here, matching his pace.";
+                break;
+
+            default:
+                // 依赖缺失等未预期情形：回落通用共处文案，保持常驻句非 null 契约
+                sentence = isZh ? "你和农夫正待在一起。" : "You are spending time with the farmer.";
+                break;
+        }
+
+        string text = sentence + progress;
+        string giftLine = Prompts.PromptsBlocks.BuildDateGiftLine(digest, isZh);
+        if (!string.IsNullOrEmpty(giftLine))
+            text += "\n" + giftLine;
+        return text;
     }
 
     /// <summary>

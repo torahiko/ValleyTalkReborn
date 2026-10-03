@@ -105,13 +105,16 @@ internal static class BarkFocusRouter
 
         // ── 池 0：Companion（跟随/约会注意力聚焦） ──
         var focus = CompanionFocusResolver.Resolve(npc);
+        // VT-FOCUS-04：聚焦态下共处候选主导（6.0f），感知/感官候选权重打五折，
+        // 心事/闪回/传闻整体裁剪；常态（focus == None）一切权重与池照旧。
+        float ambientDiscount = focus != CompanionFocusMode.None ? 0.5f : 1.0f;
         if (focus != CompanionFocusMode.None)
         {
-            // 权重 2.2f：高于 Sensory(1.8f)/Preoccupation(0.7f)，低于瞬态感知(2.5f)；
-            // 疲劳阻尼：lastType == Companion 时 weight *= 0.4f（允许继续聚焦但不霸屏）
-            float companionWeight = 2.2f;
+            // 权重 6.0f：聚焦态共处候选主导，高于打折后的瞬态感知(1.25f)/感官(0.9f)；
+            // 疲劳阻尼：lastType == Companion 时 weight *= 0.6f（允许继续聚焦但不霸屏）
+            float companionWeight = 6.0f;
             if (lastType == BarkFocusType.Companion)
-                companionWeight *= 0.4f;
+                companionWeight *= 0.6f;
 
             var loc = npc?.currentLocation;
             string locName = loc != null ? EnvironmentScanner.GetLocationFriendlyName(loc.Name) : null;
@@ -160,16 +163,20 @@ internal static class BarkFocusRouter
         }
 
         // ── 池 1：Introspective（内心世界） ──
-        // 1a. 心事常态（解除硬编码 0.2，基准权重 0.7f）
-        TryAddPreoccupation(npc, bio, lastType, list);
-        // 1b. 记忆闪回（低频彩蛋 0.25f，受时空心境门槛限制）
-        TryAddLongIntervalEcho(npc, lastType, isZh, list);
+        // 心事/闪回与共处场景冲突，聚焦态整体裁剪（常态路径不变）
+        if (focus == CompanionFocusMode.None)
+        {
+            // 1a. 心事常态（解除硬编码 0.2，基准权重 0.7f）
+            TryAddPreoccupation(npc, bio, lastType, list);
+            // 1b. 记忆闪回（低频彩蛋 0.25f，受时空心境门槛限制）
+            TryAddLongIntervalEcho(npc, lastType, isZh, list);
+        }
 
         // ── 池 2：Interactive（外部互动与在场感知） ──
-        TryAddInteractive(npc, lastType, isZh, list);
+        TryAddInteractive(npc, lastType, isZh, list, ambientDiscount);
 
         // ── 池 3：Sensory（体感/天气/室内物件，基准 1.8f） ──
-        TryAddSensory(npc, lastType, lastSensoryKey, isZh, list);
+        TryAddSensory(npc, lastType, lastSensoryKey, isZh, list, ambientDiscount);
 
         return list;
     }
@@ -321,9 +328,11 @@ internal static class BarkFocusRouter
         NPC npc,
         BarkFocusType lastType,
         bool isZh,
-        List<Candidate> list)
+        List<Candidate> list,
+        float ambientDiscount)
     {
-        float fatigueMult = (lastType == BarkFocusType.Interactive) ? 0.3f : 1.0f;
+        // ambientDiscount：聚焦态 0.5f 对感知/目击/人群候选整体打折（常态 1.0f 无感）
+        float fatigueMult = ((lastType == BarkFocusType.Interactive) ? 0.3f : 1.0f) * ambientDiscount;
 
         // 2a. 瞬态感知（最高优先级交互）
         var perceptions = PerceptionManager.Instance?.GetFilteredBucketFor(npc.Name, 1);
@@ -380,7 +389,9 @@ internal static class BarkFocusRouter
 
         // 2d. 镇事件传闻（TIE-007）：非消费预览——仅在候选构建阶段探测，
         //     认领由 BarkPromptBuilder 在本决策被选定后执行。
-        TryAddIncidentRumor(npc, fatigueMult, isZh, list);
+        //     聚焦态裁剪（ambientDiscount < 1）：传闻与共处场景冲突
+        if (ambientDiscount >= 1.0f)
+            TryAddIncidentRumor(npc, fatigueMult, isZh, list);
     }
 
     /// <summary>
@@ -472,9 +483,11 @@ internal static class BarkFocusRouter
         BarkFocusType lastType,
         string lastSensoryKey,
         bool isZh,
-        List<Candidate> list)
+        List<Candidate> list,
+        float ambientDiscount)
     {
-        float fatigueMult = (lastType == BarkFocusType.Sensory) ? 0.3f : 1.0f;
+        // ambientDiscount：聚焦态 0.5f 对感官候选打折（常态 1.0f 无感）
+        float fatigueMult = ((lastType == BarkFocusType.Sensory) ? 0.3f : 1.0f) * ambientDiscount;
 
         var sensoryItems = CollectSensoryItems(npc, isZh);
         if (sensoryItems.Count == 0) return;
