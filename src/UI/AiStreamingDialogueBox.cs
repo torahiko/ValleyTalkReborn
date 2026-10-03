@@ -123,6 +123,26 @@ namespace ValleytalkReborn.UI
         private const int DashPunctuationDelayMs = 320;
         private const int NewlineDelayMs = 450;
 
+        // 标点组分档（票 VT-STREAM-10）：停顿只在组末一次性结算，
+        // 终强调组与混合组按游程长度逐字加压并分别封顶。
+        private const int EnumCommaDelayMs = 90;
+        private const int SemicolonDelayMs = 210;
+        private const int ColonDelayMs = 200;
+        private const int ExclamationDelayMs = 440;
+        private const int QuestionDelayMs = 460;
+        private const int DashRunDelayMs = 400;
+        private const int EllipsisRunDelayMs = 500;
+        private const int EllipsisLongRunDelayMs = 560;
+        private const int TerminalRunExtraPerCharMs = 40;   // 终强调组（！!？?）逐字加压，封顶 620
+        private const int MixedRunExtraPerCharMs = 20;      // 其余混合组逐字加压，封顶 500
+
+        // 软启动与 slew 惯性（票 VT-STREAM-10）：碎首块先驻留再开字，
+        // 基准延迟每次揭示至多向 runway 目标滑移 ±2ms。
+        private const int SoftStartHoldMs = 150;
+        private const int SoftStartRunwayTargetChars = 8;
+        private const int SoftStartRevealCount = 6;
+        private const int BaseDelaySlewPerRevealMs = 2;
+
         /// <summary>
         /// 思考态波浪文字的点号追加节奏：每 500ms 递增一点，0~3 循环。
         /// 与 CancelButtonPlugin 的原版复刻保持同一时间基。
@@ -197,9 +217,16 @@ namespace ValleytalkReborn.UI
         /// <summary>句末标点集：句末软断行的截断点紧随其标点之后。</summary>
         private const string SentenceEnders = "。！？.!?\n";
 
-        private const string LightPunctuation = ",，、;；";
-        private const string LongPunctuation = ".。!！?？";
-        private const string DashPunctuation = "…—-";
+        // 打字机标点分组（票 VT-STREAM-10）：组末一次性结算，小数点单独守卫。
+        private const string EnumCommaPunctuation = "、";
+        private const string LightPunctuation = ",，";
+        private const string SemicolonPunctuation = ";；";
+        private const string ColonPunctuation = ":：";
+        private const string LongPunctuation = ".。";
+        private const string ExclamationPunctuation = "!！";
+        private const string QuestionPunctuation = "?？";
+        private const string DashPunctuation = "—–-";
+        private const string EllipsisPunctuation = "…";
 
         #endregion
 
@@ -240,6 +267,15 @@ namespace ValleytalkReborn.UI
 
         /// <summary>网络断粮代偿预算（毫秒）：游标追平流末尾后累积，标点停顿处扣减。</summary>
         private int _starvationMs = 0;
+
+        /// <summary>
+        /// slew 惯性基准延迟（毫秒，票 VT-STREAM-10）：每次揭示至多向 runway
+        /// 目标滑移 ±2ms，消解流式突发时的节奏跳变；软启动配额未尽时地板为原速。
+        /// </summary>
+        private int _smoothedBaseDelayMs = BaseTypeDelayMs;
+
+        /// <summary>软启动剩余揭示配额（票 VT-STREAM-10）：未尽时基准速度地板抬至原速。</summary>
+        private int _softStartRevealsRemaining = 0;
 
         /// <summary>已翻过的页面归档，仅供 GetFullDialogueText 复原全文本。</summary>
         private readonly List<string> _pageHistory = new();
@@ -382,6 +418,8 @@ namespace ValleytalkReborn.UI
             _currentCues.Clear();
             _appliedCueIndex = -1;
             _starvationMs = 0;
+            _smoothedBaseDelayMs = BaseTypeDelayMs;
+            _softStartRevealsRemaining = 0;
 
             IngestText(Sanitize(fullText));
 
@@ -426,7 +464,20 @@ namespace ValleytalkReborn.UI
 
             // 首批有效字符到达：脱离思考态。
             if (_state == StreamingDialogueState.Thinking)
+            {
                 _state = StreamingDialogueState.Typing;
+
+                // 软启动预滚（票 VT-STREAM-10）：碎首块先驻留 150ms 再开字，
+                // 并装填前 6 次揭示的原速地板配额，消解流式开头的骤快感。
+                if (_characterIndex == 0
+                    && !_isStreamComplete
+                    && _displayedPageText.Length < SoftStartRunwayTargetChars
+                    && (ModEntry.Config == null || ModEntry.Config.EnableRhythmicTyping))
+                {
+                    _typeTimerMs = Math.Max(_typeTimerMs, SoftStartHoldMs);
+                    _softStartRevealsRemaining = SoftStartRevealCount;
+                }
+            }
 
             // 快进模式下游标保持吸附到当前页末端，等待后续增量。
             if (_isFastForwardActive)
@@ -497,6 +548,8 @@ namespace ValleytalkReborn.UI
             _currentCues.Clear();
             _appliedCueIndex = -1;
             _starvationMs = 0;
+            _smoothedBaseDelayMs = 0;
+            _softStartRevealsRemaining = 0;
             _isCurrentPageSealed = false;
             _characterIndex = 0;
             _isStreamComplete = true;
@@ -1055,8 +1108,9 @@ namespace ValleytalkReborn.UI
 
         /// <summary>
         /// 计算揭示第 <paramref name="revealedCount"/> 个字符之后，到揭示下一个字符
-        /// 之前应当等待的毫秒数（票 VT-STREAM-08）。连续同类标点折叠：若后一字符
-        /// 仍为标点，当前标点不注入额外停顿，仅在标点组末字触发长停顿。
+        /// 之前应当等待的毫秒数（票 VT-STREAM-08）。连续同类标点折叠为标点组：
+        /// 若后一字符仍为标点，当前标点不注入额外停顿，仅在组末字按
+        /// <see cref="GetPunctuationRunDelayMs"/> 一次性结算组停顿。
         /// 在此之上叠加：流式 runway 自适应基准（runway &lt;= 1 时 1.5x 阻尼防骤停、
         /// runway &gt;= 16 时 0.8x 轻微追赶、流已结束时恒定原速），以及断粮代偿——
         /// 网络断粮期间积累的 <paramref name="starvationMs"/> 预算优先抵扣本字符的
@@ -1082,24 +1136,80 @@ namespace ValleytalkReborn.UI
             if (current == '\n')
                 return NewlineDelayMs;
 
-            int punctuationDelay = GetPunctuationDelayMs(current);
-            if (punctuationDelay == 0)
+            if (GetPunctuationDelayMs(current) == 0)
                 return ScaleBaseDelayMs(runway, isStreamComplete);
 
             // 折叠：下一个字符仍是标点时，本字符不注入停顿。
             if (revealedCount < text.Length && GetPunctuationDelayMs(text[revealedCount]) != 0)
                 return ScaleBaseDelayMs(runway, isStreamComplete);
 
-            // 断粮代偿：标点停顿先被断粮预算抵扣（扣减后归零或扣至 0）。
-            int effectivePunctuation = punctuationDelay;
+            // 断粮代偿：标点组停顿先被断粮预算抵扣（扣减后归零或扣至 0）。
+            int runDelay = GetPunctuationRunDelayMs(text, revealedCount - 1);
+            int effectivePunctuation = runDelay;
             if (starvationMs > 0)
             {
-                int consumed = Math.Min(punctuationDelay, starvationMs);
-                effectivePunctuation = punctuationDelay - consumed;
+                int consumed = Math.Min(runDelay, starvationMs);
+                effectivePunctuation = runDelay - consumed;
                 starvationMs -= consumed;
             }
 
             return ScaleBaseDelayMs(runway, isStreamComplete) + effectivePunctuation;
+        }
+
+        /// <summary>
+        /// 生产路径（票 VT-STREAM-10）：5 参语义之上叠加软启动地板与 slew 惯性。
+        /// 基准延迟不直取 <see cref="ScaleBaseDelayMs"/> 目标值，而是让
+        /// <paramref name="smoothedBaseDelayMs"/> 每次揭示至多向目标滑移 ±2ms；
+        /// 软启动配额未尽时目标地板抬至原速，消解流式开头的骤快感。
+        /// </summary>
+        /// <param name="text">当前页文本。</param>
+        /// <param name="revealedCount">已揭示的字符数（刚揭示的字符下标为 revealedCount - 1）。</param>
+        /// <param name="runway">未揭示的剩余缓冲字符数（text.Length - revealedCount）。</param>
+        /// <param name="isStreamComplete">流是否已结束。</param>
+        /// <param name="starvationMs">断粮代偿预算（毫秒），按实际抵扣量递减。</param>
+        /// <param name="smoothedBaseDelayMs">slew 惯性基准延迟（毫秒），按滑移量就地更新。</param>
+        /// <param name="softStartRevealsRemaining">软启动剩余揭示配额；大于 0 时基准地板为原速。</param>
+        internal static int ComputeDelayMs(string text, int revealedCount, int runway, bool isStreamComplete, ref int starvationMs,
+            ref int smoothedBaseDelayMs, int softStartRevealsRemaining)
+        {
+            // 玩家关闭节奏开关时无视标点与换行，一律恒定原版等间隔打字速度；
+            // Config 为 null（无头测试环境）时按开启处理。门禁先返回，不触碰任何 ref。
+            if (ModEntry.Config != null && !ModEntry.Config.EnableRhythmicTyping)
+                return BaseTypeDelayMs;
+
+            if (text == null || revealedCount <= 0 || revealedCount > text.Length)
+                return BaseTypeDelayMs;
+
+            char current = text[revealedCount - 1];
+
+            if (current == '\n')
+                return NewlineDelayMs;
+
+            int target = ScaleBaseDelayMs(runway, isStreamComplete);
+            if (softStartRevealsRemaining > 0)
+                target = Math.Max(target, BaseTypeDelayMs);
+
+            smoothedBaseDelayMs += Math.Clamp(
+                target - smoothedBaseDelayMs, -BaseDelaySlewPerRevealMs, BaseDelaySlewPerRevealMs);
+
+            if (GetPunctuationDelayMs(current) == 0)
+                return smoothedBaseDelayMs;
+
+            // 折叠：下一个字符仍是标点时，本字符不注入停顿。
+            if (revealedCount < text.Length && GetPunctuationDelayMs(text[revealedCount]) != 0)
+                return smoothedBaseDelayMs;
+
+            // 断粮代偿：标点组停顿先被断粮预算抵扣（既有算法原样保留）。
+            int runDelay = GetPunctuationRunDelayMs(text, revealedCount - 1);
+            int effectivePunctuation = runDelay;
+            if (starvationMs > 0)
+            {
+                int consumed = Math.Min(runDelay, starvationMs);
+                effectivePunctuation = runDelay - consumed;
+                starvationMs -= consumed;
+            }
+
+            return smoothedBaseDelayMs + effectivePunctuation;
         }
 
         /// <summary>流式 runway 自适应基准延迟（票 VT-STREAM-08）。</summary>
@@ -1114,16 +1224,113 @@ namespace ValleytalkReborn.UI
             return BaseTypeDelayMs;
         }
 
-        /// <summary>返回单字符的标点停顿毫秒数；非标点返回 0。</summary>
+        /// <summary>
+        /// 返回单字符的标点停顿毫秒数；非标点返回 0
+        /// （票 VT-STREAM-10 档位表：、90 | ，,140 | ；;210 | ：:200 | 。.380 |
+        /// ！!440 | ？?460 | —–-320 | …320 | 其余 0）。
+        /// </summary>
         private static int GetPunctuationDelayMs(char c)
         {
+            if (EnumCommaPunctuation.IndexOf(c) >= 0)
+                return EnumCommaDelayMs;
             if (LightPunctuation.IndexOf(c) >= 0)
                 return LightPunctuationDelayMs;
+            if (SemicolonPunctuation.IndexOf(c) >= 0)
+                return SemicolonDelayMs;
+            if (ColonPunctuation.IndexOf(c) >= 0)
+                return ColonDelayMs;
             if (LongPunctuation.IndexOf(c) >= 0)
                 return LongPunctuationDelayMs;
-            if (DashPunctuation.IndexOf(c) >= 0)
+            if (ExclamationPunctuation.IndexOf(c) >= 0)
+                return ExclamationDelayMs;
+            if (QuestionPunctuation.IndexOf(c) >= 0)
+                return QuestionDelayMs;
+            if (DashPunctuation.IndexOf(c) >= 0 || EllipsisPunctuation.IndexOf(c) >= 0)
                 return DashPunctuationDelayMs;
             return 0;
+        }
+
+        /// <summary>
+        /// 标点组停顿（票 VT-STREAM-10）：<paramref name="endIndex"/>（含）为标点组
+        /// 末字时返回整组一次性结算的停顿；非组末或非标点返回 0。单独 '.' 两侧均为
+        /// ASCII 数字（小数点）时返回 0。组内按成员构成分流：纯点串（'.'/'…'）、
+        /// 终强调组（含 ！!？?）、纯破折串（"—–-"）与其余混合组，后两组按游程
+        /// 长度逐字加压并封顶。
+        /// </summary>
+        /// <param name="text">当前页文本。</param>
+        /// <param name="endIndex">刚揭示字符的下标（含）。</param>
+        internal static int GetPunctuationRunDelayMs(string text, int endIndex)
+        {
+            if (text == null || endIndex < 0 || endIndex >= text.Length)
+                return 0;
+            if (GetPunctuationDelayMs(text[endIndex]) == 0)
+                return 0;
+
+            // 组未完：后一字符仍是标点时由末字统一结算。
+            if (endIndex + 1 < text.Length && GetPunctuationDelayMs(text[endIndex + 1]) != 0)
+                return 0;
+
+            int runStart = endIndex;
+            while (runStart > 0 && GetPunctuationDelayMs(text[runStart - 1]) != 0)
+                runStart--;
+            int runLen = endIndex - runStart + 1;
+
+            // 小数守卫：单独 '.' 两侧均为 ASCII 数字时按普通字符处理。
+            if (runLen == 1 && text[endIndex] == '.'
+                && endIndex > 0 && endIndex + 1 < text.Length
+                && text[endIndex - 1] >= '0' && text[endIndex - 1] <= '9'
+                && text[endIndex + 1] >= '0' && text[endIndex + 1] <= '9')
+                return 0;
+
+            bool hasExclamation = false;
+            bool hasQuestion = false;
+            bool hasDotLike = false;
+            bool hasDash = false;
+            bool hasOther = false;
+            int maxTier = 0;
+            for (int i = runStart; i <= endIndex; i++)
+            {
+                char c = text[i];
+                int tier = GetPunctuationDelayMs(c);
+                if (tier > maxTier)
+                    maxTier = tier;
+
+                if (c == '!' || c == '！')
+                    hasExclamation = true;
+                else if (c == '?' || c == '？')
+                    hasQuestion = true;
+                else if (c == '.' || c == '…')
+                    hasDotLike = true;
+                else if (c == '—' || c == '–' || c == '-')
+                    hasDash = true;
+                else
+                    hasOther = true;
+            }
+
+            // 纯点串（'.'/'…'）：4 连以上 560，2~3 连 500，单字按档位。
+            if (!hasExclamation && !hasQuestion && !hasDash && !hasOther)
+            {
+                if (runLen >= 4)
+                    return EllipsisLongRunDelayMs;
+                if (runLen >= 2)
+                    return EllipsisRunDelayMs;
+                return text[endIndex] == '.' ? LongPunctuationDelayMs : DashPunctuationDelayMs;
+            }
+
+            // 终强调组（含 ！!？?）：问号取 460 档否则 440，逐字加压封顶 620。
+            if (hasExclamation || hasQuestion)
+            {
+                int delay = (hasQuestion ? QuestionDelayMs : ExclamationDelayMs)
+                    + TerminalRunExtraPerCharMs * (runLen - 1);
+                return Math.Min(620, delay);
+            }
+
+            // 纯破折串（"—–-"）：两连以上 400，单字 320。
+            if (!hasDotLike && !hasOther)
+                return runLen >= 2 ? DashRunDelayMs : DashPunctuationDelayMs;
+
+            // 其余混合组：取成员最高单字档，逐字轻加压封顶 500。
+            return Math.Min(500, maxTier + MixedRunExtraPerCharMs * (runLen - 1));
         }
 
         #endregion
@@ -1165,7 +1372,12 @@ namespace ValleytalkReborn.UI
                         _characterIndex++;
                         int runway = _displayedPageText.Length - _characterIndex;
                         _typeTimerMs += ComputeDelayMs(
-                            _displayedPageText, _characterIndex, runway, _isStreamComplete, ref _starvationMs);
+                            _displayedPageText, _characterIndex, runway, _isStreamComplete, ref _starvationMs,
+                            ref _smoothedBaseDelayMs, _softStartRevealsRemaining);
+
+                        // 软启动配额随每次成功揭示递减（票 VT-STREAM-10）。
+                        if (_softStartRevealsRemaining > 0)
+                            _softStartRevealsRemaining--;
 
                         if (Game1.options.dialogueTyping)
                         {
@@ -1472,10 +1684,13 @@ namespace ValleytalkReborn.UI
 
                 // 翻页装载（票 VT-STREAM-08）：连同情绪 Cue 时间轴一起重建，
                 // 断粮代偿预算按页复位，避免跨页污染后续节奏。
+                // slew 惯性基准一并复位（票 VT-STREAM-10）；软启动配额
+                // 不复位也不重臂，跨页保留既有余量。
                 _currentCues.Clear();
                 _currentCues.AddRange(page.Cues);
                 _appliedCueIndex = -1;
                 _starvationMs = 0;
+                _smoothedBaseDelayMs = BaseTypeDelayMs;
                 SanitizeCurrentCues();
 
                 _characterIndex = 0;

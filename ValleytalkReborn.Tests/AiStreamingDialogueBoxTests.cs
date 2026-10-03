@@ -342,7 +342,7 @@ public class AiStreamingDialogueBoxTests : IDisposable
 
         Assert.Equal(35, AiStreamingDialogueBox.ComputeDelayMs(text, 1));
         Assert.Equal(35, AiStreamingDialogueBox.ComputeDelayMs(text, 2));
-        Assert.Equal(415, AiStreamingDialogueBox.ComputeDelayMs(text, 3));
+        Assert.Equal(575, AiStreamingDialogueBox.ComputeDelayMs(text, 3));
     }
 
     [Fact]
@@ -353,7 +353,7 @@ public class AiStreamingDialogueBoxTests : IDisposable
 
         Assert.Equal(35, AiStreamingDialogueBox.ComputeDelayMs(text, 5));
         Assert.Equal(35, AiStreamingDialogueBox.ComputeDelayMs(text, 6));
-        Assert.Equal(415, AiStreamingDialogueBox.ComputeDelayMs(text, 7));
+        Assert.Equal(535, AiStreamingDialogueBox.ComputeDelayMs(text, 7));
     }
 
     [Fact]
@@ -363,17 +363,17 @@ public class AiStreamingDialogueBoxTests : IDisposable
         string text = "What?!";
 
         Assert.Equal(35, AiStreamingDialogueBox.ComputeDelayMs(text, 5));
-        Assert.Equal(415, AiStreamingDialogueBox.ComputeDelayMs(text, 6));
+        Assert.Equal(535, AiStreamingDialogueBox.ComputeDelayMs(text, 6));
     }
 
     [Fact]
     public void ComputeDelay_DashRun_FoldsWithDashPause()
     {
-        // "——" -> 首字折叠，末字触发 320ms 延宕停顿
+        // "——" -> 首字折叠，末字触发 400ms 延宕停顿
         string text = "——";
 
         Assert.Equal(35, AiStreamingDialogueBox.ComputeDelayMs(text, 1));
-        Assert.Equal(355, AiStreamingDialogueBox.ComputeDelayMs(text, 2));
+        Assert.Equal(435, AiStreamingDialogueBox.ComputeDelayMs(text, 2));
     }
 
     [Fact]
@@ -1596,8 +1596,9 @@ public class AiStreamingDialogueBoxTests : IDisposable
         AiStreamingDialogueBox box = NewBox();
 
         box.AppendContent("AB", false);
-        // 推进直至 "AB" 两个字符全部揭示（35ms * 2 = 70ms）
-        for (int i = 0; i < 6; i++)
+        // 推进直至 "AB" 两个字符全部揭示（VT-STREAM-10 软启动：碎首块先驻留
+        // 150ms，slew 后两字合计约 226ms，故取 12 帧预算）。
+        for (int i = 0; i < 12; i++)
             UpdateBox(box, 16);
 
         Assert.Equal(2, box.CharacterIndex);
@@ -1817,6 +1818,129 @@ public class AiStreamingDialogueBoxTests : IDisposable
         FieldInfo starvationField = typeof(AiStreamingDialogueBox).GetField(
             "_starvationMs", BindingFlags.NonPublic | BindingFlags.Instance);
         Assert.Equal(0, (int)starvationField.GetValue(box));
+    }
+
+    #endregion
+
+    #region VT-STREAM-10 标点组分档、slew 惯性与软启动
+
+    [Theory]
+    [InlineData("好、好", 2, 125)]   // 顿号 90
+    [InlineData("好；好", 2, 245)]   // 分号 210
+    [InlineData("好：好", 2, 235)]   // 冒号 200
+    [InlineData("好吗？", 3, 495)]   // 问号 460
+    [InlineData("好呀！", 3, 475)]   // 感叹号 440
+    public void ComputeDelay_SinglePunctuation_UsesPerTierDelay(string text, int revealedCount, int expected)
+    {
+        Assert.Equal(expected, AiStreamingDialogueBox.ComputeDelayMs(text, revealedCount));
+    }
+
+    [Fact]
+    public void ComputeDelay_DecimalPointBetweenAsciiDigits_NoPause()
+    {
+        // "3.14"：小数点两侧均为 ASCII 数字，按普通字符处理，不注入停顿。
+        Assert.Equal(35, AiStreamingDialogueBox.ComputeDelayMs("3.14", 2));
+    }
+
+    [Theory]
+    [InlineData("哦..", 3, 535)]    // 纯点串 2 连 -> 500
+    [InlineData("哦...", 4, 535)]   // 纯点串 3 连 -> 500
+    [InlineData("哦....", 5, 595)]  // 纯点串 4 连 -> 560
+    [InlineData("哦？？", 3, 535)]  // 问号 2 连 -> 460 + 40
+    [InlineData("哦！！", 3, 515)]  // 感叹号 2 连 -> 440 + 40
+    public void ComputeDelay_PunctuationRun_PausesScaleWithRunLength(string text, int revealedCount, int expected)
+    {
+        Assert.Equal(expected, AiStreamingDialogueBox.ComputeDelayMs(text, revealedCount));
+    }
+
+    [Fact]
+    public void ComputeDelay_SevenParam_SlewConvergesTowardRunwayTarget()
+    {
+        int smoothed = 35;
+        int starvation = 0;
+        const string text = "abcdefghijklmnopqrstuvwxyz";
+
+        // 每次揭示至多向 runway 目标（runway 22 -> 28）滑移 ±2ms：
+        // 35 -> 33 -> 31 -> 29 -> 28 -> 28。
+        Assert.Equal(33, AiStreamingDialogueBox.ComputeDelayMs(text, 4, 22, false, ref starvation, ref smoothed, 0));
+        Assert.Equal(31, AiStreamingDialogueBox.ComputeDelayMs(text, 4, 22, false, ref starvation, ref smoothed, 0));
+        Assert.Equal(29, AiStreamingDialogueBox.ComputeDelayMs(text, 4, 22, false, ref starvation, ref smoothed, 0));
+        Assert.Equal(28, AiStreamingDialogueBox.ComputeDelayMs(text, 4, 22, false, ref starvation, ref smoothed, 0));
+        Assert.Equal(28, AiStreamingDialogueBox.ComputeDelayMs(text, 4, 22, false, ref starvation, ref smoothed, 0));
+        Assert.Equal(28, smoothed);
+    }
+
+    [Fact]
+    public void ComputeDelay_SoftStartFloor_HoldsBaseDelayAtVanillaPace()
+    {
+        int smoothed = 35;
+        int starvation = 0;
+        const string text = "abcdefghijklmnopqrstuvwxyz";
+
+        // 软启动配额未尽：runway 22 的 0.8x 追赶档被原速地板顶回，仍为 35。
+        Assert.Equal(35, AiStreamingDialogueBox.ComputeDelayMs(text, 4, 22, false, ref starvation, ref smoothed, 1));
+        Assert.Equal(35, smoothed);
+    }
+
+    /// <summary>读取私有打字计时器（无头断言用）。</summary>
+    private static int ReadTypeTimerMs(AiStreamingDialogueBox box)
+        => (int)typeof(AiStreamingDialogueBox)
+            .GetField("_typeTimerMs", BindingFlags.NonPublic | BindingFlags.Instance)
+            .GetValue(box);
+
+    /// <summary>读取私有软启动剩余配额（无头断言用）。</summary>
+    private static int ReadSoftStartRevealsRemaining(AiStreamingDialogueBox box)
+        => (int)typeof(AiStreamingDialogueBox)
+            .GetField("_softStartRevealsRemaining", BindingFlags.NonPublic | BindingFlags.Instance)
+            .GetValue(box);
+
+    /// <summary>读取私有 slew 惯性基准延迟（无头断言用）。</summary>
+    private static int ReadSmoothedBaseDelayMs(AiStreamingDialogueBox box)
+        => (int)typeof(AiStreamingDialogueBox)
+            .GetField("_smoothedBaseDelayMs", BindingFlags.NonPublic | BindingFlags.Instance)
+            .GetValue(box);
+
+    [Fact]
+    public void AppendContent_FragmentedFirstChunk_ArmsSoftStartPreRoll()
+    {
+        AiStreamingDialogueBox box = NewBox();
+
+        box.AppendContent("Hi", false);
+
+        // 碎首块：先驻留 150ms 再开字，并装填 6 次揭示的软启动配额。
+        Assert.Equal(150, ReadTypeTimerMs(box));
+        Assert.Equal(6, ReadSoftStartRevealsRemaining(box));
+    }
+
+    [Fact]
+    public void AppendContent_LongFirstChunk_DoesNotArmSoftStart()
+    {
+        AiStreamingDialogueBox box = NewBox();
+
+        box.AppendContent("Hello world", false);
+
+        // 首块已 >= 8 字：无需预滚，保持原速起步。
+        Assert.Equal(35, ReadTypeTimerMs(box));
+        Assert.Equal(0, ReadSoftStartRevealsRemaining(box));
+    }
+
+    [Fact]
+    public void PageTurn_ResetsSmoothedBaseDelayToVanillaPace()
+    {
+        AiStreamingDialogueBox box = NewBox();
+        box.AppendContent(new string('字', 20) + "#第二页", false);
+
+        // 打字 3 帧：runway >= 16 的追赶档把 slew 基准压向 28（35 -> 33 -> 31 -> 29）。
+        for (int i = 0; i < 3; i++)
+            UpdateBox(box, 40);
+        Assert.Equal(3, box.CharacterIndex);
+        Assert.Equal(29, ReadSmoothedBaseDelayMs(box));
+
+        box.receiveLeftClick(0, 0);  // 快进当前页
+        box.receiveLeftClick(0, 0);  // 翻页
+
+        // 翻页装载复位 slew 基准；软启动配额不复位也不重臂。
+        Assert.Equal(35, ReadSmoothedBaseDelayMs(box));
     }
 
     #endregion
