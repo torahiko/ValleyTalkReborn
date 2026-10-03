@@ -17,7 +17,7 @@ namespace ValleytalkReborn.Cutscene.Serendipity
 
         public bool IsActive { get; private set; }
         public Vector2 WorldPosition { get; private set; }
-        public List<NPC> TargetActors { get; private set; } = new();
+        public IReadOnlyList<NPC> TargetActors { get; private set; } = new List<NPC>();
         public SituationDefinition Situation { get; private set; }
 
         private float _remainingSeconds = 0f;
@@ -60,7 +60,8 @@ namespace ValleytalkReborn.Cutscene.Serendipity
             }
 
             IsActive = false;
-            TargetActors.Clear();
+            // 整体换新列表而非 Clear()：外部此前捕获的引用（如 ModEntry 的按键快照）不受破坏性就地清空影响
+            TargetActors = new List<NPC>();
             Situation = null;
             _remainingSeconds = 0f;
         }

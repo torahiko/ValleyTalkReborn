@@ -784,9 +784,10 @@ namespace ValleytalkReborn
                 if (e.Button == SButton.E || e.Button.IsActionButton() || e.Button == SButton.MouseRight)
                 {
                     Helper.Input.Suppress(e.Button);
-                    var actors = ValleytalkReborn.Cutscene.Serendipity.SerendipityBeacon.Instance.TargetActors;
+                    // 快照截获：先取 TargetActors 与 Situation 的本地副本，再 Dismiss（时序红线）
+                    var actors = ValleytalkReborn.Cutscene.Serendipity.SerendipityBeacon.Instance.TargetActors?.ToList();
                     var situation = ValleytalkReborn.Cutscene.Serendipity.SerendipityBeacon.Instance.Situation;
-                    ValleytalkReborn.Cutscene.Serendipity.SerendipityBeacon.Instance.Dismiss();
+                    ValleytalkReborn.Cutscene.Serendipity.SerendipityBeacon.Instance.Dismiss("player triggered encounter");
 
                     if (actors != null && actors.Count > 0 && situation != null)
                     {
@@ -794,6 +795,13 @@ namespace ValleytalkReborn
                         ValleytalkReborn.Cutscene.Serendipity.SerendipityManager.Instance.TriggerEncounter(actors, situation);
                         return;
                     }
+
+                    // BOUNDARY：快照缺失（Trace）或剧本缺失（Warn），仅记录不触发微电影；
+                    // 不硬 return，保持既有 fall-through 供后续按键处理块消费
+                    if (actors == null || actors.Count == 0)
+                        SMonitor?.Log("[SerendipityBeacon] Trigger skipped: beacon actor snapshot empty.", LogLevel.Trace);
+                    else if (situation == null)
+                        SMonitor?.Log("[SerendipityBeacon] Trigger skipped: situation missing.", LogLevel.Warn);
                 }
             }
 

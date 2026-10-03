@@ -166,6 +166,32 @@ namespace ValleytalkReborn.Tests
         }
 
         [Fact]
+        public void SerendipityBeacon_Dismiss_DoesNotMutatePreviouslyCapturedReference()
+        {
+            var beacon = SerendipityBeacon.Instance;
+            beacon.Dismiss();
+
+            // 预置非空演员表：借非泛型 IList 注入 null 占位演员（无头测试无法构造真实 NPC）
+            var seeded = (System.Collections.IList)beacon.TargetActors;
+            seeded.Add(null);
+            seeded.Add(null);
+            Assert.Equal(2, beacon.TargetActors.Count);
+
+            // 模拟 ModEntry 按键时序：先快照截获引用，再 Dismiss
+            var captured = beacon.TargetActors;
+
+            beacon.Dismiss("player triggered encounter");
+
+            // 旧实现 TargetActors.Clear() 会就地清空同一引用使快照失真；
+            // 新实现整体换新列表，外部捕获的引用保持原样
+            Assert.NotNull(captured);
+            Assert.Equal(2, captured.Count);
+            Assert.False(beacon.IsActive);
+            Assert.Empty(beacon.TargetActors);
+            Assert.Null(beacon.Situation);
+        }
+
+        [Fact]
         public void SerendipityBeacon_IsPlayerInRange_FalseWhenInactive()
         {
             var beacon = SerendipityBeacon.Instance;

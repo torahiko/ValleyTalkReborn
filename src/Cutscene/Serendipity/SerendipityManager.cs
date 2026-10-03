@@ -109,37 +109,6 @@ namespace ValleytalkReborn.Cutscene.Serendipity
         }
 
         /// <summary>
-        /// 输入按键响应（挂载于 SMAPI ButtonsChanged）
-        /// </summary>
-        public void OnButtonsChanged(ButtonsChangedEventArgs e)
-        {
-            if (!SerendipityBeacon.Instance.IsActive || !SerendipityBeacon.Instance.IsPlayerInRange())
-                return;
-
-            if (!Context.IsPlayerFree)
-                return;
-
-            // 监听 E 键或原版交互操作键（支持手柄按键与自定义改键）
-            bool actionPressed = e.Pressed.Contains(SButton.E) ||
-                                 e.Pressed.Any(b => b.IsActionButton());
-
-            if (actionPressed)
-            {
-                var actors = SerendipityBeacon.Instance.TargetActors;
-                var situation = SerendipityBeacon.Instance.Situation;
-                SerendipityBeacon.Instance.Dismiss();
-
-                if (actors != null && actors.Count > 0 && situation != null)
-                {
-                    ModEntry.SMonitor?.Log(
-                        $"[SerendipityManager] Player interacted with beacon, starting cutscene '{situation.Title}'.",
-                        LogLevel.Info);
-                    TriggerEncounter(actors, situation);
-                }
-            }
-        }
-
-        /// <summary>
         /// 执行偶遇剧情：预约 NPC、记录冷却并启动异步生成与放映
         /// </summary>
         public void TriggerEncounter(List<NPC> actors, SituationDefinition situation)
