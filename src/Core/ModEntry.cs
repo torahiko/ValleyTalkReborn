@@ -14,6 +14,7 @@ using ValleytalkReborn.UI;
 using Microsoft.Xna.Framework;
 using ValleytalkReborn.Dialogue.Coordination;
 using ValleytalkReborn.Cutscene;
+using ValleytalkReborn.Social;
 
 namespace ValleytalkReborn
 {
@@ -303,6 +304,9 @@ namespace ValleytalkReborn
             RuleManager.Instance.Initialize(helper);
             MovementManager.Instance.Initialize(helper);
             RelationshipMilestoneManager.Instance.Initialize(Helper, Monitor);
+
+            // VT-SOCIAL-03: 日结结晶器（配偶张力 DayEnding 结算 + 晨间冷战阶跃 HUD）。
+            SocialCrystallizationManager.Instance.Initialize(helper);
 
             // TIE-001: 镇事件引擎（Town Incident 契约与持久化状态）。
             // 必须位于下方 GameLoop 事件订阅之前：引擎自身的 SaveLoaded 处理器需先于
@@ -1324,6 +1328,9 @@ namespace ValleytalkReborn
         /// </summary>
         private void Cleanup()
         {
+            // VT-SOCIAL-03: 日结结晶器退订 GameLoop 事件并清空跨日冷战追踪。
+            SocialCrystallizationManager.Instance.Cleanup();
+
             try
             {
                 _dialogueCoordinator?.Unsubscribe();

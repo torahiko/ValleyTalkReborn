@@ -125,15 +125,16 @@ public class SocialGraphStoreTests
         var farmer = NewFarmer();
         Assert.False(HasKey(farmer, "Alex"));
 
-        var profile = SocialGraphService.Instance.GetProfile(farmer, "Alex", 6);
+        // VT-SOCIAL-03 自愈后种子原型服从九宫格：8 心（80/70）→ CloseConfidant。
+        var profile = SocialGraphService.Instance.GetProfile(farmer, "Alex", 8);
 
-        Assert.Equal(SocialArchetype.GuardedAcquaintance, profile.Archetype);
-        Assert.Equal(60, profile.Affection);
-        Assert.Equal(40, profile.Trust);
+        Assert.Equal(SocialArchetype.CloseConfidant, profile.Archetype);
+        Assert.Equal(80, profile.Affection);
+        Assert.Equal(70, profile.Trust);
         Assert.True(HasKey(farmer, "Alex"));
 
         // 二次读取从 ModData 反序列化，数值一致（单一数据源证明）。
-        var reloaded = SocialGraphService.Instance.GetProfile(farmer, "Alex", 6);
+        var reloaded = SocialGraphService.Instance.GetProfile(farmer, "Alex", 8);
         Assert.Equal(profile.Affection, reloaded.Affection);
         Assert.Equal(profile.Trust, reloaded.Trust);
         Assert.Equal(profile.Archetype, reloaded.Archetype);
@@ -151,19 +152,20 @@ public class SocialGraphStoreTests
             Trust = 31,
             Tension = -20,
             DomesticDistance = 55,
-            UnresolvedFriction = 42,
+            UnresolvedFriction = 10,
             Archetype = SocialArchetype.DomesticRoommate,
             SalientMemories = new List<string> { "雨天修屋顶", "生日惊喜" }
         };
 
-        SocialGraphService.Instance.SaveProfile(farmer, "Hakan", saved);
-        var loaded = SocialGraphService.Instance.GetProfile(farmer, "Hakan");
+        // VT-SOCIAL-03：显式 isMarried 让自愈判定与语义一致（摩擦 10 < 40、疏离 55 >= 50 → Roommate 保持）。
+        SocialGraphService.Instance.SaveProfile(farmer, "Hakan", saved, isMarried: true);
+        var loaded = SocialGraphService.Instance.GetProfile(farmer, "Hakan", 0, isMarried: true);
 
         Assert.Equal(72, loaded.Affection);
         Assert.Equal(31, loaded.Trust);
         Assert.Equal(-20, loaded.Tension);
         Assert.Equal(55, loaded.DomesticDistance);
-        Assert.Equal(42, loaded.UnresolvedFriction);
+        Assert.Equal(10, loaded.UnresolvedFriction);
         Assert.Equal(SocialArchetype.DomesticRoommate, loaded.Archetype);
         Assert.Equal(new List<string> { "雨天修屋顶", "生日惊喜" }, loaded.SalientMemories);
     }
@@ -176,7 +178,7 @@ public class SocialGraphStoreTests
         var farmer = NewFarmer();
         var profile = new SocialProfile { Affection = 80, Trust = 70, Archetype = SocialArchetype.CloseConfidant };
 
-        SocialGraphService.Instance.SaveProfile(farmer, "Alex", profile);
+        SocialGraphService.Instance.SaveProfile(farmer, "Alex", profile, isMarried: false);
 
         farmer.modData.TryGetValue(SocialGraphService.ModDataPrefix + "Alex", out string json);
         Assert.Contains("\"Archetype\":\"CloseConfidant\"", json);
@@ -194,15 +196,16 @@ public class SocialGraphStoreTests
         var capture = InstallCapture();
         try
         {
-            var profile = SocialGraphService.Instance.GetProfile(farmer, "Alex", 5);
+            // VT-SOCIAL-03：9 心修复种子（90/70）经自愈后仍为 CloseConfidant（九宫格自洽）。
+            var profile = SocialGraphService.Instance.GetProfile(farmer, "Alex", 9);
 
-            Assert.Equal(SocialArchetype.GuardedAcquaintance, profile.Archetype);
-            Assert.Equal(50, profile.Affection);
-            Assert.Equal(40, profile.Trust);
+            Assert.Equal(SocialArchetype.CloseConfidant, profile.Archetype);
+            Assert.Equal(90, profile.Affection);
+            Assert.Equal(70, profile.Trust);
             Assert.Contains(capture.Entries, e => e.Level == LogLevel.Warn && e.Message.Contains("Alex"));
 
             // 修复已写回：再次读取不再告警且数值一致。
-            var again = SocialGraphService.Instance.GetProfile(farmer, "Alex", 5);
+            var again = SocialGraphService.Instance.GetProfile(farmer, "Alex", 9);
             Assert.Equal(profile.Affection, again.Affection);
             Assert.Equal(1, capture.Entries.Count(e => e.Level == LogLevel.Warn));
         }

@@ -210,7 +210,8 @@ public class SocialRelationBaseAssemblyTests : IDisposable
     {
         UseZhLanguage();
         InstallFriendship("Alex", FriendshipStatus.Married);
-        SocialGraphService.Instance.SaveProfile(_farmer, "Alex", new SocialProfile { UnresolvedFriction = 45, Archetype = SocialArchetype.DomesticColdSpell });
+        SocialGraphService.Instance.SaveProfile(_farmer, "Alex",
+            new SocialProfile { UnresolvedFriction = 45, Archetype = SocialArchetype.DomesticColdSpell }, isMarried: true);
         var character = MakeCharacter("Alex",
             ("coreMarried", "CORE-MARRIED-MARKER {{Name}}"),
             ("childrenNone", "CHILDREN-NONE-MARKER"),
@@ -236,7 +237,8 @@ public class SocialRelationBaseAssemblyTests : IDisposable
     {
         UseZhLanguage();
         InstallFriendship("Alex", FriendshipStatus.Married, roommate: true);
-        SocialGraphService.Instance.SaveProfile(_farmer, "Alex", new SocialProfile { DomesticDistance = 60, Archetype = SocialArchetype.DomesticRoommate });
+        SocialGraphService.Instance.SaveProfile(_farmer, "Alex",
+            new SocialProfile { DomesticDistance = 60, Archetype = SocialArchetype.DomesticRoommate }, isMarried: true);
         var character = MakeCharacter("Alex",
             ("coreRoommates", "CORE-ROOMMATES-MARKER {{Name}}"),
             ("generalBeingRoommates", "BEING-ROOMMATES-MARKER"),

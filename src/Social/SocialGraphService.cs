@@ -47,6 +47,7 @@ public sealed class SocialGraphService
         if (!farmer.modData.TryGetValue(key, out string raw) || string.IsNullOrWhiteSpace(raw))
         {
             var seeded = SocialProfile.CreateDefault(vanillaHearts, isMarried);
+            seeded.Archetype = EvaluateArchetype(seeded, isMarried);
             farmer.modData[key] = JsonSerializer.Serialize(seeded, JsonOptions);
             return seeded;
         }
@@ -56,6 +57,7 @@ public sealed class SocialGraphService
             var profile = JsonSerializer.Deserialize<SocialProfile>(raw, JsonOptions);
             if (profile != null)
             {
+                profile.Archetype = EvaluateArchetype(profile, isMarried);
                 return profile;
             }
             Log.Warning($"[SocialGraphService] Null social profile payload for '{npcName}' — 视为损坏，重置为默认档案并写回修复。");
@@ -66,18 +68,23 @@ public sealed class SocialGraphService
         }
 
         var repaired = SocialProfile.CreateDefault(vanillaHearts, isMarried);
+        repaired.Archetype = EvaluateArchetype(repaired, isMarried);
         farmer.modData[key] = JsonSerializer.Serialize(repaired, JsonOptions);
         return repaired;
     }
 
     /// <summary>
     /// 将档案序列化为紧凑 JSON 写入 farmer.modData[ModDataPrefix + npcName]。
+    /// VT-SOCIAL-03：写入前强制 Archetype 自愈（isMarried 缺省时经 SpouseQueryService 解析），
+    /// 杜绝调用方只改 metrics 漏改枚举引发的脱节。
     /// </summary>
-    public void SaveProfile(Farmer farmer, string npcName, SocialProfile profile)
+    public void SaveProfile(Farmer farmer, string npcName, SocialProfile profile, bool? isMarried = null)
     {
         if (farmer == null) throw new ArgumentNullException(nameof(farmer));
         if (string.IsNullOrWhiteSpace(npcName)) throw new ArgumentException("npcName is required", nameof(npcName));
         if (profile == null) throw new ArgumentNullException(nameof(profile));
+        bool married = isMarried ?? SpouseQueryService.Instance.IsMarried(npcName, farmer);
+        profile.Archetype = EvaluateArchetype(profile, married);
         farmer.modData[ModDataPrefix + npcName] = JsonSerializer.Serialize(profile, JsonOptions);
     }
 
