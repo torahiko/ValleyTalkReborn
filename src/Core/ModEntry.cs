@@ -321,6 +321,9 @@ namespace ValleytalkReborn
             helper.Events.GameLoop.DayStarted += OnDayStarted;
             helper.Events.GameLoop.ReturnedToTitle += OnReturnedToTitle;
 
+            // ★ 剧本回放跨图换场：农夫 warpFarmer 落地录制现场后由 CutsceneStorageService 接续摆位开演
+            helper.Events.Player.Warped += OnPlayerWarped;
+
             // 🌟 Agent tool dispatcher thread-safe queue: process pending actions on main thread
             helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 
@@ -1690,6 +1693,14 @@ namespace ValleytalkReborn
                     "assets/ChoreLedgerData.json",
                     AssetLoadPriority.Low);
             }
+        }
+
+        /// <summary>
+        /// 剧本回放跨图换场接续：路由到 CutsceneStorageService 的待演回放落地处理（主线程）
+        /// </summary>
+        private void OnPlayerWarped(object sender, WarpedEventArgs e)
+        {
+            ValleytalkReborn.Cutscene.Storage.CutsceneStorageService.OnPlayerWarped(e);
         }
 
         private void OnMenuChanged(object sender, MenuChangedEventArgs e)

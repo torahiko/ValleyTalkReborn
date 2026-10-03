@@ -138,7 +138,7 @@ namespace ValleytalkReborn.Cutscene.Generation
                     return (false, $"剧本编译失败: {compileResult.ErrorMessage}");
                 }
 
-                // 4.5 自动归档至本地剧本库（同时录制演员开场站位，供跨场景"录像式"回放）
+                // 4.5 自动归档至本地剧本库（同时录制演员与农夫开场站位，供回归录制现场的"录像式"回放）
                 try
                 {
                     var archived = new ArchivedCutscene
@@ -153,6 +153,14 @@ namespace ValleytalkReborn.Cutscene.Generation
                             TileY = (int)a.Tile.Y,
                             Facing = a.FacingDirection
                         }).ToList(),
+                        // BOUNDARY: 本块运行于 await 后线程，读数为瞬时近似值（与 ActorStances 同语义，接受）
+                        PlayerStance = new ArchivedActorStance
+                        {
+                            Name = "Player",
+                            TileX = (int)Game1.player.Tile.X,
+                            TileY = (int)Game1.player.Tile.Y,
+                            Facing = Game1.player.FacingDirection
+                        },
                         UserIntent = userIntent ?? string.Empty,
                         RawJson = llmResp.Text,
                         ActionCount = compileResult.Actions.Count,

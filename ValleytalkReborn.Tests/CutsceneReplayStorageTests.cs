@@ -63,6 +63,46 @@ namespace ValleytalkReborn.Tests
         }
 
         [Fact]
+        public void ArchivedCutscene_PlayerStance_RoundTripsThroughStorageJson()
+        {
+            var cutscene = new ArchivedCutscene
+            {
+                Title = "山中农舍重聚曲",
+                LocationName = "FarmHouse",
+                ActorNames = new System.Collections.Generic.List<string> { "Alex" },
+                ActorStances = new System.Collections.Generic.List<ArchivedActorStance>
+                {
+                    new ArchivedActorStance { Name = "Alex", TileX = 12, TileY = 9, Facing = 2 }
+                },
+                PlayerStance = new ArchivedActorStance { Name = "Player", TileX = 9, TileY = 11, Facing = 1 },
+                UserIntent = "回归录制现场重播",
+                RawJson = @"{""title"":""山中农舍重聚曲"",""actions"":[]}",
+                ActionCount = 6,
+                CreatedAt = new DateTime(2026, 10, 3, 4, 30, 0)
+            };
+
+            string path = Path.Combine(Path.GetTempPath(), $"vt_archived_{Guid.NewGuid():N}.json");
+            try
+            {
+                StorageJson.Write(path, cutscene);
+                var loaded = StorageJson.Read<ArchivedCutscene>(path);
+
+                Assert.NotNull(loaded);
+                Assert.Equal("山中农舍重聚曲", loaded.Title);
+
+                Assert.NotNull(loaded.PlayerStance);
+                Assert.Equal("Player", loaded.PlayerStance.Name);
+                Assert.Equal(9, loaded.PlayerStance.TileX);
+                Assert.Equal(11, loaded.PlayerStance.TileY);
+                Assert.Equal(1, loaded.PlayerStance.Facing);
+            }
+            finally
+            {
+                if (File.Exists(path)) File.Delete(path);
+            }
+        }
+
+        [Fact]
         public void ArchivedCutscene_LegacyJsonWithoutStances_DeserializesWithEmptyStances()
         {
             string legacyJson = @"
@@ -81,6 +121,11 @@ namespace ValleytalkReborn.Tests
             Assert.Empty(loaded.ActorStances);
             Assert.Single(loaded.ActorNames);
             Assert.Equal("Alex", loaded.ActorNames[0]);
+
+            // 旧归档无农夫站位记录：PlayerStance 反序列化为默认实例（TileX/TileY 双零 → 回放走兜底落地）
+            Assert.NotNull(loaded.PlayerStance);
+            Assert.Equal(0, loaded.PlayerStance.TileX);
+            Assert.Equal(0, loaded.PlayerStance.TileY);
         }
     }
 }
